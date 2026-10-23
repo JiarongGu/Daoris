@@ -14,6 +14,11 @@ with the version and date at release.
   Daoris, a new conversation from this one), *Stop waiting* lets it go on only when you next write, and *Try now* offers the account
   again. A quest's session that waits for a limit says when it goes on in its row and on the quest's page, and *What needs you* says
   when Daoris could not keep an account's cool-off.
+- When a session's agent asks you a question, each answer it offers is now a row you choose (QUESTIONUI1a). Each row says what
+  the agent will do on it, and the one it recommends says why. Nothing is chosen for you. Choose one with the mouse or the arrow
+  keys, add your own words if you like, and send it with the box's *Send* or Enter. *Clear choice* sends your words alone. The
+  waiting card at the top works the same way once *Answer and carry on…* is open. An answer still waits while the question's
+  go-aheads are open.
 - A quest's session that waits for an account's limit now says so under its header: when it goes on by itself, and on which account,
   whether it goes on in its own conversation or in a new session with Daoris's brief, and when a reset did not lift the limit
   (LIMITRESUME1d). Beside it, *Go on now with…* hands it to another agent or account now, *Pause quest…* holds it, and *Try now*

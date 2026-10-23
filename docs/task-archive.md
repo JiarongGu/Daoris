@@ -20099,3 +20099,16 @@ D102's SQUASHSEEN1 note; FIX-LOG 2026-10-24.
 goes on by itself, read from its events, with *Go on now with…*, *Stop…* or *Stop waiting* and *Try now*; a limited line's row and
 its quest's page say the same sentence; the band says a cool-off Daoris could not keep beside its account; Ask Daoris's session go
 says *limited*. Overview's counts and the list's filters already read the flag. Detail: D206's LIMITRESUME1d2 note.
+## QUESTIONUI1a — the question card (2026-10-24, D208, D185)
+
+> **QUESTIONUI1a — the question card** (service, web). Each choice a radio row that reads whole with the recommendation's why (`question_ask`'s `why`), its accessible name the label and *recommended*, nothing preselected, sent with the box's own field and *Send*, the selection the frame's and tied to the question's id, keyboard and screen reader, in the box and the head's card, stories of their own. Proof: §11.
+
+(The row of `docs/2026-10-24-supervisor-design.md` §11; Codex's round-2 findings 14 and 15 settled by the build's quest. Quest
+`#af6fbdba5d8e`.)
+
+**Outcome** 2026-10-24: a park's question is a card whose answers are chosen as radio rows and sent by the field beside them, in
+the box and in the head's card. `question_ask` takes the recommendation's `why`, read by the driver, the route and the page.
+Each row is the UI design's new `ChoiceRow`. *Clear choice* lets the words go alone, and the go-aheads' order holds for either kind
+of answer. The row's proofs pass as focused tests, with the six-answer floor measured in Chromium and the stories in both
+languages and themes. The installed-window proof waits for the install to carry the build. Detail: D185's QUESTIONUI1a note and
+D208's.
