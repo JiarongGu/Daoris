@@ -841,6 +841,26 @@ public sealed class PlannerTests
         Assert.Equal(1, only.CarriesWork);
     }
 
+    /// <summary>
+    /// LIMITRESUME1b (D206, design §3.3): an open quest whose last session here an account's limit ended is the line's resume, carried
+    /// on from that record in its tree, never started afresh: its first part held a conversation too. Its strikes are not counted for it.
+    /// </summary>
+    [Fact]
+    public void An_open_quest_whose_last_session_a_limit_ended_is_carried_on_not_started_afresh()
+    {
+        var limited = FailedBeforeTake with { Note = "The `fake` account it ran on hit its session limit.", Limit = true };
+
+        foreach (var snapshot in new[] { Committed(limited, 0), Ran([Quest()], ("q1", limited)) })
+        {
+            var only = Assert.Single(Planner.Plan(snapshot, Config()));
+            Assert.Equal(StartVerdict.Start, only.Verdict);
+            Assert.Equal(limited, only.Resumes);
+            Assert.False(only.GoesOn);
+            Assert.Null(only.CarriesWork);
+            Assert.Contains("session `s1` was cut off by its account's limit before it took the quest", only.Reason);
+        }
+    }
+
     /// <summary>One session per tree: a live session in the failed one's tree holds the carry-on, which still names its work.</summary>
     [Fact]
     public void A_carry_on_of_committed_work_waits_for_the_tree_it_goes_back_into()
