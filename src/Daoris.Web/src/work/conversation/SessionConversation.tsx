@@ -50,6 +50,27 @@ export function BackToBottom({ onPress, className }: { onPress: () => void; clas
 }
 
 /**
+ * *To the top* as a press of its own (WAITPANEL1): the record's head, where every wait stands with its reading. Drawn beside
+ * *Back to bottom* above the waiting panel, as the strip's *To the top* was (D168 point 1), so neither is ever under the panel.
+ */
+export function ToTheTop({ onPress, className }: { onPress: () => void; className?: string }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onPress}
+      className={cn(
+        'flex h-7 cursor-pointer items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2.5 text-small text-ink-soft hover:text-ink',
+        className,
+      )}
+    >
+      <Icon name="toTop" size={13} />
+      {t('work.wait.top')}
+    </button>
+  );
+}
+
+/**
  * The attended session's conversation (D76, CONV2): the organism that holds its record and its
  * scroll, so the view below it holds neither.
  *

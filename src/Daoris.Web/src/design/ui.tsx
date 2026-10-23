@@ -10,7 +10,7 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowLeftRight, ArrowUp, Bell, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
+  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowUpToLine, ArrowLeft, ArrowLeftRight, ArrowUp, Bell, BookOpen, Bot, Brain, Check, ChevronDown, ChevronRight, ChevronUp,
   CircleHelp, ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, Eye, FileDiff, FilePen, FileText, Flag, FolderOpen, Gauge, GitBranch,
   GitMerge, GitPullRequest, Globe, Hand, History, Inbox, Info, Pin, ScanEye,
   Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
@@ -106,6 +106,7 @@ const ICONS = {
   tool: Wrench,
   plan: ListTodo,
   toBottom: ArrowDownToLine,
+  toTop: ArrowUpToLine,
   // The frame's own controls (FRAME6): the rail and the dock closed and opened, and the dock over the frame.
   railClose: PanelLeftClose,
   railOpen: PanelLeftOpen,

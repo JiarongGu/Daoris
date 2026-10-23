@@ -67,3 +67,20 @@ export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unk
 
   return { atTail, toTail };
 }
+
+/**
+ * Whether the reader has scrolled down from the region's top by more than a line's slack (WAITPANEL1): *To the top* is offered
+ * only then. Read again when `opened` changes, as a new session opens wherever its conversation puts it.
+ */
+export function useAwayFromTop(scroller: RefObject<HTMLElement | null>, opened: unknown): boolean {
+  const [away, setAway] = useState(false);
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return undefined;
+    const onScroll = () => setAway(element.scrollTop > SLACK);
+    onScroll();
+    element.addEventListener('scroll', onScroll, { passive: true });
+    return () => element.removeEventListener('scroll', onScroll);
+  }, [scroller, opened]);
+  return away;
+}

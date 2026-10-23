@@ -32,6 +32,8 @@ import type { Session } from '../data/api';
 import type { HeadLink, HeadOpinion, HeadReview, WorkAsk } from './head/SessionHead';
 import type { EntryAccept } from './review/EntryAccept';
 import { type WaitProps, WaitStrip } from './waits/WaitStrip';
+import { WaitPanel } from './waits/WaitPanel';
+import { useWaitPanelHeight } from './waits/waitPanelHeight';
 import { type AnchorWait, anchorOf, waitEvents } from './waits/anchors';
 import type { RuleAsk } from './waits/ProposedRules';
 import { useRuleAnswer } from './waits/ruleAnswer';
@@ -56,7 +58,8 @@ import { TerminalView } from './terminals/TerminalView';
 import { answeredPark, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../design/ui';
 import type { FrameIntent } from '../menus/commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
-import { type AnchorState, SessionConversation } from './conversation/SessionConversation';
+import { type AnchorState, BackToBottom, SessionConversation, type TailState, ToTheTop } from './conversation/SessionConversation';
+import { useAwayFromTop } from './conversation/followTail';
 import type { Level, RunningCall, Usage } from './conversation/conversation';
 import { useNow } from './useNow';
 import { useHeavySlot } from '../bridge/driver';
@@ -1863,7 +1866,13 @@ export function WorkFrame({
       ? { session: attended.id, id, at }
       : was?.session === attended.id && was.at === at ? null : was)),
   } : undefined);
-  // *To the top* from the strip (D168 point 1): the record's head, where every wait stands with its reading, the focus with it.
+  // The waiting panel's height, kept per viewer (WAITPANEL1); and the conversation's presses drawn above it, so neither is ever
+  // under it: *Back to bottom* told by the conversation (`onTail`), *To the top* once the reader is down from the head.
+  const waitPanel = useWaitPanelHeight();
+  const [tail, setTail] = useState<TailState | null>(null);
+  const awayFromTop = useAwayFromTop(centre, attended?.id);
+  // *To the top* (D168 point 1, above the waiting panel since WAITPANEL1): the record's head, where every wait stands with its
+  // reading, the focus with it.
   const toTop = () => {
     const element = centre.current;
     if (!element) return;
@@ -2329,6 +2338,8 @@ export function WorkFrame({
                   // The driver's word that its call waits for the person's answer (AUTONOMY1b3e).
                   callMark={grouping?.calling ?? undefined}
                   scroller={centre}
+                  // *Back to bottom* is the waiting panel's to draw, above it (WAITPANEL1), not the transcript's foot.
+                  onTail={setTail}
                   onUsage={onUsage}
                   onWaiting={onWaiting}
                   // Each wait's raising event, and the way between them (WAITFOOT1c, D168 point 4).
@@ -2375,128 +2386,141 @@ export function WorkFrame({
           )}
         </ViewMain>
 
-        {/* What waits on the person, where they read (WAITFOOT1b, D168): above the box and outside the conversation's scroll,
-            each wait with the head's own press. None on a teammate's record, which has no press here (D47 §4). Keyed by the
-            session, so a fold is its own. 🔴 The strip, the settler and the composer each name their kind beside the id (RELSPAM1):
-            keyed by the id alone, they took each other's fibers, and the one left over was never unmounted. */}
-        {attended && here && waits && (
-          <WaitStrip
-            key={`strip:${attended.id}`}
-            {...waits}
-            // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
-            answerBelow={answerBelow}
-            workAsk={workAskAt('foot')}
-            ruleAsk={ruleAskAt('foot')}
-            onTop={toTop}
-            toEvent={toEvent}
-            seek={seekAt('foot')}
-            // Not yet told is aside too, for the frame the observer takes to say: no strip flashed over a head on screen.
-            aside={waitsOnScreen !== false}
-          />
-        )}
+        {/* The waiting panel (WAITPANEL1): the strip and the box, its top edge a handle that sizes what waits, kept per viewer;
+            and the conversation's *To the top* and *Back to bottom* above that edge, never under it. */}
+        <WaitPanel
+          height={waitPanel.height}
+          onResize={waitPanel.resize}
+          onReset={waitPanel.reset}
+          controls={attended && here && (awayFromTop || (tail && !tail.atTail)) ? (
+            <>
+              {awayFromTop && <ToTheTop onPress={toTop} className="bg-overlay shadow-sm" />}
+              {tail && !tail.atTail && <BackToBottom onPress={tail.toTail} className="bg-overlay shadow-sm" />}
+            </>
+          ) : undefined}
+        >
+          {/* What waits on the person, where they read (WAITFOOT1b, D168): above the box and outside the conversation's scroll,
+              each wait with the head's own press. None on a teammate's record, which has no press here (D47 §4). Keyed by the
+              session, so a fold is its own. 🔴 The strip, the settler and the composer each name their kind beside the id (RELSPAM1):
+              keyed by the id alone, they took each other's fibers, and the one left over was never unmounted. */}
+          {attended && here && waits && (
+            <WaitStrip
+              key={`strip:${attended.id}`}
+              {...waits}
+              // The box below takes the park's answer: a driven park's answer box, or a parked chat's composer.
+              answerBelow={answerBelow}
+              workAsk={workAskAt('foot')}
+              ruleAsk={ruleAskAt('foot')}
+              toEvent={toEvent}
+              seek={seekAt('foot')}
+              // Not yet told is aside too, for the frame the observer takes to say: no strip flashed over a head on screen.
+              aside={waitsOnScreen !== false}
+            />
+          )}
 
-        {sending.lateTo && <SentSettler key={`settler:${sending.lateTo}`} sending={sending} giveBack={giveBackSent} />}
+          {sending.lateTo && <SentSettler key={`settler:${sending.lateTo}`} sending={sending} giveBack={giveBackSent} />}
 
-        {talking && attended && box.kind === 'chat' && (
-          <Composer
-            // Per session: the files attached in one conversation never follow the person to another.
-            key={`composer:${attended.id}`}
-            live={live}
-            sending={send.isPending}
-            refusal={refusal?.session === attended.id ? refusal.text : null}
-            // One owner for the moves at a time (D56): while the session is parked the card above holds
-            // finish and decline, and this form keeps `send` alone. Its session stop is the page
-            // header's at every state (D126 §3.3); this form keeps *Finish* and *Stop turn*.
-            endings={attended.state !== 'awaiting-person'}
-            // *Answer…* from its row puts the focus here, where a parked chat is answered.
-            focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
-            draft={draft}
-            onDraft={setDraft}
-            queued={turns.queued}
-            // A parked conversation's waiting words are its record's, which it goes on with (SAIDBACK1b): no turn, no door.
-            queuedLabel={attended.state === 'awaiting-person' ? t('work.say.waiting') : undefined}
-            fold={attended.state === 'awaiting-person'}
-            going={sending.going}
-            taking={turns.taking}
-            opening={turns.opening}
-            // Only a door that can see a turn end can stop one; the roster says which (CONV3b).
-            stoppable={roster.find((row) => row.harness === attended.adapter)?.structured === true}
-            stopping={cancelTurn.isPending}
-            onStopTurn={onStopTurn}
-            levels={levels}
-            onLevel={editQueued.level}
-            onKeepingStop={keepingStop ? onKeepingStop : undefined}
-            onRemove={editQueued.remove}
-            onEdit={editQueued.reword}
-            mentions={{
-              files: treeFiles.data?.files ?? null,
-              unlisted: treeFiles.data?.unlisted ?? 0,
-              refusal: treeFiles.error ? sentence(treeFiles.error) : null,
-            }}
-            onMentioning={setMentioning}
-            context={{
-              usage: reading?.session === attended.id ? reading.usage : undefined,
-              door: door(roster.find((row) => row.harness === attended.adapter)?.structured),
-            }}
-            offered={offered}
-            optionsBusy={setOption.isPending}
-            // The driver's refusal, or the agent's, reaches the person in its own words.
-            onOption={(option, value) => setOption.mutate({ id: attended.id, option, value }, { onError: failure(notify) })}
-            onSend={onSend}
-            onFinish={() => end.mutate(attended.id, {
-              onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),
-              onError: failure(notify),
-            })}
-          />
-        )}
+          {talking && attended && box.kind === 'chat' && (
+            <Composer
+              // Per session: the files attached in one conversation never follow the person to another.
+              key={`composer:${attended.id}`}
+              live={live}
+              sending={send.isPending}
+              refusal={refusal?.session === attended.id ? refusal.text : null}
+              // One owner for the moves at a time (D56): while the session is parked the card above holds
+              // finish and decline, and this form keeps `send` alone. Its session stop is the page
+              // header's at every state (D126 §3.3); this form keeps *Finish* and *Stop turn*.
+              endings={attended.state !== 'awaiting-person'}
+              // *Answer…* from its row puts the focus here, where a parked chat is answered.
+              focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
+              draft={draft}
+              onDraft={setDraft}
+              queued={turns.queued}
+              // A parked conversation's waiting words are its record's, which it goes on with (SAIDBACK1b): no turn, no door.
+              queuedLabel={attended.state === 'awaiting-person' ? t('work.say.waiting') : undefined}
+              fold={attended.state === 'awaiting-person'}
+              going={sending.going}
+              taking={turns.taking}
+              opening={turns.opening}
+              // Only a door that can see a turn end can stop one; the roster says which (CONV3b).
+              stoppable={roster.find((row) => row.harness === attended.adapter)?.structured === true}
+              stopping={cancelTurn.isPending}
+              onStopTurn={onStopTurn}
+              levels={levels}
+              onLevel={editQueued.level}
+              onKeepingStop={keepingStop ? onKeepingStop : undefined}
+              onRemove={editQueued.remove}
+              onEdit={editQueued.reword}
+              mentions={{
+                files: treeFiles.data?.files ?? null,
+                unlisted: treeFiles.data?.unlisted ?? 0,
+                refusal: treeFiles.error ? sentence(treeFiles.error) : null,
+              }}
+              onMentioning={setMentioning}
+              context={{
+                usage: reading?.session === attended.id ? reading.usage : undefined,
+                door: door(roster.find((row) => row.harness === attended.adapter)?.structured),
+              }}
+              offered={offered}
+              optionsBusy={setOption.isPending}
+              // The driver's refusal, or the agent's, reaches the person in its own words.
+              onOption={(option, value) => setOption.mutate({ id: attended.id, option, value }, { onError: failure(notify) })}
+              onSend={onSend}
+              onFinish={() => end.mutate(attended.id, {
+                onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),
+                onError: failure(notify),
+              })}
+            />
+          )}
 
-        {/* Every other box (MSG1f, D137 §5.1): the running door, the park's answer, the box where the same session goes
-            on, and the line where nothing takes words. Keyed by session and box, so a draft's form starts fresh. */}
-        {attended && box.kind !== 'chat' && box.kind !== 'none' && (
-          <SessionBox
-            key={`${box.kind === 'say' ? box.mode : box.kind}:${attended.id}`}
-            box={box}
-            quest={attended.quest}
-            draft={draft}
-            onDraft={setDraft}
-            sending={say.isPending}
-            refusal={refusal?.session === attended.id ? refusal.text : null}
-            held={held ? { queued: held.queued, taking: held.taking } : undefined}
-            ending={ending?.session === attended.id ? ending.words : []}
-            // What waits on a park's or an ended session's record (SAIDBACK1b), as the driver lists it.
-            waiting={box.kind === 'say' ? chatTurns[attended.id]?.queued ?? [] : []}
-            going={sending.going}
-            stopping={cancelTurn.isPending}
-            // *Answer…* from its row, and *Send back…* from its review, put the focus here (D126 §3.1, D137 §5.1).
-            focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
-            accepts={accepts}
-            onSend={onSay}
-            levels={box.kind === 'steer' ? levels : undefined}
-            onLevel={editQueued.level}
-            onKeepingStop={box.kind === 'steer' && keepingStop ? onKeepingStop : undefined}
-            onRemove={editQueued.remove}
-            onEdit={editQueued.reword}
-            // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.
-            continued={box.kind === 'line' && box.why === 'continued' && box.to
-              ? headLink((sessions.data ?? []).find((row) => row.id === box.to))
-              : null}
-            onOpenSession={(session) => attend(session.id)}
-            // What the park asks, in its box with every answer a press the box's words go with (PARKVIEW1, the design §3-§4): its
-            // question as its agent asked it, its go-aheads still open, by when and what it holds. Only where the box answers a park.
-            park={answering ? {
-              quest: attended.quest,
-              tree: ownTree(attended, rootOf(attended.repository)),
-              since: attended.updated,
-              question,
-              goAheads: openGoAheads(goAheads),
-              busy: say.isPending || parkGoAhead.isPending,
-              onChoice: question ? onChoice : undefined,
-              onGoAhead: parkAsk ? onBoxGoAhead : undefined,
-              seek: seekAt('box'),
-              toEvent,
-            } : undefined}
-          />
-        )}
+          {/* Every other box (MSG1f, D137 §5.1): the running door, the park's answer, the box where the same session goes
+              on, and the line where nothing takes words. Keyed by session and box, so a draft's form starts fresh. */}
+          {attended && box.kind !== 'chat' && box.kind !== 'none' && (
+            <SessionBox
+              key={`${box.kind === 'say' ? box.mode : box.kind}:${attended.id}`}
+              box={box}
+              quest={attended.quest}
+              draft={draft}
+              onDraft={setDraft}
+              sending={say.isPending}
+              refusal={refusal?.session === attended.id ? refusal.text : null}
+              held={held ? { queued: held.queued, taking: held.taking } : undefined}
+              ending={ending?.session === attended.id ? ending.words : []}
+              // What waits on a park's or an ended session's record (SAIDBACK1b), as the driver lists it.
+              waiting={box.kind === 'say' ? chatTurns[attended.id]?.queued ?? [] : []}
+              going={sending.going}
+              stopping={cancelTurn.isPending}
+              // *Answer…* from its row, and *Send back…* from its review, put the focus here (D126 §3.1, D137 §5.1).
+              focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
+              accepts={accepts}
+              onSend={onSay}
+              levels={box.kind === 'steer' ? levels : undefined}
+              onLevel={editQueued.level}
+              onKeepingStop={box.kind === 'steer' && keepingStop ? onKeepingStop : undefined}
+              onRemove={editQueued.remove}
+              onEdit={editQueued.reword}
+              // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.
+              continued={box.kind === 'line' && box.why === 'continued' && box.to
+                ? headLink((sessions.data ?? []).find((row) => row.id === box.to))
+                : null}
+              onOpenSession={(session) => attend(session.id)}
+              // What the park asks, in its box with every answer a press the box's words go with (PARKVIEW1, the design §3-§4): its
+              // question as its agent asked it, its go-aheads still open, by when and what it holds. Only where the box answers a park.
+              park={answering ? {
+                quest: attended.quest,
+                tree: ownTree(attended, rootOf(attended.repository)),
+                since: attended.updated,
+                question,
+                goAheads: openGoAheads(goAheads),
+                busy: say.isPending || parkGoAhead.isPending,
+                onChoice: question ? onChoice : undefined,
+                onGoAhead: parkAsk ? onBoxGoAhead : undefined,
+                seek: seekAt('box'),
+                toEvent,
+              } : undefined}
+            />
+          )}
+        </WaitPanel>
 
         </>)}
 
