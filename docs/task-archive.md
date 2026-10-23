@@ -19885,3 +19885,10 @@ note says why). Detail: FIX-LOG 2026-10-23 (GITAPP1a-iii), D202's GITAPP1a-iii n
 (2) holds the textconv, clean filter and merge driver logs equal line for line. `ReviewGraphCensusTests` (189, fast half) runs every
 combination over held answers and found one defect, fixed before landing. Detail and the after-bench: FIX-LOG 2026-10-23
 (GITAPP1a-ii), D202's GITAPP1a-ii note. On Opus.
+## TREELOCK2 - ended sessions leave their trees locked (2026-10-23)
+
+> - [ ] **TREELOCK2 - ended sessions leave their trees locked** (quest `#c875a90616c2`). Release a session's own lock on terminal moves, sweep both tree places through TREEPLACE1's predicate, and let forced removal clear an ended session's lock while keeping running and parked trees.
+
+**Outcome** 2026-10-23: terminal moves release owned locks, both tree places are swept, and forced removal checks the local
+ledger under the repository's start lock. Held trees remain protected through the terminal and desktop routes. Red-first proof,
+focused checks and one unreproduced test failure are recorded in FIX-LOG's TREELOCK2 entry.

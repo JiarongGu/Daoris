@@ -1,8 +1,6 @@
 # Daoris (道衍) — open work
 
 Open work only; move finished rows to `docs/task-archive.md`. Release changes belong in `CHANGELOG.md`.
-
-- [ ] **TREELOCK2 - ended sessions leave their trees locked** (quest `#c875a90616c2`). Release a session's own lock on terminal moves, sweep both tree places through TREEPLACE1's predicate, and let forced removal clear an ended session's lock while keeping running and parked trees. In progress: driver and desktop fixes committed; 8 real-git and 4 route cases failed first. Passed: 23 lock tests, 207 reached driver fast tests, 54 modules tests, the four reached tree/tidy Process classes and source censuses. Final verification of tree-less live records, the driver lifecycle test, archive and index refresh remain; detail is in FIX-LOG's TREELOCK2 entry.
 This handover keeps every outstanding identifier. Detailed acceptance criteria, owner quotations and
 earlier evidence remain at `38065d97:TASKS.md` in Git and in each section's contract; read the matching
 row before implementation. The earlier condensation's supporting record is `a3b20973:TASKS.md`.

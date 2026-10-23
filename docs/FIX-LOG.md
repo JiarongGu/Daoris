@@ -16,15 +16,15 @@ repository.
   retain theirs. `SessionLocks` sweeps both places through `TreeContext.Holds`. The removal's local ledger check keeps running
   and parked trees under the repository's start lock, and force releases a matching ended owner's lock before asking Git.
 - **Verify:** red first, `SessionLocksTests` with `src/Daoris.Desktop/git.process.runsettings`: 13 tests, 8 failures (five terminal
-  moves retained their lock; the old-place sweep missed its tree; forced removal failed at both places). The expanded class passes
-  all 23 tests. The reached driver fast classes pass 199 tests; home, read-sharing, optional-lock, live-login, partial-type and
-  workspace-word censuses pass. Desktop discard's four ledger-protection cases failed before its forwarding was fixed; the
-  reached modules classes then passed 54 tests. The latest reached driver fast classes pass 207 tests. Individually with the
-  git settings: `TreePlacesGitTests` 4, `SessionTreesTests` 20, `LandingTidyTests` 11 and `BranchTidyingProcessTests` 14 pass.
-  The final lock run includes an unrelated live record naming no tree; the driver's real-run lifecycle check remains.
-  One intermediate lock run failed the old-place parked-holder case once; the quiet runner emitted no diagnostic. All four
-  holder cases and then the full 23-test class passed unchanged on reruns. The cause is undetermined.
-- **Commit:** `d874f9d84` (driver implementation); desktop forwarding and final receipts follow.
+  moves retained their lock; the old-place sweep missed its tree; forced removal failed at both places). The final expanded class
+  passes all 23 tests, including removal beside an unrelated live record naming no tree. Desktop discard's four protection cases
+  failed before its forwarding was fixed. Filtered driver fast classes pass 207 tests; the reached modules classes pass 54.
+  Individually with the git settings: `TreePlacesGitTests` 4, `SessionTreesTests` 20, `LandingTidyTests` 11 and
+  `BranchTidyingProcessTests` 14 pass. `SessionTreeLockTickTests` passes its real-run lifecycle test with `process.runsettings`.
+  Home, read-sharing, optional-lock, live-login, partial-type and workspace-word censuses pass.
+- **Test observation:** one intermediate lock run failed the old-place parked-holder case once; the quiet runner emitted no
+  diagnostic. All four holder cases and then the full 23-test class passed unchanged on reruns. The cause is undetermined.
+- **Commit:** `d874f9d84`, `445a4118f`, `f12c716b0`, `3ad4e1454`.
 
 ## 2026-10-23 — Leaving Review left its git running, and a runner returned before its git had ended (GITAPP1a-iii)
 
