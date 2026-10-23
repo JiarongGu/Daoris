@@ -281,7 +281,12 @@ public sealed class OpinionStoreTests : IAsyncLifetime
         var (slow, _) = await AskedAsync(Ask(working.Id, Opinions.Asked, clone: "clone-slow"));
         var (stopped, stoppedReviewer) = await AskedAsync(Ask(working.Id, Opinions.Asked, clone: "clone-stopped"));
         await _sessions.SetStateAsync(stoppedReviewer.Id, SessionState.Stopped, null, null, null, Now.AddMinutes(21));
+        // LIMITRESUME1h (D206 design §3.8): one an account's limit ended is `limited`, which the driver's gate re-asks after the reset,
+        // however late its record moved.
+        var (limited, limitedReviewer) = await AskedAsync(Ask(working.Id, Opinions.Asked, clone: "clone-limited"));
+        await _sessions.SetStateAsync(limitedReviewer.Id, SessionState.Failed, "the account's limit", null, null, Now.AddMinutes(25), limit: true);
 
+        Assert.Equal((Opinions.Failed, Opinions.Limited), Read(await _desk.ReadAsync(limited.Id, Now.AddMinutes(30))));
         Assert.Equal((Opinions.Failed, Opinions.Ended), Read(await _desk.ReadAsync(early.Id, Now.AddMinutes(30))));
         Assert.Equal((Opinions.Reading, null), Read(await _desk.ReadAsync(slow.Id, Now.AddMinutes(19))));
         Assert.Equal((Opinions.Failed, Opinions.OutOfTime), Read(await _desk.ReadAsync(slow.Id, Now.AddMinutes(21))));

@@ -178,7 +178,14 @@ public sealed record OpinionGateFacts(string Repository, ResolvedOpinion? Rule)
 /// <param name="Since">How many commits that would land a commit does not hold; null where git could not say.</param>
 public sealed record OpinionReads(
     Func<string, Task<OpinionView?>> Opinion, Func<string, OpinionDelivered> Delivered, Func<string, Task<bool?>> Covers,
-    Func<string, Task<int?>> Since);
+    Func<string, Task<int?>> Since)
+{
+    /// <summary>
+    /// When a reviewer's account is ready again after the limit that ended its session, by that session (LIMITRESUME1h, D206 design
+    /// §3.8): its cool-off's <c>until</c>, or the moment it was read where no cool-off names it any more. Null reads none, as before.
+    /// </summary>
+    public Func<string, DateTimeOffset>? Ready { get; init; }
+}
 
 /// <summary>
 /// The second opinion's part of the landing gate for the chain's work in one repository (XAGENT1f, D155 points 9 and 10; the
@@ -397,6 +404,13 @@ public static class OpinionGate
 
         if (first is null) return of(OpinionGateStates.NotAsked);
         var state = of(OpinionGateStates.Reading) with { Opinion = first };
+        // LIMITRESUME1h (D206 design §3.8): a pass an account's limit ended is gated as a choice refused at its start is, cooling until its
+        // account's reset, which the look's re-ask reads (`OpinionGateLook`).
+        if (first is { State: OpinionViews.Failed, Why: OpinionViews.Limited } && reads.Ready is { } ready)
+        {
+            return state with { State = OpinionGateStates.Unavailable, Code = ReviewerUnavailable.Cooling, Until = ready(first.Session) };
+        }
+
         if (first.State == OpinionViews.Failed) return state with { State = OpinionGateStates.Unavailable, Code = first.Why ?? "ended" };
         if (!first.Given) return state;
 

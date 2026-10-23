@@ -73,6 +73,13 @@ public static class AccountCooling
             .OrderBy(entry => entry.Agent, StringComparer.OrdinalIgnoreCase)
             .ThenBy(entry => entry.Account ?? "", StringComparer.OrdinalIgnoreCase)];
 
+    /// <summary>
+    /// The cool-off a limit wrote for <paramref name="session"/>, passed or not, as the file still holds it (LIMITRESUME1h, D206 design
+    /// §3.8): a run's own reset. Null where none names it: never written, ended early, or replaced by a later limit on the same account.
+    /// </summary>
+    public static CoolingEntry? OfSession(string home, string session) =>
+        Entries(Load(home)).FirstOrDefault(entry => string.Equals(entry.Session, session, StringComparison.Ordinal));
+
     /// <summary>The account's cool-off at <paramref name="now"/>, or null when it is ready.</summary>
     public static CoolingEntry? Of(string home, string agent, string? account, DateTimeOffset now) =>
         Read(home, now).FirstOrDefault(entry => Same(entry, agent, account));
