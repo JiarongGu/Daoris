@@ -293,6 +293,8 @@ hand-over's new conversation keeps it as its first prompt (`origin: target`, its
 opening; a driven carry-on carries it as part of its instruction, accounted within it. The new part reads its line's kept folders.
 Every start's instruction also says how its agent signs its commits (MAKERTRAIL1, `CommitTrailers.For`): an agent of another
 maker ends each commit with a `Co-Authored-By` naming its own maker and the model that ran, and a Claude harness adds its own.
+A carry-on whose part before it ran on another maker and left work uncommitted is told that maker's trailer too, from the record's
+harness and the models its door reported, or *model unreported* (MAKERTRAIL2, `SessionTarget.LeftBy`).
 What the bound left out is one call away: the brief's notice names the connector's `line_read` (SESSCTX1f, D189's note), which
 pages the line's event files on this machine with the service's own reader, `LineEvents`; the file both read is held by a test on
 each side (`LineEventFilesTests` here). A working session is allowed it by default; a reviewer, a helper and a brainstorm pass are

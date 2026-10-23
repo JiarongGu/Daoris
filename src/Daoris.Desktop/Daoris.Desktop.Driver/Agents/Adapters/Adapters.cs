@@ -24,6 +24,12 @@ public sealed record SessionTarget(
     /// <summary>The selected adapter's commit attribution instruction, composed for this start.</summary>
     public string? CommitTrailer { get; init; }
 
+    /// <summary>
+    /// MAKERTRAIL2: for a carry-on, the part of its line before it as that part's record says it ran, so a start of another maker
+    /// is told that work left uncommitted in the tree carries the earlier maker's trailer too. Null for every other start.
+    /// </summary>
+    public EarlierMaker? LeftBy { get; init; }
+
     /// <summary>D205 §3.2: what this start's actor asked for, carried by every native prepare.</summary>
     public ActorAsked? Asked { get; init; }
 
@@ -361,13 +367,23 @@ public sealed record SessionTarget(
 }
 
 /// <summary>
+/// The part of a line before a carry-on, as its record says it ran (MAKERTRAIL2): the harness it opened on, that harness's maker
+/// where this build knows it, and the models its door reported (MODELROLE1b's <c>ran</c>), none where it reported none.
+/// </summary>
+public sealed record EarlierMaker(string Adapter, string? Maker, IReadOnlyList<string> Models);
+
+/// <summary>
 /// Commit attribution from the selected harness's maker and its running model's identity.
 /// </summary>
 internal static class CommitTrailers
 {
     // The adapter declares the maker; the harness knows the model actually selected for the turn.
     // Account settings may be aliases or defaults, and a continued session may have changed maker.
-    internal static string For(ISessionAdapter adapter)
+    // MAKERTRAIL2: a carry-on whose earlier part ran on another maker and left work uncommitted is told that maker's trailer too.
+    internal static string For(ISessionAdapter adapter, EarlierMaker? earlier = null) =>
+        earlier is not null && !SameMaker(adapter, earlier) ? $"{Own(adapter)}\n\n{Left(earlier)}" : Own(adapter);
+
+    private static string Own(ISessionAdapter adapter)
     {
         var maker = adapter.Toolchain?.Maker;
         if (string.Equals(maker, "Anthropic", StringComparison.OrdinalIgnoreCase))
@@ -387,6 +403,32 @@ internal static class CommitTrailers
             + "If no model identity is reported, say model unreported rather than invent one. "
             + "Replace any other placeholders with your own identity. If your harness adds that trailer itself, do not add a duplicate.";
     }
+
+    /// <summary>
+    /// The earlier maker's trailer, its model as that part's door reported it (MODELROLE1b), or <c>model unreported</c>: never the
+    /// new maker's, nor an account default.
+    /// </summary>
+    private static string Left(EarlierMaker earlier)
+    {
+        var model = earlier.Models.Count == 0 ? "model unreported" : string.Join(", ", earlier.Models);
+        var identity = earlier.Maker switch
+        {
+            "Anthropic" => $"Claude (Anthropic, {model}) <noreply@anthropic.com>",
+            "OpenAI" => $"Codex (OpenAI, {model}) <noreply@openai.com>",
+            "DeepSeek" => $"DeepSeek ({model}) <noreply@deepseek.com>",
+            _ => $"{earlier.Adapter} ({earlier.Maker ?? "maker unknown"}, {model}) <its maker's attribution address>",
+        };
+        var on = earlier.Maker is { Length: > 0 } maker ? $", made by {maker}" : "";
+        return $"The part of this line before you ran on `{earlier.Adapter}`{on}, and left work uncommitted in this tree. "
+            + "A commit holding any of that work carries its maker's trailer too, beside your own:\n\n"
+            + $"Co-Authored-By: {identity}";
+    }
+
+    /// <summary>One maker where both harnesses name theirs; else one harness, since a maker this build does not know is told apart by its harness.</summary>
+    private static bool SameMaker(ISessionAdapter adapter, EarlierMaker earlier) =>
+        adapter.Toolchain?.Maker is { Length: > 0 } maker && earlier.Maker is { Length: > 0 }
+            ? string.Equals(maker, earlier.Maker, StringComparison.OrdinalIgnoreCase)
+            : string.Equals(adapter.Name, earlier.Adapter, StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>
@@ -396,9 +438,12 @@ internal static class CommitTrailers
 /// </summary>
 public static class TargetPrompt
 {
-    /// <summary>Bind the maker of this start, including a start continuing another maker's work.</summary>
+    /// <summary>
+    /// Bind the maker of this start, including a start continuing another maker's work: told that maker's trailer too where the part
+    /// before it left work uncommitted in the tree (MAKERTRAIL2).
+    /// </summary>
     internal static SessionTarget ForStart(SessionTarget target, ISessionAdapter adapter) =>
-        target with { CommitTrailer = CommitTrailers.For(adapter) };
+        target with { CommitTrailer = CommitTrailers.For(adapter, target.InFlight.Count > 0 ? target.LeftBy : null) };
 
     /// <summary>
     /// The instruction a session is handed — an intake's own where the target carries one, so every
