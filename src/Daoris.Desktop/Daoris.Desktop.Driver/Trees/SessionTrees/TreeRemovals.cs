@@ -38,10 +38,10 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         if (service is not null)
         {
             if (removing is null) return new(false, TreeLock.Starting(owner.Repository));
-            if ((await service.ActiveSessionsAsync(ct).ConfigureAwait(false)).Any(session => session.Tree is { } tree && SamePath(tree, full)))
+            if ((await service.ActiveSessionsAsync(ct).ConfigureAwait(false)).Any(session => session.Tree is { Length: > 0 } tree && SamePath(tree, full)))
                 return new(false, SessionBranchDiscard.Held(owner.Repository, follows.BranchOfTree(full)?.Branch ?? Path.GetFileName(full)));
             if (force && SessionLocks.HolderOf(full) is { } holder
-                && await service.RecordAsync(holder, ct).ConfigureAwait(false) is { Tree: { } heldTree } record && SamePath(heldTree, full))
+                && await service.RecordAsync(holder, ct).ConfigureAwait(false) is { Tree: { Length: > 0 } heldTree } record && SamePath(heldTree, full))
                 await SessionLocks.LetGoEndedAsync(record).ConfigureAwait(false);
         }
 

@@ -139,17 +139,19 @@ public sealed class SessionLocksTests : IDisposable
     [InlineData("stopped")]
     [InlineData("failed")]
     [InlineData("stood-down")]
-    public async Task A_terminal_move_releases_the_sessions_own_lock_after_a_park(string state)
+    public async Task A_terminal_move_releases_the_sessions_own_lock(string state)
     {
         var root = await MakeRepositoryAsync();
         var tree = (await new SessionTrees(_home).OpenAsync(root, "engine", "aurora")).Path;
         using var ledger = new StandInLedger();
         ledger.Publish("q1", "engine");
-        ledger.Park("s1", "q1", tree);
+        if (state is "failed" or "stood-down") ledger.Driven("s1", "q1", tree);
+        else ledger.Park("s1", "q1", tree);
         using var service = ledger.Client();
         await SessionLocks.HoldAsync(tree, "s1", CancellationToken.None);
 
-        await SessionMoves.ResolveAsync(_ => false, service, "s1", state, note: null);
+        if (state is "failed" or "stood-down") await service.AdvanceAsync("s1", state);
+        else await SessionMoves.ResolveAsync(_ => false, service, "s1", state, note: null);
 
         Assert.Null(await LockOfAsync(root, tree));
         Assert.Equal(0, (await RunAsync(root, "worktree", "remove", tree)).ExitCode);
@@ -206,6 +208,9 @@ public sealed class SessionLocksTests : IDisposable
         using var ledger = new StandInLedger();
         ledger.Publish("q1", "engine");
         ledger.Driven("s1", "q1", tree, state: "completed");
+        // Another live record may name no tree; it must neither keep this one nor make the path comparison fail.
+        ledger.Publish("q2", "engine");
+        ledger.Driven("s2", "q2", "");
         using var service = ledger.Client();
         await SessionLocks.HoldAsync(tree, "s1", CancellationToken.None);
 
