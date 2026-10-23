@@ -156,7 +156,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal(
             ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "adapter", "helper",
                 "intake", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
-                "brainstorms", "workflow", "keep"],
+                "brainstorms", "workflow", "keep", "actor"],
             DriverChoicesCommand.Verbs);
         Assert.All(DriverChoicesCommand.Verbs, verb =>
             Assert.Matches($"(?<![\\w-]){System.Text.RegularExpressions.Regex.Escape(verb)}(?![\\w-])", DriverChoicesCommand.Usage));

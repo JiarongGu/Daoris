@@ -477,6 +477,36 @@ export const useSetHelpMode = () => useDriverChange<{ mode: 'restricted' | 'full
  */
 export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation: string; chosen: boolean }>('SET_HELP_GRANT');
 
+/** One entry of an actor's effective order (D205 §4.0): `from` is what a start's record keeps as its choice. */
+export type ActorEntry = { agent: string; model?: string | null; effort?: string | null; from: string };
+
+/** One actor as `ACTORS` answers it (MODELROLE1c, D205 §9.4): set, as before, off, or an entry in driver.json that does not read. */
+export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null };
+
+/**
+ * Each actor's order, where it came from (MODELROLE1c): a read of `driver.json`'s `actors`, the same `daoris driver actor` says. Kept
+ * under the driver's key, so every press that changes the driver's state asks it again. Empty in a browser.
+ */
+export const useActors = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: [...keys.driver, 'actors'] as const,
+    queryFn: async () => {
+      const answer = await call<{ actors?: ActorRow[] } | null>('ACTORS');
+      return Array.isArray(answer?.actors) ? answer.actors : [];
+    },
+    enabled: isAvailable,
+  });
+};
+
+/**
+ * One actor's order set, made off (`[]`, Intake and Ask Daoris only) or back to as before (`null`) (MODELROLE1c, D205 §8.2): the
+ * person's press, judged by the driver's one judge, written through the legacy keys, Chat and Brainstorm kept where a change of Build's
+ * agent would move them. `daoris driver actor` is its terminal twin (D50).
+ */
+export const useSetActor = () =>
+  useDriverChange<{ actor: string; choices: { agent: string; model?: string | null; effort?: string | null }[] | null }>('SET_ACTOR');
+
 /**
  * Which agent answers an ask the declarations leave (INT4b), or null for none — the field `daoris
  * driver intake <agent>|off` edits (D50). What an intake in each circle would run on moves with it,

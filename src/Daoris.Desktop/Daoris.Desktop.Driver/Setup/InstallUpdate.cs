@@ -44,12 +44,14 @@ public static class InstallUpdate
     /// <summary>
     /// The config a draining look plans with (D139 §2): every drivable repository held, so no quest starts, resumes or
     /// carries on and no answered park goes on; and no intake, which a hold does not reach. The cap is left, since a
-    /// workspace's set-up plan reads it to publish, which starts nothing.
+    /// workspace's set-up plan reads it to publish, which starts nothing. An Intake actor that is set is turned off in what
+    /// <see cref="ActorChoices.Effective"/> reads too (D205 §6.4), so the drain's <i>intakes too</i> reaches it.
     /// </summary>
     public static DriverConfig Drained(DriverConfig config) => config with
     {
         Holds = [.. config.Holds, .. config.Drivable.Where(repository => !config.Holds.Contains(repository, StringComparer.OrdinalIgnoreCase))],
         IntakeAdapter = null,
+        Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(config.Actors, StringComparer.Ordinal) { ["intake"] = [] },
     };
 
     /// <summary>

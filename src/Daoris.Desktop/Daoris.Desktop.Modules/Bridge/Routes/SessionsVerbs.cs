@@ -30,7 +30,7 @@ internal static class SessionsVerbs
             {
                 var chat = loop.Chat ?? throw DriverArguments.NotReady();
                 var started = await chat.StartFromAsync(
-                    id, config.Adapter, config, onEnded: (session, state) => DriverLoop.Ended(context.Events, session, state), token).ConfigureAwait(false);
+                    id, ActorChoices.FirstAgent("chat", config)!, config, onEnded: (session, state) => DriverLoop.Ended(context.Events, session, state), token).ConfigureAwait(false);
                 return SessionsCommand.Started(started, output) ?? 0;
             },
             HandOver = async (id, agent, account, token) =>

@@ -94,6 +94,7 @@ public static class ChoiceRoutes
     public static InstanceRoute HandOver { get; } = Person("SET_HAND_OVER");
     public static InstanceRoute Commits { get; } = Person("SET_COMMITS");
     public static InstanceRoute Keep { get; } = Person("SET_KEEP");
+    public static InstanceRoute Actor { get; } = Person("SET_ACTOR");
 
     /// <summary>Each verb that changes the home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =
@@ -120,8 +121,9 @@ public static class ChoiceRoutes
         ("driver handover", HandOver, "the hand-over rule"),
         ("driver commits", Commits, "the commit rule"),
         ("driver keep <kind> …", Keep, "the Disk space card's rule of that kind"),
+        ("driver actor <actor> …", Actor, "an actor's order (D205 §9.4)"),
+        ("driver adapter <name>", Actor, "Build's order, one choice at account default (D205 §6.4)"),
         ("driver timeout <minutes>", null, "alone: no route sets a session's timeout"),
-        ("driver adapter <name>", null, "alone: no route sets the working agent; the window names it from the roster"),
         ("driver retry <quest> --at <n>", null, "alone: RETRY_QUEST marks at the failures its verdict counts, never at a number the person gives"),
         ("driver retry <quest> --session <id>", null, "alone: RETRY_QUEST releases the stop its verdict names, never a session the person names"),
         ("driver landing … --cycle <file>|--no-cycle", null, "alone: SET_LANDING has no field for the cycle, and keeps the one the rule holds"),
@@ -153,7 +155,7 @@ public static class DriverChoicesCommand
     [
         "list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "strikes", "retry", "timeout", "cooloff", "adapter", "helper",
         "intake", "line", "landing", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits", "work-cycle",
-        "brainstorms", "workflow", "keep",
+        "brainstorms", "workflow", "keep", "actor",
     ];
 
     public const string Usage =
@@ -193,6 +195,8 @@ public static class DriverChoicesCommand
                       (a workflow's writes say their change, and with --plan save nothing)
                daoris-driver driver keep [set-aside <days>|whole|slim|default · downloads <days>|never|default · logs <days>|default
                       · history <days>|never|default · floor <n>GB|<n>%|off|default]
+               daoris-driver driver actor [<actor>] · actor <actor> "<agent> [<model>|-] [<effort>|-]" … · actor <actor> --clear
+                      · actor intake|ask-daoris off
         `daoris driver …` runs these.
         """;
 
@@ -232,6 +236,8 @@ public static class DriverChoicesCommand
             "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || MinuteFlags.Any(each => each.Flag == arg)),
             // `keep` naming no kind says each rule, a read (KEEP1d).
             "keep" => args.Count > 1,
+            // `actor` naming one actor, or none, says its order, a read (MODELROLE1c).
+            "actor" => args.Count > 2,
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
     }
@@ -281,6 +287,7 @@ public static class DriverChoicesCommand
             // `brainstorms` naming no change says the policy, a read that holds nothing and asks no confirmation (BRAINSTORM1b).
             if (verb == "brainstorms" && !Changes(args)) return BrainstormsSaid(args, before, world);
             if (verb == "keep" && !Changes(args)) return KeepsSaid(before, world);
+            if (verb == "actor" && !Changes(args)) return ActorsSaid(args, before, world);
             press = Plan(args, before, world);
         }
         catch (ChoiceWords refused)
@@ -528,14 +535,18 @@ public static class DriverChoicesCommand
             case "adapter":
             {
                 var adapter = Named(args, verb);
-                // Not refused against a list: the driver errors naming what exists at its start (D23), the side that knows.
-                return Change(null, null, config => config with { Adapter = adapter }, () =>
+                // Not refused against a list: the driver errors naming what exists at its start (D23), the side that knows. Build's
+                // one-choice order at account default, through SET_ACTOR (MODELROLE1c, D205 §6.4): Chat and Brainstorm stay where they were.
+                return ActorChange(verb, "build", [new ActorChoice(adapter)], before, world, said =>
                 {
                     Say($"daoris: sessions on this machine spawn via `{adapter}`.");
                     if (!Managed(adapter)) Say("  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.");
-                    return 0;
+                    said();
                 });
             }
+
+            case "actor":
+                return Actor(args, before, world);
 
             case "helper":
             {
@@ -2038,6 +2049,134 @@ public static class DriverChoicesCommand
         };
         return (FlagValue(args, "--workspace"), args.Contains("--clear"), set.Names ? set : null);
     }
+
+    /// <summary>
+    /// <c>actor &lt;actor&gt; …</c> (MODELROLE1c, D205 §9.4): an actor's order set from its quoted entries, <c>"agent [model|-] [effort|-]"</c>
+    /// (<c>-</c> is account default), <c>off</c> for Intake and Ask Daoris, or <c>--clear</c> back to as before; judged by the one judge.
+    /// </summary>
+    private static ChoicePress Actor(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
+    {
+        var actor = args[1];
+        if (!ActorChoices.Ids.Contains(actor, StringComparer.Ordinal))
+        {
+            throw new ChoiceWords($"`{actor}` is not an actor — one of {string.Join(", ", ActorChoices.Ids)}.");
+        }
+
+        var rest = args.Skip(2).ToList();
+        IReadOnlyList<ActorChoice>? choices;
+        if (rest is ["--clear"]) choices = null;
+        else if (rest is ["off"]) choices = [];
+        else
+        {
+            if (rest.Any(word => word.StartsWith("--", StringComparison.Ordinal)))
+            {
+                throw new ChoiceWords($"`driver actor {actor}` takes its choices, `off` or `--clear` alone — e.g. "
+                    + $"`daoris driver actor {actor} \"claude-code opus high\" \"claude-code sonnet -\"`.");
+            }
+
+            choices = [.. rest.Select(Entry)];
+        }
+
+        return ActorChange("actor", actor, choices, before, world, said =>
+        {
+            world.Instance.Out.WriteLine(choices is null ? $"daoris: {actor} is as before again: today's agent settings, at account default."
+                : choices.Count == 0 ? $"daoris: {actor} is off."
+                : $"daoris: {actor} runs the first of its choices that can run, in order.");
+            said();
+        });
+
+        static ActorChoice Entry(string quoted)
+        {
+            var words = quoted.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (words.Length is 0 or > 3)
+            {
+                throw new ChoiceWords($"`{quoted}` is not a choice: an agent, then its model or `-`, then its effort or `-`, in one quoted word.");
+            }
+
+            string? Value(int at) => words.Length > at && words[at] != "-" ? words[at] : null;
+            return new ActorChoice(words[0], Value(1), Value(2));
+        }
+    }
+
+    /// <summary>
+    /// The press that sets <paramref name="actor"/>'s order, judged here by the judge <c>SET_ACTOR</c> takes, so a refused order is said
+    /// before anything is sent; its words name the order, what it replaced, and the actors a change of Build's agent made explicit.
+    /// </summary>
+    private static ChoicePress ActorChange(
+        string verb, string actor, IReadOnlyList<ActorChoice>? choices, DriverConfig before, DriverChoicesWorld world, Action<Action> words)
+    {
+        if (ActorChoices.Judge(actor, choices) is { } refused) throw new ChoiceWords($"`driver {verb}`: {refused}");
+        var replaced = ActorView.Of(actor, before);
+        ActorChoices.With(before, actor, choices, out var kept);
+        var path = world.ConfigPath;
+        var write = world.Instance.Out;
+        var payload = new JsonObject
+        {
+            ["actor"] = actor,
+            ["choices"] = choices is null ? null : new JsonArray([.. choices.Select(choice => (JsonNode)new JsonObject
+            {
+                ["agent"] = choice.Agent, ["model"] = choice.Model, ["effort"] = choice.Effort,
+            })]),
+        };
+        return new(verb, ChoiceRoutes.Actor, payload, _ =>
+        {
+            StandingChoices.Write(path, config => ActorChoices.With(config, actor, choices));
+            return Task.FromResult<object?>(null);
+        }, _ => null, _ =>
+        {
+            words(() =>
+            {
+                var after = choices is null ? "as before" : choices.Count == 0 ? "off" : Order(choices.Select((choice, i) => (choice, i + 1)));
+                write.WriteLine($"  {actor}: {after}; it was {ActorSaid(replaced)}.");
+                if (kept.Count > 0)
+                {
+                    write.WriteLine($"  {string.Join(" and ", kept.Select(each => each == "chat" ? "Chat" : "Brainstorm"))} keep `{before.Adapter}`, written for them: a change of Build's agent no "
+                        + "longer moves them.");
+                }
+
+                write.WriteLine($"  Written to {path} — the driver re-reads it every tick, so nothing restarts.");
+            });
+            return 0;
+        });
+    }
+
+    /// <summary><c>actor</c> naming one actor or none: each order, where it came from, said.</summary>
+    private static int ActorsSaid(IReadOnlyList<string> args, DriverConfig choices, DriverChoicesWorld world)
+    {
+        var said = world.Instance.Out;
+        if (args.Count > 1 && !ActorChoices.Ids.Contains(args[1], StringComparer.Ordinal))
+        {
+            throw new ChoiceWords($"`{args[1]}` is not an actor — one of {string.Join(", ", ActorChoices.Ids)}.");
+        }
+
+        said.WriteLine($"daoris: {world.ConfigPath}");
+        foreach (var view in ActorView.All(choices).Where(view => args.Count < 2 || view.Id == args[1]))
+        {
+            said.WriteLine($"  {view.Id,-11}{ActorSaid(view)}");
+        }
+
+        said.WriteLine("  Each runs the first of its choices that can run, in order. Set one: `daoris driver actor <actor> \"<agent> "
+            + "[<model>|-] [<effort>|-]\" …`; `--clear` goes back to as before.");
+        return 0;
+    }
+
+    /// <summary>One actor's order in the terminal's words.</summary>
+    private static string ActorSaid(ActorView view) => view.State switch
+    {
+        "unreadable" => $"unreadable: driver.json's `actors.{view.Id}` {view.Error}",
+        "off" => "off",
+        _ when view.Choices.Count == 0 => view.Id == "helper"
+            ? "as before: every agent of another maker than the asker's, at account default"
+            : "as before: the agents a rule or an ask names, at account default",
+        _ => string.Join(", ", view.Choices.Select((entry, i) => Entry(i + 1, entry.Agent, entry.Model, entry.Effort)))
+             + (view.State == "before" ? " (as before)" : ""),
+    };
+
+    private static string Order(IEnumerable<(ActorChoice Choice, int At)> entries) =>
+        string.Join(", ", entries.Select(each => Entry(each.At, each.Choice.Agent, each.Choice.Model, each.Choice.Effort)));
+
+    private static string Entry(int at, string agent, string? model, string? effort) =>
+        $"{at} {agent} · {model ?? "account default"} · {effort ?? "account default"}";
 
     /// <summary><c>brainstorms</c> naming no change: this machine's rule and each workspace's, said.</summary>
     private static int BrainstormsSaid(IReadOnlyList<string> args, DriverConfig choices, DriverChoicesWorld world)

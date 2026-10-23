@@ -53,6 +53,25 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
+    /// 🔴 MODELROLE1c (D205 §6.4, round 3's Codex 8): the legacy <c>adapter</c> door writes Build's order through the write
+    /// <c>SET_ACTOR</c> makes, so Chat and Brainstorm, still as before, keep the agent they ran and the card says so.
+    /// </summary>
+    [Fact]
+    public void The_adapter_door_changes_build_and_keeps_chat_and_brainstorm_on_their_agent()
+    {
+        var config = DriverConfig.Empty with { Adapter = "claude-code" };
+
+        var plan = HelpProposals.Plan(Setting("adapter", null, null, "claude-code-acp"), config, Facts);
+        var applied = plan.Apply!(config);
+
+        Assert.Contains("Chat and Brainstorm keep `claude-code`", plan.Describe, StringComparison.Ordinal);
+        Assert.Equal("claude-code-acp", applied.Adapter);
+        Assert.Equal([new ActorChoice("claude-code-acp")], applied.Actors["build"]);
+        Assert.Equal("claude-code", ActorChoices.FirstAgent("chat", applied));
+        Assert.Equal("claude-code", ActorChoices.FirstAgent("brainstorm", applied));
+    }
+
+    /// <summary>
     /// KNOWUSE1b (D135 §3): a standing answer for a registered repository, planned in the person's words with the terminal's
     /// spelling, and applied as `SET_STANDING` and `daoris driver standing` make it; cleared with `--clear`. One for a
     /// repository this machine does not hold, and blank words, are refused in the driver's own sentences.

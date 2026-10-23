@@ -82,6 +82,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_KEEP: { scopes: ['driver', 'wiring'] },
   SET_INTAKE: { scopes: ['driver', 'harnesses'] },
   SET_HELPER: { scopes: ['driver'] },
+  SET_ACTOR: { scopes: ['driver', 'harnesses'] },
   SET_HELP_MODE: { scopes: ['driver'] },
   SET_HELP_GRANT: { scopes: ['driver'] },
   TRUST_FOLDER: { scopes: ['driver'] },

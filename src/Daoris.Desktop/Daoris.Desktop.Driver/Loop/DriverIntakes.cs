@@ -55,7 +55,20 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
     public async Task<IReadOnlyList<AskView>> IntakesDueAsync(int slots, List<string> events, CancellationToken ct)
     {
         var config = _context.Config;
-        if (config.IntakeAdapter is not { Length: > 0 }) return [];
+        // Intake is read through its actor (D205 §6.4, MODELROLE1c), so the drain's *off* reaches an order the person set; an order that
+        // does not read holds every intake with its sentence, never read as the old key.
+        string? agent;
+        try
+        {
+            agent = ActorChoices.FirstAgent("intake", config);
+        }
+        catch (ActorUnreadableException unreadable)
+        {
+            events.Add(_context.Said.Retry("intake", $"intake  {unreadable.Message}"));
+            return [];
+        }
+
+        if (agent is not { Length: > 0 }) return [];
 
         IReadOnlyList<AskView> asks;
         try
@@ -108,7 +121,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         var config = _context.Config;
         var home = _context.Home;
         var output = _context.Output;
-        var adapterName = config.IntakeAdapter!;
+        var adapterName = ActorChoices.FirstAgent("intake", config)!;
         var named = $"ask #{ask.Id} in {ask.Workspace}";
         // The hold's own sentence beside its line, as a quest's hold carries it: what a wait the intake is among says (UX6d1).
         StartRun Hold(string why) => new($"held  intake for {named}: {why}", false, Held: why);

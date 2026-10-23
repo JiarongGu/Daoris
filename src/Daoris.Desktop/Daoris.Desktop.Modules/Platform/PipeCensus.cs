@@ -184,7 +184,7 @@ public sealed class PipeCensus
         var table = new Dictionary<string, PipeRule>(StringComparer.Ordinal);
         Add(PipeClass.Open,
             // Reads (D156 §3's reads stay open): they change nothing and declare nothing (D169 point 2).
-            "ACCOUNTS", "ACROSS", "ANSWER_WAITS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
+            "ACCOUNTS", "ACROSS", "ACTORS", "ANSWER_WAITS", "ASKS_ELSEWHERE", "ASK_LANDING", "CHANNEL_READ", "CHECKOUT_BRANCH", "ENTRY_LANDING",
             "GIT_BLAME", "GIT_BRANCHES", "GIT_COMMIT", "GIT_COMPARE", "GIT_GRAPH", "GIT_HISTORY", "HANDOFF_PLAN", "HARNESSES",
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "RULES", "SESSION_DIFF", "SESSION_FILE",
@@ -233,7 +233,7 @@ public sealed class PipeCensus
             // LIMITRESUME1d: *Stop waiting*, the person's word that a conversation held by its limit goes on only when they write.
             "SESSION_STOP_WAITING",
             // Their set-up and their standing choices: what a review is set to, how work lands, what agents may reach.
-            "SETUP_PRESS", "SET_ACCESS", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPER", "SET_HELPERS", "SET_HELP_MODE",
+            "SETUP_PRESS", "SET_ACCESS", "SET_ACTOR", "SET_AGENT_SETTINGS", "SET_CAP", "SET_COMMITS", "SET_COOLOFF", "SET_DRIVABLE", "SET_HAND_OVER", "SET_HELPER", "SET_HELPERS", "SET_HELP_MODE",
             // HELPMODE1c2b: what Ask Daoris's housekeeping may do, the person's grant alone.
             "SET_HELP_GRANT",
             // FABRIC-PIPELINE1a: the landed route and the gates it runs unasked, accepted by their blob (D156).
