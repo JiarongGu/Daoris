@@ -910,6 +910,9 @@ public sealed class SessionMessagesTickTests : IDisposable
 
         public string Url { get; }
 
+        /// <summary>Each of Daoris's own words kept (COWORK1b; LIMITRESUME1b): the session, and its key.</summary>
+        public List<(string Session, string? Key)> DaorisSaid { get; } = [];
+
         /// <summary>Each take of words: the session, the ids joined, and the session that took them where it was another.</summary>
         public List<(string Session, string Ids, string? By)> Taken { get; } = [];
 
@@ -1075,7 +1078,7 @@ public sealed class SessionMessagesTickTests : IDisposable
         private static JsonObject Wire(JsonObject session)
         {
             var copy = (JsonObject)session.DeepClone();
-            var persons = copy["said"]!.AsArray().Where(word => word!["helper"] is null).ToList();
+            var persons = copy["said"]!.AsArray().Where(word => word!["helper"] is null && word["from"] is null).ToList();
             copy["answer"] = persons.Count == 0 ? null : string.Join("\n\n", persons.Select(word => word!["text"]!.GetValue<string>()));
             return copy;
         }
@@ -1212,6 +1215,8 @@ public sealed class SessionMessagesTickTests : IDisposable
                         }
 
                         session["state"] = to;
+                        // LIMITRESUME1b: the ledger's limit flag, on the failed end that carries it, as the service keeps it.
+                        session["limit"] = to == "failed" && body["limit"]?.GetValue<bool>() == true ? true : null;
                         // When it moved, as the service keeps it (HELPERWAIT1: a park made before its helper's ask was asked is not one made on it).
                         session["updated"] = DateTimeOffset.UtcNow.ToString("O");
                         if (to == "awaiting-person") session["said"] = new JsonArray();
@@ -1255,12 +1260,23 @@ public sealed class SessionMessagesTickTests : IDisposable
                             return (409, $$"""{"error":"Session `{{id}}` is {{state}}.","refusal":"running"}""");
                         }
 
+                        // COWORK1b: Daoris's own words under its producer's key, kept once by that key (LIMITRESUME1b's limit word).
+                        var said = Body();
+                        var from = said["from"]?.GetValue<string>();
+                        var key = said["key"]?.GetValue<string>();
+                        if (key is not null && session["said"]!.AsArray().FirstOrDefault(each => each!["key"]?.GetValue<string>() == key) is { } again)
+                        {
+                            return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "again", ["said"] = again.DeepClone() }.ToJsonString());
+                        }
+
                         var word = new JsonObject
                         {
-                            ["id"] = $"w{++_words}", ["text"] = Body()["text"]!.GetValue<string>(),
+                            ["id"] = $"w{++_words}", ["text"] = said["text"]!.GetValue<string>(),
                             ["at"] = DateTimeOffset.UtcNow.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = state != "awaiting-person",
+                            ["from"] = from, ["key"] = key,
                         };
                         session["said"]!.AsArray().Add(word);
+                        if (from is not null) DaorisSaid.Add((id, key));
                         _moves.TryAdd(id, []);
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "kept", ["said"] = word.DeepClone() }.ToJsonString());
                     }
