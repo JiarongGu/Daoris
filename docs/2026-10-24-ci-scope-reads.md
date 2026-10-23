@@ -1,9 +1,11 @@
-# CISCOPE1: the reads of round 1 (D191)
+# CISCOPE1: the reads of rounds 1 and 2 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-24-ci-scope-design.md` and D207 at
 `8ec788f89`, each verbatim but for its headings set one level down. The steward ran both from outside the install, read-only, on
 the design's own tree, read as landing after CIFAST1. Both ask for another round: Codex with 17 findings, 14 blocking; Opus with
-21, 8 blocking. Round 2 answers each finding in the design's reads table.
+21, 8 blocking. Round 2 answers each finding in the design's reads table. Round 2 was read the same way at `aceced648`: Codex
+asks another round (15 findings, 11 blocking); the Opus foundation reader finds the foundation holds and would accept after named
+changes the steward can check (17 findings, 6 blocking). Round 3 answers both.
 
 ## Codex
 
@@ -286,3 +288,366 @@ The target of 40 minutes (claim 7) has no measured basis for cutting 75% of the 
 **21 findings, 8 blocking.**
 
 **Verdict: another round.** The foundation holds for a merge but not for a republish. A reach map can be good enough for a merge to wait on. A miss on main is fixed forward, as D180 accepted, provided the map's recall is measured and the background sweep pays for its misses within a day. It cannot be exact for the driver. PROCREACH1 already showed that the closure is nearly everything, which is why the census follows names one level only, and a real miss of that kind is in FIX-LOG.md:960. So a republish of the owner's install cannot rest on the map alone. The design gives way only to the git half's cost and never to the map's misses. Its one backstop, the background run, is a run the install no longer waits for. On top of that it drops the sweep, the family rehearsal, the owed landing tests and the known-red guard from the stage, on a reversibility the code does not provide once a build confirms. Findings 1, 2, 5, 6 and 8 are textual and checkable. Findings 3, 4 and 7 (the merge queue at the measured arrival rate, the scoped set's basis with direct commits, and a recall proof) are design work, so round 2 should rewrite §4.1, §4.2, §5.3 and §8 and be read again as a foundation.
+
+## Codex, round 2
+
+Codex's read of round 2, at `aceced648`: 15 findings, 11 blocking; another round.
+
+### 1. Each round-1 finding
+
+Here, **design** means `docs/2026-10-24-ci-scope-design.md`. “Taken” judges the revised design contract; it does not claim implementation or runtime proof.
+
+| Finding | Verdict | Where | Why |
+|---|---|---|---|
+| Codex 1 — rehearsal saving | Taken | design:104; D207:113 | The rehearsals account for 44.1 minutes; preparation and the preceding light lane are separated. |
+| Codex 2 — latency categories and Process exceptions | Taken | design:131,136,455 | CLI exceptions and whole-suite fallbacks are acknowledged, and estimates await measured distributions; finding 2 below identifies a remaining omission. |
+| Codex 3 — retry policy | Taken | design:427 | Preserves Process retries and fast-.NET refusal, consistent with `merge-branch.mjs:3540,3559,3560`. |
+| Codex 4 — dependency completeness | Taken | design:247,256,262,300 | Adds declared indirect edges, conservative fallback and independent edge fixtures; no longer treats inventory as completeness. |
+| Codex 5 — candidate inventory versus old reports | Taken | design:286 | Discovery and execution evidence are compared with their own source tree. |
+| Codex 6 — browser/build disposition | Taken | design:424 | Browser gates and their production build are explicitly deferred. |
+| Codex 7 — background detection bound | Open | design:480,488,497 | Recovery records improve matters, but admission and overdue-stage enforcement remain incomplete: findings 11 and 13. |
+| Codex 8 — known-red masking | Open | design:363,507 | Test-level identity improves isolation, but waiver eligibility and fingerprint collisions remain: finding 6. |
+| Codex 9 — rollback overstatement | Taken | design:537 | Withdraws reversibility; `InstallSwap.cs:374` removes the previous build after confirmation. |
+| Codex 10 — incomplete update-path list | Answered with a reason that holds | design:528 | The list is withdrawn; every stage must satisfy the background and rehearsal requirements. |
+| Codex 11 — composition hiding gate failures | Taken | design:652 | Requires a completed passing aggregate, complete results and matching discovery; outside-test failures still force execution. |
+| Codex 12 — unsafe build order | Open | design:664,671,680 | Removes the original stage/value dependencies, but cross-run resource admission still arrives after its consumer: finding 15. |
+| Codex 13 — budget arithmetic and selection | Taken | design:416,634 | Selects the entire reached set when it fits, includes overhead and longest-class constraints, and withdraws the unsupported 40-minute target. |
+| Codex 14 — measurement evidence | Taken | design:593,600,616 | Adds attempts, fingerprints, linked fixes, Node coverage, invalidation and a maturity window. |
+| Codex 15 — equal coverage versus equal obligations | Taken | design:614 | Removal now requires an explanation of retained assertions and cases, alongside coverage. |
+| Codex 16 — rehearsal isolation | Open | design:562,579,680 | The proposed claims, ledger and loaded proof address pairing, but their placement leaves earlier cross-run admission unprotected: finding 15. |
+| Codex 17 — candidate lifecycle and competing landings | Open | design:85,358,376 | DOGFOOD1 corrects the install-bypasses-main premise; the replacement lifecycle still lacks the recovery cases in finding 4. |
+| Opus 1 — .NET reach is not exact | Taken | design:160,405,438 | Runs reached fast halves whole and explicitly retains the Process census’s limitation. |
+| Opus 2 — install floor | Open | design:518 | The steward’s stronger floor is adopted, but its baseline, waiver and enforcement mechanisms remain incomplete: findings 9–12. |
+| Opus 3 — merge queue | Open | design:351,363,370 | Batching is specified; bisection and the claimed wait bound do not yet hold: findings 3–5. |
+| Opus 4 — standing basis and direct commits | Taken | design:356,396 | Selection uses standing evidence on the candidate tree, including differences introduced by direct commits. |
+| Opus 5 — known red keyed by unit | Open | design:507 | Class-wide waivers are removed, but the revised test-level policy still has finding 6’s holes. |
+| Opus 6 — row order | Open | design:646 | Original dependencies are reordered correctly; finding 15 identifies the remaining admission dependency. |
+| Opus 7 — recall proof | Open | design:309,330 | Adds the requested replay and counter, but neither currently measures the claimed recall: findings 7–8. |
+| Opus 8 — TESTVALUE1’s currency | Taken | design:598,617,621 | Protects program-starting and cross-language obligations, recomputes uniqueness after each removal, and counts recurring flakes. |
+| Opus 9 — stage requirements and tree | Taken | design:465,521 | Withdraws scoped staging and keeps publishing out of the scope tree. |
+| Opus 10 — update-path omissions | Answered with a reason that holds | design:528 | Withdrawing the selective update-path exception removes the need for that list. |
+| Opus 11 — `owed` collision | Taken | design:422 | Uses `deferred`; CIFAST1’s `owed` retains its stage meaning. |
+| Opus 12 — inaccurate measurements and claims | Taken | design:104,111,131,194; D207:113 | Corrects the named arithmetic, historical counts, cost-model qualification and coalescing explanation. |
+| Opus 13 — budget arithmetic | Taken | design:634 | States capacity below 32 class-minutes before overhead and leaves the achievable target to measurement. |
+| Opus 14 — TypeScript package boundary | Taken | design:249 | Follows repository-wide relative and literal dynamic imports, plus folder, basename and glob dependencies. |
+| Opus 15 — unsafe composed verdict | Taken | design:652 | Narrows composition to a complete passing aggregate invalidated by reach. |
+| Opus 16 — verdict-store overflow | Taken | design:430,593 | Separates unit evidence from the 400-entry gate store and gives attempt history its own retention. |
+| Opus 17 — background schedule and sharing | Open | design:482,497 | Nightly catch-up is specified; one-sided admission cannot establish non-overlap or progress: finding 13. |
+| Opus 18 — inventory and root subjects | Taken | design:286,294 | Binds inventory to its tree and limits mandatory root-subject declarations to the git half. |
+| Opus 19 — candidate verbs | Open | design:354,376 | Conflict set-aside and `--continue` describe incompatible ownership of the same scope tree: finding 4. |
+| Opus 20 — coverage cost | Taken | design:607 | Supplies an explicitly provisional estimate and requires a pilot measurement before recording every suite. |
+| Opus 21 — REHPAIR1 and pairing cost | Taken | design:559,579 | Names REHPAIR1, retains serial fallback, and requires cold-cost and repeated working-day measurements. |
+
+### 2. What round 2 introduced
+
+The scoped-merge/background-install distinction follows the steward’s direction. The raised install floor, whole reached .NET fast halves, explicit browser deferral and narrowed composition rule address substantial round-1 defects.
+
+The new foundation is not settled, however. Prefix bisection assumes an attribution property tests do not guarantee. Queue recovery does not cover promotion’s irreversible boundary. The recall rules can count a selection made before a regression as evidence that its introduction was covered. The install checks depend on a last-staged record that normal CI clears, and use the acknowledged incomplete census to excuse background failures. Background execution also needs one coherent admission policy before the scoped runner starts sharing its machine.
+
+### 3. Findings
+
+1. **Non-blocking — the description of modules’ rehearsal reach is wrong.**  
+   `docs/2026-10-24-ci-scope-design.md:76` says every driver-lane and modules-lane source reaches both family and deployment rehearsals. `tools/merge-branch.mjs:974` defines `MODULES_READERS` as `modules`, `modules-process`, and `deployment`; neither the modules rule at `:1215` nor its C# exception at `:1136` adds the family rehearsal.
+
+   **Smallest change:** distinguish the two lanes’ readers. Preserve the narrower, correct statement at design `:529` that both reach deployment.
+
+2. **Non-blocking — the revised non-driver cost table omits required whole .NET suites.**  
+   `docs/2026-10-24-ci-scope-design.md:457` assigns records/documents only the cheap tier, and `:458` assigns page changes cheap checks and vitests. But the design’s own rule at `:405` runs reached .NET fast halves whole. Today’s reach sends documents to `service` (`tools/merge-branch.mjs:1249`), page changes to `service`, `driver`, and `modules` (`:969,1205`), and CLI sources to `driver` (`:972`).
+
+   **Smallest change:** enumerate those suites in the table and reprice preparation, builds and tests before using its durations in the queue model.
+
+3. **Blocking — failing-test prefix bisection does not cover the failures the scoped run can produce.**  
+   `docs/2026-10-24-ci-scope-design.md:363` promises to pin every failure to one member using failing tests alone. Yet `:428` correctly makes build, discovery and host failures red; those may name no runnable failing test (`tools/merge-branch.mjs:2043`). Test outcomes also need not be monotonic across prefixes: an earlier failure can be fixed and a different failure introduced later, and a failure can require two members together. Multiple failing tests need not follow the same three bisection steps.
+
+   **Smallest change:** define an unresolved/group attribution outcome; handle infrastructure and compilation failures separately; preserve the execution context needed to reproduce order-dependent failures. Fully rejudge the retained candidate before promotion, and prove build failure, interacting members and multiple independent failures. Limit the three-step claim to one reproducible monotonic failure over eight members.
+
+4. **Blocking — candidate recovery is not idempotent across promotion, and conflict ownership contradicts itself.**  
+   At `docs/2026-10-24-ci-scope-design.md:358`, promotion changes main before the queue can record `promoted`. A crash between those operations leaves a green candidate whose base differs from main. The restart rule at `:379` reforms it instead of recognising that it already landed. Existing `resume` explicitly checks ancestry (`tools/merge-branch.mjs:4505`); the replacement needs an equivalent recovery rule.
+
+   Separately, design `:354` sets a conflicting member aside and continues forming the candidate, while `:381` promises that its conflict remains open in that same scope tree for `--continue`.
+
+   **Smallest change:** recognise already-promoted candidates before treating base movement as new work, with crash probes before and after the git update and record write. Choose one conflict policy: pause formation with exclusive ownership, or abort/set aside and requeue a separately resolved member.
+
+5. **Non-blocking — batching does not establish the advertised two-run wait bound.**  
+   `docs/2026-10-24-ci-scope-design.md:370` promises at most two runs and says arrival rate cannot grow the queue. Eight-member capacity only bounds service capacity. Bursts can exceed eight waiting entries; union scopes can cost more than a single merge; direct commits can invalidate repeated candidates; and finding 3 removes the claimed fixed bisection cost. The measured peak hourly count does not bound arrivals in every run-sized interval.
+
+   **Smallest change:** call 30–56 minutes an estimate, not a maximum. Replay arrival timestamps together with direct commits, union-scope costs, capacity overflow and red/restart cases; report backlog and tail waits.
+
+6. **Blocking — known-red eligibility is inconsistent, and its fingerprint can merge distinct failures.**  
+   `docs/2026-10-24-ci-scope-design.md:363` waives any same-fingerprint base failure after filing it. At `:509`, waiver requires an already known-red background failure *and* base confirmation. Those rules disagree for an unverified direct commit that introduced a failure before its first background run.
+
+   The fingerprint at `:508` also retains only the assertion’s first line and normalises numbers. Distinct failing assertions or theory cases can therefore share the same signature. Current helpers already collapse theory results to their method (`tools/merge-branch.mjs:2023,2119`), so they cannot supply the stronger identity without changing.
+
+   **Smallest change:** specify exactly how base-discovered inherited failures become eligible and apply that rule everywhere. Preserve case identity and assertion location or an equivalent discriminating diagnostic. Add proofs for an unfiled base failure, another theory case, and a different assertion with the same first-line message.
+
+7. **Blocking — the replay and running counter use selection somewhere in an interval as causal coverage.**  
+   `docs/2026-10-24-ci-scope-design.md:316` guesses an introducing commit from overlap with the eventual fix, then accepts selection by *some* commit in an ambiguous range. At `:331`, the running counter likewise excludes a miss whenever any scoped run in the range selected the unit.
+
+   A unit can pass when selected early in the range, then break on a later change whose dependency is missing. These rules report that regression as covered. Selecting a unit on an abandoned candidate is likewise not proof about the promoted tree. Conversely, deliberately deferred browser tests or budgeted classes can be counted as census misses.
+
+   **Smallest change:** relate selection and its verdict to the introducing change and the tree that reached main. Keep uncertain introductions explicit. Count missing dependencies, deliberate deferrals, unjudged direct changes and execution failures separately; deduplicate repeated sightings of one regression.
+
+8. **Blocking — the historical proof lacks the inputs needed to replay the claimed scoped decision.**  
+   `docs/2026-10-24-ci-scope-design.md:319` asks for “the census tool at that commit” to decide what §4.2 would have run. The new tool does not exist at those historical commits. More importantly, §4.2 depends on standing verdicts, durations, failure ordering and budget state, while `:188` acknowledges that the retained stores cover only a short period. Starting each historical commit with no evidence would select broadly and inflate recall.
+
+   **Smallest change:** pin the new selector version and run it against historical source trees, as `tools/process-reach.mjs:819` already supports for source reading. Separate structural reach replay from historical scheduling replay. Declare unavailable state unknown, preserve the initial results before repairing misses, and use explicit fixtures for the standing/budget decisions that cannot be reconstructed.
+
+9. **Blocking — `staged.commit` is not a durable last-staged baseline.**  
+   `docs/2026-10-24-ci-scope-design.md:532` bases the install’s known-red exclusion on that field. `recordStaged` writes it (`tools/desktop-publish.mjs:1020`), but each CI run replaces it with `staged: null` at `tools/merge-branch.mjs:5486,5536`. Pruning deletes the entire gate-tree record at `:3106`.
+
+   **Smallest change:** retain successful stage history independently of the disposable gate-tree record. Define first-stage, missing/unreadable history and non-ancestor cases conservatively. Prove stage → prune or another CI run → later stage, including an earlier direct change followed by an unrelated commit.
+
+10. **Blocking — the install’s known-red exception trusts the same incomplete map the background run is meant to backstop.**  
+    `docs/2026-10-24-ci-scope-design.md:531` permits a failed gate when the last-staged delta reaches none of its known-red tests “by the census.” But `:438` explicitly admits that the Process census misses dependencies.
+
+    A change since the last install can introduce a failure through precisely such a missing edge. The background run discovers it; filing it as known red then lets the same map say that the change did not reach it and permits staging. That contradicts `:447`’s claim that scope misses cannot reach the install.
+
+    **Smallest change:** use a conservative gate-level exclusion for .NET known red, or require a separately justified complete dependency proof before waiving it. Refuse when reach is unknown. Add a stage test where an indirect dependency is intentionally absent from the class census.
+
+11. **Blocking — keeping `sweptOut` does not enforce the new overdue-stage promise.**  
+    `docs/2026-10-24-ci-scope-design.md:494` says an overdue whole run prevents staging, and `:527` presents retained `sweptOut` as the safeguard. In the code, a whole pass never expires: `tools/merge-branch.mjs:1909` returns false whenever `classes.kept` is zero, and `stageJudgement` can fall back to another standing whole pass (`:1937`).
+
+    **Smallest change:** explicitly make the stage consult the durable sweep obligation if overdue status must refuse staging. Alternatively narrow the promise to the existing kept-verdict rule. Prove an old whole pass and an older standing whole pass behind an expired composed result.
+
+12. **Blocking — background proof and all stage consumers are not specified together.**  
+    `docs/2026-10-24-ci-scope-design.md:521` says `--from-gated` “stays the one stage path,” and `:525` requires refusal without background proof. Today, plain `--stage` remains supported through `tools/desktop-publish.mjs:1154,1163`; `--from-gated` delegates to a child with that flag removed (`:1002,1137`). Both ultimately ask `--passed`, whose shared gate evidence records no run kind (`tools/merge-branch.mjs:4069`).
+
+    A tree’s location and a collection of gate passes do not themselves establish that a qualifying background run judged it. Nor does the row specify how the new checks reach the existing direct-stage path.
+
+    **Smallest change:** define a qualifying background receipt and its provenance, including permitted standing evidence and known-red treatment. Enforce it at every ordinary install-stage entry point, preserving explicit owner overrides as such. Prove direct stage, delegated child stage, scoped-only evidence and exact public-release proof.
+
+13. **Blocking — one-sided Process admission cannot guarantee non-overlap or background progress.**  
+    `docs/2026-10-24-ci-scope-design.md:497` prevents a background group starting while the scope tier runs. It says nothing about a scope tier starting after a background group has begun. The simultaneous promises—no overlap, no interruption of background work, and no scope wait—cannot all hold then. Current class groups are whole half invocations (`tools/merge-branch.mjs:5193`), potentially tens of minutes.
+
+    Strict foreground priority can also leave a nightly run started but unable to execute its Process work through continuous scoped candidates.
+
+    **Smallest change:** define symmetric admission with bounded work groups, explicit foreground priority and a stated progress policy. Account for any bounded wait in scoped latency. Prove background-first arrival, simultaneous acquisition, retry-alone execution, restart and sustained foreground load.
+
+14. **Non-blocking — the background rehearsal policy contradicts “CIFAST1 unchanged.”**  
+    `docs/2026-10-24-ci-scope-design.md:549` runs rehearsals wherever promotions reach them, while `:707` says CIFAST1 is unchanged. CIFAST1 deliberately leaves family and deployment owed on ordinary watch runs (`tools/merge-branch.mjs:5456`; `docs/decisions/D180.md:540`). Nightly execution is an understandable amendment, but ordinary post-promotion execution is another policy change.
+
+    **Smallest change:** specify the execution matrix for ordinary, due-sweep, nightly, stage and release runs. State which modes override CIFAST1 and amend the decision note accordingly.
+
+15. **Blocking — cross-run memory admission is built after cross-run execution starts.**  
+    `docs/2026-10-24-ci-scope-design.md:671` enables the scope runner beside the background runner. Their shared memory ledger arrives only in CISCOPE1f at `:680`. Serialising rehearsals with one another does not protect them, or background light suites, from a newly starting scoped run. Existing `memoryGate` samples independently and eventually runs despite insufficient memory (`tools/merge-branch.mjs:2355,2365`).
+
+    **Smallest change:** move shared admission and foreground headroom into the background/scoped-run prerequisites. Leave rehearsal pairing and its five-run proof in CISCOPE1f. Prove reservation accounting against current free memory without double-counting, simultaneous starts, release after failure, and recovery after a killed holder.
+
+**15 findings; 11 blocking.**
+
+**Verdict: another round.** Preserve the steward’s direction: merges wait on scoped verification, and the install waits on qualifying background proof. Another read is needed after the queue’s attribution and recovery rules, causal recall measurement, durable stage baseline, conservative known-red exclusion, and shared admission policy are made concrete. Those changes determine whether the proposed proofs establish the foundation’s claims; they are more than corrections the steward can check mechanically.
+
+## Opus (foundation), round 2
+
+The independent Opus 5.5 reader's foundation read of round 2, at `aceced648`: 17 findings, 6 blocking; accept after named changes the steward can check.
+
+### 1. Each round-1 finding, answered or not
+
+I checked each verdict against `tools/merge-branch.mjs`, `tools/process-reach.mjs`, the lane and gate files, D115 and D180 at `aceced648`. CIFAST1 is on main. "Fn" points to a finding under heading 3.
+
+**Codex**
+
+| # | Verdict | Where | Why |
+|---|---|---|---|
+| 1 | taken | §2.1, §8 row 1, D207 note | 44.1 of the 74.3 minutes were the two rehearsals. The rest is the light-lane wait (`:647`) and preparation. Holds. |
+| 2 | taken, incomplete | §2.2, §4.4 | The CLI reaching `driver-process` (`:1178`, `:1186`) is now stated. But §4.4 leaves out the fast .NET halves that REACH sends page, CLI and docs changes to (F9). |
+| 3 | taken | §1, §4.2 | Today's retry classes are kept (`:3559`; D180). Holds. |
+| 4 | taken | §3.2, §3.4, §3.5, §4.2 pt 2 | Declared edges, a wide fallback and an expected-edge fixture per kind are added, and a reached .NET fast half runs whole. Holds. |
+| 5 | taken | §3.4 check 1 | The inventory is now bound to the tree that ran. Holds. |
+| 6 | taken | §4.2 pt 6, §4.3 | Browser specs, their build and the rehearsals are deferred and named as a give-way. Holds. |
+| 7 | taken, new hole | §5.1 | The due record, catch-up, overdue report and conditional bound are added. But "a failed run satisfies nothing" makes every run whole through a red period (F5). |
+| 8 | taken, incomplete | §5.2, §4.1 pt 4 | Known red is now keyed by test and fingerprint. But §4.1 and §5.2 disagree on a failure on the base that is not yet known red (F2). |
+| 9 | taken | §1, §5.3 | "Reversible" is withdrawn. Checked: `InstallSwap.cs:374-376` deletes the previous build. |
+| 10 | answered | §5.3 pt 3 | The answer holds. The stage still needs a deployment pass standing on its tree, every driver- and modules-lane path reaches `deployment` (`:974`, `:976`), and a rehearsal failure carries no test identity that known red could waive. |
+| 11 | taken | §8 row 2 | Composing is narrowed to a gate pass gone stale by reach. Its proof has a caveat (F15). |
+| 12 | taken, incomplete | §8 | The backstops are kept. But the coordination between the two runners lands in row 6, after the scope runner in row 5 (F4). |
+| 13 | taken | §4.2 pt 5, §7.3 | The whole reached set runs when it fits, and 28 class-minutes closes the arithmetic. |
+| 14 | taken | §7.1, §7.2 | Attempt-level history, Node coverage, named exclusions and a maturity window are added. |
+| 15 | taken | §7.2 | The report only nominates, and each removal records the obligations kept. |
+| 16 | taken | §6.2, §8 row 6 | A port claim, a memory ledger, and the serial chain as the default. |
+| 17 | taken, incomplete | §1, §4.1, §8 row 5 | The correction holds: DOGFOOD1 says the install never merges. But who commits a candidate and where the records go is unsaid (F6), and conflict handling contradicts itself (F8). |
+
+**Opus foundation read**
+
+| # | Verdict | Where | Why |
+|---|---|---|---|
+| 1 | taken | §2.3, §3.2, §4.2 pt 2, §4.3 | Checked: GENREGEN1's two tests carry no Process trait (they are in the driver's fast half), and its change reached `driver` through the driver lane. So it is selected, as claimed. |
+| 2 | taken, then reopened | §5.3 | The background pass, the sweep, the paid rehearsals and dropping "reversible" all hold. But point 4 lets a failing gate count for the stage, judged by the census (F1). |
+| 3 | taken | §2.7, §4.1 | The arrival rate matches main's first-parent history (my per-day counts differ only at a day boundary). Batching and bisection are added. The holes are F2, F4 and F7. |
+| 4 | answered | §4.2, §5.3 | Holds for the install, which stages only on the background's verdicts. For the queue, a direct commit's breakage meets the base-failure gap (F2). |
+| 5 | taken, incomplete | §4.1 pt 4, §5.2 | The base re-run is added, but the two sections disagree (F2). |
+| 6 | taken, incomplete | §8 | Same as Codex 12 (F4). |
+| 7 | taken, incomplete | §3.5, §8 row 3 | The replay proof and the running count exist. Both count a miss as selected when a later scoped run found it (F3, F17). |
+| 8 | taken | §7.1, §7.2 | Coverage counted within its currency, one removal at a time, recurring flakes count. |
+| 9 | taken | §4.5, §5.3 | One stage rule, and a publish never holds the scope tree. But §6.1 now contradicts CIFAST1 (F12). |
+| 10 | answered | §5.3 pt 3 | Same as Codex 10. |
+| 11 | taken | §4.2, §9 | *Deferred* in the design. D207's body still says *owed* (F13). |
+| 12 | taken | as named | Corrected. But §1 now sends modules-lane paths to the family rehearsal (F12), and §4.4 is still low (F9). |
+| 13 | taken | §7.3 | Closes. |
+| 14 | taken | §3.2 | As named. |
+| 15 | taken | §8 row 2 | As named. |
+| 16 | taken, incomplete | §4.2, §7.1 | The stores are now separate. Which verdicts a scoped run writes to the gate store is unsaid (F10). |
+| 17 | taken, incomplete | §5.1 | The nightly run is now unconditional. A background Process half that is already running when a scoped Process tier starts is not handled (F4). |
+| 18 | taken | §3.4 | Check 1 bound to its tree; check 4 sized. |
+| 19 | taken, incomplete | §4.1 | Each verb is mapped to the scope tree. A conflict is both set aside and resumed (F8). |
+| 20 | taken | §7.1 | Estimated, and measured on one suite first. |
+| 21 | taken | §6.2, §8 row 6 | REHPAIR1 is taken over and the trees are priced once. |
+
+### 2. What round 2 introduced
+
+**Claims about the code.** Nearly every citation holds at `b61325e6c`. I checked `BLOCKING` :933, `PATH_CHECKS` :947, `REACH` :989, `MODULES_READERS` :974, `DRIVER_READERS` :976, :1101, :1178, :1186, `SWEEP_BOUND_MS` :1898, `sweptOut` :1908, `stageJudgement` :1926, `ciPlan` :5109, and `classPlan` :5134 with its rules at :5175, :5178 and :5181. Also `mergeInProgress` :2572, `mergeNext` :4431/:4454, :3559, `MEMORY_NEEDS` :2208, `memoryGate` :2331, `STAGE_REHEARSALS` :500, `staged` at `desktop-publish.mjs:1020`, `InstallSwap.cs:374-376` and `takePorts`.
+
+Four claims are wrong:
+- §4.1 says the merge is "today's", but today the tool never commits (F6).
+- §1 sends modules-lane paths to the family rehearsal, which the lane table does not (F12).
+- §6.1 runs the stage rehearsals on promotion, against CIFAST1 (F12).
+- §4.4 leaves out the fast halves that REACH reaches (F9).
+
+**Holes in the mechanisms:**
+- **The merge queue and its bisection.** A failure already on the base has no consistent rule (F2). Bisecting on single tests misses failures that need their suite (F7). The commit step and the records have no place (F6). The runner and conflicts are underspecified (F8).
+- **The scoped set's basis and direct commits.** Standing does cover direct commits, but only for detection: their breakage lands as an inherited failure (F2). Deferred and known-red units carry into every later candidate (F9).
+- **Known red.** It waives a failure at the stage (F1). Its 72-hour expiry contradicts D207's own Rejected list (F11).
+- **The recall proof and the miss count.** Both credit a miss to whichever later scoped run found it (F3). Their sources do not reach back a month (F17).
+- **The install's floor.** It matches today's, except point 4 (F1).
+- **The background run's schedule and its share of the machine.** A scoped Process tier cannot both "take the machine first" and never run beside a background half that will not end (F4). Failed runs re-sweep without end (F5). Which verdicts each runner writes is unsaid (F10).
+
+**The rows.**
+- Row 4 lands the stage waiver first, against §8's "the install's stage is today's throughout" (F1).
+- Row 5 starts a second heavy runner before row 6 coordinates the two (F4), and needs F6 decided.
+- Row 2's replay may contradict its own narrowed rule (F15).
+- The public-release rule has no row (F14).
+
+**On the foundation.**
+- **A merge waiting only on its scoped run holds.** It is strictly more than today's merge, which waits on `BLOCKING` alone. The recall proof (row 3) comes before the scoped run (row 5). The .NET fast halves are judged at gate level by a table held by tests. A miss costs attribution, since the install waits for the background run. But "recall measured" needs F3, and "misses bounded" needs F2 and F5.
+- **The install's floor keeps D115's and D180's guarantees**, through today's `stageJudgement`, `sweptOut` and CIFAST1's paid rehearsals, except §5.3 point 4.
+- **The public release is unaffected.** `.github/workflows/release.yml` runs every gate itself.
+
+### 3. Findings
+
+1. **Blocking. §5.3 point 4 lets an install out on a run that is not green, judged by the census.**
+   - Design lines 531-534 count a gate "whose only failures are known-red tests" when the change since `staged.commit` reaches none of them "by the census".
+   - Today's `stageJudgement` (`merge-branch.mjs:1926-1956`) passes only when every gate's newest standing verdict passes. D180 rejects "letting an install out without a green run" (D180.md:52). D115's CIFAST1 note says "the full set still stands before any stage" (D115.md:558).
+   - Round 2 contradicts itself: point 1 (524-526), the D207 note (D207.md:100-101) and §8's "the install's stage is today's throughout" (647) all say the opposite, yet row 4 (666) builds point 4.
+   - "By the census" uses the name census, which §2.3 says is not a closure. So a test turned red by a census miss since the last stage, the very case the census cannot see, is the one waived.
+   - Point 4 also has no defined interaction with `sweptOut` or with "a failed run satisfies nothing".
+   - **Smallest change:** delete the waiver. The stage needs every gate passing (point 1, today's rule), and known red waives only in the queue. If the steward wants the waiver, D207 must record it as the owner accepting D180's rejected item, and judge reach by REACH at gate level, never by the census.
+
+2. **Blocking. A failure that is on the candidate's base but not yet known red has no rule, and bisection cannot place it.**
+   - §4.1 point 4 (363-364) treats a failure that repeats on the base as inherited and waives it. §5.2 (509-511) waives it only if it is also already known red, and counts "everything else".
+   - Under §5.2 the failure counts against the candidate. That happens with a parent's direct commit (on 2026-10-21 these included `fix:`, `test(driver)` and `refactor(web)` code commits) and with a promoted miss that a later candidate finds (447-448). Bisection over the members then pins it to none of them, since the base itself fails.
+   - Every candidate that reaches that unit is then red until a background run (38 to 74 minutes, once the gate tree is free) makes it known red.
+   - **Smallest change:** one rule. A test that fails on the candidate's base with the same fingerprint is inherited for that candidate, known red or not. It is filed to `ci-findings.json` at once as known red, its 72 hours starting then, and it is never pinned to a member. §5.2's "known red and" then only decides whether the base re-run can be skipped.
+
+3. **Blocking. The miss count, and the replay's rule for an unsettled range, count a miss as "selected" when a later scoped run found it.**
+   - The running count (330-333) calls a failure a miss only if "no scoped run in that range selected" it. When a later candidate runs the unit and finds the failure inherited (F2), that later run selected it, so the miss is never counted, even though the introducing commit's own scoped run missed it.
+   - That later-candidate path is the first one §4.3 names (447-448).
+   - The replay (316-318) counts an unsettled range as selected "if some commit's scope selected it", which overstates recall the same way.
+   - **Smallest change:**
+     - Judge each failure against its introducing commit alone, found by running the failing test over main's range (the queue's own bisection). Count a miss when that commit's own scope did not select the unit.
+     - Feed the count from inherited failures that candidates find as well as from the background run.
+     - Count direct commits apart, as unscoped.
+     - Count a range that cannot be settled as missed, in a stated lower bound.
+     - Say that before CISCOPE1e the count measures today's `BLOCKING`-only merges.
+
+4. **Blocking. The rules for sharing the machine contradict each other when a background Process gate is already running.**
+   - §5.1 (497-499) says the background never ends for a merge and never blocks one, the two Process lanes never run side by side, and "a scoped run takes the machine first".
+   - A "class group" is a whole half (D180.md:436), and a rehearsal cannot yield partway either. So a scoped Process tier that is due while a background git half (31 to 44 minutes on every sweep and night) or the nightly rehearsal chain (31 to 53 minutes) is running must either:
+     - wait, so the merge waits on the full set, against the steward's direction;
+     - end the background gate, which §5.1 and D180's CI1 note (D180.md:473) forbid; or
+     - run beside it, which §5.1 says never happens.
+   - Merges also gain Process halves for the first time (`isLongGate` keeps them off merges today), beside five workers and the install's sessions.
+   - The coordination between the two runners and the memory ledger come in CISCOPE1f (row 6, 680-683), after CISCOPE1e (row 5) starts the second heavy runner.
+   - **Smallest change:**
+     - State the converse case. Either a scoped Process tier runs beside a background Process-lane gate that is already running, with its FLAKE1 re-run alone not waiting for that gate, and the background starts no Process-lane gate while a scoped tier is running or queued. Or the background runs its halves in short class groups and the scoped tier waits at most one group.
+     - State the scoped run's worst wait.
+     - Move the coordination between the runners, and the memory reservation, into CISCOPE1e. Its proof should time scoped runs with a background half already running.
+
+5. **Blocking. "A failed run satisfies no sweep and no night" makes background runs whole through every red period.**
+   - Design 488-491. Today a failed whole run records a fresh verdict for every class (`addClassVerdicts`), so `classPlan`'s sweep (`:5176-5180`) is satisfied for a day whatever the half's verdict.
+   - Under round 2 the sweep record stays due after any failure, and the watch never re-gates a tip that failed. So each run after the next promotion runs the half whole again, for the whole time a test is known red (up to 72 hours).
+   - A failed night makes every following run a run of every gate (one to one and a half hours) until one is green.
+   - The background takes the most machine, and the republish waits longest, exactly while main is red.
+   - **Smallest change:**
+     - A half's sweep is satisfied by a run that gave every class a verdict, pass or fail, as today.
+     - A night is satisfied by a whole run that finished with its failures filed.
+     - Only a run that was ended or killed before its classes ran leaves the sweep or the night due.
+
+6. **Blocking. Who commits a candidate's merges, when the parent reads the diff, and where the records go are not said. "The merge itself is today's" is wrong.**
+   - Design 341-345 has the tool `git commit` each merge in the scope tree.
+   - Today the tool never commits: "Committing stays the parent's, after it reads the diff and writes the records" (`merge-branch.mjs:69`; the refusal at :4517). The parent puts the message and records into the merge commit: `b61325e6c` adds the reads file, `TASKS.md` and the indexes beyond its second parent.
+   - With batches of up to eight committed by the tool, the parent's review and record step has no place.
+   - If the records follow promotion as direct commits, each one forces the candidate in flight to be re-formed (358-362), with no lighter path for a records-only move.
+   - **Smallest change:**
+     - The parent hands over the message and records with the branch (a records commit on it, or a message file when it queues), or writes them after promotion as a records-only commit.
+     - A candidate whose base moved only by records is re-formed and runs only the cheap tier's record checks.
+
+7. **Not blocking. Bisecting "the failing tests alone" (365-366) cannot place a failure that needs its suite.**
+   - A test polluted by another passes alone. FLAKE1 treats that as a defect and never re-runs it alone (`merge-branch.mjs:245-249`, `:3559`). So it passes alone on every prefix and on the base.
+   - Runs of single tests could also be recorded as a unit's pass.
+   - **Smallest change:** run the failing test's whole class or file on the base and on each prefix, falling back to the members one at a time. Record no unit verdict from these runs.
+
+8. **Not blocking. The queue's runner and its conflicts.**
+   - The first invocation becomes the runner (347-349), so the queue lives only as long as the parent's waiting tool call.
+   - A conflicting branch is "set aside ... handed back" (353-355), yet `--continue` "resumes a conflict left open" in the scope tree (380-382), which the next candidate needs.
+   - **Smallest change:** make the runner a detached process like `--ci --watch`. Pick one conflict rule: hand the branch back, or hold the conflict in a tree of its own.
+
+9. **Not blocking. §4.4 (455-461) leaves out the fast halves its own §4.2 point 2 runs, and the carry-over between candidates.**
+   - REACH sends the page lanes to `service`, `driver` and `modules` (`:969`, `:1205`), the CLI lane to `driver` (`:972`, `:1229`), and docs and records to `service` (`:1234`, `:1249`). So a docs merge runs the service suite whole, about five minutes of tests plus a build, not 2 to 4 minutes.
+   - Deferred git-half classes and known-red units run in every later candidate.
+   - "Two runs" of waiting (370-374) leaves out re-forming after a direct commit.
+   - **Smallest change:** add those fast halves to the rows, and state the carry-over and the re-forms.
+
+10. **Not blocking. Which verdicts a scoped run writes to the gate store is unsaid (430-432).**
+    - `stageJudgement` counts any standing gate verdict, whatever tree gave it.
+    - If a scoped git half with deferred classes, or a suite run by file, writes a gate pass, the stage counts it.
+    - If a scoped run writes none, the background re-runs on the promoted tip, the same tree, everything the scoped run just passed.
+    - **Smallest change:**
+      - A scoped run writes a gate verdict only for a gate it ran whole, or a Process half run by class with nothing deferred. It writes none otherwise.
+      - The background keeps gate-level standing for every gate that is not a Process half.
+      - Say whether "the background run has passed it" (525) means standing passes from either runner or the background's own record of that commit.
+
+11. **Not blocking. The 72-hour expiry (512-514) blocks every merge that reaches the test.**
+    - That is what D207's Rejected list says known red exists to avoid (D207.md:61-62).
+    - "Its row says it is skipped" names no mechanism.
+    - **Smallest change:** record the expiry as a deliberate exception in D207, and name the skip: a `Skip` carrying the row's id, held by the census check.
+
+12. **Not blocking. Two wrong claims.**
+    - §1 (76-77) says modules-lane paths reach the family rehearsal. `MODULES_READERS` (`:974`) is `modules`, `modules-process` and `deployment` only.
+    - §6.1 (549-550) has the background run all three rehearsals "wherever a promotion reaches them". A watch run owes the family and deployment rehearsals (`STAGE_REHEARSALS`, `:500`), which §9 (707) keeps unchanged.
+    - **Smallest change:** correct both sentences.
+
+13. **Not blocking. D207's body and its "Changes" paragraph are still round 1.**
+    - Points 1 to 7 (D207.md:14-46) still say `commit-tree`, *owed*, 10 to 16 minutes, "a scoped pass clears it", `--from-scoped` and 40 minutes.
+    - "Changes" (65-68) still says PROCREACH1's "third whole rule removed", which round 2 narrows instead. The note overrides points 1 to 7 but not that paragraph.
+    - **Smallest change:** rewrite the body to round 2 before acceptance.
+
+14. **Not blocking. The public-release rule (486, 543) has no row.**
+    - `--ci --release` exists in no row. The release workflow already runs every gate itself (`release.yml:234-321`).
+    - **Smallest change:** assign the rule to CISCOPE1d, or name the workflow's own run as the release's gate and drop the local rule.
+
+15. **Not blocking. Row 2's proof may contradict its own rule (656-658).**
+    - Replaying `f296996` "with zero classes run" holds only if the git half's previous gate verdict was a pass gone stale by reach.
+    - The run before it, `73c1fe0` (98), failed with the git half run whole. If that half failed outside a test, the narrowed rule runs `f296996`'s half whole.
+    - **Smallest change:** state, from that run's `status.json`, which gate failed `73c1fe0`, and what the rule then does with `f296996`.
+
+16. **Not blocking. Two gaps in what the rows run.**
+    - `npm run verify` also runs `node --test tools/*.test.mjs` (twelve files), which §4.2 point 3 (409-411) does not assign.
+    - Row 3 "changes nothing the CI runs" (661) while it adds `check` to the CI's run and to a merge.
+    - **Smallest change:** name those files among the units run by file, and correct row 3's sentence.
+
+17. **Not blocking. The recall proof's sources do not span its month (312-315).**
+    - `gate-verdicts.json` holds about a day and a half (§2.5), class verdicts six per class, and the `ci-*` folders start with CI1.
+    - A batch's record is dropped when the batch ends (`dropState`, `:4507`), so only the FIX-LOG reaches back to 2026-09-24.
+    - **Smallest change:** state each source's span and count in the proof's output, and give the recall over the FIX-LOG's failures separately.
+
+**17 findings, 6 blocking.**
+
+**Verdict: accept after named changes the steward can check without another read.** The foundation now holds. A merge that waits only on its scoped run is strictly safer than today's merge, which waits on `BLOCKING` alone. The recall proof comes before the scoped run is relied on. The .NET fast halves run whole by a lane table held by tests. Since the install waits for the background run, a miss costs attribution, not the owner's install. The install's floor is today's `stageJudgement`, `sweptOut` and CIFAST1's paid rehearsals. The public release keeps its own full run. What remains is a set of local rules, not a redesign, and each can be checked against the text:
+- delete §5.3 point 4's waiver (F1);
+- one rule for a failure already on the base (F2);
+- a miss judged against its introducing commit alone (F3);
+- the converse case of machine sharing, with the coordination between the runners moved into CISCOPE1e (F4);
+- a sweep and a night satisfied by a run that finished, whatever its verdict (F5);
+- where a candidate's commit, message and records come from (F6).
+
+Findings 7 to 17 are corrections and statements the steward can check line by line.
