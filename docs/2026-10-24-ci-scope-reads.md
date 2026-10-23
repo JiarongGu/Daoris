@@ -1,4 +1,4 @@
-# CISCOPE1: the reads of rounds 1 to 4 (D191)
+# CISCOPE1: the reads of rounds 1 to 5 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-24-ci-scope-design.md` and D207 at
 `8ec788f89`, each verbatim but for its headings set one level down. The steward ran both from outside the install, read-only, on
@@ -9,7 +9,10 @@ changes the steward can check (17 findings, 6 blocking). Round 3 answers both. R
 another round (12 findings, 6 blocking); the Opus foundation reader's check finds every round-2 blocking change taken as named
 and would accept after named changes (12 findings, 2 blocking). Round 4 answers both. Round 4 was read at `e89f00ca4`: Codex
 asks another round (8 findings, 3 blocking); the Opus foundation reader's check would accept after named changes (10 findings,
-3 blocking, each a local rule of the queue's base run). Round 5 answers both.
+3 blocking, each a local rule of the queue's base run). Round 5 answers both. Round 5 was read at `9a48b7f3d` by the Opus
+foundation reader alone, Codex's workspace being out of credits: accept after named changes (10 findings, 3 blocking), Codex's
+three round-4 blocking findings answered in substance. Round 6 makes those changes for the steward to check, and Codex's read of
+the final text is owed when its credits return.
 
 ## Codex
 
@@ -1459,3 +1462,296 @@ What remains is three local rules in §4.1 point 4. Each is a sentence, with its
 
 Findings 4 to 10 are statements and corrections the steward can check line by line. Codex's read of round 4 is a separate
 matter.
+
+## Opus (foundation), round 5
+
+The independent Opus 5.5 reader's check of round 5, at `9a48b7f3d`: 10 findings, 3 blocking; accept after named changes. Codex's workspace was out of credits that day, so round 5 has no Codex read; Codex read rounds 1 to 4.
+
+### CISCOPE1, round 5: the independent Opus foundation read (D191)
+
+Read at `9a48b7f3d` (round 5: the design and D207), against the code at `cdf6d5f55`. `git diff --stat a6991805f HEAD` is empty
+over `tools/`, `daoris.gates.json`, `daoris.lanes.json`, `package.json`, `.github/`, D115, D180, `src/Daoris.Cli/tool-test` and
+`ProcessJob.cs`. `docs/development.md` changed only in its landing paragraph. So round 4's line numbers hold, and so does round
+5's claim that nothing it cites changed. "design:N" is `docs/2026-10-24-ci-scope-design.md` line N, "D207:N" is
+`docs/decisions/D207.md`, "mb:N" is `tools/merge-branch.mjs`, "dp:N" is `tools/desktop-publish.mjs`, and "PJ:N" is
+`src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Consoles/ProcessJob.cs`. I did not open `local/`, so figures drawn from run
+records are taken as stated.
+
+#### 1. Round 4's findings
+
+##### The Opus foundation read, round 4
+
+| # | Finding | Verdict | Where | Why |
+|---|---|---|---|---|
+| F1 | A failure whose message varies is never matched | Taken as named. It holds within one tree but not across commits | design:609-621, :1014-1025; D207:44-46; rows 3-5 | A failure is now matched by name, case, exception type and location. GUIDs and hex runs are normalised, and the fingerprint stays the record. But the location is a line number (design:1016), and every judgement compares different trees: the base against the prefixes, and the commits of history. Finding 1. |
+| F2 | An unresolved candidate of one has no outcome, and a prefix that cannot run has no reading | Taken as named; holds | design:683-702; row 5 design:1327-1331; D207:53-55 | A candidate of one is handed back unresolved, its flake filed, and the queue goes on. Only the parent requeues it. A prefix that cannot run the selection makes the failure unresolved. Both cases are in row 5. |
+| F3 | A death of memory meets the base-first stop; today's retries are misstated | Taken as named, then reopened by one added sentence | design:622-630, :792-796, :159-162; row 5 design:1331-1334; D207:46-48 | A death of memory is kept out of the base run, the prefixes and the stop. MEMGATE1 and LEFT1 are named as today's retries. But the new rule that judges a death "on a run admitted with its whole need reserved and free" as the gate's covers every normally admitted run, and reservation does not cover the workers' load. Finding 3. |
+| F4 | The two runners' load is understated | Taken as named. It holds as stated, but a precondition is unmet | design:843-847, :936-941; row 5 design:1357-1358 | `byMemory` and the background's light lane (26 GB) are now in, and the proof times beside both. But D180 records that the CI could drop GATEORDER1's wait only because its light lane runs below normal. The scoped run runs every gate at normal. Finding 8. |
+| F5 | Normal priority departs from D180's budget note, unnamed | Taken as named; holds | design:947-956, :1388-1392; D207:159-163; row 5 design:1359 | It is named as an amendment to point 2 (D180.md:68-69, the harm at :60-62). It is bounded to one scoped Process tier and the git half's eight minutes. A dispatch refusal fails the proof. |
+| F6 | The base-failure stop is an unrecorded exception | Taken as named; holds | design:644-652, :1393-1396; D207:132-135; row 5 design:1322-1324 | It is recorded as the second exception, with its asymmetry against the 72-hour grace. `--queue --recheck` and the runner's own hourly recheck lift it. |
+| F7 | "Every candidate" is too broad; a partial fix is handed back | Taken as named; holds | design:666-671, :753-757, :785-788, :1046-1048; D207:41-42, :127-131; rows 4-5 | Eligibility now comes first. The deferred kinds never stop the queue; the stage refuses them and the watch says so. A known-red git class consumes the budget. A partial fix is handed back by rule. (With finding 1, a mere line shift reads as a partial fix.) |
+| F8 | A reservation's group is found per run; an admission read ends processes | Taken otherwise: a job per gate. Holds for ownership; open on release | design:962-983; row 5 design:1343-1352 | A per-gate job counts only that gate's descendants, and only the lock-taker ends processes. But an ended kill-on-close job is read as unreadable and keeps its charge forever. Finding 4. (§11.4 credits "Codex 4's mechanism"; it is Codex 3's. Finding 10.) |
+| F9 | The stretch probes are unbounded, and their price assumes short stretches | Taken as named; holds; the price is optimistic | design:430-445, :486-496 | The probes now recurse. Each failure is priced at about 11 halving runs, plus d/16 probes, plus a walk of at most 48. The month's 2,153 first-parent commits are verified (since 2026-09-24T00:00). But "most settle at step 3" does not follow. Finding 9. |
+| F10 | Small slips | Taken; holds | design:584-595, :557-562, :1042-1044, :1180; D207:56 | *Records only* is defined by three rules (mb:1234, :1244, :1249, checked). `ruleFor` is at mb:1574. The figure is 15 to 26. A queued tip that differs from the last `--preview` is refused, but see finding 5. The expiry is counted per test. |
+
+##### Codex, round 4: its three blocking findings
+
+| # | Finding | Verdict | Where | Why |
+|---|---|---|---|---|
+| 1 | The historical search cannot establish its lower bound | Taken (its second option); holds within one signature | design:421-449, :1270-1276; D207:25-34 | A verdict is credited only when every commit of the open set (q, v] gets it; otherwise the search walks the contiguous suffix, and past 48 runs the failure is unsettled. That is sound while the signature stays constant from the introduction to the first failure. A line shift or a changed failure between them credits the commit that changed the signature. Finding 1. |
+| 2 | Two matching snapshots do not bind the artifact | Taken as named; holds for the parent, open for the child | design:1078-1097; row 4 design:1294-1301; D207:76-80 | The parent holds the gate tree's lock through the child's build (dp:947-994, :1119-1140, checked). But the child is itself a plain `--stage` (`childArgs`, dp:997-1008), so "a plain `--stage` refuses" either refuses every stage or, read loosely, admits a build in the gate tree that holds no lock. The deployment rehearsal's own plain `--stage` is also at stake. Finding 2. |
+| 3 | Orphan heuristics cannot implement process-group ownership | Taken as named; holds for membership and unknown reads | design:962-988; row 5 design:1343-1352; D207:68-71 | Each gate runs in a job of its own, joined suspended, with no breakaway, and is accounted by its job (PJ:23-26, :160-171, checked). An unknown read keeps the charge. Each gate also has build servers of its own. But a name no job answers is an ended job under kill-on-close (PJ:256-268), and the text keeps that charge forever. Finding 4. |
+
+#### 2. What round 5 introduced
+
+**Claims checked against the code; these hold.**
+- **Merge tool:**
+  - `memoryDeath` at mb:2244, `againOfMemory` at mb:3744-3765, and the MEMGATE1 header at mb:270-276.
+  - LEFT1 at mb:3540-3557, and `:3559`.
+  - `byMemory` at mb:623-647, and GATEORDER1 at mb:290-291 and :509-515.
+  - `ruleFor` at mb:1574.
+  - The REACH rows at mb:989-997, :1129, :1189, :1233, :1234, :1244, :1249 and :1253.
+  - `mergeByBase` at mb:1392, `resolveBacklog` at :1429 and `recordMatcher` at :1842.
+  - `memoryGate` at mb:2331, `lowerPriority` at :4865 and `BESIDE_ENVIRONMENT` at :4879.
+- **The publisher:** `gatedSource`'s hold at dp:947-994. It writes `holder: 'stage'` at :981 and reads HEAD again at :988. The child is spawned at dp:1137, and the lock is released at :1139. The `npm pack` step is at dp:1220-1245.
+- **The job object:** PJ:23-26 (HEAVYRUN1a).
+- **D180:** D180.md:49, :60-62, :68-69 and :573.
+- **The count:** 2,153 first-parent commits.
+
+**Wrong or unsupported claims.**
+- "Most settle at step 3" (design:495). Of the month's 2,153 first-parent commits, 991 are direct commits, which are *unscoped*. So an open set of more than two or three commits nearly always holds two verdicts. Finding 9.
+- MEMGATE1 "runs any gate that died of memory again once, whole and alone" (design:159-161, :624-625). A Process half whose dead tests are named runs those tests alone, as FLAKE1's are (mb:275, :3533, :3569-3574). Finding 10.
+- "Scheduled by memory, as a CI run is" (design:843-844). The CI's `byMemory` rests on a priority split that the scoped run lacks (D180.md:428-433). Finding 8.
+- §11.4's Opus row 8 says "by Codex 4's mechanism" (design:1638); the mechanism is Codex 3's. Finding 10.
+
+**New holes.**
+- The signature's location is a line number, and every judgement compares trees. Finding 1.
+- The plain-`--stage` refusal says nothing of the delegated child, of `_fixtures`, or of the second read the child must make. Finding 2.
+- A death of memory "on a run admitted with its need reserved" is judged as the gate's. Finding 3.
+- Release reads an ended job as unreadable. Finding 4.
+- The parent's records commit moves the previewed tip, so the normal flow is refused. Finding 5.
+- A build's signature, "a compiler's error code and file", depends on the order MSBuild prints errors. Finding 6.
+- Row 3 needs the signature reader before any row builds it. Finding 7.
+
+**D115, D180, CIFAST1.**
+- **D115.** GATEWT1 already rejected "staging from the main checkout once its tree matches" (D115.md:505-507). Round 5's refusal of a plain `--stage` extends that rejection, and the two are consistent. GATE3's `_fixtures` exemption (dp:872) must survive it. Finding 2.
+- **D180.**
+  - The budget note's point 2 is named.
+  - The two exceptions are named.
+  - The PROCREACH1 exposure is stated.
+  - The CI1 note's point 5 names its precondition for dropping GATEORDER1's wait: the Process lane at normal priority, the light lane below it (D180.md:431-432). The scoped run does not meet it, and the departure is not named. Finding 8.
+- **CIFAST1.** Unchanged, except for the night, which is named with its rejection's answer.
+
+**The rows.**
+- The order holds otherwise:
+  - no backstop goes before its replacement;
+  - admission arrives with the second runner;
+  - the stage only tightens.
+- Row 3 must build the signature (finding 7).
+- Row 4's stage cases lack two: the delegated child under its parent's lock, and a plain `--stage` in the gate tree without that lock. Finding 2.
+- Row 5 needs these cases:
+  - a line shift (finding 1);
+  - a death of memory within its need under outside load (finding 3);
+  - an ended job (finding 4);
+  - the preview taken after the records commit (finding 5).
+
+**D207.**
+- Its body and Changes match the design, except two points:
+  - point 3 omits the rule for a death of memory on a reserved run (finding 3);
+  - point 5 carries "a plain `--stage` refused" without the child's binding (finding 2).
+- Its new *Rejected* items match the design.
+
+**The §10 questions, briefly.**
+1. Within one signature, yes: the credited verdict is the last transition's, and no unprobed stretch carries one. Across a signature change between the introduction and the first failure, no (finding 1). The order of the steps also wastes most of the price (finding 9).
+2. For the parent, yes. The child, `_fixtures`, and the place of the second read need one rule (finding 2).
+3. Membership survives an intermediate's death, and an unknown read keeps the charge. But an ended job is not distinguished from an unreadable one (finding 4).
+4. Not yet. Two failures are still placed wrongly:
+   - a line shift by a member pins it, and the failure is not inherited (finding 1);
+   - a death of memory under outside load reaches the base run and the prefixes (finding 3).
+
+   The rest are placed.
+5. Yes, both exceptions are right to record, and each has a bounded exit. The base-failure stop should match a build failure by an order-free signature (finding 6).
+
+#### 3. Findings
+
+1. **Blocking. The signature's location is a line number. Across commits, a line shift reads as another failure, in the queue
+   and in recall.**
+   - **Where:** design:611-612, :1016, :1023, :1030-1031, :412-416, :421-443; D207:44-46; rows 3 and 5.
+   - **The fault.** Every judgement the signature serves compares runs on different trees: the base against each prefix
+     (members change files), and recall's walk over history. The location is "file and line" (design:1016). Any member or
+     commit that adds or removes a line above the failing assertion, in the test's own file, changes that location.
+   - **Queue, inheritance.** A member adds a test above a known-red test. The candidate's signature now differs from the
+     base's, so the failure is not inherited. "A changed signature (another location …)" counts against the candidate
+     (design:1030-1031), so it is pinned to that member and handed back, as a "partial fix" (design:667-671).
+   - **Queue, attribution.** Member 2 breaks T, and member 5 adds lines above T. Prefixes 2 to 4 fail at the old line, which is
+     "not the signature". So member 5 is pinned and member 2 is promoted. Only the retained candidate's re-judgement finds
+     member 2, in a second round.
+   - **Recall.**
+     - The walk back from f stops at the commit before the line shift: that commit fails, but "without the signature". The
+       search credits the shift.
+     - The shifting commit edits the unit's own file, so the census reaches it: *selected*, whatever introduced the
+       failure.
+     - So a real miss enters the numerator, which §3.5 exists to exclude (§10 question 1).
+     - The same holds for any change of signature between the introduction and f, such as a renamed test or a changed
+       exception type.
+   - **Smallest change:**
+     - The signature's location is the frame's method plus the text of its source line, read from the tree the run used,
+       normalised as messages are, with its ordinal among identical lines of that method. Never the line number. The
+       fingerprint keeps file and line as the record's identity.
+     - In recall's search, q moves only on a run where the test passes. A run where it fails with another signature, or where
+       it does not exist, moves nothing. If such a run is the newest below the open set, the failure is unsettled, *signature
+       changed*.
+     - Row 5 fixtures:
+       - a member adds lines above a known-red assertion: the failure is inherited, and nobody is pinned;
+       - the member-2 and member-5 sequence above: member 2 is pinned.
+     - Row 3 fixtures:
+       - lines are inserted above a failing assertion between its introduction and its first failure: the introduction is
+         found, not the insertion;
+       - a rename: never *selected* at the rename.
+
+2. **Blocking. The refusal of a plain `--stage` does not say how the delegated child builds, and the child is itself a plain
+   `--stage`.**
+   - **Where:** design:1060-1065, :1091-1097; D207:77-80; row 4 design:1294-1301; dp:872, :997-1008, :1119-1140, :1154-1167,
+     :1410; `tools/deployment-rehearsal.mjs:455-460`, :1659-1661; `src/Daoris.Desktop/Daoris.Desktop.Driver/Setup/UpdateCommand.cs:87-88`.
+   - **How the child runs today.** `--from-gated` takes the lock, then spawns the gate tree's own publish with `childArgs`.
+     That drops only `--from-gated` and `--to` (dp:997-1008, :1137). So the child takes the plain path (dp:1154-1167), with the
+     gate tree as its root.
+   - **Two readings, both wrong:**
+     - A refusal of every plain `--stage` refuses the child, so no stage can happen.
+     - A refusal keyed only on "not the main checkout" admits a plain `--stage` run by hand inside the gate tree. That build
+       holds no lock, so a watch's run may move the tree under it: the very source change round 5 closes.
+   - **What else the rule meets:**
+     - The deployment rehearsal's step 9b stages with a plain `--stage` into `_fixtures/deployment-rehearsal/install`
+       (deployment-rehearsal.mjs:455-460, :1659-1661). `ungatedRefusal` exempts it today (dp:872), and the stage needs that
+       rehearsal.
+     - The driver's `update` verb tells the owner to stage with the plain command (UpdateCommand.cs:87-88).
+     - The child promotes the stage itself (dp:1410). So the read "after the build and before staging" (design:1094-1095) can
+       only be made in the child.
+   - **Smallest change:**
+     - A plain `--stage` builds in two cases only:
+       - under `_fixtures`, as GATE3 has it;
+       - inside the gate tree, while the tree's lock is held with `holder: 'stage'` by its parent process, the lock's commit
+         being the tree's HEAD.
+     - Otherwise it refuses and names the gated command.
+     - The child makes the second three-tree read just before it promotes the stage.
+     - Row 4 adds four cases:
+       - the delegated child builds under its parent's lock;
+       - a plain `--stage` run in the gate tree without that lock is refused;
+       - the deployment rehearsal's `_fixtures` stage is unchanged;
+       - `daoris-driver update` names `--from-gated`.
+
+3. **Blocking. A death of memory "on a run admitted with its whole need reserved and free" is judged as the gate's. As worded,
+   that is every normally admitted run, and the reservation does not cover the load that kills.**
+   - **Where:** design:627-630, :957-961, :989-992; row 5 design:1333-1334; D207:46-48; mb:259-261; PJ:347-355.
+   - **The wording.** §5.1 admits every gate, scoped or background, when sampled free memory, less the unused reservations,
+     covers its need, and it reserves that need (design:957-961). Only a scoped gate past MEMGATE1's bound runs without
+     admission (design:991-992). So "a run admitted with its whole need reserved and free" is the ordinary first run. The
+     sentence sends an ordinary death back to the base run and the prefixes. Under the same load the base dies too and stops
+     the queue: round 4's harm.
+   - **The narrow reading** (only the run after the hold) is still unsound. The admission record holds only the two runners'
+     gates. The workers, the owner's install and its sessions are not in it, and they ran the machine out of commit on
+     2026-10-22 (mb:259-261). Free memory at admission is not free memory throughout the run.
+   - **D207 point 3** does not state the rule.
+   - **Smallest change:**
+     - Apply the rule only to the run after the hold.
+     - There, judge a death as the gate's only when its own job's peak committed memory exceeded its reserved need.
+       `ProcessJob` already declares `PeakJobMemoryUsed` (PJ:354).
+     - A death within its need stays the machine's, and holds the candidate again, said.
+     - Row 5: a death within its need under load from outside the runners is held, not judged; one past its need is judged.
+     - D207 point 3 states the rule.
+
+4. **Not blocking. Release cannot tell an ended job from an unreadable one.**
+   - **Where:** design:968-983; row 5 design:1347-1352; PJ:15-18, :95, :256-268, :285-292.
+   - **How HEAVYRUN1a's jobs end.** They end on close (`KillOnJobClose`, PJ:95, :285-292). When the last handle closes,
+     every process in the job ends, and the job and its name are gone. `EndNamedAsync` reads a name no job answers as "a job
+     whose last handle closed, which ended what it held" (PJ:256-268).
+   - **What the design keeps instead.** It keeps the whole charge for "a job that cannot be opened while its record says it
+     was made" (design:978). That is every ended job whose holder closed it or died, so the charge is kept forever. The
+     background waits on memory without bound (design:993-997), so it loses that memory for good.
+   - **Who holds the job.**
+     - "A holder found gone with its job still holding processes" (design:982-983) can only be a job whose handle something
+       else still holds. The text does not say what holds it: the gate's launcher, for the gate's life.
+     - An admission reader whose handle closes last ends the gate it read. That contradicts "ending processes is never an
+       admission read's".
+   - **Smallest change:**
+     - Choose and state the job's close semantics. Two options:
+       - kill-on-close: the launcher holds the handle for the gate's life, and a reader opens for query only and never holds
+         the last handle;
+       - not kill-on-close: the lock-taker's cleanup ends the job.
+     - A name no job answers is an ended job, and its charge is released. Any other failure to open or read keeps the charge.
+     - Row 5 adds two cases:
+       - a holder dies and its job is gone: the next read releases the charge;
+       - a job that refuses to open: its charge is kept.
+
+5. **Not blocking. The parent's records commit moves the previewed tip.**
+   - **Where:** design:543-548, :557-560; row 5 design:1339-1340.
+   - **The fault.** The flow is: preview, then a records commit on the branch, then the queue. The queue refuses a tip that
+     differs from the last `--preview`, so every queue made in that order is refused.
+   - **Smallest change:** the parent previews after its records commit, so the diff it reads holds its records. Say so in
+     §4.1 and in the dispatch skill's merge step, which row 5 changes. Row 5's proof uses that order.
+
+6. **Not blocking. A build's signature, "a compiler's error code and file", depends on output order.**
+   - **Where:** design:616-618.
+   - **The fault.** MSBuild builds projects on several nodes and prints each project's errors as it finishes. When more than
+     one project fails, which error comes first varies between runs. So the base and a prefix can disagree on a build failure
+     they share. This is the hash-order case of round 4's F1, for builds. It matters most for the base-failure stop.
+   - **Smallest change:** a build's signature is the set of distinct error codes with their files, matched as sets.
+
+7. **Not blocking. Row 3 uses the signature before any row builds it.**
+   - **Where:** design:1261-1277, :1278-1284.
+   - **The fault.** Recall's search matches by §4.1 point 4's signature. That needs a reader of trx, vitest and `node --test`
+     reports that keeps the case, the exception type and the location. Today's readers cut the case (mb:2023, :2119). Row 4
+     lists "the fingerprint's case and location"; row 3 lists neither.
+   - **Smallest change:** row 3 builds the failure reader and the signature, with their tool-tests. Rows 4 and 5 reuse them.
+
+8. **Not blocking. The scoped run drops GATEORDER1's wait without the priority split that let the CI drop it.**
+   - **Where:** design:843-847, :947; mb:509-511, :623-626, :4890-4892; D180.md:428-433.
+   - **The precondition.** D180's CI1 note, point 5: "GATEORDER1's reason was the light gates' CPU load on the Process lane's
+     clocks, which FAMILYFAIL1c has since met by priority: the Process lane runs at normal, the light lane below it."
+   - **The departure.** The scoped runner runs every gate at normal (design:947). Its heavy light gates then load its Process
+     tier's clocks at equal priority, which is the 0b44c7a harm (mb:510-511).
+   - **Smallest change:**
+     - Either run the scoped heavy light gates below normal while a scoped Process tier runs, as the CI's are, or keep
+       GATEORDER1's wait in the scoped run and price §4.4 with it.
+     - Name the choice beside the budget-note amendment.
+     - Row 5 counts the scoped Process halves' FLAKE1 re-runs.
+
+9. **Not blocking. Recall's search pays for halving and the probes before the step that settles it, and its cap meets the
+   observation lag.**
+   - **Where:** design:430-445, :486-496.
+   - **Step 3 rarely settles.** Of the 2,153 first-parent commits, 991 are direct, so an open set of more than two or three
+     commits nearly always holds two verdicts. "Most settle at step 3" (design:495) is unsupported.
+   - **The walk alone suffices within its cap.** Walking down from f finds the exact last transition within 48 runs,
+     whatever halving and the probes did. They help only a failure that passes the cap.
+   - **The cap meets the lag.** At about 69 first-parent commits a day, 48 runs cover about 17 hours of lag. So a FIX-LOG
+     failure from before CI1, found later than that, is unsettled and counted as missed.
+   - **Smallest change:**
+     - Walk first. Run halving, the probes and step 3 only for a failure the walk caps.
+     - Where a FIX-LOG entry names the breaking commit and its two runs show the transition there, judge the failure as first
+       seen at that commit (f is that commit).
+     - State each source's observation lag beside its count.
+
+10. **Not blocking. Slips.**
+    - design:159-161 and :624-625: MEMGATE1's run again of a Process half whose dead tests are named runs those tests alone
+      (mb:275, :3533, :3569-3574), not the whole half.
+    - design:1638: the Opus F8 row should read "taken, by Codex 3's mechanism", not Codex 4's.
+    - design:1274: row 3's fixture "a fingerprint that changes partway" should be a signature that changes partway, with the
+      verdict finding 1 gives it.
+    - D207:46-48: should carry finding 3's rule once it is settled.
+
+**10 findings, 3 blocking.**
+
+**Verdict: accept after named changes the steward can check without another read.** Round 5 takes the round-4 Opus read's three
+blocking changes as named, and it answers Codex's three blocking findings in substance:
+- recall credits a verdict only where the open set agrees;
+- the stage builds under the gate tree's held lock;
+- reservations are held by a job per gate.
+
+The foundation is unchanged and holds: a merge waits on a scoped run in a tree of its own, the install waits for the background
+run with no waiver, and recall is a causal lower bound. Three places each need a sentence, with its proof cases:
+- the signature's location by its source text, not its line, and recall's q moving only on a pass (finding 1);
+- the plain-`--stage` rule bound to the child's held lock and to `_fixtures`, with the second read in the child (finding 2);
+- the memory-death exception limited to the run after the hold, and judged by the job's own peak commit (finding 3).
+
+Findings 4 to 10 are local corrections the steward can check line by line. Finding 1 also bears on Codex's first finding, which
+Codex's read of round 5 will judge.
