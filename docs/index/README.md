@@ -326,7 +326,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-23-limit-resume-reads.md` | 70 | 652 |
 | `docs/2026-10-23-session-watch-design.md` | 74 | 714 |
 | `docs/2026-10-23-terminal-trust-design.md` | 66 | 603 |
-| `docs/2026-10-24-ci-scope-design.md` | 177 | 1653 |
+| `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
 | `docs/2026-10-24-supervisor-design.md` | 170 | 1415 |
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
