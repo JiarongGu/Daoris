@@ -5988,7 +5988,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.match(result.out, /first\s+none\s+no verdict on this tree/);
     // CISCOPE1d: no background run finished on it either, so the stage's own run is what it names.
     assert.match(result.out, /not staged\s+no background run's receipt on its commit's tree \([0-9a-f]{7}\): no background run finished on it/);
-    assert.match(result.out, /\n {2}Run the stage's own run in the gate tree on it: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
+    assert.match(result.out, /\n {2}Run the stage's own CI run on it: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
 
     result = await repo.run(['--full']);
     assert.equal(result.status, 0, result.out);
@@ -6107,7 +6107,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // CISCOPE1d: with no background run on the fix, the stage's own run is what it names.
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
-    assert.match(result.out, /\n {2}Run the stage's own run in the gate tree on it: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
+    assert.match(result.out, /\n {2}Run the stage's own CI run on it: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
     // One finished on it (and failed the stale gates): the smaller command is what is left.
     receipt(repo.root);
     result = await repo.run(['--passed']);
@@ -6885,7 +6885,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     result = await repo.run(['--passed'], env, gateTree);
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /not staged\s+desk-process's sweep is overdue \(local\/ci-sweep\.json\): last run whole/);
-    assert.match(result.out, new RegExp(`Run the stage's own run in the gate tree on it: node tools/merge-branch\\.mjs --ci --stage ${second.slice(0, 7)}`));
+    assert.match(result.out, new RegExp(`Run the stage's own CI run on it: node tools/merge-branch\\.mjs --ci --stage ${second.slice(0, 7)}`));
     rmSync(ranFile, { force: true });
     result = await repo.run(['--ci', '--stage', second.slice(0, 7)], env);
     assert.equal(result.status, 0, result.out);

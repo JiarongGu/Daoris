@@ -1018,7 +1018,7 @@ export const REACH = Object.freeze([
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
   {
     paths: [
-      'tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-failures.mjs', 'tools/test-recall.mjs',
+      'tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-recall.mjs',
       'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
     ],
     gates: ['tool-tests'],
@@ -1044,9 +1044,9 @@ export const REACH = Object.freeze([
   { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
-    paths: ['tools/desktop-publish.mjs', 'tools/ci-background.mjs'],
+    paths: ['tools/desktop-publish.mjs', 'tools/ci-background.mjs', 'tools/test-failures.mjs'],
     gates: ['tool-tests', 'deployment', 'rehearse-family'],
-    why: 'the publish the deployment rehearsal drives, and what it imports (the background run\'s records, CISCOPE1d, which the merge tool imports too); the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
+    why: 'the publish the deployment rehearsal drives, and what it imports (the background run\'s records, CISCOPE1d, and the failure reader they import, CISCOPE1c, both of which the merge tool imports too); the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
   },
   {
     paths: ['tools/processes.mjs'],
@@ -4448,7 +4448,7 @@ export function stageEvidence(root, tree, plan, now = Date.now()) {
     ok: refusals.length === 0,
     lines,
     refusals,
-    remedy: refusals.length && commit ? { what: "the stage's own run in the gate tree", command: stageCommand(commit) } : null,
+    remedy: refusals.length && commit ? { what: "the stage's own CI run", command: stageCommand(commit) } : null,
   };
 }
 
