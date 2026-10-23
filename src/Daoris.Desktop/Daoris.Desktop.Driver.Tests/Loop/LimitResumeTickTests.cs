@@ -245,6 +245,30 @@ public sealed class LimitResumeTickTests : IDisposable
     }
 
     /// <summary>
+    /// Round 3's Codex 10 (D125 point 3 amended): a cool-off the file will not take still ends the run limited, no strike, its account
+    /// passed until its reset from memory, and the line resumes at it as any limited line does.
+    /// </summary>
+    [Fact]
+    public async Task A_cool_off_whose_write_fails_is_still_limited_with_no_strike_and_passes_the_account_until_its_reset()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        Directory.CreateDirectory(AccountCooling.PathOf(_home));
+        var driver = Driver(service, "resumes", strikes: 1);
+        await LimitedAsync(service, driver);
+        Assert.True(AccountCooling.Unwritten(_home, "stub", null));
+        Assert.Empty(await new ServiceClient(service.Url, null).StrikesAsync());
+
+        var held = await driver.TickAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(StartVerdict.Blocked, held.Considerations.Single(c => c.Quest.Id == "q1").Verdict);
+        Assert.Equal(1, service.SessionCount);
+
+        _now = Until.AddMinutes(1);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(1, service.SessionCount);
+        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
+    }
+
+    /// <summary>
     /// Round 3's B8 item 4: a start held between the judge and its going on (here a replay holding the repository's trees) keeps no word.
     /// </summary>
     [Fact]

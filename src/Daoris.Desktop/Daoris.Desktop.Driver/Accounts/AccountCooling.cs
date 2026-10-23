@@ -52,10 +52,85 @@ public static class AccountCooling
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Cooling);
 
     /// <summary>Every account cooling at <paramref name="now"/>, by agent and account.</summary>
-    public static IReadOnlyList<CoolingEntry> Read(string home, DateTimeOffset now) =>
-        [.. Entries(Load(home)).Where(entry => entry.Until > now)
+    public static IReadOnlyList<CoolingEntry> Read(string home, DateTimeOffset now)
+    {
+        var unkept = Unwritten(home, now);
+        var written = Entries(Load(home)).Where(entry => entry.Until > now && !unkept.Any(held => Same(held, entry.Agent, entry.Account)));
+        return [.. written.Concat(unkept)
             .OrderBy(entry => entry.Agent, StringComparer.OrdinalIgnoreCase)
             .ThenBy(entry => entry.Account ?? "", StringComparer.OrdinalIgnoreCase)];
+    }
+
+    /// <summary>
+    /// The cool-offs the file would not take (LIMITRESUME1b, D206; the limit-resume design §3.1, round 3's Codex 10), by home, agent and
+    /// account: the limit was read, and only keeping it failed, so it is held in this process's memory, which every reader reads as it
+    /// reads the file, until the file takes it or its <c>until</c> passes. A shell that ends loses it, and the first attempt after meets
+    /// the refusal again, limited again: one attempt per come-up.
+    /// </summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Home, string Agent, string Account), CoolingEntry> Unkept = new();
+
+    private static (string, string, string) UnkeptKey(string home, string agent, string? account) =>
+        (Path.GetFullPath(home).ToUpperInvariant(), agent.ToUpperInvariant(), (account ?? "").ToUpperInvariant());
+
+    /// <summary>
+    /// Cool an account, as <see cref="Cool"/> does, or, where the file will not take it, hold it in memory (LIMITRESUME1b): the account is
+    /// passed until its <c>until</c> all the same. True where the file took it.
+    /// </summary>
+    public static bool Keep(string home, CoolingEntry entry, DateTimeOffset now)
+    {
+        var key = UnkeptKey(home, entry.Agent, entry.Account);
+        try
+        {
+            Cool(home, entry, now);
+            Unkept.TryRemove(key, out _);
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            Unkept[key] = entry;
+            return false;
+        }
+    }
+
+    /// <summary>Whether the account's cool-off is held in memory only, the file not having taken it (LIMITRESUME1b).</summary>
+    public static bool Unwritten(string home, string agent, string? account) => Unkept.ContainsKey(UnkeptKey(home, agent, account));
+
+    /// <summary>The cool-offs held in memory for this home that still hold at <paramref name="now"/>; one whose <c>until</c> passed is let go.</summary>
+    private static List<CoolingEntry> Unwritten(string home, DateTimeOffset now)
+    {
+        var held = new List<CoolingEntry>();
+        if (Unkept.IsEmpty) return held;
+
+        var here = Path.GetFullPath(home).ToUpperInvariant();
+        foreach (var (key, entry) in Unkept)
+        {
+            if (key.Home != here) continue;
+            if (entry.Until <= now) Unkept.TryRemove(key, out _);
+            else held.Add(entry);
+        }
+
+        return held;
+    }
+
+    /// <summary>
+    /// Each cool-off held in memory for this home written to the file again (LIMITRESUME1b): once per look, never per read, since a file
+    /// that will not take it may take seconds to say so. One it takes leaves memory; one whose <c>until</c> passed is let go.
+    /// </summary>
+    public static void WriteUnkept(string home, DateTimeOffset now)
+    {
+        foreach (var entry in Unwritten(home, now))
+        {
+            try
+            {
+                Cool(home, entry, now);
+                Unkept.TryRemove(UnkeptKey(home, entry.Agent, entry.Account), out _);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Still unkept: the next look tries again.
+            }
+        }
+    }
 
     /// <summary>
     /// How long after a cool-off ends its account is said to be offered again (TOOL6e): a day, the walk's own horizon
@@ -99,14 +174,23 @@ public static class AccountCooling
     /// <summary>End one account's cool-off early (<i>Try now</i>, a sign-in, a key). True when it was cooling.</summary>
     public static bool End(string home, string agent, string? account, DateTimeOffset now)
     {
-        var ended = false;
-        Edit(home, now, root =>
+        // One held in memory ends too (LIMITRESUME1b), whether or not the file reads.
+        var ended = Unkept.TryRemove(UnkeptKey(home, agent, account), out var unkept) && unkept.Until > now;
+        try
         {
-            if (Child(root, agent) is not { } held || Key(held, account ?? "") is not { } key) return false;
-            ended = held[key] is JsonObject entry && Moment(entry, "until") is { } until && until > now;
-            held.Remove(key);
-            return true;
-        });
+            Edit(home, now, root =>
+            {
+                if (Child(root, agent) is not { } held || Key(held, account ?? "") is not { } key) return false;
+                ended |= held[key] is JsonObject entry && Moment(entry, "until") is { } until && until > now;
+                held.Remove(key);
+                return true;
+            });
+        }
+        catch (Exception error) when (unkept is not null && error is IOException or UnauthorizedAccessException)
+        {
+            // The file would not take it before either: the memory was all there was.
+        }
+
         return ended;
     }
 
@@ -343,6 +427,15 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
             ("session", session), ("adapter", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
             ("window", Bounded(seen.Window)), ("until", AccountCooling.Stamp(seen.Until)), ("stated", seen.Stated),
             ("assumedZone", seen.AssumedZone), ("turn", turn), ("used", used),
+        ]);
+
+    /// <summary>
+    /// A cool-off the file would not take, held in memory until it does or its reset passes (LIMITRESUME1b, D206): once per entry.
+    /// </summary>
+    public static AccountLine CoolingUnkept(string session, string adapter, string? account, LimitSeen seen) =>
+        new("account.cooling-unkept",
+        [
+            ("session", session), ("adapter", adapter), ("account", Profile(account)), ("until", AccountCooling.Stamp(seen.Until)),
         ]);
 
     /// <summary>

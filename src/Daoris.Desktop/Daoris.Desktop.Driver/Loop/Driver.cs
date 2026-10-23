@@ -667,6 +667,10 @@ public sealed class Driver(
     /// <summary><see cref="TickAsync"/>'s look, saying into <paramref name="events"/> and <paramref name="concluded"/> as it goes.</summary>
     private async Task<TickReport> LookAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
     {
+        // LIMITRESUME1b (the limit-resume design §3.1): a cool-off the file would not take is written again once per look, held in memory
+        // meanwhile, so the account stays passed until its reset with no strike spent on a full disk.
+        AccountCooling.WriteUnkept(home, Context.Harnesses.Clock());
+
         // The sync runs BESIDE the sessions, not only around them (D68 §6): every whole look syncs, and a whole look comes
         // round at the watch's pace while sessions work. After it, every session this driver runs whose take came
         // back LOST is stopped, because its quest is another machine's and its work would double theirs (D68 §5).
@@ -2944,7 +2948,8 @@ public sealed class Driver(
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // The cool-off could not be written: the record still says the agent's words, and the strikes bound it.
+            // The limit could not be read for a disk that would not answer: the record still says the agent's words. A cool-off the
+            // file would not take is no such case: the roster holds it in memory, and the end is limited (LIMITRESUME1b).
             return (conclusion, false);
         }
 
@@ -2952,6 +2957,8 @@ public sealed class Driver(
 
         var (entry, seen) = read;
         service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, Context.Events.TurnsEnded(sessionId) + 1, used?.Used));
+        // LIMITRESUME1b (the design §3.1, round 3's Codex 10): kept in memory only, said once in the machine log for this entry.
+        if (AccountCooling.Unwritten(home, entry.Agent, entry.Account)) service.AccountSaid(AccountLine.CoolingUnkept(sessionId, adapter.Name, selection.Profile, seen));
         var noted = conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, Context.Harnesses.Zone));
 
         // 🔴 LIMITRESUME1b (the design §3.3's bound): an attempt refused with the same kind of limit within the margin after its account's
