@@ -1151,6 +1151,48 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
 }
 
 /**
+ * One choice of a single-select group, drawn as a row that reads whole (QUESTIONUI1a; D208, the supervisor design §8.1-§8.2): a real
+ * radio inside the row's label, so the group's Tab, arrows and Space are the browser's own and no roving focus is built, drawn in the
+ * platform's palette rather than the OS's (UX5 U5). The rows sharing a `name` are one group; a caller wraps them in its
+ * `role="radiogroup"` with the group's name. The row's name is what `labelledBy` names, so the whole row is the press without its
+ * every line being the name; `describedBy` adds the rest. Selected, the row wears the accent's border and wash, apart from any mark
+ * drawn inside it.
+ */
+export function ChoiceRow({ name, value, checked, onChange, labelledBy, describedBy, children }: {
+  name: string;
+  value: string;
+  checked: boolean;
+  onChange: () => void;
+  /** The ids whose text is the choice's accessible name, in order. */
+  labelledBy: string;
+  /** The ids whose text describes it, or none. */
+  describedBy?: string;
+  children: ReactNode;
+}) {
+  return (
+    <label
+      className={cn(
+        'flex min-w-0 cursor-pointer items-start gap-2 rounded-control border px-3 py-2',
+        'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent/60',
+        checked ? 'border-accent bg-accent-soft' : 'border-line bg-raised hover:border-line-strong',
+      )}
+    >
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={checked}
+        onChange={onChange}
+        aria-labelledby={labelledBy}
+        aria-describedby={describedBy}
+        className="mt-1 size-4 shrink-0 cursor-pointer appearance-none rounded-full border border-line-strong bg-raised outline-none checked:border-accent checked:bg-accent checked:shadow-[inset_0_0_0_3px_var(--color-raised)]"
+      />
+      {children}
+    </label>
+  );
+}
+
+/**
  * A checkbox with its sentence. `hideLabel` keeps the sentence for the accessibility tree and takes
  * it off the screen — for a setting row, where the label already stands at the left and a second
  * copy beside the box would say everything twice.
