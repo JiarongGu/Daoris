@@ -236,8 +236,8 @@ export type Block = {
   reaches?: string | null;
   /** For `held`: the level the person asked for (COWORK1a), beside the reach the door gave; absent on a record from before. */
   level?: Level;
-  /** For `held`: Daoris's own words, never the person's (COWORK1b); absent on the person's. */
-  from?: 'daoris';
+  /** For `held`: whose words where not the person's (COWORK1b; SUPERVISOR1a-i, {@link Author}); absent on the person's. */
+  from?: Author;
   /** For `held`: the answer of its park's question the words were pressed as (PARKVIEW1); absent on any other. */
   choice?: string;
   /** For `held`: the names of what the person attached. */
@@ -302,8 +302,11 @@ export type Ask = {
   key: string; text: string; origin: string; at: string; files?: string[]; account?: InstructionAccount | null;
   /** Another agent's findings, handed as the session's next turn (XAGENT1e): the second opinion they are from. */
   opinion?: string;
-  /** Daoris's own words (COWORK1b): a reopen told, a step's go-on; never the person's, and no target it composed. */
-  from?: 'daoris';
+  /**
+   * Whose words where not the person's, by their mark (COWORK1b; SUPERVISOR1a-i, {@link Author}): Daoris's own, the supervisor's on
+   * the owner's behalf, or an author the page does not know; never the person's, and no target Daoris composed.
+   */
+  from?: Author;
   /** The ask's channel message these words carry, by its id (SESSCTX1b): another session's claim where the origin is `target`. */
   channel?: string;
   /** The answer of its park's question the person's words were pressed as (PARKVIEW1), drawn as that answer chosen. */
@@ -340,6 +343,22 @@ export type ChatMessage = {
  * cutting its step where its agent steers. A request: the door gives what it can and says so, and no level stops a turn.
  */
 export type Level = 'ordinary' | 'urgent' | 'now';
+
+/**
+ * Whose words a word is where they are not the person's, read from its event's `from` mark, never its sentence: Daoris's own words
+ * (COWORK1b), handed as a target; the supervisor's, on the owner's behalf (SUPERVISOR1a-i, D208); or `unattributed`, an author this
+ * page does not know, drawn as *Not attributed* and never as *You* (the supervisor design §6.1).
+ */
+export type Author = 'daoris' | 'supervisor' | 'unattributed';
+
+/** The {@link Author} of a word event, or undefined for the person's (no `from`). */
+export function authorOf(event: Pick<SessionEvent, 'from' | 'origin'>): Author | undefined {
+  if (!event.from) return undefined;
+  if (event.from === 'supervisor') return 'supervisor';
+  // Daoris's words are a target it handed; a `daoris` mark on the person's own origin reads as theirs, as it always did.
+  if (event.from === 'daoris') return event.origin === 'target' ? 'daoris' : undefined;
+  return 'unattributed';
+}
 
 /** A level from the driver's word, read defensively: any other is none. */
 export const levelOf = (word: unknown): Level | undefined =>
@@ -448,7 +467,7 @@ export function toTurns(
     // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out. Another
     // agent's findings are no composed target (XAGENT1g): they name the opinion they are from instead. Nor are Daoris's own words
     // (COWORK1b), named by their mark, never their sentence.
-    ...(event.origin === 'target' && event.from === 'daoris' ? { from: 'daoris' as const }
+    ...(authorOf(event) ? { from: authorOf(event) }
       : event.origin === 'target' && event.opinion ? { opinion: event.opinion }
         : event.origin === 'target' ? { account: event.account ?? null } : {}),
   });
@@ -500,7 +519,7 @@ export function toTurns(
           const block: Block = {
             key, kind: 'held', at: event.at, text: event.text ?? '', id: event.id, reaches: event.reaches,
             ...(level ? { level } : {}),
-            ...(event.origin === 'target' && event.from === 'daoris' ? { from: 'daoris' as const } : {}),
+            ...(authorOf(event) ? { from: authorOf(event) } : {}),
             ...(event.choice && (event.origin ?? 'person') === 'person' ? { choice: event.choice } : {}),
             ...(event.files?.length ? { files: event.files } : {}),
           };

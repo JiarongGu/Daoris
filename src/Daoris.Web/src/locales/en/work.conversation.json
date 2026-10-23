@@ -9,6 +9,8 @@
   "work.conversation.claim": "Another session’s claim, in Daoris’s words",
   "work.conversation.opinion": "Another agent's findings",
   "work.conversation.daoris": "Daoris’s words",
+  "work.conversation.supervisor": "From the supervisor, on your behalf",
+  "work.conversation.unattributed": "Not attributed",
   "work.conversation.show": "Show all",
   "work.conversation.hide": "Fold",
   "work.conversation.thought": "thought",

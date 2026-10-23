@@ -7,7 +7,7 @@ import type { NotePart } from '../../data/api';
 import { turnEnd } from '../waits/anchors';
 import { CHANNEL_CLAIM_OPENING } from '../channel';
 import {
-  type Ask, type Block, CONVERSATION_CODES, type Level, type PlanEntry, type Receipts, runCount, type RunningCall, runningCall, segments,
+  type Ask, type Author, type Block, CONVERSATION_CODES, type Level, type PlanEntry, type Receipts, runCount, type RunningCall, runningCall, segments,
   type Turn,
 } from './conversation';
 import { useNow } from '../useNow';
@@ -377,27 +377,35 @@ function TurnMeter({ turn }: { turn: Turn }) {
  * are a block from that agent, open, under Daoris's fixed words that name it and its maker, never the person's. Daoris's own words
  * (COWORK1b), a reopen told or a step's go-on, are named as Daoris's by their mark, open, and never as the person's.
  */
+/** What each author's words are headed with: never *You* for words that are not the person's (SUPERVISOR1a-i, D208 §6.1). */
+const AUTHOR_KEYS = {
+  daoris: 'work.conversation.daoris',
+  supervisor: 'work.conversation.supervisor',
+  unattributed: 'work.conversation.unattributed',
+} as const satisfies Record<Author, string>;
+
 function AskView({ ask }: { ask: Ask }) {
   const { t } = useTranslation();
   const findings = Boolean(ask.opinion);
-  const daoris = ask.origin === 'target' && ask.from === 'daoris';
+  // Words by an author's mark (COWORK1b; SUPERVISOR1a-i): Daoris's, the supervisor's on the owner's behalf, or not attributed.
+  const marked = Boolean(ask.from);
   // Another session's claim on the ask's channel (SESSONE2c): Daoris's words around it, kept as the driver's own, short enough to
   // read whole and never the target Daoris composed. Told by its channel mark (SESSCTX1b), and a record from before by its opening.
-  const claim = ask.origin === 'target' && !findings && !daoris
+  const claim = ask.origin === 'target' && !findings && !marked
     && (Boolean(ask.channel) || (ask.text ?? '').startsWith(CHANNEL_CLAIM_OPENING));
-  const target = ask.origin === 'target' && !claim && !daoris;
+  const target = ask.origin === 'target' && !claim && !marked;
   const [open, setOpen] = useState(!target || findings);
 
   return (
     <div
       className={cn(
         'rounded-card border border-line border-l-[3px] bg-raised px-3 py-2',
-        findings || daoris ? 'border-l-line-strong' : 'border-l-accent',
+        findings || marked ? 'border-l-line-strong' : 'border-l-accent',
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-meta text-ink-faint">
-          {findings ? t('work.conversation.opinion') : daoris ? t('work.conversation.daoris') : claim ? t('work.conversation.claim')
+          {findings ? t('work.conversation.opinion') : ask.from ? t(AUTHOR_KEYS[ask.from]) : claim ? t('work.conversation.claim')
             // SESSCTX1b: a new part's first prompt is Daoris's brief of the line it continues, folded as a target is.
             : target && ask.continues ? t('work.conversation.brief')
               : target ? t('work.conversation.target') : t('work.conversation.you')}
@@ -498,7 +506,7 @@ function HeldAsk({ block }: { block: Block }) {
     // Dashed while it waits; words taken already (`now`, STEER2b) are drawn solid, as a turn's ask is.
     <div className={cn('rounded-card border px-3 py-2', block.reaches === 'now' ? 'border-line-strong' : 'border-dashed border-line-strong')}>
       <span className="flex items-center gap-2">
-        <span className="text-meta text-ink-faint">{t(block.from === 'daoris' ? 'work.conversation.daoris' : 'work.conversation.you')}</span>
+        <span className="text-meta text-ink-faint">{t(block.from ? AUTHOR_KEYS[block.from] : 'work.conversation.you')}</span>
         {/* The level named only where it is not quiet (COWORK1a, the design §8.2): the person's own words sent now. A word in a
             neutral chip, never a hue, and never a wait's. */}
         {block.level === 'now' && <Chip>{t('work.level.now')}</Chip>}
