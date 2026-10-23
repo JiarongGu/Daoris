@@ -284,6 +284,10 @@ public static class DriverCommand
               each repository's line and branches: the sessions', the landed (on origin or not, their pull
               request), yours, and how many only origin holds, each against the line; and the git each read
               ran. Those holding Daoris's branches, every one with --all. Reads only.
+          git review <session> [--json] [--time]
+              a session's review as its Review page reads it: the files and their base, the uncommitted ones, the line
+              and the branch; --time each git it started, its node and budget, the gate's wait, the creation and the run,
+              with the `review.read` line written to the machine log. Reads only.
           update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]
               what is staged beside the install and how the last swap ended; or install it when idle (the
               default), now (ending what runs as a close does), or not now, as the window's banner does.

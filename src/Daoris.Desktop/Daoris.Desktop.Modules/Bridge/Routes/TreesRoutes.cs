@@ -60,75 +60,21 @@ public sealed class TreesRoutes(DriverLoop loop)
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, baseCommit) = await service.SessionGroundAsync(id, cancellationToken);
-        var trees = new SessionTrees(_loop.Home);
-        // This machine's landing of the session, standing or a trace (D113): where its work went.
-        var landing = trees.Recorded.Landing(id);
-        var gone = TreeFolders.TreeGone(tree);
-
-        // What the session's OWN tree holds that no commit does, read apart (REVIEWDIRTY1-a, D164 point 4); never for a conversation in
-        // the person's checkout, whose uncommitted work is not knowably the session's (D49 §3).
-        var dirty = gone || !OwnTree(trees, tree) ? null : await WorkingTree.UncommittedDiffAsync(tree!, cancellationToken);
-
-        if (!gone && !string.IsNullOrWhiteSpace(baseCommit))
-        {
-            // The review measures from the newest commit the work shares with the line (REVIEWBASE1, D164's note): a tree that took
-            // in newer line commits (WSR6's replay, a merge, a rebase, the line checked out) would otherwise show the line's own
-            // changes as the session's work. It says how far the latest line it knows is past the tree, and fetches nothing.
-            var range = await trees.ReviewRangeAsync(tree!, baseCommit, cancellationToken);
-            // A chain's step that merged the line reads from a merge of the line's base and its parent's tip (REVIEWBASE3), a tree
-            // and no commit: the answer still names the commit it is measured from.
-            var diff = await WorkingTree.DiffAsync(tree!, range.Reads, cancellationToken) is { } read ? read with { Base = range.From } : null;
-            if (diff is not null)
-            {
-                var standing = landing is null
-                    ? null
-                    : await trees.LandedReviewAsync(await CheckoutOfAsync(service, landing.Repository, cancellationToken), landing, changes: false, cancellationToken);
-                // HEAD's own name, never the layout's (`SessionTrees.BranchNowAsync` falls back to it where detached, REVIEWBASE4). Git
-                // just read the range from this HEAD, so a refusal to name it is a fault, thrown as `BranchAsync` throws it.
-                var branch = await WorkingTree.BranchAsync(tree!, cancellationToken);
-                // ACCEPTFOOT1: the driver's own offer to land this tree (LAND4: D88's proof and SQUASHTIDY1b's content hold), read where
-                // the work is beyond the line and nothing landed it, so an open conversation is offered exactly what a press would land.
-                var offer = landing is null && range.Behind is { Ahead: > 0 } && OwnTree(trees, tree)
-                    && await trees.WorkAsync(tree!, cancellationToken) is { } work
-                    ? LandOffer.Of(tree!, work)
-                    : null;
-                return ReviewAnswer(
-                    id, diff, ReviewSource.Tree, standing, treeGone: false, uncommitted: dirty, behind: range.Behind, treeBranch: branch, offer: offer);
-            }
-        }
-
-        if (landing is not null)
-        {
-            var review = await trees.LandedReviewAsync(
-                await CheckoutOfAsync(service, landing.Repository, cancellationToken), landing, changes: true, cancellationToken);
-            return ReviewAnswer(id, review.Changes, ReviewSource.Branch, review, treeGone: gone);
-        }
-
-        // Nothing committed is readable (no base, or a range git cannot read), but the tree holds uncommitted work: that is the review,
-        // rather than a refusal that says there is nothing to see.
-        if (dirty is { Files.Count: > 0 })
-        {
-            return ReviewAnswer(
-                id, new WorkingTree.TreeDiff([], null, ""), ReviewSource.Tree, null, treeGone: false, uncommitted: dirty,
-                treeBranch: await WorkingTree.BranchAsync(tree!, cancellationToken));
-        }
-
-        throw Unreviewable(id, tree, baseCommit);
+        // The reads, their order and their fallbacks are the driver's, so the terminal's `git review` reads through the same code
+        // (GITAPP1a-i), each start counted and the read said as `review.read`.
+        var review = await SessionReviews.ReadAsync(
+            id, tree, baseCommit, new SessionTrees(_loop.Home), (repository, ct) => CheckoutOfAsync(service, repository, ct), _loop.Log,
+            cancellationToken);
+        if (review is null) throw Unreviewable(id, tree, baseCommit);
+        return review.FromBranch
+            ? ReviewAnswer(id, review.Diff, ReviewSource.Branch, review.Landed, treeGone: review.TreeGone)
+            : ReviewAnswer(
+                id, review.Diff, ReviewSource.Tree, review.Landed, treeGone: false, uncommitted: review.Uncommitted, behind: review.Behind,
+                treeBranch: review.TreeBranch, offer: review.Offer);
     }
 
     /// <summary>Whether <paramref name="tree"/> is one this home opened for a session, which ran in it alone (D49 §3); a person's checkout is not.</summary>
-    private static bool OwnTree(SessionTrees trees, string? tree)
-    {
-        if (string.IsNullOrWhiteSpace(tree)) return false;
-        try
-        {
-            return trees.Holds(tree);
-        }
-        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
-        {
-            return false;
-        }
-    }
+    private static bool OwnTree(SessionTrees trees, string? tree) => SessionReviews.OwnTree(trees, tree);
 
     /// <summary>
     /// The process a session's own tree runs under (PROCESS1e, D164's amendment point 3), for its page's *Details*: how its work is

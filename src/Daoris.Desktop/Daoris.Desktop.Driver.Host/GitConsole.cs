@@ -1,10 +1,11 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The branch list from a terminal (GIT1c, D147 §3.3, D50): <c>daoris-driver git branches</c>. The words are the library's
-/// (<see cref="GitBranchesCommand"/>); this wires the real world: the registry's checkouts, the session records, the home
-/// and the person's choices. It writes nothing: the host routes it before the machine log opens, since that open prunes old
-/// files.
+/// The branch list from a terminal (GIT1c, D147 §3.3, D50): <c>daoris-driver git branches</c>, and Review's read,
+/// <c>git review</c> (GITAPP1a-i), whose <c>--time</c> appends one log line. The words are the library's
+/// (<see cref="GitBranchesCommand"/>, <see cref="GitReviewCommand"/>); this wires the real world: the registry's checkouts, the
+/// session records, the home and the person's choices. Beyond that line it writes nothing: the host routes it before the machine
+/// log opens, since that open prunes old files.
 /// </summary>
 internal static class GitConsole
 {
@@ -30,6 +31,41 @@ internal static class GitConsole
                         is not (InstanceFound.None or InstanceFound.Headless),
                     Environment.GetEnvironmentVariable);
                 return await GitIdentityCommand.RunAsync(args, world, Console.Out, Console.Error).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+            {
+                Console.Error.WriteLine($"git: {error.Message}");
+                return 2;
+            }
+        }
+
+        // Review's read from a terminal and the bench's verb (GITAPP1a-i): the route's own code, each start counted and timed.
+        if (GitReviewCommand.Answers(args))
+        {
+            if (GitReviewCommand.Read(args, out var wrong) is not { } review)
+            {
+                Console.Error.WriteLine($"git: {wrong}");
+                Console.Error.WriteLine(GitReviewCommand.Usage);
+                return 2;
+            }
+
+            try
+            {
+                var configPath = DriverConfig.ResolvePath();
+                var home = DriverConfig.HomeOf(configPath);
+                using var service = ServiceClient.FromEnvironment();
+                // `review.read` is appended to the driver's file; the log is never opened as the host opens it, since that prunes.
+                using var log = new MachineLog(home, "driver");
+                var sources = new GitReviewSources(
+                    service.SessionGroundAsync,
+                    async (repository, ct) =>
+                    {
+                        var root = (await service.RegistryAsync(ct).ConfigureAwait(false))
+                            .FirstOrDefault(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Root;
+                        return string.IsNullOrWhiteSpace(root) || !Directory.Exists(root) ? null : root;
+                    },
+                    new SessionTrees(home));
+                return await GitReviewCommand.RunAsync(review, sources, log, Console.Out).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
             {

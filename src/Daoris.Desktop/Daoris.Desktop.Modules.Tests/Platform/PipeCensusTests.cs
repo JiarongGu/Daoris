@@ -230,6 +230,8 @@ public sealed class PipeCensusTests
             "chat", "help resume <id>", "drive", "update",
             "quest delete|accept|done|reopen|go-on|check|review", "answer", "ask \"…\"", "sync status", "ask channel <id>",
             "trace", "git branches", "workflow", "logs",
+            // GITAPP1a-i: the bench's verb times the git its own process starts.
+            "git review <session>",
             "plugins show <id>", "plugins activity <id>", "plugins try <folder|id>", "plugins install <file>", "plugins new <id>",
             "help delete <id>", "setup --workspace <name>",
             // COAGENT1b: a session's pieces, read off the box under the home, which says the same with or without the instance.

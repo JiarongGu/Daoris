@@ -285,6 +285,11 @@ using Daoris.Driver;
 //                 Tools resolves; and the git each read ran, ready to copy. The repositories holding Daoris's branches, the
 //                 rest named (D112); --all every one. It writes nothing.
 //
+//   git review <session> [--json] [--time]
+//                 Review's read of a session from a terminal (GITAPP1a-i, D202 point 2, the git-app design P1.5): the route's
+//                 own code (SessionReviews), its answer said or written as JSON without patches; --time each git start by node
+//                 and budget with the gate's wait, the creation and the run apart, and `review.read` appended to the log.
+//
 //   update [--install <folder>] · update --when-idle | --now | --cancel [--install <folder>]
 //                 an install's update (UPDATE1, D139): what `publish:desktop --stage` put beside the install, what holds
 //                 for it and how the last swap ended; or the word on it, written to <home>/update.json as the window's

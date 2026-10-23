@@ -5,6 +5,38 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-23 — Review's git was counted for one runner of three, and never timed (GITAPP1a-i)
+
+- **Symptom:** Review is slow (the git-app brief §4: 16.2 s and 44.1 s on this machine), and nothing in the driver could say where its
+  time went. A test counting git through `WorkingTree.Started` saw only part of it, and no log line said how many starts a read made
+  or how long each one waited, took to start and ran.
+- **Root cause:** `Started` was raised in `RunGitAsync` alone. `ReadGitAsync`, which runs Review's diffs, `status`, untracked reads
+  and both `--show-toplevel`s, and `GitBytesAsync` each started git apart (Codex 28 in D202's reads). The gate (`ProcessStarts`) kept
+  no time, so its wait, the creation and the run were one number at best (Codex 4).
+- **Fix:** one seam, `GitLaunch.LaunchAsync`, beneath all three runners: `Started` for each start, its kind and the review's node,
+  its flow's budget, and the gate's wait and the creation (`ProcessStarts.Timing`) apart from the run. It adds no flag. `SESSION_DIFF`'s
+  chain moved unchanged into `SessionReviews`, which the route and `daoris-driver git review <session> [--json] [--time]` read
+  through; each read writes `review.read`.
+- **Verification:** `GitLaunchTests` (fast half): each runner starts through the seam once, with its arguments unchanged; the census
+  of today's arguments per kind; the source census of `Trees/`. `ReviewStartsTests` (Process, `git.process.runsettings`, 6) counts
+  today's chain per path, as D202's GITAPP1a-i note lists. `GitReviewCommandTests`, `DriverCommandTests`, `HelpCoverageTests`,
+  `ProcessStartsTests`, `ProcessStartsCensusTests`, `RefSnapshotTests`, `HelpStartReadTests` and `VerbLeasesTests` pass, as do the
+  modules' `DriverModuleTreesTests` and `PipeCensusTests`. The git classes counting `Started` or covering the runners pass too (82,
+  `git.process.runsettings`): `HelpTreesReadTests`, `JudgedDeleteGitTests`, `NodeGitReadsGitTests`, `ObservedTipsGitTests`,
+  `PullRequestStateTests`, `SessionTreesTests`, `TreeSyncStartsTests`, `GitStreamEndsTests` and `ReviewBaseTests`; and with `process.runsettings` `ChildProcessTests`, `GitHoldsProcessTests` and `GitSshHoldsProcessTests` (18).
+- **The before-bench** (design §10.3, reported, never failing), at `958a0e0b8`: `git review 65ea247e --time`, this row's own
+  session tree, ten runs each. Nothing else of this session ran beside it; the machine's other sessions did.
+
+  | Case | Starts (review + offer + untracked) | Median | p90 | Creation, summed (median run) | Gate wait |
+  |---|---|---|---|---|---|
+  | 29 files committed, nothing untracked | 34 (13 + 21 + 0) | 6.2 s | 7.4 s | 0.49 s | ≤ 2 ms |
+  | The same, 50 untracked files | 84 (13 + 21 + 50) | 13.8 s | 15.8 s | 1.1 s | ≤ 6 ms |
+
+  The brief's 368-file and 1,771-file cases need sessions whose recorded base is that far back, which the verb reads from the
+  record, so they were not run here; GITAPP1i's window timings run under the owner's load. Two readings: the gate waits almost never
+  (one read's starts are serial), so its time is the creation and the runs, about 0.2-0.4 s a start; and the Accept offer is the
+  longer chain, 21 starts after the review's 13.
+
 ## 2026-10-23 — A hand read back after its answer was lost told nothing on this machine (HELPERWAIT1b2)
 
 - **Symptom:** found by Codex's read of COWORKUX1's round 4 (its one blocking finding), not seen on a machine. A helper's answer whose

@@ -135,7 +135,10 @@ public sealed class ProcessStarts
 
     private async Task<T> RunAsync<T>(Func<T> start, StartClass whose, CancellationToken ct)
     {
+        var timed = s_timed.Value;
+        var asked = timed is null ? 0 : Stopwatch.GetTimestamp();
         await EnterAsync(whose, ct).ConfigureAwait(false);
+        var entered = timed is null ? 0 : Stopwatch.GetTimestamp();
         try
         {
             return await Task.Run(start, CancellationToken.None).ConfigureAwait(false);
@@ -143,7 +146,29 @@ public sealed class ProcessStarts
         finally
         {
             Leave(whose);
+            timed?.Invoke(entered - asked, Stopwatch.GetTimestamp() - entered);
         }
+    }
+
+    // Who is told a start's wait and creation in this flow (Timing); null in a flow nobody times.
+    private static readonly AsyncLocal<Action<long, long>?> s_timed = new();
+
+    /// <summary>
+    /// Tell <paramref name="timed"/> the wait for a place and the creation inside it, in <see cref="Stopwatch"/> ticks, of each start this
+    /// flow makes through a gate until disposed (GITAPP1a-i, the git-app design §1.2: the gate's wait, the creation and the run apart).
+    /// It changes nothing of the start: one the runtime refused or that threw is timed still, and one cancelled while it waited for its
+    /// place, which never started, is not.
+    /// </summary>
+    internal static IDisposable Timing(Action<long, long> timed)
+    {
+        var before = s_timed.Value;
+        s_timed.Value = timed;
+        return new Untimed(before);
+    }
+
+    private sealed class Untimed(Action<long, long>? before) : IDisposable
+    {
+        public void Dispose() => s_timed.Value = before;
     }
 
     /// <summary>Take a place for <paramref name="whose"/>, now where one is free for it, else once one is handed on.</summary>
