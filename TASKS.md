@@ -249,6 +249,17 @@ a → b, c → d, e → f → g → h → i. Keep person and driver authorizatio
 - [ ] **PERSONDOOR1j — protect confirmation slots** (service; decide). Reserve person's terminal admission against five-slot agent exhaustion. §4.2; six agent asks cannot block reserved terminal.
 - [ ] **PERSONDOOR2 — beyond HTTP doors** (design; after PERSONDOOR1). Store/home files, connector token and remote key boundaries. D156 §7; decision before build.
 
+Roles the owner appoints, and the question card. Contract: `docs/2026-10-24-supervisor-design.md` (D208, proposed: Codex's read and
+an independent Opus foundation read before any row starts), §11 in this order.
+
+- [ ] **SUPERVISOR1a — the supervisor's door** (modules, driver, service, web; small; offered with D201's grant). Appointed per repository in the window, the steward answers a parked session's question from a terminal as the supervisor: kept `From: supervisor` with sourced reasons, held five minutes for **Overrule**, said on the session and in *Notifications*, never a card. Proof: §11 row a.
+- [ ] **SUPERVISOR1b — its bounds** (service, driver, web; after 1a). `question_ask`'s `owner` mark, `SUPERVISOR_DEFER` with the card's *left to you*, three answers alone per line. Proof: §11 row b.
+- [ ] **QUESTIONUI1a — the question card** (service, web). Each choice a radio row that reads whole with the recommendation's why (`question_ask`'s `why`), nothing preselected, one *Send* with words, keyboard and screen reader, in the box and the head's card, stories of their own. Proof: §11.
+- [ ] **QUESTIONUI1b — the supervisor's pick on the card** (web; after 1a and QUESTIONUI1a). Its pick, reasons and overrule on the card. Proof: §11.
+- [ ] **SUPERVISOR1d — the supervisor measured** (tools; before 1c is offered). The question bench's supervisor tier: answers against settled cases, owner questions left, tokens per answer. Proof: §11 row d.
+- [ ] **SUPERVISOR1c — the supervisor actor** (driver, service, web; after SUPERVISOR1d and D205's choices rows). The ninth actor holds the role, read-only, one turn per question. Proof: §11 row c.
+- [ ] **SUPERVISOR1e — scope and window** (modules, web; after 1a). A workspace's appointment; the overrule window set by the owner. Proof: §11 row e.
+
 ## Second opinions
 
 Contract: `docs/2026-10-08-second-agent-design.md` (D155), section proofs.
