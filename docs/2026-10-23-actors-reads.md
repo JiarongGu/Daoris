@@ -290,3 +290,453 @@ Against the glossary (`Web/locales/glossary.json`), `names-check.mjs` and `trans
 row c's proof, row e's proof and the card's words following them. The shape needs no other round. If the steward settles B1 or
 B2 otherwise than the change named (for instance a different way to pass one account for one choice), those two sections are
 the walk's contract and want another foundation read.
+
+## Codex, round 2
+
+Codex's read of round 2 at `8b41f7b08`, read-only. Round 3 answers it.
+
+### 1. Each round-1 finding
+
+Verdicts assess round 2’s treatment, not implementation. `Design` means `docs/2026-10-23-actors-design.md`; shortened code paths follow its abbreviations.
+
+| Finding | Verdict | Where | Why |
+|---|---|---|---|---|
+| Codex 1 — native adapter’s “No model” remark | taken | Design §0.2; `Adapters.cs:2074` | The correction now retains the actual remark. |
+| Codex 2 — model windows already recorded | taken | Design §§0.2, 4.1, row k; `ClaudeUsage.cs:106` | History recording is distinguished correctly from rotation and cooling. |
+| Codex 3 — today’s model cascade | taken | Design §0.2; D205’s round-2 note | Custom commands, repository settings and environment are included. |
+| Codex 4 — empty reviewers versus off | taken | Design §§4.0, 4.4; `OpinionRules.cs:24`, `:179` | Empty inheritance is withdrawn; `false` remains off, with migration cases. |
+| Codex 5 — rule-supplied defaults lack provenance | taken | Design §§4.0, 9.3 | `rule-default` supplies a durable source and appears in the preview and explanation. |
+| Codex 6 — brainstorm alternatives versus participants | taken | Design §4.4; `DriverBrainstorms.cs:345` | Distinct, frozen voices replace substitution; acceptance wording still needs finding 10 below. |
+| Codex 7 — scalar migration changes untouched actors | open | Design §§4.0, 6.4, rows c–e | The first-write projection helps, but clearing an actor reopens inheritance, and readers land too late; findings 7–8. |
+| Codex 8 — account-specific offers and invalidation | taken | Design §§3.3, 9.2 | Readings are per account and version, with bounded negative validity. |
+| Codex 9 — negotiation reservation and release | open | Design §4.1; `HarnessRoster.cs:1662`, `:1681` | A release exists on paper, but ownership during reselection and an intervening look remain undefined; finding 1. |
+| Codex 10 — acknowledgement inferred by setter | answered | Design §3.2; `Acp.cs:527` | Returned and assumed state are separated. Proceeding after an empty successful answer is a defensible availability choice when labelled *not reported*. |
+| Codex 11 — effort settings fallback loses precedence | taken | Design §3.2, row a | The file fallback is withdrawn; unsupported effort is disclosed before dispatch. |
+| Codex 12 — composer override cannot be reconstructed | open | Design §4.2; `ChatRunner.cs:1699` | Structured values fix display-name reconstruction, but a model change can invalidate the retained effort; finding 5. |
+| Codex 13 — reported-tier information lost | taken | Design §§5, 9.3 | Names are collected before token attribution; overflow is explicit; configuration changes have separate entries. |
+| Codex 14 — brainstorm provenance has no home | taken | Design §5, row b; `DriverBrainstorms.cs:634` | Local pass records, including retries, receive the provenance and their reader/display chain. |
+| Codex 15 — confirmation protects only managed requests | open | Design §8.2 | The acknowledged full-access limitation is honest, but the new confirmed-copy mechanism needs an exact approval and write contract; finding 6. |
+| Opus B1 — refusal occurs after opening the record | open | Design §3.3 | Ending incompatible records is sound; reservation transfer, default restoration and conversation retry remain incomplete; findings 1–3. |
+| Opus B2 — offers and refusals are account-specific | taken | Design §§3.3, 4.1, 9.2 | The scope and choice-major account exhaustion are corrected. |
+| Opus B3 — unsupported permission posture starves choices | wrong | Design §4.1; `Help/HelpMode.cs:83` | The driven pre-pass is right; the added claim that restricted Ask Daoris requires an asking mapping contradicts the code; finding 9. |
+| Opus B4 — migration and old writers | open | Design §§4.0, 6.4, 8.2 | Old doors are named, but preservation after clearing, rollout order and confirmed writes remain open. |
+| Opus B5 — later native runs lose the model | taken | Design §3.2; `DriverContinuations.cs:899`, `:1031` | Targets carry the choice through all three prepares; retries reuse the prepared start. |
+| Opus B6 — nonexistent empty-reviewer inheritance | taken | Design §§4.0, 4.4 | Reviewers remain named; their actor supplies model alternatives without enabling opinions. |
+| Opus B7 — voices contradict fallback acceptance words | open | Design §§4.4, 6.3, 7.1 | Voice semantics are explicit, but the actual acceptance paragraph still promises fallback-only execution; finding 10. |
+| Opus B8 — widening `handOver: on` | taken | Design §4.2; `handOverOffer.ts:24` | Daoris’s offer remains the person’s press under every mode. |
+
+### 2. Findings introduced by round 2
+
+1. **Blocking — reselection has no defined ownership of the existing reservation.**  
+   `Design:279` re-asks the counting walk while the opened process remains alive; `Design:382` releases on negotiation failure. Keeping the original reservation biases that walk: `HarnessRoster.cs:1687` includes provisional starts in `Running`, and `AccountRotation.cs:541` ranks by that count. Releasing it first removes the protection against a concurrent account probe while the process still holds the account (`HarnessRoster.cs:729`). A second selection also creates another reservation, while `Unchose` only removes the original provisional number; a look can already have moved that number into record-based accounting (`:1651`).  
+   **Smallest change:** define reselection as an operation on the existing reservation: exclude its own load when judging alternatives, retain it during same-account negotiation, and stop the old process before transferring or releasing it. Define its handoff to record-based accounting. Add cases with goal ordering, concurrent probes and a look during negotiation.
+
+2. **Blocking — reusing an ACP session does not restore account default.**  
+   `Design:279` permits setting again on the same open session, while §3.1 defines account default as passing nothing. Suppose `session/new` starts on `m0`; setting `m1` returns contradictory current state `m2`, which round 2 correctly treats as refusal; the next choice names no model. Sending nothing leaves `m2`, not `m0`. `Acp.cs:533` keeps the returned current state, and there is no reset operation in this mechanism.  
+   **Smallest change:** reuse the session only when the next choice can establish its complete effective configuration. For account-default values after a potentially mutating attempt, restore a measured opening default or reopen the session. Test the contradictory-answer-to-default case.
+
+3. **Blocking — “the next look” is not a conversation fallback mechanism.**  
+   `Design:282` ends the record and promises that a conversation keeps its words and proceeds at the next look. Conversations start in `ChatRunner.StartAsync` (`ChatRunner.cs:390`), independently of driven planning. Their existing go-on requires an ended chat with waiting words and resumes its recorded adapter (`ChatGoOn.cs:340`, `:372`); it does not take the next actor choice. Saying the words are kept does not identify who schedules the replacement or distinguishes negotiation from an ordinary continuation.  
+   **Smallest change:** give the chat runner an explicit pending-start retry path, carrying the effective order, passed accounts and queued words until dispatch or exhaustion. Define recovery after interruption and separation from ordinary go-on. Prove that one press survives refusal on account 1 and starts on account 2 without another word or press.
+
+4. **Blocking — `asked` uses a real model name as its account-default sentinel.**  
+   `Design:780` allows either a model value or the string `default`. But `AgentSettings.Models` explicitly includes the tool’s model alias `"default"` (`Accounts/AgentSettings.cs:58`), also present in the ACP fixture (`AcpTests.cs:2379`). An explicit request for that alias and an omitted model therefore have indistinguishable provenance, although one must carry a flag/setter and the other must leave the cascade alone. Replacing requested effort with `not-carried` also loses the `high` needed for the promised *asked high · not carried* display.  
+   **Smallest change:** use tagged values, separating requested value, source and carrier status. Keep an explicit `"default"` model distinct from an absent model, and retain unsupported requested values. Test both through recording and resume.
+
+5. **Blocking — merging composer overrides can resurrect an obsolete effort.**  
+   `Design:416` stores each changed category and merges it into the previous override. An effort-only change should preserve the model, but the inverse is unsafe: changing the model can change both the effort menu and its current value, which `Acp.cs:516` explicitly documents. An earlier `{model: A, effort: high}` followed by a model change whose returned state is `B/low` can be persisted as `B/high`; resume then changes what the person left selected.  
+   **Smallest change:** after a successful model change, reconcile both categories from the returned configuration, clearing or replacing dependent effort overrides. Preserve the model on effort-only changes. Add a model-change/reset-effort case alongside the current effort-only case.
+
+6. **Blocking — the confirmed copy lacks an exact approval and commit contract.**  
+   `Design:723` introduces two files and says *Apply confirms the file’s* choices. It does not bind that press to a displayed snapshot, specify what happens if the file changes before Apply, or say whether saving one actor confirms unrelated pending edits. This matters with the existing writer: `DriverConfig.Save` rereads disk and preserves concurrent changes (`DriverConfig.cs:914`, `:923`). Copying that merged configuration into `actors-confirmed` could confirm an unrelated edit. The hand-edit card also has no specified before/after choices, unlike `actor_propose`.  
+   **Smallest change:** make the confirmed snapshot authoritative. Bind the hand-edit card to its displayed actor changes and revision; reject stale Apply/Put back. Apply an ordinary Save only as its reviewed patch over confirmed state, preserving unrelated pending edits as unconfirmed. Define the shared lock, write ordering and recovery for both files, and ensure all start-time fallback readers receive the confirmed view. Prove concurrent edits and failure between writes.
+
+### 3. Remaining findings and proof gaps
+
+7. **Blocking — clearing an actor defeats first-write preservation.**  
+   `Design:347` freezes dependent actors only on the write that first sets one of Build, Chat or Brainstorm. Yet `Design:698` and `:806` support clearing an actor back to absence. After migration, clear Chat; then change an already-set Build. Chat again reads the written-through `adapter` and moves with Build, although the second change names only Build. The statement at `Design:349` that no actor reads `adapter` after the first write is consequently false.  
+   **Smallest change:** preserve every currently inherited dependent actor before every compatibility-scalar change, including after a clear, or redefine clear so it cannot recreate that live dependency. Test set → clear Chat → change Build.
+
+8. **Blocking — row c’s migration guarantee depends on readers scheduled for rows d and e.**  
+   `Design:903` writes Build through to `adapter` and materializes Chat and Brainstorm, but Chat starts taking its actor in row d (`:904`) and Brainstorm in row e (`:905`). Until then, their actual readers still use `config.Adapter` (`ConversationRoutes.cs:48`; `DriverBrainstorms.cs:348`). Writing their future actor entries does not preserve their behavior in the independently landing row c. The existing setting-proposal adapter writer is also not migrated until row d.  
+   **Smallest change:** move all shared-scalar compatibility readers and writers into row c’s boundary. Later rows can add model behavior and editors. Row c’s proof must exercise actual Chat and Brainstorm starts and the legacy proposal door after changing Build, rather than only `Effective`’s table.
+
+9. **Blocking — restricted Ask Daoris is assigned a new unsupported-posture refusal.**  
+   `Design:393` says restricted access needs the asking posture and attributes that to D183 point 3. `HelpAccess.For` instead permits restricted starts without inspecting `AskingPosture` (`Help/HelpMode.cs:83`); it requests `HelpRoom.Posture` where offered. Only full access requires a mapped `FullPosture` (`:98`). D183 point 3 records and discloses the mode; it does not establish the new condition. A restricted configuration that runs today can therefore stop running during the supposedly unchanged upgrade.  
+   **Smallest change:** judge Ask Daoris’s pre-pass using `HelpAccess.For(...).Refusal`, and driven starts using `DrivenAccess.For(...).Refusal`. Add an as-before restricted start on a harness without an asking mapping.
+
+10. **Blocking — the acceptance paragraph still describes Brainstorm’s additional voice as a fallback.**  
+    Round 2 correctly says Brainstorm runs its choices together (`Design:452`, `:679`). Nevertheless, the actual acceptance paragraph at `Design:562` still says Daoris tries a later choice only when an earlier one cannot start. The section body at `:607` repeats that universal claim. Counting an added voice elsewhere on the card does not make this sentence true. This is the unresolved acceptance part of Opus B7.  
+    **Smallest change:** make the acceptance text actor-specific: ordered actors exhaust earlier choices’ accounts; Brainstorm runs the listed voices together and identifies the added voices. Apply the distinction to both languages and the section body; test a card changing Build and Brainstorm together.
+
+11. **Non-blocking — rollback loses more than the model.**  
+    `Design:579` says an older build starts the same agent and rollback loses only the model. An explicit Chat agent can differ from Build, while the older Chat reader uses Build’s written-through `adapter` (`ConversationRoutes.cs:48`). Brainstorm also loses additional voices; ordered alternatives and effort are unavailable.  
+    **Smallest change:** disclose the actual compatibility projection: older builds use the legacy scalar agents and original rules, losing actor-specific agent separation, alternatives, voices, model and effort. Make the older-build fixtures demonstrate that projection.
+
+**11 findings; 10 blocking.**
+
+**Verdict: another round.** The eight actors, named rule fences, per-account readings, session-level carriers and local tier provenance remain sound foundations. Round 2 closes many original defects, but reservation transfer, same-session defaults, conversation fallback, override restoration and the new confirmation store still need a consistent operational contract. Revise those mechanisms and land the compatibility readers with their writers; the next read should check those boundaries and their failure cases.
+
+## Opus (foundation), round 2
+
+The independent Opus reader's foundation read of round 2, read-only. Round 3 answers it.
+
+### Opus's foundation read of MODELROLE1's design (D205, round 2)
+
+*An independent Opus 5.5 reader, in Fable's place under D191's amendment of 2026-10-23. Read at `8b41f7b08`, the design's
+branch at round 2. Round 2's own change against `3d3045848` is documents only (the design, D205's note and their records);
+the code in that range is merged TREELOCK2 and MAKERTRAIL1 work, which this design does not touch. Read whole:
+`docs/2026-10-23-actors-reads.md`, `docs/2026-10-23-actors-design.md`, `docs/decisions/D205.md` with its note, and
+`git diff 3d3045848 HEAD` of the last two. Also loaded: `.claude/knowledge/session-record-fields.md`, D139 point 2, D176
+point 2, D194 point 5, and the code at the lines below. Nothing was built, run or fetched, and Claude Code's documentation is
+not checked here. Paths use the design's abbreviations (`Driver/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`, `Modules/`
+= `src/Daoris.Desktop/Daoris.Desktop.Modules/`, `Web/` = `src/Daoris.Web/src/`). Design lines are cited as `design:N`.*
+
+Round 2 answers both reads honestly and mostly well. I would keep these parts as written: one effective order behind
+`ActorChoices.Effective`, per-account readings, a per-start passed set, `no-posture`, carriers on every native prepare,
+names kept before `TurnModels` touches them, and Brainstorm's frozen voices. The narrowing of B1 is right. It keeps B2's
+order, and its rule, *the walk answers as if the refusal had been known before the spawn*, states the walk better than my
+round-1 B1(a) did.
+
+Six things remain open:
+
+- The paths after the open are written for a driven first start only, so continuations and conversations have none.
+- The confirmed copy misses four write and read paths.
+- The update drain loses its way to stop intakes.
+- The reservation names a mechanism the count does not have.
+- A Build whose choices use both doors can fall onto the door that cannot take its quest.
+- Brainstorm's card still uses the sentence B7 objected to.
+
+#### 1. Round 1's blocking findings, checked
+
+##### 1.1 The Opus read's B1-B8
+
+| # | Round 2 | Against the code | Standing |
+|---|---|---|---|
+| B1 | Taken, narrowed (design:262-291) | It holds for a driven first start. The record opens at `Driver.cs:2104-2112`, before `Prepare` at `:2320`. The options are first seen in `AcpSession.OpenAsync` (`Acp.cs:911-945`). Before the first prompt no take is possible, so the quest is still `Open`, and the next look plans it as a first start (`Planner.cs:1311-1321`). | Closed for first starts. Open for continuations and conversations (R2-B1) and for the reservation (R2-B4) |
+| B2 | Taken as named (design:269-274, :377-379, :762-767) | The set fits `Pass` beside `WalkMemory.Unknown` (`HarnessRoster.cs:1304-1309`, `:1360-1365`). Each account has its own home (`:1244-1245`). | Closed inside the walk. Open where an account is chosen outside it (the curve move, R2-B1) |
+| B3 | Taken: `no-posture` (design:389-394) | `DrivenAccess.cs:104-111`. The hold after the walk is at `Driver.cs:1764-1775`, and Ask Daoris's refusal at `ChatRunner.cs:600-602`. | Closed. Its twin for the connector is R2-B5 |
+| B4 | Taken (design:345-353, :581-590, :717-727) | (a) holds for the readers of `adapter` that start an actor (`Driver.cs:1672`, `ConversationRoutes.cs:48`, `DriverBrainstorms.cs:348`). (b) and (c) hold for the doors named. | Closed for (a)-(c). The hand-edit half is R2-B2, the drain R2-B3, and the doors' twins N10 |
+| B5 | Taken (design:239-245) | `GoOnStart` prepares through `PrepareResume(target, …)` (`DriverContinuations.cs:899-907`). `AgainAsync` reuses its run's `info` (`:1031-1040`). `PrepareChat` takes the `ChatTarget` (`Adapters.cs:2172`). | Closed |
+| B6 | Taken (design:335, :445-447) | `OpinionRules.cs:23-27`, `:140`, `:178-179` | Closed |
+| B7 | Taken, voices (design:452-460, §7.1 rows) | The row and the editor say *all at once*. The card's quoted words do not. | Half closed: R2-B6 |
+| B8 | Taken as named (design:404-409) | `HandOverRules.cs:57-58`, `handOverOffer.ts:24` | Closed |
+
+##### 1.2 Codex's 4-15
+
+| # | Round 2 | Standing |
+|---|---|---|
+| 4 | Taken: the empty-reviewers branch is withdrawn; `false` stays off; migration fixtures | Closed |
+| 5 | Taken: `rule-default`, shown in the preview and the note | Closed |
+| 6 | Taken: voices are planned and frozen; a voice that cannot run is dropped, never replaced; one entry per agent | Closed. Since nothing is ever substituted, no maker outside D176 point 2's per-maker showing receives the packet |
+| 7 | Taken: the first write makes the other actors explicit; legacy writers named | Closed for Build, Chat and Brainstorm. The drain is R2-B3 and hand edits R2-B2 |
+| 8 | Taken: per account, a day's validity, refreshed by the open | Closed inside the walk. The curve move and the resume are R2-B1 |
+| 9 | Taken in aim | The mechanism does not match the count: R2-B4 |
+| 10 | Answered: when no list is returned, the work goes on and is shown *not reported* | The reason holds. *ran* is the agent's word on every turn, *Details* shows both, and holding would strand an agent that never returns its list. Row a should measure what an accepted change returns (N5) |
+| 11 | Taken: no file fallback for effort | Closed |
+| 12 | Taken: `override` stored as category and value id | Closed (the protocol door only, which is where the composer works) |
+| 13 | Taken: names kept before `TurnModels`, up to eight, with `more` | Closed for names. The `entries` list is unbounded (N6) |
+| 14 | Taken: pass records carry the shapes, in row b | Closed |
+| 15 | Taken as Codex's second option, an authority boundary | Open on four paths: R2-B2 |
+
+##### 1.3 B1 and B2: the walk's contract
+
+Round 2 settled B1 differently from the change I named. I judge the difference right, and I checked it against the code.
+Take Build with choice 1 = Claude Code · opus and choice 2 = Claude Code · sonnet, and suppose account-1 refuses opus at
+the open:
+
+- If account-2 is ready, the re-asked walk answers choice 1 on account-2. The record ends, and the next look starts that,
+  because account-1's kept reading passes it.
+- Only where account-2 is cooling or passed does the answer come back to the same agent on the same account. Then sonnet is
+  set on the open session.
+
+My B1(a) would have taken sonnet on account-1 in the first case too, against B2. Each part of the contract:
+
+- **A refused model once the record is open.** This holds for a driven first start, and only there. A resume, a go-on run, a
+  carry-on, the curve move and a conversation are also opens, and none of them can take the stated path. A resume cannot
+  change account; a conversation has no next look; a pipe chat's prompt is on stdin. This is R2-B1.
+- **Per-account offers and refusals.** Keyed by agent, version and account, a day old at most, and refreshed by the open,
+  they hold. §4.1's pseudo-code judges the readings *inside* the walk (design:366-367). Say so in words, so that every
+  caller of `WalkAsync` gets them: `SelectHandedAsync`, `CarriedOnAsync` and `ResumeAsync`'s own-account pass
+  (`HarnessRoster.cs:895-905`, `:968`, `:991-995`). The curve move chooses accounts without the walk (R2-B1).
+- **Passing accounts within a choice for one start.** The per-start `passed` set is the right seam, and it is a start's
+  alone. Once the record ends, only the kept reading carries the pass to the next look. So the reading must be written
+  before the record ends (N4). The reservation around the set is R2-B4.
+- **The pipe door's exception.** It holds where the prompt is in the arguments (`Adapters.cs:2092`, `:2127`). A model
+  refusal on a silent turn did no work, and ending the part with no strike, keeping the refusal, is right. It has no
+  counterpart for a pipe chat, whose words go on stdin (`Adapters.cs:2181`), or for a go-on run, where TURNFAIL2 hands the
+  words back (`DriverContinuations.cs:934-940`). Both are in R2-B1.
+
+So the walk's contract is right for first starts and **missing, not wrong**, for everything else.
+
+#### 2. What round 2 introduced, read as a foundation
+
+**The effective order (§4.0).** This is sound. There is one function and three stored states (*as before*, *off*, *set*).
+Fences decide who runs; the actor decides the order only where no fence names agents, and always decides the model.
+`rule-default` and `handed` give every run an index. Three things need saying:
+
+- Helper's order is D155's maker passes, not the actor's order (N1).
+- A pick or a handed agent whose account refuses the model has no stated path (N2).
+- The order a start walks should be read once for that start (N3).
+
+The upgrade path holds: absent keys read as today, and the first write makes Chat and Brainstorm explicit.
+
+**The confirmed copy (§8.2).** Starts read the last confirmed actors, and a hand edit waits for a card. This holds against an
+edit made with no intent to forge, and the design states its limit honestly. But it is narrower than it reads. Every other
+key that a full-access shell reaches in the same file stays unconfirmed: an access rule's `unrestricted`, `cap`, the holds.
+It also adds a second source of start-time truth that every reader must choose between. As written, it is open on four paths
+(R2-B2).
+
+**The carriers on every run (§3.2).** These hold, as B5 above.
+
+**The tier that ran (§5, §9.3).** This holds:
+
+- `ran` comes from the reported names as the door gave them (`Acp.cs:2217`, `:1384`).
+- `mixed` stays a token fact (`TurnModels.cs:69-80`).
+- Fields set after the open use the later door that `session-record-fields.md` describes.
+- Brainstorm's pass records carry the same shapes.
+
+Bound `entries` the way `models` is bounded (N6).
+
+**Brainstorm's voices (§4.4).** These hold: one entry per agent, at most `MostAgents`, frozen, dropped and never replaced. The
+request's and the policy's agents still come first, as at `DriverBrainstorms.cs:348`. The card's words are the gap (R2-B6).
+
+**The migration of the old doors (§6.4).** This holds for the doors named:
+
+- `driver adapter` writes with no route today (`DriverChoicesCommand.cs:528-536`).
+- `setting_propose`'s three doors are at `HelpSettingProposals.cs:34-38`, `:195-207` and `:255-263`.
+
+Three readers that predate actors are missed:
+
+- The update drain turns intakes off by nulling a key the actor replaces (R2-B3).
+- The planner decides whether an unadopted repository can be driven from `adapter`'s single door (R2-B5).
+- Some twins of the retired doors are not named (N10).
+
+**Concurrency with a running session.** Running work keeps its record's `asked` and `override`. That holds through
+`ResumeAsync`, `GoOnStart`, `AgainAsync` and the composer's change. `agent-offers` has a stated multi-writer rule. Two gaps:
+a Save made while a hand edit waits can confirm that edit (R2-B2(c)), and a start in flight should keep the order it began
+with (N3).
+
+#### 3. Blocking findings
+
+**R2-B1. The paths after the open cover a driven first start only. Continuations and conversations have none.**
+
+- *The design:* design:275-291 gives the after-the-open paths, ending "the next look starts what the walk now answers. A
+  conversation keeps the person's words and says so; its press is not lost". design:412-413 says "A resume re-applies the
+  record's asked choice". design:402-403 says a carry-on keeps "the same choice re-applied at the open". design:421-423 says
+  "A continuation takes its record's asked choice".
+- *The code:* five opens do not fit those paths.
+  - **A resume** runs on its record's own account, never one the walk picks, because its conversation lives in that
+    account's home (`HarnessRoster.cs:907-971`, `ChooseAsync(chosen: named)` at `:968`).
+    - A refusal there cannot "end the record". That record already holds work and the person's words.
+    - Nor can the start move to another account. If the reading is judged inside the walk, the resume holds every look
+      until the reading expires, then is refused again.
+  - **A pipe go-on run** fails as a turn (`DriverContinuations.cs:934-940`) and returns to that resume.
+  - **The curve move** shifts a running chat to another account of its agent at the end of a turn, by the hand-over's box.
+    No press is involved and the walk is not used (`CurveMove.cs:62-127`). Its candidates are judged ready without any
+    model (`HarnessRoster.cs:1974-1994`). It can therefore take an account that refuses the chat's model, after ending the
+    old conversation.
+  - **A conversation** opens its record before it spawns (`ChatRunner.cs:424-499`; Ask Daoris `:606-620`), and no look
+    follows. Nothing names who opens the walk's answer, or what the window shows meanwhile. A pipe chat's first message
+    goes on stdin (`Adapters.cs:2181`), so the pipe exception's "next look" has no counterpart there.
+  - **A carry-on's new record** that ends `choice-not-offered` leaves a `Taken` quest. `Plans` plans such a quest only by
+    its last record's state (`Planner.cs:1377-1389`). An end the planner does not know leaves the quest unplanned and
+    unsaid. A known end makes `CarriedOnFrom` carry on from the empty record (`:1341-1343`).
+- *Smallest change:* one paragraph in §3.3, *After the open, for what is not a first start*, and its rows in §13.
+  - (a) **A continuation keeps its asked choice.** This covers a resume, a go-on, a carry-on, a briefed move, a hand-over
+    to another account of the same agent, and the curve move.
+    - It walks only that choice's accounts, each judged by its reading. It never takes the actor's next entry; D163 says a
+      running line never moves to another choice.
+    - `SwitchCandidates` judges each candidate's reading for the record's `asked` (and `override`) model. A candidate that
+      does not offer it is not ready, so the curve move never takes it.
+    - A resume whose own account refuses goes the way a resume whose account cannot carry it goes today: through
+      `ElsewhereAsync` (`HarnessRoster.cs:964`, `:973-980`), its words carried to a new record by D175 point 3. The old
+      record is left as it was and never ended `choice-not-offered`.
+    - With no account left: the wait's sentence, and D163's offer of the next choice, as for an agent whose accounts are
+      all cooling (§4.2).
+  - (b) **A conversation re-asks within the same press.**
+    - `StartAsync` and `PlaceHelpAsync` end the refused record `choice-not-offered` and open the walk's answer in the same
+      call. The window follows the new record, and its note says both.
+    - With nothing left, the press is refused in the wait's sentence (§4.5).
+    - A pipe chat's measured refusal on its first turn does the same, carrying the person's first message.
+  - (c) **`choice-not-offered` is an end the planner reads.**
+    - Name its state, or a code on `failed`, so that `Plans` plans it and strikes leave it out.
+    - `LastRun` skips such a record, so a carry-on is planned from the record it continued.
+    - Its fresh tree is let go as a session that never ran (the path at `Driver.cs:2113-2117`).
+  - Tests:
+    - A resume on an account that lost the model: carried to a new record, the old one untouched.
+    - A curve move with one candidate not offering the model: that candidate not taken.
+    - A Chat whose first entry is refused at the open: one press, one running conversation, two records.
+    - A carry-on whose record ended `choice-not-offered`: planned again from the record before it.
+
+**R2-B2. The confirmed copy misses four paths.**
+
+- *The design:* design:722-727. "starts read the **last confirmed** actors". The copy is "written only where a `SET_ACTOR`
+  or a Save is applied, holding the confirmed `actors` and the three keys". design:720-721 adds "No door writes them
+  otherwise".
+- *The code:*
+  - (a) **The terminal acting alone.** When no instance runs, or a headless loop holds the home, a verb acts alone and
+    writes `driver.json` itself (`DriverChoicesCommand.cs:292-321`; `InstanceDoor.cs:8-12`). With nothing running, that
+    terminal is the person's door (D194 point 5; a session's terminal is refused at `:294-298`).
+    - If it writes no copy, the person's own command is held as a hand edit.
+    - Under a headless loop (the family rehearsal, a server machine) there is no window, so the card never shows and the
+      edit is held for good.
+  - (b) **A card's *Apply*.** This is the person's press too. It covers `actor_propose`, and `setting_propose`'s
+    `intake`/`helper`/`adapter` doors until row h, which row d keeps writing. But it is neither `SET_ACTOR` nor the Save
+    that §8.2 lists.
+  - (c) **A Save can confirm another actor's pending hand edit.** `WithActor` changes the file as it stands under the keep
+    lock (`DriverConfig.cs:914-923`). A copy "holding the confirmed `actors`", written from that file, confirms whatever
+    hand edit was waiting there.
+  - (d) **The readers.** "Starts read the copy" has to reach every reader of the keys that starts work. Those are:
+    - `Driver.cs:903`, `:1672`, `:909`
+    - `DriverIntakes.cs:58`, `:111`
+    - `HelpRoutes.cs:52`, `:1265`
+    - `ConversationRoutes.cs:48`, `:164`
+    - `SessionsVerbs.cs:33`
+    - `DriverBrainstorms.cs:348`
+    - `BriefedMove.cs:111`, `ChatGoOn.cs:372`, `OpinionGateLook.cs:368`
+
+    Today each reads `DriverConfig` directly. One that keeps doing so runs a held edit.
+- *Smallest change:* either of two, both checkable without another read.
+  - (i) **Keep the copy and name the four paths in §8.2:**
+    - The alone path writes both files.
+    - Under a headless loop, a held edit is said in the look's report, and `daoris driver actor --apply | --put-back` is
+      the card's terminal twin.
+    - Every card's *Apply* that writes these keys writes the copy.
+    - A write confirms only the actors and keys it names, and the copy keeps its others.
+    - One accessor serves the confirmed actors and keys to the readers listed. The editor shows both versions where they
+      differ.
+  - (ii) **Take Codex 15's first option.**
+    - D205 point 9 holds for Daoris's own doors, every one through `SET_ACTOR` or the Save, as §6.4's table already makes
+      them.
+    - A raw edit of `driver.json` is D183's unenforced shell, as it is for every other key in that file.
+    - Drop the copy, the card and the home entry.
+
+  (ii) is smaller, and it does not make one family of keys in `driver.json` the only one guarded.
+
+**R2-B3. The update drain stops intakes by nulling a key the actor replaces.**
+
+- *The design:* design:577-579 writes `intakeAdapter` through, and Intake is read by `Effective` (§4.0); with the copy, from
+  the confirmed keys.
+- *The code:* a draining look plans with `InstallUpdate.Drained(config)` (`DriverWatch.cs:604`). That sets
+  `IntakeAdapter = null` in memory (`InstallUpdate.cs:49-53`), which is how D139 point 2's "intakes too" holds: the gate is
+  `DriverIntakes.cs:58`. An Intake actor that is *set*, read from `actors` or from the copy, escapes this, and intakes start
+  while the app drains for an update.
+- *Smallest change:* in §6.4, the drain sets Intake *off* in what `Effective` reads, not `intakeAdapter` alone. Test: a
+  draining look with Intake *set* starts no intake.
+
+**R2-B4. The reservation names a mechanism the count does not have.**
+
+- *The design:* design:380-386: "The selection becomes a reservation counted as today, with `Release` (the same `Unchose`)
+  … and `Commit` at the first prompt." Its tests promise "no distorted rotation".
+- *The code:* a count is an entry in `_chosen` until the next look whose mark covers it. After that, the count is the record
+  itself (`Look`, `HarnessRoster.cs:1651-1659`; `Chose`/`Unchose`, `:1662-1675`). A look "begins only once the last look's
+  starts have opened their records", and the look waits only for the open (`Driver.cs:891-897`). So:
+  - Nothing exists for *Commit* to do.
+  - After the open, `Unchose` is usually a no-op. The release is the record's end.
+  - The re-ask at the open is a pass under the gate, which counts a second time for the same start (`:1193`, `:1415`).
+  - A record ended `choice-not-offered` still feeds `LastStarted` (`:1692`). The least-recent step then reads the refusing
+    account as just used (`AccountRotation.cs:555-575`).
+  - Today's holds after the walk do not `Unchose` (`Driver.cs:1775`, `:1796`).
+- *Smallest change:* restate the second bullet of §4.1 in the count's own terms:
+  - Before the record opens, a release is `Unchose`, including the holds after the walk at `Driver.cs:1775` and `:1796`.
+  - After the open, the release is the record's end, and `Facts` (`:1688-1693`) leaves a `choice-not-offered` record out
+    of `Running` and `LastStarted`.
+  - The re-ask carries the open's own count in. A same-account answer keeps that count; any other answer releases it.
+    The re-ask never takes a second count.
+  - Drop *Commit*.
+
+  §4.1's tests stand as written.
+
+**R2-B5. A Build that mixes doors can fall onto the door that cannot take its quest.**
+
+- *The design:* the per-entry pass codes (design:365, :389-394) and the write-through of `adapter` (design:345-353).
+- *The code:*
+  - The planner admits an unadopted repository only when the machine's single door is the protocol door
+    (`Planner.cs:1729-1753`). Only that door hands the session the connector it takes its quest with: the pipe door gets
+    the plugins' servers only (`SpawnServers.cs:55-67`, `Driver.cs:2202-2205`; the connector is added on the protocol door
+    alone at `:3760-3771`).
+  - That door is `config.Adapter`'s wire (`Driver.cs:618-628`), which becomes Build's first agent under write-through. So
+    an entry on the pipe door can run in an unadopted repository: a whole session spent that cannot take or close its
+    quest, then a strike.
+  - The reverse case refuses a repository that a later entry could drive.
+- *Smallest change:* a `no-connector` pass, judged per entry before the walk as `no-posture` is, from the repository's
+  adoption and the entry's wire. The planner's gate asks whether *any* entry can drive the repository, not `Door()` alone,
+  and the workspace set-up's use of `Door()` (`Driver.cs:1312`) does the same. Test: an unadopted repository, with Build's
+  first entry cooling on the protocol door and its second on the pipe door, waits rather than spawning on the pipe.
+
+**R2-B6. Brainstorm's card still says what B7 objected to.**
+
+- *The design:* design:562-566 is the card's quoted acceptance sentence, the press that is D191 point 3's yes: "Daoris tries
+  a later choice … only when an earlier one cannot start". §6.2's Brainstorm row adds a second voice (design:546).
+  design:459-460 and design:964 promise that "the card counts the voices it adds", but neither §6.3 nor §7.1 has the words.
+- *The code:* with nothing named, a brainstorm today runs one voice (`DriverBrainstorms.cs:348`).
+- *Smallest change:*
+  - In §6.3 and §7.1, give Brainstorm's before → after row its words, in both languages: *Brainstorm: two voices at once,
+    where one ran before; this spends more* / *头脑风暴：同时运行两方，原来是一方；用量更多*.
+  - Scope the general sentence to "every other actor".
+
+#### 4. Not blocking, in order of weight
+
+1. **Helper's order follows D155's maker passes, not the actor's order.** design:441 lists "Helper with no rule list" among
+   the actors whose entries are the order. But `HelperChoice.ChooseAsync` walks the candidates through `ReviewerChoice`'s
+   passes (`HelperChoice.cs:30-37`, `ReviewerChoice.cs:175-180`, `:215-226`): another maker than the asker's comes first.
+   Say this in §4.0 and §4.4. The preview should say *another maker than the asker's first*, since the asker is known only
+   at the ask.
+2. **A pick or a handed agent whose account refuses the model.** A pick is "the one account, never moved" (design:342-343;
+   `HarnessRoster.cs:1065`, `:1293`). Name what runs: that agent's next entry on that account, or a refused pick with the
+   reason.
+3. **The order a start walks is read once for that start.** A `SET_ACTOR` that lands between the walk and the re-ask at the
+   open should not change the order the re-ask uses.
+4. **The readings.**
+   - Key `refused` by model.
+   - A door that rejects `set_config_option` as a method is an agent-and-version reading, not one per account. Otherwise
+     every account opens and ends a record once a day.
+   - Write a reading before the refused record ends.
+5. **Acknowledgement.** Row a should measure whether an accepted `set_config_option` returns the requested id as the current
+   value. Until it does, a differing current value counts as a refusal only where it is another offered model, so that a
+   normalised id does not pass an account.
+6. **`ran.entries` is unbounded.** A conversation with many composer changes grows it on every change. Bound it as `models`
+   is, with a count.
+7. **If the copy stays (R2-B2(i)):**
+   - A malformed hand edit is said in the card with `Judge`'s error and *Apply* refused. It does not hold starts as design:596
+   says, since starts read the copy.
+   - A copy that has gone missing after its first seeding is an unconfirmed change, not a new seed.
+   - Its D195 class is `driver.json`'s.
+8. **The hand-edit card's place.** It asks for a press, so name its screen and its classification under
+   `.claude/knowledge/person-waits.md`. §4.5 adds no kind to *What needs you*.
+9. **What a rollback and the old verb now do.**
+   - An older build reads `adapter`, which is Build's first agent, for Chat and the brainstorm's fallback too
+     (`ConversationRoutes.cs:48`, `DriverBrainstorms.cs:348`). A rollback can therefore change Chat's agent, not only its
+     model, and the footnote should say so.
+   - `driver adapter` used to move both Build and Chat. Its sentence should say that Chat stays on its agent.
+10. **The retired doors' twins.**
+    - The service's `HelpSettingProposalWriter.Doors` (`HelpSettingProposals.cs:27`).
+    - `PipeWording`'s `SET_INTAKE` and `SET_HELPER` rows (`PipeWording.cs:188-189`).
+    - The web's `useSetIntake` and `useSetHelper` (`Web/bridge/driver.ts:463`, `:486`).
+    - The room's machine facts, which read the three keys (`HelpRoomMachineNow.cs:15-17`).
+11. **Stale sentences carried over from round 1:**
+    - design:209 says "reused as it is", while design:247-249 says "with one change".
+    - design:98 says "the code already enforces it", which §8.2 now contradicts.
+    - design:596 and §9.2 mention "the CLI writer's keep table". That writer left in PUSH1f2b (`jsonkeep.ts:8`), and my
+      round-1 N7 was wrong to name it.
+    - design:841's D24 note says "every actor works at *account default*".
+12. **The opinion wire's same-agent display** judges against `config.Adapter` alone (`LinesRoutes.cs:155`,
+    `DriverRoutes.cs:620-622`, `HelpSettingProposals.cs:730`). When Build runs on more than one agent, either say so or
+    judge against Build's agents.
+13. **A voice's bounded restart** on its agent's next account (`DriverBrainstorms.cs:603-609`) judges that account's reading,
+    as the walk does.
+
+The names were taken as round 1's §4 named them. I spot-checked §2.1 and §7.1 and did not run them against `names-check.mjs`.
+
+#### 5. Verdict
+
+**Accept after the changes named in R2-B1 to R2-B6.** Each is a change to the design's text at the lines named, with the
+tests each names, and the steward can check each at those lines. The shape needs no other round, and neither does the walk's
+contract for a first start.
+
+If R2-B1 is settled differently from the change named, that is the walk's contract again and wants another foundation read.
+An example would be a continuation taking the actor's next entry rather than holding its asked choice, or a resume ending its
+record. Either option in R2-B2 is checkable without one.
+
+**6 blocking (R2-B1 to R2-B6); 13 not blocking.**
