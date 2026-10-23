@@ -673,7 +673,7 @@ export const ACCESS_AT: Readonly<Record<string, string>> = {
   machine: 'settings.access.setupOf.machine',
 };
 
-/** The actors' ids (D205 §2.2), each worded by its `settings.ai.actors.name.*` entry. */
+/** The actors' ids (D205 §2.2), each worded by its `work.actor.name.*` entry, as *Details* says it. */
 const ACTOR_IDS = new Set(['build', 'intake', 'opinion', 'helper', 'partner', 'brainstorm', 'ask-daoris', 'chat']);
 
 /**
@@ -750,7 +750,7 @@ function said(
     case 'actor': {
       // An actor by its id, said by the name the screen gives it (D205 §2.2); one this page does not know as written.
       const actor = text(value);
-      return actor === null ? null : ACTOR_IDS.has(actor) ? t(`settings.ai.actors.name.${actor}`) : actor;
+      return actor === null ? null : ACTOR_IDS.has(actor) ? t(`work.actor.name.${actor}`) : actor;
     }
     case 'why': {
       const why = text(value);

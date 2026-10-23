@@ -182,6 +182,35 @@ describe('noteLines', () => {
       ].map((text) => ({ kind: 'said', text })));
     });
 
+    /**
+     * MODELROLE1c2 (D205 §4.6 item 1, §7.1): where a later choice ran, the actor line beside the opening, the actor by the screen's
+     * name, the choice's number, the entry that ran and each choice passed in the walk's words, which stay as written.
+     */
+    it('words the actor line where a later choice ran', () => {
+      const actor = [
+        coded('opening.actor', 'Ran as Build’s choice 2, …', {
+          actor: 'build', n: 2, entry: 'claude-code-acp · sonnet', passed: 'choice 1, claude-code-acp · opus: `account-1` did not offer `opus`',
+        }),
+      ];
+      expect(noteLines(t, { parts: actor }, 'en')).toEqual([{
+        kind: 'said',
+        text: "Ran as Build's choice 2, claude-code-acp · sonnet: choice 1, claude-code-acp · opus: `account-1` did not offer `opus`.",
+      }]);
+      expect(noteLines(zh, { parts: actor }, 'zh')).toEqual([{
+        kind: 'said', text: '以开发的第 2 个选择运行，claude-code-acp · sonnet：choice 1, claude-code-acp · opus: `account-1` did not offer `opus`。',
+      }]);
+    });
+
+    /** MODELROLE1c2 (D205 §3.5(c)): a record its agent's refusal of the choice ended, in both languages, naming no account. */
+    it('words a choice its agent did not offer', () => {
+      const ended = [coded('ended.choice-not-offered', 'Not started: …', { agent: 'claude-code-acp', model: 'opus' })];
+      expect(noteLines(t, { parts: ended }, 'en')[0]).toEqual({
+        kind: 'said',
+        text: "Not started: `claude-code-acp` did not offer `opus` on its account, so nothing ran; the next look chooses again by its actor's order.",
+      });
+      expect(noteLines(zh, { parts: ended }, 'zh')[0]?.text).toBe('未启动：`claude-code-acp` 在其账户上不提供 `opus`，因此什么也没有运行；下一次查看会按其角色的顺序重新选择。');
+    });
+
     /** LOCKPASSED1: an account passed for its lock is a reason of its own, said in both languages. */
     it('words an account passed for its lock by its own reason', () => {
       const locked = [
