@@ -56,7 +56,7 @@ public sealed class LimitResumeTickTests : IDisposable
     private IReadOnlyList<SessionEvent> Events(string session) =>
         new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events;
 
-    private Daoris.Driver.Driver Driver(SessionMessagesTickTests.SaidStandIn service, string mode, int strikes = 0)
+    private Daoris.Driver.Driver Driver(SessionMessagesTickTests.SaidStandIn service, string mode, int strikes = 0, bool paused = false)
     {
         var adapters = AdapterSet.Built();
         var config = DriverConfig.Empty with
@@ -69,6 +69,7 @@ public sealed class LimitResumeTickTests : IDisposable
             Strikes = strikes,
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Log, mode] },
         };
+        if (paused) config = config.WithPausedQuest("q1", new WorkPause(Seen, new Dictionary<string, string>()));
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => _now, Zone = Zone });
@@ -265,6 +266,27 @@ public sealed class LimitResumeTickTests : IDisposable
         _now = Until.AddMinutes(1);
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(1, service.SessionCount);
+        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
+    }
+
+    /// <summary>
+    /// The design §3.7's guard: a line the person paused is planned as paused before anything else, so its start never reaches the keep
+    /// and no word is said to its record; Resume lets it go on as step 1 has it.
+    /// </summary>
+    [Fact]
+    public async Task A_paused_line_keeps_no_word_until_it_is_resumed()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        await LimitedAsync(service, Driver(service, "resumes"));
+
+        _now = Until.AddMinutes(1);
+        var paused = await Driver(service, "resumes", paused: true).RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(StartVerdict.Paused, paused.Considerations.Single(c => c.Quest.Id == "q1").Verdict);
+        Assert.Equal(1, service.SessionCount);
+        Assert.Empty(service.DaorisSaid);
+        Assert.DoesNotContain(Heard(), line => line["method"]!.GetValue<string>() == "session/resume");
+
+        await Driver(service, "resumes").RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
     }
 
