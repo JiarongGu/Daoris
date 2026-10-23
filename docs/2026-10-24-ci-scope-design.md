@@ -528,7 +528,8 @@ Of those, the scoped run runs:
    cost under two minutes (§2.4: 1 m 39 s, 1 m 43 s, 1 m 38 s, 20 s; the HTTP host's 3 m 17 s) beside a build that dominates. Run
    whole, it keeps the net that caught GENREGEN1's two censuses.
 3. **The TypeScript suites by file**, where reach is a real closure (§3.2): the CLI's and the tool-tests' `node --test` files,
-   the `tools/*.test.mjs` files `npm run verify` runs (16 on main at `b0d68c641`; Opus r2 16), and the page's vitest files that
+   every `tools/*.test.mjs` file (`npm run verify` names twelve of the 16 on main at `b0d68c641`; Opus r2 16), and the page's
+   vitest files that
    the candidate's paths reach. A whole-suite file (§3.4 check 5) or an unresolved read runs its suite
    whole.
 4. **The driver's other Process half and the modules' Process half by class**, as PROCREACH1 runs them. The census there is the
@@ -1076,7 +1077,7 @@ there.
 | 13 | D207's body and Changes are still round 1 | Taken: both rewritten to round 3 | D207 |
 | 14 | The public-release rule has no row | Taken, the second option: the release workflow's own run of every gate (`release.yml:234-321`) is the release's gate; the local `--ci --release` dropped | §5.1, §5.3, §9 |
 | 15 | Row 2's proof may contradict its own rule | Answered, checked: `73c1fe0` failed on `cli` and `driver-process`, its git half ran whole and passed, so `f296996`'s half held a pass gone stale by reach, which the rule composes | §8 row 2 |
-| 16 | Two gaps in what the rows run | Taken: the 16 `tools/*.test.mjs` files run by file; row 3 says it adds `check` | §4.2 point 3, §8 row 3 |
+| 16 | Two gaps in what the rows run | Taken: every `tools/*.test.mjs` file run by file (`npm run verify` names twelve of the 16); row 3 says it adds `check` | §4.2 point 3, §8 row 3 |
 | 17 | The proof's sources do not span its month | Taken: each source's span and count stated in the output; the recall over the FIX-LOG's failures given apart | §3.5 |
 
 **The Opus read's §2 claims** are its findings 6, 12 and 9, answered above. Its note that a merge waiting on its scoped run is
