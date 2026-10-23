@@ -15,7 +15,7 @@ vi.mock('@shenora/react', async () => {
   return { ...actual, WindowCommands };
 });
 
-import { SPLASH_QUIET_MS, useSplashLift } from './splash';
+import { SPLASH_QUIET_MS, isFirstScreen, useSplashLift } from './splash';
 
 /** An answer the test gives when it chooses. */
 function deferred<T>() {
@@ -91,10 +91,78 @@ describe('the splash lifts once the first screen has its data', () => {
     expect(closeSplash).toHaveBeenCalledTimes(1);
   });
 
+  it('names the first screen by the queries it draws, and only those', () => {
+    expect(isFirstScreen(['status'])).toBe(true);
+    expect(isFirstScreen(['sessions', 'groups', '*'])).toBe(true);
+    expect(isFirstScreen(['driver'])).toBe(true);
+    expect(isFirstScreen(['driver', 'lines'])).toBe(false);
+    expect(isFirstScreen(['harnesses'])).toBe(false);
+  });
+
   it('loses nothing where no window is here: the call rejects and the page goes on', async () => {
     closeSplash.mockImplementationOnce(() => Promise.reject(new Error('NO_ROUTE')));
     mount(Promise.resolve('shell'), Promise.resolve('view'));
 
+    await waitFor(() => expect(closeSplash).toHaveBeenCalledTimes(1));
+  });
+});
+
+/**
+ * A start's first screen (STARTFAST1b): the frame's status and the Sessions list's groups, which waits on it, beside the
+ * harnesses' probes and the lines, which queue behind the driver's first looks and are no part of what the screen draws.
+ */
+function StartScreen({ status, groups, probes, lines }: Record<'status' | 'groups' | 'probes' | 'lines', Promise<string>>) {
+  useSplashLift();
+  const shell = useQuery({ queryKey: ['status'], queryFn: () => status });
+  useQuery({ queryKey: ['sessions', 'groups', '*'], queryFn: () => groups, enabled: shell.data !== undefined });
+  useQuery({ queryKey: ['harnesses'], queryFn: () => probes });
+  useQuery({ queryKey: ['driver', 'lines'], queryFn: () => lines });
+  return null;
+}
+
+describe('the splash lifts on the first screen\'s own data (STARTFAST1b)', () => {
+  it('says it once the first screen has answered, while the probes and the lines still load', async () => {
+    const status = deferred<string>();
+    const groups = deferred<string>();
+    const never = new Promise<string>(() => {});
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <StartScreen status={status.promise} groups={groups.promise} probes={never} lines={never} />
+      </QueryClientProvider>,
+    );
+
+    await act(() => pause(SPLASH_QUIET_MS * 3));
+    expect(closeSplash).not.toHaveBeenCalled();
+
+    // The frame's answer, and the list's question it lets start: the list is still on its way.
+    await act(async () => status.resolve('status'));
+    await act(() => pause(SPLASH_QUIET_MS * 3));
+    expect(closeSplash).not.toHaveBeenCalled();
+
+    await act(async () => groups.resolve('groups'));
+    await waitFor(() => expect(closeSplash).toHaveBeenCalledTimes(1));
+    expect(client.isFetching({ queryKey: ['harnesses'] })).toBe(1);
+  });
+
+  it('is not held by a tick asking an answered query again', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    let asked = 0;
+    function Ticking() {
+      useSplashLift();
+      // Answered once, then each later ask never answers: a refetch the tick started keeps the screen's answer.
+      useQuery({ queryKey: ['driver'], queryFn: () => (asked++ === 0 ? Promise.resolve('state') : new Promise<string>(() => {})) });
+      useQuery({ queryKey: ['harnesses'], queryFn: () => new Promise<string>(() => {}) });
+      return null;
+    }
+    render(
+      <QueryClientProvider client={client}>
+        <Ticking />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => expect(client.getQueryData(['driver'])).toBe('state'));
+    void client.invalidateQueries({ queryKey: ['driver'] });
     await waitFor(() => expect(closeSplash).toHaveBeenCalledTimes(1));
   });
 });
