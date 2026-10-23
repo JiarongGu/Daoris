@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - An intake, an opinion and a helper a limit cut off never ran again by themselves (LIMITRESUME1h)
+
+- **Symptom:** none seen on the install yet; D206 design §3.8 read it from the code. An intake an account's limit ended used up its
+  ask: the ask stayed bound to the failed record and no later look answered it. A second opinion whose reviewer hit a limit waited
+  for the person's *Try again*, though the gate re-asks a cooling choice by itself. A helper a limit cut off was refused *no
+  answer*, so a lead that ended its turn waiting on it (HELPERWAIT1) was brought back to the person.
+- **Root cause:** each kind's end read a limit only to cool the account, and then ended as any failure. The intake's open binds the
+  ask (`RecordIntakeAsync`), and the look picks only asks with no binding, so nothing unbound it. The host derived a failed pass's
+  why from its timing alone (`ended`, `out-of-time`), so the gate read `Unavailable` with no `Until`, a shape the look's re-ask
+  (`OpinionGateLook`, `Cooling` with an `Until` passed) never matches. `SettleHelperAsync` refused any turn with no answer.
+- **Fix:** the state door's `unbindAsk` clears an intake's ask in the same step as its end, only where the ask still names that
+  session, on a move to `failed` alone (D205 §3.5(f)'s door). The intake sends it with a limited end, which also raises no *Ended*.
+  The host says a limited pass's why as `limited`, and the gate sets `Unavailable` / `Cooling` with the `Until` from the cool-off
+  its session wrote (`AccountCooling.OfSession`), or the moment it was read where none names it any more. A limited helper's ask
+  becomes `cooling` with its account's reset, which `HelperWaits.Open` counts as open. The look runs it again while its lead waits,
+  and the walk passes the cooling account. Once the lead no longer waits, the look refuses it `limited` and never runs it again.
+  The asker's line, `helper.limited`, says when that account is ready again. The page words the cooling row and the refusal in en
+  and zh.
+- **Verify:** red first, with each fix set aside: the driver's `IntakeTests.A_limited_intakes_ask_is_held_until_the_reset_and_picked_again_after_it`
+  (the ask still bound to `i1`), `OpinionLookTests.A_pass_a_limit_ended_is_asked_again_by_the_look_after_its_accounts_reset`
+  (`limited`, no `Until`), and `HelperLookTests`' two limited-helper tests (`refused`, `no-answer`). Green by class: the service's
+  `IntakeTests` (9), `OpinionStoreTests` (12), `HelperBoxShapeTests` and `McpHelperToolTests` (7), and the host's two state-door
+  tests. The driver's Process classes `IntakeTests` (39), `OpinionLookTests` (8), `HelperProcessTests` and `HelperWaitTickTests`
+  (6), each with `process.runsettings`. The fast `AttentionTests`, `AccountLimitHoldTests`, `AskSignatureTests` (65),
+  `OpinionGateTests` and `AccountCoolingTests` (78), and `NoteCodesTests`, `HelperFilesTests`, `HelperJudgeTests`,
+  `HelperLookTests`, `SessionsHelperTests` and `LookJudgesTests` (145). The modules' `DriverModuleSessionHelpersTests` (12). The
+  web's `HelperAsks.test.tsx`, `note.test.ts` and `bridge/sessions` (88). `i18n:check`, `names:check --strict` and `tsc` pass.
+- **Not covered:** the installed window was not looked at. The helper's re-run is proven with the walk stood in, and the real walk's
+  pass over a cooling account is TOOL4d's. A limited intake's next start is held by the real roster in the stand-in test.
+
 ## 2026-10-23 - An approved hand-over that could not be taken read as refused (HANDOVERSAID1)
 
 - **Symptom:** on the install at 13:13 UTC, session `cc63a27e` (quest `#289dcd93ebeb`) wrote `handover.asked`, *Its agent

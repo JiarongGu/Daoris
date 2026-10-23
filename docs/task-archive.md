@@ -19980,3 +19980,16 @@ and the attention watch raises no *Ended* for it. The line's own news is two loo
 `limit-waits` and `limit-went-on`. The page words a `failed` record with `limit` as *limited* / *额度用尽* in a neutral tone,
 through its one shown-state reader, on the session rows, heads, quest page, parts strip, chain strip and trace. The sessions slice
 now pushes `limit`. *Resumed* waits for 1b, and an intake keeps its *Ended* until 1h. Detail: D206's LIMITRESUME1a note.
+
+## LIMITRESUME1h — an intake, an opinion and a helper a limit cut off run again by themselves (2026-10-24, D206)
+
+> | LIMITRESUME1h | §3.8: an intake at a limit unbound by D205 (f)'s door; an opinion's limited pass gated `Unavailable`/`Cooling` with its `Until` from the cool-off entry; a helper a lead waits on kept open `cooling` and asked again; one no lead waits on refused as limited with its ready time | 1a | stand-in agents: a limited intake's ask picked again after the reset, held meanwhile, no strike; a limited opinion re-asked by `OpinionGateLook` after its `Until`; a lead waiting on a limited helper still waiting, the helper run again on another account or at the reset, never back to the person; a lead that went on → the helper refused as limited, not run again |
+
+(The row of `docs/2026-10-23-limit-resume-design.md` §6; the backlog holds it inside LIMITRESUME1.)
+
+**Outcome** 2026-10-24: a limited intake lets its ask go in the same step as its end (the state door's `unbindAsk`, D205 §3.5(f)'s
+door), raises no *Ended*, and is held by the cool-off until the reset, when the next intake answers it. A limited second opinion
+reads `limited` on the host and is gated `Unavailable` / `Cooling` with its account's reset, so the look asks it again by itself. A
+limited helper's ask stays open as `cooling` while its lead waits, and runs again once an account is ready. Once the lead no longer
+waits, it is refused `limited` with its ready time (`helper.limited`), worded in en and zh. Detail: FIX-LOG's LIMITRESUME1h entry
+and D206's LIMITRESUME1h note.
