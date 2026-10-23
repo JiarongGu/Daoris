@@ -51,6 +51,8 @@ Paths below are relative to this file. Historical documents have their own [arch
 | `2026-10-02-knowledge-design-review.md` | Contract: discovery floor and recall | D129; KNOW3 bench evidence |
 | `2026-10-03-decisions-record-design.md` | Contract: per-decision files and checks | D134 |
 | `2026-10-04-orientation-everywhere-design.md` | Contract: repository indexes and source ranges | D151 |
+| `2026-10-24-ci-scope-design.md` | Proposed (D207), round 1, read by Codex and the Opus foundation reader, both asking another round: a modular CI. Every test unit's reach and subject by one census; a merge waits on a scoped run of what it reaches on a candidate commit in a tree of its own, the git half by subject within a budget; the full set in the background, never blocking, its failures filed; the rehearsals out of the per-merge path and side by side; each test's value measured and the git half cut to fit; measured on real merges | D207; CIFAST1, CISCOPE1b-f, TESTVALUE1 |
+| `2026-10-24-ci-scope-reads.md` | Reads (CISCOPE1, under D191): Codex's read and the independent Opus reader's foundation read of round 1, verbatim; both ask another round (17 findings, 14 blocking; 21, 8 blocking) | D207 |
 
 ## Driver, sessions, sharing and landing contracts
 
