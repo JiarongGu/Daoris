@@ -15,7 +15,10 @@ Quest `#eb9269d33cff`, D205 row b. Reporting only: every choice remains `before`
   first native start, the resume and the chat carry the same tagged `Asked` (`ActorAsked.NativeArguments`). `TurnModels.Reported`
   keeps the door's names in report order before token attribution sorts or collapses them, and quota names survive counts that do
   not reconcile. `ActorRun` watches a run's turn events, keeps `ran` bounded (8 models, 8 entries, each with a count of more),
-  writes in order and drains at the run's end, and logs `actor.ran`; a failed write is logged and changes nothing.
+  writes in order and drains at the run's end, and logs `actor.ran`; a failed write is logged and changes nothing. The one-shot
+  writes at a start and at a composer change go through `ServiceClient.TryKeepActorAsync`, and the start's read of its record is
+  guarded the same way: a service that refuses or does not answer costs the record its provenance (`actor.keep-failed`,
+  `actor.read-failed` in the machine log), never the start or the press.
 - The composer's provenance reads only the list the setter returned (`AcpSession.LastAcknowledgedOptions`). Its existing local
   projection is kept for the menu but is never taken as an acknowledgement.
 - Usage history: each turn line carries the start's `actor`; older lines have none.
@@ -31,13 +34,16 @@ Quest `#eb9269d33cff`, D205 row b. Reporting only: every choice remains `before`
 Focused classes only, as the standing test rule for this repository says:
 
 - Driver: `ActorRunTests` (the 13-start table and the required seams; the record cases; explicit `default`, absent model and
-  uncarried effort through serialization and each native prepare), `AcpTests` (Claude's measured quota names; `codex-acp`'s
+  uncarried effort through serialization and each native prepare; a refused provenance write logged, never thrown), `AcpTests` (Claude's measured quota names; `codex-acp`'s
   answer-only report; *not reported* where the answer names none; a setter with no returned list is no acknowledgement),
   `ClaudeStreamJsonTests` (the pipe's reported names, init excluded; the refusal's `<synthetic>` names nothing),
   `UsageTurnsTests`, `BrainstormFilesTwinTests` (a pass and its restart), `ChatGoOnTests`, `HelpPlaceWorkspaceTests`,
   `HelpWiredTests`, `AskAndWaitTickTests`, `GatedStartsTests`.
-- Process classes, each alone with `src/Daoris.Desktop/process.runsettings`: `ChatGoesOnProcessTests` (13) and
-  `BrainstormProcessTests` (2, a real brainstorm pass recording actor, choice, asked agent and the stub's reported model).
+- Process classes, each alone with `src/Daoris.Desktop/process.runsettings`: `BrainstormProcessTests` (2, a real brainstorm
+  pass recording actor, choice, asked agent and the stub's reported model) passes. `ChatGoesOnProcessTests` passed 13 of 13 on
+  the base before MAKERTRAIL1. On today's `main`, 7 of its 13 fail, and 6 of `ProtocolChatTests`' 15. Each failure is the stub
+  hearing MAKERTRAIL1's attribution brief ahead of the person's first words. `ProtocolChatTests` fails the same 6 on a
+  detached `main` without this row, so this change does not cause them.
 - Modules: `SessionsStateSliceTests`. Service: `SessionStoreTests`, `SessionSyncTests` (no sync carries the fields). HTTP:
   `ContinuesHostTests` and `PersonDoorTableTests` (loopback only).
 - Web: the `work/head` tests and `actors.test.ts`, the typecheck, `i18n:check` and `names:check -- --strict` (no finding of this
