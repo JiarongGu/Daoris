@@ -516,9 +516,13 @@ public sealed class DriverLoop(
     /// <summary>
     /// The supervisor's decisions, live in this instance's memory (SUPERVISOR1a-i, D208; the supervisor design §3.4): one for the shell's
     /// life, shared by the routes that keep and overrule a decision and every look of the loop, since both run in the window's process.
-    /// Inert until the door (1a-ii): its admission refuses every act.
+    /// Inert until the door (1a-ii): its admission refuses every act; a test sets its own, with the admission it injects.
     /// </summary>
-    public QuestionSupervisorDecisions Supervisor => _supervisor ??= new(Home, NoDecisionAdmission.Instance, log);
+    public QuestionSupervisorDecisions Supervisor
+    {
+        get => _supervisor ??= new(Home, NoDecisionAdmission.Instance, log);
+        set => _supervisor = value;
+    }
 
     private QuestionSupervisorDecisions? _supervisor;
 

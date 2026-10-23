@@ -121,7 +121,8 @@ public sealed class ConversationRoutes(DriverContext context)
         // so a label never answers a question it was not offered for. Fable's read, Q4: words that begin with one of its answers, as
         // the page composes a press, are marked with it, so the conversation draws a choice and the session is handed one.
         string? choice = null;
-        if (Optional(request, "question") is { } question)
+        var asking = Optional(request, "question");
+        if (asking is { } question)
         {
             if (new QuestionFiles(_loop.Home).Read(id) is not { } asked || asked.Id != question)
             {
@@ -143,6 +144,9 @@ public sealed class ConversationRoutes(DriverContext context)
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
         if (said.Running) _loop.Words.KeepOnAsk(id, text);
+        // SUPERVISOR1a-i (the supervisor design §6.3): the owner's answer to a question a supervisor's decision is on supersedes it at
+        // once; the service's one owner-word operation took its released word back in the same step.
+        if (said.Sent && asking is not null) await _loop.Supervisor.SupersedeAsync(id, asking, DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
         // `to`: the conversation a conversation handed over or moved went on in, where `why` is `continued` (HANDWORDS1).
         // `now`: the press was carried out; false where it was not asked, or the door could do neither, `why` saying so.
         return new { said.Sent, said.Reaches, said.Why, said.To, said.Now };

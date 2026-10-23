@@ -85,6 +85,7 @@
   "person.route.SESSION_QUIET_CARRY_ON": "end a quiet session's run and carry its work on",
   "person.route.SESSION_QUIET_LEAVE": "leave a quiet session running",
   "person.route.SESSION_ANSWER_ALONE": "let a session's answer go on alone, or keep it",
+  "person.route.SUPERVISOR_OVERRULE": "overrule the supervisor's answer to a session's question",
   "person.route.RETRY_QUEST": "try a parked quest again",
   "person.route.HELP_APPLY": "apply a proposal of Ask Daoris",
   "person.route.CHANNEL_POST": "post words to an ask's channel as yours",

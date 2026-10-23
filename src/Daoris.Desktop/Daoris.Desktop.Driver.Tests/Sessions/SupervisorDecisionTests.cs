@@ -421,6 +421,22 @@ public sealed class SupervisorDecisionTests : IDisposable
         Assert.Equal(SupervisorState.Superseded, second.LiveOf(Session).Single().State);
     }
 
+    /// <summary>
+    /// <c>SESSION_INPUT</c> naming the decision's question supersedes it at once (§6.3), held or released; one on another question
+    /// stands, and the superseded question is the owner's (<c>overruled</c>) until a new one replaces it.
+    /// </summary>
+    [Fact]
+    public async Task The_owners_answer_naming_the_question_supersedes_at_once()
+    {
+        var decisions = Decisions();
+        var kept = await decisions.KeepAsync(Answer(), Park(), Kept);
+
+        Assert.Equal(0, await decisions.SupersedeAsync(Session, "q-other", Kept.AddMinutes(1)));
+        Assert.Equal(1, await decisions.SupersedeAsync(Session, "q-1", Kept.AddMinutes(1)));
+        Assert.Equal(SupervisorState.Superseded, decisions.LiveOf(Session).Single(each => each.Id == kept.Decision).State);
+        Assert.Equal(SupervisorWhy.Overruled, (await decisions.KeepAsync(Answer(), Park(), Kept.AddMinutes(2))).Why);
+    }
+
     /// <summary>Every transition not in §3.6 is refused and changes nothing.</summary>
     [Fact]
     public async Task Every_transition_not_in_the_lifecycle_is_refused()

@@ -295,6 +295,18 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
                 : live.State;
         }, ct);
 
+    /// <summary>
+    /// The owner's words named <paramref name="question"/> (§6.3, <c>SESSION_INPUT</c> with its question): every held or released
+    /// decision on it moves to <c>superseded</c> at once, since the service's one owner-word operation already took a released word back.
+    /// </summary>
+    /// <returns>How many moved.</returns>
+    public Task<int> SupersedeAsync(string session, string question, DateTimeOffset now, CancellationToken ct = default) =>
+        UnderAsync(session, () => Task.FromResult(_live.Values
+            .Where(each => each.Session == session && each.Question.Id == question
+                           && each.State is SupervisorState.Held or SupervisorState.Released)
+            .ToList()
+            .Count(each => Move(each, SupervisorState.Superseded, now, null) == SupervisorState.Superseded)), ct);
+
     // ——— Admission by ticket (§6.3).
 
     /// <summary>

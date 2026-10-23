@@ -189,7 +189,7 @@ public sealed class PipeCensus
             "HELPER_WAITS", "HELP_CONVERSATIONS", "HELP_PROPOSALS", "HELP_PUBLISHED", "HELP_WIRED", "HEAVY_MARKS", "HEAVY_SLOT", "HISTORY_PLAN", "LANDING", "LINES", "OPINION_GATE",
             "OPINION_WAITS", "PERMISSION_WAITS", "PLUGIN", "PLUGINS", "PLUGIN_ACTIVITY", "PLUGIN_READ", "RULES", "SESSION_DIFF", "SESSION_FILE",
             "SESSION_FILES", "SESSION_GROUPS", "SESSION_HAND_OVER_ASK", "SESSION_HELPERS", "SESSION_PARTNERS", "SESSION_HISTORY", "SESSION_OPENINGS", "SESSION_OPTIONS",
-            "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
+            "SESSION_PROCESS", "SESSION_QUESTION", "SESSION_SUPERVISOR", "SESSION_QUEUE", "SESSION_SEARCH", "SESSION_SPENT", "SESSION_STREAMS", "SESSION_WHERE", "SETUP_PLAN", "STARTS",
             "STATE", "STATE_SLICE", "SWEEP_PLAN", "SYSTEM_DOWNLOADS", "SYSTEM_SPACE", "SYSTEM_WIRING", "TAIL_SESSION", "TOOLS_LIST", "TRACE", "TREES_SYNC_PLAN", "TREES_SYNC_SCOPE",
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.
@@ -224,6 +224,8 @@ public sealed class PipeCensus
             "SESSION_QUIET_CARRY_ON", "SESSION_QUIET_LEAVE",
             // COWORK1e: the person's word on a third answer alone held for them, which only they may let go on.
             "SESSION_ANSWER_ALONE",
+            // SUPERVISOR1a-i: the owner's overrule of a supervisor's decision, which only they may make.
+            "SUPERVISOR_OVERRULE",
             "RETRY_QUEST", "HELP_APPLY",
             // The person's words, and a conversation begun or carried on with them.
             "SESSION_INPUT", "SESSION_QUEUE_EDIT", "CHANNEL_POST", "CHANNEL_FORWARD", "START_CHAT", "START_HELP", "HELP_START_FROM",
