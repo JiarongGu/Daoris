@@ -43,6 +43,8 @@ import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../agents/tools';
 import { agentOf, machineScope } from '../settings/accounts/accounts';
 import { namer } from '../settings/accounts/namer';
+import { limitedLine, limitWaitOf, limitWaitSaid } from './limitWait';
+import { LimitWaitLine } from './LimitWaitLine';
 import {
   boxOf, coolingFor, goOnBriefRefusal, levelsOf, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
 } from './say';
@@ -76,7 +78,7 @@ import { SessionTimeline } from './head/SessionTimeline';
 import { SessionRail } from './rail/SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
 import { askOfEntry, entryOfSession, isIntakeEntry, nameOfEntry } from './entries';
-import { useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
+import { useAccountUse, useChannel, useForwardChannel, usePostChannel } from '../bridge/shell';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { leadingAgentOf, type SessionFactsOf, sessionFacts, sessionFactsTip } from './head/headFacts';
 import type { Answered } from './InlineConfirm';
@@ -355,6 +357,9 @@ export function WorkFrame({
   const [handOverChosen, setHandOverChosen] = useState<{ why: 'near' | 'limit'; choice: AgentChoice } | null>(null);
   // The conversations whose offer to hand over the person put down: for this run of the frame, never stored (MIXAGENT1b-ii).
   const [offerDismissed, setOfferDismissed] = useState<ReadonlySet<string>>(() => new Set());
+  // LIMITRESUME1d: what *Try now* on a waiting line came to where it was refused, by the session it was pressed on.
+  const [limitRefusal, setLimitRefusal] = useState<{ session: string; sentence: string } | null>(null);
+  const accountUse = useAccountUse();
   // The session whose pause asks under the header (PAUSE1e, D132 §2.6), with the work it pauses: of that session only.
   const [pauseAsking, setPauseAsking] = useState<{ session: string; target: WorkTarget } | null>(null);
   // *Answer…* from a row (D126 §3.1): the session it was pressed for, and a count, so the box at its foot takes the focus
@@ -1917,13 +1922,22 @@ export function WorkFrame({
     ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
     : null;
   const headActs = attendedFacts ? offeredActs(attendedFacts, 'header').filter(actions.can) : [];
+  // LIMITRESUME1d (D206 §3.7): a driven line an account's limit cut off, every account it may run on cooling, says under its header
+  // when it resumes by itself and how, with the person's ways out beside it: *Go on now with…* (the hand-over's ask), *Pause quest…*
+  // and the account's *Try now*. Read from the accounts the page holds, never a guess: no walk that waits, no line.
+  const attendedWorkspace = attended
+    ? (registry.data ?? []).find((row) => row.repository === attended.repository)?.workspace || 'default'
+    : 'default';
+  const limitWait = attended && here && limitedLine(attended, quest?.status, Boolean(grouping?.pausedBy))
+    ? limitWaitOf({ session: attended, workspace: attendedWorkspace, doors: roster, answer: accounts.data, now: new Date() })
+    : null;
   // Daoris's offer to hand over (MIXAGENT1b-ii, D163 point 3): on a conversation this page offers the press on, when its own
   // account is cut or near its limit by its scope's near (never the agent's pace warning alone, USAGEREAD3b) and another agent
   // has an account the walk would take. No driver read.
-  const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id)
+  const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id) && !limitWait
     ? handOverOffer({
       session: attended,
-      workspace: (registry.data ?? []).find((row) => row.repository === attended.repository)?.workspace || 'default',
+      workspace: attendedWorkspace,
       doors: roster,
       answer: accounts.data,
       now: new Date(),
@@ -2056,6 +2070,24 @@ export function WorkFrame({
           busy={actions.work.pausing}
           onPause={(answered) => actions.work.pause(pausing.target, answered)}
           onClose={() => setPauseAsking(null)}
+        />
+      ) : limitWait && attended ? (
+        <LimitWaitLine
+          // Keyed by the session: a refusal said in one is never another's.
+          key={attended.id}
+          className="mt-2.5"
+          lines={limitWaitSaid(t, limitWait, (account) => nameOf(attended.adapter, account))}
+          busy={actions.handingOver || accountUse.isPending}
+          refusal={limitRefusal?.session === attended.id ? limitRefusal.sentence : null}
+          onGoOnNow={headActs.includes('handOver') ? () => doors.handOver?.(attended.id) : undefined}
+          onPause={attended.quest ? () => doors.pause?.(attended.id, { scope: 'quest', id: attended.quest! }) : undefined}
+          onTryNow={() => {
+            setLimitRefusal(null);
+            accountUse.mutate(
+              { harness: attended.adapter, action: 'ready', ...(limitWait.account ? { profile: limitWait.account } : {}) },
+              { onError: (error) => setLimitRefusal({ session: attended.id, sentence: sentence(error) }) },
+            );
+          }}
         />
       ) : offer && attended ? (
         <HandOverOfferLine

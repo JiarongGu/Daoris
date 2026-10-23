@@ -45,6 +45,7 @@
   "person.route.SESSION_QUEUE_EDIT": "收回或改写一个会话中等待的话",
   "person.route.SESSION_GO_ON_NEW": "在新会话中继续一个会话等待的话",
   "person.route.SESSION_START_FROM": "用一个会话无法继续的话开始一段对话",
+  "person.route.SESSION_STOP_WAITING": "让因账户额度而等待的对话停止等待，它只在你写给它时才继续",
   "person.route.SESSION_GO_ON_BRIEF": "在会话的新部分中用它等待的话继续，并交给它 Daoris 对它的简报",
   "person.route.SESSION_HAND_OVER": "将一段对话交给另一个智能体",
   "person.route.SESSION_HELPER_ASK": "请另一个智能体协助一个会话",

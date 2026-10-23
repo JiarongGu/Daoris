@@ -45,6 +45,7 @@
   "person.route.SESSION_QUEUE_EDIT": "take back or reword words waiting on a session",
   "person.route.SESSION_GO_ON_NEW": "carry a session's waiting words on in a new session",
   "person.route.SESSION_START_FROM": "start a conversation with the words a session could not go on with",
+  "person.route.SESSION_STOP_WAITING": "let a conversation held by its account's limit stop waiting, so it goes on only when you write to it",
   "person.route.SESSION_GO_ON_BRIEF": "go on with a session's waiting words in a new part, handed Daoris's brief of it",
   "person.route.SESSION_HAND_OVER": "hand a conversation over to another agent",
   "person.route.SESSION_HELPER_ASK": "ask another agent to help a session",

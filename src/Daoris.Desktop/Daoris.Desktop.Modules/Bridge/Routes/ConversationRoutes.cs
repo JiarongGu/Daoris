@@ -187,6 +187,21 @@ public sealed class ConversationRoutes(DriverContext context)
         return new { moved.SessionId, moved.Sent, moved.Why, moved.Message };
     }
 
+    // *Stop waiting* (LIMITRESUME1d, D206 §3.7, N27): an ended conversation held by its account's limit waits no more. Its waiting
+    // words are marked, Daoris's limit word taken off, and the limits stage leaves it, so nothing goes on by itself; the person's next
+    // word goes on as any word to an ended conversation does (`ChatRunner.StopWaitingAsync`, LIMITRESUME1c). `{ stopped, message }`:
+    // one that runs, waits for no limit, or is no conversation of this machine's is refused as data, in the runner's sentence.
+    [DriverRoute("SESSION_STOP_WAITING")]
+    [Publishes("SESSION_STOP_WAITING", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private async Task<object?> SessionStopWaitingAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var chat = _loop.Chat ?? throw NotReady();
+        var refused = await chat.StopWaitingAsync(id, cancellationToken).ConfigureAwait(false);
+        if (refused is null) _loop.Nudge();
+        return new { Stopped = refused is null, Message = refused ?? "" };
+    }
+
     // *Go on with another agent…* (MIXAGENT1b-i, D163): a conversation of this machine handed to another agent, from its page.
     // The chat runner judges and keeps the ask: taken at once for a conversation that is not talking, kept for its turn's end
     // for one that is (the page's *Stop and hand over…* asks this first, then stops the turn). `{ sessionId, kept, why, message }`;
