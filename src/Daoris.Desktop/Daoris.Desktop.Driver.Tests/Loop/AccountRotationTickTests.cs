@@ -466,6 +466,88 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 LIMITRESUME1b (D206; the limit-resume design §3.3 step 2, D137 point 7 amended): limited on account-1 with account-2 free, the
+    /// person's words never wait for account-1's reset: the line goes on at once in a briefed part on account-2, handed the words as
+    /// theirs, and no word of Daoris's is kept, since its own conversation is not resumed.
+    /// </summary>
+    [Fact]
+    public async Task A_line_limited_on_one_account_goes_on_briefed_on_the_free_one_with_the_held_words_and_no_limit_word()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var driver = new Daoris.Driver.Driver(client, Resuming("limited"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("failed", "Taken", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
+        Assert.NotNull(roster.CoolingOf("acp-stub", "account-1"));
+        await service.SayAsync("s1", "Also log the port.");
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.Equal(("completed", "account-2", "Done"), (service.State("s2"), Profile(service, "s2"), service.Status("q1")));
+        Assert.Equal([("s1", "w1", "s2")], service.Taken);
+        Assert.Empty(service.DaorisSaid);
+        Assert.DoesNotContain(Frames(), frame => frame["method"]!.GetValue<string>() == "session/resume");
+        var carrying = Frames().Last(frame => frame["method"]!.GetValue<string>() == "session/prompt")["prompt"]!.GetValue<string>();
+        Assert.Contains("carrying on quest", carrying);
+        Assert.Contains("Also log the port.", carrying);
+        Assert.DoesNotContain(LimitResume.Words, carrying);
+        Assert.Empty(await client.StrikesAsync());
+    }
+
+    /// <summary>
+    /// 🔴 Round 3's Codex 4: two limited full resumes running on account-1, then account-2 free: the line goes on briefed there, never
+    /// said <i>cannot go on</i>; no word of Daoris's is left on the record, and none is handed to the briefed part. No strike in any.
+    /// </summary>
+    [Fact]
+    public async Task Two_limited_full_resumes_then_another_account_free_go_on_briefed_with_no_word_of_Daoris_s_left()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var now = Seen;
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var driver = new Daoris.Driver.Driver(
+            client, Resuming("limited-twice"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        // account-2 cools for days, so only account-1's resets can take the line.
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-2", Until.AddDays(5), true, "weekly", Seen, "s0"), Seen);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("failed", "account-1"), (service.State("s1"), Profile(service, "s1")));
+        Assert.True(JsonNode.Parse(service.Record("s1"))!["limit"]?.GetValue<bool>() == true, $"{service.Record("s1")}\n{File.ReadAllText(ResumeLog)}");
+
+        foreach (var reset in new[] { Until.AddMinutes(1), Until.AddDays(2).AddMinutes(2) })
+        {
+            now = reset;
+            var resumed = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+            var seenResumed = $"look: {string.Join(" | ", resumed.Events)}\nafter: {service.Record("s1")}";
+            Assert.True(service.SessionCount == 1, seenResumed);
+            Assert.Equal("failed", service.State("s1"));
+            Assert.Empty(service.Said("s1"));
+        }
+
+        Assert.Equal(2, Frames().Count(frame => frame["method"]!.GetValue<string>() == "session/resume"));
+
+        // account-2 freed by the person's Try now while account-1 cools again.
+        AccountCooling.End(_home, "stub", "account-2", now);
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.Equal("account-2", Profile(service, "s2"));
+        Assert.Empty(service.Said("s1"));
+        Assert.DoesNotContain(Events("s1"), e => e.Why is not null && e.To is null);
+        Assert.Null(new GoOnMarks(_home).Read("s1"));
+        Assert.DoesNotContain(
+            LimitResume.Words, Frames().Last(frame => frame["method"]!.GetValue<string>() == "session/prompt")["prompt"]!.GetValue<string>());
+        Assert.Empty(await client.StrikesAsync());
+    }
+
+    /// <summary>
     /// The protocol door's stand-in that resumes (MSG1g): it names its conversation <c>conv-&lt;session&gt;</c> and writes down
     /// each frame with the stub account it runs as, what it was prompted and what its record's note said. A first prompt takes
     /// the quest and, by its mode, closes it (<c>closes</c>) or fails its turn with the quest still taken (<c>fails</c>); a
@@ -491,6 +573,7 @@ public sealed class AccountRotationTickTests : IDisposable
             const heard = (what) => appendFileSync(log, JSON.stringify({ ...what, session, account }) + '\n');
             const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
               method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+            const LIMIT = "Internal error: You've hit your individual spend limit · run /usage-credits to ask your admin for a higher limit · your weekly limit resets Oct 3, 4pm (ZONE)";
             let conversation = null;
             let resumed = false;
             const say = (text) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
@@ -513,13 +596,19 @@ public sealed class AccountRotationTickTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 const prompt = (frame.params?.prompt ?? []).filter((block) => block.type === 'text').map((block) => block.text).join('\n');
                 heard({ method: 'session/prompt', prompt, resumed, note: await note() });
-                if (resumed) {
+                if (resumed && mode === 'limited-twice') {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: LIMIT } });
+                } else if (resumed) {
                   say('Logged the port, as you said.');
                   send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
                 } else if (prompt.includes('carrying on quest')) {
                   await respond({ action: 'done', reason: 'carried on' });
                   say('Done.');
                   send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                } else if (mode.startsWith('limited')) {
+                  // LIMITRESUME1b: the first turn is refused by observation 4's sentence, which cools the account it ran on.
+                  await respond({ action: 'take' });
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: LIMIT } });
                 } else if (mode === 'fails') {
                   await respond({ action: 'take' });
                   say('I started the field.');
@@ -536,7 +625,7 @@ public sealed class AccountRotationTickTests : IDisposable
             });
             // stdin closed: the ending. Never process.exit (STUB1): the process ends when the loop drains.
             lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });
-            """);
+            """.Replace("(ZONE)", $"({Zone.Id})", StringComparison.Ordinal));
         return script;
     }
 
