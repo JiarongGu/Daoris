@@ -153,7 +153,8 @@ public static class AccountCooling
     /// §3.8): a run's own reset. Null where none names it: never written, ended early, or replaced by a later limit on the same account.
     /// </summary>
     public static CoolingEntry? OfSession(string home, string session) =>
-        Entries(Load(home)).FirstOrDefault(entry => string.Equals(entry.Session, session, StringComparison.Ordinal));
+        Entries(Load(home)).Concat(Unwritten(home, DateTimeOffset.MinValue))
+            .FirstOrDefault(entry => string.Equals(entry.Session, session, StringComparison.Ordinal));
 
     /// <summary>The account's cool-off at <paramref name="now"/>, or null when it is ready.</summary>
     public static CoolingEntry? Of(string home, string agent, string? account, DateTimeOffset now) =>
