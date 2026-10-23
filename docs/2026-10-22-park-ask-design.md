@@ -96,7 +96,8 @@ what only the person can decide before ending the turn on it, with the answers o
 
 The box of a parked session (`SessionBox`, answer mode) carries the whole ask above its one text field (`work/waits/ParkAnswer.tsx`),
 so it is always at the foot, where the person reads the last message, at every width, whatever is on screen above. It is bounded
-at 40% of the main area and scrolls within, as the strip does. In order:
+at 40% of the main area and scrolls within, as the strip does (amended 2026-10-23, WAITPANEL1: within its share of the waiting
+panel's height, which the person drags and which is kept per viewer; D185's WAITPANEL1 note). In order:
 
 1. **Its question**, the agent's words as written; under it each answer it offered as a press (its label, the recommended one
    primary and marked *recommended*), and beside each what the agent will do on it, its words; then, where the agent named one,

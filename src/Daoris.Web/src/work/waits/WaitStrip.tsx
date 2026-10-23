@@ -114,7 +114,8 @@ export type WaitProps = {
  * frame's to read) the strip stands aside, hidden and not unmade, so a fold and words begun in it are kept. Never from under the
  * person: it stays while an ask is open in it, while a press led to its line, and while the focus is in it.
  *
- * Several fold to one line naming them; *To the top* takes the person to the head's waits. Nothing waits, nothing is drawn.
+ * Several fold to one line naming them; *To the top*, where a host hands `onTop`, takes the person to the head's waits (the
+ * session's frame draws it above the waiting panel instead, WAITPANEL1). Nothing waits, nothing is drawn.
  * A molecule: no hook beyond its own fold, focus and sought line.
  */
 export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, aside = false, ...props }: WaitProps & {
@@ -174,6 +175,7 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
       ref={section}
       aria-label={title}
       hidden={aside && !held && !handing}
+      data-wait-part=""
       className="shrink-0 border-t border-line bg-page"
       onFocus={() => setInside(true)}
       // The outline goes once the person moves on from the line it led to, and the strip with it where the head's are on screen.
@@ -183,8 +185,9 @@ export function WaitStrip({ answerBelow = false, workAsk, ruleAsk, onTop, seek, 
         setInside(false);
       }}
     >
-      {/* Bounded, so a long gate never pushes the conversation off the window: the strip scrolls in itself. */}
-      <div className="grid max-h-[40vh] grid-cols-[minmax(0,1fr)] gap-2 overflow-y-auto px-4 py-2">
+      {/* Bounded, so a long gate never pushes the conversation off the window: the strip scrolls in itself, within its share of the
+          waiting panel's height (WAITPANEL1), or 40% of the window where no panel holds it. */}
+      <div className="grid max-h-[var(--wait-part,40vh)] grid-cols-[minmax(0,1fr)] gap-2 overflow-y-auto px-4 py-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <h2 className="m-0 text-small font-semibold text-ink-open">{title}</h2>
           {shut && <span className="min-w-0 text-small text-ink-soft">{waits.map((wait) => waitName(t, wait)).join(' · ')}</span>}

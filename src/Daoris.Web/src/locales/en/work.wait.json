@@ -4,6 +4,8 @@
   "work.wait.fold": "Fold",
   "work.wait.show": "Show",
   "work.wait.top": "To the top",
+  "work.wait.resize": "Height of what waits on you",
+  "work.wait.scroll": "Move through the conversation",
   "work.wait.questionBelow": "It asked you a question: answer it in the box below.",
   "work.wait.questionTop": "It asked you a question: read it and answer it at the top.",
   "work.wait.intake": "Its intake asked you; the answer is on its ask.",

@@ -70,7 +70,8 @@ export function QuestionAsked({ question, busy = false, onChoice }: {
  * - **Behind a disclosure, folded** (PARKWORDS1): that no deadline runs, **what it holds meanwhile** (its quest taken, its own tree
  *   kept, nothing running) and **what an answer does**, Daoris's facts in its words, there for the person who asks.
  *
- * Bounded at 40% of the main area and scrolled within, as the strip is, so a long question never pushes the field off the window.
+ * Bounded by its share of the waiting panel's height (WAITPANEL1; 40% of the window where no panel holds it) and scrolled within,
+ * as the strip is, so a long question never pushes the field off the window.
  * A molecule: props in, presses out; the frame holds the words, the presses' doors and their pending.
  */
 export function ParkAnswer({ quest, tree = null, since, question, goAheads, busy = false, onChoice, onGoAhead, seek, toEvent }: {
@@ -109,7 +110,8 @@ export function ParkAnswer({ quest, tree = null, since, question, goAheads, busy
     <section
       ref={section}
       aria-labelledby={heading}
-      className="grid max-h-[40vh] grid-cols-[minmax(0,1fr)] gap-2 overflow-y-auto"
+      data-wait-part=""
+      className="grid max-h-[var(--wait-part,40vh)] grid-cols-[minmax(0,1fr)] gap-2 overflow-y-auto"
       onBlur={(event) => { if (leftFor(event)) letGo(); }}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">

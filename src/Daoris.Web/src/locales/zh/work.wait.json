@@ -4,6 +4,8 @@
   "work.wait.fold": "收起",
   "work.wait.show": "展开",
   "work.wait.top": "到顶部",
+  "work.wait.resize": "等你处理区域的高度",
+  "work.wait.scroll": "在对话中移动",
   "work.wait.questionBelow": "它向你提了一个问题：在下面的框里回答它。",
   "work.wait.questionTop": "它向你提了一个问题：到顶部阅读并回答它。",
   "work.wait.intake": "它的受理会话问了你；答复在它的需求上。",

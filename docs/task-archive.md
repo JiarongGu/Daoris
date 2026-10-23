@@ -19892,3 +19892,12 @@ combination over held answers and found one defect, fixed before landing. Detail
 **Outcome** 2026-10-23: terminal moves release owned locks, both tree places are swept, and forced removal checks the local
 ledger under the repository's start lock. Held trees remain protected through the terminal and desktop routes. Red-first proof,
 focused checks and one unreproduced test failure are recorded in FIX-LOG's TREELOCK2 entry.
+## WAITPANEL1 — the session's waiting panel sized by the person, and the scroll buttons above it (2026-10-23, D185)
+
+> - [ ] **WAITPANEL1 — the session's waiting panel sized by the person, and the scroll buttons above it** (web-shell; the owner's report, 2026-10-23; D185, PARKVIEW1, PARKWORDS1). What waits on the person's action at the bottom of a session's conversation takes too much height and cannot be resized; its edge drags to resize it, the height kept per viewer, with a sensible default and a floor that keeps the conversation readable; and the conversation's scroll-to-top and scroll-to-bottom buttons sit above it, never under it (a stacking order). Proof: a story and behavior test for the drag and the kept height, a test that the buttons stay above the panel, and the installed window in both themes.
+
+**Outcome** 2026-10-23: the strip and the box are one panel (`work/waits/WaitPanel.tsx`), its top edge a keyboard-reachable
+separator; the height (the most its waits take, 240 px at first, 72 at the floor, the conversation keeping 240 px of the column) is
+kept per viewer as `daoris.waitPanelHeight`. *To the top* and *Back to bottom* are one row above the panel's edge, over the
+conversation's sticky lines. Held by `WaitPanel.test.tsx` and `measured/waitPanel.spec.ts`, with `Work/Waiting panel`'s stories;
+the installed window is not yet looked at. Detail: D185's WAITPANEL1 note. On Opus.

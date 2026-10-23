@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- What waits on you at the foot of a session's conversation takes less height and you can resize it (WAITPANEL1). Drag its top
+  edge, or focus the edge and use the arrow keys, Home and End; a double-click puts it back. Your height is kept for next time, it
+  starts at 240 px, and the conversation above always keeps room to read. *To the top* and *Back to bottom* now sit just above the
+  panel, never under it.
+
 - Finishing or declining a parked session now releases its tree's lock (TREELOCK2). The tidy also clears stale session locks
   at both tree locations. `trees remove --force` can remove a tree locked by an ended session and keeps trees a running or
   parked session still holds.
