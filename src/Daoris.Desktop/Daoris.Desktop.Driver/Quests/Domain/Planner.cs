@@ -1308,6 +1308,12 @@ public static class Planner
             {
                 considerations.Add(CarryOn(quest, failed) with { CarriesWork = snapshot.Committed[quest.Id] });
             }
+            // 🔴 LIMITRESUME1b (D206, design §3.3): an open quest whose last session here an account's limit ended is the line's resume,
+            // carried on from that record, never started afresh in a new tree: its first part held a conversation too.
+            else if (quest.Status == "Open" && LimitedFrom(quest) is { } limited)
+            {
+                considerations.Add(CarryOn(quest, limited));
+            }
             else if (quest.Status == "Open")
             {
                 var considered = Consider(quest);
@@ -1348,6 +1354,14 @@ public static class Planner
             snapshot.Committed.GetValueOrDefault(quest.Id) > 0
             && snapshot.LastRun.TryGetValue(quest.Id, out var last)
             && CommittedWork.CutOff(last)
+            && !HeldForPerson(last)
+                ? last
+                : null;
+
+        // The record an open quest's limited line resumes from (LIMITRESUME1b): its last session here, ended by an account's limit.
+        PriorSession? LimitedFrom(QuestView quest) =>
+            snapshot.LastRun.TryGetValue(quest.Id, out var last)
+            && last is { Limit: true, State: "failed" }
             && !HeldForPerson(last)
                 ? last
                 : null;
@@ -1527,6 +1541,10 @@ public static class Planner
                             ? $"carrying on in `{quest.To}` — session `{cutOff.Session}` was handed over to {handed.Agent}."
                         : cutOff.PersonStopped
                             ? $"carrying on in `{quest.To}` — you stopped session `{cutOff.Session}`, and released it."
+                        // LIMITRESUME1b: an open quest whose session an account's limit cut off before it took the quest.
+                        : quest.Status == "Open" && cutOff.Limit && snapshot.Committed.GetValueOrDefault(quest.Id) == 0
+                            ? $"carrying on in `{quest.To}` — session `{cutOff.Session}` was cut off by its account's limit before it took the quest: "
+                              + (cutOff.Note is { Length: > 0 } limit ? limit : "it ended before closing the quest.")
                         // RETRYWORK1: an open quest whose cut-off session committed work before it took the quest.
                         : quest.Status == "Open"
                             ? $"carrying on in `{quest.To}` — session `{cutOff.Session}` failed before it took the quest, and its tree holds "
