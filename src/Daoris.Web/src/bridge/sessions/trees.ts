@@ -26,13 +26,33 @@ const REVIEW_KEPT = 30 * 60_000;
 /** How long a live session's review is fresh: the moment every view's query is (`main.tsx`). */
 const LIVE_FRESH = 15_000;
 
-/** A review asked of the host and not answered yet: the one read per session, and when it began. */
-type Reading = { answer: Promise<SessionDiff>; since: number };
+/**
+ * How long a review nobody waits on is let run before the page leaves it (GITAPP1a-iii, the git-app design P1.6; provisional): a
+ * return within it joins the read still running (REVIEW4), and past it the page sends `READ_LEAVE`, so the host stops its git.
+ */
+export const READ_LEAVE_GRACE = 10_000;
 
 /**
- * The reads in flight, by session, for each query cache (REVIEW4). The bridge cannot stop a call it has sent, so git
- * reads on after the person leaves; a return within that read waits on it rather than starting a second, and counts
- * from its start. Kept beside the cache whose answer it becomes, so a second cache (a test's) never meets another's.
+ * A review asked of the host and not answered yet: the one read per session, when it began, the id the host knows it by, how
+ * many of the page's waiters wait on it, and the grace running once the last has gone.
+ */
+type Reading = {
+  answer: Promise<SessionDiff>;
+  since: number;
+  read: string;
+  waiting: number;
+  grace: ReturnType<typeof setTimeout> | null;
+  done: boolean;
+};
+
+/** A read's id, the page's own per call (GITAPP1a-iii): what `READ_LEAVE` names, never the session, which two windows share. */
+let reads$ = 0;
+const readId = () => `${Date.now().toString(36)}-${(reads$ += 1).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+/**
+ * The reads in flight, by session, for each query cache (REVIEW4). A return within a read waits on it rather than starting a
+ * second, and counts from its start. Kept beside the cache whose answer it becomes, so a second cache (a test's) never meets
+ * another's.
  */
 const reads = new WeakMap<QueryClient, Map<string, Reading>>();
 const readsOf = (client: QueryClient): Map<string, Reading> => {
@@ -67,30 +87,60 @@ export const useReadingSince = (session: string | null): number | null => {
 };
 
 /**
+ * The page leaves a read nobody waits on (GITAPP1a-iii): out of the table, so a return asks afresh, and `READ_LEAVE` sent, so the
+ * host stops its git once no other window waits on it. An older shell's refusal of the route changes nothing: its read runs on.
+ */
+function leave(client: QueryClient, session: string, entry: Reading) {
+  const reading = readsOf(client);
+  entry.grace = null;
+  if (entry.waiting > 0 || entry.done) return;
+  // A read a newer one replaced is left too, though it is no longer the one a return joins.
+  if (reading.get(session) === entry) {
+    reading.delete(session);
+    tell();
+  }
+  void Promise.resolve()
+    .then(() => call('READ_LEAVE', { read: entry.read }))
+    .catch(() => {});
+}
+
+/**
  * The review's answer, waited on until the person leaves (REVIEW4).
  *
  * @remarks
- * **Leaving cancels the page's wait, not git.** The query hands its signal here, so a review that unmounts mid-read is
- * cancelled and reverts: no clock runs and no state is held for a pane nobody looks at. The host's read goes on, since
- * nothing on the bridge stops it, and what it answers with nobody waiting is put where a return reads first: it is the
- * answer that return would otherwise ask git for again. A refusal with nobody waiting is dropped; a return asks.
+ * **Leaving cancels the page's wait, and then git** (GITAPP1a-iii, the git-app design P1.6). The query hands its signal here,
+ * so a review that unmounts mid-read is cancelled and reverts: no clock runs and no state is held for a pane nobody looks at.
+ * The read counts its waiters; once the last has gone it runs on for {@link READ_LEAVE_GRACE}, within which a return joins it
+ * and what it answers with nobody waiting is put where a return reads first, as before. Past the grace the page sends
+ * `READ_LEAVE` with the read's id, and a return after that asks afresh. A refusal with nobody waiting is dropped; a return asks.
+ * The host binds each read to the window that asked, so a window destroyed mid-read leaves its reads with no script here.
  *
  * **An act that changed the tree asks afresh.** A landing or a discard invalidates the review; a read begun before it
  * answers for the tree as it was, so the read again starts its own, and the earlier one's answer is dropped.
+ *
+ * Exported for its own test (`trees.leave.test.ts`); a view reads the review through {@link useSessionDiff}.
  */
-function readDiff(client: QueryClient, session: string, signal: AbortSignal): Promise<SessionDiff> {
+export function readDiff(client: QueryClient, session: string, signal: AbortSignal): Promise<SessionDiff> {
   const reading = readsOf(client);
   const key = keys.diff(session);
   let held = reading.get(session);
   if (!held || client.getQueryState(key)?.isInvalidated) {
+    const read = readId();
     const entry: Reading = {
-      answer: call<SessionDiff>('SESSION_DIFF', { id: session }, { timeoutMs: reviewBound }),
+      answer: call<SessionDiff>('SESSION_DIFF', { id: session, read }, { timeoutMs: reviewBound }),
       since: Date.now(),
+      read,
+      waiting: 0,
+      grace: null,
+      done: false,
     };
     held = entry;
     reading.set(session, entry);
     tell();
     const settle = () => {
+      entry.done = true;
+      if (entry.grace !== null) clearTimeout(entry.grace);
+      entry.grace = null;
       if (reading.get(session) !== entry) return;
       reading.delete(session);
       tell();
@@ -107,21 +157,45 @@ function readDiff(client: QueryClient, session: string, signal: AbortSignal): Pr
     );
   }
 
-  const answer = held.answer;
+  const entry = held;
+  const answer = entry.answer;
+  // Nobody waits on a read still running: it runs on for the grace, then the page leaves it.
+  const rest = () => {
+    if (entry.waiting === 0 && !entry.done && entry.grace === null) {
+      entry.grace = setTimeout(() => leave(client, session, entry), READ_LEAVE_GRACE);
+    }
+  };
   return new Promise<SessionDiff>((resolve, reject) => {
-    const leave = () => reject(signal.reason);
     if (signal.aborted) {
-      leave();
+      rest();
+      reject(signal.reason);
       return;
     }
-    signal.addEventListener('abort', leave, { once: true });
+    // One more waiter: a grace running for this read is a return within it, which joins the read.
+    entry.waiting += 1;
+    if (entry.grace !== null) clearTimeout(entry.grace);
+    entry.grace = null;
+    let waits = true;
+    const gone = () => {
+      if (!waits) return;
+      waits = false;
+      entry.waiting -= 1;
+    };
+    const left = () => {
+      gone();
+      rest();
+      reject(signal.reason);
+    };
+    signal.addEventListener('abort', left, { once: true });
     answer.then(
       (diff) => {
-        signal.removeEventListener('abort', leave);
+        signal.removeEventListener('abort', left);
+        gone();
         resolve(diff);
       },
       (error: unknown) => {
-        signal.removeEventListener('abort', leave);
+        signal.removeEventListener('abort', left);
+        gone();
         reject(error);
       },
     );

@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Leaving Review now stops the git it started (GITAPP1a-iii). Before, git read on to its end after you left, however long it took.
+  Now a review nobody looks at runs on for ten seconds, so coming straight back still joins it. After that Daoris stops its git and
+  waits for it to end. Two windows on one session's review now share one read, which stops once neither waits. Closing a window
+  stops its reads too. A git that does not end when stopped is said in the machine log as `git.unended`.
 - `daoris-driver git review <session>` reads a session's review from a terminal, as its Review page reads it (GITAPP1a-i). It
   says the files and their base, the uncommitted ones, the line and the branch; `--json` writes them without their patches. With
   `--time` it lists every git the read started: which read it was, whose (the review, its untracked files, a landing's review or

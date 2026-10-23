@@ -425,6 +425,7 @@ public sealed partial class StatePublisherTests : DriverModuleBridge
     [InlineData("SET_LANDING", "landing,lines", null)]
     [InlineData("LANDING", "", null)]
     [InlineData("SESSION_PROCESS", "", null)]
+    [InlineData("READ_LEAVE", "", null)]
     [InlineData("OPINION_GATE", "", null)]
     [InlineData("OPINION_WAITS", "", null)]
     [InlineData("HANDOFF_PLAN", "", null)]

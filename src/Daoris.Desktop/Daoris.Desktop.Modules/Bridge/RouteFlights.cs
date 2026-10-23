@@ -27,9 +27,11 @@ public sealed class RouteFlights
     /// <summary>
     /// Join the flight under way for <paramref name="key"/>, or start one with <paramref name="ask"/>, which runs on this
     /// caller's thread until its first wait, as a route always has. Cancelling <paramref name="ct"/> stops this caller
-    /// waiting, and the flight with it only when no other caller waits.
+    /// waiting, and the flight with it only when no other caller waits. <paramref name="joined"/> is told once this caller is
+    /// counted among the flight's waiters (GITAPP1a-iii).
     /// </summary>
-    public async Task<object?> JoinAsync(string key, Func<CancellationToken, Task<object?>> ask, CancellationToken ct)
+    public async Task<object?> JoinAsync(
+        string key, Func<CancellationToken, Task<object?>> ask, CancellationToken ct, Action? joined = null)
     {
         ct.ThrowIfCancellationRequested();
         Flight flight;
@@ -41,6 +43,7 @@ public sealed class RouteFlights
             flight.Waiting++;
         }
 
+        joined?.Invoke();
         if (first) _ = FlyAsync(key, flight, ask);
         try
         {

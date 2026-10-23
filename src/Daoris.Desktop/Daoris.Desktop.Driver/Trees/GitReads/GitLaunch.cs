@@ -192,6 +192,8 @@ internal static class GitLaunch
         var began = Stopwatch.GetTimestamp();
         // The gate writes its wait and its creation here (ProcessStarts.Timed), in this start's own flow alone.
         using (ProcessStarts.Timing((waited, created) => launched.Gate(waited, created)))
+        // GITAPP1a-iii: a git that outlived its kill is said with its node, never swallowed.
+        using (ChildProcess.Telling((pid, reason) => GitUnended.Say(launched, pid, reason)))
         {
             try
             {

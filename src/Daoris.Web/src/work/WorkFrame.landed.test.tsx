@@ -793,7 +793,7 @@ describe('reviewing what a session landed', () => {
     expect(await screen.findByText('src/chunk.ts')).toBeTruthy();
     // Within the review's own bound (REVIEW4): the bridge's 30 seconds gave up on a diff git took most of a minute over.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', {
-      payload: { id: 's1a2b3c4' }, timeoutMs: 180_000,
+      payload: { id: 's1a2b3c4', read: expect.any(String) }, timeoutMs: 180_000,
     });
     // The range it is measured from, stated — a review that does not say so is an opinion.
     expect(screen.getByText(/abc12345/)).toBeTruthy();
