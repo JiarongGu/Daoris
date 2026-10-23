@@ -189,8 +189,8 @@ A run killed outright leaves its logs in the tree; the next run keeps them there
 
 ### Work the local install builds
 
-The install's driven sessions build rows of this repository in their own trees. Two practices keep one line of work in one
-place (learned 2026-10-23, LIMITGOON1):
+The install's driven sessions build rows of this repository in their own trees. Three practices keep one line of work in one
+place (learned 2026-10-23 and 24, LIMITGOON1 and LIMITRESUME1d):
 
 - **A stuck session is resumed in place,** never re-published as a new quest. Answer its park, resume it (`sessions say`,
   `help resume`), or let its quest go on. A new quest for the same work opens a second tree, and both must later rebase onto
@@ -198,6 +198,9 @@ place (learned 2026-10-23, LIMITGOON1):
 - **Land through Daoris's own `trees land`.** A landing done beside it, such as a squash to correct a commit's attribution, is
   not recognised as the sessions' work (SQUASHSEEN1). Daoris then reopens those sessions to rebase onto main, finding nothing
   left to do.
+- **Publish a quest that builds on another row only once that row's landing is committed.** A session's tree starts from
+  main as it stands. A quest that names a row as landed while its merge is still being tested sends the builder to ask
+  whether to merge the unreviewed branch.
 
 ### The CI between releases
 
