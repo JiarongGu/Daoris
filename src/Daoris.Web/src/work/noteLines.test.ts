@@ -361,7 +361,7 @@ describe('noteLines', () => {
       expect(noteLines(t, { parts: [same] }, 'en')[0].text)
         .toBe('The hand-over to codex-acp was not taken: it already runs on that agent. This session goes on with its own agent.');
       expect(noteLines(zh, { parts: [closed] }, 'zh')[0].text)
-        .toBe('转交给 codex-acp 没有完成：它的任务已关闭，没有剩下的工作可以转交。这个会话不会再继续。');
+        .toBe('转交给 codex-acp 没有完成：它的委托已关闭，没有剩下的工作可以转交。这个会话不会再继续。');
       expect(noteLines(zh, { parts: [same] }, 'zh')[0].text)
         .toBe('转交给 codex-acp 没有完成：它已经在那个智能体上运行。这个会话继续由它自己的智能体做。');
       for (const line of [closed, same].map((part) => noteLines(t, { parts: [part] }, 'en')[0].text)) expect(line).not.toMatch(/refused/);
@@ -372,7 +372,7 @@ describe('noteLines', () => {
       expect(noteLines(t, { parts: [refused] }, 'en')[0].text)
         .toBe('Its agent’s ask to hand this session over was refused: its quest is closed, so no work is left to hand over.');
       expect(noteLines(zh, { parts: [refused] }, 'zh')[0].text)
-        .toBe('它的智能体要求转交这个会话，被拒绝：它的任务已关闭，没有剩下的工作可以转交。');
+        .toBe('它的智能体要求转交这个会话，被拒绝：它的委托已关闭，没有剩下的工作可以转交。');
     });
   });
 
