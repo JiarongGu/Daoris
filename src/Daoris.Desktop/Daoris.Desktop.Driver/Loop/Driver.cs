@@ -2932,6 +2932,12 @@ public sealed class Driver(
         if (conclusion.State != "failed" || turnFailed is not { Length: > 0 }) return (conclusion, false);
 
         (CoolingEntry Entry, LimitSeen Seen)? limited;
+        // The cool-offs that ended lately, read before this one replaces its account's (LIMITRESUME1b): a reset that did not lift it.
+        var now = Context.Harnesses.Clock();
+        IReadOnlyList<CoolingEntry> ended;
+        try { ended = AccountCooling.Offered(home, now); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { ended = []; }
+
         try
         {
             limited = Context.Harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId, config.CoolOff);
@@ -2946,7 +2952,18 @@ public sealed class Driver(
 
         var (entry, seen) = read;
         service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, Context.Events.TurnsEnded(sessionId) + 1, used?.Used));
-        return (conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, Context.Harnesses.Zone)), true);
+        var noted = conclusion.Unsaid(turnFailed).Then(" ", CoolingWords.NoteOf(entry, Context.Harnesses.Zone));
+
+        // 🔴 LIMITRESUME1b (the design §3.3's bound): an attempt refused with the same kind of limit within the margin after its account's
+        // cool-off ended met a reset that did not lift it (an admin's spend limit can outlast the window the sentence names). Said once,
+        // on this end, and in the machine log; it still waits for the next cool-off and never parks.
+        if (LimitResume.NotLifted(ended, entry, now) is { } notLifted)
+        {
+            noted = noted.Then(" ", notLifted);
+            service.AccountSaid(AccountLine.NotLifted(sessionId, adapter.Name, selection.Profile, seen));
+        }
+
+        return (noted, true);
     }
 
     /// <summary>

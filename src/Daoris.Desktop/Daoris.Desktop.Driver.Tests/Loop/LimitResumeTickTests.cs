@@ -217,6 +217,34 @@ public sealed class LimitResumeTickTests : IDisposable
     }
 
     /// <summary>
+    /// The design §3.3's bound: an attempt refused with the same kind of limit just after its account's cool-off ended says its reset did
+    /// not lift the limit, once, on its end; it waits for the next cool-off, never parks, and counts no strike.
+    /// </summary>
+    [Fact]
+    public async Task A_refusal_with_the_same_limit_just_after_the_reset_says_it_was_not_lifted_once_and_never_parks()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var driver = Driver(service, "limited", strikes: 1);
+        await LimitedAsync(service, driver);
+        Assert.DoesNotContain("limit.not-lifted", service.Record("s1"));
+
+        _now = Until.AddMinutes(1);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        Assert.Equal(("failed", "Taken"), (service.State("s1"), service.Status("q1")));
+        Assert.Contains("\"limit\":true", service.Record("s1"), StringComparison.Ordinal);
+        Assert.Single(JsonNode.Parse(service.Record("s1"))!["noteParts"]!.AsArray(), part => part?["code"]?.GetValue<string>() == "limit.not-lifted");
+        Assert.Contains("Its last reset did not lift the limit: weekly.", service.Note("s1"));
+        Assert.Empty(await new ServiceClient(service.Url, null).StrikesAsync());
+
+        // The next attempt, long after that cool-off, says nothing of it again.
+        _now = Until.AddDays(2);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.DoesNotContain("limit.not-lifted", service.Record("s1"));
+        Assert.Equal(1, service.SessionCount);
+    }
+
+    /// <summary>
     /// Round 3's B8 item 4: a start held between the judge and its going on (here a replay holding the repository's trees) keeps no word.
     /// </summary>
     [Fact]
