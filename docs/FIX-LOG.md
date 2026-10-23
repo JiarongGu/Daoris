@@ -25,7 +25,7 @@ repository.
   filter with the same file: `ContentHeldTests`, `ContentLandingTests`, `ContentOfferTests`, `ContentProofLossTests`,
   `TerminalLandRebaseTests`, `AutoLandingRebaseTests`, `LandRebaseLandingTests`, `LandBacklogLandingTests`,
   `LandingSquashTests` and `EndJudgementGitTests`, 70 of 70 with the new class. A first build that asked past commits of the
-  line failed `EndJudgementGitTests`' patch-only case, so the proof asks the line's tip alone. `ContentHoldWordsTests`, 15 of 15, and the driver's fast half. Detail:
+  line failed `EndJudgementGitTests`' patch-only case, so the proof asks the line's tip alone. `ContentHoldWordsTests`, 15 of 15, and the driver's fast half, 14,183. Detail:
   D102's SQUASHSEEN1 note.
 
 ## 2026-10-24 - Conversations an update closed never came back (LIMITRESUME1i)
