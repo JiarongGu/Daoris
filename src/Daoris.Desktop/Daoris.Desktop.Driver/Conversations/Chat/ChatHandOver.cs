@@ -218,9 +218,10 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
 
     /// <summary>
     /// The old conversation ends by the runner's own end: its process is stopped and its record says so, returning once its watch
-    /// has written it, or after <see cref="HandOverEnd"/>. One that already ended has nothing to stop.
+    /// has written it, or after <see cref="HandOverEnd"/>. One that already ended has nothing to stop. A limit's move ends the old part
+    /// the same way (<see cref="LimitMove"/>).
     /// </summary>
-    private async Task EndForHandOverAsync(string sessionId)
+    internal async Task EndForHandOverAsync(string sessionId)
     {
         if (!_context.Watching.TryGetValue(sessionId, out var watch)) return;
 

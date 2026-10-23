@@ -183,6 +183,7 @@
   "note.moved.on": "Went on in session {{session}} with {{agent}} as `{{account}}`, because {{why}}: its context stood at {{tokens}} tokens, and the new session was handed Daoris's brief of it, {{count}} characters.",
   "note.moved.from": "Continues session {{session}}, which ran on {{agent}} as `{{account}}`, because {{why}}: its context stood at {{tokens}} tokens, and it was handed Daoris's brief of it, {{count}} characters.",
   "note.chat.moved": "Moved to `{{to}}` at the end of its turn: `{{from}}` had used {{used}} of its {{window}} limit, over its curve's {{curve}}; `{{to}}` has room.",
+  "note.chat.limit-not-moved": "Its account reached its limit, and it could not go on on the next account: write to it again once one has room.",
   "note.chat.moved-from": "Continues from `{{from}}`, which had used {{used}} of its {{window}} limit, over its curve's {{curve}}.",
   "note.helper.asked": "A helper was asked: {{agent}} reads in session {{session}} and answers the question.",
   "note.helper.answered": "Helper {{agent}} (session {{session}}) answered; its answer is this session's next turn, marked as the helper's.",

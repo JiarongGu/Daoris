@@ -80,6 +80,9 @@ public sealed class ChatRunner : IDisposable
 
     private readonly CurveMove _curve;
 
+    // LIMITGOON1: a conversation whose turn its account's limit refused goes on, in the same conversation, on the next account.
+    private readonly LimitMove _limit;
+
     // What the conversations' turns are judged by (NOTIFY1a): the person's words, their stops and each turn's end.
     private readonly AttentionWatch _answers = new();
 
@@ -140,6 +143,7 @@ public sealed class ChatRunner : IDisposable
         _handOver = new ChatHandOver(_context, this);
         _curve = new CurveMove(_context, _handOver);
         _help = new ChatHelp(_context, this);
+        _limit = new LimitMove(_context, this, _handOver, _help);
         _words = new ChatHelperWords(_context);
         _move = new BriefedMove(_context, this, _handOver, _help);
 
@@ -479,8 +483,10 @@ public sealed class ChatRunner : IDisposable
         _processes.MarkOpening(sessionId);
 
         // A new conversation holds no context yet, so it rotates like a start (TOOL4f, D125 §3.3), and only here, at its
-        // opening: its account is its process's home, set at spawn. Its first line says which account and why.
-        RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, carried: null);
+        // opening: its account is its process's home, set at spawn. Its first line says which account and why, and, where it goes on
+        // from a limit, the conversation it carries and the turn the limit refused (LIMITGOON1).
+        RotatedOpening.Say(
+            _service, _events, sessionId, resolved.Name, selection, from is { Why: HandOverWhy.Limit } ? LimitCarried(from.Session) : null);
 
         // A conversation in a tree it grew is told its repository's process with its first message (PROCESS1d-ii, D164's amendment
         // point 4), as a driven session is in its instruction. Never the person's checkout, nor a tree handed over, whose new
@@ -584,8 +590,13 @@ public sealed class ChatRunner : IDisposable
     /// window that moves meanwhile moves nothing here: its record keeps it and its account is that workspace's. Null is a press
     /// that named none, which opens as before, in <c>default</c>.
     /// </param>
+    /// <param name="carries">
+    /// The conversation whose account's limit refused its turn, which this one goes on from on the next account (LIMITGOON1): its
+    /// opening line and <c>account.rotated</c> name it, as a driven carry-on's do. Null for every other start.
+    /// </param>
     /// <exception cref="DriverException">The agent names no harness this machine knows.</exception>
-    public async Task<HelpPlaced> PlaceHelpAsync(string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default)
+    public async Task<HelpPlaced> PlaceHelpAsync(
+        string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default, string? carries = null)
     {
         var resolved = _harnesses.Adapters.Resolve(adapter);
         if (!resolved.Interactive)
@@ -615,8 +626,9 @@ public sealed class ChatRunner : IDisposable
         // Marked as this process's start until its spawn's marker replaces it: placed, it waits for its run (QUEUED1).
         _processes.MarkOpening(sessionId);
 
-        // Ask Daoris's opening rotates like a start, on its scope's order (TOOL4f, D125 §3.2), and says so first.
-        RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, carried: null);
+        // Ask Daoris's opening rotates like a start, on its scope's order (TOOL4f, D125 §3.2), and says so first; one that goes on from a
+        // limit names the conversation it carries and the turn the limit refused (LIMITGOON1).
+        RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, LimitCarried(carries));
         return new(sessionId, message) { Workspace = RemoteTarget.Workspace(workspace), Adapter = resolved, Selection = selection };
     }
 
@@ -1229,6 +1241,9 @@ public sealed class ChatRunner : IDisposable
         var mapper = resolved.StructuredOutput();
         // The turn's end it was last judged at by its account's usage curve (SWITCH1c-ii): told under its turns' own lock, in order.
         DateTimeOffset? judged = null;
+        // Whether a turn's refusal was read for its account's limit since the last turn's end was judged (LIMITGOON1): set on the turn's
+        // own thread, taken at its end.
+        var limitedTurn = 0;
         void Changed(ChatQueue queue)
         {
             QueueChanged?.Invoke(sessionId, queue);
@@ -1236,11 +1251,13 @@ public sealed class ChatRunner : IDisposable
             HelpTurnChanged(sessionId, queue);
             // A conversation asked to go on with another agent while it talked is handed over as its turn ends (MIXAGENT1a-i).
             _handOver.Due(sessionId, queue, config, onEnded);
-            // One over its account's usage curve goes on with another account of its agent as its turn ends (SWITCH1c-ii), judged once.
+            // One over its account's usage curve goes on with another account of its agent as its turn ends (SWITCH1c-ii), judged once;
+            // one whose turn its account's limit refused goes on, in the same conversation, on the next account (LIMITGOON1), and only that.
             if (CurveMove.TurnJustEnded(queue, judged))
             {
                 judged = queue.LastTurnEnded;
-                _curve.Due(sessionId, config, onEnded);
+                if (Interlocked.Exchange(ref limitedTurn, 0) == 1) _limit.Due(sessionId, config, onEnded);
+                else _curve.Due(sessionId, config, onEnded);
             }
 
             // A turn the person's words started has ended (NOTIFY1a): judged last, so a listener's failure moves nothing above.
@@ -1254,7 +1271,12 @@ public sealed class ChatRunner : IDisposable
             chat = new ProtocolChat(
                 place.Posture ?? resolved.AcpPosture, meta, workTree, offered, Changed,
                 stopped: () => _processes.WasStopRequested(sessionId),
-                limited: failure => Limited(sessionId, resolved, selection.Profile, failure, config.CoolOff),
+                limited: failure =>
+                {
+                    var cooling = Limited(sessionId, resolved, selection.Profile, failure, config.CoolOff);
+                    if (cooling is not null) Interlocked.Exchange(ref limitedTurn, 1);
+                    return cooling;
+                },
                 signedOut: failure => SignedOut(resolved, selection.Profile, failure),
                 goOn: goOn?.Ask,
                 // On this door the words went once their prompt is on the wire.
@@ -1897,6 +1919,14 @@ public sealed class ChatRunner : IDisposable
             sessionId, adapter.Name, profile, read.Seen, _events.TurnsEnded(sessionId) + 1, used: null));
         return CoolingWords.ConversationOf(read.Entry, _harnesses.Zone);
     }
+
+    /// <summary>
+    /// What a conversation that goes on from a limit carries (LIMITGOON1), for its opening line and <c>account.rotated</c>: the one it
+    /// continues, the turn the limit refused (its last ended, since a conversation's refused turn ends <c>error</c> in its record, after
+    /// <see cref="Limited"/> counted it) and its context there. Null for a start that carries none.
+    /// </summary>
+    private RotatedOpening.Carried? LimitCarried(string? carries) =>
+        carries is null ? null : new RotatedOpening.Carried(carries, _events.TurnsEnded(carries), RotatedOpening.ContextOf(null, _events, carries));
 
     /// <summary>
     /// A conversation's call the door refused, read for the account's sign-in (SIGNIN1b, D125 ROSTER1b) by the reader a driven
