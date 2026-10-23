@@ -31,6 +31,10 @@ with the version and date at release.
 - A session whose model's provider refused its turn no longer stops to ask you about it (APIREFUSAL1). It used to show the
   provider's *API Error* under *What needs you* as though it were a question. Now the run fails, saying the provider refused it
   and keeping the provider's words and request id, and the work goes on as after any failed run.
+- A hand-over you said yes to that Daoris could not take no longer reads as refused (HANDOVERSAID1). The session's timeline now
+  says it was not taken, gives the reason in words (its quest closed, the agent unavailable, its tree gone), and says whether the
+  session goes on with its own agent. An agent's ask that could not be taken anyway, such as one for a closed quest, is refused
+  when it is asked, so you are not asked to say yes. A hand-over you ask for at a terminal or in the window says so on the timeline.
 
 - Finishing or declining a parked session now releases its tree's lock (TREELOCK2). The tidy also clears stale session locks
   at both tree locations. `trees remove --force` can remove a tree locked by an ended session and keeps trees a running or
