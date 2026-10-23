@@ -100,7 +100,11 @@ interface ClassVerdict { verdict: string; tree: string | null; at: string; commi
 /** PROCREACH1: what a CI run does with a Process half it owes: the whole half and why, or the classes it runs and those it keeps. */
 interface ClassPlan {
   whole: string | null; run: { name: string; why: string }[]; kept: { name: string; verdict: ClassVerdict; standing: string }[]; sweep: string | null;
+  /** CISCOPE1b: why a half whose every class is kept passes without running, when it does. */
+  composed?: string;
 }
+/** CISCOPE1b: a half's newest gate verdict and how it stands on the tree a CI run gates. */
+interface Last { verdict: Verdict; standing: Standing }
 type Reached = { whole: { path: string; why: string }[]; classes: string[]; by: Map<string, string> };
 /** GATE6: how a verdict given on one tree stands for another, for its gate, and the paths that say so. */
 interface Standing { standing: 'exact' | 'records' | 'unreached' | 'stale'; paths: string[]; records: string[] }
@@ -293,8 +297,10 @@ const tool = await import(
   addClassVerdicts: (home: string, gate: string, entries: ({ name: string } & ClassVerdict)[], options?: { keep?: number }) => void;
   classPlan: (facts: {
     classes: string[]; verdicts: Record<string, ClassVerdict[]>; tree: string; drift: (from: string) => string[] | null;
-    reached: (paths: string[]) => Reached; now?: number; bound?: number;
+    reached: (paths: string[]) => Reached; last?: Last | null; now?: number; bound?: number;
   }) => ClassPlan;
+  composeRefusal: (facts: { classes: string[]; verdicts: Record<string, ClassVerdict[]>; last: Last | null }) => string | null;
+  lastVerdict: (gate: string, verdicts: Verdict[], judging: Judging) => Last | null;
 };
 /** CI1: what `os.cpus()` answers of a processor, the times it spent by kind since the machine started. */
 interface CpuTimes { times: { user: number; nice: number; sys: number; idle: number; irq: number } }
@@ -4368,12 +4374,101 @@ test('a half the CI owes runs the classes a change reaches and keeps the rest; a
   assert.equal(tool.SWEEP_BOUND_MS, 24 * 60 * 60 * 1000);
   assert.match(tool.classPlan({ ...facts, verdicts: every(pass('t1')), now: Date.parse(at(11)), bound: 30 * 60_000 }).whole ?? '', /older than 0\.5 hours/);
 
-  // Every class kept while the half is owed (it failed outside a test): the whole half, for a verdict of its own.
+  // Every class kept with no verdict of the half's own to compose from: the whole half, for one (CISCOPE1b's refusals below).
   plan = tool.classPlan({ ...facts, verdicts: every(pass('t2')) });
-  assert.match(plan.whole ?? '', /every class is kept, but the half owes a verdict/);
+  assert.match(plan.whole ?? '', /every class is kept, but the half has no verdict of its own: it runs whole for a verdict of its own/);
   // No class with a pass that stands (a tree git cannot compare): the whole half.
   plan = tool.classPlan({ ...facts, verdicts: every(pass('gone')) });
   assert.match(plan.whole ?? '', /no class has a pass that stands on this tree/);
+});
+
+test('CISCOPE1b: a half whose every class stands passes without running only when its last verdict was a pass gone stale by reach, complete and matching the census', () => {
+  const at = (hour: number) => `2026-10-22T${String(hour).padStart(2, '0')}:00:00Z`;
+  const classes = ['N.AlphaTests', 'N.BetaTests', 'N.LonelyTests'];
+  // Since t1, a path reached the gate but none of its classes: a source no class's area holds.
+  const facts = {
+    classes, tree: 't2', drift: (from: string) => (from === 't1' ? ['src/Shell/Window.cs'] : null),
+    reached: (): Reached => ({ whole: [], classes: [], by: new Map() }), now: Date.parse(at(12)),
+  };
+  const ran = (name: string, verdict = 'PASS', hour = 10): [string, ClassVerdict[]] => [name, [{ verdict, tree: 't1', at: at(hour), commit: 'c1' }]];
+  const whole = Object.fromEntries(classes.map((name) => ran(name)));
+  const stale: Standing = { standing: 'stale', paths: ['src/Shell/Window.cs'], records: [] };
+  const last = (verdict = 'PASS', classesOf: Verdict['classes'] | null = { ran: 3, kept: 0, sweep: at(10) }, standing = stale): Last => ({
+    verdict: { gate: 'desk-process', verdict, tree: 't1', at: at(10), commit: 'c1', ...(classesOf ? { classes: classesOf } : {}) }, standing,
+  });
+
+  // Its last run passed whole, every class with it; only paths no class reads changed since: it passes by its classes.
+  let plan = tool.classPlan({ ...facts, verdicts: whole, last: last() });
+  assert.deepEqual([plan.whole, plan.run, plan.kept.length, plan.sweep], [null, [], 3, at(10)]);
+  assert.equal(plan.composed, 'its last verdict, a pass on 2026-10-22 10:00 UTC, went stale by reach alone (src/Shell/Window.cs), which reaches none of its classes');
+  // So does a half whose last pass was itself composed (none ran, every class kept): its classes' own passes stand.
+  plan = tool.classPlan({ ...facts, verdicts: whole, last: last('PASS', { ran: 0, kept: 3, sweep: at(10) }) });
+  assert.equal(plan.whole, null);
+  assert.ok(plan.composed);
+
+  // The refusals: each runs the whole half, saying what may be hidden.
+  const refused = (why: RegExp, verdicts: Record<string, ClassVerdict[]>, given: Last | null) => {
+    const refusal = tool.classPlan({ ...facts, verdicts, last: given });
+    assert.equal(refusal.composed, undefined);
+    assert.deepEqual([refusal.run.length, refusal.kept, refusal.sweep], [3, [], null]);
+    assert.match(refusal.whole ?? '', new RegExp(`^every class is kept, but ${why.source}: it runs whole for a verdict of its own$`));
+  };
+  // A half that failed outside a test, every class kept: a build, a host or a discovery failure stays owed.
+  refused(/its last verdict \(FAIL on 2026-10-22 10:00 UTC\) failed outside a test/, whole, last('FAIL'));
+  // A trx missing: the run's results are not complete, whatever the classes' own verdicts.
+  refused(/its last pass \(2026-10-22 10:00 UTC\) has no results of its classes \(no trx was read\)/, whole, last('PASS', { ran: null, kept: 0, sweep: at(10) }));
+  refused(/its last pass .* has no results of its classes \(no trx was read\)/, whole, last('PASS', null));
+  refused(/its last pass .* has no results of its classes \(no trx was read\)/, whole, last('PASS', { ran: 0, kept: 0, sweep: at(10) }));
+  // A class the census lacks: the runner ran one the census never saw.
+  refused(/its last run ran N\.GhostTests, which the census lacks/, { ...whole, ...Object.fromEntries([ran('N.GhostTests')]) }, last());
+  // And the converse: its last run, whole, did not run a class the census holds (its pass is from an earlier run).
+  refused(/its last run, whole, did not run N\.LonelyTests, which the census holds/, { ...whole, ...Object.fromEntries([ran('N.LonelyTests', 'PASS', 9)]) }, last());
+  // A pass that did not go stale by reach (its tree cannot be compared), and a half with no verdict at all.
+  refused(/its last pass \(2026-10-22 10:00 UTC\) did not go stale by reach/, whole, last('PASS', { ran: 3, kept: 0, sweep: at(10) }, { standing: 'stale', paths: [], records: [] }));
+  refused(/the half has no verdict of its own/, whole, null);
+
+  // A class run by reach in the last run counts only for the census it agrees with; one kept then is not asked to have run.
+  assert.equal(tool.composeRefusal({ classes, verdicts: { ...whole, ...Object.fromEntries([ran('N.LonelyTests', 'PASS', 9)]) }, last: last('PASS', { ran: 2, kept: 1, sweep: at(9) }) }), null);
+
+  // The sweep is unchanged: past its bound the half runs whole, however its last pass went stale.
+  plan = tool.classPlan({ ...facts, verdicts: whole, last: last(), now: Date.parse(at(10)) + tool.SWEEP_BOUND_MS + 60_000 });
+  assert.match(plan.whole ?? '', /a sweep runs the whole half/);
+  // A class a change reaches still runs, and the rest are kept: the narrowed rule asks only of a half with nothing to run.
+  plan = tool.classPlan({ ...facts, reached: () => ({ whole: [], classes: ['N.BetaTests'], by: new Map([['N.BetaTests', 'src/Shell/Window.cs']]) }), verdicts: whole, last: last() });
+  assert.deepEqual([plan.whole, plan.run.map((each) => each.name), plan.kept.length, plan.composed], [null, ['N.BetaTests'], 2, undefined]);
+});
+
+test("CISCOPE1b: f296996's git half replayed: 73c1fe0 failed on cli and driver-process, its git half ran whole and passed, so at f296996 it composes and runs none of its 86 classes", () => {
+  // The records of 2026-10-23, as `local/gate-verdicts.json` and `local/class-verdicts.json` held them when f296996's run began:
+  // 73c1fe0's git half ran whole (86 classes, 1,966 s) and passed; its run failed on `cli` and `driver-process`
+  // (`DriverHostTests.A_bare_invocation_prints_the_usage_and_starts_nothing`). f296996 changed four paths since: three records
+  // and `DriverHostTests.cs`, which the lane table sends to the driver's Process gates and no git-half class reads.
+  const [from, to] = ['c7293367a5be4b906346b7b6458d5ab57e5330c4', '1b70f53efb1b69c99463f1a1db44d8e69f0fc031'];
+  const at = '2026-10-23T00:32:12Z';
+  const classes = Array.from({ length: 86 }, (_, i) => `Daoris.Desktop.Driver.Tests.Git${String(i).padStart(2, '0')}Tests`);
+  const changed = ['TASKS.md', 'docs/decisions/D204.md', 'docs/index/decisions.md', 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/DriverHostTests.cs'];
+  const judging: Judging = {
+    tree: to, drift: (tree: string) => (tree === from ? changed : null), isRecord: (path: string) => !path.startsWith('src/'),
+    reaching: (_gate: string, paths: string[]) => paths.filter((path) => path.startsWith('src/Daoris.Desktop/')),
+  };
+  const verdicts: Verdict[] = [
+    { gate: 'driver-process', verdict: 'FAIL', tree: from, at: '2026-10-23T00:24:43Z', commit: '73c1fe0', classes: { ran: 114, kept: 0, sweep: '2026-10-23T00:24:43Z' } },
+    { gate: 'driver-process-git', verdict: 'PASS', tree: from, at, commit: '73c1fe0', classes: { ran: 86, kept: 0, sweep: at } },
+  ];
+  const last = tool.lastVerdict('driver-process-git', verdicts, judging);
+  assert.deepEqual(last?.standing, { standing: 'stale', paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/DriverHostTests.cs'], records: changed.slice(0, 3) });
+  assert.equal(tool.lastVerdict('driver-process', verdicts, judging)?.verdict.verdict, 'FAIL');
+  assert.equal(tool.lastVerdict('modules-process', verdicts, judging), null);
+  const plan = tool.classPlan({
+    classes, tree: to, drift: judging.drift, last, now: Date.parse('2026-10-23T02:23:28Z'),
+    verdicts: Object.fromEntries(classes.map((name) => [name, [{ verdict: 'PASS', tree: from, at, commit: '73c1fe0' }]])),
+    // No git-half class reads the other half's test file: the census places it nowhere in this half.
+    reached: (): Reached => ({ whole: [], classes: [], by: new Map() }),
+  });
+  // Zero classes run, where the run as it went ran all 86 whole for 1,888,153 ms: 31.5 minutes.
+  assert.deepEqual([plan.whole, plan.run.length, plan.kept.length, plan.sweep], [null, 0, 86, at]);
+  assert.match(plan.composed ?? '', /a pass on 2026-10-23 00:32 UTC, went stale by reach alone \(src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\/DriverHostTests\.cs\)/);
+  assert.equal(Math.round(1_888_153 / 6_000) / 10, 31.5);
 });
 
 test('the stage refuses a Process half that kept classes on verdicts older than the sweep bound, and the CI owes it; a whole pass of any age stands', () => {
@@ -6593,6 +6688,26 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
     assert.match(halfOf(fifth).classes!.whole ?? '', /src\/Desk\/Desk\.Tests\/GlobalUsings\.cs acts on every test unnamed/);
+
+    // CISCOPE1b: a fixture no class names reaches the gate and none of its classes; the last pass, whole, went stale by it
+    // alone, so the half passes by its kept classes without running, and the stage takes that pass.
+    const sixth = commit('src/Desk/Desk.Tests/unused.txt', 'nothing reads this\n');
+    result = await repo.run(['--ci'], env);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(dotnetRan(), [], 'no class ran');
+    assert.match(result.out, /desk-process: passes without running \(CISCOPE1b\): all 3 classes kept, each with a pass that stands on this tree, the oldest from [^;]+; its last verdict, a pass on [^,]+, went stale by reach alone \(src\/Desk\/Desk\.Tests\/unused\.txt\), which reaches none of its classes/);
+    assert.match(result.out, /CI on \w+ \(CI1\): 1 of 2 gates to run[\s\S]*CI green on \w+: 1 gate run and passed, 1 passed by its kept classes \(desk-process\)/);
+    half = halfOf(sixth);
+    assert.deepEqual([half.state, half.verdict, half.ms, half.classes!.run, half.classes!.kept.length], ['done', 'PASS', 0, [], 3]);
+    assert.match(half.note ?? '', /^passed without running \(CISCOPE1b\): /);
+    assert.deepEqual(halfVerdicts().at(-1)!.classes, { ran: 0, kept: 3, sweep: halfVerdicts().at(-2)!.at });
+    result = await repo.run(['--passed'], env, gateTree);
+    assert.equal(result.status, 0, result.out);
+    // After a composed pass, a change that reaches a class runs it by reach as before.
+    commit('src/Desk/Desk.Core/Alpha/AlphaThing.cs', 'namespace Desk;\npublic sealed class AlphaThing { public int Three => 3; }\n');
+    result = await repo.run(['--ci'], env);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests LonelyTests']);
     repo.cleanup();
   });
 
