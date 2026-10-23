@@ -306,6 +306,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'handover.asked': { values: ['agent'] },
   'handover.taking': { values: ['agent'] },
   'handover.refused': { values: ['why'], why: 'handover' },
+  // HANDOVERSAID1: the person's own ask names the path that made it; a hand-over let go that could not be taken is not taken, never refused.
+  'handover.asked-terminal': { values: ['agent'] },
+  'handover.asked-window': { values: ['agent'] },
+  'handover.not-taken': { values: ['agent', 'why'], why: 'handover' },
+  'handover.not-taken-ends': { values: ['agent', 'why'], why: 'handover' },
   // A session's own background work (CONVNOTE2f): the work's names as code, a state as the harness said it; a program's words
   // follow `unread`.
   'background.unread': { values: [] },
@@ -497,6 +502,16 @@ export const HAND_OVER_ASK_REASONS: Readonly<Record<string, { key: string; value
   'asker-gone': { key: 'note.handover.why.asker-gone', values: [] },
   'asker-unfit': { key: 'note.handover.why.asker-unfit', values: [] },
   cannot: { key: 'note.handover.why.cannot', values: [] },
+  'quest-closed': { key: 'note.handover.why.quest-closed', values: [] },
+  'quest-elsewhere': { key: 'note.handover.why.quest-elsewhere', values: [] },
+  'quest-reopened': { key: 'note.handover.why.quest-reopened', values: [] },
+  'not-last-run': { key: 'note.handover.why.not-last-run', values: [] },
+  'unknown-agent': { key: 'note.handover.why.unknown-agent', values: [] },
+  'same-agent': { key: 'note.handover.why.same-agent', values: [] },
+  'no-door': { key: 'note.handover.why.no-door', values: [] },
+  running: { key: 'note.handover.why.running', values: [] },
+  'tree-gone': { key: 'note.handover.why.tree-gone', values: [] },
+  waiting: { key: 'note.handover.why.waiting', values: [] },
 };
 
 /**

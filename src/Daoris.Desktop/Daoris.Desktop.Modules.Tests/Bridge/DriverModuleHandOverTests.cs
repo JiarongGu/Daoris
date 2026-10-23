@@ -64,6 +64,30 @@ public sealed class DriverModuleHandOverTests : DriverModuleBridge
         Assert.Equal(expected, ConversationRoutes.HandOverAskedBy(why, askedBy));
     }
 
+    /// <summary>
+    /// 🔴 HANDOVERSAID1: the person's yes in the window to a conversation's agent's ask, which the take could not go on with: the session's
+    /// record says it was not taken, by the take's own reason in words and what the session does next, never that it was refused.
+    /// </summary>
+    [Fact]
+    public async Task A_yes_the_take_cannot_go_on_with_is_said_as_not_taken_with_its_reason()
+    {
+        var (loop, module, _) = await UpAsync();
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Sessions));
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions, "c1" + HandOverAskFiles.AskSuffix),
+            """{"id":"a1b2c3d4","session":"c1","note":"Near my limit.","askedBy":"agent","at":"2026-10-20T09:00:00Z"}""");
+        var files = new HandOverAskFiles(Home);
+        files.WriteState("c1", new HandOverAskState("a1b2c3d4", HandOverAskStates.Waiting, null, "talk", DateTimeOffset.Parse("2026-10-20T09:01:00Z")));
+
+        var yes = await AnswerAsync(module, "SESSION_HAND_OVER_APPROVE", new { session = "c1", ask = "a1b2c3d4" });
+
+        Assert.False(yes.GetProperty("approved").GetBoolean());
+        Assert.Equal(HandOver.SameAgent, yes.GetProperty("why").GetString());
+        Assert.Equal((HandOverAskStates.Refused, HandOverAskWhy.SameAgent), (files.ReadState("c1")!.State, files.ReadState("c1")!.Code));
+        var note = Assert.Single(loop.Events.After("c1", 0).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.Equal("handover.not-taken", note.Parts![0].Code);
+        Assert.Equal("The hand-over to talk was not taken: it already runs on that agent. This session goes on with its own agent.", note.Text);
+    }
+
     private async Task<(DriverLoop Loop, DriverModule Module, DriverModuleStartFromTests.StandIn Service)> UpAsync()
     {
         var root = Path.Combine(Home, "engine");

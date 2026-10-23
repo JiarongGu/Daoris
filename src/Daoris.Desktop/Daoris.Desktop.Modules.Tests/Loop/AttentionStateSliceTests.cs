@@ -1079,6 +1079,9 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Ask("s5", "h5", "2026-10-21T08:00:00Z", HandOverAskStates.Taken);
         Ask("s6", "h6", "2026-10-21T08:00:00Z", HandOverAskStates.Refused, HandOverAskWhy.Declined);
         Ask("s7", "h7", "2026-10-21T08:00:00Z", HandOverAskStates.Waiting, stateId: "h0");
+        // HANDOVERSAID1: refused at the ask for its closed quest, and let go but not taken: neither asks the person anything.
+        Ask("s8", "h8", "2026-10-21T08:00:00Z", HandOverAskStates.Refused, HandOverAskWhy.QuestClosed);
+        Ask("s9", "h9", "2026-10-21T08:00:00Z", HandOverAskStates.Refused, HandOverAskWhy.SameAgent);
 
         var waits = JsonSerializer.SerializeToNode(AttentionStateSlice.HandOverWaits(Home), IpcJson.Options)!.AsArray();
 

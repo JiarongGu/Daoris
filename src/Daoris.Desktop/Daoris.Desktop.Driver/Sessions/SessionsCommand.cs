@@ -161,6 +161,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     public Func<string, HandOverAgent?>? Drives { get; init; }
 
     /// <summary>
+    /// Where a verb's line on a session's record goes (HANDOVERSAID1): the running Daoris's own record and transcript where the verb runs
+    /// in it, so one writer numbers the record; null writes it to this home's sessions folder, as the verb alone does.
+    /// </summary>
+    public Action<string, Noted>? Notes { get; init; }
+
+    /// <summary>
     /// How a piece's lead's tree is read at the person's ask (COAGENT1b, <c>sessions partner</c>): its commit and uncommitted paths, git's
     /// by default, a test's without a process (MOD8).
     /// </summary>
@@ -1657,6 +1663,14 @@ public static class SessionsCommand
                 world.Service, world.Home, roster, ask.Ids[0], ask.Agent!, ask.Account, HandOverWhy.Press, HandOverBy.Person,
                 DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
             output.WriteLine($"sessions: {answer.Message}");
+            if (answer.Kept)
+            {
+                // HANDOVERSAID1: the session's record names who asked, the person at a terminal, as the agent's own ask names its agent.
+                var note = HandOverAskNotes.AskedBy(HandOverAsker.Terminal, ask.Agent!);
+                if (world.Notes is { } said) said(ask.Ids[0], note);
+                else HandOverAskNotes.Say(new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)), null, ask.Ids[0], note);
+            }
+
             if (answer.Kept && !world.LoopRuns()) output.WriteLine("sessions: no driver is running on this home now: its look takes it when one does.");
             return answer.Kept ? 0 : 1;
         }

@@ -617,6 +617,16 @@ public static class NoteCodes
         new(HandOverAskWhy.AskerGone, [], "note.handover.why.asker-gone"),
         new(HandOverAskWhy.AskerUnfit, [], "note.handover.why.asker-unfit"),
         new(HandOverAskWhy.Cannot, [], "note.handover.why.cannot"),
+        new(HandOverAskWhy.QuestClosed, [], "note.handover.why.quest-closed"),
+        new(HandOverAskWhy.QuestElsewhere, [], "note.handover.why.quest-elsewhere"),
+        new(HandOverAskWhy.QuestReopened, [], "note.handover.why.quest-reopened"),
+        new(HandOverAskWhy.NotLastRun, [], "note.handover.why.not-last-run"),
+        new(HandOverAskWhy.UnknownAgent, [], "note.handover.why.unknown-agent"),
+        new(HandOverAskWhy.SameAgent, [], "note.handover.why.same-agent"),
+        new(HandOverAskWhy.NoDoor, [], "note.handover.why.no-door"),
+        new(HandOverAskWhy.Running, [], "note.handover.why.running"),
+        new(HandOverAskWhy.TreeGone, [], "note.handover.why.tree-gone"),
+        new(HandOverAskWhy.Waiting, [], "note.handover.why.waiting"),
     ]);
 
     // ——— An agent's ask to hand its session over (MIXAGENT1c, D163 point 3): on its session, waiting for the person's word with the
@@ -624,6 +634,13 @@ public static class NoteCodes
     public static readonly NoteCode HandOverAsked = new("handover.asked", ["agent"]);
     public static readonly NoteCode HandOverTaking = new("handover.taking", ["agent"]);
     public static readonly NoteCode HandOverRefused = new("handover.refused", ["why"]) { Why = HandOver };
+
+    // HANDOVERSAID1: the person's own ask names the path that made it, and a hand-over let go that Daoris could not take is said as not
+    // taken, with its reason and what the session does next, never as refused.
+    public static readonly NoteCode HandOverAskedTerminal = new("handover.asked-terminal", ["agent"]);
+    public static readonly NoteCode HandOverAskedWindow = new("handover.asked-window", ["agent"]);
+    public static readonly NoteCode HandOverNotTaken = new("handover.not-taken", ["agent", "why"]) { Why = HandOver };
+    public static readonly NoteCode HandOverNotTakenEnds = new("handover.not-taken-ends", ["agent", "why"]) { Why = HandOver };
 
     // ——— A helper (MIXAGENT2a-ii, D163 point 2): on the asker, a helper asked, answered or refused, with the agent and why;
     // on the helper, whose session it helps. Facts only: never an account's name or a path.

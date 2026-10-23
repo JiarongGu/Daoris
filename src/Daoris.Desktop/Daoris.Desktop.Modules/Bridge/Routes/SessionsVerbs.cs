@@ -45,6 +45,8 @@ internal static class SessionsVerbs
             PieceBase = loop.PieceBases,
             // COWORK1a: `sessions stop <id> --turn`, the keeping stop, on the turns this Daoris's loop holds.
             StopTurn = (id, _) => ConversationRoutes.KeepingStopAsync(loop, id),
+            // HANDOVERSAID1: a verb's line on a session's record is the loop's, so one writer numbers it.
+            Notes = (id, note) => HandOverAskNotes.Say(loop.Events, loop.Output, id, note),
         };
 
         var code = await SessionsCommand.RunAsync(ask, world, output, ct).ConfigureAwait(false);

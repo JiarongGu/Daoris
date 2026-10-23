@@ -77,6 +77,10 @@ public sealed class HandOverAskLookTests : IDisposable
         return tree;
     }
 
+    private IReadOnlyList<string> Said(string session) =>
+        [.. new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events
+            .Where(e => e.Kind == SessionEventKind.Note).Select(e => e.Text ?? "")];
+
     private IReadOnlyList<string> Notes(string session) =>
         [.. new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(session, 0).Events
             .Where(e => e.Kind == SessionEventKind.Note).SelectMany(e => e.Parts ?? []).Select(part => part.Code ?? "")];
@@ -212,6 +216,49 @@ public sealed class HandOverAskLookTests : IDisposable
         await Driver(HandOverRules.On).TickAsync().WaitAsync(Bound);
 
         Assert.Equal(("e1e2e3e4", HandOverAskStates.Taken), (State("c0nv0001")!.Id, State("c0nv0001")!.State));
+    }
+
+    /// <summary>
+    /// 🔴 HANDOVERSAID1: a quest's session whose quest is closed is refused at the ask, by that reason, never left to wait on a yes the
+    /// take cannot honour: nothing waits on the person, and its record says why.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_of_a_session_whose_quest_is_closed_is_refused_at_the_ask_by_that_reason()
+    {
+        _ledger.Park("s1", "q1", Tree("tree-s1"));
+        _ledger.Move("q1", "Done");
+        Asks("s1");
+
+        await Driver().TickAsync().WaitAsync(Bound);
+
+        Assert.Equal((HandOverAskStates.Refused, HandOverAskWhy.QuestClosed), (State("s1")!.State, State("s1")!.Code));
+        Assert.Equal(["handover.refused"], Notes("s1"));
+        Assert.Equal("Its agent's ask to hand this session over was refused: its quest is closed, so no work is left to hand over.", Said("s1")[^1]);
+    }
+
+    /// <summary>
+    /// 🔴 HANDOVERSAID1 (the owner's report, 2026-10-23): the person said yes to a quest's session's ask, and its quest closed before the
+    /// look took it: said as not taken with that reason and what the session does next, never as refused, which reads as their own no.
+    /// </summary>
+    [Fact]
+    public async Task An_approved_hand_over_of_a_closed_quests_session_is_said_as_not_taken_with_its_reason()
+    {
+        _ledger.Park("s1", "q1", Tree("tree-s1"));
+        Asks("s1");
+        await Driver().TickAsync().WaitAsync(Bound);
+        Assert.Equal(HandOverAskStates.Waiting, State("s1")!.State);
+
+        Assert.True(HandOverAskWord.Approve(new HandOverAskFiles(_home), "s1", "a1b2c3d4").Stands);
+        _ledger.Move("q1", "Done");
+        var look = await Driver().TickAsync().WaitAsync(Bound);
+
+        Assert.Equal((HandOverAskStates.Refused, HandOverAskWhy.QuestClosed), (State("s1")!.State, State("s1")!.Code));
+        Assert.Equal(["handover.asked", "handover.not-taken-ends"], Notes("s1"));
+        Assert.Equal(
+            "The hand-over to codex-acp was not taken: its quest is closed, so no work is left to hand over. Nothing goes on with this session.",
+            Said("s1")[^1]);
+        Assert.Empty(new HandedQuests(_home).All());
+        Assert.Contains(look.Events, line => line.Contains("could not be taken (quest-closed)", StringComparison.Ordinal));
     }
 
     /// <summary>A session gone from this machine leaves nothing: its ask and state are taken away, and no record is written to.</summary>

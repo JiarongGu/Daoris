@@ -104,4 +104,45 @@ public sealed class HandOverAskJudgeTests
             Assert.Contains(NoteCodes.HandOver.All, reason => reason.Code == why);
         }
     }
+
+    /// <summary>
+    /// 🔴 HANDOVERSAID1: each asker is named by the path that made the ask: the agent's own (its tool), the person at a terminal, the
+    /// person by the window's press, each on a code of its own the page words.
+    /// </summary>
+    [Fact]
+    public void The_ask_note_names_its_asker()
+    {
+        var agent = HandOverAskNotes.Asked("codex-acp");
+        var terminal = HandOverAskNotes.AskedBy(HandOverAsker.Terminal, "codex-acp");
+        var window = HandOverAskNotes.AskedBy(HandOverAsker.Window, "codex-acp");
+
+        Assert.Equal(["handover.asked", "handover.asked-terminal", "handover.asked-window"],
+            [agent.Parts[0].Code, terminal.Parts[0].Code, window.Parts[0].Code]);
+        Assert.StartsWith("Its agent asked to hand this session over", agent.Note, StringComparison.Ordinal);
+        Assert.Equal("You asked at a terminal to hand this session over to codex-acp: Daoris takes it at its next look.", terminal.Note);
+        Assert.Equal("You asked in the window to hand this session over to codex-acp: Daoris takes it at its next look.", window.Note);
+    }
+
+    /// <summary>
+    /// 🔴 HANDOVERSAID1: a hand-over let go that Daoris could not take is said as not taken, never refused, with the take's own reason in
+    /// words and what the session does next; a reason the take names that is no code here is `cannot`.
+    /// </summary>
+    [Fact]
+    public void A_hand_over_not_taken_says_its_reason_and_what_the_session_does_next()
+    {
+        var closed = HandOverAskNotes.NotTaken("codex-acp", HandOver.QuestClosed);
+        var unknown = HandOverAskNotes.NotTaken("codex-acp", HandOver.UnknownAgent);
+        var odd = HandOverAskNotes.NotTaken("codex-acp", "not-found");
+
+        Assert.Equal(("handover.not-taken-ends", "quest-closed"), (closed.Parts[0].Code, Why(closed)));
+        Assert.Equal(
+            "The hand-over to codex-acp was not taken: its quest is closed, so no work is left to hand over. Nothing goes on with this session.",
+            closed.Note);
+        Assert.Equal(("handover.not-taken", "unknown-agent"), (unknown.Parts[0].Code, Why(unknown)));
+        Assert.EndsWith("This session goes on with its own agent.", unknown.Note, StringComparison.Ordinal);
+        Assert.Equal("cannot", Why(odd));
+        Assert.DoesNotContain("refused", closed.Note + unknown.Note + odd.Note, StringComparison.Ordinal);
+    }
+
+    private static object Why(Noted note) => note.Parts[0].Values.Single(value => value.Key == "why").Value;
 }
