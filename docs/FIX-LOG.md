@@ -76,6 +76,25 @@ repository.
   `AwaitingPerson`, `SessionHead`, `WaitStrip` and `waits` (305 and 219 tests); `tsc --noEmit`; the i18n and names checks.
 - **The trap:** "one owner for the answer" was read as "one place to answer". The owner rule is about which surface owns the
   moves; an answer the person cannot find is not owned by anyone.
+## 2026-10-24 - Sessions of another maker omitted commit attribution (MAKERTRAIL1)
+
+- **Symptom:** two Codex-built TREELOCK2 commits carried no `Co-Authored-By` trailer, so the merge check required a bypass.
+- **Root cause:** the driven and conversation briefs carried no instruction for commit attribution. Claude's harness supplied
+  its own trailer, hiding the gap for that maker. The merge check introduced in `616549015` required a nonempty trailer but
+  named no expected maker and accepted unrelated co-authors as proof of agent attribution.
+- **Fix:** `CommitTrailers` in `Adapters.cs` uses the selected adapter's declared maker, asks for the model the harness actually
+  runs (or an explicit unreported model), and leaves Claude's automatic trailer to its harness. `Driver` binds the instruction
+  for both the process environment and the accounted first prompt; `ChatRunner` carries it in a repository conversation's
+  process brief, including a handover from another maker. The merge check accepts Anthropic/Claude, OpenAI/Codex and DeepSeek
+  attribution and names those expected makers on refusal; historical harness model trailers and merges remain accepted.
+- **Verify:** all 174 tests in `node --test src/Daoris.Cli/tool-test/merge-branch.test.ts` pass, including maker cases and a
+  real git Codex stand-in. Filtered driver fast classes cover `AdapterTests` (one case per adapter), `ChatNoteCodeTests`,
+  `TargetPromptGoldenTests`, `ProcessWordsTests`, `HandedTests`, `ContextBriefTests`, `HandOverTests`,
+  `HandOverNoteBriefingTests`, `GoOnBriefedTests` and `ChatTurnsTests`, together with `SystemWiringTests` (439 passing).
+  The home and one-word censuses pass (5 tests); partials, read-shares, optional-locks and live-logins are clean. No Process
+  half, rehearsal or whole .NET project was run. An optional temporary mutation removing Codex from the check was refused by
+  automatic approval review; the existing negative cases verify refusals without that mutation.
+- **Commit:** `6e263543e` (merge check), `4b44f1ef7` (driver briefs and adapter proof).
 
 ## 2026-10-23 - A repository set up from its page stayed not adopted (SETUPSTATE1)
 

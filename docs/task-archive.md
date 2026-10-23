@@ -19950,3 +19950,11 @@ difference in offers and an unentitled model on a real account, since none was f
 the box's say door there, its question's answers as presses once opened, and through the park's answer door elsewhere; a refusal
 is said in the card with the words kept. A teammate's or a browser's park says where it is answered. Red-first proof and the
 reading of the install's record are in FIX-LOG's PARKANSWER1 entry. The installed window is looked at after the republish.
+
+## MAKERTRAIL1 — a session of another maker signs its commits as its maker (2026-10-24)
+
+> - [ ] **MAKERTRAIL1 — a session of another maker signs its commits as its maker** (driver; found 2026-10-23 landing TREELOCK2, built by Codex: two of its commits carried no `Co-Authored-By` line and the merge tool refused them until `--no-commit-check`). Daoris's brief to a driven session tells an agent of any maker the trailer naming its own maker and model (Claude's sessions add theirs through their harness), and the merge tool's check names the maker it expected. Proof: the brief's words for each adapter, and a Codex stand-in's commit passing the check.
+
+**Outcome.** Driven starts and repository conversations receive their selected adapter's attribution instruction, naming their
+maker and asking for the running model. Claude's harness adds its own trailer. The merge check accepts supported makers and
+names them on refusal. Per-adapter brief tests and a real git Codex stand-in cover it; verification and root cause: FIX-LOG 2026-10-24.
