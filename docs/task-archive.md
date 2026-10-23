@@ -19822,3 +19822,15 @@ under its id before marking the ask handed; one `Dispatch`, idempotent by the id
 now dispatches before its state's mark. `HelperLookTests` proves an ended conversation going on once through the real `ChatRunner`,
 and an urgent word reaching a running asker's next step once. HELPERWAIT1c's row (Codex's round-4 finding 2) was already filed with
 its prerequisite by HELPERWAIT1b's landing. Detail: FIX-LOG 2026-10-23 (HELPERWAIT1b2), D203's HELPERWAIT1b2 note. On Opus.
+
+## GITAPP1a-i — the counting seam and the bench door, on today's chain (2026-10-23, D202)
+
+> - [ ] **GITAPP1a-i — the counting seam and the bench door, on today's chain** (driver; lands first and alone; D202's round-4 point 2; design P1.5, P1.8 row 1). One `Launch(kind, arguments, budget)` beneath `RunGitAsync`, `ReadGitAsync` and `GitBytesAsync` (`WorkingTree.cs:1025,1104,1198`), raising `WorkingTree.Started` for all three, classifying and counting each start by node and budget with the gate's wait, creation and run apart; it adds no flag (Codex R3-9); a census of today's arguments per kind and a source census refusing git started under `Trees/` outside it; `daoris-driver git review <session> --time` and `review.read` over today's chain. No answer changes. Proof: today's Review counted at `12 + I + M + Uᵣ` per path through the seam, the line's guesses and both `--show-toplevel`s included; the two censuses; the before-bench of design §10.3.
+
+**Outcome** 2026-10-23: `GitLaunch.LaunchAsync` (`Trees/GitReads/GitLaunch.cs`) sits beneath the three runners, raises `Started` for
+each, classes the start by kind and the review's node, counts it in its flow's budget and times the gate's wait and the creation
+apart from the run (`ProcessStarts.Timing`); it adds no flag. `SESSION_DIFF`'s chain moved unchanged into `SessionReviews`, which
+the route and the new `daoris-driver git review <session> [--json] [--time]` read through, each read writing `review.read`.
+`ReviewStartsTests` counts today's Review per path (12 and the line's guesses, + I, + I + M, + E + K′ + I, + Uᵣ), each start's
+arguments held to `GitLaunchTests`' census; the source census refuses git under `Trees/` outside the seam. Detail and the
+before-bench: FIX-LOG 2026-10-23 (GITAPP1a-i), D202's GITAPP1a-i note. On Opus.

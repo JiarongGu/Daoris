@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- `daoris-driver git review <session>` reads a session's review from a terminal, as its Review page reads it (GITAPP1a-i). It
+  says the files and their base, the uncommitted ones, the line and the branch; `--json` writes them without their patches. With
+  `--time` it lists every git the read started: which read it was, whose (the review, its untracked files, a landing's review or
+  the Accept offer), and how long it waited to start, took to start and ran. Each Review read now writes a `review.read` line to
+  the machine log, with its time and its counts and no path. What Review shows is unchanged.
 - A session tree opened before the install's folders were rearranged is landed, removed and tidied again (TREEPLACE1). Such
   trees stay in the install's `data/trees/` while new ones open in `work/trees/`. *Accept*, `trees land` and `trees remove`
   refused them as not a session tree, and the tidy kept them after their work was on the line. Both places now hold Daoris's

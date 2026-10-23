@@ -276,9 +276,9 @@ internal static class GitLaunch
             ["rev-list", "--count", "HEAD", "--not", ..] => "N2",
             ["rev-list", "--count", ..] => "N1",
             ["merge-tree", "--write-tree", ..] => "M",
-            ["status", ..] => "S",
+            ["status", ..] => "S", // optional-locks: a pattern over a start's command, which starts nothing
             ["symbolic-ref", "--short", "-q", "HEAD"] => "H",
-            ["diff", ..] => KindOf(arguments) switch
+            ["diff", ..] => KindOf(arguments) switch // optional-locks: a pattern over a start's command, which starts nothing
             {
                 GitKind.UntrackedDiff => "U",
                 GitKind.WorktreeDiff => "W",
