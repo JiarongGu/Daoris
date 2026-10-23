@@ -34,25 +34,26 @@ const SESSION = { quest: '7a82cc', tree: 's-1a2b3c4', since: '2026-10-22T09:06:0
 afterEach(() => { void i18n.changeLanguage('en'); });
 
 describe('a park\'s ask in its box', () => {
-  it('says its question, and answers with the press of each answer it offered, the recommended one marked', async () => {
-    const onChoice = vi.fn();
-    render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} onChoice={onChoice} onGoAhead={vi.fn()} />);
+  // QUESTIONUI1a: each answer a row to select, sent by the box's own *Send*; the card offers no press that sends.
+  it('says its question, each answer it offered a row to select, the recommended one marked with its reason', async () => {
+    const onSelect = vi.fn();
+    render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} onSelect={onSelect} onGoAhead={vi.fn()} />);
 
     const ask = screen.getByRole('region', { name: 'It asks you' });
     expect(within(ask).getByText('Which quarterly target should the dashboard tile show?')).toBeInTheDocument();
-    expect(within(ask).getByText('Write 1,200, the planning sheet\'s value, which the ticket links.')).toBeInTheDocument();
+    expect(within(ask).getByText('If you choose this: Write 1,200, the planning sheet\'s value, which the ticket links.')).toBeInTheDocument();
     expect(within(ask).getByText('recommended')).toBeInTheDocument();
-    await userEvent.click(within(ask).getByRole('button', { name: '1,350' }));
-    expect(onChoice).toHaveBeenLastCalledWith('1,350');
-    await userEvent.click(within(ask).getByRole('button', { name: '1,200' }));
-    expect(onChoice).toHaveBeenLastCalledWith('1,200');
+    expect(within(ask).getByText('Why: The ticket links the planning sheet.')).toBeInTheDocument();
+    expect(within(ask).queryByRole('button', { name: /1,350/ })).toBeNull();
+    await userEvent.click(within(ask).getByRole('radio', { name: /^1,350/ }));
+    expect(onSelect).toHaveBeenLastCalledWith('1,350');
   });
 
   // PARKWORDS1: one line says where its question is and how long it has waited; what it holds and how the answer travels fold.
   it('says in one line where its question is and how long it has waited, and folds what it holds meanwhile', async () => {
     vi.useFakeTimers({ now: new Date('2026-10-22T14:12:00Z'), shouldAdvanceTime: true });
     try {
-      render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} onChoice={vi.fn()} />);
+      render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} onSelect={vi.fn()} />);
 
       expect(screen.getByText('It asks this, waiting 5h 6m: answer below.')).toBeVisible();
       expect(screen.getByText('It says it needs your answer by: before Friday\'s release')).toBeVisible();
@@ -72,8 +73,8 @@ describe('a park\'s ask in its box', () => {
 
   it('answers each go-ahead still open with its own press, and holds its question until they are answered, saying so', async () => {
     const onGoAhead = vi.fn();
-    const onChoice = vi.fn();
-    render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[GO_AHEAD]} onChoice={onChoice} onGoAhead={onGoAhead} />);
+    const onSelect = vi.fn();
+    render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[GO_AHEAD]} onSelect={onSelect} onGoAhead={onGoAhead} />);
 
     const line = screen.getByText('write on production').closest('li')!;
     expect(within(line).getByText('“dashboard configuration”')).toBeInTheDocument();
@@ -85,8 +86,9 @@ describe('a park\'s ask in its box', () => {
 
     expect(screen.getByText('Answer its go-aheads first: each keeps it waiting for its question, whose answer then sends it on with them.'))
       .toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '1,200' })).toBeDisabled();
-    expect(onChoice).not.toHaveBeenCalled();
+    // A row may still be selected: the frame refuses its send until the go-aheads are answered (Codex's round-2 finding 14).
+    await userEvent.click(screen.getByRole('radio', { name: /^1,200/ }));
+    expect(onSelect).toHaveBeenLastCalledWith('1,200');
   });
 
   it('with no question recorded, says in its one line that it asked above, and answers its go-aheads as before', async () => {
@@ -105,19 +107,20 @@ describe('a park\'s ask in its box', () => {
     expect(onGoAhead).toHaveBeenLastCalledWith(1, true);
   });
 
-  it('draws no press where nothing answers, and none while a press is on its way', () => {
+  it('draws no press and no radio where nothing answers, and no go-ahead\'s press while one is on its way', () => {
     const { unmount } = render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[GO_AHEAD]} />);
     expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
     expect(screen.getByText('1,200')).toBeInTheDocument();
     unmount();
 
-    render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} busy onChoice={vi.fn()} />);
-    expect(screen.getByRole('button', { name: '1,200' })).toBeDisabled();
+    render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[GO_AHEAD]} busy onSelect={vi.fn()} onGoAhead={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
   });
 
   it('says the chrome in 中文 and the agent\'s words as written', async () => {
     await i18n.changeLanguage('zh');
-    render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[GO_AHEAD]} onChoice={vi.fn()} onGoAhead={vi.fn()} />);
+    render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[GO_AHEAD]} onSelect={vi.fn()} onGoAhead={vi.fn()} />);
 
     expect(screen.getByRole('region', { name: '它在问你' })).toBeInTheDocument();
     expect(screen.getByText('Which quarterly target should the dashboard tile show?')).toBeInTheDocument();
@@ -135,7 +138,7 @@ describe('a park\'s ask in its box', () => {
       const { unmount } = render(<ParkAnswer {...SESSION} question={null} goAheads={[]} />);
       expect(screen.getByText('它在上面提了问，已等 5 小时 6 分：在下面回答。')).toBeVisible();
       unmount();
-      render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} onChoice={vi.fn()} />);
+      render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} onSelect={vi.fn()} />);
       expect(screen.getByText('它在问这个，已等 5 小时 6 分：在下面回答。')).toBeVisible();
       expect(screen.getByText('这里没有期限：它会一直等到你回答。')).not.toBeVisible();
     } finally {

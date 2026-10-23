@@ -85,7 +85,7 @@ function Column({ height, onResize, onReset, holds }: {
                 onSend={nothing}
                 park={{
                   quest: '7a82cc', tree: 's-1a2b3c4', since: new Date(Date.now() - 12 * 60_000).toISOString(),
-                  question: ASKED, goAheads: [PRODUCTION], onChoice: nothing, onGoAhead: nothing,
+                  question: ASKED, goAheads: [PRODUCTION], onSelect: nothing, onGoAhead: nothing,
                 }}
               />
             )}

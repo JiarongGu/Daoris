@@ -4,8 +4,8 @@ import type { NotePart, Quest } from '../../data/api';
 import { Button, Segmented, WaitingCard } from '../../design/ui';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import { Note } from '../Note';
-import { QuestionAsked } from './ParkAnswer';
 import type { ParkQuestion } from './parkQuestion';
+import { QuestionCard } from './QuestionCard';
 import { InConversation } from './WaitAnchor';
 
 /** What the ledger lets a person do from `awaiting-person` — and nothing this surface invented. */
@@ -40,9 +40,11 @@ export type QuestClose = { as: 'done'; note: string | null };
  *
  * **🔴 And where the box below answers it too (PARKANSWER1).** The card once handed no answer of its own wherever the box at the
  * foot was the park's, so a park whose box the person did not have before them offered only *Finish* and *Decline…* (the owner
- * report, 2026-10-23). Every park the frame can answer is answered here as well: its question's answers presses where one was
- * asked (PARKVIEW1), else the words under its closing message, through the frame's same door, and the hint names both places. A
- * refusal is said here, where it was pressed, and the words stay.
+ * report, 2026-10-23). Every park the frame can answer is answered here as well: its question's answers rows to select once
+ * *Answer and carry on…* is open (PARKVIEW1, QUESTIONUI1a), else the words under its closing message, through the frame's same door,
+ * and the hint names both places. Its one *Send* sends the selected answer with the card's words, naming the question, or the words
+ * alone; the selection is the card's own, tied to the question's id. A refusal is said here, where it was pressed, the words and the
+ * selection kept; the frame refuses an answer of either kind while the question's go-aheads are open.
  *
  * **Declining asks for its reason in place**, the same two-step a quest's page uses and for the
  * same reason: the note is the only part whoever reads the record later can act on, and a decline
@@ -86,7 +88,7 @@ export function AwaitingPerson({
    * sentence it was refused in (PARKANSWER1), said here with the words kept; nothing, and the answer was taken.
    */
   onAnswer?: (answer: string | null) => Promise<string | null> | void;
-  /** A press of its question's answer, with the card's words (PARKANSWER1, PARKVIEW1): settled as `onAnswer` is. */
+  /** Its question's answer selected, sent with the card's words (PARKANSWER1, QUESTIONUI1a): settled as `onAnswer` is. */
   onChoice?: (label: string, words: string) => Promise<string | null> | void;
   /** The box at the foot answers it too (PARKANSWER1): the hint names both places. */
   below?: boolean;
@@ -100,6 +102,10 @@ export function AwaitingPerson({
   // The answer on its way, and the sentence one was refused in (PARKANSWER1).
   const [sending, setSending] = useState(false);
   const [refused, setRefused] = useState<string | null>(null);
+  // The answer selected in its question (QUESTIONUI1a), on the question it was selected on: a replaced one is drawn with none.
+  const [choice, setChoice] = useState<{ question: string; label: string } | null>(null);
+  const selected = question && choice?.question === question.id && question.choices.some((one) => one.label === choice.label)
+    ? choice.label : null;
   const send = async (settle: Promise<string | null> | void) => {
     setSending(true);
     setRefused(null);
@@ -110,6 +116,7 @@ export function AwaitingPerson({
         return;
       }
       setWords('');
+      setChoice(null);
       setAnswering(false);
     } finally {
       setSending(false);
@@ -129,14 +136,14 @@ export function AwaitingPerson({
   return (
     <WaitingCard title={t('work.head.waiting')}>
 
-      {/* Its answers are presses only once the person opens the card's answer, so its words go with them (PARKANSWER1). */}
+      {/* Its answers are rows to select only once the person opens the card's answer, so its words go with them (PARKANSWER1). */}
       {question
         ? (
           <div className="mt-1.5">
-            <QuestionAsked
+            <QuestionCard
               question={question}
-              busy={pending || sending}
-              onChoice={answering && onChoice ? (label) => { void send(onChoice(label, words)); } : undefined}
+              selected={selected}
+              onSelect={answering && onChoice ? (label) => setChoice(label === null ? null : { question: question.id, label }) : undefined}
             />
           </div>
         )
@@ -163,7 +170,11 @@ export function AwaitingPerson({
             </label>
             {refused && <p role="status" className="m-0 text-small text-ink-danger [overflow-wrap:anywhere]">{refused}</p>}
             <div className="flex flex-wrap gap-2">
-              <Button variant="primary" disabled={pending || sending} onClick={() => { void send(onAnswer(words.trim() || null)); }}>
+              <Button
+                variant="primary"
+                disabled={pending || sending}
+                onClick={() => { void send(selected && onChoice ? onChoice(selected, words) : onAnswer(words.trim() || null)); }}
+              >
                 {t('work.awaiting.answerConfirm')}
               </Button>
               <Button variant="ghost" onClick={() => { setAnswering(false); setRefused(null); }}>{t('common.cancel')}</Button>
