@@ -14,6 +14,12 @@ public sealed record AttentionFacts
     /// <summary>Every session record, closed ones and every workspace's included, as the sessions slice holds them.</summary>
     public IReadOnlyList<JsonObject> Sessions { get; init; } = [];
 
+    /// <summary>
+    /// The sessions a supervisor's decision answers for now (SUPERVISOR1a-i, D208; the supervisor design §4.2), from the decisions'
+    /// memory: held or released, the park is not a wait on the person, since the overrule is optional and said as a notice.
+    /// </summary>
+    public IReadOnlySet<string> Supervised { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
     /// <summary>Every quest, as the quests slice holds them.</summary>
     public IReadOnlyList<JsonObject> Quests { get; init; } = [];
 
@@ -256,7 +262,9 @@ public static class NeedsAPerson
         // A park the person answered goes on at the driver's next look (ANSWER1c): it no longer needs them. A parked intake whose ask is
         // live is the ask's row.
         var standsFor = live.Select(ask => Truthy(ask, "intake")).OfType<string>().ToHashSet(StringComparer.Ordinal);
-        foreach (var session in facts.Sessions.Where(session => Parks(session) && !standsFor.Contains(Text(session, "id") ?? "")))
+        // SUPERVISOR1a-i (the supervisor design §4.2): nor a park a supervisor's held or released decision answers for.
+        foreach (var session in facts.Sessions.Where(session =>
+                     Parks(session) && !standsFor.Contains(Text(session, "id") ?? "") && !facts.Supervised.Contains(Text(session, "id") ?? "")))
         {
             var row = Row("parked", Text(session, "id"), Text(session, "updated"), Scope(session));
             row["where"] = Text(session, "repository");

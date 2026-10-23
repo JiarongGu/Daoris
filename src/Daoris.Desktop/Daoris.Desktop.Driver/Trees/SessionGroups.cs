@@ -644,6 +644,16 @@ public sealed record SessionLook(
     public IReadOnlySet<string> Between { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>
+    /// The sessions a supervisor's held decision holds (SUPERVISOR1a-i, the supervisor design §6.3), from the decisions' memory in the
+    /// process the look is taken in; none where it keeps none, as the terminal's listing.
+    /// </summary>
+    public IReadOnlySet<string> SupervisorHeld { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>Whether a held decision holds <paramref name="record"/>: one is held, and no word of the owner's waits (the planner's own rule).</summary>
+    public bool SupervisorHolds(PriorSession record) =>
+        SupervisorHeld.Contains(record.Session) && !record.Waiting.Any(word => word.Persons);
+
+    /// <summary>
     /// A look from the records as the service answered them: parsed, and each quest's last run and strikes read by the
     /// planner's own readers, never a second copy of either rule.
     /// </summary>
@@ -1254,7 +1264,9 @@ public static class SessionGroups
             if (_look.NamedByReopen.TryGetValue(quest, out var named) && Waits(named)) return named;
             return _look.LastRun.TryGetValue(quest, out var last) && Waits(last) ? last : null;
 
-            bool Waits(PriorSession record) => record.WordsWaiting && !GoOnMarks.Judged(record, _look.Unable.GetValueOrDefault(record.Session));
+            // SUPERVISOR1a-i (the supervisor design §6.3): the planner's hold, in this copy's own right.
+            bool Waits(PriorSession record) =>
+                record.WordsWaiting && !GoOnMarks.Judged(record, _look.Unable.GetValueOrDefault(record.Session)) && !_look.SupervisorHolds(record);
         }
 
         /// <summary>The planner's verdict on this session's quest, where its words go on in this session (<see cref="WordsOn"/>) or it is that quest's last here.</summary>

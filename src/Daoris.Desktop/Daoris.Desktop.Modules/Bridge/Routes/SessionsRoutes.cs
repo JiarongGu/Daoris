@@ -545,6 +545,51 @@ public sealed class SessionsRoutes(DriverContext context)
         return Task.FromResult<object?>(new { Answered = answer.Stands, answer.Why, answer.Message });
     }
 
+    // The supervisor's decisions on a session (SUPERVISOR1a-i, D208; the supervisor design §6.1, §6.2): those live in this shell's
+    // memory as they stand, and every other read from the session's files as history (`earlier`), granting nothing. A read: `{ decisions }`,
+    // oldest first, each its question's snapshot, choice, reasons, holder, state, when it goes on and when it last moved.
+    [DriverRoute("SESSION_SUPERVISOR")]
+    private Task<object?> SessionSupervisorAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        return Task.FromResult<object?>(new { Decisions = _loop.Supervisor.History(id).Select(SupervisorDecisionRow).ToList() });
+    }
+
+    /// <summary>One decision as the page reads it: never its receipt, its ticket nor its word's text.</summary>
+    internal static object SupervisorDecisionRow(SupervisorDecisionView view) => new
+    {
+        view.Id,
+        Question = new { view.Question.Id, Text = view.Question.Question, Choices = view.Question.Choices.Select(choice => choice.Label).ToList() },
+        view.Choice,
+        Reasons = view.Reasons.Select(reason => new { reason.Says, reason.Source }).ToList(),
+        Holder = new { view.Holder.Kind, view.Holder.Parent },
+        State = SupervisorStates.Spell(view.State),
+        view.Why,
+        KeptAt = Moments.Write(view.KeptAt),
+        GoesOnAt = Moments.Write(view.GoesOnAt),
+        StateAt = Moments.Write(view.StateAt),
+        view.Earlier,
+    };
+
+    // The owner's *Overrule* (SUPERVISOR1a-i, D208; the supervisor design §6.3): `{ id, decision }`, a press only the person may make,
+    // taken under the session's decision lock. While held the decision is overruled with nothing to take back; while released its word
+    // is taken back through the take-back door first. From admitted on nothing changes, and the answer says the state. `{ done, state }`,
+    // `done` false with `state` null where no decision of the session is live by that id.
+    [DriverRoute("SUPERVISOR_OVERRULE")]
+    [Publishes("SUPERVISOR_OVERRULE", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private async Task<object?> SupervisorOverruleAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var decision = PayloadHelper.GetRequiredValue<string>(request.Payload, "decision");
+        var service = _loop.Service ?? throw NotReady();
+        var state = await _loop.Supervisor.OverruleAsync(
+            id, decision,
+            async (session, word, token) => (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done,
+            DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
+        if (state == SupervisorState.Overruled) _loop.Nudge();
+        return new { Done = state == SupervisorState.Overruled, State = state is { } moved ? SupervisorStates.Spell(moved) : null };
+    }
+
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";

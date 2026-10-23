@@ -61,6 +61,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_PARTNER_ASK: { scopes: ['sessions', 'driver'], session: 'id' },
   // The person's word on a third answer alone held for them (COWORK1e): the mark taken away or kept, the look nudged.
   SESSION_ANSWER_ALONE: { scopes: ['sessions', 'driver'], session: 'session' },
+  // SUPERVISOR1a-i: the owner's overrule of a supervisor's decision.
+  SUPERVISOR_OVERRULE: { scopes: ['sessions', 'driver'], session: 'id' },
   // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish; and since HELPMODE1c3 the driver's, whose
   // helpGrants draws Ask Daoris's browser grant from the plugin's approval.
   PLUGIN_ACTION: { scopes: ['driver', 'plugins', 'harnesses'] },

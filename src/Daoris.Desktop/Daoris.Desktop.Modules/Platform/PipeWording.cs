@@ -148,6 +148,7 @@ public static class PipeWording
         Row("SESSION_QUIET_LEAVE", W("id", PipeRole.Session));
         Row("SESSION_PERMISSION_ANSWER", W("session", PipeRole.Session));
         Row("SESSION_ANSWER_ALONE", W("session", PipeRole.Session));
+        Row("SUPERVISOR_OVERRULE", W("id", PipeRole.Session));
         Row("SESSION_GO_AHEAD", W("id", PipeRole.Session), W("ask", PipeRole.Ask), W("words", PipeRole.Words));
         Row("SET_SESSION_OPTION", W("id", PipeRole.Session));
         Row("STOP_OPINION", W("id", PipeRole.Session), W("words", PipeRole.Words));

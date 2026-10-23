@@ -295,6 +295,18 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
                 : live.State;
         }, ct);
 
+    /// <summary>
+    /// The owner's words named <paramref name="question"/> (§6.3, <c>SESSION_INPUT</c> with its question): every held or released
+    /// decision on it moves to <c>superseded</c> at once, since the service's one owner-word operation already took a released word back.
+    /// </summary>
+    /// <returns>How many moved.</returns>
+    public Task<int> SupersedeAsync(string session, string question, DateTimeOffset now, CancellationToken ct = default) =>
+        UnderAsync(session, () => Task.FromResult(_live.Values
+            .Where(each => each.Session == session && each.Question.Id == question
+                           && each.State is SupervisorState.Held or SupervisorState.Released)
+            .ToList()
+            .Count(each => Move(each, SupervisorState.Superseded, now, null) == SupervisorState.Superseded)), ct);
+
     // ——— Admission by ticket (§6.3).
 
     /// <summary>
@@ -385,6 +397,22 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     public DateTimeOffset? HeldUntil(string session) =>
         _live.Values.Where(each => each.Session == session && each.State == SupervisorState.Held)
             .Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
+
+    /// <summary>The soonest moment a held decision goes on, across every session, for the loop's nudge (§3.4); null where none is held.</summary>
+    public DateTimeOffset? NextGoesOn() =>
+        _live.Values.Where(each => each.State == SupervisorState.Held).Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
+
+    /// <summary>The sessions a held decision holds now (§6.3), for a look that reads no snapshot of the driver's.</summary>
+    public IReadOnlySet<string> HeldSessions() =>
+        new HashSet<string>(_live.Values.Where(each => each.State == SupervisorState.Held).Select(each => each.Session), StringComparer.Ordinal);
+
+    /// <summary>The sessions a held or released decision answers for now (§4.2): their parks are not a wait on the owner.</summary>
+    public IReadOnlySet<string> Answering() => new HashSet<string>(
+        _live.Values.Where(each => each.State is SupervisorState.Held or SupervisorState.Released).Select(each => each.Session),
+        StringComparer.Ordinal);
+
+    /// <summary>Whether <paramref name="session"/> has a decision that is not final, which the look settles, compares and releases.</summary>
+    public bool Moving(string session) => _live.Values.Any(each => each.Session == session && !SupervisorStates.Final(each.State));
 
     /// <summary>The decisions live in memory for <paramref name="session"/>, as they stand.</summary>
     public IReadOnlyList<SupervisorDecisionView> LiveOf(string session) =>

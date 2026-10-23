@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - The supervisor's decisions lived only as long as the look that kept them (SUPERVISOR1a-i)
+
+- **Symptom:** found while wiring the release into the look, not seen running: the decisions' memory was `LoopContext.Supervisor`,
+  and the watch builds a new `Driver`, and with it a new `LoopContext`, for every look. A decision kept in one look would have been
+  gone at the next, never released nor held, and the window's routes held no reference to it at all.
+- **Root cause:** SUPERVISOR1a-i's first part placed the one-per-instance memory (the supervisor design §3.4) on the per-look context.
+  Production keeps no decision yet (the admission refuses every act), so nothing was lost in practice.
+- **Fix:** the modules' `DriverLoop.Supervisor` is the one memory for the shell's life, handed to its watch, which sets it on every
+  look's driver (`DriverWatch.Supervisor`); the headless host's watch keeps its own for its life. The routes read the same instance.
+- **Verify:** `SupervisorDecisionTests.The_look_releases_at_goesOnAt_and_holds_until_then` and
+  `DriverModuleSessionQuestionTests.Overrule_takes_a_held_or_released_decision_back_and_changes_nothing_after_admission`; the watch's
+  `DriverWatchLookTests` and `DriverWatchTopicsTests` 9 of 9.
+
 ## 2026-10-24 - The session head grew past its narrow ceiling once its parts said what ran (MODELROLE1b)
 
 - **Symptom:** the CI on a293792 failed `web-measured`: `head/Narrow`'s every-block head measured 359.1 px against today's ceiling

@@ -5,7 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
-- Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208).
+- Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208). A
+  session that goes on with no words of yours, a helper's answer or Daoris's alone, now says whose words they are, never *your answer*.
   Nothing is offered yet and nothing you see changes: its answer can only be kept as the supervisor's, never as yours. Your own
   words to a parked session now take back any supervisor's answer waiting on it.
 - For contributors: the CI's watch now runs on a schedule (CISCOPE1d). Every night it runs every gate whole, the rehearsals

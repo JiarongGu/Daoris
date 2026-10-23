@@ -89,6 +89,28 @@ public sealed class QuestionFilesTests : IDisposable
         Assert.Equal(expected["by"]?.GetValue<string>(), read.By);
     }
 
+    /// <summary>
+    /// SUPERVISOR1a-i (the supervisor design §6.3): a park restored after its run's opening cleared its question gets it back from the
+    /// decision's snapshot, with the same id, its choices to press.
+    /// </summary>
+    [Fact]
+    public void A_restored_question_reads_back_with_its_id_and_choices()
+    {
+        var files = new QuestionFiles(_home);
+        var asked = new ParkQuestion(
+            "q-7", "s1", "Which report?", [new("The monthly one", "I write it."), new("The weekly one", "I write that.")], 2, "today", Opened,
+            "It is due.");
+
+        Assert.True(files.Restore(asked));
+        var read = files.Read("s1")!;
+
+        Assert.Equal(
+            (asked.Id, asked.Question, asked.Recommend, asked.By, asked.Why, asked.At),
+            (read.Id, read.Question, read.Recommend, read.By, read.Why, read.At));
+        Assert.Equal(asked.Choices, read.Choices);
+        Assert.False(files.Restore(asked with { Session = "../escape" }));
+    }
+
     [Fact]
     public void A_file_that_does_not_read_and_an_id_that_is_not_one_are_none()
     {

@@ -93,6 +93,87 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
     }
 
     /// <summary>A stand-in service: the records as given, on the one door the route reads.</summary>
+    /// <summary>The injected admission (SUPERVISOR1a-i): the door that answers it lands in 1a-ii, and production refuses every act.</summary>
+    private sealed class Appointed : IDecisionAdmission
+    {
+        public DecisionAdmitted Admit(string repository) => new("g-1", null);
+    }
+
+    /// <summary>The records, and the take-back door answering done, each word it took kept.</summary>
+    private sealed class TakesBack(string json, List<string> taken) : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath.EndsWith("/take-back", StringComparison.Ordinal))
+            {
+                using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
+                taken.Add(body.RootElement.GetProperty("word").GetString()!);
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("""{"done":true,"message":"taken back"}""", Encoding.UTF8, "application/json") };
+            }
+
+            return request.Method == HttpMethod.Get && request.RequestUri!.AbsolutePath == "/api/sessions"
+                ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") }
+                : new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{}", Encoding.UTF8, "application/json") };
+        }
+    }
+
+    /// <summary>
+    /// SUPERVISOR1a-i (D208; the supervisor design §6.3): the owner's <b>Overrule</b>. While held the decision is overruled with nothing
+    /// taken back; while released its word is taken back first; after admission the press answers <c>admitted</c> and then
+    /// <c>went-on</c> and changes nothing; an unknown decision is no press at all. The session's decisions read back with their reasons,
+    /// never a receipt nor a word's text.
+    /// </summary>
+    [Fact]
+    public async Task Overrule_takes_a_held_or_released_decision_back_and_changes_nothing_after_admission()
+    {
+        var loop = Loop();
+        var taken = new List<string>();
+        const string json = """[{"id":"s1","repository":"engine","state":"awaiting-person","quest":"q1","kind":"driven","created":"2026-10-22T08:00:00Z"}]""";
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new TakesBack(json, taken))));
+        var decisions = new QuestionSupervisorDecisions(loop.Home, new Appointed());
+        loop.Supervisor = decisions;
+        var module = new DriverModule(Bus, loop);
+        var at = DateTimeOffset.Parse("2026-10-24T09:00:00Z");
+        var asked = new ParkQuestion("q-1", "s1", "Which report?", [new("Monthly", "I write it."), new("Weekly", "I write that.")], 1, null, at);
+        var park = new SupervisedPark("engine", true, true, asked, false, false, false);
+        Task<SupervisorKept> KeepAsync(string question) => decisions.KeepAsync(
+            new SupervisorAnswer("s1", question, "g-1", "Monthly", [new("The ticket says monthly.", "the quest's line 2")], new("terminal", "pwsh")),
+            park with { Filed = asked with { Id = question } }, at);
+        Task<SupervisorSaid> Say(string session, string decision, string question, string choice, string key, CancellationToken ct) =>
+            Task.FromResult(new SupervisorSaid("w-" + question, null));
+
+        var held = await KeepAsync("q-1");
+        var overruled = await AnswerAsync(module, "SUPERVISOR_OVERRULE", new { id = "s1", decision = held.Decision });
+        Assert.Equal((true, "overruled"), (overruled.GetProperty("done").GetBoolean(), overruled.GetProperty("state").GetString()));
+        Assert.Empty(taken);
+
+        var released = await KeepAsync("q-2");
+        await decisions.ReleaseAsync("s1", Say, at.AddMinutes(5));
+        var back = await AnswerAsync(module, "SUPERVISOR_OVERRULE", new { id = "s1", decision = released.Decision });
+        Assert.Equal((true, "overruled"), (back.GetProperty("done").GetBoolean(), back.GetProperty("state").GetString()));
+        Assert.Equal(["w-q-2"], taken);
+
+        var admitted = await KeepAsync("q-3");
+        await decisions.ReleaseAsync("s1", Say, at.AddMinutes(5));
+        var (_, ticket) = await decisions.AdmitAsync("s1", _ => Task.FromResult(true), "go", at.AddMinutes(6));
+        var late = await AnswerAsync(module, "SUPERVISOR_OVERRULE", new { id = "s1", decision = admitted.Decision });
+        Assert.Equal((false, "admitted"), (late.GetProperty("done").GetBoolean(), late.GetProperty("state").GetString()));
+        await decisions.WentOnAsync(ticket!, at.AddMinutes(7));
+        var gone = await AnswerAsync(module, "SUPERVISOR_OVERRULE", new { id = "s1", decision = admitted.Decision });
+        Assert.Equal((false, "went-on"), (gone.GetProperty("done").GetBoolean(), gone.GetProperty("state").GetString()));
+        Assert.Equal(["w-q-2"], taken);
+
+        var unknown = await AnswerAsync(module, "SUPERVISOR_OVERRULE", new { id = "s1", decision = "nothing" });
+        Assert.False(unknown.GetProperty("done").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, unknown.GetProperty("state").ValueKind);
+
+        var read = (await AnswerAsync(module, "SESSION_SUPERVISOR", new { id = "s1" })).GetProperty("decisions").EnumerateArray().ToList();
+        Assert.Equal(["overruled", "overruled", "went-on"], read.Select(each => each.GetProperty("state").GetString()).Order());
+        Assert.Equal("the quest's line 2", read[0].GetProperty("reasons")[0].GetProperty("source").GetString());
+        Assert.False(read[0].TryGetProperty("receipt", out _));
+        Assert.False(read[0].TryGetProperty("word", out _));
+    }
+
     private sealed class Records(string json) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>

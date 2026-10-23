@@ -377,6 +377,66 @@ public sealed class SupervisorDecisionTests : IDisposable
         Assert.Equal(["forged-2"], SupervisorQuarantine.Unhandable(running, decisions));
     }
 
+    /// <summary>
+    /// The look's moves (§3.4, §6.3): inside the window a held decision is not released and holds its record; at <c>goesOnAt</c> the look
+    /// releases it and the hold ends; a held decision with the owner's word waiting is superseded before any release; a released one on a
+    /// record no longer parked is stale with its word taken back.
+    /// </summary>
+    [Fact]
+    public async Task The_look_releases_at_goesOnAt_and_holds_until_then()
+    {
+        var decisions = Decisions();
+        var ledger = new Ledger();
+        await decisions.KeepAsync(Answer(), Park(), Kept);
+        SaidWordView Word(string id) => new(id, "words", Kept, [], false);
+        var parked = new PriorSession(Session, "tree", "awaiting-person") { Said = [Word("helped") with { Helper = "h1" }] };
+        var snapshot = new Snapshot([], [], []) { LastRun = new Dictionary<string, PriorSession> { ["q1"] = parked } };
+
+        var inside = await SupervisorQuarantine.DecideAsync(snapshot, decisions, ledger.Say, ledger.TakeBack, Kept.AddMinutes(4), CancellationToken.None);
+        Assert.True(inside.SupervisorHolds(parked));
+        Assert.Empty(ledger.Kept);
+        Assert.Equal(Kept.AddMinutes(5), decisions.NextGoesOn());
+
+        var after = await SupervisorQuarantine.DecideAsync(snapshot, decisions, ledger.Say, ledger.TakeBack, Kept.AddMinutes(5), CancellationToken.None);
+        Assert.False(after.SupervisorHolds(parked));
+        Assert.Equal(SupervisorState.Released, decisions.LiveOf(Session).Single().State);
+        Assert.Null(decisions.NextGoesOn());
+
+        // Released, then the record is no longer parked: stale, its word taken back.
+        var word = decisions.LiveOf(Session).Single().Word!;
+        var ended = parked with { State = "stopped", Said = [Word(word) with { From = SupervisorHanded.From }] };
+        await SupervisorQuarantine.DecideAsync(
+            snapshot with { LastRun = new Dictionary<string, PriorSession> { ["q1"] = ended } }, decisions, ledger.Say, ledger.TakeBack,
+            Kept.AddMinutes(6), CancellationToken.None);
+        Assert.Equal((SupervisorState.Stale, SupervisorWhy.NotParked), (decisions.LiveOf(Session).Single().State, decisions.LiveOf(Session).Single().Why));
+        Assert.Equal([word], ledger.TakenBack);
+
+        // A second question's held decision with the owner's word waiting: superseded before any release.
+        var second = Decisions();
+        await second.KeepAsync(Answer(), Park(), Kept);
+        var answered = parked with { Said = [Word("owner")] };
+        await SupervisorQuarantine.DecideAsync(
+            snapshot with { LastRun = new Dictionary<string, PriorSession> { ["q1"] = answered } }, second, ledger.Say, ledger.TakeBack,
+            Kept.AddMinutes(9), CancellationToken.None);
+        Assert.Equal(SupervisorState.Superseded, second.LiveOf(Session).Single().State);
+    }
+
+    /// <summary>
+    /// <c>SESSION_INPUT</c> naming the decision's question supersedes it at once (§6.3), held or released; one on another question
+    /// stands, and the superseded question is the owner's (<c>overruled</c>) until a new one replaces it.
+    /// </summary>
+    [Fact]
+    public async Task The_owners_answer_naming_the_question_supersedes_at_once()
+    {
+        var decisions = Decisions();
+        var kept = await decisions.KeepAsync(Answer(), Park(), Kept);
+
+        Assert.Equal(0, await decisions.SupersedeAsync(Session, "q-other", Kept.AddMinutes(1)));
+        Assert.Equal(1, await decisions.SupersedeAsync(Session, "q-1", Kept.AddMinutes(1)));
+        Assert.Equal(SupervisorState.Superseded, decisions.LiveOf(Session).Single(each => each.Id == kept.Decision).State);
+        Assert.Equal(SupervisorWhy.Overruled, (await decisions.KeepAsync(Answer(), Park(), Kept.AddMinutes(2))).Why);
+    }
+
     /// <summary>Every transition not in §3.6 is refused and changes nothing.</summary>
     [Fact]
     public async Task Every_transition_not_in_the_lifecycle_is_refused()

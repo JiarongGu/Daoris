@@ -463,14 +463,29 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// This driver runs the session and keeps the words for its run (COWORK1c, the message-urgency design §6): a running record keeps
     /// them only so, and a service from before refuses them as <c>running</c>, as it always did.
     /// </param>
+    /// <param name="supervised">
+    /// The supervisor's release (SUPERVISOR1a-i, D208; the supervisor design §3.4): its decision, question and choice, sent with no text,
+    /// since the service composes the word from the choice. Null for every other say.
+    /// </param>
     public async Task<SayAnswer> SayAsync(
         string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default, string? channel = null,
-        string? from = null, string? key = null, string? level = null, bool running = false)
+        string? from = null, string? key = null, string? level = null, bool running = false,
+        (string Decision, string Question, string Choice)? supervised = null)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
-            writer.WriteString("text", text);
+            if (supervised is { } release)
+            {
+                writer.WriteString("decision", release.Decision);
+                writer.WriteString("question", release.Question);
+                writer.WriteString("choice", release.Choice);
+            }
+            else
+            {
+                writer.WriteString("text", text);
+            }
+
             // SESSONE2e: the channel message these words are, which the ask holds already; an older service ignores it.
             if (channel is { Length: > 0 }) writer.WriteString("channel", channel);
             if (from is { Length: > 0 }) writer.WriteString("from", from);
@@ -1688,10 +1703,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// still names it; a move to <c>failed</c> alone. Sent only where true; a host older than the field ignores it, and the ask stays
     /// served as before.
     /// </param>
+    /// <param name="expect">
+    /// The exact ids of the supervisor's words a go-on's move to working admits (SUPERVISOR1a-i, D208; the supervisor design §6.3): the
+    /// ledger refuses the move (<c>words-changed</c>) where the record's waiting supervisor's words are not exactly these, and an absent
+    /// one reads as empty. Sent on every go-on's move; null sends none.
+    /// </param>
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
         CancellationToken ct = default, bool interrupted = false, bool limit = false, IReadOnlyList<NotePart>? parts = null,
-        string? expected = null, bool unbindAsk = false)
+        string? expected = null, bool unbindAsk = false, IReadOnlyList<string>? expect = null)
     {
         var body = WriteJson(writer =>
         {
@@ -1710,6 +1730,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (limit) writer.WriteBoolean("limit", true);
             if (expected is not null) writer.WriteString("expected", expected);
             if (unbindAsk) writer.WriteBoolean("unbindAsk", true);
+            if (expect is not null)
+            {
+                writer.WriteStartArray("expect");
+                foreach (var word in expect) writer.WriteStringValue(word);
+                writer.WriteEndArray();
+            }
+
             writer.WriteEndObject();
         });
 
@@ -1737,8 +1764,44 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>Move a session's record with a composed note: its English and its parts together (LANG1a).</summary>
     public Task<string> AdvanceAsync(
         string id, string state, Noted noted, string? evidence = null, string? transcript = null,
-        CancellationToken ct = default, bool interrupted = false, bool limit = false, string? expected = null) =>
-        AdvanceAsync(id, state, noted.Note, evidence, transcript, ct, interrupted, limit, noted.Parts, expected);
+        CancellationToken ct = default, bool interrupted = false, bool limit = false, string? expected = null,
+        IReadOnlyList<string>? expect = null) =>
+        AdvanceAsync(id, state, noted.Note, evidence, transcript, ct, interrupted, limit, noted.Parts, expected, expect: expect);
+
+    /// <summary>
+    /// Put a park the driver took up and could not hand back to waiting on the owner (SUPERVISOR1a-i, D208; the supervisor design §6.3,
+    /// <c>RestoreParkAsync</c>), keeping every waiting word but <paramref name="takeBack"/>, the supervisor's word it admitted, with
+    /// the note the look read. Refused where the record is not the working one a go-on took up; a refusal throws as a move's does.
+    /// </summary>
+    public async Task RestoreParkAsync(string id, IReadOnlyList<string> takeBack, Noted? noted, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("takeBack");
+            foreach (var word in takeBack) writer.WriteStringValue(word);
+            writer.WriteEndArray();
+            if (noted is { } note)
+            {
+                writer.WriteString("note", note.Note);
+                if (note.Parts is { Count: > 0 })
+                {
+                    writer.WritePropertyName("noteParts");
+                    NotePart.Write(writer, note.Parts);
+                }
+            }
+
+            writer.WriteEndObject();
+        });
+        var (ok, _, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/restore", body, ct).ConfigureAwait(false);
+        if (!ok)
+        {
+            throw new DriverException(
+                $"the service refused restoring session `{id}`'s park: " + ((root is { } refused ? Text(refused, "error") : null) ?? payload));
+        }
+
+        Raise(Moved, new SessionMoved(id, "awaiting-person"));
+    }
 
     /// <summary>The state an answer's session record is in now, or null when it carries none.</summary>
     private static string? StateOf(JsonElement answer) =>

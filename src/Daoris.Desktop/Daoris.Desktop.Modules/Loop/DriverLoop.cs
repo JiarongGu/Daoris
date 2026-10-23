@@ -514,6 +514,19 @@ public sealed class DriverLoop(
     public SessionsLooked SessionsLooked { get; } = new();
 
     /// <summary>
+    /// The supervisor's decisions, live in this instance's memory (SUPERVISOR1a-i, D208; the supervisor design §3.4): one for the shell's
+    /// life, shared by the routes that keep and overrule a decision and every look of the loop, since both run in the window's process.
+    /// Inert until the door (1a-ii): its admission refuses every act; a test sets its own, with the admission it injects.
+    /// </summary>
+    public QuestionSupervisorDecisions Supervisor
+    {
+        get => _supervisor ??= new(Home, NoDecisionAdmission.Instance, log);
+        set => _supervisor = value;
+    }
+
+    private QuestionSupervisorDecisions? _supervisor;
+
+    /// <summary>
     /// Ask Daoris's conversation placed and not yet running (HELPSTART1): the press answers once it is placed, and the words said
     /// to it meanwhile wait here for its door.
     /// </summary>
@@ -851,6 +864,8 @@ public sealed class DriverLoop(
             Noticed = () => Notices.Slice.Wake(),
             // Where a run's failure nothing else awaits is written with its place, not left to the finalizer (ANSWER2).
             Log = log,
+            // SUPERVISOR1a-i: the one memory of the supervisor's decisions, read by every look.
+            Supervisor = Supervisor,
             // STARTFAST1b: the first look's line-following and tidy wait for the first screen's data, so the page's git-backed pulls
             // and harness probes are not queued behind them for the background's places.
             FirstScreen = FirstScreenAsync,

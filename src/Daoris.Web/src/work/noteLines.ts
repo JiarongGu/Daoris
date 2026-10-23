@@ -135,6 +135,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.fell-back': { values: ['why'], why: 'continue' },
   'working.resumes-answer': { values: [] },
   'working.goes-on': { values: [] },
+  // SUPERVISOR1a-i (D208): a park going on with none of the owner's words, its authors named, never "your answer".
+  'working.resumes-others': { values: ['authors'] },
   // Where the person's words went.
   'went.cannot': { values: ['why'], key: 'work.say.cannot', why: 'continue' },
   'went.new-session': { values: ['why'], why: 'continue' },
@@ -434,6 +436,8 @@ export const RESUMED_REASONS: Readonly<Record<string, { key: string; values: rea
   'words-and-helper': { key: 'note.resumed.why.words-and-helper', values: [] },
   // Daoris's own words alone (COWORK1b): a reopen told, a step's go-on.
   daoris: { key: 'note.resumed.why.daoris', values: [] },
+  // The supervisor's answer, on the owner's behalf, with none of the owner's words (SUPERVISOR1a-i, D208).
+  supervisor: { key: 'note.resumed.why.supervisor', values: [] },
 };
 
 /**
@@ -603,9 +607,11 @@ export const NOTE_VALUES: Readonly<
   Record<
     string,
     | 'id' | 'ids' | 'names' | 'moment' | 'number' | 'count' | 'percent' | 'text' | 'why' | 'cooling' | 'window' | 'account' | 'accounts'
-    | 'bgstate' | 'setAt' | 'accessAt' | 'actor'
+    | 'bgstate' | 'setAt' | 'accessAt' | 'actor' | 'authors'
   >
 > = {
+  // SUPERVISOR1a-i: who a word is by, each a code worded by `work.note.author.*` and joined the reader's way.
+  authors: 'authors',
   // A commit rule's mode, its own word set as code by the sentence, and where it was set (PROCESS1d-ii).
   mode: 'text', source: 'setAt',
   // The level whose access setup landed work by its rule (ACCESSWORDS1).
@@ -697,6 +703,9 @@ const text = (value: unknown): string | null =>
   typeof value === 'string' && value.length > 0 ? value : typeof value === 'number' && Number.isFinite(value) ? String(value) : null;
 
 /** A value as its sentence says it, or null where it is absent or not the shape its kind is. */
+/** The authors a note names (SUPERVISOR1a-i), in the order the driver writes them; any other is not worded. */
+const AUTHORS: readonly string[] = ['supervisor', 'helper', 'opinion', 'daoris'];
+
 function said(
   t: Translate, name: string, values: Record<string, unknown>, code: NoteCode, language: string, names?: AccountNames,
 ): string | null {
@@ -710,6 +719,13 @@ function said(
       if (!Array.isArray(value) || value.length === 0) return null;
       const ids = value.map(text);
       return ids.every((id): id is string => id !== null) ? list(ids.map((id) => `\`${names?.get(id) ?? id}\``), language) : null;
+    }
+    case 'authors': {
+      if (!Array.isArray(value) || value.length === 0) return null;
+      const authors = value.map(text);
+      return authors.every((author): author is string => author !== null && AUTHORS.includes(author))
+        ? list(authors.map((author) => t(`work.note.author.${author}`)), language)
+        : null;
     }
     case 'ids': {
       if (!Array.isArray(value) || value.length === 0) return null;

@@ -250,14 +250,39 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         // word taken back between the look and the move never goes (Continuations.HandedAfterMove). A park's note is replaced
         // while it works; an ended record's keeps what ended it and says it goes on (MSG1b), with another agent's findings where
         // those are all it goes on with (XAGENT1e), never "your words".
-        var workingNote = park.Parked ? Continuations.WorkingNoted
+        // SUPERVISOR1a-i (the supervisor design §6.1): a park's note follows who answered, never "your answer" where none of the owner's
+        // words wait.
+        var workingNote = park.Parked
+            ? persons || Continuations.AuthorsOf(park.Waiting) is not { Count: > 0 } others ? Continuations.WorkingNoted
+                : Continuations.WorkingWithOthersNoted(others)
             : findings && !persons ? Continuations.GoingOnWithFindingsNoted
             : helper && !persons ? Continuations.GoingOnWithHelperNoted
             : daoris && !persons ? Continuations.GoingOnWithDaorisNoted
             : Continuations.GoingOnNoted;
+        // 🔴 SUPERVISOR1a-i (D208; the supervisor design §6.3): the move is admitted under the session's decision lock. A held decision
+        // moves nothing; a released one's word is named in `expect` with the record required still parked, and the move draws a
+        // single-use ticket; every other move names none, so a supervisor's word the look did not admit refuses it (`words-changed`).
+        SupervisorTicket? ticket;
         try
         {
-            await service.AdvanceAsync(sessionId, "working", workingNote, transcript: transcript, ct: ct).ConfigureAwait(false);
+            var (moved, admitted) = await _context.Supervisor.AdmitAsync(
+                sessionId,
+                async expect =>
+                {
+                    await service.AdvanceAsync(
+                        sessionId, "working", workingNote, transcript: transcript, ct: ct,
+                        expected: expect.Count > 0 ? "awaiting-person" : null, expect: expect).ConfigureAwait(false);
+                    return true;
+                },
+                Guid.NewGuid().ToString("N")[..12], DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+            if (!moved)
+            {
+                starting?.Dispose();
+                const string held = "the supervisor's answer on it is held for the owner, or no longer stands: the next look plans it again.";
+                return (new StartRun($"held  #{quest.Id} → {quest.To}: {held}", false, null, held), null, false);
+            }
+
+            ticket = admitted;
         }
         catch (DriverException refused)
         {
@@ -318,11 +343,29 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         try
         {
             // Every word waiting once it moved, as the move left them (SAIDBACK1d): none can be taken back from a record that runs.
-            var words = Continuations.HandedAfterMove(park.Waiting, await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false));
+            var again = await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false);
+            // SUPERVISOR1a-i (§6.1, §6.3): a supervisor's word is handed only where it is the ticket's; with a ticket, a re-read that
+            // failed or no longer holds its word is not-handed, the park restored less it.
+            if (ticket is { } admittedFirst && (again is null || !again.Waiting.Any(word => word.Id == admittedFirst.Word)))
+            {
+                return await NotHandedAsync(quest, park, admittedFirst, again is null ? "unread" : "taken").ConfigureAwait(false);
+            }
+
+            var words = Continuations.Ticketed(Continuations.HandedAfterMove(park.Waiting, again), ticket);
             if (words.Count == 0) return await PutBackAsync(quest, park).ConfigureAwait(false);
             // PARKVIEW1 (Fable's read, Q4): a word pressed as an answer of its park's question carries the mark it was shown under, so it
             // is handed as that answer chosen and recorded as one.
-            words = Continuations.Marked(words, _context.Events.ChoicesOf(sessionId));
+            words = Continuations.Ticketed(Continuations.Marked(words, _context.Events.ChoicesOf(sessionId)), ticket);
+            // The ticket's word is handed as the paragraph composed from the decision in memory, never its stored text; the ticket spent.
+            if (ticket is { } handing)
+            {
+                if (_context.Supervisor.Hand(handing) is not { } paragraph)
+                {
+                    return await NotHandedAsync(quest, park, handing, "spent").ConfigureAwait(false);
+                }
+
+                words = [.. words.Select(word => word.Id == handing.Word ? word with { Text = paragraph } : word)];
+            }
 
             // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; what its start did with
             // its tree against the line first after them (LANDSYNC2), since that is where its next commit goes.
@@ -332,7 +375,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 // HELPERWAIT1: a helper's answer handed beside the person's at this look is among the words, though not among the look's.
                 Continuations.OpeningNoted(
                     adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked, findings, persons,
-                    helper || words.Any(word => word.Helper is not null), daoris),
+                    helper || words.Any(word => word.Helper is not null), daoris, words.Any(word => word.Supervisors)),
                 // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
                 Continuations.AfterWords(
                     Continuations.AfterWords(inSync, after),
@@ -402,7 +445,12 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 waitsOnBackground: Driver.WaitsOnBackground(service, quest, sessionId, resumed: true),
                 stopMade: stop => stoppedFirst = stop,
                 movedFirst: true,
-                spawned: () => spawned = true,
+                spawned: () =>
+                {
+                    spawned = true;
+                    // SUPERVISOR1a-i (§6.3): went-on at the spawn of the run built with the ticket's word, at that moment.
+                    if (ticket is { } went) _ = _context.Supervisor.WentOnAsync(went, DateTimeOffset.UtcNow, CancellationToken.None);
+                },
                 // MODELROLE1c2 (D205 §3.5(a)): a resume keeps its asked choice and never moves to another, so a refusal at the open ends the
                 // open and puts the record back (ConcludeResumedAsync); what the open lists is kept as its account's reading.
                 offers: new OpenOffers(selection.Version, selection.Profile, _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
@@ -413,6 +461,12 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             // A record that parked again, or goes on at the next look, still holds its tree (TREELOCK1).
             holdsTree = run is { Opened: true, Ended: null };
             return (run, refusedWhy, resume.Spoken);
+        }
+        catch (Exception error) when (!spawned && ticket is not null)
+        {
+            // 🔴 SUPERVISOR1a-i (§6.3): every failure between the admission and the wire, the driver's close among them, is not-handed:
+            // nothing was spawned with the supervisor's word, and the park is restored with its queue less that word.
+            return await NotHandedAsync(quest, park, ticket, error is OperationCanceledException ? "closed" : "unstarted").ConfigureAwait(false);
         }
         catch (Exception error) when (!spawned && !(error is OperationCanceledException && ct.IsCancellationRequested))
         {
@@ -732,6 +786,37 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
 
         return (unsent ?? TakenBackFirst(quest, park.Session), null, false);
+    }
+
+    /// <summary>
+    /// An admitted supervisor's word that was not handed (SUPERVISOR1a-i, D208; the supervisor design §6.3): the decision moves to
+    /// <c>not-handed</c>, the park is restored by the ledger's <c>RestoreParkAsync</c> keeping every word but that one (never
+    /// <see cref="PutBackAsync"/>, whose move to a park clears them), and its question is written back from the decision's snapshot with
+    /// the same id, since the run's opening may have cleared it. Where the restore fails the record is left working with no run, for the
+    /// orphan sweep, and the word, no longer handable, is taken back by the first look after.
+    /// </summary>
+    private async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> NotHandedAsync(
+        QuestView quest, PriorSession park, SupervisorTicket ticket, string why)
+    {
+        var question = _context.Supervisor.LiveOf(park.Session).FirstOrDefault(each => each.Id == ticket.Decision)?.Question;
+        await _context.Supervisor.NotHandedAsync(ticket, why, DateTimeOffset.UtcNow, CancellationToken.None).ConfigureAwait(false);
+        try
+        {
+            // Never cancelled: a record left working with no run is the orphan sweep's to end.
+            await _context.Service.RestoreParkAsync(
+                park.Session, [ticket.Word], park.Note is { } note ? new Noted(note, park.NoteParts ?? []) : null, CancellationToken.None)
+                .ConfigureAwait(false);
+        }
+        catch (Exception refused) when (refused is DriverException or HttpRequestException)
+        {
+            return (new StartRun(
+                $"held  #{quest.Id} → {quest.To}: the supervisor's answer was not handed, and session {park.Session} could not be restored: {refused.Message}",
+                false, null, refused.Message), null, false);
+        }
+
+        if (question is not null) new QuestionFiles(_context.Home).Restore(question);
+        const string said = "the supervisor's answer was not handed: the park waits on the owner again, with its other words.";
+        return (new StartRun($"held  #{quest.Id} → {quest.To}: session {park.Session}: {said}", false, null, said), null, false);
     }
 
     /// <summary>
