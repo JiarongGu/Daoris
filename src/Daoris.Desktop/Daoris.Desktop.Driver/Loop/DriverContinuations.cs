@@ -608,7 +608,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 : new SessionEnded(
                     sessionId, quest.To, conclusion.State,
                     ByPerson: stop is { ByPerson: true }, conclusion.Note,
-                    Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile)), null);
+                    Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile) { Limit = limited }), null);
     }
 
     /// <summary>
