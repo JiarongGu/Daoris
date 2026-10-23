@@ -235,6 +235,7 @@
     "ProbeLockTests.cs": "Accounts",
     "ProbeRaceTests.cs": "Accounts",
     "ProcessJobTests.cs": "Agents",
+    "ProviderRefusalTickTests.cs": "Loop",
     "PseudoConsoleTests.cs": "Agents",
     "PullRequestAskTests.cs": "Trees",
     "PullRequestOccasionTests.cs": "Trees",

@@ -13,7 +13,9 @@ namespace Daoris.Driver;
 /// state (D46 §4), because those are the two signals outside work also produces — and because the ACP
 /// wire flattens an aborted, blocked or errored turn to `end_turn`, so its stop reason is a
 /// self-report that cannot be told apart from an ordinary ending. What this carries ENRICHES the
-/// console and the transcript; it never replaces an observation.
+/// console and the transcript; it never replaces an observation. The one exception is <see cref="AcpOutcome.Refusal"/>
+/// (APIREFUSAL1): the adapter's word that its model's provider refused a call, which is the door saying the work was cut
+/// off, as a failed call is (ACPEND1), and not the session describing its work.
 /// </remarks>
 /// <summary>
 /// What a session consumed, as its harness reported it (TOOL3/D57 §4).
@@ -137,7 +139,17 @@ public sealed record AcpConfigOption(
 /// zero. "Nothing was measured" and "it used nothing" are different claims (TOOL3).
 /// </param>
 public sealed record AcpOutcome(
-    string StopReason, string SessionId, int Updates, AcpUsage? Usage = null);
+    string StopReason, string SessionId, int Updates, AcpUsage? Usage = null)
+{
+    /// <summary>
+    /// The stop reason a turn ends with when its model's provider refused it (APIREFUSAL1): seen on the install (2026-10-23) after
+    /// the adapter said the provider's <c>API Error</c>, with its request id, as the agent's message.
+    /// </summary>
+    public const string Refusal = "refusal";
+
+    /// <summary>Whether its last turn ended on its provider's refusal (<see cref="Refusal"/>).</summary>
+    public bool ProviderRefused => StopReason == Refusal;
+}
 
 /// <summary>
 /// The agent's refusal of a call: a JSON-RPC error, said as a sentence, with what its <c>data</c> carried kept beside

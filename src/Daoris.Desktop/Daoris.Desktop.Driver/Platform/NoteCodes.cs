@@ -401,6 +401,12 @@ public static class NoteCodes
     public static readonly NoteCode EndedExit = new("ended.exit", ["exit"]);
     public static readonly NoteCode EndedTurnFailedTaken = new("ended.turn-failed-taken", []);
     public static readonly NoteCode EndedTurnFailedOpen = new("ended.turn-failed-open", []);
+
+    /// <summary>
+    /// APIREFUSAL1: its model's provider refused a call and the turn ended on it (the protocol door's <c>refusal</c>): a failed run, a
+    /// strike, never a park, followed by the provider's words with their request id.
+    /// </summary>
+    public static readonly NoteCode EndedProviderRefused = new("ended.provider-refused", []);
     public static readonly NoteCode EndedParkedAsked = new("ended.parked-asked", []);
     public static readonly NoteCode EndedParkedTranscript = new("ended.parked-transcript", []);
     public static readonly NoteCode EndedParkedShort = new("ended.parked-short", []);

@@ -35,6 +35,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.exit': { values: ['exit'] },
   'ended.turn-failed-taken': { values: [] },
   'ended.turn-failed-open': { values: [] },
+  // APIREFUSAL1: its model's provider refused its turn; a failed run, never a park.
+  'ended.provider-refused': { values: [] },
   'ended.parked-asked': { values: [] },
   'ended.parked-transcript': { values: [] },
   'ended.parked-short': { values: [] },

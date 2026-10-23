@@ -388,6 +388,49 @@ public sealed class ObservationTests
         Assert.Equal("awaiting-person", Observation.Conclude(0, "Taken", took: true, lastWords: PicksUp, backgroundCut: []).State);
     }
 
+    private const string ProviderSaid =
+        "API Error: the model's safeguards flagged this message. Details: `[reasoning_extraction]`\n\nRequest ID: req_011StandIn";
+
+    /// <summary>
+    /// 🔴 APIREFUSAL1 (the install, 2026-10-23): a turn its model's provider refused, which its adapter said as the agent's last words
+    /// before exiting 0, is a failed run by its own code with the provider's words and request id kept, never a park on the person:
+    /// a start holding its quest, one that never took it, a resumed run and one whose quest had closed alike. A done or a new
+    /// question to another repository reached first still stands, and the same words without the door's refusal still park.
+    /// </summary>
+    [Fact]
+    public void A_turn_its_provider_refused_is_a_failed_run_by_its_own_code_never_a_park()
+    {
+        foreach (var conclusion in new[]
+                 {
+                     Observation.Conclude(0, "Taken", took: true, lastWords: ProviderSaid, providerRefused: true),
+                     Observation.Conclude(0, "Taken", resumed: true, lastWords: ProviderSaid, providerRefused: true),
+                     Observation.Conclude(0, "Open", lastWords: ProviderSaid, providerRefused: true),
+                     Observation.Conclude(0, "Taken", took: true, lastWords: ProviderSaid, awaitsHelper: true, providerRefused: true),
+                     Observation.Resumed(0, "awaiting-person", "Taken", "Taken", took: true, lastWords: ProviderSaid, providerRefused: true),
+                     Observation.Resumed(0, "completed", "Done", "Done", lastWords: ProviderSaid, providerRefused: true),
+                 })
+        {
+            Assert.Equal("failed", conclusion.State);
+            Assert.Equal(NoteCodes.EndedProviderRefused.Code, conclusion.Parts![0].Code);
+            var words = Assert.Single(conclusion.Parts!, part => part.Code is null);
+            Assert.Equal((ProviderSaid, NoteBy.Program), (words.Words, words.By));
+            Assert.Contains("req_011StandIn", conclusion.Note);
+            Assert.DoesNotContain(conclusion.Parts!, part => part.Code == NoteCodes.EndedParkedAsked.Code);
+        }
+
+        Assert.Equal(
+            "its model's provider refused its turn, so the run failed and goes on as a failed run does:",
+            Observation.Conclude(0, "Taken", took: true, providerRefused: true).Note);
+        Assert.Equal("completed", Observation.Conclude(0, "Done", took: true, lastWords: ProviderSaid, providerRefused: true).State);
+        Assert.Equal(
+            "ended.awaits",
+            Observation.Conclude(0, "Taken", awaitsAfter: "q9", took: true, lastWords: ProviderSaid, providerRefused: true).Parts![0].Code);
+        Assert.Equal(
+            ("awaiting-person", NoteCodes.EndedParkedAsked.Code),
+            (Observation.Conclude(0, "Taken", took: true, lastWords: "Which port?").State,
+             Observation.Conclude(0, "Taken", took: true, lastWords: "Which port?").Parts![0].Code));
+    }
+
     private const string HelperAsked = "I asked a helper about the window; I will go on when it answers.";
 
     /// <summary>

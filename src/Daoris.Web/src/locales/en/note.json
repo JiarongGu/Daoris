@@ -3,6 +3,7 @@
   "note.ended.exit": "It exited with code {{exit}}.",
   "note.ended.turn-failed-taken": "The agent's turn failed with the quest still taken:",
   "note.ended.turn-failed-open": "The agent's turn failed before it took its quest:",
+  "note.ended.provider-refused": "Its model's provider refused its turn, so the run failed and goes on as a failed run does:",
   "note.ended.parked-asked": "It stopped with its quest still taken, to ask you:",
   "note.ended.parked-transcript": "It stopped with its quest still taken, to ask you; what it needs ends its transcript.",
   "note.ended.parked-short": "It stopped to ask you.",
