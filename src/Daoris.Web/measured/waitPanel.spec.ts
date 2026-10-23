@@ -91,4 +91,32 @@ test.describe('the waiting panel', () => {
     const at = await measure(page);
     expect(at.main.height).toBeGreaterThanOrEqual(CONVERSATION - 4);
   });
+
+  // QUESTIONUI1a (the supervisor design §8.4): six long answers at the panel's floor scroll within the park's part, and the box's field
+  // and *Send*, outside every part, stay in sight in the column under it.
+  for (const story of ['SixLongAtTheFloor', 'SixLongAtTheFloorChineseDark']) {
+    test(`keeps the field and its send in sight under six long answers at the floor: ${story}`, async ({ page }) => {
+      await open(page, story);
+      const at = await page.evaluate(() => {
+        const column = document.querySelector('[data-story-column]')!.getBoundingClientRect();
+        const part = document.querySelector('[data-region="wait-panel"] [data-wait-part]') as HTMLElement;
+        const field = document.querySelector('textarea')!.getBoundingClientRect();
+        const send = document.querySelector('button[type="submit"]')!.getBoundingClientRect();
+        return {
+          column: { top: column.top, bottom: column.bottom },
+          scrolls: part.scrollHeight > part.clientHeight,
+          radios: part.querySelectorAll('input[type="radio"]').length,
+          field: { top: field.top, bottom: field.bottom },
+          send: { top: send.top, bottom: send.bottom },
+        };
+      });
+      console.log(`${story}: ${JSON.stringify(at)}`);
+      expect(at.radios).toBe(6);
+      expect(at.scrolls).toBe(true);
+      for (const box of [at.field, at.send]) {
+        expect(box.top).toBeGreaterThanOrEqual(at.column.top);
+        expect(box.bottom).toBeLessThanOrEqual(at.column.bottom + 0.5);
+      }
+    });
+  }
 });

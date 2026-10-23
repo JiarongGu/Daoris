@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { useState } from 'react';
 import type { GoAhead, Session } from '../../data/api';
 import { chinese } from '../../design/storyLanguage';
 import { MAIN_WIDTHS } from '../../design/storyWidths';
@@ -37,6 +38,15 @@ const ASKED: ParkQuestion = {
   at: '2026-10-22T09:05:00Z',
 };
 
+const SIX_LONG: ParkQuestion = {
+  ...ASKED,
+  id: 'q6l0ng00',
+  choices: Array.from({ length: 6 }, (_, index) => ({
+    label: `Reading ${index + 1} of the target`,
+    does: 'Write that value into the dashboard configuration, and keep the earlier one behind the setting until the next release.',
+  })),
+};
+
 const PRODUCTION: GoAhead = {
   number: 1, kind: 'write', on: 'production', act: 'dashboard configuration', state: 'asked',
   asked: [{ session: 's1a2b3c4', quest: '7a82cc', at: '2026-10-22T09:04:00Z', why: 'The tile reads its target from it.' }],
@@ -48,12 +58,16 @@ const LANDS = { branch: 'daoris/s-1a2b3c4', tree: 's-1a2b3c4', commits: 2, uncom
 type Holds = 'park' | 'stripAndPark' | 'nothing';
 
 /** The column: the conversation scrolling in the main area, with a sticky line of its own, and the panel under it. */
-function Column({ height, onResize, onReset, holds }: {
+function Column({ height, onResize, onReset, holds, question = ASKED }: {
+  /** The park's question: three answers, or six long ones (QUESTIONUI1a). */
+  question?: ParkQuestion;
   height: number;
   onResize: (height: number) => void;
   onReset?: () => void;
   holds: Holds;
 }) {
+  // The answer selected, held as the frame holds it, so a row chosen in the story stays chosen (QUESTIONUI1a).
+  const [selected, setSelected] = useState<string | null>(null);
   return (
     <Tooltip.Provider>
       <div data-story-column="" style={{ width: MAIN_WIDTHS.half }} className="isolate flex h-[40rem] max-w-full flex-col bg-page text-ink">
@@ -85,7 +99,7 @@ function Column({ height, onResize, onReset, holds }: {
                 onSend={nothing}
                 park={{
                   quest: '7a82cc', tree: 's-1a2b3c4', since: new Date(Date.now() - 12 * 60_000).toISOString(),
-                  question: ASKED, goAheads: [PRODUCTION], onSelect: nothing, onGoAhead: nothing,
+                  question, goAheads: [PRODUCTION], selected, onSelect: setSelected, onGoAhead: nothing,
                 }}
               />
             )}
@@ -133,6 +147,15 @@ export const NothingWaiting: Story = { args: { holds: 'nothing' } };
 
 /** At the floor: a line of what waits, the rest scrolled, the conversation given the column. */
 export const AtTheFloor: Story = { render: () => <Column height={72} onResize={nothing} holds="park" /> };
+
+/** Six long answers at the floor (QUESTIONUI1a): the rows scroll within the park's part, the field and *Send* stay in sight below it. */
+export const SixLongAtTheFloor: Story = { render: () => <Column height={72} onResize={nothing} holds="park" question={SIX_LONG} /> };
+
+/** The same in 中文 and dark. */
+export const SixLongAtTheFloorChineseDark: Story = {
+  render: () => <Column height={72} onResize={nothing} holds="park" question={SIX_LONG} />,
+  decorators: [chinese, dark],
+};
 
 /** Kept taller than the column: held where the conversation keeps its floor (240 px) above the panel, so it stays readable. */
 export const KeptTall: Story = { render: () => <Column height={2000} onResize={nothing} holds="stripAndPark" /> };

@@ -1,7 +1,6 @@
 import { useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Chip } from '../../design/ui';
-import { cn } from '../../lib/cn';
+import { Button, ChoiceRow, Chip } from '../../design/ui';
 import type { ParkQuestion } from './parkQuestion';
 
 /**
@@ -18,7 +17,8 @@ import type { ParkQuestion } from './parkQuestion';
  * - **Cleared by its own press** (Codex's round-2 finding 15): a native radio cannot be unselected, so *Clear choice* returns the group
  *   to none, the focus to its first row, and the words go alone.
  * - **Its accessible name is its label, *recommended* where it is, and what it does**; the reason is its description, so *recommended*
- *   is said once. The `<label>` wraps the row for the press; `aria-labelledby` keeps the reason out of the name.
+ *   is said once. Each row is the UI design's `ChoiceRow`: a native radio in the row's `<label>`, drawn in the platform's palette, its
+ *   name by `aria-labelledby` so the reason stays out of it.
  * - Without `onSelect` the rows are listed with no radio, as the head's card lists them until its answer is opened.
  *
  * A molecule: props in, a selection out (D55). The frame holds the selection beside the words, tied to the question's id.
@@ -38,7 +38,7 @@ export function QuestionCard({ question, selected = null, onSelect }: {
 
   const clear = () => {
     onSelect?.(null);
-    group.current?.querySelector<HTMLInputElement>('input[type="radio"]')?.focus();
+    group.current?.querySelector<HTMLInputElement>('input')?.focus();
   };
 
   return (
@@ -68,31 +68,25 @@ export function QuestionCard({ question, selected = null, onSelect }: {
                 {why && <span id={`${at}-why`} className="break-words text-small text-ink-soft">{t('work.park.why', { why })}</span>}
               </span>
             );
-            const row = 'flex min-w-0 items-start gap-2 rounded-control border px-3 py-2';
             if (!choosing) {
-              return <div key={choice.label} role="listitem" className={cn(row, 'border-line bg-raised')}>{body}</div>;
+              return (
+                <div key={choice.label} role="listitem" className="flex min-w-0 rounded-control border border-line bg-raised px-3 py-2">
+                  {body}
+                </div>
+              );
             }
             return (
-              <label
+              <ChoiceRow
                 key={choice.label}
-                className={cn(
-                  row,
-                  'cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent/60',
-                  chosen ? 'border-accent bg-accent-soft' : 'border-line bg-raised hover:border-line-strong',
-                )}
+                name={`${id}-choice`}
+                value={choice.label}
+                checked={chosen}
+                onChange={() => onSelect?.(choice.label)}
+                labelledBy={[`${at}-label`, recommended && `${at}-recommended`, choice.does && `${at}-does`].filter(Boolean).join(' ')}
+                describedBy={why ? `${at}-why` : undefined}
               >
-                <input
-                  type="radio"
-                  name={`${id}-choice`}
-                  value={choice.label}
-                  checked={chosen}
-                  onChange={() => onSelect?.(choice.label)}
-                  aria-labelledby={[`${at}-label`, recommended && `${at}-recommended`, choice.does && `${at}-does`].filter(Boolean).join(' ')}
-                  aria-describedby={why ? `${at}-why` : undefined}
-                  className="mt-1 size-4 shrink-0 cursor-pointer accent-accent outline-none"
-                />
                 {body}
-              </label>
+              </ChoiceRow>
             );
           })}
         </div>
