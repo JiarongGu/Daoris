@@ -17,6 +17,57 @@ public sealed class AdapterTests
         Root: "D:/fam/Game",
         ServiceUrl: "http://localhost:5177");
 
+    [Theory]
+    [InlineData("claude-code", "Anthropic", true)]
+    [InlineData("claude-code-acp", "Anthropic", true)]
+    [InlineData("codex-acp", "OpenAI", false)]
+    [InlineData("dsh", "DeepSeek", false)]
+    [InlineData("stub", "MAKER", false)]
+    [InlineData("acp-stub", "MAKER", false)]
+    public void Each_start_and_conversation_names_its_own_maker_and_running_model(string name, string maker, bool automatic)
+    {
+        var adapter = AdapterSet.Built().Resolve(name);
+        // A new start must replace the attribution an earlier maker left on the target.
+        var target = TargetPrompt.ForStart(Target() with { CommitTrailer = "old maker's instruction" }, adapter);
+        var composed = TargetPrompt.Composed(target);
+        var process = ChatRunner.ProcessTold(
+            new ResolvedCommits(new CommitRule(CommitRules.Ask, null), CommitRules.DefaultSource), null, adapter: adapter);
+        foreach (var words in new[] { composed.Text, process.Words })
+        {
+            Assert.Contains($"`{name}`", words);
+            Assert.Contains(maker, words);
+            Assert.Contains("model actually running this session", words);
+            Assert.Contains("Co-Authored-By", words);
+            Assert.Contains("do not add a duplicate", words);
+            Assert.DoesNotContain("old maker's instruction", words);
+            if (automatic)
+            {
+                Assert.Contains("Your Claude harness adds", words);
+                Assert.DoesNotContain("Co-Authored-By:", words);
+            }
+            else
+            {
+                Assert.Contains("Co-Authored-By:", words);
+                Assert.Contains("model unreported rather than invent one", words);
+            }
+            if (maker == "OpenAI") Assert.Contains("Codex (OpenAI, MODEL) <noreply@openai.com>", words);
+            if (maker == "DeepSeek") Assert.DoesNotContain("OpenAI", words);
+        }
+        Assert.Equal(composed.Text.Length, composed.Account.Sections.Sum(section => section.Chars ?? 0));
+        Assert.Contains(process.Words, new ChatMessage("continue", []) { Process = process }.Prompt);
+        // The environment carries the same instruction that the ACP door's first prompt carries.
+        var info = adapter.Prepare(target, ["node", "stand-in.mjs"]);
+        Assert.Equal(composed.Text, info.Environment["DAORIS_TARGET"]);
+        using var service = new ServiceClient("http://ledger.test", null);
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [name] = ["node", "stand-in.mjs"] },
+        };
+        var driver = new Daoris.Driver.Driver(service, config, AdapterSet.Built(), Path.GetFullPath("_fixtures/makertrail-unused"));
+        var spawn = driver.Prepare(adapter, Target() with { CommitTrailer = "old maker's instruction" }, new HarnessSelection(null));
+        Assert.Equal(composed.Text, spawn.Info.Environment["DAORIS_TARGET"]);
+    }
+
     [Fact]
     public void An_unknown_adapter_errors_naming_what_exists()
     {

@@ -2582,6 +2582,7 @@ public sealed class Driver(
     internal (ProcessStartInfo Info, string? Notice) Prepare(
         ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null)
     {
+        target = TargetPrompt.ForStart(target, adapter);
         var info = prepared ?? adapter.Prepare(target with { Home = target.Home ?? DaorisHome.Resolve(Variable) }, config.Commands.GetValueOrDefault(adapter.Name));
 
         // The environment seam every harness already carries for exactly this (D49 §4). Applied
@@ -3215,7 +3216,7 @@ public sealed class Driver(
         // what the session was for, never from what the session said about itself (D46 §4).
         // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target. After it, the answers
         // to the go-aheads it asked since its start (KNOWUSE1a).
-        var composed = resume is null ? TargetPrompt.Composed(target) : null;
+        var composed = resume is null ? TargetPrompt.Composed(TargetPrompt.ForStart(target, adapter)) : null;
         var prompt = resume?.Prompt ?? composed!.Text;
         // What the target was composed of, kept beside it on its event with the rules handed beside it (CONTEXT1, D143 point 1);
         // a resume composes nothing, so its record keeps none. Nor a reviewer's (XAGENT1d): its instruction is its own

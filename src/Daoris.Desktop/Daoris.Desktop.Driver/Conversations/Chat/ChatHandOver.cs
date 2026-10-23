@@ -239,6 +239,7 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
     {
         if (!_context.Turned.ContainsKey(sessionId) && !_context.Talking.ContainsKey(sessionId)) return false;
 
+        message = _runner.WithProcess(sessionId, message);
         // The browser's line after Daoris's brief (SESSCTX1b keeps the brief a field of its own, so the line is the briefing's alone).
         if (_context.Browsers.TryRemove(sessionId, out var browser))
         {
