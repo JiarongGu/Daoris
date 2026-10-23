@@ -123,8 +123,9 @@ internal static class TreesConsole
             case ["remove", var named, ..]:
             {
                 var force = args.Contains("--force");
+                using var service = ServiceClient.FromEnvironment();
                 var removal = LooksLikePath(named)
-                    ? await trees.RemoveAsync(named, force).ConfigureAwait(false)
+                    ? await trees.RemoveAsync(named, force, service: service).ConfigureAwait(false)
                     : await RemoveSessionBranchAsync(trees, named, Option(args, "--repository"), force).ConfigureAwait(false);
                 Told(home, LooksLikePath(named) ? PressesTold.DiscardTree : PressesTold.DiscardBranch);
                 // A refusal that preserves work is policy doing its job, not a tool error. The words are the routes' too (RPC1b3).

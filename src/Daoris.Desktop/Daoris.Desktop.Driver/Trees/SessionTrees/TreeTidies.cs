@@ -311,10 +311,11 @@ internal sealed class TreeTidies(
     /// It deletes the branch only while it is the commit judged, and a content-held one's commits stay on a recovery ref the
     /// sentence names (SQUASHTIDY1c).
     /// <paramref name="force"/> is the person saying it again, meaning it. The record
-    /// forgets it once it is gone. <b>It asks no sessions</b>, so forced it would take a tree a live session holds: the
-    /// person's doors reach it through <see cref="SessionBranchDiscard"/>, which keeps such a branch (LAND3c).
+    /// forgets it once it is gone. The person's doors supply their local ledger through <see cref="SessionBranchDiscard"/>:
+    /// a removal with a tree checks it again under the repository's start lock (TREELOCK2).
     /// </remarks>
-    internal async Task<TreeRemoval> RemoveBranchAsync(string root, string repository, string branch, bool force = false, CancellationToken ct = default)
+    internal async Task<TreeRemoval> RemoveBranchAsync(string root, string repository, string branch, bool force = false, CancellationToken ct = default,
+        ServiceClient? service = null)
     {
         if (!branch.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal))
         {
@@ -355,7 +356,7 @@ internal sealed class TreeTidies(
         if (worktrees.GetValueOrDefault(branch) is { } tree)
         {
             return context.Holds(tree)
-                ? await removals.RemoveAsync(tree, force, ct).ConfigureAwait(false)
+                ? await removals.RemoveAsync(tree, force, ct, service).ConfigureAwait(false)
                 : new(false, $"`{branch}` is checked out at {tree}, which is not a session tree — Daoris removes nothing there.");
         }
 

@@ -16,7 +16,8 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
     /// somebody's checkout, and is refused before git is asked anything.
     /// </summary>
     /// <param name="force">The person saying it again, meaning it: work and branch go too.</param>
-    internal async Task<TreeRemoval> RemoveAsync(string path, bool force = false, CancellationToken ct = default)
+    /// <param name="service">The person's door supplies the local ledger: a held tree stays, and force can lift an ended session's own lock.</param>
+    internal async Task<TreeRemoval> RemoveAsync(string path, bool force = false, CancellationToken ct = default, ServiceClient? service = null)
     {
         var full = Path.GetFullPath(path);
         if (!context.Holds(full))
@@ -28,6 +29,20 @@ internal sealed class TreeRemovals(TreeContext context, TreeFollows follows, Con
         if (!Directory.Exists(full))
         {
             return new(false, $"there is no tree at {path}.");
+        }
+
+        // TREELOCK2: keep the repository's starts out from the ledger read through the removal. A stale lock can name an ended
+        // session while a later one holds the same tree, so the live-tree check precedes the lock owner's record.
+        var owner = context.OwnerOf(full);
+        using var removing = service is null ? null : TreeLock.TryReplaying(context.Home, owner.Workspace, owner.Repository);
+        if (service is not null)
+        {
+            if (removing is null) return new(false, TreeLock.Starting(owner.Repository));
+            if ((await service.ActiveSessionsAsync(ct).ConfigureAwait(false)).Any(session => session.Tree is { Length: > 0 } tree && SamePath(tree, full)))
+                return new(false, SessionBranchDiscard.Held(owner.Repository, follows.BranchOfTree(full)?.Branch ?? Path.GetFileName(full)));
+            if (force && SessionLocks.HolderOf(full) is { } holder
+                && await service.RecordAsync(holder, ct).ConfigureAwait(false) is { Tree: { Length: > 0 } heldTree } record && SamePath(heldTree, full))
+                await SessionLocks.LetGoEndedAsync(record).ConfigureAwait(false);
         }
 
         // The main root, from git itself: the common dir is the main repository's .git, wherever the
