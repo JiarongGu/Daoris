@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { SyncStanding } from '../data/api';
-import type { KeepSet } from '../data/wiring';
+import type { ActorRow, KeepSet } from '../data/wiring';
 import { keys, SYNC_SLICE } from '../data/queries';
 import type { AccountWaitTick, Consideration, TrustHold } from '../data/signals';
 import type { AccessLevel } from '../settings/repository/Access';
@@ -477,11 +477,8 @@ export const useSetHelpMode = () => useDriverChange<{ mode: 'restricted' | 'full
  */
 export const useSetHelpGrant = () => useDriverChange<{ grant: string; operation: string; chosen: boolean }>('SET_HELP_GRANT');
 
-/** One entry of an actor's effective order (D205 §4.0): `from` is what a start's record keeps as its choice. */
-export type ActorEntry = { agent: string; model?: string | null; effort?: string | null; from: string };
-
-/** One actor as `ACTORS` answers it (MODELROLE1c, D205 §9.4): set, as before, off, or an entry in driver.json that does not read. */
-export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null };
+// The actors' wire types live in `data/wiring` so the presentational Actors card reads them without reaching the bridge.
+export type { ActorEntry, ActorRow } from '../data/wiring';
 
 /**
  * Each actor's order, where it came from (MODELROLE1c): a read of `driver.json`'s `actors`, the same `daoris driver actor` says. Kept

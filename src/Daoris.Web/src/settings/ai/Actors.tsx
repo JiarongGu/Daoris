@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ActorRow } from '../../bridge/driver';
+import type { ActorRow } from '../../data/wiring';
 import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 

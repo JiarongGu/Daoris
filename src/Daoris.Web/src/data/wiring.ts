@@ -207,3 +207,9 @@ export type SpaceStarted = {
   run: string | null; joined: boolean; why?: 'held'; message?: string;
   held?: { pid: number; since: string; door: string; gone: boolean } | null;
 };
+
+/** One entry of an actor's effective order (D205 §4.0): `from` is what a start's record keeps as its choice. */
+export type ActorEntry = { agent: string; model?: string | null; effort?: string | null; from: string };
+
+/** One actor as `ACTORS` answers it (MODELROLE1c, D205 §9.4): set, as before, off, or an entry in driver.json that does not read. */
+export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null };

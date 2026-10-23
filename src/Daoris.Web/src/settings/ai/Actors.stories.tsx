@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
-import type { ActorRow } from '../../bridge/driver';
+import type { ActorRow } from '../../data/wiring';
 import { ActorsCard } from './Actors';
 
 // The actors on AI features (MODELROLE1c, D205 §7): each kind of work Daoris starts, its order folded to one line, in the shapes
