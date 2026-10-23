@@ -20014,3 +20014,12 @@ reads `limited` on the host and is gated `Unavailable` / `Cooling` with its acco
 limited helper's ask stays open as `cooling` while its lead waits, and runs again once an account is ready. Once the lead no longer
 waits, it is refused `limited` with its ready time (`helper.limited`), worded in en and zh. Detail: FIX-LOG's LIMITRESUME1h entry
 and D206's LIMITRESUME1h note.
+## LIMITRESUME1b — a limited driven line resumes its own conversation once its account is ready (2026-10-24, D206)
+
+> | LIMITRESUME1b | §3.3 for a driven line: an `Open` or `Taken` quest's limited last part planned as the line's resume; step 0's presses first; step 1 decided in the carry-on's start (`Driver.cs:1716-1736`), its maker's reading asked, `limit.reset` kept through the say door and taken off on any refusal; else a briefed carry-on with the held words; else `held.limit-waits`; TURNFAIL1's limited words always `Wait`; `limit.notLifted` | 1a | Round 2, N7: in the driver's stand-in test, not `PlannerTests`, B1's case first: **the own account freeing in the same look as the carry-on is planned → a full resume of the same conversation id with `limit.reset` and no brief, never a briefed part on it** (the install's case); … *Round 3 (B8, Codex 4, 10; N19, N20):* … a cool-off whose write throws → limited, no strike, the account passed until its `Until` |
+
+(The row of `docs/2026-10-23-limit-resume-design.md` §6, its proof cut where marked; the backlog holds it inside LIMITRESUME1.)
+
+**Outcome** 2026-10-24: a limited line resumes its own conversation on its own account once ready, Daoris's word kept just before
+it goes on and taken off at every conclusion; a refusal goes on briefed in the same start. Open quests are carried on, words go
+with the walk, `held.limit-waits` says the wait, and no limit is a strike. Detail: D206's note; FIX-LOG 2026-10-24.
