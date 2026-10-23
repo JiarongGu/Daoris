@@ -65,8 +65,10 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
     /// not placed comes back with a null id and the sentence why; its message is what the finished start says.
     /// </summary>
     /// <param name="workspace">The workspace the person's window was on at the press (ASKSCOPE1a): the new one's, whose running one is set aside.</param>
+    /// <param name="order">Ask Daoris's effective order, a new conversation's (MODELROLE1d), as <see cref="ChatRunner.PlaceHelpAsync"/> takes it.</param>
     public async Task<HelpPlaced> PlaceHelpFromAsync(
-        string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default)
+        string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default,
+        IReadOnlyList<ActorEffective>? order = null)
     {
         if (context.Closing) return new(null, "the application is closing, so no conversation starts now.");
 
@@ -80,7 +82,7 @@ internal sealed class ChatHelp(ChatContext context, ChatRunner runner)
 
         if (await SetAsideHelpAsync(null, workspace, ct).ConfigureAwait(false) is { } answering) return new(null, $"{HeldWords.AnsweringWhy(answering)}.");
 
-        var placed = await runner.PlaceHelpAsync(adapter, config, workspace, ct).ConfigureAwait(false);
+        var placed = await runner.PlaceHelpAsync(adapter, config, workspace, ct, order: order).ConfigureAwait(false);
         if (placed.SessionId is not { } id) return placed;
 
         try

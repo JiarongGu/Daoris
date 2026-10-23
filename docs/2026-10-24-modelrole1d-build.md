@@ -17,12 +17,23 @@ which remain.
    (*Off — declarations only*, *Off — starters only*). Intake's, Ask Daoris's and Chat's editors are offered beside Build's;
    Intake's and Ask Daoris's add *Off*; Chat's and Ask Daoris's say what a running conversation does (§7, round 4), every other
    editor that running work never moves.
-2. **Starts 5 and 10-13 take their actor** (remaining): the chat runner's start and Ask Daoris's placement walking Chat's and Ask
-   Daoris's effective order, `no-posture` from `HelpAccess.For`, the pick overriding, the carriers on `ChatTarget`, the composer's
-   `override` kept, reconciled and re-applied, and the composer opening on the actor's model.
-3. **§3.5(b)'s pending start** (remaining): `ChatPending` owning the attempt across replacements, the queued words moved, the go-on
+2. **Chat's and Ask Daoris's starts take their actor** (built). A new conversation (`START_CHAT`, `SESSION_START_FROM`) walks
+   Chat's effective order and a new Ask Daoris (`START_HELP`, `HELP_START_FROM`) Ask Daoris's (`ChatRunner.WalkAsync`): an order of
+   one is today's start on its agent, asking its model; more are walked choice by choice, each choice's accounts by the existing
+   walk judged for its model. An entry that holds no conversation is passed `unavailable`, and for Ask Daoris one its access refuses
+   under the mode standing now `no-posture` (`HelpAccess.For`), before any account is asked; with none, the press is refused in
+   *Chat waits: none of its choices can run now.* / *Ask Daoris waits: …*. An agent the person named on the new conversation's chip
+   is a pick, its model Chat's first entry for that agent. The record keeps the entry's `choice` and `asked`, and the opening note's
+   actor line says a later choice. The chat's protocol open carries its asked choice (`AcpSession.Carry`) and keeps what its open
+   listed as its agent's offer reading, so the composer opens on the actor's model; the native door carries it through
+   `NativeArguments` as before. The composer's change is kept as `override`, reconciled from the returned configuration
+   (`ActorOverride.Reconciled`: an effort-only change keeps the model, a model change clears the effort), and a conversation going on
+   re-applies it over its asked choice (`ActorAsked.Overlaid`), its record's asked left as its open set it. Continuations (a hand-over,
+   a limit move, a briefed move) keep running on the agent they name, as before.
+3. **Intake's start takes its actor** (remaining): start 5 walking Intake's effective order with its carriers.
+4. **§3.5(b)'s pending start** (remaining): `ChatPending` owning the attempt across replacements, the queued words moved, the go-on
    after an interruption, a pick never walked afresh, a refused continuation's brief recomposed.
-4. **§3.5(f)'s Intake re-ask** (remaining): `EndRefusedIntakeAsync` and the Intake's walk within its own start.
+5. **§3.5(f)'s Intake re-ask** (remaining): `EndRefusedIntakeAsync` and the Intake's walk within its own start.
 
 ## Checks run
 
@@ -33,6 +44,13 @@ with why), `HelpCoverageTests`, `HelpSettingProposalsTests`, `HelpRoom*` (the go
 `DriverModuleRoutesTests`, `StartWiringRouteTests`; the web's `src/settings`, `src/bridge`, `src/locales`, the stories and
 presentational tests, the typecheck, `i18n:check`, `names-check.mjs --strict` and `check:web-rules`. No Process class was changed.
 
+Part 2: driver `ActorRunTests` (the override's reconciling and overlay), `HelpPlaceWorkspaceTests` (Ask Daoris's walk, `no-posture`,
+as before restricted and full, the wait's sentence, Chat's walk and a pick), `AcpTests`, `ChatGoOnTests`, `HandOverRunnerTests`,
+`BuildWalkTests`; the changed Process class `ProtocolChatTests` with `process.runsettings` (a new conversation opening on its Chat
+entry's model and effort; its stand-in now keeps the effort it is set to), and beside it `ChatRunnerTests`, `HelpChatTests`,
+`ChatGoesOnProcessTests`, `LimitGoesOnProcessTests`, `HandOverProcessTests`, `CurveMoveProcessTests`, `ChatWordsRestartProcessTests`;
+modules `DriverModuleConversationTests`, `DriverModuleStartFromTests`, `DriverModuleHelpTests`, `DriverModuleActorTests`.
+
 ## Readings
 
 - *Off* on Intake's and Ask Daoris's editors is a press beside *Save* (`settings.ai.actors.off`, *Off* / 关闭), not a value in the
@@ -40,3 +58,7 @@ presentational tests, the typecheck, `i18n:check`, `names-check.mjs --strict` an
   by the glossary, which keeps *turn off* for a plugin (停用).
 - The Intake card's per-circle *Runs as* lines and Ask Daoris's tier sentence stay, under their rows, since §7 folds the cards into
   the rows and says nothing is lost; their ⓘ sentences are the cards' own.
+- A conversation going on with a kept `override` does not write its record's `asked` again: §9.3 sets `asked` at the open and again only
+  by the same-account move, and the override re-applied is the person's change, not the open's ask.
+- A route that names an agent (the new conversation's chip) is a pick even where it names Chat's own first agent: the person chose it,
+  and §3.5(d) keeps a pick on its agent.

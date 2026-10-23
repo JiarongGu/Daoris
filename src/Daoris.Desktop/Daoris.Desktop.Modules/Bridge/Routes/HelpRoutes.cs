@@ -80,7 +80,9 @@ public sealed class HelpRoutes(DriverContext context)
                 return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle };
             }
 
-            var place = await chat.PlaceHelpAsync(helper, config, named is null ? null : spelled, cancellationToken).ConfigureAwait(false);
+            // Ask Daoris's order walked (MODELROLE1d, D205 §4.1), each entry judged by its access under the mode standing now.
+            var place = await chat.PlaceHelpAsync(
+                helper, config, named is null ? null : spelled, cancellationToken, order: ActorChoices.Effective("ask-daoris", config)).ConfigureAwait(false);
             if (place.SessionId is not { } id) return new { SessionId = (string?)null, place.Message, Running = false, Workspace = circle };
 
             starting.Placed(circle, id);
@@ -1286,7 +1288,8 @@ public sealed class HelpRoutes(DriverContext context)
         await placing.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var place = await chat.PlaceHelpFromAsync(id, helper, config, named is null ? null : spelled, cancellationToken).ConfigureAwait(false);
+            var place = await chat.PlaceHelpFromAsync(
+                id, helper, config, named is null ? null : spelled, cancellationToken, ActorChoices.Effective("ask-daoris", config)).ConfigureAwait(false);
             if (place.SessionId is not { } placedId) return new { SessionId = (string?)null, place.Message, From = id, Workspace = circle };
 
             starting.Placed(circle, placedId);

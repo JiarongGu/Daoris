@@ -665,7 +665,7 @@ public sealed class AcpSession(
                 foreach (var category in touched)
                 {
                     var leaves = category == "model" ? later.Model : later.Effort;
-                    if (leaves.Source == "entry") continue;
+                    if (leaves.Source is "entry" or "override") continue;
                     if (OpeningOptions.FirstOrDefault(option => option.Category == category) is not { Current: { } opening } option) continue;
                     try
                     {
@@ -695,7 +695,7 @@ public sealed class AcpSession(
 
             async Task<ActorValue> OneAsync(string category, ActorValue value, bool judged)
             {
-                if (value is not { Source: "entry", Value: { } wanted, Carried: true }) return value;
+                if (value is not { Source: "entry" or "override", Value: { } wanted, Carried: true }) return value;
                 if (ConfigOptions.FirstOrDefault(option => option.Category == category) is not { } option) return value with { Carried = false };
                 if (option.Current == wanted) return value;
                 // Always asked, never judged by the list alone (MODELROLE1a): Claude's door lists aliases and takes a full id it does not list,

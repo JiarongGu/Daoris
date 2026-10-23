@@ -30,13 +30,13 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
     /// A conversation's door with accounts, present by a look: nothing is probed or spawned. <paramref name="full"/> is its mode that
     /// asks nothing (HELPMODE1a1), none by default.
     /// </summary>
-    private sealed class Door(HarnessToolchain toolchain, string? full = null) : ISessionAdapter
+    private sealed class Door(HarnessToolchain toolchain, string? full = null, string name = "door", bool interactive = true) : ISessionAdapter
     {
-        public string Name => "door";
+        public string Name => name;
 
         public SessionWire Wire => SessionWire.Acp;
 
-        public bool Interactive => true;
+        public bool Interactive => interactive;
 
         public HarnessToolchain? Toolchain => toolchain;
 
@@ -51,15 +51,20 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
 
     private ChatRunner Runner(ChatLedger ledger, string? full = null)
     {
+        HarnessToolchain Toolchain(string variable) =>
+            new(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: variable, ProbeByPresence: true);
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
         {
-            ["door"] = new Door(
-                new HarnessToolchain(Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "DOOR_HOME", ProbeByPresence: true),
-                full),
+            ["door"] = new Door(Toolchain("DOOR_HOME"), full),
+            // MODELROLE1d: a second agent with a mode that asks nothing, and one that holds no conversation, for the actors' walks.
+            ["full-door"] = new Door(Toolchain("FULL_DOOR_HOME"), "bypassPermissions", "full-door"),
+            ["mute"] = new Door(Toolchain("MUTE_HOME"), name: "mute", interactive: false),
         });
         var settings = DaorisHome.Entry(_home, HomeEntry.Harnesses);
         foreach (var account in new[] { "home", "office" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "door", account));
-        new HarnessSettings().WithDefault("door", "home").WithWorkspaceDefault("alpha", "door", "office").Save(settings);
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "full-door", "home"));
+        new HarnessSettings().WithDefault("door", "home").WithWorkspaceDefault("alpha", "door", "office").WithDefault("full-door", "home")
+            .Save(settings);
         return new ChatRunner(
             ledger.Client(), adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)),
             harnesses: new HarnessRoster(adapters, settings));
@@ -228,5 +233,83 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         Assert.Equal(["h1"], ChatHelp.Aside(rooms, goingOn: null, "ALPHA"));
         Assert.Empty(ChatHelp.Aside(rooms, goingOn: "h1", "alpha"));
         Assert.Equal(["h3"], ChatHelp.Aside(rooms, goingOn: null, null));
+    }
+
+    /// <summary>
+    /// MODELROLE1d (D205 §4.1, §3.5(e)'s access bullet): Ask Daoris's order is walked choice by choice, each entry judged first by
+    /// <c>HelpAccess.For</c> under the mode standing now, so full access passes an agent with no mode that asks nothing
+    /// (<c>no-posture</c>) and opens on the next, carrying its model; its record names that agent.
+    /// </summary>
+    [Fact]
+    public async Task Ask_Daoris_s_order_passes_an_entry_its_access_refuses_and_opens_on_the_next()
+    {
+        var ledger = new ChatLedger();
+        var runner = Runner(ledger);
+        var config = ActorChoices.With(Config.WithHelpMode(HelpModes.Full), "ask-daoris", [new ActorChoice("door"), new ActorChoice("full-door", "opus")]);
+
+        var placed = await runner.PlaceHelpAsync("door", config, "alpha", order: ActorChoices.Effective("ask-daoris", config));
+
+        Assert.NotNull(placed.SessionId);
+        Assert.Equal("full-door", placed.Adapter!.Name);
+        Assert.Equal(new ActorEffective("full-door", "opus", null, "2"), placed.Chosen);
+        Assert.Equal("full-door", ledger.Record(placed.SessionId!)["adapter"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// MODELROLE1d (D205 §4.1, §13: no-posture and restricted Ask Daoris as before): an order as before is today's start on its agent,
+    /// restricted on an agent with no mode that asks nothing included; full access on it alone is refused in today's words.
+    /// </summary>
+    [Fact]
+    public async Task Ask_Daoris_as_before_starts_as_today_restricted_and_full()
+    {
+        var ledger = new ChatLedger();
+        var runner = Runner(ledger);
+
+        var restricted = await runner.PlaceHelpAsync("door", Config, "alpha", order: ActorChoices.Effective("ask-daoris", Config));
+        var full = await runner.PlaceHelpAsync("door", Config.WithHelpMode(HelpModes.Full), "beta", order: ActorChoices.Effective("ask-daoris", Config));
+
+        Assert.Equal(new ActorEffective("door", null, null, "before"), restricted.Chosen);
+        Assert.Equal("door", restricted.Adapter!.Name);
+        Assert.Null(full.SessionId);
+        Assert.Contains("help mode restricted", full.Message);
+        Assert.Equal(["alpha"], ledger.HelpAsked);
+    }
+
+    /// <summary>
+    /// MODELROLE1d (D205 §4.5): with no choice of Ask Daoris's that can run, the press is refused in the wait's sentence, each choice
+    /// named with its reason, and nothing is opened.
+    /// </summary>
+    [Fact]
+    public async Task No_choice_that_can_run_refuses_the_press_in_the_wait_s_sentence()
+    {
+        var ledger = new ChatLedger();
+        var runner = Runner(ledger);
+        var config = ActorChoices.With(Config, "ask-daoris", [new ActorChoice("gone"), new ActorChoice("mute")]);
+
+        var refused = await runner.PlaceHelpAsync("door", config, "alpha", order: ActorChoices.Effective("ask-daoris", config));
+
+        Assert.Null(refused.SessionId);
+        Assert.StartsWith("Ask Daoris waits: none of its choices can run now. choice 1, gone · account default: `gone` is not an agent", refused.Message);
+        Assert.Contains("choice 2, mute · account default: `mute` does not hold conversations", refused.Message);
+        Assert.Empty(ledger.HelpAsked);
+    }
+
+    /// <summary>
+    /// MODELROLE1d (D205 §4.1): Chat's walk takes the first entry that can hold a conversation, each passed one said with its code, its
+    /// accounts judged for its model; a pick is one entry, its agent's and its model Chat's first entry for that agent (§3.5(d)).
+    /// </summary>
+    [Fact]
+    public async Task Chat_s_walk_passes_what_cannot_hold_a_conversation_and_a_pick_takes_its_agent_s_model()
+    {
+        var runner = Runner(new ChatLedger());
+        var config = ActorChoices.With(Config, "chat", [new ActorChoice("mute"), new ActorChoice("door", "sonnet", "high")]);
+
+        var walk = await runner.WalkAsync("chat", ActorChoices.Effective("chat", config), config, null, null, CancellationToken.None);
+
+        Assert.Equal(new ActorEffective("door", "sonnet", "high", "2"), walk.Chosen);
+        Assert.Equal("door", walk.Adapter!.Name);
+        Assert.Equal("unavailable", Assert.Single(walk.Passes).Code);
+        Assert.Equal([new ActorEffective("door", "sonnet", "high", "pick")], ActorChoices.Effective("chat", config, pick: "door"));
+        Assert.Equal(["--model", "sonnet"], new ActorEffective("door", "sonnet", null, "pick").Asked.NativeArguments([]));
     }
 }

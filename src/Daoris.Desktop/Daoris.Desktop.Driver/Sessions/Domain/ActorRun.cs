@@ -12,7 +12,19 @@ public sealed record ActorAsked(string Agent, ActorValue Model, ActorValue Effor
     /// The model its choice named, which each account's offer reading is judged for (D205 §4.1, the walk's model parameter); null for
     /// account default, the person's own command or environment, which no reading passes.
     /// </summary>
-    public string? NamedModel => Model is { Source: "entry", Value: { } model } ? model : null;
+    public string? NamedModel => Model is { Source: "entry" or "override", Value: { } model } ? model : null;
+
+    /// <summary>
+    /// This asked choice with the composer's <paramref name="change"/> laid over it (D205 §4.2, MODELROLE1d): what a resume and a briefed
+    /// continuation set, the person's last change after the opening's. An override's model drops the asked effort unless the override
+    /// names one, since a model change resets the effort the agent gives. Each value it names is carried, its source <c>override</c>.
+    /// </summary>
+    public ActorAsked Overlaid(ActorOverride? change) => change is null ? this : this with
+    {
+        Model = change.Model is { } model ? new("override", model, true) : Model,
+        Effort = change.Effort is { } effort ? new("override", effort, true)
+            : change.Model is not null ? new("account-default", null, false) : Effort,
+    };
 
     public static ActorAsked ForSpawn(string agent, System.Diagnostics.ProcessStartInfo info, ActorAsked? requested = null)
     {
@@ -24,7 +36,7 @@ public sealed record ActorAsked(string Agent, ActorValue Model, ActorValue Effor
             {
                 var named = words[i] == flag && i + 1 < words.Length ? words[i + 1]
                     : words[i].StartsWith(flag + "=", StringComparison.Ordinal) ? words[i][(flag.Length + 1)..] : null;
-                if (named is not null) return value is { Source: "entry", Carried: true } && value.Value == named ? value : new("command", named, false);
+                if (named is not null) return value is { Source: "entry" or "override", Carried: true } && value.Value == named ? value : new("command", named, false);
             }
             return value;
         }
@@ -40,13 +52,61 @@ public sealed record ActorAsked(string Agent, ActorValue Model, ActorValue Effor
     /// <summary>The native carrier, shared by first starts, resumes and chats. Existing command flags retain precedence.</summary>
     public IEnumerable<string> NativeArguments(IReadOnlyList<string> command)
     {
-        if (Model is { Source: "entry", Value: { } model, Carried: true } && !Has(command, "--model"))
+        if (Model is { Source: "entry" or "override", Value: { } model, Carried: true } && !Has(command, "--model"))
         { yield return "--model"; yield return model; }
-        if (Effort is { Source: "entry", Value: { } effort, Carried: true } && !Has(command, "--effort"))
+        if (Effort is { Source: "entry" or "override", Value: { } effort, Carried: true } && !Has(command, "--effort"))
         { yield return "--effort"; yield return effort; }
     }
 
     private static bool Has(IEnumerable<string> command, string flag) => command.Any(word => word == flag || word.StartsWith(flag + "=", StringComparison.Ordinal));
+}
+
+/// <summary>
+/// The composer's last change on a conversation, kept as values (D205 §4.2, §9.3's <c>override</c>, MODELROLE1d): the model's and the
+/// effort's value ids as the agent returned them, never their display names, which need not be unique or reversible.
+/// </summary>
+public sealed record ActorOverride(string? Model, string? Effort)
+{
+    /// <summary>The record's <c>override</c> as the service keeps it; null where it holds none or none that reads.</summary>
+    public static ActorOverride? Read(JsonElement? kept)
+    {
+        if (kept is not { ValueKind: JsonValueKind.Object } value) return null;
+        string? Text(string name) => value.TryGetProperty(name, out var each) && each.ValueKind == JsonValueKind.String ? each.GetString() : null;
+        var model = Text("model");
+        var effort = Text("effort");
+        return model is null && effort is null ? null : new(model, effort);
+    }
+
+    /// <summary>
+    /// <paramref name="before"/> after one change of <paramref name="category"/>, reconciled from the configuration the agent
+    /// <paramref name="returned"/> (round 3, Codex 5), never merged blindly: an effort-only change keeps the model; a model change sets
+    /// the model and clears the effort, leaving it to what the new model gives. With no returned list nothing was acknowledged, and
+    /// nothing changes.
+    /// </summary>
+    public static ActorOverride? Reconciled(ActorOverride? before, string category, IReadOnlyList<AcpConfigOption>? returned)
+    {
+        if (returned is null) return before;
+        var now = returned.FirstOrDefault(option => option.Category == category)?.Current;
+        return (category, now) switch
+        {
+            (_, null) => before,
+            ("model", { } model) => new(model, null),
+            ("thought_level", { } effort) => new(before?.Model, effort),
+            _ => before,
+        };
+    }
+
+    /// <summary>The record's <c>override</c> as it is written: only what it names.</summary>
+    public IReadOnlyDictionary<string, string> Written
+    {
+        get
+        {
+            var written = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (Model is { } model) written["model"] = model;
+            if (Effort is { } effort) written["effort"] = effort;
+            return written;
+        }
+    }
 }
 
 /// <summary>
