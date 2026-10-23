@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's *To the top* and *Back to bottom* are now arrows alone, so they no longer cover the messages under them. Their
+  names show when you point at them, and a screen reader says them.
 - Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208). A
   session that goes on with no words of yours, a helper's answer or Daoris's alone, now says whose words they are, never *your answer*.
   Nothing is offered yet and nothing you see changes: its answer can only be kept as the supervisor's, never as yours. Your own

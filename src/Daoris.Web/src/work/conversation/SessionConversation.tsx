@@ -30,22 +30,22 @@ export type AnchorState = { anchored: AnchorWait[]; show: (wait: AnchorWait) => 
 const NO_ANCHORS: Anchors = { held: {}, earlier: [] };
 
 /**
- * *Back to bottom* as a press of its own (ASKHIST1c): 28 px, for a strip its host keeps outside the transcript, so it takes
- * its own room and never covers the words it leads back to.
+ * The two scroll presses' one look: a 28 px square with its arrow alone, its name its label and its tooltip. Their words once
+ * stood beside the arrow and covered the messages under them (the owner's report, 2026-10-24); the arrow says the act.
+ */
+const SCROLL_PRESS =
+  'flex h-7 w-7 cursor-pointer items-center justify-center rounded-control border border-line-strong bg-raised text-ink-soft hover:text-ink';
+
+/**
+ * *Back to bottom* as a press of its own (ASKHIST1c): for a strip its host keeps outside the transcript, so it takes its own
+ * room and never covers the words it leads back to.
  */
 export function BackToBottom({ onPress, className }: { onPress: () => void; className?: string }) {
   const { t } = useTranslation();
+  const name = t('work.conversation.bottom');
   return (
-    <button
-      type="button"
-      onClick={onPress}
-      className={cn(
-        'flex h-7 cursor-pointer items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2.5 text-small text-ink-soft hover:text-ink',
-        className,
-      )}
-    >
-      <Icon name="toBottom" size={13} />
-      {t('work.conversation.bottom')}
+    <button type="button" onClick={onPress} aria-label={name} title={name} className={cn(SCROLL_PRESS, className)}>
+      <Icon name="toBottom" size={14} />
     </button>
   );
 }
@@ -56,17 +56,10 @@ export function BackToBottom({ onPress, className }: { onPress: () => void; clas
  */
 export function ToTheTop({ onPress, className }: { onPress: () => void; className?: string }) {
   const { t } = useTranslation();
+  const name = t('work.wait.top');
   return (
-    <button
-      type="button"
-      onClick={onPress}
-      className={cn(
-        'flex h-7 cursor-pointer items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2.5 text-small text-ink-soft hover:text-ink',
-        className,
-      )}
-    >
-      <Icon name="toTop" size={13} />
-      {t('work.wait.top')}
+    <button type="button" onClick={onPress} aria-label={name} title={name} className={cn(SCROLL_PRESS, className)}>
+      <Icon name="toTop" size={14} />
     </button>
   );
 }
