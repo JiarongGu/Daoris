@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ActorRow } from '../../data/wiring';
 import { Button, Card, CardHeader, FormField, FormGrid, FormRow, Icon, Inline, Prose, SelectField, SettingList, SettingRow } from '../../design/ui';
@@ -14,8 +14,14 @@ type Draft = { key: number; agent: string; model: string; effort: string };
 /** The most choices an actor holds (D205 §3.1, `ActorChoices.Most`). */
 const MOST = 4;
 
-/** The actors whose editor this build offers (MODELROLE1c: Build's; rows d and e add the others). */
-const EDITABLE = new Set(['build']);
+/** The actors whose editor this build offers (MODELROLE1c: Build's; MODELROLE1d: Intake's, Ask Daoris's and Chat's; row e the rest). */
+const EDITABLE = new Set(['build', 'intake', 'ask-daoris', 'chat']);
+
+/** The actors whose running conversation goes on with the next choice at its agent's limit (D205 §3.5(e), §7: their editors say so). */
+const CONVERSING = new Set(['ask-daoris', 'chat']);
+
+/** Each actor that may be off, and its own words for off (D205 §2.1, round 2: they keep their cards' words on the folded rows). */
+const OFF_WORDS: Record<string, string> = { intake: 'settings.ai.intake.off', 'ask-daoris': 'settings.ai.helper.off' };
 
 /** What the efforts' field suggests: the pipe door's words (D205 §3.1); a protocol agent's own come with its offers. */
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
@@ -37,7 +43,7 @@ export function entryText(t: TFunction, entry: ActorChoice): string {
  */
 export function actorSummary(t: TFunction, row: ActorRow): string {
   if (row.state === 'unreadable') return t('settings.ai.actors.unreadable', { error: row.error ?? '' });
-  if (row.state === 'off') return t('settings.ai.actors.off');
+  if (row.state === 'off') return t(OFF_WORDS[row.id] ?? 'settings.ai.actors.off');
   const before = row.state === 'before' ? ` · ${t('settings.ai.actors.asBefore')}` : '';
   if (row.choices.length === 0) {
     if (row.id === 'opinion') return t('settings.ai.actors.fencedRule', { state: t('settings.ai.actors.asBefore') });
@@ -51,14 +57,17 @@ export function actorSummary(t: TFunction, row: ActorRow): string {
 
 /**
  * **Actors** (MODELROLE1c, D205 §7): each kind of work Daoris starts, a row each, in the screen's order, its order of choices folded
- * to one line; and Build's editor, one choice a row of agent, model and effort, *Move up*, *Move down* and *Remove*, *Add a choice*
+ * to one line, with what a row says beside it (Intake's and Ask Daoris's, their cards folded in by MODELROLE1d); and the editors of
+ * Build, Intake, Ask Daoris and Chat, *Off* on the two that may be off, one choice a row of agent, model and effort, *Move up*, *Move down* and *Remove*, *Add a choice*
  * up to four, *Save* and *Clear* (back to as before). One editor is open at a time, where *Edit* was pressed (D185 R3); a refusal is
  * the driver's sentence under its *Save*, the editor still open as it was. The page judges nothing: the driver's one judge does.
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
-export function ActorsCard({ rows, agents, busy = false, onSave }: {
+export function ActorsCard({ rows, agents, about = {}, busy = false, onSave }: {
   rows: readonly ActorRow[];
+  /** What a row says beside its order, by actor: its ⓘ, and the lines under it (Intake's and Ask Daoris's, their cards folded in). */
+  about?: Partial<Record<string, { why?: string; below?: ReactNode }>>;
   /** The agents this machine has, to name in a choice. */
   agents: readonly { value: string; label: string }[];
   busy?: boolean;
@@ -101,6 +110,7 @@ export function ActorsCard({ rows, agents, busy = false, onSave }: {
             <SettingRow
               key={row.id}
               label={name(row.id)}
+              why={about[row.id]?.why}
               control={!open_ && (
                 <>
                   <span className="text-body text-ink wrap-anywhere">{actorSummary(t, row)}</span>
@@ -110,6 +120,7 @@ export function ActorsCard({ rows, agents, busy = false, onSave }: {
                 </>
               )}
             >
+              {!open_ && about[row.id]?.below}
               {open_ && editing && (
                 <form
                   aria-label={t('settings.ai.actors.editorTitle', { actor: name(row.id) })}
@@ -199,7 +210,8 @@ export function ActorsCard({ rows, agents, busy = false, onSave }: {
                   </datalist>
                   <p className="m-0 text-small text-ink-soft">{t('settings.ai.actors.later')}</p>
                   <p className="m-0 text-small text-ink-soft">{t('settings.ai.actors.outranks')}</p>
-                  <p className="m-0 text-small text-ink-soft">{t('settings.ai.actors.neverMoves')}</p>
+                  {/* What a running conversation does, said where the order it follows is set (D205 §7, round 4). */}
+                  <p className="m-0 text-small text-ink-soft">{t(CONVERSING.has(row.id) ? 'settings.ai.actors.goesOn' : 'settings.ai.actors.neverMoves')}</p>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="ghost"
@@ -210,6 +222,9 @@ export function ActorsCard({ rows, agents, busy = false, onSave }: {
                       {t('settings.ai.actors.add')}
                     </Button>
                     <Button type="submit" disabled={busy}>{t('settings.ai.actors.save')}</Button>
+                    {OFF_WORDS[row.id] && row.state !== 'off' && (
+                      <Button variant="ghost" disabled={busy} onClick={() => save(row.id, [])}>{t('settings.ai.actors.off')}</Button>
+                    )}
                     {row.state !== 'before' && (
                       <Button variant="ghost" disabled={busy} onClick={() => save(row.id, null)}>{t('settings.ai.actors.clear')}</Button>
                     )}

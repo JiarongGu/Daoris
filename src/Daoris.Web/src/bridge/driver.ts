@@ -459,9 +459,6 @@ export const retryNotice = (quest: string, state: DriverState): [string, Record<
     ? ['quests.detail.released', { id: quest, session: state.retried.session ?? '' }]
     : ['quests.detail.retried', { id: quest, count: state.strikes }];
 
-/** Name the agent Ask Daoris runs on, or null for none — `daoris driver helper <agent>|off` (D50, D89). */
-export const useSetHelper = () => useDriverChange<{ adapter: string | null }>('SET_HELPER');
-
 /**
  * Ask Daoris's access mode, `restricted` or `full` (HELPMODE1b, D183 point 2): the person's press alone, from the panel's chip or
  * Settings, over the key `daoris-driver help mode` sets (D50). It takes each conversation's next turn: one running under another
@@ -499,18 +496,12 @@ export const useActors = () => {
 /**
  * One actor's order set, made off (`[]`, Intake and Ask Daoris only) or back to as before (`null`) (MODELROLE1c, D205 §8.2): the
  * person's press, judged by the driver's one judge, written through the legacy keys, Chat and Brainstorm kept where a change of Build's
- * agent would move them. `daoris driver actor` is its terminal twin (D50).
+ * agent would move them. `daoris driver actor` is its terminal twin (D50), and `driver intake|helper` write Intake's and Ask Daoris's
+ * one-choice order through it (MODELROLE1d). What an intake in each circle would run on moves with Intake's order, so the route
+ * publishes the roster's key too (STATEHUB1h, D169).
  */
 export const useSetActor = () =>
   useDriverChange<{ actor: string; choices: { agent: string; model?: string | null; effort?: string | null }[] | null }>('SET_ACTOR');
-
-/**
- * Which agent answers an ask the declarations leave (INT4b), or null for none — the field `daoris
- * driver intake <agent>|off` edits (D50). What an intake in each circle would run on moves with it,
- * so its route publishes the roster's key too, and that answer is asked again rather than left naming the agent before
- * (STATEHUB1h, D169).
- */
-export const useSetIntake = () => useDriverChange<{ adapter: string | null }>('SET_INTAKE');
 
 /**
  * "Look now": a quest just published, or an ask just made, is looked at on the driver's next breath

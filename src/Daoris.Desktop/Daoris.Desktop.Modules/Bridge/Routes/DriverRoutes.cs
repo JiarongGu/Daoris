@@ -299,29 +299,6 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
-    // Which harness answers asks with an intake session (INT4b), or null for none — the same
-    // file `daoris driver intake <adapter>|off` edits: one truth, two doors (D50). What an intake in each circle would run on
-    // moves with it, which the roster's key holds.
-    [DriverRoute("SET_INTAKE")]
-    [Publishes("SET_INTAKE", StateScopes.Driver | StateScopes.Harnesses)]
-    private object? SetIntake(IpcRequest request)
-    {
-        var adapter = Optional(request, "adapter");
-        _context.Change(config => config.WithIntake(adapter));
-        return State(_loop);
-    }
-
-    // The agent Ask Daoris runs on (HELP1, D89), or null for none — the same file
-    // `daoris driver helper <adapter>|off` edits: one truth, two doors (D50).
-    [DriverRoute("SET_HELPER")]
-    [Publishes("SET_HELPER", StateScopes.Driver)]
-    private object? SetHelper(IpcRequest request)
-    {
-        var adapter = Optional(request, "adapter");
-        _context.Change(config => config.WithHelper(adapter));
-        return State(_loop);
-    }
-
     // Each actor's order, where it came from and its effective entries (MODELROLE1c, D205 §9.4): a read, the same `daoris driver actor`
     // says. An actor whose stored entry does not read says why.
     [DriverRoute("ACTORS")]
@@ -330,7 +307,7 @@ public sealed class DriverRoutes(DriverContext context)
     // One actor's order set, made off, or back to as before (MODELROLE1c, D205 §8.2, §9.4): the person's press, the same `actors` key
     // `daoris driver actor` edits: one truth, two doors (D50). Judged by `ActorChoices.Judge` before anything is written, and written
     // through `adapter`, `intakeAdapter` and `helperAdapter`, Chat and Brainstorm made explicit where a change of `adapter` would move
-    // them (§4.0). `choices` absent or null is as before; an empty list is off. What an intake runs on may move, as SET_INTAKE's.
+    // them (§4.0). `choices` absent or null is as before; an empty list is off. What an intake runs on may move with Intake's order.
     [DriverRoute("SET_ACTOR")]
     [Publishes("SET_ACTOR", StateScopes.Driver | StateScopes.Harnesses)]
     private object? SetActor(IpcRequest request)

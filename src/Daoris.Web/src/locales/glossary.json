@@ -137,7 +137,7 @@
         "quests.detail.to", "quests.detail.waitsOn", "quests.includeClosed", "search.localOnly",
         "quests.requirements.check", "quests.requirements.reliedOn",
         "settings.across.repositoryField", "settings.across.workspaceField",
-        "settings.ai.helper.label", "settings.ai.helpMode.label", "settings.ai.intake.label", "settings.ai.intake.runsAs",
+        "settings.ai.helpMode.label", "settings.ai.intake.runsAs",
         "help.wired.field.*", "help.grants.name.*", "help.grants.op.*",
         "settings.ai.search.label", "settings.browser.driving.label", "settings.browser.extensions.label",
         "settings.browser.favorites.address", "settings.browser.favorites.label",

@@ -513,6 +513,26 @@ public sealed class ProtocolChatTests : IDisposable
         Assert.True(runner.Finish(id));
     }
 
+    /// <summary>
+    /// MODELROLE1d (D205 §3.2, §6.4, §13: the composer opening on the actor's model): a new conversation whose Chat entry names a model
+    /// and an effort sets both on its session, the model first, before its first prompt, so the composer opens on them.
+    /// </summary>
+    [Fact]
+    public async Task A_new_conversation_opens_on_its_chat_entry_s_model_and_effort()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        using var talking = await TalkAsync(service, order: [new ActorEffective("acp-stub", "sonnet", "max", "1")]);
+        var (runner, id) = (talking.Runner, talking.Id);
+
+        await Until(() => runner.Options(id).Count > 0 && runner.Options(id)[0].Current == "sonnet", () => $"heard [{string.Join(" | ", HeardLines())}]");
+
+        var heard = HeardLines().ToList();
+        var model = heard.IndexOf("set: model=sonnet");
+        Assert.True(model >= 0 && heard.IndexOf("set: effort=max") > model, string.Join(" | ", heard));
+        Assert.Equal("max", runner.Options(id).Single(option => option.Category == "thought_level").Current);
+        Assert.True(runner.Finish(id));
+    }
+
     /// <summary>A conversation whose agent offers no options offers the person none.</summary>
     [Fact]
     public async Task A_conversation_whose_agent_offers_no_options_offers_none()
@@ -537,7 +557,7 @@ public sealed class ProtocolChatTests : IDisposable
         }
     }
 
-    private async Task<Talking> TalkAsync(StandInService service, string? mode = null)
+    private async Task<Talking> TalkAsync(StandInService service, string? mode = null, IReadOnlyList<ActorEffective>? order = null)
     {
         var config = DriverConfig.Empty with
         {
@@ -552,7 +572,7 @@ public sealed class ProtocolChatTests : IDisposable
         var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
-        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        var id = (await runner.StartAsync("engine", "acp-stub", config, order: order)).SessionId!;
         await Until(() => service.State(id) == "working", () => $"state {service.State(id)}");
         return new Talking(client, runner, events, id);
     }
@@ -581,12 +601,13 @@ public sealed class ProtocolChatTests : IDisposable
             // CHATTAKE1b: the record its spawn named, which a connector it started would inherit.
             if (process.argv[3] === 'session') note('session: ' + (process.env.DAORIS_SESSION_ID ?? 'none'));
             let model = 'default';
+            let effort = 'high';
             const options = () => [
               { id: 'mode', name: 'Mode', category: 'mode', type: 'select', currentValue: 'acceptEdits',
                 options: [{ value: 'acceptEdits', name: 'Accept Edits' }, { value: 'bypassPermissions', name: 'Bypass' }] },
               { id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: model,
                 options: [{ value: 'default', name: 'Default' }, { value: 'sonnet', name: 'Sonnet' }, { value: 'haiku', name: 'Haiku' }] },
-              ...(model === 'haiku' ? [] : [{ id: 'effort', name: 'Effort', category: 'thought_level', type: 'select', currentValue: 'high',
+              ...(model === 'haiku' ? [] : [{ id: 'effort', name: 'Effort', category: 'thought_level', type: 'select', currentValue: effort,
                 options: [{ value: 'low', name: 'Low' }, { value: 'high', name: 'High' }, { value: 'max', name: 'Max' }] }]),
             ];
             for await (const line of createInterface({ input: process.stdin })) {
@@ -603,6 +624,7 @@ public sealed class ProtocolChatTests : IDisposable
               } else if (frame.method === 'session/set_config_option') {
                 note(`set: ${frame.params.configId}=${frame.params.value}`);
                 if (frame.params.configId === 'model') model = frame.params.value;
+                if (frame.params.configId === 'effort') effort = frame.params.value;
                 send({ jsonrpc: '2.0', id: frame.id, result: { configOptions: options() } });
               } else if (frame.method === 'session/prompt') {
                 const said = frame.params.prompt[0].text;

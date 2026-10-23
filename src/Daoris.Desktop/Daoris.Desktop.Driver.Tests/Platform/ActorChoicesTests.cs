@@ -189,6 +189,40 @@ public sealed class ActorChoicesTests
         Assert.Equal("claude-code-acp", ActorChoices.FirstAgent("intake", config));
     }
 
+    /// <summary>
+    /// MODELROLE1d (D205 §6.4, design §13's census): <c>driver intake|helper</c>, <c>SET_ACTOR</c> and <c>setting_propose</c>'s doors
+    /// write Intake's and Ask Daoris's one-choice order; the old setters that take an actor back to as before are left to tests and a
+    /// configuration's own reading, so no production door writes <c>intakeAdapter</c> or <c>helperAdapter</c> past the one judge.
+    /// </summary>
+    [Fact]
+    public void No_door_writes_the_intake_or_helper_key_past_the_actor()
+    {
+        var root = EveryChildIsHandedTheToolsTests.SourceRoot();
+        var writers = Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
+            .Where(file => !file.Contains(".Tests", StringComparison.Ordinal)
+                && !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && Path.GetFileName(file) != "DriverConfig.cs")
+            .Where(file => File.ReadAllText(file) is var text && (text.Contains(".WithIntake(", StringComparison.Ordinal) || text.Contains(".WithHelper(", StringComparison.Ordinal)))
+            .Select(Path.GetFileName)
+            .ToList();
+
+        Assert.Empty(writers);
+    }
+
+    [Fact]
+    public void The_old_intake_and_helper_verbs_write_a_one_choice_order_or_off()
+    {
+        var on = ActorChoices.With(DriverConfig.Empty, "intake", [new ActorChoice("codex-acp")]);
+        var off = ActorChoices.With(on, "ask-daoris", []);
+
+        Assert.Equal([new ActorChoice("codex-acp")], on.Actors["intake"]);
+        Assert.Equal("codex-acp", on.IntakeAdapter);
+        Assert.Empty(off.Actors["ask-daoris"]);
+        Assert.Null(off.HelperAdapter);
+        Assert.Equal("off", ActorView.Of("ask-daoris", off).State);
+    }
+
     [Fact]
     public void The_drain_turns_a_set_intake_off_in_what_effective_reads()
     {

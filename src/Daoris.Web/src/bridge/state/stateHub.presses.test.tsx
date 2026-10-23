@@ -33,7 +33,7 @@ import { useSetReadAcross, useSetWriteAcross } from '../repositories/across';
 import { channelKey, usePostChannel } from '../sessions/asks';
 import { useAddFavorite, useRemoveFavorite, useSetBrowser, useSetExtensions, useSetLinks } from '../browser';
 import { useParkGoAhead } from '../sessions/conversation';
-import { useSetIntake, useTrustFolder } from '../driver';
+import { useSetActor, useTrustFolder } from '../driver';
 import { HELP_HISTORY, useHelpStartFrom, usePinHelp, useRenameHelp, useStartHelp } from '../help';
 import { useSetCommits, useSetHelpers, useSetLanguage, useSetLine, useSetOpinion, useSetReview } from '../repositories/lines';
 import { useStateHub } from './stateHub';
@@ -51,7 +51,8 @@ const presses: [hook: string, usePress: () => Press, variables: unknown, family:
   ['useSetHelpers', useSetHelpers, { repository: 'engine' }, [keys.lines]],
   ['useSetReadAcross', useSetReadAcross, { repository: 'engine', read: true }, [keys.across]],
   ['useSetWriteAcross', useSetWriteAcross, { repository: 'engine', to: 'game', allow: true }, [keys.across]],
-  ['useSetIntake', useSetIntake, { adapter: 'claude-code' }, [keys.allStarts]],
+  // MODELROLE1d: Intake's order moves what an intake in each circle runs on, as SET_INTAKE's did.
+  ['useSetActor', useSetActor, { actor: 'intake', choices: [{ agent: 'claude-code' }] }, [keys.allStarts]],
   ['useTrustFolder', useTrustFolder, { folder: 'engine', trustFile: 'trust.json' }, [keys.driver]],
   ['useAccountUse', useAccountUse, { harness: 'claude-code', action: 'use' }, [keys.accounts, keys.harnesses]],
   ['useHarnessAction', useHarnessAction, { harness: 'claude-code', action: 'profile-rename', profile: 'work' },

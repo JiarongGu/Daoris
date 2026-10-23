@@ -108,6 +108,79 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         return [.. due.Take(slots)];
     }
 
+    /// <summary>
+    /// An intake's walk over Intake's effective order (MODELROLE1d, D205 §4.1), as a quest's first start walks Build's: choice by choice,
+    /// each choice's accounts by the existing walk before the next, judged for its model, on accounts not kept for conversations. An
+    /// agent this machine does not know is passed <c>unavailable</c> before any account is asked. Each passed entry joins
+    /// <paramref name="passes"/>; with none that can run, the selection holds on the wait's sentence, the soonest cool-off beside it.
+    /// </summary>
+    /// <param name="refused">
+    /// For the start's re-ask at the open (D205 §3.5(f)): the entry and account its agent refused, passed as if known before the spawn; the
+    /// walk then takes no count of its own (<paramref name="except"/> its start's own count left out of the ranking).
+    /// </param>
+    private async Task<(ISessionAdapter? Adapter, HarnessSelection Selection, ActorEffective? Chosen)> WalkAsync(
+        AskView ask, IReadOnlyList<ActorEffective> order, DriverConfig config, List<BuildPass> passes, CancellationToken ct,
+        (ActorEffective Entry, string? Account)? refused = null, long except = 0)
+    {
+        var counts = refused is null;
+        HarnessSelection? held = null;
+        CoolingEntry? soonest = null;
+        foreach (var entry in order)
+        {
+            string code;
+            string? why;
+            if (!_context.Adapters.Names.Contains(entry.Agent, StringComparer.OrdinalIgnoreCase))
+            {
+                (code, why) = ("unavailable", $"`{entry.Agent}` is not an agent on this machine");
+            }
+            else
+            {
+                var adapter = _context.Adapters.Resolve(entry.Agent);
+                IReadOnlyCollection<string>? passed = refused is { Entry: var at, Account: { } account } && at == entry ? [account] : null;
+                var selection = await _context.Harnesses
+                    .SelectAsync(adapter.Name, config, ask.Workspace, chosen: null, StartKind.Driven, ct, entry.Model, passed, except, counts)
+                    .ConfigureAwait(false);
+                if (selection.Allowed)
+                {
+                    if (!counts) return (adapter, selection, entry);
+                    _driver.Log?.Write("info", "actor.chose", [("actor", "intake"), ("ask", ask.Id), ("choice", entry.From), ("agent", entry.Agent),
+                        ("model", entry.Model), ("passed", passes.Select(pass => pass.Said).ToList())]);
+                    return (adapter, selection, entry);
+                }
+
+                held ??= selection;
+                if (selection.Cooling is { } cooling && (soonest is null || cooling.Until < soonest.Until)) soonest = cooling;
+                (code, why) = (selection.NotOffered is not null ? AgentOffers.NotOffered
+                    : selection.Cooling is not null ? "cooling" : selection.SignedOut is not null ? "signed-out" : "held", selection.Refusal);
+            }
+
+            passes.Add(new BuildPass(entry, code, why));
+            if (counts) _driver.Log?.Write("info", "actor.passed", [("actor", "intake"), ("ask", ask.Id), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
+        }
+
+        // The wait's sentence (D205 §4.5): judged again at every look, the first choice that can run, in order, taken.
+        var wait = $"Intake waits: none of its choices can run now. {string.Join("; ", passes.Select(pass => pass.Said))}.";
+        return (null, (held ?? new HarnessSelection(wait)) with { Refusal = wait, Cooling = soonest }, null);
+    }
+
+    /// <summary>
+    /// An intake's re-ask where its agent refused the entry's model at the open (D205 §3.5(f)): the walk over the order its start read, as
+    /// if the refusal had been known before the spawn, taking no count of its own. A later entry of the same agent on the same account is
+    /// set on the open session; anything else is null, and the record ends <c>choice-not-offered</c>, its ask let go.
+    /// </summary>
+    private async Task<(ActorAsked Asked, string Choice)?> ReaskAsync(
+        AskView ask, IReadOnlyList<ActorEffective> order, DriverConfig config, ActorEffective refused, HarnessSelection selection,
+        CancellationToken ct)
+    {
+        var again = await WalkAsync(ask, order, config, [], ct, (refused, selection.Profile), selection.Number).ConfigureAwait(false);
+        var same = again.Chosen is { } later && later != refused
+                   && string.Equals(later.Agent, refused.Agent, StringComparison.OrdinalIgnoreCase)
+                   && string.Equals(again.Selection.Profile, selection.Profile, StringComparison.OrdinalIgnoreCase);
+        _driver.Log?.Write("info", "actor.reasked", [("actor", "intake"), ("ask", ask.Id), ("refused", refused.From),
+            ("answer", again.Chosen?.From), ("same", same)]);
+        return same ? (again.Chosen!.Asked, again.Chosen.From) : null;
+    }
+
     /// <returns>
     /// The console line, whether a session actually opened, and — when one ENDED here — what it ended
     /// as. A park is not an ending: the record waits for the person, and the tick that finds it parked
@@ -121,7 +194,9 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         var config = _context.Config;
         var home = _context.Home;
         var output = _context.Output;
-        var adapterName = ActorChoices.FirstAgent("intake", config)!;
+        // MODELROLE1d (D205 §4.1): Intake's effective order, read once for this start. The gate above found it not off.
+        var order = ActorChoices.Effective("intake", config);
+        var adapterName = order[0].Agent;
         var named = $"ask #{ask.Id} in {ask.Workspace}";
         // The hold's own sentence beside its line, as a quest's hold carries it: what a wait the intake is among says (UX6d1).
         StartRun Hold(string why) => new($"held  intake for {named}: {why}", false, Held: why);
@@ -130,21 +205,37 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         // never happen would mark the ask served and explain nothing.
         ISessionAdapter adapter;
         HarnessSelection selection;
-        try
+        var chosen = order[0];
+        var passes = new List<BuildPass>();
+        if (order.Count > 1)
         {
-            adapter = _context.Adapters.Resolve(adapterName);
-            // An intake is driven work (D130 §4.6): it never starts on an account kept for conversations.
-            selection = await _context.Harnesses.SelectAsync(adapterName, config, ask.Workspace, chosen: null, StartKind.Driven, ct)
-                .ConfigureAwait(false);
-        }
-        catch (DriverException error)
-        {
-            return Hold(error.Message);
-        }
+            var walked = await WalkAsync(ask, order, config, passes, ct).ConfigureAwait(false);
+            if (walked is not { Chosen: { } entry, Adapter: { } taken })
+            {
+                return Hold(walked.Selection.Refusal!) with { Cooling = walked.Selection.Cooling, SignedOut = walked.Selection.SignedOut };
+            }
 
-        // A cooling account's hold carries its cool-off (TOOL4d), and the accounts it passed not signed in (TOOL6g), as a
-        // quest's does.
-        if (!selection.Allowed) return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
+            (adapter, selection, chosen, adapterName) = (taken, walked.Selection, entry, taken.Name);
+        }
+        else
+        {
+            try
+            {
+                adapter = _context.Adapters.Resolve(adapterName);
+                // An intake is driven work (D130 §4.6): it never starts on an account kept for conversations. Its accounts are judged
+                // by their offer readings for the entry's model (D205 §4.1).
+                selection = await _context.Harnesses.SelectAsync(adapterName, config, ask.Workspace, chosen: null, StartKind.Driven, ct, chosen.Model)
+                    .ConfigureAwait(false);
+            }
+            catch (DriverException error)
+            {
+                return Hold(error.Message);
+            }
+
+            // A cooling account's hold carries its cool-off (TOOL4d), and the accounts it passed not signed in (TOOL6g), as a
+            // quest's does.
+            if (!selection.Allowed) return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
+        }
 
         // The room, written from the circle's declarations as they stand now.
         string room;
@@ -195,6 +286,8 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
 
         // An intake on another account of the order says so, as a quest's start does (TOOL4f, D125 §3.2).
         RotatedOpening.Say(service, _context.Events, sessionId, adapterName, selection, carried: null);
+        // Where a later choice of Intake's order ran, its actor line says which and why (D205 §4.6).
+        RotatedOpening.SayActor(_context.Events, sessionId, "intake", chosen, passes);
 
         try
         {
@@ -213,6 +306,9 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 Attachments = ask.Attachments,
                 Ask = ask.Id,
                 Session = sessionId,
+                // MODELROLE1d (D205 §3.2): the entry's model and effort, carried on either door, and the choice its record keeps.
+                Asked = chosen.Asked,
+                Choice = chosen.From,
                 // Its workspace's session language (LANG1c): an intake answers a workspace's ask, in no repository.
                 Prompt = IntakePrompt.Compose(
                     ask, SessionLanguages.OfWorkspace(config, ask.Workspace), InAppBrowserServers.Told(browserDrivers), routedByIntake),
@@ -261,12 +357,33 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
                 said: _driver.Said(adapter, selection, sessionId),
+                // MODELROLE1d (D205 §3.5(f)): its agent's refusal of the entry's model at the open is kept as the account's reading and
+                // re-asked within this start, the order read once: a later entry of the same agent on the same account is set on this
+                // session; anything else ends the record `choice-not-offered` below, its ask let go in the same write.
+                offers: new OpenOffers(
+                    selection.Version, selection.Profile,
+                    order.Count > 1 ? _ => ReaskAsync(ask, order, config, chosen, selection, ct)
+                        : _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
                         _context.Usage?.Record(new UsageEntry(
                             sessionId, $"ask #{ask.Id}", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                    }
+
+                    // D205 §3.5(f): refused at the open, before any prompt. One write ends the record `choice-not-offered` and lets the
+                    // ask go, only where its binding names this session, so the next look picks it as an ask never served and its walk
+                    // passes the refusing account by the reading kept; its process has stopped, so its one count is given back.
+                    if (!_context.Processes.WasStopRequested(sessionId) && ended.NotOffered is { } notOffered)
+                    {
+                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Name, notOffered);
+                        await service.EndRefusedIntakeAsync(sessionId, refusedEnd, ct).ConfigureAwait(false);
+                        _context.Harnesses.Release(selection.Number, sessionId);
+                        return new StartRun(
+                            $"{refusedEnd.State}  intake {sessionId} ({named}): {refusedEnd.Note}", true,
+                            new SessionEnded(sessionId, $"ask #{ask.Id}", refusedEnd.State, false, refusedEnd.Note,
+                                Adapter: adapter.Name, Account: selection.Profile));
                     }
 
                     // What became of the ask is the observation — the intake's own account of it is not.

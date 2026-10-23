@@ -198,12 +198,17 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                     return Refused($"there is no agent `{agent}` on this machine — one of {Names(facts.Agents)}.", "", "");
                 }
 
+                // Intake's or Ask Daoris's one-choice order at account default, or off, the write SET_ACTOR makes, judged by its one
+                // judge (MODELROLE1d, D205 §6.4), until MODELROLE1h retires the door into actor_propose.
                 var intake = proposal.Door == "intake";
+                var actor = intake ? "intake" : "ask-daoris";
+                IReadOnlyList<ActorChoice> choices = agent is null ? [] : [new ActorChoice(agent)];
+                if (ActorChoices.Judge(actor, choices) is { } refusedOrder) return Refused(refusedOrder, "", "");
                 planned = (intake
                         ? agent is null ? "Stop answering asks with an agent: the declarations alone propose." : $"Answer asks with `{agent}`."
                         : agent is null ? "Turn Ask Daoris's agent off: it offers its starters only." : $"Run Ask Daoris on `{agent}`.",
                     $"daoris driver {proposal.Door} {value}",
-                    c => intake ? c.WithIntake(agent) : c.WithHelper(agent));
+                    c => ActorChoices.With(c, actor, choices));
                 break;
             }
             case "strikes" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var strikes):

@@ -43,9 +43,12 @@ public sealed class ConversationRoutes(DriverContext context)
         var chat = _loop.Chat ?? throw NotReady();
 
         var config = DriverConfig.Load(_loop.ConfigPath);
-        // A blank adapter is none named, and Chat's is the answer (D205 §4.0, MODELROLE1c: its actor's first agent, `adapter` as
-        // before). This route took a blank one as a name (REV3 CLEAN1); the page happens never to send one.
-        var adapter = Optional(request, "adapter") ?? ActorChoices.FirstAgent("chat", config)!;
+        // A blank adapter is none named, and Chat's order is walked (D205 §4.1, MODELROLE1d); one named is the person's pick, its model
+        // Chat's first entry for that agent (§3.5(d)). This route took a blank one as a name (REV3 CLEAN1); the page happens never to
+        // send one.
+        var named = Optional(request, "adapter");
+        var order = ActorChoices.Effective("chat", config, pick: named);
+        var adapter = named ?? order.FirstOrDefault()?.Agent ?? config.Adapter;
 
         // The end of a conversation is news the page wants without asking: the drawer is
         // probably open, and a record that moved silently reads as one that hung.
@@ -61,7 +64,7 @@ public sealed class ConversationRoutes(DriverContext context)
             var files = request.Payload is { } payload ? FilesOf(payload) : [];
             var started = await chat.StartWithAsync(
                 repository, adapter, config, text, files, Optional(request, "requestId"),
-                ownTree: TreeChoice(request), profile: profile, onEnded: OnEnded, ct: cancellationToken);
+                ownTree: TreeChoice(request), profile: profile, onEnded: OnEnded, ct: cancellationToken, order: order);
             _loop.Nudge();
             return new { started.SessionId, started.Sent, started.Why, started.Message };
         }
@@ -71,7 +74,7 @@ public sealed class ConversationRoutes(DriverContext context)
             // The per-conversation tree choice (D51). Absent falls back to the repository's
             // standing opt-in, which the runner reads from the same config.
             ownTree: TreeChoice(request),
-            ct: cancellationToken);
+            ct: cancellationToken, order: order);
 
         _loop.Nudge();
         return new { start.SessionId, start.Message };
@@ -160,8 +163,11 @@ public sealed class ConversationRoutes(DriverContext context)
 
         var chat = _loop.Chat ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
+        // A new conversation: Chat's order walked (MODELROLE1d, D205 §4.1).
+        var order = ActorChoices.Effective("chat", config);
         var started = await chat.StartFromAsync(
-                id, ActorChoices.FirstAgent("chat", config)!, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
+                id, order.FirstOrDefault()?.Agent ?? config.Adapter, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
+                cancellationToken, order)
             .ConfigureAwait(false);
         _loop.Nudge();
         return new { started.SessionId, started.Sent, started.Why, started.Message };

@@ -189,8 +189,8 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | discard a failed or superseded session's branch, with its tree where it is still here | Sessions → the session's review → Discard, while its tree is here | `daoris-driver trees remove <session|branch> [--repository <name>] --force` |
 | hand a branch a landing made to a landing plugin, to push it and open the pull request | Sessions → the session's review → Hand to <plugin> | `daoris-driver trees hand <session|branch> [--plugin <id>]` |
 | ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine (Ask Daoris never proposes it: it changes nothing of yours or on the platform, and the room already says what was last answered) | (no screen yet) | `daoris-driver trees state <session|branch> [--repository <name>]` |
-| choose the agent that answers asks | Settings → AI features | `daoris driver intake <agent>|off` |
-| choose the agent Ask Daoris runs on | Settings → AI features | `daoris driver helper <agent>|off` |
+| choose the agent that answers asks | Settings → AI features → Actors, Intake | `daoris driver intake <agent>|off` |
+| choose the agent Ask Daoris runs on | Settings → AI features → Actors, Ask Daoris | `daoris driver helper <agent>|off` |
 | choose the agent driven sessions start on | Settings → AI features → Actors, Build | `daoris driver adapter <agent>` |
 | choose who does each kind of work, and with which model | Settings → AI features → Actors | `daoris driver actor <actor> …` |
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |

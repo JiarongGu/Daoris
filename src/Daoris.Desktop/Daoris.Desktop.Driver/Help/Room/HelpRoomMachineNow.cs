@@ -13,8 +13,10 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
     public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) => machine with
     {
         Adapter = sources.Config.Adapter,
-        Intake = sources.Config.IntakeAdapter,
-        Helper = sources.Config.HelperAdapter,
+        // MODELROLE1d (D205 §6.4): Intake's and Ask Daoris's first agent, as their actors read; an order that does not read is said by
+        // the actors' own line, and its key stands here.
+        Intake = First("intake", sources.Config) ?? sources.Config.IntakeAdapter,
+        Helper = First("ask-daoris", sources.Config) ?? sources.Config.HelperAdapter,
         Cap = sources.Config.Cap,
         // ENTRY1f2 (D161's ENTRY1f note): by the Sessions list's own rule, so the count and the list name the same sessions,
         // less Ask Daoris's own conversation, which opens here; a teammate's never reached the snapshot.
@@ -54,6 +56,18 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         // PARALLEL1a: what the judges' facts had not read yet, which each section says where it says its part.
         NotReadYet = sources.NotReadYet,
     };
+
+    private static string? First(string actor, DriverConfig config)
+    {
+        try
+        {
+            return ActorChoices.FirstAgent(actor, config);
+        }
+        catch (ActorUnreadableException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>
     /// The most ended sessions the room lists by id (SESSUX1h3): enough to name one to archive or delete from the newest, short

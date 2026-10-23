@@ -24,7 +24,17 @@ public sealed record HelpPlaced(string? SessionId, string Message)
     internal ISessionAdapter? Adapter { get; init; }
 
     internal HarnessSelection? Selection { get; init; }
+
+    /// <summary>The entry of Ask Daoris's order it was placed on (MODELROLE1d, D205 §4.1), which its run asks; null runs as before.</summary>
+    internal ActorEffective? Chosen { get; init; }
 }
+
+/// <summary>
+/// What a new conversation's walk over its actor's order answered (MODELROLE1d, D205 §4.1): the agent, the account and the entry it took,
+/// and each entry it passed before with its code; or, where none can run, the wait's sentence the press is refused in (§4.5).
+/// </summary>
+internal sealed record ConversationWalk(
+    ISessionAdapter? Adapter, HarnessSelection? Selection, ActorEffective? Chosen, IReadOnlyList<BuildPass> Passes, string? Refusal);
 
 /// <summary>
 /// A conversation with an agent in one repository (D49 §3) — the session D46 built, entered by a
@@ -51,6 +61,9 @@ public sealed record HelpPlaced(string? SessionId, string Message)
 public sealed class ChatRunner : IDisposable
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _opening = new();
+
+    /// <summary>Each conversation's composer change as last kept (D205 §4.2), which the next change is reconciled with.</summary>
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ActorOverride> _overrides = new(StringComparer.Ordinal);
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _updateCuts = new();
     /// <summary>The shell crossed its close boundary: no further turn starts.</summary>
     public bool Closing => _context.Closing;
@@ -279,8 +292,9 @@ public sealed class ChatRunner : IDisposable
     /// <summary>Place a new Ask Daoris conversation from an earlier one's words, its room read and agent spawned after (HELPSTART1b, <see cref="ChatHelp.PlaceHelpFromAsync"/>).</summary>
     /// <param name="workspace">The workspace the person's window was on at the press (ASKSCOPE1a), as <see cref="PlaceHelpAsync"/> takes it.</param>
     public Task<HelpPlaced> PlaceHelpFromAsync(
-        string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default) =>
-        _help.PlaceHelpFromAsync(earlier, adapter, config, workspace, ct);
+        string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default,
+        IReadOnlyList<ActorEffective>? order = null) =>
+        _help.PlaceHelpFromAsync(earlier, adapter, config, workspace, ct, order);
 
     /// <summary>Start a new Ask Daoris conversation from an earlier one's words (ASKHIST1, <see cref="ChatHelp.StartHelpFromAsync"/>).</summary>
     public Task<ChatStart> StartHelpFromAsync(
@@ -294,8 +308,10 @@ public sealed class ChatRunner : IDisposable
     /// nowhere meanwhile: a word said to it while this runs waits rather than reopening it under the words handed on.
     /// </summary>
     /// <param name="onEnded">Told when the new conversation ends, as a start's is.</param>
+    /// <param name="order">Chat's effective order, walked where it holds more than one entry (MODELROLE1d); null runs on <paramref name="adapter"/>.</param>
     public async Task<StartedFrom> StartFromAsync(
-        string sessionId, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+        string sessionId, string adapter, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default,
+        IReadOnlyList<ActorEffective>? order = null)
     {
         if (_context.Closing) return new StartedFrom(null, false, null, "the application is closing, so no conversation starts now.");
 
@@ -309,7 +325,7 @@ public sealed class ChatRunner : IDisposable
         {
             return await StartFrom.RunAsync(
                 _service, _home, _events, _output, sessionId,
-                (repository, token) => StartAsync(repository, adapter, config, onEnded, ct: token),
+                (repository, token) => StartAsync(repository, adapter, config, onEnded, ct: token, order: order),
                 (id, text, files, preface) => Say(id, text, files, preface),
                 ct).ConfigureAwait(false);
         }
@@ -326,14 +342,16 @@ public sealed class ChatRunner : IDisposable
     /// </summary>
     /// <param name="ownTree">Absent is the driver's choice; true a tree of its own; false the checkout.</param>
     /// <exception cref="DriverException">The request id is malformed.</exception>
+    /// <param name="order">Chat's effective order, walked where it holds more than one entry (MODELROLE1d); null runs on <paramref name="adapter"/>.</param>
     public Task<StartedFrom> StartWithAsync(
         string repository, string adapter, DriverConfig config, string text, IReadOnlyList<ChatUpload> files, string? requestId,
-        bool? ownTree = null, string? profile = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+        bool? ownTree = null, string? profile = null, Func<string, string, Task>? onEnded = null, CancellationToken ct = default,
+        IReadOnlyList<ActorEffective>? order = null)
     {
         Task<StartedFrom> Run() => _context.Closing
             ? Task.FromResult(new StartedFrom(null, false, null, "the application is closing, so no conversation starts now."))
             : StartWith.RunAsync(
-                token => StartAsync(repository, adapter, config, onEnded, profile, ownTree, token),
+                token => StartAsync(repository, adapter, config, onEnded, profile, ownTree, token, order: order),
                 (id, words, attached, preface) => Say(id, words, attached, preface),
                 text, files, ct);
 
@@ -440,10 +458,15 @@ public sealed class ChatRunner : IDisposable
     /// The conversation this one continues, handed over, with why and who asked (MIXAGENT1a-iii): named on the new record as it
     /// opens. Null for every other conversation.
     /// </param>
+    /// <param name="order">
+    /// Chat's effective order for a new conversation (MODELROLE1d, D205 §4.1): one entry runs on its agent, as before, asking its model;
+    /// more are walked choice by choice, each choice's accounts before the next. Null for a conversation that continues another, which
+    /// runs on <paramref name="adapter"/> as before.
+    /// </param>
     public async Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
-        CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null)
+        CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null)
     {
         if (_context.Closing) return new(null, "Daoris is closing.");
         var key = Guid.NewGuid().ToString("N");
@@ -452,7 +475,7 @@ public sealed class ChatRunner : IDisposable
         try
         {
             if (_context.Closing) return new(null, "Daoris is closing.");
-            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from).ConfigureAwait(false);
+            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order).ConfigureAwait(false);
         }
         finally
         {
@@ -464,13 +487,19 @@ public sealed class ChatRunner : IDisposable
     private async Task<ChatStart> StartCoreAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
-        CancellationToken ct, string? tree, ContinuedFrom? from)
+        CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order)
     {
+        // MODELROLE1d (D205 §4.1): an order of one is today's start on its agent, asking its model; more are walked below, once the
+        // workspace whose accounts each choice walks is known.
+        var chosen = order is [var only] ? only : null;
+        if (chosen is not null) adapter = chosen.Agent;
+        var walking = order is { Count: > 1 };
+
         // Through the roster's LIVE set, not the one this runner was built with: the driver's tick
         // hands the roster the build's adapters plus whatever the plugins declare (D64), so a harness
         // declared since the shell started is a harness a conversation can run on now.
-        var resolved = _harnesses.Adapters.Resolve(adapter);
-        if (!resolved.Interactive)
+        var resolved = walking ? null! : _harnesses.Adapters.Resolve(adapter);
+        if (!walking && !resolved.Interactive)
         {
             // Asked BEFORE the record is opened: a session record for a conversation that could never
             // have happened would hold the repository and explain nothing.
@@ -495,10 +524,21 @@ public sealed class ChatRunner : IDisposable
         // The harness and the account (D49 §4), asked before the record exists — the same place the
         // `interactive` question is asked, and for the same reason. The circle comes from the registry
         // row, which is the machine's own wiring and the only honest source for it (D48 §2).
-        var selection = await _harnesses
-            .SelectAsync(resolved.Name, config, known!.Workspace, profile, StartKind.Conversation, ct)
-            .ConfigureAwait(false);
-        if (!selection.Allowed) return new(null, selection.Refusal!);
+        HarnessSelection selection;
+        IReadOnlyList<BuildPass> passes = [];
+        if (walking)
+        {
+            var walk = await WalkAsync("chat", order!, config, known!.Workspace, profile, ct).ConfigureAwait(false);
+            if (walk is not { Adapter: { } walked, Selection: { } taken, Chosen: { } entry }) return new(null, walk.Refusal!);
+            (resolved, selection, chosen, passes) = (walked, taken, entry, walk.Passes);
+        }
+        else
+        {
+            selection = await _harnesses
+                .SelectAsync(resolved.Name, config, known!.Workspace, profile, StartKind.Conversation, ct, chosen?.Model)
+                .ConfigureAwait(false);
+            if (!selection.Allowed) return new(null, selection.Refusal!);
+        }
 
         // A tree of the conversation's own, when asked for — per conversation, or as the repository's
         // standing choice (D51). Grown before the record, like every refusal above this line. Its
@@ -557,6 +597,8 @@ public sealed class ChatRunner : IDisposable
         // from a limit, the conversation it carries and the turn the limit refused (LIMITGOON1).
         RotatedOpening.Say(
             _service, _events, sessionId, resolved.Name, selection, from is { Why: HandOverWhy.Limit } ? LimitCarried(from.Session) : null);
+        // Where a later choice of Chat's order ran, its actor line says which and why (D205 §4.6), in the local conversation only.
+        if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "chat", chosen, passes);
 
         // A conversation in a tree it grew is told its process with its first message. A handed-over conversation also needs
         // its new maker's attribution: the record it continues may carry a different maker's instruction (MAKERTRAIL1). Any other
@@ -578,7 +620,7 @@ public sealed class ChatRunner : IDisposable
             return started = await RunAsync(
                 "chat", sessionId, message, resolved, selection, config,
                 RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued),
-                onEnded, ct).ConfigureAwait(false);
+                onEnded, ct, chosen: chosen).ConfigureAwait(false);
         }
         finally
         {
@@ -647,9 +689,9 @@ public sealed class ChatRunner : IDisposable
     /// </remarks>
     public async Task<ChatStart> StartHelpAsync(
         string adapter, DriverConfig config, HelpMachine machine,
-        Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default, IReadOnlyList<ActorEffective>? order = null)
     {
-        var placed = await PlaceHelpAsync(adapter, config, ct: ct).ConfigureAwait(false);
+        var placed = await PlaceHelpAsync(adapter, config, ct: ct, order: order).ConfigureAwait(false);
         return placed.SessionId is null
             ? new(null, placed.Message)
             : await RunHelpAsync(placed, config, _ => Task.FromResult<HelpMachine?>(machine), onEnded, ct).ConfigureAwait(false);
@@ -670,10 +712,25 @@ public sealed class ChatRunner : IDisposable
     /// The conversation whose account's limit refused its turn, which this one goes on from on the next account (LIMITGOON1): its
     /// opening line and <c>account.rotated</c> name it, as a driven carry-on's do. Null for every other start.
     /// </param>
+    /// <param name="order">
+    /// Ask Daoris's effective order for a new conversation (MODELROLE1d, D205 §4.1): one entry runs on its agent, as before, asking its
+    /// model; more are walked choice by choice, each entry judged first by <see cref="HelpAccess.For"/> under the mode standing now
+    /// (<c>no-posture</c>). Null for one that goes on from another, which runs on <paramref name="adapter"/> as before.
+    /// </param>
     /// <exception cref="DriverException">The agent names no harness this machine knows.</exception>
     public async Task<HelpPlaced> PlaceHelpAsync(
-        string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default, string? carries = null)
+        string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default, string? carries = null,
+        IReadOnlyList<ActorEffective>? order = null)
     {
+        if (order is { Count: > 1 })
+        {
+            var walk = await WalkAsync("ask-daoris", order, config, workspace, null, ct).ConfigureAwait(false);
+            if (walk is not { Adapter: { } walked, Selection: { } taken, Chosen: { } entry }) return new(null, walk.Refusal!);
+            return await OpenHelpAsync(walked, taken, entry, walk.Passes, config, workspace, carries, ct).ConfigureAwait(false);
+        }
+
+        var chosen = order is [var only] ? only : null;
+        if (chosen is not null) adapter = chosen.Agent;
         var resolved = _harnesses.Adapters.Resolve(adapter);
         if (!resolved.Interactive)
         {
@@ -690,8 +747,18 @@ public sealed class ChatRunner : IDisposable
 
         // The account its workspace names, then the machine's (ASKSCOPE1a), as a start in that workspace takes one; a press that
         // named none asks the machine's, as before (D89).
-        var selection = await _harnesses.SelectAsync(resolved.Name, config, workspace, null, StartKind.Conversation, ct).ConfigureAwait(false);
+        var selection = await _harnesses
+            .SelectAsync(resolved.Name, config, workspace, null, StartKind.Conversation, ct, chosen?.Model).ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
+        return await OpenHelpAsync(resolved, selection, chosen, [], config, workspace, carries, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Ask Daoris's record opened on the agent and account its start chose, and its opening said (HELPSTART1, MODELROLE1d).</summary>
+    private async Task<HelpPlaced> OpenHelpAsync(
+        ISessionAdapter resolved, HarnessSelection selection, ActorEffective? chosen, IReadOnlyList<BuildPass> passes, DriverConfig config,
+        string? workspace, string? carries, CancellationToken ct)
+    {
+        var access = HelpAccess.For(config.HelpMode, resolved);
 
         // Its workspace's own room (ASKSCOPE1b), which its record keeps as its tree: the folder its harness keeps it by. With the mode
         // its start gets (HELPMODE1a2), which its run reads from the same file below.
@@ -705,7 +772,61 @@ public sealed class ChatRunner : IDisposable
         // Ask Daoris's opening rotates like a start, on its scope's order (TOOL4f, D125 §3.2), and says so first; one that goes on from a
         // limit names the conversation it carries and the turn the limit refused (LIMITGOON1).
         RotatedOpening.Say(_service, _events, sessionId, resolved.Name, selection, LimitCarried(carries));
-        return new(sessionId, message) { Workspace = RemoteTarget.Workspace(workspace), Adapter = resolved, Selection = selection };
+        // Where a later choice of Ask Daoris's order ran, its actor line says which and why (D205 §4.6).
+        if (chosen is not null) RotatedOpening.SayActor(_events, sessionId, "ask-daoris", chosen, passes);
+        return new(sessionId, message) { Workspace = RemoteTarget.Workspace(workspace), Adapter = resolved, Selection = selection, Chosen = chosen };
+    }
+
+    /// <summary>
+    /// A new conversation's walk over <paramref name="actor"/>'s effective order (MODELROLE1d, D205 §4.1), as Build's start walks its:
+    /// choice by choice, each choice's accounts by the existing walk before the next, every account judged by its offer reading for the
+    /// choice's model. An entry that cannot hold a conversation here is passed <c>unavailable</c> before any account is asked, and, for Ask
+    /// Daoris, one its access refuses under the mode standing now <c>no-posture</c> (<see cref="HelpAccess.For"/>), so a full-access
+    /// mode never reaches an agent with no mode that asks nothing. With none that can run, the press is refused in the wait's sentence,
+    /// each choice named (§4.5).
+    /// </summary>
+    internal async Task<ConversationWalk> WalkAsync(
+        string actor, IReadOnlyList<ActorEffective> order, DriverConfig config, string? workspace, string? profile, CancellationToken ct)
+    {
+        var passes = new List<BuildPass>();
+        using var log = new MachineLog(_home, "driver");
+        foreach (var entry in order)
+        {
+            string? code = null;
+            string? why = null;
+            ISessionAdapter? resolved = null;
+            if (!_harnesses.Adapters.Names.Contains(entry.Agent, StringComparer.OrdinalIgnoreCase))
+            {
+                (code, why) = ("unavailable", $"`{entry.Agent}` is not an agent on this machine");
+            }
+            else
+            {
+                resolved = _harnesses.Adapters.Resolve(entry.Agent);
+                if (!resolved.Interactive) (code, why) = ("unavailable", $"`{resolved.Name}` does not hold conversations");
+                else if (actor == "ask-daoris" && HelpAccess.For(config.HelpMode, resolved).Refusal is { } unposed) (code, why) = ("no-posture", unposed);
+            }
+
+            if (code is null)
+            {
+                var selection = await _harnesses
+                    .SelectAsync(resolved!.Name, config, workspace, profile, StartKind.Conversation, ct, entry.Model).ConfigureAwait(false);
+                if (selection.Allowed)
+                {
+                    log.Write("info", "actor.chose", [("actor", actor), ("choice", entry.From), ("agent", entry.Agent), ("model", entry.Model),
+                        ("passed", passes.Select(pass => pass.Said).ToList())]);
+                    return new(resolved, selection, entry, passes, null);
+                }
+
+                (code, why) = (selection.NotOffered is not null ? AgentOffers.NotOffered
+                    : selection.Cooling is not null ? "cooling" : selection.SignedOut is not null ? "signed-out" : "held", selection.Refusal);
+            }
+
+            passes.Add(new BuildPass(entry, code, why));
+            log.Write("info", "actor.passed", [("actor", actor), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
+        }
+
+        return new(null, null, null, passes,
+            $"{ActorWords.Name(actor)} waits: none of its choices can run now. {string.Join("; ", passes.Select(pass => pass.Said))}.");
     }
 
     /// <summary>
@@ -781,7 +902,9 @@ public sealed class ChatRunner : IDisposable
                 return new(null, "the application is closing, so no conversation starts now.");
             }
 
-            return await RunAsync("ask-daoris", sessionId, placed.Message, resolved, selection, config, HelpPlace(room, reads, placed.Workspace), onEnded, ct)
+            return await RunAsync(
+                    "ask-daoris", sessionId, placed.Message, resolved, selection, config, HelpPlace(room, reads, placed.Workspace), onEnded, ct,
+                    chosen: placed.Chosen)
                 .ConfigureAwait(false);
         }
         finally
@@ -1120,9 +1243,13 @@ public sealed class ChatRunner : IDisposable
     /// ended state, its own conversation resumed rather than opened, and the person's words waiting its first turn. Null
     /// for a new conversation.
     /// </param>
+    /// <param name="chosen">
+    /// The entry of its actor's order this new conversation runs (MODELROLE1d, D205 §4.1): its <c>choice</c> and what it asks. Null
+    /// for one going on, which keeps its record's, and for a start that walked nothing, which runs as before.
+    /// </param>
     internal async Task<ChatStart> RunAsync(
         string actor, string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
-        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null)
+        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null)
     {
         var workTree = place.Tree;
         var transcript = DaorisHome.Entry(_home, HomeEntry.Sessions, $"{sessionId}.log");
@@ -1130,7 +1257,14 @@ public sealed class ChatRunner : IDisposable
         // The place as asked, before its mode is applied below: what the one retry of a native go-on runs in again (SESSCTX1c).
         var asked = place;
         actor = goOn?.Record.Actor ?? actor;
-        var actorAsked = goOn?.Record.Asked ?? ActorAsked.Before(resolved.Name);
+        var actorAsked = goOn?.Record.Asked ?? chosen?.Asked ?? ActorAsked.Before(resolved.Name);
+        var choice = goOn?.Record.Choice ?? chosen?.From ?? "before";
+        // MODELROLE1d (D205 §4.2): a conversation going on re-applies the person's last composer change over its asked choice, so its
+        // resume sets what they last left; the record's asked stays as its open set it.
+        var overriding = goOn is null ? null : ActorOverride.Read(goOn.Record.Override);
+        if (overriding is not null) _overrides[sessionId] = overriding;
+        else _overrides.TryRemove(sessionId, out _);
+        var carrying = actorAsked.Overlaid(overriding);
 
         Process process;
         string? rules = null;
@@ -1165,7 +1299,7 @@ public sealed class ChatRunner : IDisposable
                 // The native door resumes its own conversation by the id kept for it; the protocol door on its wire.
                 new ChatTarget(place.Name, workTree, _service.BaseUrl)
                 {
-                    Asked = actorAsked,
+                    Asked = carrying,
                     Resume = resolved.Wire == SessionWire.Pipe ? goOn?.Ask.Conversation : null,
                     // Its harness's mode that asks nothing, where Ask Daoris runs with full access on the native door (HELPMODE1a1).
                     PermissionMode = place.PermissionMode,
@@ -1268,9 +1402,11 @@ public sealed class ChatRunner : IDisposable
             }
 
             // D205 row b: reported alone, so a refusal here costs the record its provenance, never the conversation.
-            using (var startLog = new MachineLog(_home, "driver"))
+            // An override re-applied is the person's change, never the open's asked, so the record's asked is left as it was.
+            if (overriding is null)
             {
-                await _service.TryKeepActorAsync(sessionId, startLog, goOn?.Record.Choice ?? "before", ActorAsked.ForSpawn(resolved.Name, info, actorAsked), ct: ct)
+                using var startLog = new MachineLog(_home, "driver");
+                await _service.TryKeepActorAsync(sessionId, startLog, choice, ActorAsked.ForSpawn(resolved.Name, info, actorAsked), ct: ct)
                     .ConfigureAwait(false);
             }
             // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait. Through the launcher
@@ -1380,7 +1516,15 @@ public sealed class ChatRunner : IDisposable
                 wentOn: goOn is null ? null : () =>
                 {
                     if (goOn.Sent(named: false)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
-                });
+                })
+            {
+                // MODELROLE1d (D205 §3.2): its actor's model and effort set before its first prompt, the composer opening on them; what
+                // the agent would not take kept as asked and not carried, and what its open listed kept as its agent's reading (§9.2).
+                Asked = carrying,
+                Carried = overriding is not null ? null
+                    : notCarried => _ = _service.TryKeepActorAsync(sessionId, null, choice, notCarried, ct: CancellationToken.None),
+                OffersRead = options => KeepOffers(resolved.Name, selection, sessionId, options),
+            };
             chat.Turns.Closing = () => _context.Closing;
             _context.Turned[sessionId] = chat;
         }
@@ -1896,15 +2040,17 @@ public sealed class ChatRunner : IDisposable
         // Only returned configuration is acknowledged. An empty answer says nothing about what the setter asked.
         var model = session.LastAcknowledgedOptions?.FirstOrDefault(item => item.Category == "model")?.Current;
         var effort = session.LastAcknowledgedOptions?.FirstOrDefault(item => item.Category == "thought_level")?.Current;
-        var changed = new Dictionary<string, string>();
-        if (model is not null) changed["model"] = model;
-        if (effort is not null) changed["effort"] = effort;
-        if (changed.Count > 0)
+        // MODELROLE1d (D205 §4.2): kept as values, reconciled from the returned configuration with the change before it, never merged
+        // blindly: an effort-only change keeps the model, and a model change clears the effort the new model resets.
+        var before = _overrides.TryGetValue(sessionId, out var kept) ? kept : null;
+        var reconciled = ActorOverride.Reconciled(before, option.Category ?? "", session.LastAcknowledgedOptions);
+        if (reconciled is not null && reconciled != before)
         {
+            _overrides[sessionId] = reconciled;
             // The agent took the change already: a provenance write that fails is logged, never the press's failure.
             using (var keepLog = new MachineLog(_home, "driver"))
             {
-                await _service.TryKeepActorAsync(sessionId, keepLog, changed: changed, ct: ct).ConfigureAwait(false);
+                await _service.TryKeepActorAsync(sessionId, keepLog, changed: reconciled.Written, ct: ct).ConfigureAwait(false);
             }
             if (_context.ActorRuns.TryGetValue(sessionId, out var actorRun)) actorRun.Report([], new(DateTimeOffset.UtcNow, model, effort));
         }
@@ -1916,6 +2062,22 @@ public sealed class ChatRunner : IDisposable
             ("option", option.Name), ("chosen", chosen));
         _context.Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = set.Note, Parts = set.Parts });
         return ThePersons(after);
+    }
+
+    /// <summary>
+    /// What a conversation's open listed, kept as its agent's offer reading on its account (D205 §9.2, MODELROLE1d), as a driven open's
+    /// is; a reading that cannot be kept is logged, never the conversation's failure.
+    /// </summary>
+    private void KeepOffers(string agent, HarnessSelection selection, string sessionId, IReadOnlyList<AcpConfigOption> options)
+    {
+        IReadOnlyList<string>? Values(string category) =>
+            options.FirstOrDefault(option => option.Category == category) is { } option ? [.. option.Choices.Select(each => each.Value)] : null;
+        if (AgentOffers.Offered(_home, agent, selection.Version, selection.Profile, Values("model"), Values("thought_level"), DateTimeOffset.UtcNow)
+            is { } unkept)
+        {
+            using var log = new MachineLog(_home, "driver");
+            log.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
+        }
     }
 
     /// <summary>The options a person may set (<see cref="AcpConfigOption.ThePersons"/>), in the agent's order.</summary>
@@ -2403,7 +2565,12 @@ public sealed class ChatRunner : IDisposable
             streams: _output is null ? null : new SessionStreams(_output, sessionId),
             // Its model and effort, told each time they change, so the page offers what the agent does (AGT6b).
             onOptions: options => OptionsChanged?.Invoke(sessionId, ThePersons(options)),
-            onConversation: keep);
+            onConversation: keep)
+        {
+            Carry = chat.Asked,
+            Carried = chat.Carried,
+            OffersRead = chat.OffersRead,
+        };
         // What it says about its account's windows, kept as it says it (TOOL6c).
         if (said is not null) session.LimitsSaid += said;
         // Its background work stoppable from its tab for as long as the conversation lasts (CONSOLE3a).
@@ -2555,6 +2722,15 @@ public sealed class ChatRunner : IDisposable
         public object? Meta { get; }
 
         public string Cwd { get; }
+
+        /// <summary>What its actor asks, set on the session before its first prompt (D205 §3.2, MODELROLE1d); null sets nothing.</summary>
+        public ActorAsked? Asked { get; init; }
+
+        /// <summary>Told what was carried where it differs from <see cref="Asked"/>.</summary>
+        public Action<ActorAsked>? Carried { get; init; }
+
+        /// <summary>Told what the open listed, its agent's offer reading on its account (D205 §9.2).</summary>
+        public Action<IReadOnlyList<AcpConfigOption>>? OffersRead { get; init; }
 
         public IReadOnlyList<AcpMcpServer> Servers { get; }
 

@@ -102,6 +102,62 @@ public sealed class ActorRunTests : IDisposable
             Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError) { Content = new StringContent("{\"error\":\"refused\"}") });
     }
 
+    private static IReadOnlyList<AcpConfigOption> Returned(string model, string? effort) =>
+    [
+        // Two values with one display name: the override keeps the value id, never the name.
+        new("model", "Model", "model", model, [new("claude-opus-5-5", "Opus"), new("opus", "Opus"), new("sonnet", "Sonnet")]),
+        .. effort is null ? Array.Empty<AcpConfigOption>() : [new AcpConfigOption("effort", "Effort", "thought_level", effort, [new("low", "Low"), new("high", "High")])],
+    ];
+
+    /// <summary>
+    /// MODELROLE1d (D205 §4.2, design §13's records row): the composer's override kept as value ids and reconciled from the returned
+    /// configuration, never merged blindly: an effort-only change keeps the model, a model change whose answer resets the effort clears
+    /// it, two values with one display name stay apart, and a change the agent returned no list for keeps nothing new.
+    /// </summary>
+    [Fact]
+    public void The_composer_s_override_is_reconciled_from_what_the_agent_returned()
+    {
+        var model = ActorOverride.Reconciled(null, "model", Returned("claude-opus-5-5", "high"));
+        Assert.Equal(new ActorOverride("claude-opus-5-5", null), model);
+
+        var effort = ActorOverride.Reconciled(model, "thought_level", Returned("claude-opus-5-5", "high"));
+        Assert.Equal(new ActorOverride("claude-opus-5-5", "high"), effort);
+
+        // A model change after {opus, high} is kept as {sonnet}, never sonnet/high: the effort is left to what the new model gives.
+        Assert.Equal(new ActorOverride("sonnet", null), ActorOverride.Reconciled(effort, "model", Returned("sonnet", "low")));
+        Assert.Equal(new ActorOverride("opus", null), ActorOverride.Reconciled(effort, "model", Returned("opus", null)));
+        // Not acknowledged: nothing changes.
+        Assert.Same(effort, ActorOverride.Reconciled(effort, "model", null));
+        Assert.Equal(new Dictionary<string, string> { ["model"] = "sonnet" }, new ActorOverride("sonnet", null).Written);
+    }
+
+    /// <summary>
+    /// MODELROLE1d (D205 §4.2): a resume applies the asked choice overlaid by the override, whose model drops the asked effort unless it
+    /// names one; the record's override as the service keeps it reads back, and each value it names is carried on both doors.
+    /// </summary>
+    [Fact]
+    public void A_resume_carries_the_asked_choice_overlaid_by_the_override()
+    {
+        var asked = new ActorEffective("claude-code", "opus", "high", "1").Asked;
+
+        var overlaid = asked.Overlaid(new ActorOverride("sonnet", null));
+        Assert.Equal(new ActorValue("override", "sonnet", true), overlaid.Model);
+        Assert.Equal("account-default", overlaid.Effort.Source);
+        Assert.Equal(asked, asked.Overlaid(null));
+        Assert.Equal(new ActorValue("override", "low", true), asked.Overlaid(new ActorOverride(null, "low")).Effort);
+        Assert.Equal(asked.Model, asked.Overlaid(new ActorOverride(null, "low")).Model);
+        Assert.Equal("sonnet", overlaid.NamedModel);
+
+        var kept = JsonSerializer.SerializeToElement(new ActorOverride("sonnet", "low").Written);
+        Assert.Equal(new ActorOverride("sonnet", "low"), ActorOverride.Read(kept));
+        Assert.Null(ActorOverride.Read(null));
+
+        var chat = new ChatTarget("Owner", _home, "http://stand-in") { Asked = asked.Overlaid(new ActorOverride("sonnet", null)), Resume = "conv-1" };
+        var arguments = new ClaudeCodeAdapter().PrepareChat(chat, null).ArgumentList.ToList();
+        Assert.Equal("sonnet", arguments[arguments.IndexOf("--model") + 1]);
+        Assert.DoesNotContain("--effort", arguments);
+    }
+
     [Fact]
     public void The_thirteen_start_table_names_an_actor_and_the_two_spawn_seams_require_it()
     {

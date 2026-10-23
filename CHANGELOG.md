@@ -14,6 +14,12 @@ with the version and date at release.
   background run on that commit's exact tree, a clean checkout and no overdue daily run, and it names `--ci --stage <commit>`
   where any is missing. `--ci --night` runs the night by hand. Each stage is recorded, and a stage says what it brings since
   the last one.
+- Intake, Ask Daoris and Chat now run their choices (MODELROLE1d). On Settings → AI features the *Intake* and *Ask Daoris* cards are
+  rows of *Actors*, each with its own editor, and Chat has one too; *Off* turns Intake or Ask Daoris off. A new conversation, a new
+  Ask Daoris and an intake take the first of their choices that can run, and open on that choice's model and effort; with none, the
+  press says each choice and why. A model you set from a conversation's composer is kept, and set again when the conversation goes
+  on. An intake whose account refuses its model before starting lets its ask go, and the next look answers it on another account.
+  `daoris driver intake|helper` now set Intake's or Ask Daoris's order.
 - The CI between releases no longer runs a driver or modules `Process` half when every class in it already passed and nothing
   changed since reaches any of them (CISCOPE1b). The half passes on those classes, and the run and its status say so. It still
   runs whole when its last run failed outside a test, when that run's results were missing, or when the classes the run found

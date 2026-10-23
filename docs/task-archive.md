@@ -20178,3 +20178,20 @@ the test's first sighting. `--passed` also needs a finished counted run's receip
 overdue sweep and no aged whole pass. The gate store keeps verdicts per gate. Each stage is recorded in its own history.
 Tool-tests: `ci-background.test.ts`, and the merge tool's and publisher's. The stage built from the gate tree alone and the
 attempt-level records are CISCOPE1d2 in the backlog. Detail: D207's CISCOPE1d note.
+## MODELROLE1d — Intake, Ask Daoris and Chat run their choices (2026-10-24, D205; in parts, its rest MODELROLE1d2)
+
+> | **MODELROLE1d — Intake, Ask Daoris and Chat run their choices** | Starts 5, 10-13 take their actor; the two cards fold into rows; `driver intake\|helper` write a one-choice list through `SET_ACTOR`, `SET_INTAKE` and `SET_HELPER` leave the census; `setting_propose`'s `intake`, `helper` and `adapter` doors write one-choice lists through `Judge` until row h retires them; `no-posture` from `HelpAccess.For`; the pick overrides; the composer's `override` kept, reconciled and re-applied; §3.5(b)'s re-ask within the press and its go-on after an interruption; the curve move judging each candidate's reading. **Round 4:** §3.5(b)'s pending start (`ChatPending`) owning the attempt across replacements, the queued words moved; a pick never walked afresh; a refused continuation's brief recomposed; §3.5(f)'s Intake re-ask and `EndRefusedIntakeAsync`; Chat's and Ask Daoris's editors' sentence. §3.5(e) lands as LIMITGOON2, after LIMITGOON1 and row c, Ask Daoris's exception and its remarks at the five places with it | *Absent means off* kept; `no-posture`, restricted Ask Daoris as before; the composer opening on the actor's model; the override cases of §13; `HelpRoomDoorsTests`; on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart |
+
+(Quest `#00b7114a6f5f`.)
+
+**Outcome** 2026-10-24, in four parts. **Built:** the old intake and helper verbs and proposal doors writing Intake's and Ask Daoris's
+one-choice order through the one judge, `SET_INTAKE` and `SET_HELPER` gone from the module, census, wording, words and bridge; the
+two cards folded into their *Actors* rows with Intake's, Ask Daoris's and Chat's editors, *Off*, and the editors' sentences in both
+languages; new conversations, Ask Daoris and intakes walking their actor's order, `no-posture` by `HelpAccess.For`, the pick, the
+wait's sentence; the chat's protocol carrier and offer reading; the composer's override reconciled and re-applied; an intake refused
+at the open re-asked, or ended `choice-not-offered` with its ask let go in the same write. Proved by `ActorChoicesTests`,
+`ActorRunTests`, `HelpPlaceWorkspaceTests`, the Process classes `ProtocolChatTests` (a new conversation opening on its entry's model
+and effort) and `IntakeTests` (a walk past a missing agent; a first account's refusal answered once on the second after a restart),
+the room's goldens and the web's AI features tests. **Remaining, as MODELROLE1d2:** §3.5(b)'s pending conversation start and what
+follows it, and the curve move's reading; the installed-window proof. Detail: D205's MODELROLE1d note;
+`docs/2026-10-24-modelrole1d-build.md`.
