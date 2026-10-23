@@ -181,6 +181,18 @@ public sealed class DriverWatch(
     /// </summary>
     public void Nudge(string topic, string subject) => Woken(new Wake(topic, subject));
 
+    /// <summary>
+    /// The supervisor's decisions (SUPERVISOR1a-i, D208; the supervisor design §3.4), one for this loop's life and handed to every look's
+    /// driver, so a decision kept in one look is the same in the next; the window's shell hands its own, shared with its routes.
+    /// </summary>
+    public QuestionSupervisorDecisions Supervisor
+    {
+        get => _supervisor ??= new(home, NoDecisionAdmission.Instance, Log);
+        init => _supervisor = value;
+    }
+
+    private QuestionSupervisorDecisions? _supervisor;
+
     /// <summary>What watches the home's record files (<see cref="HomeWatch"/>): the machine's watchers unless a test hands its fake.</summary>
     internal IChangeSource? Source { get; init; }
 
@@ -491,6 +503,8 @@ public sealed class DriverWatch(
         _nodes = nodes;
         // FABRIC-RUN1d: the runtime's own wakes run link 8 alone: its timer and a plugin's step, never the local plan.
         using var nodesDue = new System.Threading.Timer(_ => NodesWoken("due"));
+        // SUPERVISOR1a-i (the supervisor design §3.4): the look nudged at a held decision's goesOnAt, which releases it.
+        using var supervisorDue = new System.Threading.Timer(_ => Nudge(ChangeTopics.Words, SupervisorHanded.From));
 
         TickReport? looked = null;
         chain.Bind(ChainRanks.Plan, async (heard, token) =>
@@ -627,6 +641,7 @@ public sealed class DriverWatch(
                     // ACCESSSWAP1b: a session outlives this look's reading of the file, so its run reads the file again at its turn's end.
                     ConfigPath = configPath,
                 };
+            driver.Context.Supervisor = Supervisor;
             try
             {
                 var report = await driver.TickAsync(token, failed: said =>
@@ -638,6 +653,7 @@ public sealed class DriverWatch(
             }
             finally
             {
+                NodesDue(supervisorDue, Supervisor.NextGoesOn());
                 if (!driver.WokeSpent) Unspent(taken, driver.LandingBusy);
             }
         }
@@ -698,6 +714,9 @@ public sealed class DriverWatch(
                                 "sweep", new LookNews(LookSaid.Swept, ended.Id, ended.Id), $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}"));
                         }
                         swept = true;
+                        // SUPERVISOR1a-i (the supervisor design §3.4): the decisions an earlier run left closed before this first look's
+                        // carry-ons, held and released ones stale and admitted ones interrupted; their waiting words the look takes back.
+                        Supervisor.SweepAtStart(DateTimeOffset.UtcNow);
                         // A record the sweep ended concludes too (LAND2b, design §2): one whose quest its session closed done
                         // before the crash is due, and this first look lands it.
                         await OrphansDueAsync(orphans, config, ct).ConfigureAwait(false);

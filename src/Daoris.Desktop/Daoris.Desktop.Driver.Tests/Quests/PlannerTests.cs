@@ -1716,6 +1716,30 @@ public sealed class PlannerTests
     }
 
     /// <summary>
+    /// SUPERVISOR1a-i (D208; the supervisor design §6.3): while a supervisor's decision on a park is held, the record is held whatever
+    /// else waits, a helper's answer and Daoris's own words arriving inside the window included; after the window it is eligible as any
+    /// waiting word is; and the owner's own words are never held by it.
+    /// </summary>
+    [Fact]
+    public void A_held_supervisor_decision_holds_its_park_whatever_else_waits()
+    {
+        SaidWordView Word(string id) => new(id, "words", DateTimeOffset.UnixEpoch, [], false);
+        var parked = new PriorSession("s1", "D:/trees/s1", "awaiting-person")
+        {
+            Said = [Word("helped") with { Helper = "h1" }, Word("daoris") with { From = DaorisWords.From }],
+        };
+        var snapshot = Ran([Quest(status: "Taken")], ("q1", parked));
+        var held = new HashSet<string>(StringComparer.Ordinal) { "s1" };
+
+        // A park with no words to go on with waits on the person, and the planner says nothing of it.
+        Assert.DoesNotContain(Planner.Plan(snapshot with { SupervisorHeld = held }, Config()), considered => considered.GoesOn);
+        Assert.True(Assert.Single(Planner.Plan(snapshot, Config())).GoesOn);
+
+        var owners = Ran([Quest(status: "Taken")], ("q1", parked with { Said = [.. parked.Said!, Word("owner")] }));
+        Assert.True(Assert.Single(Planner.Plan(owners with { SupervisorHeld = held }, Config())).GoesOn);
+    }
+
+    /// <summary>
     /// What an answer would start, a carry-on or the answered park going on (D131), and a waiting quest's resume once its
     /// question is answered, each wait for Resume (design §2.1, §2.2).
     /// </summary>

@@ -1001,6 +1001,17 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, int> Committed { get; init; } =
         new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The sessions a supervisor's decision holds (SUPERVISOR1a-i, D208; the supervisor design §6.3), read from the decisions' memory at
+    /// each look (<see cref="SupervisorQuarantine.DecideAsync"/>): while one is <c>held</c> and no word of the owner's waits, the record is
+    /// held whatever else waits, so a helper's answer or Daoris's own words cannot cut the overrule window. Absent is none.
+    /// </summary>
+    public IReadOnlySet<string> SupervisorHeld { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>Whether a held supervisor's decision holds <paramref name="record"/>: one is held, and no word of the owner's waits.</summary>
+    public bool SupervisorHolds(PriorSession record) =>
+        SupervisorHeld.Contains(record.Session) && !record.Waiting.Any(word => word.Persons);
 }
 
 public enum StartVerdict
@@ -1485,9 +1496,10 @@ public static class Planner
 
             // SESSWATCH1a: never the record the person ended with End and carry on: its words go to the carry-on, never to a resume of
             // the run that hung (the session-watch design §2.3).
+            // SUPERVISOR1a-i (the supervisor design §6.3): never while a supervisor's decision on it is held for the owner's overrule.
             bool Waits(PriorSession record) =>
                 record.WordsWaiting && !GoOnMarks.Judged(record, snapshot.Unable.GetValueOrDefault(record.Session))
-                && !Observation.IsQuietPressed(record.NoteParts);
+                && !Observation.IsQuietPressed(record.NoteParts) && !snapshot.SupervisorHolds(record);
         }
 
         // Words going on in the record they were said to (MSG1b, D137 §2.2), `continuing` it: a park is still an active record

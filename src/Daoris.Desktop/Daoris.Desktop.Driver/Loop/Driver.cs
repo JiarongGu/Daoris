@@ -447,6 +447,19 @@ public sealed class Driver(
         Meetings.MeetingsAsync(snapshot, taken, events, ct);
 
     /// <summary>The quests handed to another agent, at a look (MIXAGENT1a-ii): <see cref="DriverHandOvers.HandOversAsync"/>.</summary>
+    /// <summary>
+    /// The supervisor's release through the service's say (SUPERVISOR1a-i, D208; the supervisor design §3.4): no text, its decision,
+    /// question and choice, the receipt as the say's key. Kept answers the word's id; a refusal its word; a lost response throws, which
+    /// the release keeps held to repeat.
+    /// </summary>
+    internal async Task<SupervisorSaid> SupervisorSayAsync(
+        string session, string decision, string question, string choice, string key, CancellationToken ct)
+    {
+        var said = await service.SayAsync(
+            session, "", ct: ct, from: SupervisorHanded.From, key: key, supervised: (decision, question, choice)).ConfigureAwait(false);
+        return said.Kept && said.Word?.Id is { } word ? new SupervisorSaid(word, null) : new SupervisorSaid(null, said.Refusal ?? "unsaid");
+    }
+
     internal Task<Snapshot> HandOversAsync(Snapshot snapshot, List<string> events, CancellationToken ct) =>
         HandOvers.HandOversAsync(snapshot, events, ct);
 
@@ -881,19 +894,26 @@ public sealed class Driver(
         var snapshot = await Stages.TimeAsync("snapshot", () => service.SnapshotAsync(ct)).ConfigureAwait(false);
         // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
         snapshot = await Stages.TimeAsync("paused", () => PausedWork.LookAsync(service, config, snapshot, ct)).ConfigureAwait(false);
-        // SUPERVISOR1a-i (D208; the supervisor design §6.1): a word claiming the supervisor that Daoris did not attribute is taken back
-        // before anything plans, and never planned from.
-        var unquarantined = snapshot;
-        snapshot = await Stages.TimeAsync("supervisor", () => SupervisorQuarantine.LookAsync(
-            unquarantined, Context.Supervisor,
-            async (session, word, token) => (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done,
-            Log, ct)).ConfigureAwait(false);
+        // SUPERVISOR1a-i (D208; the supervisor design §3.4, §6.1, §6.3): each decision not yet final compared, settled and released
+        // first, so the release's own word is recorded before anything judges it; then a word claiming the supervisor that Daoris did
+        // not attribute is taken back before anything plans, and never planned from.
+        SupervisorTakeBack takeBack = async (session, word, token) =>
+            (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
+        var undecided = snapshot;
+        snapshot = await Stages.TimeAsync("supervisor", async () => await SupervisorQuarantine.LookAsync(
+            await SupervisorQuarantine.DecideAsync(undecided, Context.Supervisor, SupervisorSayAsync, takeBack, DateTimeOffset.UtcNow, ct)
+                .ConfigureAwait(false),
+            Context.Supervisor, takeBack, Log, ct).ConfigureAwait(false)).ConfigureAwait(false);
         // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers that would take their line on alone a third time in a row
         // with nobody between are marked for the person first, so the planner leaves them waiting. A record needs its line read only where
         // answers alone wait on it.
         var lookedAt = snapshot;
+        // A record a supervisor's held decision holds is not picked (SUPERVISOR1a-i, §6.3): nothing goes on from it inside the window.
         await Stages.TimeAsync("alone", () => new AnswersAloneHold(Context.Events, Context.Marks)
-            .LookAsync(service, lookedAt.LastRun.Values.Concat(lookedAt.NamedByReopen.Values), DateTimeOffset.UtcNow, ct)).ConfigureAwait(false);
+            .LookAsync(
+                service,
+                lookedAt.LastRun.Values.Concat(lookedAt.NamedByReopen.Values).Where(record => !lookedAt.SupervisorHolds(record)),
+                DateTimeOffset.UtcNow, ct)).ConfigureAwait(false);
         // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting. The session a
         // reopen names is one the planner goes on with too (FABRIC-CLOSE1c9).
         snapshot = snapshot with { Unable = Context.Marks.For(snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)) };

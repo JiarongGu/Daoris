@@ -136,7 +136,7 @@ public static class GroupsStateSlice
                 service, config, DriverContext.DoorOf(loop, config), loop.Look.Latest, loop.Home, walked ? only : [], ct,
                 turnEnded: chat is null ? null : chat.TurnEnded)
             .ConfigureAwait(false);
-        look = look with { Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now() };
+        look = look with { Waits = loop.Look.Waits, Calls = RunningCalls.Of(loop.Events).Now(), SupervisorHeld = loop.Supervisor.HeldSessions() };
         if (only is null) loop.SessionsLooked.Keep(look, at);
         if (walked) return look;
         var trees = new SessionTrees(loop.Home);

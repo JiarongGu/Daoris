@@ -386,6 +386,17 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         _live.Values.Where(each => each.Session == session && each.State == SupervisorState.Held)
             .Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
 
+    /// <summary>The soonest moment a held decision goes on, across every session, for the loop's nudge (§3.4); null where none is held.</summary>
+    public DateTimeOffset? NextGoesOn() =>
+        _live.Values.Where(each => each.State == SupervisorState.Held).Select(each => (DateTimeOffset?)each.GoesOnAt).Min();
+
+    /// <summary>The sessions a held decision holds now (§6.3), for a look that reads no snapshot of the driver's.</summary>
+    public IReadOnlySet<string> HeldSessions() =>
+        new HashSet<string>(_live.Values.Where(each => each.State == SupervisorState.Held).Select(each => each.Session), StringComparer.Ordinal);
+
+    /// <summary>Whether <paramref name="session"/> has a decision that is not final, which the look settles, compares and releases.</summary>
+    public bool Moving(string session) => _live.Values.Any(each => each.Session == session && !SupervisorStates.Final(each.State));
+
     /// <summary>The decisions live in memory for <paramref name="session"/>, as they stand.</summary>
     public IReadOnlyList<SupervisorDecisionView> LiveOf(string session) =>
         [.. _live.Values.Where(each => each.Session == session).OrderBy(each => each.KeptAt).Select(View)];
