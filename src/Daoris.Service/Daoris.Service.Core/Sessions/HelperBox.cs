@@ -26,8 +26,11 @@ public sealed class HelperBox(string? home)
 
     public const int MaxAnswer = 20000;
 
-    /// <summary>The states the driver writes, in the order an ask goes through them (<c>refused</c> ends it with a code).</summary>
-    public static readonly IReadOnlyList<string> States = ["waiting", "approved", "started", "answered", "refused"];
+    /// <summary>
+    /// The states the driver writes, in the order an ask goes through them (<c>refused</c> ends it with a code); <c>cooling</c> is a started
+    /// ask an account's limit cut off, open again (LIMITRESUME1h). Only <c>started</c> finds an ask its helper answers.
+    /// </summary>
+    public static readonly IReadOnlyList<string> States = ["waiting", "approved", "started", "answered", "refused", "cooling"];
 
     private const string NoSession =
         "This connector speaks for no session the driver started here, so there is no one a helper's answer could come back to.";

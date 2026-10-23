@@ -60,6 +60,7 @@ public sealed class HelperFiles(string home)
                 Attempted = Moments.Read(element, "attempted"),
                 Agent = Text(element, "agent"),
                 Words = Text(element, "words"),
+                Until = Moments.Read(element, "until"),
             };
         }
     }
@@ -82,6 +83,7 @@ public sealed class HelperFiles(string home)
             if (state.Attempted is { } attempted) writer.WriteString("attempted", Moments.Write(attempted));
             if (state.Agent is not null) writer.WriteString("agent", state.Agent);
             if (state.Words is not null) writer.WriteString("words", state.Words);
+            if (state.Until is { } until) writer.WriteString("until", Moments.Write(until));
             writer.WriteEndObject();
         });
     }

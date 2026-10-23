@@ -51,12 +51,20 @@ public sealed class HelperLookTests : IDisposable
         public string? LastWords { get; init; }
         public string Ended { get; init; } = "completed";
 
+        /// <summary>How many of its first runs an account's limit cuts off, failed with the flag and no answer (LIMITRESUME1h).</summary>
+        public int Limited { get; init; }
+
         public Task<HelperPassRun> RunAsync(HelperPassAsk ask, ReviewerChoice choice, CancellationToken ct)
         {
             Asked.Add(ask);
             ask.Opened?.Invoke(Helper);
             // Its turn: the state it was started under is what `helper_answer` finds its ask by.
             SeenAtTurn.Add(files.ReadState(ask.Ask.Id));
+            if (Asked.Count <= Limited)
+            {
+                return Task.FromResult(new HelperPassRun(Helper, $"failed  helper {Helper}") { State = "failed", Limit = true });
+            }
+
             if (Answer is not null)
             {
                 File.WriteAllText(files.PathOf(ask.Ask.Id, "answer"),
@@ -73,7 +81,7 @@ public sealed class HelperLookTests : IDisposable
 
     private Daoris.Driver.Driver Driver(
         OpinionStandIn host, Pass? pass, HelperRule? rule = null, int cap = 3, ReviewerChoice? choice = null,
-        Func<string, CancellationToken, Task<HelperCaptureRead>>? capture = null) =>
+        Func<string, CancellationToken, Task<HelperCaptureRead>>? capture = null, Func<ReviewerChoice>? choose = null) =>
         new(host.Client(), DriverConfig.Empty with
         {
             Adapter = "claude-code-acp", Cap = cap,
@@ -83,7 +91,8 @@ public sealed class HelperLookTests : IDisposable
             HelperPasses = pass is null ? (_, _, _) => throw new InvalidOperationException("no helper starts here") : pass.RunAsync,
             HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((OpinionStandIn.Tip, "D:/checkouts/reports")),
             HelperCaptures = capture ?? ((_, _) => Task.FromResult(new HelperCaptureRead(Captured))),
-            HelperChoices = (_, _, _, _) => Task.FromResult(choice ?? new ReviewerChoice("codex-acp", "another-maker", null, "codex-acp reads it.")),
+            HelperChoices = (_, _, _, _) => Task.FromResult(
+                choose?.Invoke() ?? choice ?? new ReviewerChoice("codex-acp", "another-maker", null, "codex-acp reads it.")),
         };
 
     /// <summary>The host with the asker's record and the record the pass's helper opened, a chat that serves it.</summary>
@@ -783,6 +792,106 @@ public sealed class HelperLookTests : IDisposable
         Assert.Equal(("s1", "awaiting-person", "helper.refused-by"), (session, state, code));
         var note = host.Note("s1");
         Assert.StartsWith("Helper codex-acp did not answer this question: the helper ended without an answer.\n\nIt stopped with its quest still taken", note);
+    }
+
+    /// <summary>The look's records with session s1 ended waiting on its own helper, its quest still taken (HELPERWAIT1).</summary>
+    private static Snapshot LeadWaiting() => new([new QuestView("q1", "ask #a1", "reports", "The work", "", "Taken")], [], [])
+    {
+        LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["q1"] = new PriorSession("s1", "trees/default/reports/s-1", "completed")
+            {
+                Quest = "q1", NoteParts = [NoteCodes.EndedAwaitsHelper.Part("a line.", [])], Said = [],
+            },
+        },
+    };
+
+    /// <summary>
+    /// LIMITRESUME1h (D206 design §3.8): a helper an account's limit cut off, which its lead waits on, is never refused: the ask stays open,
+    /// <c>cooling</c> with its account's reset, so the lead keeps waiting and is never brought back to the person; the look runs it again
+    /// once the walk gives an account, here another at the next look, and its answer settles the ask.
+    /// </summary>
+    [Fact]
+    public async Task A_lead_waiting_on_a_limited_helper_still_waits_and_the_helper_runs_again_once_an_account_is_ready()
+    {
+        Ask("a1");
+        var host = Host().Quest("q1", "Taken");
+        host.Set("s1", "noteParts", Parts("ended.awaits-helper"));
+        var reset = DateTimeOffset.Parse("2026-10-12T16:00:00Z");
+        AccountCooling.Cool(_home, new CoolingEntry("codex", null, reset, Stated: true, "weekly", At, Helper), At);
+        var pass = new Pass(Files) { Limited = 1, Answer = "It drops the last day because the range is half-open." };
+        var ready = false;
+        var asked = 0;
+        var driver = Driver(host, pass, choose: () =>
+        {
+            Interlocked.Increment(ref asked);
+            return ready
+                ? new ReviewerChoice("codex-acp", "another-maker", null, "codex-acp reads it on another account.")
+                : new ReviewerChoice(null, null, ReviewerUnavailable.Cooling, "Every listed agent of another maker is cooling.");
+        });
+        ready = true;
+
+        await Look(driver);
+        await Until(() => Files.ReadState("a1") is { State: HelperStates.Cooling });
+        var cooling = Files.ReadState("a1")!;
+        Assert.Equal((reset, "codex-acp"), (cooling.Until, cooling.Agent));
+        // Open, so the lead's turn end and the look's move back to the person both read it as waited on.
+        Assert.Single(HelperWaits.Open("s1", Files.Asks(), Files.ReadState));
+
+        // Its account still cooling and none other ready: the lead waits, nothing runs, and nothing goes back to the person.
+        // A look while the last pass's claim is still let go starts nothing, so the test looks again until the walk was asked.
+        async Task LookUntil(Func<bool> done)
+        {
+            for (var looks = 0; !done(); looks++)
+            {
+                if (looks == 300) throw new TimeoutException($"the look never did it: the walk was asked {Volatile.Read(ref asked)} times");
+                await driver.HelpersAsync(LeadWaiting(), 0, [], CancellationToken.None);
+                await Task.Delay(50);
+            }
+        }
+
+        ready = false;
+        await LookUntil(() => Volatile.Read(ref asked) >= 3);
+        Assert.Single(pass.Asked);
+        Assert.Equal(HelperStates.Cooling, Files.ReadState("a1")!.State);
+        Assert.Empty(host.Moves);
+
+        // Another account ready: run again, and its answer is handed to the session that waited on it. (The test's records stay as they
+        // were, so a later look would read the lead as still waiting with nothing open; the real look reads it gone on with the answer.)
+        ready = true;
+        await LookUntil(() => Files.ReadState("a1") is { State: HelperStates.Answered or HelperStates.Refused });
+        await Until(() => Files.ReadState("a1") is { Handed: not null } or { State: HelperStates.Refused });
+        Assert.Equal(HelperStates.Answered, Files.ReadState("a1")!.State);
+        Assert.Equal(2, pass.Asked.Count);
+    }
+
+    /// <summary>
+    /// LIMITRESUME1h (D206 design §3.8): a limited helper whose lead no longer waits on it (it went on, or never ended its turn on it) is
+    /// refused <c>limited</c> at the next look, the asker's line saying when that account is ready again, and never run again.
+    /// </summary>
+    [Fact]
+    public async Task A_limited_helper_its_lead_went_on_from_is_refused_limited_with_its_ready_time_and_not_run_again()
+    {
+        Ask("a1");
+        var host = Host().Quest("q1", "Taken");
+        var reset = DateTimeOffset.Parse("2026-10-12T16:00:00Z");
+        AccountCooling.Cool(_home, new CoolingEntry("codex", null, reset, Stated: true, "weekly", At, Helper), At);
+        var pass = new Pass(Files) { Limited = 1, Answer = "an answer nobody waits for" };
+        var driver = Driver(host, pass);
+        await Look(driver);
+        await Until(() => Files.ReadState("a1") is { State: HelperStates.Cooling });
+
+        var events = await Look(driver);
+        await Look(driver);
+
+        var state = Files.ReadState("a1")!;
+        Assert.Equal((HelperStates.Refused, HelperWhy.Limited, reset), (state.State, state.Code, state.Until));
+        Assert.Contains("refused (limited)", Assert.Single(events));
+        Assert.Single(pass.Asked);
+        var note = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events
+            .Last(e => e.Kind == SessionEventKind.Note);
+        Assert.Equal(["helper.limited"], NoteAssert.Codes(note.Parts!));
+        Assert.Equal(("codex-acp", NoteCodes.Moment(reset)), (note.Parts![0].Value("agent"), note.Parts[0].Value("until")));
     }
 
     /// <summary>

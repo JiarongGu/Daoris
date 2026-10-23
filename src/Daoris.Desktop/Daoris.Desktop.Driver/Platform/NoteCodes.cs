@@ -582,6 +582,8 @@ public static class NoteCodes
         new(HelperWhy.CaptureMoved, [], "note.helper.why.capture-moved"),
         // HELPERWAIT1: a hand whose outcome a restart lost, added after the sixteen (a reason is additive).
         new(HelperWhy.HandUncertain, [], "note.helper.why.hand-uncertain"),
+        // LIMITRESUME1h: a limit ended its turn and the session no longer waits on it (its note is `helper.limited`, which says when).
+        new(HelperWhy.Limited, [], "note.helper.why.limited"),
     ]);
 
     /// <summary>Why a piece was refused, held or uncertain (COAGENT1b, <see cref="PartnerWhy"/>): the page's <c>note.partner.why.*</c>.</summary>
@@ -650,6 +652,10 @@ public static class NoteCodes
     public static readonly NoteCode HelperRefused = new("helper.refused", ["why"]) { Why = Helper };
     public static readonly NoteCode HelperRefusedBy = new("helper.refused-by", ["agent", "why"]) { Why = Helper };
     public static readonly NoteCode HelperHelping = new("helper.helping", ["session"]);
+    // LIMITRESUME1h (D206 design §3.8): on the asker, a helper an account's limit cut off and that it no longer waits on, with when that
+    // account is ready again, or with none where no cool-off this machine holds names it.
+    public static readonly NoteCode HelperLimited = new("helper.limited", ["agent", "until"]);
+    public static readonly NoteCode HelperLimitedNoReset = new("helper.limited-no-reset", ["agent"]);
 
     // ——— A partner's piece (COAGENT1b, D199 point 8; the co-agent design §7.8): on the lead, a piece asked of an agent, started, answered,
     // refused, ended by a stop, its minutes or a limit with its work kept, uncertain, its files beyond its paths and its work held; on the

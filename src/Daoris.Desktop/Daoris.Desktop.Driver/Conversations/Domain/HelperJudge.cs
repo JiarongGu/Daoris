@@ -65,7 +65,8 @@ public static class HelperJudge
         if (ask.AskedBy == HelperAsk.ByAgent)
         {
             if (rule.Mode == HelperRules.Off) return HelperVerdict.Refuse(HelperWhy.Off);
-            if (rule.Mode == HelperRules.Ask && state is not { State: HelperStates.Approved }) return HelperVerdict.Wait(null);
+            // A cooling ask already ran once (LIMITRESUME1h): the yes it started under holds for its run again.
+            if (rule.Mode == HelperRules.Ask && state is not { State: HelperStates.Approved or HelperStates.Cooling }) return HelperVerdict.Wait(null);
         }
 
         if (started >= PerAsker) return HelperVerdict.Refuse(HelperWhy.TooMany);
