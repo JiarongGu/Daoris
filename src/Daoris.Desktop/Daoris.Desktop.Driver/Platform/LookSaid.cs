@@ -166,11 +166,17 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     /// <summary>A quest's line an account's limit cut off, gone on in a new session handed the brief (LIMITRESUME1a): its own news, once.</summary>
     public const string LimitWentOn = "limit-went-on";
 
+    /// <summary>
+    /// A quest's line an account's limit cut off, resumed in its own conversation once its own account was ready again (LIMITRESUME1b,
+    /// D206): its own news, once per limited part.
+    /// </summary>
+    public const string LimitResumed = "limit-resumed";
+
     /// <summary>Every news code, which the page's words cover in both languages.</summary>
     public static readonly IReadOnlyList<string> NewsCodes =
         [HandOverRefused, HandOverElsewhere, HandOverDropped, HandOverAskRefused, HandOverFailed, HandedBack, LostClaim, LostToReopen,
          MeetingCut, BrainstormCut, Swept, MeetingFailed, BrainstormFailed, HelperAskerGone, ReopenUnrecorded, ReopenTreeGone,
-         PluginUnsound, LimitWaits, LimitWentOn];
+         PluginUnsound, LimitWaits, LimitWentOn, LimitResumed];
 
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
 

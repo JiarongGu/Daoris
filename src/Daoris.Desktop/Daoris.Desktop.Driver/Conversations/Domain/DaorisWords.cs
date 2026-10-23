@@ -133,6 +133,18 @@ public static class DaorisKeys
     /// </summary>
     public static string Rebase(string session, string tip) => $"{RebaseKind}/{session}/{tip}";
 
+    public const string LimitResetKind = "limit-reset";
+
+    /// <summary>
+    /// The limit word's key (LIMITRESUME1b, D206; the limit-resume design §3.3 step 1): the session a limit ended and the cool-off's
+    /// <c>until</c> that held it, so a start tried again at a later look for the same cool-off keeps one word. No quest's fact:
+    /// <see cref="Read"/> names none, so the word waits as it is.
+    /// </summary>
+    public static string LimitReset(string session, string until) => $"{LimitResetKind}/{session}/{until}";
+
+    /// <summary>Whether a key is a limit word's (<see cref="LimitReset"/>).</summary>
+    public static bool IsLimitReset(string? key) => key?.StartsWith(LimitResetKind + "/", StringComparison.Ordinal) == true;
+
     /// <summary>The fact a key names; null for none, or a key that is not one of Daoris's facts.</summary>
     /// <remarks>Read from both ends, since a machine's name sits between the quest and the sequence.</remarks>
     public static DaorisFact? Read(string? key)

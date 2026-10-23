@@ -452,6 +452,8 @@ public static class NoteCodes
     public static readonly NoteCode EndedWordsWaitYou = new("ended.words-wait-you", []);
     // LIMITRESUME1b (D206): the person's words a turn an account's limit refused carried wait for the limit to lift, never failed twice.
     public static readonly NoteCode EndedLimitWordsWait = new("ended.limit-words-wait", []);
+    // LIMITRESUME1b (D206): a limited line's own conversation could not be resumed (`why`, the refusal's code), so it went on briefed.
+    public static readonly NoteCode LimitResumeRefused = new("limit.resume-refused", ["why"]);
 
     // ACCESSSWAP1b (D183's note): Daoris ended a run at its turn's end because its repository's permission prompts changed (`from`, `to`,
     // each a permission prompts value), and the words it held go on in the same conversation under the new setup.
