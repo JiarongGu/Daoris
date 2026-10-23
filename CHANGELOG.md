@@ -45,6 +45,11 @@ with the version and date at release.
   says when each stage of the start came, in milliseconds from the program's start: the home, the driver, the terminal's pipe, the
   local service, the window shown, the page's browser, the page's first data and the splash lifted, and what lifted it. What
   starts, and in what order, is unchanged.
+- The Daoris window starts sooner and its splash comes down with the first screen's data (STARTFAST1b). The local service now
+  starts beside the window's browser engine, not after it. The splash lifts once the first screen's own lists have answered,
+  instead of waiting until every list on the page went quiet, or ten seconds. The first look's following of each repository's
+  line, its tidy of session branches and Ask Daoris's facts start once the first screen has its data, or after 30 seconds. The
+  window's held wait on confirmations is no longer written to the machine log as a failed request.
 - Every agent Daoris starts now runs inside a job that belongs to the Daoris process that started it (TERMTRUST1a part (i), D201).
   This covers sessions, carry-ons, conversations, helpers, reviewers, brainstorm passes, workflow nodes and partners, and also a
   plugin's processes. Each one starts through Daoris's own small launcher, so even its first child process starts inside that

@@ -19834,3 +19834,21 @@ the route and the new `daoris-driver git review <session> [--json] [--time]` rea
 `ReviewStartsTests` counts today's Review per path (12 and the line's guesses, + I, + I + M, + E + K′ + I, + Uᵣ), each start's
 arguments held to `GitLaunchTests`' census; the source census refuses git under `Trees/` outside the seam. Detail and the
 before-bench: FIX-LOG 2026-10-23 (GITAPP1a-i), D202's GITAPP1a-i note. On Opus.
+## STARTFAST1b — the start's cut (2026-10-23)
+
+> - [ ] **STARTFAST1b — the start's cut** (desktop, modules, web-shell, service). The start-path design §5: the host spawned before `app.Run()`, the splash lifted on the first screen's queries, the first look's follow, tidy and facts held until the page's word, `confirmations/waiting` exempt from `request.failed`. Proof: `start.stages` on the install before and after; each cut's own test.
+
+**Outcome** 2026-10-23: (a) `Program` begins the host (`HostSupervisor.Begin`) right after locating it, before the kit's runner
+starts Chromium, and the loop takes that start (`UpAsync`); only the launch holding `HostStartClaim`, a named mutex per service
+address, begins it, since the single-instance guard runs inside the runner; the supervisor now marks `host`. (b) `useSplashLift`
+lifts once the first screen's queries (`isFirstScreen`: the frame's and the two start views' roots, not the harnesses nor the
+lines) have answered and none is on its first fetch for 150 ms; the global quiet is the fallback. (c) The first look's
+line-following and tidy (`DriverWatch.FirstScreen`) and the facts' start wait for the page's word
+(`StartStages.FirstScreenAsync`), at most 30 s. (d) The host's request log exempts `/api/confirmations/waiting`'s held wait as the
+change stream's. Tests: `splash.test.tsx` (lifted with the first screen's data while probes and lines load; a tick's refetch holds
+nothing), `LookWaitTests` (follow and tidy not begun while held, both run once let go), `StartStagesTests`,
+`HostSupervisorNoHostTests`, `ConfirmationTests` (a wait held past two seconds writes no `request.failed`). Not measured here:
+`start.stages` on the install, which needs a republish. Expected after it: `host` close to or below `driver` on a cold start
+(the host's start under `cef_initialize`, where before it came about 5 s after `driver`), `browser` following `shown` with
+little wait on the host, `page` about the first screen's data, `splash` within a few hundred ms of `page`, `by=page`, and no
+`request.failed` for `/api/confirmations/waiting`. Detail: D56's STARTFAST1b note. On Opus.
