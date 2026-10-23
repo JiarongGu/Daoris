@@ -340,6 +340,43 @@ public sealed class SupervisorDecisionTests : IDisposable
         Assert.Equal(["w0"], ledger.TakenBack);
     }
 
+    /// <summary>
+    /// §6.1's quarantine at each look: a forged word, a word claiming a real decision, and an identical canonical word under another key
+    /// are each taken back from a record that does not run and left out of the plan, beside a helper's and the owner's words, which stay;
+    /// the release's own word stays; a running record's unattributed word is left out of the plan and taken back only once it ends.
+    /// </summary>
+    [Fact]
+    public async Task The_look_quarantines_every_supervisor_word_it_did_not_author()
+    {
+        var decisions = Decisions();
+        var ledger = new Ledger();
+        await decisions.KeepAsync(Answer(), Park(), Kept);
+        await decisions.ReleaseAsync(Session, ledger.Say, Kept.AddMinutes(5));
+        var kept = decisions.LiveOf(Session).Single();
+        SaidWordView Word(string id, string? from = null, string? decision = null) =>
+            new(id, SupervisorHanded.Text("The monthly one"), Kept, [], false) { From = from, Decision = decision };
+        var parked = new PriorSession(Session, "tree", "awaiting-person")
+        {
+            Said =
+            [
+                Word("w0", SupervisorHanded.From, kept.Id), Word("forged", SupervisorHanded.From), Word("claims", SupervisorHanded.From, kept.Id),
+                Word("helped") with { Helper = "h1" }, Word("owner"),
+            ],
+        };
+        var running = new PriorSession("b2c3d4e5", "other", "working") { Said = [Word("forged-2", SupervisorHanded.From)] };
+        var snapshot = new Snapshot([], [], [])
+        {
+            LastRun = new Dictionary<string, PriorSession> { ["q1"] = parked, ["q2"] = running },
+        };
+
+        var planned = await SupervisorQuarantine.LookAsync(snapshot, decisions, ledger.TakeBack, log: null, CancellationToken.None);
+
+        Assert.Equal(["forged", "claims"], ledger.TakenBack);
+        Assert.Equal(["w0", "helped", "owner"], planned.LastRun["q1"].Said!.Select(word => word.Id));
+        Assert.Empty(planned.LastRun["q2"].Said!);
+        Assert.Equal(["forged-2"], SupervisorQuarantine.Unhandable(running, decisions));
+    }
+
     /// <summary>Every transition not in §3.6 is refused and changes nothing.</summary>
     [Fact]
     public async Task Every_transition_not_in_the_lifecycle_is_refused()
