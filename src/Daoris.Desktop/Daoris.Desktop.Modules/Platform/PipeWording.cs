@@ -136,6 +136,7 @@ public static class PipeWording
         Row("SESSION_GO_ON_NEW", W("id", PipeRole.Session));
         Row("SESSION_START_FROM", W("id", PipeRole.Session));
         Row("SESSION_GO_ON_BRIEF", W("id", PipeRole.Session));
+        Row("SESSION_STOP_WAITING", W("id", PipeRole.Session));
         Row("SESSION_HAND_OVER", W("id", PipeRole.Session), W("agent", PipeRole.Agent));
         Row("SESSION_HELPER_ASK", W("id", PipeRole.Session), W("agent", PipeRole.Agent), W("question", PipeRole.Words));
         Row("SESSION_PARTNER_ASK", W("id", PipeRole.Session), W("agent", PipeRole.Agent), W("piece", PipeRole.Words));

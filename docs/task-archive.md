@@ -20045,3 +20045,11 @@ are not paired: the deployment rehearsal's in-place packs write and remove the `
 holds it). On a scratch commit with stand-ins at a real run's walls, a plain `--ci` took 70.6 s before and 43.5 s after,
 scaled one second a minute; the stage's path then took 57.2 s. Detail: D180's CIFAST1 note, D115's; proof: the CIFAST1 tests in
 `src/Daoris.Cli/tool-test/merge-branch.test.ts`.
+## LIMITRESUME1d — a waiting limited line says when it resumes, in its head; the terminal says limited (2026-10-24, D206, in part)
+
+> | LIMITRESUME1d | §3.7: the sentence (own or briefed), `notLifted`, *Go on now with…* (Ask Daoris's `HelpDoor`), *Pause* for a driven line, *Stop* and *Stop waiting* for a conversation, *Try now* beside, in the head, foot, row and quest page; notes `limit.resumed`, `held.limit-waits`, `limit.notLifted`, `limit.resumeRefused`, `ended.limit-words-wait`, `account.cooling-unkept`; glossary; §3.1's other readers | 1b, 1c | page tests and stories in en and zh; `HelpCoverageTests`' rows for the presses; `note.test.ts`; the terminal's `sessions` saying *limited* |
+
+**Outcome** 2026-10-24, in part: a driven line its limit ended says under its header when it resumes and how (`work/waits/limitWait.ts`,
+`LimitWaitLine`), with *Go on now with…*, *Pause quest…* and *Try now*; `SESSION_STOP_WAITING` carries *Stop waiting*; the terminal
+lists such a record *limited*; the glossary holds *limited*, *ready again* and *stop waiting*. The rest is LIMITRESUME1d2 in the
+backlog. Detail: D206's LIMITRESUME1d note.

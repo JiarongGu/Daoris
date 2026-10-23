@@ -201,6 +201,24 @@ describe('the acts a session is offered', () => {
     expect(handOverLabel(session({ kind: 'chat', quest: null, state: 'completed' }))).toBe('work.act.handOver');
   });
 
+  /**
+   * LIMITRESUME1d (D206 §3.7): a driven line an account's limit ended goes on now with another agent or account from its header, the
+   * hand-over named *Go on now with…*; not on its row, not once its quest is closed, and not while a pause holds it.
+   */
+  it('offers a line a limit ended Go on now with… in its header, unless closed or paused', () => {
+    const limited = session({ state: 'failed', limit: true });
+    const ended = placed({ group: 'ended', shown: 'limited' });
+    expect(offeredActs({ session: limited, quest: quest('Taken'), grouping: ended, root: ROOT }, 'header')).toContain('handOver');
+    expect(offeredActs({ session: limited, quest: quest('Taken'), grouping: ended, root: ROOT }, 'row')).not.toContain('handOver');
+    expect(offeredActs({ session: limited, quest: quest('Done'), grouping: ended, root: ROOT }, 'header')).not.toContain('handOver');
+    const paused = placed({ group: 'ended', shown: 'limited', pausedBy: { scope: 'quest', id: 'abc123' } });
+    expect(offeredActs({ session: limited, quest: quest('Taken'), grouping: paused, root: ROOT }, 'header')).not.toContain('handOver');
+    expect(handOverLabel(limited)).toBe('work.limit.goOnNow');
+    // A failure no limit made is offered nothing new.
+    expect(offeredActs({ session: session({ state: 'failed' }), quest: quest('Taken'), grouping: ended, root: ROOT }, 'header'))
+      .not.toContain('handOver');
+  });
+
   it('offers Review where there is work to read, and leads with it in To review', () => {
     const toReview = { session: session({ state: 'stopped', tree: TREE }), grouping: placed({ group: 'review', shown: 'stopped' }), root: ROOT };
     expect(offeredActs(toReview, 'header')).toContain('review');

@@ -255,6 +255,27 @@ public sealed class SessionsCommandTests : IDisposable
     }
 
     /// <summary>
+    /// LIMITRESUME1d (D206 §3.1, D50's parity): a failed record an account's limit ended is listed <i>limited</i>, as the page says it,
+    /// never <i>failed</i>; one that failed otherwise stays failed. The terminal reads the ledger's flag as the page does.
+    /// </summary>
+    [Fact]
+    public async Task A_session_a_limit_ended_is_listed_limited()
+    {
+        var limited = Record("l1m1ted0", "failed", "q1", minutes: 10);
+        limited["limit"] = true;
+        var ledger = new Ledger(
+            [limited, Record("fa1led00", "failed", "q2", minutes: 20)],
+            [Quest("q1", "Expose a streaming budget", "Taken"), Quest("q2", "Cap the hydration per frame", "Taken")]);
+
+        var (exit, said) = await RunAsync(ledger, []);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("  l1m1ted0  limited  engine — ", said);
+        Assert.Contains("  fa1led00  failed  engine — ", said);
+        Assert.DoesNotContain("l1m1ted0  failed", said);
+    }
+
+    /// <summary>
     /// MSG1f3 (D137 §3.2, its MSG1f2 note): a chat the person wrote to after it ended goes on, since its runner takes the words
     /// up at once, so it is listed under Working, <i>going on</i>; one its runner held says so under Resumes later, in the
     /// runner's own line. Before, both were listed as they ended.

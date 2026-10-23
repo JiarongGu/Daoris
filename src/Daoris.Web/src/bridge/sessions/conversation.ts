@@ -636,6 +636,20 @@ export const useHandOver = () => useMutation({
     })),
 });
 
+/** What *Stop waiting* came to (LIMITRESUME1d): stopped, or why not in the runner's own sentence. */
+export type StoppedWaiting = { stopped: boolean; message: string };
+
+/**
+ * *Stop waiting* (LIMITRESUME1d, D206 §3.7): `SESSION_STOP_WAITING`, an ended conversation held by its account's limit waits no more,
+ * so it goes on only when the person writes to it. A refusal (one that runs, one that waits for no limit) is the answer, never thrown.
+ */
+export const useStopWaiting = () => useMutation({
+  mutationFn: async (session: string): Promise<StoppedWaiting> => {
+    const answer = await call<{ stopped?: unknown; message?: unknown } | null>('SESSION_STOP_WAITING', { id: session });
+    return { stopped: answer?.stopped === true, message: typeof answer?.message === 'string' ? answer.message : '' };
+  },
+});
+
 /**
  * Finish a conversation: the harness gets end-of-input, says what it was going to say, and exits.
  * `useStopSession` is the other verb and means something else — the person cut it off.

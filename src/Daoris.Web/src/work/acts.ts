@@ -3,6 +3,7 @@ import { answeredPark, type IconName, type MenuAct, SESSION_ACTIVE } from '../de
 import type { SessionGrouping } from './groups';
 import { isHelp, isHelper, isIntake, isOpinion, sessionOrigin } from './identity';
 import { askOf, type WorkTarget } from './pausing/pausing';
+import { limitedLine } from './waits/limitWait';
 import type { SessionWhere } from './rail/SessionRow';
 
 // The acts on a session, as its row's ⋯ and its page header offer them (SESSUX1d, D126 §3.1): which apply, in which
@@ -67,6 +68,8 @@ export function actMenu(
 
 /** The hand-over's one name by state (MIXAGENT1b-i): *Go on with another agent…* idle, *Stop and hand over…* while it works. */
 export function handOverLabel(session: Session): string {
+  // LIMITRESUME1d (D206 §3.7): a line an account's limit ended goes on now, never *with another agent* alone: an account too.
+  if (limitedLine(session)) return 'work.limit.goOnNow';
   return SESSION_ACTIVE.has(session.state) ? 'work.act.handOverStop' : 'work.act.handOver';
 }
 
@@ -140,6 +143,11 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
     // SESSWATCH1a (the session-watch design §2.3): a live quest's own session is handed over from its page too, through the judge
     // `sessions hand-over` answers it by; the look takes it, stops it and carries its quest on with the agent chosen.
     if (driven && door === 'header') offered.add('handOver');
+    // LIMITRESUME1d (D206 §3.7): a line an account's limit ended goes on now with another agent or account by the same ask, its
+    // record handed from (the planner's step 0), unless a pause holds it.
+    if (limitedLine(session, facts.quest?.status, Boolean(pausedBy)) && !intake && !isHelp(session) && !wordless && door === 'header') {
+      offered.add('handOver');
+    }
     if (driven && !pausedBy) {
       offered.add('pauseQuest');
       if (askOf(facts.quest)) offered.add('pauseAsk');
