@@ -2139,6 +2139,34 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.DoesNotContain("account-limited-here", (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Body);
     }
 
+    /// <summary>
+    /// LIMITRESUME1h (D206, design §3.8): an intake an account's limit ended lets its ask go through the state door, in the same move, so
+    /// the next intake may open for it; asked of a move to anything but failed, it is refused, 409.
+    /// </summary>
+    [Fact]
+    public async Task An_intakes_limited_end_lets_its_ask_go_through_the_state_door()
+    {
+        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Find who should build the monthly page." });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var room = Path.Combine(host.Repositories, "rooms", "limitresume1h");
+        var intake = await host.PostAsync("/api/sessions/intake", new { ask, room });
+        var id = intake.Json.GetProperty("session").GetProperty("id").GetString()!;
+        foreach (var state in new[] { "starting", "working" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        var refused = await host.PostAsync($"/api/sessions/{id}/state", new { state = "stopped", unbindAsk = true });
+        var failed = await host.PostAsync(
+            $"/api/sessions/{id}/state", new { state = "failed", note = "the account's limit.", limit = true, unbindAsk = true });
+
+        Assert.Equal(409, refused.Status);
+        Assert.Equal(200, failed.Status);
+        var unbound = (await host.GetAsync($"/api/asks/{ask}")).Json;
+        Assert.True(!unbound.TryGetProperty("intake", out var intakeOf) || intakeOf.ValueKind == JsonValueKind.Null);
+        Assert.Equal(200, (await host.PostAsync("/api/sessions/intake", new { ask, room })).Status);
+    }
+
     /// <summary>A chat in <c>Keeper</c>, in a tree of its own so it holds nothing another test opens, ended <c>completed</c>.</summary>
     private async Task<string> EndedChatAsync(string tree)
     {

@@ -1348,10 +1348,15 @@ public sealed class SessionLedger(
     /// the standing confirmation sends <c>awaiting-person</c>, so a session resumed between the verb's read and the move is not ended.
     /// Null moves from any state the move allows, as before.
     /// </param>
+    /// <param name="unbindAsk">
+    /// That the intake's ask is let go with its end (LIMITRESUME1h, D206 design §3.8; D205 §3.5(f)'s door): the ask's binding cleared in the
+    /// same step, only where it still names this session, so the next look may give the ask to another intake. Only a move to <c>failed</c>
+    /// may say so; the record stays, still naming its ask.
+    /// </param>
     public async Task<SessionAdvanceOutcome> AdvanceAsync(
         string id, string state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null,
-        string? expected = null)
+        string? expected = null, bool unbindAsk = false)
     {
         var target = Parse(state);
         if (target is null or SessionState.Queued)
@@ -1386,6 +1391,15 @@ public sealed class SessionLedger(
             return new(
                 SessionAdvanceRefusal.InvalidMove,
                 $"Only a move to failed can say an account's limit — it says why a turn failed, and "
+                + $"session `{id}` was asked to move to {Spell(target.Value)}.",
+                Session: null);
+        }
+
+        if (unbindAsk && target != SessionState.Failed)
+        {
+            return new(
+                SessionAdvanceRefusal.InvalidMove,
+                $"Only a move to failed can let an intake's ask go — it frees the ask for the next intake, and "
                 + $"session `{id}` was asked to move to {Spell(target.Value)}.",
                 Session: null);
         }
@@ -1434,6 +1448,10 @@ public sealed class SessionLedger(
                     id, target.Value, note, evidence, transcript, now, inside, interrupted, limit,
                     clearSaid: target == SessionState.AwaitingPerson, noteParts: noteParts)
                 .ConfigureAwait(false);
+            if (unbindAsk && moved!.Ask is { } ask && asks is not null)
+            {
+                await asks.UnbindIntakeAsync(ask, moved.Id, now, inside).ConfigureAwait(false);
+            }
 
             return new SessionAdvanceOutcome(
                 SessionAdvanceRefusal.None,
