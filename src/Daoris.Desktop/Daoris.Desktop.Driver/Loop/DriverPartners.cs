@@ -591,7 +591,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             var opening = PartnerPass.Opening(repository, ask.Ask.Base);
 
             return await _driver.HoldAsync(
-                adapter, info, target, sessionId, transcript, ask.Copy, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
+                "partner", adapter, info, target, sessionId, transcript, ask.Copy, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
                 refusesInput: PartnerPass.TakesNoWords(piece),
                 ct: ct,
                 // 🔴 The start made the launcher's at the start itself (D199's note on the strict start, TERMTRUST1a): it joins this

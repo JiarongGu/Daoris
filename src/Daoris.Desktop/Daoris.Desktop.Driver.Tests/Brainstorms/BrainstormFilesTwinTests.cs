@@ -22,6 +22,29 @@ public sealed class BrainstormFilesTwinTests : IDisposable
 
     private BrainstormFiles Files => new(_home);
 
+    [Fact]
+    public void A_pass_and_a_restart_keep_the_actor_request_and_reported_models()
+    {
+        var asked = ActorAsked.Before("acp-stub");
+        var record = new BrainstormPassRecord(new BrainstormBy("g1", "maker", "acp-stub", "one"), "generate", "running", [], 1)
+        {
+            Actor = "brainstorm", Choice = "before", Asked = asked,
+            Ran = new ActorRan(["first-model"], 0, [], 0),
+        };
+        Files.WritePass("b1", record);
+        var restart = Assert.Single(new BrainstormFiles(_home).ReadPasses("b1"));
+        Assert.Equal("brainstorm", restart.Actor);
+        Assert.Equal("before", restart.Choice);
+        Assert.Equal(asked, restart.Asked);
+        Assert.Equal("first-model", restart.Ran!.Models.Single());
+        var reports = new ActorReports(restart.Ran);
+        reports.Report(["next-model"]);
+        Files.WritePass("b1", restart with { Turns = 2, Ran = reports.Snapshot });
+        var resumed = Assert.Single(new BrainstormFiles(_home).ReadPasses("b1"));
+        Assert.Equal(["first-model", "next-model"], resumed.Ran!.Models);
+        Assert.Equal(2, resumed.Turns);
+    }
+
     private static JsonNode Table() =>
         JsonNode.Parse(File.ReadAllText(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "brainstorm-files.json")))!;
 

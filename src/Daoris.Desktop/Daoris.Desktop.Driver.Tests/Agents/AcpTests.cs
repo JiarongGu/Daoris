@@ -1371,6 +1371,7 @@ public sealed class AcpTests
 
         var turn = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models!;
         Assert.Equal(("claude-sonnet-5-5", (bool?)false, TurnModels.FromQuota), (turn.Model, turn.Whole, turn.From));
+        Assert.Equal(["claude-sonnet-5-5", "claude-haiku-4-5-20251001"], turn.Reported);
         Assert.Equal(
             [("claude-haiku-4-5-20251001", new TurnTokens(902, 11, 0, 0)), ("claude-sonnet-5-5", new TurnTokens(2, 4, 16420, 10603))],
             turn.Split!.Select(each => (each.Model, each.Tokens)));
@@ -2557,6 +2558,22 @@ public sealed class AcpTests
     /// The list <c>claude-agent-acp</c> answered after a change, as measured: the model's value as the agent holds it (an
     /// alias for a full id that has one), the effort while the model offers one, and no <c>fast</c> once it is not opus.
     /// </summary>
+    [Fact]
+    public async Task A_setter_with_no_returned_list_is_not_an_acknowledgement()
+    {
+        var agent = new FakeAgent((frame, _) => frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1}"""),
+            "session/new" => Ok(frame, """{"sessionId":"s-ack"}"""),
+            _ => Ok(frame, "{}"),
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fixture", CancellationToken.None);
+        await session.SetConfigOptionAsync("model", "sonnet", CancellationToken.None);
+        Assert.Null(session.LastAcknowledgedOptions);
+        session.Release();
+    }
+
     private static string ClaudeAnswer(string mode, string model, string? effort) => $$"""
         {"configOptions":[{"id":"mode","name":"Mode","category":"mode","type":"select","currentValue":"{{mode}}","options":[{"value":"default","name":"Manual"},{"value":"acceptEdits","name":"Accept edits"},{"value":"auto","name":"Auto"}]},
          {"id":"model","name":"Model","category":"model","type":"select","currentValue":"{{model}}","options":[{"value":"default","name":"Default (recommended)"},{"value":"opus","name":"Opus"},{"value":"sonnet","name":"Sonnet"},{"value":"haiku","name":"Haiku"},{"value":"claude-opus-4-8","name":"Opus 4.8"}]}

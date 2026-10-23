@@ -28,9 +28,28 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         ["limit"] = false, ["deletable"] = true, ["said"] = new JsonArray(), ["noteParts"] = new JsonArray(new JsonObject { ["words"] = "done" }),
         ["opinion"] = null, ["serves"] = null, ["from"] = null, ["fromWhy"] = null, ["fromBy"] = null, ["entry"] = "local/engine",
         ["helpMode"] = null, ["access"] = new JsonObject { ["permissions"] = "ask" }, ["piece"] = null,
+        ["actor"] = "build", ["choice"] = "before", ["asked"] = new JsonObject { ["agent"] = "claude-code" },
+        ["override"] = null, ["ran"] = new JsonObject { ["models"] = new JsonArray("reported-model"), ["more"] = 0, ["entries"] = new JsonArray(), ["entriesMore"] = 0 },
     };
 
     private static string Records(params JsonObject[] records) => new JsonArray([.. records.Select(record => record.DeepClone())]).ToJsonString();
+
+    [Fact]
+    public async Task A_reported_model_wakes_the_sessions_slice_without_a_state_move()
+    {
+        var record = Record("s1", "default", "working");
+        _service.Sessions = Records(record);
+        var (loop, slice) = await UpAsync();
+        await slice.JudgeAsync();
+        record["ran"]!["models"] = new JsonArray("next-reported-model");
+        _service.Sessions = Records(record);
+        await loop.Service!.KeepActorAsync("s1", ran: new ActorRan(["next-reported-model"], 0, [], 0));
+        Assert.Contains(Raised, each => each.Type == StatePublisher.Type && each.Payload is StateChanged changed && changed.Scopes.Contains("sessions"));
+        await slice.JudgeAsync();
+        var pushed = Written(slice.Snapshot().Partitions.Single().Data)["s1"]!;
+        Assert.Equal("working", pushed["state"]!.GetValue<string>());
+        Assert.Equal("next-reported-model", pushed["ran"]!["models"]![0]!.GetValue<string>());
+    }
 
     /// <summary>A loop come up over the stand-in service, and its sessions' slice.</summary>
     private async Task<(DriverLoop Loop, StateSlice Slice)> UpAsync()
@@ -86,7 +105,7 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         // The first parameter, one after a generic type, and the last: the reading went through the whole record.
         Assert.Equal("id", service[0]);
         Assert.Contains("said", service);
-        Assert.Equal("piece", service[^1]);
+        Assert.Equal("ran", service[^1]);
         Assert.Equal(page.Order(StringComparer.Ordinal), SessionsStateSlice.Fields.Order(StringComparer.Ordinal));
         Assert.Empty(SessionsStateSlice.Fields.Intersect(SessionsStateSlice.PulledOnly));
         var classed = SessionsStateSlice.Fields.Concat(SessionsStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);

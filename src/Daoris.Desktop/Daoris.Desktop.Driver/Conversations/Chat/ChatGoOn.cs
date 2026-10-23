@@ -574,7 +574,7 @@ internal sealed class ChatGoOn
         var continued = record.From is { Length: > 0 } from ? await ContextBriefs.LineIdsAsync(_context.Service, from, ct).ConfigureAwait(false) : [];
 
         return await _runner.RunAsync(
-            sessionId,
+            record.Actor ?? "chat", sessionId,
             words.Any(word => word.Persons)
                 ? $"conversation `{sessionId}` goes on with your words in its own conversation."
                 : words.All(word => word.Daoris)
@@ -649,7 +649,7 @@ internal sealed class ChatGoOn
         var (room, reads) = await _help.HelpRoomNowAsync(sessionId, HelpRoom.GoesOnIn(_context.Home, record.Workspace, record.Tree), ct)
             .ConfigureAwait(false);
         return await _runner.RunAsync(
-            sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,
+            record.Actor ?? "ask-daoris", sessionId, $"Ask Daoris `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,
             _runner.HelpPlace(room, reads, record.Workspace), onEnded, ct, new GoingOn(record, ask)).ConfigureAwait(false);
     }
 

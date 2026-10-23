@@ -968,7 +968,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             var opening = HelperPass.Opening(ask.Repository, ask.Tip, posture);
 
             return await _driver.HoldAsync(
-                adapter, info, target, sessionId, transcript, copy.Path, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
+                "helper", adapter, info, target, sessionId, transcript, copy.Path, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
                 // One turn, and no words: nobody talks to a helper while it reads, on either door.
                 refusesInput: HelperPass.TakesNoWords(ask.Ask.Id),
                 ct: ct,

@@ -546,13 +546,19 @@ public sealed class AcpSession(
 
         var answer = await RequestAsync("session/set_config_option", new { sessionId = _sessionId, configId, value }, ct)
             .ConfigureAwait(false);
-        var after = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("configOptions", out var list)
+        var returned = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("configOptions", out var list)
                     && list.ValueKind == JsonValueKind.Array
             ? AcpConfigOption.Read(list)
-            : [.. ConfigOptions.Select(option => option.Id == configId ? option with { Current = value } : option)];
+            : null;
+        LastAcknowledgedOptions = returned;
+        // Preserve the composer's existing reading; provenance below never mistakes this local projection for an acknowledgement.
+        var after = returned ?? [.. ConfigOptions.Select(option => option.Id == configId ? option with { Current = value } : option)];
         KeepOptions(after);
         return after;
     }
+
+    /// <summary>D205: only the list the last setter actually returned; null when it returned none.</summary>
+    public IReadOnlyList<AcpConfigOption>? LastAcknowledgedOptions { get; private set; }
 
     /// <summary>
     /// Run one turn end to end: handshake, a session on the tree, the target as a prompt, and every
@@ -1394,15 +1400,16 @@ public sealed class AcpSession(
     /// </summary>
     private TurnModels TurnModelsOf(JsonElement result, TurnTokens? tokens)
     {
+        JsonElement raw = default;
         var split = result.ValueKind == JsonValueKind.Object
                     && result.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
                     && meta.TryGetProperty("quota", out var quota) && quota.ValueKind == JsonValueKind.Object
                     && quota.TryGetProperty("model_usage", out var byModel)
-            ? TurnModels.Read(byModel)
+            ? TurnModels.Read(raw = byModel)
             : null;
         lock (_measured)
         {
-            var models = TurnModels.Of(tokens, _named, TurnModels.FromUpdates, split, _split, TurnModels.FromQuota);
+            var models = TurnModels.Of(tokens, _named, TurnModels.FromUpdates, split, _split, TurnModels.FromQuota, TurnModels.Names(raw));
             _named.Clear();
             if (split is { Count: > 0 }) _split = split;
             return models;

@@ -546,7 +546,7 @@ public sealed class ChatRunner : IDisposable
         try
         {
             return started = await RunAsync(
-                sessionId, message, resolved, selection, config,
+                "chat", sessionId, message, resolved, selection, config,
                 RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued),
                 onEnded, ct).ConfigureAwait(false);
         }
@@ -751,7 +751,7 @@ public sealed class ChatRunner : IDisposable
                 return new(null, "the application is closing, so no conversation starts now.");
             }
 
-            return await RunAsync(sessionId, placed.Message, resolved, selection, config, HelpPlace(room, reads, placed.Workspace), onEnded, ct)
+            return await RunAsync("ask-daoris", sessionId, placed.Message, resolved, selection, config, HelpPlace(room, reads, placed.Workspace), onEnded, ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -1091,7 +1091,7 @@ public sealed class ChatRunner : IDisposable
     /// for a new conversation.
     /// </param>
     internal async Task<ChatStart> RunAsync(
-        string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
+        string actor, string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null)
     {
         var workTree = place.Tree;
@@ -1099,6 +1099,8 @@ public sealed class ChatRunner : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
         // The place as asked, before its mode is applied below: what the one retry of a native go-on runs in again (SESSCTX1c).
         var asked = place;
+        actor = goOn?.Record.Actor ?? actor;
+        var actorAsked = goOn?.Record.Asked ?? ActorAsked.Before(resolved.Name);
 
         Process process;
         string? rules = null;
@@ -1133,6 +1135,7 @@ public sealed class ChatRunner : IDisposable
                 // The native door resumes its own conversation by the id kept for it; the protocol door on its wire.
                 new ChatTarget(place.Name, workTree, _service.BaseUrl)
                 {
+                    Asked = actorAsked,
                     Resume = resolved.Wire == SessionWire.Pipe ? goOn?.Ask.Conversation : null,
                     // Its harness's mode that asks nothing, where Ask Daoris runs with full access on the native door (HELPMODE1a1).
                     PermissionMode = place.PermissionMode,
@@ -1234,6 +1237,7 @@ public sealed class ChatRunner : IDisposable
                 });
             }
 
+            await _service.KeepActorAsync(sessionId, goOn?.Record.Choice ?? "before", ActorAsked.ForSpawn(resolved.Name, info, actorAsked), ct: ct).ConfigureAwait(false);
             // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait. Through the launcher
             // (TERMTRUST1a, D201 point 4): its harness born in this process's agents' job, the launcher read as the conversation's process.
             process = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _home, log: null, CancellationToken.None).ConfigureAwait(false)
@@ -1261,7 +1265,10 @@ public sealed class ChatRunner : IDisposable
 
         // Its turns are kept in the usage history under the account it runs as (USAGECAP1a2), as a driven session's are: bound
         // before any word is queued to it.
-        UsageTurns.Bound(_home, _events, sessionId, TurnBinding.Of(resolved, selection.Profile));
+        UsageTurns.Bound(_home, _events, sessionId, TurnBinding.Of(resolved, selection.Profile) with { Actor = actor });
+        var actorLog = new MachineLog(_home, "driver");
+        var actorRun = new ActorRun(_events, sessionId, actor, goOn?.Record.Ran, ran => _service.KeepActorAsync(sessionId, ran: ran), actorLog);
+        _context.ActorRuns[sessionId] = actorRun;
 
         // The conversation outlives this call: the person types, the harness answers, and the record
         // moves when the process does. Watched on an unbound token deliberately — a chat is not ended
@@ -1383,7 +1390,7 @@ public sealed class ChatRunner : IDisposable
 
         var watch = WatchAsync(
             sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser, Said,
-            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid });
+            new Watched(resolved.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog);
         _context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -1396,7 +1403,7 @@ public sealed class ChatRunner : IDisposable
             _ = AgainAsync(
                 watch,
                 () => RunAsync(
-                    sessionId, message, resolved, selection, config, asked, onEnded, CancellationToken.None, new GoingOn(goOn.Record, goOn.Ask)),
+                    actor, sessionId, message, resolved, selection, config, asked, onEnded, CancellationToken.None, new GoingOn(goOn.Record, goOn.Ask)),
                 () => goOn.Ask.Refused is { Lost: true } lost
                     ? _goOn.LostAsync(goOn.Record, lost, resolved.Name, config, onEnded, held: false, CancellationToken.None)
                     : Task.FromResult(new ChatStart(null, "")));
@@ -1790,6 +1797,17 @@ public sealed class ChatRunner : IDisposable
         }
 
         var after = await session.SetConfigOptionAsync(configId, value, ct).ConfigureAwait(false);
+        // Only returned configuration is acknowledged. An empty answer says nothing about what the setter asked.
+        var model = session.LastAcknowledgedOptions?.FirstOrDefault(item => item.Category == "model")?.Current;
+        var effort = session.LastAcknowledgedOptions?.FirstOrDefault(item => item.Category == "thought_level")?.Current;
+        var changed = new Dictionary<string, string>();
+        if (model is not null) changed["model"] = model;
+        if (effort is not null) changed["effort"] = effort;
+        if (changed.Count > 0)
+        {
+            await _service.KeepActorAsync(sessionId, changed: changed, ct: ct).ConfigureAwait(false);
+        }
+        if (_context.ActorRuns.TryGetValue(sessionId, out var actorRun)) actorRun.Report([], new(DateTimeOffset.UtcNow, model, effort));
         // Said as the agent names them, so a reader later knows what ran the turns after this one.
         var chosen = option.Choices.FirstOrDefault(choice => choice.Value == value)?.Name ?? value;
         // CONVNOTE2c: the option and its value are the agent's own names, facts the page words the sentence around.
@@ -2052,8 +2070,11 @@ public sealed class ChatRunner : IDisposable
     private async Task<bool> WatchAsync(
         string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
         Action<AcpUsage>? measured, string? rules, IStreamMapper? mapper, ProtocolChat? chat, NativeChat? native,
-        string? servers, bool drivesBrowser, Action<JsonElement>? said, Watched watched)
+        string? servers, bool drivesBrowser, Action<JsonElement>? said, Watched watched, ActorRun actorRun, MachineLog actorLog)
     {
+        using var actorLogging = actorLog;
+        await using var actorWatching = actorRun;
+        using var actorUnbound = new Disposer(() => _context.ActorRuns.TryRemove(sessionId, out _));
         var goOn = watched.GoOn;
         // Its harness conversation's id, kept for its record the moment its door names it (MSG1c, D137 §4.2).
         var keep = watched.Keeps ? _context.Conversations.Keeping(sessionId, watched.Adapter) : null;

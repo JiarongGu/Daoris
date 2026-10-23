@@ -438,14 +438,11 @@ public sealed class SessionLedger(
     public const int MostResolved = 64;
 
     /// <summary>
-    /// Record the downloaded versions a start of a record of this machine's was handed (KEEP1b, D195 point 6; the cleanup design §3.5,
-    /// Fable F2.5), added to those of its earlier starts: the downloads' rule keeps each while the session runs. Any kind of record, since
-    /// every start runs a binary. Its state, its last move and its revision stay: what a start was handed is a fact about its run, and it
-    /// never travels.
+    /// D205's later provenance door. Machine-local, without a state move or sync revision; omitted members keep their value.
     /// </summary>
     /// <returns>The record as it now reads; null where no record of this machine's has that id.</returns>
     /// <exception cref="ArgumentException">
-    /// None named, more than <see cref="MostResolved"/>, or one that is no <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>: a path never is.
+    /// An unknown choice, a non-object value or provenance beyond its bounds.
     /// </exception>
     public async Task<Session?> KeepActorAsync(string id, string? choice, JsonElement? asked, JsonElement? changed, JsonElement? ran,
         CancellationToken ct = default)
@@ -455,10 +452,20 @@ public sealed class SessionLedger(
         foreach (var value in new[] { asked, changed, ran })
             if (value is { } element && (element.ValueKind != JsonValueKind.Object || element.GetRawText().Length > 16384))
                 throw new ArgumentException("actor provenance must be a bounded object");
+        if (ran is { } reported)
+        {
+            foreach (var name in new[] { "models", "entries" })
+                if (reported.TryGetProperty(name, out var list) && (list.ValueKind != JsonValueKind.Array || list.GetArrayLength() > 8))
+                    throw new ArgumentException($"ran.{name} keeps at most eight; overflow is counted separately");
+            foreach (var name in new[] { "more", "entriesMore" })
+                if (reported.TryGetProperty(name, out var count) && (count.ValueKind != JsonValueKind.Number || !count.TryGetInt32(out var n) || n < 0))
+                    throw new ArgumentException($"ran.{name} must be a nonnegative count");
+        }
         return await sessions.KeepActorAsync(id, choice, asked, changed, ran, ct).ConfigureAwait(false)
             ? await sessions.FindAsync(id, ct).ConfigureAwait(false) : null;
     }
 
+    /// <summary>Record the downloaded versions a start was handed (KEEP1b, D195 point 6), added to its earlier starts without a move or revision.</summary>
     public async Task<Session?> KeepResolvedAsync(string id, IReadOnlyList<string> versions, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(versions);

@@ -42,6 +42,8 @@ public static class SessionsStateSlice
         "profile", "tree", "baseCommit", "ask", "opinion", "serves", "from", "fromWhy", "fromBy", "answer", "access", "noteParts", "piece",
         // An account's limit made its failure: every list words it limited (LIMITRESUME1a, D206 point 1).
         "limit",
+        // D205 §9.3: the machine-local provenance, absent on a mirror and a sync.
+        "actor", "choice", "asked", "override", "ran",
     ];
 
     /// <summary>

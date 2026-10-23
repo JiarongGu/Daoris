@@ -87,7 +87,10 @@ public sealed record HistoryRead(IReadOnlyList<KeptReading> Readings, IReadOnlyL
 public sealed record KeptTurn(
     string? Agent, string? Account, int? Epoch, string? Door, string Session, long Seq, DateTimeOffset? Started, DateTimeOffset Ended,
     TurnTokens Tokens, string Model, IReadOnlyList<ModelTokens>? Split, string? Attribution, bool? Whole, bool Cancelled, string Meaning,
-    int Reader);
+    int Reader)
+{
+    public string? Actor { get; init; }
+}
 
 /// <summary>What the turns' log holds, in the order it was written: its turns, its gaps, and the lines that did not read.</summary>
 public sealed record TurnsRead(IReadOnlyList<KeptTurn> Turns, IReadOnlyList<HistoryGap> Gaps, int Unread);
@@ -615,6 +618,7 @@ public static class UsageHistory
         Text(json, "account", bound?.Account);
         Number(json, "epoch", epoch);
         Text(json, "door", Word(binding?.Door));
+        Text(json, "actor", Word(binding?.Actor));
         json.WriteString("session", turn.Session);
         json.WriteNumber("seq", turn.Seq);
         Text(json, "started", turn.Started is { } started ? Stamp(started) : null);
@@ -884,7 +888,7 @@ public static class UsageHistory
         return new KeptTurn(
             agent, agent is null ? null : Json.Text(record, "account"), Whole(record, "epoch"), Json.NonEmpty(record, "door"), session, seq,
             Moments.ReadStrict(Json.Text(record, "started")), ended, TokensOf(record), model, split, Json.NonEmpty(record, "attribution"),
-            Flag(record, "whole"), cancelled, meaning, reader);
+            Flag(record, "whole"), cancelled, meaning, reader) { Actor = Json.NonEmpty(record, "actor") };
     }
 
     private static TurnTokens TokensOf(JsonObject record) =>

@@ -110,6 +110,9 @@ public sealed class ChatGoesOnProcessTests : IDisposable
              "initialize", "session/resume: conv-1", "prompt: Also log the port. | No, 9090.", "session/close", "stdin ended"],
             HeardLines());
         Assert.Equal(1, ledger.Count);
+        Assert.Equal("chat", ledger.Record(id)["actor"]!.GetValue<string>());
+        Assert.Equal("before", ledger.Record(id)["choice"]!.GetValue<string>());
+        Assert.Equal("acp-reported", ledger.Record(id)["ran"]!["models"]![0]!.GetValue<string>());
         Assert.Equal([(id, "w1,w2")], ledger.Taken);
         Assert.Empty(ledger.Said(id));
         var taken = events.After(id, 0).Events
@@ -305,6 +308,9 @@ public sealed class ChatGoesOnProcessTests : IDisposable
         Assert.Equal(
             ["resume=none", "message=first", "resume=native-1", "message=Also log the port.\\n\\nNo, 9090."],
             StubFile.Lines(log));
+        Assert.Equal("chat", ledger.Record(id)["actor"]!.GetValue<string>());
+        Assert.Equal("native-reported", ledger.Record(id)["ran"]!["models"]![0]!.GetValue<string>());
+        Assert.DoesNotContain("stub", ledger.Record(id)["ran"]!["models"]!.AsArray().Select(value => value!.GetValue<string>()));
         Assert.Equal([(id, "w1,w2")], ledger.Taken);
         Assert.Equal(1, ledger.Count);
     }
@@ -592,7 +598,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
             const held = [];
             const say = (text) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
               update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } } });
-            const answer = (id, stopReason) => send({ jsonrpc: '2.0', id, result: { stopReason } });
+            const answer = (id, stopReason) => send({ jsonrpc: '2.0', id, result: { stopReason, _meta: { quota: { model_usage: [{ model: 'acp-reported' }] } } } });
             const lines = createInterface({ input: process.stdin });
             lines.on('line', async (line) => {
               const frame = JSON.parse(line);
@@ -684,7 +690,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
                 out({ type: 'system', subtype: 'init', session_id: resume ?? 'native-1', cwd: process.cwd(), tools: [], model: 'stub' });
                 named = true;
               }
-              out({ type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'heard ' + text }] } });
+              out({ type: 'assistant', message: { role: 'assistant', model: 'native-reported', content: [{ type: 'text', text: 'heard ' + text }] } });
               out({ type: 'result', subtype: 'success', is_error: false, result: 'ok' });
             });
             lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });

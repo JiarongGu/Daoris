@@ -205,6 +205,7 @@ public sealed class ClaudeStreamJsonTests
         Assert.DoesNotContain(events, e => e.Kind == SessionEventKind.Tool);
         var models = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models;
         Assert.NotEqual("<synthetic>", models?.Model);
+        Assert.Empty(models!.Reported);
     }
 
     /// <summary>

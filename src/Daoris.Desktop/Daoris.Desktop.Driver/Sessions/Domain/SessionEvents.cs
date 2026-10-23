@@ -374,8 +374,8 @@ public sealed record SessionEvent
 
     /// <summary>
     /// For <see cref="SessionEventKind.Turn"/>: which models its tokens were spent on, as its door said them (USAGECAP1a2, D179
-    /// point 2), for the usage history alone. Never written: the record and every page keep no model's name (D24, TOOL3), so it
-    /// rides in memory from the door to the history's watch, and an event read back from the record has none.
+    /// point 2). Never written on the event log: it rides in memory to the history's watch and D205's provenance watch;
+    /// reported names are kept separately on the machine-local service record. A replayed event has none.
     /// </summary>
     [JsonIgnore]
     public TurnModels? Models { get; init; }

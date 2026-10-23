@@ -89,6 +89,22 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.Equal("a@one", atRemote.Origin);
     }
 
+    [Fact]
+    public async Task Actor_provenance_never_leaves_the_machine_on_a_sync()
+    {
+        var session = await _a.CreateAsync("q1", "Shared", "stub", Now, actor: "build");
+        var value = System.Text.Json.JsonSerializer.SerializeToElement(new { model = "private-model" });
+        await _a.KeepActorAsync(session.Id, "before", value, value, value);
+        await SyncAsync(_a, "a@one");
+        await SyncAsync(_b, "b@two");
+        foreach (var store in new[] { _remote, _b })
+        {
+            var mirrored = (await store.FindAsync($"a@one/{session.Id}"))!;
+            Assert.Null(mirrored.Actor); Assert.Null(mirrored.Choice); Assert.Null(mirrored.Asked);
+            Assert.Null(mirrored.Override); Assert.Null(mirrored.Ran);
+        }
+    }
+
     /// <summary>
     /// SESSUX1f (D126 §5.4): a record that went up is marked pushed, so a delete here can say the team's copy would stay;
     /// one of a repository that has not joined stayed home and is not.

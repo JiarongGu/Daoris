@@ -237,7 +237,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 job: IntakeRoom.Allowed, plugins: skillPlugins);
 
             return await _driver.HoldAsync(
-                adapter, info, target, sessionId, transcript, room, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
+                "intake", adapter, info, target, sessionId, transcript, room, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
                 // 🔴 One turn takes no messages (INT4h), on either door: the pipe door gives it no stdin,
                 // and the protocol door's stdin is the driver's own frames — a person's line written
                 // there would land in the middle of the JSON-RPC stream.

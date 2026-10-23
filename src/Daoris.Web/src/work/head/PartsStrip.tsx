@@ -7,6 +7,7 @@ import type { PartSpent, SessionEntry } from '../entries';
 import { shownOf } from '../groups';
 import type { SessionWhere } from '../rail/SessionRow';
 import { beganLine, partPlace, spentLine } from './partsLife';
+import { ranLine } from '../actors';
 
 /** What the strip reads of one part's record besides the driver's word: its record, its repository's checkout, where its work is. */
 export type PartFacts = {
@@ -73,6 +74,7 @@ export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
                 ? <Dot tone={SESSION_DOT[word]} label={t(shownKey(word))} />
                 : <span className="text-meta text-ink-faint">{part.shown}</span>}
               <span>{beganLine(t, part, parts, rows)}</span>
+              <span className="text-meta text-ink-faint">{ranLine(t, facts?.session)}</span>
               {part.quest && <span className="font-mono text-meta text-ink-faint">#{part.quest}</span>}
               {place && <span className="text-meta text-ink-faint">{place}</span>}
               {spent && <span className="text-meta text-ink-faint">{spent}</span>}

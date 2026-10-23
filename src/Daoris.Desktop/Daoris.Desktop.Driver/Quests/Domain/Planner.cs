@@ -247,6 +247,11 @@ public sealed record PriorSession(
     string Session, string? Tree, string State = "", string? Note = null, string? Repository = null,
     string? Answer = null, bool Interrupted = false)
 {
+    public string? Actor { get; init; }
+    public string? Choice { get; init; }
+    public ActorAsked? Asked { get; init; }
+    public System.Text.Json.JsonElement? Override { get; init; }
+    public ActorRan? Ran { get; init; }
     /// <summary>
     /// Whether it ended because the person stopped it (D104): <c>stopped</c>, and not by the sweep or a shutdown. Such a stop
     /// holds its quest until the person releases it (SESSUX1b, D126 §3.3).

@@ -18,6 +18,7 @@ namespace Daoris.Driver;
 /// </param>
 public sealed record TurnBinding(string? Agent, string? Account, string Door, string Meaning)
 {
+    public string? Actor { get; init; }
     /// <summary>A session's binding as its start chose the account: <paramref name="profile"/>, or null for the tool's own.</summary>
     public static TurnBinding Of(ISessionAdapter adapter, string? profile)
     {
@@ -96,6 +97,11 @@ public static class UsageTurns
             else held.Sessions[session] = binding;
             while (held.Order.Count > Remembered) held.Sessions.Remove(held.Order.Dequeue());
         }
+    }
+
+    public static void ActorBound(string home, SessionEvents events, string session, string actor)
+    {
+        if (BindingOf(home, session) is { } binding) Bound(home, events, session, binding with { Actor = actor });
     }
 
     private static TurnBinding? BindingOf(string home, string session)
