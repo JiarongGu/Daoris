@@ -22,7 +22,7 @@ namespace Daoris.Desktop;
 /// <para><b>Its inputs, from memory.</b> The sessions, the quests, the asks, the groups and the work as their slices last judged them
 /// (<see cref="StateSlice.Snapshot"/>); the registry as the machine's facts hold it; and what the driver's look kept: the trust holds,
 /// the considerations and the account waits as the tick hands them, the second opinions judged, the rule proposals, the helpers' asks,
-/// the agents' asks to hand over (NOTIFY2e), the held tool calls and the answers the answers-alone bound holds (COWORK1e, off the home's marks); and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
+/// the moves back to the person the service refused (HELPERWAIT1c), the agents' asks to hand over (NOTIFY2e), the held tool calls and the answers the answers-alone bound holds (COWORK1e, off the home's marks); and for the accounts' rows, the roster's last readings as <c>HARNESSES</c> answers them (asking no account,
 /// ROSTER1) and how each agent's accounts are used as the accounts slice holds it. Not judged until every slice it reads has judged and
 /// the registry has landed (PUSHUX1): a band drawn from half its inputs would say nothing waits where something does. The look's own
 /// lists are empty before its first look, as the page's were.</para>
@@ -278,6 +278,8 @@ public static class AttentionStateSlice
             Opinions = Written(TreesRoutes.OpinionWaits(loop.Judged.Latest)),
             Helpers = Written(HelperWaits(loop.Home)),
             HandOvers = Written(HandOverWaits(loop.Home)),
+            // HELPERWAIT1c: each move back to the person the service refused, from the home's helpers folder.
+            Backs = Written(BackWaits(loop.Home)),
             Permissions = Written(PermissionWaits(HeldPermissions.Of(loop.Events))),
             Answers = Written(AnswerWaits(loop.Home)),
             Doors = Written(AgentsRoutes.Doors(loop.Harnesses, roster)),
@@ -366,6 +368,16 @@ public static class AttentionStateSlice
                 .Select(ask => (object)new { ask.Id, Session = ask.Asker, ask.Question, ask.Agent, At = Moments.Write(ask.At) }),
         ];
     }
+
+    /// <summary>
+    /// The sessions that waited on their own helper whose move back to the person the service refused (HELPERWAIT1c; the co-worker design
+    /// §5 point 4), oldest first, as the driver's look kept them while the refusal stands: each session, its quest, the service's words and
+    /// since its first refusal. A read off the home's helpers folder.
+    /// </summary>
+    public static IReadOnlyList<object> BackWaits(string home) =>
+    [
+        .. new HelperFiles(home).Backs().Select(back => (object)new { back.Session, back.Quest, back.Words, At = Moments.Write(back.At) }),
+    ];
 
     /// <summary>
     /// What the agents' asks to hand their sessions over wait on the person's word (NOTIFY2e, MIXAGENT1c), oldest first: each the

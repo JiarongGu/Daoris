@@ -1005,6 +1005,58 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// 🔴 HELPERWAIT1c (the co-worker design §5 point 4, §12 row 11): a session that waited on its own helper, whose helper ended with no
+    /// answer and whose move back to the person the service refused, is a row by the session: its repository, its quest and the service's
+    /// refusal as said, waiting since the first refusal. A record that has moved on meanwhile (the move landed: it is a park's row now)
+    /// is none; one the page does not hold guesses no repository.
+    /// </summary>
+    [Fact]
+    public void A_refused_move_back_to_the_person_is_a_row_by_its_session_with_the_refusal()
+    {
+        var rows = Rows(new()
+        {
+            Sessions =
+            [
+                Session("""{"id":"c0nv0001","quest":"7a82cc","state":"completed"}"""),
+                Session("""{"id":"m0v3d000","quest":"7a82cc","state":"awaiting-person"}"""),
+            ],
+            Quests = [Quest()],
+            Registry = [Registration("engine")],
+            Backs =
+            [
+                JsonNode.Parse("""{"session":"c0nv0001","quest":"7a82cc","words":"Session `c0nv0001`'s tree is held by s-2.","at":"2026-10-23T09:30:00Z"}""")!.AsObject(),
+                JsonNode.Parse("""{"session":"m0v3d000","quest":"7a82cc","words":"refused","at":"2026-10-23T09:00:00Z"}""")!.AsObject(),
+                JsonNode.Parse("""{"session":"g0n3","quest":null,"words":"refused","at":"2026-10-23T08:00:00Z"}""")!.AsObject(),
+            ],
+        });
+
+        // The one whose move landed is its park's row alone.
+        Assert.Equal(["helper-ended:c0nv0001", "helper-ended:g0n3", "parked:m0v3d000"], Keys(rows));
+        Is("""{"kind":"helper-ended","id":"c0nv0001","since":"2026-10-23T09:30:00Z","workspace":"default","where":"engine","detail":"Session `c0nv0001`'s tree is held by s-2.","session":"c0nv0001","quest":"7a82cc"}""",
+            rows.Single(row => row["id"]!.GetValue<string>() == "c0nv0001"));
+        Is("""{"kind":"helper-ended","id":"g0n3","since":"2026-10-23T08:00:00Z","where":"","detail":"refused","session":"g0n3","quest":null}""",
+            rows.Single(row => row["id"]!.GetValue<string>() == "g0n3"));
+    }
+
+    /// <summary>HELPERWAIT1c: the refused moves back are read off the home's helpers folder, oldest first, as the driver's look kept them.</summary>
+    [Fact]
+    public void The_refused_moves_back_are_the_records_the_look_kept()
+    {
+        var files = new HelperFiles(Home);
+        Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Helpers));
+        files.WriteBack(new HelperBack("s1", "q1", "refused once", DateTimeOffset.Parse("2026-10-23T09:10:00Z")));
+        files.WriteBack(new HelperBack("s2", null, "refused twice", DateTimeOffset.Parse("2026-10-23T09:00:00Z")));
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Helpers, "s3.back.json"), "{ \"session\": ");
+
+        var waits = JsonSerializer.SerializeToNode(AttentionStateSlice.BackWaits(Home), IpcJson.Options)!.AsArray();
+
+        Assert.Equal(["s2", "s1"], waits.Select(wait => wait!["session"]!.GetValue<string>()));
+        Assert.Equal(["session", "quest", "words", "at"], waits[1]!.AsObject().Select(field => field.Key));
+        Assert.Equal(("q1", "refused once"), (waits[1]!["quest"]!.GetValue<string>(), waits[1]!["words"]!.GetValue<string>()));
+        Assert.Equal(DateTimeOffset.Parse("2026-10-23T09:00:00Z"), DateTimeOffset.Parse(waits[0]!["at"]!.GetValue<string>()));
+    }
+
+    /// <summary>
     /// NOTIFY2e: the hand-over waits are read off the home's sessions folder: an ask the look holds <c>waiting</c>, by its own id, with its
     /// session, note and agent; one not read yet, approved, taken or refused, and a state naming an earlier ask, wait on nothing of theirs.
     /// </summary>

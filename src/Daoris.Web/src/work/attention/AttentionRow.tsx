@@ -25,7 +25,7 @@ export type AttentionKind =
   | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
-  | 'quiet';
+  | 'quiet' | 'helper-ended';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -280,6 +280,8 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
   parked: () => ['work.attention.door.answer'],
   intake: (item) => ['work.attention.door.intake', { id: item.id }],
   review: () => ['work.attention.door.review'],
+  // HELPERWAIT1c: a refused move back to the person is looked at on its session's page, where its tree and its helper's card are.
+  'helper-ended': () => ['work.attention.door.open'],
   // CONFIRMSEEN1: a terminal's press is answered on its card, which shows every value it carries; the row never answers it.
   confirmation: () => ['work.attention.door.confirmation'],
   // KEEP1f: what else goes below the floor is chosen on the *Disk space* card's press, where every unit is listed first.

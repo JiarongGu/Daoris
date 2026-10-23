@@ -77,6 +77,8 @@
   "work.attention.signedOut.refused": "密钥被拒绝：请在 {{product}} 的页面上给它换上新的 API 密钥。",
   "work.attention.helper": "智能体想请助手",
   "work.attention.helperWhy": "{{session}} 想请另一个智能体帮忙。在你同意之前，不会去问。",
+  "work.attention.helper-ended": "助手未答复",
+  "work.attention.helperEndedWhy": "{{session}} 在等它的助手，助手没有答复就结束了。Daoris 没能把它交回给你，因为服务拒绝了：{{words}} 在你查看之前，它一直占着自己的工作树。",
   "work.attention.hand-over": "智能体请求转交",
   "work.attention.quiet": "无动静，也没有在运行",
   "work.attention.quietBusy": "在运行，但没有任何输出",

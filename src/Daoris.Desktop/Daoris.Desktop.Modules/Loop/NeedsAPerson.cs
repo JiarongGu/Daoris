@@ -44,6 +44,12 @@ public sealed record AttentionFacts
     /// <summary>The sessions the watcher brings to the person (SESSWATCH1a), as its memory holds them.</summary>
     public IReadOnlyList<JsonObject> Quiet { get; init; } = [];
 
+    /// <summary>
+    /// The sessions that waited on their own helper whose move back to the person the service refused (HELPERWAIT1c), as the look kept
+    /// them (<see cref="AttentionStateSlice.BackWaits"/>): each session, its quest, the service's words and since when.
+    /// </summary>
+    public IReadOnlyList<JsonObject> Backs { get; init; } = [];
+
     /// <summary>The agents' asks to hand their sessions over that wait on the person's yes or no (NOTIFY2e), as the look holds them.</summary>
     public IReadOnlyList<JsonObject> HandOvers { get; init; } = [];
 
@@ -347,6 +353,23 @@ public static class NeedsAPerson
             };
             // It waits for its repository's heavy-run slot behind a holder, named by the holder's session, empty for a terminal's run.
             if (wait["heavy"] is JsonValue heavy) row["quiet"]!["heavy"] = heavy.DeepClone();
+            rows.Add(row);
+        }
+
+        // A session that waited on its own helper, whose helper ended with no answer and whose move back to the person the service refused
+        // (HELPERWAIT1c; the co-worker design §5 point 4, §12 row 11): it stays `completed`, so no park row says it, and it holds its tree
+        // until the person looks. Keyed by the session, since the first refusal, its repository, its quest and the service's words as
+        // said. A record the page holds that has moved on (the move landed, a park's row now) is none; the look lets its file go next.
+        foreach (var back in facts.Backs)
+        {
+            var session = Text(back, "session");
+            var record = sessions.GetValueOrDefault(session ?? "");
+            if (record is not null && Text(record, "state") != "completed") continue;
+            var row = Row("helper-ended", session, Truthy(back, "at"), SessionScope(session));
+            row["where"] = Text(record, "repository") ?? "";
+            row["session"] = session;
+            row["quest"] = Text(back, "quest");
+            row["detail"] = Text(back, "words");
             rows.Add(row);
         }
 
