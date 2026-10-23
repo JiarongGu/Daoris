@@ -2734,6 +2734,109 @@ public sealed class AcpTests
         session.Release();
     }
 
+    // ——— MODELROLE1c: the protocol carrier (D205 §3.2), what an actor's entry asks set at the open, before the first prompt.
+
+    private static ActorAsked Entry(string? model, string? effort) => new(
+        "claude-code-acp",
+        model is null ? new("account-default", null, false) : new("entry", model, true),
+        effort is null ? new("account-default", null, false) : new("entry", effort, true));
+
+    /// <summary>An agent answering Claude's measured lists, holding what each set asked, and what the run's first prompt came after.</summary>
+    private static FakeAgent Carrying(Func<JsonElement, string?>? set = null)
+    {
+        var held = (Model: "default", Effort: "default");
+        return new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}""");
+                case "session/new": return Ok(frame, $$$"""{"sessionId":"s-1","configOptions":{{{ClaudeOffered}}},"modes":{"currentModeId":"auto","availableModes":[{"id":"auto"},{"id":"acceptEdits"}]}}""");
+                case "session/set_config_option":
+                    if (set?.Invoke(frame) is { } answered) return answered;
+                    var p = frame.GetProperty("params");
+                    if (p.GetProperty("configId").GetString() == "model") held.Model = p.GetProperty("value").GetString()!;
+                    else held.Effort = p.GetProperty("value").GetString()!;
+                    return Ok(frame, ClaudeAnswer("auto", held.Model, held.Effort));
+                case "session/prompt": return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+    }
+
+    private static List<string> Methods(FakeAgent agent) =>
+        [.. agent.Sent.Select((_, i) => agent.Frame(i)).Where(f => f.TryGetProperty("method", out _)).Select(f =>
+            f.GetProperty("method").GetString() is "session/set_config_option" ? $"set {f.GetProperty("params").GetProperty("configId").GetString()}={f.GetProperty("params").GetProperty("value").GetString()}"
+            : f.GetProperty("method").GetString()!)];
+
+    /// <summary>
+    /// 🔴 The model, then the effort, each by its category, after <c>session/new</c> and before the posture and the first prompt; the
+    /// posture set again after them, since a model change can move it (MODELROLE1a). Nothing differs from what was asked, so nothing is
+    /// told.
+    /// </summary>
+    [Fact]
+    public async Task An_entry_s_model_and_effort_are_set_before_the_first_prompt_model_first()
+    {
+        var agent = Carrying();
+        ActorAsked? told = null;
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, posture: "auto") { Carry = Entry("opus", "high"), Carried = carried => told = carried };
+
+        await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
+
+        Assert.Equal(["initialize", "session/new", "set model=opus", "set effort=high", "session/set_mode", "session/prompt"],
+            Methods(agent).TakeWhile(method => method != "session/close").ToList());
+        Assert.Null(told);
+    }
+
+    /// <summary>An entry at account default sets nothing, and the open is today's.</summary>
+    [Fact]
+    public async Task Account_default_sets_nothing()
+    {
+        var agent = Carrying();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }) { Carry = ActorAsked.Before("claude-code-acp") };
+
+        await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
+
+        Assert.DoesNotContain(Methods(agent), method => method.StartsWith("set ", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A model the agent refuses at the set, and an effort it offers no option for, are kept as asked and not carried, and told, so the
+    /// record says <i>asked opus · not carried</i>, never a choice taken; the run goes on before any prompt fails (D205 §3.3, §5).
+    /// </summary>
+    [Fact]
+    public async Task A_refused_model_is_kept_as_asked_and_not_carried()
+    {
+        var agent = Carrying(frame => frame.GetProperty("params").GetProperty("configId").GetString() == "model"
+            ? $$$$"""{"jsonrpc":"2.0","id":{{{{frame.GetProperty("id").GetRawText()}}}},"error":{"code":-32603,"message":"Internal error","data":{"details":"model not available"}}}"""
+            : null);
+        ActorAsked? told = null;
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }) { Carry = Entry("opus", null), Carried = carried => told = carried };
+
+        await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
+
+        Assert.NotNull(told);
+        Assert.Equal(new ActorValue("entry", "opus", false), told!.Model);
+        Assert.Contains("session/prompt", Methods(agent));
+    }
+
+    /// <summary>
+    /// A returned list naming another value the list offers is a refusal; an asked id answered with its alias is taken (round 3, Opus N5;
+    /// MODELROLE1a).
+    /// </summary>
+    [Theory]
+    [InlineData("sonnet", "haiku", false)]
+    [InlineData("claude-sonnet-5-5", "sonnet", true)]
+    public async Task A_returned_value_is_a_refusal_only_where_it_is_another_offered_value(string asked, string returned, bool carried)
+    {
+        var agent = Carrying(frame => Ok(frame, ClaudeAnswer("auto", returned, "default")));
+        ActorAsked? told = null;
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }) { Carry = Entry(asked, null), Carried = each => told = each };
+
+        await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
+
+        Assert.Equal(carried, told is null);
+    }
+
     // ——— ACPDATA1: a refusal's `data`, kept beside its message (D125 §1.2; limit-signals evidence §3, §4).
 
     /// <summary>An agent that refuses the prompt with this JSON-RPC error, and answers the rest.</summary>

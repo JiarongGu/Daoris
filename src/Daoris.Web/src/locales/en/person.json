@@ -96,6 +96,7 @@
   "person.route.HELP_PIN": "pin a conversation with Ask Daoris, or unpin it",
   "person.route.SETUP_PRESS": "set a repository up for agents",
   "person.route.SET_ACCESS": "change what agents may reach",
+  "person.route.SET_ACTOR": "change the agents and models an actor runs on",
   "person.route.SET_AGENT_SETTINGS": "change an agent's settings",
   "person.route.SET_CAP": "change how many sessions Daoris starts at once",
   "person.route.SET_COMMITS": "change how sessions write commits",

@@ -14,6 +14,14 @@ with the version and date at release.
   conversation says it goes on at your next word. A session *Update now* stopped is not counted as a failure, and it goes on in
   its own conversation. A conversation that never took a turn is left as it was, and `help resume` says it never took a turn.
   Closing Daoris yourself is unchanged.
+- Settings → AI features has a new *Actors* card: one row for each kind of work Daoris starts (Build, Intake, Second opinion,
+  Helper, Partner, Brainstorm, Ask Daoris, Chat), showing its order of agents and models (MODELROLE1c). Build can be edited
+  there. Its order holds up to four choices, each an agent with its model and effort in the agent's own words, or the account
+  default. A new quest starts on the first choice that can run. Where none can, the quest waits and says why for each choice.
+  On the protocol door the model and effort are set before the session's first turn. A model the agent does not take runs at
+  the account default, and *Details* says it was not carried. Changing Build's agent, here, with `daoris driver adapter` or
+  through Ask Daoris's proposal, no longer moves Chat or Brainstorm: they keep the agent they ran on. `daoris driver actor`
+  shows and sets each actor's order from a terminal. Until you set an order, every actor starts exactly as before.
 - An intake, a second opinion or a helper cut off by an account's limit now runs again by itself (LIMITRESUME1h). An ask whose
   intake hit a limit is answered after the account is ready again, rather than left unanswered, and raises no *Ended* notice. A
   second opinion is asked again after the reset, without waiting for your *Try again*. A helper that a session waits on is run again

@@ -462,3 +462,96 @@ describe('Ask Daoris’s configured access on Settings', () => {
     expect(screen.queryByText(i18n.t('help.grants.title'))).toBeNull();
   });
 });
+
+/**
+ * MODELROLE1c (D205 §7): the actors under AI features, each order folded to one line as `ACTORS` answers it, and Build's editor,
+ * whose Save sends the whole order over `SET_ACTOR`; a refusal is the driver's sentence under its Save, the editor still open.
+ */
+describe('Actors on AI features', () => {
+  const ROSTER = {
+    settingsPath: 'C:/somewhere/.daoris/harnesses.json',
+    adapter: 'claude-code',
+    harnesses: [
+      {
+        harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', wire: 'pipe',
+        present: true, version: 'claude 9.9.9', problem: null, machineDefault: null,
+        pinned: null, managed: null, pinnable: true, ownLogin: 'in', workspaceDefaults: [], profiles: [],
+      },
+    ],
+  };
+  const before = (id: string, agent?: string) => ({
+    id, state: agent || id === 'opinion' || id === 'partner' || id === 'helper' ? 'before' : 'off',
+    choices: agent ? [{ agent, from: 'before' }] : [],
+  });
+  const ACTORS = {
+    actors: [
+      before('build', 'claude-code'), before('intake'), before('opinion'), before('helper'), before('partner'),
+      before('brainstorm', 'claude-code'), before('ask-daoris'), before('chat', 'claude-code'),
+    ],
+  };
+  let refuse = false;
+
+  beforeEach(() => {
+    refuse = false;
+    i18n.changeLanguage('en');
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'SET_ACTOR' && refuse) throw new Error('build takes at most 4 choices, not 5.');
+      if (type === 'STATE' || type === 'SET_ACTOR') return DRIVER_STATE;
+      if (type === 'HARNESSES') return ROSTER;
+      if (type === 'ACTORS') return ACTORS;
+      if (type === 'STARTS') return { adapter: 'claude-code', starts: [] };
+      return undefined;
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('folds each actor to one line, as before where it reads today\'s settings', async () => {
+    show(<SettingsView notify={() => {}} section="ai" />);
+
+    expect(await screen.findByText('Actors')).toBeTruthy();
+    expect(screen.getAllByText('claude-code · account default · account default · as before').length).toBe(2);
+    expect(screen.getByText('all at once: claude-code · account default · account default · as before')).toBeTruthy();
+    expect(screen.getByText('models for the agents a rule names: as before')).toBeTruthy();
+    // Build's editor alone in this row (MODELROLE1c): the others' come with rows d and e.
+    expect(screen.getAllByRole('button', { name: 'Edit' })).toHaveLength(1);
+  });
+
+  it("saves Build's order over SET_ACTOR, one choice's model named", async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="ai" />);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }));
+    const editor = screen.getByRole('form', { name: 'Build: your order' });
+    expect(within(editor).getByText('Running work never moves to another choice.')).toBeTruthy();
+    await user.type(within(editor).getByRole('textbox', { name: "choice 1's model" }), 'opus');
+    await user.click(within(editor).getByRole('button', { name: 'Save' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_ACTOR', {
+      payload: { actor: 'build', choices: [{ agent: 'claude-code', model: 'opus', effort: null }] },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith("Build's order is saved; new work takes it."));
+    await waitFor(() => expect(screen.queryByRole('form', { name: 'Build: your order' })).toBeNull());
+  });
+
+  it('says a refusal under its Save and keeps the editor open as it was (R3)', async () => {
+    refuse = true;
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="ai" />);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }));
+    const editor = screen.getByRole('form', { name: 'Build: your order' });
+    await user.type(within(editor).getByRole('textbox', { name: "choice 1's model" }), 'opus');
+    await user.click(within(editor).getByRole('button', { name: 'Save' }));
+
+    expect(await within(editor).findByRole('alert')).toHaveTextContent('at most 4 choices');
+    expect(within(editor).getByRole('textbox', { name: "choice 1's model" })).toHaveValue('opus');
+    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('saved'));
+  });
+});

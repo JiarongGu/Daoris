@@ -96,12 +96,12 @@ public sealed class BrainstormLookTests : IDisposable
             ["leftOut"] = new JsonArray(),
         }.ToJsonString();
 
-    private (Daoris.Driver.Driver Driver, Service Service, Turns Turns) Start(int cap = 3)
+    private (Daoris.Driver.Driver Driver, Service Service, Turns Turns) Start(int cap = 3, DriverConfig? config = null)
     {
         var service = new Service();
         var turns = new Turns();
         var driver = new Daoris.Driver.Driver(
-            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(service)), DriverConfig.Empty with { Adapter = "stub", Cap = cap }, AdapterSet.Built(), _home)
+            new ServiceClient("http://127.0.0.1:9", null, new HttpClient(service)), config ?? DriverConfig.Empty with { Adapter = "stub", Cap = cap }, AdapterSet.Built(), _home)
         {
             BrainstormTurns = turns.RunAsync,
         };
@@ -272,6 +272,27 @@ public sealed class BrainstormLookTests : IDisposable
         Assert.Equal("answered", JsonNode.Parse(File.ReadAllText(Files.PathOf(id, "passes", "g2.json")))!["state"]!.GetValue<string>());
         Assert.False(Directory.Exists(Files.Rooms(id)));
         Assert.Empty(service.Asked);
+    }
+
+    /// <summary>
+    /// 🔴 MODELROLE1c (D205 §4.0, round 3's Codex 8): a brainstorm naming no agent, with no policy agents, runs Brainstorm's voice, and a
+    /// change of Build's agent never moves it: the write that changed <c>adapter</c> kept Brainstorm on the agent it ran.
+    /// </summary>
+    [Fact]
+    public async Task After_build_changes_agent_a_brainstorm_naming_none_keeps_its_voice()
+    {
+        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "stub", Cap = 3 }, "build", [new ActorChoice("acp-stub", "opus")]);
+        Assert.Equal("acp-stub", config.Adapter);
+        var id = Files.WriteRequest("How should the daily report stop dropping its last day?", null, [], At);
+        var (driver, _, turns) = Start(config: config);
+        await LookAsync(driver);
+        Files.WriteSent(id, Files.ReadState(id)!.Packet!, At);
+        turns.Answers["g1"] = Give(("Make the window inclusive of its last day", "yes", "low"));
+        turns.Answers["s1"] = Synthesize(("An inclusive window", 1, ["P1"]));
+
+        await LookAsync(driver);
+
+        Assert.Equal(["stub", "stub"], turns.Seen.Select(seen => seen.Turn.Agent));
     }
 
     /// <summary>

@@ -598,10 +598,13 @@
       "before": null,
       "exit": 0,
       "out": [
-        "daoris: sessions on this machine spawn via `claude-code`."
+        "daoris: sessions on this machine spawn via `claude-code`.",
+        "  build: 1 claude-code · account default · account default; it was 1 claude-code · account default · account default (as before).",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
       ],
       "err": [],
-      "after": "{}\n"
+      "after": "{\n  \"actors\": {\n    \"build\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ]\n  }\n}\n",
+      "changed": "MODELROLE1c (D205 §6.4): `adapter` sets Build's order, one choice at account default, through SET_ACTOR; it says the order it replaced, and Chat and Brainstorm, still as before, are written as the agent they ran, so a change of Build's agent never moves them."
     },
     {
       "name": "adapter, one with no toolchain",
@@ -613,10 +616,14 @@
       "exit": 0,
       "out": [
         "daoris: sessions on this machine spawn via `stub`.",
-        "  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does."
+        "  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.",
+        "  build: 1 stub · account default · account default; it was 1 claude-code · account default · account default (as before).",
+        "  Chat and Brainstorm keep `claude-code`, written for them: a change of Build's agent no longer moves them.",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
       ],
       "err": [],
-      "after": "{\n  \"adapter\": \"stub\"\n}\n"
+      "after": "{\n  \"adapter\": \"stub\",\n  \"actors\": {\n    \"build\": [\n      {\n        \"agent\": \"stub\"\n      }\n    ],\n    \"brainstorm\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ],\n    \"chat\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ]\n  }\n}\n",
+      "changed": "MODELROLE1c (D205 §6.4): `adapter` sets Build's order, one choice at account default, through SET_ACTOR; it says the order it replaced, and Chat and Brainstorm, still as before, are written as the agent they ran, so a change of Build's agent never moves them."
     },
     {
       "name": "adapter, no name",
@@ -2980,6 +2987,179 @@
       "out": [],
       "err": [
         "daoris: `many` is no rule of `set-aside`: it keeps 1 to 90 days, `whole`, `slim` or `default`."
+      ],
+      "after": null
+    },
+    {
+      "name": "actor, every actor as before",
+      "argv": [
+        "actor"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  build      1 claude-code · account default · account default (as before)",
+        "  intake     off",
+        "  opinion    as before: the agents a rule or an ask names, at account default",
+        "  helper     as before: every agent of another maker than the asker's, at account default",
+        "  partner    as before: the agents a rule or an ask names, at account default",
+        "  brainstorm 1 claude-code · account default · account default (as before)",
+        "  ask-daoris off",
+        "  chat       1 claude-code · account default · account default (as before)",
+        "  Each runs the first of its choices that can run, in order. Set one: `daoris driver actor <actor> \"<agent> [<model>|-] [<effort>|-]\" …`; `--clear` goes back to as before."
+      ],
+      "err": [],
+      "after": null
+    },
+    {
+      "name": "actor, one actor set",
+      "argv": [
+        "actor",
+        "build"
+      ],
+      "before": "{\n  \"adapter\": \"claude-code\",\n  \"actors\": {\n    \"build\": [\n      { \"agent\": \"claude-code\", \"model\": \"opus\", \"effort\": \"high\" },\n      { \"agent\": \"codex-acp\" }\n    ]\n  }\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: <config>",
+        "  build      1 claude-code · opus · high, 2 codex-acp · account default · account default",
+        "  Each runs the first of its choices that can run, in order. Set one: `daoris driver actor <actor> \"<agent> [<model>|-] [<effort>|-]\" …`; `--clear` goes back to as before."
+      ],
+      "err": [],
+      "after": "{\n  \"adapter\": \"claude-code\",\n  \"actors\": {\n    \"build\": [\n      { \"agent\": \"claude-code\", \"model\": \"opus\", \"effort\": \"high\" },\n      { \"agent\": \"codex-acp\" }\n    ]\n  }\n}\n"
+    },
+    {
+      "name": "actor, an order set",
+      "argv": [
+        "actor",
+        "build",
+        "claude-code opus high",
+        "codex-acp - -"
+      ],
+      "before": null,
+      "exit": 0,
+      "out": [
+        "daoris: build runs the first of its choices that can run, in order.",
+        "  build: 1 claude-code · opus · high, 2 codex-acp · account default · account default; it was 1 claude-code · account default · account default (as before).",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"actors\": {\n    \"build\": [\n      {\n        \"agent\": \"claude-code\",\n        \"model\": \"opus\",\n        \"effort\": \"high\"\n      },\n      {\n        \"agent\": \"codex-acp\"\n      }\n    ]\n  }\n}\n"
+    },
+    {
+      "name": "actor, an order whose first agent changes adapter",
+      "argv": [
+        "actor",
+        "build",
+        "codex-acp - -",
+        "claude-code sonnet"
+      ],
+      "before": "{\n  \"adapter\": \"claude-code\"\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: build runs the first of its choices that can run, in order.",
+        "  build: 1 codex-acp · account default · account default, 2 claude-code · sonnet · account default; it was 1 claude-code · account default · account default (as before).",
+        "  Chat and Brainstorm keep `claude-code`, written for them: a change of Build's agent no longer moves them.",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"adapter\": \"codex-acp\",\n  \"actors\": {\n    \"build\": [\n      {\n        \"agent\": \"codex-acp\"\n      },\n      {\n        \"agent\": \"claude-code\",\n        \"model\": \"sonnet\"\n      }\n    ],\n    \"brainstorm\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ],\n    \"chat\": [\n      {\n        \"agent\": \"claude-code\"\n      }\n    ]\n  }\n}\n"
+    },
+    {
+      "name": "actor, intake off",
+      "argv": [
+        "actor",
+        "intake",
+        "off"
+      ],
+      "before": "{\n  \"intakeAdapter\": \"claude-code\"\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: intake is off.",
+        "  intake: off; it was 1 claude-code · account default · account default (as before).",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"actors\": {\n    \"intake\": []\n  }\n}\n"
+    },
+    {
+      "name": "actor, back to as before",
+      "argv": [
+        "actor",
+        "build",
+        "--clear"
+      ],
+      "before": "{\n  \"adapter\": \"codex-acp\",\n  \"actors\": {\n    \"build\": [\n      { \"agent\": \"codex-acp\" }\n    ]\n  }\n}\n",
+      "exit": 0,
+      "out": [
+        "daoris: build is as before again: today's agent settings, at account default.",
+        "  build: as before; it was 1 codex-acp · account default · account default.",
+        "  Written to <config> — the driver re-reads it every tick, so nothing restarts."
+      ],
+      "err": [],
+      "after": "{\n  \"adapter\": \"codex-acp\"\n}\n"
+    },
+    {
+      "name": "actor, build cannot be off",
+      "argv": [
+        "actor",
+        "build",
+        "off"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `driver actor`: build cannot be off: only intake and ask-daoris have no agent; give it one to 4 choices."
+      ],
+      "after": null
+    },
+    {
+      "name": "actor, five choices",
+      "argv": [
+        "actor",
+        "build",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `driver actor`: build takes at most 4 choices, not 5."
+      ],
+      "after": null
+    },
+    {
+      "name": "actor, not an actor",
+      "argv": [
+        "actor",
+        "builder",
+        "claude-code"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `builder` is not an actor — one of build, intake, opinion, helper, partner, brainstorm, ask-daoris, chat."
+      ],
+      "after": null
+    },
+    {
+      "name": "actor, a choice of four words",
+      "argv": [
+        "actor",
+        "build",
+        "claude-code opus high extra"
+      ],
+      "before": null,
+      "exit": 2,
+      "out": [],
+      "err": [
+        "daoris: `claude-code opus high extra` is not a choice: an agent, then its model or `-`, then its effort or `-`, in one quoted word."
       ],
       "after": null
     }

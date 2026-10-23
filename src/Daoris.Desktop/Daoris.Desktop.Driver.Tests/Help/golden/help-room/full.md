@@ -219,7 +219,8 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine (Ask Daoris never proposes it: it changes nothing of yours or on the platform, and the room already says what was last answered) | (no screen yet) | `daoris-driver trees state <session|branch> [--repository <name>]` |
 | choose the agent that answers asks | Settings → AI features | `daoris driver intake <agent>|off` |
 | choose the agent Ask Daoris runs on | Settings → AI features | `daoris driver helper <agent>|off` |
-| choose the agent driven sessions start on | (no screen yet) | `daoris driver adapter <agent>` |
+| choose the agent driven sessions start on | Settings → AI features → Actors, Build | `daoris driver adapter <agent>` |
+| choose who does each kind of work, and with which model | Settings → AI features → Actors | `daoris driver actor <actor> …` |
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |
 | start a quest its failed sessions parked again | Quests → the quest's page → Try again | `daoris driver retry <quest>` |
 | start a quest your stop holds again: carry a taken one on in its tree, or plan an open one | Quests → the quest's page, whose *Sitting* names the session | `daoris driver retry <quest> --session <id>` |
@@ -281,6 +282,7 @@ design.
 - apply a workflow's version from a file, import a workflow whole, or declare a workspace's kind of task: `daoris driver workflow apply <id> <file>|--as-graph [--base <v>]`, `daoris driver workflow import <file>`, `daoris driver workflow kind <name> <kind> --label "…" [--paths <p,…>]`
 - choose which version of a tool Daoris runs: the one on the PATH, or one kept in the home (Settings → Tools): `daoris tool use <tool> system`, `daoris tool use <tool> managed [<version>]`
 - remove a location tool versions are offered from (Settings → Tools): `daoris tool locations [add|remove <address>]`
+- choose each actor's order of agents, models and efforts (Settings → AI features → Actors): `daoris driver actor [<actor>] ["<agent> [<model>|-] [<effort>|-]" …]`
 
 A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and
 `{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,

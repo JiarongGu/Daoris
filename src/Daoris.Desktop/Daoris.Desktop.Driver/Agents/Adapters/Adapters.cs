@@ -26,6 +26,9 @@ public sealed record SessionTarget(
 
     /// <summary>D205 §3.2: what this start's actor asked for, carried by every native prepare.</summary>
     public ActorAsked? Asked { get; init; }
+
+    /// <summary>D205 §4.0 (MODELROLE1c): the entry of its actor's order a new start took, its record's <c>choice</c>; null keeps the record's.</summary>
+    public string? Choice { get; init; }
     /// <summary>Addresses the quest carries (D65 §2), handed over as the asker gave them.</summary>
     public IReadOnlyList<string> Links { get; init; } = [];
 

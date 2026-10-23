@@ -259,7 +259,13 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                     return Refused($"there is no agent `{value}` on this machine — one of {Names(facts.Agents)}.", "", "");
                 }
 
-                planned = ($"Start this machine's driven sessions on `{value}`.", $"daoris driver adapter {value}", c => c with { Adapter = value });
+                // Build's one-choice order at account default, the write SET_ACTOR makes (MODELROLE1c, D205 §6.4): a Chat and a Brainstorm
+                // still as before are written as the agent they ran, so a change of Build's agent never moves them.
+                ActorChoices.With(config, "build", [new ActorChoice(value)], out var kept);
+                planned = (
+                    $"Start this machine's driven sessions on `{value}`."
+                    + (kept.Count > 0 ? $" {string.Join(" and ", kept.Select(actor => actor == "chat" ? "Chat" : "Brainstorm"))} keep `{config.Adapter}`, written for them." : ""),
+                    $"daoris driver adapter {value}", c => ActorChoices.With(c, "build", [new ActorChoice(value)]));
                 break;
             default:
                 return Refused($"`{proposal.Door} {value}` is not a change the driver makes.", "", "");

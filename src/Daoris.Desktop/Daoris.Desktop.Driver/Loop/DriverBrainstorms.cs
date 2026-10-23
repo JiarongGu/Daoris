@@ -340,12 +340,15 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>
     /// The generators a request runs, by pass, in its order (D176 point 9: a request's flags choose within the policy, never beyond
     /// it): the agents it names that the policy lists, or every one it names where the policy lists none; with none named, the
-    /// policy's, else this machine's agent. One the policy does not list keeps its pass, never run.
+    /// policy's, else Brainstorm's voices (D205 §4.4, MODELROLE1c: its actor's agents, <c>adapter</c>'s as before, at account default).
+    /// One the policy does not list keeps its pass, never run.
     /// </summary>
     private List<(string Pass, string Agent, bool Allowed)> Generators(BrainstormRequest request, BrainstormRule rule)
     {
         var named = request.Agents.Select(agent => agent.Trim()).Where(agent => agent.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        var agents = named.Count > 0 ? named : rule.Agents.Count > 0 ? [.. rule.Agents] : [_context.Config.Adapter];
+        var agents = named.Count > 0 ? named
+            : rule.Agents.Count > 0 ? [.. rule.Agents]
+            : ActorChoices.Effective("brainstorm", _context.Config).Select(voice => voice.Agent).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var plan = new List<(string Pass, string Agent, bool Allowed)>();
         var running = 0;
         foreach (var agent in agents)

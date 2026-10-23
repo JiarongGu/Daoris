@@ -322,6 +322,25 @@ public sealed class DriverRoutes(DriverContext context)
         return State(_loop);
     }
 
+    // Each actor's order, where it came from and its effective entries (MODELROLE1c, D205 §9.4): a read, the same `daoris driver actor`
+    // says. An actor whose stored entry does not read says why.
+    [DriverRoute("ACTORS")]
+    private object? Actors(IpcRequest request) => new { Actors = ActorView.All(DriverConfig.Load(_loop.ConfigPath)) };
+
+    // One actor's order set, made off, or back to as before (MODELROLE1c, D205 §8.2, §9.4): the person's press, the same `actors` key
+    // `daoris driver actor` edits: one truth, two doors (D50). Judged by `ActorChoices.Judge` before anything is written, and written
+    // through `adapter`, `intakeAdapter` and `helperAdapter`, Chat and Brainstorm made explicit where a change of `adapter` would move
+    // them (§4.0). `choices` absent or null is as before; an empty list is off. What an intake runs on may move, as SET_INTAKE's.
+    [DriverRoute("SET_ACTOR")]
+    [Publishes("SET_ACTOR", StateScopes.Driver | StateScopes.Harnesses)]
+    private object? SetActor(IpcRequest request)
+    {
+        var actor = Optional(request, "actor") ?? throw new DriverException("the press named no actor.");
+        var choices = ActorChoices.Payload(request.Payload);
+        _context.Change(config => ActorChoices.With(config, actor, choices));
+        return State(_loop);
+    }
+
     // Ask Daoris's access mode (HELPMODE1a2, D183 point 2): `restricted` or `full`, the person's press alone, over the same key
     // `daoris-driver help mode` sets: one truth, two doors (D50). Each start reads it, and a conversation running under another ends
     // at its turn's end, its next words resuming it under the mode chosen (ACCESSSWAP1): nothing it runs with changes while it runs.

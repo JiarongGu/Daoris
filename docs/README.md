@@ -207,6 +207,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-16-fabric-contract-audit.md` | Evidence: each collaboration concept's store, writer and fabric primitive; Claude Code's and Codex's native children measured against a server | D173's FABRIC-C0 note; FABRIC rows in TASKS |
 | `2026-10-23-model-effort-doors-evidence.md` | Evidence: what each door accepts for model and effort, its refusals and what a turn reports | D205's MODELROLE1a note; MODELROLE1's later rows |
 | `2026-10-24-modelrole1b-build.md` | MODELROLE1b's build checkpoints, readings, focused verification and installed-window expectations | D205 row b |
+| `2026-10-24-modelrole1c-build.md` | MODELROLE1c's parts, which are built and which remain, the focused verification and the readings | D205 row c |
 
 ## Records and generated indexes
 

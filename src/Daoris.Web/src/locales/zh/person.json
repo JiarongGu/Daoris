@@ -96,6 +96,7 @@
   "person.route.HELP_PIN": "置顶与问道衍的一段对话，或取消置顶",
   "person.route.SETUP_PRESS": "为智能体设置一个仓库",
   "person.route.SET_ACCESS": "更改智能体可以触及的范围",
+  "person.route.SET_ACTOR": "更改角色运行所用的智能体和模型",
   "person.route.SET_AGENT_SETTINGS": "更改一个智能体的设置",
   "person.route.SET_CAP": "更改 Daoris 同时启动的会话数",
   "person.route.SET_COMMITS": "更改会话写提交的方式",

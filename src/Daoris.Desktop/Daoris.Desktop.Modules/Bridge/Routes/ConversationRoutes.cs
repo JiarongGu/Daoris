@@ -43,9 +43,9 @@ public sealed class ConversationRoutes(DriverContext context)
         var chat = _loop.Chat ?? throw NotReady();
 
         var config = DriverConfig.Load(_loop.ConfigPath);
-        // A blank adapter is none named, and the machine's own is the answer. This route took a
-        // blank one as a name (REV3 CLEAN1); the page happens never to send one.
-        var adapter = Optional(request, "adapter") ?? config.Adapter;
+        // A blank adapter is none named, and Chat's is the answer (D205 §4.0, MODELROLE1c: its actor's first agent, `adapter` as
+        // before). This route took a blank one as a name (REV3 CLEAN1); the page happens never to send one.
+        var adapter = Optional(request, "adapter") ?? ActorChoices.FirstAgent("chat", config)!;
 
         // The end of a conversation is news the page wants without asking: the drawer is
         // probably open, and a record that moved silently reads as one that hung.
@@ -161,7 +161,7 @@ public sealed class ConversationRoutes(DriverContext context)
         var chat = _loop.Chat ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
         var started = await chat.StartFromAsync(
-                id, config.Adapter, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
+                id, ActorChoices.FirstAgent("chat", config)!, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
             .ConfigureAwait(false);
         _loop.Nudge();
         return new { started.SessionId, started.Sent, started.Why, started.Message };
