@@ -35,6 +35,9 @@ public sealed record HelperPassRun(string? Session, string Line)
 
     /// <summary>What the helper said last, bounded as a parked session's words are, where its turn completed: the fallback answer.</summary>
     public string? LastWords { get; init; }
+
+    /// <summary>An account's limit ended its turn (LIMITRESUME1h, D206 design §3.8): its record's <c>limited</c> flag.</summary>
+    public bool Limit { get; init; }
 }
 
 /// <summary>The helper pass's own words and bounds (MIXAGENT2a-ii), each said once for every door.</summary>

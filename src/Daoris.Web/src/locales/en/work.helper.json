@@ -20,6 +20,8 @@
   "work.helper.state.started": "{{agent}} is answering",
   "work.helper.state.answered": "{{agent}} answered: its answer is this session’s next turn",
   "work.helper.state.refused": "no helper answered: {{why}}",
+  "work.helper.state.cooling": "{{agent}} hit its account’s limit: it runs again on another account, or once that account is ready again at {{until}}",
+  "work.helper.state.coolingNoReset": "{{agent}} hit its account’s limit: it runs again once an account is ready",
   "work.helper.approve": "Let it ask",
   "work.helper.approved": "It has your yes: the driver starts a helper at its next look.",
   "work.helper.decline": "Not now",

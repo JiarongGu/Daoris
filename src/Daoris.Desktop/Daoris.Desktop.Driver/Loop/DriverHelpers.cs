@@ -89,6 +89,13 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                     case HelperStates.Started:
                         await SettlingAsync(ask, events, token => SettleStartedAsync(ask, state, files, token), ct).ConfigureAwait(false);
                         continue;
+                    case HelperStates.Cooling when !LeadWaits(snapshot, ask.Asker):
+                        // LIMITRESUME1h (D206 design §3.8): its asker no longer waits on it, so an answer after the reset would land in a turn
+                        // that no longer wants it. A cooling ask its asker still waits on is judged and run again below, as an approved one is.
+                        events.Add(_context.Said.Say(await RefuseAsync(
+                            ask, HelperWhy.Limited, state!.Agent, files, ct,
+                            note: HelperNotes.Limited(state.Agent ?? "another agent", state.Until, _context.Harnesses.Zone)).ConfigureAwait(false)));
+                        continue;
                 }
 
                 // PARALLEL1g (D181 point 3): under the watch the asker's record is read as the `helper` topic's judge beside the look, once
@@ -409,6 +416,15 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     }
 
     /// <summary>
+    /// Whether a driven session of this machine's waits on its own helpers now (LIMITRESUME1h, D206 design §3.8; HELPERWAIT1): it ended its
+    /// turn waiting on them, by the look's records, and its quest is still taken, as <see cref="BackToPersonAsync"/> reads it.
+    /// </summary>
+    private static bool LeadWaits(Snapshot snapshot, string asker) =>
+        snapshot.LastRun.Values.Any(record => string.Equals(record.Session, asker, StringComparison.Ordinal) && HelperWaits.Waits(record)
+                                              && snapshot.Quests.Any(quest => quest.Status == "Taken"
+                                                                              && string.Equals(quest.Id, record.Quest, StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>
     /// Whether the asker has no turn in flight (COAGENT1a, D199 point 5): its work in progress is captured only then. Whether it
     /// runs is this look's list of active sessions under the watch, where the asker's record is read once per ask, and its record
     /// otherwise; a running one is between turns where its newest turn has ended (<see cref="SessionEvents.TurnEnded"/>).
@@ -524,7 +540,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// </summary>
     private static bool Wait(HelperFiles files, HelperAsk ask, HelperState? state, string? code)
     {
-        if (state is { State: HelperStates.Approved }) return false;
+        // A cooling ask keeps its state and its reset while it waits for a slot or an account (LIMITRESUME1h), as an approved one keeps its yes.
+        if (state is { State: HelperStates.Approved or HelperStates.Cooling }) return false;
         if (state is { State: HelperStates.Waiting } kept && kept.Code == code) return false;
         files.WriteState(new HelperState(ask.Id, HelperStates.Waiting, code, null, DateTimeOffset.UtcNow));
         return true;
@@ -536,11 +553,16 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// nothing, so the refusal is news (NOTIFY2h2).
     /// </summary>
     /// <param name="detail">What refused it beyond its code, for the log's line alone (a capture's path): never the notes'.</param>
-    private Task<LookLine> RefuseAsync(HelperAsk ask, string code, string? agent, HelperFiles files, CancellationToken ct, string? detail = null)
+    /// <param name="note">The asker's line where its code says more than <see cref="HelperNotes.Refused"/> does (LIMITRESUME1h's reset).</param>
+    private Task<LookLine> RefuseAsync(
+        HelperAsk ask, string code, string? agent, HelperFiles files, CancellationToken ct, string? detail = null, Noted? note = null)
     {
         var kept = files.ReadState(ask.Id);
-        files.WriteState(new HelperState(ask.Id, HelperStates.Refused, code, kept?.Helper, DateTimeOffset.UtcNow) { Agent = agent ?? kept?.Agent });
-        var note = HelperNotes.Refused(code, agent ?? kept?.Agent);
+        files.WriteState(new HelperState(ask.Id, HelperStates.Refused, code, kept?.Helper, DateTimeOffset.UtcNow)
+        {
+            Agent = agent ?? kept?.Agent, Until = kept?.Until,
+        });
+        note ??= HelperNotes.Refused(code, agent ?? kept?.Agent);
         if (code != HelperWhy.AskerGone)
         {
             _context.Output?.Append(ask.Asker, $"— {note.Note}");
@@ -612,14 +634,17 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             return await RefuseAsync(ask, run.Code ?? HelperWhy.NotStarted, agent, files, ct).ConfigureAwait(false);
         }
 
-        return await SettleHelperAsync(ask, files, run.State, run.LastWords, ct).ConfigureAwait(false);
+        return await SettleHelperAsync(ask, files, run.State, run.LastWords, ct, run.Limit).ConfigureAwait(false);
     }
 
     /// <summary>
     /// What the helper said, settled once its turn ended: the answer <c>helper_answer</c> wrote, else its last words bounded as a
-    /// parked session's are (only where the turn completed), else <c>refused</c> with <c>no-answer</c>; then delivered.
+    /// parked session's are (only where the turn completed), else, where an account's limit ended it, <c>cooling</c> with that account's
+    /// reset (LIMITRESUME1h), else <c>refused</c> with <c>no-answer</c>; then delivered.
     /// </summary>
-    private async Task<LookLine> SettleHelperAsync(HelperAsk ask, HelperFiles files, string? ended, string? lastWords, CancellationToken ct)
+    /// <param name="limited">An account's limit ended the helper's turn: its record's flag.</param>
+    private async Task<LookLine> SettleHelperAsync(
+        HelperAsk ask, HelperFiles files, string? ended, string? lastWords, CancellationToken ct, bool limited = false)
     {
         var state = files.ReadState(ask.Id);
         if (state is not { State: HelperStates.Started, Helper: { } helper }) return Helper(LookClass.Progress, $"helper  ask `{ask.Id}` is not started: nothing to settle.");
@@ -631,6 +656,16 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         else if (ended == "completed" && lastWords is { Length: > 0 } words)
         {
             state = state with { State = HelperStates.Answered, At = DateTimeOffset.UtcNow, LastWords = true, Words = words };
+        }
+        else if (limited)
+        {
+            // LIMITRESUME1h (D206 design §3.8): never refused here, so a lead that waits on it keeps waiting (`HelperWaits.Open` counts it
+            // open). The next look runs it again while its asker waits, the walk passing the cooling account, and refuses it once not.
+            var until = AccountCooling.OfSession(_context.Home, helper)?.Until;
+            files.WriteState(state with { State = HelperStates.Cooling, At = DateTimeOffset.UtcNow, Until = until });
+            return Helper(LookClass.Progress,
+                $"helper  ask `{ask.Id}` is cooling: helper {helper}'s account hit its limit before it answered; it runs again while session "
+                + $"{ask.Asker} waits on it, on another account or once that account is ready{(until is { } ready ? $" ({Moments.Write(ready)})" : "")}.");
         }
         else
         {
@@ -655,7 +690,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var lastWords = record is { State: "completed" }
             ? SessionLastWords.ParkedWords(_context.Events, helper, DaorisHome.Entry(_context.Home, HomeEntry.Sessions, $"{helper}.log"))
             : null;
-        return await SettleHelperAsync(ask, files, record?.State, lastWords, ct).ConfigureAwait(false);
+        return await SettleHelperAsync(ask, files, record?.State, lastWords, ct, record?.Limit == true).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -964,7 +999,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                         sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
                     // Its last words stand as the answer only where its turn completed and it used no tool (design §3).
                     var lastWords = conclusion.State == "completed" ? SessionLastWords.ParkedWords(_context.Events, sessionId, transcript) : null;
-                    return Ended(conclusion.State, conclusion.Note, lastWords);
+                    return Ended(conclusion.State, conclusion.Note, lastWords) with { Limit = limited };
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

@@ -28,6 +28,22 @@ public static class HelperNotes
             ? Noted.Of(NoteCodes.HelperRefused, $"No helper answered this question: {HelperWhy.Said(why)}.", ("why", why))
             : Noted.Of(NoteCodes.HelperRefusedBy, $"Helper {agent} did not answer this question: {HelperWhy.Said(why)}.", ("agent", agent), ("why", why));
 
+    /// <summary>
+    /// On the asker: an account's limit cut its helper off and the session no longer waits on it, so it is not run again (LIMITRESUME1h,
+    /// D206 design §3.8), with when that account is ready again where a cool-off this machine holds says so. Never which account.
+    /// </summary>
+    public static Noted Limited(string agent, DateTimeOffset? until, TimeZoneInfo zone) =>
+        until is { } ready
+            ? Noted.Of(
+                NoteCodes.HelperLimited,
+                $"Helper {agent} hit its account's limit before it answered, and this session no longer waits on it, so it is not run again; "
+                + $"its account is ready again at {CoolingWords.When(ready, zone)}.",
+                ("agent", agent), ("until", NoteCodes.Moment(ready)))
+            : Noted.Of(
+                NoteCodes.HelperLimitedNoReset,
+                $"Helper {agent} hit its account's limit before it answered, and this session no longer waits on it, so it is not run again.",
+                ("agent", agent));
+
     /// <summary>On the helper: whose session it helps.</summary>
     public static Noted Helping(string asker) =>
         Noted.Of(NoteCodes.HelperHelping, $"This session is helping session {asker}: it reads, answers one question and changes nothing.", ("session", asker));

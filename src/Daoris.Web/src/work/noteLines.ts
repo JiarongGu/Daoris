@@ -290,6 +290,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'helper.refused': { values: ['why'], why: 'helper' },
   'helper.refused-by': { values: ['agent', 'why'], why: 'helper' },
   'helper.helping': { values: ['session'] },
+  // LIMITRESUME1h: a helper an account's limit cut off, which the session no longer waits on, with when its account is ready again.
+  'helper.limited': { values: ['agent', 'until'] },
+  'helper.limited-no-reset': { values: ['agent'] },
   // A partner's piece (COAGENT1b, D199 point 8): on the lead its course, on the partner whose session it works for. Notes, never words.
   'partner.asked': { values: ['agent'] },
   'partner.started': { values: ['agent', 'session'] },
@@ -494,6 +497,8 @@ export const HELPER_REASONS: Readonly<Record<string, { key: string; values: read
   'capture-moved': { key: 'note.helper.why.capture-moved', values: [] },
   // A hand whose outcome a restart lost (HELPERWAIT1), never made again by itself.
   'hand-uncertain': { key: 'note.helper.why.hand-uncertain', values: [] },
+  // LIMITRESUME1h: a limit cut it off and the session no longer waits on it (its line is `helper.limited`, which says when).
+  limited: { key: 'note.helper.why.limited', values: [] },
 };
 
 /**

@@ -584,6 +584,8 @@ const readHelpers = (answer: unknown): HelperAskRow[] => {
       code: word(row.code),
       helper: word(row.helper),
       startedOn: word(row.startedOn),
+      // LIMITRESUME1h: a cooling ask's account's reset.
+      until: word(row.until),
     }));
 };
 

@@ -20,6 +20,8 @@
   "work.helper.state.started": "{{agent}} 正在回答",
   "work.helper.state.answered": "{{agent}} 已回答：回答是这个会话的下一轮",
   "work.helper.state.refused": "没有助手回答：{{why}}",
+  "work.helper.state.cooling": "{{agent}} 用尽了账户额度：会换一个账户再次运行，或在该账户于 {{until}} 重新可用时运行",
+  "work.helper.state.coolingNoReset": "{{agent}} 用尽了账户额度：有账户可用时会再次运行",
   "work.helper.approve": "让它问",
   "work.helper.approved": "已同意：驱动下次查看时会启动助手。",
   "work.helper.decline": "暂不",

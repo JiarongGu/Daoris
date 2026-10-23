@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { moment } from '../../locales/format';
 import i18n from '../../locales/i18n';
 import { type HelperAskRow, HelperAsks, openAsks } from './HelperAsks';
 
@@ -158,6 +159,39 @@ describe('the helpers a session asked for', () => {
       render(<HelperAsks nameOf={nameOf} asks={asks} />);
       expect(lineOf('Waits on the turn.').getByText('智能体问的 · 等这个会话的这一轮结束，以便完整读到它的工作')).toBeInTheDocument();
       expect(lineOf('Not captured.').getByText(/它的工作中有指向工作树之外的链接，无法完整取下/)).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
+   * LIMITRESUME1h (D206 design §3.8): an ask whose helper an account's limit cut off stays on the page while its session waits on it,
+   * saying it runs again and when that account is ready; one its session no longer waits on is refused as limited, in both languages.
+   */
+  it('says a helper a limit cut off, still waited on or refused as limited, in both languages', async () => {
+    const until = '2026-10-12T16:00:00Z';
+    const asks = [
+      row({ id: 'a1', question: 'Cooling.', state: 'cooling', helper: 'h1', startedOn: 'codex-acp', until }),
+      row({ id: 'a2', question: 'Cooling, no reset.', state: 'cooling', helper: 'h2', startedOn: 'codex-acp' }),
+      row({ id: 'a3', question: 'Limited.', state: 'refused', code: 'limited', startedOn: 'codex-acp', until }),
+    ];
+    expect(openAsks(asks).map((each) => each.id)).toEqual(['a1', 'a2']);
+    render(<HelperAsks nameOf={nameOf} asks={asks} />);
+    const ready = moment(until, 'en');
+    expect(lineOf('Cooling.').getByText(
+      `The agent asked · Codex hit its account’s limit: it runs again on another account, or once that account is ready again at ${ready}`)).toBeInTheDocument();
+    expect(lineOf('Cooling, no reset.').getByText('The agent asked · Codex hit its account’s limit: it runs again once an account is ready'))
+      .toBeInTheDocument();
+    expect(lineOf('Limited.').getByText(
+      'The agent asked · no helper answered: its account hit its limit before it answered, and the session no longer waits on it')).toBeInTheDocument();
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    try {
+      render(<HelperAsks nameOf={nameOf} asks={asks} />);
+      expect(lineOf('Cooling.').getByText(
+        `智能体问的 · Codex 用尽了账户额度：会换一个账户再次运行，或在该账户于 ${moment(until, 'zh')} 重新可用时运行`)).toBeInTheDocument();
+      expect(lineOf('Limited.').getByText('智能体问的 · 没有助手回答：它的账户在回答之前用尽了额度，而该会话已不再等它')).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }
