@@ -12,8 +12,12 @@
   "work.park.meanwhile": "在此期间，它的委托 #{{quest}} 仍由它接下，你回答前它不运行任何东西。",
   "work.park.goesOn": "你的回答会作为你的话交给同一个会话，它会在驱动的下一轮带着它继续。",
   "work.park.order": "先答复它的放行：每项放行都会让它继续等它的问题，问题的回答随后带着这些答复送它继续。",
-  "work.park.placeholder": "你的话——随上面按下的回答一起发送，或单独作为你的回答",
+  "work.park.placeholder": "你的话——随上面选中的回答一起发送，或单独作为你的回答",
   "work.park.goAheadsFirst": "先答复上面的放行：之后这个回答会带着它们送它继续。",
   "work.park.changed": "这个页面读取后它的问题变了：阅读新的问题再回答。什么也没有发送。",
-  "work.park.chose": "已回答“{{label}}”：同一个会话会在驱动的下一轮带着它继续。"
+  "work.park.chose": "已回答“{{label}}”：同一个会话会在驱动的下一轮带着它继续。",
+  "work.park.placeholderChosen": "你的话，随“{{label}}”一起发送——也可以只发送它",
+  "work.park.ifChosen": "选这个的话：{{does}}",
+  "work.park.why": "理由：{{why}}",
+  "work.park.clear": "清除选择"
 }

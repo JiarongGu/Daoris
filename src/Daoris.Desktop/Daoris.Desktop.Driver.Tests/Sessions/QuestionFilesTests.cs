@@ -85,6 +85,7 @@ public sealed class QuestionFilesTests : IDisposable
             [.. expected["choices"]!.AsArray().Select(choice => (choice!["label"]!.GetValue<string>(), choice["does"]!.GetValue<string>()))],
             read.Choices.Select(choice => (choice.Label, choice.Does)));
         Assert.Equal(expected["recommend"]?.GetValue<int>(), read.Recommend);
+        Assert.Equal(expected["why"] is { } why ? Words(why) : null, read.Why);
         Assert.Equal(expected["by"]?.GetValue<string>(), read.By);
     }
 

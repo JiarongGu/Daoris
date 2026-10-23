@@ -1455,14 +1455,14 @@ describe('a park\'s question', () => {
     window.localStorage.removeItem('daoris.drafts');
   });
 
-  it('shows its question in the box with its answers as presses, and in the head\'s card in place of its last message', async () => {
+  it('shows its question in the box with its answers as rows to select, and in the head\'s card in place of its last message', async () => {
     show('g0ah3ad0');
 
     const ask = await screen.findByRole('region', { name: 'It asks you' });
     expect(await within(ask).findByText('Which quarterly target should the dashboard tile show?')).toBeInTheDocument();
-    expect(within(ask).getByRole('button', { name: '1,200' })).toBeEnabled();
-    expect(within(ask).getByText('recommended')).toBeInTheDocument();
-    expect(within(ask).getByText('Write 1,350.')).toBeInTheDocument();
+    expect(within(ask).getByRole('radio', { name: /^1,200 recommended/ })).not.toBeChecked();
+    expect(within(ask).queryByRole('button', { name: /1,200/ })).toBeNull();
+    expect(within(ask).getByText('If you choose this: Write 1,350.')).toBeInTheDocument();
     expect(within(ask).getByText('It says it needs your answer by: before Friday\'s release')).toBeInTheDocument();
     expect(within(ask).getByText(/^Meanwhile its quest #q4sk00 stays taken/)).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUESTION', { payload: { id: 'g0ah3ad0' } });
@@ -1470,55 +1470,136 @@ describe('a park\'s question', () => {
     const card = screen.getByText('This one is waiting on you').closest('section')!;
     expect(within(card).getByText('Which quarterly target should the dashboard tile show?')).toBeInTheDocument();
     expect(within(card).queryByRole('button', { name: '1,200' })).toBeNull();
+    expect(within(card).queryByRole('radio')).toBeNull();
     expect(within(card).queryByText(/I need go-aheads 1 and 2/)).toBeNull();
   });
 
-  it('sends a choice as its label with the box\'s words, naming the question, and the words leave the box', async () => {
+  /** Each SESSION_INPUT the page sent, by its payload. */
+  const inputs = () => invoke.mock.calls
+    .filter(([, type]) => type === 'SESSION_INPUT')
+    .map(([, , request]) => (request as { payload: unknown }).payload);
+
+  /** QUESTIONUI1a (the supervisor design §8.4): a row selected, then the box's own *Send* sends it with the box's words, once. */
+  it('sends the selected answer with the box\'s words through the box\'s one *Send*, once, naming the question', async () => {
+    let settle: (answer: unknown) => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUESTION') return { question: QUESTION };
+      if (type === 'SESSION_INPUT') return new Promise((resolve) => { settle = resolve; });
+      return DRIVER_STATE;
+    });
     const notify = vi.fn();
     show('g0ah3ad0', notify);
     const ask = await screen.findByRole('region', { name: 'It asks you' });
     await within(ask).findByText('Which quarterly target should the dashboard tile show?');
 
+    await userEvent.click(within(ask).getByRole('radio', { name: /^1,350/ }));
+    expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', 'your words, sent with “1,350” — or send it alone');
     await userEvent.type(screen.getByLabelText('Message'), 'but only on the dashboard');
-    await userEvent.click(within(ask).getByRole('button', { name: '1,350' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
-      payload: { id: 'g0ah3ad0', text: '1,350\n\nbut only on the dashboard', question: 'q5t10n00' },
-    }));
-    expect(notify).toHaveBeenCalledWith("Answered “1,350”: the same session goes on with it at the driver's next look.");
-    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
+    await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: '1,350\n\nbut only on the dashboard', question: 'q5t10n00' }]));
+    // While it is on its way nothing sends again, by the press or by Enter.
+    expect(screen.getByRole('button', { name: 'Carry on with this answer' })).toBeDisabled();
+    await userEvent.type(screen.getByLabelText('Message'), '{Enter}');
+    expect(inputs()).toHaveLength(1);
+
+    settle({ sent: true, reaches: 'resume' });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith("Answered “1,350”: the same session goes on with it at the driver's next look."));
+    expect(screen.getByLabelText('Message')).toHaveValue('');
+    await waitFor(() => expect(within(ask).getByRole('radio', { name: /^1,350/ })).not.toBeChecked());
+    expect(inputs()).toHaveLength(1);
   });
 
-  /** PARKANSWER1: the card answers the park too, its question's answers presses once its answer is opened, its own words going with them. */
-  it('answers the question from the head\'s card, a press sending its label with the card\'s words', async () => {
+  it('sends the selected answer alone on Enter in the empty box, and the words alone once the selection is cleared', async () => {
+    show('g0ah3ad0');
+    const ask = await screen.findByRole('region', { name: 'It asks you' });
+    await within(ask).findByText('Which quarterly target should the dashboard tile show?');
+
+    expect(screen.getByRole('button', { name: 'Carry on with this answer' })).toBeDisabled();
+    await userEvent.click(within(ask).getByRole('radio', { name: /^1,200/ }));
+    await userEvent.type(screen.getByLabelText('Message'), '{Enter}');
+    await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: '1,200', question: 'q5t10n00' }]));
+
+    await userEvent.click(within(ask).getByRole('radio', { name: /^1,350/ }));
+    await userEvent.click(within(ask).getByRole('button', { name: 'Clear choice' }));
+    await userEvent.type(screen.getByLabelText('Message'), 'Neither yet.{Enter}');
+    await waitFor(() => expect(inputs()).toEqual([
+      { id: 'g0ah3ad0', text: '1,200', question: 'q5t10n00' },
+      { id: 'g0ah3ad0', text: 'Neither yet.' },
+    ]));
+  });
+
+  /** PARKANSWER1, QUESTIONUI1a: the head's card selects a row once its answer is opened, and its one *Send* combines it with its words. */
+  it('answers the question from the head\'s card, its *Send* combining the selected answer with the card\'s words, once', async () => {
     show('g0ah3ad0');
     const card = (await screen.findByText('This one is waiting on you')).closest('section')!;
     await within(card).findByText('Which quarterly target should the dashboard tile show?');
 
     await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
+    await userEvent.click(within(card).getByRole('radio', { name: /^1,200/ }));
     await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'tile only');
-    await userEvent.click(within(card).getByRole('button', { name: '1,200' }));
+    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
-      payload: { id: 'g0ah3ad0', text: '1,200\n\ntile only', question: 'q5t10n00' },
-    }));
+    await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: '1,200\n\ntile only', question: 'q5t10n00' }]));
   });
 
-  it('says a question that changed under the page in the box, keeping the words, and sends nothing more', async () => {
-    answered = { sent: false, why: 'question-changed' };
+  it('sends the head card\'s words alone where no answer is selected, naming no question', async () => {
+    show('g0ah3ad0');
+    const card = (await screen.findByText('This one is waiting on you')).closest('section')!;
+    await within(card).findByText('Which quarterly target should the dashboard tile show?');
+
+    await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
+    await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'Hold the tile.');
+    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
+
+    await waitFor(() => expect(inputs()).toEqual([{ id: 'g0ah3ad0', text: 'Hold the tile.' }]));
+  });
+
+  it('says a refusal in the box, keeping the words and the selection, and a question that changed, keeping the words', async () => {
+    answered = { sent: false, why: 'not-listening' };
     const notify = vi.fn();
     show('g0ah3ad0', notify);
     const ask = await screen.findByRole('region', { name: 'It asks you' });
     await within(ask).findByText('Which quarterly target should the dashboard tile show?');
 
+    await userEvent.click(within(ask).getByRole('radio', { name: /^1,200/ }));
     await userEvent.type(screen.getByLabelText('Message'), 'and say so');
-    await userEvent.click(within(ask).getByRole('button', { name: '1,200' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    await screen.findByRole('alert');
+    expect(screen.getByLabelText('Message')).toHaveValue('and say so');
+    expect(within(ask).getByRole('radio', { name: /^1,200/ })).toBeChecked();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
+    answered = { sent: false, why: 'question-changed' };
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(
       'Its question changed since this page read it: read the new one and answer it. Nothing was sent.',
-    );
+    ));
     expect(screen.getByLabelText('Message')).toHaveValue('and say so');
     expect(notify).not.toHaveBeenCalled();
+    expect(inputs()).toHaveLength(2);
+  });
+
+  it('refuses in the head\'s card while the go-aheads are open, a selected answer and words alone alike, keeping both', async () => {
+    ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [ASK_WITH_GO_AHEADS.goAheads[0]] }];
+    show('g0ah3ad0');
+    const card = (await screen.findByText('This one is waiting on you')).closest('section')!;
+    await within(card).findByText('Which quarterly target should the dashboard tile show?');
+    await within(await screen.findByRole('region', { name: 'It asks you' })).findByText('write on production');
+
+    await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
+    const words = within(card).getByLabelText('your answer — the same session goes on with these words');
+    await userEvent.type(words, 'tile only');
+    await userEvent.click(within(card).getByRole('radio', { name: /^1,200/ }));
+    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
+    expect(await within(card).findByRole('status')).toHaveTextContent('Answer its go-aheads above first: then this answer sends it on with them.');
+    expect(words).toHaveValue('tile only');
+    expect(within(card).getByRole('radio', { name: /^1,200/ })).toBeChecked();
+
+    await userEvent.click(within(card).getByRole('button', { name: 'Clear choice' }));
+    await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
+    expect(within(card).getByRole('status')).toHaveTextContent('Answer its go-aheads above first: then this answer sends it on with them.');
+    expect(words).toHaveValue('tile only');
+    expect(inputs()).toEqual([]);
   });
 
   it('sends the free answer through the box as before, naming no question', async () => {
@@ -1536,10 +1617,10 @@ describe('a park\'s question', () => {
 
   /**
    * The owner's case, in neutral words: parked on a production go-ahead beside its question, with the person's words in the box. The
-   * go-ahead comes first and takes the words, keeping the park for the question (`goesOn: false`); the question's presses and the
-   * free answer wait for it, said so, and nothing goes to the park meanwhile.
+   * go-ahead comes first and takes the words, keeping the park for the question (`goesOn: false`); an answer selected and the free
+   * answer wait for it alike, through *Send* and Enter (Codex's round-2 finding 14), said so, and nothing goes to the park meanwhile.
    */
-  it('answers a production go-ahead first with the box\'s words, keeping the park for its question, whose presses wait for it', async () => {
+  it('answers a production go-ahead first with the box\'s words, keeping the park for its question, whose answers wait for it', async () => {
     ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [ASK_WITH_GO_AHEADS.goAheads[0]] }];
     const notify = vi.fn();
     show('g0ah3ad0', notify);
@@ -1548,11 +1629,22 @@ describe('a park\'s question', () => {
     expect(within(ask).getByText(
       'Answer its go-aheads first: each keeps it waiting for its question, whose answer then sends it on with them.',
     )).toBeInTheDocument();
-    expect(within(ask).getByRole('button', { name: '1,200' })).toBeDisabled();
 
-    await userEvent.type(screen.getByLabelText('Message'), 'only the menu entry, not the report');
+    // A selected answer, by *Send* and by Enter: refused, the selection kept.
+    await userEvent.click(within(ask).getByRole('radio', { name: /^1,200/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Answer its go-aheads above first: then this answer sends it on with them.');
+    await userEvent.type(screen.getByLabelText('Message'), '{Enter}');
+    expect(within(ask).getByRole('radio', { name: /^1,200/ })).toBeChecked();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+
+    // Words alone, by *Send* and by Enter: refused, the words kept.
+    await userEvent.click(within(ask).getByRole('button', { name: 'Clear choice' }));
+    await userEvent.type(screen.getByLabelText('Message'), 'only the menu entry, not the report');
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    await userEvent.type(screen.getByLabelText('Message'), '{Enter}');
+    expect(screen.getByRole('alert')).toHaveTextContent('Answer its go-aheads above first: then this answer sends it on with them.');
+    expect(screen.getByLabelText('Message')).toHaveValue('only the menu entry, not the report');
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
 
     await userEvent.click(within(within(ask).getByText('write on production').closest('li')!).getByRole('button', { name: 'Approve' }));

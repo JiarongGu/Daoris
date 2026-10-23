@@ -1150,7 +1150,7 @@ describe('a park\'s go-aheads', () => {
    */
   it('lists them with no press where the box below answers the park, and shows its question in place of its last message', () => {
     const question = {
-      id: 'q5t10n00', question: 'Which target should the tile show?', recommend: 1, by: null, at: '2026-09-21T11:20:00Z',
+      id: 'q5t10n00', question: 'Which target should the tile show?', recommend: 1, why: null, by: null, at: '2026-09-21T11:20:00Z',
       choices: [{ label: '1,200', does: 'Write 1,200.' }, { label: '1,350', does: 'Write 1,350.' }],
     };
     render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} parkBox question={question} />);
@@ -1161,8 +1161,9 @@ describe('a park\'s go-aheads', () => {
     expect(within(section).queryByLabelText('your words, if any')).toBeNull();
     expect(section).toHaveTextContent('Each is answered in the box below, with your words there.');
     expect(screen.getByText('Which target should the tile show?')).toBeInTheDocument();
-    expect(screen.getByText('Write 1,350.')).toBeInTheDocument();
+    expect(screen.getByText('If you choose this: Write 1,350.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '1,200' })).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
     expect(screen.queryByText('I need the two go-aheads to finish.')).toBeNull();
     // The card's own moves stay its: finish and decline.
     expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();

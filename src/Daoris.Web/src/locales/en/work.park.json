@@ -12,8 +12,12 @@
   "work.park.meanwhile": "Meanwhile its quest #{{quest}} stays taken, and it runs nothing until you answer.",
   "work.park.goesOn": "Your answer goes to the same session as your words, and it goes on with it at the driver's next look.",
   "work.park.order": "Answer its go-aheads first: each keeps it waiting for its question, whose answer then sends it on with them.",
-  "work.park.placeholder": "your words — with the answer you press above, or alone as your answer",
+  "work.park.placeholder": "your words — with the answer you choose above, or alone as your answer",
   "work.park.goAheadsFirst": "Answer its go-aheads above first: then this answer sends it on with them.",
   "work.park.changed": "Its question changed since this page read it: read the new one and answer it. Nothing was sent.",
-  "work.park.chose": "Answered “{{label}}”: the same session goes on with it at the driver's next look."
+  "work.park.chose": "Answered “{{label}}”: the same session goes on with it at the driver's next look.",
+  "work.park.placeholderChosen": "your words, sent with “{{label}}” — or send it alone",
+  "work.park.ifChosen": "If you choose this: {{does}}",
+  "work.park.why": "Why: {{why}}",
+  "work.park.clear": "Clear choice"
 }

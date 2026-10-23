@@ -106,29 +106,36 @@ describe('SessionBox', () => {
   });
 
   /**
-   * PARKVIEW1 (the park's ask design §3): what the park asks stands in its answer's box above the field, every answer a press, and
-   * the field says its words go with the answer pressed; the free answer is the box's own send, as before.
+   * PARKVIEW1, QUESTIONUI1a: what the park asks stands in its answer's box above the field, every answer a row to select, and the field
+   * says its words go with the answer chosen. With one selected the box's *Send* sends with the field empty too, and the field names it;
+   * the frame makes the message. The free answer is the box's own send, as before.
    */
-  it('draws what a park asks above the answer\'s field, its answers as presses', async () => {
+  it("draws what a park asks above the answer's field, a selected answer letting *Send* go with the field empty", async () => {
     const onSend = vi.fn();
-    const onChoice = vi.fn();
-    show({
-      box: { kind: 'say', mode: 'answer' }, onSend,
-      park: {
-        quest: 'q8f2e1', since: '2026-10-22T09:00:00Z', goAheads: [], onChoice,
-        question: { id: 'q1', question: 'Which port?', choices: [{ label: '8080', does: 'Use 8080.' }], recommend: null, by: null, at: '' },
-      },
-    });
+    const onSelect = vi.fn();
+    const park = {
+      quest: 'q8f2e1', since: '2026-10-22T09:00:00Z', goAheads: [], onSelect,
+      question: { id: 'q1', question: 'Which port?', choices: [{ label: '8080', does: 'Use 8080.' }], recommend: null, why: null, by: null, at: '' },
+    };
+    const { rerender } = show({ box: { kind: 'say', mode: 'answer' }, onSend, park });
 
     const ask = screen.getByRole('region', { name: 'It asks you' });
     const field = screen.getByLabelText('Message');
     expect(ask.compareDocumentPosition(field)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(field).toHaveAttribute('placeholder', 'your words — with the answer you press above, or alone as your answer');
-    await userEvent.click(screen.getByRole('button', { name: '8080' }));
-    expect(onChoice).toHaveBeenCalledWith('8080');
-    await userEvent.type(field, 'any free port');
+    expect(field).toHaveAttribute('placeholder', 'your words — with the answer you choose above, or alone as your answer');
+    expect(screen.getByRole('button', { name: 'Carry on with this answer' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('radio', { name: '8080 If you choose this: Use 8080.' }));
+    expect(onSelect).toHaveBeenCalledWith('8080');
+
+    rerender(<Tooltip.Provider><SessionBox box={{ kind: 'say', mode: 'answer' }} onSend={onSend} park={{ ...park, selected: '8080' }} /></Tooltip.Provider>);
+    expect(screen.getByLabelText('Message')).toHaveAttribute('placeholder', 'your words, sent with “8080” — or send it alone');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
-    expect(onSend).toHaveBeenCalledWith('any free port');
+    expect(onSend).toHaveBeenLastCalledWith('');
+
+    rerender(<Tooltip.Provider><SessionBox box={{ kind: 'say', mode: 'answer' }} onSend={onSend} park={park} /></Tooltip.Provider>);
+    await userEvent.type(screen.getByLabelText('Message'), 'any free port');
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+    expect(onSend).toHaveBeenLastCalledWith('any free port');
   });
 
   /** D137 §5.1: on a session that ended, the box says the same session goes on with the words; nothing to attach. */
