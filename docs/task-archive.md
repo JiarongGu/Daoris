@@ -20162,3 +20162,19 @@ test in `src/Daoris.Cli/tool-test/merge-branch.test.ts`.
 `test-recall.test.ts`, the merge tool's lists). The inventory matched three CI runs' trx files on their own trees. The recall
 proof ran structurally with no historical run: a lower bound of 0 of 145 (0 of the FIX-LOG's 67), all unsettled, so CISCOPE1e
 does not start on it. The historical runs and §2.2's replay are CISCOPE1c2 in the backlog. Detail: D207's CISCOPE1c note.
+
+## CISCOPE1d — the background run's schedule, known red and the stage's evidence (2026-10-24, D207)
+
+> **CISCOPE1d** (D207's row 4; `docs/2026-10-24-ci-scope-design.md` §8 row 4, with §5.1 to §5.3): the background run's
+> schedule and its safeguards: `local/ci-sweep.json`, the nightly run with its catch-up, the run-kind matrix, a sweep and a
+> night satisfied by a run that finished whatever its verdict, the overdue report; `local/ci-findings.json`, known red by test
+> and fingerprint, read by row 3's reader and matched by its signature, with its clearing and expiry; the stage's receipts and
+> history, the install staged only on a commit the background run passed.
+
+**Outcome** 2026-10-24, in part: `tools/ci-background.mjs` keeps the four records, and the merge tool runs by them. Each run
+has a kind on its record, status, receipt and verdicts. A due half runs whole. `--ci --night` and the watch's 03:00 night run
+every gate whole and catch up a missed night. Failures are filed as known red, cleared by lineage and expire 72 hours after
+the test's first sighting. `--passed` also needs a finished counted run's receipt on HEAD's tree, a clean checkout, no
+overdue sweep and no aged whole pass. The gate store keeps verdicts per gate. Each stage is recorded in its own history.
+Tool-tests: `ci-background.test.ts`, and the merge tool's and publisher's. The stage built from the gate tree alone and the
+attempt-level records are CISCOPE1d2 in the backlog. Detail: D207's CISCOPE1d note.

@@ -76,6 +76,7 @@ import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:p
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
 import { extractTarGz } from '../src/Daoris.Cli/src/platform/tarball.ts';
+import { appendStage, readStageHistory, stageRange, stageRangeLines } from './ci-background.mjs';
 import { copyTree, isMain, renameHeld, spawnGit, writeAtomic } from './fsx.mjs';
 import { running } from './processes.mjs';
 // The service hosts' one build recipe (CONNECTOR1): what `--service` lays under `app/`, built as the service publish builds it.
@@ -1020,6 +1021,33 @@ export function recordStaged(home, { commit, to, at }) {
   writeAtomic(file, `${JSON.stringify({ ...record, staged: { commit, to, at } }, null, 2)}\n`);
 }
 
+/**
+ * CISCOPE1d (design §5.3): what a stage of `commit` brings since the last one, as lines, read from the main checkout's
+ * `local/stage-history.jsonl`, which no CI run rewrites and no prune deletes (the gate tree's `staged` is no baseline). Where it
+ * cannot say (no history yet, a last staged commit that is not an ancestor of this one), the range is said to be unknown;
+ * nothing the stage decides depends on it.
+ */
+export function stageReport(home, commit) {
+  const range = stageRange(readStageHistory(home), commit, {
+    isAncestor: (a, b) => gitIn(home, ['merge-base', '--is-ancestor', a, b]).status === 0,
+    commits: (a, b) => (gitIn(home, ['log', '--format=%h %s', `${a}..${b}`]).stdout ?? '').split(/\r?\n/).filter(Boolean),
+  });
+  return stageRangeLines(range);
+}
+
+/** CISCOPE1d: a successful stage appended to the main checkout's history: the commit, its tree, where it went, when, forced or not. */
+export function recordStage(home, { commit, to, at, forced = false }) {
+  const tree = gitIn(home, ['rev-parse', '--verify', '--quiet', `${commit}^{tree}`]).stdout?.trim() || null;
+  appendStage(home, { commit, tree, to, at, forced });
+}
+
+/** The main checkout of the repository at `repoRoot`: the first worktree git lists, or `repoRoot` where git cannot say. */
+function mainCheckout(repoRoot) {
+  const listed = gitIn(repoRoot, ['worktree', 'list', '--porcelain']);
+  const first = listed.status === 0 ? listed.stdout.split(/\r?\n/).find((line) => line.startsWith('worktree ')) : null;
+  return first ? resolve(first.slice('worktree '.length).trim()) : repoRoot;
+}
+
 /** Whether this script published here before: the marker, with its header — a file with that name proves nothing. */
 export function isInstall(folder) {
   const marker = join(folder, MARKER);
@@ -1133,13 +1161,17 @@ async function main() {
         process.exitCode = 2;
         return;
       }
+      for (const line of stageReport(source.home, source.commit)) console.log(`desktop-publish: ${line}`);
       console.log(`desktop-publish: building ${sha} from the gate tree (${GATE_TREE}), not from this checkout; it holds the tree until its build ends.`);
       built = spawnSync(process.execPath, [join(source.tree, 'tools', 'desktop-publish.mjs'), ...childArgs(argv, to)], { cwd: source.tree, stdio: 'inherit' });
     } finally {
       source.release();
     }
     if (built.status === 0) {
-      recordStaged(source.home, { commit: source.commit, to, at: new Date().toISOString().replace(/\.\d+Z$/, 'Z') });
+      const at = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+      recordStaged(source.home, { commit: source.commit, to, at });
+      // CISCOPE1d: the stage's history, apart from the gate tree's record, which every run rewrites.
+      recordStage(source.home, { commit: source.commit, to, at, forced: flag('--force-ungated') });
       console.log('desktop-publish: the gate tree\'s stage is done; the next merge\'s prune removes the tree, or node tools/merge-branch.mjs --prune now.');
     }
     process.exit(built.status ?? 2);
@@ -1408,6 +1440,14 @@ async function main() {
     };
     writeManifest(root, identity);
     promoteStage(root, to);
+    // CISCOPE1d: a stage built here is recorded here; the gate tree's child is recorded by its parent, and a rehearsal's
+    // stage under `_fixtures` is no stage of the owner's install.
+    const home = mainCheckout(repoRoot);
+    const child = samePath(repoRoot, join(home, ...GATE_TREE.split('/')));
+    if (!child && !insideFixtures(to, repoRoot)) {
+      const commit = gitIn(repoRoot, ['rev-parse', 'HEAD']).stdout?.trim();
+      if (commit) recordStage(home, { commit, to, at: identity.at, forced: flag('--force-ungated') });
+    }
     console.log(`\ndesktop-publish: staged build ${identity.id} (${identity.version}${identity.commit ? `, ${identity.commit}` : ''}) `
       + `beside ${to}, in ${STAGED.join('/')}/`);
     console.log('  The desktop installs it once no driven session runs and no turn is in flight, and starts again (D139);');

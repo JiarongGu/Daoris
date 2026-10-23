@@ -16,7 +16,7 @@ import {
   DRIVER_EXE, DRIVER_HOME, DRIVER_LAUNCHERS, DRIVER_PROJECT, driverLaunchers, driverPublishCommand, layDriverLaunchers,
   APP_PROJECT, LAUNCHER_PROJECT, appPublishCommand, artifactsOf, launcherPublishCommand, publishStages,
   installedNote, isInstall, layCli, layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, servicePlan, stageRefusal,
-  stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged,
+  stagedManifest, ungatedRefusal, unstage, writeManifest, GATE_TREE_LOCK, GATE_TREE_RECORD, childArgs, gatedSource, recordStaged, recordStage, stageReport,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
 // The service hosts' one build recipe (CONNECTOR1), which the desktop's `--service` publishes by.
@@ -48,6 +48,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const folder = (): string => mkdtempSync(join(tmpdir(), 'daoris-publish-'));
 
 const markInstalled = (at: string) => writeFileSync(join(at, MARKER), `${MARKER_HEADER}\n\nours\n`);
+
+/** CISCOPE1d: a background run's receipt on `tree` in the main checkout's `local/ci-runs.jsonl`, which a stage needs beside its verdicts. */
+function receipt(home: string, tree: string): void {
+  const file = join(home, 'local', 'ci-runs.jsonl');
+  mkdirSync(dirname(file), { recursive: true });
+  const held = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  writeFileSync(file, `${held}${JSON.stringify({ commit: 'c', tree, kind: 'ci', started: '2026-10-24T10:00:00Z', ended: '2026-10-24T10:30:00Z', finished: true, state: 'green', gates: [] })}\n`);
+}
 
 test('five names make an install, the marker and the update’s folder among them', () => {
   assert.deepEqual([...OWN].sort(), ['Daoris.exe', 'INSTALLED.md', 'app', 'data', 'update']);
@@ -240,7 +248,12 @@ test('the stage refuses an ungated commit, as the merge tool\'s gates record rea
   let gated = ungatedRefusal(to, repo);
   assert.match(gated.refusal!, /first\s+none/);
   assert.match(gated.refusal!, /second\s+none/);
+  // CISCOPE1d: no background run finished on it, so the stage's own run is what it names.
+  assert.match(gated.refusal!, /not staged\s+no background run's receipt on its commit's tree/);
+  assert.match(gated.refusal!, /run the stage's own CI run on this checkout: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
+  receipt(repo, tree);
 
+  gated = ungatedRefusal(to, repo);
   assert.match(gated.refusal!, /run every gate on this checkout: node tools\/merge-branch\.mjs --full/);
 
   record(['first']);
@@ -312,6 +325,9 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
     schema: 1, verdicts: trees.map((at) => ({ gate: 'first', verdict: 'PASS', tree: at, at: '2026-10-18T11:00:00Z', commit: null, branch: null })),
   }, null, 2)}\n`);
   record([git('rev-parse', `${moved}^{tree}`)]);
+  // CISCOPE1d: a background run finished on each tree, as a stage needs.
+  receipt(repo, git('rev-parse', `${moved}^{tree}`));
+  receipt(repo, git('rev-parse', `${gated}^{tree}`));
   assert.equal(ungatedRefusal(to, repo).refusal, null, 'the main checkout passes on its own tree');
   const refused = ungatedRefusal(to, tree);
   assert.match(refused.refusal!, /the full set of gates has not passed this checkout/);
@@ -330,6 +346,58 @@ test('a stage from the gate tree builds the commit it holds, refuses another or 
   assert.deepEqual(noted.staged, { commit: gated, to, at: '2026-10-18T12:00:00Z' });
   assert.equal(noted.passed, true, 'the rest of the record is kept');
   git('worktree', 'remove', tree);
+  fx.cleanup();
+});
+
+// CISCOPE1d (design §5.3): the stage history is the stage's own record, apart from the gate tree's, which every run rewrites.
+test('the stage history survives a prune and another CI run, a later stage reads its baseline from it, and a first stage or a non-ancestor says the range is unknown', () => {
+  const fx = makeFixture('publish-stage-history');
+  const repo = join(fx.root, 'repo');
+  mkdirSync(repo, { recursive: true });
+  const env = {
+    ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_AUTHOR_NAME: 'Fixture', GIT_AUTHOR_EMAIL: 'fixture@example.test',
+    GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.test',
+  };
+  const git = (...args: string[]): string => {
+    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env });
+    assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
+    return result.stdout.trim();
+  };
+  git('init', '--quiet', '--template=', '-b', 'main');
+  assert.equal(git('rev-parse', '--show-toplevel').toLowerCase().replace(/\\/g, '/'), repo.toLowerCase().replace(/\\/g, '/'));
+  writeFileSync(join(repo, '.gitignore'), 'local/\n');
+  const commit = (text: string): string => {
+    writeFileSync(join(repo, 'code.txt'), `${text}\n`);
+    git('add', '-A');
+    git('commit', '--quiet', '-m', text);
+    return git('rev-parse', 'HEAD');
+  };
+  const first = commit('first');
+  const to = join(fx.root, 'install');
+
+  // A first stage: nothing to compare with.
+  assert.deepEqual(stageReport(repo, first), ['since the last stage: unknown (no stage is recorded yet)']);
+  recordStage(repo, { commit: first, to, at: '2026-10-24T10:00:00Z' });
+  const history = () => readFileSync(join(repo, 'local', 'stage-history.jsonl'), 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line));
+  assert.deepEqual(history(), [{ commit: first, tree: git('rev-parse', `${first}^{tree}`), to, at: '2026-10-24T10:00:00Z', forced: false }]);
+
+  // A prune removes the gate tree, and another CI run rewrites the tree's record: the history is neither.
+  git('worktree', 'add', '--quiet', '--detach', join(repo, 'local', 'gate-tree'), first);
+  recordStaged(repo, { commit: first, to, at: '2026-10-24T10:00:00Z' });
+  git('worktree', 'remove', join(repo, 'local', 'gate-tree'));
+  writeFileSync(join(repo, GATE_TREE_RECORD), `${JSON.stringify({ schema: 1, commit: 'later', started: '2026-10-24T11:00:00Z', staged: null })}\n`);
+  commit('second');
+  const third = commit('third');
+  const report = stageReport(repo, third);
+  assert.match(report[0]!, new RegExp(`since the last stage \\(${first.slice(0, 7)}, 2026-10-24 10:00 UTC\\): 2 commits`));
+  assert.deepEqual(report.slice(1).map((line: string) => line.replace(/^ {2}[0-9a-f]+ /, '')), ['third', 'second']);
+  recordStage(repo, { commit: third, to, at: '2026-10-24T12:00:00Z', forced: true });
+  assert.equal(history().at(-1).forced, true, 'a forced stage is recorded as forced');
+
+  // A last staged commit this one does not descend from: the range is unknown, and said.
+  git('checkout', '--quiet', '-b', 'other', first);
+  const other = commit('other');
+  assert.deepEqual(stageReport(repo, other), [`since the last stage: unknown (the last staged commit, ${third.slice(0, 7)}, is not an ancestor of this one)`]);
   fx.cleanup();
 });
 

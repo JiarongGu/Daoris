@@ -401,7 +401,7 @@
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  *   node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
  *   node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]
- *   node tools/merge-branch.mjs --ci [--stage] [<commit>] [--one-at-a-time]
+ *   node tools/merge-branch.mjs --ci [--stage | --night] [<commit>] [--one-at-a-time]
  *   node tools/merge-branch.mjs --ci --watch [--one-at-a-time]
  *   node tools/merge-branch.mjs --ci --stop
  *   node tools/merge-branch.mjs --passed
@@ -421,10 +421,16 @@ import {
 } from 'node:fs';
 import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPriority as osSetPriority, totalmem as osTotalmem } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
+import {
+  CI_SWEEP, NIGHT_HOUR, appendReceipt, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, nextRun, nightSatisfied, noteNight,
+  noteSweeps, overdueLines, passingTests, readFindings, readReceipts, readSweep, receiptFor, sweepSatisfied, sweepState, writeFindings,
+  writeSweep,
+} from './ci-background.mjs';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
+import { gateSignature, readTrx, signatureOf } from './test-failures.mjs';
 
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
@@ -676,7 +682,7 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
   '       node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]',
-  '       node tools/merge-branch.mjs --ci [--stage] [<commit>] [--one-at-a-time]',
+  '       node tools/merge-branch.mjs --ci [--stage | --night] [<commit>] [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --watch [--one-at-a-time]',
   '       node tools/merge-branch.mjs --ci --stop',
   '       node tools/merge-branch.mjs --passed',
@@ -702,7 +708,7 @@ export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
-    ci: false, ciCommit: null, watch: false, stop: false, ciStage: false,
+    ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
   };
   let batch = false;
   let rerun = false;
@@ -727,6 +733,10 @@ export function parseArgs(argv) {
     } else if (arg === '--stage') {
       // CIFAST1: the stage path, its commit right after it as after --ci.
       options.ciStage = true;
+      ciNext = !options.ciCommit;
+    } else if (arg === '--night') {
+      // CISCOPE1d: the nightly run by hand, every gate whole, its commit right after it as after --ci.
+      options.ciNight = true;
       ciNext = !options.ciCommit;
     } else if (arg === '--watch') options.watch = true;
     else if (arg === '--stop') options.stop = true;
@@ -766,11 +776,13 @@ export function parseArgs(argv) {
   if (options.watch && !options.ci) throw usageError("--watch is the CI's: --ci --watch gates main's tip as it moves");
   if (options.stop && !options.ci) throw usageError("--stop is the CI watch's: --ci --stop ends a watch running here");
   if (options.ciStage && !options.ci) throw usageError("--stage is the CI's: --ci --stage [<commit>] gates a commit to stage, its rehearsals with it");
+  if (options.ciNight && !options.ci) throw usageError("--night is the CI's: --ci --night [<commit>] runs every gate whole, as the nightly run does");
   if (options.ci) {
     // CI1: one run of the CI, its watch, or the stop asked of the watch; each a verb alone. CIFAST1: a run for a stage.
-    if (flags.some((flag) => !['--ci', '--stage', '--watch', '--stop', '--keep-going', '--one-at-a-time'].includes(flag))) {
-      throw usageError('--ci takes only a commit, --stage, --watch, --stop, --keep-going and --one-at-a-time');
+    if (flags.some((flag) => !['--ci', '--stage', '--night', '--watch', '--stop', '--keep-going', '--one-at-a-time'].includes(flag))) {
+      throw usageError('--ci takes only a commit, --stage, --night, --watch, --stop, --keep-going and --one-at-a-time');
     }
+    if (options.ciNight && (options.ciStage || options.watch)) throw usageError('--ci --night is a run of its own: not with --stage or --watch, whose watch runs the night itself');
     if (flags.filter((flag) => flag === '--stage').length > 1) throw usageError('--stage is given once');
     const words = Boolean(options.ciCommit) || options.branches.length > 0;
     if (options.stop && (options.watch || words || flags.length > 2)) throw usageError('--ci --stop takes nothing else: it asks the watch running here to end');
@@ -1006,7 +1018,7 @@ export const REACH = Object.freeze([
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
   {
     paths: [
-      'tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-failures.mjs', 'tools/test-recall.mjs',
+      'tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-recall.mjs',
       'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
     ],
     gates: ['tool-tests'],
@@ -1032,9 +1044,9 @@ export const REACH = Object.freeze([
   { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
-    paths: ['tools/desktop-publish.mjs'],
+    paths: ['tools/desktop-publish.mjs', 'tools/ci-background.mjs', 'tools/test-failures.mjs'],
     gates: ['tool-tests', 'deployment', 'rehearse-family'],
-    why: 'the publish the deployment rehearsal drives, and what it imports; the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
+    why: 'the publish the deployment rehearsal drives, and what it imports (the background run\'s records, CISCOPE1d, and the failure reader they import, CISCOPE1c, both of which the merge tool imports too); the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
   },
   {
     paths: ['tools/processes.mjs'],
@@ -1764,11 +1776,33 @@ export function readVerdicts(root) {
   }
 }
 
-/** Verdicts appended, newest last, the oldest dropped past `keep`: written beside, then renamed. */
-export function addVerdicts(root, entries, { keep = 400 } = {}) {
+/**
+ * CISCOPE1d (D207 point 5): how many verdicts the store keeps of each gate, apart for the scoped run's (`kind` `scoped`) and every
+ * other kind's, so a working day of scoped verdicts never evicts a night's or a stage's. Round 2 kept the newest 400 overall,
+ * which the busiest gates' verdicts alone would fill.
+ */
+export const VERDICTS_KEPT_PER_GATE = 40;
+
+/** The verdicts kept: of each gate, the newest `keep` of the scoped run's and the newest `keep` of the rest, in their order. */
+export function keptVerdicts(verdicts, keep = VERDICTS_KEPT_PER_GATE) {
+  const counts = new Map();
+  const kept = [];
+  for (let i = verdicts.length - 1; i >= 0; i -= 1) {
+    const entry = verdicts[i];
+    const key = `${entry.gate}\u0000${entry.kind === 'scoped' ? 'scoped' : 'background'}`;
+    const seen = counts.get(key) ?? 0;
+    if (seen >= keep) continue;
+    counts.set(key, seen + 1);
+    kept.push(entry);
+  }
+  return kept.reverse();
+}
+
+/** Verdicts appended, newest last, the oldest of a gate dropped past `keep` (`keptVerdicts`): written beside, then renamed. */
+export function addVerdicts(root, entries, { keep = VERDICTS_KEPT_PER_GATE } = {}) {
   const file = join(root, VERDICTS_FILE);
   holdingLock(file, () => {
-    const verdicts = [...readVerdicts(root).verdicts, ...entries].slice(-keep);
+    const verdicts = keptVerdicts([...readVerdicts(root).verdicts, ...entries], keep);
     const record = {
       schema: 1,
       _why: 'Written by tools/merge-branch.mjs (GATE3): each gate verdict with the tree it ran on. publish:desktop asks `merge-branch --passed`, which reads it.',
@@ -1922,6 +1956,17 @@ export function sweptOut(entry, now = Date.now(), bound = SWEEP_BOUND_MS) {
 }
 
 /**
+ * CISCOPE1d (design §5.3 point 2): whether a verdict is a Process half's whole pass (it kept no class) given more than `bound`
+ * before `now`. Before a stage such a pass counts only on the commit's own tree: on another, by standing alone, the census's
+ * reach is all that carries it, so it is held to the sweep's bound as a pass that kept classes is.
+ */
+export function agedWhole(entry, now = Date.now(), bound = SWEEP_BOUND_MS) {
+  if (!passing(entry?.verdict) || !entry?.classes || Number(entry.classes.kept) > 0) return false;
+  const at = Date.parse(entry.at ?? '');
+  return !Number.isFinite(at) || now - at > bound;
+}
+
+/**
  * Whether the full set passed `tree`: for each gate of the plan, its newest verdict that still stands for this tree
  * (`verdictStanding`: on it, or on one that differs from it only by the records and by paths that gate cannot reach)
  * must pass. `missing` names each gate that has no such passing verdict. Each gate carries the verdict that counts
@@ -1931,9 +1976,10 @@ export function sweptOut(entry, now = Date.now(), bound = SWEEP_BOUND_MS) {
  * PROCREACH1: a Process half's pass that kept classes by reach (`classes.kept`) stands only while its oldest kept class verdict
  * (`classes.sweep`) is within `bound` of `now` (`sweptOut`): past it, a sweep of the whole half is owed, so the stage refuses
  * the gate (`swept` says why) and the CI runs it. An older pass that still stands counts instead, and a whole half's of any
- * age stands as every verdict does.
+ * age stands as every verdict does. CISCOPE1d: with `ageWhole` (the stage's, never the CI's), a whole half's pass on another tree
+ * counts only within `bound` (`agedWhole`), said as `swept` with `aged`; one on this tree counts at any age.
  */
-export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching, now = Date.now(), bound = SWEEP_BOUND_MS }) {
+export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching, now = Date.now(), bound = SWEEP_BOUND_MS, ageWhole = false }) {
   const drifts = new Map();
   const driftOf = (from) => {
     if (!drifts.has(from)) drifts.set(from, drift(from));
@@ -1949,6 +1995,8 @@ export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching
       const how = verdictStanding({ from: entry.tree, tree, gate: name, drift: driftOf, isRecord, reaching });
       if (how.standing !== 'stale' && sweptOut(entry, now, bound)) {
         if (!swept || String(entry.at) >= String(swept.verdict.at)) swept = { verdict: entry, sweep: entry.classes.sweep, standing: how };
+      } else if (ageWhole && how.standing !== 'stale' && how.standing !== 'exact' && agedWhole(entry, now, bound)) {
+        if (!swept || String(entry.at) >= String(swept.verdict.at)) swept = { verdict: entry, sweep: entry.at, standing: how, aged: true };
       } else if (how.standing !== 'stale') {
         if (!newest || String(entry.at) >= String(newest.at)) [newest, standing] = [entry, how];
       } else if (!stale || String(entry.at) >= String(stale.verdict.at)) {
@@ -4050,6 +4098,7 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
+  kind = null,
 } = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
@@ -4076,7 +4125,8 @@ function runRecorded(root, gates, dir, {
         const classes = isProcessGate(gate)
           ? { classes: { ran: result.trx ? found.length : null, kept: gate.reach?.kept.length ?? 0, sweep: gate.reach?.kept.length ? gate.reach.sweep : started } }
           : {};
-        addVerdicts(home, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch, ...classes }]);
+        // CISCOPE1d: every verdict carries the kind of run that gave it (`ci-background.mjs`'s `RUN_KINDS`, or `merge`, `checkout`).
+        addVerdicts(home, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch, ...(kind ? { kind } : {}), ...classes }]);
         addClassVerdicts(home, gate.name, found.map((each) => ({ ...each, tree, at: started, commit })));
       }
       onResult(result);
@@ -4110,6 +4160,7 @@ async function gateMerge(root, state, plan) {
     keepGoing: state.keepGoing,
     oneAtATime: state.oneAtATime === true,
     branch,
+    kind: 'merge',
     onResult: (result) => {
       state.results[branch][result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
@@ -4206,6 +4257,7 @@ async function rerunGates(root, options) {
     keepGoing: state.keepGoing || options.keepGoing,
     oneAtATime: state.oneAtATime === true || options.oneAtATime,
     branch,
+    kind: 'merge',
     onResult: (result) => {
       results[result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
       writeState(root, state);
@@ -4256,7 +4308,7 @@ async function gateCheckout(root, options, watch = null, trees = null) {
   const unwatch = watch ? watch.poll(TIP_POLL_MS) : () => {};
   let results;
   try {
-    results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt, trees });
+    results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, halt, trees, kind: options.runKind ?? 'checkout' });
   } finally {
     unwatch();
   }
@@ -4283,7 +4335,9 @@ async function gateCheckout(root, options, watch = null, trees = null) {
     if (remedy) console.log(remedyLine(remedy));
     return 1;
   }
-  console.log(`merge-branch: the full set passed ${head.slice(0, 7)}: ${count(results.length, 'gate')}${flakeNote(flakes)}. A stage of this tree is allowed.`);
+  // CISCOPE1d: a run beside writes its receipt as it ends, so its stage needs nothing more; on the checkout, the stage's evidence is said.
+  const clause = options.runKind === 'full' ? ' A stage of this tree is allowed.' : stageClause(root, plan, judgeCheckout(root, plan));
+  console.log(`merge-branch: the full set passed ${head.slice(0, 7)}: ${count(results.length, 'gate')}${flakeNote(flakes)}.${clause}`);
   return 0;
 }
 
@@ -4300,6 +4354,10 @@ function stageLines(gates) {
       return `${head('stale')} ${verdict.verdict} ${when(verdict.at)}, ${why}`;
     }
     // PROCREACH1: a pass that kept classes on verdicts past the sweep's bound: the whole half is owed before a stage.
+    if (gate.swept?.aged) {
+      const { verdict } = gate.swept;
+      return `${head('aged')} ${verdict.verdict} ${when(verdict.at)}: a whole pass given on another tree, older than the ${hoursOf(SWEEP_BOUND_MS)} hours it stands by reach before a stage (CISCOPE1d); the whole half runs again`;
+    }
     if (gate.swept) {
       const { verdict, sweep } = gate.swept;
       return `${head('swept')} ${verdict.verdict} ${when(verdict.at)}: it kept ${classCount(verdict.classes.kept)} on verdicts from ${when(sweep)}, older than the ${hoursOf(SWEEP_BOUND_MS)} hours a sweep stands; the whole half runs again`;
@@ -4323,20 +4381,82 @@ function passedOnly(root) {
   const judged = judgeCheckout(root, plan);
   if (!judged) throw new Refusal("git could not write the checkout's tree, so whether the full set passed it cannot be told");
   const head = git(root, ['rev-parse', '--short', 'HEAD'], { allowFail: true }).out.trim() || 'no commit';
+  const evidence = stageEvidence(root, judged.tree, plan);
+  const passed = judged.passed && evidence.ok;
   console.log(`merge-branch: the full set has ${judged.passed ? '' : 'NOT '}passed this checkout (tree ${judged.tree.slice(0, 7)}, HEAD ${head}): `
-    + `${plan.length - judged.missing.length} of ${plan.length} gates.`);
+    + `${plan.length - judged.missing.length} of ${plan.length} gates${judged.passed && !evidence.ok ? ", but the stage's evidence is missing (CISCOPE1d)" : ''}.`);
   for (const line of stageLines(judged.gates)) console.log(line);
-  // GATE6b: the smallest command that would pass it, which the publish's refusal names in turn.
-  const remedy = stageRemedy(judged.gates);
+  for (const line of evidence.lines) console.log(line);
+  // GATE6b: the smallest command that would pass it, which the publish's refusal names in turn. CISCOPE1d: a stage with no
+  // receipt, or a sweep overdue, needs the stage's own run in the gate tree, which also runs whatever the verdicts lack.
+  const remedy = evidence.remedy ?? stageRemedy(judged.gates);
   if (remedy) console.log(remedyLine(remedy));
-  return judged.passed ? 0 : 1;
+  return passed ? 0 : 1;
 }
 
 /** The stage's judgement of the checkout as it stands, with its tree; null when git cannot write the tree. */
 function judgeCheckout(root, plan) {
   const tree = contentTree(root);
   if (!tree) return null;
-  return { tree, ...stageJudgement({ ...standingFor(root, tree), plan: plan.map((gate) => gate.name), verdicts: readVerdicts(verdictsHome(root)).verdicts }) };
+  return { tree, ...stageJudgement({ ...standingFor(root, tree), plan: plan.map((gate) => gate.name), verdicts: readVerdicts(verdictsHome(root)).verdicts, ageWhole: true }) };
+}
+
+/**
+ * CISCOPE1d: the due record as the CI and the stage read it, a half it has not seen yet given the time of its newest whole run
+ * in the gate store (a Process verdict that kept no class and read its classes), so a machine's first run under the record does
+ * not take every half as never swept.
+ */
+function sweepRecord(home, plan, verdicts = readVerdicts(home).verdicts) {
+  const record = readSweep(home);
+  const seeded = [];
+  for (const gate of plan.filter(isProcessGate)) {
+    if (record.halves[gate.name]) continue;
+    const whole = verdicts.filter((each) => each.gate === gate.name && each.classes && !(Number(each.classes.kept) > 0) && Number(each.classes.ran) > 0)
+      .sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
+    if (whole) seeded.push({ gate: gate.name, at: whole.at, commit: whole.commit ?? null, kind: whole.kind ?? null });
+  }
+  return noteSweeps(record, seeded);
+}
+
+/**
+ * CISCOPE1d (design §5.3 points 1 and 2): what a stage needs beside its gates' verdicts. The checkout's content is its commit's
+ * tree (a dirty checkout is refused, whatever its verdicts); a background run finished on that tree and its receipt counts
+ * (`receiptFor`: ordinary, nightly, a plain `--ci`, `--ci --stage` or `--full --beside`, never a sweep-only run); and no
+ * Process half's sweep is overdue in `local/ci-sweep.json`. There is no waiver: a known-red test fails its gate here as any
+ * failure does. `remedy` names the stage's own run, `--ci --stage <HEAD>`, where any is missing.
+ */
+export function stageEvidence(root, tree, plan, now = Date.now()) {
+  const home = verdictsHome(root);
+  const commit = headCommit(root);
+  const headTree = commit ? git(root, ['rev-parse', '--verify', '--quiet', `${commit}^{tree}`], { allowFail: true }).out.trim() || null : null;
+  const lines = [];
+  const refusals = [];
+  if (!headTree) refusals.push('this checkout has no commit, so no background run can have passed it');
+  else if (tree !== headTree) {
+    refusals.push(`its content (tree ${tree.slice(0, 7)}) is not its commit's (tree ${headTree.slice(0, 7)}): a stage builds a commit's tree, never uncommitted changes`);
+  }
+  if (headTree) {
+    const { receipt, why } = receiptFor(readReceipts(home), headTree);
+    if (receipt) lines.push(`  ${pad('receipt', 16)} a ${receipt.kind} run finished on this commit's tree (${String(receipt.commit).slice(0, 7)}, ${when(receipt.ended)})`);
+    else refusals.push(`no background run's receipt on its commit's tree (${commit.slice(0, 7)}): ${why}`);
+  }
+  for (const each of sweepState(sweepRecord(home, plan), plan.filter(isProcessGate).map((gate) => gate.name), now, SWEEP_BOUND_MS)) {
+    if (each.overdue) refusals.push(each.last ? `${each.gate}'s sweep is overdue (${CI_SWEEP}): last run whole ${when(each.last)}` : `${each.gate} has no sweep recorded (${CI_SWEEP})`);
+  }
+  for (const refusal of refusals) lines.push(`  ${pad('not staged', 16)} ${refusal}`);
+  return {
+    ok: refusals.length === 0,
+    lines,
+    refusals,
+    remedy: refusals.length && commit ? { what: "the stage's own CI run", command: stageCommand(commit) } : null,
+  };
+}
+
+/** A run's closing clause on the stage: allowed, or what it still needs, from `stageEvidence`. */
+function stageClause(root, plan, judged) {
+  if (!judged?.passed) return '';
+  const evidence = stageEvidence(root, judged.tree, plan);
+  return evidence.ok ? ' A stage of this tree is allowed.' : ` A stage still needs its evidence: ${evidence.refusals[0]}; ${evidence.remedy?.command ?? 'commit it first'}.`;
 }
 
 /** Whether the full set passed the checkout, as a clause: what `--passed` and a re-run on the checkout say. */
@@ -4398,7 +4518,7 @@ async function rerunCheckout(root, options) {
   }
   // The rest as the stage reads them: each verdict that stands, a failure kept, and a gate with none.
   for (const line of stageLines(judged.gates.filter((gate) => !planned.run.includes(gate.name)))) console.log(line);
-  const ran = await runRecorded(root, gates, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime });
+  const ran = await runRecorded(root, gates, dir, { keepGoing: options.keepGoing, oneAtATime: options.oneAtATime, kind: 'checkout' });
 
   const failedRan = ran.filter((result) => result.verdict === 'FAIL');
   const failed = failedRan.map(gateNamed);
@@ -4415,8 +4535,7 @@ async function rerunCheckout(root, options) {
     if (memory) console.log(memory);
   } else {
     const ranNote = ran.length ? `${count(ran.length, 'gate')} run and passed on ${sha}${flakeNote(flakes)}` : `no gate run on ${sha}`;
-    const passed = after?.passed === true;
-    console.log(`merge-branch: ${ranNote}; ${stage}.${passed ? ' A stage of this tree is allowed.' : ''}`);
+    console.log(`merge-branch: ${ranNote}; ${stage}.${stageClause(root, plan, after)}`);
   }
   if (remedy) console.log(remedyLine(remedy));
   return !failed.length && !notRun && after?.passed === true ? 0 : 1;
@@ -5040,7 +5159,7 @@ async function gateBeside(root, options) {
       onMove: (moved) => trees.end(`main moved from ${moved.from.slice(0, 7)} to ${moved.to.slice(0, 7)}`),
     });
     try {
-      code = await gateCheckout(tree, options, watch, trees);
+      code = await gateCheckout(tree, { ...options, runKind: 'full' }, watch, trees);
     } finally {
       // Pass, fail or a thrown error: the tree may be pruned next, and its logs go with it.
       try {
@@ -5050,7 +5169,11 @@ async function gateBeside(root, options) {
       }
     }
     const outcome = besideOutcome(code, watch.superseded);
-    writeGateRecord(home, { commit, started, ended: nowIso(), passed: outcome.passed, ...(outcome.superseded ? { superseded: outcome.superseded } : {}), staged: null });
+    const ended = nowIso();
+    writeGateRecord(home, { commit, started, ended, passed: outcome.passed, ...(outcome.superseded ? { superseded: outcome.superseded } : {}), staged: null });
+    // CISCOPE1d: its receipt, a `full` run, finished unless a newer tip or a stop ended it.
+    const finished = !watch.superseded && !trees.ended;
+    appendReceipt(home, { commit, tree: contentTree(tree), kind: 'full', started, ended, finished, state: finished ? (code === 0 ? 'green' : 'failed') : 'stopped', gates: [] });
     if (watch.superseded) {
       console.log(`  Run it again on the new tip: node tools/merge-branch.mjs --full --beside; the gate tree stays at ${sha} until then (${GATE_TREE}).`);
     } else if (code === 0) {
@@ -5116,8 +5239,9 @@ export const CI_IDLE = Object.freeze({ busy: 0.25, freeGb: 16, width: 5, sampleM
  * checked too. Every other gate is kept, with the verdict that stands and how it stands. CIFAST1: a gate `owe` names that
  * lacks a pass is `owed` for a stage rather than run (a plain run hands it `STAGE_REHEARSALS`' gates, the stage's path none).
  */
-export function ciPlan({ plan, verdicts, tree, drift, reaching, owe = [], now = Date.now(), bound = SWEEP_BOUND_MS }) {
-  const judged = stageJudgement({ plan, verdicts, tree, drift, reaching, isRecord: () => false, now, bound });
+export function ciPlan({ plan, verdicts, tree, drift, reaching, owe = [], now = Date.now(), bound = SWEEP_BOUND_MS, ageWhole = false }) {
+  // CISCOPE1d: the stage's path judges a whole pass's age as the stage will (`agedWhole`), so the run it names runs that half.
+  const judged = stageJudgement({ plan, verdicts, tree, drift, reaching, isRecord: () => false, now, bound, ageWhole });
   const kept = judged.gates.filter((gate) => !judged.missing.includes(gate.name)).map((gate) => ({ name: gate.name, verdict: gate.verdict, standing: gate.standing }));
   // CIFAST1: of the gates `owe` names (a plain run's stage rehearsals), one without a pass that stands is owed, not run.
   const owed = judged.missing.filter((name) => owe.includes(name));
@@ -5253,7 +5377,7 @@ export function lastVerdict(gate, verdicts, { tree, drift, isRecord, reaching })
  * be read, or a half whose command names no settings, runs whole and says why. CISCOPE1b: each half is judged with its newest
  * gate verdict in `verdicts` (the gate store's) and how that stands, and a half its plan composes (`composed`) is not run.
  */
-function reachedHalves({ tree, treeId, gates, standing, verdicts = [], home, dir, now = Date.now() }) {
+function reachedHalves({ tree, treeId, gates, standing, verdicts = [], home, dir, now = Date.now(), whole = new Map(), owedAnyway = new Set() }) {
   const plans = new Map();
   let read = null;
   const store = readClassVerdicts(home).gates;
@@ -5277,6 +5401,9 @@ function reachedHalves({ tree, treeId, gates, standing, verdicts = [], home, dir
         last: lastVerdict(gate.name, verdicts, { tree: treeId, ...standing }),
         now,
       });
+      // CISCOPE1d: a half whose sweep is due, and every half of a nightly run, runs whole whatever its reach; a half the run
+      // owed anyway, whose own plan runs it whole, keeps its reason.
+      if (whole.has(gate.name) && (!plan.whole || !owedAnyway.has(gate.name))) plan = { whole: whole.get(gate.name), run: found.classes.map((each) => ({ name: each.full, why: 'the whole half runs' })), kept: [], sweep: null };
     } catch (error) {
       plan = { whole: `its classes could not be read (${error.message}), so it runs whole`, run: [], kept: [], sweep: null };
     }
@@ -5370,8 +5497,9 @@ export function ciWidth({ busy, physical, commit }) {
  * CIFAST1: whether it is the stage's path (`stage`), the gates it owes a stage (`owed`), and each such gate `owed`, neither
  * failed nor passed, its note naming the run that pays it.
  */
-export function ciStatus({ commit, tree, plan, chosen, since, light, pid, at, logOf, stage = false }) {
+export function ciStatus({ commit, tree, plan, chosen, since, light, pid, at, logOf, stage = false, kind = stage ? 'stage' : 'ci' }) {
   const owed = chosen.owed ?? [];
+  const skipped = chosen.skipped ?? [];
   return {
     schema: 1,
     _why: 'Written by tools/merge-branch.mjs --ci (CI1): one CI run of this commit in the gate tree, each gate of the plan as it stands. The parent reads it.',
@@ -5385,6 +5513,7 @@ export function ciStatus({ commit, tree, plan, chosen, since, light, pid, at, lo
     since,
     light,
     stage,
+    kind,
     owed,
     gates: plan.map((gate) => {
       const base = { name: gate.name, kind: gate.kind, lane: isProcessLane(gate) ? 'process' : 'light' };
@@ -5392,6 +5521,9 @@ export function ciStatus({ commit, tree, plan, chosen, since, light, pid, at, lo
         return { ...base, state: 'owed', verdict: null, at: null, ms: null, log: null, note: `owed for a stage: ${stageCommand(commit)} runs it`, kept: null };
       }
       const kept = chosen.kept.find((entry) => entry.name === gate.name);
+      if ((!kept || !kept.verdict) && skipped.includes(gate.name)) {
+        return { ...base, state: 'not run', verdict: null, at: null, ms: null, log: null, note: 'a sweep alone runs the due half and nothing else (CISCOPE1d)', kept: null };
+      }
       if (!kept || chosen.run.includes(gate.name)) return { ...base, state: 'waiting', verdict: null, at: null, ms: null, log: null, note: null, kept: null };
       const { verdict, standing } = kept;
       return {
@@ -5442,6 +5574,90 @@ function readTip(home) {
 const fromHome = (home, file) => relative(home, file).split('\\').join('/');
 
 /**
+ * CISCOPE1d: the nightly run's hour, local time (`NIGHT_HOUR`), or null for no night: `MERGE_BRANCH_CI_NIGHT_HOUR` sets it,
+ * `off` for the tool's own tests, whose watches would otherwise start with a night.
+ */
+export function nightHour(env = process.env) {
+  const said = env.MERGE_BRANCH_CI_NIGHT_HOUR;
+  if (said === 'off') return null;
+  const hour = Number(said);
+  return said !== undefined && said !== '' && Number.isInteger(hour) && hour >= 0 && hour < 24 ? hour : NIGHT_HOUR;
+}
+
+/** CISCOPE1d: the overdue report, the night left out where none is run (`hour` null). */
+const overdueSaid = (record, halves, hour) => overdueLines(hour === null ? { ...record, night: { last: nowIso() } } : record, halves, Date.now(), { hour: hour ?? NIGHT_HOUR });
+
+/**
+ * CISCOPE1d (design §5.1, §5.2): what a CI run's end writes beside its verdicts. The due record: each Process half it ran whole
+ * and gave every class a verdict (`sweepSatisfied`) is swept, and a nightly run that finished satisfies the night. The findings:
+ * each failure it found is filed as known red (a Process half's by test from its trx, with row 3's fingerprint and signature, the
+ * source read from the run's own tree; any other gate's by its step, `gateSignature`), a death of memory never; each pass clears
+ * the known red of its test (a trx's passing tests) or its gate on a commit on main's first-parent line from where it was last
+ * seen. Answers what the run says of them, the overdue report and the known red the watch says.
+ */
+function noteBackground({ home, tree, plan, commit, kind, state, started, ended, results }) {
+  const halves = plan.filter(isProcessGate).map((gate) => gate.name);
+  let sweep = sweepRecord(home, plan);
+  const swept = results.filter((result) => isProcessGate(result.gate) && sweepSatisfied({ whole: result.gate.reach?.whole ?? null, verdict: result.verdict, trx: result.trx && existsSync(result.trx) ? result.trx : null }))
+    .map((result) => ({ gate: result.gate.name, at: result.at, commit, kind }));
+  sweep = noteSweeps(sweep, swept);
+  if (kind === 'nightly' && nightSatisfied(state)) sweep = noteNight(sweep, { at: started, commit, ended });
+  writeSweep(home, sweep);
+
+  let findings = readFindings(home);
+  const read = (path) => {
+    try {
+      return readFileSync(join(tree, path), 'utf8');
+    } catch {
+      return null;
+    }
+  };
+  const line = new Set(lines(git(home, ['rev-list', '--first-parent', commit], { allowFail: true }).out));
+  const descends = (from) => line.has(from);
+  let filed = 0;
+  let cleared = 0;
+  for (const result of results) {
+    if (result.verdict === 'ENDED') continue;
+    const name = result.gate.name;
+    const trx = result.trx && existsSync(result.trx) ? readFileSync(result.trx, 'utf8') : null;
+    if (result.verdict === 'FAIL' && result.cause !== 'memory') {
+      const failures = trx ? readTrx(trx) : [];
+      const sightings = failures.length
+        ? failures.map((failure) => ({
+          gate: name, unit: failure.unit, test: failure.test, fingerprint: fingerprintOf(failure, tree), signature: signatureOf(failure, read, tree),
+          message: failure.message, lines: [failure.message].filter(Boolean),
+        }))
+        : [(() => {
+          const output = result.log && existsSync(result.log) ? readFileSync(result.log, 'utf8') : '';
+          const signature = gateSignature(name, 'run', output, tree);
+          const message = signature.message ?? (signature.errors ?? []).join(' ');
+          return { gate: name, unit: name, test: name, fingerprint: { test: name, exception: '', at: null, message }, signature, message, lines: [message].filter(Boolean) };
+        })()];
+      for (const sighting of sightings) {
+        findings = fileSighting(findings, { ...sighting, commit, at: result.at ?? ended, kind }).record;
+        filed += 1;
+      }
+    }
+    const passes = trx ? passingTests(trx) : new Set();
+    const gatePassed = result.verdict === 'PASS' || result.verdict === 'FLAKE';
+    const passed = (finding) => finding.gate === name && (finding.test === name ? gatePassed : passes.has(finding.test));
+    const done = clearPasses(findings, { commit, at: ended, kind, passed, descends });
+    findings = done.record;
+    cleared += done.cleared.length;
+  }
+  if (filed || cleared) writeFindings(home, findings);
+
+  const overdue = overdueSaid(sweep, halves, nightHour());
+  const knownRed = knownRedLines(findings);
+  const open = findings.findings.filter((each) => each.state === 'red').length;
+  const said = [];
+  if (swept.length) said.push(`swept (${CI_SWEEP}): ${swept.map((each) => each.gate).join(', ')}, each class given a verdict`);
+  if (kind === 'nightly') said.push(nightSatisfied(state) ? 'the night is satisfied: this nightly run finished' : `the night stays due: this nightly run ${state === 'stopped' ? 'was stopped' : 'did not finish'}`);
+  if (filed || cleared || open) said.push(`known red (local/ci-findings.json): ${filed} filed, ${cleared} cleared by this run; ${open} open`);
+  return { lines: [...said, ...overdue, ...knownRed], overdue, knownRed };
+}
+
+/**
  * `--ci [<commit>]` (CI1): one CI run, in the gate tree (GATEWT1's, held by its lock as a `ci` run), of `commit`, main's tip
  * unless named. The tree is made or moved and its dependencies installed; a run of main's tip then reads the tip again and,
  * where a merge landed meanwhile, moves to the newest before any gate starts (`CI_MOVES`), so a newer tip supersedes a run not
@@ -5466,6 +5682,10 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
   const resolved = git(home, ['rev-parse', '--verify', '--quiet', `${named ?? `refs/heads/${MAIN}`}^{commit}`], { allowFail: true });
   if (resolved.status !== 0) throw new Refusal(`no commit '${named ?? MAIN}' to gate`);
   let commit = resolved.out.trim();
+  // CISCOPE1d: the run's kind (`ci-background.mjs`'s `RUN_KINDS`): the watch's `ordinary`, `sweep` or `nightly`, else as asked.
+  const kind = options.ciKind ?? (options.ciNight ? 'nightly' : options.ciStage ? 'stage' : 'ci');
+  const begun = nowIso();
+  let receiptTree = null;
   const { stale } = takeGateLock(home, { commit, holder: 'ci' });
   const trees = stepTrees();
   const unhook = stopOnInterrupt(trees);
@@ -5513,24 +5733,32 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     const sha = commit.slice(0, 7);
     if (trees.ended) {
       console.log(`stopped: ${trees.ended}, before any gate of ${sha} started; it is not a pass`);
+      appendReceipt(home, { commit, tree: null, kind, started: begun, ended: nowIso(), finished: false, state: 'stopped', gates: [] });
       return 1;
     }
     for (const line of copyPrivateFiles(home, tree, privateGateFiles(home))) console.log(`  ${line}`);
     const plan = readPlan(tree);
     const treeId = contentTree(tree);
     if (!treeId) throw new Refusal("git could not write the gate tree's tree, so which verdicts stand on it cannot be told");
+    receiptTree = treeId;
     const standing = standingFor(tree, treeId);
-    // CIFAST1: a plain run owes the stage's rehearsals; the stage's path runs them.
-    const owe = options.ciStage ? [] : plan.filter(isStageRehearsal).map((gate) => gate.name);
+    // CIFAST1: a plain run owes the stage's rehearsals; the stage's path runs them, and so does a night (CISCOPE1d).
+    const owe = kind === 'stage' || kind === 'nightly' ? [] : plan.filter(isStageRehearsal).map((gate) => gate.name);
     const gateVerdicts = readVerdicts(home).verdicts;
-    const chosen = ciPlan({ ...standing, owe, plan: plan.map((gate) => gate.name), verdicts: gateVerdicts });
+    const names = plan.map((gate) => gate.name);
+    const ordinary = ciPlan({ ...standing, owe, plan: names, verdicts: gateVerdicts, ageWhole: kind === 'stage' });
+    // CISCOPE1d: the due record decides which halves run whole, and the run's kind what it runs (design §5.1's matrix).
+    const halvesOfPlan = plan.filter(isProcessGate).map((gate) => gate.name);
+    const due = sweepState(sweepRecord(home, plan, gateVerdicts), halvesOfPlan, Date.now(), SWEEP_BOUND_MS).filter((each) => each.overdue).map((each) => each.gate);
+    const byKind = kindPlan(kind, { plan: names, ordinary, due, halves: halvesOfPlan });
+    const chosen = { ...ordinary, run: byKind.run, owed: byKind.owed, kept: ordinary.kept.filter((entry) => !byKind.run.includes(entry.name)), skipped: byKind.skipped };
     const dir = join(home, SCRATCH, `ci-${sha}`);
     mkdirSync(dir, { recursive: true });
     for (const gate of plan.filter((each) => chosen.run.includes(each.name))) {
       for (const suffix of ['.log', '.rerun.log', '.trx', '.partial']) rmSync(join(dir, `${gate.name}${suffix}`), { force: true });
     }
     // PROCREACH1: each Process half it owes runs the classes a change reaches, the rest kept, or whole, and says which.
-    const halves = reachedHalves({ tree, treeId, gates: plan.filter((gate) => chosen.run.includes(gate.name)), standing, verdicts: gateVerdicts, home, dir });
+    const halves = reachedHalves({ tree, treeId, gates: plan.filter((gate) => chosen.run.includes(gate.name)), standing, verdicts: gateVerdicts, home, dir, whole: byKind.whole, owedAnyway: new Set(ordinary.run) });
     const reach = halves.plans;
     // CISCOPE1b: a half whose every class stands, its last pass gone stale by reach alone, passes by them without running.
     const composed = halves.gates.filter((gate) => gate.reach?.composed);
@@ -5550,7 +5778,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       const file = at ? join(home, SCRATCH, `ci-${at.slice(0, 7)}`, `${gate}.log`) : null;
       return file && existsSync(file) ? fromHome(home, file) : null;
     };
-    status = ciStatus({ commit, tree: treeId, plan, chosen, since, light, pid: process.pid, at: started, logOf, stage: options.ciStage });
+    status = ciStatus({ commit, tree: treeId, plan, chosen, since, light, pid: process.pid, at: started, logOf, stage: kind === 'stage', kind });
     for (const [name, half] of reach) {
       const gate = status.gates.find((each) => each.name === name);
       if (gate) gate.classes = reachStatus(half);
@@ -5558,9 +5786,11 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     writeStatus();
     writeGateRecord(home, { commit, started, ended: null, passed: null, staged: null, by: 'ci' });
 
-    const kept = chosen.gates.filter((gate) => !chosen.run.includes(gate.name) && !chosen.owed.includes(gate.name));
-    console.log(`CI on ${sha} (CI1${options.ciStage ? ', for a stage: CIFAST1' : ''}): ${gates.length} of ${plan.length} gates to run, ${count(kept.length, 'verdict')} kept, which still stand on this tree`
-      + `${chosen.owed.length ? `, ${chosen.owed.join(' and ')} owed for a stage` : ''}; it keeps going past a failure`);
+    const kept = chosen.gates.filter((gate) => !chosen.run.includes(gate.name) && !chosen.owed.includes(gate.name) && !chosen.skipped.includes(gate.name));
+    const kindSaid = kind === 'stage' ? ', for a stage: CIFAST1' : kind === 'nightly' ? ', the nightly run: every gate whole (CISCOPE1d)' : kind === 'sweep' ? ', a sweep alone: the due half whole (CISCOPE1d)' : '';
+    console.log(`CI on ${sha} (CI1${kindSaid}): ${gates.length} of ${plan.length} gates to run, ${count(kept.length, 'verdict')} kept, which still stand on this tree`
+      + `${chosen.owed.length ? `, ${chosen.owed.join(' and ')} owed for a stage` : ''}${chosen.skipped.length ? `, ${chosen.skipped.length} not run by a sweep` : ''}; it keeps going past a failure`);
+    if (due.length && kind !== 'nightly') console.log(`  due a sweep (${CI_SWEEP}): ${due.join(', ')}, run whole whatever ${due.length === 1 ? 'its' : 'their'} reach`);
     if (chosen.owed.length) console.log(`  owed, not run (CIFAST1): ${chosen.owed.join(', ')}, which ${stageCommand(commit)} runs before a stage`);
     console.log(since.commit
       ? `  since the last green run (${since.commit.slice(0, 7)}, ${when(since.at)}): ${since.paths === null ? 'what changed could not be read' : `${count(since.paths, 'path')} changed`}`
@@ -5574,7 +5804,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     for (const gate of composed) {
       const at = nowIso();
       // Its verdict ran no class (`ran` 0), so it adds no class verdicts, and it carries the oldest it kept for `sweptOut`.
-      addVerdicts(home, [{ gate: gate.name, verdict: 'PASS', tree: treeId, at, commit, branch: null, classes: { ran: 0, kept: gate.reach.kept.length, sweep: gate.reach.sweep } }]);
+      addVerdicts(home, [{ gate: gate.name, verdict: 'PASS', tree: treeId, at, commit, branch: null, kind, classes: { ran: 0, kept: gate.reach.kept.length, sweep: gate.reach.sweep } }]);
       Object.assign(gateOf(gate.name) ?? {}, { state: 'done', verdict: 'PASS', at, ms: 0, note: `passed without running (CISCOPE1b): ${gate.reach.composed}` });
     }
     if (composed.length) writeStatus();
@@ -5588,6 +5818,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
         trees,
         width: light.width,
         byMemory: true,
+        kind,
         onStart: (gate) => {
           Object.assign(gateOf(gate.name) ?? {}, { state: 'running', at: nowIso() });
           writeStatus();
@@ -5604,18 +5835,31 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     }
     for (const gate of status.gates) if (gate.state === 'waiting' || gate.state === 'running') gate.state = 'not run';
 
-    const after = ciPlan({ ...standing, owe, plan: plan.map((gate) => gate.name), verdicts: readVerdicts(home).verdicts });
+    const judgedAfter = ciPlan({ ...standing, owe, plan: names, verdicts: readVerdicts(home).verdicts, ageWhole: kind === 'stage' });
+    // CISCOPE1d: a sweep alone is judged on the half it ran, never on the gates it was not asked to run.
+    const after = kind === 'sweep' ? { ...judgedAfter, run: judgedAfter.run.filter((name) => chosen.run.includes(name)), owed: [] } : judgedAfter;
     const state = trees.ended ? 'stopped' : after.run.length === 0 ? 'green' : 'failed';
     const ended = nowIso();
     Object.assign(status, { state, ended });
     writeStatus();
     const ranNames = results.filter((result) => result.verdict !== 'ENDED').map((result) => result.gate.name);
     // CIFAST1: the record says which run was the stage's path, and what a plain one left owed.
-    const noted = { commit, state, at: ended, status: fromHome(home, statusFile), ...(options.ciStage ? { stage: true } : {}), ...(after.owed.length ? { owed: after.owed } : {}) };
-    noteCiRun(home, noted, state === 'green' ? { commit, tree: treeId, at: ended } : null);
+    const noted = { commit, state, at: ended, status: fromHome(home, statusFile), kind, ...(kind === 'stage' ? { stage: true } : {}), ...(after.owed.length ? { owed: after.owed } : {}) };
+    noteCiRun(home, noted, state === 'green' && kind !== 'sweep' ? { commit, tree: treeId, at: ended } : null);
     writeGateRecord(home, { commit, started, ended, passed: state === 'green', staged: null, by: 'ci' });
+    // CISCOPE1d: the run's receipt, its due record and its findings, each at its end.
+    const keptKind = new Map(chosen.kept.map((entry) => [entry.name, entry.verdict?.kind ?? null]));
+    appendReceipt(home, {
+      commit, tree: treeId, kind, started: begun, ended, finished: state === 'green' || state === 'failed', state,
+      gates: status.gates.map((gate) => ({ name: gate.name, state: gate.state, verdict: gate.verdict, kind: gate.state === 'kept' ? keptKind.get(gate.name) ?? null : gate.state === 'done' ? kind : null })),
+    });
+    const background = noteBackground({ home, tree, plan, commit, kind, state, started, ended, results });
+    status.overdue = background.overdue;
+    status.knownRed = background.knownRed;
+    writeStatus();
 
     console.log('');
+    for (const line of background.lines) console.log(`  ${line}`);
     if (state === 'stopped') {
       const endedNames = results.filter((result) => result.verdict === 'ENDED').map((result) => result.gate.name);
       const left = gates.filter((gate) => !results.some((result) => result.gate.name === gate.name)).map((gate) => gate.name);
@@ -5623,7 +5867,10 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     } else if (state === 'green') {
       const flakes = results.filter((result) => result.verdict === 'FLAKE');
       const ran = `${ranNames.length ? `${count(ranNames.length, 'gate')} run and passed` : 'no gate run'}${composed.length ? `, ${composed.length} passed by ${composed.length === 1 ? 'its' : 'their'} kept classes (${composed.map((gate) => gate.name).join(', ')})` : ''}`;
-      if (after.owed.length) {
+      if (kind === 'sweep') {
+        // CISCOPE1d: a sweep alone says only the half it ran; it is no receipt a stage counts.
+        console.log(`merge-branch: CI sweep on ${sha}: ${chosen.run.join(', ')} ran whole and passed${flakeNote(flakes)}; a sweep alone is no stage's receipt.`);
+      } else if (after.owed.length) {
         // CIFAST1: green on every gate it runs; the stage still needs the rehearsals it owes.
         console.log(`merge-branch: CI green on ${sha}: ${ran}, ${count(kept.length, 'verdict')} kept${flakeNote(flakes)}; ${after.owed.join(' and ')} owed for a stage, neither failed nor passed.`);
         console.log(`  Before a stage, run them on it in the gate tree: ${stageCommand(commit)}`);
@@ -5647,10 +5894,16 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
       Object.assign(status, { state: 'error', ended: nowIso(), error: error?.message ?? String(error) });
       writeStatus();
       try {
-        noteCiRun(home, { commit, state: 'error', at: status.ended, status: fromHome(home, statusFile) });
+        noteCiRun(home, { commit, state: 'error', at: status.ended, status: fromHome(home, statusFile), kind });
       } catch {
         // The error itself is what the run says.
       }
+    }
+    try {
+      // CISCOPE1d: every run of the gate tree leaves its receipt; one ended in an error did not finish.
+      if (!(error instanceof Refusal && error.busy)) appendReceipt(home, { commit, tree: receiptTree, kind, started: begun, ended: nowIso(), finished: false, state: 'error', gates: [] });
+    } catch {
+      // The error itself is what the run says.
     }
     throw error;
   } finally {
@@ -5666,14 +5919,20 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
  * and the tip is read again at once after, so the tips that landed while a run went give way to the newest. A tree held is
  * waited for, said once; a run refused because the tree was taken meanwhile (`busy`) is tried again; any other failure is
  * said once and that tip not tried again by this watch. It ends, 0, once `stopAsked`, read every `tickMs`.
+ *
+ * CISCOPE1d (design §5.1): `schedule(tip)` says which run is next and why (`ci-background.mjs`'s `nextRun`: a night due first,
+ * then a tip with no verdict, then a due sweep with no promotion to ride), and `run(kind)` starts it; one of a kind is tried once
+ * per tip, so a night that cannot finish, or a sweep its build leaves due, is not started again until main moves. Without a
+ * schedule it gates the tip alone, as CI1 did. `report()` gives the overdue report and the known red, said each time it changes.
  */
-export async function watchCi({ tip, gated, holder, run, stopAsked, sleep, say, pollMs = CI_WATCH_MS, tickMs = CI_TICK_MS, now = Date.now }) {
+export async function watchCi({ tip, gated, holder, run, stopAsked, sleep, say, pollMs = CI_WATCH_MS, tickMs = CI_TICK_MS, now = Date.now, schedule = null, report = null }) {
   const tried = new Set();
   let said = null;
   const sayOnce = (line) => {
     if (line !== said) say(line);
     said = line;
   };
+  let reported = '';
   let next = 0;
   for (;;) {
     if (stopAsked()) {
@@ -5683,17 +5942,25 @@ export async function watchCi({ tip, gated, holder, run, stopAsked, sleep, say, 
     if (now() >= next) {
       next = now() + pollMs;
       const at = tip();
+      if (report) {
+        const lines = report();
+        if (lines.join('\n') !== reported) for (const line of lines) say(`the CI watch: ${line}`);
+        reported = lines.join('\n');
+      }
+      const wanted = !at ? null : schedule ? schedule(at) : gated(at) ? null : { kind: 'ordinary', key: 'ordinary' };
+      const key = wanted ? `${wanted.key} ${at}` : null;
       if (!at) sayOnce("the CI watch: main's tip could not be read; it is read again");
-      else if (!gated(at) && !tried.has(at)) {
+      else if (wanted && !tried.has(key)) {
         const busy = holder();
         if (busy) sayOnce(`the CI watch: ${at.slice(0, 7)} waits: ${busy}`);
         else {
-          tried.add(at);
+          tried.add(key);
           said = null;
+          if (wanted.why && wanted.kind !== 'ordinary') say(`the CI watch: a ${wanted.kind} run of ${at.slice(0, 7)}: ${wanted.why}`);
           try {
-            await run();
+            await run(wanted.kind);
           } catch (error) {
-            if (error?.busy) tried.delete(at);
+            if (error?.busy) tried.delete(key);
             sayOnce(`the CI watch: ${error?.message ?? error}`);
           }
           next = 0;
@@ -5754,8 +6021,14 @@ async function ciWatchVerb(root, options) {
   const stopAsked = () => interrupted || existsSync(stopFile);
   const fromEnv = Number(process.env.MERGE_BRANCH_CI_WATCH_MS);
   const pollMs = Number.isFinite(fromEnv) && fromEnv >= 100 ? fromEnv : CI_WATCH_MS;
+  const hour = nightHour();
+  const halvesOf = () => {
+    const plan = readPlan(home);
+    return { plan, halves: plan.filter(isProcessGate).map((gate) => gate.name) };
+  };
   try {
     console.log(`the CI watch (CI1): main's tip gated in ${GATE_TREE} as it moves, once the tree is idle; read every ${span(pollMs)}; `
+      + `${hour === null ? 'no nightly run' : `a nightly run of every gate at ${String(hour).padStart(2, '0')}:00 local time, a missed night caught up first`} and each Process half swept within a day (CISCOPE1d); `
       + 'stop it with node tools/merge-branch.mjs --ci --stop, or Ctrl+C');
     return await watchCi({
       tip: () => readTip(home),
@@ -5764,7 +6037,15 @@ async function ciWatchVerb(root, options) {
         const held = readGateLock(home);
         return held?.running ? holderSaid(held) : null;
       },
-      run: () => gateCi(root, { ...options, ciCommit: null }, { stopAsked }),
+      schedule: (at) => {
+        const { plan, halves } = halvesOf();
+        return nextRun({ record: sweepRecord(home, plan), halves, tipGated: ciGated(home, at), hour });
+      },
+      report: () => {
+        const { plan, halves } = halvesOf();
+        return [...overdueSaid(sweepRecord(home, plan), halves, hour), ...knownRedLines(readFindings(home))];
+      },
+      run: (kind = 'ordinary') => gateCi(root, { ...options, ciCommit: null, ciKind: kind }, { stopAsked }),
       stopAsked,
       sleep: (ms) => new Promise((done) => { setTimeout(done, Math.min(ms, pollMs)); }),
       say: console.log,

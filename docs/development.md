@@ -140,6 +140,7 @@ node tools/merge-branch.mjs --full
 node tools/merge-branch.mjs --full --beside [<commit>]
 node tools/merge-branch.mjs --ci [<commit>]
 node tools/merge-branch.mjs --ci --stage [<commit>]
+node tools/merge-branch.mjs --ci --night [<commit>]
 node tools/merge-branch.mjs --ci --watch
 node tools/merge-branch.mjs --ci --stop
 ```
@@ -267,6 +268,35 @@ watch says the first runs and exits. `--ci --stop` asks it to end: it
 ends the gates it is running, each with its whole tree, keeps every finished verdict, and lets its records go. A watch
 killed outright leaves a stale lock, which the next run takes over, ending what the dead run started (CIPRIO1d, CIPRIO1e).
 
+The watch is the background run, on a schedule (CISCOPE1d, D207's design §5.1). `tools/ci-background.mjs` keeps its
+records, each in the main checkout's `local/`. Each run has a kind, which its status (`kind`), its record and every
+verdict it gives carry:
+
+- **ordinary**: the watch's run of a new tip.
+- **ci**: a plain `--ci`.
+- **stage**: `--ci --stage`.
+- **nightly**: every gate whole, the two rehearsals included. The watch runs one at 03:00 local time, and first at its next
+  start when a night was missed; `--ci --night [<commit>]` runs one by hand.
+- **sweep**: with no new tip to ride, a run of a due half alone.
+- **full**: `--full --beside`.
+
+`local/ci-sweep.json` holds each Process half's last sweep and the last night that finished. A half is due a day after its
+last sweep, and the next run runs it whole, whatever its reach (`due a sweep` in its lines). A run that gives every class a
+verdict sweeps the half, red or green. A night is satisfied by a nightly run that finished, red or green. A run stopped
+before the classes ran, or a build that left them unrun, leaves either due. The run's lines, its status (`overdue`) and the
+watch say what is overdue. `MERGE_BRANCH_CI_NIGHT_HOUR` sets the hour, and `off` runs no night.
+
+Each failure a run finds is filed as **known red** in `local/ci-findings.json`. A Process half's failure is filed by test,
+from its trx, with the fingerprint (the test with its case, the exception type, the assertion's file and line, and the
+message line) and the signature `tools/test-failures.mjs` gives. Any other gate's failure is filed by its step. A failure
+whose signature an open finding holds only moves that finding's last sighting. A pass of the test, or of the gate, clears
+it, but only on a commit on main's first-parent line from where it was last seen failing. A sighting within a day of a
+clearing restores the finding with its first sighting. A test known red for 72 hours from its first sighting is past
+inheriting: the run and the watch say so, and warn twelve hours before. A death of memory is never filed.
+
+Each run appends its **receipt** to `local/ci-runs.jsonl` as it ends: the commit, its tree, the kind, its start and end,
+whether it finished, and each gate's verdict with the kind that gave it.
+
 A plain run, and each run of the watch, owes the family and deployment rehearsals to a stage (CIFAST1, D180's CIFAST1
 note). They were 14 to 23 and 14 to 22 minutes of a 45 to 75 minute run. Such a run never starts them. One without a pass
 that stands is `owed` in the status (its top-level `owed`, the gate's state `owed`) and in the record, neither failed nor
@@ -282,6 +312,22 @@ run moves the tree meanwhile. It still refuses a commit the tree does not hold, 
 verdicts do not pass (`--passed`, GATE6), the rehearsals' among them. Its refusal names `--ci --stage <commit>`, which gates
 that commit there again, running only what it lacks. `--full --beside` remains the run of every gate, for a release that
 wants a fresh full set.
+
+`--passed` also asks for the background run's evidence (CISCOPE1d, D207's design §5.3), so an install is staged only on a
+commit the background run passed, with no waiver:
+
+- **A receipt.** A finished run's receipt on the commit's tree, matched by tree: an ordinary or nightly run, a plain `--ci`,
+  `--ci --stage` or `--full --beside`. A sweep alone, a stopped run and a `--full` on the checkout give none.
+- **A clean checkout.** The checkout's content is its commit's tree, so uncommitted changes are refused, whatever the verdicts
+  say.
+- **No sweep overdue** in `local/ci-sweep.json`.
+- **No old whole pass.** A whole Process pass given on another tree counts only within a day; one on the commit's own tree
+  counts at any age.
+
+Each line starts `not staged`. The remedy is `--ci --stage <commit>`, whose run gives the receipt, runs a due or aged half
+whole, and runs whatever the verdicts lack. A known-red test fails its gate here like any failure. Each successful stage
+appends to `local/stage-history.jsonl` (the commit, its tree, where it went, when, and whether it was forced). A stage from
+the gate tree first says what it brings since the last stage, or that the range is unknown.
 
 Commits are local work and follow green gates (D37). Push, publish, release, history rewrites and
 destructive actions retain their human boundary. Do not bypass provenance checks or hooks to make
