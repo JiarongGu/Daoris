@@ -1815,6 +1815,15 @@ public sealed class Driver(
 
         if (!selection.Allowed)
         {
+            // LIMITRESUME1b (the design §3.3 step 3): a line a limit cut off, with no account it may run on ready, waits with a sentence
+            // of its own naming the earliest reset and whose account, said on its record once per wait; the next look past it takes it.
+            if (limitedLine is not null && selection.Cooling is { } earliest)
+            {
+                var waits = LimitResume.Waits(earliest, Context.Harnesses.Zone, AccountNames.Of(home, earliest.Agent));
+                GoOns.HeldSaying(limitedLine, waits);
+                return Hold(waits.Note) with { Cooling = earliest, SignedOut = selection.SignedOut };
+            }
+
             // A cooling account's hold carries its cool-off (TOOL4d), so the look says the wait once and a screen shows
             // the quest waiting for an account; and the accounts it passed not signed in (TOOL6g), so both say the sign-in.
             return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };

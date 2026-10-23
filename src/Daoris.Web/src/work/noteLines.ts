@@ -369,6 +369,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // id as a shell spells it, the tool's own sign-in's refresh `waits.read-again`.
   'held.cooling-account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },
   'held.cooling-own': { values: ['owner', 'until', 'why'], why: 'cooling' },
+  'held.limit-waits': { values: ['owner', 'account', 'until'], why: 'cooling' },
+  'held.limit-waits-own': { values: ['owner', 'until'], why: 'cooling' },
   'held.signed-out': { values: ['owner', 'account', 'profile'] },
   // OWNSPACE1a: no Daoris account of the agent's is signed in, and its own home is never a start's.
   'held.no-account': { values: ['owner'] },

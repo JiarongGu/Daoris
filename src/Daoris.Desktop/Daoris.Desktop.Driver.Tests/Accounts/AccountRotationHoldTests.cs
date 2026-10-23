@@ -89,9 +89,10 @@ public sealed class AccountRotationHoldTests : IDisposable
 
         var sitting = Assert.Single(look.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
+        // LIMITRESUME1b: a line a limit cut off says its own wait, naming the first account ready and when.
         Assert.Equal(
-            $"every `stub` account this start may use is cooling; the first ready, `account-2`, at Oct 3, 16:02 ({Zone.Id}), "
-            + "as the agent said. Daoris starts nothing on them until then.",
+            $"Every account it may run on is at its limit: it goes on by itself once the `stub` account `account-2` is ready again "
+            + $"at Oct 3, 16:02 ({Zone.Id}).",
             sitting.Reason);
         Assert.False(look.Progressed);
         Assert.Single(_ledger.Sessions);

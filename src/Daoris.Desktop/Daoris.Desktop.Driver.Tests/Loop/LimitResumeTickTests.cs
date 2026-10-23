@@ -94,9 +94,16 @@ public sealed class LimitResumeTickTests : IDisposable
         var driver = Driver(service, "resumes", strikes: 1);
         await LimitedAsync(service, driver);
 
-        // Held while the account cools: nothing spawned, no word kept.
-        var held = await driver.TickAsync().WaitAsync(Poll.Patience);
-        Assert.Equal(StartVerdict.Blocked, held.Considerations.Single(c => c.Quest.Id == "q1").Verdict);
+        // Held while the account cools, with the line's own sentence, said on its record once: nothing spawned, no word kept.
+        for (var held = 0; held < 2; held++)
+        {
+            var waiting = await driver.TickAsync().WaitAsync(Poll.Patience);
+            var sitting = waiting.Considerations.Single(c => c.Quest.Id == "q1");
+            Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
+            Assert.StartsWith("Every account it may run on is at its limit: it goes on by itself once `stub`'s own sign-in is ready again at Oct 3, 16:02", sitting.Reason);
+        }
+
+        Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == "held.limit-waits-own") == true);
         Assert.Equal(1, service.SessionCount);
         Assert.Empty(service.DaorisSaid);
 

@@ -931,6 +931,9 @@ public static class NoteCodes
     // is a line of its own, its refresh `waits.read-again`. `profile` is the id as a shell spells it in the sign-in command.
     public static readonly NoteCode HeldCoolingAccount = new("held.cooling-account", ["owner", "account", "until", "why"]) { Why = Cooling };
     public static readonly NoteCode HeldCoolingOwn = new("held.cooling-own", ["owner", "until", "why"]) { Why = Cooling };
+    // LIMITRESUME1b (D206): a line a limit cut off, every account it may run on at its limit, goes on by itself once the earliest is ready.
+    public static readonly NoteCode HeldLimitWaits = new("held.limit-waits", ["owner", "account", "until"]) { Why = Cooling };
+    public static readonly NoteCode HeldLimitWaitsOwn = new("held.limit-waits-own", ["owner", "until"]) { Why = Cooling };
     public static readonly NoteCode HeldSignedOut = new("held.signed-out", ["owner", "account", "profile"]);
     // LOCKPASSED1 (D125's PARALLEL1c note): every account the start could run on was locked past its patience; the accounts by id, a list.
     public static readonly NoteCode HeldLocked = new("held.locked", ["owner", "accounts"]);

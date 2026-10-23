@@ -104,7 +104,8 @@ public sealed class AccountLimitTickTests : IDisposable
             Assert.Equal(2, service.SessionCount);
             var sitting = held.Considerations.Single(c => c.Quest.Id == "q1");
             Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
-            Assert.Equal(CoolingWords.Hold(cooling, Zone), sitting.Reason);
+            // LIMITRESUME1b: a line a limit cut off says its own wait, the earliest reset and whose account.
+            Assert.Equal(LimitResume.Waits(cooling, Zone).Note, sitting.Reason);
             Assert.Equal(["q1"], Assert.Single(held.Waits).Quests);
         }
 
