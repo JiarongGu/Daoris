@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session cut off by an account's limit now reads *limited*, quietly, wherever its state is shown, not *failed* in red
+  (LIMITRESUME1a). It no longer raises an *Ended* notice. Its quest's work says once in *Done and failed* that it waits for an
+  account to be ready again, or that it went on in a new session.
+
 - Driven sessions and repository conversations now receive commit attribution instructions for their own maker and running
   model (MAKERTRAIL1). Claude keeps its harness's automatic trailer. The merge check accepts supported makers' trailers and
   names the expected makers when attribution is missing or unrecognized.

@@ -19978,3 +19978,15 @@ not recorded. Detail and the red-first proof are in FIX-LOG's HANDOVERSAID1 entr
 **Outcome** 2026-10-24: the look and the recheck judge the reviewer against every agent the line ran on (`OpinionWriters`), so a
 line carried across makers takes a reviewer of either as the same agent, `not-independent`. Proof red first in `OpinionLookTests`
 and `OpinionRecheckTests`; detail: FIX-LOG and D206, 2026-10-24.
+
+## LIMITRESUME1a — a limited end is worded *limited*, with no *Ended* notice and the line's own news (2026-10-24, D206)
+
+> | LIMITRESUME1a | §3.1: a limited end is worded *limited*, quiet, in every list and head; no *Ended* notice; the line's own news | — | `AttentionTests`: a limited conclusion raises no *Ended*; the page's state-word tests in en and zh; `i18n:check`, `names:check --strict` |
+
+(The row of `docs/2026-10-23-limit-resume-design.md` §6; the backlog holds it inside LIMITRESUME1.)
+
+**Outcome** 2026-10-24: a quest's session ended by an account's limit carries the ledger's flag on its end (`SessionEnded.Limit`),
+and the attention watch raises no *Ended* for it. The line's own news is two look news codes said once per limited part,
+`limit-waits` and `limit-went-on`. The page words a `failed` record with `limit` as *limited* / *额度用尽* in a neutral tone,
+through its one shown-state reader, on the session rows, heads, quest page, parts strip, chain strip and trace. The sessions slice
+now pushes `limit`. *Resumed* waits for 1b, and an intake keeps its *Ended* until 1h. Detail: D206's LIMITRESUME1a note.
