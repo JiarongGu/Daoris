@@ -20,8 +20,9 @@ import {
 } from './records';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 import { namer } from '../settings/accounts/namer';
+import { limitWaitLines } from '../work/waits/limitWait';
 import {
-  retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSessionGroups, useSetHold, useTrace,
+  retryNotice, useAccounts, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSessionGroups, useSetHold, useTrace,
   useTrustFolder, useUntrusted, useWorkflowRun, useWorkPlan, useWorkState,
 } from '../bridge/shell';
 import { questUnit } from '../work/head/milestone';
@@ -163,6 +164,8 @@ export function useQuestsView({
   // its trace. In a browser there is no roster, and each record's id is said.
   const harnesses = useHarnesses();
   const nameOf = namer(t, Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : []);
+  // LIMITRESUME1d2 (D206 §3.7): the accounts its session's limit's wait is worded from, as its head words it; none in a browser.
+  const accounts = useAccounts();
   // A quest just published is looked at now, not at the driver's next poll.
   const nudge = useNudge();
   const considered = useConsidered().data ?? [];
@@ -435,6 +438,16 @@ export function useQuestsView({
         session={session}
         grouping={session ? groups.data?.find((row) => row.session === session.id) ?? null : null}
         nameOf={nameOf}
+        limitWait={session ? limitWaitLines(t, {
+          session,
+          questStatus: quest.status,
+          paused: Boolean(groups.data?.find((row) => row.session === session.id)?.pausedBy),
+          workspace: (registry.data ?? []).find((row) => row.repository === session.repository)?.workspace,
+          doors: Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [],
+          answer: accounts.data,
+          label: (account) => nameOf(session.adapter, account),
+          now: new Date(),
+        }) : null}
         busy={busy}
         retrying={retry.isPending}
         trusting={trustingFor === quest.id}

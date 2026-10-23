@@ -153,6 +153,25 @@ export function limitWaitSaid(t: Translate, wait: LimitWait, label: (account: st
 }
 
 /**
+ * A driven line's wait in words where it waits (LIMITRESUME1d2, D206 §3.7): the head's sentence, for the session's row and its quest's
+ * page, which hold the same facts. Null where it is no limited line or the walk waits for nothing.
+ */
+export function limitWaitLines(t: Translate, { session, questStatus, paused = false, workspace, doors, answer, label, now }: {
+  session: Pick<Session, 'state' | 'limit' | 'kind' | 'quest' | 'adapter' | 'profile' | 'noteParts'>;
+  questStatus?: string | null;
+  paused?: boolean;
+  workspace?: string | null;
+  doors: readonly ToolDoor[];
+  answer: AccountsAnswer | null | undefined;
+  label: (account: string | null) => string;
+  now: Date;
+}): string[] | null {
+  if (!limitedLine(session, questStatus, paused)) return null;
+  const wait = limitWaitOf({ session, workspace, doors, answer, now });
+  return wait ? limitWaitSaid(t, wait, label) : null;
+}
+
+/**
  * A conversation's wait in words (LIMITRESUME1d2, D206 §3.7): the walk's sentence where the page holds the accounts and the walk
  * waits, else the driver's own `chat.limit-waits` line in the reader's language (a browser, or a walk not read yet). Null once that
  * line's moment has passed and no walk says more: the look wakes it then, and a line saying a time gone by would claim a wait.

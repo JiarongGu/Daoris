@@ -26,6 +26,9 @@ import { byName, marked, readable } from './railSearch';
 import { type SessionDoors, useSessionActs } from '../sessionActs';
 import { useHeavySlots } from '../../bridge/driver';
 import { heavyPartOf } from '../heavySlot';
+import { useAccounts, useHarnesses } from '../../bridge/shell';
+import { namer } from '../../settings/accounts/namer';
+import { limitWaitLines } from '../waits/limitWait';
 
 /**
  * The rail: Sessions' list, by state or by repository (SESSUX1c, D126 §4), and its search (RAIL1).
@@ -219,6 +222,22 @@ export function SessionRail({
   // Each row the list holds, with what it is drawn from besides its record.
   const factsOfEntry = entryFacts(entries);
   const entryOf = new Map((entries ?? []).map((entry): [string, SessionEntry] => [entry.leading, entry]));
+  // LIMITRESUME1d2 (D206 §3.7): a line its account's limit cut off says on its row when it goes on by itself, the head's first
+  // sentence, from the accounts the page holds; a browser holds none, and its row says nothing more.
+  const accounts = useAccounts();
+  const harnesses = useHarnesses();
+  const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
+  const nameOf = namer(t, roster);
+  const limitWaitOf = (session: Session) => limitWaitLines(t, {
+    session,
+    questStatus: session.quest ? questFor.get(session.quest)?.status : undefined,
+    paused: Boolean(groupings?.find((row) => row.session === session.id)?.pausedBy),
+    workspace: registered.get(session.repository)?.workspace,
+    doors: roster,
+    answer: accounts.data,
+    label: (account) => nameOf(session.adapter, account),
+    now: new Date(),
+  })?.[0] ?? null;
   const rows: SessionRowFacts[] = listed.map((session) => ({
     session,
     // A line of work an ask began is named by its ask, whose page names it the same way (D167, design §1.6); an intake
@@ -235,6 +254,7 @@ export function SessionRail({
     continues: continues[session.id],
     helps: helps[session.id],
     ...heavyOf(session),
+    limitWait: live ? null : limitWaitOf(session),
   }));
   // The call each session is making, from the shell's push where it is live (WAITSAY1c2): laid over the pull's `calling`.
   const calls = usePushedCalls();
@@ -358,6 +378,7 @@ export function SessionRail({
       continues={continues[session.id]}
       helps={helps[session.id]}
       {...heavyOf(session)}
+      limitWait={live ? null : limitWaitOf(session)}
       grouping={live ? null : placed.get(session.id)}
       // A search finds archived sessions too, marked, since it is how one is found without the tick (D126 §4.5).
       archived={!live && Boolean(placed.get(session.id)?.archived)}

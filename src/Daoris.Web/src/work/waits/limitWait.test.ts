@@ -3,7 +3,7 @@ import i18n from '../../locales/i18n';
 import { moment } from '../../locales/format';
 import type { AccountsAnswer, AgentAccounts } from '../../settings/accounts/accounts';
 import { USE_DEFAULTS } from '../../settings/accounts/accounts';
-import { chatLimitHeldOf, limitedLine, limitWaitOf, limitWaitSaid, notLiftedOf } from './limitWait';
+import { chatLimitHeldOf, limitedLine, limitWaitLines, limitWaitOf, limitWaitSaid, notLiftedOf } from './limitWait';
 
 // LIMITRESUME1d (D206 §3.7): what a line an account's limit cut off says while it waits, read from the accounts the page holds.
 
@@ -77,6 +77,18 @@ describe('a limited line\'s wait', () => {
       '它将在新会话中继续，并附上 Daoris 的简报。',
       '上次重置未解除额度限制：weekly。',
     ]);
+  });
+
+  // LIMITRESUME1d2: the row and the quest's page read the head's own sentence, for a limited line alone.
+  it('words a limited line’s wait for its row and its quest’s page, and nothing for another', () => {
+    const line = { adapter: 'claude-code-acp', profile: 'a', noteParts: [], state: 'failed', limit: true, kind: 'driven', quest: 'q1' } as never;
+    expect(limitWaitLines(t, { session: line, questStatus: 'Taken', doors, answer: answer(), label, now: NOW })).toEqual([
+      `Waiting for a limit to reset: it resumes by itself at ${moment(SOON)}, on a.`,
+      'It goes on in its own conversation.',
+    ]);
+    expect(limitWaitLines(t, { session: line, questStatus: 'Taken', paused: true, doors, answer: answer(), label, now: NOW })).toBeNull();
+    expect(limitWaitLines(t, { session: line, questStatus: 'Done', doors, answer: answer(), label, now: NOW })).toBeNull();
+    expect(limitWaitLines(t, { session: line, doors, answer: null, label, now: NOW })).toBeNull();
   });
 
   it('says a reset nobody said as a try again, never as a reset', () => {

@@ -18,6 +18,8 @@ import {
   WAITING, WAITS_FOR_ACCOUNT, WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
+import { useTranslation } from 'react-i18next';
+import { type LimitWait, limitWaitSaid } from '../work/waits/limitWait';
 
 // A quest's page (FRAME1d, D118 §3d) in Quests' main area, where it was a drawer: open, taken, sitting for the
 // person's hold, held for the agent's trust with its question open, parked by its strikes, waiting on a question, a
@@ -74,6 +76,22 @@ export const FinishedAtACheckpointChinese: Story = { ...FinishedAtACheckpoint, d
 
 /** The same in dark. */
 export const FinishedAtACheckpointDark: Story = { ...FinishedAtACheckpoint, decorators: [dark] };
+
+/**
+ * Its session cut off by an account's limit (LIMITRESUME1d2, D206 §3.7): *limited*, and when it goes on by itself and how, the head's
+ * own sentence worded in the story's language.
+ */
+export const SessionWaitsForALimit: Story = {
+  args: { quest: TAKEN, session: { ...FINISHED_HERE, state: 'failed', limit: true }, onAttend: nothing },
+  render: function Render(args) {
+    const { t } = useTranslation();
+    const wait: LimitWait = { until: '2026-10-24T11:02:00Z', account: 'work', own: false, stated: true, notLifted: null };
+    return <QuestPage {...args} limitWait={limitWaitSaid(t, wait, (account) => account ?? '')} />;
+  },
+};
+
+/** The same in 中文. */
+export const SessionWaitsForALimitChinese: Story = { ...SessionWaitsForALimit, decorators: [chinese] };
 
 /** Carrying the person's requirements: *Mark done…*'s ask says they are not answered one by one. */
 export const FinishedWithRequirements: Story = {
