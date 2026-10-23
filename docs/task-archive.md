@@ -20080,3 +20080,14 @@ scaled one second a minute; the stage's path then took 57.2 s. Detail: D180's CI
 `LimitWaitLine`), with *Go on now with…*, *Pause quest…* and *Try now*; `SESSION_STOP_WAITING` carries *Stop waiting*; the terminal
 lists such a record *limited*; the glossary holds *limited*, *ready again* and *stop waiting*. The rest is LIMITRESUME1d2 in the
 backlog. Detail: D206's LIMITRESUME1d note.
+
+## SQUASHSEEN1 — work landed as a squash is recognised, and its sessions are not reopened to rebase (2026-10-24, D102)
+
+> **SQUASHSEEN1 — work landed as a squash is recognised, and its sessions are not reopened to rebase** (driver; found 2026-10-23 on LIMITGOON1). The parent landed two sessions' work on main as one squashed commit (to correct a commit's attribution); Daoris did not read it as their work, so both sessions were told to rebase onto main, ran again, and found everything already there. A session whose branch's content main already holds, by the landing's content comparison (`ContentHolds`, D102's SQUASHTIDY notes) or a squash's recorded subject, is judged landed: no rebase telling, its tree tidied. Proof: a squashed landing on a fixture repository judged landed for the session it came from, and no rebase told.
+
+(Quest `#d26a76050e10`.)
+
+**Outcome** 2026-10-24: the content proof's third form, `SquashCarries`, reads merging the branch into the line as it stands as adding
+nothing (generated files aside, the backlog read by rows). The landing refuses such a tree as `carried` before any replay, so no
+rebase is told, and the head, the removals and the clean-up take it as landed. A squash's recorded subject was not used. Detail:
+D102's SQUASHSEEN1 note; FIX-LOG 2026-10-24.

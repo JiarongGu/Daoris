@@ -12,10 +12,18 @@ namespace Daoris.Driver;
 /// <param name="Squash">Its whole tree is the tree of a commit on the line since it left it: what a squash merge of it leaves.</param>
 public sealed record ContentHold(string Where, bool Squash)
 {
+    /// <summary>
+    /// A squash on the line carried it with other work (SQUASHSEEN1, <see cref="SquashCarries"/>): merging it into the line as it stands
+    /// adds nothing. Never set with <see cref="Squash"/>.
+    /// </summary>
+    public bool Carried { get; init; }
+
     /// <summary>How its work was found held: the clause a removal's sentence and the clean-up's row in the terminal say.</summary>
     public string Said => Squash
         ? $"its work is on `{Where}` by content (a squash merge)"
-        : $"its work is on `{Where}` by content (each file it changed reads the same there)";
+        : Carried
+            ? $"its work is on `{Where}` by content (a squash carried it: merging it there adds nothing)"
+            : $"its work is on `{Where}` by content (each file it changed reads the same there)";
 
     /// <summary>
     /// Where the commits a content-held removal deleted are kept (SQUASHTIDY1c), and the two things a person may do with them:
@@ -86,6 +94,8 @@ internal sealed class ContentHolds(TreeContext context)
     /// of the branch onto a line that had not moved makes exactly that commit, and the line may have moved on after it.</item>
     /// <item><b>Its files</b>: every file it changed since then reads on the line's tip as the branch left it — D102's proof by
     /// content, as a landed branch is judged.</item>
+    /// <item><b>A squash that carried it with other work</b> (SQUASHSEEN1): merging it into the line's tip adds nothing, generated
+    /// files and the backlog's rows aside (<see cref="SquashCarries"/>).</item>
     /// </list>
     /// <para>Failing both, its files read the same on one branch of the person's: a local branch outside <c>daoris/</c>, where a
     /// cherry-pick put them. One holder holds all of them, so the sentence can name it; work split over two is not proven.</para>
@@ -155,6 +165,12 @@ internal sealed class ContentHolds(TreeContext context)
             {
                 case true: return ContentProof.Of(new ContentHold(form, Squash: false), formRef, formId);
                 case null: unread ??= $"git could not compare the branch's files with `{form}`"; break;
+            }
+
+            // SQUASHSEEN1: a squash carried it with other work, so merging it into the line adds nothing.
+            if (await SquashCarries.HeldAsync(cwd, tip, mergeBase.Trim(), formId, paths, ct).ConfigureAwait(false))
+            {
+                return ContentProof.Of(new ContentHold(form, Squash: false) { Carried = true }, formRef, formId);
             }
         }
 

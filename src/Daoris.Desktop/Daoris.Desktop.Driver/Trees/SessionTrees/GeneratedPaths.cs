@@ -37,6 +37,20 @@ internal static class GeneratedPaths
         return paths.All(marked.Contains);
     }
 
+    /// <summary>
+    /// Which of <paramref name="paths"/> the repository at <paramref name="place"/> marks generated, read as <see cref="AllAsync"/> reads
+    /// them; null where git cannot say. The paths go on git's input, since a branch's files may be more than a command line holds.
+    /// </summary>
+    internal static async Task<IReadOnlySet<string>?> MarkedAsync(
+        string place, IReadOnlyCollection<string> paths, CancellationToken ct, string? source = null)
+    {
+        if (paths.Count == 0) return new HashSet<string>(StringComparer.Ordinal);
+        var (code, output, _) = await WorkingTree.GitAsync(
+            place, ["check-attr", "-z", "--stdin", .. source is null ? Array.Empty<string>() : [$"--source={source}"], Attribute],
+            string.Concat(paths.Select(path => path + "\0")), ct).ConfigureAwait(false);
+        return code != 0 ? null : Marked(output);
+    }
+
     /// <summary><c>git check-attr -z</c>'s answer read: each path whose attribute is set or <c>true</c>.</summary>
     internal static IReadOnlySet<string> Marked(string output)
     {

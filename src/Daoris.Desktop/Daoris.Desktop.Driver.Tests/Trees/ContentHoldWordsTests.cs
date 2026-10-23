@@ -19,6 +19,27 @@ public sealed class ContentHoldWordsTests
             "its work is on `feature/x` by content (each file it changed reads the same there)",
             new ContentHold("feature/x", Squash: false).Said);
 
+    /// <summary>SQUASHSEEN1: a squash that carried it with other work says so, since its tree is not the squash's.</summary>
+    [Fact]
+    public void A_squash_that_carried_it_with_other_work_says_merging_it_adds_nothing() =>
+        Assert.Equal(
+            "its work is on `main` by content (a squash carried it: merging it there adds nothing)",
+            new ContentHold("main", Squash: false) { Carried = true }.Said);
+
+    /// <summary>
+    /// SQUASHSEEN1: the backlog read by rows. Two sessions moved out neighbouring rows and the squash moved both; a row the branch moved
+    /// that the line still has, or one it added that the line lacks, is not held; the line's own other rows are its own.
+    /// </summary>
+    [Theory]
+    [InlineData("- A\n- B\n- C\n", "- C\n", "- B\n- C\n", true)]
+    [InlineData("- A\n- B\n- C\n", "- C\n- D\n", "- B\n- C\n- E\n\n", false)]
+    [InlineData("- A\n- B\n- C\n", "- C\n- D\n- E\n", "- B\n- C\n- E\n", true)]
+    [InlineData("- A\n- B\n- C\n", "- A\n- C\n", "- B\n- C\n", false)]
+    [InlineData("- A\n- B\n", "- A\n- B\n\n", "- A\n\n- B\n", true)]
+    [InlineData("- A\n", "- A\n- A\n", "- A\n", true)]
+    public void The_backlog_holds_a_branch_where_every_row_it_moved_reads_so_on_the_line(string @base, string line, string branch, bool held) =>
+        Assert.Equal(held, SquashCarries.RowsHeld(@base, line, branch));
+
     [Fact]
     public void A_line_on_origin_is_named_as_git_names_it() =>
         Assert.Equal("its work is on `origin/main` by content (a squash merge)", new ContentHold("origin/main", Squash: true).Said);
