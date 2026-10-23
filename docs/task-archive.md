@@ -19922,3 +19922,12 @@ and then the words the refused turns held (`Domain/LimitHeld.cs`). Each part say
 the parts into one row, and the page shows them as one conversation. Held by `LimitGoesOnProcessTests` with a stand-in agent,
 `LimitHeldTests`, `HelpConversationsTests`, `DriverModuleHelpHistoryTests` and `AskDaoris.test.tsx`; the installed window is not
 yet looked at. Detail: `docs/2026-10-23-limit-goes-on-design.md`, D189's and D197's LIMITGOON1 notes, FIX-LOG's entry.
+## APIREFUSAL1 — a model call its provider refuses is a failed turn, never a question to the person (2026-10-23)
+
+> - [ ] **APIREFUSAL1 — a model call its provider refuses is a failed turn, never a question to the person** (driver; found 2026-10-23 on LIMITGOON1's first session). A driven session's turn ended on the provider's refusal (an `API Error: … safeguards flagged this message` with its request id, `[reasoning_extraction]`), and the observation concluded the run as a park for the person: *It stopped with its quest still taken, to ask you:* followed by the error, with nothing the person could answer. A provider's refusal or API error that ends a turn is a failed run with its own note code (the provider's words and the request id kept), counted as a strike, and the line goes on as a failed run does (another account or, under its actor, another choice, D205), never a park. Proof: a stand-in agent whose turn ends on a refusal sentence is concluded failed with the code, and is not shown in *What needs you*.
+
+**Outcome** 2026-10-23: the protocol door ended the install's turn with `stopReason: refusal`, after the adapter said the provider's
+error as the agent's message. The observation never read the stop reason, so the run parked. That stop reason now reaches the
+conclusion (`HarnessEnding.ProviderRefused`), which reads it before every park. The run fails under `ended.provider-refused`, keeping
+the provider's words and request id. It is a strike, carried on as any failed run is (driver), and worded in en and zh (web). The
+red-first tick proof and the classes run are in FIX-LOG's APIREFUSAL1 entry.

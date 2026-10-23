@@ -535,12 +535,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 ? Observation.Resumed(
                     code, park.State, quest.Status, status, quest.Awaits, after?.Awaits, turnFailed,
                     took: !closed && status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                    lastWords: closed ? null : SessionLastWords.ParkedWords(_context.Events, sessionId, transcript),
+                    // APIREFUSAL1: a refused turn quotes its provider's words whether or not its quest had closed.
+                    lastWords: closed && !ended.ProviderRefused ? null : SessionLastWords.ParkedWords(_context.Events, sessionId, transcript),
                     // BGWAIT1c: the native door's harness ended its own background work with its turn.
                     backgroundCut: ended.BackgroundCut,
                     // FABRIC-CLOSE1h5: a closure graph's submission is its done, as at a first run's end.
                     submitted: !closed && QuestResults.Submitted(after),
-                    awaitsHelper: awaitsHelper)
+                    awaitsHelper: awaitsHelper,
+                    // APIREFUSAL1: its provider refused its turn, a failed run and never a park, as at a first run's end.
+                    providerRefused: ended.ProviderRefused)
                 // BGWAIT2: a done this run reached outranks the timeout; a quest closed before it went on is not this run's.
                 : _driver.Watch.EndedMinutes(sessionId) is { } quietMinutes
                     ? Observation.AfterQuiet(quietMinutes, quest.Status, status)

@@ -37,6 +37,12 @@ public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<str
     public SetupSwap? SetupChanged { get; init; }
 
     /// <summary>
+    /// Whether its last turn ended on its model's provider refusing a call (APIREFUSAL1): the protocol door's own stop reason,
+    /// <see cref="AcpOutcome.Refusal"/>, never words its agent wrote. False on every other door.
+    /// </summary>
+    public bool ProviderRefused { get; init; }
+
+    /// <summary>
     /// A door that carries only text (AGT3c): its transcript's last lines, both its streams, beside the process's exit. Its
     /// agent's words are among them and cannot be told apart, so only an exit that was not 0 lets them be read. Unreadable
     /// is none.

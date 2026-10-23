@@ -2417,7 +2417,9 @@ public sealed class Driver(
                                 backgroundCut: ended.BackgroundCut,
                                 // FABRIC-CLOSE1h5: a closure graph's submission is its done, so its session is due, never parked.
                                 submitted: QuestResults.Submitted(after),
-                                awaitsHelper: awaitsHelper)
+                                awaitsHelper: awaitsHelper,
+                                // APIREFUSAL1: its provider refused its turn, so it failed, and never parks on the person.
+                                providerRefused: ended.ProviderRefused)
                             // BGWAIT2: a done this run reached outranks the timeout, as it outranks a messy exit.
                             // SESSWATCH1a: the watcher's end (a headless --quiet-end) reads as its own cause, never as a bound's.
                             : Watch.EndedMinutes(sessionId) is { } quietMinutes
@@ -3346,7 +3348,12 @@ public sealed class Driver(
 
         var concluded = await conclude(
                 exitCode, used, turnFailed,
-                Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript) with { SetupChanged = left.Count > 0 ? swapped : null })
+                Ending(acp is not null, structured is not null, exitCode, turnFailed, own, transcript) with
+                {
+                    SetupChanged = left.Count > 0 ? swapped : null,
+                    // APIREFUSAL1: the door's own word that its provider refused the turn it ended on.
+                    ProviderRefused = outcome?.ProviderRefused == true,
+                })
             .ConfigureAwait(false);
 
         // The part's native children end with it (FABRIC-C1a): a run killed, stopped or failed says nothing of theirs, so each its

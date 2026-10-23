@@ -629,6 +629,8 @@ public sealed class AnswerContinuesTickTests : IDisposable
 
                         session["state"] = to;
                         if (body["note"] is { } note) session["note"] = note.GetValue<string>();
+                        // APIREFUSAL1: the note's parts, kept as the ledger keeps them, so a test reads an ending by its code.
+                        if (body["noteParts"] is { } parts) session["noteParts"] = parts.DeepClone();
                         if (to == "starting") _startNotes[id] = session["note"]?.GetValue<string>() ?? "";
                         // ANSWER1b: a session that parks again asks anew.
                         if (to == "awaiting-person") session.Remove("answer");

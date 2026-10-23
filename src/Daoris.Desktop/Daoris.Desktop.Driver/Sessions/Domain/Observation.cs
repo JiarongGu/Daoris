@@ -89,11 +89,15 @@ public static class Observation
     /// Whether its agent has a helper ask of its own still open, and its last turn asked the person nothing (HELPERWAIT1,
     /// <c>Driver.WaitsOnOwnHelperAsync</c>): where it would park, it waits on that helper instead.
     /// </param>
+    /// <param name="providerRefused">
+    /// Whether its last turn ended on its model's provider refusing a call (APIREFUSAL1, <see cref="HarnessEnding.ProviderRefused"/>):
+    /// the door's word, so <paramref name="lastWords"/> are the provider's error, quoted as its words and never as a question.
+    /// </param>
     public static SessionConclusion Conclude(
         int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool resumed = false, bool took = false, string? lastWords = null,
         string? reopenedFrom = null, IReadOnlyList<string>? backgroundCut = null, bool submitted = false,
-        bool awaitsHelper = false) => questStatus switch
+        bool awaitsHelper = false, bool providerRefused = false) => questStatus switch
     {
         // Ask and wait (D79): the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
@@ -124,6 +128,12 @@ public static class Observation
         "Open" when turnFailed is { Length: > 0 }
             => SessionConclusion.Of("failed", Noted.Of(NoteCodes.EndedTurnFailedOpen, "the agent's turn failed before it took its quest:")
                 .Then(" ", Noted.Said(turnFailed, NoteBy.Agent))),
+
+        // 🔴 APIREFUSAL1 (the install, 2026-10-23): its model's provider refused a call and the turn ended on it. Its adapter said the
+        // provider's error as the agent's last words and exited 0, so with its quest taken it parked, asking the person what nobody
+        // could answer. It is a failed run, a strike, carried on as one; read before every park, as a failed turn is.
+        "Taken" or "Open" when providerRefused
+            => SessionConclusion.Of("failed", ProviderRefusedNote(lastWords)),
 
         // FABRIC-CLOSE1c2 (§E5): the person reopened the work its quest grew from, and the service told it so at its step and refused
         // its done and its ready. It stopped holding its quest for their choice: a good ending, as a wait is, read before the park, which
@@ -221,6 +231,18 @@ public static class Observation
                 "It stopped with its quest still taken, to ask you — what it needs is in the last words of its transcript.");
 
     /// <summary>
+    /// A run whose turn its model's provider refused (APIREFUSAL1): Daoris's line, then the provider's words as the harness said them,
+    /// whole within the last words' bound, so its request id stays on the record; with none, the line alone.
+    /// </summary>
+    internal static Noted ProviderRefusedNote(string? words)
+    {
+        var line = Noted.Of(
+            NoteCodes.EndedProviderRefused,
+            "its model's provider refused its turn, so the run failed and goes on as a failed run does:");
+        return words is { Length: > 0 } said ? line.Then(" ", Noted.Said(said, NoteBy.Program)) : line;
+    }
+
+    /// <summary>
     /// A session that ended its turn on its own open helper ask (HELPERWAIT1): it waits on that helper, and comes to the person only if
     /// no answer comes. Its agent's words are not quoted: they are its conversation's, and a quote would read as a question.
     /// </summary>
@@ -265,14 +287,18 @@ public static class Observation
     /// <param name="backgroundCut">The session's own background work its harness ended with its turn (BGWAIT1c), as a start's.</param>
     /// <param name="submitted">Whether its quest stands at a closure graph's current submission, as a start's (FABRIC-CLOSE1h5).</param>
     /// <param name="awaitsHelper">Whether it ended its turn on its own open helper ask, as a start's (HELPERWAIT1).</param>
+    /// <param name="providerRefused">Whether its turn ended on its provider's refusal, as a start's (APIREFUSAL1).</param>
     public static SessionConclusion Resumed(
         int exitCode, string before, string startedOn, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
         string? turnFailed = null, bool took = false, string? lastWords = null, IReadOnlyList<string>? backgroundCut = null,
-        bool submitted = false, bool awaitsHelper = false) =>
+        bool submitted = false, bool awaitsHelper = false, bool providerRefused = false) =>
         startedOn is "Open" or "Taken"
             ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords, backgroundCut: backgroundCut,
-                submitted: submitted, awaitsHelper: awaitsHelper)
-            : WentOn(exitCode, before, turnFailed);
+                submitted: submitted, awaitsHelper: awaitsHelper, providerRefused: providerRefused)
+            : turnFailed is not { Length: > 0 } && providerRefused
+                // APIREFUSAL1: its words went on and its provider refused the turn, which never ends as the state it went on from.
+                ? SessionConclusion.Of("failed", ProviderRefusedNote(lastWords))
+                : WentOn(exitCode, before, turnFailed);
 
     /// <summary>
     /// How a session whose quest had closed ends after going on with the person's words (MSG1b, D137 §2.3): in the state it

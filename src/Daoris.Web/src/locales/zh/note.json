@@ -3,6 +3,7 @@
   "note.ended.exit": "进程退出码为 {{exit}}。",
   "note.ended.turn-failed-taken": "智能体这一轮失败，委托仍已接下：",
   "note.ended.turn-failed-open": "智能体这一轮在接下委托前失败：",
+  "note.ended.provider-refused": "模型的提供方拒绝了这一轮，因此本次运行失败，并像失败的运行一样继续：",
   "note.ended.parked-asked": "它停了下来，委托仍已接下，想问你：",
   "note.ended.parked-transcript": "它停了下来，委托仍已接下，想问你；它需要什么写在记录末尾。",
   "note.ended.parked-short": "它停下来问你。",

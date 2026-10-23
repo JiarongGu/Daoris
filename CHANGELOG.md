@@ -18,6 +18,9 @@ with the version and date at release.
   that landed on a branch for review, merged on the remote and then pulled outside Daoris, was not registered until Daoris
   started again. Now Daoris notices the line move, registers the repository from it at its next look, and tells every open
   window.
+- A session whose model's provider refused its turn no longer stops to ask you about it (APIREFUSAL1). It used to show the
+  provider's *API Error* under *What needs you* as though it were a question. Now the run fails, saying the provider refused it
+  and keeping the provider's words and request id, and the work goes on as after any failed run.
 
 - Finishing or declining a parked session now releases its tree's lock (TREELOCK2). The tidy also clears stale session locks
   at both tree locations. `trees remove --force` can remove a tree locked by an ended session and keeps trees a running or
