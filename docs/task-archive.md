@@ -19901,3 +19901,13 @@ separator; the height (the most its waits take, 240 px at first, 72 at the floor
 kept per viewer as `daoris.waitPanelHeight`. *To the top* and *Back to bottom* are one row above the panel's edge, over the
 conversation's sticky lines. Held by `WaitPanel.test.tsx` and `measured/waitPanel.spec.ts`, with `Work/Waiting panel`'s stories;
 the installed window is not yet looked at. Detail: D185's WAITPANEL1 note. On Opus.
+## SETUPSTATE1 — a repository set up from its page shows as set up (2026-10-23)
+
+> - [ ] **SETUPSTATE1 — a repository set up from its page shows as set up** (web, modules; the owner's report, 2026-10-23). After the person sets a repository up from its page (Projects, the repository's setup or configuration press), the page's state does not move: it does not read as an active, adopted Daoris repository. First find whether the setup's write lands and the page misses the change (a key or a pushed slice not told), or the setup does not finish; then fix that. Proof: a behavior test pressing the setup and seeing the repository's state change without a reload, and the installed window.
+
+**Outcome** 2026-10-23: the set-up finished, and its work reached the line through a pull request merged and pulled outside Daoris.
+The registry follows only lines Daoris moved, so it never registered the repository. The ref watch now makes a line due when it
+stands at another commit than it was last followed at (driver). A follow that sends a registration tells the windows `registry`
+(modules). The page re-reads the registry on that scope and drops *not adopted* with no reload (web behavior test). The red-first
+proof, the reached classes and the installed-window check are in FIX-LOG's SETUPSTATE1 entry; the window is looked at after the
+republish.
