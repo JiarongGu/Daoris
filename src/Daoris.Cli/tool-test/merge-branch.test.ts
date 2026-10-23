@@ -39,6 +39,8 @@ interface Options {
   ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean;
   /** CIFAST1: the stage's path, which runs the rehearsals a plain run owes. */
   ciStage: boolean;
+  /** CISCOPE1d: the nightly run by hand, every gate whole. */
+  ciNight: boolean;
 }
 /** GATEWT1: what the prune knows of the gate tree: git lists it, the commit it holds, its changes, its run's lock and its stage. */
 interface GateTreeFacts {
@@ -225,7 +227,7 @@ const tool = await import(
   };
   VERDICTS_FILE: string;
   verdictStanding: (facts: Judging & { from: string | null; gate: string }) => Standing;
-  stageJudgement: (facts: Judging & { plan: string[]; verdicts: Verdict[]; now?: number; bound?: number }) => { passed: boolean; missing: string[]; gates: Judged[] };
+  stageJudgement: (facts: Judging & { plan: string[]; verdicts: Verdict[]; now?: number; bound?: number; ageWhole?: boolean }) => { passed: boolean; missing: string[]; gates: Judged[] };
   stageRemedy: (gates: Judged[]) => { command: string; what: string; runs: string[] } | null;
   checkoutRerun: (gates: Judged[], named: string[]) => {
     run: string[]; kept: { name: string; verdict: string; at: string }[]; stale: { name: string; verdict: string; at: string; paths: string[] }[]; none: string[];
@@ -291,9 +293,14 @@ const tool = await import(
     pid: number; at: string; logOf: (gate: string, commit: string | null) => string | null; stage?: boolean;
   }) => CiStatus;
   watchCi: (seams: {
-    tip: () => string | null; gated: (commit: string) => boolean; holder: () => string | null; run: () => Promise<number>;
+    tip: () => string | null; gated: (commit: string) => boolean; holder: () => string | null; run: (kind?: string) => Promise<number>;
     stopAsked: () => boolean; sleep: (ms: number) => Promise<void>; say: (line: string) => void; pollMs?: number; tickMs?: number; now?: () => number;
+    schedule?: ((tip: string) => { kind: string; key: string; why?: string } | null) | null; report?: (() => string[]) | null;
   }) => Promise<number>;
+  /** CISCOPE1d: the gate store kept per gate, the scoped run's apart from the background's. */
+  keptVerdicts: (verdicts: (Verdict & { kind?: string })[], keep?: number) => (Verdict & { kind?: string })[];
+  VERDICTS_KEPT_PER_GATE: number;
+  nightHour: (env: Record<string, string | undefined>) => number | null;
   /** PROCREACH1: a Process half run by the classes a change reaches, each class's verdict kept with its tree, a whole half at least daily. */
   CLASS_VERDICTS_FILE: string;
   SWEEP_BOUND_MS: number;
@@ -322,7 +329,7 @@ interface CiGate {
 interface CiStatus {
   schema: number; commit: string; tree: string; state: string; pid: number; started: string; updated: string; ended: string | null;
   since: { commit: string | null; at: string | null; paths: number | null }; light: { width: number; idle: boolean; why: string };
-  stage: boolean; owed: string[]; gates: CiGate[]; error?: string;
+  stage: boolean; kind?: string; owed: string[]; gates: CiGate[]; error?: string;
 }
 
 // The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
@@ -349,7 +356,7 @@ test('the arguments name one branch, or several after --batch, and the flags', (
   assert.deepEqual(tool.parseArgs(['mod9']), {
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
-    ci: false, ciCommit: null, watch: false, stop: false, ciStage: false,
+    ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
   });
   assert.equal(tool.parseArgs(['a', '--gated']).gated, true);
   assert.equal(tool.parseArgs(['--continue', '--gated']).gated, true);
@@ -470,7 +477,15 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
     assert.deepEqual([stage.ci, stage.ciStage, stage.ciCommit, stage.branches], [true, true, 'abc1234', []], argv.join(' '));
   }
   assert.deepEqual([tool.parseArgs(['--ci', '--stage']).ciStage, tool.parseArgs(['--ci', '--stage']).ciCommit], [true, null]);
+  // CISCOPE1d: the nightly run by hand, every gate whole, its commit after --night or after --ci.
+  for (const argv of [['--ci', '--night', 'abc1234'], ['--ci', 'abc1234', '--night']]) {
+    const night = tool.parseArgs(argv);
+    assert.deepEqual([night.ci, night.ciNight, night.ciStage, night.ciCommit], [true, true, false, 'abc1234'], argv.join(' '));
+  }
   const cases: [string[], RegExp][] = [
+    [['--night'], /--night is the CI's: --ci --night \[<commit>\]/],
+    [['--ci', '--night', '--stage'], /--ci --night is a run of its own/],
+    [['--ci', '--night', '--watch'], /--ci --night is a run of its own/],
     [['--watch'], /--watch is the CI's: --ci --watch/],
     [['--stop'], /--stop is the CI watch's: --ci --stop/],
     [['--ci', 'abc1234', 'b'], /--ci takes no branch/],
@@ -478,7 +493,7 @@ test("--ci gates a commit in the gate tree, main's tip unless named; --watch fol
     [['--ci', '--watch', 'abc1234'], /--ci --watch gates main's tip as it moves: it takes no commit/],
     [['--ci', '--stop', 'abc1234'], /--ci --stop takes nothing else/],
     [['--ci', '--stop', '--watch'], /--ci --stop takes nothing else/],
-    [['--ci', '--full'], /--ci takes only a commit, --stage, --watch, --stop, --keep-going and --one-at-a-time/],
+    [['--ci', '--full'], /--ci takes only a commit, --stage, --night, --watch, --stop, --keep-going and --one-at-a-time/],
     [['--stage'], /--stage is the CI's: --ci --stage \[<commit>\]/],
     [['--ci', '--watch', '--stage'], /--ci --watch owes the stage's rehearsals/],
     [['--ci', '--stop', '--stage'], /--ci --stop takes nothing else/],
@@ -622,7 +637,7 @@ test("a CI run's status names each gate of the plan: those it runs waiting, the 
     light: { width: 5, idle: true, why: 'idle' }, pid: 42, at: '2026-10-22T10:00:00Z',
     logOf: (gate, commit) => (commit === kept.commit ? `local/scratch/ci-ccccccc/${gate}.log` : null),
   });
-  assert.deepEqual(Object.keys(status), ['schema', '_why', 'commit', 'tree', 'state', 'pid', 'started', 'updated', 'ended', 'since', 'light', 'stage', 'owed', 'gates']);
+  assert.deepEqual(Object.keys(status), ['schema', '_why', 'commit', 'tree', 'state', 'pid', 'started', 'updated', 'ended', 'since', 'light', 'stage', 'kind', 'owed', 'gates']);
   assert.deepEqual([status.stage, status.owed], [false, []]);
   assert.deepEqual([status.schema, status.commit, status.tree, status.state, status.pid, status.started, status.updated, status.ended],
     [1, 'a'.repeat(40), 't2', 'running', 42, '2026-10-22T10:00:00Z', '2026-10-22T10:00:00Z', null]);
@@ -4507,6 +4522,91 @@ test('the stage refuses a Process half that kept classes on verdicts older than 
     'a sweep whose time does not read is no sweep within the bound');
 });
 
+// CISCOPE1d (design §5.3 point 2, §8 row 4): a standing whole pass's age, before a stage only.
+test('before a stage a whole Process pass standing by reach counts only within the bound, an older one behind it neither; on its own tree at any age', () => {
+  const now = Date.parse('2026-10-24T12:00:00Z');
+  const judging = { tree: 'T', drift: (from: string) => (from === 'T' ? [] : ['docs/a.md']), isRecord: () => false, reaching: () => [] };
+  const verdicts: Verdict[] = [
+    // Two whole passes on older trees, by reach alone: 30 hours and three days old.
+    { gate: 'driver-process-git', verdict: 'PASS', tree: 'R', at: '2026-10-21T12:00:00Z', classes: { ran: 86, kept: 0, sweep: '2026-10-21T12:00:00Z' } },
+    { gate: 'driver-process-git', verdict: 'PASS', tree: 'S', at: '2026-10-23T06:00:00Z', classes: { ran: 86, kept: 0, sweep: '2026-10-23T06:00:00Z' } },
+    // A whole pass on this very tree, three days old.
+    { gate: 'modules-process', verdict: 'PASS', tree: 'T', at: '2026-10-21T12:00:00Z', classes: { ran: 19, kept: 0, sweep: '2026-10-21T12:00:00Z' } },
+    // A whole pass by reach, 5 hours old.
+    { gate: 'driver-process', verdict: 'PASS', tree: 'S', at: '2026-10-24T07:00:00Z', classes: { ran: 100, kept: 0, sweep: '2026-10-24T07:00:00Z' } },
+  ];
+  const plan = ['driver-process-git', 'modules-process', 'driver-process'];
+  const staged = tool.stageJudgement({ ...judging, plan, verdicts, now, ageWhole: true });
+  assert.deepEqual(staged.missing, ['driver-process-git'], 'the newer aged pass, and the older one behind it, both refused');
+  const aged = staged.gates[0] as Judged & { swept?: { aged?: boolean; verdict: Verdict } };
+  assert.deepEqual([aged.swept?.aged, aged.swept?.verdict.tree], [true, 'S']);
+  // The CI's own judgement is unchanged (a pass stands at any age), and the stage's path judges as the stage does.
+  assert.equal(tool.stageJudgement({ ...judging, plan, verdicts, now }).passed, true);
+  assert.deepEqual(tool.ciPlan({ ...judging, plan, verdicts, now, ageWhole: true } as Parameters<typeof tool.ciPlan>[0]).run, ['driver-process-git']);
+});
+
+test('a known-red browser spec and a known-red rehearsal fail their gates at the stage: no waiver', () => {
+  const judging = { tree: 'T', drift: () => [], isRecord: () => false, reaching: () => [] };
+  const verdicts: Verdict[] = [
+    { gate: 'universal', verdict: 'PASS', tree: 'T', at: '2026-10-24T10:00:00Z' },
+    { gate: 'web-e2e', verdict: 'FAIL', tree: 'T', at: '2026-10-24T10:00:00Z' },
+    { gate: 'rehearse-family', verdict: 'FAIL', tree: 'T', at: '2026-10-24T10:00:00Z' },
+  ];
+  const judged = tool.stageJudgement({ ...judging, plan: ['universal', 'web-e2e', 'rehearse-family'], verdicts, ageWhole: true });
+  assert.deepEqual(judged.missing, ['web-e2e', 'rehearse-family']);
+});
+
+test("the gate store keeps each gate's verdicts apart for the scoped run and the background: a working day of scoped verdicts leaves a night's and a stage's in place", () => {
+  const at = (minute: number) => new Date(Date.parse('2026-10-24T00:00:00Z') + minute * 60_000).toISOString();
+  const night = { gate: 'cli', verdict: 'PASS', tree: 'N', at: at(0), kind: 'nightly' };
+  const stage = { gate: 'cli', verdict: 'PASS', tree: 'S', at: at(1), kind: 'stage' };
+  // 127 merges' scoped verdicts on the same gate, the day the design measured.
+  const day = Array.from({ length: 127 }, (_, i) => ({ gate: 'cli', verdict: 'PASS', tree: `c${i}`, at: at(10 + i), kind: 'scoped' }));
+  const kept = tool.keptVerdicts([night, stage, ...day]);
+  assert.deepEqual(kept.filter((each) => each.kind !== 'scoped').map((each) => each.kind), ['nightly', 'stage']);
+  assert.equal(kept.filter((each) => each.kind === 'scoped').length, tool.VERDICTS_KEPT_PER_GATE);
+  assert.equal(kept.at(-1)!.tree, 'c126', 'the newest of each kept, in their order');
+  // Another gate's verdicts are kept apart too.
+  assert.equal(tool.keptVerdicts([...day, { gate: 'web', verdict: 'PASS', tree: 'W', at: at(500) }]).filter((each) => each.gate === 'web').length, 1);
+});
+
+test("CISCOPE1d: the watch runs a night due first, then a tip with no verdict, then a due sweep, each kind once a tip, and says the overdue report as it changes", async () => {
+  const runs: string[] = [];
+  const said: string[] = [];
+  let clock = 0;
+  const due = { night: true, sweep: true };
+  const watching = tool.watchCi({
+    tip: () => 'a'.repeat(40),
+    gated: () => runs.includes('ordinary'),
+    holder: () => null,
+    schedule: () => (due.night ? { kind: 'nightly', key: 'nightly 03:00', why: 'the night due has not run' }
+      : !runs.includes('ordinary') ? { kind: 'ordinary', key: 'ordinary' }
+        : due.sweep ? { kind: 'sweep', key: 'sweep driver-process-git', why: 'driver-process-git is due a sweep' } : null),
+    report: () => (due.sweep ? ["overdue: driver-process-git's sweep"] : []),
+    run: async (kind?: string) => {
+      runs.push(kind ?? '');
+      if (kind === 'nightly') due.night = false;
+      // The sweep's build fails and leaves the half unrun, so it stays due: the watch does not start it again for this tip.
+      return kind === 'sweep' ? 1 : 0;
+    },
+    // Twenty polls: long enough to show the due sweep is not started again on the same tip.
+    stopAsked: () => clock >= 2000,
+    sleep: async () => { clock += 100; },
+    say: (line) => said.push(line),
+    pollMs: 100,
+    tickMs: 100,
+    now: () => clock,
+  });
+  assert.equal(await watching, 0);
+  assert.deepEqual(runs, ['nightly', 'ordinary', 'sweep']);
+  assert.match(said.join('\n'), /the CI watch: a nightly run of aaaaaaa: the night due has not run/);
+  assert.match(said.join('\n'), /the CI watch: a sweep run of aaaaaaa: driver-process-git is due a sweep/);
+  assert.equal(said.filter((line) => /overdue: driver-process-git's sweep/.test(line)).length, 1, 'the report said once while it holds');
+  assert.equal(tool.nightHour({ MERGE_BRANCH_CI_NIGHT_HOUR: 'off' }), null);
+  assert.equal(tool.nightHour({ MERGE_BRANCH_CI_NIGHT_HOUR: '23' }), 23);
+  assert.equal(tool.nightHour({}), 3);
+});
+
 // ---------------------------------------------------------------------------------------------------
 // CIPRIO1: a full set beside the merges is a guest on the machine
 
@@ -5176,6 +5276,19 @@ const FAKE_DOTNET = [
 /** What ran, or what was recorded, in name order: light gates that build nothing in common run side by side (GATELANES2). */
 const unordered = (list: string[]): string[] => [...list].sort();
 
+/**
+ * CISCOPE1d: a background run's receipt on HEAD's tree, as `local/ci-runs.jsonl` holds one, for the tests whose subject is the
+ * gates' judgement (GATE6, GATE6b) rather than where the receipt comes from: a stage needs one beside its gates' verdicts.
+ */
+function receipt(root: string, fields: { kind?: string; finished?: boolean } = {}): void {
+  const file = join(root, 'local', 'ci-runs.jsonl');
+  mkdirSync(dirname(file), { recursive: true });
+  const held = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  const at = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  const line = { commit: git(root, 'rev-parse', 'HEAD'), tree: git(root, 'rev-parse', 'HEAD^{tree}'), kind: fields.kind ?? 'ci', started: at, ended: at, finished: fields.finished ?? true, state: 'failed', gates: [] };
+  writeFileSync(file, `${held}${JSON.stringify(line)}\n`);
+}
+
 interface Scratch {
   root: string;
   /** `cwd`: where the tool runs, the repository's main checkout unless named (GATEWT1 runs it in the gate tree). */
@@ -5230,7 +5343,7 @@ function scratch(name: string, gates: { name: string; run: string }[], files: Re
       const named = args.some((arg) => ['--full', '--rerun', '--stale', '--passed', '--prune', '--gated', '--ci'].includes(arg));
       const given = named || extra['BY_DEFAULT'] !== undefined ? args : [...args, '--gated'];
       // MEMGATE1: a scratch's heavy gates never read the machine's memory, so no test here waits on what the machine holds.
-      const child = spawn(process.execPath, [TOOL, ...given], { cwd, env: { ...env, ...GIT_ENV, MERGE_BRANCH_MEMORY: 'off', ...extra } });
+      const child = spawn(process.execPath, [TOOL, ...given], { cwd, env: { ...env, ...GIT_ENV, MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', ...extra } });
       let out = '';
       child.stdout.on('data', (chunk) => { out += String(chunk); });
       child.stderr.on('data', (chunk) => { out += String(chunk); });
@@ -5873,7 +5986,9 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /the full set has NOT passed this checkout/);
     assert.match(result.out, /first\s+none\s+no verdict on this tree/);
-    assert.match(result.out, /node tools\/merge-branch\.mjs --full/);
+    // CISCOPE1d: no background run finished on it either, so the stage's own run is what it names.
+    assert.match(result.out, /not staged\s+no background run's receipt on its commit's tree \([0-9a-f]{7}\): no background run finished on it/);
+    assert.match(result.out, /\n {2}Run the stage's own run in the gate tree on it: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
 
     result = await repo.run(['--full']);
     assert.equal(result.status, 0, result.out);
@@ -5887,13 +6002,33 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(record.verdicts[0]!.tree, git(repo.root, 'rev-parse', 'HEAD^{tree}'), 'the tree that was gated, the clean checkout\'s');
     assert.equal(record.verdicts[0]!.commit, git(repo.root, 'rev-parse', 'HEAD'));
 
+    // CISCOPE1d: `--full` on the checkout is no background run, so its passes alone do not stage it.
+    assert.match(result.out, /A stage still needs its evidence: no background run's receipt on its commit's tree/);
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /the full set has passed this checkout \(.*\): 2 of 2 gates, but the stage's evidence is missing \(CISCOPE1d\)/);
+    // A sweep-only run's receipt, and a run that was stopped, are said and never counted.
+    receipt(repo.root, { kind: 'sweep' });
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /only a sweep-only run finished on it, which ran one half and is no receipt a stage counts/);
+    receipt(repo.root, { kind: 'ordinary', finished: false });
+    assert.equal((await repo.run(['--passed'])).status, 1);
+    receipt(repo.root);
     result = await repo.run(['--passed']);
     assert.equal(result.status, 0, result.out);
     assert.match(result.out, /the full set has passed this checkout/);
     assert.match(result.out, /first\s+PASS\s+\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC\s+on this tree/);
+    assert.match(result.out, /receipt\s+a ci run finished on this commit's tree/);
 
-    // The parent writes the records after the gates: a tree that differs only by them is forgiven.
+    // The parent writes the records after the gates: a tree that differs only by them is forgiven, once committed.
     writeFileSync(join(repo.root, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\n- **A** line, long enough.\n');
+    // CISCOPE1d: uncommitted, it is a dirty checkout whose HEAD has a receipt and passing verdicts, refused all the same.
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /not staged\s+its content \(tree [0-9a-f]{7}\) is not its commit's \(tree [0-9a-f]{7}\): a stage builds a commit's tree, never uncommitted changes/);
+    git(repo.root, 'commit', '--quiet', '-am', `the records${TRAILER}`);
+    receipt(repo.root);
     result = await repo.run(['--passed']);
     assert.equal(result.status, 0, result.out);
     assert.match(result.out, /on a tree that differs from this one only by the records \(CHANGELOG\.md\)/);
@@ -5934,6 +6069,9 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(repo.ran().slice(3), ['web']);
     git(repo.root, 'commit', '--quiet', '--no-edit');
     writeFileSync(join(repo.root, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\n- **A** browser test, fixed.\n');
+    // CISCOPE1d: the records committed, and a background run finished on that commit, as the watch's would.
+    git(repo.root, 'commit', '--quiet', '-am', `the records${TRAILER}`);
+    receipt(repo.root);
     result = await repo.run(['--passed']);
     assert.equal(result.status, 0, result.out);
     assert.match(result.out, /the full set has passed this checkout/);
@@ -5966,6 +6104,12 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // The refusal names --stale, which runs two gates, not a second full run.
     writeFileSync(join(repo.root, spec), 'two\n');
     git(repo.root, 'commit', '--quiet', '-am', `fix the spec${TRAILER}`);
+    // CISCOPE1d: with no background run on the fix, the stage's own run is what it names.
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /\n {2}Run the stage's own run in the gate tree on it: node tools\/merge-branch\.mjs --ci --stage [0-9a-f]{7}\n/);
+    // One finished on it (and failed the stale gates): the smaller command is what is left.
+    receipt(repo.root);
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /\n {2}Run the 2 stale gates on it: node tools\/merge-branch\.mjs --stale\n/);
@@ -6009,6 +6153,8 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.deepEqual(unordered(repo.ran()), ['first', 'second', 'third']);
     assert.match(result.out, /\n {2}Run the gate it lacks on it: node tools\/merge-branch\.mjs --rerun second\n/, 'the failed full set names the smaller command');
 
+    // CISCOPE1d: the background run finished on this commit too, its flake failing there as here.
+    receipt(repo.root);
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
     assert.match(result.out, /second\s+FAIL\s+.* UTC\s+on this tree/);
@@ -6485,6 +6631,16 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     result = await repo.run(['--passed'], {}, gateTree);
     assert.equal(result.status, 0, result.out);
     assert.equal(publish.ungatedRefusal(join(dirname(repo.root), 'install'), gateTree).refusal, null);
+    // CISCOPE1d: each run left its receipt, by tree, with its kind and each gate's verdict and the kind that gave it.
+    const receipts = () => readFileSync(join(repo.root, 'local', 'ci-runs.jsonl'), 'utf8').split('\n').filter(Boolean)
+      .map((line) => JSON.parse(line) as { commit: string; tree: string; kind: string; finished: boolean; state: string; gates: { name: string; state: string; verdict: string | null; kind: string | null }[] });
+    assert.deepEqual(receipts().map((each) => [each.commit, each.tree, each.kind, each.finished, each.state]), [
+      [first, git(repo.root, 'rev-parse', `${first}^{tree}`), 'ci', true, 'green'],
+      [second, git(repo.root, 'rev-parse', `${second}^{tree}`), 'ci', true, 'green'],
+    ]);
+    assert.deepEqual(receipts()[1]!.gates.map((gate) => `${gate.name} ${gate.state} ${gate.verdict} ${gate.kind}`), ['universal done PASS ci', 'service done PASS ci', 'tool-tests kept PASS ci']);
+    const verdictKinds = (JSON.parse(readFileSync(join(repo.root, 'local', 'gate-verdicts.json'), 'utf8')) as { verdicts: Verdict[] }).verdicts.map((each) => (each as Verdict & { kind?: string }).kind);
+    assert.deepEqual([...new Set(verdictKinds)], ['ci'], 'every verdict carries the kind of run that gave it');
 
     // Again on the same commit: nothing is owed and nothing runs.
     rmSync(ranFile, { force: true });
@@ -6503,6 +6659,12 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(record().lastGreen!.commit, second, 'the last green run is still the one before');
     result = await repo.run(['--passed'], {}, gateTree);
     assert.equal(result.status, 1, 'a failed commit is still refused at the stage');
+    // CISCOPE1d: the failure is filed as known red, by its gate's step where it names no test, first seen on this commit.
+    type Filed = { gate: string; test: string; state: string; firstSeen: { commit: string }; lastSeen: { commit: string }; cleared: { commit: string; kind: string } | null };
+    const findings = () => (JSON.parse(readFileSync(join(repo.root, 'local', 'ci-findings.json'), 'utf8')) as { findings: Filed[] }).findings;
+    assert.deepEqual(findings().map((each) => [each.gate, each.test, each.state, each.firstSeen.commit]), [['universal', 'universal', 'red', third]]);
+    assert.match(result.out, /universal\s+FAIL/);
+    assert.match(readFileSync(join(repo.root, 'local', 'scratch', `ci-${third.slice(0, 7)}`, 'status.json'), 'utf8'), /"knownRed"/);
 
     // A change that reaches only the tool tests: the failed gate runs with it, owed whatever the change.
     const fourth = commit('tools/merge-branch.mjs', '// the scratch repository\'s own\n');
@@ -6510,8 +6672,17 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(ranThere(), ['tool-tests', 'universal']);
     assert.deepEqual(states(statusOf(fourth)), ['universal done PASS', 'service kept PASS', 'tool-tests done PASS']);
+    // Its pass on a commit that descends from where it was last seen failing clears it.
+    assert.deepEqual(findings().map((each) => [each.state, each.cleared?.commit, each.cleared?.kind]), [['cleared', fourth, 'ci']]);
+    assert.match(result.out, /known red \(local\/ci-findings\.json\): 0 filed, 1 cleared by this run; 0 open/);
+    // A late run on the older, failing commit, which fourth does not precede: its pass clears nothing, and its failure is
+    // the same signature seen within a day of the clearing, which restores the finding with its first sighting.
+    rmSync(ranFile, { force: true });
+    result = await repo.run(['--ci', third.slice(0, 7)], { CI_FAIL: 'universal' });
+    assert.equal(result.status, 1, result.out);
+    assert.deepEqual(findings().map((each) => [each.state, each.firstSeen.commit, each.lastSeen.commit]), [['red', third, third]]);
     assert.deepEqual(record().runs.map((run) => `${run.commit.slice(0, 7)} ${run.state}`),
-      [first, second, second, third, fourth].map((sha, i) => `${sha.slice(0, 7)} ${i === 3 ? 'failed' : 'green'}`));
+      [first, second, second, third, fourth, third].map((sha, i) => `${sha.slice(0, 7)} ${i === 3 || i === 5 ? 'failed' : 'green'}`));
     repo.cleanup();
   });
 
@@ -6557,7 +6728,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       let status = statusOf(tip);
       assert.deepEqual([status.state, status.stage, status.owed], ['green', false, ['rehearse-family', 'deployment']]);
       assert.deepEqual(states(status), ['universal done PASS', 'rehearse-family owed null', 'deployment owed null']);
-      assert.deepEqual(record().runs.at(-1), { commit: tip, state: 'green', at: record().runs.at(-1)!.at, status: `local/scratch/ci-${sha}/status.json`, owed: ['rehearse-family', 'deployment'] });
+      assert.deepEqual(record().runs.at(-1), { commit: tip, state: 'green', at: record().runs.at(-1)!.at, status: `local/scratch/ci-${sha}/status.json`, kind: 'ci', owed: ['rehearse-family', 'deployment'] });
       // The stage asks their pass, and a plain run gave none.
       result = await repo.run(['--passed'], {}, gateTree);
       assert.equal(result.status, 1, result.out);
@@ -6592,12 +6763,33 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       assert.deepEqual(record().runs.at(-1)!.stage, true);
       result = await repo.run(['--passed'], {}, gateTree);
       assert.equal(result.status, 0, result.out);
+      // CISCOPE1d: the stage's path left a receipt of its kind on this tree, which the stage counts.
+      const receipts = readFileSync(join(repo.root, 'local', 'ci-runs.jsonl'), 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line) as { kind: string; state: string; finished: boolean });
+      assert.deepEqual(receipts.map((each) => `${each.kind} ${each.state} ${each.finished}`), ['ci green true', 'stage failed true', 'ci green true', 'stage green true']);
+      assert.match(result.out, /receipt\s+a stage run finished on this commit's tree/);
       // Their passes stand for a plain run after: nothing is owed or run.
       clear();
       result = await repo.run(['--ci']);
       assert.equal(result.status, 0, result.out);
       assert.match(result.out, /nothing to run/);
       assert.deepEqual(statusOf(tip).owed, []);
+
+      // CISCOPE1d: the night runs every gate whole, the rehearsals included, whatever stands, and a finished one satisfies it.
+      clear();
+      result = await repo.run(['--ci', '--night']);
+      assert.equal(result.status, 0, result.out);
+      assert.match(result.out, new RegExp(`CI on ${sha} \\(CI1, the nightly run: every gate whole \\(CISCOPE1d\\)\\): 3 of 3 gates to run, 0 verdicts kept`));
+      assert.deepEqual([read('ran.txt'), read('rehearsals.txt')], [['universal'], ['rehearse-family start', 'rehearse-family end', 'deployment start', 'deployment end']]);
+      assert.match(result.out, /the night is satisfied: this nightly run finished/);
+      const sweep = JSON.parse(readFileSync(join(repo.root, 'local', 'ci-sweep.json'), 'utf8')) as { night: { commit: string } | null };
+      assert.equal(sweep.night?.commit, tip);
+      assert.equal(statusOf(tip).kind, 'nightly');
+      // A red night that finished satisfies it too, its failure filed (a stopped one is `nightSatisfied`'s, ci-background.test.ts).
+      clear();
+      result = await repo.run(['--ci', '--night'], { CI_FAIL: 'universal' });
+      assert.equal(result.status, 1, result.out);
+      assert.match(result.out, /the night is satisfied: this nightly run finished/);
+      assert.match(result.out, /known red \(local\/ci-findings\.json\): 1 filed/);
     } finally {
       repo.cleanup();
     }
@@ -6680,6 +6872,27 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
     assert.match(result.out, /desk-process: the whole half runs \(3 classes\): its oldest kept class verdict \(Desk\.Tests\.BetaTests, [^)]+\) is older than 24 hours: a sweep runs the whole half/);
+    result = await repo.run(['--passed'], env, gateTree);
+    assert.equal(result.status, 0, result.out);
+
+    // CISCOPE1d: the due record holds the half's last sweep, its whole run's; past its bound the stage refuses, and the stage's
+    // own run runs the half whole though its pass stands, which satisfies it again.
+    const sweepFile = join(repo.root, 'local', 'ci-sweep.json');
+    const dueRecord = JSON.parse(readFileSync(sweepFile, 'utf8')) as { halves: Record<string, { last: string; commit: string; kind: string }> };
+    assert.deepEqual([dueRecord.halves['desk-process']!.commit, dueRecord.halves['desk-process']!.kind], [second, 'ci']);
+    dueRecord.halves['desk-process']!.last = aged(dueRecord.halves['desk-process']!.last);
+    writeFileSync(sweepFile, JSON.stringify(dueRecord));
+    result = await repo.run(['--passed'], env, gateTree);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /not staged\s+desk-process's sweep is overdue \(local\/ci-sweep\.json\): last run whole/);
+    assert.match(result.out, new RegExp(`Run the stage's own run in the gate tree on it: node tools/merge-branch\\.mjs --ci --stage ${second.slice(0, 7)}`));
+    rmSync(ranFile, { force: true });
+    result = await repo.run(['--ci', '--stage', second.slice(0, 7)], env);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(dotnetRan(), ['dotnet-test AlphaTests BetaTests LonelyTests']);
+    assert.match(result.out, /due a sweep \(local\/ci-sweep\.json\): desk-process, run whole whatever its reach/);
+    assert.match(result.out, /desk-process: the whole half runs \(3 classes\): its sweep is due \(ci-sweep\.json\)/);
+    assert.match(result.out, /swept \(local\/ci-sweep\.json\): desk-process, each class given a verdict/);
     result = await repo.run(['--passed'], env, gateTree);
     assert.equal(result.status, 0, result.out);
 

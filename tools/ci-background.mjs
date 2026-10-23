@@ -231,10 +231,11 @@ export function overdueLines(record, halves, now = Date.now(), { bound = SWEEP_B
 
 /**
  * Which run the watch starts next, and why, or null: a night due first (a missed night caught up before any other background
- * run), then a tip no run gave a verdict on (`ordinary`), then a due sweep with no promotion to ride (`sweep`).
+ * run), then a tip no run gave a verdict on (`ordinary`), then a due sweep with no promotion to ride (`sweep`). An `hour` of
+ * null runs no night.
  */
 export function nextRun({ record, halves, tipGated, now = Date.now(), bound = SWEEP_BOUND_MS, hour = NIGHT_HOUR }) {
-  const night = nightDue(record, now, hour);
+  const night = hour === null ? { due: false } : nightDue(record, now, hour);
   if (night.due) return { kind: 'nightly', key: `nightly ${night.since}`, why: `the night due ${minute(night.since)} has not run` };
   if (!tipGated) return { kind: 'ordinary', key: 'ordinary', why: "main's tip has no verdict of a run here" };
   const due = dueHalves(record, halves, now, bound);
