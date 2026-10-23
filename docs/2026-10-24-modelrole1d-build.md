@@ -35,8 +35,10 @@ which remain.
    kept for conversations, an agent this machine lacks passed `unavailable`; with none, the ask holds on *Intake waits: none of its
    choices can run now.*, the soonest cool-off beside it. The target carries the entry's `Asked` and `Choice`, so both doors carry its
    model and effort and the record keeps its choice; the opening note's actor line says a later choice.
-4. **§3.5(b)'s pending start** (remaining): `ChatPending` owning the attempt across replacements, the queued words moved, the go-on
-   after an interruption, a pick never walked afresh, a refused continuation's brief recomposed.
+4. **§3.5(b)'s pending start** (remaining, filed as MODELROLE1d2 with the curve move's reading): `ChatPending` owning the attempt
+   across replacements, the queued words moved, the go-on after an interruption, a pick never walked afresh, a refused continuation's
+   brief recomposed. Until then a conversation whose model its account refuses at the open runs at account default, said as *not
+   carried*, as MODELROLE1c left it.
 5. **§3.5(f)'s Intake re-ask** (built). An intake's open is handed its offers (`OpenOffers`): what its open lists is kept as its
    agent's reading, and a refusal of the entry's model at the open is kept refused on that account, then re-asked over the order its
    start read (`DriverIntakes.ReaskAsync`, the walk with no count and the start's own left out): a later entry of the same agent on
@@ -67,6 +69,9 @@ waiting on the wait's sentence with none), its fast half, `InstallUpdateTests` a
 Part 5: the changed Process class `IntakeTests` with `process.runsettings` (an intake its first account refuses at the open ends
 `choice-not-offered` with its ask let go and the reading kept, and a driver started again answers the ask once on the second
 account); `AttentionTests`, `StrikeTests`, `StructureTests` and `IntakeTests`' fast half.
+
+Before finishing: the driver's fast half (14,269 passed) and the modules' (2,341 passed); the CLI's `doc-duplicates`, `dogfood` and
+`home-census` tests; the web's `i18n:check`, `names-check.mjs --strict`, `src/locales` and `presentational` tests; `check:web-rules`.
 
 ## Readings
 
