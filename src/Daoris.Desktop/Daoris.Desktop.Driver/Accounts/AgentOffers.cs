@@ -17,7 +17,11 @@ public sealed record OfferReading(
     DateTimeOffset At,
     IReadOnlyList<string>? Models,
     IReadOnlyList<string>? Efforts,
-    IReadOnlyList<string> Refused);
+    IReadOnlyList<string> Refused)
+{
+    /// <summary>When it last refused a model there: what a refusal's day is counted from, apart from the opens that list again.</summary>
+    public DateTimeOffset? RefusedAt { get; init; }
+}
 
 /// <summary>
 /// <c>data/agent-offers.json</c> (D205 §9.2, MODELROLE1c2): what each agent, version and account last offered in <c>model</c> and
@@ -71,9 +75,14 @@ public static class AgentOffers
 
     /// <summary>
     /// Whether <paramref name="account"/>'s reading passes it for <paramref name="model"/> in a start on <paramref name="agent"/> at
-    /// <paramref name="version"/>: <see cref="RefusedCode"/> where it refused that model, <see cref="NotOffered"/> where its list lacks it,
-    /// null where the account is tried (account default, no reading, a stale or other-version one, or the model offered).
+    /// <paramref name="version"/>: where that account refused the model at an open, <see cref="NotOffered"/> if its list lacks it and
+    /// <see cref="RefusedCode"/> if the list offered it; null where the account is tried (account default, no reading, a stale or
+    /// other-version one, or no refusal of that model).
     /// </summary>
+    /// <remarks>
+    /// A list that lacks a model is never a pass by itself (MODELROLE1a): Claude's protocol door lists aliases and takes a full id the list
+    /// does not name, answering its alias, so only the agent's own refusal at an open passes an account.
+    /// </remarks>
     public static string? Judge(
         IReadOnlyList<OfferReading> readings, string agent, string? version, string? account, string? model, DateTimeOffset now)
     {
@@ -81,24 +90,27 @@ public static class AgentOffers
         var key = account ?? OwnHome;
         var reading = readings.FirstOrDefault(each =>
             string.Equals(each.Agent, agent, StringComparison.OrdinalIgnoreCase) && string.Equals(each.Account, key, StringComparison.OrdinalIgnoreCase));
-        if (reading is null || !string.Equals(reading.Version, version, StringComparison.Ordinal) || now - reading.At >= Fresh) return null;
-        if (reading.Refused.Contains(model, StringComparer.OrdinalIgnoreCase)) return RefusedCode;
-        return reading.Models is { Count: > 0 } models && !models.Contains(model, StringComparer.OrdinalIgnoreCase) ? NotOffered : null;
+        if (reading is null || !string.Equals(reading.Version, version, StringComparison.Ordinal)) return null;
+        if (reading.RefusedAt is not { } refusedAt || now - refusedAt >= Fresh) return null;
+        if (!reading.Refused.Contains(model, StringComparer.OrdinalIgnoreCase)) return null;
+        return reading.Models?.Contains(model, StringComparer.OrdinalIgnoreCase) == true ? RefusedCode : NotOffered;
     }
 
     /// <summary>
-    /// An open's reading (§9.2, at every protocol <c>session/new</c>): what it listed, replacing the account's last list; a model it
-    /// refused at this version is kept refused only while the new list still lacks it. Null where written; else why not.
+    /// An open's reading (§9.2, at every protocol <c>session/new</c>): what it listed, replacing the account's last list; the models it
+    /// refused at this version stay refused until their day is out, since an open that lists them again has not tried them. Null where
+    /// written; else why not.
     /// </summary>
     public static string? Offered(
         string home, string agent, string? version, string? account, IReadOnlyList<string>? models, IReadOnlyList<string>? efforts,
         DateTimeOffset now) =>
         Edit(home, agent, account, version, now, held =>
         {
-            var refused = held is not null && held.Version == version
-                ? held.Refused.Where(model => models is null || !models.Contains(model, StringComparer.OrdinalIgnoreCase)).ToList()
-                : [];
-            return new OfferReading(agent, version, account ?? OwnHome, now, models, efforts, refused);
+            var same = held is not null && held.Version == version;
+            return new OfferReading(agent, version, account ?? OwnHome, now, models, efforts, same ? held!.Refused : [])
+            {
+                RefusedAt = same ? held!.RefusedAt : null,
+            };
         });
 
     /// <summary>
@@ -108,10 +120,14 @@ public static class AgentOffers
     public static string? Refused(string home, string agent, string? version, string? account, string model, DateTimeOffset now) =>
         Edit(home, agent, account, version, now, held =>
         {
-            var same = held is not null && held.Version == version;
+            var same = held is not null && held.Version == version && held.RefusedAt is { } at && now - at < Fresh;
             List<string> refused = same ? [.. held!.Refused] : [];
             if (!refused.Contains(model, StringComparer.OrdinalIgnoreCase)) refused.Add(model);
-            return new OfferReading(agent, version, account ?? OwnHome, now, same ? held!.Models : null, same ? held!.Efforts : null, refused);
+            var listed = held is not null && held.Version == version;
+            return new OfferReading(agent, version, account ?? OwnHome, now, listed ? held!.Models : null, listed ? held!.Efforts : null, refused)
+            {
+                RefusedAt = now,
+            };
         });
 
     private static string Key(string agent, string? account) => $"{agent.ToLowerInvariant()}|{(account ?? OwnHome).ToLowerInvariant()}";
@@ -155,6 +171,8 @@ public static class AgentOffers
     private static string? Numeric(string? version) =>
         version is null ? null : new string([.. version.TakeWhile(c => char.IsDigit(c) || c == '.')]).Trim('.');
 
+    private static string Moment(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
+
     private static string Text(IReadOnlyDictionary<string, OfferReading> readings) => JsonFile.Serialize(writer =>
     {
         writer.WriteStartObject();
@@ -166,7 +184,8 @@ public static class AgentOffers
             writer.WriteString("agent", reading.Agent);
             writer.WriteString("account", reading.Account);
             if (reading.Version is not null) writer.WriteString("version", reading.Version);
-            writer.WriteString("at", reading.At.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture));
+            writer.WriteString("at", Moment(reading.At));
+            if (reading.RefusedAt is { } refusedAt) writer.WriteString("refusedAt", Moment(refusedAt));
             List("models", reading.Models);
             List("efforts", reading.Efforts);
             List("refused", reading.Refused);
@@ -226,7 +245,14 @@ public static class AgentOffers
             return null;
         }
 
-        return new(agent, Text("version"), Text("account") ?? OwnHome, when, Values("models"), Values("efforts"), Values("refused") ?? []);
+        DateTimeOffset? refusedAt = Text("refusedAt") is { } refused
+            && DateTimeOffset.TryParse(refused, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var refusedWhen)
+                ? refusedWhen
+                : null;
+        return new(agent, Text("version"), Text("account") ?? OwnHome, when, Values("models"), Values("efforts"), Values("refused") ?? [])
+        {
+            RefusedAt = refusedAt,
+        };
 
         string? Text(string name) => element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 

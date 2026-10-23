@@ -43,6 +43,12 @@ public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<str
     public bool ProviderRefused { get; init; }
 
     /// <summary>
+    /// Its agent did not offer, or refused, the choice its actor asked at the open, and nothing else could run on that session, so it
+    /// ended before any prompt (D205 §3.3, MODELROLE1c2): its record ends <c>choice-not-offered</c>. Null on every other run.
+    /// </summary>
+    public ModelRefusal? NotOffered { get; init; }
+
+    /// <summary>
     /// A door that carries only text (AGT3c): its transcript's last lines, both its streams, beside the process's exit. Its
     /// agent's words are among them and cannot be told apart, so only an exit that was not 0 lets them be read. Unreadable
     /// is none.

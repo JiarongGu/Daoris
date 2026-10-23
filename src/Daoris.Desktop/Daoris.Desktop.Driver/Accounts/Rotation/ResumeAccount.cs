@@ -78,10 +78,18 @@ public sealed record ResumeChoice(HarnessSelection Selection, NextHold Own)
     public bool Waits => Own == NextHold.Cooling && !NewSession && !Limited;
 
     /// <summary>
+    /// The own account's reading does not offer the record's asked model (D205 §3.5(a), MODELROLE1c2): it cannot carry the words, which
+    /// go to a new record on another account of the same choice, the old record left as it was.
+    /// </summary>
+    public bool NotOffered { get; init; }
+
+    /// <summary>
     /// Why the words go elsewhere, where they do (the reason <c>account</c>, with what held the account as its detail); null
     /// where the resume runs on its own account or waits for it.
     /// </summary>
-    public ContinueReason? Elsewhere => Own is NextHold.Ready or NextHold.Near || Waits ? null : ContinueWhy.AccountHeld(Own, NewSession);
+    public ContinueReason? Elsewhere => NotOffered
+        ? ContinueWhy.Of(ContinueWhy.Account) with { Detail = ResumeWords.NotOfferedLine }
+        : Own is NextHold.Ready or NextHold.Near || Waits ? null : ContinueWhy.AccountHeld(Own, NewSession);
 
     /// <summary>
     /// The conversation's line while its words wait (CONVNOTE2g): <see cref="ResumeWords.NotYet"/> and why, by code
@@ -256,4 +264,7 @@ public static class ResumeWords
         (NextHold.Kept, _) => Noted.Of(NoteCodes.AccountResumeKept, "That account is kept for conversations, which driven work never runs on."),
         _ => null,
     };
+
+    /// <summary>The own account's reading does not offer the asked model (D205 §3.5(a)), naming neither, since the note travels.</summary>
+    public static Noted NotOfferedLine => Noted.Of(NoteCodes.AccountResumeNotOffered, "That account does not offer the model this work asked for.");
 }

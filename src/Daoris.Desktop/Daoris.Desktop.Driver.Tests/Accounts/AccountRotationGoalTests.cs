@@ -186,16 +186,50 @@ public sealed class AccountRotationGoalTests : IDisposable
              { "id": "s2", "adapter": "claude-code", "profile": "account-2", "created": "2026-10-01T11:00:00+05:45", "state": "completed" },
              { "id": "s3", "adapter": "claude-code", "created": "not a time", "state": "working" },
              { "id": "s4", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
-             { "id": "other-machine/s1", "adapter": "claude-code", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" }]
+             { "id": "other-machine/s1", "adapter": "claude-code", "profile": "account-1", "created": "2026-10-01T10:00:00Z", "state": "working" },
+             { "id": "s5", "adapter": "claude-code-acp", "profile": "account-1", "created": "2026-10-01T12:00:00Z", "state": "failed",
+               "noteParts": [{ "code": "ended.choice-not-offered", "values": { "agent": "claude-code-acp", "model": "opus" } }] }]
             """, [new SessionView("s1", "engine", "working"), new SessionView("s3", "engine", "working")]);
 
         Assert.Equal(
             [
-                new SessionStarted("claude-code-acp", "account-1", new DateTimeOffset(2026, 10, 1, 10, 0, 0, TimeSpan.Zero), Running: true),
-                new SessionStarted("claude-code", "account-2", new DateTimeOffset(2026, 10, 1, 11, 0, 0, TimeSpan.FromMinutes(345)), Running: false),
-                new SessionStarted("claude-code", null, null, Running: true),
+                new SessionStarted("claude-code-acp", "account-1", new DateTimeOffset(2026, 10, 1, 10, 0, 0, TimeSpan.Zero), Running: true) { Id = "s1" },
+                new SessionStarted("claude-code", "account-2", new DateTimeOffset(2026, 10, 1, 11, 0, 0, TimeSpan.FromMinutes(345)), Running: false) { Id = "s2" },
+                new SessionStarted("claude-code", null, null, Running: true) { Id = "s3" },
+                // MODELROLE1c2 (D205 §3.5(c)): a record its agent's refusal of the choice ended is read so, by its end code.
+                new SessionStarted("claude-code-acp", "account-1", new DateTimeOffset(2026, 10, 1, 12, 0, 0, TimeSpan.Zero), Running: false)
+                {
+                    Id = "s5",
+                    NotOffered = true,
+                },
             ],
             started);
+    }
+
+    /// <summary>
+    /// MODELROLE1c2 (D205 §4.1, round 4, R3-B1): a start's one count is given back by <c>Release</c>, both halves and idempotently: its
+    /// number taken back with no look between, and, after a look captured its still-running record, that record made neither running nor
+    /// the account's last start, so the refusing account is neither busy nor ranked as just used.
+    /// </summary>
+    [Fact]
+    public async Task Release_gives_back_a_start_s_count_with_no_look_and_after_a_look()
+    {
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
+        var roster = Present();
+
+        var chosen = await roster.SelectAsync("fake", Config, null, null);
+        Assert.True(chosen.Number > 0);
+        Assert.True(roster.Busy("fake", chosen.Profile));
+        roster.Release(chosen.Number);
+        roster.Release(chosen.Number);
+        Assert.False(roster.Busy("fake", chosen.Profile));
+
+        var mark = roster.Mark();
+        roster.Look([new SessionStarted("fake", "account-1", DateTimeOffset.UtcNow, Running: true) { Id = "s1" }], mark);
+        Assert.True(roster.Busy("fake", "account-1"));
+        roster.Release(0, "s1");
+        Assert.False(roster.Busy("fake", "account-1"));
     }
 
     [Fact]

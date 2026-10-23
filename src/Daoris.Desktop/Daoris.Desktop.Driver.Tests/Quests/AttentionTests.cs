@@ -182,6 +182,25 @@ public sealed class AttentionTests
     }
 
     /// <summary>
+    /// MODELROLE1c2 (D205 §3.5(c), §4.6): an end its agent's refusal of the choice made at the open raises no <i>Ended</i>: the next look
+    /// starts what the walk answers, and a fallback asks nothing. A failure beside it in the same look is still said.
+    /// </summary>
+    [Fact]
+    public void A_choice_not_offered_conclusion_raises_no_ended()
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Tick([Session("s1", "working"), Session("s2", "working")]));
+
+        var events = watch.Observe(Tick(
+            [],
+            new SessionEnded("s1", "engine", "failed", ByPerson: false, "Not started.", Quest: "q1") { NotOffered = true },
+            new SessionEnded("s2", "engine", "failed", ByPerson: false, "the gate went red.")));
+
+        Assert.Equal("s2", Assert.Single(events, e => e.Kind == AttentionKind.Ended).Session);
+        Assert.DoesNotContain(events, e => e.Session == "s1");
+    }
+
+    /// <summary>
     /// A session that left the active list without the driver concluding it ended some other way —
     /// a resolve, an ended chat, a stop — and every one of those is the person, on this machine,
     /// pressing something. There is nothing to suppress, because there is nothing to report.

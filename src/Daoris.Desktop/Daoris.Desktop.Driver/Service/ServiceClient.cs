@@ -2046,6 +2046,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             var cutOff = (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase) && !Limit(session) && !AccountRefused(session))
                          || (string.Equals(state, "stopped", StringComparison.OrdinalIgnoreCase) && Interrupted(session));
             if (NotePart.Read(session)?.Any(part => part.Code == NoteCodes.UpdateClosed.Code) == true) continue;
+            // D205 §3.5(c): a choice its agent refused at the open, before any prompt, is the account's, never the quest's.
+            if (NotOffered(session)) continue;
             if (!cutOff) continue;
             if (Text(session, "quest") is not { Length: > 0 } quest) continue;
 
@@ -2072,6 +2074,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (IsTeams(session)) continue;
             if (Text(session, "quest") is not { Length: > 0 } quest) continue;
             if (string.Equals(Text(session, "state"), "stood-down", StringComparison.OrdinalIgnoreCase)) continue;
+            // D205 §3.5(c): a record its agent's refusal of the choice ended before any prompt ran nothing, so a carry-on carries on from
+            // the record before it, never from the empty one.
+            if (NotOffered(session)) continue;
 
             var at = Moments.Read(Text(session, "created")) ?? DateTimeOffset.MinValue;
             if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
@@ -2456,7 +2461,12 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 adapter,
                 Text(session, "profile"),
                 Moments.Read(Text(session, "created")),
-                running.Contains(Text(session, "id") ?? "")));
+                running.Contains(Text(session, "id") ?? ""))
+            {
+                Id = Text(session, "id"),
+                // D205 §3.5(c): a record its agent's refusal of the choice ended at the open, read by its end code.
+                NotOffered = NotOffered(session),
+            });
         }
 
         return started;
@@ -2477,6 +2487,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     private static bool AccountRefused(JsonElement session) =>
         NotePart.Read(session) is { } parts
         && parts.Any(part => part.Code is { } code && NoteCodes.AccountsOwn.Any(own => own.Code == code));
+
+    /// <summary>
+    /// Whether a record ended <c>choice-not-offered</c> (D205 §3.5(c), MODELROLE1c2), read by its end code: its agent refused the choice at
+    /// the open, before any prompt, so it is no strike, no last run and no start the walk counts.
+    /// </summary>
+    internal static bool NotOffered(JsonElement session) =>
+        NotePart.Read(session)?.Any(part => part.Code == NoteCodes.EndedChoiceNotOffered.Code) == true;
 
     /// <summary>A record that came down from the team — keyed `origin/id`, the id this machine's own never has.</summary>
     internal static bool IsTeams(JsonElement session) => Text(session, "id")?.Contains('/') == true;

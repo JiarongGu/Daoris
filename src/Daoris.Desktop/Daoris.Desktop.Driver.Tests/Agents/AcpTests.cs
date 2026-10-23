@@ -2837,6 +2837,87 @@ public sealed class AcpTests
         Assert.Equal(carried, told is null);
     }
 
+    // ——— MODELROLE1c2: a choice refused at the open (D205 §3.3), re-asked before any prompt.
+
+    private static string Refusing(JsonElement frame) =>
+        $$$$"""{"jsonrpc":"2.0","id":{{{{frame.GetProperty("id").GetRawText()}}}},"error":{"code":-32603,"message":"Internal error","data":{"details":"Invalid value for config option model"}}}""";
+
+    /// <summary>
+    /// 🔴 A model the agent refuses at the set, where the start re-asks, ends the open before any prompt: the refusal is the re-ask's,
+    /// coded <c>not-offered</c> for a value its list did not name, the session closed, and the outcome carries it, so the record ends
+    /// <c>choice-not-offered</c>. The opening's list is told as the agent's offers first.
+    /// </summary>
+    [Fact]
+    public async Task A_model_refused_at_the_open_with_nothing_else_ends_it_before_any_prompt()
+    {
+        var agent = Carrying(frame => frame.GetProperty("params").GetProperty("value").GetString() == "mythos" ? Refusing(frame) : null);
+        ModelRefusal? asked = null;
+        IReadOnlyList<AcpConfigOption>? offered = null;
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+        {
+            Carry = Entry("mythos", null),
+            ModelRefused = refusal => { asked = refusal; return Task.FromResult<ActorAsked?>(null); },
+            OffersRead = options => offered = options,
+        };
+
+        var outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
+
+        Assert.Equal(new ModelRefusal("model", "mythos", AgentOffers.NotOffered), asked);
+        Assert.Equal(asked, outcome.NotOffered);
+        Assert.Equal(AcpOutcome.ChoiceNotOffered, outcome.StopReason);
+        Assert.DoesNotContain("session/prompt", Methods(agent));
+        Assert.Contains(offered!, option => option.Category == "model");
+    }
+
+    /// <summary>
+    /// D205 §3.3's same-account move: the re-ask answers a later choice of the same agent on the same account, set on the open session
+    /// with no respawn; a category the refused attempt moved and the later choice leaves at account default is first set back to its
+    /// opening value (round 4, Opus N6: the opening snapshot, not the latest list), then the run prompts.
+    /// </summary>
+    [Fact]
+    public async Task A_same_account_move_sets_the_later_choice_on_the_open_session_restoring_what_the_attempt_moved()
+    {
+        // `opus` answered with `haiku` (another value it offers): a refusal that moved the session.
+        var agent = Carrying(frame => frame.GetProperty("params").GetProperty("value").GetString() == "opus"
+            ? Ok(frame, ClaudeAnswer("auto", "haiku", "default"))
+            : null);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+        {
+            Carry = Entry("opus", null),
+            ModelRefused = refusal => Task.FromResult<ActorAsked?>(refusal.Code == AgentOffers.RefusedCode ? Entry(null, "low") : null),
+        };
+
+        var outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
+
+        Assert.Null(outcome.NotOffered);
+        var sets = Methods(agent).Where(method => method.StartsWith("set ", StringComparison.Ordinal)).ToList();
+        Assert.Equal(["set model=opus", "set model=default", "set effort=low"], sets);
+        Assert.Contains("session/prompt", Methods(agent));
+        Assert.Equal("default", session.OpeningOptions.First(option => option.Category == "model").Current);
+    }
+
+    /// <summary>D205 §3.3: an agent that refuses the set back to the opening value ends the record, as a refusal with nothing else.</summary>
+    [Fact]
+    public async Task A_set_back_the_agent_refuses_ends_the_open()
+    {
+        var agent = Carrying(frame => frame.GetProperty("params").GetProperty("value").GetString() switch
+        {
+            "opus" => Ok(frame, ClaudeAnswer("auto", "haiku", "default")),
+            "default" => Refusing(frame),
+            _ => null,
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+        {
+            Carry = Entry("opus", null),
+            ModelRefused = _ => Task.FromResult<ActorAsked?>(Entry(null, "low")),
+        };
+
+        var outcome = await session.RunAsync("D:/fam/Game", "a task", CancellationToken.None);
+
+        Assert.NotNull(outcome.NotOffered);
+        Assert.DoesNotContain("session/prompt", Methods(agent));
+    }
+
     // ——— ACPDATA1: a refusal's `data`, kept beside its message (D125 §1.2; limit-signals evidence §3, §4).
 
     /// <summary>An agent that refuses the prompt with this JSON-RPC error, and answers the rest.</summary>

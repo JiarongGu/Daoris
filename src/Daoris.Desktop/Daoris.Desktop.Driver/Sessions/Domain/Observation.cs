@@ -231,6 +231,18 @@ public static class Observation
                 "It stopped with its quest still taken, to ask you — what it needs is in the last words of its transcript.");
 
     /// <summary>
+    /// A start whose agent did not offer, or refused, the model its actor asked at the open, before any prompt (D205 §3.3, §3.5(c),
+    /// MODELROLE1c2): <c>failed</c>, ended <c>choice-not-offered</c>, naming the agent and the model but no account, since the note travels.
+    /// </summary>
+    internal static SessionConclusion ChoiceNotOffered(string agent, ModelRefusal refusal) =>
+        SessionConclusion.Of(
+            "failed",
+            Noted.Of(
+                NoteCodes.EndedChoiceNotOffered,
+                $"Not started: `{agent}` did not offer `{refusal.Value}` on its account, so nothing ran; the next look chooses again by its actor's order.",
+                ("agent", agent), ("model", refusal.Value)));
+
+    /// <summary>
     /// A run whose turn its model's provider refused (APIREFUSAL1): Daoris's line, then the provider's words as the harness said them,
     /// whole within the last words' bound, so its request id stays on the record; with none, the line alone.
     /// </summary>

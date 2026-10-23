@@ -403,6 +403,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 stopMade: stop => stoppedFirst = stop,
                 movedFirst: true,
                 spawned: () => spawned = true,
+                // MODELROLE1c2 (D205 §3.5(a)): a resume keeps its asked choice and never moves to another, so a refusal at the open ends the
+                // open and puts the record back (ConcludeResumedAsync); what the open lists is kept as its account's reading.
+                offers: new OpenOffers(selection.Version, selection.Profile, _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
                 conclude: (exitCode, used, turnFailed, ended) =>
                     ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended,
                         openedAt, ct))
@@ -544,6 +547,17 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var service = _context.Service;
         var config = _context.Config;
         var sessionId = park.Session;
+
+        // 🔴 MODELROLE1c2 (D205 §3.5(a), round 4, Opus §2.2 and N4): its own account refused its asked model at the open, before any prompt.
+        // The record holds work and the person's words, so it is never ended `choice-not-offered`: it is put back as it ended, which leaves
+        // it not running and concludes nothing, so no strike can be read; its count is given back once its process stopped; and the next
+        // look's resume judges the reading kept, carrying its words to a new record on another account of the same choice.
+        if (ended.NotOffered is not null && _context.Processes.StopMade(sessionId) is null)
+        {
+            _context.Harnesses.Release(selection.Number);
+            var (put, fellBack, _) = await PutBackAsync(quest, park).ConfigureAwait(false);
+            return (put, fellBack);
+        }
 
         // 🔴 The native door's harness ended on a failed exit before naming its conversation, once more after its one retry as the same
         // resume (SESSCTX1c, D189's amendment; HoldAsync tried it): it never opened it, which a crash, a failed sign-in or a flag it
