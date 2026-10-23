@@ -149,7 +149,7 @@ const DERIVED: ReadonlySet<string> = new Set(['parked', 'awaiting-reply', 'answe
  * derives that this page does not know reads as the record's own, never as nothing.
  */
 export function shownOf(
-  session: Pick<Session, 'kind' | 'state' | 'answer'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
+  session: Pick<Session, 'kind' | 'state' | 'answer' | 'limit'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
   taking: boolean | undefined,
 ): ShownState {
   if (grouping && DERIVED.has(grouping.shown)) return grouping.shown as ShownState;

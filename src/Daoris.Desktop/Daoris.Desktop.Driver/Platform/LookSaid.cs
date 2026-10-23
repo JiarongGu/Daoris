@@ -157,11 +157,20 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     /// <summary>A plugin whose hook process exited three times within an hour: not started again until the person tries again (NOTIFY2h2).</summary>
     public const string PluginUnsound = "plugin-unsound";
 
+    /// <summary>
+    /// A quest's line an account's limit cut off, held while every account it may run on cools: it goes on by itself once one is ready
+    /// (LIMITRESUME1a, D206 point 1). Its own news, said once per limited part, in place of that part's <i>Ended</i>.
+    /// </summary>
+    public const string LimitWaits = "limit-waits";
+
+    /// <summary>A quest's line an account's limit cut off, gone on in a new session handed the brief (LIMITRESUME1a): its own news, once.</summary>
+    public const string LimitWentOn = "limit-went-on";
+
     /// <summary>Every news code, which the page's words cover in both languages.</summary>
     public static readonly IReadOnlyList<string> NewsCodes =
         [HandOverRefused, HandOverElsewhere, HandOverDropped, HandOverAskRefused, HandOverFailed, HandedBack, LostClaim, LostToReopen,
          MeetingCut, BrainstormCut, Swept, MeetingFailed, BrainstormFailed, HelperAskerGone, ReopenUnrecorded, ReopenTreeGone,
-         PluginUnsound];
+         PluginUnsound, LimitWaits, LimitWentOn];
 
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
 

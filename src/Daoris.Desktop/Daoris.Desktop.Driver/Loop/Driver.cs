@@ -929,14 +929,29 @@ public sealed class Driver(
                     signedOutAt.Remove(opened);
                 }
 
+                // LIMITRESUME1a (D206 point 1): a line a limit cut off says that it went on, once, as its own news, not its end's.
+                if (LimitedLine(came.Started) is { } wentOn)
+                {
+                    events.Add(Lines.News("start", wentOn with { Code = LookSaid.LimitWentOn }, $"start  #{wentOn.Quest}: {LimitWentOnLine}"));
+                }
+
                 continue;
             }
 
-            // A start held on its accounts waits on the person (its row); one held otherwise is tried at a later look (NOTIFY2h).
-            var startClass = came.Came is { Cooling: not null } or { SignedOut: not null } ? LookClass.Wait
-                : came.Came is { Held: not null, Ended: null } ? LookClass.Retry
-                : LookClass.Progress;
-            events.Add(Lines.Of(startClass, "start", came.Came.Line));
+            // A start held on its accounts waits on the person (its row); one held otherwise is tried at a later look (NOTIFY2h). A line a
+            // limit cut off, held on cooling accounts, says it waits as its own news, once (LIMITRESUME1a), the band saying the time.
+            if (came.Came.Cooling is not null && LimitedLine(came.Started) is { } limitWaits)
+            {
+                events.Add(Lines.News("start", limitWaits, came.Came.Line));
+            }
+            else
+            {
+                var startClass = came.Came is { Cooling: not null } or { SignedOut: not null } ? LookClass.Wait
+                    : came.Came is { Held: not null, Ended: null } ? LookClass.Retry
+                    : LookClass.Progress;
+                events.Add(Lines.Of(startClass, "start", came.Came.Line));
+            }
+
             progressed |= came.Came.Opened;
             if (came.Came.Ended is not null) concluded.Add(came.Came.Ended);
             if (came.Started.Quest is { } quest && came.Came.Held is not null) heldAt[quest] = came.Came.Held;
@@ -1078,6 +1093,19 @@ public sealed class Driver(
             }
         }
     }
+
+    /// <summary>The line said where a line a limit cut off went on (LIMITRESUME1a): every carry-on is a new part handed the brief.</summary>
+    internal const string LimitWentOnLine = "work an account's limit cut off went on in a new session, handed Daoris's brief.";
+
+    /// <summary>
+    /// The line's own news for a start of a quest whose last part an account's limit ended (LIMITRESUME1a, D206 point 1; the limit-resume
+    /// design §3.1), coded <see cref="LookSaid.LimitWaits"/> and keyed by that part, so each limited part says it waits once and went on
+    /// once; null for any other start. A start the person's words make is theirs, never said back (R3), so it is none.
+    /// </summary>
+    internal static LookNews? LimitedLine(StartBegun started) =>
+        started is { Quest: { } quest, Start: { GoesOn: false, Resumes: { Limit: true } prior } }
+            ? new LookNews(LookSaid.LimitWaits, prior.Session, prior.Session, quest, started.Workspace)
+            : null;
 
     /// <summary>
     /// The starts this look held on a cooling account, one wait per account (TOOL4d, D125 §4), each written to the
@@ -2496,7 +2524,7 @@ public sealed class Driver(
                             : new SessionEnded(
                                 sessionId, quest.To, conclusion.State,
                                 ByPerson: stop is { ByPerson: true }, conclusion.Note,
-                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile));
+                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile) { Limit = limited });
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
