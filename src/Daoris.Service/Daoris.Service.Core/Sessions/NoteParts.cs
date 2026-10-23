@@ -36,6 +36,8 @@ public static class LedgerNoteCodes
     public static readonly LedgerNoteCode WentOnHelperBoth = new("ledger.went-on-helper-both", ["at"]);
     // Daoris's own words alone (COWORK1b, D188): a reopen told, a step's go-on; never "your words".
     public static readonly LedgerNoteCode WentOnDaoris = new("ledger.went-on-daoris", ["at"]);
+    // The supervisor's answer alone (SUPERVISOR1a-i, D208): on the owner's behalf, never "your words".
+    public static readonly LedgerNoteCode WentOnSupervisor = new("ledger.went-on-supervisor", ["at"]);
     // A quest's note (QUESTCLOSE1b1): the person marked it done, their words, where they gave any, a part beneath it.
     public static readonly LedgerNoteCode PersonDone = new("quest.person-done", []);
 

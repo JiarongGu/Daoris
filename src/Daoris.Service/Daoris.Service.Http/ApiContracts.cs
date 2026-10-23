@@ -460,9 +460,11 @@ public sealed record SessionResponse(
 // COWORK1b (D188): `from`, the author where it is not the person (`daoris`), and `key`, its producer's; absent on a word kept with none.
 // COWORK1c (D188): `level`, when its sender asked it to reach a working session, and `attempt`, when a dispatcher first wrote it to a
 // harness; each absent on a word kept with none.
+// `Decision`, `Question` and `Choice` (SUPERVISOR1a-i, D208): what a `from: supervisor` word claims, absent on every other.
 public sealed record SaidWordResponse(
     string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens, string? By = null, string? Helper = null,
-    string? From = null, string? Key = null, string? Level = null, DateTimeOffset? Attempt = null);
+    string? From = null, string? Key = null, string? Level = null, DateTimeOffset? Attempt = null,
+    string? Decision = null, string? Question = null, string? Choice = null);
 // MSG1a (D137 §5.3): what the person says to a parked or ended session. `Files` are the names of what they gave with it;
 // a path is cut to its name before it is kept.
 // `Channel` (SESSONE2e, D167) is the id of the channel message the words are, which the channel already keeps on the ask:
@@ -471,9 +473,11 @@ public sealed record SaidWordResponse(
 // producer's key, a word kept once per key on the record; absent, the door keeps the person's words as before.
 // COWORK1c (D188): `Level` (`ordinary`, `urgent` or `now`, refused `level` for any other), and `Running`, the driver that runs the
 // session asking for its run: a running record keeps the word only so; absent, it refuses as before.
+// `Decision`, `Question` and `Choice` (SUPERVISOR1a-i, D208): the supervisor's release names them with `from: supervisor` and no
+// text, the service composing the words from the choice; any other author naming one is refused `from`.
 public sealed record SayRequest(
     string? Text, IReadOnlyList<string>? Files = null, string? Channel = null, string? From = null, string? Key = null,
-    string? Level = null, bool? Running = null);
+    string? Level = null, bool? Running = null, string? Decision = null, string? Question = null, string? Choice = null);
 // The session as it stands, the ledger's sentence, and the word as kept (to this machine only).
 public sealed record SaidResponse(SessionResponse Session, string Message, SaidWordResponse? Said);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
@@ -623,9 +627,12 @@ public sealed record ResolvedKeepRequest(List<string>? Resolved);
 // it; a note sent without them clears the record's, and an older driver sends none. `Expected` (TERMTRUST1a, D201 point 2): the
 // state the record must be in, compared in the ledger's step; none moves from any state the move allows, as before. `UnbindAsk`
 // (LIMITRESUME1h, D206): an intake's end lets its ask go in the same step, for the next intake; none keeps the binding, as before.
+// `Expect` (SUPERVISOR1a-i, D208): the supervisor's words a move to working admits, exactly; none admits none.
 public sealed record AdvanceSessionRequest(
     string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null,
-    JsonElement? NoteParts = null, string? Expected = null, bool? UnbindAsk = null);
+    JsonElement? NoteParts = null, string? Expected = null, bool? UnbindAsk = null, IReadOnlyList<string>? Expect = null);
+// SUPERVISOR1a-i (D208): a park the driver took up put back, less the supervisor's words it admitted and never handed.
+public sealed record RestoreParkRequest(IReadOnlyList<string>? TakeBack, string? Note, JsonElement? NoteParts = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 // `FirstLine` and `LastLine` (ORIENT2e): the lines of its file an entry is, as `/api/entries` answers them, taken
 // only where they can be its body's; a feed that names none is read as before.

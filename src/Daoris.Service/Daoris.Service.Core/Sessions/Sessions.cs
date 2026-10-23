@@ -383,12 +383,22 @@ public sealed record Session(
 /// <see cref="SessionStore.MarkAttemptAsync"/>: a word with an attempt and not taken off when a shell comes up may have reached the agent,
 /// and is never sent again. Null for a word never attempted, and every word kept before the field.
 /// </param>
+/// <param name="Decision">
+/// The supervisor's decision a <see cref="SaidFrom.Supervisor"/> word claims (SUPERVISOR1a-i, the supervisor design §6.1), or null.
+/// A claim on the record, never an authority: only the driver's memory says which word its release wrote.
+/// </param>
+/// <param name="Question">The recorded question that decision answers (SUPERVISOR1a-i), or null.</param>
+/// <param name="Choice">The offered label the decision chose (SUPERVISOR1a-i), from which the service composed the text, or null.</param>
 public sealed record SaidWord(
     string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens = false, string? By = null, string? Helper = null,
-    string? Channel = null, string? From = null, string? Key = null, string? Level = null, DateTimeOffset? Attempt = null)
+    string? Channel = null, string? From = null, string? Key = null, string? Level = null, DateTimeOffset? Attempt = null,
+    string? Decision = null, string? Question = null, string? Choice = null)
 {
-    /// <summary>Whether the person said it: every word but another agent's, a reviewer's, a helper's or Daoris's.</summary>
+    /// <summary>Whether the person said it: every word but another agent's, a reviewer's, a helper's, Daoris's or the supervisor's.</summary>
     public bool Persons => By is null && Helper is null && From is null;
+
+    /// <summary>Whether it claims the supervisor (SUPERVISOR1a-i): a claim only, which the driver attributes or quarantines.</summary>
+    public bool Supervisors => From == SaidFrom.Supervisor;
 }
 
 /// <summary>The authors a word on a record names in its <see cref="SaidWord.From"/> (COWORK1b, D188): never the person, who is the absence.</summary>
@@ -403,8 +413,14 @@ public static class SaidFrom
     /// </summary>
     public const string Agent = "agent";
 
+    /// <summary>
+    /// The supervisor the owner appointed, answering a park's question on their behalf (SUPERVISOR1a-i, D208): kept only through the
+    /// say's conditional step with its decision, question and choice, its text the service's own. Never the person's.
+    /// </summary>
+    public const string Supervisor = "supervisor";
+
     /// <summary>Whether this build keeps a word by <paramref name="from"/>: none named, or one it knows.</summary>
-    public static bool Known(string? from) => from is null or Daoris or Agent;
+    public static bool Known(string? from) => from is null or Daoris or Agent or Supervisor;
 }
 
 /// <summary>
@@ -1662,7 +1678,11 @@ public sealed class SessionStore
                 // COWORK1c: its level, a later build's word read as none, and when a dispatcher first wrote it to a harness.
                 var level = JsonFields.Text(element, "level") is { Length: > 0 } asked && SaidLevel.Known(asked) ? asked : null;
                 var attempt = Moments.Read(element, "attempt");
-                words.Add(new SaidWord(wordId, text, at, files, reopens, by, helper, channel, from, key, level, attempt));
+                // SUPERVISOR1a-i: what a supervisor's word claims, read as claims; absent on every other word.
+                var decision = JsonFields.Text(element, "decision") is { Length: > 0 } decided ? decided : null;
+                var question = JsonFields.Text(element, "question") is { Length: > 0 } questioned ? questioned : null;
+                var choice = JsonFields.Text(element, "choice") is { Length: > 0 } chose ? chose : null;
+                words.Add(new SaidWord(wordId, text, at, files, reopens, by, helper, channel, from, key, level, attempt, decision, question, choice));
             }
 
             return words;
@@ -1700,6 +1720,9 @@ public sealed class SessionStore
         if (word.Key is not null) writer.WriteString("key", word.Key);
         if (word.Level is not null) writer.WriteString("level", word.Level);
         if (word.Attempt is { } attempt) writer.WriteString("attempt", Moments.Write(attempt));
+        if (word.Decision is not null) writer.WriteString("decision", word.Decision);
+        if (word.Question is not null) writer.WriteString("question", word.Question);
+        if (word.Choice is not null) writer.WriteString("choice", word.Choice);
         writer.WriteEndObject();
     }
 

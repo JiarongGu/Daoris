@@ -70,6 +70,8 @@ describe('a session note’s codes, held to both catalogues', () => {
       'ledger.went-on-helper', 'ledger.went-on-helper-both',
       // Daoris's own words alone (COWORK1b).
       'ledger.went-on-daoris',
+      // The supervisor's answer alone (SUPERVISOR1a-i).
+      'ledger.went-on-supervisor',
       // A quest's note (QUESTCLOSE1b1): the person's done, its lead coded and their words beneath it.
       'quest.person-done',
     ]);
