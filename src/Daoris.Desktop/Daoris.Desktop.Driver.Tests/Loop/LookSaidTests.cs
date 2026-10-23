@@ -162,6 +162,35 @@ public sealed class LookSaidTests : IDisposable
         Assert.Equal("look-meeting-failed-m1", Assert.Single(Notices.Read(_home, Now)!).Id);
     }
 
+    /// <summary>
+    /// LIMITRESUME1a (D206 point 1; the limit-resume design §3.1): a quest's line a limit cut off says what became of it as its own news,
+    /// not as an <i>Ended</i>: keyed by the limited part, so a start held look after look keeps one notice of its wait and one of its
+    /// going on. A start that carries on any other end, or that the person's words make, says none.
+    /// </summary>
+    [Fact]
+    public void A_line_a_limit_cut_off_says_its_own_news_once_per_part()
+    {
+        var quest = new QuestView("q1", "game", "engine", "Expose a streaming budget", "A body.", "Taken");
+        var limited = new PriorSession("s3", null, "failed") { Limit = true };
+        StartBegun Begun(Consideration start) => new("q1", null, "engine", "games", "claude-code", start);
+        var carryOn = new Consideration(quest, StartVerdict.Start, "carries on") { Resumes = limited };
+
+        var waits = Daoris.Driver.Driver.LimitedLine(Begun(carryOn));
+        Assert.Equal(new LookNews(LookSaid.LimitWaits, "s3", "s3", "q1", "games"), waits);
+        Assert.Null(Daoris.Driver.Driver.LimitedLine(Begun(carryOn with { Resumes = limited with { Limit = false } })));
+        Assert.Null(Daoris.Driver.Driver.LimitedLine(Begun(carryOn with { GoesOn = true })));
+        Assert.Null(Daoris.Driver.Driver.LimitedLine(new StartBegun(null, "a1", "ask #a1", "games", "claude-code")));
+
+        var said = Said();
+        said.News("start", waits!, "held  #q1 → engine: every account cools");
+        said.News("start", waits!, "held  #q1 → engine: every account cools");
+        said.News("start", waits! with { Code = LookSaid.LimitWentOn }, $"start  #q1: {Daoris.Driver.Driver.LimitWentOnLine}");
+
+        Assert.Equal(
+            ["look-limit-waits-s3", "look-limit-went-on-s3"],
+            Notices.Read(_home, Now)!.Select(notice => notice.Id).Order(StringComparer.Ordinal));
+    }
+
     /// <summary>Every news code has its words in both of the page's catalogues (the translation contract): a code is never shown raw.</summary>
     [Fact]
     public void Every_news_code_has_its_words_in_en_and_zh()

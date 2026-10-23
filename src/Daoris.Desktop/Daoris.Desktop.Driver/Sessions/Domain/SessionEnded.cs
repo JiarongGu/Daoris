@@ -13,4 +13,11 @@ namespace Daoris.Driver;
 /// <param name="Account">The credential profile it ran as, or null for the harness's own home.</param>
 public sealed record SessionEnded(
     string Session, string Repository, string State, bool ByPerson, string? Note = null,
-    string? Quest = null, string? Adapter = null, string? Account = null);
+    string? Quest = null, string? Adapter = null, string? Account = null)
+{
+    /// <summary>
+    /// An account's limit made this end (LIMITRESUME1a, D206 point 1): the record's <c>limited</c> flag, read beside its state, so
+    /// the attention watch raises no <i>Ended</i> for it, as the ledger counts no strike.
+    /// </summary>
+    public bool Limit { get; init; }
+}
