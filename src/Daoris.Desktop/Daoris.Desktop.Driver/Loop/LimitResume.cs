@@ -46,6 +46,21 @@ internal static class LimitResume
     public static IReadOnlyList<string> WordIds(IEnumerable<SaidWordView> words) =>
         [.. words.Where(word => word.Daoris && DaorisKeys.IsLimitReset(word.Key)).Select(word => word.Id).OfType<string>()];
 
+    /// <summary>
+    /// The line's own hold where no account it may run on is ready (the design §3.3 step 3, <c>held.limit-waits</c>): the earliest
+    /// moment one is ready again, the cool-off's <c>until</c> with its margin (§3.2), and whose account, by the person's name in the
+    /// English and by its id in the values. At the first look past it, step 1 or step 2 takes the line.
+    /// </summary>
+    public static Noted Waits(CoolingEntry earliest, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
+    {
+        var said = $"Every account it may run on is at its limit: it goes on by itself once {CoolingWords.Who(earliest, names)} is ready again "
+                   + $"at {CoolingWords.When(earliest.Until, zone)}.";
+        (string Name, object? Value)[] facts = [("owner", earliest.Agent), ("until", NoteCodes.Moment(earliest.Until))];
+        return earliest.Account is { } account
+            ? Noted.Of(NoteCodes.HeldLimitWaits, said, [("account", account), .. facts])
+            : Noted.Of(NoteCodes.HeldLimitWaitsOwn, said, facts);
+    }
+
     /// <summary>What the record says where its own conversation could not be resumed (<c>limit.resume-refused</c>), as a wake says it.</summary>
     public static Noted Refused(ContinueReason why) => LimitNotes.ResumeRefused(why);
 }
