@@ -1032,9 +1032,9 @@ export const REACH = Object.freeze([
   { paths: ['tools/family-rehearsal.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
   { paths: ['tools/setup-kit.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the family rehearsal's set-up kit, and its tool-tests, which run it for real in a scratch repository (GATESLIM1)" },
   {
-    paths: ['tools/desktop-publish.mjs'],
+    paths: ['tools/desktop-publish.mjs', 'tools/ci-background.mjs'],
     gates: ['tool-tests', 'deployment', 'rehearse-family'],
-    why: 'the publish the deployment rehearsal drives, and what it imports; the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
+    why: 'the publish the deployment rehearsal drives, and what it imports (the background run\'s records, CISCOPE1d, which the merge tool imports too); the family rehearsal runs usage-report, which imports it; and its tool-tests (GATESLIM1)',
   },
   {
     paths: ['tools/processes.mjs'],
