@@ -180,7 +180,10 @@ internal static class Program
             // For good (MAINWINDOWS2): a close from code reads as the person's, which only puts the first away while another
             // main window is open, and an update has to end the application whatever is open.
             close: () => sp.GetRequiredService<MainForm>().CloseForGood(),
-            bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>()));
+            bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>())
+        {
+            ClosingForUpdate = build => sp.GetRequiredService<DriverLoop>().Processes.Close = Daoris.Driver.ShellClose.Update(build),
+        });
         builder.Services.AddIpcModule<UpdateModule>();
         builder.Services.AddSingleton<MainForm>();
         // A tool named as a file (TOOLS7): the system's file picker, owned by the window whose page asked (MAINWINDOWS2c), as the

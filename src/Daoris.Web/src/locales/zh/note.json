@@ -109,6 +109,8 @@
   "note.chat.ended": "对话已结束；它的提交就是它的记录。",
   "note.chat.cancelled": "启动它的请求在进程启动前被取消。",
   "note.chat.not-kept": "Daoris 没有为它的对话保存 ID，所以写给它的话无法在其中继续。",
+  "note.chat.restarted": "Daoris 为更新而重启；你下次发话时，此对话将在原对话中继续。",
+  "note.update.closed": "Daoris 为更新到构建 {{build}} 而停止。",
   "note.help.room-as-written": "{{seconds}} 秒内没能读完本机，所以问道衍以上次写下的房间启动，不读取房间之外的检出；读完本机后会重写房间。",
   "note.help.room-unread": "问道衍的房间无法写入：{{seconds}} 秒内没能读完本机，而且之前从未写过房间。等本机不那么忙时再问一次。",
   "note.help.room-not-read-yet": "问道衍已立即启动，依据的是本机目前已读到的内容：尚未读取的部分，房间里会注明；每读到一部分，房间就会重写。",

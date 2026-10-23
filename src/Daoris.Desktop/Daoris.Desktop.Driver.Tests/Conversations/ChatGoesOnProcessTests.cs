@@ -49,11 +49,11 @@ public sealed class ChatGoesOnProcessTests : IDisposable
         return config;
     }
 
-    private ChatRunner Runner(ServiceClient client, SessionEvents events)
+    private ChatRunner Runner(ServiceClient client, SessionEvents events, SessionProcesses? processes = null)
     {
         var adapters = AdapterSet.Built();
         return new ChatRunner(
-            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            client, adapters, _home, processes ?? new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
     }
 
@@ -571,8 +571,170 @@ public sealed class ChatGoesOnProcessTests : IDisposable
         Assert.True(runner.Finish(id));
         await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, events, id));
 
-        Assert.EndsWith(ChatRunner.NotKept, ledger.Note(id));
+        Assert.DoesNotContain(ChatRunner.NotKept, ledger.Note(id));
         Assert.Null(new HarnessConversations(_home).Read(id));
+    }
+
+    [Theory]
+    [InlineData("running", true)]
+    [InlineData("held", true)]
+    [InlineData("idle", true)]
+    [InlineData("never", true)]
+    [InlineData("running", false)]
+    public async Task An_update_keeps_one_unsent_restart_word_only_for_work_it_cuts(string state, bool update)
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("acp-stub", "node", Agent(), Heard);
+        var events = Events;
+        var processes = new SessionProcesses();
+        using var client = ledger.Client();
+        using (var runner = Runner(client, events, processes))
+        {
+            var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+            await Poll.Until(() => runner.Queue(id) is { Opening: false }, () => Seen(ledger, events, id));
+            if (state != "never")
+            {
+                runner.Say(id, state == "idle" ? "first" : "hold");
+                await Poll.Until(() => HeardLines().Any(line => line.StartsWith("prompt:", StringComparison.Ordinal)));
+                if (state == "idle") await Poll.Until(() => !runner.Taking(id));
+                if (state == "held") await runner.SayKeptAsync(id, "held words", [], null, MessageLevel.Ordinary, null);
+            }
+            if (update) processes.Close = ShellClose.Update("build-1");
+            runner.StopAll(Poll.Patience);
+            runner.StopAll(Poll.Patience);
+            Assert.Equal("stopped", ledger.State(id));
+            var words = ledger.Record(id)["said"]!.AsArray();
+            var restart = words.Where(word => word?["key"]?.GetValue<string>() == DaorisKeys.Restart(id, "build-1")).ToArray();
+            Assert.Equal(update && state is "running" or "held" ? 1 : 0, restart.Length);
+            Assert.DoesNotContain(HeardLines(), line => line.Contains(ShellClose.Words, StringComparison.Ordinal));
+            if (restart.Length == 1) Assert.Null(restart[0]?["attempted"]);
+            if (update && state == "idle") Assert.Contains("chat.restarted", ledger.Record(id).ToJsonString());
+            if (update && state == "running")
+            {
+                using var next = Runner(client, events);
+                await next.TakeUpAsync();
+                await Poll.Until(() => HeardLines().Contains("prompt: " + ShellClose.Words), () => Seen(ledger, events, id));
+                Assert.Contains("session/resume: conv-1", HeardLines());
+                Assert.Equal(1, ledger.Count);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_door_opening_during_the_close_is_held_and_keeps_one_restart_word(bool goingOn)
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("acp-stub", "node", Agent(), Heard);
+        var events = Events;
+        var processes = new SessionProcesses { Close = ShellClose.Update("build-1") };
+        if (goingOn)
+        {
+            ledger.Chat("c1", "completed", "acp-stub", _root).Say("w1", "pending words");
+            new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-1");
+        }
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        ledger.BeforeRequest = async (request, body) =>
+        {
+            if (body?.Contains(goingOn ? "\"working\"" : "\"starting\"", StringComparison.Ordinal) == true)
+            {
+                entered.TrySetResult();
+                await release.Task;
+            }
+        };
+        using var client = ledger.Client();
+        using var runner = Runner(client, events, processes);
+        var start = goingOn ? runner.GoOnAsync("c1") : runner.StartAsync("engine", "acp-stub", config);
+        await entered.Task.WaitAsync(Poll.Patience);
+        Assert.True(runner.InFlight > 0);
+        var closing = Task.Run(() => runner.StopAll(Poll.Patience));
+        await Poll.Until(() => runner.Closing);
+        release.TrySetResult();
+        var id = (await start).SessionId!;
+        await closing.WaitAsync(Poll.Patience);
+        Assert.Equal("stopped", ledger.State(id));
+        Assert.Single(ledger.Record(id)["said"]!.AsArray(), word => word?["key"]?.GetValue<string>() == DaorisKeys.Restart(id, "build-1"));
+        Assert.DoesNotContain(HeardLines(), line => line.StartsWith("prompt:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_spoken_conversation_without_an_id_says_not_kept_beside_its_close()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("stub", "node", TextAgent());
+        var events = Events;
+        using var client = ledger.Client();
+        using var runner = Runner(client, events);
+        var id = (await runner.StartAsync("engine", "stub", config)).SessionId!;
+        await Poll.Until(() => ledger.State(id) == "working");
+        events.Append(id, new SessionEvent { Kind = SessionEventKind.User, Text = "first", Origin = "person" });
+        runner.StopAll(Poll.Patience);
+        Assert.StartsWith(ChatRunner.ClosedNote, ledger.Note(id));
+        Assert.EndsWith(ChatRunner.NotKept, ledger.Note(id));
+        Assert.Contains("chat.not-kept", ledger.Record(id).ToJsonString());
+        Assert.Contains(Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl")
+            .SelectMany(File.ReadAllLines), line => line.Contains("conversation.unkept", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_restart_whose_conversation_is_lost_goes_by_the_brief_without_the_restart_word(bool kept)
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("acp-stub", "node", Agent(), Heard, "gone");
+        ledger.Chat("c1", "stopped", "acp-stub", _root);
+        var events = Events;
+        events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "finish the report" });
+        if (kept) new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-1");
+        using var client = ledger.Client();
+        await client.SayAsync("c1", ShellClose.Words, from: DaorisWords.From, key: DaorisKeys.Restart("c1", "build-1"));
+        using var runner = Runner(client, events);
+        await runner.TakeUpAsync();
+        await Poll.Until(() => ledger.Count == 2 && HeardLines().Any(line => line.StartsWith("prompt:", StringComparison.Ordinal)),
+            () => Seen(ledger, events, "c1"));
+        Assert.Empty(ledger.Said("c1"));
+        Assert.DoesNotContain(HeardLines(), line => line.Contains(ShellClose.Words, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_turn_finishing_during_close_preparation_starts_no_next_turn_and_keeps_its_restart_unsent()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("acp-stub", "node", Agent(), Heard, "finish-on-signal");
+        var events = Events;
+        var processes = new SessionProcesses { Close = ShellClose.Update("build-1") };
+        using var client = ledger.Client();
+        using var runner = Runner(client, events, processes);
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        runner.Say(id, "hold");
+        await Poll.Until(() => HeardLines().Contains("prompt: hold"));
+        await runner.SayKeptAsync(id, "next turn", [], null, MessageLevel.Ordinary, null);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        ledger.BeforeRequest = async (_, body) =>
+        {
+            if (body?.Contains("\"starting\"", StringComparison.Ordinal) == true)
+            {
+                entered.TrySetResult();
+                await release.Task;
+            }
+        };
+        var opening = runner.StartAsync("engine", "acp-stub", config);
+        await entered.Task.WaitAsync(Poll.Patience);
+        var close = Task.Run(() => runner.StopAll(Poll.Patience));
+        await Poll.Until(() => runner.Closing);
+        File.WriteAllText(Heard + ".finish", "finish");
+        await Poll.Until(() => !runner.Taking(id));
+        Assert.DoesNotContain("prompt: next turn", HeardLines());
+        Assert.DoesNotContain(ledger.Record(id)["said"]!.AsArray(), word => word?["key"]?.GetValue<string>() == DaorisKeys.Restart(id, "build-1"));
+        release.TrySetResult();
+        await opening;
+        await close.WaitAsync(Poll.Patience);
+        Assert.Single(ledger.Record(id)["said"]!.AsArray(), word => word?["key"]?.GetValue<string>() == DaorisKeys.Restart(id, "build-1"));
+        Assert.DoesNotContain(HeardLines(), line => line.Contains(ShellClose.Words, StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -587,7 +749,7 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     {
         var script = Path.Combine(_home, "acp-go-on-agent.mjs");
         File.WriteAllText(script, """
-            import { appendFileSync } from 'node:fs';
+            import { appendFileSync, existsSync } from 'node:fs';
             import { createInterface } from 'node:readline';
             if (process.argv.includes('--version')) { console.log('acp-stub 1.0.0'); process.exit(0); }
             const [heard, mode] = process.argv.slice(2);
@@ -625,7 +787,15 @@ public sealed class ChatGoesOnProcessTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 const text = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
                 note('prompt: ' + text);
-                if (text === 'hold') { held.push(frame.id); return; }
+                if (text === 'hold') {
+                  held.push(frame.id);
+                  if (mode === 'finish-on-signal') {
+                    const timer = setInterval(() => {
+                      if (existsSync(heard + '.finish')) { clearInterval(timer); held.shift(); answer(frame.id, 'end_turn'); }
+                    }, 10);
+                  }
+                  return;
+                }
                 if (mode === 'queues-hold' && held.length > 0) { held.push(frame.id); return; }
                 if (queues && held.length > 0) {
                   // The words folded in at the next step: the held turn handed off, the work going on as the words'.

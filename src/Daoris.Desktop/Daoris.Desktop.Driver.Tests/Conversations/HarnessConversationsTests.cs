@@ -14,6 +14,22 @@ public sealed class HarnessConversationsTests : IDisposable
 
     public HarnessConversationsTests() => Directory.CreateDirectory(_home);
 
+    [Fact]
+    public void A_failed_keep_logs_the_session_adapter_and_error_kind()
+    {
+        var store = new HarnessConversations(_home);
+        Directory.CreateDirectory(store.PathOf("s1"));
+        store.Keep("s1", "acp-stub", "conv-1");
+        Assert.Null(store.Read("s1"));
+        var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl")
+            .SelectMany(File.ReadAllLines).ToArray();
+        var line = Assert.Single(lines);
+        Assert.Contains("conversation.unkept", line);
+        Assert.Contains("acp-stub", line);
+        Assert.Contains("s1", line);
+        Assert.DoesNotContain("conv-1", line);
+    }
+
     public void Dispose()
     {
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }

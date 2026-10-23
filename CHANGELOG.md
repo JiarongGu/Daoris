@@ -9,6 +9,11 @@ with the version and date at release.
   whether it goes on in its own conversation or in a new session with Daoris's brief, and when a reset did not lift the limit
   (LIMITRESUME1d). Beside it, *Go on now with…* hands it to another agent or account now, *Pause quest…* holds it, and *Try now*
   offers the account again. The terminal's `daoris-driver sessions` lists such a session as *limited*.
+- Conversations an update closes now come back (LIMITRESUME1i). A conversation stopped mid-turn, or with words waiting, goes on
+  in its own conversation once the new version starts, and Daoris tells it that it restarted for an update. An idle
+  conversation says it goes on at your next word. A session *Update now* stopped is not counted as a failure, and it goes on in
+  its own conversation. A conversation that never took a turn is left as it was, and `help resume` says it never took a turn.
+  Closing Daoris yourself is unchanged.
 - An intake, a second opinion or a helper cut off by an account's limit now runs again by itself (LIMITRESUME1h). An ask whose
   intake hit a limit is answered after the account is ready again, rather than left unanswered, and raises no *Ended* notice. A
   second opinion is asked again after the reset, without waiting for your *Try again*. A helper that a session waits on is run again

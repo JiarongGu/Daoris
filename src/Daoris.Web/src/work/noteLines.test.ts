@@ -15,6 +15,13 @@ const coded = (code: string, text: string, values: Record<string, unknown> = {})
 const words = (said: string, by: string): NotePart => ({ words: said, by });
 
 describe('noteLines', () => {
+  it('words an update close and an idle conversation restart in both languages', () => {
+    const parts = [coded('update.closed', 'closed', { build: 'build-1' }), coded('chat.restarted', 'restarted')];
+    expect(noteText(t, { parts }, 'en')).toContain('Daoris stopped for an update to build build-1.');
+    expect(noteText(t, { parts }, 'en')).toContain('at your next word');
+    expect(noteText(zh, { parts }, 'zh')).toContain('构建 build-1');
+    expect(noteText(zh, { parts }, 'zh')).toContain('你下次发话时');
+  });
   /** §2: Daoris's line is chrome, worded from its code and values in the reader's language, never from its English. */
   it('words a coded part in the reader’s language, with its values', () => {
     const parts = [coded('ended.taken-exit', 'exit 2 with the quest still taken.', { exit: 2 })];

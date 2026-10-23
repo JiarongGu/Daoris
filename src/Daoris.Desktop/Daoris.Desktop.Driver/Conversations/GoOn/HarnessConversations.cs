@@ -38,7 +38,8 @@ public sealed class HarnessConversations(string home)
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // Lost: the next answer to this session carries on in a new one, saying no id was kept.
+            using var log = new MachineLog(home, "driver");
+            log.Warn("conversation.unkept", ("session", session), ("adapter", adapter), ("error", error.GetType().Name));
         }
     }
 

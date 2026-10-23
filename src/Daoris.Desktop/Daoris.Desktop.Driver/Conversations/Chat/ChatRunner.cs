@@ -50,6 +50,13 @@ public sealed record HelpPlaced(string? SessionId, string Message)
 /// </remarks>
 public sealed class ChatRunner : IDisposable
 {
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _opening = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _updateCuts = new();
+    /// <summary>The shell crossed its close boundary: no further turn starts.</summary>
+    public bool Closing => _context.Closing;
+    /// <summary>Turns and starts the update drain waits on, including conversations going on before their process exists.</summary>
+    public int InFlight => _opening.Count + _context.GoingOn.Keys.Union(
+        _context.Turned.Where(pair => pair.Value.Turns.State is { Taking: true } or { Opening: true }).Select(pair => pair.Key)).Count();
     private readonly ServiceClient _service;
 
     private readonly string _home;
@@ -437,6 +444,27 @@ public sealed class ChatRunner : IDisposable
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null)
+    {
+        if (_context.Closing) return new(null, "Daoris is closing.");
+        var key = Guid.NewGuid().ToString("N");
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _opening[key] = done.Task;
+        try
+        {
+            if (_context.Closing) return new(null, "Daoris is closing.");
+            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from).ConfigureAwait(false);
+        }
+        finally
+        {
+            done.TrySetResult();
+            _opening.TryRemove(key, out _);
+        }
+    }
+
+    private async Task<ChatStart> StartCoreAsync(
+        string repository, string adapter, DriverConfig config,
+        Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
+        CancellationToken ct, string? tree, ContinuedFrom? from)
     {
         // Through the roster's LIVE set, not the one this runner was built with: the driver's tick
         // hands the roster the build's adapters plus whatever the plugins declare (D64), so a harness
@@ -1247,6 +1275,15 @@ public sealed class ChatRunner : IDisposable
             }
             // Through the start gate (PROCSTART2): a conversation's press may reach here before its first wait. Through the launcher
             // (TERMTRUST1a, D201 point 4): its harness born in this process's agents' job, the launcher read as the conversation's process.
+            if (_context.Closing)
+            {
+                SpawnSettings.Remove(rules);
+                SpawnServers.Remove(servers);
+                SpawnSkills.Remove(skills);
+                await Conclude(sessionId, "stopped", ClosedNoted, onEnded).ConfigureAwait(false);
+                if (_processes.Close.Build is { } build) KeepRestart(sessionId, build);
+                return new(sessionId, message);
+            }
             process = await AgentStarts.StartAsync(info, ContainedKind.Agent, StartClass.Person, _home, log: null, CancellationToken.None).ConfigureAwait(false)
                 ?? throw new DriverException($"the {resolved.Name} adapter's process did not start");
         }
@@ -1344,6 +1381,7 @@ public sealed class ChatRunner : IDisposable
                 {
                     if (goOn.Sent(named: false)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 });
+            chat.Turns.Closing = () => _context.Closing;
             _context.Turned[sessionId] = chat;
         }
         else if (mapper is not null)
@@ -1357,7 +1395,14 @@ public sealed class ChatRunner : IDisposable
                 {
                     if (goOn.Sent(named: true)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 });
+            native.Turns.Closing = () => _context.Closing;
             _context.Turned[sessionId] = native;
+        }
+
+        if (_context.Closing)
+        {
+            (chat?.Turns ?? native?.Turns)?.HoldForClose();
+            if (_processes.Close.Build is not null) _updateCuts.TryAdd(sessionId, 0);
         }
 
         // The person's words a conversation goes on with are its first turn (MSG1c, D137 §2.2), queued before any word said
@@ -1450,11 +1495,22 @@ public sealed class ChatRunner : IDisposable
     {
         // No conversation goes on from here (MSG1c), and one already on its way is let finish its start first, so its
         // process is among those stopped below rather than spawned after them.
+        var atClose = _context.Turned.ToDictionary(pair => pair.Key, pair => pair.Value.Turns.State);
         _context.Close();
         _goOn.Stop();
+        var update = _processes.Close.Build;
+        foreach (var (id, chat) in _context.Turned)
+        {
+            var state = atClose.GetValueOrDefault(id) ?? chat.Turns.State;
+            var cut = chat.Turns.HoldForClose();
+            if (update is not null && (cut || state.Taking || state.Opening || state.Queued.Count > 0))
+                _updateCuts.TryAdd(id, 0);
+        }
+        if (update is not null)
+            foreach (var id in _context.GoingOn.Keys) _updateCuts.TryAdd(id, 0);
         try
         {
-            Task.WaitAll([.. _context.GoingOn.Values], bound);
+            Task.WaitAll([.. _opening.Values, .. _context.GoingOn.Values], bound);
         }
         catch (AggregateException)
         {
@@ -1462,7 +1518,13 @@ public sealed class ChatRunner : IDisposable
         }
 
         var watches = _context.Watching.ToArray();
-        foreach (var (id, _) in watches) _processes.Stop(id, ClosedNoted);
+        foreach (var (id, _) in watches)
+        {
+            if (_context.Turned.TryGetValue(id, out var chat)) chat.Turns.HoldForClose();
+            var idle = update is not null && !_updateCuts.ContainsKey(id) && Spoken(id);
+            _processes.Stop(id, idle ? Noted.Of(NoteCodes.ChatRestarted,
+                "Daoris restarted for an update; this conversation goes on in its own conversation at your next word.") : ClosedNoted);
+        }
 
         try
         {
@@ -1471,6 +1533,33 @@ public sealed class ChatRunner : IDisposable
         catch (AggregateException)
         {
             // A watch that failed has written its own record, or could not; either way it has ended.
+        }
+        if (update is not null)
+        {
+            foreach (var id in _updateCuts.Keys)
+            {
+                if (watches.FirstOrDefault(entry => entry.Key == id).Value is not { IsCompletedSuccessfully: true }) continue;
+                KeepRestart(id, update);
+            }
+        }
+    }
+
+    private bool Spoken(string session) => _events.After(session, 0).Events.Any(e => e.Kind == SessionEventKind.User && e.Reaches is null);
+
+    private void KeepRestart(string session, string build)
+    {
+        try
+        {
+            var said = _service.SayAsync(session, ShellClose.Words, from: DaorisWords.From,
+                key: DaorisKeys.Restart(session, build)).GetAwaiter().GetResult();
+            if (said.Kept) return;
+            using var refused = new MachineLog(_home, "driver");
+            refused.Warn("conversation.restart-unkept", ("session", session), ("error", "Refused"));
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or OperationCanceledException)
+        {
+            using var log = new MachineLog(_home, "driver");
+            log.Warn("conversation.restart-unkept", ("session", session), ("error", error.GetType().Name));
         }
     }
 
@@ -2181,10 +2270,8 @@ public sealed class ChatRunner : IDisposable
             // evidence claim beyond whatever its commits already say.
             var stopped = _processes.WasStopRequested(sessionId);
             // The driver's own reason when it was the driver — closing, say — and the person's otherwise. Said before anyone
-            // writes to it (MSG1c): a conversation whose harness named no id cannot go on in it. Never on the driver's own
-            // reason, which a reader matches whole (ClosedNote's twin in the deployment rehearsal).
-            var note = _processes.StopReason(sessionId)
-                ?? EndedNote(stopped, notKept: watched.Keeps && _context.Conversations.Read(sessionId) is null);
+            // writes to it (MSG1c): a spoken conversation whose harness kept no id says so beside any stop's own note.
+            var note = EndedNoteFor(sessionId, watched, stopped);
             await Conclude(sessionId, stopped ? "stopped" : "completed", note, onEnded).ConfigureAwait(false);
             return false;
         }
@@ -2202,6 +2289,11 @@ public sealed class ChatRunner : IDisposable
                 return false;
             }
 
+            if (_processes.WasStopRequested(sessionId))
+            {
+                await Conclude(sessionId, "stopped", EndedNoteFor(sessionId, watched, stopped: true), onEnded).ConfigureAwait(false);
+                return false;
+            }
             await Conclude(sessionId, "failed", Observation.Failure(error.Message), onEnded).ConfigureAwait(false);
             return false;
         }
@@ -2214,6 +2306,15 @@ public sealed class ChatRunner : IDisposable
             // Its native children end with this run (FABRIC-C1a): lost where it was stopped or failed, ended where it ended clean.
             ChildLineage.End(_home, sessionId, clean: EndedClean(process) && !_processes.WasStopRequested(sessionId), DateTimeOffset.UtcNow);
         }
+    }
+
+    private Noted EndedNoteFor(string session, Watched watched, bool stopped)
+    {
+        var note = _processes.StopReason(session) ?? EndedNote(stopped, notKept: false);
+        if (!watched.Keeps || _context.Conversations.Read(session) is not null || !Spoken(session)) return note;
+        using var log = new MachineLog(_home, "driver");
+        log.Warn("conversation.unkept", ("session", session), ("adapter", watched.Adapter), ("error", "MissingId"));
+        return note.Then(" ", Noted.Of(NoteCodes.ChatNotKept, NotKept));
     }
 
     /// <summary>Whether a run's process ended on its own with exit 0 (FABRIC-C1a); one still running, or that cannot say, did not.</summary>

@@ -2,6 +2,16 @@ using System.Diagnostics;
 
 namespace Daoris.Driver;
 
+/// <summary>The shell's close reason, shared by its conversation and driven processes (D206 §3.9).</summary>
+public sealed record ShellClose(string? Build)
+{
+    public static ShellClose Person { get; } = new((string?)null);
+    public static ShellClose Update(string build) => new(build);
+    public const string Words = "Daoris restarted for an update while you were working. Go on where you stopped.";
+    public static Noted Closed(string build) => Noted.Of(
+        NoteCodes.UpdateClosed, "Daoris stopped for an update.", ("build", build));
+}
+
 /// <summary>
 /// The live session processes, by session id — the one piece of session state that never reaches the
 /// service (D46 §4): the record travels, the process handle stays with whoever spawned it. This
@@ -21,6 +31,7 @@ namespace Daoris.Driver;
 /// </param>
 public sealed class SessionProcesses(string? markers = null)
 {
+    public ShellClose Close { get; set; } = ShellClose.Person;
     private sealed class Entry
     {
         public required Process Process;

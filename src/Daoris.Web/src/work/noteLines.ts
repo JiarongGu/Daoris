@@ -160,6 +160,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.ended': { values: [] },
   'chat.cancelled': { values: [] },
   'chat.not-kept': { values: [] },
+  'chat.restarted': { values: [] },
+  'update.closed': { values: ['build'] },
   // Ask Daoris's start, where the machine's reading for its room did not answer in time (HELPSTUCK1).
   'help.room-as-written': { values: ['seconds'] },
   'help.room-unread': { values: ['seconds'] },
@@ -607,6 +609,8 @@ export const NOTE_VALUES: Readonly<
   call: 'text',
   // LIMITRESUME1b: the limit an attempt just after its reset met again, in the agent's own words.
   hit: 'text',
+  // LIMITRESUME1i: the build an update installed when its close cut a run, as `version` is said.
+  build: 'text',
   until: 'moment', at: 'moment', seen: 'moment',
   exit: 'number', minutes: 'number', paths: 'number', turn: 'number',
   // How long Ask Daoris's start waited for the machine's reading, in whole seconds (HELPSTUCK1).

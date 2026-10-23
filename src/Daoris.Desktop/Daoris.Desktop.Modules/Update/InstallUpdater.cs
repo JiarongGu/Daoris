@@ -75,7 +75,7 @@ public sealed class InstallUpdater(
     Func<UpdateWork> work,
     // Starts the launcher with `--update --after <pid>`, through the start gate: false when it could not be started.
     Func<CancellationToken, Task<bool>> relaunch,
-    // Closes the application as the person's close does: each driven session recorded stopped and interrupted (D104).
+    // Closes the application after ClosingForUpdate has handed the shell its reason and build (D206).
     Action close,
     IEventBus? bus = null,
     Func<DateTimeOffset>? clock = null,
@@ -100,6 +100,8 @@ public sealed class InstallUpdater(
     public TimeSpan Pace { get; init; } = TimeSpan.FromSeconds(2);
 
     private DateTimeOffset Now => (clock ?? (() => DateTimeOffset.UtcNow))();
+    /// <summary>Hand the close its staged build before closing any window (D206 §3.9).</summary>
+    public Action<string>? ClosingForUpdate { get; init; }
 
     /// <summary>Whether the loop's starts are held for the update: the driver watch asks at every look (D139 §2).</summary>
     public bool Draining
@@ -394,6 +396,7 @@ public sealed class InstallUpdater(
         log.Info("update.applying", ("build", id), ("version", staged?.Version), ("by", by), ("waitedSeconds", (long)waited));
         // Said and done with: a word that outlived its build would hold for the next one (InstallUpdate.ModeFor).
         InstallUpdate.Clear(home);
+        ClosingForUpdate?.Invoke(id);
         close();
         return applying;
     }

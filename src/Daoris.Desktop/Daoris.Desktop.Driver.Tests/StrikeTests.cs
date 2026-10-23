@@ -13,6 +13,17 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class StrikeTests
 {
+    [Fact]
+    public void An_update_close_is_not_a_strike_but_a_person_s_close_still_is()
+    {
+        var strikes = ServiceClient.ReadStrikes("""
+            [{"id":"s1","quest":"q1","state":"stopped","interrupted":true,
+              "noteParts":[{"code":"update.closed","values":{"build":"b1"}}]},
+             {"id":"s2","quest":"q2","state":"stopped","interrupted":true}]
+            """);
+        Assert.False(strikes.ContainsKey("q1"));
+        Assert.Equal(1, strikes["q2"]);
+    }
     private const string Records = """
         [
           { "id": "s1", "quest": "q1", "repository": "Game", "state": "failed" },

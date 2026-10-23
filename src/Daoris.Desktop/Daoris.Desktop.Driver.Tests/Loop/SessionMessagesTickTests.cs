@@ -1215,6 +1215,7 @@ public sealed class SessionMessagesTickTests : IDisposable
                         }
 
                         session["state"] = to;
+                        session["interrupted"] = to == "stopped" && body["interrupted"]?.GetValue<bool>() == true;
                         // LIMITRESUME1b: the ledger's limit flag, on the failed end that carries it, as the service keeps it.
                         session["limit"] = to == "failed" && body["limit"]?.GetValue<bool>() == true ? true : null;
                         // When it moved, as the service keeps it (HELPERWAIT1: a park made before its helper's ask was asked is not one made on it).
