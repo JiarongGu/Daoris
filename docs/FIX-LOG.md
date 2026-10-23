@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - The session head grew past its narrow ceiling once its parts said what ran (MODELROLE1b)
+
+- **Symptom:** the CI on a293792 failed `web-measured`: `head/Narrow`'s every-block head measured 359.1 px against today's ceiling
+  of 352, the parts' fold one line taller.
+- **Root cause:** MODELROLE1b added what ran (`ranLine`) to the parts fold's summary, which wrapped anywhere, so at the narrow width
+  the newest part's line took a second line. The gate itself was kept, not run, on b61325e and the CIs before a293792: its verdict
+  stood from a tree the merge's paths were judged not to reach, though `work/head/` is what it measures. A reach miss of the kind
+  CISCOPE1c's recall proof counts.
+- **Fix:** the summary is one line, cut with its whole text on hover (`title`); *Show all* still lists every part in full
+  (`work/head/PartsFold.tsx`).
+- **Verify:** `measured/head.spec.ts` 30 of 30 locally, `head/Narrow` under its ceiling; the head's unit tests and the
+  presentational boundary, 341 of 341.
+
 ## 2026-10-24 - Every landing asked git for a squash the line could not hold (SQUASHSEEN1b)
 
 - **Symptom:** the CI on d879097 failed the git half: `LandGitCountTests`' three landings started more git programs than their

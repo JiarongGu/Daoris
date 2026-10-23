@@ -51,15 +51,17 @@ export function PartsFold({ plan, defaultOpen = false, ...props }: PartsProps & 
 
   const shown = Math.max(0, parts.findIndex((part) => part.session === attended));
   const newest = parts[parts.length - 1]!;
+  const summary = [
+    t('work.parts.of', { n: shown + 1, total: parts.length }),
+    t('work.parts.newest', { began: beganLine(t, newest, parts, props.rows) }),
+    ranLine(t, props.rows[newest.session]?.session),
+  ].join(' · ');
   return (
     <nav aria-label={t('work.parts.title')} className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink-faint">
       <span className="font-semibold">{t('work.parts.title')}</span>
-      <span className="min-w-0 text-ink-soft [overflow-wrap:anywhere]">
-        {t('work.parts.of', { n: shown + 1, total: parts.length })}
-        {' · '}
-        {t('work.parts.newest', { began: beganLine(t, newest, parts, props.rows) })}
-        {' · '}{ranLine(t, props.rows[newest.session]?.session)}
-      </span>
+      {/* One line, cut with its whole text on hover: the parts' list under *Show all* says every part in full, and the head keeps
+          its height now the newest part also says what ran (MODELROLE1b, the measured head's narrow ceiling). */}
+      <span className="min-w-0 flex-1 truncate text-ink-soft" title={summary}>{summary}</span>
       <button type="button" onClick={() => setOpen(true)} className={PRESS}>
         {t('work.parts.showAll')}
       </button>
