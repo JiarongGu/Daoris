@@ -14,6 +14,12 @@ public enum PipeClass
 
     /// <summary>What only a window does (its own commands, the pickers, the file manager, Daoris's browser, its shells): refused.</summary>
     Window,
+
+    /// <summary>
+    /// A role's act the owner appointed (SUPERVISOR1a-ii, D208 point 2): judged by the standing confirmation's role method, under its
+    /// caller look and the holder's proof; run with no card where covered, refused where not, never asked.
+    /// </summary>
+    Role,
 }
 
 /// <summary>
@@ -194,6 +200,9 @@ public sealed class PipeCensus
             "UNDER_WAY", "USAGE", "WORKFLOW_CURRENT", "WORKFLOW_RUN", "WORK_PLAN", "WORK_STATE",
             // NOTIFY2i: what came to the person, a press by its act and session alone, never a value, so a terminal answers none of it.
             "NOTIFICATIONS",
+            // SUPERVISOR1a-ii (D208 §3.1): the parked questions with no decision in appointed repositories, what the holder looks at; it
+            // names no key and shows nothing the session's own page does not.
+            "SUPERVISOR_WAITING",
             // The driver's own (D156 §3: sync, refresh): a look now, a sync pass with the service, the registry and the
             // accounts' use read again, the tools' locations looked at.
             "NUDGE", "SYNC_NOW", "REGISTRY_REFRESH", "ACCOUNTS_READ", "TOOLS_LOOK",
@@ -270,7 +279,12 @@ public sealed class PipeCensus
             "PERSON_CONFIRM_SHOWN",
             // TERMTRUST1a (D201 point 5): the standing confirmation is granted and revoked in the window alone; no card offers it, since a
             // person used to confirming a terminal's presses would confirm that one too.
-            "SET_STANDING_CONFIRMATION");
+            "SET_STANDING_CONFIRMATION",
+            // SUPERVISOR1a-ii (D208 §2.1 point 1): an appointment is made and turned off in the window alone, by the owner's own press.
+            "SET_APPOINTMENT");
+        // SUPERVISOR1a-ii (D208 §3.1): the supervisor's answer, a role's act, covered only for a terminal outside every agent's job that
+        // proves the holder key; never a card.
+        Add(PipeClass.Role, "SUPERVISOR_ANSWER");
         // One route, two forms. What a switch of git would change compares programs Daoris already knows (the PATH's, a
         // managed version), and with `way: "file"` runs whatever file the payload names: that form is the person's.
         table.Add("TOOLS_GIT", PipeRule.Of("way", PipeClass.Open, PipeClass.Person, "\"system\"", "\"managed\""));

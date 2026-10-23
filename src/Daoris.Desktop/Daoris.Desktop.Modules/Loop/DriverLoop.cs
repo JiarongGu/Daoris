@@ -516,15 +516,23 @@ public sealed class DriverLoop(
     /// <summary>
     /// The supervisor's decisions, live in this instance's memory (SUPERVISOR1a-i, D208; the supervisor design §3.4): one for the shell's
     /// life, shared by the routes that keep and overrule a decision and every look of the loop, since both run in the window's process.
-    /// Inert until the door (1a-ii): its admission refuses every act; a test sets its own, with the admission it injects.
+    /// Its admission is the pipe's judge (SUPERVISOR1a-ii), read at each ask, so a pipe served after the first look still answers; with
+    /// no pipe, or while appointments are not offered, every act is refused. A test sets its own, with the admission it injects.
     /// </summary>
     public QuestionSupervisorDecisions Supervisor
     {
-        get => _supervisor ??= new(Home, NoDecisionAdmission.Instance, log);
+        get => _supervisor ??= new(Home, new PipeAdmission(this), log);
         set => _supervisor = value;
     }
 
     private QuestionSupervisorDecisions? _supervisor;
+
+    /// <summary>The decisions' admission: the served pipe's judge where there is one, else none admitted (SUPERVISOR1a-ii).</summary>
+    private sealed class PipeAdmission(DriverLoop loop) : IDecisionAdmission
+    {
+        public DecisionAdmitted Admit(string repository) =>
+            loop.Pipe?.StandingConfirmation is { } judge ? judge.Admit(repository) : NoDecisionAdmission.Instance.Admit(repository);
+    }
 
     /// <summary>
     /// Ask Daoris's conversation placed and not yet running (HELPSTART1): the press answers once it is placed, and the words said
@@ -836,6 +844,9 @@ public sealed class DriverLoop(
             served.StandingConfirmation.RunsHere = Processes.AliveOnThisMachine;
             served.StandingConfirmation.HeldNow = repository =>
                 DriverConfig.Load(ConfigPath).Holds.Contains(repository, StringComparer.OrdinalIgnoreCase);
+            // SUPERVISOR1a-ii (D208 §5): an appointment names a repository this machine drives.
+            served.StandingConfirmation.Drives = repository =>
+                DriverConfig.Load(ConfigPath).Drivable.Contains(repository, StringComparer.OrdinalIgnoreCase);
         }
 
         if (Pipe?.Serve() is { } pipe)

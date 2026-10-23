@@ -305,8 +305,12 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         return swept;
     }
 
-    /// <summary>How many decisions this instance kept under <paramref name="generation"/> since it started: Setup's <i>answers this run</i>.</summary>
-    public int KeptUnder(string generation) => _live.Values.Count(each => each.Generation == generation);
+    /// <summary>
+    /// Whether <paramref name="question"/> of <paramref name="session"/> has a decision, live or closed as the owner's (§3.1's
+    /// <c>answered</c> and <c>overruled</c>): what <c>SUPERVISOR_WAITING</c> leaves out.
+    /// </summary>
+    public bool Decided(string session, string question) =>
+        _closed.ContainsKey((session, question)) || _live.Values.Any(each => each.Session == session && each.Question.Id == question);
 
     /// <summary>
     /// The owner's <b>Overrule</b> (§6.3, <c>SUPERVISOR_OVERRULE</c>), under the decision's lock: while held it moves to <c>overruled</c>

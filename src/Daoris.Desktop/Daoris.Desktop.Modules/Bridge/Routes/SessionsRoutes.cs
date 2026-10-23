@@ -590,6 +590,22 @@ public sealed class SessionsRoutes(DriverContext context)
         return new { Done = state == SupervisorState.Overruled, State = state is { } moved ? SupervisorStates.Spell(moved) : null };
     }
 
+    // The supervisor's answer (SUPERVISOR1a-ii, D208 §3.1): `{ id, question, generation, proof, choice, reasons }`, a role's act, `Role` in
+    // the pipe's census. Refused on every door but a terminal's the judge's role method covered (`PipeDoor.Role`, never the presses'
+    // standing flag); kept as a held decision on the park, its repository the appointment's. `{ kept, decision?, goesOnAt?, why? }`,
+    // refused as data and keeping nothing.
+    [DriverRoute("SUPERVISOR_ANSWER")]
+    [Publishes("SUPERVISOR_ANSWER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private async Task<object?> SupervisorAnswerAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await SupervisorDoor.AnswerAsync(_loop, request.Payload, cancellationToken).ConfigureAwait(false);
+
+    // What waits for the supervisor's holder (SUPERVISOR1a-ii, D208 §3.2): the parked sessions here with a recorded question and no
+    // decision on it, in a repository a live appointment names, each with its generation. A read naming no key:
+    // `{ waiting: [{ session, repository, question, asked, generation }] }`.
+    [DriverRoute("SUPERVISOR_WAITING")]
+    private async Task<object?> SupervisorWaitingAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false) };
+
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";

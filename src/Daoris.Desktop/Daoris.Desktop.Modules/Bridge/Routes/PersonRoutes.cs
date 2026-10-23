@@ -99,6 +99,29 @@ public sealed class PersonRoutes(DriverLoop loop)
             : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it has no standing confirmation."));
     }
 
+    // SUPERVISOR1a-ii (D208 §2.3, §5): the owner's appointment of a role, made and turned off in the window alone. `{ role, repository,
+    // holder?, on }`, `holder` `terminal` where none is named. With `on`, a terminal holder's terminal is started first, by the window, with
+    // the key in its environment, and nothing is kept where it could not start; the key is never answered. Answered `{ done, why?,
+    // message? }`, a refusal as data (`window-only`, `not-offered`, `unknown-role`, `unknown-repository`, `newer`, `unwritten`,
+    // `unstarted`, `no-pipe`). The judge's mutation step ends first; then each decision kept under a generation it ended goes stale.
+    [DriverRoute("SET_APPOINTMENT")]
+    [Publishes("SET_APPOINTMENT", StateScopes.Driver | StateScopes.Sessions)]
+    private async Task<object?> SetAppointmentAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        if (PipeDoor.Now == PipeDoor.Terminal)
+        {
+            return new StandingChange(false, "window-only", "Only Daoris's window appoints a role or turns one off.");
+        }
+
+        var role = PayloadHelper.GetRequiredValue<string>(request.Payload, "role");
+        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var holder = PayloadHelper.GetOptionalValue<string>(request.Payload, "holder") ?? RoleHolders.Terminal;
+        var on = PayloadHelper.GetRequiredValue<bool>(request.Payload, "on");
+        return _loop.Pipe is { } pipe
+            ? await SupervisorDoor.AppointAsync(_loop, pipe, role, repository, holder, on, cancellationToken).ConfigureAwait(false)
+            : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it appoints no terminal holder.");
+    }
+
     private sealed record PersonKey(string? Key);
 
     private sealed record PersonShown(bool Shown);

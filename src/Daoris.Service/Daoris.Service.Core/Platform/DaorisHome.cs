@@ -380,6 +380,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Proof = new("proof", HomeCategory.Work, "work/files/proof/*", "proof/*");
     public static readonly HomeEntry UsageRead = new("usage-read", HomeCategory.Work, "work/usage-read", "usage-read");
     public static readonly HomeEntry BrainstormRooms = new("brainstorm-rooms", HomeCategory.Work, "work/brainstorm-rooms/*", "brainstorm-rooms/*");
+    // SUPERVISOR1a-ii (D208 §2.2): a role holder's own folder, outside every repository, emptied at each appointment; the window alone writes there.
+    public static readonly HomeEntry RoleRooms = new("role-rooms", HomeCategory.Work, "work/rooms/roles/*", "work/rooms/roles/*");
     public static readonly HomeEntry Toolchain = new("toolchain", HomeCategory.Cache, "cache/toolchain", "toolchain");
     public static readonly HomeEntry ToolVersions = new("tool-versions", HomeCategory.Cache, "cache/tools", "tools");
     public static readonly HomeEntry Bin = new("bin", HomeCategory.Cache, "cache/bin", "bin");
@@ -411,7 +413,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitSshConfig, GitKnownHosts, GitConfig, Window,
-        Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms,
+        Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,
         GitHeld, GitGrants, GitUsed, GitCheckouts, Logs,

@@ -94,22 +94,35 @@ public static class PipeDoor
     /// </summary>
     public static bool Standing => Current.Value == Terminal && Granted.Value;
 
+    private static readonly AsyncLocal<RoleJudgement?> Appointed = new();
+
+    /// <summary>
+    /// The role act the request this call runs for was covered as (SUPERVISOR1a-ii, D208; the supervisor design §11 row 1a-ii): the
+    /// appointment the judge's role method found it under, read by a role's handler, which refuses every door but a covered terminal's;
+    /// null for every other request. Never <see cref="Standing"/>, which is the presses' alone.
+    /// </summary>
+    public static RoleJudgement? Role => Current.Value == Terminal && Appointed.Value is { Covered: true } covered ? covered : null;
+
     /// <summary>What the pipe holds around a dispatch: the request came in by the terminal's door until disposed.</summary>
-    internal static IDisposable Enter() => Enter(standing: false);
+    internal static IDisposable Enter() => Enter(standing: false, role: null);
 
     /// <summary>The same, for a press the standing confirmation admitted (<see cref="Standing"/>).</summary>
-    internal static IDisposable EnterStanding() => Enter(standing: true);
+    internal static IDisposable EnterStanding() => Enter(standing: true, role: null);
 
-    private static IDisposable Enter(bool standing)
+    /// <summary>The same, for a role's act the judge's role method covered (<see cref="Role"/>).</summary>
+    internal static IDisposable EnterRole(RoleJudgement covered) => Enter(standing: false, role: covered);
+
+    private static IDisposable Enter(bool standing, RoleJudgement? role)
     {
-        var before = (Current.Value, Granted.Value);
+        var before = (Current.Value, Granted.Value, Appointed.Value);
         Current.Value = Terminal;
         Granted.Value = standing;
+        Appointed.Value = role;
         return new Restore(before);
     }
 
-    private sealed class Restore((string? Door, bool Standing) before) : IDisposable
+    private sealed class Restore((string? Door, bool Standing, RoleJudgement? Role) before) : IDisposable
     {
-        public void Dispose() => (Current.Value, Granted.Value) = before;
+        public void Dispose() => (Current.Value, Granted.Value, Appointed.Value) = before;
     }
 }
