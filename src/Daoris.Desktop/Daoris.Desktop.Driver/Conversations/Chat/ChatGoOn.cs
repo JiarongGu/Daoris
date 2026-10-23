@@ -422,12 +422,12 @@ internal sealed class ChatGoOn
 
     /// <summary>Daoris's limit words waiting on a record (<see cref="DaorisKeys.IsLimitReset"/>).</summary>
     private static IEnumerable<SaidWordView> LimitWordsOf(PriorSession record) =>
-        record.Waiting.Where(word => word.Daoris && DaorisKeys.IsLimitReset(word.Key) && word.Id is not null);
+        record.Waiting.Where(word => word.Daoris && DaorisKeys.IsResume(word.Key) && word.Id is not null);
 
     /// <summary>The record as its words stand without Daoris's limit word: what a refusal marks, names and hands on.</summary>
     private static PriorSession WithoutLimitWords(PriorSession record) =>
         record.Said is { } said && LimitWordsOf(record).Any()
-            ? record with { Said = [.. said.Where(word => !(word.Daoris && DaorisKeys.IsLimitReset(word.Key)))] }
+            ? record with { Said = [.. said.Where(word => !(word.Daoris && DaorisKeys.IsResume(word.Key)))] }
             : record;
 
     private async Task<ChatStart> GoingOnAsync(
@@ -791,6 +791,7 @@ internal sealed class ChatGoOn
         PriorSession record, ContinueReason why, string adapter, DriverConfig choices, Func<string, string, Task>? onEnded, bool held,
         CancellationToken ct)
     {
+        var restarted = record.Waiting.Any(word => word.Daoris && DaorisKeys.IsRestart(word.Key));
         // 🔴 LIMITRESUME1c (D206 §3.5, B9): Daoris's limit word off first, by its id; it is never handed on, nor the reason to say cannot.
         record = await LimitWordOffAsync(record.Session, record).ConfigureAwait(false) ?? record;
         var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
@@ -798,12 +799,12 @@ internal sealed class ChatGoOn
 
         // A conversation its limit held keeps the refused turns' words in its events alone: it goes on by the limit's own ended-record
         // move, its own account allowed since its conversation is lost, handed the brief, those words and the words that waited.
-        if (!_context.Closing && LimitHeld.Waiting(_context.Events.After(record.Session, 0).Events) is not null)
+        if (!_context.Closing && (restarted || LimitHeld.Waiting(_context.Events.After(record.Session, 0).Events) is not null))
         {
             StartedFrom? moved;
             try
             {
-                moved = await _limit.MoveEndedAsync(record.Session, why, choices, onEnded, ct, holding: held).ConfigureAwait(false);
+                moved = await _limit.MoveEndedAsync(record.Session, why, choices, onEnded, ct, holding: held, restarted: restarted).ConfigureAwait(false);
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))

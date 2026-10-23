@@ -2070,7 +2070,7 @@ public sealed class Driver(
         {
             limitWord = keptWord.Word;
             start = start with { Resumes = keptWord.Record, GoesOn = true };
-            LimitResumed[quest.Id] = keptWord.Record.Session;
+            if (keptWord.Record.Limit) LimitResumed[quest.Id] = keptWord.Record.Session;
         }
         else if (limitResume && !start.GoesOn)
         {
@@ -2628,7 +2628,9 @@ public sealed class Driver(
             try
             {
                 await service.AdvanceAsync(
-                    sessionId, closed.State, closed.AsNoted(), ct: CancellationToken.None, interrupted: interrupted).ConfigureAwait(false);
+                    sessionId, closed.State,
+                    stoppedFirst is null && Context.Processes.Close.Build is { } build ? ShellClose.Closed(build) : closed.AsNoted(),
+                    ct: CancellationToken.None, interrupted: interrupted).ConfigureAwait(false);
             }
             catch
             {

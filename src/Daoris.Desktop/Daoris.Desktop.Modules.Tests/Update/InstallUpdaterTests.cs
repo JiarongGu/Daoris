@@ -26,6 +26,7 @@ public sealed class InstallUpdaterTests : Bridge
     private int _closed;
 
     private bool _launches = true;
+    private string? _closingBuild;
 
     public InstallUpdaterTests()
     {
@@ -46,8 +47,9 @@ public sealed class InstallUpdaterTests : Bridge
             _relaunched++;
             return Task.FromResult(_launches);
         },
-        close: () => _closed++,
-        bus: Bus, clock: () => Now, pid: 4242);
+        close: () => { Assert.NotNull(_closingBuild); _closed++; },
+        bus: Bus, clock: () => Now, pid: 4242)
+        { ClosingForUpdate = build => _closingBuild = build };
 
     [Fact]
     public async Task A_workspace_build_is_no_install_and_never_drains()
@@ -97,6 +99,7 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(UpdateStates.Applying, applying.State);
         Assert.Equal(1, _relaunched);
         Assert.Equal(1, _closed);
+        Assert.Equal("b1", _closingBuild);
         await updater.LookAsync();
         Assert.Equal(1, _relaunched);
         Assert.Equal(1, _closed);

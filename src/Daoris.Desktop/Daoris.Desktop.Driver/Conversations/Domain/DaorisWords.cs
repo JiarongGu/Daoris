@@ -134,6 +134,10 @@ public static class DaorisKeys
     public static string Rebase(string session, string tip) => $"{RebaseKind}/{session}/{tip}";
 
     public const string LimitResetKind = "limit-reset";
+    public const string RestartKind = "restart";
+    public static string Restart(string session, string build) => $"{RestartKind}/{session}/{build}";
+    public static bool IsRestart(string? key) => key?.StartsWith(RestartKind + "/", StringComparison.Ordinal) == true;
+    public static bool IsResume(string? key) => IsLimitReset(key) || IsRestart(key);
 
     /// <summary>
     /// The limit word's key (LIMITRESUME1, D206 §3.3 step 1, §3.5): the session its account's limit cut off, and the cool-off's

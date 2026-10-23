@@ -160,6 +160,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.ended': { values: [] },
   'chat.cancelled': { values: [] },
   'chat.not-kept': { values: [] },
+  'chat.restarted': { values: [] },
+  'update.closed': { values: ['build'] },
   // Ask Daoris's start, where the machine's reading for its room did not answer in time (HELPSTUCK1).
   'help.room-as-written': { values: ['seconds'] },
   'help.room-unread': { values: ['seconds'] },

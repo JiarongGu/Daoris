@@ -16,6 +16,31 @@ namespace Daoris.Desktop.Modules.Tests;
 /// </summary>
 public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
 {
+    [Fact]
+    public async Task A_go_on_pending_counts_in_the_update_drain()
+    {
+        var root = Path.Combine(Home, "engine");
+        Directory.CreateDirectory(root);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var service = new StandIn(root)
+        {
+            BeforeWorking = async () => { entered.TrySetResult(); await release.Task; },
+        };
+        service.Chat("c1", root, ("w1", "go on"));
+        new HarnessConversations(Home).Keep("c1", "talk", "conv-c1");
+        var loop = Loop();
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase) { ["talk"] = new Talk() });
+        using var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
+        using var chat = new ChatRunner(client, adapters, Home, loop.Processes,
+            harnesses: new HarnessRoster(adapters, HarnessSettingsPath), events: loop.Events);
+        var coming = loop.ComeUpAsync(client, chat);
+        await entered.Task.WaitAsync(Poll.Patience);
+        Assert.Equal(1, loop.Work().Turns);
+        Assert.False(InstallUpdate.Idle(loop.Work().Driven, loop.Work().Turns));
+        release.TrySetResult();
+        await coming.WaitAsync(Poll.Patience);
+    }
     /// <summary>A conversation's adapter on the protocol door with no toolchain to ask, so nothing is probed or spawned.</summary>
     private sealed class Talk : ISessionAdapter
     {
@@ -119,6 +144,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
     /// </summary>
     private sealed class StandIn(string root) : HttpMessageHandler
     {
+        public Func<Task>? BeforeWorking { get; init; }
         private readonly object _gate = new();
         private readonly List<JsonObject> _sessions = [];
         private readonly Dictionary<string, List<string>> _moves = new(StringComparer.Ordinal);
@@ -148,6 +174,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
         {
             var path = request.RequestUri!.AbsolutePath;
             var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
+            if (body.Contains("\"working\"", StringComparison.Ordinal) && BeforeWorking is { } before) await before();
             var (status, answer) = Answer(request.Method.Method, path, body);
             return new HttpResponseMessage(status) { Content = new StringContent(answer, Encoding.UTF8, "application/json") };
         }

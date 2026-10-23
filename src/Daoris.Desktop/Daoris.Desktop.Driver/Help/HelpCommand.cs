@@ -293,6 +293,9 @@ public static class HelpCommand
         switch (ask.Verb)
         {
             case "resume":
+                if (new HarnessConversations(world.Home).Read(id) is null
+                    && !events.After(id, 0).Events.Any(e => e.Kind == SessionEventKind.User && e.Reaches is null))
+                    output.WriteLine($"help: {id}: never-spoken — it never took a turn.");
                 // The words go where the panel's box sends them: the say door, and the same conversation goes on with them.
                 return await SessionsCommand.RunAsync(
                     new SessionsAsk("say") { Ids = [id], Text = ask.Text, Files = ask.Files }, world, output, ct).ConfigureAwait(false);
