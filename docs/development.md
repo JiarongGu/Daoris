@@ -139,6 +139,7 @@ node tools/merge-branch.mjs --rerun <gate>
 node tools/merge-branch.mjs --full
 node tools/merge-branch.mjs --full --beside [<commit>]
 node tools/merge-branch.mjs --ci [<commit>]
+node tools/merge-branch.mjs --ci --stage [<commit>]
 node tools/merge-branch.mjs --ci --watch
 node tools/merge-branch.mjs --ci --stop
 ```
@@ -201,7 +202,8 @@ place (learned 2026-10-23, LIMITGOON1):
 
 ### The CI between releases
 
-`--ci [<commit>]` is the local CI (CI1, D180's CI1 note). It gates main's tip, or the named commit, in the same
+`--ci [<commit>]` is the local CI (CI1, D180's CI1 note). It gates main's tip, or the named commit, with every gate but the
+two rehearsals it owes a stage (below), in the same
 `local/gate-tree`, holding its lock, and never touches the main checkout's tree. It runs only the gates that commit's
 verdicts lack. A gate runs again when it has no verdict, when a path changed since its last pass reaches it, or when its
 last verdict failed, whatever changed since. Every other gate keeps the verdict that stands, and the first run on a machine
@@ -239,12 +241,21 @@ watch says the first runs and exits. `--ci --stop` asks it to end: it
 ends the gates it is running, each with its whole tree, keeps every finished verdict, and lets its records go. A watch
 killed outright leaves a stale lock, which the next run takes over, ending what the dead run started (CIPRIO1d, CIPRIO1e).
 
-A release then waits only for the last delta. Once the status of the commit to release says `green` and the gate tree
-holds it, stage it: `npm run publish:desktop -- --to <install> --service --stage --from-gated <commit>`. The stage holds
-the gate tree's lock through its build, so no CI run moves the tree meanwhile. It still refuses a commit the tree does
-not hold, a tree a run holds, and a commit whose verdicts do not pass (`--passed`, GATE6). Its refusal names
-`--ci <commit>`, which gates that commit there again, running only what it lacks. `--full --beside` remains the run of
-every gate, for a release that wants a fresh full set.
+A plain run, and each run of the watch, owes the family and deployment rehearsals to a stage (CIFAST1, D180's CIFAST1
+note). They were 14 to 23 and 14 to 22 minutes of a 45 to 75 minute run. Such a run never starts them. One without a pass
+that stands is `owed` in the status (its top-level `owed`, the gate's state `owed`) and in the record, neither failed nor
+passed, and the run is green on the rest. A run therefore waits about as long as the git half. `--ci --stage [<commit>]` is
+the stage's path. On the commit to stage it runs both rehearsals, one after the other, with whatever else its verdicts
+lack. They do not run side by side: each of the deployment rehearsal's publishes packs the CLI in place, which writes and
+removes the `dist/` the family's runs of the bin would load.
+
+A release then waits only for the last delta and the rehearsals. Once the commit to release is green, run `--ci --stage
+<commit>`. When that run's status says `green` and the gate tree holds the commit, stage it: `npm run publish:desktop --
+--to <install> --service --stage --from-gated <commit>`. The stage holds the gate tree's lock through its build, so no CI
+run moves the tree meanwhile. It still refuses a commit the tree does not hold, a tree a run holds, and a commit whose
+verdicts do not pass (`--passed`, GATE6), the rehearsals' among them. Its refusal names `--ci --stage <commit>`, which gates
+that commit there again, running only what it lacks. `--full --beside` remains the run of every gate, for a release that
+wants a fresh full set.
 
 Commits are local work and follow green gates (D37). Push, publish, release, history rewrites and
 destructive actions retain their human boundary. Do not bypass provenance checks or hooks to make
