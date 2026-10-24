@@ -171,7 +171,7 @@ describe('the terminal view (CONSOLE4b)', () => {
   it('adopts a terminal the window opened itself as a shown tab', async () => {
     render(<Held />);
     await waitFor(() => expect(screens).toHaveLength(1));
-    await act(() => eventHandlers.get('DAORIS.TERMINAL_OPENED')!({ id: 'tholder01', shell: 'pwsh', cwd: 'C:/home/work/rooms/roles/supervisor' }));
+    await act(() => eventHandlers.get('DAORIS.TERMINAL_OPENED')!({ id: 'tholder01', shell: 'pwsh', cwd: 'X:/daoris/work/rooms/roles/supervisor' }));
     await waitFor(() => expect(screens).toHaveLength(2));
     expect(calls('OPEN')).toHaveLength(1);
   });
