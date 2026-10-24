@@ -228,6 +228,43 @@ public static class WorkingTree
     }
 
     /// <summary>
+    /// Every branch tip in <paramref name="root"/>, read by one <c>git for-each-ref</c> (CONFIRMWAIT1, the confirm-wait design §15.1 item
+    /// 1: a plan's branches bound by their full commits, not their count): each local branch by its name, each remote's as
+    /// <c>&lt;remote&gt;/&lt;name&gt;</c>, each by its full commit id. Null where git cannot say.
+    /// </summary>
+    public static async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string root, CancellationToken ct = default)
+    {
+        var (code, stdout, _) = await GitAsync(
+            root, ["for-each-ref", "--format=%(objectname) %(refname)", "refs/heads", "refs/remotes"], ct).ConfigureAwait(false);
+        if (code != 0) return null;
+        var tips = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var line in stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var at = line.IndexOf(' ', StringComparison.Ordinal);
+            if (at <= 0) continue;
+            var name = line[(at + 1)..].TrimEnd('\r');
+            var shortName = name.StartsWith("refs/heads/", StringComparison.Ordinal) ? name["refs/heads/".Length..]
+                : name.StartsWith("refs/remotes/", StringComparison.Ordinal) ? name["refs/remotes/".Length..]
+                : null;
+            if (shortName is { Length: > 0 } && !shortName.EndsWith("/HEAD", StringComparison.Ordinal)) tips[shortName] = line[..at];
+        }
+
+        return tips;
+    }
+
+    /// <summary>
+    /// What <paramref name="root"/>'s index holds staged against its head, by each entry's modes and full blob ids (CONFIRMWAIT1 §15.1
+    /// item 2: a discard binds its index, whose staged bytes can change while the working file stays the same). Empty where nothing is
+    /// staged; null where git cannot say.
+    /// </summary>
+    public static async Task<string?> StagedAsync(string root, CancellationToken ct = default)
+    {
+        var (code, stdout, _) = await GitAsync(
+            root, ["--no-optional-locks", "diff", "--cached", "--raw", "--no-abbrev", "-z", "--no-renames"], ct).ConfigureAwait(false);
+        return code == 0 ? stdout : null;
+    }
+
+    /// <summary>
     /// The paths <paramref name="root"/> holds uncommitted, untracked files each by name, relative to it with <c>/</c>; null where git
     /// cannot say (CONFIRMWAIT1a-i: a forced discard's ground, what it would lose).
     /// </summary>

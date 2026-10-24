@@ -119,6 +119,9 @@ internal sealed class StubGrounds : IPipeGroundWorld
 
     public HashSet<string> Registered { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>What a name resolves to where the test says (CONFIRMWAIT1 §15.1 item 4); a name only <see cref="Registered"/> resolves to itself.</summary>
+    public Dictionary<string, string> Registrations { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public Dictionary<string, string> Quests { get; } = new(StringComparer.Ordinal);
 
     public Dictionary<string, string> Asks { get; } = new(StringComparer.Ordinal);
@@ -127,6 +130,9 @@ internal sealed class StubGrounds : IPipeGroundWorld
     public Dictionary<string, string> Tips { get; } = new(StringComparer.Ordinal);
 
     public Dictionary<string, string> Heads { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Tips in a session's tree by <c>session:branch</c>, <c>HEAD</c> its head (CONFIRMWAIT1 §15.1 item 1); <see cref="Heads"/> beside it.</summary>
+    public Dictionary<string, string> TreeTips { get; } = new(StringComparer.Ordinal);
 
     /// <summary>A read's answer by its route, made from the read's payload.</summary>
     public Dictionary<string, Func<JsonElement?, object>> Reads { get; } = new(StringComparer.Ordinal);
@@ -164,10 +170,26 @@ internal sealed class StubGrounds : IPipeGroundWorld
         return Sessions.TryGetValue(id, out var found) ? found : null;
     }
 
-    public async Task<bool> RegisteredAsync(string name, CancellationToken cancellationToken)
+    public async Task<string?> RegistrationAsync(string name, CancellationToken cancellationToken)
     {
         await Read(cancellationToken);
-        return Registered.Contains(name);
+        return Registrations.TryGetValue(name, out var resolved) ? resolved : Registered.Contains(name) ? name : null;
+    }
+
+    public async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Tips.Where(each => each.Key.StartsWith(repository + ":", StringComparison.Ordinal))
+            .ToDictionary(each => each.Key[(repository.Length + 1)..], each => each.Value, StringComparer.Ordinal);
+    }
+
+    public async Task<IReadOnlyDictionary<string, string>?> SessionTipsAsync(string session, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        var tips = TreeTips.Where(each => each.Key.StartsWith(session + ":", StringComparison.Ordinal))
+            .ToDictionary(each => each.Key[(session.Length + 1)..], each => each.Value, StringComparer.Ordinal);
+        if (!tips.ContainsKey("HEAD") && Heads.TryGetValue(session, out var head)) tips["HEAD"] = head;
+        return tips;
     }
 
     public async Task<string?> QuestAsync(string id, CancellationToken cancellationToken)
