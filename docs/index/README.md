@@ -343,7 +343,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-confirm-wait-reads.md` | 77 | 812 |
 | `docs/2026-10-24-cowork-view-design.md` | 87 | 924 |
 | `docs/2026-10-24-cowork-view-reads.md` | 54 | 656 |
-| `docs/2026-10-24-event-hook-design.md` | 61 | 586 |
+| `docs/2026-10-24-event-hook-design.md` | 89 | 775 |
 | `docs/2026-10-24-event-hook-reads.md` | 47 | 522 |
 | `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
 | `docs/2026-10-24-keep-size-reads.md` | 121 | 1074 |
