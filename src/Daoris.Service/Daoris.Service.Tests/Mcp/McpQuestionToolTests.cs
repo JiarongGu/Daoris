@@ -156,6 +156,34 @@ public sealed class McpQuestionToolTests : McpToolsFixture
         Assert.False(Directory.Exists(Sessions()) && Directory.GetFiles(Sessions(), "*" + QuestionBox.Suffix).Length > 0);
     }
 
+    /// <summary>
+    /// 🔴 SUPERVISOR1b (D208; the supervisor design §4.1): a question the agent marks the owner's keeps its mark, one of the six codes,
+    /// in the file the service and the driver both read; an unmarked one keeps none; and a mark that is none of the six is refused by
+    /// name, writing nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_question_marked_the_owners_keeps_its_mark_and_an_unknown_mark_is_refused()
+    {
+        var (connector, driven, _) = await ConnectorAsync();
+
+        Assert.Contains("is not one of", await connector(driven).AskAsync("Which account?", TwoReadings, owner: "money"));
+        Assert.False(File.Exists(Sessions(driven + QuestionBox.Suffix)));
+
+        await connector(driven).AskAsync("Which account?", TwoReadings, owner: " sign-in ");
+        using (var kept = JsonDocument.Parse(File.ReadAllText(Sessions(driven + QuestionBox.Suffix))))
+        {
+            Assert.Equal("sign-in", kept.RootElement.GetProperty("owner").GetString());
+        }
+
+        Assert.Equal("sign-in", QuestionBox.Read(Home, driven)!.Owner);
+
+        await connector(driven).AskAsync("Which report?", TwoReadings);
+        using var unmarked = JsonDocument.Parse(File.ReadAllText(Sessions(driven + QuestionBox.Suffix)));
+        Assert.Equal(JsonValueKind.Null, unmarked.RootElement.GetProperty("owner").ValueKind);
+        Assert.Null(QuestionBox.Read(Home, driven)!.Owner);
+        Assert.Equal(["sign-in", "access", "spending", "delete", "repository-asks", "preference"], QuestionBox.OwnerMarks);
+    }
+
     /// <summary>With no home the question is refused and nothing is written, as a hand-over's ask is.</summary>
     [Fact]
     public async Task question_ask_with_no_home_says_so()

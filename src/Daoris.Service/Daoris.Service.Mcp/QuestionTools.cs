@@ -33,6 +33,13 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
         string? by = null,
         [Description("Why you recommend that answer, in a sentence, at most 300 characters: shown under it. Only with `recommend`.")]
         string? why = null,
+        [Description(
+            "Set only where you know the question is the owner's alone, never the supervisor's to answer for them: `sign-in` (a sign-in, "
+            + "a credential or an account), `access` (widening what an agent may do: a permission, a rule, a trust, writing across, full "
+            + "access), `spending` (money, or an account's use beyond the work's own runs), `delete` (deleting or losing the owner's data, "
+            + "or rewriting history), `repository-asks` (a repository document says to ask the person), `preference` (the owner's own "
+            + "taste where nothing records it). Leave it out otherwise: an unmarked question may still be left to the owner.")]
+        string? owner = null,
         CancellationToken ct = default)
     {
         var questions = box ?? QuestionBox.FromEnvironment();
@@ -40,7 +47,7 @@ public sealed class QuestionTools(IntakeScope? intake = null, SessionLedger? led
         var record = ledger is not null && session is not null ? await ledger.FindAsync(session, ct).ConfigureAwait(false) : null;
         return questions.Ask(
             record, session, question, choices?.Select(choice => (choice?.Label, choice?.Does)).ToList(), recommend, by, DateTimeOffset.UtcNow,
-            why).Message;
+            why, owner).Message;
     }
 }
 
