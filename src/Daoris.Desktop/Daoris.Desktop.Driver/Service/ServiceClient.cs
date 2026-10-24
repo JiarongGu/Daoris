@@ -2389,6 +2389,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             Override = ActorRead<JsonElement?>(session, "override"),
             Ran = ActorRead<ActorRan>(session, "ran"),
             Limit = Limit(session),
+            NotOffered = NotOffered(session),
             // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
             Adapter = Text(session, "adapter"),
             HarnessVersion = Text(session, "harnessVersion"),

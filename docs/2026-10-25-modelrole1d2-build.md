@@ -22,8 +22,13 @@ and which remain.
    said, taken off the refused record by their ids as its turn takes them. The press's id answers for the replacement
    (`ChatRunner.CurrentOf`, read by `SessionWords`), and the shell tells `CHAT_REPLACED { from, to }`. Nothing left, the
    conversation says why it did not go on and the words wait on the refused record.
-3. **A `choice-not-offered` chat's go-on is a fresh start of its actor** (to do), a pick never walked afresh, a refused continuation's
-   brief recomposed through `BriefedMove`'s seam.
+3. **A `choice-not-offered` chat's go-on is a fresh start of its actor** (built). A record read as ended `choice-not-offered`
+   (`PriorSession.NotOffered`, by its end code) is never resumed: `ChatGoOn` hands it to `BriefedMove.NotOfferedAsync`, the press's
+   go-on and the come-up's alike, which walks its actor's order afresh (Chat in the refused record's tree, Ask Daoris in its
+   workspace's room) with the record as `from` (`not-offered`) and its waiting words as the first message, taken off it by their ids.
+   A pick is never walked afresh: its recovery order on its own account, the refused entry passed by the reading kept, else it
+   waits saying why. A refused continuation, whose line holds an earlier part that held a conversation, is handed Daoris's brief
+   of its line first (`ContextBriefs.ComposeAsync`), then the words; a refused new conversation goes on with its words alone.
 4. **The window follows `chat.replaced`** (to do).
 
 ## Checks run
@@ -40,3 +45,11 @@ taking its agent's next entry on its own account. Beside it `ProtocolChatTests`,
 `HandOverRunnerTests`, `CurveMoveTests`, `NoteSitesTests`, `StructureTests`; modules `DriverModuleConversationTests`,
 `DriverModuleConversationProcessTests`, `DriverModuleHelpStartTests`, `DriverModuleSessionsTests`, `SessionWordsTerminalTests`,
 `DriverModuleHelpHistoryTests`.
+
+Part 3: `ChatPendingProcessTests`' three go-on cases, seen failing first with the branch switched off (each went on as a lost
+conversation, on the refusing account at account default): the come-up's go-on of a refused chat opening the walk's answer on the
+second account with its words once; a refused pick never running on another account; a refused continuation's go-on handed a fact
+only part A's history held before the words. Beside them, both halves of `AccessCarriedTests`, `ChatGoOnTests`,
+`ChatGoesOnProcessTests`, `DrivenAccessTests`, `GoOnBriefedTests`, `NoteSitesTests`, `OpinionDeliveryTests`,
+`SessionWordsWaitingTests`, `HelpGoOnTests`, `LimitWaitsProcessTests`, `LimitGoesOnProcessTests`, `LimitGoesElsewhereProcessTests`,
+`ChatWordsRestartProcessTests`, `PlannerTests`, `ServiceClientTests` (245 and 43 passed).

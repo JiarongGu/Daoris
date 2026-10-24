@@ -268,6 +268,12 @@ public sealed record PriorSession(
     /// <summary>Its record says an account's limit made its failure (TOOL4c): what a carry-on is told after one (TOOL4f).</summary>
     public bool Limit { get; init; }
 
+    /// <summary>
+    /// It ended <c>choice-not-offered</c> (D205 §3.5(b), (c)), read by its end code: its agent refused the choice at the open, so no
+    /// conversation began there, and a conversation's go-on is a fresh start of its actor (MODELROLE1d2).
+    /// </summary>
+    public bool NotOffered { get; init; }
+
     /// <summary>The adapter its record opened on (ANSWER1a, D131 §1): an answer resumes its conversation only on the same one.</summary>
     public string? Adapter { get; init; }
 

@@ -226,6 +226,104 @@ public sealed class ChatPendingProcessTests : IDisposable
     }
 
     /// <summary>
+    /// A record the app stopped after its agent refused it at the open, before its replacement opened: ended <c>choice-not-offered</c> on
+    /// account-1 with the refusal kept as that account's reading, its <paramref name="choice"/> and the words said to it waiting.
+    /// </summary>
+    private async Task<string> RefusedAsync(
+        ChatLedger ledger, ServiceClient client, string choice, ContinuedFrom? from = null, string repository = "engine")
+    {
+        var id = repository == "engine" ? "c1" : "h1";
+        ledger.Chat(id, "working", "acp-stub", repository == "engine" ? _root : HelpRoom.PathOf(_home), repository: repository, profile: "account-1", from: from);
+        await client.TryKeepActorAsync(id, null, choice, new ActorEffective("acp-stub", "opus", null, choice).Asked);
+        var ended = Observation.ChoiceNotOffered("acp-stub", new ModelRefusal("model", "opus", AgentOffers.RefusedCode));
+        await client.AdvanceAsync(id, ended.State, ended.Note, parts: ended.Parts);
+        Assert.Null(AgentOffers.Refused(_home, "acp-stub", null, "account-1", "opus", DateTimeOffset.UtcNow));
+        ledger.For(id).Say("w1", "Make the port configurable.");
+        return id;
+    }
+
+    /// <summary>
+    /// 🔴 Interrupted between its two records (§3.5(b)): the refused record's go-on, the come-up's, is a fresh start of its actor, never a
+    /// resume: the walk's answer opens on account-2, continuing it by <c>not-offered</c>, its waiting words its first message, once, and
+    /// taken off the refused record by their ids.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_chat_s_go_on_after_the_app_stopped_is_a_fresh_start_of_its_actor()
+    {
+        var config = Config("account-1:opus", "chat", [new ActorChoice("acp-stub", "opus")], "account-1", "account-2");
+        var (runner, ledger, client, _) = Runner();
+        using var r = runner;
+        using var c = client;
+        var refused = await RefusedAsync(ledger, client, "1");
+
+        await runner.TakeUpAsync();
+
+        await Poll.Until(() => Prompts("account-2").Length == 1, () => Seen(ledger, refused));
+        // After the process a conversation continuing another in its tree is told (MAKERTRAIL1), its words: no brief, since none began.
+        var handed = Assert.Single(Prompts("account-2"));
+        Assert.EndsWith("Make the port configurable.", handed, StringComparison.Ordinal);
+        Assert.DoesNotContain("You continue session", handed, StringComparison.Ordinal);
+        Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("account-1 ", StringComparison.Ordinal));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("account-2", refused, HandOverWhy.NotOffered, _root), (next.Profile, next.From, next.FromWhy, next.Tree));
+        await Poll.Until(() => ledger.Said(refused).Count == 0, () => Seen(ledger, refused));
+        Assert.Equal("failed", ledger.State(refused));
+    }
+
+    /// <summary>
+    /// 🔴 A pick is never walked afresh (round 4, Codex 2): a picked start interrupted after its refusal, account-2 free and offering the
+    /// model, the come-up's go-on never runs it there: with no other entry of the picked agent, it waits saying why, its words kept.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_pick_s_go_on_never_runs_on_another_account()
+    {
+        var config = Config("account-1:opus", "chat", [new ActorChoice("acp-stub", "opus")], "account-1", "account-2");
+        var (runner, ledger, client, _) = Runner();
+        using var r = runner;
+        using var c = client;
+        var refused = await RefusedAsync(ledger, client, "pick");
+
+        var taken = await runner.TakeUpAsync();
+
+        Assert.All(taken, start => Assert.Null(start.SessionId));
+        Assert.Equal(1, ledger.Count);
+        Assert.Equal(["w1"], ledger.Said(refused));
+        Assert.Empty(StubFile.Lines(Heard));
+        Assert.Contains(Events.After(refused, 0).Events, e => e.Parts?.Any(part => part.Code == NoteCodes.ChatLimitNotMoved.Code) == true);
+    }
+
+    /// <summary>
+    /// 🔴 A refused continuation rebuilds its brief (round 4, Codex 3): part A held a conversation, replacement B was refused before its first
+    /// prompt, and the app stopped before C opened. C's first prompt carries a fact only A's history held, then the words, once.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_continuation_s_go_on_is_handed_the_brief_of_its_line_then_its_words()
+    {
+        var config = Config("account-1:opus", "chat", [new ActorChoice("acp-stub", "opus")], "account-1", "account-2");
+        var (runner, ledger, client, _) = Runner();
+        using var r = runner;
+        using var c = client;
+        ledger.Chat("c0", "completed", "acp-stub", _root, profile: "account-1");
+        var events = Events;
+        events.Keep("c0", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "The port lives in deploy/ports.yaml." }, say: null);
+        events.Keep("c0", new SessionEvent { Kind = SessionEventKind.Message, Text = "Noted: deploy/ports.yaml holds the port." }, say: null);
+        var refused = await RefusedAsync(ledger, client, "1", new ContinuedFrom("c0", HandOverWhy.Limit, HandOverBy.Daoris));
+
+        await runner.TakeUpAsync();
+
+        await Poll.Until(() => Prompts("account-2").Length == 1, () => Seen(ledger, refused));
+        var handed = Assert.Single(Prompts("account-2"));
+        Assert.Contains("deploy/ports.yaml", handed, StringComparison.Ordinal);
+        Assert.True(
+            handed.IndexOf("deploy/ports.yaml", StringComparison.Ordinal) < handed.IndexOf("Make the port configurable.", StringComparison.Ordinal),
+            handed);
+        Assert.Single(StubFile.Lines(Heard), line => line.Contains("Make the port configurable.", StringComparison.Ordinal));
+        // The ledger's third record: part A, the refused B, and C.
+        var next = (await client.RecordAsync("c3"))!;
+        Assert.Equal((refused, HandOverWhy.NotOffered, "account-2"), (next.From, next.FromWhy, next.Profile));
+    }
+
+    /// <summary>
     /// A stand-in ACP agent on the stub's accounts: it writes each method and prompt down with its account, lists three models, and refuses
     /// at the set each model its second argument names for its account.
     /// </summary>
@@ -267,7 +365,8 @@ public sealed class ChatPendingProcessTests : IDisposable
                 }
               } else if (frame.method === 'session/prompt') {
                 const text = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
-                note('prompt: ' + text);
+                // On one line, so a brief's lines and the words after it read as the one prompt they are.
+                note('prompt: ' + text.replace(/\s*\n\s*/g, ' '));
                 await new Promise((resolve) => setTimeout(resolve, 50));
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-pending',
                   update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'heard ' + text } } } });
