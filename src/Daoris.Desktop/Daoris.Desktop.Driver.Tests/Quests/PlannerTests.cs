@@ -1459,6 +1459,75 @@ public sealed class PlannerTests
         Assert.Equal("you stopped session `s1`; Try again carries it on — `daoris driver retry q1 --session s1`.", only.Reason);
     }
 
+    // ── the steward's stop: held the same way, said as the steward's, released by its Try again only through memory (STEWARDROLE1b) ──
+
+    private static readonly PriorSession StewardStop = PersonStop with
+    {
+        Note = Observation.StoppedBySteward.Note, NoteParts = Observation.StoppedBySteward.Parts,
+    };
+
+    /// <summary>A stand-in for the run's memory: <see cref="Live"/> says whether a role's release is held at <c>released</c>.</summary>
+    private sealed class RoleMemory(bool live) : IRoleStarts
+    {
+        public bool Live { get; } = live;
+
+        public bool Caused(string repository, string quest) => false;
+
+        public bool Released(string quest, RoleRelease release) => Live;
+
+        public bool Take(string quest, RoleRelease release) => Live;
+
+        public void HeldForOwner(string quest)
+        {
+        }
+    }
+
+    /// <summary>
+    /// D209 §5.1: the steward's stop, live or at a checkpoint, holds its quest as the person's does, with its own reason and its sitting
+    /// fact, never saying the person stopped it.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_take_the_steward_stopped_is_held_with_its_own_reason(bool parked)
+    {
+        var noted = parked ? SessionMoves.ByTheStewardNoted("stopped") : Observation.StoppedBySteward;
+        var stop = PersonStop with { Note = noted.Note, NoteParts = noted.Parts };
+
+        var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", stop)), Config()));
+
+        Assert.True(stop.StewardStopped);
+        Assert.Equal(StartVerdict.Stopped, only.Verdict);
+        Assert.Equal(
+            "the steward stopped session `s1`; Try again, by the steward or the owner, carries it on — `daoris driver retry q1 --session s1`.", only.Reason);
+        Assert.Equal((SittingFact.Steward, "s1"), (only.Said?.Code, only.Said?.Session));
+        Assert.Equal(stop, only.HeldBy);
+        Assert.False(PersonStop.StewardStopped);
+    }
+
+    /// <summary>
+    /// D209 §5.1a, finding 7: the steward's Try again is written in <c>roleReleases</c>, and releases its own stop only while this run's
+    /// memory holds its operation at <c>released</c>; with no memory (an older build, a restart) or a cancelled one it releases nothing,
+    /// and the owner's own release beside it stays usable. A role's release names a stop of the steward's, never the person's.
+    /// </summary>
+    [Fact]
+    public void The_steward_s_release_frees_its_own_stop_only_through_the_run_s_memory()
+    {
+        var snapshot = Ran([Quest(status: "Taken")], ("q1", StewardStop)) with { Repositories = [Repo()] };
+        var released = Config().WithRoleReleased("q1", new RoleRelease(RoleReleaseKinds.Stop, "s1", "steward", "a1"));
+
+        var started = Assert.Single(Planner.Plan(snapshot, released, roles: new RoleMemory(true)));
+        Assert.Equal((StartVerdict.Start, "s1"), (started.Verdict, started.Resumes?.Session));
+        Assert.Equal("carrying on in `Game` — the steward stopped session `s1`, and it was released.", started.Reason);
+
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, released)).Verdict);
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, released, roles: new RoleMemory(false))).Verdict);
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, Config().WithReleased("q1", "s1"))).Verdict);
+
+        var personStopped = Ran([Quest(status: "Taken")], ("q1", PersonStop)) with { Repositories = [Repo()] };
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(personStopped, released, roles: new RoleMemory(true))).Verdict);
+    }
+
     /// <summary>🔴 An open quest whose session the person stopped before its take is held too, never planned again at the next look.</summary>
     [Fact]
     public void An_open_quest_the_person_stopped_before_its_take_is_held_rather_than_planned_again()

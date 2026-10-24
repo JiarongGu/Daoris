@@ -496,6 +496,8 @@ public static class NoteCodes
     public static readonly NoteCode WatchQuietWork = new("watch.quiet-work", ["minutes", "works"]);
     public static readonly NoteCode WatchLeft = new("watch.left", []);
     public static readonly NoteCode EndedStopped = new("ended.stopped", []);
+    // STEWARDROLE1b (D209 §5.1): the steward's own stop, a behavioural sibling of the person's, never the person's with a suffix.
+    public static readonly NoteCode EndedStoppedSteward = new("ended.stopped-steward", []);
     public static readonly NoteCode EndedLostClaim = new("ended.lost-claim", []);
     // A take lost to the person's reopen of the work its step grew from (FABRIC-CLOSE1c18), not to another machine's take.
     public static readonly NoteCode EndedLostClaimReopened = new("ended.lost-claim-reopened", []);
@@ -562,6 +564,8 @@ public static class NoteCodes
     public static readonly NoteCode StartedWordsTaken = new("started.words-taken", ["quest", "session"]);
     public static readonly NoteCode StartedAnswer = new("started.answer", ["quest", "session"]);
     public static readonly NoteCode StartedReleased = new("started.released", ["quest", "session"]);
+    // STEWARDROLE1b (D209 §5.1): a quest carried on after the steward's stop of its session was released.
+    public static readonly NoteCode StartedReleasedSteward = new("started.released-steward", ["quest", "session"]);
     public static readonly NoteCode StartedCutOff = new("started.cut-off", ["quest", "session"]);
     // An open quest carried on in the tree whose session committed work and failed before it took it (RETRYWORK1): never rebuilt.
     public static readonly NoteCode StartedCarriedWork = new("started.carried-work", ["quest", "session"]);
@@ -781,6 +785,9 @@ public static class NoteCodes
     public static readonly NoteCode StoppedAbandonedQuest = new("stopped.abandoned-quest", ["quest"]);
     public static readonly NoteCode StoppedCheckpointFinished = new("stopped.checkpoint-finished", []);
     public static readonly NoteCode StoppedCheckpointStopped = new("stopped.checkpoint-stopped", []);
+    // STEWARDROLE1b (D209 §5.1): the steward's finish and stop of a parked session, siblings of the person's two above.
+    public static readonly NoteCode StoppedCheckpointFinishedSteward = new("stopped.checkpoint-finished-steward", []);
+    public static readonly NoteCode StoppedCheckpointStoppedSteward = new("stopped.checkpoint-stopped-steward", []);
     public static readonly NoteCode StoppedCheckpointMoved = new("stopped.checkpoint-moved", []);
     public static readonly NoteCode StoppedOrphan = new("stopped.orphan", []);
     // TERMTRUST1a (D201 point 7, the terminal-trust design §7.1): a stop or a finish run under the standing confirmation, after the move's own note.

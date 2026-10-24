@@ -159,6 +159,48 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
+    /// A role's releases (STEWARDROLE1b, D209 §4.3, §5.1a, finding 7): each quest's release a role's act wrote, apart from the owner's
+    /// <see cref="Released"/> and <see cref="TransientReleased"/>, whose writers take no author and whose readers on a build before this
+    /// one ignore any field they do not know. So an older build reading this file finds no release of the steward's to take as the
+    /// owner's, and one that rewrites it without this key leaves the quest held. The planner reads an entry as a release only where this
+    /// run's memory holds its operation at <c>released</c> (<see cref="IRoleStarts"/>); none outlives a restart. Absent is none, written
+    /// only when set.
+    /// </summary>
+    public IReadOnlyDictionary<string, RoleRelease> RoleReleases { get; init; } =
+        new Dictionary<string, RoleRelease>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>This quest's role release, or null where none is written.</summary>
+    public RoleRelease? RoleReleaseFor(string questId) => RoleReleases.GetValueOrDefault(questId.Trim().TrimStart('#'));
+
+    /// <summary>A role's release of this quest written, one per quest, the later replacing the earlier.</summary>
+    /// <exception cref="DriverException">A blank quest, session or act: a role's release names what it releases and the act that made it.</exception>
+    public DriverConfig WithRoleReleased(string questId, RoleRelease release)
+    {
+        if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(release.Session) || string.IsNullOrWhiteSpace(release.Act))
+        {
+            throw new DriverException("a role's release names the quest, the session whose stop it releases and the act that made it.");
+        }
+
+        var quest = questId.Trim().TrimStart('#');
+        var next = new Dictionary<string, RoleRelease>(RoleReleases, StringComparer.OrdinalIgnoreCase);
+        var key = next.Keys.FirstOrDefault(k => string.Equals(k, quest, StringComparison.OrdinalIgnoreCase)) ?? quest;
+        next[key] = release with { Session = release.Session.Trim() };
+        return this with { RoleReleases = next };
+    }
+
+    /// <summary>This quest's role release withdrawn (a cancel, a consumer's take, a restart's first look); unchanged where it has none.</summary>
+    public DriverConfig WithoutRoleRelease(string questId)
+    {
+        var quest = questId.Trim().TrimStart('#');
+        if (!RoleReleases.Keys.Any(key => string.Equals(key, quest, StringComparison.OrdinalIgnoreCase))) return this;
+        return this with
+        {
+            RoleReleases = RoleReleases.Where(pair => !string.Equals(pair.Key, quest, StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
+        };
+    }
+
+    /// <summary>
     /// This quest's releases and its restart mark dropped (PAUSE1d, D132 §3.4 step 7): once a quest is closed it is never
     /// planned again (D46 §3), so none says anything any more. Unchanged where it has none.
     /// </summary>
@@ -166,13 +208,14 @@ public sealed record DriverConfig(
     {
         var quest = questId.Trim().TrimStart('#');
         bool Same(string key) => string.Equals(key, quest, StringComparison.OrdinalIgnoreCase);
-        if (!Released.Keys.Any(Same) && !Forgiven.Keys.Any(Same) && !TransientReleased.Keys.Any(Same)) return this;
+        if (!Released.Keys.Any(Same) && !Forgiven.Keys.Any(Same) && !TransientReleased.Keys.Any(Same) && !RoleReleases.Keys.Any(Same)) return this;
         return this with
         {
             Released = Released.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
             Forgiven = Forgiven.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
             TransientReleased = TransientReleased.Where(pair => !Same(pair.Key))
                 .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
+            RoleReleases = RoleReleases.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
         };
     }
 
@@ -1059,6 +1102,7 @@ public sealed record DriverConfig(
             WriteMap(writer, "released", Released);
             // Written only when set (AGENTERRORS1a2): absent is no transient release.
             WriteTransientReleases(writer, TransientReleased);
+            WriteRoleReleases(writer, RoleReleases);
             // Written only when set (PAUSE1a), as the CLI keeps them: absent is no pause.
             WritePauses(writer, "pausedAsks", PausedAsks);
             WritePauses(writer, "pausedQuests", PausedQuests);
@@ -1150,6 +1194,44 @@ public sealed record DriverConfig(
         }
 
         writer.WriteEndObject();
+    }
+
+    /// <summary>A role's releases (STEWARDROLE1b): each quest an object, its <c>kind</c>, <c>session</c>, <c>by</c> and <c>act</c>.</summary>
+    private static void WriteRoleReleases(Utf8JsonWriter writer, IReadOnlyDictionary<string, RoleRelease> map)
+    {
+        if (map.Count == 0) return;
+        writer.WriteStartObject("roleReleases");
+        foreach (var (quest, release) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            writer.WriteStartObject(quest);
+            writer.WriteString("kind", release.Kind);
+            writer.WriteString("session", release.Session);
+            writer.WriteString("by", release.By);
+            writer.WriteString("act", release.Act);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
+    }
+
+    /// <summary>A role's releases as written: an entry missing any of its four fields is none; a quest named twice is read where first written.</summary>
+    private static IReadOnlyDictionary<string, RoleRelease> RoleReleaseMap(JsonElement container, string name)
+    {
+        var released = new Dictionary<string, RoleRelease>(StringComparer.OrdinalIgnoreCase);
+        if (!container.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return released;
+        foreach (var property in element.EnumerateObject())
+        {
+            if (property.Name.Length == 0 || released.ContainsKey(property.Name) || property.Value.ValueKind != JsonValueKind.Object) continue;
+            if (Json.NonEmpty(property.Value, "kind") is not { } kind || Json.NonEmpty(property.Value, "session")?.Trim() is not { Length: > 0 } session
+                || Json.NonEmpty(property.Value, "by") is not { } by || Json.NonEmpty(property.Value, "act") is not { } act)
+            {
+                continue;
+            }
+
+            released[property.Name] = new RoleRelease(kind, session, by, act);
+        }
+
+        return released;
     }
 
     /// <summary>
@@ -1561,6 +1643,7 @@ public sealed record DriverConfig(
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,
             Released = SessionMap(root, "released"),
             TransientReleased = TransientReleaseMap(root, "transientReleased"),
+            RoleReleases = RoleReleaseMap(root, "roleReleases"),
             PausedAsks = PauseMap(root, "pausedAsks"),
             PausedQuests = PauseMap(root, "pausedQuests"),
             Standing = StandingMap(root, "standing"),
@@ -1702,6 +1785,47 @@ public sealed record WorkPause(DateTimeOffset? At, IReadOnlyDictionary<string, s
 /// end it released, the record's <c>updated</c> as the press read it.
 /// </summary>
 public sealed record TransientRelease(string Session, DateTimeOffset Ended);
+
+/// <summary>
+/// A role's release of a quest (STEWARDROLE1b, D209 §5.1a): its kind (<see cref="RoleReleaseKinds"/>), the session whose stop or end it
+/// releases, the role that wrote it (<c>steward</c>) and its act's id, which the run's memory holds its operation by.
+/// </summary>
+public sealed record RoleRelease(string Kind, string Session, string By, string Act);
+
+/// <summary>The kinds of a role's release: a stop's (§3.1 row 8) and, with STEWARDROLE1f, a transient hold's (row 11).</summary>
+public static class RoleReleaseKinds
+{
+    public const string Stop = "stop";
+    public const string Transient = "transient";
+}
+
+/// <summary>
+/// The run's memory of a role's acts as the driver's starts read it (STEWARDROLE1b, D209 §3.1a, §5.1a), handed by the application that
+/// holds the judge; null on a loop with none, whose starts no role's act caused and which honours no role's release (fail-closed).
+/// </summary>
+public interface IRoleStarts
+{
+    /// <summary>
+    /// Whether a steward's act caused a start of <paramref name="quest"/> in <paramref name="repository"/> (§3.1a): the repository driven
+    /// by the steward this run and not the owner's since, or the quest carried on by a steward's live release.
+    /// </summary>
+    bool Caused(string repository, string quest);
+
+    /// <summary>Whether this run's memory holds <paramref name="release"/>'s operation at <c>released</c>: only then is it a release (§5.1a).</summary>
+    bool Released(string quest, RoleRelease release);
+
+    /// <summary>
+    /// The start's take of the release (§5.1a, the execution cutoff): its operation moved from <c>released</c> to <c>executing</c>, its
+    /// generation live and its quest not the owner's; false where a revoke or the owner's act cancelled it.
+    /// </summary>
+    bool Take(string quest, RoleRelease release);
+
+    /// <summary>
+    /// A start a steward's act caused was held for the owner (§3.1a, <c>held.checkout</c>): every pending operation on the quest ended,
+    /// said on the role's line.
+    /// </summary>
+    void HeldForOwner(string quest);
+}
 
 /// <summary>A landing rule <c>driver.json</c> keeps that reads as no rule (FABRIC-GRAPH1d, <see cref="DriverConfig.UnreadLandings"/>).</summary>
 /// <param name="Name">The repository or workspace it is written under, as written.</param>
