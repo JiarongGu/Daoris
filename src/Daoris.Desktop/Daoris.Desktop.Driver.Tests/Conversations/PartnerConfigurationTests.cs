@@ -73,4 +73,29 @@ public sealed class PartnerConfigurationTests
         Assert.NotEqual(first, PartnerConfigurations.Digest("acceptEdits", "D:/trees/p-a", Guarded("D:/trees/p-a", "Bash(npm test:*)", "Edit"), ["no"], false));
         Assert.NotEqual(first, PartnerConfigurations.Digest("default", "D:/trees/p-a", Guarded("D:/trees/p-a", "Bash(npm test:*)", "Edit"), ["no"], true));
     }
+
+    /// <summary>
+    /// MODELROLE1e (D205 §4.4, §12): the partner actor gives the named agent its model, and the model is no part of its confinement. Two
+    /// choices, one digest: the admission reads the posture, the guard and the rule lists only, so a row measured for the agent admits
+    /// every model it is given and a model never needs a measured row of its own.
+    /// </summary>
+    [Fact]
+    public void Two_choices_of_the_partner_actor_are_one_admission_digest()
+    {
+        var codex = AdapterSet.Built().Resolve("codex-acp");
+        ActorEffective Entry(string model) => Assert.Single(ActorChoices.Effective(
+            "partner", ActorChoices.With(DriverConfig.Empty, "partner", [new ActorChoice("codex-acp", model, "high")]), fence: ["codex-acp"]));
+        var (opus, sonnet) = (Entry("opus"), Entry("sonnet"));
+        var rules = PartnerPermissions.Shape(Person);
+
+        var one = PartnerConfigurations.Of(codex, "0.162.0", "X:/daoris/trees/default/reports/p-pc000001", rules, ["x"], guarded: true, "windows 10.0");
+        var two = PartnerConfigurations.Of(codex, "0.162.0", "X:/daoris/trees/default/reports/p-pc000001", rules, ["x"], guarded: true, "windows 10.0");
+
+        Assert.NotEqual(opus.Asked.NamedModel, sonnet.Asked.NamedModel);
+        Assert.Equal(("1", "1"), (opus.From, sonnet.From));
+        Assert.Equal(one.SettingsDigest, two.SettingsDigest);
+        Assert.DoesNotContain(
+            typeof(PartnerConfigurations).GetMethod(nameof(PartnerConfigurations.Of))!.GetParameters(),
+            parameter => parameter.Name!.Contains("model", StringComparison.OrdinalIgnoreCase) || parameter.ParameterType == typeof(ActorEffective));
+    }
 }

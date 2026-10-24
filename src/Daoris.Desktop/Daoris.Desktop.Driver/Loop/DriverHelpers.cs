@@ -597,9 +597,12 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             return await RefuseAsync(ask, HelperWhy.Unreadable, null, files, ct).ConfigureAwait(false);
         }
 
-        var choice = _context.HelperChoices is { } choose
-            ? await choose(ask, rule, asker, ct).ConfigureAwait(false)
-            : await HelperChoice.ChooseAsync(_context.Harnesses, ask, rule, asker.Adapter, _context.Config, asker.Workspace, ct).ConfigureAwait(false);
+        // D205 §4.4 and §3.5(f): the actor gives each agent its model, and a refusal at the open is asked again inside this call.
+        Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
+            _context.HelperChoices is { } choose
+                ? choose(ask, rule, asker, ct)
+                : HelperChoice.ChooseAsync(_context.Harnesses, ask, rule, asker.Adapter, _context.Config, asker.Workspace, ct, passed);
+        var choice = await Walk(null).ConfigureAwait(false);
         if (!choice.Chosen)
         {
             // No agent ready: it waits, and the state says why (a cool-off, a sign-in, no other maker), tried again at a later look.
@@ -622,9 +625,12 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         {
             Capture = capture,
             Workspace = asker.Workspace,
+            Reask = Walk,
+            Replaced = next => agent = next.Reviewer!,
             Opened = helper =>
             {
-                // 🔴 Started, naming the helper, BEFORE its turn: `helper_answer` finds its ask by this state.
+                // 🔴 Started, naming the helper, BEFORE its turn: `helper_answer` finds its ask by this state. A pass whose agent refused the
+                // entry's model at the open calls this again with the replacement (D205 §3.5(f)), so the state names the session that runs.
                 files.WriteState(new HelperState(ask.Id, HelperStates.Started, null, helper, DateTimeOffset.UtcNow) { Agent = agent });
                 var asked = HelperNotes.Asked(agent, helper);
                 _context.Output?.Append(ask.Asker, $"— {asked.Note}");
@@ -898,7 +904,33 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         string? left;
         try
         {
-            run = await ReadHelperInCopyAsync(ask, adapter, selection, helper, copy, ct).ConfigureAwait(false);
+            var reask = ask.Reask is { } walk ? new OneTurnReask(choice, walk) : null;
+            run = await ReadHelperInCopyAsync(ask, choice, adapter, selection, helper, copy, reask, ct).ConfigureAwait(false);
+            // D205 §3.5(f): its agent refused the entry's model at the open, so the refused record has ended `choice-not-offered` and this
+            // call walks its candidates on with it passed, then opens the replacement and calls `Opened` again with it, before it
+            // publishes an ordinary outcome; with none left, `not-started` with the pass reasons.
+            while (run is { NotOffered: true } && reask is not null && !ct.IsCancellationRequested)
+            {
+                var next = await reask.NextAsync().ConfigureAwait(false);
+                if (next is not { Chosen: true, Selection: { Allowed: true } nextSelection, Reviewer: { } nextHelper })
+                {
+                    run = new HelperPassRun(null, $"held  helper for ask `{ask.Ask.Id}`: {next.Sentence}") { Code = HelperWhy.NotStarted };
+                    break;
+                }
+
+                try
+                {
+                    adapter = _context.Adapters.Resolve(nextHelper);
+                }
+                catch (DriverException error)
+                {
+                    run = new HelperPassRun(null, $"held  helper for ask `{ask.Ask.Id}`: {error.Message}") { Code = HelperWhy.NotStarted };
+                    break;
+                }
+
+                ask.Replaced?.Invoke(next);
+                run = await ReadHelperInCopyAsync(ask, next, adapter, nextSelection, nextHelper, copy, reask, ct).ConfigureAwait(false);
+            }
         }
         finally
         {
@@ -911,7 +943,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
     /// <summary>The helper's turn from its record's open to its record's end, in its copy.</summary>
     private async Task<HelperPassRun> ReadHelperInCopyAsync(
-        HelperPassAsk ask, ISessionAdapter adapter, HarnessSelection selection, string agent, OpinionTreeOpened copy, CancellationToken ct)
+        HelperPassAsk ask, ReviewerChoice choice, ISessionAdapter adapter, HarnessSelection selection, string agent, OpinionTreeOpened copy,
+        OneTurnReask? reask, CancellationToken ct)
     {
         var service = _context.Service;
         var home = _context.Home;
@@ -932,6 +965,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             new(sessionId, $"{state}  helper {sessionId} ({named}): {note}") { State = state, LastWords = lastWords };
         // The record says who asked: an opening's line, then the helper's own on another account of the order, as a quest's start does.
         RotatedOpening.Say(service, _context.Events, sessionId, agent, selection, carried: null);
+        OneTurnReask.Say(_context.Events, sessionId, "helper", choice, _driver.Log);
         var bound = HelperPass.Bound(_context.Config);
         var posture = OpinionPosture.Of(adapter);
 
@@ -944,6 +978,9 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 Helper = ask.Ask.Id,
                 Session = sessionId,
                 Prompt = HelperInstruction.Compose(packet),
+                // MODELROLE1e (D205 §3.2, §4.4): the entry's model and effort, carried on either door, and the choice its record keeps.
+                Asked = choice.Effective?.Asked,
+                Choice = choice.Effective?.From,
             };
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
             await _driver.KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
@@ -983,12 +1020,25 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 said: _driver.Said(adapter, selection, sessionId),
                 minutes: bound,
                 noConnector: HelperPass.NoConnector,
+                // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in
+                // this call: a later entry of the same agent on the same account is set on this session, anything else ends the record.
+                offers: new OpenOffers(selection.Version, selection.Profile, reask is null ? null : _ => reask.SameAccountAsync()),
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
                         _context.Usage?.Record(new UsageEntry(
                             sessionId, ask.Repository, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                    }
+
+                    // Refused at the open, before any prompt: the record ends `choice-not-offered`, its one count given back once its
+                    // process has stopped, and the pass asks its walk again (above) before it publishes an outcome.
+                    if (!_context.Processes.WasStopRequested(sessionId) && ended.NotOffered is { } notOffered)
+                    {
+                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Name, notOffered);
+                        await service.AdvanceAsync(sessionId, refusedEnd.State, note: refusedEnd.Note, ct: ct, parts: refusedEnd.Parts).ConfigureAwait(false);
+                        _context.Harnesses.Release(selection.Number, sessionId);
+                        return Ended(refusedEnd.State, refusedEnd.Note) with { NotOffered = true };
                     }
 
                     var byPerson = _context.Processes.WasStopRequested(sessionId);

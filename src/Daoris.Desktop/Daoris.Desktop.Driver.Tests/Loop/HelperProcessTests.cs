@@ -188,6 +188,102 @@ public sealed class HelperProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 MODELROLE1e (D205 §3.5(f), the row's test): a helper whose agent refuses the Helper actor's model on its first account, at the open
+    /// and before any prompt, handles the refusal inside its own call. The refused record ends `choice-not-offered`, the agent's other
+    /// account is walked with the first passed, the ask is started again naming the replacement (so `helper_answer` finds its ask by the
+    /// session that runs), and the ask is answered once, by the replacement.
+    /// </summary>
+    [Fact]
+    public async Task A_helper_its_first_account_refuses_answers_the_ask_once_on_the_second()
+    {
+        Ask();
+        foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
+        new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"])
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var service = HelperStandIn.Start(_repository.Root, _tip);
+        await using var _ = service;
+        var config = ActorChoices.With(
+            DriverConfig.Empty with
+            {
+                Adapter = "claude-code",
+                Cap = 3,
+                TestBound = 4,
+                Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingHelper(), "account-1:opus"] },
+                Helpers = new Dictionary<string, HelperRule> { ["reports"] = new(HelperRules.On, ["acp-stub"]) },
+            },
+            "helper", [new ActorChoice("acp-stub", "opus")]);
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            HelperTrees = (_, _) => Task.FromResult<(string?, string?)>((_tip, _repository.Root)),
+        };
+
+        await driver.HelpersAsync(new Snapshot([], [], []), 0, [], CancellationToken.None);
+        await SettleAsync(driver, Files, state => state is { State: HelperStates.Answered, Handed: not null });
+
+        Assert.Equal(["account-1", "account-2"], service.Opened.Select(opened => opened["account"]!.GetValue<string>()));
+        Assert.Equal(["starting", "working", "failed"], service.States("h1"));
+        Assert.Equal(["starting", "working", "completed"], service.States("h2"));
+        // The state names the session that ran, and the answer is its.
+        Assert.Equal("h2", Files.ReadState(AskId)!.Helper);
+        var hand = Assert.Single(service.Hands);
+        Assert.Equal("h2", hand.Helper);
+        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-1", "opus", DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>
+    /// The protocol door's helper on the stub's accounts (MODELROLE1e): it lists Claude's three model values, refuses at the set the models
+    /// its argument names for its account, as Claude's door was measured to (MODELROLE1a), and answers through the file its tool writes.
+    /// </summary>
+    private string RefusingHelper()
+    {
+        var script = Path.Combine(_home, "refusing-helper.mjs");
+        var helpers = DaorisHome.Entry(_home, HomeEntry.Helpers).Replace("\\", "/");
+        File.WriteAllText(script, $$"""
+            import { createInterface } from 'node:readline';
+            import { basename, join } from 'node:path';
+            import { mkdirSync, writeFileSync } from 'node:fs';
+            const refuses = process.argv[2] ?? '';
+            const home = process.env.DAORIS_STUB_CONFIG_DIR ?? '';
+            const account = home ? basename(home) : '(own)';
+            const refused = new Set(refuses.split(',').filter((pair) => pair.startsWith(account + ':')).map((pair) => pair.split(':')[1]));
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            let model = 'default';
+            const options = () => [{ id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: model,
+              options: [{ value: 'default', name: 'Default' }, { value: 'opus', name: 'Opus' }, { value: 'sonnet', name: 'Sonnet' }] }];
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1', configOptions: options() } });
+              } else if (frame.method === 'session/set_config_option') {
+                const value = frame.params.value;
+                if (refused.has(value)) {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error',
+                    data: { details: `Invalid value for config option model: ${value}` } } });
+                } else {
+                  model = value;
+                  send({ jsonrpc: '2.0', id: frame.id, result: { configOptions: options() } });
+                }
+              } else if (frame.method === 'session/prompt') {
+                const helpers = '{{helpers}}';
+                mkdirSync(helpers, { recursive: true });
+                writeFileSync(join(helpers, '{{AskId}}.answer.json'), JSON.stringify({
+                  id: '{{AskId}}', helper: process.env.DAORIS_SESSION_ID, answer: 'The window is exclusive at report.md:1.', at: new Date().toISOString(),
+                }));
+                send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            }
+            process.exit(0);
+            """);
+        return script;
+    }
+
+    /// <summary>
     /// The stub helper: a harness with real mechanics and no model. It says what it saw (including the state file it was started
     /// under), then either answers through the file <c>helper_answer</c> writes or ends having said words only.
     /// </summary>
@@ -322,13 +418,15 @@ public sealed class HelperProcessTests : IDisposable
                     {
                         var body = Body();
                         Opened.Add(body);
-                        _states["h1"] = [];
+                        // Each helper the host opens is the next: the first `h1`, a replacement for a refused open `h2`.
+                        var id = "h" + Opened.Count;
+                        _states[id] = [];
                         var session = new JsonObject
                         {
-                            ["id"] = "h1", ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["adapter"] = body["adapter"]!.GetValue<string>(),
+                            ["id"] = id, ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["adapter"] = body["adapter"]!.GetValue<string>(),
                             ["workspace"] = "work", ["serves"] = body["asker"]!.GetValue<string>(), ["tree"] = body["tree"]!.GetValue<string>(),
                         };
-                        return (200, new JsonObject { ["message"] = "Session `h1` reads `reports` in a clone of its own.", ["session"] = session }.ToJsonString());
+                        return (200, new JsonObject { ["message"] = $"Session `{id}` reads `reports` in a clone of its own.", ["session"] = session }.ToJsonString());
                     }
 
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/state", StringComparison.Ordinal):
@@ -340,13 +438,14 @@ public sealed class HelperProcessTests : IDisposable
                         return (200, new JsonObject { ["session"] = new JsonObject { ["id"] = id, ["state"] = state }, ["message"] = "moved" }.ToJsonString());
                     }
 
-                    case ("POST", "/api/helpers/h1/hand"):
+                    case ("POST", _) when path.StartsWith("/api/helpers/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
                     {
+                        var helper = path["/api/helpers/".Length..^"/hand".Length];
                         var text = Body()["text"]!.GetValue<string>();
-                        Hands.Add(("h1", text));
+                        Hands.Add((helper, text));
                         var word = new JsonObject
                         {
-                            ["id"] = "hw1", ["text"] = text, ["at"] = DateTimeOffset.UtcNow.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true, ["helper"] = "h1",
+                            ["id"] = "hw1", ["text"] = text, ["at"] = DateTimeOffset.UtcNow.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true, ["helper"] = helper,
                         };
                         Words.Add(word);
                         return (200, new JsonObject { ["message"] = "Handed.", ["said"] = word.DeepClone() }.ToJsonString());

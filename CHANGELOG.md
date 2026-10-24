@@ -11,6 +11,16 @@ with the version and date at release.
   part running alongside stays in the *Parts* strip; pressing a part there attends it, scrolls to it and hides the parts after it. One
   line closes the old part and one opens the new, and the account's opening line sits folded under it. Moves and hand-overs now read as
   a new part of the same session, saying what the new part was handed (Daoris's brief or record, not the agent's own turns), in English and 中文.
+- A second opinion, a helper, a partner and a brainstorm now run on the model you gave their actor (MODELROLE1e). Set it in the
+  terminal with `daoris driver actor opinion|helper|partner|brainstorm "<agent> <model> <effort>"`; the page's editors for them are
+  still to come. The rule you set for second opinions, helpers and partners and the agents a brainstorm names still decide who may
+  answer and in what order, so another maker's agent still reads first, and the same agent on a stronger model reads as *the same
+  agent, fresh: opus*, never as an independent reading. A model an account does not offer is passed for that account and the agent's
+  next choice is tried; if its agent refuses the model when it starts, the second opinion, helper or partner asks again on another
+  account or choice and answers once. A brainstorm's voices are planned once, and a voice that cannot run is dropped, never replaced.
+  Where Build or Chat has an order of its own, Daoris's offer to hand a session over names that order's next choice on another agent
+  (*Build's next choice is 2: Codex · gpt-5*), and an agent's ask to hand over under *on* goes to the same one; nothing is handed over
+  without your press under *ask* or *on*.
 - The steward's desk is built and the steward is still not offered (STEWARDROLE1c, D209). Nothing you use changes until its
   activation. Once it is, any session or terminal can ask the steward for one of its acts with
   `daoris-driver steward request <act> <target> "<why>"`, and needs no key to do so. A request grants nothing: the steward reads it

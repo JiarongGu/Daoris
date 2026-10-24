@@ -45,6 +45,15 @@ public sealed record OpinionPassAsk(
     /// a door reads the pass as being read while it runs, never as not asked. Null tells nobody, as a recheck's run does.
     /// </summary>
     public Action<string, string>? Opened { get; init; }
+
+    /// <summary>
+    /// The owner's own walk, asked again with what was passed left out (D205 §3.5(f), MODELROLE1e): a refusal of the entry's model at the
+    /// open is handled in this call, the refused record ended <c>choice-not-offered</c> and the walk's answer opened. Null asks nothing again.
+    /// </summary>
+    public Func<IReadOnlyList<ReviewerPassed>, Task<ReviewerChoice>>? Reask { get; init; }
+
+    /// <summary>Told the choice that replaced a refused open, before the replacement's record opens: the gate keeps its reviewer and label.</summary>
+    public Action<ReviewerChoice>? Replaced { get; init; }
 }
 
 /// <summary>
@@ -81,6 +90,9 @@ public sealed record OpinionPassRun(string Line, bool Opened)
 
     /// <summary>Why the copy's folder is left, where removing it failed; null where it went, or none was made.</summary>
     public string? TreeLeft { get; init; }
+
+    /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c> (D205 §3.5(f)).</summary>
+    public bool NotOffered { get; init; }
 
     /// <summary>
     /// A pass no reviewer could read (§3.3, §10): tier <c>none</c>, with the choice's code and its sentence, and nothing started.

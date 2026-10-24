@@ -450,4 +450,161 @@ public sealed class ReviewerChoiceTests : IDisposable
         Assert.Equal(AgentAbsence.PinNotInstalled, pin.Absent);
         Assert.Null(here.Absent);
     }
+
+    // ——— The actor's models (MODELROLE1e, D205 §4.0, §4.4): the rule decides who and in what order, the actor each agent's model.
+
+    private static DriverConfig Actor(string actor, params ActorChoice[] entries) => ActorChoices.With(Config, actor, entries);
+
+    private static Task<ReviewerChoice> Choose(
+        HarnessRoster roster, string working, string reviewers, DriverConfig config, IReadOnlyList<ReviewerPassed>? passed = null) =>
+        ReviewerChoice.ChooseAsync(roster, Rule(reviewers), working.Split(','), config, null, passed: passed);
+
+    private void Refuses(string agent, string model, string? account = null) =>
+        Assert.Null(AgentOffers.Refused(_home, agent, null, account, model, Now));
+
+    /// <summary>The row's first proof: another maker's agent still reads first, and reads on the model the actor gave it.</summary>
+    [Fact]
+    public async Task Another_maker_reads_first_on_the_model_the_actor_gave_it_whatever_the_actor_lists_first()
+    {
+        var config = Actor("opinion", new("claude-code-acp", "opus"), new("codex-acp", "gpt-5", "high"));
+
+        var choice = await Choose(Roster(), "claude-code", "claude-code-acp,codex-acp", config);
+
+        Assert.Equal(("codex-acp", Another, null), (choice.Reviewer, choice.Label, choice.Code));
+        Assert.Equal(new ActorEffective("codex-acp", "gpt-5", "high", "2"), choice.Effective);
+        Assert.Contains("`codex-acp` reads it on `gpt-5`", choice.Sentence, StringComparison.Ordinal);
+    }
+
+    /// <summary>The row's second proof: a stronger model never makes the same agent independent, and the label names it as fresh.</summary>
+    [Fact]
+    public async Task The_same_agent_on_a_stronger_model_is_labelled_fresh_and_never_independent()
+    {
+        var config = Actor("opinion", new ActorChoice("claude-code-acp", "opus", "high"));
+
+        var choice = await Choose(Roster(), "claude-code", "claude-code-acp", config);
+
+        Assert.Equal(("claude-code-acp", Same, NotIndependent), (choice.Reviewer, choice.Label, choice.Code));
+        Assert.Equal("opus", choice.Effective!.Model);
+        Assert.Contains("fresh: opus", choice.Sentence, StringComparison.Ordinal);
+        Assert.Contains("not an independent reading", choice.Sentence, StringComparison.Ordinal);
+    }
+
+    /// <summary>The row's third proof: the rule's reviewer the actor has no entry for runs at account default, as today's rules do.</summary>
+    [Fact]
+    public async Task A_reviewer_with_no_entry_runs_at_rule_default()
+    {
+        var config = Actor("opinion", new ActorChoice("codex-acp", "gpt-5"));
+
+        var choice = await Choose(Roster(), "claude-code", "dsh", config);
+
+        Assert.Equal("dsh", choice.Reviewer);
+        Assert.Equal(new ActorEffective("dsh", null, null, "rule-default"), choice.Effective);
+        Assert.DoesNotContain(" on `", choice.Sentence, StringComparison.Ordinal);
+    }
+
+    /// <summary>The row's fourth proof: a rule that is <c>false</c> is still off, and the actor never enables or orders reviewers.</summary>
+    [Fact]
+    public async Task A_rule_of_false_is_still_off_whatever_the_actor_lists()
+    {
+        var config = Actor("opinion", new ActorChoice("codex-acp", "gpt-5"));
+
+        var choice = await ReviewerChoice.ChooseAsync(Roster(), OpinionRule.None, ["claude-code"], config, null);
+
+        Assert.False(choice.Chosen);
+        Assert.Null(choice.Reviewer);
+        Assert.Empty(choice.Tried);
+    }
+
+    [Fact]
+    public async Task An_agent_with_no_entries_at_all_reads_as_it_always_did()
+    {
+        var choice = await Choose(Roster(), "claude-code", "codex-acp", Config);
+
+        Assert.Equal((choice.Reviewer, choice.Label), ("codex-acp", Another));
+        Assert.Equal(new ActorEffective("codex-acp", null, null, "rule-default"), choice.Effective);
+    }
+
+    /// <summary>A model the agent does not offer passes that entry on its account, and the agent's next entry is walked, the pass said.</summary>
+    [Fact]
+    public async Task A_model_the_agent_does_not_offer_passes_to_the_agent_s_next_entry()
+    {
+        Account("codex", "work");
+        Refuses("codex-acp", "opus", "work");
+        var config = Actor("opinion", new("codex-acp", "opus"), new("codex-acp", "sonnet"));
+
+        var choice = await Choose(Roster(), "claude-code", "codex-acp", config);
+
+        Assert.Equal(new ActorEffective("codex-acp", "sonnet", null, "2"), choice.Effective);
+        var passed = Assert.Single(choice.Tried);
+        Assert.Equal((ReviewerHeld.NotOffered, "opus"), (passed.Held, passed.Entry!.Model));
+        Assert.Null(choice.Code);
+    }
+
+    /// <summary>
+    /// MODELROLE1e (D205 §3.5(f)): a partner is named by its ask, so as a pick: the named agent's other accounts, then its other entries on
+    /// the same account, then refused with the reasons; never another agent, whatever else is installed.
+    /// </summary>
+    [Fact]
+    public async Task A_named_agent_walks_its_own_accounts_and_entries_and_never_another_agent()
+    {
+        Account("codex", "work");
+        Account("codex", "spare");
+        Refuses("codex-acp", "opus", "work");
+        Refuses("codex-acp", "opus", "spare");
+        Refuses("codex-acp", "sonnet", "work");
+        var config = Actor("partner", new ActorChoice("codex-acp", "opus"), new ActorChoice("codex-acp", "sonnet"));
+        var roster = Roster();
+
+        var choice = await ReviewerChoice.ChooseAsync(roster, Rule("codex-acp"), ["claude-code"], config, null, actor: "partner");
+
+        // Entry 1 is passed (neither account offers it); entry 2 runs on the account that still does.
+        Assert.Equal(("sonnet", "spare"), (choice.Effective!.Model, choice.Selection!.Profile));
+
+        Refuses("codex-acp", "sonnet", "spare");
+        var none = await ReviewerChoice.ChooseAsync(roster, Rule("codex-acp"), ["claude-code"], config, null, actor: "partner");
+
+        Assert.False(none.Chosen);
+        Assert.NotEmpty(none.Tried);
+        Assert.All(none.Tried, each => Assert.Equal("codex-acp", each.Reviewer));
+    }
+
+    /// <summary>A cool-off is the account's, so an agent that is cooling holds each of its entries alike and is asked once.</summary>
+    [Fact]
+    public async Task A_cooling_agent_holds_each_of_its_entries_alike_and_is_asked_once()
+    {
+        Cool("codex");
+        var config = Actor("opinion", new("codex-acp", "opus"), new("codex-acp", "sonnet"));
+
+        var choice = await Choose(Roster(), "claude-code", "codex-acp,dsh", config);
+
+        Assert.Equal("dsh", choice.Reviewer);
+        Assert.Single(choice.Tried, each => each.Reviewer == "codex-acp");
+    }
+
+    /// <summary>
+    /// An owner's call that was refused at the open asks again with the (entry, account) it passed left out (§3.5(f)): the entry's other
+    /// account is walked before the agent's next entry, as choice-major order has it.
+    /// </summary>
+    [Fact]
+    public async Task An_entry_and_account_a_call_already_passed_are_left_out_of_the_walk()
+    {
+        Account("codex", "first");
+        Account("codex", "second");
+        var config = Actor("opinion", new("codex-acp", "opus"), new("codex-acp", "sonnet"));
+        var roster = Roster();
+        var first = await Choose(roster, "claude-code", "codex-acp", config);
+        var opus = first.Effective!;
+
+        var again = await Choose(roster, "claude-code", "codex-acp", config, [new ReviewerPassed(opus, first.Selection!.Profile)]);
+
+        Assert.Equal(opus, again.Effective);
+        Assert.NotEqual(first.Selection.Profile, again.Selection!.Profile);
+
+        var last = await Choose(
+            roster, "claude-code", "codex-acp", config,
+            [new ReviewerPassed(opus, first.Selection.Profile), new ReviewerPassed(opus, again.Selection.Profile)]);
+
+        Assert.Equal("sonnet", last.Effective!.Model);
+        Assert.Equal(ReviewerHeld.NotOffered, Assert.Single(last.Tried).Held);
+    }
 }

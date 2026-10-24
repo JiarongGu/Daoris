@@ -20740,3 +20740,21 @@ not theirs, a conversation no runner here holds or a headless host. The answerin
 the recheck; a hand-over's newest record and an ended chat take them by their own paths. Each proof seen failing first, the
 `OpinionResumeTickTests` `Process` case on both doors included. **Not reached:** no real conversation or agent ran. Detail: D157's
 CHATFLOW1e note.
+## MODELROLE1e — second opinions, helpers, partners and brainstorms take their models (2026-10-25, D205)
+
+> | **MODELROLE1e — second opinions, helpers, partners and brainstorms take their models** | §4.0's fences and §4.4's composition; the label naming the model; the brainstorm's frozen voices; the hand-over offer naming the next choice; **round 4:** an agent's ask under `on` taking the same order, `HandOverOrder`, its web twin and `fixtures/hand-over-order.json` moving together (§3.5(e)); each one-turn owner's refusal at the open handled in its own call (§3.5(f)) | `ReviewerChoice` over entries (another maker first; the same agent on a stronger model labelled *fresh*; a reviewer with no entry at `rule-default`; `false` still off); two choices one digest; a brainstorm whose voice cannot run dropping it with no substitute; a cooling Build offering the hand-over and taking it only on the person's press under `ask` and `on` alike; on the install, a second opinion's *Details* naming Codex's reported model |
+
+(Quest `#1d2f0395f34a`; tracked in the MODELROLE1 row of the backlog, which says row e is built.)
+
+**Outcome** 2026-10-25. **Built:** the rule or the ask still decides who and in what order, and the actor gives each listed agent its model, for
+a second opinion, a helper, a partner and a brainstorm; the same agent on a stronger model is labelled *fresh* and never independent;
+a model an account does not offer passes that entry and the agent's next is walked; a brainstorm's voices are planned once and a voice
+that cannot run is dropped with nothing in its place; a hand-over goes to the actor's next entry on another agent, Build's for a line
+and Chat's for a conversation, with the roster's order only where the actor is *as before*, an agent's ask under `on` taking the same
+order, and the page's offer naming *Build's next choice* in English and 中文; each one-turn owner handles its agent's refusal of the
+model at the open in its own call (`OneTurnReask`). **Proved** by `ReviewerChoiceTests`, `PartnerConfigurationTests` (two choices, one
+digest), `BrainstormLookTests`, `HandOverAtTurnEndTests` (a cooling Build under `ask` and `on`), `HandOverOrderTests` and the page's
+`handOverOrder.test.ts` on the shared `actorRows`, `OneTurnReaskTests`, and with real processes `HelperProcessTests` and `ReviewTreeTests`
+(a first account's refusal answered once on the second). **Left, as MODELROLE1e2:** the editors for the four fenced actors, a
+conversation's hand-over opening on `handed`'s model, the partner's real-process case, and the installed proof. Detail: D205's
+MODELROLE1e note; `docs/2026-10-25-modelrole1e-build.md`.

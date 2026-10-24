@@ -360,11 +360,20 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         IReadOnlyList<string> reviewers = answeredBy.Any(agent => AgentFamily.Of(_context.Harnesses.Adapters, agent).Same(firstFamily))
             ? [.. asked.Rule.Reviewers.Where(each => !AgentFamily.Of(_context.Harnesses.Adapters, each).Same(firstFamily))]
             : [first.Adapter];
-        var choice = await ReviewerChoice.ChooseAsync(
-                _context.Harnesses, asked.Rule with { Reviewers = reviewers }, wrote, _context.Config, asked.Workspace, ct)
-            .ConfigureAwait(false);
+        // D205 §4.2: a recheck by the first reviewer is a continuation, so it takes the first pass's record's asked choice, not the actor as it
+        // stands now; with the record's asked unread (an older record), or another reviewer chosen above, it reads the actor's entries as the
+        // first pass did.
+        IReadOnlyList<ActorEffective>? order = reviewers is [var same] && string.Equals(same, first.Adapter, StringComparison.OrdinalIgnoreCase)
+            && records.GetValueOrDefault(first.Session) is { Asked: { } was } record
+            ? [new ActorEffective(first.Adapter, was.NamedModel, was.Effort is { Carried: true, Value: { } effort } ? effort : null, record.Choice ?? "rule-default")]
+            : null;
+        Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
+            ReviewerChoice.ChooseAsync(
+                _context.Harnesses, asked.Rule with { Reviewers = reviewers }, wrote, _context.Config, asked.Workspace, ct, passed: passed, order: order);
+        var choice = await Walk(null).ConfigureAwait(false);
         var ask = asked with
         {
+            Reask = Walk,
             Occasion = first.Occasion,
             Working = first.Working,
             Base = first.Tip,

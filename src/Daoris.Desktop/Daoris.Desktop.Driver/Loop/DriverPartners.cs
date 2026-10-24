@@ -13,6 +13,16 @@ public sealed record PartnerPassAsk(PartnerAsk Ask, PriorSession Lead, string Ro
     /// <see cref="PartnerStates.Started"/> naming them then, which <c>partner_answer</c> finds its piece by.
     /// </summary>
     public Action<string, string>? Opened { get; init; }
+
+    /// <summary>
+    /// The owner's own walk, asked again with what was passed left out (D205 §3.5(f), MODELROLE1e): a refusal of the entry's model at the
+    /// open is handled in this call, the refused record ended <c>choice-not-offered</c> and the walk's answer opened, <see cref="Opened"/>
+    /// called again with the replacement. The ask names its agent, so the walk is that agent's other accounts, then its other entries.
+    /// </summary>
+    public Func<IReadOnlyList<ReviewerPassed>, Task<ReviewerChoice>>? Reask { get; init; }
+
+    /// <summary>Told the choice that replaced a refused open, before the replacement's record opens.</summary>
+    public Action<ReviewerChoice>? Replaced { get; init; }
 }
 
 /// <summary>What a partner's pass came to: its record if one opened, how its turn ended, and only once its job was waited empty.</summary>
@@ -28,6 +38,9 @@ public sealed record PartnerPassRun(string? Session, string Line)
 
     /// <summary>What the partner said last, where its turn completed: the fallback answer.</summary>
     public string? LastWords { get; init; }
+
+    /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c> (D205 §3.5(f)).</summary>
+    public bool NotOffered { get; init; }
 }
 
 /// <summary>
@@ -163,9 +176,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             return null;
         }
 
-        var choice = _context.PartnerChoices is { } choose
-            ? await choose(ask, lead, ct).ConfigureAwait(false)
-            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, _context.PartnerMeasured, ct).ConfigureAwait(false);
+        var choice = await ChoosePartnerAsync(ask, lead, null, ct).ConfigureAwait(false);
         if (!choice.Chosen)
         {
             // A cool-off or a sign-in waits, tried again at a later look; a refusal by the sheet is said and ends the piece.
@@ -273,6 +284,15 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             }
         });
 
+    /// <summary>
+    /// The agent the ask names, walked for its account and its entries of the partner actor (D205 §4.4), the (entry, account) a refusal at the
+    /// open already passed left out.
+    /// </summary>
+    private Task<ReviewerChoice> ChoosePartnerAsync(PartnerAsk ask, PriorSession lead, IReadOnlyList<ReviewerPassed>? passed, CancellationToken ct) =>
+        _context.PartnerChoices is { } choose
+            ? choose(ask, lead, ct)
+            : PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, _context.PartnerMeasured, ct, passed);
+
     /// <summary>An approved or preparing piece a restart left: a partial copy removed, the lead read again, then prepared as at first.</summary>
     private async Task<LookLine> PrepareAgainAsync(PartnerAsk ask, PartnerState state, bool removeCopy, PartnerFiles files, CancellationToken ct)
     {
@@ -285,9 +305,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         if (PartnerJudge.Refusal(ask, lead) is { } refused) return Refuse(ask, refused, state.Agent, files);
         var root = lead!.Tree is { Length: > 0 } tree ? await RootAsync(tree, ct).ConfigureAwait(false) : null;
         if (root is null) return Refuse(ask, PartnerWhy.CopyFailed, state.Agent, files);
-        var choice = _context.PartnerChoices is { } choose
-            ? await choose(ask, lead, ct).ConfigureAwait(false)
-            : await PartnerChoice.ChooseAsync(_context.Harnesses, ask, lead.Adapter, _context.Config, lead.Workspace, _context.PartnerMeasured, ct).ConfigureAwait(false);
+        var choice = await ChoosePartnerAsync(ask, lead, null, ct).ConfigureAwait(false);
         if (!choice.Chosen) return Refuse(ask, choice.Code ?? PartnerWhy.NotMeasured, ask.Agent, files);
         return await RunPieceAsync(ask, lead, root, choice, files, ct).ConfigureAwait(false);
     }
@@ -308,6 +326,9 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
         var pass = new PartnerPassAsk(ask, lead, root, copy)
         {
+            Reask = passed => ChoosePartnerAsync(ask, lead, passed, ct),
+            // A replacement on another account of the named agent: the state names the account that runs (D205 §3.5(f)).
+            Replaced = next => files.WriteState(files.ReadState(ask.Id)! with { Account = next.Selection?.Profile, At = DateTimeOffset.UtcNow }),
             // 🔴 Started, naming the record and the job, BEFORE its turn: `partner_answer` finds its piece by this state.
             Opened = (partner, job) =>
             {
@@ -481,6 +502,29 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     /// </summary>
     internal async Task<PartnerPassRun> PartnerPassAsync(PartnerPassAsk ask, ReviewerChoice choice, CancellationToken ct = default)
     {
+        var reask = ask.Reask is { } walk ? new OneTurnReask(choice, walk) : null;
+        var run = await PartnerAttemptAsync(ask, choice, reask, makeCopy: true, ct).ConfigureAwait(false);
+        // D205 §3.5(f): its agent refused the entry's model at the open, so the refused record has ended `choice-not-offered` and this call
+        // asks its walk again before it publishes an outcome. Named by its ask (D199), the walk is the named agent's other accounts, then
+        // its other entries; never another agent. Its job has ended and waited empty, its copy untouched, and the replacement opens in both.
+        while (run is { NotOffered: true } && reask is not null && !ct.IsCancellationRequested)
+        {
+            var next = await reask.NextAsync().ConfigureAwait(false);
+            if (next is not { Chosen: true, Selection.Allowed: true })
+            {
+                return new PartnerPassRun(null, $"held  partner for piece `{ask.Ask.Id}`: {next.Sentence}") { Code = PartnerWhy.NotMeasured };
+            }
+
+            ask.Replaced?.Invoke(next);
+            run = await PartnerAttemptAsync(ask, next, reask, makeCopy: false, ct).ConfigureAwait(false);
+        }
+
+        return run;
+    }
+
+    /// <summary>One try of the partner's pass with <paramref name="choice"/>: admitted, its copy (the first try's), its job and its record.</summary>
+    private async Task<PartnerPassRun> PartnerAttemptAsync(PartnerPassAsk ask, ReviewerChoice choice, OneTurnReask? reask, bool makeCopy, CancellationToken ct)
+    {
         var piece = ask.Ask.Id;
         if (choice is not { Chosen: true, Selection: { Allowed: true } selection, Reviewer: { } agent })
         {
@@ -506,7 +550,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             return new PartnerPassRun(null, $"refused  partner for piece `{piece}`: {PartnerMeasurements.Refused(configuration)}") { Code = PartnerWhy.NotMeasured };
         }
 
-        if (await PieceCopy.MakeAsync(ask.Root, ask.Copy, ask.Ask.Base, ct).ConfigureAwait(false) is { } failed)
+        if (makeCopy && await PieceCopy.MakeAsync(ask.Root, ask.Copy, ask.Ask.Base, ct).ConfigureAwait(false) is { } failed)
         {
             return new PartnerPassRun(null, $"held  partner for piece `{piece}`: {failed.Why}") { Code = failed.Code };
         }
@@ -531,7 +575,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         ask.Opened?.Invoke(sessionId, PieceJobs.NameOf(piece));
         try
         {
-            return await TurnAsync(ask, adapter, selection, agent, sessionId, configuration, ct).ConfigureAwait(false);
+            return await TurnAsync(ask, choice, adapter, selection, agent, sessionId, configuration, reask, ct).ConfigureAwait(false);
         }
         finally
         {
@@ -542,8 +586,8 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     private async Task<PartnerPassRun> TurnAsync(
-        PartnerPassAsk ask, ISessionAdapter adapter, HarnessSelection selection, string agent, string sessionId,
-        PartnerConfiguration configuration, CancellationToken ct)
+        PartnerPassAsk ask, ReviewerChoice choice, ISessionAdapter adapter, HarnessSelection selection, string agent, string sessionId,
+        PartnerConfiguration configuration, OneTurnReask? reask, CancellationToken ct)
     {
         var service = _context.Service;
         var home = _context.Home;
@@ -551,6 +595,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var piece = ask.Ask.Id;
         var repository = ask.Lead.Repository ?? "";
         RotatedOpening.Say(service, _context.Events, sessionId, agent, selection, carried: null);
+        OneTurnReask.Say(_context.Events, sessionId, "partner", choice, _driver.Log);
         var bound = PartnerPass.Bound(_context.Config);
         PartnerPassRun Ended(string state, string end, string note, string? lastWords = null) =>
             new(sessionId, $"{state}  partner {sessionId} (piece `{piece}`): {note}") { End = end, LastWords = lastWords };
@@ -563,6 +608,9 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 Piece = piece,
                 Session = sessionId,
                 Prompt = PartnerInstruction.Compose(packet),
+                // MODELROLE1e (D205 §3.2, §4.4): the entry's model and effort, carried on either door, and the choice its record keeps.
+                Asked = choice.Effective?.Asked,
+                Choice = choice.Effective?.From,
             };
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
             await _driver.KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
@@ -602,11 +650,24 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 said: _driver.Said(adapter, selection, sessionId),
                 minutes: bound,
                 noConnector: PartnerPass.NoConnector,
+                // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in
+                // this call: a later entry of the same agent on the same account is set on this session, anything else ends the record.
+                offers: new OpenOffers(selection.Version, selection.Profile, reask is null ? null : _ => reask.SameAccountAsync()),
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
                         _context.Usage?.Record(new UsageEntry(sessionId, repository, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                    }
+
+                    // Refused at the open, before any prompt: the record ends `choice-not-offered`, its one count given back once its
+                    // process has stopped, and the pass asks its walk again (above) before it publishes an outcome.
+                    if (!_context.Processes.WasStopRequested(sessionId) && ended.NotOffered is { } notOffered)
+                    {
+                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Name, notOffered);
+                        await service.AdvanceAsync(sessionId, refusedEnd.State, note: refusedEnd.Note, ct: ct, parts: refusedEnd.Parts).ConfigureAwait(false);
+                        _context.Harnesses.Release(selection.Number, sessionId);
+                        return Ended(refusedEnd.State, PartnerEnds.Answered, refusedEnd.Note) with { NotOffered = true };
                     }
 
                     var byPerson = _context.Processes.WasStopRequested(sessionId);

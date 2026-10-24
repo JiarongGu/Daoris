@@ -307,7 +307,24 @@ internal sealed class DriverHandOvers(LoopContext context)
     {
         var doors = _context.HandOverDoors is { } stand ? await stand(ct).ConfigureAwait(false) : await RosterDoorsAsync(ct).ConfigureAwait(false);
         var quest = IsQuest(record);
-        return HandOverOrder.Others(record.Adapter, doors).FirstOrDefault(agent => quest ? Drives(agent) is not null : AccountsOf(agent) is not null);
+        // D205 §3.5(e) (MODELROLE1e): every path takes the actor's effective order, a driven line's Build's and a conversation's Chat's:
+        // the next entry on another agent. The roster's order serves only where the actor is as before.
+        return HandOverOrder.Steps(record.Adapter, doors, OrderOf(quest ? "build" : "chat"))
+            .Select(step => step.Harness)
+            .FirstOrDefault(agent => quest ? Drives(agent) is not null : AccountsOf(agent) is not null);
+    }
+
+    /// <summary>The actor's effective order as it stands now; none where its stored entry does not read, and then the roster's order stands.</summary>
+    private IReadOnlyList<ActorEffective> OrderOf(string actor)
+    {
+        try
+        {
+            return ActorChoices.Effective(actor, _context.Config);
+        }
+        catch (ActorUnreadableException)
+        {
+            return [];
+        }
     }
 
     /// <summary>The roster's doors in its order, as the page's offer reads them: each adapter, whether it is here, and whose accounts it runs as.</summary>

@@ -292,6 +292,101 @@ public sealed class ReviewTreeTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 MODELROLE1e (D205 §3.5(f), the row's test): a reviewer whose first account refuses the Second opinion actor's model at the open,
+    /// before any prompt, is handled inside the pass's own call. The refused reviewer's record ends `choice-not-offered`, the agent's other
+    /// account is walked with the first passed, a second opinion is asked of the host for the replacement in the same copy, the gate is told
+    /// the replacement, and the pass answers once, by the replacement.
+    /// </summary>
+    [Fact]
+    public async Task A_reviewer_its_first_account_refuses_reads_the_work_once_on_the_second()
+    {
+        foreach (var account in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", account));
+        new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"])
+            .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        await using var service = OpinionStandIn.Start();
+        var config = ActorChoices.With(
+            DriverConfig.Empty with
+            {
+                Adapter = "claude-code",
+                TestBound = 4,
+                Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", RefusingReviewer(), "account-1:opus"] },
+            },
+            "opinion", [new ActorChoice("acp-stub", "opus")]);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var driver = new Daoris.Driver.Driver(new ServiceClient(service.Url, null), config, adapters, _home, harnesses: roster);
+        var rule = new OpinionRule(["acp-stub"], [OpinionRules.Landing], Minutes: 30);
+        Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
+            ReviewerChoice.ChooseAsync(roster, rule, ["claude-code"], config, "work", passed: passed);
+        var choice = await Walk(null);
+        Assert.Equal("account-1", choice.Selection!.Profile);
+        var told = new List<string?>();
+        var opened = new List<(string Opinion, string Session)>();
+
+        var run = await driver.PassAsync(
+            new OpinionPassAsk(OpinionRules.Landing, "w1", "reports", _repository.Root, _base, "daoris/s-1a2b3c4d", rule)
+            {
+                Workspace = "work",
+                Reask = Walk,
+                Replaced = next => told.Add(next.Selection!.Profile),
+                Opened = (opinion, session) => opened.Add((opinion, session)),
+            },
+            choice);
+
+        Assert.True(run.Opened, run.Line);
+        Assert.Equal(("op2", "r2", "completed"), (run.Opinion, run.Session, run.State));
+        Assert.False(run.NotOffered);
+        Assert.Equal(["account-2"], told);
+        Assert.Equal([("op1", "r1"), ("op2", "r2")], opened);
+        Assert.Equal(["account-1", "account-2"], service.Asked.Select(asked => asked["reviewer"]!["account"]!.GetValue<string>()));
+        Assert.Equal(["starting", "working", "failed"], service.States("r1"));
+        Assert.Equal(["starting", "working", "completed"], service.States("r2"));
+        Assert.Equal(AgentOffers.RefusedCode, AgentOffers.Judge(AgentOffers.Read(_home), "acp-stub", null, "account-1", "opus", DateTimeOffset.UtcNow));
+        Assert.Empty(Directory.EnumerateDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, "work", "reports")));
+    }
+
+    /// <summary>The protocol door's reviewer on the stub's accounts (MODELROLE1e): it refuses at the open the models its argument names for its account.</summary>
+    private string RefusingReviewer()
+    {
+        var script = Path.Combine(_home, "refusing-reviewer.mjs");
+        File.WriteAllText(script, """
+            import { createInterface } from 'node:readline';
+            import { basename } from 'node:path';
+            const refuses = process.argv[2] ?? '';
+            const home = process.env.DAORIS_STUB_CONFIG_DIR ?? '';
+            const account = home ? basename(home) : '(own)';
+            const refused = new Set(refuses.split(',').filter((pair) => pair.startsWith(account + ':')).map((pair) => pair.split(':')[1]));
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            let model = 'default';
+            const options = () => [{ id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: model,
+              options: [{ value: 'default', name: 'Default' }, { value: 'opus', name: 'Opus' }, { value: 'sonnet', name: 'Sonnet' }] }];
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1', configOptions: options() } });
+              } else if (frame.method === 'session/set_config_option') {
+                const value = frame.params.value;
+                if (refused.has(value)) {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error',
+                    data: { details: `Invalid value for config option model: ${value}` } } });
+                } else {
+                  model = value;
+                  send({ jsonrpc: '2.0', id: frame.id, result: { configOptions: options() } });
+                }
+              } else if (frame.method === 'session/prompt') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            }
+            process.exit(0);
+            """);
+        return script;
+    }
+
+    /// <summary>
     /// The stub reviewer: a harness with real mechanics and no model. It says what it saw, then does everything its instruction
     /// tells it never to — writes, commits, branches, tags and pushes in its copy — so the copy is what holds.
     /// </summary>
@@ -408,16 +503,18 @@ public sealed class ReviewTreeTests : IDisposable
                             return (400, """{"error":"Session `w1` worked in `notes`, and the candidate is in `reports`: a pass reads the work of a session in the candidate's repository."}""");
                         }
 
+                        // The first open is `op1` read by `r1`; one a pass opens in place of a refused open is `op2` by `r2`.
+                        var (reader, opinion) = ("r" + Asked.Count, "op" + Asked.Count);
                         var session = new JsonObject
                         {
-                            ["id"] = "r1", ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["adapter"] = "stub",
-                            ["workspace"] = "work", ["opinion"] = "op1", ["tree"] = body["tree"]!.GetValue<string>(),
+                            ["id"] = reader, ["repository"] = "reports", ["state"] = "queued", ["kind"] = "chat", ["adapter"] = body["reviewer"]!["adapter"]!.GetValue<string>(),
+                            ["workspace"] = "work", ["opinion"] = opinion, ["tree"] = body["tree"]!.GetValue<string>(),
                         };
-                        _states["r1"] = [];
+                        _states[reader] = [];
                         return (200, new JsonObject
                         {
-                            ["opinion"] = new JsonObject { ["id"] = "op1", ["session"] = "r1", ["state"] = "reading" },
-                            ["message"] = "Second opinion `op1` (first pass) asked of `stub`: session `r1` reads `reports` in a clone of its own.",
+                            ["opinion"] = new JsonObject { ["id"] = opinion, ["session"] = reader, ["state"] = "reading" },
+                            ["message"] = $"Second opinion `{opinion}` (first pass) asked of `stub`: session `{reader}` reads `reports` in a clone of its own.",
                             ["session"] = session,
                         }.ToJsonString());
                     }

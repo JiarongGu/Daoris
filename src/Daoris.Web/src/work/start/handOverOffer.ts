@@ -1,4 +1,5 @@
 import type { Session } from '../../data/api';
+import type { ActorRow } from '../../data/wiring';
 import { type AccountsAnswer, type AccountScope, agentOf, machineScope, switchOf, workspaceScope } from '../../settings/accounts/accounts';
 import { toolOf, type ToolDoor } from '../../agents/tools';
 import { coolingFor } from '../say';
@@ -13,6 +14,11 @@ export type HandOverOffer = {
   agent: string;
   /** That account; null where the walk takes the agent's own sign-in. */
   account: string | null;
+  /**
+   * Where the session's actor has an order of its own (MODELROLE1e, D205 §3.5(e)), the choice the offer names: its number in that order
+   * and the model it asks (null for account default). Absent where the roster's order stands because the actor is as before.
+   */
+  choice?: { n: string; model: string | null };
 };
 
 /**
@@ -29,13 +35,15 @@ export type HandOverOffer = {
  * The scope is the conversation's workspace's own where it names one, else the machine's, as the start's chip reads it, for the
  * agent that owns the door's accounts (AGT7). A shell older than the facts answers none, and then there is no offer.
  */
-export function handOverOffer({ session, workspace, doors, answer, now }: {
+export function handOverOffer({ session, workspace, doors, answer, now, actor }: {
   session: Pick<Session, 'adapter' | 'profile'>;
   /** The conversation's workspace, as the registry names it (`default` where it names none). */
   workspace: string;
   doors: readonly ToolDoor[];
   answer: AccountsAnswer | null | undefined;
   now: Date;
+  /** The session's actor (Build's for a driven line, Chat's for a conversation) as `ACTORS` answers it; its order is the offer's. */
+  actor?: ActorRow | null;
 }): HandOverOffer | null {
   const scopeOf = (agent: NonNullable<ReturnType<typeof agentOf>>): AccountScope =>
     workspaceScope(agent, workspace) ?? machineScope(agent);
@@ -51,8 +59,9 @@ export function handOverOffer({ session, workspace, doors, answer, now }: {
   if (!why) return null;
   if (switchesAway(session, doors, answer, scopeOf)) return null;
 
-  // Candidates are other tools (MIXAGENT1b-iii), each once by its first present door; a tool's other door is the same tool.
-  for (const door of otherToolDoors(session, doors)) {
+  // Candidates are the actor's entries on other tools (MODELROLE1e, D205 §3.5(e)), in its order; where the actor is as before they are
+  // the roster's other tools (MIXAGENT1b-iii), each once by its first present door. A tool's other door is the same tool.
+  for (const { door, model, from } of nextChoices(session, doors, actor)) {
     const agent = agentOf(answer, toolOf(door));
     const scope = agent ? scopeOf(agent) : null;
     const next = scope?.next;
@@ -68,7 +77,10 @@ export function handOverOffer({ session, workspace, doors, answer, now }: {
     const taken = [next.account ?? null, ...(next.others ?? []).filter((each) => each.hold === 'ready').map((each) => each.account ?? null)]
       .find(roomy);
     if (taken === undefined) continue;
-    return { why, until: why === 'limit' ? until : null, agent: door.harness, account: taken };
+    return {
+      why, until: why === 'limit' ? until : null, agent: door.harness, account: taken,
+      ...(from === 'roster' ? {} : { choice: { n: from, model } }),
+    };
   }
   return null;
 }
@@ -111,6 +123,36 @@ export function otherToolDoors(session: Pick<Session, 'adapter'>, doors: readonl
     if (!door.present || seen.has(toolOf(door))) continue;
     seen.add(toolOf(door));
     found.push(door);
+  }
+  return found;
+}
+
+/** One step of a hand-over's order: the door it goes to, the model the actor's entry asks of it, and the choice it is. */
+export type NextChoice = { door: ToolDoor; model: string | null; from: string };
+
+/**
+ * The order a hand-over goes in (MODELROLE1e, D205 §3.5(e), round 4's Opus N1): every path takes the session's actor's effective
+ * order, so it is the actor's entries whose agent is a present door on another tool than the session's own, each with its model and its
+ * number. No maker outside the actor's entries is a step. Where the actor is as before, or has no entries, the roster's order stands
+ * (`otherToolDoors`) with no model, its `from` being `roster`. A TWIN with the driver's `HandOverOrder.Steps`, both held to
+ * `fixtures/hand-over-order.json`'s `actorRows`.
+ */
+export function nextChoices(
+  session: Pick<Session, 'adapter'>,
+  doors: readonly ToolDoor[],
+  actor?: Pick<ActorRow, 'choices'> | null,
+): NextChoice[] {
+  const entries = actor?.choices ?? [];
+  if (entries.length === 0 || entries.every((entry) => entry.from === 'before')) {
+    return otherToolDoors(session, doors).map((door) => ({ door, model: null, from: 'roster' }));
+  }
+  const own = doors.find((each) => each.harness === session.adapter);
+  const ownTool = own ? toolOf(own) : session.adapter;
+  const found: NextChoice[] = [];
+  for (const entry of entries) {
+    const door = doors.find((each) => each.present && each.harness === entry.agent);
+    if (!door || toolOf(door) === ownTool) continue;
+    found.push({ door, model: entry.model ?? null, from: entry.from });
   }
   return found;
 }

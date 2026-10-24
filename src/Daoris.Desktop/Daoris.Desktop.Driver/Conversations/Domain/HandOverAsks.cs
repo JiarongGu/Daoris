@@ -231,7 +231,41 @@ public static class HandOverOrder
 
         return found;
     }
+
+    /// <summary>
+    /// The entries of the actor a hand-over goes to, in its effective order (D205 §3.5(e), MODELROLE1e): the present doors of an actor's
+    /// entries that are on another tool than the session's own, each entry once with its model and effort and the choice it is, so the
+    /// offer names it and the start takes <c>handed</c>'s model. An actor <i>as before</i> (no entries of its own: <paramref name="entries"/>
+    /// empty, or only the legacy key's) has no order of its own to take, and the roster's order stands (<see cref="Others"/>) with no model.
+    /// A TWIN with the page's <c>nextChoices</c>, both held to <c>fixtures/hand-over-order.json</c>'s <c>actorRows</c>.
+    /// </summary>
+    public static IReadOnlyList<HandOverStep> Steps(string? own, IReadOnlyList<HandOverDoor> doors, IReadOnlyList<ActorEffective> entries)
+    {
+        if (entries.Count == 0 || entries.All(entry => entry.From == "before"))
+        {
+            return [.. Others(own, doors).Select(harness => new HandOverStep(harness, null, null, "roster"))];
+        }
+
+        var mine = doors.FirstOrDefault(door => string.Equals(door.Harness, own, StringComparison.Ordinal));
+        var ownTool = mine is null ? own ?? "" : ToolOf(mine);
+        var found = new List<HandOverStep>();
+        foreach (var entry in entries)
+        {
+            var door = doors.FirstOrDefault(each => each.Present && string.Equals(each.Harness, entry.Agent, StringComparison.Ordinal));
+            if (door is null || string.Equals(ToolOf(door), ownTool, StringComparison.Ordinal)) continue;
+            found.Add(new HandOverStep(door.Harness, entry.Model, entry.Effort, entry.From));
+        }
+
+        return found;
+    }
 }
+
+/// <summary>One step of a hand-over's order: the agent it goes to, the model and effort its actor's entry asks of it, and the choice it is.</summary>
+/// <param name="Harness">The agent's adapter.</param>
+/// <param name="Model">The entry's model; null for account default.</param>
+/// <param name="Effort">The entry's effort; null for account default.</param>
+/// <param name="From">The entry's number in its actor's order; <c>roster</c> where the roster's order stands because the actor is <i>as before</i>.</param>
+public sealed record HandOverStep(string Harness, string? Model, string? Effort, string From);
 
 /// <summary>
 /// The outgoing agent's note as the next agent reads it (MIXAGENT1c; design §2): after Daoris's own record of the session, marked as

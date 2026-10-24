@@ -343,19 +343,22 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// policy's, else Brainstorm's voices (D205 §4.4, MODELROLE1c: its actor's agents, <c>adapter</c>'s as before, at account default).
     /// One the policy does not list keeps its pass, never run.
     /// </summary>
-    private List<(string Pass, string Agent, bool Allowed)> Generators(BrainstormRequest request, BrainstormRule rule)
+    internal List<(string Pass, string Agent, bool Allowed, ActorEffective Entry)> Generators(BrainstormRequest request, BrainstormRule rule)
     {
         var named = request.Agents.Select(agent => agent.Trim()).Where(agent => agent.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        var agents = named.Count > 0 ? named
-            : rule.Agents.Count > 0 ? [.. rule.Agents]
-            : ActorChoices.Effective("brainstorm", _context.Config).Select(voice => voice.Agent).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        var plan = new List<(string Pass, string Agent, bool Allowed)>();
+        // D205 §4.4 (MODELROLE1e): the request's and the policy's agents decide who, each taking the actor's entry for it, else account
+        // default (rule-default); with none named, the actor's entries are the voices, one each. The plan is read once and frozen for the
+        // brainstorm: a later change of the actor never reaches a run begun, and a voice that cannot run is dropped, never replaced.
+        var voices = named.Count > 0 ? ActorChoices.Effective("brainstorm", _context.Config, fence: named)
+            : rule.Agents.Count > 0 ? ActorChoices.Effective("brainstorm", _context.Config, fence: rule.Agents)
+            : ActorChoices.Effective("brainstorm", _context.Config);
+        var plan = new List<(string Pass, string Agent, bool Allowed, ActorEffective Entry)>();
         var running = 0;
-        foreach (var agent in agents)
+        foreach (var voice in voices.DistinctBy(each => each.Agent, StringComparer.OrdinalIgnoreCase))
         {
-            var allowed = rule.Agents.Count == 0 || rule.Agents.Contains(agent, StringComparer.OrdinalIgnoreCase);
+            var allowed = rule.Agents.Count == 0 || rule.Agents.Contains(voice.Agent, StringComparer.OrdinalIgnoreCase);
             if (allowed && ++running > MostAgents) break;
-            plan.Add(($"g{plan.Count + 1}", agent, allowed));
+            plan.Add(($"g{plan.Count + 1}", voice.Agent, allowed, voice));
         }
 
         return plan;
@@ -393,7 +396,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                     {
                         var check = BrainstormAnswers.Check(text, sources);
                         return (check.Answer, check.Codes);
-                    }, files, minutes.Pass * Minute, generatorsEnd, stop.Token, ct)
+                    }, files, minutes.Pass * Minute, generatorsEnd, stop.Token, ct, entry: each.Entry)
                 : Task.FromResult(Refused(id, each.Pass, each.Agent, files))).ToList();
             var results = await Task.WhenAll(generators).ConfigureAwait(false);
             var passes = results.Select(result => result.Record).ToList();
@@ -419,6 +422,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 // The synthesizer: the first agent of the request whose generator answered (D176 point 9's proposed default), within its
                 // own minutes and before the challenge's reserve.
                 var synthesizer = answered[0].By.Adapter;
+                // D205 §4.2: the synthesis takes its generator's asked choice, not the actor as it stands now, and its record says so.
+                var generated = plan.First(each => each.Pass == answered[0].By.Pass).Entry;
                 var (record, synthesis) = await PassAsync<BrainstormSynthesized>(
                     id, "s1", synthesizer, BrainstormPassRecord.Synthesize, bytes, BrainstormInstruction.Synthesizer(digest),
                     BrainstormSyntheses.Anonymous(handed),
@@ -426,7 +431,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                     {
                         var check = BrainstormSyntheses.Check(text, handed);
                         return (check.Synthesis, check.Codes);
-                    }, files, minutes.Synthesis * Minute, deadline - minutes.Challenge * Minute, stop.Token, ct).ConfigureAwait(false);
+                    }, files, minutes.Synthesis * Minute, deadline - minutes.Challenge * Minute, stop.Token, ct, entry: generated).ConfigureAwait(false);
                 passes.Add(record);
                 if (stop.IsCancellationRequested && synthesis is null) return Ran(LookClass.Own, Stopped(id, packet, passes, answered, needs, files, digest));
                 document = synthesis is not null
@@ -527,19 +532,22 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     internal async Task<(BrainstormPassRecord Record, T? Valid)> PassAsync<T>(
         string id, string pass, string agent, string role, byte[] packet, string instruction, byte[]? proposals,
         Func<string?, (T? Valid, IReadOnlyList<string> Codes)> check, BrainstormFiles files, TimeSpan own, DateTimeOffset until,
-        CancellationToken stop, CancellationToken ct, Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? run = null)
+        CancellationToken stop, CancellationToken ct, Func<BrainstormTurn, CancellationToken, Task<BrainstormTurnRun>>? run = null,
+        ActorEffective? entry = null)
         where T : class
     {
         run ??= _context.BrainstormTurns ?? TurnAsync;
         var family = AgentFamily.Of(_context.Adapters, agent);
         var maker = family.Maker ?? family.Owner;
         string? account = null;
+        // The accounts this voice passed for its model (D205 §4.4): its one bounded restart leaves them out, never a cool-off.
+        var passedAccounts = new List<string>();
         (BrainstormPassRecord, T?) Ended(string state, IReadOnlyList<string> codes, int turns, T? valid = null)
         {
             var prior = files.ReadPasses(id).FirstOrDefault(each => each.By.Pass == pass);
             var record = new BrainstormPassRecord(new BrainstormBy(pass, maker, agent, account), role, state, codes, turns)
             {
-                Actor = "brainstorm", Choice = "before", Asked = ActorAsked.Before(agent), Ran = prior?.Ran,
+                Actor = "brainstorm", Choice = entry?.From ?? "before", Asked = entry?.Asked ?? ActorAsked.Before(agent), Ran = prior?.Ran,
             };
             files.WritePass(id, record);
             return (record, valid);
@@ -587,7 +595,10 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 try
                 {
                     ran = await run(
-                        new BrainstormTurn(id, turn, agent, room, said, files.AnswerPath(id, turn), Math.Max(1, (int)Math.Ceiling(left.TotalMinutes))),
+                        new BrainstormTurn(id, turn, agent, room, said, files.AnswerPath(id, turn), Math.Max(1, (int)Math.Ceiling(left.TotalMinutes)))
+                        {
+                            Entry = entry, Passed = passedAccounts.Count > 0 ? [.. passedAccounts] : null,
+                        },
                         window.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (window.IsCancellationRequested && !ct.IsCancellationRequested)
@@ -607,11 +618,14 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                     return Ended(BrainstormPassRecord.Unavailable, restart ? [Limit, ran.Code ?? "not-started"] : [ran.Code ?? "not-started"], turns);
                 }
 
-                if (ran.Code == Limit && !restart && !cut)
+                if (ran.Code is Limit or AgentOffers.NotOffered && !restart && !cut)
                 {
                     // D125: the account cooled where the turn ran, no strike is counted, and the pass starts once more on the next
-                    // ready account of that agent's walk, as its one repair, within its minutes.
-                    codes = [Limit];
+                    // ready account of that agent's walk, as its one repair, within its minutes. D205 §4.4: so does an account whose agent
+                    // refused the voice's model at the open, that account passed for the voice and judged by the next account's reading;
+                    // with none that offers it, the voice is dropped (below), never replaced by another entry or agent.
+                    codes = [ran.Code];
+                    if (ran.Code == AgentOffers.NotOffered && ran.Account is { Length: > 0 } refusedAt) passedAccounts.Add(refusedAt);
                     restart = true;
                     continue;
                 }
@@ -664,8 +678,9 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         try
         {
             adapter = _context.Adapters.Resolve(turn.Agent);
+            // D205 §4.4: the voice's accounts are judged by their readings for the voice's model, the ones it already passed left out.
             (selection, _) = await _context.Harnesses
-                .SelectHandedAsync(turn.Agent, _context.Config, null, null, StartKind.Driven, ct).ConfigureAwait(false);
+                .SelectHandedAsync(turn.Agent, _context.Config, null, null, StartKind.Driven, ct, turn.Entry?.Model, turn.Passed).ConfigureAwait(false);
         }
         catch (DriverException error)
         {
@@ -674,7 +689,10 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
         if (!selection.Allowed)
         {
-            return new BrainstormTurnRun(false, null, selection.Cooling is not null ? "cooling" : "unavailable", $"held  brainstorm turn {turn.Turn}: {selection.Refusal}");
+            return new BrainstormTurnRun(
+                false, null,
+                selection.NotOffered is not null ? AgentOffers.NotOffered : selection.Cooling is not null ? "cooling" : "unavailable",
+                $"held  brainstorm turn {turn.Turn}: {selection.Refusal}");
         }
 
         var files = new BrainstormFiles(_context.Home);
@@ -683,13 +701,21 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         await using var reports = new ActorRun(_context.Events, sessionId, "brainstorm", passBefore?.Ran, ran =>
         {
             var pass = files.ReadPasses(turn.Id).FirstOrDefault(each => each.By.Pass == passId);
-            if (pass is not null) files.WritePass(turn.Id, pass with { Actor = "brainstorm", Choice = "before", Asked = ActorAsked.Before(adapter.Name), Ran = ran });
+            if (pass is not null)
+            {
+                files.WritePass(turn.Id, pass with
+                {
+                    Actor = "brainstorm", Choice = turn.Entry?.From ?? "before", Asked = turn.Entry?.Asked ?? ActorAsked.Before(adapter.Name), Ran = ran,
+                });
+            }
+
             return Task.CompletedTask;
         });
         var target = new SessionTarget(QuestId: "", "Brainstorm", "", "Daoris", "", turn.Room, "")
         {
             Brainstorm = turn.Id,
-            Asked = ActorAsked.Before(adapter.Name),
+            Asked = turn.Entry?.Asked ?? ActorAsked.Before(adapter.Name),
+            Choice = turn.Entry?.From,
             BrainstormTurn = turn.Turn,
             BrainstormAnswer = turn.Answer,
             Session = sessionId,
@@ -708,11 +734,17 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             return await _driver.HoldAsync(
                 "brainstorm", adapter, info, target, sessionId, transcript, turn.Room, notice, rules, handed: handed,
                 refusesInput: "a brainstorm's pass is one turn, and takes no words",
-                conclude: (exitCode, used, turnFailed, _) =>
+                conclude: (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
                         _context.Usage?.Record(new UsageEntry(sessionId, "", adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                    }
+
+                    if (ended.NotOffered is not null)
+                    {
+                        _context.Harnesses.Release(selection.Number, sessionId);
+                        return Task.FromResult(new BrainstormTurnRun(true, selection.Profile, AgentOffers.NotOffered, $"{AgentOffers.NotOffered}  brainstorm turn {turn.Turn}"));
                     }
 
                     var code = turnFailed is { Length: > 0 } failure && Cooled(adapter, selection, failure, sessionId) ? Limit
@@ -723,6 +755,9 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                 },
                 ct, scope: scope, handedServers: [], minutes: turn.Minutes,
                 said: _driver.Said(adapter, selection, sessionId),
+                // D205 §4.4: its agent's refusal of the voice's model at the open is kept as the account's reading, and the turn ends with
+                // it (above) for the pass's one bounded restart on the next account; a voice has no other entry to move to on this account.
+                offers: new OpenOffers(selection.Version, selection.Profile, _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
                 noConnector: "— this machine has no connector, so this pass cannot give its answer.", movedFirst: true)
                 .ConfigureAwait(false);
         }
