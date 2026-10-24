@@ -454,6 +454,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 // MODELROLE1c2 (D205 §3.5(a)): a resume keeps its asked choice and never moves to another, so a refusal at the open ends the
                 // open and puts the record back (ConcludeResumedAsync); what the open lists is kept as its account's reading.
                 offers: new OpenOffers(selection.Version, selection.Profile, _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
+                // AGENTERRORS1a (D210 §5.1, §5.5): a continuation of a driven quest session is tried again as its start is.
+                transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, retryCt),
                 conclude: (exitCode, used, turnFailed, ended) =>
                     ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended,
                         openedAt, ct))
@@ -689,14 +691,37 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var swappedOn = stop is null && ended.SetupChanged is not null;
         if (swappedOn) conclusion = Observation.SetupChanged(conclusion, ended.SetupChanged!);
 
+        // AGENTERRORS1a (D210 §5.1): past its transient bound a failed end is `ended.transient`, no strike and no cool-off, its quest held
+        // for the person; Daoris's go-on comes off by its key where its take-off did not land, as at a first run's end (R3-O5).
+        if (stop is null && ended.Transient?.Episode is { Exhausted: true } exhausted && conclusion.State == "failed")
+        {
+            conclusion = Observation.Transient(exhausted);
+        }
+
+        var episode = ended.Transient?.Opened == true;
+        if (episode) await TransientRetries.GoOnOffAsync(service, sessionId, ct).ConfigureAwait(false);
+
         conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
         conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);
-        (conclusion, var limited) = _driver.AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
+        (conclusion, var limited) = _driver.AccountLimited(
+            conclusion, adapter, selection, turnFailed, sessionId, used,
+            byCode: ended.Transient?.Last is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null);
+
+        // 🔴 AGENTERRORS1a (the design §5.1, round 3, R2-C2): after an episode the resume's words went on the wire in this run, so they are
+        // never sent again, whatever kind ends it: taken, or unacknowledged where its first prompt met the error before any update of its
+        // turn, said then by COWORK1c's `lost` note. TURNFAIL1 and D206 are handed only words still held, which a resume's never are.
+        if (episode && stop is null && resume.Prompted && ended.Transient!.OpeningUnacknowledged && resume.Ids.Count > 0)
+        {
+            _context.Events.Keep(
+                sessionId,
+                new SessionEvent { Kind = SessionEventKind.Note, Text = ChatTurns.LostLine, Words = [.. resume.Ids], Code = SessionEventCodes.Lost },
+                say: null);
+        }
 
         // 🔴 TURNFAIL1: words a failed turn carried were never answered. They stay waiting on the record, unmarked, as a cooling
         // account's do (D137 §2.2), and its note and conversation say why; failing a second time running, they wait for the
         // person (FailedTurnWords). Every other run took them. LIMITRESUME1b: a limited end's always wait (D137's note as D206 amends it).
-        var words = stop is null && resume.Prompted && resume.Ids.Count > 0
+        var words = stop is null && resume.Prompted && resume.Ids.Count > 0 && !episode
             ? FailedTurnWords.Judge(conclusion, turnFailed, ended, park, limited)
             : WordsAfter.Taken;
         // LIMITRESUME1b (the design §3.3, round 3's B8 item 3): Daoris's limit word comes off at every conclusion, so it never reaches a

@@ -39,6 +39,11 @@ tick, and once the quest no longer waits on that work and no turn runs, the sess
 that does not exit within ten seconds with that work still running has its tree ended (D83's DONEEND1 note). A timeout is said
 to the door before the kill, and a run that brought its quest to done before it concludes completed (`Observation.AfterTimeout`).
 
+A driven session's prompt that its provider fails for a moment is tried again inside its run, on the same session (D210's AGENTERRORS1a
+note): `AgentErrors.Read` (`Agents/Errors/`) reads the door's failure by the adapter's `ErrorWords` and its owner's, and the protocol
+door's `TransientRetry` waits 1, 2, 4, 8 and 16 minutes on the driver's `RetryClock`. Past five tries the record ends `ended.transient`,
+no strike, and the planner holds its quest for the person's word.
+
 The accounts are one set per agent (D197): `HarnessSettings` folds the wiring to one order per agent, and only the agents the
 adapters and plugin harnesses name are folded (`HarnessSettings.AgentsKnown`, POOLSTRAY1). A stray folder under the agent homes is
 said once in the machine log and never read as an agent, and a stray entry already in the wiring is dropped at the next fold.

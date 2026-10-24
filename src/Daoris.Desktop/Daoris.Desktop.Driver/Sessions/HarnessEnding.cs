@@ -43,6 +43,12 @@ public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<str
     public bool ProviderRefused { get; init; }
 
     /// <summary>
+    /// The transient retry the run was handed (AGENTERRORS1a, D210 §5.1), whose episode, dispositions and last reading the conclusion
+    /// reads; null for a run handed none, which keeps today's end.
+    /// </summary>
+    public TransientRetry? Transient { get; init; }
+
+    /// <summary>
     /// Its agent did not offer, or refused, the choice its actor asked at the open, and nothing else could run on that session, so it
     /// ended before any prompt (D205 §3.3, MODELROLE1c2): its record ends <c>choice-not-offered</c>. Null on every other run.
     /// </summary>

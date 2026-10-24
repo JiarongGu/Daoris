@@ -101,6 +101,31 @@ internal sealed class AcpWake
         }
     }
 
+    /// <summary>Whether a turn its harness started is running, its end unsaid (AGENTERRORS1a: a transient episode never prompts into one).</summary>
+    public bool Running
+    {
+        get
+        {
+            lock (_gate) return _began > 0;
+        }
+    }
+
+    /// <summary>Completes once a turn its harness started is running (AGENTERRORS1a: it ends a transient episode's wait, never the episode).</summary>
+    public async Task WokeAsync(CancellationToken ct)
+    {
+        while (true)
+        {
+            Task changed;
+            lock (_gate)
+            {
+                if (_began > 0) return;
+                changed = _changed.Task;
+            }
+
+            await changed.WaitAsync(ct).ConfigureAwait(false);
+        }
+    }
+
     /// <summary>Something besides an update changed what the wait reads: a prompt was answered.</summary>
     public void Stir()
     {

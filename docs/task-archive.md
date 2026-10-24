@@ -20354,3 +20354,19 @@ Detail: D208's SUPERVISOR1b note.
 `CONFIRMING`, `--wait`/`--no-wait` from the host's entry, `waiting` exit 1, `already` exit 0, `withdraw <id>` by the pipe's own
 `WITHDRAW`, a waiting press kept thirty days, one Ctrl+C sentence. Each case seen failing first. **Not built:** the instance's half
 (1a-i, 1a-ii). Detail: D156's CONFIRMWAIT1b note.
+## AGENTERRORS1a — a driven session's transient failure tried again in the same conversation (2026-10-24, D210)
+
+> **AGENTERRORS1a** (the agent-errors design §11's first row; driver, web). The kinds and the reader at the interface, the protocol
+> door's prompt failure for a driven session, §5.1's episode inside `AcpSession.RunAsync`, `ended.transient` with the actual tries
+> and waits, and the planner's hold with its word rule and the hand-over carried on in its tree; access and fatal keep today's ends,
+> a failure at the open keeps today's end, *Try again*'s keyed release is 1a2's.
+
+(Quest `#a2157ff07b19`.)
+
+**Outcome** 2026-10-24, in four commits on one branch. A provider's 529 on a driven session's protocol door is tried again inside
+its run, on the same session, after 1, 2, 4, 8 and 16 minutes, each try the person's held words and then Daoris's go-on, no word on
+the wire ever sent twice; past five tries the record ends `ended.transient`, no strike and no cool-off, and its quest is held until
+the person's word, said after the end, goes on in the same conversation. One reader (`AgentErrors.Read`) reads every protocol door's
+prompt failure into limit, access, transient or fatal from the adapter's `ErrorWords` and its owner's. Proved on real ticks with a
+held clock, each case seen failing first. **Not built:** shape 2, the open, the page's head and *Try again* (1a2); the follow-up
+proofs D210's AGENTERRORS1a note lists. Detail: D210's AGENTERRORS1a note; the fix log's entry for the 529 park.

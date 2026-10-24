@@ -134,6 +134,17 @@ public static class DaorisKeys
     public static string Rebase(string session, string tip) => $"{RebaseKind}/{session}/{tip}";
 
     public const string LimitResetKind = "limit-reset";
+    public const string TransientRetryKind = "transient-retry";
+
+    /// <summary>
+    /// Daoris's go-on's key in a transient episode (AGENTERRORS1a, the agent-errors design §5.1): the session and the episode, named by
+    /// when its first failure was read, so one episode keeps one word. No quest's fact: <see cref="Read"/> names none.
+    /// </summary>
+    public static string TransientRetry(string session, DateTimeOffset episode) =>
+        $"{TransientRetryKind}/{session}/{episode.UtcDateTime.ToString("yyyy-MM-dd'T'HH-mm-ss'Z'", System.Globalization.CultureInfo.InvariantCulture)}";
+
+    /// <summary>Whether a word's key is a transient episode's go-on (<see cref="TransientRetry"/>): what both conclusions take off as the fallback.</summary>
+    public static bool IsTransientRetry(string? key) => key?.StartsWith(TransientRetryKind + "/", StringComparison.Ordinal) == true;
     public const string RestartKind = "restart";
     public static string Restart(string session, string build) => $"{RestartKind}/{session}/{build}";
     public static bool IsRestart(string? key) => key?.StartsWith(RestartKind + "/", StringComparison.Ordinal) == true;

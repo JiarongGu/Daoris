@@ -169,6 +169,16 @@ public sealed class SessionWatch
         watched.Works = works;
     }
 
+    /// <summary>
+    /// Where a session's door says it waits between a transient episode's tries (AGENTERRORS1a, D210 §5.1, amending D200): on Daoris's own
+    /// timer, never its agent, so the watch reads it as a call held for the person's permission is read, a wait that is not the agent's,
+    /// opening no episode and ending nothing, a headless <c>--quiet-end</c> included.
+    /// </summary>
+    public void Transient(string session, Func<bool> waits)
+    {
+        if (_watched.TryGetValue(session, out var watched)) watched.Transient = waits;
+    }
+
     /// <summary>Stamp a session heard now: one in-memory write, from any reading thread.</summary>
     public void Heard(string session)
     {
@@ -337,6 +347,13 @@ public sealed class SessionWatch
             return;
         }
 
+        // AGENTERRORS1a: a run waiting between a transient episode's tries waits on Daoris's own timer, bounded by the episode itself.
+        if (watched.Transient?.Invoke() == true)
+        {
+            if (watched.Episode is { } retrying) steps.Add(Over(watched, retrying, "waits", now));
+            return;
+        }
+
         // A headless run's --quiet-end: unheard that long, busy or not, the run is ended and carried on (§2), on its own bound, which
         // may be shorter than Q's.
         if (EndAfter is { } endAfter && unheard >= endAfter && watched.EndedMinutes is null)
@@ -492,6 +509,7 @@ public sealed class SessionWatch
         public readonly WatchedRun Run = run;
         public Func<bool>? OwnWork = run.WaitsOnOwnWork;
         public Func<IReadOnlyList<string>>? Works;
+        public Func<bool>? Transient;
         public long HeardTicks = heard;
         public readonly List<(TimeSpan At, TimeSpan Cpu)> Reads = [];
         public readonly CancellationTokenSource End = new();

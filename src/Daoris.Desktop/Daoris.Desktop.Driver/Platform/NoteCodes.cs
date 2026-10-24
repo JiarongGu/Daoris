@@ -410,6 +410,19 @@ public static class NoteCodes
     public static readonly NoteCode EndedProviderRefused = new("ended.provider-refused", []);
 
     /// <summary>
+    /// AGENTERRORS1a (D210, the agent-errors design §5.1, §8): its provider kept failing after every try a transient episode made, with
+    /// the tries made and the minutes actually waited, followed by the provider's words: <c>failed</c>, no strike, no cool-off, its quest
+    /// held for the person's word, which goes on in the same conversation.
+    /// </summary>
+    public static readonly NoteCode EndedTransient = new("ended.transient", ["count", "minutes"]);
+
+    /// <summary>
+    /// AGENTERRORS1a (the design §5.1, §8): said once in the conversation at a transient episode's first failure, with the schedule's
+    /// tries and minutes said as <i>up to</i> and when the first try goes, followed by the provider's words. No line per try.
+    /// </summary>
+    public static readonly NoteCode AgentTransientRetrying = new("agent.transient-retrying", ["agent", "count", "minutes", "at"]);
+
+    /// <summary>
     /// MODELROLE1c2 (D205 §3.3, §3.5(c)): its agent did not offer, or refused, the model its actor asked at the open, before any prompt:
     /// <c>failed</c> with this end, no strike, its quest planned again, no <i>Ended</i> notice, and a quiet row. Naming no account, since
     /// the note travels; the account is the record's own.

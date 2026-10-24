@@ -246,6 +246,22 @@ public static class Observation
     /// A run whose turn its model's provider refused (APIREFUSAL1): Daoris's line, then the provider's words as the harness said them,
     /// whole within the last words' bound, so its request id stays on the record; with none, the line alone.
     /// </summary>
+    /// <summary>
+    /// A run past its transient bound (AGENTERRORS1a, D210, the agent-errors design §5.1, §8): <c>failed</c>, <c>ended.transient</c>, with the
+    /// tries made and the whole minutes actually waited, never the schedule's, and the provider's words as a program's. No strike, no
+    /// cool-off; the planner holds its quest for the person's word.
+    /// </summary>
+    public static SessionConclusion Transient(TransientEpisode episode)
+    {
+        var minutes = (int)Math.Round(episode.Waited.TotalMinutes);
+        var line = Noted.Of(
+            NoteCodes.EndedTransient,
+            $"Its provider kept failing after {episode.Tries} tries, with {minutes} minutes of waits between them. It waits for your words, "
+            + "which go on in the same conversation:",
+            ("count", episode.Tries), ("minutes", minutes));
+        return SessionConclusion.Of("failed", episode.Words is { Length: > 0 } words ? line.Then(" ", Noted.Said(words, NoteBy.Program)) : line);
+    }
+
     internal static Noted ProviderRefusedNote(string? words)
     {
         var line = Noted.Of(

@@ -269,6 +269,12 @@ public sealed class Driver(
     /// servers and catalogue, and the settables. Built once, here; the classes below hold it, and the ones that run through this
     /// driver's machinery hold the driver as well.
     /// </summary>
+    /// <summary>
+    /// The clock a driven session's transient retry waits on (AGENTERRORS1a, D210 §5.1): the machine's, and a held one in a test
+    /// (<c>.claude/knowledge/held-clocks.md</c>), so its 1, 2, 4, 8 and 16 minutes are the test's to spend.
+    /// </summary>
+    public TimeProvider RetryClock { get; init; } = TimeProvider.System;
+
     internal LoopContext Context { get; } = new(service, config, home, adapters, processes, harnesses, events, output, usage, running, hooks, browser);
 
     /// <summary>The sessions still running, which outlive the look that started them (DEV3).</summary>
@@ -2712,6 +2718,9 @@ public sealed class Driver(
                     chosen is { } walkedEntry && handedQuest is null && start.Resumes is null
                         ? _ => ReaskAsync(start, registry, walkedEntry, selection, ct)
                         : _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
+                // AGENTERRORS1a (D210 §5.1, §5.5): a driven quest session is tried again in the same conversation on a transient failure,
+                // asking before each try whether its quest still wants a turn.
+                transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, retryCt),
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
@@ -2777,9 +2786,21 @@ public sealed class Driver(
                     var notOffered = stop is null && ended.NotOffered is not null;
                     if (notOffered) conclusion = Observation.ChoiceNotOffered(adapter.Name, ended.NotOffered!);
 
+                    // AGENTERRORS1a (D210 §5.1): past its transient bound a failed end is `ended.transient`, no strike and no cool-off, its quest
+                    // held for the person; and Daoris's go-on comes off the record by its key where its take-off did not land (R3-O5).
+                    if (stop is null && ended.Transient?.Episode is { Exhausted: true } exhausted && conclusion.State == "failed")
+                    {
+                        conclusion = Observation.Transient(exhausted);
+                    }
+
+                    if (ended.Transient?.Opened == true) await TransientRetries.GoOnOffAsync(service, sessionId, ct).ConfigureAwait(false);
+
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
-                    (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
+                    (conclusion, var limited) = AccountLimited(
+                        conclusion, adapter, selection, turnFailed, sessionId, used,
+                        // A limit read by its code on the door, with no sentence (§3.1): cooled for D125's unstated hour.
+                        byCode: ended.Transient?.Last is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null);
 
                     var commits = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
                     // EVID1b (D144 §3): a done that waits on its evidence is read here, after the quest and before the record,
@@ -3159,9 +3180,10 @@ public sealed class Driver(
     /// </remarks>
     /// <param name="turnFailed">What the protocol door said refusing the turn (ACPEND1), or null.</param>
     /// <param name="used">The context the door reported, for the log; null where it reported none.</param>
+    /// <param name="byCode">A limit the reader read by its code with no sentence (AGENTERRORS1a, §3.1): cooled for D125's hour.</param>
     internal (SessionConclusion Conclusion, bool Limit) AccountLimited(
         SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, string sessionId,
-        AcpUsage? used)
+        AcpUsage? used, LimitSeen? byCode = null)
     {
         if (conclusion.State != "failed" || turnFailed is not { Length: > 0 }) return (conclusion, false);
 
@@ -3174,7 +3196,7 @@ public sealed class Driver(
 
         try
         {
-            limited = Context.Harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId, config.CoolOff);
+            limited = Context.Harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId, config.CoolOff, byCode);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -3525,6 +3547,10 @@ public sealed class Driver(
     /// A partner's piece's job (COAGENT1b), which its harness joins beneath this process's agents' job and is never started outside
     /// (TERMTRUST1a); null for every other run.
     /// </param>
+    /// <param name="transientWanted">
+    /// On the protocol door, the driven check a transient retry asks before each try (AGENTERRORS1a, D210 §5.5): given, the run is handed
+    /// a <see cref="TransientRetry"/>; null, as for every run but a driven quest session's in row 1a, keeps today's end.
+    /// </param>
     internal async Task<T> HoldAsync<T>(
         string actor, ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
@@ -3534,7 +3560,7 @@ public sealed class Driver(
         ResumeAsk? resume = null, Noted? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
         Action? working = null, Func<CancellationToken, Task<bool>>? waitsOnBackground = null, int? minutes = null,
         string? noConnector = null, Action<SessionStop?>? stopMade = null, bool movedFirst = false, Action? spawned = null,
-        string? piece = null, OpenOffers? offers = null)
+        string? piece = null, OpenOffers? offers = null, Func<CancellationToken, Task<bool>>? transientWanted = null)
     {
         // Through the start gate (PROCSTART2): a press that starts a session reaches here before its first wait, and the
         // runtime's start lock is no thread's to wait on but the pool's. Seen through once begun, as the start always was.
@@ -3683,6 +3709,12 @@ public sealed class Driver(
                 await service.TryKeepActorAsync(sessionId, Log, choice, later.Asked, ct: CancellationToken.None).ConfigureAwait(false);
                 return later.Asked;
             };
+        // AGENTERRORS1a (D210 §5.1): a driven quest session's protocol door is handed the transient retry, its waits on the driver's clock.
+        var retry = adapter.Wire == SessionWire.Acp && transientWanted is not null && target.QuestId is { } retried
+            ? TransientRetries.For(
+                Context.Adapters, adapter, Context.Harnesses, service, Context.Events, output, Watch, Log, sessionId, retried,
+                prior?.Profile, RetryClock, transientWanted)
+            : null;
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire. A driven session's repository's
@@ -3695,7 +3727,7 @@ public sealed class Driver(
                 // asked and not carried, so the record never says a choice was taken that was not.
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, Log, choice, notCarried, ct: CancellationToken.None),
-                modelRefused: refusedAt, offerRead: offered)
+                modelRefused: refusedAt, offerRead: offered, retry: retry)
             : null;
         // What the native door's harness says in its own words, apart from its agent's, for its ending (AGT3c).
         var own = new HarnessWords();
@@ -3780,6 +3812,8 @@ public sealed class Driver(
                     ProviderRefused = outcome?.ProviderRefused == true,
                     // MODELROLE1c2: its agent refused its choice at the open, before any prompt.
                     NotOffered = outcome?.NotOffered,
+                    // AGENTERRORS1a: what its transient retry read and did, for the conclusion.
+                    Transient = retry,
                 })
             .ConfigureAwait(false);
 
@@ -4137,7 +4171,7 @@ public sealed class Driver(
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null, string? noConnector = null, AcpEnding? ending = null,
         Func<string, string, string>? unoffered = null, Func<bool>? setupChanged = null, IReadOnlyList<SaidWordView>? handed = null,
         ActorAsked? asked = null, Action<ActorAsked>? carried = null, Func<ModelRefusal, Task<ActorAsked?>>? modelRefused = null,
-        Action<IReadOnlyList<AcpConfigOption>>? offerRead = null)
+        Action<IReadOnlyList<AcpConfigOption>>? offerRead = null, TransientRetry? retry = null)
     {
         await using var file = TranscriptFile.Open(transcript, append: resume is not null);
 
@@ -4226,6 +4260,8 @@ public sealed class Driver(
             // SESSWATCH1a: whether it waits on its own background work, the watcher's state C.
             var waitsOn = session;
             Watch.OwnWork(sessionId, () => waitsOn.WaitsOnOwnWork, () => [.. waitsOn.BackgroundRunning.Select(task => task.Name)]);
+            // AGENTERRORS1a (D210 §5.1, amending D200): a wait between a transient episode's tries is Daoris's, never quiet.
+            if (retry is not null) Watch.Transient(sessionId, () => waitsOn.WaitsOnTransient);
             // What it says about its account's windows, kept as it says it (TOOL6c).
             if (said is not null) session.LimitsSaid += said;
             using var stops = output is null ? null : Context.Processes.OpenTaskStops(sessionId, session.StopTaskAsync);
@@ -4294,7 +4330,8 @@ public sealed class Driver(
                     attempting: resume is null ? null : () => SaidDoor.AttemptedAsync(service, sessionId, resume.Words),
                     // The files said with them, a link each after the blocks (MSG1d3, D137 §2.4).
                     files: resume?.Files,
-                    waitsOnBackground: waitsOnBackground)
+                    waitsOnBackground: waitsOnBackground,
+                    retry: retry)
                 .ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "

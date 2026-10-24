@@ -265,13 +265,20 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// How long the account cools when the agent named no time this reads: the machine's <c>cooloff</c>
     /// (<see cref="DriverConfig.CoolOff"/>, TOOL4e), or <see cref="AccountLimits.DefaultCoolOff"/> when none is handed over.
     /// </param>
-    public (CoolingEntry Entry, LimitSeen Seen)? Limited(string adapter, string? profile, string? failure, string session, TimeSpan? coolOff = null)
+    /// <param name="byCode">
+    /// A limit the reader read by its code or kind with no sentence its table reads (AGENTERRORS1a, the agent-errors design §3.1, §5.2):
+    /// cooled for D125's unstated default from now, <c>Stated: false</c>, where the sentence reads none. Null reads the sentence alone.
+    /// </param>
+    public (CoolingEntry Entry, LimitSeen Seen)? Limited(
+        string adapter, string? profile, string? failure, string session, TimeSpan? coolOff = null, LimitSeen? byCode = null)
     {
         var resolved = adapters.Resolve(adapter);
         if (CoolingAgent(resolved) is not { } agent) return null;
 
         var now = Clock();
-        if (AccountLimits.Read(LimitsOf(resolved.Name), failure, now, Zone, coolOff ?? AccountLimits.DefaultCoolOff) is not { } seen) return null;
+        var read = AccountLimits.Read(LimitsOf(resolved.Name), failure, now, Zone, coolOff ?? AccountLimits.DefaultCoolOff)
+                   ?? (byCode is { Stated: false } coded ? coded with { Until = now + (coolOff ?? AccountLimits.DefaultCoolOff) } : null);
+        if (read is not { } seen) return null;
 
         var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved);
         // LIMITRESUME1b (D206; D125 point 3 amended): a cool-off the file will not take is held in memory, never lost to a strike.

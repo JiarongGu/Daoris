@@ -257,7 +257,12 @@ public sealed record HarnessToolchain(
     // The local ports the tool's own sign-in waits on for the browser's answer, in the order it tries them (CODEXLOGIN1: Codex
     // 0.160.0 takes 1455, else 1457). Where none can be bound the sign-in is refused before it starts and the device code is
     // offered (`SignInPorts`). Null checks nothing. The CLI's `loginPorts` is the twin.
-    IReadOnlyList<int>? LoginPorts = null)
+    IReadOnlyList<int>? LoginPorts = null,
+    // The tool's map from its door's codes, kind words and statuses to an error's kind, with its recorded transient sentences
+    // (AGENTERRORS1a, D210, the agent-errors design §4.1), read by `AgentErrors.Read` from the door's failure, never from the
+    // transcript. Read own, then owner (never "own or owner"), and its `AuthRequiredCode` from its own entry alone. Declared only
+    // with a recorded sentence or a frame its source shows; null reads nothing by code. Not a twin: the CLI concludes no session.
+    ErrorWords? ErrorWords = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>

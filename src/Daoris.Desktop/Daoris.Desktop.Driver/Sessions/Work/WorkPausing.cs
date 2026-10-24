@@ -73,6 +73,8 @@ public static class WorkPausing
         StartVerdict.NotDrivable, StartVerdict.NotAdopted, StartVerdict.NoRoot,
         // A take that is not this machine's (CARRY2b): a resume carries nothing on over it.
         StartVerdict.TakenElsewhere,
+        // AGENTERRORS1a: a line past its transient bound, held for the person's word.
+        StartVerdict.TransientHeld,
     ];
 
     /// <summary>
