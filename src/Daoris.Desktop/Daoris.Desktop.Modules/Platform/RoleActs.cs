@@ -1,0 +1,220 @@
+using System.Text.Json;
+using Daoris.Driver;
+
+namespace Daoris.Desktop;
+
+/// <summary>
+/// One act of a role's table (STEWARDROLE1a-i, D209 §3.1, §3.3): its name, its exact form, and its handler, run inside the role's door
+/// once the act is admitted and past its gate. A later row adds its act behind its own look (§10's <see cref="StewardActs.Offered"/>).
+/// </summary>
+public interface IRoleAct
+{
+    /// <summary>The act's name, as <c>ROLE_ACT</c>'s <c>act</c> names it.</summary>
+    string Name { get; }
+
+    /// <summary>Whether <paramref name="form"/> is exactly the act's form (field names compared as D201's <c>IsForm</c> compares them, values exact).</summary>
+    bool IsForm(JsonElement form);
+
+    /// <summary>The thing the act acts on, as its exact form names it (a repository, a quest or a session), which its record and its gate are keyed by.</summary>
+    string Target(JsonElement form);
+
+    /// <summary>The act's handler, run under <see cref="PipeDoor.Role"/>; its answer is the route's.</summary>
+    Task<object?> RunAsync(RoleActRun run, CancellationToken ct);
+}
+
+/// <summary>What an act's handler is handed: its admitted act's id, its role's judge (whose run's memory it registers a pending operation in), and its form.</summary>
+public sealed record RoleActRun(string Id, string Role, string Act, JsonElement Form, StandingConfirmation Judge);
+
+/// <summary>
+/// The steward's acts (D209 §3.1, §10): its table, empty in STEWARDROLE1a-i, each later row adding its act behind its own look, and the
+/// set this build offers, which an appointment's <c>acts</c> keeps as its ask named it (§2.3).
+/// </summary>
+public static class StewardActs
+{
+    /// <summary>The acts this build offers a new appointment: none until STEWARDROLE1b.</summary>
+    public static IReadOnlyList<string> Offered { get; } = [];
+
+    /// <summary>The set-up act (§3.1 row 12), refused without the appointment's own tick.</summary>
+    public const string Setup = "setup";
+
+    /// <summary>The steward's table: none in this build.</summary>
+    public static IReadOnlyDictionary<string, IRoleAct> Table { get; } = new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
+
+    /// <summary>Each role's table for <c>ROLE_ACT</c>: the steward's; the supervisor's acts are its own routes, so its table here is empty.</summary>
+    public static IReadOnlyDictionary<string, IRoleAct> TableOf(string role) =>
+        role == Roles.Steward ? Table : new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
+}
+
+/// <summary>Where an admitted act stands in the run's memory (§3.4 steps 7 and 8).</summary>
+public static class RoleActStates
+{
+    public const string Admitted = "admitted";
+    public const string Running = "running";
+    public const string Done = "done";
+    public const string Cancelled = "cancelled";
+}
+
+/// <summary>Where a pending operation stands (§5.1a): at a stage, bound, executed (its last stage taken), or cancelled.</summary>
+public static class RoleOperationStates
+{
+    public const string Pending = "pending";
+    public const string Bound = "bound";
+    public const string Executed = "executed";
+    public const string Cancelled = "cancelled";
+}
+
+/// <summary>
+/// A pending operation as the run's memory holds it (§5.1a): the act it came from, its role, generation and holder, the actor it is
+/// recorded as, its target, its kind, its stages in order and the one it is at, whether its last stage is a binding, its state, and the
+/// complete operation its consumers act on — never what a file says.
+/// </summary>
+public sealed record RoleOperation(
+    string Id, string Role, string Generation, string Holder, string Actor, string Target, string Kind, IReadOnlyList<string> Stages,
+    int At, bool Binds, string State, object? Operation)
+{
+    /// <summary>The stage its next consumer takes, or null where none is left.</summary>
+    public string? Stage => State == RoleOperationStates.Pending && At < Stages.Count ? Stages[At] : null;
+}
+
+/// <summary>
+/// The run's memory of a role's acts (STEWARDROLE1a-i, D209 §3.4 steps 7 and 8, §5.1a): every admitted act by its id, every pending
+/// operation by its stages, and every hand-over binding. It is the judge's own state, every method called under the judge's lock
+/// (<see cref="StandingConfirmation"/> holds it), so an admission, a gate's step, a consumer's take and a revoke's cancel never
+/// interleave. Nothing here is written to disk; a restart forgets it all.
+/// </summary>
+internal sealed class RoleActsMemory
+{
+    private sealed record Admitted(string Id, string Role, string Act, string Generation, string Holder, string Target)
+    {
+        public string State { get; set; } = RoleActStates.Admitted;
+    }
+
+    private readonly Dictionary<string, Admitted> _acts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, RoleOperation> _operations = new(StringComparer.Ordinal);
+
+    /// <summary>Step 7: the act registered as <c>admitted</c>, its id drawn here, never the verb's.</summary>
+    public string Admit(string role, string act, string generation, string holder, string target)
+    {
+        var id = "a" + Guid.NewGuid().ToString("N")[..15];
+        _acts[id] = new Admitted(id, role, act, generation, holder, target);
+        return id;
+    }
+
+    /// <summary>The act's state, or null where no act has the id.</summary>
+    public string? StateOf(string id) => _acts.TryGetValue(id, out var act) ? act.State : null;
+
+    /// <summary>The act's generation, or null.</summary>
+    public string? GenerationOf(string id) => _acts.TryGetValue(id, out var act) ? act.Generation : null;
+
+    /// <summary>Step 8: an act still <c>admitted</c> and live moved to <c>running</c>; false where it was cancelled or is not admitted.</summary>
+    public bool Run(string id, Func<string, bool> live)
+    {
+        if (!_acts.TryGetValue(id, out var act) || act.State != RoleActStates.Admitted) return false;
+        if (!live(act.Generation))
+        {
+            act.State = RoleActStates.Cancelled;
+            return false;
+        }
+
+        act.State = RoleActStates.Running;
+        return true;
+    }
+
+    public void Done(string id)
+    {
+        if (_acts.TryGetValue(id, out var act) && act.State == RoleActStates.Running) act.State = RoleActStates.Done;
+    }
+
+    /// <summary>
+    /// A pending operation registered for an act that ran (§5.1a): at its first stage where its generation is live, else cancelled at
+    /// once. The operation's id is its act's.
+    /// </summary>
+    public RoleOperation? Pend(string id, string actor, string kind, IReadOnlyList<string> stages, bool binds, object? operation, Func<string, bool> live)
+    {
+        if (!_acts.TryGetValue(id, out var act) || stages.Count == 0) return null;
+        var state = live(act.Generation) ? RoleOperationStates.Pending : RoleOperationStates.Cancelled;
+        var pending = new RoleOperation(id, act.Role, act.Generation, act.Holder, actor, act.Target, kind, stages, 0, binds, state, operation);
+        _operations[id] = pending;
+        return pending;
+    }
+
+    /// <summary>A consumer's first step: the live operation on <paramref name="target"/> at <paramref name="stage"/>, memory first by target and stage.</summary>
+    public RoleOperation? Find(string target, string stage, Func<string, bool> live) =>
+        _operations.Values.FirstOrDefault(each => string.Equals(each.Target, target, StringComparison.OrdinalIgnoreCase)
+                                                  && each.Stage == stage && live(each.Generation));
+
+    /// <summary>
+    /// A consumer's take (and, after its awaits, its second step, the execution cutoff): the operation still at <paramref name="stage"/>,
+    /// its generation live, moved past it; its last stage taken makes it a binding where it binds, else executed. False otherwise.
+    /// </summary>
+    public RoleOperation? Take(string id, string stage, Func<string, bool> live)
+    {
+        if (!_operations.TryGetValue(id, out var operation) || operation.Stage != stage) return null;
+        if (!live(operation.Generation))
+        {
+            _operations[id] = operation with { State = RoleOperationStates.Cancelled };
+            return null;
+        }
+
+        var next = operation.At + 1;
+        var taken = next < operation.Stages.Count
+            ? operation with { At = next }
+            : operation with { At = next, State = operation.Binds ? RoleOperationStates.Bound : RoleOperationStates.Executed };
+        _operations[id] = taken;
+        return taken;
+    }
+
+    /// <summary>The live binding on <paramref name="target"/>, read by each later start this run; null where none.</summary>
+    public RoleOperation? Binding(string target, Func<string, bool> live) =>
+        _operations.Values.FirstOrDefault(each => each.State == RoleOperationStates.Bound
+                                                  && string.Equals(each.Target, target, StringComparison.OrdinalIgnoreCase) && live(each.Generation));
+
+    /// <summary>The operation by its id, whatever its state.</summary>
+    public RoleOperation? Of(string id) => _operations.GetValueOrDefault(id);
+
+    /// <summary>
+    /// A revoke's part of its mutation step (§3.4): every act of <paramref name="generations"/> still <c>admitted</c>, every stage of its
+    /// pending operations not yet executed, and every binding, cancelled. Answers what it cancelled, for the log.
+    /// </summary>
+    public int Cancel(IReadOnlySet<string> generations)
+    {
+        var cancelled = 0;
+        foreach (var act in _acts.Values.Where(each => each.State == RoleActStates.Admitted && generations.Contains(each.Generation)))
+        {
+            act.State = RoleActStates.Cancelled;
+            cancelled++;
+        }
+
+        foreach (var operation in _operations.Values.ToList())
+        {
+            if (!generations.Contains(operation.Generation)) continue;
+            if (operation.State is not (RoleOperationStates.Pending or RoleOperationStates.Bound)) continue;
+            _operations[operation.Id] = operation with { State = RoleOperationStates.Cancelled };
+            cancelled++;
+        }
+
+        return cancelled;
+    }
+
+    /// <summary>The owner's act on a target (§5.4, STEWARDROLE1a-ii's mark): every admitted act, pending stage and binding on it cancelled.</summary>
+    public int CancelTarget(string target)
+    {
+        var cancelled = 0;
+        foreach (var act in _acts.Values.Where(each => each.State == RoleActStates.Admitted
+                                                       && string.Equals(each.Target, target, StringComparison.OrdinalIgnoreCase)))
+        {
+            act.State = RoleActStates.Cancelled;
+            cancelled++;
+        }
+
+        foreach (var operation in _operations.Values.ToList())
+        {
+            if (!string.Equals(operation.Target, target, StringComparison.OrdinalIgnoreCase)) continue;
+            if (operation.State is not (RoleOperationStates.Pending or RoleOperationStates.Bound)) continue;
+            _operations[operation.Id] = operation with { State = RoleOperationStates.Cancelled };
+            cancelled++;
+        }
+
+        return cancelled;
+    }
+}

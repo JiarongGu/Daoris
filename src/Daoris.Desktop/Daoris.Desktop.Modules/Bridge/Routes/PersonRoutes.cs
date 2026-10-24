@@ -112,10 +112,13 @@ public sealed class PersonRoutes(DriverLoop loop)
             : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it has no standing confirmation."));
     }
 
-    // SUPERVISOR1a-ii (D208 §2.3, §5): the owner's appointment of a role, made and turned off in the window alone. `{ role, repository,
-    // holder?, on }`, `holder` `terminal` where none is named. With `on`, a terminal holder's terminal is started first, by the window, with
-    // the key in its environment, and nothing is kept where it could not start; the key is never answered. Answered `{ done, why?,
-    // message? }`, a refusal as data (`window-only`, `not-offered`, `unknown-role`, `unknown-repository`, `newer`, `unwritten`,
+    // SUPERVISOR1a-ii (D208 §2.3, §5), amended by STEWARDROLE1a-i (D209 §2.2, §2.3): the owner's appointment of a role, made and turned
+    // off in the window alone. `{ role, scope, holder?, on, share?, setup? }`, `scope` `machine` or `repository:<name>` (the built
+    // `repository` read as that scope for one release), `holder` `terminal` where none is named, `share` a later Appoint's choice while a
+    // holder lives (`own`, or a living holder's id), `setup` the steward's own tick. With `on`, a new holder's tab is started first, by
+    // the window, Daoris's own pinned harness with the key in its environment, and nothing is kept where it could not start; the key is
+    // never answered. Answered `{ done, why?, message? }`, a refusal as data (`window-only`, `not-offered`, `unknown-role`,
+    // `unknown-repository`, `scope`, `choose-terminal`, `no-holder`, `revoked-holder`, `holder-harness`, `newer`, `unwritten`,
     // `unstarted`, `no-pipe`). The judge's mutation step ends first; then each decision kept under a generation it ended goes stale.
     [DriverRoute("SET_APPOINTMENT")]
     [Publishes("SET_APPOINTMENT", StateScopes.Driver | StateScopes.Sessions)]
@@ -127,11 +130,20 @@ public sealed class PersonRoutes(DriverLoop loop)
         }
 
         var role = PayloadHelper.GetRequiredValue<string>(request.Payload, "role");
-        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        // STEWARDROLE1a-i (D209 §2.3): `scope`; the built `{ role, repository, … }` form is read as `repository:<name>` for one release.
+        var scope = PayloadHelper.GetOptionalValue<string>(request.Payload, "scope")
+            ?? (PayloadHelper.GetOptionalValue<string>(request.Payload, "repository") is { Length: > 0 } repository ? RoleScopes.Repository(repository) : null);
+        if (scope is null || !RoleScopes.Known(scope))
+        {
+            return new StandingChange(false, StandingConfirmation.Scope, "An appointment names its scope: `machine` or `repository:<name>`.");
+        }
+
         var holder = PayloadHelper.GetOptionalValue<string>(request.Payload, "holder") ?? RoleHolders.Terminal;
         var on = PayloadHelper.GetRequiredValue<bool>(request.Payload, "on");
+        var share = PayloadHelper.GetOptionalValue<string>(request.Payload, "share");
+        var setup = PayloadHelper.GetOptionalValue<bool>(request.Payload, "setup");
         return _loop.Pipe is { } pipe
-            ? await SupervisorDoor.AppointAsync(_loop, pipe, role, repository, holder, on, cancellationToken).ConfigureAwait(false)
+            ? await SupervisorDoor.AppointAsync(_loop, pipe, new AppointRequest(role, scope, holder, on, share, setup), cancellationToken).ConfigureAwait(false)
             : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it appoints no terminal holder.");
     }
 

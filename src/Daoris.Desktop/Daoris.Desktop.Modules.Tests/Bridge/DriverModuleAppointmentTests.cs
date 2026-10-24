@@ -67,7 +67,7 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
     }
 
     private StandingConfirmation Judge(bool appointments = true) =>
-        new(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, appointments: appointments)
+        new(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, supervisor: appointments, walk: new StandingConfirmationTests.Walked())
         {
             Drives = repository => repository == "engine",
         };
@@ -80,10 +80,10 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         using var pipe = new InstancePipe(dispatcher, Bus, Home, standing: Judge());
         loop.Pipe = pipe;
         var started = new List<string>();
-        SupervisorDoor.Starter = handed =>
+        SupervisorDoor.Starter = open =>
         {
-            started.Add(handed);
-            return Task.FromResult(true);
+            started.Add(open.Key);
+            return Task.FromResult(StandingConfirmationTests.Opened(open));
         };
         try
         {
@@ -111,8 +111,11 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
             Assert.Equal("unknown-repository", unknown.GetProperty("why").GetString());
             Assert.Single(started);
 
-            SupervisorDoor.Starter = _ => Task.FromResult(false);
-            var unstarted = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true });
+            SupervisorDoor.Starter = _ => Task.FromResult(new HolderOpened(null, null, StandingConfirmation.Unstarted, null));
+            // A holder lives: the next Appoint names a terminal of its own (D209 §2.2); the built `repository` form is still read as its scope.
+            var unchosen = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true });
+            Assert.Equal((false, StandingConfirmation.ChooseTerminal), (unchosen.GetProperty("done").GetBoolean(), unchosen.GetProperty("why").GetString()));
+            var unstarted = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", scope = "repository:engine", on = true, share = "own" });
             Assert.Equal((false, "unstarted"), (unstarted.GetProperty("done").GetBoolean(), unstarted.GetProperty("why").GetString()));
             // The appointment in force is the one before: nothing was installed.
             Assert.Equal(hash, Convert.ToHexStringLower(HolderKey.Hash(key)!));
@@ -128,6 +131,27 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         }
     }
 
+    /// <summary>
+    /// STEWARDROLE1a-i (D209 §3.3): <c>ROLE_ACT</c>'s own handler, off the role's door (the page's, or any request the judge did not
+    /// cover), is refused <c>not-holder</c> and runs nothing; and a <c>SET_APPOINTMENT</c> naming no scope is refused <c>scope</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_role_act_off_the_role_s_door_is_refused_and_an_appointment_names_its_scope()
+    {
+        var (loop, module, dispatcher, services) = Compose();
+        using var composed = services;
+        using var pipe = new InstancePipe(dispatcher, Bus, Home, standing: Judge());
+        loop.Pipe = pipe;
+        var payload = new { role = "steward", act = "drive", generation = "g", form = new { repository = "engine" }, proof = new string('0', 64) };
+
+        var refused = await AnswerAsync(module, "ROLE_ACT", payload);
+
+        Assert.Equal((false, SupervisorWhy.NotHolder), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("why").GetString()));
+        Assert.Equal(RolesBrief.Revision, refused.GetProperty("brief").GetString());
+        var unscoped = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "steward", on = true });
+        Assert.Equal((false, StandingConfirmation.Scope), (unscoped.GetProperty("done").GetBoolean(), unscoped.GetProperty("why").GetString()));
+    }
+
     /// <summary>D208 §2.3: this build does not offer appointments, so the window's press is refused and nothing starts.</summary>
     [Fact]
     public async Task This_build_refuses_an_appointment_not_offered_and_starts_nothing()
@@ -137,7 +161,11 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         using var pipe = new InstancePipe(dispatcher, Bus, Home);
         loop.Pipe = pipe;
         var started = 0;
-        SupervisorDoor.Starter = _ => Task.FromResult(++started > 0);
+        SupervisorDoor.Starter = _ =>
+        {
+            started++;
+            return Task.FromResult(new HolderOpened(null, null, StandingConfirmation.Unstarted, null));
+        };
         try
         {
             var refused = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true });
@@ -169,7 +197,11 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         Assert.NotNull(pipe.Serve());
         loop.Pipe = pipe;
         string? key = null;
-        SupervisorDoor.Starter = handed => Task.FromResult((key = handed) is not null);
+        SupervisorDoor.Starter = open =>
+        {
+            key = open.Key;
+            return Task.FromResult(StandingConfirmationTests.Opened(open));
+        };
         try
         {
             Assert.True((await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true })).GetProperty("done").GetBoolean());
@@ -228,7 +260,11 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         Assert.NotNull(pipe.Serve());
         loop.Pipe = pipe;
         string? key = null;
-        SupervisorDoor.Starter = handed => Task.FromResult((key = handed) is not null);
+        SupervisorDoor.Starter = open =>
+        {
+            key = open.Key;
+            return Task.FromResult(StandingConfirmationTests.Opened(open));
+        };
         try
         {
             Assert.True((await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true })).GetProperty("done").GetBoolean());

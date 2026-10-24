@@ -620,6 +620,16 @@ public sealed class SessionsRoutes(DriverContext context)
     private async Task<object?> SupervisorDeferAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await SupervisorDoor.DeferAsync(_loop, request.Payload, cancellationToken).ConfigureAwait(false);
 
+    // A role's act (STEWARDROLE1a-i, D209 §3.3): `{ role, act, generation, form, proof }`, `Role` in the pipe's census, judged by the
+    // judge's role method as SUPERVISOR_ANSWER is, then admitted once with an id Daoris draws. Its handler checks the act once more
+    // under the judge's lock (§3.4 step 8: still admitted, its holder's hash present, its appointment live) and runs its role's table's
+    // handler; the steward's table is empty in this build, so every act is refused `not-role` at the judge. `{ done, why?, answer?,
+    // roles, brief }`, refused as data.
+    [DriverRoute("ROLE_ACT")]
+    [Publishes("ROLE_ACT", StateScopes.Sessions | StateScopes.Driver)]
+    private async Task<object?> RoleActAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await SupervisorDoor.ActAsync(_loop.Pipe, request.Payload, cancellationToken).ConfigureAwait(false);
+
     // What waits for the supervisor's holder (SUPERVISOR1a-ii, D208 §3.2): the parked sessions here with a recorded question and no
     // decision on it, in a repository a live appointment names, each with its generation. Told by event (NOBLOCK1): it reads the
     // service and the question files, so an ask is answered from what is held and the verb asks until an answer computed after

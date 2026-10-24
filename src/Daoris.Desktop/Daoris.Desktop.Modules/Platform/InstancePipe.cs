@@ -604,7 +604,9 @@ public sealed class InstancePipe : IDisposable
             role = StandingConfirmation.JudgeRole(request.Module, request.Type, request.Payload, connection.Client, connection.TakeNonce());
             if (!role.Covered)
             {
-                _log.Info("supervisor.refused", ("why", role.Why ?? ""), ("door", PipeDoor.Terminal));
+                // STEWARDROLE1a-i (D209 §5.2): a role's act's refusal is `role.refused`; the supervisor's routes keep their own line.
+                if (request.Type == RoleRoutes.Act) _log.Info("role.refused", ("why", role.Why ?? ""), ("door", PipeDoor.Terminal));
+                else _log.Info("supervisor.refused", ("why", role.Why ?? ""), ("door", PipeDoor.Terminal));
                 return (IpcJson.Serialize(Refuse(request, role.Why ?? Unclassed, RoleRefusal(role.Why))), null);
             }
         }
@@ -904,7 +906,12 @@ public sealed class InstancePipe : IDisposable
     /// <summary>A role's act refused at the door (SUPERVISOR1a-ii), in the terminal's words, by its code. Nothing was kept.</summary>
     private static string RoleRefusal(string? why) => why switch
     {
-        SupervisorWhy.NotOffered => "This Daoris does not offer appointments yet. Nothing was kept.",
+        SupervisorWhy.NotOffered => "This Daoris does not offer this role's appointment yet. Nothing was kept.",
+        SupervisorWhy.NotAppointed => "No appointment of this role is in force: the owner appoints it in the window. Nothing was done.",
+        RoleWhy.NotRole => "That is the owner's to do; the role's appointment does not cover it. Nothing was done.",
+        RoleWhy.NotGranted => "The owner's appointment of this role does not name that act. Nothing was done.",
+        RoleWhy.HolderConfig =>
+            "This act did not come from the role's terminal as Daoris started it, on Daoris's own configuration; its terminal is ended. Nothing was done.",
         SupervisorWhy.NotHolder => "This terminal did not prove the supervisor's key for this connection and this answer. Nothing was kept.",
         SupervisorWhy.Dormant => "The supervisor was appointed before Daoris restarted: the owner presses Appoint again. Nothing was kept.",
         SupervisorWhy.AppointmentChanged => "The appointment this answer names is not the one in force: read the question again. Nothing was kept.",
