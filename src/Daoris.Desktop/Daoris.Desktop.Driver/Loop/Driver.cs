@@ -2722,8 +2722,8 @@ public sealed class Driver(
                         ? _ => ReaskAsync(start, registry, walkedEntry, selection, ct)
                         : _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
                 // AGENTERRORS1a (D210 §5.1, §5.5): a driven quest session is tried again in the same conversation on a transient failure,
-                // asking before each try whether its quest still wants a turn.
-                transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, retryCt),
+                // asking before each try whether its quest still wants a turn, against the quest as this start was planned (finding 5).
+                transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, quest.Status, quest.Awaits, retryCt),
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
@@ -3279,14 +3279,23 @@ public sealed class Driver(
             return conclusion;
         }
 
-        var owner = refusing.Owner(adapter.Name);
+        return conclusion.Then(" ", RefuseAccount(adapter, selection, refusing.Owner(adapter.Name)));
+    }
+
+    /// <summary>
+    /// The account a refused credential holds (AGT3b) and reads signed out (ROSTER1b), named by <paramref name="owner"/>; its line for the
+    /// record. What <see cref="AccountRefused"/> applies, and a resume's open refused for access applies as the reader read it (Codex's
+    /// owed read of D210, finding 6).
+    /// </summary>
+    internal Noted RefuseAccount(ISessionAdapter adapter, HarnessSelection selection, string owner)
+    {
         // The hold a later start says names the account by the person's name, read now (ACCT2b); the note, which travels and
         // whose cleaner knows only the record's own id, keeps the id.
         var named = selection.Profile is { } profile ? AccountNames.Said(AccountNames.Of(Context.Harnesses.Home, owner), profile) : null;
         var hold = RefusedAccounts.RefusedHold(owner, selection.Profile, named);
         Context.Harnesses.Refuse(adapter.Name, selection.Profile, hold.Note, hold);
         Context.Harnesses.SignedOut(adapter.Name, selection.Profile);
-        return conclusion.Then(" ", RefusedAccounts.RefusedNote(owner, selection.Profile));
+        return RefusedAccounts.RefusedNote(owner, selection.Profile);
     }
 
     /// <summary>

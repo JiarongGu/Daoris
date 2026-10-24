@@ -35,6 +35,9 @@ public sealed class AcpTransientTests
 
         public void Push(string json) => _toClient.Writer.TryWrite(json);
 
+        /// <summary>The agent's stream ends, as a transport lost: nothing more is read, and nothing still open is answered.</summary>
+        public void Close() => _toClient.Writer.TryComplete();
+
         public IReadOnlyList<string> Methods
         {
             get
@@ -754,5 +757,315 @@ public sealed class AcpTransientTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run.WaitAsync(Poll.Patience));
         Assert.Single(agent.Prompts);
         Assert.False(session.WaitsOnTransient);
+    }
+
+    // ——— Codex's owed read of D210's accepted text (docs/2026-10-24-agent-errors-reads.md, the section Codex, the accepted text).
+
+    /// <summary>The prompts whose first block is Daoris's go-on: the tries.</summary>
+    private static int Tries(Agent agent) => agent.Prompts.Count(blocks => blocks.Length > 0 && blocks[^1] == TransientRetry.GoOnText(Overloaded));
+
+    /// <summary>
+    /// 🔴 Finding 1: a try answered only because a queued word took its turn over is no recovery. Every try is handed to a word the
+    /// person says mid-turn, whose own prompt then meets the 529: the episode and its count are kept through each hand-over, so the run
+    /// reaches ONE exhaustion after five tries. Red before: each hand-over's failure opened a fresh episode, and the run never ended.
+    /// </summary>
+    [Fact]
+    public async Task A_try_handed_to_a_queued_word_that_fails_keeps_the_episode_to_one_exhaustion()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        JsonElement open = default;
+        var count = 0;
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.TryGetProperty("method", out var m) ? m.GetString() : null)
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    if (Interlocked.Increment(ref count) == 1) return Failed(frame);
+                    var text = frame.GetProperty("params").GetProperty("prompt")[0].GetProperty("text").GetString();
+                    if (text == TransientRetry.GoOnText(Overloaded))
+                    {
+                        // A try: held open until a queued word takes its turn over.
+                        open = frame.Clone();
+                        return null;
+                    }
+
+                    // claude-agent-acp settles the running try at the queued word's echo; the word's own turn meets the provider's error.
+                    self.Push(Answer(open, "end_turn"));
+                    return Failed(frame);
+                default:
+                    return frame.TryGetProperty("id", out _) && frame.TryGetProperty("method", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var retry = Retry(clock, told);
+        var inbox = new DrivenInbox(_ => { });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        int[] schedule = [1, 2, 4, 8, 16];
+        for (var at = 0; at < schedule.Length; at++)
+        {
+            var waits = at + 1;
+            await Poll.Until(() => told.Count("wait") >= waits || run.IsCompleted, () => $"wait {waits} never came: {string.Join(", ", told.Lines)}", Poll.Patience);
+            Assert.False(run.IsCompleted, "the run ended where it should have waited");
+            clock.Advance(TimeSpan.FromMinutes(schedule[at]));
+            await Poll.Until(() => Tries(agent) >= waits, () => $"try {waits} never went", Poll.Patience);
+            // The try is on the wire: a word said now goes at its next step.
+            await Task.Delay(100);
+            Assert.True(inbox.Hold(new ChatMessage($"word {waits}", [])));
+        }
+
+        var exhausted = await Assert.ThrowsAsync<AcpTransientExhausted>(() => run.WaitAsync(Poll.Patience));
+        Assert.Equal((5, true), (exhausted.Episode.Tries, exhausted.Episode.Exhausted));
+        Assert.Single(told.Lines, line => line.StartsWith("began:", StringComparison.Ordinal));
+        Assert.Equal(5, Tries(agent));
+    }
+
+    /// <summary>
+    /// 🔴 Finding 2, the words already on the wire: six words queued behind the turn the provider fails, each of whose own turns fails
+    /// too. They consume what is left of the five tries and nothing past it: the run ends exhausted with five counted, the sixth settled
+    /// past the bound, and no go-on is sent. Red before: six tries counted, past the bound.
+    /// </summary>
+    [Fact]
+    public async Task More_than_five_words_already_on_the_wire_settle_within_the_bound_and_authorize_no_try_past_it()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var frames = new List<JsonElement>();
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.TryGetProperty("method", out var m) ? m.GetString() : null)
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    lock (frames)
+                    {
+                        frames.Add(frame.Clone());
+                        if (frames.Count < 7) return null;
+                        foreach (var each in frames) self.Push(Failed(each));
+                        return null;
+                    }
+
+                default:
+                    return frame.TryGetProperty("id", out _) && frame.TryGetProperty("method", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var retry = Retry(clock, told);
+        var inbox = new DrivenInbox(_ => { });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        for (var word = 1; word <= 6; word++) Assert.True(inbox.Hold(new ChatMessage($"word {word}", [])));
+        var exhausted = await Assert.ThrowsAsync<AcpTransientExhausted>(() => run.WaitAsync(Poll.Patience));
+
+        Assert.Equal((5, 1, true), (exhausted.Episode.Tries, exhausted.Episode.SettledPast, exhausted.Episode.Exhausted));
+        Assert.Equal(7, agent.Prompts.Count);
+        Assert.Equal(0, Tries(agent));
+        Assert.DoesNotContain("wait", told.Lines);
+    }
+
+    /// <summary>
+    /// 🔴 Finding 2, a word said while the wire settles: dispatch is held from the episode's first failure, so it never goes alone
+    /// behind the settling turn as a turn of its own, and goes first in the next try's one prompt with the go-on. Red before: it went
+    /// at once, a fourth prompt the settling had to admit.
+    /// </summary>
+    [Fact]
+    public async Task A_word_said_while_the_wire_settles_is_held_for_the_next_try()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        JsonElement first = default;
+        var settling = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var count = 0;
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.TryGetProperty("method", out var m) ? m.GetString() : null)
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    switch (Interlocked.Increment(ref count))
+                    {
+                        case 1:
+                            first = frame.Clone();
+                            return null;
+                        case 2:
+                            // The provider fails the active turn; the queued word's turn is held open, settling.
+                            self.Push(Failed(first));
+                            settling.SetResult(frame.Clone());
+                            return null;
+                        default:
+                            return Answer(frame, "end_turn");
+                    }
+
+                default:
+                    return frame.TryGetProperty("id", out _) && frame.TryGetProperty("method", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var retry = Retry(clock, told);
+        var inbox = new DrivenInbox(_ => { });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("log the port", [])));
+        var queued = await settling.Task.WaitAsync(Poll.Patience);
+        await Poll.Until(() => told.Lines.Any(line => line.StartsWith("began:", StringComparison.Ordinal)), () => "no episode opened", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("use port 9090", [])));
+        await Task.Delay(200);
+        Assert.Equal(2, agent.Prompts.Count);
+
+        agent.Push(Failed(queued));
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal([["serve the report"], ["log the port"], ["use port 9090", TransientRetry.GoOnText(Overloaded)]], agent.Prompts);
+        Assert.Equal(2, retry.Episode!.Tries);
+    }
+
+    /// <summary>
+    /// 🔴 Finding 3: a word written to the wire after the episode opened, whose stream is then lost before any answer, is uncertain:
+    /// said by the <c>lost</c> note under its id and never handed back as <see cref="AcpSession.Unreached"/>, which the driver keeps to go
+    /// again. Red before: the lost stream left it untaken, and it was kept for retransmission.
+    /// </summary>
+    [Fact]
+    public async Task A_word_written_before_the_stream_is_lost_is_uncertain_and_never_unreached()
+    {
+        var clock = new MovedClock();
+        var events = new List<SessionEvent>();
+        JsonElement first = default;
+        var count = 0;
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.TryGetProperty("method", out var m) ? m.GetString() : null)
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    if (Interlocked.Increment(ref count) == 1)
+                    {
+                        first = frame.Clone();
+                        return null;
+                    }
+
+                    // The provider fails the active turn; then the transport is lost with the queued word unanswered.
+                    self.Push(Failed(first));
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(100);
+                        self.Close();
+                    });
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) && frame.TryGetProperty("method", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var retry = Retry(clock, new Told());
+        var inbox = new DrivenInbox(_ => { });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => { lock (events) events.Add(e); });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("log the port", [])));
+        await Assert.ThrowsAnyAsync<DriverException>(() => run.WaitAsync(Poll.Patience));
+
+        Assert.Empty(session.Unreached);
+        Assert.Equal(["log the port"], retry.Uncertain.Select(word => word.Text));
+        List<SessionEvent> lost;
+        lock (events) lost = [.. events.Where(e => e.Code == SessionEventCodes.Lost)];
+        Assert.Equal(["said-1"], Assert.Single(lost).Words);
+        Assert.Equal(2, agent.Prompts.Count);
+    }
+
+    /// <summary>
+    /// 🔴 Finding 4: a kept word a try would carry goes to the wire only once its record acknowledged its attempt. Where the record
+    /// would not mark it (and would not take it off either), the try does not write it: it waits on its record, unmarked, for the next
+    /// run, so a shell that came up after this one sends it once, never twice. Daoris's go-on, unmarked, goes as the try's plain block,
+    /// its kept copy settled without the wire. Red before: the unmarked word was written, and a restart would have sent it again.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_word_whose_attempt_the_record_did_not_mark_is_never_written_by_a_try()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Scripted((n, frame, _) => n == 1 ? Failed(frame) : Answer(frame, "end_turn"));
+        var door = new Daoris.Driver.Tests.StandInSaid { RefusingAttempts = true, RefusingTakeOff = true };
+        var settled = new List<string>();
+        var retry = new TransientRetry
+        {
+            Read = refused => AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), DoorFailure.OfPrompt(refused), clock.GetUtcNow(), TimeZoneInfo.Utc),
+            Clock = clock,
+            Began = (_, _) => told.Add("began"),
+            Waits = waiting => told.Add(waiting ? "wait" : "waited"),
+            KeepGoOn = (_, text, _) => Task.FromResult<ChatMessage?>(SaidDoor.Dispatched(
+                new ChatMessage(text, []) { Id = "g1", Kept = true, Daoris = new DaorisWord("transient/s1") }, door,
+                went => { lock (settled) settled.Add(went.Id!); })),
+        };
+        var inbox = new DrivenInbox(_ => { });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await Poll.Until(() => session.WaitsOnTransient, () => "the run never waited", Poll.Patience);
+        Assert.Equal(InboxKeep.Held, (await inbox.KeepAsync(door, new ChatMessage("use port 9090", []), CancellationToken.None)).Outcome);
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal([["serve the report"], [TransientRetry.GoOnText(Overloaded)]], agent.Prompts);
+        // The person's word waits on its record, unmarked and never written: the next run's to send, once.
+        var waiting = Assert.Single(door.Said, word => word.Text == "use port 9090");
+        Assert.Null(waiting.Attempt);
+        Assert.Null(retry.Episode!.GoOnId);
+        Assert.Equal(["g1"], settled);
+    }
+
+    /// <summary>
+    /// 🔴 Finding 7: a turn its harness wakes while the owner's check is awaited is read again at the try's admission. No prompt enters
+    /// that turn, and the go-on follows once it has ended. Red before: the wake was read once, before the check, and the try went into
+    /// the woken turn.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_woken_during_the_owner_s_check_holds_the_try_until_it_ends()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Scripted((n, frame, _) => n == 1 ? Failed(frame) : Answer(frame, "end_turn"));
+        var asked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var retry = Retry(clock, told, wanted: async ct =>
+        {
+            asked.TrySetResult();
+            await answer.Task.WaitAsync(ct);
+            return true;
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, retry: retry);
+        await PassAsync(told, clock, run, 1);
+        await asked.Task.WaitAsync(Poll.Patience);
+        // The harness wakes its agent while the check is read: its turn runs with no prompt open.
+        agent.Push(Said("The build you started has finished."));
+        await Task.Delay(200);
+        answer.SetResult();
+        await Task.Delay(200);
+        Assert.Single(agent.Prompts);
+
+        agent.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":10,"size":100,"_meta":{"_claude/origin":{"kind":"task-notification"}}}}}""");
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal([["serve the report"], [TransientRetry.GoOnText(Overloaded)]], agent.Prompts);
+        Assert.Equal(1, retry.Episode!.Tries);
     }
 }

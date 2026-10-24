@@ -38,7 +38,15 @@ public sealed class TransientRetryTickTests : IDisposable
 
     public void Dispose()
     {
+        // The stand-in's own failures are no case's subject: one it logged fails the case it happened under, whatever it asserted.
+        var failed = File.Exists(Log) ? Heard().Where(line => line["method"]!.GetValue<string>() == "stand-in-failed").Select(line => line.ToJsonString()).ToList() : [];
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        Assert.True(failed.Count == 0, $"the stand-in agent failed on its own: {string.Join(" | ", failed)}");
+    }
+
+    private static string Faults(SaidStandIn service)
+    {
+        lock (service.Faults) return string.Join(" | ", service.Faults);
     }
 
     private string Log => Path.Combine(_home, "agent.log");
@@ -70,19 +78,63 @@ public sealed class TransientRetryTickTests : IDisposable
         };
     }
 
-    /// <summary>Passes each wait the run makes on the held clock, once it waits: <paramref name="minutes"/>, one wait at a time.</summary>
-    private static async Task PassAsync(MovedClock clock, Task tick, params int[] minutes)
+    /// <summary>The waits each session's record has said and this test has passed, by the session (the determinism of the waits).</summary>
+    private readonly Dictionary<string, int> _passed = new(StringComparer.Ordinal);
+
+    /// <summary>Passes each wait of <c>s1</c>'s run: <see cref="PassAsync(MovedClock, Task, string, int[])"/>.</summary>
+    private Task PassAsync(MovedClock clock, Task tick, params int[] minutes) => PassAsync(clock, tick, "s1", minutes);
+
+    /// <summary>
+    /// Passes each wait <paramref name="session"/>'s run makes on the held clock, one at a time, by the record's own state, never by
+    /// time (the steward's determinism, <c>.claude/knowledge/held-clocks.md</c>): the record's next quiet <c>transient</c> event says
+    /// the wait began and when its try goes, and the clock holds a timer due at exactly that moment, which says the run waits on it.
+    /// Only then is the clock moved, to that moment and no other; the wait's length is the schedule's, <paramref name="minutes"/>.
+    /// </summary>
+    private async Task PassAsync(MovedClock clock, Task tick, string session, params int[] minutes)
     {
         foreach (var each in minutes)
         {
-            await Poll.Until(() => clock.Waiting || tick.IsCompleted, () => "the run never waited to try again", Poll.Patience);
-            Assert.False(tick.IsCompleted, "the tick ended where its run should have waited");
-            clock.Advance(TimeSpan.FromMinutes(each));
+            var wait = _passed.GetValueOrDefault(session) + 1;
+            DateTimeOffset? until = null;
+            await Poll.Until(
+                () =>
+                {
+                    until = Waits(session).Skip(wait - 1).FirstOrDefault();
+                    return (until is { } at && clock.Pending.Contains(at)) || tick.IsCompleted;
+                },
+                () => $"{session}'s wait {wait} never began on the held clock\n{Seen(clock)}", Poll.Patience);
+            Assert.False(tick.IsCompleted, $"the tick ended where {session}'s run should have waited ({wait})\n{Seen(clock)}");
+            Assert.Equal(TimeSpan.FromMinutes(each), until!.Value - clock.GetUtcNow());
+            _passed[session] = wait;
+            clock.Advance(until.Value - clock.GetUtcNow());
         }
     }
 
+    /// <summary>
+    /// Passes every wait the look's runs make until it ends, each to the moment the clock's earliest timer is due: for a run whose
+    /// waits the case does not count (a refused resume's briefed fallback, which meets the 529 as every first prompt here does).
+    /// </summary>
+    private static async Task DrainAsync(MovedClock clock, Task tick)
+    {
+        while (!tick.IsCompleted)
+        {
+            await Poll.Until(() => clock.Pending.Count > 0 || tick.IsCompleted, () => "the look never ended", Poll.Patience);
+            if (clock.Pending is [var due, ..]) clock.Advance(due - clock.GetUtcNow());
+        }
+    }
+
+    /// <summary>When each of the session's waits ends, as its record's quiet <c>transient</c> events said them, in order.</summary>
+    private IReadOnlyList<DateTimeOffset> Waits(string session) =>
+        [.. Events(session).Where(e => e.Kind == SessionEventKind.Transient && e.Next is not null).Select(e => e.Next!.Value)];
+
+    /// <summary>Everything a failure needs said: the record, its events' kinds and notes, what the agent heard and the clock's timers.</summary>
+    private string Seen(MovedClock clock, string session = "s1") =>
+        $"clock: {clock.GetUtcNow():O}, pending: {string.Join(", ", clock.Pending.Select(at => at.ToString("O")))}\n"
+        + $"events: {string.Join(" | ", Events(session).Select(e => $"{e.Kind}{(e.Next is { } next ? $" next {next:O}" : "")}{(e.Try is { } number ? $" try {number}" : "")}{(e.Text is { Length: > 0 } text ? $" {text[..Math.Min(text.Length, 120)]}" : "")}"))}\n"
+        + $"heard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
+
     private string Seen(SaidStandIn service, object? look = null) =>
-        $"look: {look}\nrecord: {service.Record("s1")}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
+        $"look: {look}\nrecord: {service.Record("s1")}\nfaults: {Faults(service)}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
 
     /// <summary>
     /// 🔴 Shape 1 (the design §0): the prompt fails <c>-32603</c> with <c>data.errorKind: "overloaded"</c> twice, then the agent works.
@@ -342,6 +394,127 @@ public sealed class TransientRetryTickTests : IDisposable
             last["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
     }
 
+    /// <summary>
+    /// 🔴 Codex's owed read of D210, finding 5, a D79 continuation: the quest's session asked another repository and ended waiting; its
+    /// answer came, and the resume's first prompt meets the 529. The question it names stays on the quest once answered, which is
+    /// history, not this run's wait: the run is tried again and finishes its quest. Red before: the owner's check read the named
+    /// question as a wait, sent no try, and the quest stayed taken.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_after_its_answered_question_is_tried_again_through_a_transient_failure()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        service.Question();
+        var clock = new MovedClock();
+        var driver = Protocol(service, "asks", clock);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal("Taken", service.Status("q1"));
+
+        service.Close("q2", "Done", "POST /notes takes { text }.");
+        var tick = driver.RunOnceAsync();
+        // The resume is a session of its own (D79), whose record says its wait.
+        await PassAsync(clock, tick, "s2", 1);
+        var look = await tick.WaitAsync(Poll.Patience);
+
+        var seen = Seen(service, string.Join(" | ", look.Events));
+        Assert.True(service.Status("q1") == "Done", seen);
+        var resumed = Prompts().Where(prompt => prompt["session"]!.GetValue<string>() != "s1").ToList();
+        Assert.True(resumed.Count == 2, seen);
+        Assert.StartsWith(
+            "The last request failed on the provider's side", Assert.Single(resumed[1]["blocks"]!.AsArray())!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// 🔴 Finding 5, the person's explicit continuation of a closed quest: their word resumes a done quest's conversation, and its prompt
+    /// meets the 529. The quest was closed before their word began, so its close is no new completion: the run is tried again and
+    /// answers them. Red before: the check read the closed quest as done, sent no try, and the record ended as though it had answered.
+    /// </summary>
+    [Fact]
+    public async Task The_person_s_word_to_a_closed_quest_s_session_is_tried_again_through_a_transient_failure()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var clock = new MovedClock();
+        var driver = Protocol(service, "closed-then", clock);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
+
+        await service.SayAsync("s1", "Also log the port.");
+        var tick = driver.RunOnceAsync();
+        await PassAsync(clock, tick, 1);
+        await tick.WaitAsync(Poll.Patience);
+
+        var seen = Seen(service);
+        var resumed = Prompts().Where(prompt => prompt["resumed"]!.GetValue<bool>()).ToList();
+        Assert.True(resumed.Count == 2, seen);
+        Assert.Equal(["Also log the port."], resumed[0]["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
+        Assert.StartsWith("The last request failed on the provider's side", Assert.Single(resumed[1]["blocks"]!.AsArray())!.GetValue<string>());
+        Assert.True(service.Said("s1").Count == 0, seen);
+    }
+
+    /// <summary>
+    /// 🔴 Finding 6: the person's word resumes the held record, and its open meets the 529 and then a limit by its code alone
+    /// (<c>rate_limit</c>, no sentence), at <c>session/resume</c> and at <c>session/load</c>. The limit keeps its policy through the
+    /// resume's wrapper: its account cools for D125's unstated hour before the refused resume's fallback is chosen. Red before: the
+    /// wrapper's refusal took the fallback first, and nothing cooled.
+    /// </summary>
+    [Theory]
+    [InlineData("open-limit")]
+    [InlineData("open-limit-load")]
+    public async Task A_limit_at_the_open_after_a_transient_failure_cools_its_account(string mode)
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var clock = new MovedClock();
+        var driver = Protocol(service, mode, clock);
+        var tick = driver.RunOnceAsync();
+        await PassAsync(clock, tick, 1, 2, 4, 8, 16);
+        await tick.WaitAsync(Poll.Patience);
+        Assert.True(service.State("s1") == "failed", Seen(service));
+
+        await service.SayAsync("s1", "Go on where the overload stopped you.");
+        var resuming = driver.RunOnceAsync();
+        await PassAsync(clock, resuming, 1);
+        await resuming.WaitAsync(Poll.Patience);
+
+        var method = mode.EndsWith("-load", StringComparison.Ordinal) ? "session/load" : "session/resume";
+        Assert.Equal(2, Heard().Count(line => line["method"]!.GetValue<string>() == method));
+        Assert.True(AccountCooling.Read(_home, DateTimeOffset.UtcNow).Count > 0, Seen(service));
+        Assert.Equal(6, Prompts().Length);
+    }
+
+    /// <summary>
+    /// 🔴 Finding 6, access: the same open meets the 529 and then the stub's refused credential (<c>API Error: 401</c>), at
+    /// <c>session/resume</c> and at <c>session/load</c>. The account is marked as an access failure marks it, signed out, before the
+    /// fallback. Red before: nothing marked it.
+    /// </summary>
+    [Theory]
+    [InlineData("open-access")]
+    [InlineData("open-access-load")]
+    public async Task An_access_refusal_at_the_open_after_a_transient_failure_marks_its_account(string mode)
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var clock = new MovedClock();
+        var driver = Protocol(service, mode, clock);
+        var tick = driver.RunOnceAsync();
+        await PassAsync(clock, tick, 1, 2, 4, 8, 16);
+        await tick.WaitAsync(Poll.Patience);
+
+        await service.SayAsync("s1", "Go on where the overload stopped you.");
+        var resuming = driver.RunOnceAsync();
+        await PassAsync(clock, resuming, 1);
+        // The stub's own sign-in runs in its own home whatever its reading (OWNSPACE1a), so the refused resume's briefed fallback starts
+        // a session of its own, which meets the 529 as every first prompt here does: its waits are passed too.
+        await DrainAsync(clock, resuming);
+        await resuming.WaitAsync(Poll.Patience);
+        var method = mode.EndsWith("-load", StringComparison.Ordinal) ? "session/load" : "session/resume";
+        Assert.Equal(2, Heard().Count(line => line["method"]!.GetValue<string>() == method));
+        Assert.True(
+            AccountReads.Of(_home, "stub").Own?.Login == LoginState.Out,
+            $"reads: {(File.Exists(AccountReads.PathOf(_home)) ? File.ReadAllText(AccountReads.PathOf(_home)) : "none")}\n"
+            + $"notes: {string.Join(" | ", Events("s1").Where(e => e.Kind == SessionEventKind.Note).TakeLast(4).Select(e => e.Text))}\n{Seen(service)}");
+        Assert.False(AccountCooling.Read(_home, DateTimeOffset.UtcNow).Count > 0, "an access refusal cooled an account");
+        Assert.Equal(6, Prompts().Count(prompt => prompt["conversation"]!.GetValue<string>() == "conv-s1"));
+    }
+
     private static async Task<string> SessionsJsonAsync(SaidStandIn service)
     {
         using var http = new HttpClient();
@@ -353,7 +526,11 @@ public sealed class TransientRetryTickTests : IDisposable
     /// first two prompts with the 529, streaming the error as its agent's words first as the adapter does, then closes the quest done;
     /// <c>always</c> fails every prompt; <c>always-open</c> too, never taking its quest. A resumed prompt is logged and closes the quest,
     /// but under <c>relentless</c>, which takes its quest and fails every prompt, a resumed one included. <c>open-fails</c> is
-    /// <c>always</c> whose first six resumes meet the 529 at the open, before any prompt, and whose seventh works.
+    /// <c>always</c> whose first six resumes meet the 529 at the open, before any prompt, and whose seventh works. <c>open-limit</c> and
+    /// <c>open-access</c> are <c>always</c> whose resume meets the 529 at the open and then a limit by its code alone, or the stub's refused
+    /// credential; with <c>-load</c> the agent offers no resume, so the open is <c>session/load</c>. <c>asks</c> takes its quest and waits on
+    /// <c>q2</c> (D79), and the resume's session meets the 529 once, then finishes; <c>closed-then</c> closes its quest done at once, and a
+    /// resumed prompt meets the 529 once, then is answered.
     /// </summary>
     private string Agent()
     {
@@ -366,20 +543,38 @@ public sealed class TransientRetryTickTests : IDisposable
             const session = process.env.DAORIS_SESSION_ID;
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
             const heard = (what) => appendFileSync(log, JSON.stringify({ ...what, session }) + '\n');
-            const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
-              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+            // The stand-in's own call to the service never decides a case (the steward's determinism): one the machine's load failed
+            // is made again until the service answers it, and one that never is says so in the log rather than ending the agent.
+            const respond = async (body) => {
+              for (let attempt = 1; ; attempt++) {
+                try {
+                  return await fetch(`${url}/api/quests/q1/respond`, {
+                    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+                } catch (error) {
+                  if (attempt >= 100) { heard({ method: 'stand-in-failed', what: body.action, error: String(error) }); throw error; }
+                  await new Promise((done) => setTimeout(done, 50));
+                }
+              }
+            };
             const overloaded = 'API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.';
             let conversation = null;
             let resumed = false;
             let prompts = 0;
+            let resumedPrompts = 0;
+            let opens = 0;
+            const fail = (frame, error) => send({ jsonrpc: '2.0', id: frame.id, error });
+            const overload = { code: -32603, message: 'Internal error: ' + 'API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.', data: { errorKind: 'overloaded' } };
             const say = (text) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
               update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } } });
             const lines = createInterface({ input: process.stdin });
-            lines.on('line', async (line) => {
+            // A failure of the stand-in's own is in the log, never the agent's process ending under a case (its stream's end is a case's
+            // own subject); every case's failure message shows the log.
+            lines.on('line', (line) => handle(line).catch((error) => heard({ method: 'stand-in-failed', what: 'frame', error: String(error) })));
+            const handle = async (line) => {
               const frame = JSON.parse(line);
               if (frame.method === 'initialize') {
                 send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1,
-                  agentCapabilities: { loadSession: true, sessionCapabilities: { resume: {}, close: {} } } } });
+                  agentCapabilities: { loadSession: true, sessionCapabilities: mode.endsWith('-load') ? { close: {} } : { resume: {}, close: {} } } } });
               } else if (frame.method === 'session/new') {
                 conversation = 'conv-' + session;
                 heard({ method: 'session/new', conversation });
@@ -391,6 +586,14 @@ public sealed class TransientRetryTickTests : IDisposable
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: ' + overloaded, data: { errorKind: 'overloaded' } } });
                   return;
                 }
+                // open-limit, open-access: the open meets the 529, then a limit by its code alone or the stub's refused credential.
+                if (mode.startsWith('open-limit') || mode.startsWith('open-access')) {
+                  opens++;
+                  if (opens === 1) return fail(frame, overload);
+                  if (opens === 2) return fail(frame, mode.startsWith('open-limit')
+                    ? { code: -32603, message: 'Internal error: Rate limited.', data: { errorKind: 'rate_limit' } }
+                    : { code: -32603, message: 'Internal error: API Error: 401 API key is invalid.' });
+                }
                 conversation = frame.params.sessionId;
                 resumed = true;
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
@@ -398,6 +601,33 @@ public sealed class TransientRetryTickTests : IDisposable
                 prompts++;
                 const blocks = (frame.params?.prompt ?? []).filter((block) => block.type === 'text').map((block) => block.text);
                 heard({ method: 'session/prompt', conversation: frame.params?.sessionId, blocks, resumed });
+                if (mode === 'asks') {
+                  // D79: the first session takes its quest and asks q2; the resume's session meets the 529 once, then finishes.
+                  if (session === 's1') {
+                    await respond({ action: 'take' });
+                    await respond({ action: 'wait', on: 'q2' });
+                  } else if (prompts === 1) {
+                    say(overloaded);
+                    return fail(frame, overload);
+                  } else {
+                    say('Served.');
+                    await respond({ action: 'done', reason: 'served the report' });
+                  }
+                  return send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                }
+                if (mode === 'closed-then') {
+                  // The quest done at once; the person's word to its closed session meets the 529 once, then is answered.
+                  if (!resumed) {
+                    await respond({ action: 'take' });
+                    await respond({ action: 'done', reason: 'served the report' });
+                  } else if (++resumedPrompts === 1) {
+                    say(overloaded);
+                    return fail(frame, overload);
+                  } else {
+                    say('Logged the port.');
+                  }
+                  return send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                }
                 if (resumed && mode !== 'relentless') {
                   say('Went on where it stopped.');
                   await respond({ action: 'done', reason: 'went on' });
@@ -416,7 +646,7 @@ public sealed class TransientRetryTickTests : IDisposable
               } else if (frame.id !== undefined && frame.method) {
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
               }
-            });
+            };
             // stdin closed: the ending. Never process.exit (STUB1): the process ends when the loop drains.
             lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });
             """);

@@ -27,6 +27,12 @@ internal sealed class StandInSaid : ISaidDoor
     /// <summary>A refusal every keep is answered with; null keeps.</summary>
     public string? Refusing { get; set; }
 
+    /// <summary>Every attempt answered not marked (AGENTERRORS1, Codex's finding 4): a record that would not mark a word.</summary>
+    public bool RefusingAttempts { get; set; }
+
+    /// <summary>Every take-off answered not landed: a record that would not take a word off.</summary>
+    public bool RefusingTakeOff { get; set; }
+
     public IReadOnlyList<string> Ids
     {
         get
@@ -61,6 +67,7 @@ internal sealed class StandInSaid : ISaidDoor
 
     public Task<bool> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct)
     {
+        if (RefusingAttempts) return Task.FromResult(false);
         lock (_gate)
         {
             Attempted.AddRange(ids);
@@ -76,6 +83,7 @@ internal sealed class StandInSaid : ISaidDoor
     public async Task<bool> TakeOffAsync(IReadOnlyList<string> ids, CancellationToken ct)
     {
         if (TakingOff is { } taking) await taking(ids).ConfigureAwait(false);
+        if (RefusingTakeOff) return false;
         lock (_gate)
         {
             TakenOff.AddRange(ids);

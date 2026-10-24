@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - TransientRetryTickTests passed its waits by a guess, and a stand-in's own failure ended a case (AGENTERRORS1, the tick tests' determinism)
+
+- **Symptom:** on the steward's runs of the merged AGENTERRORS1 tree, `TransientRetryTickTests` (Process half) failed now and then and
+  passed alone: `A_driven_session_failing_transient_twice_goes_on_in_the_same_conversation_and_ends_as_its_work_does` once in three
+  runs, and `A_limit_at_the_open_after_a_transient_failure_cools_its_account` (`open-limit`) in another.
+- **Root cause:** three things in the tests, none in the driver. (1) `PassAsync` waited for `MovedClock.Waiting`, *any* timer
+  due, then moved the clock by the schedule's minutes from wherever it stood. Under load the timer seen could be another one on
+  the same clock, so the move could land before the run's own retry timer was made, or reach it from the wrong moment, and the
+  case's later waits went out of step with the run's. The refused resume's fallback was drained the same way, by a
+  guessed sixteen minutes a step. (2) The stand-in agent's `line` handler was an `async` function whose rejection nobody caught: a
+  `fetch` to the stand-in service the machine's load refused ended the agent's process, and its stream's end is a case's own
+  subject. (3) `SaidStandIn`'s serving loop let one request's exception, in the answer or in writing it, escape the loop, so every
+  later request of the case went unanswered and the case ran out its patience saying something else.
+- **Fix:** `PassAsync` waits on the record's own state (`.claude/knowledge/held-clocks.md`): the session's next quiet `transient`
+  event names when its try goes, and the clock moves only once `MovedClock.Pending` holds a timer due at exactly that moment, to
+  that moment; the gap is asserted to be the schedule's minutes, and a resume's wait is read on its own session (`s2`, D79).
+  `DrainAsync` moves to the earliest pending timer instead of a guess. The stand-in agent retries its own call to the service and
+  logs a failure of its own as `stand-in-failed`, which fails the case in `Dispose`; `SaidStandIn` answers a throwing request 500 and
+  keeps it in `Faults`, said by each failure message. The cooling assertion reads `AccountCooling` on the machine's clock, the one
+  `HarnessRoster.Clock` writes it on, not the retry's held clock. What each case proves is unchanged.
+- **Verification:** `TransientRetryTickTests` with `src/Daoris.Desktop/process.runsettings`, ten runs in a row: 12 of 12 in
+  each, 120 of 120. The driver's whole Process half: the class 12 of 12 within it; 789 of 794 overall, the other five failing
+  outside the class, four on a tree that had not built `Daoris.Service.Mcp` and one `SessionWatchProcessTests` case, all nine
+  of those classes green again once it was built (9 of 9). The driver's fast half: 14,471 of 14,471.
+
 ## 2026-10-24 - A session's own git read a committed file past 260 characters in its tree as deleted (TREELONG1)
 
 - **Symptom:** seen on the install's work workspace. A file at 242 characters in a repository's checkout is at 265 in a session's
@@ -82,6 +107,113 @@ repository.
 - **Verification:** two `WorkflowRunTests` cases, seen failing first (the ask's two chains where one was expected; the worker's id
   where the conversation's was), then green with the `WorkflowRunTests`, `WorkflowPortsTests`, `WorkflowRunCommandTests`,
   `WorkflowRunSaidTwinTests` and `TraceTests` classes (288), the driver's fast half (14,411) and `DriverModuleWorkflowRunTests` (17).
+The nine entries headed *(AGENTERRORS1, Codex's C4-n)* are the code defects Codex's owed read of D210's accepted text found in rows
+1a and 1a2 on main, before any installed build carried them (`docs/2026-10-24-agent-errors-reads.md`, *Codex, the accepted text*;
+the design's §17). Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; each test was seen red against the rows as
+committed, then green.
+
+## 2026-10-24 - A try handed to a queued word reset the transient budget (AGENTERRORS1, Codex's C4-1)
+
+- **Symptom:** a try that `claude-agent-acp` answered `end_turn` at a queued word's echo returned from the episode as recovered; the
+  word's own turn then met the 529 and opened a fresh episode with a fresh count, so repeated hand-overs (helper words make them
+  with no act of the person's) never reached the exhaustion hold.
+- **Root cause:** `AcpSession.EpisodeAsync` returned the try's stop reason, taking the answer as proof the provider was back, as
+  round 3 had already refused to do for an answered settling turn.
+- **Fix:** after a try answers, the turns it handed over settle inside the episode (`SettleAsync`), its count kept; one failing
+  transient is the try's failure, and the episode goes on (`Agents/Acp/Acp.cs`).
+- **Verification:** `AcpTransientTests.A_try_handed_to_a_queued_word_that_fails_keeps_the_episode_to_one_exhaustion`: five
+  hand-overs, one line, one exhaustion after five tries; red as a run that never ended.
+
+## 2026-10-24 - Settling a transient episode counted past its bound and admitted new turns (AGENTERRORS1, Codex's C4-2)
+
+- **Symptom:** six words already queued behind the failed turn, each failing, counted six tries; a word said while the wire settled
+  went at once, a new turn settling had to await.
+- **Root cause:** the inbox held words only from the wait's start (`DrivenInbox.Waiting`), which came after settling, and the bound
+  was read only after the whole queue drained.
+- **Fix:** `DrivenInbox.Settling` holds dispatch from the episode's first failure and before each settling; a written turn's failure
+  takes one of the tries left and, once they are spent, counts none (`TransientEpisode.SettledPast`), with no try after it.
+- **Verification:** `More_than_five_words_already_on_the_wire_settle_within_the_bound_and_authorize_no_try_past_it` (red as six
+  tries) and `A_word_said_while_the_wire_settles_is_held_for_the_next_try` (red as a fourth prompt), in `AcpTransientTests`.
+
+## 2026-10-24 - A lost transport handed a written word back to be sent again (AGENTERRORS1, Codex's C4-3)
+
+- **Symptom:** after an episode opened, a word queued behind the failed turn and written to the wire, whose stream then ended before
+  any answer, came back as `Unreached`, which the driver keeps on the record to go again (`WordsLeft`).
+- **Root cause:** a lost stream faults every pending request (`Fail`) with no answer, so `Answered` never read the word's
+  disposition, and `Untaken` called every untaken word unreached, written or not.
+- **Fix:** `OpenPrompt.Written` is set as a prompt's write returns; after an episode opened, `Untaken` says a written, untaken word
+  by the `lost` note, gives it to the episode's uncertain words, and leaves it out of `Unreached`.
+- **Verification:** `AcpTransientTests.A_word_written_before_the_stream_is_lost_is_uncertain_and_never_unreached`; red as the word in
+  `Unreached`.
+
+## 2026-10-24 - A try wrote a kept word its record had not marked attempted (AGENTERRORS1, Codex's C4-4)
+
+- **Symptom:** under the episode's rule that a word on the wire is never sent again, a try still wrote a word whose attempt mark the
+  record refused; with its take-off failing too and the shell then gone, the next come-up would read it as never sent and send it
+  again.
+- **Root cause:** the dispatcher's mark fails open (`SaidDoor.Dispatched`), COWORK1c's accepted cost, and the try used that mark.
+- **Fix:** the dispatcher also hands the mark's answer (`ChatMessage.Marking`); a try writes a kept word only once it is
+  acknowledged, leaves one of the person's unwritten on its record for the next run, and settles an unmarked go-on without the wire,
+  sending its text as the try's plain block (`AcpSession.TryAsync`).
+- **Verification:** `AcpTransientTests.A_kept_word_whose_attempt_the_record_did_not_mark_is_never_written_by_a_try`, a record that
+  refuses both the mark and the take-off (`StandInSaid.RefusingAttempts`, `RefusingTakeOff`); red as the word written.
+
+## 2026-10-24 - The transient owner's check read a quest's history as the run's end (AGENTERRORS1, Codex's C4-5)
+
+- **Symptom:** a D79 resume whose first prompt met the 529 got no try, since its quest still named its answered question; the person's
+  word to a closed quest's session got none either, and the record ended as though it had answered them.
+- **Root cause:** `TransientRetries.WantedAsync` refused every quest with `Awaits` set, which stays set once answered, and every quest
+  not Open or Taken, with no reading of the run's start.
+- **Fix:** the check is handed the quest as the look planned the run (`startedOn`, `awaitsBefore`, both seats in `Loop/Driver.cs` and
+  `Loop/DriverContinuations.cs`): only a question other than the one named at the start is a wait, as `Observation`'s `Asks` reads
+  it; a quest closed before the run began is tried while it exists; and a quest Taken as the run started is the run's, since a D79
+  resume's new session holds no take of its own (found by the tick: its first form still asked `TookAsync` of that session).
+- **Verification:** `TransientRetryTickTests.A_resume_after_its_answered_question_is_tried_again_through_a_transient_failure` and
+  `The_person_s_word_to_a_closed_quest_s_session_is_tried_again_through_a_transient_failure`, on real ticks; each red as no try.
+
+## 2026-10-24 - A limit or access refusal at a resume's open skipped its account (AGENTERRORS1, Codex's C4-6)
+
+- **Symptom:** a resume whose `session/resume` or `session/load` met the 529 and then a limit cooled no account, and one that then met
+  a refused credential marked none, so the briefed fallback could walk straight back onto it.
+- **Root cause:** the open's phase rethrew the typed refusal, `ResumeAsync` wrapped it as `AcpResumeRefused`, and the continuation's
+  refused branch restored the record and returned before the account readers ran.
+- **Fix:** `DriverContinuations.OpeningAccount` applies the retry's last reading, where it is the open's limit or access, before the
+  refused resume goes on as before: a limit by `AccountLimited`; access as the reader read it, a credential's refusal by
+  `Driver.RefuseAccount` (split out of `AccountRefused`, which reads only the adapter's own `Refused` and so missed the stub's owner's
+  words: the tick found it), a sign-in's words by `AccountSignedOut`, an access code signed out.
+- **Verification:** `TransientRetryTickTests.A_limit_at_the_open_after_a_transient_failure_cools_its_account` and
+  `An_access_refusal_at_the_open_after_a_transient_failure_marks_its_account`, each at `session/resume` and `session/load`; red as
+  nothing cooled or signed out.
+
+## 2026-10-24 - A try could go into a turn the harness woke during the owner's check (AGENTERRORS1, Codex's C4-7)
+
+- **Symptom:** a wake that began while the episode awaited its owner's check was not read again, and the go-on was prompted into the
+  woken turn, which never answers it (BGWAIT1's hang).
+- **Root cause:** `EpisodeAsync` read `_wake.Running` once, before the awaited check.
+- **Fix:** `AcpSession.AdmitAsync` waits out a woken turn and, where a wake is owed, `AfterEndedAsync`'s quiet, asks the owner, then
+  reads the wake again and repeats while one began.
+- **Verification:** `AcpTransientTests.A_turn_woken_during_the_owner_s_check_holds_the_try_until_it_ends`; red as the try sent into
+  the woken turn.
+
+## 2026-10-24 - A harness line could read as a limit (AGENTERRORS1, Codex's C4-8)
+
+- **Symptom:** a harness-only line matching a weekly limit's sentence, or naming `rate_limit`, read as a limit, which would cool its
+  account, though the source is read for a credential's refusal alone (the design §3.3).
+- **Root cause:** `AgentErrors.Read` checked `Where: harness` after the limit and access readings.
+- **Fix:** the source is branched on first; a harness line reads access by the `Refused` words, own then owner, or fatal
+  (`Agents/Errors/AgentErrors.cs`).
+- **Verification:** `AgentErrorsTests.A_harness_line_never_reads_a_limit_by_its_sentence_or_its_code`; red as `Limit`.
+
+## 2026-10-24 - The transient drop cut quotations of the provider's error from authored messages (AGENTERRORS1, Codex's C4-10)
+
+- **Symptom:** a message quoting the overload before the episode, or an answer after it quoting it again, lost the quotation in the
+  rendered conversation, and a message that was the quotation alone disappeared.
+- **Root cause:** `toTurns` removed every substring matching an episode's quoted error from every message of every turn.
+- **Fix:** only a failed attempt's block loses the error it ends on: a block followed by the episode's line, a try's or a wait's quiet
+  event, or the end's note, never an answer, and none before the first failure; a quiet event parts the blocks on either side
+  (`src/Daoris.Web/src/work/conversation/conversation.ts`, `failedAttempts`).
+- **Verification:** `conversation.test`'s *removes only the failed attempts' provider error*; red as both quotations cut. The three
+  tries' record gained the quiet events a 1a2 record carries, and still shows the error once.
 
 ## 2026-10-24 - A test's stand-in listened on a port Node's fetch refuses (FLAKE1)
 
