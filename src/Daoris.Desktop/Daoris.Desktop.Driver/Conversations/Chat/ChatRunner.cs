@@ -3295,7 +3295,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                 new ChatMessage(text, []) { Daoris = new DaorisWord(DaorisKeys.TransientRetry(retry.Session, episode.Began)) }),
             Began = (episode, next) =>
             {
-                var noted = TransientRetries.Retrying(retry.Agent, episode.Words, next);
+                var noted = TransientRetry.Retrying(retry.Agent, episode.Words, next);
                 _line(noted.Note);
                 _record(new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts });
             },
