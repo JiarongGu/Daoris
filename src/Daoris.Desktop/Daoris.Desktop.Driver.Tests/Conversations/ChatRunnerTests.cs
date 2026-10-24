@@ -56,6 +56,38 @@ public sealed class ChatRunnerTests : IDisposable
         Assert.DoesNotContain("checks", note.Text, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// CHATFLOW1e (the chat-flow design §6): a chat run whose process names a second opinion is handed <c>opinion_answer</c> in its rules from
+    /// its spawn, since a live conversation's rules are fixed then, as a driven run is handed it at its resume: so even where the person turned
+    /// the connector's default off, the tool that answers its findings is there. One whose process names none is handed what a conversation
+    /// always was, and with the connector's default on, the tool is allowed once.
+    /// </summary>
+    [Fact]
+    public void A_chat_run_whose_process_names_an_opinion_is_handed_the_tool_that_answers_findings_at_its_spawn()
+    {
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Unanswered()));
+        var binds = new ChatRunBinds(_home, service, events);
+        var across = new AcrossReach([], [], []);
+        var connectorOff = PermissionFile.Empty with { DefaultsOff = ["connector"] };
+
+        var named = binds.Opened("c1a2b3c4", "engine", "aurora", DriverConfig.Parse("""{"opinions":{"engine":{"reviewers":["codex-acp"]}}}"""));
+        var none = binds.Opened("d1a2b3c4", "engine", "aurora", DriverConfig.Empty);
+
+        Assert.True(ChatRunBinds.AnswersFindings(named));
+        Assert.False(ChatRunBinds.AnswersFindings(none));
+        Assert.Equal(
+            DriverContinuations.AnswersFindings,
+            ChatRunner.RulesFor(connectorOff, "aurora", "engine", "/work/engine", "/data/chats/c1", across, answers: true).Allow
+                .Where(rule => rule.Contains("opinion_answer", StringComparison.Ordinal)));
+        Assert.DoesNotContain(
+            ChatRunner.RulesFor(connectorOff, "aurora", "engine", "/work/engine", "/data/chats/d1", across).Allow,
+            rule => rule.Contains("opinion_answer", StringComparison.Ordinal));
+        Assert.Single(
+            ChatRunner.RulesFor(PermissionFile.Empty, "aurora", "engine", "/work/engine", "/data/chats/c1", across, answers: true).Allow,
+            rule => rule.Contains("opinion_answer", StringComparison.Ordinal));
+    }
+
     /// <summary>A service that answers nothing: the open's bind reads only local files.</summary>
     private sealed class Unanswered : HttpMessageHandler
     {
