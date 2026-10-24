@@ -1,6 +1,6 @@
-# A conversation's work in its own tree runs its repository's workflow: a run keyed by the conversation's line, a gate that refuses the person's Accept with its reason and asks the second opinion at that press, a send-back only between turns, and a no-run answer the page words in both languages (proposed, round 2, 2026-10-24)
+# A conversation's work in its own tree runs its repository's workflow: a run keyed by the conversation's line, a gate that refuses the person's Accept with its reason and asks the second opinion at that press, a send-back only between turns, and a no-run answer the page words in both languages (accepted, 2026-10-24)
 
-**Standing:** proposed, round 2, a note amending D157 (the workflow) and D155 (the second opinion) for CHATFLOW1, under D191. Round 1
+**Standing:** accepted 2026-10-24 by the steward under D191 (D157's CHATFLOW1 acceptance note; Codex's read of this text owed), round 2 with its named changes, a note amending D157 (the workflow) and D155 (the second opinion) for CHATFLOW1. Round 1
 was written by Claude Opus 5.5 from the code on main at `8cc3936b0` and read at `94c9065f4` by the independent Opus foundation reader
 alone, its read verbatim in `docs/2026-10-24-chat-flow-reads.md`: 24 findings, 8 blocking, another round; Codex's read is owed, its
 credits out. Round 2 is written by Claude Opus 5.5 from the code on main at `ca046e7fe`. Since the read's `ffcf42926`, `src/` changed in
