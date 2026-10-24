@@ -1359,7 +1359,7 @@ export const isGenerated = (path, generated) => generated.some(({ folder }) => p
 /** Each generated folder written from the tree as it stands, and staged; one line each. A command that fails refuses the merge's gates. */
 function writeGenerated(root) {
   for (const { folder, run } of readGenerated(root)) {
-    const ran = spawnSync(run, { cwd: root, encoding: 'utf8', shell: true });
+    const ran = spawnSync(run, { cwd: root, encoding: 'utf8', shell: true, windowsHide: true });
     if (ran.status !== 0) throw new Refusal(`${run} could not write ${folder}/ into the merge:\n${(ran.stderr || ran.stdout || '').trim()}`, 1);
     git(root, ['add', '-A', '--', folder]);
     console.log(`${folder}/: written from the merged tree (${ran.stdout.trim().replace(/^[\w-]+: /, '')})`);
@@ -1634,7 +1634,7 @@ export const KNOWLEDGE_SERVER = 'tools/knowledge-server.mjs';
  */
 function refreshKnowledgeServer(root) {
   if (!existsSync(join(root, KNOWLEDGE_SERVER))) return;
-  const run = spawnSync(process.execPath, [KNOWLEDGE_SERVER, 'build'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const run = spawnSync(process.execPath, [KNOWLEDGE_SERVER, 'build'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true });
   const last = (text) => (text ?? '').trim().split('\n').filter(Boolean).at(-1) ?? '';
   console.log(run.status === 0
     ? `knowledge server: ${last(run.stdout).replace(/^knowledge-server: /, '')}`

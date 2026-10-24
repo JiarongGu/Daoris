@@ -191,7 +191,7 @@ export function dedupe(failures) {
 // The month's failure sources
 
 const git = (root, args, input) => {
-  const out = spawnSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, input });
+  const out = spawnSync('git', args, { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, input });
   if (out.status !== 0) throw new Error(`git ${args.join(' ')}: ${String(out.stderr).trim()}`);
   return out.stdout;
 };
@@ -308,7 +308,7 @@ export function sourceSummary(name, failures, commitTime) {
 // The tool
 
 const MAIN_CHECKOUT = () => {
-  const list = spawnSync('git', ['worktree', 'list', '--porcelain'], { encoding: 'utf8' }).stdout ?? '';
+  const list = spawnSync('git', ['worktree', 'list', '--porcelain'], { encoding: 'utf8', windowsHide: true }).stdout ?? '';
   return /^worktree (.+)$/m.exec(list)?.[1] ?? process.cwd();
 };
 

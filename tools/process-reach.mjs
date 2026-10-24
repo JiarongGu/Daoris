@@ -817,7 +817,7 @@ const READ = (path) => path === 'daoris.gates.json' || (path.startsWith('src/Dao
  * and the census reads about two thousand.
  */
 export function repository(root, commit = null) {
-  const listed = spawnSync('git', commit ? ['ls-tree', '-r', '-z', commit] : ['ls-files', '-z'], { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  const listed = spawnSync('git', commit ? ['ls-tree', '-r', '-z', commit] : ['ls-files', '-z'], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
   if (listed.status !== 0) throw new Error(`git could not list ${commit ?? 'the tree'}: ${String(listed.stderr).trim()}`);
   if (!commit) {
     const files = listed.stdout.split('\0').filter(Boolean);
@@ -829,7 +829,7 @@ export function repository(root, commit = null) {
     if (parts && parts[1] === 'blob') blobs.set(parts[3], parts[2]);
   }
   const wanted = [...blobs].filter(([path]) => READ(path));
-  const batch = spawnSync('git', ['cat-file', '--batch'], { cwd: root, input: `${wanted.map(([, sha]) => sha).join('\n')}\n`, maxBuffer: 1024 * 1024 * 1024 });
+  const batch = spawnSync('git', ['cat-file', '--batch'], { cwd: root, windowsHide: true, input: `${wanted.map(([, sha]) => sha).join('\n')}\n`, maxBuffer: 1024 * 1024 * 1024 });
   if (batch.status !== 0) throw new Error(`git could not read ${commit}'s files: ${String(batch.stderr).trim()}`);
   const texts = new Map();
   let at = 0;
@@ -870,7 +870,7 @@ async function main(argv) {
   if (verb === 'reach') {
     const [from, to, ...wanted] = rest;
     if (!from || !to) throw new Error('usage: node tools/process-reach.mjs reach <from> <to> [<gate>…]');
-    const diff = spawnSync('git', ['diff', '--name-only', '--no-renames', '-z', from, to], { cwd: root, encoding: 'utf8' });
+    const diff = spawnSync('git', ['diff', '--name-only', '--no-renames', '-z', from, to], { cwd: root, windowsHide: true, encoding: 'utf8' });
     if (diff.status !== 0) throw new Error(`git could not compare ${from} and ${to}: ${String(diff.stderr).trim()}`);
     const paths = diff.stdout.split('\0').filter(Boolean);
     const { files, read } = repository(root, to);

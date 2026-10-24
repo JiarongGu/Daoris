@@ -30,16 +30,20 @@ export function gitStart(env = process.env) {
   return { file: start.file, env: start.set === null ? env : { ...env, ...start.set } };
 }
 
-/** `spawnSync('git', args, options)`, through `gitStart` with `options.env` (the process's where none). */
+/**
+ * `spawnSync('git', args, options)`, through `gitStart` with `options.env` (the process's where none). Its window is hidden
+ * unless the caller says otherwise: a process with no console of its own, as the merge queue's detached runner is, gives each
+ * console program it starts a new visible window, and the runner's git calls opened a window each on the owner's screen.
+ */
 export function spawnGit(args, options = {}) {
   const { file, env } = gitStart(options.env ?? process.env);
-  return spawnSync(file, args, { ...options, env });
+  return spawnSync(file, args, { windowsHide: true, ...options, env });
 }
 
-/** `execFileSync('git', args, options)`, through `gitStart` with `options.env` (the process's where none). */
+/** `execFileSync('git', args, options)`, through `gitStart` with `options.env` (the process's where none), its window hidden. */
 export function execGit(args, options = {}) {
   const { file, env } = gitStart(options.env ?? process.env);
-  return execFileSync(file, args, { ...options, env });
+  return execFileSync(file, args, { windowsHide: true, ...options, env });
 }
 
 /**

@@ -62,7 +62,7 @@ const READS = (path) => /^(src|tools|examples)\//.test(path) && /\.(cs|csproj|pr
  * `repository` reads them, over every suite's sources: a commit's files by one `git cat-file --batch`.
  */
 export function treeOf(root, commit = null) {
-  const listed = spawnSync('git', commit ? ['ls-tree', '-r', '-z', commit] : ['ls-files', '-z'], { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  const listed = spawnSync('git', commit ? ['ls-tree', '-r', '-z', commit] : ['ls-files', '-z'], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
   if (listed.status !== 0) throw new Error(`git could not list ${commit ?? 'the tree'}: ${String(listed.stderr).trim()}`);
   if (!commit) {
     const files = listed.stdout.split('\0').filter(Boolean);
@@ -79,7 +79,7 @@ export function treeOf(root, commit = null) {
     if (parts && parts[1] === 'blob') blobs.set(parts[3], parts[2]);
   }
   const wanted = [...blobs].filter(([path]) => READS(path));
-  const batch = spawnSync('git', ['cat-file', '--batch'], { cwd: root, input: `${wanted.map(([, sha]) => sha).join('\n')}\n`, maxBuffer: 2 * 1024 * 1024 * 1024 });
+  const batch = spawnSync('git', ['cat-file', '--batch'], { cwd: root, windowsHide: true, input: `${wanted.map(([, sha]) => sha).join('\n')}\n`, maxBuffer: 2 * 1024 * 1024 * 1024 });
   if (batch.status !== 0) throw new Error(`git could not read ${commit}'s files: ${String(batch.stderr).trim()}`);
   const texts = new Map();
   let at = 0;
@@ -577,8 +577,8 @@ export function checks(files, read, map, { lanes = [], laneless = [], union = []
  */
 export async function judgeStructurally(root, commit, units) {
   const { readLanes, pathsReaching } = await import('./merge-branch.mjs');
-  const parents = spawnSync('git', ['rev-list', '--parents', '-n', '1', commit.sha], { cwd: root, encoding: 'utf8' }).stdout.trim().split(' ').slice(1);
-  const diff = spawnSync('git', ['diff', '--name-only', '--no-renames', '-z', `${commit.sha}^1`, commit.sha], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const parents = spawnSync('git', ['rev-list', '--parents', '-n', '1', commit.sha], { cwd: root, windowsHide: true, encoding: 'utf8' }).stdout.trim().split(' ').slice(1);
+  const diff = spawnSync('git', ['diff', '--name-only', '--no-renames', '-z', `${commit.sha}^1`, commit.sha], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const paths = diff.stdout.split('\0').filter(Boolean);
   const tree = treeOf(root, commit.sha);
   const map = census(tree.files, tree.read);
@@ -635,7 +635,7 @@ async function main(argv) {
   if (verb === 'reach') {
     const [from, to, ...suites] = rest;
     if (!from || !to) throw new Error('usage: node tools/test-map.mjs reach <from> <to> [<suite>…]');
-    const diff = spawnSync('git', ['diff', '--name-only', '--no-renames', '-z', from, to], { cwd: root, encoding: 'utf8' });
+    const diff = spawnSync('git', ['diff', '--name-only', '--no-renames', '-z', from, to], { cwd: root, windowsHide: true, encoding: 'utf8' });
     if (diff.status !== 0) throw new Error(`git could not compare ${from} and ${to}: ${String(diff.stderr).trim()}`);
     const paths = diff.stdout.split('\0').filter(Boolean);
     const { files, read } = treeOf(root, to);
