@@ -917,8 +917,13 @@ public sealed class Driver(
         SupervisorTakeBack takeBack = async (session, word, token) =>
             (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
         var undecided = snapshot;
+        // SUPERVISOR1b (§4.3): D188's bound asked again at each release, the records read once a look and only where one is due.
+        var alone = new AnswersAloneHold(Context.Events, Context.Marks);
+        IReadOnlyDictionary<string, PriorSession>? lines = null;
+        SupervisorBound bound = async (session, token) =>
+            alone.AtBound(session, lines ??= await AnswersAloneHold.RecordsAsync(service, token).ConfigureAwait(false));
         snapshot = await Stages.TimeAsync("supervisor", async () => await SupervisorQuarantine.LookAsync(
-            await SupervisorQuarantine.DecideAsync(undecided, Context.Supervisor, SupervisorSayAsync, takeBack, DateTimeOffset.UtcNow, ct)
+            await SupervisorQuarantine.DecideAsync(undecided, Context.Supervisor, SupervisorSayAsync, takeBack, DateTimeOffset.UtcNow, ct, bound)
                 .ConfigureAwait(false),
             Context.Supervisor, takeBack, Log, ct).ConfigureAwait(false)).ConfigureAwait(false);
         // 🔴 COWORK1e (D188 point 4; the message-urgency design §2.3): answers that would take their line on alone a third time in a row
@@ -926,7 +931,7 @@ public sealed class Driver(
         // answers alone wait on it.
         var lookedAt = snapshot;
         // A record a supervisor's held decision holds is not picked (SUPERVISOR1a-i, §6.3): nothing goes on from it inside the window.
-        await Stages.TimeAsync("alone", () => new AnswersAloneHold(Context.Events, Context.Marks)
+        await Stages.TimeAsync("alone", () => alone
             .LookAsync(
                 service,
                 lookedAt.LastRun.Values.Concat(lookedAt.NamedByReopen.Values).Where(record => !lookedAt.SupervisorHolds(record)),

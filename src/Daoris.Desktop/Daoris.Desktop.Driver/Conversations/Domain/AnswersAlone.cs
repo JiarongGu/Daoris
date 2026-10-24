@@ -34,6 +34,13 @@ internal static class AnswersAlone
     public static bool Holds(IReadOnlyList<SaidWordView> words, IEnumerable<SessionEvent> line) =>
         words.Count > 0 && words.All(Solicited) && Count(line) >= Bound;
 
+    /// <summary>
+    /// Whether the line is at the bound already (SUPERVISOR1b, the supervisor design §4.3): one more go-on by answers alone, the
+    /// supervisor's word alone among them, would be held. The supervisor's route refuses <c>supervisor-bound</c> here, at its keeping
+    /// and again at its release, so a decision is never kept only to be held behind the bound.
+    /// </summary>
+    public static bool AtBound(IEnumerable<SessionEvent> line) => Count(line) >= Bound;
+
     /// <summary>The go-ons by answers alone at the line's end, in a row, back to the last word of the person's or Daoris's.</summary>
     public static int Count(IEnumerable<SessionEvent> line)
     {

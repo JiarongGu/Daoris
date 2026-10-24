@@ -1,5 +1,5 @@
 {
-  "_why": "PARKVIEW1 (the park's ask design §2; Fable's read, Q6): a park's question as `question_ask` writes `<session>.question.json`, and what each reader takes of it. The driver's QuestionFilesTests reads each row's `file` as the file, the page's parkQuestion.test.ts as SESSION_QUESTION's answer, which carries the same fields. `widen` sets a field to that many `x` before it is read, so a bound is held without a page of letters: `question`, `by`, `why`, or `choices.<n>.label` and `choices.<n>.does`; a number in `read` stands for that field so widened. `read` is what both take, or null for no question; neither reader keeps more than the writer would (QuestionBox's bounds: the question 1000, six answers, a label 80, what it does 300, by when 200, why it recommends 300, no two labels alike in any case). `why` is the recommendation's reason (QUESTIONUI1a): read only beside a recommendation, and null where none is read.",
+  "_why": "PARKVIEW1 (the park's ask design §2; Fable's read, Q6): a park's question as `question_ask` writes `<session>.question.json`, and what each reader takes of it. The driver's QuestionFilesTests reads each row's `file` as the file, the page's parkQuestion.test.ts as SESSION_QUESTION's answer, which carries the same fields. `widen` sets a field to that many `x` before it is read, so a bound is held without a page of letters: `question`, `by`, `why`, or `choices.<n>.label` and `choices.<n>.does`; a number in `read` stands for that field so widened. `read` is what both take, or null for no question; neither reader keeps more than the writer would (QuestionBox's bounds: the question 1000, six answers, a label 80, what it does 300, by when 200, why it recommends 300, no two labels alike in any case). `why` is the recommendation's reason (QUESTIONUI1a): read only beside a recommendation, and null where none is read. `owner` is the agent's mark that the question is the owner's alone (SUPERVISOR1b, the supervisor design §4.1): read as written wherever it is words, one this build does not know included (the safe side: the supervisor answers no marked question), and null where it is absent, blank or not words; a row's `read` with no `owner` reads null.",
   "rows": [
     {
       "name": "a question whole: its answers in order, the one recommended with why, and by when",
@@ -97,6 +97,26 @@
       "file": { "id": "c9", "session": "s1", "question": "Which?", "choices": [], "by": "x", "at": "2026-10-22T09:05:00Z" },
       "widen": { "by": 201 },
       "read": null
+    },
+    {
+      "name": "a question marked the owner's keeps its mark",
+      "file": { "id": "c14", "session": "s1", "question": "Which account?", "choices": [{ "label": "Mine", "does": "a" }], "owner": "sign-in", "at": "2026-10-22T09:05:00Z" },
+      "read": { "id": "c14", "question": "Which account?", "choices": [{ "label": "Mine", "does": "a" }], "recommend": null, "why": null, "by": null, "owner": "sign-in" }
+    },
+    {
+      "name": "a mark this build does not know is still a mark",
+      "file": { "id": "c15", "session": "s1", "question": "Which?", "choices": [], "owner": "a-later-mark", "at": "2026-10-22T09:05:00Z" },
+      "read": { "id": "c15", "question": "Which?", "choices": [], "recommend": null, "why": null, "by": null, "owner": "a-later-mark" }
+    },
+    {
+      "name": "a blank mark, or one that is not words, is none",
+      "file": { "id": "c16", "session": "s1", "question": "Which?", "choices": [], "owner": "  ", "at": "2026-10-22T09:05:00Z" },
+      "read": { "id": "c16", "question": "Which?", "choices": [], "recommend": null, "why": null, "by": null, "owner": null }
+    },
+    {
+      "name": "a mark that is a number is none",
+      "file": { "id": "c17", "session": "s1", "question": "Which?", "choices": [], "owner": 3, "at": "2026-10-22T09:05:00Z" },
+      "read": { "id": "c17", "question": "Which?", "choices": [], "recommend": null, "why": null, "by": null, "owner": null }
     },
     {
       "name": "two answers alike, case aside, are none",
