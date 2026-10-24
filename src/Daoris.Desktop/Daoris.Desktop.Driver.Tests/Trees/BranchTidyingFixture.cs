@@ -96,7 +96,12 @@ public abstract class BranchTidyingFixture : IDisposable
     protected static string Removed(TreeOpened tree) =>
         $"tidy  engine: removed `{tree.Branch}`, which held nothing beyond `main`; its tree's folder was moved aside to ";
 
-    protected MachineLog Log() => new(_home, "driver", () => _now);
+    /// <summary>
+    /// The home's machine log, on the real clock the looks read (MAINRED1): its file is today's, so a look's log prune (KEEP1d), at
+    /// most fifteen days ahead here, never finds it past the logs' days. On a fixed date it aged with the calendar, and from
+    /// 2026-10-24 each look fifteen days ahead removed it and said so.
+    /// </summary>
+    protected MachineLog Log() => new(_home, "driver");
 
     /// <summary>The data of every line of <paramref name="event"/> the machine log holds.</summary>
     protected JsonElement[] Events(string @event)
