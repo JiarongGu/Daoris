@@ -82,6 +82,38 @@ describe("the person's door over the bridge", () => {
     ]);
   });
 
+  // CONFIRMWAIT1a-i (the confirm-wait design §5.2, §10's bound row): a Confirm waits as long as the press's grounds may take to read,
+  // with the bridge's slack, not the bridge's own 30 seconds; a moved ground is answered with its reason and its values.
+  it("sends a terminal's Confirm with its press's bound and the slack, and reads a changed answer's reason", async () => {
+    invoke.mockResolvedValueOnce({ answered: false, why: 'changed', message: 'Not done.', reason: 'plan', values: { then: 'x', bad: 3 } })
+      .mockResolvedValueOnce({ answered: false, why: 'unread', message: 'It still waits.' })
+      .mockResolvedValueOnce({ answered: true, confirmed: true });
+    const { result } = renderHook(() => useAnswerConfirmation(), { wrapper: wrapper() });
+    const setup = { source: 'pipe' as const, id: 'c1', route: 'SETUP_PRESS', fields: [], expires: null, checkWithin: 125_000 };
+
+    expect(await result.current.mutateAsync({ waiting: setup, confirm: true }))
+      .toEqual({ answered: false, why: 'changed', message: 'Not done.', reason: 'plan', values: { then: 'x' } });
+    expect(await result.current.mutateAsync({ waiting: setup, confirm: true }))
+      .toEqual({ answered: false, why: 'unread', message: 'It still waits.' });
+    // A press its shell told no bound keeps the bridge's own.
+    expect(await result.current.mutateAsync({ waiting: { ...setup, checkWithin: null }, confirm: false })).toEqual({ answered: true });
+    expect(invoke.mock.calls).toEqual([
+      ['DAORIS.DRIVER', 'PERSON_CONFIRM', { payload: { id: 'c1', confirm: true }, timeoutMs: 125_000 + 120_000 }],
+      ['DAORIS.DRIVER', 'PERSON_CONFIRM', { payload: { id: 'c1', confirm: true }, timeoutMs: 125_000 + 120_000 }],
+      ['DAORIS.DRIVER', 'PERSON_CONFIRM', { payload: { id: 'c1', confirm: false } }],
+    ]);
+  });
+
+  it("reads a terminal's press with no time, whether a terminal waits on it, and whether its Confirm is being judged", async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'PERSON_CONFIRMATIONS'
+      ? { seq: 1, waiting: [{ ...ARCHIVE, expires: null, waitedOn: false, checking: true, checkWithin: 30_000 }] }
+      : null));
+    const read = renderHook(() => useTerminalConfirmations(), { wrapper: wrapper() });
+
+    await waitFor(() => expect(read.result.current).toHaveLength(1));
+    expect(read.result.current[0]).toMatchObject({ expires: null, waitedOn: false, checking: true, checkWithin: 30_000 });
+  });
+
   // CONFIRMSEEN1: the window's word that a card is in front of the person, by the confirmation's id; the service's counts its own.
   it("says a terminal's press is shown by its confirmation's id, and reads which are shown", async () => {
     invoke.mockResolvedValueOnce({ shown: true }).mockResolvedValueOnce({ shown: false, why: 'gone', message: 'This no longer waits.' });

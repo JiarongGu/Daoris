@@ -36,6 +36,14 @@ const SLACK = 2 * MINUTE;
 export const lookBound = (repositories: number) =>
   Math.ceil(Math.max(1, repositories) / hostBounds.fetchesAtOnce) * hostBounds.fetchMinutes * MINUTE + SLACK;
 
+/**
+ * How long a terminal's press's Confirm may take (CONFIRMWAIT1a-i, the confirm-wait design §5.2): its grounds are read again before it
+ * runs, as long as its slowest read may take (`checkWithin`, which the shell tells on the press, so the page names no route), and the
+ * bridge's slack beside it. None told keeps the bridge's own bound.
+ */
+export const confirmBound = (checkWithin: number | null | undefined): number | undefined =>
+  typeof checkWithin === 'number' && checkWithin > 0 ? checkWithin + SLACK : undefined;
+
 /** How long a press over `rows` may take: at most one replay's bound each, one after another. */
 export const pressBound = (rows: number) => Math.max(1, rows) * hostBounds.replayMinutes * MINUTE + SLACK;
 

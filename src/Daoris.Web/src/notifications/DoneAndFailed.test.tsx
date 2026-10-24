@@ -6,7 +6,7 @@ import type { Notice } from '../bridge/notices';
 import i18n from '../locales/i18n';
 import { PressArea } from '../person/Confirmations';
 import { watchScreen } from '../test/onScreen';
-import { DoneAndFailed } from './DoneAndFailed';
+import { DoneAndFailed, noticeWords } from './DoneAndFailed';
 
 // *Done and failed* (NOTIFY2f, D196 point 6, the notification design §2.2's fourth group, §2.3, §2.4): what the person need not answer,
 // newest first, each one line in the reader's language with its age, the unread marked; read once it is shown in a window in front;
@@ -108,6 +108,18 @@ describe('Done and failed', () => {
   it('offers no Mark all read with nothing unread', () => {
     drawn([DONE]);
     expect(screen.queryByRole('button', { name: 'Mark all read' })).not.toBeInTheDocument();
+  });
+
+  // CONFIRMWAIT1a-i (the confirm-wait design §6, §8.3): a press its terminal took back once shown, and one Daoris's close ended.
+  it.each([
+    ['en', 'withdrawn', 'A terminal took back its press to stop a session'],
+    ['en', 'closed', "Daoris closed while a terminal's press to stop a session waited, and it was not done"],
+    ['zh', 'withdrawn', '一个终端撤回了请求：停止一个会话'],
+    ['zh', 'closed', 'Daoris 关闭时一个终端的请求仍在等待：停止一个会话，它未被执行'],
+  ])("says a terminal's press taken back or ended by the close (%s, %s)", async (language, kind, words) => {
+    await i18n.changeLanguage(language);
+    expect(noticeWords({ id: `${kind}-p1`, kind, at: '2026-10-22T08:58:00.000Z', read: false, route: 'STOP_SESSION' }, i18n.t)).toBe(words);
+    await i18n.changeLanguage('en');
   });
 
   it('says it in Chinese', async () => {

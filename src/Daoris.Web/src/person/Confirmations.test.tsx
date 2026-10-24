@@ -12,7 +12,8 @@ import {
 // The window's confirmation of a terminal's press (PERSONDOOR1f, RPC1c; D156 point 4, the person-door design §4.2), as NOTIFY2b
 // (D196 point 4, the notification design §3) draws it in *Notifications*: in plain words that keep what tells one session and one
 // file from another, every value in the card's view, the route's name under *Details*; its decision region bounded, and *shown*
-// once that region is in view in a window in front of the person, which starts its two minutes.
+// once that region is in view in a window in front of the person. A terminal's press waits until the person answers
+// (CONFIRMWAIT1a-i): its card says so and whether a terminal still waits on it; its Confirm is judged before it runs.
 
 const SAY: Confirmation = {
   source: 'pipe', id: 'c1', module: 'DAORIS.DRIVER', route: 'SESSION_INPUT',
@@ -27,17 +28,17 @@ const SAY: Confirmation = {
     { role: 'level', name: '/level', value: 'urgent' }, { role: 'files', name: '/paths/0', value: 'src/feed/export.ts' },
     { role: 'files', name: '/paths/1', value: 'test/feed/export.ts' }, { role: 'form', name: '/said', value: 'true' },
   ],
-  asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 60_000).toISOString(), expires: '2026-10-21T09:10:00Z',
+  asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 60_000).toISOString(), expires: null, waitedOn: true,
 };
 const STOP: Confirmation = {
   source: 'pipe', id: 'c2', module: 'DAORIS.DRIVER', route: 'STOP_SESSION',
   fields: [{ name: '/id', type: 'string', value: '9b1e0d2a' }, { name: '/said', type: 'boolean', value: 'true' }],
   named: [{ role: 'session', name: '/id', value: '9b1e0d2a' }],
-  asker: { process: null, pid: 77 }, expires: '2026-10-21T09:12:00Z',
+  asker: { process: null, pid: 77 }, expires: null,
 };
 const UNKNOWN: Confirmation = {
   source: 'pipe', id: 'c3', module: 'DAORIS.DRIVER', route: 'SET_MYSTERY', fields: [{ name: '/keep', type: 'number', value: '3' }],
-  asker: { process: null, pid: 77 }, expires: '2026-10-20T09:03:00Z',
+  asker: { process: null, pid: 77 }, expires: null,
 };
 const SERVICE: Confirmation = {
   source: 'service', id: 'h1', route: 'POST /api/quests/{id}/review', act: "a review's verdict",
@@ -52,7 +53,7 @@ const SESSIONS: Record<string, { title: string; repository: string; workspace?: 
 };
 const NAMES: PressNames = { session: (id) => SESSIONS[id] ?? null };
 
-const draw = (waiting: Confirmation[], answer = vi.fn(async () => ({ answered: true as const }))) => {
+const draw = (waiting: Confirmation[], answer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer> = vi.fn(async () => ({ answered: true as const }))) => {
   const notify = vi.fn();
   const view = render(<Confirmations waiting={waiting} onAnswer={answer} notify={notify} names={NAMES} />);
   return { ...view, answer, notify };
@@ -171,7 +172,7 @@ describe("the window's confirmation of a terminal's press", () => {
 
     await userEvent.click(within(stop).getByRole('button', { name: 'Confirm' }));
     expect(await within(stop).findByRole('alert')).toHaveTextContent(
-      'This no longer waits: it was answered in another window, its two minutes passed, or its terminal took it back.');
+      'This no longer waits: it was answered in another window, or its terminal took it back.');
     await userEvent.click(within(service).getByRole('button', { name: 'Refuse' }));
     expect(await within(service).findByRole('alert')).toHaveTextContent('This confirmation no longer waits: it expired.');
     expect(notify).not.toHaveBeenCalled();
@@ -179,8 +180,8 @@ describe("the window's confirmation of a terminal's press", () => {
 
   // NOTIFY2a (D196 point 4, the notification design §3.4): a Confirm past its time finds its card gone, so its refusal is toasted.
   it.each([
-    ['en', 'Confirm', 'This no longer waits: it was answered in another window, its two minutes passed, or its terminal took it back.'],
-    ['zh', '确认', '此请求已不再等待：它已在另一个窗口中得到回答、两分钟已过，或其终端已将它撤回。'],
+    ['en', 'Confirm', 'This no longer waits: it was answered in another window, or its terminal took it back.'],
+    ['zh', '确认', '此请求已不再等待：它已在另一个窗口中得到回答，或其终端已将它撤回。'],
   ])('toasts a refusal whose card has gone with its press (%s)', async (language, confirm, words) => {
     await i18n.changeLanguage(language);
     let settle: (value: ConfirmationAnswer) => void = () => {};
@@ -197,20 +198,73 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(notify).toHaveBeenCalledTimes(1);
   });
 
-  it('says its time left once shown, stepping, and until when it waits to be found before', () => {
+  it("says a service's time left, stepping, and a terminal's press that it waits until the person answers", () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
     try {
       vi.setSystemTime(new Date('2026-10-21T09:00:00Z'));
-      const shown = { ...STOP, id: 's', shown: true, expires: '2026-10-21T09:01:40Z' };
-      draw([shown, { ...STOP, id: 'u' }]);
-      const [counting, waiting] = screen.getAllByRole('group');
-      expect(counting).toHaveTextContent('refused by itself in 1m 40s');
+      draw([{ ...SERVICE, expires: '2026-10-21T09:01:40Z' }, { ...STOP, id: 'u', shown: true, waitedOn: true }, { ...STOP, id: 'w', waitedOn: false }]);
+      const [service, waited, left] = screen.getAllByRole('group');
+      expect(service).toHaveTextContent('refused by itself in 1m 40s');
       act(() => { vi.advanceTimersByTime(10_000); });
-      expect(counting).toHaveTextContent('refused by itself in 1m 30s');
-      expect(waiting).toHaveTextContent('It waits until');
+      expect(service).toHaveTextContent('refused by itself in 1m 30s');
+      // CONFIRMWAIT1a-i: no time is drawn for a terminal's press, shown or not; whether a terminal waits on it is.
+      expect(waited).toHaveTextContent('It waits until you answer. A terminal waits on this.');
+      expect(waited).not.toHaveTextContent('refused by itself');
+      expect(left).toHaveTextContent('It waits until you answer. No terminal waits on this now; it can read how it ended later.');
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('says the age of a press that has waited over an hour first, in weight', () => {
+    draw([{ ...STOP, id: 'old', asked: new Date(Date.now() - 3 * 3_600_000).toISOString() }, { ...STOP, id: 'new', asked: new Date().toISOString() }]);
+
+    const [old, fresh] = screen.getAllByRole('group');
+    expect(within(old).getByText(/asked 3h ago/).className).toContain('font-semibold');
+    expect(within(fresh).getByText(/asked/).className).not.toContain('font-semibold');
+  });
+
+  it('replaces its buttons while its Confirm is judged, and gives them back', () => {
+    const { rerender, answer, notify } = draw([{ ...STOP, checking: true }]);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Checking that nothing changed…');
+    expect(screen.queryByRole('button', { name: 'Confirm' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Refuse' })).toBeNull();
+    rerender(<Confirmations waiting={[STOP]} onAnswer={answer} notify={notify} names={NAMES} />);
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeEnabled();
+  });
+
+  // The design's stale row (§10): the reason a moved ground gives, said on its card in the reader's language, its states worded.
+  it.each([
+    ['en', 'Confirm', { reason: 'session', values: { then: 'awaiting-person', now: 'completed' } },
+      'Not done: the session moved on while this waited (it was waiting on you, it is completed).'],
+    ['en', 'Confirm', { reason: 'quest', values: { then: 'Open', now: 'Taken' } }, 'Not done: the quest moved on while this waited (it was open, it is taken).'],
+    ['en', 'Confirm', { reason: 'setting', values: {} }, 'Not done: what this would set changed while this waited (stop a session).'],
+    ['en', 'Confirm', { reason: 'branch', values: { branch: 'quest/x' } }, 'Not done: the branch quest/x gained or lost commits while this waited.'],
+    ['zh', '确认', { reason: 'repository', values: { repository: 'Lyntai' } }, '未执行：仓库 Lyntai 已不再登记在本机。'],
+    ['zh', '确认', { reason: 'ask', values: {} }, '未执行：等待期间该需求已关闭。'],
+  ])('says why a press whose ground moved was not done (%s, %j)', async (language, confirm, changed, words) => {
+    await i18n.changeLanguage(language);
+    const answer = vi.fn(async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'changed', message: 'the host said so', ...changed }));
+    draw([STOP], answer);
+
+    await userEvent.click(screen.getByRole('button', { name: confirm }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(words);
+  });
+
+  it.each([
+    ['en', 'Confirm', "Daoris could not read what this rests on just now; it still waits."],
+    ['zh', '确认', 'Daoris 暂时无法读取它所依据的内容；它仍在等待。'],
+  ])('says a Confirm whose grounds could not be read leaves it waiting (%s)', async (language, confirm, words) => {
+    await i18n.changeLanguage(language);
+    const answer = vi.fn(async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'unread', message: '' }));
+    draw([STOP], answer);
+
+    await userEvent.click(screen.getByRole('button', { name: confirm }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(words);
+    expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
   });
 
   it('says all of it in Chinese', async () => {
