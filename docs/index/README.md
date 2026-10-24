@@ -337,7 +337,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
 | `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
 | `docs/2026-10-24-keep-size-reads.md` | 67 | 669 |
-| `docs/2026-10-24-steward-role-design.md` | 82 | 719 |
+| `docs/2026-10-24-steward-role-design.md` | 123 | 1013 |
 | `docs/2026-10-24-steward-role-reads.md` | 80 | 795 |
 | `docs/2026-10-24-supervisor-design.md` | 197 | 1609 |
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
