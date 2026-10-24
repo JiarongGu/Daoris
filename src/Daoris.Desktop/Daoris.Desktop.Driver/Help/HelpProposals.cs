@@ -599,6 +599,15 @@ public static class HelpProposals
     }
 
     /// <summary>
+    /// What the person's Apply of <paramref name="proposal"/> acts on, by its kind's door (STEWARDROLE1a-ii, D209 §5.4): what the Apply
+    /// marks the owner's for the run before its edit.
+    /// </summary>
+    public static HelpOwned Owned(HelpProposal proposal) => HelpProposalKinds.Owned(proposal);
+
+    /// <summary>The doors <paramref name="kind"/> takes, as its file spells them; none for a kind none judges. What the owner's census sweep reads.</summary>
+    public static IReadOnlyList<string> DoorsOf(string kind) => HelpProposalKinds.Find(kind)?.Doors ?? [];
+
+    /// <summary>
     /// Judge a proposal with the route's own code, against the machine as it stands: first against the workspace its conversation is
     /// bound to (ASKSCOPE1c, <see cref="HelpProposalScope"/>), then by its kind.
     /// </summary>

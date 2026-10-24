@@ -48,6 +48,12 @@ internal interface IHelpProposalKind
     HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts);
 
     /// <summary>
+    /// What the person's Apply of <paramref name="proposal"/> acts on, which it marks the owner's for the run before its edit
+    /// (STEWARDROLE1a-ii, D209 §5.4): by default nothing; a kind whose doors act on a repository, a workspace or a quest says which.
+    /// </summary>
+    HelpOwned Owned(HelpProposal proposal) => HelpOwned.Nothing;
+
+    /// <summary>
     /// Its card drawn for the person, judged as <paramref name="plan"/> (HIST1f-b): a kind whose Apply sends exactly what its
     /// card listed keeps that now, in the proposal's file, for <see cref="Read"/> to hand its next judge. Nothing for every other.
     /// </summary>
@@ -120,4 +126,16 @@ internal static class HelpProposalKinds
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>
     public static IHelpProposalKind? Find(string kind) =>
         All.FirstOrDefault(each => string.Equals(each.Kind, kind, StringComparison.Ordinal));
+
+    /// <summary>What an Apply of <paramref name="proposal"/> acts on (STEWARDROLE1a-ii): its kind's answer, nothing for a kind none judges.</summary>
+    public static HelpOwned Owned(HelpProposal proposal) => Find(proposal.Kind)?.Owned(proposal) ?? HelpOwned.Nothing;
+}
+
+/// <summary>
+/// What an Ask Daoris Apply acts on (STEWARDROLE1a-ii, D209 §5.4): the repositories, workspaces and quests its plan names, which the
+/// Apply marks the owner's for the run before its edit; a workspace's plan marks every repository of it.
+/// </summary>
+public sealed record HelpOwned(IReadOnlyList<string> Repositories, IReadOnlyList<string> Workspaces, IReadOnlyList<string> Quests)
+{
+    public static HelpOwned Nothing { get; } = new([], [], []);
 }

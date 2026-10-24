@@ -82,10 +82,47 @@ public static class SupervisorDoor
     /// lock is checked once more, still admitted, its holder's hash present and its appointment live, and moved to running; only then
     /// does its table's handler run. Refused as data. Its answer names the holder's roles and the brief's revision (§2.2).
     /// </summary>
-    public static async Task<object?> ActAsync(InstancePipe? pipe, System.Text.Json.JsonElement? payload, CancellationToken ct)
+    /// <remarks>
+    /// STEWARDROLE1a-ii (§3.4 step 8, §5.4): before that step the act's target is resolved to its dependencies (a quest's repository, a
+    /// repository's workspace) and every one of their gates is taken alone in the fixed order; under them the target's records are read
+    /// for a person's door's write this run (<see cref="OwnerRecords"/>), the step refuses an <c>owner-set</c> target, and the act's
+    /// dependent conditions are judged again (<see cref="IRoleAct.UnderGatesAsync"/>). A dependency or a record that cannot be read
+    /// refuses the act <c>unread</c>. The gates are held across the handler and released as it returns.
+    /// </remarks>
+    public static async Task<object?> ActAsync(InstancePipe? pipe, System.Text.Json.JsonElement? payload, CancellationToken ct, IOwnerScopes? scopes = null)
     {
         if (PipeDoor.Role is not { ActId: { } id, Role: { } role, Act: { } act } judged || pipe is null) return Acted(false, SupervisorWhy.NotHolder, null);
         var judge = pipe.StandingConfirmation;
+        var target = judge.ActTarget(id);
+        IReadOnlyList<RoleScope>? gates = target is null ? [] : await DependenciesAsync(target, scopes, ct).ConfigureAwait(false);
+        if (gates is null)
+        {
+            judge.ActDone(id);
+            return Acted(false, RoleWhy.Unread, judged.Roles);
+        }
+
+        await using var held = await judge.Gates.EnterAsync(gates, alone: true, ct).ConfigureAwait(false);
+        if (target is { Kind: OwnerKinds.Quest } quest && scopes is not null)
+        {
+            bool? wrote;
+            try
+            {
+                wrote = await scopes.PersonWroteAsync(quest.Name, judge.RunStarted, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not (OperationCanceledException or OutOfMemoryException))
+            {
+                wrote = null;
+            }
+
+            if (wrote is not false)
+            {
+                // §5.4's service doors mark by the record: a person's write on the quest this run makes it theirs, as a mark does.
+                if (wrote is true) judge.MarkOwner(new OwnerResolved([quest], [], false), standing: false);
+                judge.ActDone(id);
+                return Acted(false, wrote is true ? RoleWhy.OwnerSet : RoleWhy.Unread, judged.Roles);
+            }
+        }
+
         if (judge.RunAct(id) is { } why) return Acted(false, why, judged.Roles);
         try
         {
@@ -94,12 +131,42 @@ public static class SupervisorDoor
                 return Acted(false, RoleWhy.NotRole, judged.Roles);
             }
 
-            var answer = await row.RunAsync(new RoleActRun(id, role, act, form.Form, judge), ct).ConfigureAwait(false);
+            var run = new RoleActRun(id, role, act, form.Form, judge);
+            if (await row.UnderGatesAsync(run, ct).ConfigureAwait(false) is { } refused) return Acted(false, refused, judged.Roles);
+            var answer = await row.RunAsync(run, ct).ConfigureAwait(false);
             return new { Done = true, Why = (string?)null, Answer = answer, Roles = judged.Roles ?? [], Brief = RolesBrief.Revision };
         }
         finally
         {
             judge.ActDone(id);
+        }
+    }
+
+    /// <summary>
+    /// An act's target and its dependencies (§5.4): a quest, its repository and that repository's workspace; a repository and its
+    /// workspace. Null where one could not be read; a target with no scopes to read by is its own alone.
+    /// </summary>
+    public static async Task<IReadOnlyList<RoleScope>?> DependenciesAsync(RoleScope target, IOwnerScopes? scopes, CancellationToken ct)
+    {
+        if (scopes is null) return [target];
+        try
+        {
+            var gates = new List<RoleScope> { target };
+            var repository = target.Kind == OwnerKinds.Repository
+                ? target.Name
+                : await scopes.RepositoryOfQuestAsync(target.Name, ct).ConfigureAwait(false);
+            if (repository is null) return target.Kind == OwnerKinds.Quest ? null : gates;
+            gates.Add(new RoleScope(OwnerKinds.Repository, repository));
+            if (await scopes.WorkspaceOfAsync(repository, ct).ConfigureAwait(false) is { Length: > 0 } workspace)
+            {
+                gates.Add(new RoleScope(OwnerKinds.Workspace, workspace));
+            }
+
+            return RoleScope.Order(gates);
+        }
+        catch (Exception error) when (error is not (OperationCanceledException or OutOfMemoryException))
+        {
+            return null;
         }
     }
 

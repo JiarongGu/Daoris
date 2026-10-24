@@ -322,6 +322,10 @@ public sealed class StandingConfirmation : IDecisionAdmission
     private readonly HashSet<string> _endedTabs = new(StringComparer.Ordinal);
     private readonly Dictionary<string, int> _answers = new(StringComparer.Ordinal);
     private readonly RoleActsMemory _acts = new();
+    // STEWARDROLE1a-ii (D209 §5.4): what the owner acted on this run, by its scope's key, through whichever door; and whether a target
+    // of theirs could not be resolved, which holds every quest for the run. Memory alone: a restart forgets it.
+    private readonly HashSet<string> _ownerSet = new(StringComparer.Ordinal);
+    private bool _ownerUnresolved;
 
     /// <summary>A holder of this run (D209 §2.2): apart from its appointments, shared by them or its own.</summary>
     private sealed class Holding(string id, byte[] hash, string? tab, HolderProcess? process, DateTimeOffset since)
@@ -359,6 +363,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         SupervisorOffered = supervisor ?? SupervisorOfferedInThisBuild;
         StewardOffered = steward ?? StewardOfferedInThisBuild;
         Walk = walk ?? HolderWalk.System;
+        RunStarted = _clock.GetUtcNow();
     }
 
     /// <summary>Whether this instance offers the grant (D201's note on order).</summary>
@@ -416,6 +421,15 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     /// <summary>Told a press it covered, with the window's count (<see cref="UsedEvent"/>); none tells nobody.</summary>
     public Action<long, DateTimeOffset>? Used { get; set; }
+
+    /// <summary>
+    /// The run's gates (STEWARDROLE1a-ii, D209 §5.4), one per workspace, repository and quest: a role's act holds its target's and its
+    /// dependencies' alone; an owner's press holds what it resolves to beside the owner's other presses. Never the judge's lock.
+    /// </summary>
+    public RoleGates Gates { get; } = new();
+
+    /// <summary>When this run began, after which a person's door's write on a quest's records marks it (§5.4, <see cref="OwnerRecords"/>).</summary>
+    public DateTimeOffset RunStarted { get; }
 
     /// <summary>The record's path.</summary>
     public string RecordPath => DaorisHome.Entry(_home, HomeEntry.StandingConfirmation);
@@ -1095,8 +1109,12 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
         if (!row.IsForm(act.Form)) return RoleJudgement.Refused(SupervisorWhy.Form);
 
+        // Step 6's `owner-set` (STEWARDROLE1a-ii, §5.4): what the owner acted on this run is theirs until Daoris restarts.
+        var target = new RoleScope(row.TargetKind, row.Target(act.Form));
+        if (OwnerHolds(target)) return RoleJudgement.Refused(RoleWhy.OwnerSet);
+
         // Step 7: admitted once, its id drawn here and registered as admitted; the lock is released as this returns.
-        var admitted = _acts.Admit(role, act.Act, appointed.Generation, holding.Id, row.Target(act.Form));
+        var admitted = _acts.Admit(role, act.Act, appointed.Generation, holding.Id, target.Name, target.Kind);
         _answers[appointed.Generation] = _answers.GetValueOrDefault(appointed.Generation) + 1;
         return new RoleJudgement(true, null, role, appointed.Repository, appointed.Generation, holding.Id, act.Act, admitted, roles);
     }
@@ -1104,13 +1122,70 @@ public sealed class StandingConfirmation : IDecisionAdmission
     // ——— The run's memory of a role's acts (D209 §3.4 steps 7 and 8, §5.1a): every step one hold of the judge's lock, never across an await.
 
     /// <summary>
-    /// §3.4 step 8, under the act's gate: the act still <c>admitted</c> (no revoke cancelled it), its holder's hash present and its
-    /// generation live, moved to <c>running</c>; null where it may run, else <c>appointment-changed</c>.
+    /// §3.4 step 8, under the act's gates: the act still <c>admitted</c> (no revoke and no owner's mark cancelled it), its holder's hash
+    /// present and its generation live, and its target not <c>owner-set</c>, moved to <c>running</c>; null where it may run, else
+    /// <c>owner-set</c> or <c>appointment-changed</c>.
     /// </summary>
     public string? RunAct(string id)
     {
-        lock (_gate) return _acts.Run(id, Live) ? null : SupervisorWhy.AppointmentChanged;
+        lock (_gate)
+        {
+            if (_acts.TargetOf(id) is { } target && OwnerHolds(target))
+            {
+                _acts.Refuse(id);
+                return RoleWhy.OwnerSet;
+            }
+
+            if (_acts.Run(id, Live)) return null;
+            return _acts.CancelledByOwner(id) ? RoleWhy.OwnerSet : SupervisorWhy.AppointmentChanged;
+        }
     }
+
+    /// <summary>The admitted act's target, which its gates are taken for (§5.4); null where no act has the id.</summary>
+    public RoleScope? ActTarget(string id)
+    {
+        lock (_gate) return _acts.TargetOf(id);
+    }
+
+    /// <summary>
+    /// The owner's mark (STEWARDROLE1a-ii, D209 §5.4), set inside the gates of every scope it resolved to: each repository and quest
+    /// marked <c>owner-set</c> for the run, every admitted act, pending stage and binding on it cancelled in this one step; an owner's
+    /// target that could not be resolved holds every quest. A repository marked by anything but the standing confirmation's covered
+    /// press forgets the hold that confirmation remembered (D201's <c>Forget</c>, moved into the mark), so its covered resume asks.
+    /// </summary>
+    public void MarkOwner(OwnerResolved resolved, bool standing)
+    {
+        if (resolved.Marks.Count == 0 && !resolved.Unresolved) return;
+        var cancelled = 0;
+        lock (_gate)
+        {
+            foreach (var scope in resolved.Marks)
+            {
+                _ownerSet.Add(scope.Key);
+                cancelled += _acts.CancelTarget(scope.Kind, scope.Name);
+                if (scope.Kind == OwnerKinds.Repository && !standing) _held.Remove(scope.Name);
+            }
+
+            if (resolved.Unresolved)
+            {
+                _ownerUnresolved = true;
+                cancelled += _acts.CancelKind(OwnerKinds.Quest);
+            }
+        }
+
+        _log.Info("role.owner-set", ("count", Count(resolved.Marks.Count)), ("unresolved", resolved.Unresolved ? "true" : "false"));
+        if (cancelled > 0) _log.Info("role.cancelled", ("count", Count(cancelled)), ("why", RoleWhy.OwnerSet));
+    }
+
+    /// <summary>Whether the owner acted on <paramref name="target"/> this run (§5.4).</summary>
+    public bool IsOwnerSet(RoleScope target)
+    {
+        lock (_gate) return OwnerHolds(target);
+    }
+
+    // Under the lock.
+    private bool OwnerHolds(RoleScope target) =>
+        _ownerSet.Contains(target.Key) || (_ownerUnresolved && target.Kind == OwnerKinds.Quest);
 
     /// <summary>The act's handler returned.</summary>
     public void ActDone(string id)

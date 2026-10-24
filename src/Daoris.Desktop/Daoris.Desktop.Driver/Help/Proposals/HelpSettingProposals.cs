@@ -50,6 +50,26 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         return new([proposal.Workspace], [proposal.Door == "retry" ? null : proposal.Target, other, proposal.Repository]) { Records = quest };
     }
 
+    /// <summary>
+    /// STEWARDROLE1a-ii (D209 §5.4): each door's target, which its Apply marks the owner's: the quest for <c>retry</c>; for every other
+    /// door its repository, or its workspace where the plan is the workspace's (a line, a landing, a language). A machine's door
+    /// (<c>strikes</c>, <c>timeout</c>, <c>notify</c>, <c>cap</c>, <c>cooloff</c>, <c>keep</c>) names neither, and marks nothing.
+    /// </summary>
+    public HelpOwned Owned(HelpProposal proposal)
+    {
+        var target = proposal.Target?.Trim();
+        if (proposal.Door == "retry")
+        {
+            return target?.TrimStart('#').Trim() is { Length: > 0 } quest ? new HelpOwned([], [], [quest]) : HelpOwned.Nothing;
+        }
+
+        var workspace = proposal.Workspace?.Trim();
+        return new HelpOwned(
+            target is { Length: > 0 } ? [target] : [],
+            workspace is { Length: > 0 } ? [workspace] : [],
+            []);
+    }
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var target = proposal.Target?.Trim();

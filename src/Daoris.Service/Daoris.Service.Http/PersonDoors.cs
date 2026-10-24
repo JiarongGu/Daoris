@@ -38,10 +38,50 @@ public sealed record Door(string Method, string Pattern, DoorClass Class, string
     /// gate before the route leaves such a door to it, refusing only a stale key.
     /// </summary>
     public DoorForm? Form { get; init; }
+
+    /// <summary>
+    /// What a person's door's effect is attributed to the person by on a quest's records (STEWARDROLE1a-ii, D209 §5.4): the kind of
+    /// write that makes the quest the owner's for the run, and the evidence the desktop's reader finds it by; or none, with why. Every
+    /// <see cref="DoorClass.Person"/> door and form declares one (<c>PersonDoorTableTests</c>, and the desktop's census sweep).
+    /// </summary>
+    public OwnerMark? Marks { get; init; }
 }
 
 /// <summary>A door's form (<see cref="Door.Form"/>): the field that makes it, the class it moves to, and its own name.</summary>
-public sealed record DoorForm(string Field, DoorClass Class, string Act);
+public sealed record DoorForm(string Field, DoorClass Class, string Act)
+{
+    /// <summary>What the form's effect marks on a quest's records, as <see cref="Door.Marks"/> says it of a door.</summary>
+    public OwnerMark? Marks { get; init; }
+}
+
+/// <summary>
+/// The kinds of a person's write that make a quest the owner's for the run (D209 §5.4), exactly, and <see cref="None"/>. A twin
+/// (<c>.claude/knowledge/twins.md</c>): the desktop's <c>OwnerRecordKinds</c> spells the same four, and its <c>OwnerRecords</c> reads
+/// each evidence a door declares here.
+/// </summary>
+public static class OwnerMarkKinds
+{
+    public const string SessionMove = "session-move";
+    public const string SessionWord = "session-word";
+    public const string HandOver = "hand-over";
+    public const string Status = "status";
+    public const string None = "none";
+
+    public static IReadOnlyList<string> All { get; } = [SessionMove, SessionWord, HandOver, Status, None];
+}
+
+/// <summary>
+/// A person's door's mark (D209 §5.4): its <see cref="Kind"/>, one of <see cref="OwnerMarkKinds"/>, and its <see cref="Evidence"/> as the
+/// desktop reads it (<c>move:&lt;kind&gt;</c>, <c>note:&lt;code&gt;</c>, <c>session-note:&lt;code&gt;</c>, <c>said:person</c>,
+/// <c>word:&lt;kind&gt;</c>, <c>instance:&lt;ROUTE&gt;</c>); for <see cref="OwnerMarkKinds.None"/>, why it marks nothing. A quest's
+/// publication and its ask's own words never mark.
+/// </summary>
+public sealed record OwnerMark(string Kind, string Evidence)
+{
+    public static OwnerMark Of(string kind, string evidence) => new(kind, evidence);
+
+    public static OwnerMark None(string why) => new(OwnerMarkKinds.None, why);
+}
 
 /// <summary>
 /// The local host's doors, every route by its class (design §3.2), and the refusal each says (§5.2). A route the table
@@ -108,14 +148,21 @@ public static class PersonDoors
     public static readonly Door Respond = new("POST", "/api/quests/{id}/respond", DoorClass.Agent, "a quest's take, done or decline")
     {
         // PAUSE1c: the driver declines an open quest on the person's press to abandon it.
-        Form = new DoorForm("whileOpen", DoorClass.Person, "an abandon's decline"),
+        Form = new DoorForm("whileOpen", DoorClass.Person, "an abandon's decline")
+        {
+            // STEWARDROLE1a-ii: the driver posts it on the person's Abandon, whose press marks the quest at the instance's door.
+            Marks = OwnerMark.Of(OwnerMarkKinds.Status, "instance:WORK_ABANDON"),
+        },
     };
 
     /// <summary>The set-up door: a set-up a session said, naming it; or the person's own, with where to look.</summary>
     public static readonly Door SetUp = new("POST", "/api/quests/{id}/set-up", DoorClass.Driver, "a set-up a session said, with the commit Daoris read")
     {
         // REVIEWENV1b: a set-up that names no session is the person's own, which the exchange takes only with `look`.
-        Form = new DoorForm("look", DoorClass.Person, "a set-up of their own"),
+        Form = new DoorForm("look", DoorClass.Person, "a set-up of their own")
+        {
+            Marks = OwnerMark.None("a review's fact; it moves no session and no status"),
+        },
     };
 
     /// <summary>
@@ -125,10 +172,12 @@ public static class PersonDoors
     public static readonly Door AskConfirmation = new("POST", "/api/confirmations", DoorClass.Agent, "an ask for the person's confirmation");
 
     /// <summary>The person's confirmation of what a terminal asked: the key's alone.</summary>
-    public static readonly Door Confirm = new("POST", "/api/confirmations/{id}/confirm", DoorClass.Person, "the confirmation of a terminal's act");
+    public static readonly Door Confirm = new("POST", "/api/confirmations/{id}/confirm", DoorClass.Person, "the confirmation of a terminal's act")
+        { Marks = OwnerMark.None("an answer to a terminal's ask; the press it confirms is marked as it runs") };
 
     /// <summary>The person's refusal of what a terminal asked: the key's alone.</summary>
-    public static readonly Door Refuse = new("POST", "/api/confirmations/{id}/refuse", DoorClass.Person, "the refusal of a terminal's act");
+    public static readonly Door Refuse = new("POST", "/api/confirmations/{id}/refuse", DoorClass.Person, "the refusal of a terminal's act")
+        { Marks = OwnerMark.None("an answer to a terminal's ask; the press it confirms is marked as it runs") };
 
     /// <summary>Every route either host maps, each with its class: 68 at PERSONDOOR1b, the change stream's read among them since FABRIC-EVENT3b.</summary>
     public static IReadOnlyList<Door> Table { get; } =
@@ -224,49 +273,49 @@ public static class PersonDoors
 
         // The person's alone (19, and the forms above): the review, what a review is set to, the yes and the done, a
         // go-ahead's answer, their words, closing and deleting, and the registry's verbs (D48 §3).
-        new("POST", "/api/quests/{id}/review", DoorClass.Person, "a review's verdict"),
-        new("POST", "/api/quests/{id}/set-up-step", DoorClass.Person, "a set-up step"),
-        new("POST", "/api/asks", DoorClass.Person, "an ask"),
-        new("POST", "/api/asks/{id}/review", DoorClass.Person, "an ask's review choice"),
+        new("POST", "/api/quests/{id}/review", DoorClass.Person, "a review's verdict") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:verdict") },
+        new("POST", "/api/quests/{id}/set-up-step", DoorClass.Person, "a set-up step") { Marks = OwnerMark.None("it publishes a new step, and a publication never marks") },
+        new("POST", "/api/asks", DoorClass.Person, "an ask") { Marks = OwnerMark.None("it publishes an ask, and a publication never marks") },
+        new("POST", "/api/asks/{id}/review", DoorClass.Person, "an ask's review choice") { Marks = OwnerMark.None("an ask's review choice, made before its quests start") },
         // WORKFLOW1e (the workflow design §4.3): what kind of task an ask is and which workflow it follows is the person's, as what
         // a review is set to is; an agent proposes a kind (WORKFLOW1i) and never sets one.
-        new("POST", "/api/asks/{id}/workflow", DoorClass.Person, "an ask's kind and workflow"),
+        new("POST", "/api/asks/{id}/workflow", DoorClass.Person, "an ask's kind and workflow") { Marks = OwnerMark.None("an ask's kind and workflow, chosen before its quests start") },
         // WORKFLOW1e2 (§4.1 row 1): a quest published with no ask has its own, set on its page before it starts, the person's alike.
-        new("POST", "/api/quests/{id}/workflow", DoorClass.Person, "a quest's kind and workflow"),
+        new("POST", "/api/quests/{id}/workflow", DoorClass.Person, "a quest's kind and workflow") { Marks = OwnerMark.None("a quest's kind and workflow, chosen before it starts; its status does not move") },
         // SESSONE2a (D167 point 7): the person's message on the ask's channel is their words, with every reach D137 gives them; an agent
         // posts through the connector's tool, which is marked as its claim. Their read mark is theirs to move, and a driver's, for a part;
         // NOTIFY2g: on a teammate's ask too, classed as a local ask's mark is.
-        new("POST", "/api/asks/{id}/channel", DoorClass.Person, "a message on an ask's channel"),
-        new("POST", "/api/asks/{id}/channel/read", DoorClass.Person, "an entry's read mark on an ask's channel"),
-        new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure"),
-        new("POST", "/api/quests/{id}/done", DoorClass.Person, "a quest's done of their own"),
+        new("POST", "/api/asks/{id}/channel", DoorClass.Person, "a message on an ask's channel") { Marks = OwnerMark.None("a message on the ask's channel, which names no quest") },
+        new("POST", "/api/asks/{id}/channel/read", DoorClass.Person, "an entry's read mark on an ask's channel") { Marks = OwnerMark.None("a read mark") },
+        new("POST", "/api/quests/{id}/accept", DoorClass.Person, "the yes to a departure") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:accepted") },
+        new("POST", "/api/quests/{id}/done", DoorClass.Person, "a quest's done of their own") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "note:quest.person-done") },
         // FABRIC-CLOSE1c (§E5): only the person reopens a sealed submission, and only they choose whether its held step goes on.
-        new("POST", "/api/quests/{id}/reopen", DoorClass.Person, "a submission's reopen"),
-        new("POST", "/api/quests/{id}/continue", DoorClass.Person, "the word to go on with a step its source's reopen held"),
-        new("POST", "/api/asks/{id}/go-aheads/{number}", DoorClass.Person, "a go-ahead's answer"),
-        new("POST", "/api/sessions/{id}/added", DoorClass.Person, "words added to a running session"),
-        new("POST", "/api/sessions/{id}/say", DoorClass.Person, "words to a session"),
+        new("POST", "/api/quests/{id}/reopen", DoorClass.Person, "a submission's reopen") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:reopened") },
+        new("POST", "/api/quests/{id}/continue", DoorClass.Person, "the word to go on with a step its source's reopen held") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:rebound") },
+        new("POST", "/api/asks/{id}/go-aheads/{number}", DoorClass.Person, "a go-ahead's answer") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionMove, "session-note:ledger.answered") },
+        new("POST", "/api/sessions/{id}/added", DoorClass.Person, "words added to a running session") { Marks = OwnerMark.None("the ask's own words (added), which never mark") },
+        new("POST", "/api/sessions/{id}/say", DoorClass.Person, "words to a session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
         // SAIDBACK1a: the person's words, taken back or reworded before a session took them, are theirs to move as saying them is.
-        new("POST", "/api/sessions/{id}/take-back", DoorClass.Person, "words taken back from a session"),
-        new("POST", "/api/sessions/{id}/answer", DoorClass.Person, "an answer to a parked session"),
-        new("POST", "/api/asks/{id}/close", DoorClass.Person, "an ask's close"),
-        new("DELETE", "/api/asks/{id}", DoorClass.Person, "an ask's delete"),
-        new("DELETE", "/api/quests/{id}", DoorClass.Person, "a quest's delete"),
-        new("DELETE", "/api/sessions/{id}", DoorClass.Person, "a session's delete"),
-        new("POST", "/api/history/clear", DoorClass.Person, "a clear of finished history"),
+        new("POST", "/api/sessions/{id}/take-back", DoorClass.Person, "words taken back from a session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionWord, "said:person") },
+        new("POST", "/api/sessions/{id}/answer", DoorClass.Person, "an answer to a parked session") { Marks = OwnerMark.Of(OwnerMarkKinds.SessionMove, "session-note:ledger.answered") },
+        new("POST", "/api/asks/{id}/close", DoorClass.Person, "an ask's close") { Marks = OwnerMark.None("an ask's close, which leaves its quests as they are") },
+        new("DELETE", "/api/asks/{id}", DoorClass.Person, "an ask's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
+        new("DELETE", "/api/quests/{id}", DoorClass.Person, "a quest's delete") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:deleted") },
+        new("DELETE", "/api/sessions/{id}", DoorClass.Person, "a session's delete") { Marks = OwnerMark.None("a record removed; the quest's own records are what is read") },
+        new("POST", "/api/history/clear", DoorClass.Person, "a clear of finished history") { Marks = OwnerMark.None("finished history, which no role acts on") },
         // BRAINSTORM1a3 (D176 point 9): only the person starts a brainstorm, lets its packet go and clears it; an agent's ask waits
         // for their yes, which a terminal's confirmation in the window is.
-        new("POST", "/api/brainstorms", DoorClass.Person, "a brainstorm's question"),
-        new("POST", "/api/brainstorms/{id}/send", DoorClass.Person, "a brainstorm's send"),
-        new("DELETE", "/api/brainstorms/{id}", DoorClass.Person, "a brainstorm's clear"),
-        new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Person, "a conflict's dismissal"),
+        new("POST", "/api/brainstorms", DoorClass.Person, "a brainstorm's question") { Marks = OwnerMark.None("a brainstorm, no quest") },
+        new("POST", "/api/brainstorms/{id}/send", DoorClass.Person, "a brainstorm's send") { Marks = OwnerMark.None("a brainstorm, no quest") },
+        new("DELETE", "/api/brainstorms/{id}", DoorClass.Person, "a brainstorm's clear") { Marks = OwnerMark.None("a brainstorm, no quest") },
+        new("POST", "/api/quests/{id}/conflicts/dismiss", DoorClass.Person, "a conflict's dismissal") { Marks = OwnerMark.None("a lost move dismissed; its status does not move") },
         // SYNCMERGE1a (D178 point 3): only the person, on the machine whose take lost, brings it forward; a local host's alone.
-        new("POST", "/api/quests/{id}/conflicts/forward", DoorClass.Person, "a lost take brought forward"),
+        new("POST", "/api/quests/{id}/conflicts/forward", DoorClass.Person, "a lost take brought forward") { Marks = OwnerMark.Of(OwnerMarkKinds.Status, "move:dismissed") },
         // FABRIC-CLOSE1i2: only the person says a machine left their workspace, since a retired machine no longer holds a bind off.
-        new("POST", "/api/sync/machines/{machine}/retire", DoorClass.Person, "a machine's retirement at a workspace's remote"),
-        new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire"),
-        new("POST", "/api/registry/{repository}/workspace", DoorClass.Person, "a repository's re-wiring"),
-        new("POST", "/api/registry/import", DoorClass.Person, "a folder's import"),
+        new("POST", "/api/sync/machines/{machine}/retire", DoorClass.Person, "a machine's retirement at a workspace's remote") { Marks = OwnerMark.None("a machine's retirement, no quest") },
+        new("DELETE", "/api/registry/{repository}", DoorClass.Person, "a repository's retire") { Marks = OwnerMark.None("a repository's retire, the registry's") },
+        new("POST", "/api/registry/{repository}/workspace", DoorClass.Person, "a repository's re-wiring") { Marks = OwnerMark.None("a repository's re-wiring, the registry's") },
+        new("POST", "/api/registry/import", DoorClass.Person, "a folder's import") { Marks = OwnerMark.None("a folder's import, the registry's") },
         // The answers to a terminal's ask (PERSONDOOR1b), never themselves asked for.
         Confirm,
         Refuse,
