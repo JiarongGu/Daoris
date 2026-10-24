@@ -381,7 +381,8 @@ public sealed class OpinionLandingTests : IDisposable
 
         Assert.Equal((OpinionGateStates.NotAsked, false, ChatRun), (gate.Opinion.State, gate.Opinion.Asked, gate.Opinion.Run));
         Assert.Empty(new OpinionDues(_home).Open());
-        Assert.False(File.Exists(Path.Combine(_home, "opinions", "gates", ChatRun + ".json")));
+        var kept = new OpinionGates(_home).Read(ChatRun, "web-app");
+        Assert.Equal((0, 0, 0), (kept.Asks.Count, kept.Requests.Count, kept.Person.Count));
     }
 
     private const string ChatSession = "c1a2b3c4";

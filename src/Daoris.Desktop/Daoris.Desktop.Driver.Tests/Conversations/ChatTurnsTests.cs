@@ -153,7 +153,7 @@ public sealed class ChatTurnsTests
         }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            GitSeed.Discard(directory);
         }
     }
 
