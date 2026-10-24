@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - The router's union merge left a changed row twice, the older copy coming back (ROUTERMERGE1)
+
+- **Symptom:** on 2026-10-24 six landings left a design's or a reads file's row in `docs/README.md` twice, an older copy
+  coming back each time, with no conflict reported; only `doc-duplicates` caught them.
+- **Root cause:** `.gitattributes` merged the router by union, the driver suited to the append-only records. The router's rows
+  change in place, and union keeps both versions of a line two branches changed: a branch that changed a row `main` also
+  changed, or that still carried a row `main` had since replaced next to a change of its own, left both rows. Replayed over the
+  router's last 138 two-parent merges, 41 left a key more times than `main`'s side had it.
+- **Fix:** `tools/merge-rows.mjs`, a merge driver declared for `docs/README.md` (`merge=rows`), merges each table's rows by their
+  first cell three ways and the prose around them as text; a row both sides changed differently is a marked conflict. The root
+  `npm ci` configures it in the clone's own git config (`prepare` runs `--install`). The append-only records keep union.
+- **Verification:** `tools/merge-rows.test.mjs` (16 cases, a base and two sides for each rule; the first 15 written before the
+  driver, 12 of them seen failing against a stub that kept ours), including a scratch repository under `_fixtures/` whose two branches each edited one of two neighbouring rows,
+  merged by git through the driver, each row once. The same replay through the driver: no clean merge added a duplicate a side
+  did not already carry; 25 stop as marked conflicts instead.
+
 ## 2026-10-24 - A conversation continuing a quest's worker read its line's origin, not its quest's run (CHATFLOW1a, Codex's finding 6)
 
 - **Symptom:** found by Codex's read of the accepted chat-flow design, not seen on the install. A quest an ask sent, its worker gone on

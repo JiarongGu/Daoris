@@ -20444,3 +20444,15 @@ configuration directory; `scope`, `acts` and `setup`; the two role flags; `ROLE_
 of admitted acts, pending operations by their stages and bindings; the configuration walk on every `Role` route. The web: the
 appointment by scope and the choice of terminal. Each case seen failing first. Detail, and what 1a-ii to 1g still owe: D209's
 STEWARDROLE1a-i note.
+
+## ROUTERMERGE1 — the router merges row by row, never by union (2026-10-24)
+
+> **ROUTERMERGE1 — the router merges row by row, never by union** (tools; seen 2026-10-24). `docs/README.md` merges by union (`.gitattributes:43`), so a branch that changed a router row `main` also changed, or that carries a row `main` has since replaced, leaves both rows with no conflict: on 2026-10-24 six landings left a design's or a reads file's row twice, an older copy coming back each time, and only `doc-duplicates` caught it. Give the router (and any record whose rows are keyed by their first cell) a merge driver in `tools/` that merges its table rows by key three ways (base, ours, theirs): a row one side changed takes that side, a row both changed differently is a conflict, a row one side removed and the other left alone goes, and prose outside the tables merges as text; declared in `.gitattributes` with its driver configured by the repository's own setup, and the union kept for the append-only records it suits. Proof: the driver's tests over a base and two sides for each case, and a scratch repository's merge of two branches that each edited one row leaving each row once.
+
+(Quest `#c752e1f496fe`.)
+
+**Outcome** 2026-10-24. `tools/merge-rows.mjs` is declared for `docs/README.md` (`merge=rows`); the append-only records keep union.
+The root `npm ci` configures it in the clone's own git config (`prepare` runs `--install`), and `docs/development.md` (*Prepare
+the workspace*) says what a clone that skipped it runs once. Held by `tools/merge-rows.test.mjs`, run by `verify`, with its scratch
+repository's merge under `_fixtures/`. Only the router is declared: no other record was named. Detail: the fix log's ROUTERMERGE1
+entry.

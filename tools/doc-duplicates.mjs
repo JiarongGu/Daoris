@@ -35,7 +35,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
 
-/** The records marked `merge=union` besides the decisions record, and what a duplicate is in each. */
+/**
+ * The records marked `merge=union` besides the decisions record, and what a duplicate is in each. The router merges by
+ * its rows since ROUTERMERGE1 (`merge=rows`, `tools/merge-rows.mjs`) and is checked still: a branch cut from an earlier
+ * union merge can carry a row twice, and the driver keeps a side's own duplicate.
+ */
 const APPEND_ONLY = [
   { file: 'docs/task-archive.md', kind: 'heading' },
   { file: 'docs/FIX-LOG.md', kind: 'heading' },

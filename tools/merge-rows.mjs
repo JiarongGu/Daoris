@@ -16,7 +16,7 @@
  *   changed differently a conflict. Each table stands in that text as one line, so its rows never meet the text merge.
  *
  * A table is a line starting `|` followed by a separator line (`|---|`), its body the `|` lines after; one inside a
- * fenced block is text. A table is known across the three by the heading above it and its place under that heading, or,
+ * fenced block (as `doc-duplicates`' `fenced` reads one) is text. A table is known across the three by the heading above it and its place under that heading, or,
  * where a side moved or renamed it, by the base table sharing most of its row keys. Two rows with one key in a table are
  * told apart by their order.
  *
@@ -26,13 +26,13 @@
  * an unreadable file, git failing), the file left as it was.
  */
 import { readFileSync } from 'node:fs';
+import { fenced } from './doc-duplicates.mjs';
 import { isMain, spawnGit, writeAtomic } from './fsx.mjs';
 
 /** The driver's command as `--install` configures it, run by git from the work tree's top. */
 export const DRIVER = 'node tools/merge-rows.mjs %O %A %B %L %P';
 const NAME = 'rows: Markdown table rows by their first cell (ROUTERMERGE1)';
 
-const FENCE = /^\s*(```|~~~)/;
 const HEADING = /^#{1,6}\s/;
 const ROW = /^\s*\|/;
 const SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
@@ -53,24 +53,18 @@ export function keyOf(row) {
 export function parseDocument(lines) {
   const skeleton = [];
   const tables = new Map();
-  let fence = null;
+  const inFence = fenced(lines);
   let heading = '';
   let under = 0;
   for (let at = 0; at < lines.length; at += 1) {
     const line = lines[at];
-    const opens = FENCE.exec(line);
-    if (fence !== null) {
-      if (opens && opens[1] === fence) fence = null;
-      skeleton.push(line);
-      continue;
-    }
-    if (opens) { fence = opens[1]; skeleton.push(line); continue; }
+    if (inFence[at]) { skeleton.push(line); continue; }
     if (HEADING.test(line)) { heading = line.trim(); under = 0; skeleton.push(line); continue; }
-    if (ROW.test(line) && at + 1 < lines.length && SEPARATOR.test(lines[at + 1])) {
+    if (ROW.test(line) && at + 1 < lines.length && !inFence[at + 1] && SEPARATOR.test(lines[at + 1])) {
       skeleton.push(line, lines[at + 1]);
       at += 2;
       const rows = [];
-      while (at < lines.length && ROW.test(lines[at])) rows.push(lines[at++]);
+      while (at < lines.length && !inFence[at] && ROW.test(lines[at])) rows.push(lines[at++]);
       at -= 1;
       const id = `${heading}#${under++}`;
       tables.set(id, keyed(rows));

@@ -130,6 +130,13 @@ test('prose outside the tables merges as text, conflicting where both changed it
   assert.match(both.text, /\n<{7} ours\nIntro prose, ours\.\n={7}\nIntro prose, theirs\.\n>{7} theirs\n/);
 });
 
+test('a table inside a fenced block is text, not rows', () => {
+  const fence = (...rows) => `${base}\n\`\`\`md\n| Key | Value |\n|---|---|\n${rows.join('\n')}\n\`\`\`\n`;
+  const merged = mergeRows(fence('| a | 1 |'), fence('| a | 1 |', '| c | 3 |'), fence('| a | 1 |', '| d | 4 |'));
+  // Two different lines added at one place: as text, one conflict; as rows of different keys they would merge clean.
+  assert.equal(merged.conflicts, 1);
+});
+
 test('a table one side added comes with its rows', () => {
   const ours = `${base}\n## New\n\n| Key | Value |\n|---|---|\n| k | v |\n`;
   const theirs = router(guides, swap(designs, 2, '| `z.md` | Accepted | Z1 |'));
