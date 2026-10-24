@@ -380,3 +380,143 @@ Round 2 was written at `ca046e7fe`. SUPERVISOR1b merged before it landed, so `Dr
 11 findings, 2 blocking.
 
 **Verdict: accept after named changes the steward can check without another read.** Round 2 took round 1's foundation: the refuse-and-ask gate, no kept press, no graph binding before CHATFLOW1f, nothing told that is not enforced, and the line's stored key. §1 and §4.2 read the code well. Both blocking findings are confined to the send-back loop. Row e's delivery needs the service and the modules and an atomic take (finding 1), and its recheck needs deciding (finding 2, best by keeping D155's automatic recheck). Each fix is a named change to §6, §13 and row e. Rows a and b may go ahead once finding 4's two classification rows are added. Rows c, d and d2 may go ahead once findings 3, 5, 7 and 8 are taken. Row e waits for findings 1 and 2. The steward can check all of these against this read. Codex's read stays owed under D191.
+
+## Codex, the accepted text (owed)
+
+Codex's read of the accepted design and its D157 and D155 notes at `16e0950e2`, owed since round 1 when its credits ran out, read after rows a and b were built: 12 findings, 8 blocking; reopen, keeping the refusing gate, the local run and the ordinary send-back direction.
+
+### 1. Claims about the code
+
+Read against **main `7cda79f01`**, including both earlier reads in full and D157’s and D155’s CHATFLOW1 notes and acceptance note.
+
+Paths below use:
+
+- `D/` = `src/Daoris.Desktop/Daoris.Desktop.Driver/`
+- `M/` = `src/Daoris.Desktop/Daoris.Desktop.Modules/`
+- `S/` = `src/Daoris.Service/Daoris.Service.Core/`
+- `W/` = `src/Daoris.Web/src/`
+
+These claims are wrong against main, or overstate what the cited mechanism establishes:
+
+- **“Nothing here is built,” and §1’s account of the trace, API and untranslated no-run answer.** Rows a and b have landed. The trace reads all six fields (`D/Sessions/Trace/Trace.cs:286–291`), `SessionResponse` carries `TookQuest` (`src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs:457`), the route answers code and interpolation values (`M/Bridge/Routes/WorkflowRoutes.cs:243`), and the page translates known codes (`W/workflow/WorkflowRunView.tsx:303–309`). These are historical baseline statements now, not today’s behaviour. Finding 12.
+- **§4.1’s inference that an unchanged `From` tree makes every session-origin entry the first record in that tree.** An entry can inherit the origin of the session that *published a quest*, independently of its worker’s `From` line (`S/Sessions/SessionEntries.cs:108–112`). A closed quest’s worker continued as a chat can consequently have a session origin naming a publisher in another tree. Finding 6.
+- **“An ask’s origin is an intake’s line.”** Quests sent by an ask also receive that origin (`SessionEntries.cs:95–97`). Their workers, and those workers continued as chats, can have `ask:<id>/<repository>`, not an intake’s entry. Finding 6.
+- **§5.2’s “a landing never meets a turn writing in the tree,” because Accept is offered between turns and refuses dirty work.** Offering a press does not reserve the turns. The route reads the gate and later lands without holding `ChatTurns` (`M/Bridge/Routes/TreesRoutes.cs:551`, `:596`). A clean, newly committed turn can pass the dirty check. Finding 1.
+- **§6.1(c)’s “the reservation’s task completes at the send-back turn’s end, as `TakeHeld`’s does.”** `TakeHeld` returns `_drained.Task` (`D/Conversations/Chat/ChatTurns.cs:560–566`). That task completes when the pump drains, not at one message’s turn boundary (`:859–870`, `:1008–1009`). Finding 3.
+- **§6.2’s claim that the recheck reads only commits made in answer.** The existing answer reader captures current `HEAD` (`D/Review/OpinionAnswers.cs:87–92`); fix validation checks ancestry between the first opinion’s tip and that head (`:127–145`). It establishes neither the answering turn’s boundaries nor who caused every intervening commit. Finding 3.
+- **§7’s assertion that `HEAD` at the look, “between turns,” is the press’s tip.** A whole intervening turn can finish before that look. `AskPassAsync` reads current `HEAD`, without a press tip or turn generation (`D/Loop/OpinionGateLook.cs:353–359`). Checking coverage at the *next landing* protects neither the earlier review request nor its send-back. Finding 4.
+
+### 2. The mechanism’s holes
+
+The refusing gate is the right replacement for a kept landing. The settled text also fixes the earlier service/module omissions. The remaining problem is that **one atomic turn reservation is being asked to establish several different boundaries**.
+
+It does not establish that the person has no earlier message being persisted. `ChatTurns.KeepAsync` releases `_gate` while awaiting the service and has not yet put that message in the queue. It does not establish that the person has not already completed another turn since Accept. And the proposed completion task does not identify the end of the answering turn.
+
+The landing has a separate boundary problem. For Current and steps versions, the gate’s opinion tip is not automatically `LandingGate.Tip`. Only the graph path pins that field. Reading a gate at A and subsequently landing the tree at B remains possible. Neither a disabled button nor a clean working tree is a substitute for binding the press to its candidate.
+
+There is also more than one meaning of “line.” The entry groups work by its origin; `From` identifies continuation; a concrete quest identifies the workflow binding and gate. An ask origin and a publisher’s session origin cannot substitute for the concrete quest. The settled classification still conflates them.
+
+Finally, the proposed chat work states do not fit the existing quest derivation unchanged. A chat waiting for Accept has not reached `done`, while the later-step readers require work to be done before showing the opinion and landing. The graph row has the corresponding unresolved problem at runtime: it needs a candidate’s beginning, end and next cycle without a quest.
+
+These are additional findings beyond the earlier reads’ fixes. They affect whose words start the next turn, which candidate gets reviewed and landed, and whether the view exposes the gate that actually holds the work.
+
+### 3. The rows
+
+| Row | Can it be built independently in this order? Does its proof suffice? |
+|---|---|
+| **a** | Already built. Its classification needs finding 6’s correction. The existing examples prove selected origins, not the general identity rule. Add an ask-published quest continued as a chat, a quest inheriting another tree’s publisher origin, and a taken-quest chat contributing actual run facts. |
+| **b** | Already built and stands for its stated translation scope. |
+| **c** | After a’s correction and finding 7. Add proof that the chat’s opinion and landing remain visible before landing, including while findings are answered. Its visible checks mark also requires the web lane. |
+| **d** | After c and finding 1. The existing sequential proofs do not establish candidate identity under a new turn, a hand-over or a wait for the landing hold. Exercise the actual mutation on both terminal paths and the bridge. |
+| **d2** | Must ship with d, as stated. Its skip needs finding 1’s candidate boundary too: the tip skipped must be the tip landed. |
+| **e** | Cannot be built safely from the present contract. Findings 2–5 amend reservation, completion, stale delivery and ended-chat resumption. The proof currently asks both to wait behind activity and to send findings to the person when reservation fails; those outcomes need distinct conditions. |
+| **f** | Needs finding 8’s subject and lifecycle contract before binding any graph. A `run:chat-…` fixture alone does not prove closure, another landing, or a failed check’s send-back. |
+| **g** | Correctly remains installed proof. One uninterrupted successful loop cannot prove the races; its ledger should distinguish that demonstration from the boundary proofs required above. |
+| **h** | Can follow c, but needs the resumption proof in finding 10 and the web work in finding 11. |
+| **i** | Can follow corrected a independently of the chat-run rows. Finding 6 must supply one concrete work resolver shared by its view and every landing/opinion door. |
+
+### 4. Findings
+
+1. **The landing is not bound to the candidate the gate judged. — Blocking; before d and d2.**
+
+   The claim is at design `:344–365`. `TreesRoutes.cs:551` reads the gate before `:596` lands. `D/Review/Domain/OpinionGate.cs:675–679` explicitly permits an unpinned landing to use the tree as it stands; `D/Trees/SessionTrees/TreeGates.cs:64–76` pins only graph landings. The landing hold serializes landings, not conversation turns (`D/Trees/SessionTrees/TreeLands.cs:420–438`). A person can start and commit another turn after the gate read, and those commits can land under the earlier opinion or look skip.
+
+   **Smallest change:** reserve the chat against another turn for the press, judge every part at one captured tip, and pass that tip through the existing pinned landing path. Refuse a moved candidate. Apply this to both doors, including a terminal addressing a conversation another process holds. Prove movement after gate judgement and while waiting for the landing hold.
+
+2. **The reservation can overtake a person’s earlier message. — Blocking; before e.**
+
+   Design `:434–440` reserves under `_gate` alone. But `D/Conversations/Chat/ChatTurns.cs:159–172` serializes persistence with `_keeping`, checks `_gate`, then awaits `door.KeepAsync`. The message enters `Take` only at `:197`. During that await the queue can look idle, so the send-back reserves first although the person already sent—and may already have persisted—the earlier word.
+
+   **Smallest change:** serialize reservation with the dispatcher’s keep operation before testing idle state. Make adoption of the service-kept findings word part of that dispatcher operation. Add a test holding the person’s service write between the initial check and `Take`; the findings must not overtake it.
+
+3. **The proposed completion task does not delimit the answering turn. — Blocking; before e.**
+
+   Design `:442–443` relies on `TakeHeld`’s task. That task is the whole pump’s drain (`ChatTurns.cs:560–566`, `:865–870`). A person’s ordinary message arriving during the send-back can run before it completes. Reading answers then captures that later turn’s `HEAD`, and the automatic recheck can include the person’s subsequent work (`D/Review/OpinionAnswers.cs:87–92`; `D/Loop/OpinionDeliverer.cs:216–222`).
+
+   **Smallest change:** give this particular turn a completion boundary. Capture its ending tip and answers before another queued turn runs, and make the recheck use that frozen reading. Do not describe ancestry alone as proof that a commit was made by that turn. Prove a person’s queued turn changing `HEAD` immediately after the answering turn.
+
+4. **A completed intervening person’s turn is invisible to the send-back decision. — Blocking; before e.**
+
+   Design `:410–413` tests waiting words; `:435–440` tests present idleness. Neither detects: Accept at A; the opinion reads A; the person sends and finishes work B; findings arrive while the chat is idle. The send-back then starts automatically on work the person has moved past. The rejection at design `:679` gives exactly that reason for forbidding queueing behind their words.
+
+   The existing state stores a last turn end (`ChatTurns.cs:987–990`), but the opinion request records no corresponding person-turn generation (`D/Review/Domain/OpinionGate.cs:96`, `:129`).
+
+   **Smallest change:** associate delivery eligibility with the person-turn generation at the initiating press, and compare it atomically at reservation. An intervening person’s turn sends the findings to the person even if it has already ended. Distinguish that from temporary activity which merely waits. Add both cases to row e’s proof.
+
+5. **An ended chat can wait forever without receiving the word that would resume it. — Blocking; before e.**
+
+   Design `:440–441` leaves findings waiting whenever no runner holds the chat. Yet `:463–464` requires an ended chat to resume in its own conversation. The service hand occurs only *after* reservation (`:437–438`), so the ended record never receives the findings word. Its normal go-on path requires `WordsWaiting` (`D/Conversations/Chat/ChatGoOn.cs:440–443`) and consumes those words before `RunAsync` (`:558–586`).
+
+   **Smallest change:** name a separate ended-chat path: hand the word to the ended record, then request its existing go-on through the owning runner, preserving attribution and its turn completion boundary. Keep headless waiting as an explicit separate outcome; route a definitive inability to resume to the person. Prove an ended resumable chat with no person’s words already waiting.
+
+6. **The origin classifier does not identify the work whose workflow must govern it. — Blocking; correction to a before i.**
+
+   Design `:208–216`, `:234–235` and row i at `:653–658` leave three related gaps:
+
+   - An ask origin can belong to a repository worker, not an intake (`S/Sessions/SessionEntries.cs:95–97`). Row i names quest origins and `tookQuest`, leaving this resumed worker without its concrete quest gate.
+   - A quest can inherit its publisher’s session origin (`:108–112`); its continued worker’s tree need not be that publisher’s tree. The stated key rules cover neither that mismatch nor the concrete quest behind it.
+   - Reading a taken quest’s run does not make the chat one of its work records. Main still selects `mine` exclusively by `session.Quest` (`D/Workflows/WorkflowRun.Read.cs:185–187`), then derives its tree, gate and landings from that set (`:209–245`). These chats keep `Quest` null.
+
+   **Smallest change:** resolve the concrete work from the continuation’s quest-bearing records or its taken quest before treating an origin as an intake or an own chat run. Use that resolution consistently for run facts and gates. Preserve the genuine intake’s ask-wide view. Add all three cases to a/i’s proofs, asserting worker, tree, opinion and landing facts as well as run identity.
+
+7. **The chat’s displayed work state prevents its later steps from being derived as a quest’s. — Blocking; before c.**
+
+   Design `:261–267` keeps the work step `waiting-on-you/land` until landing, while saying later steps derive as a quest’s. Existing derivation sets `workDone` only for `done` (`D/Workflows/Domain/WorkflowRun.cs:354–363`). Opinion returns `not-reached` before that (`:583`), as do look (`:678`) and landing (`:735–737`). During a findings-answering turn, the chat becomes `working` again, which would hide the opinion then too.
+
+   **Smallest change:** define chat candidate readiness independently of the displayed work state and use it for later-step derivation. Preserve the opinion’s actual state while its answering turn runs. Prove the view before first Accept, during review, during answer delivery, after recheck and after landing.
+
+8. **Row f still lacks the graph subject and next-candidate lifecycle it says it supplies. — Blocking; before f.**
+
+   Design `:283–285` defers `claimed`, `handed` and `quest.close` subjects to f. Row f (`:642–644`) mentions the first two but settles neither `quest.close` nor another landing of the same run.
+
+   Today `claimed` and `quest.close` observe a quest (`D/Trees/Nodes/GraphRuns.cs:226–230`); runtime branch selection depends on that quest (`D/Trees/Nodes/NodeRuntime.cs:487–501`). An ended run is reconsidered when a different quest returns (`:492–493`). A chat has none of those facts.
+
+   **Smallest change:** specify the chat candidate’s subject, its submission at Accept, treatment or rejection of `quest.close`, and how a later candidate reopens the same bound run without starting steps at an ordinary turn’s end. Keep graph binding disabled until that contract exists. Prove two successive landings, hand-over, closure and a failed check’s single send-back.
+
+9. **Reviewer independence needs proof across the newly permitted re-hand. — Not blocking.**
+
+   Design `:446–449` permits the successor to answer, and `:494–496` requires independence from every contributing family. Existing recheck selection seeds writer discovery with `first.Working` (`D/Loop/OpinionDeliverer.cs:211–214`), while `OpinionWriters.Agents` follows that record’s ancestry (`D/Review/Domain/OpinionWriters.cs:23–39`). It does not discover a later successor merely because that successor answered.
+
+   **Smallest change:** explicitly include the answering successor’s line when selecting the rechecker, while retaining the original opinion identity required by the service. Add a proof where the successor is of the original reviewer’s family; that reviewer must no longer be presented as independent of the fixes.
+
+10. **Row h’s proof stops before same-record resumption. — Not blocking.**
+
+    Design `:315–318` acquires checks and the lock when a chat opens and releases them when it ends. Going on in that same conversation bypasses `StartAsync` and calls `RunAsync` directly (`D/Conversations/Chat/ChatGoOn.cs:576–586`). `run-heavy` depends on both the session lock and kept checks (`D/Sessions/Heavy/HeavyRun.cs:183`). Testing a new chat and a hand-over does not prove this path.
+
+    **Smallest change:** name acquisition and restoration for every resumed execution, including come-up, with release on failed starts. Add an end-and-go-on proof for a light chat. Also distinguish Current’s live requested checks from the checks actually handed to the running harness if the rule changes during its lifetime.
+
+11. **Some row ownership and proof obligations remain outside the listed lanes. — Not blocking.**
+
+    Row c changes a visible checks mark (`design:596`), and h removes it (`:320–321`), but neither lists web. Row d’s new mutation is described at `LAND_SESSION_TREE`; the standalone terminal currently goes directly from gate reading to landing (`src/Daoris.Desktop/Daoris.Desktop.Driver.Host/TreesConsole.cs:390`, `:417`). A refusal’s wording test does not prove that terminal press asks the opinion.
+
+    **Smallest change:** add web to c/h’s ownership, place the refuse-and-ask mutation in a shared driver operation, and explicitly prove it through the bridge, connected terminal and standalone terminal. Keep all three plans free of writes.
+
+12. **The settled document needs an updated standing over its preserved baseline. — Not blocking.**
+
+    The main-code discrepancies listed in §1 are consequences of a/b landing; D157 records them at `docs/decisions/D157.md:550–593`. Design `:11` and `:719` still say nothing is built. Its code citations also retain the pre-a reader’s line numbers.
+
+    **Smallest change:** add the a/b implementation boundary to the standing and label §1 as the dated baseline. Re-pin citations used by the remaining implementation rows. Preserve the earlier reads and historical answer tables unchanged.
+
+**12 findings, 8 blocking.**
+
+**Verdict: reopen.** The refusing gate, local run and ordinary send-back direction stand, but the settled mechanism still lacks a reliable boundary for the person’s earlier words, the answering turn and the candidate their press lands. Findings 1–8 require amendments before d/d2, e, corrected a/i, c and f respectively. Rows a and b’s completed work remains useful; their existence does not establish those remaining boundaries.

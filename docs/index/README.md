@@ -336,11 +336,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-agent-errors-design.md` | 141 | 1004 |
 | `docs/2026-10-24-agent-errors-reads.md` | 125 | 1263 |
 | `docs/2026-10-24-chat-flow-design.md` | 88 | 783 |
-| `docs/2026-10-24-chat-flow-reads.md` | 52 | 382 |
+| `docs/2026-10-24-chat-flow-reads.md` | 70 | 522 |
 | `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
 | `docs/2026-10-24-confirm-wait-design.md` | 107 | 871 |
-| `docs/2026-10-24-confirm-wait-reads.md` | 59 | 685 |
+| `docs/2026-10-24-confirm-wait-reads.md` | 77 | 812 |
 | `docs/2026-10-24-cowork-view-design.md` | 49 | 573 |
 | `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
 | `docs/2026-10-24-keep-size-reads.md` | 121 | 1074 |
