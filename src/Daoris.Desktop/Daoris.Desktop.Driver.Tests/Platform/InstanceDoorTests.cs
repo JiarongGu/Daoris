@@ -164,15 +164,96 @@ public sealed class InstanceDoorTests : IAsyncLifetime
 
         Assert.Equal(0, exit);
         Assert.Equal(0, _alone);
-        Assert.Single(standIn.Presses);
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString();
         Assert.Equal($"trees: archived s1a2b3c4.{Environment.NewLine}", _out.ToString());
-        Assert.Equal($"trees: waiting for you to confirm this in Daoris's window…{Environment.NewLine}", _error.ToString());
+        // CONFIRMWAIT1b (the confirm-wait design §4.1): the id, and the two verbs that read and take it back, said at once.
+        Assert.Equal(
+            $"trees: waiting for you to confirm this in Daoris's window (request {id}); `daoris-driver result {id}` says how it ended, "
+            + $"and `daoris-driver withdraw {id}` takes it back…{Environment.NewLine}",
+            _error.ToString());
     }
 
-    /// <summary>RPC1c: the person's refusal, and two minutes with no answer, are the verb's exit 1 with the instance's sentence; nothing is done alone.</summary>
+    /// <summary>
+    /// CONFIRMWAIT1b (design §4.1): with <c>--no-wait</c> (a wait of zero) the verb returns once the instance says <c>CONFIRMING</c>,
+    /// having said the id and its two verbs, and asks <c>RESULT</c>: a press <c>waiting</c> is exit 1 and kept past the day.
+    /// </summary>
+    [Fact]
+    public async Task No_wait_returns_once_the_instance_says_it_waits_naming_its_id_and_its_two_verbs()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Confirming = true;
+        standIn.Press = StandInPress.Hold;
+        standIn.Result = "waiting";
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var exit = await PressAsync(World(wait: TimeSpan.Zero), Open with { Class = RouteClass.Person });
+
+        Assert.Equal(1, exit);
+        Assert.Equal(0, _alone);
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString();
+        Assert.Single(standIn.Results);
+        var lines = _error.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(2, lines.Length);
+        Assert.Contains($"(request {id}); `daoris-driver result {id}` says how it ended, and `daoris-driver withdraw {id}` takes it back…", lines[0]);
+        Assert.Equal(InstanceDoor.StillWaiting("trees", id!), lines[1]);
+        var kept = new SentPresses(_home).Find(id!, DateTimeOffset.UtcNow.AddDays(2));
+        Assert.NotNull(kept);
+        Assert.NotNull(kept.WaitingAt);
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1b (design §4.1): the verb's own wait over with the press still waiting is not lost and not an error: <c>RESULT</c>'s
+    /// <c>waiting</c> is said with the id and its two verbs, exit 1; today's instance, which answers <c>running</c>, is said as today, exit 2.
+    /// </summary>
+    [Theory]
+    [InlineData("waiting", 1)]
+    [InlineData("running", 2)]
+    public async Task A_press_at_its_waits_end_is_said_by_results_state(string state, int code)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Confirming = true;
+        standIn.Press = StandInPress.Hold;
+        standIn.Result = state;
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var exit = await PressAsync(World(wait: TimeSpan.FromMilliseconds(500)), Open with { Class = RouteClass.Person });
+
+        Assert.Equal(code, exit);
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
+        if (state == "waiting") Assert.Contains(InstanceDoor.StillWaiting("trees", id), _error.ToString());
+        else Assert.Contains($"Daoris was still working on it (request {id})", _error.ToString());
+        Assert.Equal(state == "waiting", new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2)) is not null);
+    }
+
+    /// <summary>CONFIRMWAIT1b (design §4.1, §5.1): <c>already</c> is exit 0, its sentence on the error stream, nothing done alone.</summary>
+    [Fact]
+    public async Task Already_set_is_exit_0_with_its_sentence()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Press = StandInPress.Refuse;
+        standIn.Code = "already";
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var exit = await PressAsync(World(), Open with { Class = RouteClass.Person });
+
+        Assert.Equal(0, exit);
+        Assert.Equal(0, _alone);
+        Assert.Contains("trees: refused already. (already)", _error.ToString());
+    }
+
+    /// <summary>
+    /// RPC1c: the person's refusal, and two minutes with no answer, are the verb's exit 1 with the instance's sentence; nothing is done
+    /// alone. CONFIRMWAIT1b (design §2): a ground that changed, a withdrawal and a loss are the person's or the asker's word too.
+    /// </summary>
     [Theory]
     [InlineData("refused")]
     [InlineData("expired")]
+    [InlineData("changed")]
+    [InlineData("withdrawn")]
+    [InlineData("lost")]
     public async Task A_person_route_the_window_refuses_or_lets_expire_is_exit_1_and_never_done_alone(string code)
     {
         if (!OperatingSystem.IsWindows()) return;
@@ -552,6 +633,169 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.Contains("trees: removed 1 of 1.", _out.ToString());
         Assert.Single(standIn.Presses);
         Assert.Equal(0, _alone);
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1b (design §4.2): <c>result</c> says a press still <c>waiting</c> as the verb's own end does, exit 1, and keeps it past
+    /// the day; its ending's refusals are exit 1 where they are the person's or the asker's word, aligned with the press, else 2; and
+    /// <c>unknown</c> says what is so.
+    /// </summary>
+    [Theory]
+    [InlineData("waiting", null, 1)]
+    [InlineData("answered", "refused", 1)]
+    [InlineData("answered", "changed", 1)]
+    [InlineData("answered", "withdrawn", 1)]
+    [InlineData("answered", "lost", 1)]
+    [InlineData("answered", "expired", 1)]
+    [InlineData("answered", "already", 0)]
+    [InlineData("answered", "stopping", 2)]
+    [InlineData("unknown", null, 2)]
+    public async Task Result_says_a_waiting_press_and_each_ending_with_the_press_exit_codes(string state, string? refused, int code)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Press = StandInPress.Drop;
+        standIn.Result = "running";
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+        await PressAsync(World());
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
+        _error.GetStringBuilder().Clear();
+        standIn.Result = state;
+        standIn.ResultRefused = refused;
+
+        var exit = await InstanceDoor.ResultAsync(id, World());
+
+        Assert.Equal(code, exit);
+        var said = _error.ToString();
+        switch (state)
+        {
+            case "waiting":
+                Assert.Contains(InstanceDoor.StillWaiting("trees", id), said);
+                Assert.NotNull(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2)));
+                break;
+            case "unknown":
+                Assert.Contains($"Daoris has no ending for request {id}: it keeps an ending a day, and a press it never began is not in it.", said);
+                Assert.DoesNotContain("it stopped while this was under way", said);
+                break;
+            default:
+                Assert.Contains($"refused {refused}. ({refused})", said);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1b (design §4.3): <c>withdraw &lt;id&gt;</c> sends the pipe's own <c>WITHDRAW { id, key }</c> with the kept key on a
+    /// new connection, never the kit's <c>CANCEL</c>, and says each answer: taken back exit 0; confirmed meanwhile, nothing cancelled, exit
+    /// 1; already ended, with its ending, exit 1; another key's exit 2; and today's instance, which has no such route, exit 2, saying so.
+    /// </summary>
+    [Theory]
+    [InlineData("withdrawn", 0, "took back request {id}: it was not done, and its card is gone from Daoris's window.")]
+    [InlineData("running", 1, "request {id} was confirmed meanwhile and is under way, so nothing was taken back")]
+    [InlineData("ended", 1, "request {id} had already ended: it was done; `daoris-driver result {id}` says its answer.")]
+    [InlineData("id-taken", 2, "refused id-taken. (id-taken)")]
+    [InlineData("no-route", 2, "the Daoris running here cannot take a press back (request {id}): it is from before `withdraw`")]
+    public async Task Withdraw_sends_the_pipes_own_withdraw_with_the_kept_key_and_says_each_answer(string answer, int code, string said)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Confirming = true;
+        standIn.Press = StandInPress.Drop;
+        standIn.Result = "running";
+        standIn.Withdraw = answer;
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+        await PressAsync(World(), Open with { Class = RouteClass.Person });
+        var press = Assert.Single(standIn.Presses);
+        var id = press.GetProperty("id").GetString()!;
+        _error.GetStringBuilder().Clear();
+
+        var exit = await InstanceDoor.WithdrawAsync(id, World());
+
+        Assert.Equal(code, exit);
+        Assert.Contains(said.Replace("{id}", id), _error.ToString() + _out.ToString());
+        var withdraw = Assert.Single(standIn.Withdraws);
+        Assert.Equal("DAORIS.PIPE", withdraw.GetProperty("module").GetString());
+        Assert.Equal(id, withdraw.GetProperty("payload").GetProperty("id").GetString());
+        Assert.Equal(press.GetProperty("key").GetString(), withdraw.GetProperty("payload").GetProperty("key").GetString());
+        Assert.DoesNotContain(standIn.Sent, each => each.GetProperty("type").GetString() == "CANCEL");
+    }
+
+    /// <summary>CONFIRMWAIT1b: an id this terminal never sent is withdrawn from nothing, and the instance is not asked.</summary>
+    [Fact]
+    public async Task Withdraw_of_an_id_it_never_sent_asks_nothing()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var exit = await InstanceDoor.WithdrawAsync("a-request-nobody-sent", World());
+
+        Assert.Equal(2, exit);
+        Assert.Equal(0, standIn.Connections);
+        Assert.Contains("this terminal sent no request a-request-nobody-sent", _error.ToString());
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1b (design §4.1): <c>--wait &lt;minutes&gt;</c>, 0 to 30, and <c>--no-wait</c>, which is <c>--wait 0</c>, are taken
+    /// from the words in the host's entry before any verb reads them; no flag leaves the wait unset, and a wait out of bounds, without
+    /// its minutes, or said twice is a problem.
+    /// </summary>
+    [Theory]
+    [InlineData("agent rules allow Bash(git:*) --wait 5", "agent rules allow Bash(git:*)", 5)]
+    [InlineData("--no-wait tool use git system", "tool use git system", 0)]
+    [InlineData("setup Lyntai --wait 0", "setup Lyntai", 0)]
+    [InlineData("setup Lyntai --wait 30", "setup Lyntai", 30)]
+    [InlineData("trees list", "trees list", null)]
+    public void The_wait_is_taken_from_the_words_before_the_verb_reads_them(string words, string rest, int? minutes)
+    {
+        Assert.True(InstanceDoor.TakeWait(words.Split(' '), out var left, out var wait, out var problem));
+        Assert.Null(problem);
+        Assert.Equal(rest.Split(' '), left);
+        Assert.Equal(minutes is { } m ? TimeSpan.FromMinutes(m) : null, wait);
+    }
+
+    [Theory]
+    [InlineData("setup Lyntai --wait 31")]
+    [InlineData("setup Lyntai --wait -1")]
+    [InlineData("setup Lyntai --wait soon")]
+    [InlineData("setup Lyntai --wait")]
+    [InlineData("setup Lyntai --wait 5 --no-wait")]
+    [InlineData("setup Lyntai --no-wait --no-wait")]
+    public void A_wait_out_of_bounds_or_said_twice_is_a_problem(string words)
+    {
+        Assert.False(InstanceDoor.TakeWait(words.Split(' '), out _, out _, out var problem));
+        Assert.Contains("--wait", problem);
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1b (design §4.1, §11): Ctrl+C still withdraws nothing, and the families' one sentence says both verbs, read by each of
+    /// the four consoles; no client of this machine writes the kit's <c>CANCEL</c>.
+    /// </summary>
+    [Fact]
+    public void The_four_ctrl_c_sentences_name_result_and_withdraw_and_withdraw_nothing()
+    {
+        Assert.Contains("may still be confirmed there", InstanceDoor.StoppedAtCtrlC);
+        Assert.Contains("`daoris-driver result <id>` asks how it ended", InstanceDoor.StoppedAtCtrlC);
+        Assert.Contains("`daoris-driver withdraw <id>` takes it back", InstanceDoor.StoppedAtCtrlC);
+        var host = Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host");
+        foreach (var console in new[] { "AgentsConsole.cs", "DriverChoicesConsole.cs", "PluginConsole.cs", "ToolsConsole.cs" })
+        {
+            var source = File.ReadAllText(Path.Combine(host, console));
+            Assert.Contains("InstanceDoor.StoppedAtCtrlC", source);
+            Assert.DoesNotContain("may still be confirmed there", source);
+        }
+
+        Assert.DoesNotContain("\"CANCEL\"", File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Platform", "InstanceClient.cs")));
+    }
+
+    /// <summary>The desktop's source folder, found up from the test's output.</summary>
+    private static string SourceRoot()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            if (Directory.Exists(Path.Combine(dir.FullName, "Daoris.Desktop.Driver.Host"))) return dir.FullName;
+        }
+
+        throw new InvalidOperationException("the desktop's source folder was not found above the test's output");
     }
 
     [Fact]

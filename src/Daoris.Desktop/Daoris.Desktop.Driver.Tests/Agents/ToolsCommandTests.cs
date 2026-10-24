@@ -244,6 +244,14 @@ public sealed class ToolsCommandTests : IDisposable
         Assert.Empty(ToolInstall.Downloaded(Home, "gh"));
     }
 
+    /// <summary>CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.</summary>
+    [Fact]
+    public void The_usage_says_how_long_a_change_waits_on_its_confirm()
+    {
+        Assert.All(ToolsCommand.Verbs, verb => Assert.Contains(verb, ToolsCommand.Usage, StringComparison.Ordinal));
+        Assert.Contains(InstanceDoor.WaitUsage, ToolsCommand.Usage, StringComparison.Ordinal);
+    }
+
     /// <summary>The short changes hold the home from the top; a read, the usage and the long verbs hold none (D194 point 2).</summary>
     [Theory]
     [InlineData("use git system", true)]

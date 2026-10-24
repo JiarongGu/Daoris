@@ -107,6 +107,9 @@ public sealed class DriverCommandTests
             .ToList();
 
         Assert.True(verbs.Count >= 8, $"expected the host's verbs, found {string.Join(", ", verbs)}");
+        // CONFIRMWAIT1b (the confirm-wait design §4.1, §4.3): `withdraw <id>` beside `result <id>`, and how long a press waits.
+        Assert.Contains("withdraw", verbs);
+        Assert.Contains("\n  --wait <minutes> | --no-wait\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
         foreach (var verb in verbs.Append("drive"))
         {
             Assert.Contains($"\n  {verb} ", DriverCommand.Usage.ReplaceLineEndings("\n"));

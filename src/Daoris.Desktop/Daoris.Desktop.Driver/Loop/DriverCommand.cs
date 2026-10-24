@@ -78,7 +78,13 @@ public static class DriverCommand
           result <id>
               how a press this terminal sent to the running Daoris ended, when its answer did not reach the
               verb ("Daoris was still working on it (request …)"): asked again with the key it was sent with,
-              for a day. It sends nothing again.
+              for a day, or up to thirty while it waits for your Confirm. It sends nothing again.
+          withdraw <id>
+              take back a press this terminal sent that waits for your Confirm in Daoris's window: its card goes
+              and nothing is done. One you confirmed meanwhile is never taken back; Ctrl+C takes nothing back.
+          --wait <minutes> | --no-wait
+              with any verb that presses: how long it waits on its Confirm in Daoris's window, 0 to 30 (the
+              default 30). --no-wait returns once it is asked, naming its id; `result <id>` says how it ended.
           quest delete <id>  ·  quest accept <id>
               delete a quest nobody has started on, or accept a done's departure from what you required, so what
               it held (the chain's next step, a quest waiting on it) goes on.

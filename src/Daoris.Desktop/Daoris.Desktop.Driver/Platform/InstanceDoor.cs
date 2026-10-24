@@ -58,8 +58,15 @@ public sealed class InstanceWorld
     /// <summary>How long the pipe is given to connect and answer the hello (§7.2: five seconds).</summary>
     public TimeSpan Answer { get; init; } = TimeSpan.FromSeconds(5);
 
-    /// <summary>How long a press is waited on before its answer is asked for by <c>RESULT</c>.</summary>
-    public TimeSpan Wait { get; init; } = TimeSpan.FromMinutes(30);
+    /// <summary>
+    /// How long a press is waited on before its answer is asked for by <c>RESULT</c>: <c>--wait &lt;minutes&gt;</c>, which the host's
+    /// entry takes (CONFIRMWAIT1b, the confirm-wait design §4.1). Zero is <c>--no-wait</c>: the verb returns once the instance says the
+    /// press waits for the window (<c>CONFIRMING</c>), and a press that asks no window, or a read, is waited on as long as by default.
+    /// </summary>
+    public TimeSpan Wait { get; init; } = InstanceDoor.LongestWait;
+
+    /// <summary>The bound a request is waited on within: <see cref="Wait"/>, or the default where it is <c>--no-wait</c>'s zero.</summary>
+    public TimeSpan Within => Wait > TimeSpan.Zero ? Wait : InstanceDoor.LongestWait;
 
     /// <summary>
     /// The SIDs whose pipe this terminal takes as its user's: <see cref="InstanceClient.ThisUser"/>'s where null (PIPEOWNER1), or a
@@ -224,9 +231,11 @@ public static class InstanceDoor
     /// 🔴 <b>A timeout never means "do it here"</b> (§7.2): once a request was sent, a lost answer is asked for by <c>RESULT</c>
     /// with the request's key on a new connection, and what it says is said; the press is never sent again nor done alone.
     /// <para><b>A person's press is confirmed in the window</b> (RPC1c, D156 §4.2): the instance shows it there naming this terminal,
-    /// and the verb says it waits as the instance tells it so (<c>CONFIRMING</c>); the confirmed press's answer is said in the verb's
-    /// words, and the person's refusal or the two minutes' end is the instance's sentence, exit 1, nothing done here. A window's
-    /// route is never sent: no terminal verb has one.</para>
+    /// and the verb says it waits as the instance tells it so (<c>CONFIRMING</c>), naming the request's id and the verbs that read and
+    /// take it back at once (CONFIRMWAIT1b); the confirmed press's answer is said in the verb's words, and the person's refusal or the
+    /// two minutes' end is the instance's sentence, exit 1, nothing done here. The verb's own wait over with the press still
+    /// <c>waiting</c> is exit 1 too, and an instance from before CONFIRMWAIT1a-i, which answers <c>running</c> then, is said as before,
+    /// exit 2. A window's route is never sent: no terminal verb has one.</para>
     /// </remarks>
     /// <param name="payload">The route's payload, as a window's press sends it.</param>
     /// <param name="alone">The verb acting from its own process, as it does where no instance runs.</param>
@@ -252,13 +261,18 @@ public static class InstanceDoor
         // RPC1j: kept before it is sent, so `result <id>` can ask for an answer that never reached this verb.
         if (world.Home is { } kept) new SentPresses(kept).Keep(new SentPress(id, key, $"{route.Module}.{route.Route}", DateTimeOffset.UtcNow));
         JsonElement? answer;
+        // CONFIRMWAIT1b (§4.1): `--no-wait` leaves the line once the instance says the press waits, the id already said.
+        using var leave = CancellationTokenSource.CreateLinkedTokenSource(ct);
         await using (var client = look.Client!)
         {
-            answer = await client.RequestAsync(id, route.Module, route.Route, payload, key, told => Told(told, id, world), world.Wait, ct)
-                .ConfigureAwait(false);
+            answer = await client.RequestAsync(id, route.Module, route.Route, payload, key, told =>
+            {
+                if (Told(told, id, world) && world.Wait <= TimeSpan.Zero) leave.Cancel();
+            }, world.Within, leave.Token).ConfigureAwait(false);
         }
 
-        // The answer was lost (the connection, or the verb's wait over): asked for, never sent again, never done here (§6.1).
+        // The answer was lost (the connection, or the verb's wait over): asked for, never sent again, never done here (§6.1). Which
+        // end it is, RESULT's state says (CONFIRMWAIT1b): a press still waiting for the person is not one under way.
         if (answer is null)
         {
             var result = await ResultAsync(client: look, id, key, world, ct).ConfigureAwait(false);
@@ -266,6 +280,12 @@ public static class InstanceDoor
             if (state == "answered" && result!.Value.GetProperty("data").TryGetProperty("answer", out var ended))
             {
                 answer = ended;
+            }
+            else if (state == Waiting)
+            {
+                if (world.Home is { } home) new SentPresses(home).Waiting(id, DateTimeOffset.UtcNow);
+                await world.Error.WriteLineAsync(StillWaiting(world.Verb, id)).ConfigureAwait(false);
+                return 1;
             }
             else
             {
@@ -284,15 +304,106 @@ public static class InstanceDoor
 
         var (code, message, _) = Refusal(answer.Value);
         await world.Error.WriteLineAsync($"{world.Verb}: {message} ({code})").ConfigureAwait(false);
-        // RPC1c: the person's refusal in the window, and the two minutes with no answer, are the person's word: a policy answer, exit 1.
-        return code is Refused or Expired ? 1 : 2;
+        return RefusalExit(code);
     }
+
+    /// <summary>
+    /// A press's refusal as the verb's exit code: <c>already</c> 0, the world being as asked (CONFIRMWAIT1b, the confirm-wait design
+    /// §5.1); the person's or the asker's word on it (<see cref="PersonEnds"/>) 1, a policy answer (RPC1c); any other 2.
+    /// </summary>
+    private static int RefusalExit(string? code) => code == Already ? 0 : code is not null && PersonEnds.Contains(code) ? 1 : 2;
 
     /// <summary>The instance's refusal of a person's press the person refused in its window (RPC1c, <c>InstancePipe.Refused</c>).</summary>
     public const string Refused = "refused";
 
     /// <summary>The instance's refusal of a person's press nobody confirmed within its two minutes (RPC1c, <c>InstancePipe.Expired</c>).</summary>
     public const string Expired = "expired";
+
+    /// <summary>
+    /// A press's endings that are the person's or its asker's word, exit 1 at the press and at <c>result</c> alike (the confirm-wait
+    /// design §2, §4.2): refused, a ground that changed while it waited, withdrawn, lost at a restart, and an instance from before
+    /// CONFIRMWAIT1a-i's two minutes.
+    /// </summary>
+    public static readonly IReadOnlySet<string> PersonEnds = new HashSet<string>(StringComparer.Ordinal)
+    {
+        Refused, Expired, "changed", "withdrawn", "lost",
+    };
+
+    /// <summary>A press whose world is already as it asks, answered at the ask with no card (the confirm-wait design §5.1): exit 0.</summary>
+    public const string Already = "already";
+
+    /// <summary><c>RESULT</c>'s state for a press that waits for the person's Confirm (CONFIRMWAIT1a-i, the confirm-wait design §4.2).</summary>
+    public const string Waiting = "waiting";
+
+    /// <summary>The longest a verb waits on a press, and the default: <c>--wait</c>'s bound (the confirm-wait design §4.1).</summary>
+    public static readonly TimeSpan LongestWait = TimeSpan.FromMinutes(30);
+
+    /// <summary>What a family's usage says of the wait (CONFIRMWAIT1b), held in each by its usage test.</summary>
+    public const string WaitUsage =
+        "Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.";
+
+    /// <summary>
+    /// What a family says at the person's Ctrl+C (RPC1h, CONFIRMWAIT1b): it withdraws nothing (the confirm-wait design §4.1, §11), so the
+    /// two verbs that read and take back what was sent are named.
+    /// </summary>
+    public const string StoppedAtCtrlC =
+        "daoris: stopped at your Ctrl+C. A change already sent to Daoris's window may still be confirmed there: `daoris-driver result <id>` "
+        + "asks how it ended, and `daoris-driver withdraw <id>` takes it back; nothing more was done here.";
+
+    /// <summary>
+    /// A press still waiting for the person's Confirm when the verb's wait ended (the confirm-wait design §4.1): not lost and not an
+    /// error, said with its id and the two verbs, exit 1.
+    /// </summary>
+    public static string StillWaiting(string verb, string id) =>
+        $"{verb}: still waiting for your confirmation in Daoris's window (request {id}); `daoris-driver result {id}` says how it ended, "
+        + $"and `daoris-driver withdraw {id}` takes it back (waiting)";
+
+    /// <summary>
+    /// Takes <c>--wait &lt;minutes&gt;</c> (0 to 30) and <c>--no-wait</c>, which is <c>--wait 0</c>, from the host's words before any
+    /// verb reads them (CONFIRMWAIT1b, the confirm-wait design §4.1): the rest are the verb's, and the wait is set on the world the
+    /// verb is given, null where none was said. False, with the problem, for a wait out of bounds, without its minutes, or said twice.
+    /// </summary>
+    public static bool TakeWait(IReadOnlyList<string> args, out string[] rest, out TimeSpan? wait, out string? problem)
+    {
+        var left = new List<string>(args.Count);
+        wait = null;
+        problem = null;
+        for (var at = 0; at < args.Count; at++)
+        {
+            if (args[at] is not ("--wait" or "--no-wait"))
+            {
+                left.Add(args[at]);
+                continue;
+            }
+
+            if (wait is not null)
+            {
+                problem = "--wait or --no-wait is said once.";
+                break;
+            }
+
+            if (args[at] == "--no-wait")
+            {
+                wait = TimeSpan.Zero;
+                continue;
+            }
+
+            if (at + 1 >= args.Count || !int.TryParse(args[at + 1], System.Globalization.NumberStyles.None,
+                    System.Globalization.CultureInfo.InvariantCulture, out var minutes) || minutes > LongestWait.TotalMinutes)
+            {
+                problem = $"--wait takes the minutes to wait on a press's Confirm, 0 to {LongestWait.TotalMinutes:0}.";
+                break;
+            }
+
+            wait = TimeSpan.FromMinutes(minutes);
+            at++;
+        }
+
+        rest = [.. left];
+        if (problem is null) return true;
+        wait = null;
+        return false;
+    }
 
     /// <summary>The notification that tells this terminal its press waits for the person in the window (<c>InstancePipe.Confirming</c>).</summary>
     public const string Confirming = "CONFIRMING";
@@ -369,7 +480,7 @@ public static class InstanceDoor
         await using (var client = look.Client!)
         {
             answer = await client.RequestAsync(Guid.NewGuid().ToString(), route.Module, route.Route, payload, Guid.NewGuid().ToString("N"),
-                told: null, world.Wait, ct).ConfigureAwait(false);
+                told: null, world.Within, ct).ConfigureAwait(false);
         }
 
         return answer is { } said && Succeeded(said) ? words(said.TryGetProperty("data", out var data) ? data : default) : null;
@@ -408,29 +519,19 @@ public static class InstanceDoor
     /// <summary>
     /// <c>daoris-driver result &lt;id&gt;</c> (RPC1j, §6.1): how a press this terminal sent ended, asked of the instance with the key it
     /// was sent with. An answered press's words are its route's (<c>said</c>), else its answer as the instance gave it; a press still
-    /// under way, one the instance does not know and one it holds for another key are said, exit 2.
+    /// under way, one the instance does not know and one it holds for another key are said, exit 2. CONFIRMWAIT1b (the confirm-wait
+    /// design §4.2): a press still <c>waiting</c> for the person is said as the verb's own wait's end says it, exit 1, and kept past the
+    /// day; an ending the person or the asker made is exit 1 as at the press, <c>already</c> 0.
     /// </summary>
     public static async Task<int> ResultAsync(string id, InstanceWorld world, CancellationToken ct = default)
     {
-        var kept = world.Home is { } home ? new SentPresses(home).Find(id, DateTimeOffset.UtcNow) : null;
-        if (kept is null)
-        {
-            await world.Error.WriteLineAsync(
-                $"{world.Verb}: this terminal sent no request {id} within the day Daoris keeps one's answer; nothing is known of it.").ConfigureAwait(false);
-            return 2;
-        }
-
-        var look = await FindAsync(world, ct).ConfigureAwait(false);
-        if (look.Found != InstanceFound.Answers)
-        {
-            await world.Error.WriteLineAsync($"{world.Verb}: {look.Why}").ConfigureAwait(false);
-            return 2;
-        }
+        var (kept, presses, look) = await KeptAsync(id, world, ct).ConfigureAwait(false);
+        if (look is null) return 2;
 
         JsonElement? result;
         await using (var client = look.Client!)
         {
-            result = await client.ResultAsync(id, kept.Key, world.Answer, ct).ConfigureAwait(false);
+            result = await client.ResultAsync(id, kept!.Key, world.Answer, ct).ConfigureAwait(false);
         }
 
         if (result is not { } envelope)
@@ -444,6 +545,7 @@ public static class InstanceDoor
         switch (InstanceClient.Text(data, "state"))
         {
             case "answered" when data.TryGetProperty("answer", out var answer):
+                presses!.Ended(id, DateTimeOffset.UtcNow);
                 if (!Succeeded(answer)) return await RefusedAsync(answer, world).ConfigureAwait(false);
                 var inside = answer.TryGetProperty("data", out var body) ? body : default;
                 if (TreesSaid.Read(inside) is { } said)
@@ -454,22 +556,120 @@ public static class InstanceDoor
 
                 await world.Out.WriteLineAsync(inside.ValueKind == JsonValueKind.Undefined ? "{}" : inside.GetRawText()).ConfigureAwait(false);
                 return 0;
+            case Waiting:
+                presses!.Waiting(id, DateTimeOffset.UtcNow);
+                await world.Error.WriteLineAsync(StillWaiting(world.Verb, id)).ConfigureAwait(false);
+                return 1;
             case "running":
                 await world.Error.WriteLineAsync($"{world.Verb}: Daoris is still working on it (request {id}); ask again later.").ConfigureAwait(false);
                 return 2;
             default:
+                presses!.Ended(id, DateTimeOffset.UtcNow);
                 await world.Error.WriteLineAsync(
-                    $"{world.Verb}: Daoris does not know how it ended (request {id}): it stopped while this was under way, and nothing was done again.")
+                    $"{world.Verb}: Daoris has no ending for request {id}: it keeps an ending a day, and a press it never began is not in it.")
                     .ConfigureAwait(false);
                 return 2;
         }
     }
 
+    /// <summary>
+    /// <c>daoris-driver withdraw &lt;id&gt;</c> (CONFIRMWAIT1b, the confirm-wait design §4.3): takes back a press this terminal sent that
+    /// still waits for the person's Confirm, by the pipe's own <c>WITHDRAW { id, key }</c> with the key it was sent with, on a new
+    /// connection; never the kit's <c>CANCEL</c>, which reaches a confirmed press and aborts it. Taken back is exit 0; confirmed meanwhile
+    /// (nothing is cancelled) or already ended, said with its ending, exit 1; anything else exit 2, an instance from before the route
+    /// among them, which says so.
+    /// </summary>
+    public static async Task<int> WithdrawAsync(string id, InstanceWorld world, CancellationToken ct = default)
+    {
+        var (kept, presses, look) = await KeptAsync(id, world, ct).ConfigureAwait(false);
+        if (look is null) return 2;
+
+        JsonElement? withdrawn;
+        await using (var client = look.Client!)
+        {
+            withdrawn = await client.WithdrawAsync(id, kept!.Key, world.Answer, ct).ConfigureAwait(false);
+        }
+
+        if (withdrawn is not { } envelope)
+        {
+            await world.Error.WriteLineAsync($"{world.Verb}: Daoris did not answer within {world.Answer.TotalSeconds:0.#} seconds; ask again.").ConfigureAwait(false);
+            return 2;
+        }
+
+        if (!Succeeded(envelope))
+        {
+            if (Refusal(envelope).Code != NoRoute) return await RefusedAsync(envelope, world).ConfigureAwait(false);
+            await world.Error.WriteLineAsync(
+                $"{world.Verb}: the Daoris running here cannot take a press back (request {id}): it is from before `withdraw`, and a press "
+                + "it holds ends by its own time if nobody answers it; nothing was taken back.").ConfigureAwait(false);
+            return 2;
+        }
+
+        var data = envelope.TryGetProperty("data", out var held) ? held : default;
+        switch (InstanceClient.Text(data, "state"))
+        {
+            case "withdrawn":
+                presses!.Ended(id, DateTimeOffset.UtcNow);
+                await world.Out.WriteLineAsync(
+                    $"{world.Verb}: took back request {id}: it was not done, and its card is gone from Daoris's window.").ConfigureAwait(false);
+                return 0;
+            case "running":
+                await world.Error.WriteLineAsync(
+                    $"{world.Verb}: request {id} was confirmed meanwhile and is under way, so nothing was taken back; "
+                    + $"`daoris-driver result {id}` says how it ended.").ConfigureAwait(false);
+                return 1;
+            case "ended":
+                presses!.Ended(id, DateTimeOffset.UtcNow);
+                string ending;
+                if (!data.TryGetProperty("answer", out var answer)) ending = "Daoris did not say how.";
+                else if (Succeeded(answer)) ending = $"it was done; `daoris-driver result {id}` says its answer.";
+                else
+                {
+                    var (code, message, _) = Refusal(answer);
+                    ending = $"{message} ({code})";
+                }
+
+                await world.Error.WriteLineAsync($"{world.Verb}: request {id} had already ended: {ending}").ConfigureAwait(false);
+                return 1;
+            default:
+                await world.Error.WriteLineAsync(
+                    $"{world.Verb}: Daoris answered the withdrawal of request {id} in words this terminal does not read; "
+                    + $"`daoris-driver result {id}` says how it stands.").ConfigureAwait(false);
+                return 2;
+        }
+    }
+
+    /// <summary>The kit's refusal of a route it does not have: an instance from before the pipe's <c>WITHDRAW</c>.</summary>
+    private const string NoRoute = "NO_ROUTE";
+
+    /// <summary>
+    /// The press this terminal kept under <paramref name="id"/> and the instance's connection to ask about it, or, said, why there is
+    /// none: no press kept, or no instance that answers (null look).
+    /// </summary>
+    private static async Task<(SentPress? Kept, SentPresses? Presses, InstanceLook? Look)> KeptAsync(
+        string id, InstanceWorld world, CancellationToken ct)
+    {
+        var presses = world.Home is { } home ? new SentPresses(home) : null;
+        if (presses?.Find(id, DateTimeOffset.UtcNow) is not { } kept)
+        {
+            await world.Error.WriteLineAsync(
+                $"{world.Verb}: this terminal sent no request {id} within the day Daoris keeps one's answer, or the thirty days it keeps "
+                + "one that waits; nothing is known of it.").ConfigureAwait(false);
+            return (null, null, null);
+        }
+
+        var look = await FindAsync(world, ct).ConfigureAwait(false);
+        if (look.Found == InstanceFound.Answers) return (kept, presses, look);
+        await world.Error.WriteLineAsync($"{world.Verb}: {look.Why}").ConfigureAwait(false);
+        return (kept, presses, null);
+    }
+
+    /// <summary>A refusal said, exit as <see cref="PressAsync"/> gives the same refusal (CONFIRMWAIT1b, the confirm-wait design §4.2).</summary>
     private static async Task<int> RefusedAsync(JsonElement envelope, InstanceWorld world)
     {
         var (code, message, _) = Refusal(envelope);
         await world.Error.WriteLineAsync($"{world.Verb}: {message} ({code})").ConfigureAwait(false);
-        return 2;
+        return RefusalExit(code);
     }
 
     /// <summary><c>RESULT</c> for a press whose answer was lost, asked on a new connection to the pipe the verb found.</summary>
@@ -485,20 +685,25 @@ public static class InstanceDoor
 
     /// <summary>
     /// A route's progress, said as a line where it names this press and says something (§6); and that the press waits for the person
-    /// in the window (RPC1c), said once on the error, so the output stays the answer's.
+    /// in the window (RPC1c), said once on the error, so the output stays the answer's: with the request's id and the verbs that read
+    /// and take it back, at once and flushed, before any wait (CONFIRMWAIT1b, the confirm-wait design §4.1). True where it said so.
     /// </summary>
-    private static void Told(JsonElement told, string id, InstanceWorld world)
+    private static bool Told(JsonElement told, string id, InstanceWorld world)
     {
-        if (!told.TryGetProperty("payload", out var batch) || batch.ValueKind != JsonValueKind.Array) return;
+        if (!told.TryGetProperty("payload", out var batch) || batch.ValueKind != JsonValueKind.Array) return false;
+        var confirming = false;
         foreach (var each in batch.EnumerateArray())
         {
             if (!each.TryGetProperty("payload", out var status) || InstanceClient.Text(status, "id") != id) continue;
             if (InstanceClient.Text(each, "module") == InstanceClient.PipeModule && InstanceClient.Text(each, "type") == Confirming)
             {
                 // TERMTRUST1a: where the person's standing confirmation names this press and did not cover it, the wait says why.
-                world.Error.WriteLine(StandingWhy(InstanceClient.Text(status, "standing")) is { } why
-                    ? $"{world.Verb}: waiting for you to confirm this in Daoris's window ({why})…"
-                    : $"{world.Verb}: waiting for you to confirm this in Daoris's window…");
+                var why = StandingWhy(InstanceClient.Text(status, "standing")) is { } standing ? $"; {standing}" : "";
+                world.Error.WriteLine(
+                    $"{world.Verb}: waiting for you to confirm this in Daoris's window (request {id}{why}); `daoris-driver result {id}` says "
+                    + $"how it ended, and `daoris-driver withdraw {id}` takes it back…");
+                world.Error.Flush();
+                confirming = true;
                 continue;
             }
 
@@ -513,6 +718,8 @@ public static class InstanceDoor
                 world.Out.WriteLine($"  {text}");
             }
         }
+
+        return confirming;
     }
 
     private static bool Succeeded(JsonElement envelope) =>

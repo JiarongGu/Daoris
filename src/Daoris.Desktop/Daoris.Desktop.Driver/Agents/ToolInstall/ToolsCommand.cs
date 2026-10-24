@@ -94,6 +94,7 @@ public static class ToolsCommand
                daoris-driver tool download <tool> [<version>] · update <tool> · delete <tool> <version>
                daoris-driver tool locations [add|remove <address>] · look
         `daoris tool …` runs these; the tools are git, node, pwsh, gh and az.
+        Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
     private const string Prefix = "daoris";

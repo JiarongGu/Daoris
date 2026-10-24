@@ -95,7 +95,7 @@ public sealed class SessionsThroughInstanceTests
 
         Assert.Equal(0, exit);
         Assert.Equal(line + Environment.NewLine, output.ToString());
-        Assert.Equal($"sessions: waiting for you to confirm this in Daoris's window…{Environment.NewLine}", home.Error.ToString());
+        Assert.Matches(InstanceStandIn.WaitingAlone("sessions"), home.Error.ToString());
         Assert.Equal(0, service.Requests);
         Assert.False(File.Exists(new SessionArchive(home.Home).FilePath));
         var press = Assert.Single(standIn.Presses);
@@ -197,7 +197,7 @@ public sealed class SessionsThroughInstanceTests
 
         Assert.Equal(0, exit);
         Assert.Equal(line + Environment.NewLine, output.ToString());
-        Assert.Equal($"sessions: waiting for you to confirm this in Daoris's window…{Environment.NewLine}", home.Error.ToString());
+        Assert.Matches(InstanceStandIn.WaitingAlone("sessions"), home.Error.ToString());
         Assert.Equal(0, service.Requests);
         var press = Assert.Single(standIn.Presses);
         Assert.Equal(route, press.GetProperty("type").GetString());

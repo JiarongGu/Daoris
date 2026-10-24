@@ -20,9 +20,7 @@ internal static class PluginConsole
         catch (OperationCanceledException) when (closing.IsCancellationRequested)
         {
             // The token stopped a wait on the pipe; a copy or a move under way completed, each a folder moved whole.
-            await Console.Error.WriteLineAsync(
-                "daoris: stopped at your Ctrl+C. A change already sent to Daoris's window may still be confirmed there, and "
-                + "`daoris-driver result <id>` asks how it ended; nothing more was done here.").ConfigureAwait(false);
+            await Console.Error.WriteLineAsync(InstanceDoor.StoppedAtCtrlC).ConfigureAwait(false);
             return 2;
         }
     }

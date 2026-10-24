@@ -152,7 +152,7 @@ public static class SessionsSuperviseCommand
     private static async Task<IReadOnlyList<JsonElement>?> WaitingAsync(InstanceWorld instance, CancellationToken ct)
     {
         var asked = DateTimeOffset.UtcNow.AddSeconds(-1);
-        var until = DateTimeOffset.UtcNow + instance.Wait;
+        var until = DateTimeOffset.UtcNow + instance.Within;
         while (true)
         {
             IReadOnlyList<JsonElement>? waiting = null;
@@ -328,7 +328,7 @@ public static class SessionsSuperviseCommand
             ? new SupervisorDeferForm(id, draft.Question, draft.Generation, proof, bound, draft.Reasons).Payload()
             : new SupervisorForm(id, draft.Question, draft.Generation, proof, chosen, draft.Reasons).Payload();
         var answer = await client.RequestAsync(
-            Guid.NewGuid().ToString(), route.Module, route.Route, payload, Guid.NewGuid().ToString("N"), told: null, instance.Wait, ct)
+            Guid.NewGuid().ToString(), route.Module, route.Route, payload, Guid.NewGuid().ToString("N"), told: null, instance.Within, ct)
             .ConfigureAwait(false);
         if (answer is not { } envelope)
         {

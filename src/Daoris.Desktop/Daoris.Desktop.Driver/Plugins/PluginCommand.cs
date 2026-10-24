@@ -65,6 +65,7 @@ public static class PluginCommand
                daoris-driver plugin add <folder> · add --offer <id>
                daoris-driver plugin update <id> [--yes] · remove <id> · enable|disable <id>
         `daoris plugin …` runs these; the kit is `daoris-driver plugins new|try`, a package `daoris-driver plugins install`.
+        Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
     private const string Prefix = "daoris";

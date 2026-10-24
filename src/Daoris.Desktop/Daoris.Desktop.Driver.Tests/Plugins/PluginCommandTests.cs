@@ -158,6 +158,8 @@ public sealed class PluginCommandTests : IDisposable
         Assert.Equal(0, await PluginCommand.RunAsync(["--help"], World(), CancellationToken.None));
         Assert.All(PluginCommand.Verbs, verb => Assert.Contains(verb, PluginCommand.Usage, StringComparison.Ordinal));
         Assert.Contains("daoris-driver plugins new|try", PluginCommand.Usage, StringComparison.Ordinal);
+        // CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.
+        Assert.Contains(InstanceDoor.WaitUsage, PluginCommand.Usage, StringComparison.Ordinal);
         Assert.Contains("plugin [list | add <folder>", DriverCommand.Usage, StringComparison.Ordinal);
     }
 

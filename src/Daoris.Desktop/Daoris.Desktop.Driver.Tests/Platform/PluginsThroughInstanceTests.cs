@@ -30,7 +30,7 @@ public sealed class PluginsThroughInstanceTests
 
         Assert.Equal(0, exit);
         Assert.Equal(Line + Environment.NewLine, output.ToString());
-        Assert.Equal($"plugins: waiting for you to confirm this in Daoris's window…{Environment.NewLine}", home.Error.ToString());
+        Assert.Matches(InstanceStandIn.WaitingAlone("plugins"), home.Error.ToString());
         var press = Assert.Single(standIn.Presses);
         Assert.Equal("PLUGIN_ACTION", press.GetProperty("type").GetString());
         Assert.Equal(payload, press.GetProperty("payload").GetRawText());

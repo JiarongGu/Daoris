@@ -46,7 +46,7 @@ public sealed class ChannelThroughInstanceTests
 
         Assert.Equal(0, exit);
         Assert.Equal(Line + Environment.NewLine, output.ToString());
-        Assert.Equal($"ask: waiting for you to confirm this in Daoris's window…{Environment.NewLine}", home.Error.ToString());
+        Assert.Matches(InstanceStandIn.WaitingAlone("ask"), home.Error.ToString());
         Assert.Equal(0, service.Requests);
         var press = Assert.Single(standIn.Presses);
         Assert.Equal("CHANNEL_POST", press.GetProperty("type").GetString());

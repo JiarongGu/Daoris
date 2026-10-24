@@ -71,7 +71,7 @@ public sealed class HelpThroughInstanceTests
 
         Assert.Equal(0, exit);
         Assert.Equal(line + Environment.NewLine, output.ToString());
-        Assert.Equal($"help: waiting for you to confirm this in Daoris's window…{Environment.NewLine}", home.Error.ToString());
+        Assert.Matches(InstanceStandIn.WaitingAlone("help"), home.Error.ToString());
         Assert.Equal(0, service.Requests);
         var press = Assert.Single(standIn.Presses);
         Assert.Equal(route, press.GetProperty("type").GetString());
