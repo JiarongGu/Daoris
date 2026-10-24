@@ -20554,3 +20554,16 @@ started a git at every start, was dropped at the landing (FIX-LOG). `GitLongPath
 at a turn's end, its landing read for the tip its tree stands at, its opinion `chat-not-asked` before row d, a line that takes a quest
 that quest's from the take on, and its checks marked not yet enforced in en and zh. Each proof seen failing first. **Not built:** rows d
 to i; the standalone terminal's land and the opinion presses read a chat as before until rows d and i. Detail: D157's CHATFLOW1c note.
+## CONFIRMWAIT1c — the card's door to a plan's own page (2026-10-25, D156)
+
+> **CONFIRMWAIT1c — the card's door to a plan's own page** (web; the confirm-wait design §8.1, §15.3 item 13; Codex's finding 13). A terminal's press that rests on a plan (a land, a set-up, a sweep, a sync, a clear) is confirmed hours later from its card alone, its payload's fields beside it. The card gains *Look at it now* (`person.openPlan`, en and zh, in §8.3's table): a navigation action per plan route to the session's review, the repository's *Set up*, the branches' sweep or sync, or the history's clear, scoped to the press's own repository, session or workspace. Proof: a page test per plan route that the door opens the named press's plan and scope; no door on a press that rests on none.
+
+(Quest `#7eb1d7ba71fe`.)
+
+**Outcome** 2026-10-25. A terminal's press whose route rests on a plan (`LAND_SESSION_TREE`, `SETUP_PRESS`, `SWEEP`, `TREES_SYNC`,
+`HISTORY_CLEAR`) has *Look at it now* on its card (`person.openPlan`, en and zh): `planDoor` reads its scope from the press's own
+fields, and the application's one opener (`planOpening`, `app/opener.ts`) opens the session at its review, the repository's Details
+where its *Set up* is drawn, the workspace's Branches for a sweep or a sync (a repository's sync by the workspace holding it), or a
+clear's workspace Details, quest or ask. `person/Confirmations.test.tsx` holds a case per route and scope and none on a press that
+rests on none; `app/opener.test.ts` each route's page; `app/notifications.test.tsx` the window's wiring; each was seen failing first.
+Detail: D156's CONFIRMWAIT1c note.
