@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
@@ -11,19 +10,28 @@ namespace Daoris.Desktop;
 /// </summary>
 public static class SupervisorDoor
 {
-    /// <summary>Starts the holder's terminal: the window's own start where null, or a test's that reads what it was handed.</summary>
-    public static Func<ProcessStartInfo, bool>? Starter { get; set; }
+    /// <summary>
+    /// Opens the holder's terminal as a tab of Daoris's own terminal panel (<see cref="TerminalModule.OpenHolderAsync"/>), handed by the
+    /// application as it composes the window: the home, the role, the key and the moment; true where it opened. Null opens none, and an
+    /// appointment then answers <c>unstarted</c>. Never a console window of the system's (the owner's direction of 2026-10-24).
+    /// </summary>
+    public static Func<string, string, string, DateTimeOffset, CancellationToken, Task<bool>>? Panel { get; set; }
+
+    /// <summary>A test's stand-in for the panel, handed the key alone; it starts nothing. Wins over <see cref="Panel"/> where set.</summary>
+    public static Func<string, Task<bool>>? Starter { get; set; }
 
     /// <summary>
-    /// The owner's appointment (§2.3), made by the judge in one step, a terminal holder's terminal started with the key first; then every
+    /// The owner's appointment (§2.3), made by the judge in one step, a terminal holder's terminal opened with the key first; then every
     /// decision kept under a generation the step ended is swept, each under its own decision's lock (§5).
     /// </summary>
     public static async Task<StandingChange> AppointAsync(
         DriverLoop loop, InstancePipe pipe, string role, string repository, string holder, bool on, CancellationToken ct)
     {
         var home = loop.Home;
-        var change = pipe.StandingConfirmation.Appoint(role, repository, holder, on, key =>
-            HolderTerminal.Start(HolderTerminal.Build(home, role, key, DateTimeOffset.UtcNow), Starter));
+        var change = await pipe.StandingConfirmation.AppointAsync(role, repository, holder, on, key =>
+            Starter is { } stand ? stand(key)
+            : Panel is { } panel ? panel(home, role, key, DateTimeOffset.UtcNow, ct)
+            : Task.FromResult(false)).ConfigureAwait(false);
         if (change.Ended.Count == 0) return change.Answer;
 
         var service = loop.Service;

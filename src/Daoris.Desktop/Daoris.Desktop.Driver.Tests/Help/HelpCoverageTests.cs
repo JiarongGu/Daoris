@@ -557,6 +557,12 @@ public sealed partial class HelpCoverageTests
     /// Each answer follows the rule D161's ENTRY1a note gives. A press that is not a mutation is no start and no row: *Look
     /// now* (`useNudge`) is a callback that asks the loop to look sooner and changes nothing.
     /// </remarks>
+    /// <summary>Why the owner's appointment of a role is no door of Ask Daoris's (SUPERVISOR1a-ii, D208 §2.1 point 1).</summary>
+    private const string Appointment =
+        "it appoints a role that answers questions on the owner's behalf, or turns it off; it is made only in the window, with the "
+        + "owner's own press, and no verb, door, card or setting grant appoints one (D208 §2.1 point 1), since an agent that could propose it "
+        + "would be one press from answering as the owner. Turning it off asks nothing, and is the owner's too.";
+
     private static readonly (string Where, string Hook, string? Action, Answer Answer)[] Starts =
     [
         // The application's frame, in `app/` (STRUCT5c): the strip's opens, the index's refresh and Sync now. The browser is
@@ -941,6 +947,8 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSetHandOver", null, HandOverRuleDoor),
         // AUTONOMY1d: *Sessions' access*, on a repository's Setup and a workspace's.
         ("projects", "useSetAccess", null, new Exempt(SessionAccess)),
+        // SUPERVISOR1a-ii (D208 §2.1 point 1, bridge-presses row 7): the owner's appointment of the supervisor, and its turning off.
+        ("projects", "useSetAppointment", null, new Exempt(Appointment)),
         // HEAVYRUN1b2b: *Heavy gates*, on a repository's Setup.
         ("projects", "useSetHeavyGates", null, new Exempt(HeavyGates)),
         // FABRIC-PIPELINE1a: the landed route, on a repository's Setup and its Workflow tab.

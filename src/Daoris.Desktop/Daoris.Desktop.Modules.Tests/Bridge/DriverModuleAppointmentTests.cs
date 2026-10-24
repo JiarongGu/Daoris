@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -79,23 +78,20 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         using var composed = services;
         using var pipe = new InstancePipe(dispatcher, Bus, Home, standing: Judge());
         loop.Pipe = pipe;
-        var started = new List<ProcessStartInfo>();
-        SupervisorDoor.Starter = info =>
+        var started = new List<string>();
+        SupervisorDoor.Starter = handed =>
         {
-            started.Add(info);
-            return true;
+            started.Add(handed);
+            return Task.FromResult(true);
         };
         try
         {
             var appointed = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", holder = "terminal", on = true });
             Assert.True(appointed.GetProperty("done").GetBoolean(), appointed.GetRawText());
 
-            var start = Assert.Single(started);
-            var key = start.Environment[HolderKey.Variable];
+            // The panel is a stand-in here: no shell, console or window starts (HolderTerminalTests holds the tab itself).
+            var key = Assert.Single(started);
             Assert.NotNull(HolderKey.Read(key));
-            Assert.Contains("-NoProfile", start.ArgumentList);
-            Assert.Equal(HolderTerminal.Folder(Home, Roles.Supervisor), start.WorkingDirectory);
-            Assert.DoesNotContain(start.ArgumentList, argument => argument.Contains(key!, StringComparison.Ordinal));
 
             // No answer the page receives holds the key or its hash; STATE says the appointment, never its generation.
             var hash = Convert.ToHexStringLower(HolderKey.Hash(key)!);
@@ -114,7 +110,7 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
             Assert.Equal("unknown-repository", unknown.GetProperty("why").GetString());
             Assert.Single(started);
 
-            SupervisorDoor.Starter = _ => false;
+            SupervisorDoor.Starter = _ => Task.FromResult(false);
             var unstarted = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true });
             Assert.Equal((false, "unstarted"), (unstarted.GetProperty("done").GetBoolean(), unstarted.GetProperty("why").GetString()));
             // The appointment in force is the one before: nothing was installed.
@@ -140,7 +136,7 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         using var pipe = new InstancePipe(dispatcher, Bus, Home);
         loop.Pipe = pipe;
         var started = 0;
-        SupervisorDoor.Starter = _ => ++started > 0;
+        SupervisorDoor.Starter = _ => Task.FromResult(++started > 0);
         try
         {
             var refused = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true });
@@ -172,7 +168,7 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         Assert.NotNull(pipe.Serve());
         loop.Pipe = pipe;
         string? key = null;
-        SupervisorDoor.Starter = info => (key = info.Environment[HolderKey.Variable]) is not null;
+        SupervisorDoor.Starter = handed => Task.FromResult((key = handed) is not null);
         try
         {
             Assert.True((await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true })).GetProperty("done").GetBoolean());

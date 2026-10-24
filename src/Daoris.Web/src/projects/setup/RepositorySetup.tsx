@@ -19,6 +19,7 @@ import { LineField, type RepositoryLine } from '../../settings/repository/Lines'
 import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type RepositoryOpinion } from '../../settings/repository/Opinions';
 import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../../settings/repository/Reviews';
 import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../../design/ui';
+import { type SupervisorSetup, SupervisorRow } from './SupervisorRow';
 import type { Answered } from '../../work/InlineConfirm';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
@@ -80,6 +81,8 @@ export type Driving = {
    * for as long as this run remembers it: said beside the hold.
    */
   heldStanding?: boolean;
+  /** The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5), beside the hold; absent on a shell older than it. */
+  supervisor?: SupervisorSetup;
 };
 
 /** Its line and how its work lands (WSR1, WSR2), as the driver resolves them, and the presses that set or clear them. */
@@ -337,6 +340,10 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
                 <p className="m-0 text-small text-ink-soft">{t('projects.setup.heldStanding')}</p>
               )}
             </SettingRow>
+          )}
+          {/* SUPERVISOR1a-ii: the supervisor's appointment beside the hold, once the repository is driven, or while one is on record. */}
+          {driving.supervisor && (driving.drivable || driving.supervisor.appointment) && (
+            <SupervisorRow repository={repository} supervisor={driving.supervisor} />
           )}
           {/* Session trees (D51): its sessions open their own worktree, so the person's uncommitted work in the
               checkout stops holding the driver. */}

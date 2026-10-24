@@ -24,6 +24,10 @@ export type StandingConfirmationNow = {
   unwritten: boolean;
   used: number;
   held: string[];
+  /** Whether this build offers the owner's appointments (SUPERVISOR1a-ii): false until the activation's proof, and never without the grant's. */
+  appointmentsOffered: boolean;
+  /** The owner's appointments the record holds, dormant where found as Daoris started. */
+  appointments: AppointmentNow[];
 };
 
 /** A grant's or a revoke's answer (`SET_STANDING_CONFIRMATION`): done, or refused as data with a code the page words. */
@@ -49,3 +53,29 @@ const REFUSALS = new Set(['window-only', 'not-offered', 'unknown-press', 'newer'
 /** A refusal of the standing confirmation's press in words, by its code, else the driver's own sentence. */
 export const standingSaid = (t: TFunction, why: string | null, message: string) =>
   (why && REFUSALS.has(why) ? t(`settings.daoris.standing.refused.${why}`) : message || why || '');
+
+/**
+ * One of the owner's appointments as `STATE`'s `standingConfirmation.appointments` says it (SUPERVISOR1a-ii, D208; the modules'
+ * `AppointmentNow`): the role, the repository, the holder's kind, since when, whether it was found as Daoris started and so admits no
+ * holder until *Appoint again* (`dormant`), and how many acts its holder made under it in this run. Never its generation nor any key.
+ */
+export type AppointmentNow = {
+  role: string;
+  repository: string;
+  holder: string;
+  since: string | null;
+  dormant: boolean;
+  answers: number;
+};
+
+/** An appointment's or a dismissal's answer (`SET_APPOINTMENT`): done, or refused as data with a code the page words. Never a key. */
+export type AppointmentAnswer = { done: boolean; why: string | null; message: string };
+
+/** The codes an appointment is refused by (the modules' `PersonRoutes`, `StandingConfirmation`), each said in the catalogue's words. */
+const APPOINT_REFUSALS = new Set([
+  'window-only', 'not-offered', 'unknown-role', 'unknown-repository', 'newer', 'unwritten', 'unstarted', 'no-pipe',
+]);
+
+/** A refusal of an appointment in words, by its code, else the driver's own sentence. */
+export const appointmentSaid = (t: TFunction, why: string | null, message: string) =>
+  (why && APPOINT_REFUSALS.has(why) ? t(`projects.supervisor.refused.${why}`) : message || why || '');

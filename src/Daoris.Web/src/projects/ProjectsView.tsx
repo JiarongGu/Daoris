@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from '../data/api';
 import { sentence } from '../locales/format';
+import { appointmentSaid } from '../person/standing';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
@@ -26,7 +27,7 @@ import { sessionChecksToast, type SessionChecksValue } from '../settings/reposit
 import {
   useAcross, useDriver, useHarnesses, useLines, usePlugins, useRuleAction, useRules, useSetAccess, useSetCommits, useHeavyMarks, useHeavySlot, useSetDrivable, useSetHeavyGates, useSetHelpers,
   useSetHandOver, useSetHold, useSetLanding, useSetLanguage, useSetLine, useSetOpinion, useSetReadAcross, useSetReview, useSetSessionChecks, useSetStanding, useSetTrees,
-  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, standingOf,
+  useSetupPlan, useSetupPress, useSetWriteAcross, useSweepPlan, useWorkflowCurrent, useSetLanded, standingOf, useSetAppointment,
 } from '../bridge/shell';
 import type { SetUpForAgentsProps } from './setup/SetUpForAgents';
 import { doorOf } from '../agents/tools';
@@ -142,6 +143,9 @@ export function useProjectsView({
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
   const setTrees = useSetTrees();
+  // SUPERVISOR1a-ii: the owner's appointment of the supervisor, and what its last press here came to, by repository.
+  const setAppointment = useSetAppointment();
+  const [appointed, setAppointed] = useState<{ repository: string; started: boolean; refused: string | null } | null>(null);
   const setStanding = useSetStanding();
   const setLanguage = useSetLanguage();
   const setLine = useSetLine();
@@ -313,6 +317,49 @@ export function useProjectsView({
       note: !registration.adopted && door === 'pipe' ? t('projects.outside.directDoor') : undefined,
       // TERMTRUST1a: a hold a terminal made under the person's standing confirmation, as this run remembers it.
       heldStanding: named(standingOf(driver.data.standingConfirmation)?.held, repository),
+      supervisor: supervisorOf(repository),
+    };
+  };
+
+  /**
+   * The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5): the record's, live or dormant, and its presses. *Appoint* in the
+   * ask is the owner's own press: the window starts the holder's terminal, and the answer, which never carries a key, says how it
+   * ended in the ask itself; *Turn off* asks nothing, a refusal said under the row.
+   */
+  const supervisorOf = (repository: string): Driving['supervisor'] => {
+    const standing = standingOf(driver.data?.standingConfirmation);
+    if (!standing) return undefined;
+    const lower = repository.toLowerCase();
+    const mine = appointed?.repository.toLowerCase() === lower ? appointed : null;
+    return {
+      offered: standing.appointmentsOffered,
+      appointment: standing.appointments.find((each) => each.role === 'supervisor' && each.repository.toLowerCase() === lower) ?? null,
+      started: mine?.started,
+      refused: mine?.refused ?? null,
+      busy: setAppointment.isPending,
+      onAppoint: (answered) => {
+        setAppointed(null);
+        setAppointment.mutate({ role: 'supervisor', repository, on: true }, {
+          onSuccess: (answer) => {
+            if (answer.done) {
+              setAppointed({ repository, started: true, refused: null });
+              answered.done();
+            } else {
+              answered.refused(appointmentSaid(t, answer.why, answer.message));
+            }
+          },
+          onError: (error) => answered.refused(error instanceof Error ? error.message : String(error)),
+        });
+      },
+      onTurnOff: () => {
+        setAppointed(null);
+        setAppointment.mutate({ role: 'supervisor', repository, on: false }, {
+          onSuccess: (answer) => {
+            if (!answer.done) setAppointed({ repository, started: false, refused: appointmentSaid(t, answer.why, answer.message) });
+          },
+          onError: onDriverError,
+        });
+      },
     };
   };
 

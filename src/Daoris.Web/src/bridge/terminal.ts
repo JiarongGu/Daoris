@@ -129,6 +129,21 @@ export function useTerminals(): Terminals {
     if (held.current.size > TERMINALS_HELD) held.current.delete(held.current.keys().next().value!);
   });
 
+  // SUPERVISOR1a-ii (D208 §2.2): a terminal the window opened itself, the supervisor's holder's at the owner's Appoint, is a tab here
+  // like any other and is shown; its key is in that shell's environment alone, never in what the page is told.
+  useShenoraEvent('DAORIS', 'TERMINAL_OPENED', (payload) => {
+    const tab = payload as { id?: unknown; shell?: unknown; cwd?: unknown } | undefined;
+    if (typeof tab?.id !== 'string') return;
+    const id = tab.id;
+    setList((was) => (was.some((row) => row.id === id) ? was : [...was, {
+      id,
+      shell: typeof tab.shell === 'string' ? tab.shell : '',
+      cwd: typeof tab.cwd === 'string' ? tab.cwd : '',
+      exit: ended.current.get(id) ?? null,
+    }]));
+    setSelected(id);
+  });
+
   useShenoraEvent('DAORIS', 'TERMINAL_EXITED', (payload) => {
     const exit = payload as { id?: unknown; code?: unknown } | undefined;
     if (typeof exit?.id !== 'string') return;

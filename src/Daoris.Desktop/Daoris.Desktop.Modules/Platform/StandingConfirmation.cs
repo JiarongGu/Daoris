@@ -527,7 +527,11 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// Either way the generations it ended are answered for the caller to sweep after this step (§5), never inside it.
     /// </summary>
     /// <param name="start">Starts the holder's terminal with the key in its environment; true where it started. Called outside the lock.</param>
-    public AppointmentChange Appoint(string role, string repository, string holder, bool on, Func<string, bool> start)
+    public AppointmentChange Appoint(string role, string repository, string holder, bool on, Func<string, bool> start) =>
+        AppointAsync(role, repository, holder, on, key => Task.FromResult(start(key))).GetAwaiter().GetResult();
+
+    /// <summary>The same, its terminal's start awaited outside the lock (the panel's start runs through the start gate).</summary>
+    public async Task<AppointmentChange> AppointAsync(string role, string repository, string holder, bool on, Func<string, Task<bool>> start)
     {
         if (!on) return Dismiss(role, repository);
         if (!AppointsOffered) return Refuse(StandingConfirmation.NotOffered, "This Daoris does not offer appointments yet.");
@@ -546,7 +550,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         bool started;
         try
         {
-            started = start(key);
+            started = await start(key).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException
                                           or System.ComponentModel.Win32Exception)
