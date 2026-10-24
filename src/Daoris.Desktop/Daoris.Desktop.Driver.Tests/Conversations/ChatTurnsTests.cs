@@ -157,6 +157,171 @@ public sealed class ChatTurnsTests
         }
     }
 
+    /// <summary>A second opinion's findings as the runner makes them a conversation's turn (CHATFLOW1e), with its completion.</summary>
+    private static ChatMessage Findings(Func<bool, Task>? answering = null) =>
+        ChatRunner.Findings(
+            new SaidWordView("f1", "Another agent, Codex by OpenAI, read your work and claims what follows.", DateTimeOffset.UnixEpoch, [], Reopens: true)
+            {
+                By = "op1", Level = MessageLevel.Ordinary,
+            },
+            answering ?? (_ => Task.CompletedTask));
+
+    /// <summary>
+    /// 🔴 CHATFLOW1e (the chat-flow design §6.1 (b)): the send-back is reserved only between turns. A turn that is not the person's, or a word
+    /// that is not theirs waiting, leaves it waiting and hands nothing; between turns it is reserved, the service's hand asked inside the same
+    /// operation, and its word taken as a turn of its own at once. A word sent while the hand answers waits behind that turn, and the findings
+    /// never reach a turn at its next step.
+    /// </summary>
+    [Fact]
+    public async Task A_send_back_is_reserved_only_between_turns_and_a_word_sent_after_it_waits_behind_its_turn()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        var hands = 0;
+        var answering = new TaskCompletionSource<ChatMessage?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task<ChatMessage?> Hand(CancellationToken _)
+        {
+            hands++;
+            return answering.Task;
+        }
+
+        turns.Take(new ChatMessage("Daoris's word", []) { Daoris = new DaorisWord("k1") });
+        await Poll.Until(() => door.Took.Count == 1, () => "Daoris's turn never reached the door");
+        Assert.Equal(SendBack.Waiting, await turns.SendBackAsync(0, () => 0, Hand));
+        door.EndTurn(0);
+        await Poll.Until(() => !turns.Running, () => "Daoris's turn never ended");
+        Assert.Equal(0, hands);
+
+        var sending = turns.SendBackAsync(0, () => 0, Hand);
+        await Poll.Until(() => hands == 1, () => "the hand was never asked between turns");
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(new ChatMessage("one more thing", []) { Level = MessageLevel.Ordinary }));
+        Assert.Single(door.Took);
+        answering.SetResult(Findings());
+
+        Assert.Equal(SendBack.Reserved, await sending);
+        await Poll.Until(() => door.Took.Count == 2, () => "the findings never became the next turn");
+        Assert.StartsWith("Another agent", door.Took[1]);
+        Assert.Equal("f1", door.TookIds[1]);
+        door.EndTurn(1);
+        await Poll.Until(() => door.Took.Count == 3, () => "the word sent while the hand answered never ran after the findings");
+        Assert.Equal("one more thing", door.Took[2]);
+        Assert.Empty(door.Steered);
+        door.EndTurn(2);
+        turns.Gone();
+    }
+
+    /// <summary>
+    /// 🔴 CHATFLOW1e (§6.1 (b), Codex's finding 2): the person's service write held between the reservation's first check and its take. The
+    /// send-back waits for the keep, finds their word queued and their turn count risen, and goes to them: the findings never overtake it.
+    /// </summary>
+    [Fact]
+    public async Task A_persons_word_whose_keeping_is_in_flight_is_never_overtaken_by_the_findings()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        var keeping = new TaskCompletionSource();
+        record.Answering = _ => keeping.Task;
+        var hands = 0;
+
+        var kept = turns.KeepAsync(record, new ChatMessage("wait, also this", []), default);
+        await Poll.Until(() => record.Said.Count == 1, () => "the person's word never reached its record");
+        var sending = turns.SendBackAsync(0, () => 0, _ =>
+        {
+            hands++;
+            return Task.FromResult<ChatMessage?>(Findings());
+        });
+        Assert.False(sending.IsCompleted);
+        keeping.SetResult();
+        await kept;
+
+        Assert.Equal(SendBack.PersonWentOn, await sending);
+        Assert.Equal(0, hands);
+        Assert.Equal(["wait, also this"], door.Took);
+
+        // Their turn finished and nothing left waiting: the count read over the history still rose past the press's.
+        door.EndTurn(0);
+        await Poll.Until(() => !turns.Running);
+        Assert.Equal(SendBack.PersonWentOn, await turns.SendBackAsync(0, () => 1, _ => Task.FromResult<ChatMessage?>(Findings())));
+        Assert.Single(door.Took);
+        turns.Gone();
+    }
+
+    /// <summary>
+    /// 🔴 CHATFLOW1e (§6.1 (c), Codex's finding 3): the answering turn has a completion of its own. A person's word queued behind it, whose turn
+    /// moves <c>HEAD</c> as it starts, waits until the answering turn's reading is frozen, so that reading holds the answering turn's tip.
+    /// </summary>
+    [Fact]
+    public async Task A_persons_queued_turn_moving_head_after_the_answering_turn_never_reaches_its_frozen_reading()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        var head = "answered-tip";
+        door.OnTake = message =>
+        {
+            if (message.Text == "now rename it") head = "person-tip";
+        };
+        string? frozen = null;
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var capture = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Assert.Equal(SendBack.Reserved, await turns.SendBackAsync(0, () => 0, _ => Task.FromResult<ChatMessage?>(Findings(async steered =>
+        {
+            entered.SetResult();
+            await capture.Task;
+            frozen = head;
+        }))));
+        await Poll.Until(() => door.Took.Count == 1, () => "the findings' turn never reached the door");
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(new ChatMessage("now rename it", [])));
+
+        door.EndTurn(0);
+        await entered.Task.WaitAsync(Poll.Patience);
+        Assert.Single(door.Took);
+        capture.SetResult();
+
+        await Poll.Until(() => door.Took.Count == 2, () => "the person's turn never ran after the reading was frozen");
+        Assert.Equal(("answered-tip", "person-tip"), (frozen, head));
+        door.EndTurn(1);
+        turns.Gone();
+    }
+
+    /// <summary>
+    /// 🔴 CHATFLOW1e (§6.1 (c), the Opus check's finding 6): an urgent word of the person's steered into the answering turn marks its reading,
+    /// told the completion as theirs; a word of theirs that reaches only the turn's end runs after the capture, the reading unmarked.
+    /// </summary>
+    [Fact]
+    public async Task A_persons_word_steered_into_the_answering_turn_marks_its_reading_and_one_at_its_end_does_not()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        var told = new List<bool>();
+
+        Assert.Equal(SendBack.Reserved, await turns.SendBackAsync(0, () => 0, _ => Task.FromResult<ChatMessage?>(Findings(steered =>
+        {
+            lock (told) told.Add(steered);
+            return Task.CompletedTask;
+        }))));
+        await Poll.Until(() => door.Took.Count == 1);
+        Assert.Equal(TurnReach.NextStep, turns.Take(new ChatMessage("also check the docs", [])));
+        door.Step.SetResult();
+        door.EndTurn(0);
+        await Poll.Until(() => told.Count == 1, () => "the answering turn's completion was never told");
+        Assert.True(told[0]);
+
+        Assert.Equal(SendBack.Reserved, await turns.SendBackAsync(1, () => 1, _ => Task.FromResult<ChatMessage?>(Findings(steered =>
+        {
+            lock (told) told.Add(steered);
+            return Task.CompletedTask;
+        }))));
+        await Poll.Until(() => door.Took.Count == 2);
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(new ChatMessage("and the changelog", []) { Level = MessageLevel.Ordinary }));
+        door.EndTurn(1);
+        await Poll.Until(() => door.Took.Count == 3, () => "the word at the turn's end never ran after the capture");
+        Assert.Equal([true, false], told);
+        door.EndTurn(2);
+        turns.Gone();
+    }
+
     /// <summary>The conversation's turns as the press's operation reserves them, standing in for the runner that holds it.</summary>
     private sealed class Holding(ChatTurns turns) : IChatPressing
     {

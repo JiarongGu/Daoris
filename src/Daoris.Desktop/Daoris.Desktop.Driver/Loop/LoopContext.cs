@@ -63,6 +63,13 @@ internal sealed class LoopContext(
     public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver { get; set; }
 
     /// <summary>
+    /// How a chat run's second-opinion findings reach its conversation (CHATFLOW1e, the chat-flow design §6.1 (b), (f)): the shell's chat
+    /// runner, which takes them as a turn of their own only between turns, or resumes an ended conversation with them; the shell's loop hands
+    /// it in, as it hands <see cref="HandsOver"/>. Null where the loop holds no runner (the headless host): the findings wait. Set once, before a look.
+    /// </summary>
+    public IChatSendBacks? SendsBack { get; set; }
+
+    /// <summary>
     /// How a closed quest's session whose own conversation is proven lost goes on by itself as a conversation in its tree (SESSCTX1c part
     /// B, D189 point 3; the steward's choice: a closed quest opens no driven record): the shell's chat runner's own move
     /// (<c>ChatRunner.GoOnLostAsync</c>), handed the brief and the person's words; the shell's loop hands it in. Null where the loop holds

@@ -124,6 +124,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     internal Action? Delivered { get; init; }
 
     /// <summary>
+    /// A send-back's turn's own completion (CHATFLOW1e, the chat-flow design §6.1 (c)): called once that turn has ended and before the
+    /// turns take another word, told whether a word of the person's was handed to it at a step, so the answers it froze are read as theirs
+    /// too. Its task is awaited, so nothing queued behind the answering turn runs before the reading is kept. Null for every other message.
+    /// </summary>
+    internal Func<bool, Task>? Answering { get; init; }
+
+    /// <summary>
     /// The message on the ask's channel these words carry to a running part (SESSONE2b, D167 point 7): the person's, as their
     /// words; another session's, in Daoris's words around that agent's claim, which the record keeps as Daoris's, never the
     /// person's (<see cref="Words"/>). Null for every other message.
