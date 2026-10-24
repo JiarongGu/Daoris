@@ -103,6 +103,9 @@ public sealed class AcpTransientTests
 
     private const string Silent = """{"protocolVersion":1,"agentCapabilities":{}}""";
 
+    /// <summary>What <c>claude-agent-acp</c> 0.84.0 answers at <c>initialize</c> about prompts during a turn (STEER1's evidence §1).</summary>
+    private const string Queues = """{"protocolVersion":1,"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""";
+
     /// <summary>The agent: it opens <c>s-1</c>, and answers its n-th prompt by <paramref name="prompt"/>, counted from one.</summary>
     private static Agent Scripted(Func<int, JsonElement, Agent, string?> prompt)
     {
@@ -398,6 +401,58 @@ public sealed class AcpTransientTests
         lock (events) lost = [.. events.Where(e => e.Code == SessionEventCodes.Lost)];
         Assert.Equal(["said-1"], Assert.Single(lost).Words);
         Assert.Equal(["also log the port"], retry.Uncertain.Select(word => word.Text));
+    }
+
+    /// <summary>
+    /// 🔴 A settling turn (§5.1, round 3's read, R3-O1): a word sent behind the failed turn runs its own turn, which answers. That ends the
+    /// wait, never the episode, since it shows only that the agent answered that word: the go-on goes at once, with no wait, as a try.
+    /// </summary>
+    [Fact]
+    public async Task A_queued_word_s_answered_settling_turn_ends_the_wait_and_the_go_on_follows_at_once()
+    {
+        var clock = new MovedClock();
+        var first = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var count = 0;
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.TryGetProperty("method", out var m) ? m.GetString() : null)
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    switch (Interlocked.Increment(ref count))
+                    {
+                        case 1:
+                            first.SetResult(frame.Clone());
+                            return null;
+                        case 2:
+                            // The word queued behind the turn: the provider fails the active turn, and the queued word's own turn goes on.
+                            self.Push(Failed(first.Task.Result));
+                            self.Push(Said("Noted the port."));
+                            return Answer(frame, "end_turn");
+                        default:
+                            return Answer(frame, "end_turn");
+                    }
+                default:
+                    return frame.TryGetProperty("id", out _) && frame.TryGetProperty("method", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var told = new Told();
+        var retry = Retry(clock, told);
+        var inbox = new DrivenInbox(_ => { });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await first.Task.WaitAsync(Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("log the port", [])));
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal([["serve the report"], ["log the port"], [TransientRetry.GoOnText(Overloaded)]], agent.Prompts);
+        Assert.Equal((1, TimeSpan.Zero), (retry.Episode!.Tries, retry.Episode.Waited));
+        Assert.DoesNotContain("wait", told.Lines);
     }
 
     /// <summary>The person's stop or Daoris's shutdown during a wait ends the run as that stop does today: the wait is cancelled with it.</summary>
