@@ -348,5 +348,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-supervisor-design.md` | 197 | 1609 |
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `docs/README.md` | 42 | 255 |
+| `docs/README.md` | 43 | 256 |
 | `src/Daoris.Desktop/README.md` | 166 | 801 |
