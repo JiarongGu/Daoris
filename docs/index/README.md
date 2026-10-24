@@ -337,7 +337,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-chat-flow-design.md` | 65 | 611 |
 | `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
-| `docs/2026-10-24-confirm-wait-design.md` | 75 | 667 |
+| `docs/2026-10-24-confirm-wait-design.md` | 107 | 871 |
 | `docs/2026-10-24-confirm-wait-reads.md` | 59 | 685 |
 | `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
 | `docs/2026-10-24-keep-size-reads.md` | 67 | 669 |
