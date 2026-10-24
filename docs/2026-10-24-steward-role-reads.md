@@ -1,4 +1,4 @@
-# STEWARDROLE1: the reads of rounds 1 and 2 (D191)
+# STEWARDROLE1: the reads of rounds 1 to 3 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-24-steward-role-design.md` and D209 at `48f9b3cff`, each verbatim but for its headings set one level down. The steward ran both from outside the install, read-only, on the design's own tree. Codex asks another round; the Opus foundation reader would accept after named changes (20 findings, 7 blocking). Round 2 answers both.
 
@@ -793,3 +793,274 @@ cited:
    activation.
 
 Findings 6 to 14 are text or condition changes the build rows can take as they land.
+
+## Opus (foundation), round 3
+
+The independent Opus 5.5 reader's foundation read of round 3 at `3d2d446f8`, the only read of the round: 14 findings, 4 blocking; accept after named changes the steward can check without another read. Codex's read stopped when its credits ran out and is owed on the final text.
+
+### 0. Round 2's findings, checked again
+
+Read at `8cc3936b0` (main; no source file changed since round 3's `aa16658e7`; D156 gained CONFIRMWAIT1's proposed note). Read whole: the
+reads of rounds 1 and 2, round 3's diff (`92dd03ec5..3d2d446f8`), the design and D209. Read against them: D208 and its SUPERVISOR1a-ii
+note, the supervisor design §2.2, D201 and the built `StandingConfirmation.cs`, D156 and its new note, D193, D210 and the agent-errors
+design §2, §5.1 and §11 row 1a, and the code cited below. Paths are under `src/Daoris.Desktop/` unless said; *design* is
+`docs/2026-10-24-steward-role-design.md`. **C2-n** is Codex's round-2 finding n, **O2-n** the Opus read's.
+
+| Finding | What round 3 did | Checked against | Disposition |
+|---|---|---|---|
+| C2-1 revoke between admission and gate | §3.4 steps 7-8: the act registered `admitted`; the revoke's step cancels it; under the gate, one step under the judge's lock rechecks the entry, the holder's hash, the generation and `owner-set` | `StandingConfirmation.cs:597-617` (the hash dropped before the write), `:653-679` (the role method reads `_hashes` under `_gate`): the recheck needs only memory | **Taken; holds** |
+| C2-2 deferred effects and their actor | §5.1a: pending operations with actor, generation and operation; each final consumer under the quest's gate; the live stop by direct call | `Loop/DriverHandOvers.cs:80-133`, `:279-294`; `SessionRequestWatch.cs:345-372` are named and covered. `SettleAsync`/`GoAsync` (`:161-243`) is a third consumer of a yes, not named | **Taken, open on one path** (finding 2) |
+| C2-3 the start rereads the handed file | the start takes agent, null account and note from memory where the file names the steward; a restart clears a steward's file | `Loop/Driver.cs:1896-1897`, `:1087`; `HandOverFiles.cs:97-99` | **Taken; holds** |
+| C2-4 the yes binds the agent seen | `{ session, ask, agent }`, the agent signed, compared at application and at the turn's end | `HandOverAskWord.cs:44-50`; `SessionsRoutes.cs:405-410` | **Taken; holds** where its consumers are named; the look's `GoAsync` compares nothing (finding 2) |
+| C2-5 Take back does not mark | `SESSION_QUEUE_EDIT` marks its quest through the census; the go-on adds no word | `ConversationRoutes.cs:355-356` (`Session = "session"`) | **Taken; holds** |
+| C2-6 activation opens the supervisor | `SupervisorOffered` and `StewardOffered`, each gating its ask, `SET_APPOINTMENT` and admission; `AppointmentsOffered` derived | `StandingConfirmation.cs:257`, `:537`, `:633`, `:657` read one flag today | **Taken; holds** |
+| C2-7 the go-on's `not-handed` recovery | the go-on becomes D210's release, adding no word; a failed start restores `failed`/`ended.transient` with every word | `SessionLedger.cs:1072-1102` restores only working to awaiting-person; agent-errors design §5.1 | **Taken otherwise; the lifecycle holds**, but the release it now rests on breaks D210's bound and fallback (finding 3) and its restart rule (finding 7) |
+| C2-8 the printed line proves nothing | `CLAUDE_CONFIG_DIR` Daoris writes, inline `disableAllHooks`, the judge's walk to the harness's command line, canaries | `HolderTerminal.cs:27-29`; `Accounts/Harnesses/Harnesses.cs:171-174`; `Agents/Consoles/Terminals.cs:7`, `:44-47`, `:90-96` | **Taken; does not hold yet**: the programs the key is handed to are chosen by writable files (finding 1), and the walk's checks cannot pass as written (finding 5) |
+| C2-9 payloads and a symbol | §0.1's `said: true` on say and hand-over, say's verb path, `HolderKey.Variable` | `Sessions/SessionsCommand.cs:440-445`, `:497-502`, `:535-538`; `SupervisorProof.cs:20` | **Taken; holds** |
+| C2-10 trees on and continuations | fresh sessions and new parts only, said in §0.1 and row 3 | `DriverConfig.cs:1416-1424`; `DriverContinuations.cs:227` | **Taken; holds** |
+| C2-11 a closed tab emits nothing | `HolderEnded(tab)` on the page's close, the shell's exit, disposal and an exit while opening | `Windows/TerminalModule.cs:147-153`, `:270-275` | **Taken; holds** |
+| C2-12 the marker after `Take` | `HolderKey.RoleTerminal`, recorded by `Take` from the variable's presence | `SupervisorProof.cs:50-57`; `Daoris.Desktop.Driver.Host/Program.cs:337` | **Taken; holds** |
+| O2-1 `owner-set` a list of routes | marked at every owner door: `PipeCensus.Targets` for every `Person` and `Window` route, `HELP_APPLY` by its plan, `Forget` on any hold change, the service's doors by the record; a census sweep | one dispatcher for the page and the pipe (`InstancePipe.cs:778-781`; `Daoris.Desktop.App/Program.cs:298-303`); `HelpSettingProposals.cs:61`, `:80-105`; `DriverRoutes.cs:62` | **Taken as named; holds in its shape**; its edges are finding 6 |
+| O2-2 one flag for every role | as C2-6 | as C2-6 | **Taken as named; holds** |
+| O2-3 trees, stop and finish can publish | `landing-pushes` on trees on (`LandingRules.Effective`) and on a stop or finish that makes a pushed landing due | `Trees/Landing/AutoLanding.cs:203-209`; `Landing.cs:1082`; `SetupPressRules.cs:64-66` (any plugin on a branch rule) | **Taken as named; holds** (the class is `AutoLandingRules`, finding 10). Drive itself still reaches the owner's checkout (finding 4) |
+| O2-4 the go-on admits any quiet park | `not-outage`: only a last record `ended.transient` that `TransientHolding` holds; the go-on is D210's `retry` release | D210 point 3; agent-errors design §5.1 | **Taken through D210; holds for a prose question**; the release breaks D210's own bound (finding 3) |
+| O2-5 the line loads the user's configuration | both halves: Daoris's own configuration directory and an open limit proved by canaries | `HolderTerminal.cs:27-29`, `:38-42`; `Terminals.cs:7`, `:44-47`, `:90-96`; `Adapters.cs:2359` | **Taken; holds for the user's settings, hooks, plugins and instruction file; does not hold** for the shell, the harness's program and the inherited environment (finding 1) |
+| O2-6 revoke between admission and gate | as C2-1 | as C2-1 | **Taken; holds** |
+| O2-7 the role-added line never reaches the session | every role verb's answer names the holder's roles and the brief's revision | `TerminalModule.cs:248` (`open.Say` writes to the screen) | **Taken as named; holds** |
+| O2-8 the line and §6.1 disagree | the line stated whole, each verb by its exact prefix, no `sessions:*` | `SessionsCommand.cs:342-357` (`--json` falls to the list, so no subverb rides it); `Sessions/History/HistoryCommand.cs:138-148` (`history clear --yes` is a `Person` press, refused `role-terminal`) | **Taken; holds** |
+| O2-9 a hand-over chooses *on what* | `agent` within "the repository's effective `build` order" | `Platform/ActorChoices.cs:101-145` | **Taken; holds as a bound**, worded wrong (finding 9) |
+| O2-10 `RETRY_QUEST` forgives strikes | rows 8 and 11 only where `StandingChoices.Retry` answers `Released` | `Platform/StandingChoices.cs:108-120` | **Taken; holds** |
+| O2-11 the yes goes through the ask's state file | the yes a pending operation; `AtTurnEndAsync` writes `HandOverBy.Steward` | `DriverHandOvers.cs:279-294`; but `:221-243` | **Open**: a parked session's yes goes by `GoAsync` as the agent's (finding 2) |
+| O2-12 any process registers | said in §6.3 and the ask | `Daoris.Service/Daoris.Service.Http/PersonDoors.cs:215` | **Taken; holds** |
+| O2-13 any caller fills the desk | 10 per caller process, 100 in all | `Platform/StandingCaller.cs:47-53`; `docs/decisions/D208.md:267-268` | **Taken; does not hold**: the caller is the verb's own process, new each request (finding 11) |
+| O2-14 D209's body | point 3, the Amends' D208 point 3, point 6 | `D209.md:47-53`, `:77-80`, `:111-119` | **Taken; holds** |
+
+### 1. Claims about the code
+
+1. **§6.3's *Closed* and D209's *Why* (`D209.md:97-99`)**: "keeping … the user's configuration out of the holder keeps every process that
+   runs a branch's or a planted file's code from acting as the steward." False. The holder's shell is the file the home's tools file names,
+   else PATH's (`Terminals.cs:44-47`, `:90-96`; `Tools.cs:284-289`, a named file); the harness is a bare `claude` the owner types, resolved
+   by that shell's PATH (`HolderTerminal.cs:27-29`), and Daoris's own Claude Code toolchain installs it with `npm install -g`
+   (`Adapters.cs:2359`); the tab's environment is Daoris's own plus the key (`Terminals.cs:7`). Finding 1.
+2. **§5.1a's row 10 and *The yes … is the steward's to its end* (design:526, :542-545)**: the final consumer is `AtTurnEndAsync`.
+   Incomplete. An ask waiting on the person parks its session at the turn's end, "and their yes hands it over from there"
+   (`DriverHandOvers.cs:300`): the look's `SettleAsync` → `GoAsync` (`:161-243`) keeps a box `HandOverWhy.Agent`, `HandOverBy.Agent`
+   (`:242-243`; `HandOverQuest.cs:94-109`), consumed at `:80-133`. Finding 2.
+3. **§6.1, "the directory must hash as Daoris wrote it (the credential file excepted)" (design:654-655)**: Daoris's own code records that
+   the Claude adapter creates and populates `CLAUDE_CONFIG_DIR` (`Harnesses.cs:171-174`), and that a fresh one reports logged out
+   (`Adapters.cs:2349-2350`). Finding 5.
+4. **§4.3, the release "as the owner's *Try again* writes it (`WithReleased(quest, session)`)" (design:450)**: `WithReleased` is the stop's
+   (`StandingChoices.cs:118-119`). D210's design makes the transient release `WithTransientReleased(quest, session, ended)`, keyed to the
+   record's `Updated` and expressly not the stop's `Released` (agent-errors design:458-466, :484). Finding 7.
+5. **Rows 9 and 10, "the repository's effective `build` order (`ActorChoices.Effective`)"**: it takes an actor and the machine's config,
+   with an optional fence or pick, and no repository (`ActorChoices.cs:101-145`). Finding 9.
+6. **Row 6, "a live one stopped by the driver's own stop"**: this reaches only a process this instance runs. `SessionMoves.StopAsync`
+   answers `Elsewhere` for a session another Daoris process on this machine runs (`Sessions/Requests/SessionMoves.cs:22-31`), which the
+   verb reaches today only through the request folder (`SessionsCommand.cs:946-951`). Finding 8.
+7. **§6.2, "at most 10 open per caller process, as the pipe's caller look resolves it"**: the pipe's client is the connecting process
+   (`StandingCaller.cs:47-53`), always the verb (`D208.md:267-268`), so it is a new process for each request. Finding 11.
+8. Smaller slips (finding 10): `AutoLanding.Concluded` is `AutoLandingRules.Concluded` (`AutoLanding.cs:171`, `:203`). §5.1's
+   *Set by you* is no text the page shows (none in `src/Daoris.Web/src`). The inline `--settings` is not "the highest precedence", since
+   managed settings stand above it. §0.2's `TASKS.md:266`, `:269` are `:267`, `:270`.
+
+Every other citation of round 3 I checked held, at most a line or two off: `StandingConfirmation.cs:257`, `:537`, `:633`, `:657`,
+`:721-727`, `:763`; `HolderTerminal.cs:27-29`; `TerminalModule.cs:147-153`, `:270-274`; `SupervisorProof.cs:20`, `:50-57`; `Program.cs:337`;
+`DriverRoutes.cs:44-75`, `:62`; `HelpRoutes.cs:494`; `HelpSettingProposals.cs:61`, `:80-105`; `ConversationRoutes.cs:355`;
+`SessionsRoutes.cs:22-28`, `:96-104`; `SessionsCommand.cs:350`, `:440-441`, `:501`, `:536-538`, `:949`; `SessionRequestWatch.cs:345-372`;
+`Driver.cs:1087`, `:1896`; `HandOverFiles.cs:97-99`; `HandOverAskWord.cs:44-50`; `DriverHandOvers.cs:84`, `:133`, `:279-294`;
+`StandingChoices.cs:108-131`; `AutoLanding.cs:203-209`; `SetupPressRules.cs:64-67`; `Landing.cs:1082`; `ActorChoices.cs:101`;
+`SessionLedger.cs:1072-1102`; `PersonDoors.cs:215`; `InstancePipe.cs:778-780`; `PipeCensus.cs`'s classes.
+
+### 2. The mechanism's holes
+
+The foundation holds and round 3 closes most of round 2's holes. A role is admitted only by a key whose hash lives in memory, proved over
+the hello's nonce. Admission is followed by a recheck under the target's gate that a revoke can cancel. Deferred effects are pending
+operations consumed from memory, not files. The owner's overrule is keyed by what was acted on, and the census marks it at every door.
+Each role has its own flag. Done stays the owner's, and the go-on keeps no word. What remains:
+
+- **Can anything other than the appointed steward act as it.**
+  - *An agent Daoris runs* holds no key, and the caller look refuses it in its job. It can still reach the key one step removed. It
+    rewrites what the holder's tab runs: the tools file's `pwsh`, the `claude` on PATH or its npm install, or a loader variable in the
+    environment Daoris inherits. The next *Appoint* then hands the key to that code. Under the very tab shell the module started, the code
+    can start a stand-in with `SessionLine`'s exact arguments and `CLAUDE_CONFIG_DIR`, so the walk passes (finding 1).
+  - *A process riding the terminal* cannot type into the tab: `DAORIS.TERMINAL` is `Window` (`PipeCensus.cs:114`). Every program the tab
+    starts carries the key, and finding 1 decides which programs those are.
+  - *The working session* holds no key, and its hooks cannot reach one. The branch code it merges and tests is an agent's ordinary reach,
+    so it can do what finding 1 says, which is the very separation D208 point 2 and §6.2 rest on.
+  - *Home files claiming the steward*: memory is the authority, which holds, except that a release on disk carries no author
+    (finding 7).
+- **Can a covered act carry what only the owner may decide.**
+  - *Drive* on a repository with no session trees (opt-in, `DriverConfig.cs:1416-1424`) puts Daoris's sessions in the owner's checkout.
+    There a done is `NoTree` and lands nothing, since it is already in place (`AutoLanding.cs:207`). That delivery has no acceptance,
+    and it is exactly the reason row 3 gives for keeping `trees off` the owner's (finding 4).
+  - *The go-on* releases, with no bound, the hold D210 builds as the bound before the owner ("nothing loops without the person").
+    D210 also justifies its briefed fallback and walk by the release being the person's (finding 3).
+  - Go-aheads, sign-ins, widenings, pushes, done, spending and deletion are refused before any handler, and `landing-pushes` covers
+    publication through trees, stop and finish.
+- **Is any act recorded or shown as the owner's.**
+  - The notes and reasons are the steward's own codes, which holds.
+  - A yes to a parked session's ask is recorded as the agent's own ask let through (finding 2).
+  - After a restart, a steward's release left on disk is either withdrawn together with the owner's or read as the owner's (finding 7).
+- **The appointment beside D201's and D208's.**
+  - Grant: `SET_APPOINTMENT`, `Window`, with `scope`, `acts` and the tick off; *Appoint again* per role, never from the file.
+  - Storage: D201's record, read only at the start (`InstancePipe.cs:259`, `StandingConfirmation.cs:288-327`), so a planted record turns
+    nothing on mid-run either.
+  - Revoke: the hash is dropped before the write (`:597-617`); admitted acts and pending operations are cancelled in the same step; the
+    tab's end is told on four paths.
+  - One model holds for the three. D201's judge, forms, lock and caller look serve the role, and its unkeyed grant stays off.
+- **The record, the notice and the overrule.**
+  - One line per role, with real reverse presses.
+  - `owner-set` marks too much in places (a folder opened, a notice read, the supervisor appointed on the same repository, every quest
+    published this run) and orders too little against the service's own doors. Its sweep proves that each door declares a target, not
+    that the declaration is right (finding 6).
+
+### 3. The rows
+
+- **STEWARDROLE1a** can land dark against the built door, but it is round 1's size again (finding 13). Its walk is proved only on stand-in
+  process trees, which pass while the real harness's directory and argument vector fail (finding 5). Its census sweep would pass a wrong
+  `none` (finding 6).
+- **STEWARDROLE1b** follows 1a. Its proofs prove the records and conditions; it needs `no-tree` on drive (finding 4) and
+  `running-elsewhere` on stop (finding 8).
+- **STEWARDROLE1c** needs only 1a; *after 1b* is sequence. Its bound proof files from one process, so it passes while the real bound never
+  binds (finding 11).
+- **STEWARDROLE1d** has the right gate: the containment seen on every door, and `SupervisorOffered` off and proved refused. Its look should
+  add finding 1's program and shell checks and finding 12's ancestor canary and sign-in. It proves the slice by the count of cards not
+  pressed.
+- **STEWARDROLE1e** needs finding 2's parked path. Otherwise its proofs (a planted, an altered and a replaced file, cancellation by the
+  owner's stop or a revoke) prove its claim.
+- **STEWARDROLE1f** waits rightly on 1d and AGENTERRORS1a. It needs finding 3's bound and finding 7's authored release: without the
+  latter, its restart proof would withdraw the owner's own release too.
+- **STEWARDROLE1g** is sound as written.
+- **The first slice.** 1a to 1d is the right first slice. It removes the routine presses the direction names: drive, undrive, trees, hold,
+  resume, stop, finish, *Try again*, with the desk carrying the working session's needs. 1a alone gives the owner nothing, as any
+  foundation, so no row before 1d does. The go-on is worth less once AGENTERRORS1a retries outages by itself, so its place after 1d costs
+  little.
+
+### 4. Findings
+
+1. **The holder's shell and harness are programs any process of the account chooses, and the key is handed to them** (design §2.2,
+   :225-239; §6.1, :641-657; §6.3, :687-691; D209 point 7 and *Why*, `D209.md:82-87`, `:97-99`). **Blocking.**
+   - `TerminalModule.OpenHolderAsync` starts the shell `HolderTerminal.ShellOf` picks (`TerminalModule.cs:243-249`). It is the file the
+     home's tools file names, else PATH's (`Terminals.cs:44-47`, `:90-96`; `Tools.cs:284-289`). The tab carries Daoris's own environment
+     plus the key (`Terminals.cs:7`).
+   - The owner then types a bare `claude` (`HolderTerminal.cs:27-29`), resolved by PATH to a user-writable install (`Adapters.cs:2359`).
+     Its own updater's children get the key too.
+   - An agent Daoris runs, or a branch's code the working session tests, rewrites any of these once. The next *Appoint* then runs that
+     code with `DAORIS_ROLE_KEY`, and the walk passes (§2). This is O2-5's class, one step down.
+   - Smallest change, either of two:
+     - (a) Daoris starts the harness itself as the tab's process. It uses its managed, pinned `claude-code` binary by absolute path
+       (`HarnessSettings.ManagedBinary`, as the ACP door already does, `HarnessRoster.cs:1234-1236`), hash-checked at the start, with an
+       argument vector and an environment Daoris composes (no inherited loader variables, the updater off). The walk checks that
+       process's image path.
+     - (b) As O2-5's second option allowed: name the shell's and harness's resolution and the inherited environment in §6.3's *Not
+       closed*, the ask and D209 point 7, correct *Closed* and *Why*, and take the shell from the system's own location, never the tools
+       file or PATH.
+2. **A yes to a parked session's hand-over ask is taken by the look's `GoAsync`, as the agent's, outside its pending operation** (design
+   §3.1 row 10, :329; §5.1a, :526, :542-545; §10 1e, :833-844). **Blocking.**
+   - By the time the holder sees an ask waiting on the owner, its session has usually parked (`DriverHandOvers.cs:300`).
+   - The steward's `approved` is then taken by `SettleAsync` → `GoAsync` (`:161-243`), which keeps a box `askedBy: agent`, `why: agent`
+     (`:242-243`). The box's consumer stops the parked record (`:108`) and writes the handed file as the agent's (`:133`).
+   - No operation is consumed, no gate is taken, and the owner's mark and a revoke cancel nothing on this path. An owner's stop between
+     the box and its consumption is released, which is C2-2's case.
+   - Smallest change: add `GoAsync` to §5.1a's table as row 10's consumer. It takes the steward's `approved` from memory under the quest's
+     gate, compares it with the signed agent, and writes its box `askedBy: steward` with the operation's id, consumed as row 9's. Add a 1e
+     proof: parked before the yes, then the owner's stop, then the looks.
+3. **The go-on lets an outage loop without the owner, which D210 forbids** (design §4.2, :431-443; §4.3, :462-470; §9, :741-742; D209
+   point 5, `D209.md:66-71`; against `D210.md:57-60`, `:94-96`, and the agent-errors design :150-152, :478-484, :490-493). **Blocking.**
+   - §4.2 admits a go-on on every `ended.transient` hold. Each release is five more tries over 31 minutes and a turn. Past the bound the
+     record is held again, and the steward may release it again, every hour of an outage, with no strike and no cool-off.
+   - D210's hold is the bound before the owner, as `Exhausted` is for strikes, which row 8 refuses to forgive.
+   - §4.3 also restores the record where D210 goes briefed, and is silent on D206's briefed fallback and D205's walk. D210 justifies both
+     as "the person's authorized carry-on".
+   - Smallest change: one steward go-on per quest per run. A quest whose steward-released run ends `ended.transient` again is refused
+     (`go-on-spent`) and waits on the owner. The steward's release takes no briefed fallback and no walk: a refused resume restores and
+     holds. Write the amendment of D210 point 3 and its *Why* with this reason, and add both cases to `RoleGoOnTests`.
+4. **Drive puts Daoris's sessions in the owner's checkout where the repository has no session trees** (design §3.1 row 1, :320, against
+   row 3's reason, :322, and §3.2's acceptance row, :346; D209 point 3). **Blocking.**
+   - Trees are opt-in (`DriverConfig.cs:1416-1424`), so a registered repository never driven is by default a checkout one.
+   - The steward's drive then has sessions work and commit in the owner's checkout. There a done is `NoTree`, already in place, with no
+     landing for the owner to accept (`AutoLanding.cs:207`). D51's clean-tree rule holds only while the owner's work is uncommitted.
+   - Smallest change: row 1 refuses `no-tree` where `!OpensOwnTree(repository)`, and the steward gives trees first (row 3, under
+     `landing-pushes`). Say it in the ask and add it to 1b's `RoleActTests`.
+5. **The walk's checks cannot pass as written** (design §6.1, :650-657; §2.2's line, :229-233; 1a's `PipeStandingTests`, :783-784). Not
+   blocking: it fails closed.
+   - The harness writes its own state into `CLAUDE_CONFIG_DIR` (`Harnesses.cs:171-174`). A whole-directory hash therefore refuses the
+     first act and ends the holder, and a rewrite at each start drops that state.
+   - The line is typed into pwsh or Windows PowerShell 5.1 (`HolderTerminal.cs:38-42`). 5.1 passes embedded double quotes to a native
+     program unescaped, so `{"disableAllHooks":true}` arrives as `{disableAllHooks:true}`. `claude` may also be a `.ps1` or `.cmd` shim
+     running node with a script before the arguments, so "argument by argument" and "exactly one harness process" have no meaning yet.
+   - Smallest change: name exactly the files Daoris owns and checks (its `settings.json` byte for byte; no instruction file, plugin,
+     command, agent, skill or hook folder, and no other settings file) and the harness state it leaves alone. Define the harness process
+     by its image, as finding 1 (a) does, and compare its argument vector after the image. Require pwsh, or take finding 1 (a).
+6. **`owner-set`'s census marks too much in places and too little in others** (design §5.4, :591-618; 1a's `OwnerSetCensusTests`,
+   :787-790). Not blocking.
+   - Too much: no `none` reason covers doors that act on nothing a role acts on. Among them are `SESSION_OPEN_FOLDER`,
+     `SHOW_REVIEW_AGAIN`, `WORK_RECORDS_FOLDER` (`PipeCensus.cs:270`), `NOTICES_READ`, `NOTICE_DISMISS`, `HELP_DISMISS` and
+     `CHANNEL_MARK` (`:222-224`).
+   - Too much: `SET_APPOINTMENT` names the supervisor's repository (`:284`), so appointing the supervisor on X freezes the steward on X.
+   - Too much: the record rule ("a word, a move, a status or a hand-over attributed to the person … after this run's start"), read
+     literally, takes in a quest's publication and its ask's own words (`Asks.cs:200`), so every quest the owner set going this run would
+     be the owner's from birth.
+   - Too little: the service's doors take no gate, so "never a steward's effect after the owner's" does not hold for them.
+   - The sweep proves that each door declares a target, so a wrong `none` passes.
+   - Smallest change:
+     - add the reason *acts on nothing a role acts on*;
+     - name the record kinds that mark (a session's move, a word to a session, a hand-over, a status changed by a person door after
+       publication);
+     - say what orders the service's doors;
+     - cross-check `PipeCensus.Targets` against each handler's `[Publishes(…, Session = …)]` (`SessionsRoutes.cs:22`,
+       `ConversationRoutes.cs:356`) and its required `repository`, `quest`, `session` or `id` field.
+7. **The releases on disk carry no author** (design §4.3, :450-472; §5.1a, :527-528, :549-551). Not blocking.
+   - §4.3 says a release memory does not hold is the owner's, and that after a restart a release with no operation is withdrawn. The
+     first look cannot tell the two apart (`StandingChoices.cs:118-119` writes no author). So it either withdraws the owner's own
+     *Try again* at each restart, today's stop release and D210's by design (agent-errors design:465), or reads the steward's as the
+     owner's.
+   - The transient release is D210's `WithTransientReleased`, keyed to the end (§1 item 4).
+   - The consumer's "conditions … on the record … in one step under the judge's lock" read the service, which §3.4 forbids under that
+     lock.
+   - Smallest change: write the steward's releases with `by: steward` and the act's id, and have the first look after a restart withdraw
+     only those. The operation carries `ended`, and the consumer's record check is D210's end key, read in the start's own step.
+8. **Row 6's live stop reaches only a process this instance runs** (design :325, :524; `SessionMoves.cs:22-31`; `SessionsCommand.cs:946-951`).
+   Not blocking. Smallest change: refuse `running-elsewhere` with nothing written, and add it to 1b's tests.
+9. **`ActorChoices.Effective` is the machine's `build` order, not the repository's** (design :328-329, :538; `ActorChoices.cs:101-145`).
+   Not blocking. Smallest change: say "the machine's effective `build` order, within the fence a repository's hand-over rule passes where
+   it has one".
+10. **Small claim slips** (§1 item 8). Not blocking. Smallest change: `AutoLandingRules.Concluded`; drop *Set by you*, or say the row shows
+    no author today; "above every source but managed settings"; `TASKS.md:267`, `:270`.
+11. **The desk's per-caller bound binds a verb, not a caller** (design §6.2, :673-675; §6.3, :701-702; `StandingCaller.cs:47-53`;
+    `D208.md:267-268`). Not blocking.
+    - Each `STEWARD_REQUEST` comes from a new verb process, so one agent fills all 100 by running the verb 100 times.
+    - Smallest change: key the bound by the caller's agent job where the look places it in one, else by the nearest long-lived ancestor
+      the walk finds; or say in §6.3 that one process can fill the desk.
+12. **1d's look leaves out the holder folder's ancestors and the holder's own sign-in** (design §10 1d, :819-823; §6.1). Not blocking.
+    - The holder starts under the home's `work/rooms/roles/`, which agents write. Neither `--setting-sources user` nor an emptied folder
+      says anything of an instruction file in a parent folder, and the design does not say whether the harness reads one.
+    - A fresh configuration directory reports logged out (`Adapters.cs:2349-2350`), so the owner signs in once in the tab, which is the
+      owner's act (D37).
+    - Smallest change: add a canary `CLAUDE.md` in `work/rooms/roles/` and at the home's root, and put the sign-in in the look and the ask.
+13. **STEWARDROLE1a is round 1's size again** (design §10, :764-796). Not blocking.
+    - It carries the holder model, the variable and its marker, the configuration directory and the walk, the flags, `ROLE_ACT` and the
+      run's memory, and the census of every owner door with its gates.
+    - Smallest change: split it into 1a-i (holder, variable, marker, flags, configuration and walk, `ROLE_ACT`, the memory) and 1a-ii
+      (`owner-set`'s census and the gates), each with its own proof. 1b needs both.
+14. **D209's records against what landed since.** Not blocking.
+    - D156 now carries CONFIRMWAIT1's proposed note on point 4 (`D156.md:276-287`), which D209 §9 also amends. The two should read
+      together: a request the owner confirms hours later is a press at its Confirm, and marks its target then.
+    - This round had one reader. As D208 kept, Codex's read of the final text is owed, and a blocking finding of it becomes an amendment.
+    - Smallest change: one sentence each in §9 and D209's status.
+
+**14 findings, 4 blocking.**
+
+**Verdict: accept after named changes the steward can check without another read.** Round 3 answers round 2 well. The revoke recheck
+under the gate, the pending operations consumed from memory, the signed agent, the flag per role, `landing-pushes` and the go-on as D210's
+release all hold against the code, and the foundation stands: the key's hash in memory, the desk apart from the workshop, D201's presses
+as the role's, and done as the owner's. Four bounded changes remain, each checkable at the lines cited:
+1. Take finding 1's honest limit now. That means correcting §6.3's *Closed* and D209's *Why*, naming the shell's and harness's resolution
+   and the inherited environment under *Not closed* and in the ask, and taking the shell from the system's location. Take its option (a),
+   Daoris starting its pinned harness itself, as 1a's build choice with its own proof.
+2. Name `GoAsync` as row 10's consumer, with its box `askedBy: steward`.
+3. Bound the go-on to one per quest per run, with no briefed fallback or walk, and write D210's amendment with its reason.
+4. Refuse `no-tree` on drive.
+
+Findings 5 to 14 are text or condition changes the rows can take as they land, and Codex's read of the final text is owed when its
+credits return.

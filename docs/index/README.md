@@ -332,13 +332,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-23-session-watch-design.md` | 74 | 714 |
 | `docs/2026-10-23-terminal-trust-design.md` | 66 | 603 |
 | `docs/2026-10-24-agent-errors-design.md` | 122 | 893 |
-| `docs/2026-10-24-agent-errors-reads.md` | 84 | 875 |
+| `docs/2026-10-24-agent-errors-reads.md` | 109 | 1115 |
 | `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
 | `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
 | `docs/2026-10-24-keep-size-reads.md` | 67 | 669 |
 | `docs/2026-10-24-steward-role-design.md` | 123 | 1013 |
-| `docs/2026-10-24-steward-role-reads.md` | 80 | 795 |
+| `docs/2026-10-24-steward-role-reads.md` | 110 | 1066 |
 | `docs/2026-10-24-supervisor-design.md` | 197 | 1609 |
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
