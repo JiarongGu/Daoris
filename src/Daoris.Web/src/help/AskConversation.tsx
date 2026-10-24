@@ -516,7 +516,7 @@ export function useAskConversation(
         if (!answer.sessionId) {
           setFirstWords(null);
           giveBack(text, files, answer.message);
-        } else if (answer.running && finished.current.has(answer.sessionId)) {
+        } else if (answer.running && (answer.finishing || finished.current.has(answer.sessionId))) {
           // HELPNEWCHAT1: the one finished here, still winding up, is no new conversation. The words wait as this one opening
           // until it has ended, then open their own.
           afterEnd.current = { id: answer.sessionId, begin };

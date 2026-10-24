@@ -1736,11 +1736,30 @@ public sealed class ChatRunner : IDisposable
         // On the native door too, the turns already asked for run first: finishing is not withdrawing (CONV4a).
         if (_context.Turned.TryGetValue(sessionId, out var chat))
         {
+            _context.Finishing[sessionId] = 0;
             _ = chat.FinishAsync(() => _processes.CloseInput(sessionId));
             return true;
         }
 
-        return _processes.CloseInput(sessionId);
+        if (!_processes.CloseInput(sessionId)) return false;
+        _context.Finishing[sessionId] = 0;
+        return true;
+    }
+
+    /// <summary>
+    /// Whether the person finished the conversation and it is still winding up (HELPNEWCHAT1): a start carries it on as running
+    /// no longer, since the person's next words are a new conversation's.
+    /// </summary>
+    public bool Finishing(string sessionId) => _context.Finishing.ContainsKey(sessionId);
+
+    /// <summary>
+    /// The conversation's run ended, or <paramref name="bound"/> passed (HELPNEWCHAT1): what a start waits on before it opens the next
+    /// in the workspace a finishing one still holds. True where it ended.
+    /// </summary>
+    public async Task<bool> WoundUpAsync(string sessionId, TimeSpan bound, CancellationToken ct = default)
+    {
+        if (!_context.Watching.TryGetValue(sessionId, out var watch)) return !_processes.Running.Contains(sessionId, StringComparer.OrdinalIgnoreCase);
+        return await Task.WhenAny(watch, Task.Delay(bound, ct)).ConfigureAwait(false) == watch;
     }
 
     /// <summary>Send a person's message to a live chat. False when there is nothing listening.</summary>
@@ -2358,6 +2377,7 @@ public sealed class ChatRunner : IDisposable
             _context.Talking.TryRemove(sessionId, out _);
             _context.Turned.TryRemove(sessionId, out _);
             _context.Rooms.TryRemove(sessionId, out _);
+            _context.Finishing.TryRemove(sessionId, out _);
             ForgetAccess(sessionId);
             _context.Handing.TryRemove(sessionId, out _);
             _context.Browsers.TryRemove(sessionId, out _);
