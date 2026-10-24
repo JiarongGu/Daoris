@@ -42,7 +42,10 @@ to the door before the kill, and a run that brought its quest to done before it 
 A driven session's prompt that its provider fails for a moment is tried again inside its run, on the same session (D210's AGENTERRORS1a
 note): `AgentErrors.Read` (`Agents/Errors/`) reads the door's failure by the adapter's `ErrorWords` and its owner's, and the protocol
 door's `TransientRetry` waits 1, 2, 4, 8 and 16 minutes on the driver's `RetryClock`. Past five tries the record ends `ended.transient`,
-no strike, and the planner holds its quest for the person's word.
+no strike, and the planner holds its quest for the person's word. Since AGENTERRORS1a2 the same holds for a mid-turn word's prompt
+refused after the word was taken (shape 2) and for the open, whose raw `session/new` or `session/resume` is repeated; each wait and
+try keeps a quiet `transient` record event (`next`, `try`) the head reads; and *Try again* releases the hold for that end alone,
+`driver.json`'s `transientReleased` (quest → `{session, ended}`), apart from the stop's `released`.
 
 The accounts are one set per agent (D197): `HarnessSettings` folds the wiring to one order per agent, and only the agents the
 adapters and plugin harnesses name are folded (`HarnessSettings.AgentsKnown`, POOLSTRAY1). A stray folder under the agent homes is

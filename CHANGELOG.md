@@ -23,6 +23,10 @@ with the version and date at release.
   quest, and went on in a new session that lost its conversation. A word you say while it waits goes at once. If the provider keeps
   failing after five tries, the session waits for your words, which go on in the same conversation; it counts no failure against the
   quest and cools no account. This covers sessions on the protocol door; conversations and other doors follow.
+- A session held after its provider kept failing now offers *Try again*, which goes on in the same conversation, and a later run
+  that keeps failing is held again (AGENTERRORS1a2). While Daoris waits to try again, the session's head says when. A word you
+  added during a turn that the provider then refused, and a failure while the session opens, are tried again the same way, instead
+  of leaving the session waiting on you or failing it.
 - When a repository's own git hook refuses the merge commit as you accept a session's work, Daoris now says so (HOOKMERGE1). It
   says that the hook refused it and nothing conflicted, and quotes what the hook printed. Before, it said only that git would not
   merge. Daoris still runs the repository's hooks and never skips them. Change what the hook refuses, or merge the branch yourself.
