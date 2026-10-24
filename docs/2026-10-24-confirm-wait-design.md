@@ -8,7 +8,8 @@ touching the desktop since `6accf4a01` is HOOKMERGE1's, in the merge's tree code
 against that code. Round 2 was read at `48c614823` by the Opus foundation reader alone: 20 findings, 2 blocking, accept after named
 changes the steward checks without another read. Its named changes are taken here by Claude Opus 5.5 from the code on main at
 `1248aa393`, where the one change to what the design cites is SUPERVISOR1b's (`SUPERVISOR_DEFER` a second `Role` route, and
-`SessionsRoutes.cs`' lines shifted, corrected in §5.1); §14 says where each went. Nothing here is built.
+`SessionsRoutes.cs`' lines shifted, corrected in §5.1); §14 says where each went. Codex's read of the accepted text (16 findings, 9 blocking, reopen) is taken by §15, amended 2026-10-24, and
+the decision stands again on the amended text. Built: CONFIRMWAIT1b, 1a-i and 1a-ii, with §15's amendments on 1a-ii's branch.
 
 The row CONFIRMWAIT1 in `TASKS.md` carries the case: a press from a terminal that needs the window's Confirm (a setup, a repository
 driven, a session's words) ends two minutes after its card shows, or ten if no window shows it, and *Nothing was done*. On 2026-10-24
@@ -264,7 +265,7 @@ says why.
 |---|---|---|---|---|
 | `session` | the session's record: its `State` and its `Updated` (`Driver/Trees/SessionGroups.cs:14`, `:35-36`) | the service's record of the session, as `SESSION_QUESTION` reads one (`service.RecordAsync`, `SessionsRoutes.cs:367-372`) | the session exists, and both are the same | *the session moved on while this waited: it was {then}, it is {now}*, or, the state the same, *the session ran another turn while this waited* |
 | `setting` | the setting's value where it is kept, and the payload's field holding the value it sets | the read the route's row names (§5.1's setting readers below) | the value is the same | *what this would set changed while this waited ({act})* |
-| `repository` | that the repository (or workspace) is registered here | the service's registry, as `CheckoutsAndSessionsAsync` reads it (`LinesRoutes.cs:791-793`) | it still is | *the repository {repository} is no longer registered on this machine* |
+| `repository` | that the repository (or workspace) is registered here, and as what: each row's repository, workspace, `adopted` and full root (§15.1 item 4) | the service's registry, as `CheckoutsAndSessionsAsync` reads it (`LinesRoutes.cs:791-793`) | it still is | *the repository {repository} is no longer registered on this machine* |
 | `quest` | the quest's state | the service's quest by its id, as `WORK_PLAN` reads its quests' `Status` (`WorkRoutes.cs:37-70`) | the same | *the quest moved on while this waited: it was {then}, it is {now}* |
 | `ask` | the ask's state | the service's ask by its id, as `ASK_LANDING` reads its entries (`EntriesRoutes.cs:67`) | the same | *the ask was closed while this waited* |
 | `plan` | the fingerprint of the fields the route's row names in the projection table below, from the read it names; never a field the row leaves out | the read the row names, called in process with the same payload, within the bound the row names | the read gives the same fingerprint | *what this would act on changed while this waited; look at it again and ask again* |
@@ -274,7 +275,8 @@ says why.
 
 **`timeless` is only for a press that deletes nothing, moves no line or branch, and starts no work**: marking news read, a read mark on an
 ask's channel, a conversation's name or pin. Every press that deletes, moves refs, lands, sweeps, frees space or abandons work names `plan`, `branch`,
-`session` or `wait`, and none is timeless. `SESSION_DELETE` is the one delete resting on `session` alone: it deletes a record, never work, its
+`session` or `wait`, and none is timeless. `SESSION_DELETE` is the one delete resting on `session` alone: it deletes a record and the session's own local files
+(its words, transcript and attachments, `SessionDeletion.cs:74`; §15.3 item 16), never git work, which its refusals keep; its
 handler re-judges its seven refusals at the run, and the record's `State` and `Updated` are what it acts on.
 
 **What each `plan` fingerprint takes.** A plan's answer carries words composed for the person, the moment it was read and versions of
@@ -298,6 +300,9 @@ and one moved item gives another (§10).
 | `WORK_PLAN` (`WorkRoutes.cs:37`) | `abandon.pieces`: each quest's id, `Status`, `Joined`, `Key`, `Abandon`, and each session's id and state | titles, `Paused.At` | as the page reads it |
 | `SYSTEM_DOWNLOADS`, `SYSTEM_SPACE_FREE`'s `plan: true` (`SystemRoutes.cs:138`, `:81`) | each version's or unit's id | sizes and times | as the page reads it |
 | `HARNESSES`' row, `PLUGINS`' row, `TOOLS_LIST`' row | the row's id, its installed version and its state | the time it was looked at, words | as the page reads it |
+
+*Amended 2026-10-24 (§15.1 item 1):* the reads answer short ids and counts where this table names shas and tips, so each plan read whose
+rows name branches is also bound by each branch's full tip, read once per checkout; a count or a short id binds nothing.
 | `PLUGIN_READ` of a folder, an installed plugin, or an offer's folder (`PluginsRoutes.cs:158-185`) | the manifest as `PLUGIN_READ` answers it **and every file under the folder the press copies or runs**, each by its path relative to the folder and its SHA-256: the manifest alone sees no change to the code (`PluginsRoutes.cs:158-185` answers id, name, version, hook, agents and servers) | the files' times | the bridge's 30 seconds, as the page reads it |
 | `PLUGIN_UPDATE` without `apply` (`PluginsRoutes.cs:258-282`) | `Source`, `From`, `Changes`, and the files of the source it would copy, as `PLUGIN_READ` above | words | as the page reads it |
 | `TOOLS_GIT`'s file | the named file's SHA-256 | — | five seconds |
@@ -321,7 +326,7 @@ for `WORK_HELD`; `WORKFLOW_RUN` (`WorkflowRoutes.cs:222`) for `WORKFLOW_NODE`; `
 `SUPERVISOR_OVERRULE`; `HELP_PROPOSALS` (`HelpRoutes.cs:378`) for `HELP_APPLY` and `HELP_DISMISS`; `RULES` for `RULE_PROPOSAL`; `STATE`'s
 trust hold for `TRUST_FOLDER`; and `TOOLS_LIST` for `TOOLS_STOP`.
 
-**`already`.** A `setting` press whose value is already what it sets is answered at the ask, with no card: *{setting} is already set
+**`already`** (*where a row names the value it sets; the exceptions are named, §15.3 item 12*). A `setting` press whose value is already what it sets is answered at the ask, with no card: *{setting} is already set
 as this asks; nothing was asked*, code `already`, exit 0, since the world is as asked. At the Confirm the same case is `changed`
 (someone set it while this waited), since the person's world moved under the press.
 
@@ -351,7 +356,7 @@ its run, which the ground does not replace.
 | `OPINION_ANYWAY`, `OPINION_MYSELF` (`TreesRoutes.cs:762-763`) | `id` | `session`, `wait` (the opinion gate, `OPINION_GATE`) | Answers a held gate. |
 | `ASK_OPINION` (`TreesRoutes.cs:761`) | `id` | `session`, `branch` | Starts a review on an account, of the work as it was asked on. |
 | `STOP_OPINION` (`TreesRoutes.cs:764`) | `opinion` | `wait` (that opinion running) | Stops a review. |
-| `DISCARD_SESSION_TREE` (`TreesRoutes.cs:434`) | `id` or `path` | `session` (where `id`), `branch` (the tree's head); with `force`, also `plan` (the tree's uncommitted paths, each by path and SHA-256) | Deletes a tree. Re-judges its unforced proof where `force` is absent; a press with `force` skips that proof (`:429-431`), so the paths it would lose are its ground. |
+| `DISCARD_SESSION_TREE` (`TreesRoutes.cs:434`) | `id` or `path` | *amended, §15.1 item 2:* `tree` (its head and index, by `id` or `path`, and with `force` its uncommitted bytes). *As accepted:* `session` (where `id`), `branch` (the tree's head); with `force`, also `plan` (the tree's uncommitted paths, each by path and SHA-256) | Deletes a tree. Re-judges its unforced proof where `force` is absent; a press with `force` skips that proof (`:429-431`), so the paths it would lose are its ground. |
 | `DISCARD_SESSION_BRANCH` (`LinesRoutes.cs:339`) | `repository`, `branch` or `named` | `repository`, `branch` | Deletes a branch. Re-judges D88's unforced proof. |
 | `RECOVERY_DROP` (`LinesRoutes.cs:379`) | `repository`, `refs[]` with their commits | `repository`, `branch` (each ref's commit, as the payload names it) | Deletes refs. Re-judges each, a moved ref skipped. |
 | `SWEEP` (`LinesRoutes.cs:263`) | `workspace`, `only[]` | `plan` (`SWEEP_PLAN`: the branches and their tips) | Deletes branches and trees. |
@@ -360,7 +365,7 @@ its run, which the ground does not replace.
 | `SYSTEM_DOWNLOADS_CLEAR` (`SystemRoutes.cs:152`) | `versions[]` | `plan` (`SYSTEM_DOWNLOADS`: the versions) | Deletes downloads. |
 | `SYSTEM_SPACE_FREE`, not `plan: true` (`SystemRoutes.cs:81`) | `units` | `plan` (its own `plan: true` form: the units) | Deletes what it names. |
 | `WORK_ABANDON` (`WorkRoutes.cs:128`) | `ask` or `quest`, `pieces[]` | `ask` or `quest`, `plan` (`WORK_PLAN`'s `abandon.pieces`) | Abandons work. Re-judges each piece. |
-| `WORK_PAUSE`, `WORK_RESUME` (`WorkRoutes.cs:217`, `:241`) | `ask` or `quest` | `ask` or `quest` | Stops or restarts work. |
+| `WORK_PAUSE`, `WORK_RESUME` (`WorkRoutes.cs:217`, `:241`) | `ask` or `quest` | `ask` or `quest`, and `plan` (`WORK_PLAN`: the pause's `at` and stops for Resume, the work set for Pause; §15.1 item 3) | Stops or restarts work. |
 | `WORK_HELD` (`LinesRoutes.cs:690`) | `unit`, `node`, `attempt` | `wait` (the held attempt) | Answers a held attempt. |
 | `WORKFLOW_NODE` (`WorkflowRoutes.cs:254`) | `run`, `node` | `wait` (the node held in that run) | Skips or stops a run's node. |
 | `SESSION_ARCHIVE` (`SessionsRoutes.cs:820`) | `ids[]` | `session` (each) | Archives records. |
@@ -438,8 +443,8 @@ that adds it (`.claude/knowledge/bridge-presses.md`).
   pipe reads the grounds outside every lock (the standing confirmation's rule, `StandingConfirmation.cs:171-175`), then, under the lock,
   takes the press and ends it `Changed` with its reason or runs it. A `WITHDRAW` while it is checking answers `running` (§4.3), and a
   second window's answer meanwhile is `gone`. `PERSON_CONFIRM` answers once that judgement is made: `{ answered: true }`, or
-  `{ answered: false, why: "changed", reason }`, said on the card, which is still drawn (§8.1). The page waits for that answer as long as
-  the press's slowest ground may take: `PERSON_CONFIRM` is sent with the bound of the route's plan read plus the bridge's slack
+  `{ answered: false, why: "changed", reason }`, said on the card where it is still drawn and toasted where it has gone (§8.1, §15.3 item 11). The page waits for that answer as long as
+  the press's grounds may take, read one after another, the **sum** of their bounds (§15.3 item 16): `PERSON_CONFIRM` is sent with the bound of the route's plan read plus the bridge's slack
   (`bridge/call.ts:33`), not the bridge's default 30 seconds (`bridge/person.ts:164-165`), the bound carried on the confirmation as
   `checkWithin`, so the page names no route.
 - **A read that fails or times out.** At the ask it refuses `unread-grounds`, nothing asked. **At the Confirm it ends nothing**: the
@@ -569,7 +574,7 @@ A waiting press's record keeps until it ends. Its ending keeps in the journal 24
   (`person.checking`), until `PERSON_CONFIRM` answers (§5.2). A `changed` answer is then said on the card, with its reason, before the
   card goes; it is toasted only where the card has gone meanwhile (another window's view closed). A read that failed says
   `person.unread` on the card and gives its buttons back.
-- **A press that rests on a plan** (a land, a set-up, a sweep, a sync, a clear) has a door from the card to the plan's own page, where the
+- **A press that rests on a plan** (a land, a set-up, a sweep, a sync, a clear) has, under row CONFIRMWAIT1c (§15.3 item 13), a door from the card to the plan's own page, where the
   current plan is shown: the session's review for a land, the repository's *Set up*, the branches' sweep or sync, the history's clear.
   The grounds hold the press to the world at the ask; the door lets the person see that world before confirming a press hours old.
 - A keyed press (§7.1) says `person.keyed`: it does not wait across a restart.
@@ -625,7 +630,7 @@ Glossary words: 委托 for quest, 需求 for ask, 终端 for terminal, 通知 fo
 | `person.restoredUnknown` | The record does not say what sent it before Daoris restarted. | 记录未说明 Daoris 重启前是什么发出了它。 |
 | `person.openPlan` | Look at it now | 查看当前情况 |
 | `notifications.done.newer` | A terminal's press from a newer Daoris waits for it | 一个来自较新版本 Daoris 的终端请求在等待该版本 |
-| `notifications.system.waiting.title` | Presses from a terminal wait | 终端的请求在等待 |
+| `notifications.system.waiting.title` (*built as `notifications.system.confirmingMany.*`, §15.3 item 15*) | Presses from a terminal wait | 终端的请求在等待 |
 | `notifications.system.waiting.body_one` / `_other` | One waits for your confirmation. Open Daoris to confirm or refuse it. / {{count}} wait for your confirmation. Open Daoris to confirm or refuse them. | 有一个请求在等你确认。打开 Daoris 确认或拒绝它。 / {{count}} 个请求在等你确认。打开 Daoris 确认或拒绝它们。 |
 
 *Taken back* is the asker's withdrawal alone (`person.gone`, `done.withdrawn`); a press a restart could not bring back is *could not be
@@ -684,7 +689,7 @@ in the same row as the instance's. **1b lands first, then 1a-i, then 1a-ii direc
   `AttentionStateSliceTests` (the twin test extended), `NoticesStateSliceTests`, `DriverModulePersonTests`, `SessionBalloonTests`, and
   the page's `person/Confirmations`, `notifications/announce` and `bridge/person` tests, en and zh. Its gain is partial: on an install
   that is republished while the person is away, every close still ends what waits, so 1a-ii follows it directly.
-- **CONFIRMWAIT1a-ii — the records and the restart** (modules, web), directly after 1a-i. The record written at the ask in
+- **CONFIRMWAIT1a-ii — the records and the restart** (modules, web, and the driver's, the service's and the CLI's home twins; §15.3 item 16), directly after 1a-i. The record written at the ask in
   `data/pipe-waiting/` and named by the confirmation's id, no keyed payload in it; the ending's order; the close's `waiting` answer
   completing each waiting line and leaving `_running`, so the drain is not spent, and no withdrawal; a keyed press ended `Lost` at a
   close; the restore before `Serve` on the lease, and its re-judgement; the newer record left; the lost and newer notices; `restored`
@@ -718,7 +723,7 @@ The rows the task names, and what the read found unproved, each with its proof:
 | The drain's refusal | During an update's drain a Confirm is refused on the card, `person.draining`, and the press still waits; after the restart it is restored. |
 | 1a-i's close notice | Under 1a-i alone, a close with a press waiting ends it `stopping`, its line said, and the person gets the notice. |
 | A close with a press waiting drains at once | Under 1a-ii, a press waiting, `BeginStopping` then `Drain(15 s)`: it returns true at once, no `pipe.drained` logged, the record kept. |
-| Two asks within a minute | Two presses asked within a minute while no window is in front: one balloon naming two; while the main window is focused, two toasts, one per press, each keyed by its id (`notifications/announce` test). |
+| Two asks within a minute | Two presses asked within a minute while no window is in front: the first a balloon at once, the second folded into the minute's one balloon (§15.3 item 15); while the main window is focused, two toasts, one per press, each keyed by its id (`notifications/announce` test). |
 | The restore's judgement | One record each: a route the census makes `Open`, then one it makes `Window`; a payload whose fingerprint differs from its binding; a payload of 257 values; a route with no grounds row; eleven waiting records. Each fails as named and ends `Lost`, one notice for all; none is asked; the card's fields of a passing one equal `FieldsOf`'s for its payload, whatever the record holds beside. A record `begun` is not asked and its id answers `interrupted`; one `ended` whose journal line was never written answers its ending. A newer record is left in place, not asked. |
 | A journal line that fails | A refused press whose journal write throws: the record is removed, and a restart does not ask it again. |
 
@@ -806,6 +811,9 @@ installed proof is the parent's. The grounds are read through the loop's readers
 
 ## 13. Round 2: the read's findings and their answers
 
+*History: round 2's answers, superseded by §14 and §15 (2026-10-24, Codex's finding 16). Directions here that §14 or §15 changed
+(parsing in `InstanceHost.World`, skipping the restore for a held pipe, grouping the undrawn row, 1b beside the other rows) do not stand.*
+
 Every finding of the Opus foundation read of round 1 (`docs/2026-10-24-confirm-wait-reads.md` §4), each checked against the code on
 main at `ffcf42926`. *Taken* means the design now says it; *answered* means it is not taken, for the reason given; *deferred* means
 a later row carries it. The read's §1 corrections (a to j) are findings 8, 12, 13, 14, 22 and 25 below, and the rest are taken where
@@ -867,5 +875,161 @@ each checked against the code on main at `1248aa393`. Blocking in bold.
 | 19 | The words | §8.3: *could not be restored*; `person.checking`, `person.unread`, `person.restoredPid`, `person.restoredUnknown` (and `person.keyed`, `person.openPlan`), en and zh; `status.*` for a quest; `{act}` by `person.route.<ROUTE>` | `locales/en/status.json:2-3`; `locales/en/person.json:30-32`, `:105` |
 | 20 | Proofs missing | §10: one row each for `waitedOn`, a failed read at the ask and at the Confirm, the set-up across midnight, `WITHDRAW` during the read, the drain's refusal, 1a-i's close notice, a close draining at once, two asks in a minute and the toasts | — |
 
-**What stays owed.** Codex's read, on this text (D191, its 2026-10-23 amendment). The design stays proposed until both reads' blocking
-findings are taken.
+**What stayed owed** at round 2: Codex's read, on this text (D191, its 2026-10-23 amendment). It came in on 2026-10-24 and §15
+takes it.
+
+## 15. Codex's read: the amendment (2026-10-24)
+
+Codex read this text against main at `16e0950e2`, with CONFIRMWAIT1b and 1a-i landed: 16 findings, 9 blocking, *reopen*
+(`docs/2026-10-24-confirm-wait-reads.md`, *Codex (final text)*). It holds the unbounded wait, the separate cards and the withdrawal
+rule, and finds three faults. The grounds let different work pass under an unchanged reading. The restore and the record's
+rewrites leave duplicates and failed writes undefined. And the phase in which a press's grounds are read, before its card, has no
+complete lifecycle. **This amendment takes every finding, and the decision stands again on the amended text:** the direction and
+§2's rule as accepted, with the grounds, the restore, the record's rewrites and the grounding phase as this section says. Where an
+earlier section says otherwise, this section wins; each such line names §15.
+
+Findings 1 to 5 fall on 1a-i, which is on main but in no installed build; 6 to 9 fall on 1b and 1a-ii. The code they touch is the
+same grounds and records, so all of them are built on 1a-ii's branch, each with a test seen failing first (D156's amendment note of
+2026-10-24 records it). 1a-i's defects get FIX-LOG entries.
+
+### 15.1 The grounds bind what the press acts on (findings 1 to 5)
+
+1. **Commit identities, never counts or short ids.** A `plan` ground over a read whose rows name branches also reads each
+   branch's full tip and fingerprints it beside its projection (`ReadGround.Tips`). The tips come from one
+   `git for-each-ref` per checkout (`IPipeGroundWorld.TipsAsync` for a registered repository, `SessionTipsAsync` for a session's
+   tree, with its `HEAD`), not one `rev-parse` per row. The tips taken:
+   - `LANDING`: the session tree's `HEAD` and the target branch in that tree.
+   - `ENTRY_LANDING` and `ASK_LANDING`: each part's session `HEAD` and each entry's target in its repository.
+   - `HANDOFF_PLAN`: the branch its answer resolved, which an id-only hand-off names nowhere in its payload.
+   - `SWEEP_PLAN`: each branch row and each landed row.
+   - `TREES_SYNC_PLAN`: each line, both locally and as `origin/<line>`, each rebase row and each delete row.
+
+   Counts and the eight-character ids may stay in a projection beside the tips, but they no longer bind anything. The proof:
+   a branch rewritten to different commits of the same count, and a short id kept, each read `changed`.
+2. **A discard binds the tree it removes, in both forms.** `DISCARD_SESSION_TREE` reads a `tree` ground for `id` and for `path`
+   alike. It resolves the tree as the handler does and fingerprints the tree's `HEAD` and its index's staged entries
+   (`git diff --cached --raw --no-abbrev`). With `force`, it also fingerprints each uncommitted path by its bytes. This replaces
+   `tree-uncommitted`. The proof: a clean new commit in a path-named tree, and staged bytes changed while the working file stays
+   the same, each read `changed`.
+3. **A Resume releases the pause it was asked on, and a Pause stops the work it was asked on.** Both read `WORK_PLAN`.
+   - `WORK_RESUME` takes `paused.at` and each stop's quest and session.
+   - `WORK_PAUSE` takes each quest's id, `Status` and pause act, each session's id and state, and whether a pause stands.
+
+   A pause removed and made again, with a new `At`, while the ask stays open, is `changed`, and the newer pause is kept.
+4. **A repository ground is the registration's identity, not its presence.** `IPipeGroundWorld.RegistrationAsync` answers the rows
+   the name resolves to: each row's repository, workspace, `adopted`, and its root as a full path, sorted. A name with no row
+   answers none. A name unregistered and registered again at another checkout reads `changed` with reason `repository`, now
+   worded *the repository {repository} is no longer registered on this machine as it was*. The root is the checkout's identity
+   here. Another repository cloned into the same path is seen where the press also rests on a tip, as every branch-moving press
+   does.
+5. **A terminal's attachments are bound by their bytes.** `SESSION_INPUT` with `paths` (the verb's form, `said: true`) reads an
+   `attachments` ground: each path as given, and its SHA-256 where it is a rooted file. The ground is kept in the record like any
+   other. A file replaced while its path and the session stay the same is `changed`.
+
+**The baseline is whole (part of finding 7).** `PipeGroundRow.Judge` also reads a ground present at the Confirm and absent at the
+ask as moved, so an incomplete baseline protects nothing it omitted. Each ground says what readings its payload yields
+(`PipeGround.Expected`), so the restore can hold a record's grounds to its row (§15.2).
+
+### 15.2 The records, the rewrites and the restore (findings 6 to 9)
+
+6. **The asker's key lives as long as its card.** The verb marks its sent record waiting as soon as the pipe names the id, which is
+   now before the grounds are read (item 9), not at a later `RESULT`. A sent record is kept thirty days from when it was sent until
+   a read or the press's own answer finds it ended; it is then kept one day from that moment. So the next command never prunes a
+   live press's only key. The records move from `run/pipe/sent`, which anyone may clear while Daoris is closed (D172 point 1), to
+   a kept, key-bearing entry, `HomeEntry.PipeSent` (`profiles/pipe-sent`, D172 point 3: a file holding a key is a sign-in), in the
+   three home twins and the home census. A record still under `run/pipe/sent` is read where the new place has none.
+
+   Backing up and restoring `data/` (D172 point 7) brings back the card, while `profiles/` stays where it is and keeps the key. The
+   proofs: a killed verb's press read by `result <id>` a day later, and the same after `run/` is cleared and `data/` restored.
+7. **The restore holds each record whole and alone.** Besides §7.2's checks:
+   - the file's name must equal the record's `confirmation`;
+   - each terminal id is reserved across the restored set before any card is told;
+   - the record's grounds must equal, as a set of kind and subject, what its row's grounds yield for its payload (`Expected`).
+
+   Two records with one terminal id and identical bindings, payloads and grounds collapse into the first, and the other file is
+   removed. Records that conflict are each lost, and none of them overwrites an ending the journal already holds. A record with
+   grounds missing, or extra, is lost. A duplicate id and a missing ground each have a restore case.
+8. **A rewrite that fails runs nothing and ends nothing.** Every ending, and the `begun` before a run, is written to the record before
+   it is told to any window, its terminal or its dispatcher. `PipeConfirmations` calls the pipe's `Persisting` with the ending
+   while the press is marked settling, outside its lock, and takes the press only where the write succeeded. Where it failed:
+   - A Confirm or a Refuse answers `{ answered: false, why: unrecorded }`. The card stays, its buttons back, with
+     `person.unrecorded`: *Daoris could not keep your answer just now; nothing was done, and it still waits*.
+   - `WITHDRAW` answers `unrecorded`, and the press still waits.
+   - A keyed press lost at a close ends regardless: its record ends `lost` at the next start anyway.
+
+   A record whose removal fails stays `ended` or `begun`, and the next start journals what the journal lacks and removes it, never
+   asking it again. The proof: a failure injected at each write, then a second pipe on the same home, and no answered press comes
+   back waiting.
+9. **The grounding phase has a lifecycle.** Once a person's press holds its place, the pipe tells its terminal `CONFIRMING { id,
+   checking: true }` before reading the grounds, so the verb says the id at once (1b's line) and marks its record waiting. The press
+   is then a reservation (`_reserved`), and every ending from there on is journaled: `already`, `unread-grounds`, `unrecorded`,
+   `stopping` and `withdrawn`. So `RESULT` and the same id sent again say how it ended.
+   - **`RESULT`** answers `waiting`, with `asked` and `checking: true`, while the grounds are read.
+   - **`WITHDRAW`** ends a reservation at once: the read is cancelled, the answer is `withdrawn`, the line is answered and
+     journaled, and there is no card and no notice.
+   - **A close** ends each reservation `stopping` at once, journaled, its line answered and taken out of what is under way, so
+     the drain is not spent on it.
+   - **A disconnect** is read at promotion: the card's `waitedOn` is whether the line that sent the press is still open.
+   - **Promotion** claims the reservation under the pipe's lock, so a withdrawal or a close that won meanwhile leaves no card. A
+     close beginning after the claim treats the new card as any waiting press: its record is kept and its line answered
+     `waiting`.
+
+   The proof: a withdrawal and a close during a held first read, each leaving no card, no record and an unspent drain, and a
+   `RESULT` and a resend that answer the ending.
+
+### 15.3 The rest (findings 10 to 16)
+
+10. **`RESULT` answers `interrupted`** for a journal line begun and never ended, as `WITHDRAW` does (§7.2 step 3's promise).
+11. **A `changed` reason is toasted where its card has gone.** The card is taken as the answer settles, and the removal can reach the
+    page before `PERSON_CONFIRM` answers, so §8.1's *said on the card, which is still drawn* is withdrawn. The reason is said on the
+    card where it is still drawn and toasted where it is not, which the page already does. A page test holds the removal arriving
+    first.
+12. **`already` where a setting is assigned whole.** `SET_HEAVY_GATES` gains `Sets`: the gates' list in order, each by name, run and
+    working folder, with an empty list or none as none. A census test holds every `setting` ground to either `Sets` or a named
+    exception with its reason (`PipeTargetRows.NotAlready`). The exceptions:
+    - a merge into a rule: the scoped choices without a single value, `RULE_ACTION`, `SET_KEEP`, `SET_AGENT_SETTINGS`;
+    - an act beside the value: `WORKFLOW_LANDED` reads the gates at the line's tip, `TOOLS_USE` checks or downloads a version,
+      `ACCOUNT_USE` signs in;
+    - a list edited in place: `TOOLS_LOCATION`, `SET_ACTOR`;
+    - a key: `DAORIS.REMOTES`.
+13. **The plan door is a row of its own**, CONFIRMWAIT1c (`TASKS.md`): `person.openPlan` and a navigation action per plan route,
+    held by a page test that opens the press's plan and scope. No 1a row builds it.
+14. **The census reads the handler, not its file.** `PipeGroundsCensusTests` takes each field from the body of the method its
+    `[DriverRoute]` marks, not anywhere in the file. Reading a real repository's tips, not a written answer, holds the binding
+    for findings 1 and 2. The written answers stay for the projections' moved-clock pairs; a projection paired with every real
+    reader's output is not built here.
+15. **The flood and the balloon, as built.** The bound of ten keeps the cards few, but not the arrivals: an ask-then-withdraw loop
+    toasts once per ask while a window is focused. No rule here bounds that, and none is promised. The balloon is
+    `confirmingMany`, and the first ask of a quiet minute is a balloon of its own (`BalloonFold`). §10's *one balloon naming two*
+    reads: *the first at once, the second folded into the minute's one balloon*.
+16. **The settled text.** §13 is round 2's history, superseded by §14 and this section. The standing line now says what is built.
+    The Confirm's bound is the **sum** of a row's ground bounds, read one after another (§5.2's *slowest* is corrected).
+    `SESSION_DELETE` deletes a record and the session's own local files: its words, its transcript and its attachments
+    (`SessionDeletion.cs:74`). It never deletes git work, which its refusals keep (§5.1). 1a-ii's scope is modules, web, and the
+    three home twins: the driver, the service and the CLI.
+
+| # | Finding | Decision | Code it lands in |
+|---|---|---|---|
+| **1** | **Counts and short ids for commit identities** | §15.1 item 1 | `PipeGrounds.cs` (`ReadGround.Tips`), `PipeTargetRows.cs`, `LoopGrounds.cs`, `WorkingTree.TipsAsync` |
+| **2** | **Path-only forced discard binds no commits** | §15.1 item 2 | `PipeTargetRows.cs` (`DISCARD_SESSION_TREE`), `LoopGrounds.cs` (`tree`), `WorkingTree.StagedAsync` |
+| **3** | **An old Resume releases a new pause** | §15.1 item 3 | `PipeTargetRows.cs` (`WORK_PAUSE`, `WORK_RESUME`) |
+| **4** | **Registration as presence** | §15.1 item 4 | `PipeGrounds.cs` (`RepositoryGround`), `LoopGrounds.RegistrationAsync` |
+| **5** | **Attachments as mutable references** | §15.1 item 5 | `PipeTargetRows.cs` (`SESSION_INPUT`), `LoopGrounds.cs` (`attachments`) |
+| **6** | **The card outlives its key** | §15.2 item 6 | `InstanceDoor.cs`, `SentPresses.cs`, the three `DaorisHome` twins |
+| **7** | **The restore lacks uniqueness and shape checks** | §15.2 item 7, §15.1's baseline | `InstancePipe.Restore`, `PipeGround.Expected`, `PipeGroundRow.Judge` |
+| **8** | **A failed rewrite has no safe outcome** | §15.2 item 8 | `PipeConfirmations.cs` (`Persisting`), `InstancePipe.cs`, `PersonRoutes.cs`, the card |
+| **9** | **The grounding phase's lifecycle** | §15.2 item 9 | `InstancePipe.cs` (`_reserved`, `Accept`, `Withdraw`, `Result`, `BeginStopping`) |
+| 10 | `RESULT` lacks `interrupted` | §15.3 item 10 | `InstancePipe.Result` |
+| 11 | The `changed` reason on a removed card | §15.3 item 11 | `person/Confirmations.test.tsx` |
+| 12 | `already` partial | §15.3 item 12 | `PipeTargetRows.cs`, `PipeGroundsCensusTests` |
+| 13 | The plan door unassigned | §15.3 item 13 | `TASKS.md` (CONFIRMWAIT1c) |
+| 14 | The census overstates its reach | §15.3 item 14 | `PipeGroundsCensusTests` |
+| 15 | The flood and balloon claims | §15.3 item 15 | this text |
+| 16 | The settled text | §15.3 item 16 | this text, the standing line |
+
+Each finding's line of code was checked on this branch, at 1a-ii's head (`058591406`) on main's `16e0950e2`, before it was built.
+Two citations were confirmed as the read gives them:
+- the landing's eight-character ids (`TreesRoutes.cs:676`, `:703`, `:709`; `EntriesRoutes.cs:156`; `LinesRoutes.cs:457`);
+- the hand-off's count with no tip (`TreesRoutes.cs:1025`).
+
+The line numbers here are this branch's. The read's are main's.

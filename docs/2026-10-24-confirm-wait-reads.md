@@ -683,3 +683,133 @@ reason no longer binds, provided 1b lands first (4). What remains is narrower:
 Both can be checked against named lines. So can the non-blocking changes, above all: the held exception (3), the row order (4),
 the Confirm's card and failed read (6, 7), the plan bound and the readers (8, 9), the close's drain (17) and the coalescing (13).
 Codex's read stays owed under D191.
+
+## Codex (final text)
+
+Codex's read of the accepted text, owed under D191, read against main at `16e0950e2` with CONFIRMWAIT1b and 1a-i landed: 16 findings,
+9 blocking; reopen. It holds the unbounded wait, the separate cards and the withdrawal rule, and finds that the grounds let different
+work pass and that the restart protocol leaves duplicates, failed rewrites and the grounding phase unsettled. Verbatim but for its
+headings set one level down. The design's §15 and D156's amendment note of 2026-10-24 say where each finding went.
+
+### 1. Claims about the code
+
+Read against `main` at `16e0950e2`, including both earlier reads verbatim and D156’s proposal, acceptance and built notes. The design’s §1 describes its earlier baseline; CONFIRMWAIT1b and 1a-i have since landed. Persistence remains unbuilt.
+
+Paths below use `M` for `src/Daoris.Desktop/Daoris.Desktop.Modules`, `D` for `src/Daoris.Desktop/Daoris.Desktop.Driver`, and `W` for `src/Daoris.Web/src`.
+
+These claims do not hold against current code:
+
+| Text | What the code actually does |
+|---|---|
+| Design lines 292–296: landing plans carry full shas; hand-off and sweep plans carry tips. | `M/Bridge/Routes/TreesRoutes.cs:675` shortens landing commits; `:1022` returns hand-off identity and count, without a tip. `LinesRoutes.cs:726` and `:780` return sweep rows without tips; `:459` shortens sync’s `From` and `To`. D156’s built note acknowledges these departures, but they weaken the accepted grounds. Finding 1. |
+| Lines 354 and 858: a discard’s branch ground reads the tree’s head, including the path form. | `PipeTargetRows.cs:104` uses `HeadOf("id")`; `PipeGrounds.cs:251` returns no reading without `id`. The handler supports `path` alone (`TreesRoutes.cs:440`). Finding 2. |
+| Lines 277–278: `SESSION_DELETE` deletes a record, “never work.” | It also deletes local words, transcript, attachments and other session files (`D/Sessions/History/SessionDeletion.cs:74`; `SessionHomeFiles.cs:99`). It preserves Git work through separate refusals. Finding 16. |
+| Lines 519–520: an interrupted journal entry makes `RESULT` say it stopped under way. | `InstancePipe.cs:1050` handles answered entries and otherwise returns `unknown`. `WITHDRAW` already handles interrupted entries separately at `:1094`. Finding 10. |
+| Lines 441 and 568–571: a changed reason appears on the retained card before it goes. | `PipeConfirmations.cs:400` settles it; `:518` removes it and `:527` publishes that removal before `PERSON_CONFIRM` returns. The page consequently may toast the reason during an ordinary answer in the same open view. Finding 11. |
+| Lines 324–326: an already-set setting is answered without a card. | This works only where the row supplies `Sets`. Several setting rows do not, including `SET_HEAVY_GATES`, `WORKFLOW_LANDED` and `TOOLS_USE` (`PipeTargetRows.cs:163`, `:179`, `:203`). Finding 12. |
+| Lines 572–574: plan cards have a door to their plan. | `W/person/Confirmations.tsx:121` accepts no plan navigation callback, and its card’s actions at `:359` contain no such door. Finding 13. |
+| Lines 416–419: the census proves each named field belongs to its handler. | The test searches the entire source file containing the route marker, not that handler (`M.Tests/Platform/PipeGroundsCensusTests.cs:55`). Finding 14. |
+| Lines 442–444: the slowest ground or plan bound covers the Confirm. | Grounds run sequentially, and the implementation correctly uses their **sum** (`PipeGrounds.cs:373`, `:385`). A setup alone takes up to five seconds plus two minutes. Finding 16. |
+| Lines 628–629 name the folded balloon’s keys; line 721 specifies one balloon for two asks. | `SessionBalloon.cs:142` uses `confirmingMany`; `waiting` already means an account wait at `:130`. `BalloonFold.cs:46` shows the first immediately and `:68` shows the later aggregate. Finding 15. |
+
+The design also still says “Nothing here is built” at line 11 and “stays proposed” at line 870, contrary to D156’s acceptance at line 304 and built notes at lines 316 and 339.
+
+### 2. The mechanism’s holes
+
+The reversal of CONFIRMSEEN1 remains sound. A terminal need not hold its connection indefinitely, and a card can survive without that connection. The remaining problem is what the eventual Confirm authorizes.
+
+**A late press.** The earlier reads checked whether each route had a ground and whether changing one example changed its fingerprint. They did not establish that the ground identifies the work. A branch can acquire different commits without changing its count. A pause can change without changing an ask’s state. A repository name can resolve to a different checkout while remaining registered. An attachment can change while its path and session record remain identical. These are ordinary changes during a long wait, not merely the acknowledged race between the final read and dispatch.
+
+The path-only forced discard is the clearest destructive case: its head is not read at all, and a clean tree’s empty uncommitted fingerprint remains empty after new commits arrive.
+
+**A press made twice.** Two windows answering the same in-memory card are guarded correctly by `PipeConfirmations.AnswerAsync`’s lock (`PipeConfirmations.cs:342`). `WITHDRAW` also leaves a checking or running press alone. Distinct requests deliberately remain distinct cards; two confirmations of those are two authorizations.
+
+The restart specification does not state the equivalent uniqueness rule across restored files. It checks the journal, but does not explicitly reserve each restored terminal id against the other restored records. Two valid filenames can therefore describe one request id, or duplicate a confirmation id inside their records. The code’s ordinary acceptance path has an explicit `_running` binding check (`InstancePipe.cs:629`); restore needs that rule too.
+
+**A kept record that runs different work.** Rebuilding card fields from the payload fixes the earlier direct card/payload mismatch. It does not bind the objects reached through names and paths. The payload can remain byte-for-byte identical while its checkout, file contents or landed branch changes.
+
+**Failures and the phase before the card.** Persistence specifies successful writes but leaves failed terminal-state rewrites unsettled. Separately, grounding can take eighteen minutes before `CONFIRMING` says the id. During that interval the request has a reserved place but no card. Withdrawal, disconnect and close do not have a complete specified transition for that phase.
+
+The asker’s recovery also remains weaker than the card’s lifetime: a killed terminal may never mark its sent record waiting, and its key remains under disposable `run/pipe/sent`.
+
+### 3. The rows
+
+| Row | Can it land alone, in order? | Does its proof establish its claim? |
+|---|---|---|
+| **1b** | Yes, first. Its compatibility with the previous instance is sound. Its recovery behavior needs findings 6 and 9 amended. | The id-at-`CONFIRMING` proof misses grounding before that event and a harness killed before its first `RESULT`. |
+| **1a-i** | Its ordering and simultaneous web changes are sound. Its stale-work guarantee needs findings 1–5 amended, including repairs to the row already on main. | One changed example per ground proves the comparison machinery, not target identity. It misses equal-count replacement commits, path-only discard, replacement pauses, registry rebinding and changed attachment bytes. |
+| **1a-ii** | It can follow 1a-i, but its restore and write-failure protocol needs findings 6–9 settled first. Its declared scope must include the driver, service and CLI home twins, beyond “modules, web.” | The listed cases miss duplicate restored ids, failed `begun`/`ended` rewrites, publication before persistence, and close while grounding. Its interrupted-result proof also requires finding 10. |
+
+The projection proofs use hand-written JSON (`PipeGroundsCensusTests.cs:87`). Replacing words and dates in that JSON proves those substitutions are ignored; it does not prove the real reader’s shape or every field promised by the projection. Each destructive route needs a case changing the actual target while preserving the currently compared count, state or displayed abbreviation.
+
+The crash fixture can prove restoration from a surviving waiting record. Keeping the first pipe alive does not itself prove the production lease handover or exclude two live executors.
+
+### 4. Findings
+
+1. **Counts and display abbreviations replace the required commit identities — blocking, 1a-i.**  
+   Design lines 292–296 and 350–358 require tips and full commits. `PipeTargetRows.cs:96` gives an id-only `HANDOFF` no branch reading and fingerprints its count at `:99`; sweep and sync similarly take counts at `:111` and `:115`. A landed branch rewritten to different commits of the same count can pass and be handed to the plugin.  
+   **Smallest change:** read and fingerprint full source, destination and relevant branch tips from the underlying plans, including an id-only hand-off’s resolved branch. Add equal-count replacement cases; changing a count is insufficient proof.
+
+2. **A forced path-only discard does not bind committed work — blocking, 1a-i.**  
+   `PipeTargetRows.cs:104` reads the head by `id` only, while `TreesRoutes.cs:446` removes by `path`. With `force`, `LoopGrounds.cs:145` compares only uncommitted paths and working-file bytes. New clean commits leave that fingerprint unchanged. Staged content can also change while the working-file bytes stay identical.  
+   **Smallest change:** resolve both forms to the actual tree and fingerprint its head, index and uncommitted contents. Prove a clean new commit and changed staged bytes each produce `changed`.
+
+3. **An old Resume can release a new pause — blocking, 1a-i.**  
+   Design line 363 and `PipeTargetRows.cs:75` ground pause/resume only in ask or quest state. A pause is explicitly a local file, “never a state” (`D/Sessions/Work/WorkPausing.cs:60`); Resume removes whichever pause exists when it runs (`:225–236`). An ask can remain open throughout.  
+   **Smallest change:** ground Resume in the particular pause, including its generation or `At` and stopped-session bindings. Ground Pause in the work set it will stop. Prove a replacement pause is preserved.
+
+4. **Registration is presence, not target identity — blocking, 1a-i.**  
+   Design line 267 and `LoopGrounds.cs:25` compare only whether the name is registered. Hand-off resolves that name to its current checkout at `TreesRoutes.cs:1050`. Unregistering and re-registering the name elsewhere can leave the ground unchanged while redirecting execution.  
+   **Smallest change:** retain the resolved registry identity, workspace and checkout identity in the repository ground. Test rebinding the same name to another checkout.
+
+5. **Terminal attachments remain mutable references — blocking, 1a-i.**  
+   `SESSION_INPUT` receives only session/question grounds (`PipeTargetRows.cs:39`). Its terminal form reads `paths` after Confirm (`ConversationRoutes.cs:104`); `D/Sessions/SessionsCommand.cs:1169` then reads their current bytes. Keeping the payload does not keep what the asker attached.  
+   **Smallest change:** fingerprint the resolved attachment paths and bytes at the ask and compare them at Confirm. Persist those readings. Test replacement of a file while the session and path remain unchanged.
+
+6. **The card can outlive its only recovery key — blocking, 1b and 1a-ii.**  
+   `InstanceDoor.cs:702` prints `CONFIRMING` without marking the sent record waiting; that happens only after a later `RESULT` at `:286`. A killed harness can therefore leave the one-day retention rule (`SentPresses.cs:18`) in force. The key also lives in `run/pipe/sent` (`SentPresses.cs:42`; `DaorisHome.cs:406`), while the card will live in backed-up `data/`.  
+   **Smallest change:** durably mark waiting when `CONFIRMING` arrives; retain unresolved bindings in an appropriate kept, key-bearing home entry. Do not prune a still-live press’s only key on an unrelated next command. Prove killed-harness recovery after a day and recovery after restoring the supported backup.
+
+7. **Restore lacks explicit uniqueness and baseline-shape checks — blocking, 1a-ii.**  
+   Design lines 516–530 validate individual records but do not require filename/id agreement, unique confirmation ids, or unique terminal ids across the restored set. They also do not require saved grounds to match the current row’s required subjects and kinds. `PipeGroundRow.Judge` iterates only the saved readings (`PipeGrounds.cs:406`); an empty or incomplete baseline cannot protect omitted grounds.  
+   **Smallest change:** validate complete record and baseline shape, require filename/id agreement, and reserve terminal ids and bindings before publishing cards. Collapse identical duplicates; reject conflicts without overwriting an existing ending. Add duplicate-id and missing-ground restore cases.
+
+8. **Failed state rewrites have no defined safe outcome — blocking, 1a-ii.**  
+   Design lines 491–497 cover an initial write failure and a journal failure, but not failure to rewrite `waiting` as `begun` or `ended`. The existing answer path removes and publishes the card before its asynchronous execution continuation (`PipeConfirmations.cs:527`, `:534`). A failed rewrite can otherwise leave a disk record saying waiting after the person answered.  
+   **Smallest change:** make successful persistence a prerequisite for publishing the terminal transition or dispatching. On failure, run nothing and retain an explicitly unresolved card. Define recovery when deletion fails too. Inject failure at each write boundary, then reopen the home and prove no answered press returns as waiting.
+
+9. **The reserved grounding phase has incomplete lifecycle rules — blocking, 1b, 1a-i and 1a-ii.**  
+   Grounds precede the card and id notification (`InstancePipe.cs:776`, `:798`, `:806`), potentially by eighteen minutes (`PipeTargetRows.cs:122`). `WITHDRAW` has no waiting-card mapping then and returns running (`InstancePipe.cs:1086`, `:1118`). Close only closes existing cards (`:308`); the grounding continuation can subsequently publish one. Disconnect also misses its eventual `waitedOn` update (`:494`).  
+   **Smallest change:** print the recovery id before grounding, and track the reserved place through withdrawal, disconnect and shutdown. Promotion to a card must recheck those states. Prove withdrawal and close during a held initial reader, with no later card and no spent drain.
+
+10. **Interrupted `RESULT` is missing — not blocking.**  
+    Design lines 519–520 promise an outcome the present `Result` switch does not return (`InstancePipe.cs:1050`).  
+    **Smallest change:** return the interrupted answer for `PipeJournal.Seen.Interrupted`, as `Withdraw` already does at `:1094`; include that branch in 1a-ii’s proof.
+
+11. **A changed reason is not reliably retained on its card — not blocking.**  
+    Design lines 568–571 conflict with removal before the answer returns (`PipeConfirmations.cs:400`, `:527`). The page test keeps the card mounted artificially (`W/person/Confirmations.test.tsx:248`).  
+    **Smallest change:** retain a local settled card until its reason has been presented, or amend the contract to use a toast. Test the real removal event arriving before the mutation answer.
+
+12. **`already` is only partially implemented — not blocking.**  
+    Design line 324 promises it for setting presses generally. `ReadGround.Already` requires `Sets`, which several direct-setting rows omit (`PipeTargetRows.cs:163`, `:179`, `:203`).  
+    **Smallest change:** supply canonical requested-value projections for direct assignments; explicitly name the exceptions for merging operations.
+
+13. **The plan door has no implementation or assigned proof — not blocking.**  
+    Design lines 572–574 promise it, but `W/person/Confirmations.tsx:121` and `:359` provide no navigation mechanism.  
+    **Smallest change:** assign the door to a row, pass a route-specific navigation action, and prove that it opens the named press’s plan and scope.
+
+14. **The census and projection proofs overstate their reach — not blocking.**  
+    `PipeGroundsCensusTests.cs:55` accepts a field mentioned anywhere in the handler’s file; `:87` supplies synthetic plan answers. Neither establishes the claimed handler correspondence and complete real projection.  
+    **Smallest change:** restrict field checking to the actual handler and pair projections with real reader output. Mutate each safety-relevant field independently, including the equal-count cases above.
+
+15. **The flood and balloon claims are inconsistent — not blocking.**  
+    Design line 655 says ten simultaneous cards keep per-press toasts few; an ask/withdraw loop reuses those slots without bounding arrivals. Line 721 also contradicts the immediate-first balloon behavior (`BalloonFold.cs:46`, `:68`), and lines 628–629 reuse account-wait keys.  
+    **Smallest change:** state the actual arrival behavior, correct the balloon proof and use `confirmingMany`. If bounded toast volume is required, add an arrival-rate rule; the card bound does not provide one.
+
+16. **The settled text still contains incompatible instructions and descriptions — not blocking.**  
+    Besides its status statements, §13 retains superseded directions: parsing in `InstanceHost.World` (line 829), skipping restore for a held pipe (831), grouping the undrawn row (834), and placing 1b between or beside the other rows (839). The timeout wording at 442 contradicts the implemented sum; the record-only deletion rationale at 277 omits local history deletion.  
+    **Smallest change:** mark §13’s answers historical and superseded by §14, update build standing, specify the summed bound, correct deletion’s scope, and include all home-twin components in 1a-ii.
+
+Findings: **16**, of which **9 are blocking**.
+
+**Verdict: reopen.** The unbounded wait, separate cards and withdrawal rule stand. The accepted grounds still permit materially different work to pass, and the restart protocol leaves duplicate records, failed rewrites and the reserved grounding phase insufficiently defined. Findings 1–9 require amendments before the rows they touch proceed; those touching 1b or 1a-i also require repairs to the implementation already on main.
