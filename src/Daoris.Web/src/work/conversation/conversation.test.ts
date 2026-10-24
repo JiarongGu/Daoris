@@ -24,7 +24,9 @@ vi.mock('@shenora/react', () => ({
 import { en, zh } from '../../locales';
 import { useChatTurns, useSay, useSessionEvents, useSessionReach } from '../../bridge/shell';
 import { driverSource } from '../../test/driverSource';
-import { CONVERSATION_CODES, firstAnswerWait, mergeEvents, runCount, runningCall, segments, type SessionEvent, settle, toTurns } from './conversation';
+import {
+  CONVERSATION_CODES, firstAnswerWait, mergeEvents, retryingAt, runCount, runningCall, segments, type SessionEvent, settle, toTurns,
+} from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
 
@@ -584,6 +586,33 @@ describe('toTurns', () => {
 });
 
 /** WAITSHOWN1: the wait for the first answer, read from the record alone. */
+/**
+ * AGENTERRORS1a2 (D210 §5.1, §8): the head’s *Trying again at* reads a transient episode’s quiet events: the latest one’s `next` while no
+ * turn ended after it. Through several waits, a try that works, a stop and the bound.
+ */
+describe('when a transient episode tries again', () => {
+  const ask = e(1, { kind: 'user', text: 'serve the report', origin: 'target' });
+  const wait = (seq: number, next: string) => e(seq, { kind: 'transient', next });
+  const tried = (seq: number, number: number) => e(seq, { kind: 'transient', try: number });
+
+  it('is each wait’s end while it runs, nothing while a try runs, and the next wait’s end after it', () => {
+    expect(retryingAt([ask, wait(2, '2026-10-24T00:25:00Z')])).toBe('2026-10-24T00:25:00Z');
+    expect(retryingAt([ask, wait(2, '2026-10-24T00:25:00Z'), tried(3, 1)])).toBeUndefined();
+    expect(retryingAt([ask, wait(2, '2026-10-24T00:25:00Z'), tried(3, 1), wait(4, '2026-10-24T00:27:00Z')])).toBe('2026-10-24T00:27:00Z');
+  });
+
+  it('is nothing once a try works, past the bound, and where no episode ran; and the events are never lines', () => {
+    const worked = [ask, wait(2, '2026-10-24T00:25:00Z'), tried(3, 1), e(4, { kind: 'message', text: 'Served.' }), e(5, { kind: 'turn', stopReason: 'end_turn' })];
+    expect(retryingAt(worked)).toBeUndefined();
+    // A stop during a wait ends the turn, and the bound's last try fails with no wait after it: nothing waits.
+    expect(retryingAt([ask, wait(2, '2026-10-24T00:25:00Z'), e(3, { kind: 'turn', stopReason: 'cancelled' })])).toBeUndefined();
+    expect(retryingAt([ask, wait(2, '2026-10-24T00:40:00Z'), tried(3, 5)])).toBeUndefined();
+    expect(retryingAt([ask])).toBeUndefined();
+    const items = toTurns(worked).turns.flatMap((turn) => turn.items);
+    expect(items.map((item) => item.kind)).toEqual(['message']);
+  });
+});
+
 describe('the wait for a turn’s first answer', () => {
   const ask = e(1, { kind: 'user', text: 'go on', origin: 'person' });
 

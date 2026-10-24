@@ -95,6 +95,20 @@ describe('the acts a session is offered', () => {
     expect(offeredActs(released, 'row')).not.toContain('retry');
   });
 
+  /** AGENTERRORS1a2 (D210 §5.1, §8): a record past its transient bound, its quest's last here, is released for that end by Try again. */
+  it('offers Try again on a failed record past its transient bound that holds its quest, and leads with it', () => {
+    const transient = session({ state: 'failed', noteParts: [{ code: 'ended.transient', values: { count: 5, minutes: 31 } }] });
+    const holding = placed({ group: 'ended', shown: 'failed', holdsQuest: true });
+    const acts = offeredActs({ session: transient, grouping: holding, root: ROOT }, 'header');
+    expect(acts).toContain('retry');
+    expect(primaryAct(acts, holding)).toBe('retry');
+    // Not where it no longer holds its quest (a later record, a hand-over), nor a failed record that ended any other way.
+    expect(offeredActs({ session: transient, grouping: placed({ group: 'ended', shown: 'failed', holdsQuest: false }), root: ROOT }, 'row'))
+      .not.toContain('retry');
+    const struck = session({ state: 'failed', noteParts: [{ code: 'ended.turn-failed-taken', values: {} }] });
+    expect(offeredActs({ session: struck, grouping: holding, root: ROOT }, 'row')).not.toContain('retry');
+  });
+
   it('offers Archive on what the reader placed in Ended, and Unarchive wherever the mark stands', () => {
     const ended = { session: session({ state: 'completed' }), grouping: placed({ group: 'ended', shown: 'completed' }), root: ROOT };
     expect(offeredActs(ended, 'row')).toContain('archive');

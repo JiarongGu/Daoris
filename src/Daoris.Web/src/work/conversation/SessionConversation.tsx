@@ -7,7 +7,7 @@ import { useHarnesses, useSessionEvents, useSessionSearch } from '../../bridge/s
 import { Icon } from '../../design/ui';
 import { accountNames } from '../accountNames';
 import { type AnchorAsks, type Anchors, anchorsOf, type AnchorWait, marksOf } from '../waits/anchors';
-import { firstAnswerWait, lastWords, type RunningCall, runningCall, settle, toTurns, type Usage } from './conversation';
+import { firstAnswerWait, lastWords, retryingAt, type RunningCall, runningCall, settle, toTurns, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
 import { type CallMark, type Cooling, ConversationView } from './ConversationView';
 import type { ReasonValues } from '../say';
@@ -134,7 +134,7 @@ export function SessionConversation({
    */
   onUsage?: (session: string, usage?: Usage) => void;
   /** Told when the turn its agent is on was asked, while the agent has answered nothing (WAITSHOWN1); undefined once it has. */
-  onWaiting?: (session: string, since?: string, calling?: RunningCall) => void;
+  onWaiting?: (session: string, since?: string, calling?: RunningCall, retrying?: string) => void;
   /**
    * Told whether the conversation waits for its account's limit, read from its events (LIMITRESUME1d2, D206 §3.7), on a change only:
    * the head and the foot say the wait from it, so the record has one reader.
@@ -167,11 +167,13 @@ export function SessionConversation({
   const call = live ? runningCall(turns) : null;
   const callTitle = call?.title;
   const callSince = call?.since;
+  // AGENTERRORS1a2 (D210 §5.1, §8): and when a transient episode tries again, read from its quiet events, for the head's *Trying again at*.
+  const retrying = live ? retryingAt(events) : undefined;
   const reportWait = useRef(onWaiting);
   reportWait.current = onWaiting;
   useEffect(() => {
-    reportWait.current?.(session, waitingSince, callTitle && callSince ? { title: callTitle, since: callSince } : undefined);
-  }, [session, waitingSince, callTitle, callSince]);
+    reportWait.current?.(session, waitingSince, callTitle && callSince ? { title: callTitle, since: callSince } : undefined, retrying);
+  }, [session, waitingSince, callTitle, callSince, retrying]);
 
   // Its limit's wait goes up the same way (LIMITRESUME1d2), told again only where the line it reads changes.
   const held = useMemo(() => (chat ? chatLimitHeldOf(events) : null), [chat, events]);

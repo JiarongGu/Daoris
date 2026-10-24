@@ -58,6 +58,12 @@ public sealed class TransientRetry
     /// </summary>
     public Action<bool>? Waits { get; init; }
 
+    /// <summary>
+    /// Told as each wait begins, with the moment it ends and the next try goes (AGENTERRORS1a2): the quiet <c>agent.transient</c> event
+    /// the session's head reads for its <i>Trying again at</i>.
+    /// </summary>
+    public Action<TransientEpisode, DateTimeOffset>? WaitsUntil { get; init; }
+
     /// <summary>The go-on's words, with the provider's own sentence (<c>retry.go-on</c>): the agent's word, English only, as <c>limit.reset</c> is.</summary>
     public static string GoOnText(string? words) =>
         $"The last request failed on the provider's side ({words ?? "no words"}). Go on where you stopped, after anything said above.";

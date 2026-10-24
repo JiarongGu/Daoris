@@ -362,6 +362,7 @@
   "work.facts.ran": "ran {{time}}",
   "work.facts.waiting": "waiting {{time}}",
   "work.facts.firstAnswer": "no answer yet, asked {{time}}",
+  "work.facts.retrying": "trying again at {{time}}",
   "work.facts.calling": "running {{title}} for {{elapsed}}",
   "work.facts.callWaits": "waiting for your answer to {{title}} for {{elapsed}}",
   "work.facts.callWaitsUnnamed": "waiting for your answer to a tool call for {{elapsed}}",

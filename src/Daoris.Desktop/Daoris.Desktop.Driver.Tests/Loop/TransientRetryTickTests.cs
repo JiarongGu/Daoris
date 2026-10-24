@@ -114,6 +114,11 @@ public sealed class TransientRetryTickTests : IDisposable
             Assert.Single(prompt["blocks"]!.AsArray())!.GetValue<string>()));
         Assert.Single(Events("s1"), e => e.Parts?.Any(part => part.Code == NoteCodes.AgentTransientRetrying.Code) == true);
         Assert.False(File.Exists(AccountCooling.PathOf(_home)) && AccountCooling.Read(_home, DateTimeOffset.UtcNow).Count > 0, "an outage cooled an account");
+        // AGENTERRORS1a2: the record's quiet events the head reads, each wait with when it ends and each try by its number, in order.
+        Assert.Equal(
+            ["wait", "try:1", "wait", "try:2"],
+            Events("s1").Where(e => e.Kind == SessionEventKind.Transient)
+                .Select(e => e.Try is { } number ? $"try:{number}" : e.Next is not null ? "wait" : "neither"));
     }
 
     /// <summary>

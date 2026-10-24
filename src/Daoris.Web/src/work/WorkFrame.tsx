@@ -608,10 +608,12 @@ export function WorkFrame({
   const [reading, setReading] = useState<{ session: string; usage?: Usage } | null>(null);
   const onUsage = useCallback((session: string, usage?: Usage) => setReading({ session, usage }), []);
   // When the attended session's agent was asked and has answered nothing (WAITSHOWN1), likewise told by the conversation.
-  const [waiting, setWaiting] = useState<{ session: string; since?: string; calling?: RunningCall } | null>(null);
-  const onWaiting = useCallback((session: string, since?: string, calling?: RunningCall) => setWaiting({ session, since, calling }), []);
-  // The head's *running … for …* steps with the clock (WAITSAY1), only while a call is named.
-  useNow(waiting?.calling ? 15_000 : null);
+  // AGENTERRORS1a2: and when a transient episode tries again, while one of its waits runs.
+  const [waiting, setWaiting] = useState<{ session: string; since?: string; calling?: RunningCall; retrying?: string } | null>(null);
+  const onWaiting = useCallback(
+    (session: string, since?: string, calling?: RunningCall, retrying?: string) => setWaiting({ session, since, calling, retrying }), []);
+  // The head's *running … for …* steps with the clock (WAITSAY1), only while a call is named; and *Trying again at* leaves once past.
+  useNow(waiting?.calling || waiting?.retrying ? 15_000 : null);
 
   // Cleared only when the record it pointed at is gone entirely. A session that ENDED stays
   // attended, because the person is very likely reading exactly that. 🔴 And only a record this
@@ -2080,6 +2082,8 @@ export function WorkFrame({
     partners: partnersOf(partnerPieces.data ?? [], (agent) => agentRoster.names?.[agent] ?? agent),
     waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
     calling: waiting?.session === attended.id ? waiting.calling : undefined,
+    // AGENTERRORS1a2 (D210 §5.1, §8): *Trying again at* while a transient episode waits.
+    retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
     // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
     heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
   } : null;

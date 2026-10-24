@@ -78,6 +78,27 @@ export const StoppedHoldingItsQuest: Story = {
   },
 };
 
+/** The head of a session whose provider failed, its facts read as the frame reads them while a transient wait runs. */
+function TryingAgainHead(args: ComponentProps<typeof SessionPageHead>) {
+  const { t } = useTranslation();
+  const retrying = new Date(Date.now() + 4 * 60_000).toISOString();
+  return <Page><SessionPageHead {...args} facts={sessionFacts(t, { session: SESSION, shown: 'working', retrying })} /></Page>;
+}
+
+/** AGENTERRORS1a2 (D210 §5.1, §8): its provider failed and Daoris waits to try again in the same conversation; the facts say when. */
+export const TryingAgain: Story = { render: (args) => <TryingAgainHead {...args} /> };
+
+/** The same in 中文: 将于 … 重试. */
+export const TryingAgainInChinese: Story = { ...TryingAgain, decorators: [sessionWidths.half, chinese] };
+
+/** Past its transient bound (AGENTERRORS1a2): *Try again* leads, releasing that end alone, in the same conversation. */
+export const PastItsTransientBound: Story = {
+  args: {
+    session: { ...SESSION, state: 'failed', noteParts: [{ code: 'ended.transient', values: { count: 5, minutes: 31 } }] }, shown: 'failed',
+    acts: ['retry', 'handOver', 'review', 'openFolder', 'terminal', 'detach', 'archive', 'copy'], primary: 'retry',
+  },
+};
+
 /** To review: *Review* leads, since nothing but the person will verify the work (D37). */
 export const ToReview: Story = {
   args: {

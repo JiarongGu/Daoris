@@ -1333,11 +1333,13 @@ public sealed class AcpSession(
         using var cut = CancellationTokenSource.CreateLinkedTokenSource(ct);
         // At the open (§5.6) no session is there to wake and no word flows yet: only the schedule ends the wait.
         var word = opening ? Task.Delay(Timeout.Infinite, cut.Token) : _inbox?.Waiting() ?? Task.Delay(Timeout.Infinite, cut.Token);
+        var delay = TransientRetry.Delays[Math.Min(episode.Tries, TransientRetry.Bound - 1)];
         Volatile.Write(ref _waitsOnTransient, true);
         Said(() => retry.Waits?.Invoke(true));
+        Said(() => retry.WaitsUntil?.Invoke(episode, started + delay));
         try
         {
-            var timer = Task.Delay(TransientRetry.Delays[Math.Min(episode.Tries, TransientRetry.Bound - 1)], retry.Clock, cut.Token);
+            var timer = Task.Delay(delay, retry.Clock, cut.Token);
             var woke = opening ? Task.Delay(Timeout.Infinite, cut.Token) : _wake.WokeAsync(cut.Token);
             await Task.WhenAny(timer, word, woke, Ended).ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();
