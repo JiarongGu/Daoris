@@ -93,24 +93,25 @@ Each a `case` in `tools/desktop.mjs`: `build` 887 · `run` 891 · `restart` 892 
 
 | Script | Line | Runs |
 |---|---|---|
-| `test` | 14 | `npm test -w daoris` |
-| `verify` | 15 | `npm run typecheck -w daoris && npm test -w daoris && node…` |
-| `tooltests` | 16 | `npm run tooltests -w daoris` |
-| `rehearse` | 17 | `node tools/release-rehearsal.mjs` |
-| `rehearse:family` | 18 | `node tools/family-rehearsal.mjs` |
-| `rehearse:deploy` | 19 | `node tools/deployment-rehearsal.mjs` |
-| `typecheck:web` | 20 | `npm --prefix src/Daoris.Web run typecheck` |
-| `check:web-rules` | 21 | `npm --prefix src/Daoris.Web run test -- src/design/tokens.test.ts…` |
-| `test:web` | 22 | `npm run test:web:unit && npm run test:web:e2e` |
-| `test:web:unit` | 23 | `npm --prefix src/Daoris.Web run test` |
-| `test:web:e2e` | 24 | `npm --prefix src/Daoris.Web run build && dotnet build…` |
-| `test:web:measured` | 25 | `npm --prefix src/Daoris.Web run e2e:measured` |
-| `desktop` | 26 | `node tools/desktop.mjs` |
-| `testbed` | 27 | `node tools/testbed.mjs` |
-| `publish:service` | 28 | `node tools/service-publish.mjs` |
-| `knowledge:build` | 29 | `node tools/knowledge-server.mjs build` |
-| `publish:desktop` | 30 | `node tools/desktop-publish.mjs` |
-| `release-prep:check` | 31 | `node tools/release-prep.mjs --check` |
+| `prepare` | 14 | `node tools/merge-rows.mjs --install` |
+| `test` | 15 | `npm test -w daoris` |
+| `verify` | 16 | `npm run typecheck -w daoris && npm test -w daoris && node…` |
+| `tooltests` | 17 | `npm run tooltests -w daoris` |
+| `rehearse` | 18 | `node tools/release-rehearsal.mjs` |
+| `rehearse:family` | 19 | `node tools/family-rehearsal.mjs` |
+| `rehearse:deploy` | 20 | `node tools/deployment-rehearsal.mjs` |
+| `typecheck:web` | 21 | `npm --prefix src/Daoris.Web run typecheck` |
+| `check:web-rules` | 22 | `npm --prefix src/Daoris.Web run test -- src/design/tokens.test.ts…` |
+| `test:web` | 23 | `npm run test:web:unit && npm run test:web:e2e` |
+| `test:web:unit` | 24 | `npm --prefix src/Daoris.Web run test` |
+| `test:web:e2e` | 25 | `npm --prefix src/Daoris.Web run build && dotnet build…` |
+| `test:web:measured` | 26 | `npm --prefix src/Daoris.Web run e2e:measured` |
+| `desktop` | 27 | `node tools/desktop.mjs` |
+| `testbed` | 28 | `node tools/testbed.mjs` |
+| `publish:service` | 29 | `node tools/service-publish.mjs` |
+| `knowledge:build` | 30 | `node tools/knowledge-server.mjs build` |
+| `publish:desktop` | 31 | `node tools/desktop-publish.mjs` |
+| `release-prep:check` | 32 | `node tools/release-prep.mjs --check` |
 
 ## npm scripts in `src/Daoris.Web/package.json`
 
