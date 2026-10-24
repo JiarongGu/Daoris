@@ -177,6 +177,14 @@ internal sealed class TreeSweeps(
                 continue;
             }
 
+            // The last fixes' check, finding 5: the delete refuses a judgement that rested on nothing, but the tip's holder appended below would
+            // hide that, so the branch is kept here, said, before any ref is written or anything moves.
+            if (rests.Count == 0)
+            {
+                results.Add(new(now, false, $"{ContentHolds.NothingRested}, so it is kept"));
+                continue;
+            }
+
             // From here each step removes, or finishes a removal: none is cancelled halfway.
             var done = CancellationToken.None;
 
@@ -458,16 +466,19 @@ internal sealed class TreeSweeps(
         // AUTOTIDY2b: or the form a landing's branch that holds it was proven on: the line holds this work through that branch, which
         // the look takes after this one, as the press does. Waiting for the line by ancestry, a squash merge would keep both.
         var hold = onLine is not null ? "line" : "branch";
+        string? landingBranch = null;
         if (byItself && onLine is null && await LandingHoldingAsync(root, tip, landings, ct).ConfigureAwait(false) is { } landing)
         {
             onLine = landing.Line;
             hold = "landing";
+            landingBranch = landing.Branch;
             // FABRIC-END4a, fourth review: and on what that landing's proof rested on, so the line rewound since it was proved keeps it.
             rests?.Add(($"refs/heads/{landing.Branch}", landing.Tip));
             rests?.AddRange(landing.Rests);
         }
 
-        return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where) with { OnLine = onLine is not null, Hold = hold }, tip);
+        return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where)
+            with { OnLine = onLine is not null, Hold = hold, LandingBranch = landingBranch }, tip);
     }
 
     /// <summary>
@@ -508,7 +519,9 @@ internal sealed class TreeSweeps(
     private (FinishedLanding? Landing, string? Why) LandingOf(SweepItem item, string? unit)
     {
         var entries = context.Recorded.All().Where(entry => string.Equals(entry.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).ToList();
-        var found = (item.Hold is "landing" or "squash" ? entries.FirstOrDefault(entry => entry.Branch == item.Where) : null)
+        // The last fixes' check, finding 6: a landing's hold names the form of the line in `Where`, so its landing is found by its own branch.
+        var by = item.Hold switch { "landing" => item.LandingBranch, "squash" => item.Where, _ => null };
+        var found = (by is null ? null : entries.FirstOrDefault(entry => entry.Branch == by))
             ?? (unit is null ? null : entries.Where(entry => entry.Units.Contains(unit, StringComparer.Ordinal)).OrderByDescending(entry => entry.LandedAt).FirstOrDefault());
         return found is null
             ? (null, unit is null ? "no work unit names its branch, so no landing could be found for it" : "no landing is recorded for its work unit")

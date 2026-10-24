@@ -309,9 +309,15 @@ public static class SpaceFree
                 switch (kind)
                 {
                     case "set-aside":
-                        // KEEPSIZE1b (§5): the listed folders' steps again, a record due posted first, before any of them goes.
-                        await SetAsideAsync(world, mine, tally, await RecordAsync(world, null, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+                    {
+                        // KEEPSIZE1b (§5): the listed folders' steps again, a record due posted first, before any of them goes. The last fixes'
+                        // check, finding 3: each listed class is compared with the class read before this run's own record pass, which moves a
+                        // stopped folder to its record by the press's own word, so it is no change since the list.
+                        var before = ClassesNow(world);
+                        var checkouts = await RecordAsync(world, null, ct).ConfigureAwait(false);
+                        await SetAsideAsync(world, mine, tally, checkouts, before, ct).ConfigureAwait(false);
                         break;
+                    }
                     case "downloads": await DownloadsAsync(world, mine, tally, run.Door, ct).ConfigureAwait(false); break;
                     case "logs": Logs(world, mine, tally); break;
                     case "browser-cache": await CachesAsync(world, mine, tally, ct).ConfigureAwait(false); break;
@@ -352,9 +358,25 @@ public static class SpaceFree
         }
     }
 
+    /// <summary>Each set-aside folder's class and ref as the list words them, by its id, read now; none where the folders do not read.</summary>
+    private static Dictionary<string, (string Class, string? Ref)> ClassesNow(SpaceFreeWorld world)
+    {
+        try
+        {
+            return new SessionTrees(world.Home).ListSetAside(world.Policy(world.Home), world.Now())
+                .ToDictionary(folder => folder.Id, folder => (ListedClass.Of(folder), folder.Ref), StringComparer.Ordinal);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        {
+            return new(StringComparer.Ordinal);
+        }
+    }
+
     /// <param name="checkouts">The registry's checkouts, for a recorded folder's holding check right before its rename; with none, none goes by the hour.</param>
+    /// <param name="before">Each folder's class and ref read before the run's record pass (<see cref="ClassesNow"/>), which its listed ones are compared with.</param>
     private static async Task SetAsideAsync(
-        SpaceFreeWorld world, IReadOnlyList<SpaceAsked> units, SpaceTally tally, Func<string, string, string?>? checkouts, CancellationToken ct)
+        SpaceFreeWorld world, IReadOnlyList<SpaceAsked> units, SpaceTally tally, Func<string, string, string?>? checkouts,
+        IReadOnlyDictionary<string, (string Class, string? Ref)> before, CancellationToken ct)
     {
         var trees = new SessionTrees(world.Home);
         var roots = trees.SetAsideRoots;
@@ -404,7 +426,28 @@ public static class SpaceFree
         foreach (var (unit, folder) in folders.Where(each => each.Key.Early))
         {
             ct.ThrowIfCancellationRequested();
-            var (bytes, kept) = trees.RemoveSetAsideEarly(folder, unit.Own, unit.Class, unit.Ref);
+            if (unit.Class is not null && before.TryGetValue(unit.Id, out var was) && (unit.Class, unit.Ref) != was)
+            {
+                tally.Keep(SpaceKept.Changed, early: true);
+                continue;
+            }
+
+            // What it reads now, after the run's record pass: the removal compares this with what it reads right before its rename.
+            var judged = TreeSetAside.MovedAt(Path.GetFileName(folder)) is { } moved ? SetAsideEligibility.Of(folder, moved, TimeSpan.Zero, whole: true) : null;
+            var now = judged is null ? null : ListedClass.Of(judged.Class, judged.Manifest?.Why, judged.Manifest?.Finished is not null);
+            // The last fixes' check, finding 4: a folder listed recorded, or recorded now, is checked for its holder right before it goes, as the
+            // hour's door checks it, and kept `changed` unless the check passes; with no registry, it cannot pass.
+            if ((unit.Class == SetAsideClass.Recorded || now == SetAsideClass.Recorded) && judged?.Manifest is { Finished: { } finished } manifest)
+            {
+                var (held, _) = await SetAsideEligibility.HoldingAsync(checkouts?.Invoke(finished.Workspace, manifest.Repository), manifest, ct).ConfigureAwait(false);
+                if (held != Holding.Passed)
+                {
+                    tally.Keep(SpaceKept.Changed, early: true);
+                    continue;
+                }
+            }
+
+            var (bytes, kept) = trees.RemoveSetAsideEarly(folder, unit.Own, unit.Class is null ? null : now, judged?.Manifest?.Finished?.Ref);
             if (kept is null) tally.Remove(bytes, early: true);
             else tally.Keep(kept, early: true);
         }

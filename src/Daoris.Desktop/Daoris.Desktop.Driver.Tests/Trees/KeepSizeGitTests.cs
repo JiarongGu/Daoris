@@ -463,6 +463,25 @@ public sealed class KeepSizeGitTests : KeepSizeFixture
     }
 
     /// <summary>
+    /// The last fixes' check, finding 6: a session held by its landing's branch, which a squash took onto the line, is the landing hold, and its
+    /// record names that landing, found by the landing's own branch rather than the form of the line the hold names.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_holds_record_names_its_landing_by_its_own_branch()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = LandingTrees();
+        var (_, landing) = await LandingAsync(trees, root, new LandingSubject("s1", "q1", "The work"));
+        await SquashAsync(root, landing);
+
+        var aside = await SetAsideAsync(trees, root);
+        await RecordAsync(trees, root, DateTimeOffset.UtcNow);
+
+        Assert.Equal(("landing", "main"), (Manifest(aside).Finished!.Hold.Kind, Manifest(aside).Finished!.Hold.Where));
+        Assert.Equal(landing, Assert.Single(_posts).Tree.Landing?.Branch);
+    }
+
+    /// <summary>
     /// 🔴 Codex's read of the branch, finding 4: the press removes a set-aside folder only while its class and holder read as the list gave
     /// them. Listed as recorded on its ref, then unmarked by a check that found the ref gone, it is kept <c>changed</c>; and the press's
     /// request carries both, read back by the run.

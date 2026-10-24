@@ -560,6 +560,12 @@ public sealed record SweepItem(
     /// <c>squash</c>, <c>content</c>, <c>carried</c>, <c>empty</c>, or <c>branch</c> for a branch of the person's; null where none was found.
     /// </summary>
     public string? Hold { get; init; }
+
+    /// <summary>
+    /// Held by a landing (<see cref="Hold"/> <c>landing</c>): that landing's own branch, by which its record's landing is found (the last fixes'
+    /// check, finding 6), since <see cref="SweepItem.Where"/> names the form of the line it was proven on. Null for every other hold.
+    /// </summary>
+    public string? LandingBranch { get; init; }
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>

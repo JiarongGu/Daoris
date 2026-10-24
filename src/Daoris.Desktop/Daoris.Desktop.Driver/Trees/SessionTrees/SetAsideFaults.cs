@@ -46,6 +46,9 @@ internal sealed class SetAsideFault
     /// <summary>The process stops right after the move is marked <c>moved</c>, before the branch's delete.</summary>
     public bool StopAfterMove { get; init; }
 
+    /// <summary>Run right before a removal's rename into <c>.going</c>, after the purge read the folder, with the folder's path.</summary>
+    public Action<string>? BeforeRename { get; init; }
+
     /// <summary>The process stops right after a removal's rename into <c>.going</c>, before its delete.</summary>
     public bool StopAfterRename { get; init; }
 

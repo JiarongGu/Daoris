@@ -564,7 +564,8 @@ internal sealed class TreeSetAside(TreeContext context)
             {
                 (bytes, kept) = Remove(folder, judged.Hour ? GoingDoors.Hour : GoingDoors.Days, judged.Threshold, now, top: judged.Manifest?.Finished is not null);
                 // A refused rename (`busy`) or a failed delete is kept where the inventory reads it, waiting a day after the same failure twice.
-                if (kept is { } refused && refused.Code != SetAsideKept.Linked) failed.Add((folder, refused.Sentence, last.Why == refused.Sentence ? now : null));
+                // A write its read under `.going` found is said as the purge's own read says one, never a failure.
+                if (kept is { } refused && refused.Code is not (SetAsideKept.Linked or SetAsideKept.Written)) failed.Add((folder, refused.Sentence, last.Why == refused.Sentence ? now : null));
             }
 
             results.Add(new SetAside(folder, moved, kept is null, kept?.Sentence, kept?.Code) { Bytes = bytes, Class = judged.Class, Hour = judged.Hour });
@@ -633,6 +634,7 @@ internal sealed class TreeSetAside(TreeContext context)
 
         try
         {
+            SetAsideFaults.Current?.BeforeRename?.Invoke(folder);
             Directory.Move(folder, going);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

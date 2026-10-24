@@ -269,6 +269,33 @@ public sealed class KeepSizeStopsGitTests : KeepSizeFixture
     }
 
     /// <summary>
+    /// 🔴 The last fixes' check, finding 8: a file written after the purge read the folder and before its rename is found by the read again
+    /// under <c>.going</c>, before the delete begins: the folder goes back whole, kept <c>written</c>, and nothing is left in <c>.going</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_write_between_the_purges_read_and_the_rename_puts_the_folder_back_whole()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        await LandedTreeAsync(trees, root);
+        var aside = await SetAsideAsync(trees, root);
+        var now = DateTimeOffset.UtcNow;
+        await RecordAsync(trees, root, now);
+        var files = Files(aside);
+
+        SetAside kept;
+        using (SetAsideFaults.Within(new SetAsideFault { BeforeRename = folder => File.WriteAllText(Path.Combine(folder, "late.txt"), "written as it went\n") }))
+        {
+            kept = Assert.Single(await PurgeAsync(trees, now.AddMinutes(61), root));
+        }
+
+        Assert.Equal((aside, false, SetAsideKept.Written), (kept.Folder, kept.Purged, kept.Code));
+        Assert.Equal(files.Append("late.txt").Order(StringComparer.Ordinal), Files(aside));
+        Assert.False(Directory.Exists(GoingOf(trees, aside)));
+        Assert.False(File.Exists(GoingRecord.PathFor(GoingOf(trees, aside))));
+    }
+
+    /// <summary>
     /// 🔴 The last fixes' check, finding 1: a stop inside the days' delete with nothing written since. The next purge finishes it with no
     /// holding check, a registry or none, and its manifest and its removal's record go with it.
     /// </summary>
@@ -322,7 +349,9 @@ public sealed class KeepSizeStopsGitTests : KeepSizeFixture
 
     /// <summary>
     /// 🔴 The press's run (the keep-size design §5): before it removes, it resumes a folder stopped at <c>judged</c> and posts a record due
-    /// first; then it removes the folders as listed. Through <see cref="SpaceRuns"/>, the press's own door.
+    /// first; then it removes the folders as listed. Through <see cref="SpaceRuns"/>, the press's own door, sent the listed class and ref as
+    /// the window sends them: the run compares them with the class read before its own record pass (the last fixes' check, finding 3), so
+    /// the record its own pass kept is no change since the list.
     /// </summary>
     [Fact]
     public async Task The_press_resumes_and_posts_first_then_removes_as_listed()
@@ -343,13 +372,53 @@ public sealed class KeepSizeStopsGitTests : KeepSizeFixture
             },
         };
         var listed = Assert.Single(trees.ListSetAside(KeepPolicy.Default, DateTimeOffset.UtcNow));
-        var asked = new SpaceAsked("set-aside", listed.Id, Early: true, "early", Own: false);
+        var asked = new SpaceAsked("set-aside", listed.Id, Early: true, "early", Own: false) { Class = ListedClass.Of(listed), Ref = listed.Ref };
+        Assert.Equal(SetAsideClass.Stopped, asked.Class);
 
         var start = new SpaceRuns().Start(world, KeepingRun.Press, [asked]);
         await Assert.IsType<SpaceRun>(start.Run).Finished.WaitAsync(TimeSpan.FromMinutes(2));
 
         Assert.Single(_posts);
         Assert.False(Directory.Exists(aside));
+    }
+
+    /// <summary>
+    /// 🔴 The last fixes' check, finding 4: a folder listed recorded is checked for its holder right before the press removes it. Its tip's ref
+    /// dropped after the list, within its hour so no record pass unmarks it, the press's run keeps it <c>changed</c>.
+    /// </summary>
+    [Fact]
+    public async Task The_press_checks_a_recorded_folders_holder_right_before_it_removes_it()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var tree = await TreeWithWorkAsync(trees, root);
+        await GitAsync(root, "checkout", "--quiet", "-b", "feature/squashed");
+        await SquashAsync(root, tree.Branch);
+        await GitAsync(root, "checkout", "--quiet", "main");
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", "feature/squashed");
+        var aside = await SetAsideAsync(trees, root);
+        var now = DateTimeOffset.UtcNow;
+        await RecordAsync(trees, root, now);
+        var listed = Assert.Single(trees.ListSetAside(KeepPolicy.Default, now));
+        var asked = new SpaceAsked("set-aside", listed.Id, Early: true, "early", Own: false) { Class = ListedClass.Of(listed), Ref = listed.Ref };
+        Assert.Equal(SetAsideClass.Recorded, asked.Class);
+        await GitAsync(root, "update-ref", "-d", listed.Ref!);
+        var world = new SpaceFreeWorld(_home)
+        {
+            Sizes = new SpaceSizes(),
+            Now = () => now,
+            Registry = _ => Task.FromResult<IReadOnlyList<RepoView>>([new RepoView("engine", true, root, "default")]),
+            PostRecord = PostAsync,
+        };
+
+        var start = new SpaceRuns().Start(world, KeepingRun.Press, [asked]);
+        var run = Assert.IsType<SpaceRun>(start.Run);
+        await run.Finished.WaitAsync(TimeSpan.FromMinutes(2));
+
+        Assert.True(Directory.Exists(aside));
+        Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
+        var kind = Assert.Single(run.Kinds, each => each.Id == "set-aside");
+        Assert.Equal((0, 1), (kind.Removed, kind.Kept.GetValueOrDefault(SpaceKept.Changed)));
     }
 
     /// <summary>🔴 Codex finding 6 of round 2: a manifest that cannot be written keeps the tree and the branch, and the tip's ref with them goes.</summary>
