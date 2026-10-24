@@ -107,6 +107,12 @@ public enum PipeAnswered
 
     /// <summary>Confirmed while Daoris closes or an update drains it (CONFIRMWAIT1a-ii, §7.2): nothing was taken, and it still waits.</summary>
     Draining,
+
+    /// <summary>
+    /// Its ending could not be written to its record (CONFIRMWAIT1, the confirm-wait design §15.2 item 8): nothing was taken, nothing ran,
+    /// and it still waits, its buttons back.
+    /// </summary>
+    Unrecorded,
 }
 
 /// <summary>The person's answer as taken, with the ground that moved where it was <see cref="PipeAnswered.Changed"/>.</summary>
@@ -123,6 +129,9 @@ public enum PipeWithdrawal
 
     /// <summary>It no longer waits.</summary>
     Gone,
+
+    /// <summary>Its ending could not be written to its record (§15.2 item 8): nothing is taken back, and it still waits.</summary>
+    Unrecorded,
 }
 
 /// <summary>
@@ -225,6 +234,13 @@ public sealed class PipeConfirmations : IDisposable
 
     /// <summary>Whether Daoris is closing or an update drains it (CONFIRMWAIT1a-ii, §7.2): a Confirm then takes nothing, and the press waits.</summary>
     public Func<bool>? Holding { get; set; }
+
+    /// <summary>
+    /// Asked to write a press's ending to its record before anyone is told it or it runs (CONFIRMWAIT1, the confirm-wait design §15.2 item
+    /// 8): <c>begun</c> for a Confirm whose grounds hold, <c>ended</c> with its answer for any other. False where it could not be written,
+    /// and the press waits on, nothing taken; none writes nothing and takes every ending.
+    /// </summary>
+    public Func<PipeConfirmation, PipeEnding, bool>? Persisting { get; set; }
 
     /// <summary>Told a press's card the first time a window shows it (CONFIRMWAIT1a-ii): the pipe keeps <see cref="PipeConfirmation.ShownAt"/> in its record.</summary>
     public Action<PipeConfirmation>? ShownFirst { get; set; }
@@ -384,12 +400,13 @@ public sealed class PipeConfirmations : IDisposable
         lock (_gate)
         {
             held = _waiting.Find(each => each.Shown.Id == id);
-            if (held is null || held.Shown.Checking) return new PipeAnswer(PipeAnswered.Gone);
+            if (held is null || held.Shown.Checking || held.Settling) return new PipeAnswer(PipeAnswered.Gone);
             // CONFIRMWAIT1a-ii (§7.2): Daoris closing or an update draining takes no Confirm, and the press waits on, kept across the restart.
             if (confirm && Holding?.Invoke() == true) return new PipeAnswer(PipeAnswered.Draining);
             if (!confirm || held.Judge is null)
             {
-                told = Take(held);
+                held.Settling = true;
+                told = Telling();
             }
             else
             {
@@ -402,8 +419,7 @@ public sealed class PipeConfirmations : IDisposable
 
         if (!confirm || held.Judge is null)
         {
-            Settle(held, new PipeEnding(confirm ? PipeConfirmationEnd.Confirmed : PipeConfirmationEnd.Refused), told);
-            return new PipeAnswer(PipeAnswered.Answered);
+            return Finish(held, new PipeEnding(confirm ? PipeConfirmationEnd.Confirmed : PipeConfirmationEnd.Refused), new PipeAnswer(PipeAnswered.Answered));
         }
 
         Tell(told);
@@ -434,7 +450,7 @@ public sealed class PipeConfirmations : IDisposable
             }
             else
             {
-                told = Take(held);
+                held.Settling = true;
             }
         }
 
@@ -444,17 +460,64 @@ public sealed class PipeConfirmations : IDisposable
             return new PipeAnswer(PipeAnswered.Draining);
         }
 
-        switch (judged.Judged)
+        return judged.Judged switch
         {
-            case PipeJudged.Unread:
-                Tell(told);
-                return new PipeAnswer(PipeAnswered.Unread);
-            case PipeJudged.Changed:
-                Settle(held, new PipeEnding(PipeConfirmationEnd.Changed, judged.Change), told);
-                return new PipeAnswer(PipeAnswered.Changed, judged.Change);
-            default:
-                Settle(held, new PipeEnding(PipeConfirmationEnd.Confirmed), told);
-                return new PipeAnswer(PipeAnswered.Answered);
+            PipeJudged.Unread => Told(told, new PipeAnswer(PipeAnswered.Unread)),
+            PipeJudged.Changed => Finish(held, new PipeEnding(PipeConfirmationEnd.Changed, judged.Change), new PipeAnswer(PipeAnswered.Changed, judged.Change)),
+            _ => Finish(held, new PipeEnding(PipeConfirmationEnd.Confirmed), new PipeAnswer(PipeAnswered.Answered)),
+        };
+    }
+
+    private PipeAnswer Told(PipeConfirmationsNow told, PipeAnswer answer)
+    {
+        Tell(told);
+        return answer;
+    }
+
+    /// <summary>
+    /// A press marked settling, ended as <paramref name="ending"/> once its record says so (§15.2 item 8): taken, told and answered; or,
+    /// where the record could not be written, nothing taken, its buttons back, <see cref="PipeAnswered.Unrecorded"/>.
+    /// </summary>
+    private PipeAnswer Finish(Held held, PipeEnding ending, PipeAnswer taken)
+    {
+        PipeConfirmationsNow told;
+        if (!Persisted(held, ending))
+        {
+            lock (_gate)
+            {
+                held.Settling = false;
+                held.Shown = held.Shown with { Checking = false };
+                Write("unrecorded", held.Shown);
+                _seq++;
+                told = Telling();
+            }
+
+            Tell(told);
+            return new PipeAnswer(PipeAnswered.Unrecorded);
+        }
+
+        lock (_gate)
+        {
+            held.Settling = false;
+            // A close may have lost it meanwhile (a press carrying a key): its terminal was told so, and this answer takes nothing.
+            if (!_waiting.Contains(held)) return new PipeAnswer(PipeAnswered.Gone);
+            told = Take(held);
+        }
+
+        Settle(held, ending, told);
+        return taken;
+    }
+
+    /// <summary>The ending written to the press's record before it is told or run; true where nothing is asked to write it.</summary>
+    private bool Persisted(Held held, PipeEnding ending)
+    {
+        try
+        {
+            return Persisting?.Invoke(held.Shown, ending) ?? true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 
@@ -470,11 +533,26 @@ public sealed class PipeConfirmations : IDisposable
         {
             held = _waiting.Find(each => each.Shown.Id == id);
             if (held is null) return PipeWithdrawal.Gone;
-            if (held.Shown.Checking) return PipeWithdrawal.Checking;
+            if (held.Shown.Checking || held.Settling) return PipeWithdrawal.Checking;
+            held.Settling = true;
+        }
+
+        // CONFIRMWAIT1 (§15.2 item 8): its record says it was taken back before anyone is told; where it cannot, it waits on.
+        var ending = new PipeEnding(PipeConfirmationEnd.Withdrawn);
+        if (!Persisted(held, ending))
+        {
+            lock (_gate) held.Settling = false;
+            return PipeWithdrawal.Unrecorded;
+        }
+
+        lock (_gate)
+        {
+            held.Settling = false;
+            if (!_waiting.Contains(held)) return PipeWithdrawal.Gone;
             told = Take(held);
         }
 
-        Settle(held, new PipeEnding(PipeConfirmationEnd.Withdrawn), told);
+        Settle(held, ending, told);
         return PipeWithdrawal.Withdrawn;
     }
 
@@ -501,7 +579,10 @@ public sealed class PipeConfirmations : IDisposable
             told = Take(held);
         }
 
-        Settle(held, new PipeEnding(PipeConfirmationEnd.Lost), told);
+        // Written where it can be; where it cannot, the keyed record ends lost at the next start all the same (§15.2 item 8).
+        var ending = new PipeEnding(PipeConfirmationEnd.Lost);
+        Persisted(held, ending);
+        Settle(held, ending, told);
         return true;
     }
 
@@ -667,6 +748,9 @@ public sealed class PipeConfirmations : IDisposable
         public PipeConfirmation Shown { get; set; } = shown;
 
         public Func<CancellationToken, Task<PipeJudgement>>? Judge { get; } = judge;
+
+        /// <summary>That its ending is being written to its record (§15.2 item 8): a second answer meanwhile is gone, a withdrawal checking.</summary>
+        public bool Settling { get; set; }
 
         public TaskCompletionSource<PipeEnding> Ended { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }

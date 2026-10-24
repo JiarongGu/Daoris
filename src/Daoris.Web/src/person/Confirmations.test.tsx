@@ -313,6 +313,21 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
   });
 
+  // CONFIRMWAIT1 (the confirm-wait design §15.2 item 8): an answer Daoris could not keep is said on the card, which waits on, its buttons back.
+  it.each([
+    ['en', 'Refuse', 'Daoris could not keep your answer just now; nothing was done, and it still waits.'],
+    ['zh', '拒绝', 'Daoris 暂时无法记下你的回答；未执行任何操作，它仍在等待。'],
+  ])('says an answer it could not keep and the press still waits (%s)', async (language, refuse, words) => {
+    await i18n.changeLanguage(language);
+    const answer = vi.fn(async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'unrecorded', message: 'Daoris could not keep your answer just now; nothing was done, and it still waits.' }));
+    draw([STOP], answer);
+
+    await userEvent.click(screen.getByRole('button', { name: refuse }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(words);
+    expect(screen.getByRole('button', { name: refuse })).toBeEnabled();
+  });
+
   it('says all of it in Chinese', async () => {
     await i18n.changeLanguage('zh');
     draw([SAY, UNKNOWN]);
