@@ -41,18 +41,27 @@ public sealed class PipeGroundsCensusTests
         }
     }
 
-    /// <summary>Each field a ground names is one its route's handler reads, as the handler's own source spells it.</summary>
+    /// <summary>
+    /// Each field a ground names is one its route's handler reads, as the handler's own source spells it: in the body of the method its
+    /// <c>[DriverRoute]</c> marks (or the <c>case</c> a module's switch gives it), and the bodies of that file's own methods the body hands
+    /// its request to, never anywhere else in its file (CONFIRMWAIT1, the confirm-wait design §15.3 item 14).
+    /// </summary>
     [Fact]
     public void Each_field_a_ground_names_is_one_its_route_s_handler_reads()
     {
-        var routes = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
-        var sources = Directory.GetFiles(routes, "*.cs", SearchOption.AllDirectories).ToDictionary(each => each, File.ReadAllText);
+        var desktop = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop");
+        // The modules' sources, and the driver library's, whose parse a handler may hand its payload to.
+        var sources = new[] { "Daoris.Desktop.Modules", "Daoris.Desktop.Driver" }
+            .SelectMany(project => Directory.GetFiles(Path.Combine(desktop, project), "*.cs", SearchOption.AllDirectories))
+            .Where(each => !each.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .ToDictionary(each => each, File.ReadAllText);
         var missing = new List<string>();
         foreach (var (key, row) in PipeTargets.Daoris.Rows)
         {
             var route = key.Contains('.', StringComparison.Ordinal) ? key[(key.LastIndexOf('.') + 1)..] : key;
             var mark = key.Contains('.', StringComparison.Ordinal) ? $"case \"{route}\"" : $"[DriverRoute(\"{route}\")]";
-            var handler = sources.Values.Where(each => each.Contains(mark, StringComparison.Ordinal)).ToList();
+            var handler = sources.Values.Where(each => each.Contains(mark, StringComparison.Ordinal))
+                .Select(each => Handler(each, mark, sources.Values)).ToList();
             Assert.True(handler.Count > 0, $"no handler marks {key}");
             foreach (var field in row.Grounds.SelectMany(ground => ground.Fields).Distinct(StringComparer.Ordinal))
             {
@@ -60,7 +69,110 @@ public sealed class PipeGroundsCensusTests
             }
         }
 
-        Assert.Empty(missing);
+        Assert.True(missing.Count == 0, string.Join(", ", missing));
+    }
+
+    /// <summary>A file's field outside the handler's body is not the handler's: the census reads the body alone.</summary>
+    [Fact]
+    public void A_field_named_elsewhere_in_the_handler_s_file_is_not_the_handler_s()
+    {
+        const string source = """
+            internal sealed class Routes
+            {
+                [DriverRoute("A_PRESS")]
+                private object? PressAsync(IpcRequest request)
+                {
+                    var id = Optional(request, "id");
+                    return Helper(request, id);
+                }
+
+                private object? Helper(IpcRequest request, string? id) => new { Repository = Optional(request, "repository") };
+
+                [DriverRoute("ANOTHER")]
+                private object? AnotherAsync(IpcRequest request) => Optional(request, "branch");
+            }
+            """;
+
+        var body = Handler(source, "[DriverRoute(\"A_PRESS\")]");
+
+        Assert.Contains("\"id\"", body, StringComparison.Ordinal);
+        Assert.Contains("\"repository\"", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"branch\"", body, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The text of the handler <paramref name="mark"/> marks in <paramref name="source"/>: the marked method's body, or the switch's case,
+    /// and the bodies of the module's own methods it hands its request or its payload to, wherever in <paramref name="others"/> each is.
+    /// </summary>
+    private static string Handler(string source, string mark, IEnumerable<string>? others = null)
+    {
+        var at = source.IndexOf(mark, StringComparison.Ordinal);
+        var body = mark.StartsWith("case ", StringComparison.Ordinal) ? Case(source, at) : Body(source, at);
+        var methods = Methods(others ?? [source]);
+        var read = new List<string> { body };
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var next = new List<string> { body };
+        // Three calls deep: a handler hands its request or its payload to a helper, which may hand it on to the library's parse.
+        for (var depth = 0; depth < 3 && next.Count > 0; depth++)
+        {
+            next = [.. next.SelectMany(text => System.Text.RegularExpressions.Regex.Matches(text, @"\b([A-Z][A-Za-z0-9]*)\(").Select(each => each.Groups[1].Value))
+                .Where(seen.Add)
+                .SelectMany(name => methods.TryGetValue(name, out var bodies) ? bodies : [])];
+            read.AddRange(next);
+        }
+
+        return string.Join("\n", read);
+    }
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IEnumerable<string>, Dictionary<string, List<string>>> Indexed = [];
+
+    /// <summary>Every method of <paramref name="files"/> that takes a request or a payload, by its name: its bodies, indexed once.</summary>
+    private static Dictionary<string, List<string>> Methods(IEnumerable<string> files) => Indexed.GetValue(files, each =>
+    {
+        var methods = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var file in each)
+        {
+            foreach (System.Text.RegularExpressions.Match found in System.Text.RegularExpressions.Regex.Matches(file,
+                         @"\b(?:private|internal|public)\b[^;{}=\n]*?\b([A-Z][A-Za-z0-9]*)\([^)]*\b(?:IpcRequest|JsonElement)\b"))
+            {
+                var name = found.Groups[1].Value;
+                if (!methods.TryGetValue(name, out var bodies)) methods[name] = bodies = [];
+                bodies.Add(Body(file, found.Index));
+            }
+        }
+
+        return methods;
+    });
+
+    /// <summary>A method's text from <paramref name="at"/>: its block by its braces, or its expression body to its <c>;</c>.</summary>
+    private static string Body(string source, int at)
+    {
+        var open = source.IndexOf('{', at);
+        var arrow = source.IndexOf("=>", at, StringComparison.Ordinal);
+        if (arrow >= 0 && (open < 0 || arrow < open))
+        {
+            var end = source.IndexOf(';', arrow);
+            return end < 0 ? source[at..] : source[at..(end + 1)];
+        }
+
+        if (open < 0) return source[at..];
+        var depth = 0;
+        for (var each = open; each < source.Length; each++)
+        {
+            if (source[each] == '{') depth++;
+            else if (source[each] == '}' && --depth == 0) return source[at..(each + 1)];
+        }
+
+        return source[at..];
+    }
+
+    /// <summary>A switch's case from <paramref name="at"/> to the next case or the switch's end.</summary>
+    private static string Case(string source, int at)
+    {
+        var next = source.IndexOf("case \"", at + 1, StringComparison.Ordinal);
+        var end = source.IndexOf("default:", at, StringComparison.Ordinal);
+        var stop = new[] { next, end }.Where(each => each > at).DefaultIfEmpty(source.Length).Min();
+        return source[at..stop];
     }
 
     /// <summary>

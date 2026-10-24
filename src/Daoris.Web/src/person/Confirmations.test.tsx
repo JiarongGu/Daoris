@@ -198,6 +198,26 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(notify).toHaveBeenCalledTimes(1);
   });
 
+  // CONFIRMWAIT1 (the confirm-wait design §15.3 item 11): the shell takes a changed press's card as its answer settles, so the removal can
+  // come before PERSON_CONFIRM answers; the reason is then toasted, in the reader's words, never lost.
+  it.each([
+    ['en', 'Confirm', 'Not done: the branch quest/x gained or lost commits while this waited.'],
+    ['zh', '确认', '未执行：等待期间分支 quest/x 的提交已有增减。'],
+  ])('toasts a changed reason whose card was taken before its answer came (%s)', async (language, confirm, words) => {
+    await i18n.changeLanguage(language);
+    let settle: (value: ConfirmationAnswer) => void = () => {};
+    const answer = vi.fn(() => new Promise<ConfirmationAnswer>((resolve) => { settle = resolve; }));
+    const notify = vi.fn();
+    const { rerender } = render(<Confirmations waiting={[STOP]} onAnswer={answer} notify={notify} />);
+
+    await userEvent.click(screen.getByRole('button', { name: confirm }));
+    rerender(<Confirmations waiting={[]} onAnswer={answer} notify={notify} />);
+    settle({ answered: false, why: 'changed', message: 'Not done.', reason: 'branch', values: { branch: 'quest/x' } });
+
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(words, 'error'));
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+
   it("says a service's time left, stepping, and a terminal's press that it waits until the person answers", () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
     try {
