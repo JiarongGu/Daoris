@@ -79,4 +79,27 @@ public sealed class ReleasedTests
         Assert.Throws<DriverException>(() => DriverConfig.Empty.WithReleased(" ", "s1"));
         Assert.Throws<DriverException>(() => DriverConfig.Empty.WithReleased("q1", ""));
     }
+
+    /// <summary>
+    /// AGENTERRORS1a2 (D210, the agent-errors design §5.1, §8): <i>Try again</i>'s transient release, <c>transientReleased</c>, keyed to the
+    /// session AND the end it releases, apart from the stop's <c>released</c>: the same record's next end is not released, an unsaid end
+    /// passes nothing, and closing the quest drops it.
+    /// </summary>
+    [Fact]
+    public void A_transient_release_passes_only_the_end_it_names_and_survives_the_file()
+    {
+        var ended = new DateTimeOffset(2026, 10, 24, 9, 0, 0, 123, TimeSpan.Zero);
+        var released = DriverConfig.Parse(DriverConfig.Empty.WithTransientReleased("#Q1", " s1 ", ended).ToJson());
+
+        Assert.True(released.ReleasesTransient("q1", "s1", ended));
+        Assert.False(released.ReleasesTransient("q1", "s1", ended.AddMinutes(40)));
+        Assert.False(released.ReleasesTransient("q1", "s2", ended));
+        Assert.False(released.ReleasesTransient("q1", "s1", null));
+        Assert.Null(released.ReleasedFor("q1"));
+        Assert.False(DriverConfig.Empty.ReleasesTransient("q1", "s1", ended));
+        Assert.Empty(released.WithoutQuest("q1").TransientReleased);
+        Assert.DoesNotContain("transientReleased", DriverConfig.Empty.ToJson(), StringComparison.Ordinal);
+        Assert.Empty(DriverConfig.Parse("""{"transientReleased":{"q1":{"session":"s1"}}}""").TransientReleased);
+        Assert.Throws<DriverException>(() => DriverConfig.Empty.WithTransientReleased("q1", " ", ended));
+    }
 }

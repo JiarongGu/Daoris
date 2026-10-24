@@ -71,14 +71,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     internal async Task<(PriorSession Record, string Word)?> KeepLimitWordAsync(PriorSession limited, CancellationToken ct)
     {
         SayAnswer said;
+        // AGENTERRORS1a2 (the agent-errors design §5.1): a record Try again released from its transient hold takes the same step, with the
+        // episode's go-on under the key of the end released.
+        var (text, key) = Planner.EndedTransient(limited) ? LimitResume.TransientWord(limited)
+            : LimitResume.UpdateBuild(limited) is { } build ? (ShellClose.Words, DaorisKeys.Restart(limited.Session, build))
+            : (LimitResume.Words, DaorisKeys.LimitReset(limited.Session, LimitResume.Until(limited)));
         try
         {
-            said = await _context.Service.SayAsync(
-                    limited.Session, LimitResume.UpdateBuild(limited) is not null ? ShellClose.Words : LimitResume.Words,
-                    ct: ct, from: DaorisWords.From,
-                    key: LimitResume.UpdateBuild(limited) is { } build ? DaorisKeys.Restart(limited.Session, build)
-                        : DaorisKeys.LimitReset(limited.Session, LimitResume.Until(limited)))
-                .ConfigureAwait(false);
+            said = await _context.Service.SayAsync(limited.Session, text, ct: ct, from: DaorisWords.From, key: key).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {

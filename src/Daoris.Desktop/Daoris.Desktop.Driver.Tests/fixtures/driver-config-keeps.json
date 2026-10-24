@@ -25,6 +25,12 @@
     "  \"released\": {",
     "    \"q9\": \"s-41\"",
     "  },",
+    "  \"transientReleased\": {",
+    "    \"q8\": {",
+    "      \"session\": \"s-40\",",
+    "      \"ended\": \"2026-10-24T09:00:00Z\"",
+    "    }",
+    "  },",
     "  \"standing\": {",
     "    \"engine\": {",
     "      \"says\": \"先在 dev 上测试\",",
@@ -310,6 +316,13 @@
       "edit": { "op": "session-checks", "repository": "engine", "checks": null },
       "changes": [
         { "from": ["  \"sessionChecks\": {", "    \"engine\": \"heavy-at-end\"", "  },", "  \"readAcross\": {"], "to": ["  \"readAcross\": {"] }
+      ]
+    },
+    {
+      "name": "Try again released a later end of the same quest (AGENTERRORS1a2): its end changes, its session stays",
+      "edit": { "op": "transient-release", "quest": "q8", "session": "s-40", "ended": "2026-10-24T09:30:00.5Z" },
+      "changes": [
+        { "from": ["      \"ended\": \"2026-10-24T09:00:00Z\""], "to": ["      \"ended\": \"2026-10-24T09:30:00.5Z\""] }
       ]
     },
     {

@@ -1483,22 +1483,30 @@ public static class Planner
             snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, stop.Session, StringComparison.Ordinal);
 
         // AGENTERRORS1a (the design §5.1): the quest's last session here ended past its transient bound, where nothing released it:
-        // its hold. A hand-over made from that record passes it (as StopHolding passes one), and so, from row 1a2, will Try again.
+        // its hold. A hand-over made from that record passes it (as StopHolding passes one), and so does Try again's release of that end
+        // (AGENTERRORS1a2), keyed to the record's session and its `updated`, so the record's next end is held again.
         PriorSession? TransientHolding(QuestView quest) =>
             quest.Status is "Open" or "Taken"
             && snapshot.LastRun.TryGetValue(quest.Id, out var last)
             && EndedTransient(last)
             && !HandedFrom(quest, last)
+            && !TransientReleased(quest, last)
                 ? last
                 : null;
 
-        // The held record a hand-over was made from (round 3's read, R3-O3): what an Open quest is carried on from, in its tree.
+        // The held record a hand-over was made from (round 3's read, R3-O3), or the one Try again released (AGENTERRORS1a2): what an Open
+        // quest is carried on from, in its tree, ahead of RetriedFrom's commit rule, never started afresh.
         PriorSession? TransientReleasedFrom(QuestView quest) =>
-            snapshot.LastRun.TryGetValue(quest.Id, out var last) && EndedTransient(last) && HandedFrom(quest, last) ? last : null;
+            snapshot.LastRun.TryGetValue(quest.Id, out var last) && EndedTransient(last) && (HandedFrom(quest, last) || TransientReleased(quest, last))
+                ? last
+                : null;
+
+        // Try again's release of this record's end (AGENTERRORS1a2, the design §5.1): its session and its `updated` both the release's.
+        bool TransientReleased(QuestView quest, PriorSession last) => config.ReleasesTransient(quest.Id, last.Session, last.Updated);
 
         // Held for the person (the design §5.1, §8's `held.transient`): no slot; the record is its HeldBy, as a stop's verdict names its stop.
         static Consideration TransientHeld(QuestView quest, PriorSession exhausted) =>
-            new(quest, StartVerdict.TransientHeld, "Its last session's provider kept failing: it waits for your words.")
+            new(quest, StartVerdict.TransientHeld, "Its last session's provider kept failing: it waits for your words or Try again.")
             {
                 HeldBy = exhausted,
                 Said = new(SittingFact.Transient) { Session = exhausted.Session },
@@ -1554,8 +1562,10 @@ public static class Planner
                 && !Observation.IsQuietPressed(record.NoteParts) && !snapshot.SupervisorHolds(record)
                 // 🔴 AGENTERRORS1a, the hold's word rule (the design §5.1, round 3, R2-C4; round 3's read, R3-O9): a record past its transient
                 // bound goes on only with a word of the person's said after it ended. A helper's answer, Daoris's word or another session's
-                // message would resume an exhausted line with nobody between; a word said before the end never releases it.
-                && (!EndedTransient(record) || HandedFrom(quest, record) || record.Waiting.Any(word => word.Persons && record.Updated is { } ended && word.At > ended));
+                // message would resume an exhausted line with nobody between; a word said before the end never releases it. Try again's
+                // release of that end does (AGENTERRORS1a2, round 3's read, R3-O4): a word kept meanwhile goes on under it, by this GoOn.
+                && (!EndedTransient(record) || HandedFrom(quest, record) || TransientReleased(quest, record)
+                    || record.Waiting.Any(word => word.Persons && record.Updated is { } ended && word.At > ended));
         }
 
         // Words going on in the record they were said to (MSG1b, D137 §2.2), `continuing` it: a park is still an active record

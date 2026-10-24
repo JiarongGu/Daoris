@@ -123,18 +123,56 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
-    /// This quest's release and its restart mark dropped (PAUSE1d, D132 §3.4 step 7): once a quest is closed it is never
-    /// planned again (D46 §3), so neither says anything any more. Unchanged where it has neither.
+    /// The transient holds the person released with <i>Try again</i> (AGENTERRORS1a2, D210, the agent-errors design §5.1, §8), each quest
+    /// against the record's session and <b>the end it releases</b>: the record's <c>updated</c> as the press read it. Apart from the stop's
+    /// <see cref="Released"/>, which is keyed by session alone: a released resume continues the same record, so a session-keyed release
+    /// would pass its next exhaustion too, and the line would cycle with no strike. Keyed to the end, the record's next end moves past it
+    /// and is held again, with nothing to consume and across a restart. Absent is none, written only when set.
+    /// </summary>
+    public IReadOnlyDictionary<string, TransientRelease> TransientReleased { get; init; } =
+        new Dictionary<string, TransientRelease>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether the person released this quest's transient hold of <paramref name="session"/> ended at <paramref name="ended"/>: both
+    /// equal to the release's. An end that is unsaid passes nothing: the check fails closed.
+    /// </summary>
+    public bool ReleasesTransient(string questId, string session, DateTimeOffset? ended) =>
+        ended is { } at
+        && TransientReleased.TryGetValue(questId, out var release)
+        && string.Equals(release.Session, session, StringComparison.Ordinal)
+        && release.Ended == at;
+
+    /// <summary>Release this quest's transient hold of this session's end (<i>Try again</i>): one per quest, the later replacing the earlier.</summary>
+    /// <exception cref="DriverException">A blank quest or session: a release names the end it releases.</exception>
+    public DriverConfig WithTransientReleased(string questId, string session, DateTimeOffset ended)
+    {
+        if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(session))
+        {
+            throw new DriverException("a transient release names the quest and the session whose end it releases.");
+        }
+
+        var quest = questId.Trim().TrimStart('#');
+        var next = new Dictionary<string, TransientRelease>(TransientReleased, StringComparer.OrdinalIgnoreCase);
+        var key = next.Keys.FirstOrDefault(k => string.Equals(k, quest, StringComparison.OrdinalIgnoreCase)) ?? quest;
+        next[key] = new TransientRelease(session.Trim(), ended.ToUniversalTime());
+        return this with { TransientReleased = next };
+    }
+
+    /// <summary>
+    /// This quest's releases and its restart mark dropped (PAUSE1d, D132 §3.4 step 7): once a quest is closed it is never
+    /// planned again (D46 §3), so none says anything any more. Unchanged where it has none.
     /// </summary>
     public DriverConfig WithoutQuest(string questId)
     {
         var quest = questId.Trim().TrimStart('#');
         bool Same(string key) => string.Equals(key, quest, StringComparison.OrdinalIgnoreCase);
-        if (!Released.Keys.Any(Same) && !Forgiven.Keys.Any(Same)) return this;
+        if (!Released.Keys.Any(Same) && !Forgiven.Keys.Any(Same) && !TransientReleased.Keys.Any(Same)) return this;
         return this with
         {
             Released = Released.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
             Forgiven = Forgiven.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
+            TransientReleased = TransientReleased.Where(pair => !Same(pair.Key))
+                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
         };
     }
 
@@ -1018,6 +1056,8 @@ public sealed record DriverConfig(
             writer.WriteEndObject();
             // Written only when set (SESSUX1b), as the CLI writes it: absent is no release.
             WriteMap(writer, "released", Released);
+            // Written only when set (AGENTERRORS1a2): absent is no transient release.
+            WriteTransientReleases(writer, TransientReleased);
             // Written only when set (PAUSE1a), as the CLI keeps them: absent is no pause.
             WritePauses(writer, "pausedAsks", PausedAsks);
             WritePauses(writer, "pausedQuests", PausedQuests);
@@ -1093,6 +1133,47 @@ public sealed record DriverConfig(
             writer.WriteEndObject();
             writer.WriteEndObject();
         });
+    }
+
+    /// <summary>The transient releases (AGENTERRORS1a2): each quest an object, its <c>session</c> and the <c>ended</c> it releases in UTC.</summary>
+    private static void WriteTransientReleases(Utf8JsonWriter writer, IReadOnlyDictionary<string, TransientRelease> map)
+    {
+        if (map.Count == 0) return;
+        writer.WriteStartObject("transientReleased");
+        foreach (var (quest, release) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            writer.WriteStartObject(quest);
+            writer.WriteString("session", release.Session);
+            writer.WriteString("ended", release.Ended.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'", CultureInfo.InvariantCulture));
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// The transient releases as written (AGENTERRORS1a2): an entry with no session or no <c>ended</c> that reads as a moment is none,
+    /// so a release whose end is unsaid passes nothing; a quest named twice in any case is read where first written.
+    /// </summary>
+    private static IReadOnlyDictionary<string, TransientRelease> TransientReleaseMap(JsonElement container, string name)
+    {
+        var released = new Dictionary<string, TransientRelease>(StringComparer.OrdinalIgnoreCase);
+        if (!container.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return released;
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (property.Name.Length == 0 || released.ContainsKey(property.Name) || property.Value.ValueKind != JsonValueKind.Object) continue;
+            if (Json.NonEmpty(property.Value, "session")?.Trim() is not { Length: > 0 } session) continue;
+            if (Json.NonEmpty(property.Value, "ended") is not { } ended
+                || !DateTimeOffset.TryParse(ended, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var at))
+            {
+                continue;
+            }
+
+            released[property.Name] = new TransientRelease(session, at);
+        }
+
+        return released;
     }
 
     private static void WriteMap(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, string> map)
@@ -1478,6 +1559,7 @@ public sealed record DriverConfig(
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,
             Released = SessionMap(root, "released"),
+            TransientReleased = TransientReleaseMap(root, "transientReleased"),
             PausedAsks = PauseMap(root, "pausedAsks"),
             PausedQuests = PauseMap(root, "pausedQuests"),
             Standing = StandingMap(root, "standing"),
@@ -1613,6 +1695,12 @@ public sealed record DriverConfig(
 /// <param name="At">When the person paused it, or null where the file does not say in a form this reads.</param>
 /// <param name="Stopped">Each quest the pause stopped, against the session it stopped: what <i>Resume</i> writes into <see cref="DriverConfig.Released"/> (design §2.4).</param>
 public sealed record WorkPause(DateTimeOffset? At, IReadOnlyDictionary<string, string> Stopped);
+
+/// <summary>
+/// One transient release (AGENTERRORS1a2, D210, the agent-errors design §5.1): the record's session <i>Try again</i> released, and the
+/// end it released, the record's <c>updated</c> as the press read it.
+/// </summary>
+public sealed record TransientRelease(string Session, DateTimeOffset Ended);
 
 /// <summary>A landing rule <c>driver.json</c> keeps that reads as no rule (FABRIC-GRAPH1d, <see cref="DriverConfig.UnreadLandings"/>).</summary>
 /// <param name="Name">The repository or workspace it is written under, as written.</param>
