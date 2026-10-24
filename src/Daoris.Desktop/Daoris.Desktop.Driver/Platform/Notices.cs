@@ -46,8 +46,20 @@ public static class Notices
     /// <summary>A terminal's press its terminal took back after a window showed its card (CONFIRMWAIT1a-i, the confirm-wait design §6).</summary>
     public const string Withdrawn = "withdrawn";
 
-    /// <summary>A terminal's press Daoris's close ended while it waited, not done (CONFIRMWAIT1a-i, until 1a-ii keeps it across the close).</summary>
+    /// <summary>
+    /// A terminal's press Daoris's close ended while it waited, not done: kept for a notice written by CONFIRMWAIT1a-i, whose close ended
+    /// what waited; since CONFIRMWAIT1a-ii a press waits across the close in its record.
+    /// </summary>
     public const string Closed = "closed";
+
+    /// <summary>
+    /// Presses from a terminal a restart could not bring back, not done, <see cref="Notice.Count"/> of them (CONFIRMWAIT1a-ii, the
+    /// confirm-wait design §7.2): one notice for all a restart lost, or one carrying a key that Daoris's close ended, with its route.
+    /// </summary>
+    public const string Lost = "lost";
+
+    /// <summary>Presses from a terminal a newer Daoris kept, which this one leaves waiting for it (CONFIRMWAIT1a-ii, §7.2 step 2).</summary>
+    public const string Newer = "newer";
 
     /// <summary>
     /// A conversation that answered the person's words (NOTIFY2g, the notification design §2.4): one per conversation, under
@@ -254,6 +266,7 @@ public static class Notices
         Optional("route", notice.Route);
         Optional("act", notice.Act);
         Optional("code", notice.Code);
+        if (notice.Count is { } count) writer.WriteNumber("count", count);
         writer.WriteEndObject();
 
         void Optional(string name, string? value)
@@ -307,8 +320,10 @@ public static class Notices
         }
 
         var read = element.TryGetProperty("read", out var seen) && seen.ValueKind == JsonValueKind.True;
+        var count = element.TryGetProperty("count", out var counted) && counted.ValueKind == JsonValueKind.Number
+            && counted.TryGetInt32(out var number) ? number : (int?)null;
         return new(id, kind.GetString()!, when, read, Text("workspace"), Text("session"), Text("quest"), Text("repository"), Text("state"),
-            Text("route"), Text("act"), Text("code"));
+            Text("route"), Text("act"), Text("code"), count);
 
         string? Text(string name) => element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
@@ -329,6 +344,7 @@ public static class Notices
 /// <param name="Route">A press's route, its module before it where the module is not the driver's (<c>REMOTES.SET</c>).</param>
 /// <param name="Act">A press's act in its asker's own words, where it has no route the page words.</param>
 /// <param name="Code">What a look's line said, for <see cref="Notices.Look"/>: one of <see cref="LookSaid.NewsCodes"/>.</param>
+/// <param name="Count">How many presses a <see cref="Notices.Lost"/> notice names (CONFIRMWAIT1a-ii).</param>
 public sealed record Notice(
     string Id,
     string Kind,
@@ -341,4 +357,5 @@ public sealed record Notice(
     string? State = null,
     string? Route = null,
     string? Act = null,
-    string? Code = null);
+    string? Code = null,
+    int? Count = null);

@@ -836,7 +836,7 @@ public sealed class DriverLoop(
 
         // The terminal's pipe (RPC1a, the terminal RPC design §6.3): served once this loop holds the home, the one writer, and only
         // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
-        // NOTIFY2f, CONFIRMWAIT1a-i: a press taken back after it was shown, or ended by the close, is kept in Done and failed.
+        // NOTIFY2f, CONFIRMWAIT1a-i: a press taken back after it was shown, or lost at the close (CONFIRMWAIT1a-ii), is kept in Done and failed.
         if (Pipe is { } served)
         {
             served.Confirmations.Noticed = Notices.Ended;
@@ -849,6 +849,11 @@ public sealed class DriverLoop(
             // SUPERVISOR1a-ii (D208 §5): an appointment names a repository this machine drives.
             served.StandingConfirmation.Drives = repository =>
                 DriverConfig.Load(ConfigPath).Drivable.Contains(repository, StringComparer.OrdinalIgnoreCase);
+            // CONFIRMWAIT1a-ii (the confirm-wait design §7.2): the presses that waited when Daoris last stopped come back here, before the pipe
+            // is served, on this home's lease, which makes this loop their records' one writer; whatever Serve then answers, their cards are
+            // back. What could not come back, and what a newer Daoris kept, is said once in Done and failed.
+            served.Confirmations.Restarted = Notices.Restarted;
+            served.Restore();
         }
 
         if (Pipe?.Serve() is { } pipe)

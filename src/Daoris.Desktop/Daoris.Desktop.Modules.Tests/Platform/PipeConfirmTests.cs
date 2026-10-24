@@ -411,9 +411,13 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(0, driver.Ran);
     }
 
-    /// <summary>1a-i's close notice (§10): a close with a press waiting ends it <c>stopping</c>, its line said, and the person is told.</summary>
+    /// <summary>
+    /// CONFIRMWAIT1a-ii (§7.2, §10's drain row): a close with a press waiting answers its line <c>waiting</c>, <c>why: close</c>, keeps its
+    /// record and ends nothing; the drain is not spent on it, nothing is logged as left, a Confirm meanwhile takes nothing, and its card
+    /// says no terminal waits on it now.
+    /// </summary>
     [Fact]
-    public async Task A_closing_instance_ends_what_waits_runs_none_of_it_and_tells_the_person()
+    public async Task A_close_answers_a_waiting_line_waiting_keeps_its_record_and_drains_at_once()
     {
         if (!OperatingSystem.IsWindows()) return;
         var (pipe, client, driver, services, log) = await ServeAsync(new StubGrounds().Session("s1a2b3c4", "completed"));
@@ -426,14 +430,355 @@ public sealed class PipeConfirmTests : Bridge
         var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         var shown = pipe.Confirmations.Now().Waiting[0];
+        var record = Assert.Single(Records());
 
         pipe.BeginStopping();
 
-        Assert.Equal(InstancePipe.Stopping, Code(await client.AnswerAsync(id)));
+        var answer = await client.AnswerAsync(id);
+        Assert.Equal(InstancePipe.Waiting, Code(answer));
+        Assert.Equal("close", answer.GetProperty("error").GetProperty("parameters").GetProperty("why").GetString());
+        Assert.Equal($"Daoris is closing; this still waits for your confirmation (request {id}).",
+            answer.GetProperty("error").GetProperty("message").GetString());
+        var drained = System.Diagnostics.Stopwatch.StartNew();
+        Assert.True(pipe.Drain(TimeSpan.FromSeconds(15)));
+        Assert.True(drained.Elapsed < TimeSpan.FromSeconds(5), $"the drain took {drained.Elapsed}");
+        Assert.Empty(Logged("pipe.drained"));
+        Assert.Equal(record, Assert.Single(Records()));
+        Assert.Equal("waiting", ReadRecord(record).GetProperty("state").GetString());
+        Assert.Empty(noticed);
+        Assert.Equal(PipeAnswered.Draining, (await pipe.Confirmations.AnswerAsync(shown.Id, confirm: true)).Outcome);
+        Assert.Equal(shown.Id, Assert.Single(pipe.Confirmations.Now().Waiting, each => !each.WaitedOn).Id);
+        Assert.Equal(0, driver.Ran);
+    }
+
+    /// <summary>
+    /// The design's restart row (§10): a press asked on one pipe over a home, the pipe closed: its line answers <c>waiting</c>; a second pipe
+    /// on the same home lists it again, restored and said as its record's, Confirm runs it once, and <c>RESULT</c> from a new connection
+    /// with the first key answers it. Its record is gone once it ran.
+    /// </summary>
+    [Fact]
+    public async Task A_press_waiting_at_a_close_waits_again_after_the_restart_and_runs_once_on_Confirm()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var clock = new HeldClock();
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, services) = Compose(log, driver);
+        using var _ = services;
+        var first = Pipe(dispatcher, log, clock, grounds);
+        var client = await PipeClient.ConnectAsync(first.Serve()!);
+        await client.HelloAsync(HomeId);
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4", follow = true });
+        var key = client.KeyOf(id)!;
+        await UntilAsync(() => first.Confirmations.Now().Waiting.Count == 1);
+        var shown = first.Confirmations.Now().Waiting[0];
+        clock.Advance(TimeSpan.FromMinutes(5));
+        Assert.True(first.Confirmations.Show(shown.Id));
+        var seen = first.Confirmations.Now().Waiting[0].ShownAt;
+
+        first.BeginStopping();
+        Assert.Equal(InstancePipe.Waiting, Code(await client.AnswerAsync(id)));
+        Assert.True(first.Drain(Poll.Patience));
+        await client.DisposeAsync();
+        first.Dispose();
+
+        using var next = Pipe(dispatcher, log, clock, grounds);
+        next.Restore();
+        var card = Assert.Single(next.Confirmations.Now().Waiting);
+        Assert.Equal((shown.Id, shown.Asked, seen, shown.Asker), (card.Id, card.Asked, card.ShownAt, card.Asker));
+        Assert.Equal(shown.Fields, card.Fields);
+        Assert.True(card.Restored);
+        Assert.False(card.WaitedOn);
+        await using var later = await PipeClient.ConnectAsync(next.Serve()!);
+        await later.HelloAsync(HomeId);
+        Assert.Equal("waiting", (await later.ResultAsync(id, key)).GetProperty("state").GetString());
+
+        Assert.Equal(PipeAnswered.Answered, (await next.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+
+        await UntilAsync(() => driver.Ran == 1);
+        await UntilAsync(() => Records().Count == 0);
+        var read = await later.ResultAsync(id, key);
+        Assert.Equal("answered", read.GetProperty("state").GetString());
+        Assert.True(read.GetProperty("answer").GetProperty("success").GetBoolean());
+        Assert.Equal(1, driver.Ran);
+    }
+
+    /// <summary>
+    /// The design's crash row (§10): a press asked on a first pipe that is never disposed, and a second made over the same home, whose
+    /// name the first still holds: the record is restored, its card back, though the second pipe serves nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_press_waiting_at_a_crash_is_restored_though_the_pipe_s_name_is_still_held()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        var (crashed, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        await using var ___ = client;
+        await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await UntilAsync(() => crashed.Confirmations.Now().Waiting.Count == 1);
+        var shown = crashed.Confirmations.Now().Waiting[0];
+
+        using var next = Pipe(Compose(log, driver).Dispatcher, log, grounds: grounds);
+        next.Restore();
+
+        Assert.Null(next.Serve());
+        var card = Assert.Single(next.Confirmations.Now().Waiting);
+        Assert.Equal((shown.Id, Land, true), (card.Id, card.Route, card.Restored));
+        Assert.Equal(PipeAnswered.Answered, (await next.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+        await UntilAsync(() => driver.Ran == 1);
+        crashed.Dispose();
+    }
+
+    /// <summary>
+    /// The design's file name row (§10): a press whose terminal's id is a path is kept under the confirmation's own id, 32 hexadecimal
+    /// characters, in <c>data/pipe-waiting/</c>; nothing is written or removed anywhere else, and it asks and ends as any.
+    /// </summary>
+    [Fact]
+    public async Task A_record_is_named_by_the_confirmation_s_id_never_the_terminal_s()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log) = await ServeAsync(new StubGrounds().Session("s1a2b3c4", "completed"));
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var before = Files();
+        const string Path = @"..\..\data\standing-confirmation";
+
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" }, id: Path);
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+
+        var record = Assert.Single(Records());
+        Assert.Matches("^[0-9a-f]{32}\\.json$", System.IO.Path.GetFileName(record));
+        Assert.Equal(pipe.Confirmations.Now().Waiting[0].Id + ".json", System.IO.Path.GetFileName(record));
+        Assert.Equal(Path, ReadRecord(record).GetProperty("request").GetString());
+        Assert.Equal([record], Files().Except(before));
+        Assert.Empty(before.Except(Files()));
+        Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.StandingConfirmation)));
+
+        await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
+        Assert.Equal(InstancePipe.Refused, Code(await client.AnswerAsync(id)));
+        Assert.Empty(Records());
+        Assert.Empty(before.Except(Files()));
+        Assert.Equal(InstancePipe.Refused, Code((await client.ResultAsync(id)).GetProperty("answer")));
+    }
+
+    /// <summary>
+    /// The design's keyed row (§10, §7.1): <c>DAORIS.REMOTES</c> <c>SET</c> carries the workspace's deployment key, so its record holds
+    /// neither the key nor the payload, its card says it does not wait across a restart, and a close ends it lost: its line told so,
+    /// the person told, its record gone.
+    /// </summary>
+    [Fact]
+    public async Task A_keyed_press_keeps_no_payload_and_a_close_ends_it_lost()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (pipe, client, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        var noticed = new List<PipeConfirmationEnd>();
+        pipe.Confirmations.Noticed = (_, end) => noticed.Add(end);
+        const string Key = "deployment-key-never-kept-0123456789";
+
+        var id = await client.SendAsync("DAORIS.REMOTES", "SET", new { workspace = "games", url = "https://example.invalid", key = Key });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+
+        Assert.True(pipe.Confirmations.Now().Waiting[0].Keyed);
+        var bytes = File.ReadAllText(Assert.Single(Records()));
+        Assert.DoesNotContain(Key, bytes, StringComparison.Ordinal);
+        Assert.DoesNotContain("example.invalid", bytes, StringComparison.Ordinal);
+        Assert.True(ReadRecord(Records()[0]).GetProperty("keyed").GetBoolean());
+        Assert.False(ReadRecord(Records()[0]).TryGetProperty("payload", out var _____));
+
+        pipe.BeginStopping();
+
+        Assert.Equal(InstancePipe.Lost, Code(await client.AnswerAsync(id)));
         Assert.Empty(pipe.Confirmations.Now().Waiting);
-        Assert.Equal(PipeAnswered.Gone, (await pipe.Confirmations.AnswerAsync(shown.Id, confirm: true)).Outcome);
-        Assert.Equal([PipeConfirmationEnd.Closed], noticed);
-        Assert.True(pipe.Drain(Poll.Patience));
+        Assert.Equal([PipeConfirmationEnd.Lost], noticed);
+        Assert.Empty(Records());
+    }
+
+    /// <summary>The design's keyed row (§10): a keyed press's record left by a crash ends lost at the next start, said, and is never asked.</summary>
+    [Fact]
+    public async Task A_keyed_press_left_by_a_crash_ends_lost_at_the_next_start()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (crashed, client, driver, services, log) = await ServeAsync();
+        using var _ = services;
+        using var __ = log;
+        await using var ___ = client;
+        await client.SendAsync("DAORIS.REMOTES", "SET", new { workspace = "games", url = "https://example.invalid", key = "deployment-key-0123456789" });
+        await UntilAsync(() => crashed.Confirmations.Now().Waiting.Count == 1);
+
+        using var next = Pipe(Compose(log, driver).Dispatcher, log);
+        var told = new List<(int, int)>();
+        next.Confirmations.Restarted = (lost, newer) => told.Add((lost, newer));
+        next.Restore();
+
+        Assert.Empty(next.Confirmations.Now().Waiting);
+        Assert.Empty(Records());
+        Assert.Equal([(1, 0)], told);
+        crashed.Dispose();
+    }
+
+    /// <summary>
+    /// The design's restore judgement row (§10, §7.2): a record is judged again as a press is judged at its ask, from its module, route and
+    /// payload alone. A route the census makes open or the window's, a payload whose fingerprint is not its binding's, one of 257 values,
+    /// a route with no grounds row, the eleventh waiting, a record that does not read: each ends lost, never asked, one notice for all. A
+    /// passing record's card is made from its payload, whatever the record holds beside. A record begun answers <c>interrupted</c>; one
+    /// ended whose journal line was never written answers its ending; a newer one is left in place, not asked; a name that is no
+    /// confirmation's id is removed.
+    /// </summary>
+    [Fact]
+    public async Task The_restore_judges_each_record_again_as_a_press_is_judged_at_its_ask()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, services) = Compose(log, driver);
+        using var _ = services;
+        var census = PipeCensus.Daoris.With(DriverModule.Name, "NEW_PRESS", PipeClass.Person);
+        const string Key = "the-first-terminal-s-key-0123456789";
+        var land = new { id = "s1a2b3c4" };
+        var lost = new List<string>
+        {
+            WriteRecord("open", DriverModule.Name, "STATE", new { }, Key),
+            WriteRecord("window", DriverModule.Name, "PERSON_CONFIRM", new { id = "x", confirm = true }, Key),
+            WriteRecord("forged", DriverModule.Name, Land, land, Key, fingerprint: Sha("{\"id\":\"s5e6f7a8\"}")),
+            WriteRecord("wide", DriverModule.Name, "SESSION_ARCHIVE", new { ids = Enumerable.Range(0, 257).Select(each => $"s{each:D7}").ToArray(), archived = true }, Key),
+            WriteRecord("ungrounded", DriverModule.Name, "NEW_PRESS", new { id = "s1a2b3c4" }, Key),
+        };
+        var cut = System.IO.Path.Combine(RecordsFolder, Guid.NewGuid().ToString("N") + ".json");
+        File.WriteAllText(cut, "{\"version\":1,\"confirm");
+        var passing = new List<string>();
+        for (var each = 0; each < 11; each++)
+        {
+            passing.Add(WriteRecord($"waiting-{each}", DriverModule.Name, Land, land, Key, minutes: each,
+                extra: each == 0 ? new { fields = new[] { new { name = "/id", type = "string", value = "s9999999" } } } : null));
+        }
+
+        var begun = WriteRecord("begun", DriverModule.Name, Land, land, Key, state: "begun");
+        var ended = WriteRecord("ended", DriverModule.Name, Land, land, Key, state: "ended",
+            answer: """{"id":"ended","success":false,"error":{"code":"refused","message":"The person refused this in Daoris's window. Nothing was done."}}""");
+        var newer = WriteRecord("newer", DriverModule.Name, Land, land, Key, version: 99);
+        var misnamed = System.IO.Path.Combine(RecordsFolder, "..-standing.json");
+        File.WriteAllText(misnamed, "{}");
+
+        using var pipe = new InstancePipe(dispatcher, Bus, Home, log, census: census, version: "9.9.9-test", clock: new HeldClock()) { Grounds = grounds };
+        var told = new List<(int Lost, int Newer)>();
+        pipe.Confirmations.Restarted = (lostCount, newerCount) => told.Add((lostCount, newerCount));
+        pipe.Restore();
+
+        var waiting = pipe.Confirmations.Now().Waiting;
+        Assert.Equal(10, waiting.Count);
+        Assert.All(waiting, card => Assert.Equal(new PipeConfirmationField("/id", "string", "s1a2b3c4"), Assert.Single(card.Fields)));
+        Assert.Equal(passing.Take(10).Select(System.IO.Path.GetFileNameWithoutExtension), waiting.Select(card => card.Id));
+        Assert.Equal([(lost.Count + 2, 1)], told);
+        Assert.Equal(passing.Take(10).Append(newer).Order(StringComparer.Ordinal), Records());
+        Assert.False(File.Exists(misnamed));
+        Assert.Equal(0, driver.Ran);
+
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+        foreach (var each in new[] { "open", "window", "forged", "wide", "ungrounded" })
+        {
+            Assert.Equal(InstancePipe.Lost, Code((await client.ResultAsync(each, Key)).GetProperty("answer")));
+        }
+
+        Assert.Equal(InstancePipe.Lost, Code((await client.ResultAsync("waiting-10", Key)).GetProperty("answer")));
+        Assert.Equal(InstancePipe.Interrupted, Code((await client.ResultAsync("begun", Key)).GetProperty("answer")));
+        Assert.Equal(InstancePipe.Refused, Code((await client.ResultAsync("ended", Key)).GetProperty("answer")));
+        Assert.Equal("unknown", (await client.ResultAsync("newer", Key)).GetProperty("state").GetString());
+        Assert.Equal("waiting", (await client.ResultAsync("waiting-0", Key)).GetProperty("state").GetString());
+        Assert.Equal(0, driver.Ran);
+    }
+
+    /// <summary>
+    /// The design's journal row (§10, §7.1): a refused press whose journal line cannot be written still has its record removed, since
+    /// the record said it ended first, and a restart asks nothing again.
+    /// </summary>
+    [Fact]
+    public async Task A_press_whose_journal_line_fails_is_still_removed_and_not_asked_again()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        // The journal's folder is a file: no line can be written there.
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DaorisHome.Entry(Home, HomeEntry.Pipe))!);
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Pipe), "not a folder");
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        await using var ___ = client;
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        Assert.Single(Records());
+
+        await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
+
+        Assert.Equal(InstancePipe.Refused, Code(await client.AnswerAsync(id)));
+        Assert.Empty(Records());
+        pipe.Dispose();
+        using var next = Pipe(Compose(log, driver).Dispatcher, log, grounds: grounds);
+        next.Restore();
+        Assert.Empty(next.Confirmations.Now().Waiting);
+    }
+
+    /// <summary>§7.1: a press whose record cannot be written is refused <c>unrecorded</c>, nothing asked, its place given back.</summary>
+    [Fact]
+    public async Task A_press_whose_record_cannot_be_written_is_refused_and_nothing_is_asked()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(RecordsFolder)!);
+        File.WriteAllText(RecordsFolder, "not a folder");
+        var (pipe, client, driver, services, log) = await ServeAsync(new StubGrounds().Session("s1a2b3c4", "completed"));
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+
+        Assert.Equal(InstancePipe.Unrecorded, Code(await client.AnswerAsync(id)));
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.NotNull(pipe.Confirmations.Hold());
+        Assert.Equal(0, driver.Ran);
+    }
+
+    /// <summary>
+    /// The design's drain row (§10): during an update's drain a Confirm is refused on the card and the press still waits; after the
+    /// restart it is restored.
+    /// </summary>
+    [Fact]
+    public async Task A_Confirm_during_an_update_s_drain_is_refused_and_the_press_is_restored_after_the_restart()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        await using var ___ = client;
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var card = pipe.Confirmations.Now().Waiting[0];
+        pipe.Draining = () => true;
+
+        Assert.Equal(PipeAnswered.Draining, (await pipe.Confirmations.AnswerAsync(card.Id, confirm: true)).Outcome);
+
+        Assert.Equal(card.Id, Assert.Single(pipe.Confirmations.Now().Waiting).Id);
+        Assert.Equal("waiting", (await client.ResultAsync(id)).GetProperty("state").GetString());
+        pipe.BeginStopping();
+        Assert.Equal(InstancePipe.Waiting, Code(await client.AnswerAsync(id)));
+        pipe.Dispose();
+        using var next = Pipe(Compose(log, driver).Dispatcher, log, grounds: grounds);
+        next.Restore();
+        Assert.Equal(card.Id, Assert.Single(next.Confirmations.Now().Waiting).Id);
         Assert.Equal(0, driver.Ran);
     }
 
@@ -571,6 +916,84 @@ public sealed class PipeConfirmTests : Bridge
 
     private static string? Code(JsonElement answer) =>
         answer.TryGetProperty("error", out var error) ? error.GetProperty("code").GetString() : null;
+
+    /// <summary>Where the waiting presses' records are (CONFIRMWAIT1a-ii): the home's <c>pipe-waiting</c> entry.</summary>
+    private string RecordsFolder => DaorisHome.Entry(Home, HomeEntry.PipeWaiting);
+
+    /// <summary>Each record kept now, by its path.</summary>
+    private List<string> Records() =>
+        Directory.Exists(RecordsFolder) ? [.. Directory.GetFiles(RecordsFolder).Order(StringComparer.Ordinal)] : [];
+
+    private static JsonElement ReadRecord(string path) => JsonDocument.Parse(File.ReadAllText(path)).RootElement.Clone();
+
+    /// <summary>Every file under the home but the machine log's and the journal's, which a press writes as it always did.</summary>
+    private List<string> Files() =>
+    [
+        .. Directory.GetFiles(Home, "*", SearchOption.AllDirectories)
+            .Where(path => !path.StartsWith(DaorisHome.Entry(Home, HomeEntry.Logs), StringComparison.OrdinalIgnoreCase)
+                && !path.StartsWith(DaorisHome.Entry(Home, HomeEntry.Pipe), StringComparison.OrdinalIgnoreCase))
+            .Order(StringComparer.Ordinal),
+    ];
+
+    private static string Sha(string text) =>
+        Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)));
+
+    /// <summary>
+    /// A record as a Daoris that stopped left it (§7.1), written by hand: <paramref name="request"/> its terminal's id, sent with
+    /// <paramref name="key"/>, its payload as its JSON, its binding's fingerprint the payload's unless one is named, asked
+    /// <paramref name="minutes"/> past nine, and <paramref name="extra"/>'s fields beside, which no restore reads. Its path.
+    /// </summary>
+    private string WriteRecord(
+        string request, string module, string route, object payload, string key, string state = "waiting", string? answer = null,
+        string? fingerprint = null, int minutes = 0, int version = 1, object? extra = null)
+    {
+        var text = JsonSerializer.Serialize(payload, Shenora.Core.Ipc.IpcJson.Options);
+        var id = Guid.NewGuid().ToString("N");
+        var record = JsonSerializer.SerializeToNode(new
+        {
+            version,
+            confirmation = id,
+            request,
+            binding = new { request = $"{module}.{route}", payload = fingerprint ?? Sha(text), key = Sha(key) },
+            module,
+            route,
+            payload = text,
+            grounds = new[] { new { kind = "session", subject = "s1a2b3c4", value = "completed|" + new DateTimeOffset(2026, 10, 20, 9, 0, 0, TimeSpan.Zero).UtcTicks, words = "completed" } },
+            asker = new { process = "pwsh", pid = 7 },
+            asked = new DateTimeOffset(2026, 10, 20, 9, minutes, 0, TimeSpan.Zero),
+            keyed = false,
+            state,
+        })!.AsObject();
+        if (answer is not null) record["answer"] = System.Text.Json.Nodes.JsonNode.Parse(answer);
+        if (extra is not null)
+        {
+            foreach (var each in JsonSerializer.SerializeToNode(extra)!.AsObject().ToList()) record[each.Key] = each.Value?.DeepClone();
+        }
+
+        Directory.CreateDirectory(RecordsFolder);
+        var path = System.IO.Path.Combine(RecordsFolder, id + ".json");
+        File.WriteAllText(path, record.ToJsonString());
+        return path;
+    }
+
+    /// <summary>The machine log's lines of <paramref name="event"/>, their data.</summary>
+    private List<string> Logged(string @event)
+    {
+        var folder = DaorisHome.Entry(Home, HomeEntry.Logs);
+        if (!Directory.Exists(folder)) return [];
+        return
+        [
+            .. Directory.GetFiles(folder).SelectMany(path =>
+            {
+                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using var reader = new StreamReader(stream);
+                return reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            })
+            .Select(line => JsonDocument.Parse(line).RootElement)
+            .Where(line => line.GetProperty("event").GetString() == @event)
+            .Select(line => line.GetProperty("data").GetRawText()),
+        ];
+    }
 
     /// <summary>The machine log's confirmation lines' data, in order.</summary>
     private List<string> Confirmations()

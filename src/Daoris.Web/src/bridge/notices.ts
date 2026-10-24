@@ -30,7 +30,9 @@ export type Notice = {
   /**
    * `ended`, a session that ended without the person asking; `expired`, a terminal's press refused by its time; `answered`, a
    * conversation that answered the person's words (NOTIFY2g), one per conversation; `look`, a line of the driver's look that is news,
-   * by its `code` (NOTIFY2h).
+   * by its `code` (NOTIFY2h); `withdrawn`, a terminal's press taken back once shown, and `closed`, one an earlier build's close ended
+   * (CONFIRMWAIT1a-i); `lost`, `count` presses a restart could not bring back, and `newer`, presses a newer Daoris kept
+   * (CONFIRMWAIT1a-ii).
    */
   kind: string;
   at: string;
@@ -47,6 +49,8 @@ export type Notice = {
   act?: string;
   /** What a look's line said, for `look`: a hand-over that could not be made, a session stopped on a lost claim, … */
   code?: string;
+  /** How many presses from a terminal a `lost` notice names (CONFIRMWAIT1a-ii): one a restart could not bring back, or one lost at a close. */
+  count?: number;
 };
 
 const keyed = (value: unknown): Record<string, unknown> | null =>

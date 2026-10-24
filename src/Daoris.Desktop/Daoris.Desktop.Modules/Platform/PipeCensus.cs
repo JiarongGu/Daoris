@@ -145,6 +145,16 @@ public sealed class PipeCensus
         return route is not null && routes.TryGetValue(route, out var classed) ? classed.For(payload) : PipeClass.Person;
     }
 
+    /// <summary>
+    /// The person's routes whose payload carries a key, a field D172 point 3 keeps in <c>profiles/</c> alone (CONFIRMWAIT1a-ii, the
+    /// confirm-wait design §7.1): <c>DAORIS.REMOTES</c> <c>SET</c>, its <c>key</c> the workspace's deployment key. A press of one keeps no
+    /// payload in its record and does not wait across a restart.
+    /// </summary>
+    public static IReadOnlySet<string> KeyedRoutes { get; } = new HashSet<string>(StringComparer.Ordinal) { "DAORIS.REMOTES.SET" };
+
+    /// <summary>Whether <paramref name="module"/>'s <paramref name="route"/> is one of <see cref="KeyedRoutes"/>, its module matched ignoring case.</summary>
+    public static bool Keyed(string module, string route) => KeyedRoutes.Contains($"{module.ToUpperInvariant()}.{route}");
+
     /// <summary>Whether the census names <paramref name="module"/>, whole or route by route.</summary>
     public bool Names(string module) => _whole.ContainsKey(module) || _byRoute.ContainsKey(module);
 

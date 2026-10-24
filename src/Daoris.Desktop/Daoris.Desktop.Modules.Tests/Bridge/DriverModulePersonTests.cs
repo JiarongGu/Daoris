@@ -69,6 +69,36 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.2, §8.1): a Confirm while an update drains Daoris is answered as data, <c>draining</c>,
+    /// for the card to say, and the press still waits; a press restored after a restart says so and names its asker as its record's, and
+    /// one carrying a key says it does not wait across a restart.
+    /// </summary>
+    [Fact]
+    public async Task A_Confirm_during_the_drain_is_answered_draining_and_a_restored_or_keyed_card_says_so()
+    {
+        var (module, pipe, services) = Composed();
+        using var composed = services;
+        using var served = pipe;
+        pipe.Draining = () => true;
+        var waits = pipe.Confirmations.Ask(DriverModule.Name, "SESSION_DELETE",
+            [new PipeConfirmationField("/id", "string", "s5e6f7a8")], new PipeAsker("pwsh", 7))!.Value;
+        pipe.Confirmations.Ask(pipe.Confirmations.Hold()!, DriverModule.Name, "SESSION_ARCHIVE", [], new PipeAsker("pwsh", 7),
+            @as: new PipeAsAsked(Guid.NewGuid().ToString("N"), Restored: true, WaitedOn: false));
+        pipe.Confirmations.Ask(pipe.Confirmations.Hold()!, "DAORIS.REMOTES", "SET", [], new PipeAsker("pwsh", 7),
+            @as: new PipeAsAsked(Guid.NewGuid().ToString("N"), Keyed: true));
+
+        var answer = await AnswerAsync(module, "PERSON_CONFIRM", new { id = waits.Shown.Id, confirm = true });
+
+        Assert.False(answer.GetProperty("answered").GetBoolean());
+        Assert.Equal("draining", answer.GetProperty("why").GetString());
+        Assert.Equal("Daoris is about to restart; this still waits.", answer.GetProperty("message").GetString());
+        Assert.False(waits.Ended.IsCompleted);
+        var shown = (await AnswerAsync(module, "PERSON_CONFIRMATIONS")).GetProperty("waiting").EnumerateArray().ToList();
+        Assert.Equal([(false, false), (true, false), (false, true)],
+            shown.Select(each => (each.GetProperty("restored").GetBoolean(), each.GetProperty("keyed").GetBoolean())));
+    }
+
+    /// <summary>
     /// NOTIFY2j: the window reads what waits at the service's door as the loop was last told it, the service's own shape whole and
     /// numbered; none before the first telling.
     /// </summary>

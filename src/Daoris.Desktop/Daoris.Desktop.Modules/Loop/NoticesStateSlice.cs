@@ -12,7 +12,7 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>One partition, keyed by notice</b> (<see cref="News"/>): <c>{ id, kind, at, read, workspace?, session?, quest?, repository?,
-/// state?, route?, act?, code? }</c>, picked to <see cref="Fields"/>. No field says what to announce: an arrival is an event
+/// state?, route?, act?, code?, count? }</c>, picked to <see cref="Fields"/>. No field says what to announce: an arrival is an event
 /// (<see cref="ArrivedType"/>). A conversation's answer is the kind <c>answered</c> (NOTIFY2g), which the page lists in
 /// <i>Messages</i>.</para>
 ///
@@ -61,7 +61,7 @@ public sealed class NoticesStateSlice
 
     /// <summary>The fields a notice is pushed with: the page's <c>Notice</c> type, which its test reads.</summary>
     public static readonly IReadOnlyList<string> Fields =
-        ["id", "kind", "at", "read", "workspace", "session", "quest", "repository", "state", "route", "act", "code"];
+        ["id", "kind", "at", "read", "workspace", "session", "quest", "repository", "state", "route", "act", "code", "count"];
 
     private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
 
@@ -197,20 +197,34 @@ public sealed class NoticesStateSlice
 
     /// <summary>
     /// A terminal's press whose end the person is told of, kept as a notice (§2.2; CONFIRMWAIT1a-i, the confirm-wait design §6): one its
-    /// terminal took back after a window showed it (<see cref="Notices.Withdrawn"/>), and one the close ended (<see cref="Notices.Closed"/>).
-    /// Every window's, said as it arrives. No press ends by its time any more; <see cref="Notices.Expired"/> stays for a notice kept before.
+    /// terminal took back after a window showed it (<see cref="Notices.Withdrawn"/>), and one carrying a key lost as Daoris closed
+    /// (<see cref="Notices.Lost"/>, counting one; CONFIRMWAIT1a-ii, §7.2). Every window's, said as it arrives. No press ends by its time any
+    /// more, and a close ends no other; <see cref="Notices.Expired"/> and <see cref="Notices.Closed"/> stay for a notice kept before.
     /// </summary>
     public void Ended(PipeConfirmation press, PipeConfirmationEnd end)
     {
         var kind = end switch
         {
             PipeConfirmationEnd.Withdrawn => Notices.Withdrawn,
-            PipeConfirmationEnd.Closed => Notices.Closed,
+            PipeConfirmationEnd.Lost => Notices.Lost,
             _ => null,
         };
         if (kind is null) return;
         var route = press.Module == DriverModule.Name ? press.Route : $"{press.Module.Replace("DAORIS.", "", StringComparison.Ordinal)}.{press.Route}";
-        Record(new Notice($"{kind}-{press.Id}", kind, _clock.GetUtcNow(), Route: route), said: false);
+        Record(new Notice($"{kind}-{press.Id}", kind, _clock.GetUtcNow(), Route: route, Count: kind == Notices.Lost ? 1 : null), said: false);
+    }
+
+    /// <summary>
+    /// A restart's restore said to the person (CONFIRMWAIT1a-ii, the confirm-wait design §7.2 step 7): one notice for every press from a
+    /// terminal it could not bring back, naming how many (<see cref="Notices.Lost"/>), and one where records a newer Daoris wrote wait for
+    /// it (<see cref="Notices.Newer"/>). Every window's, said as each arrives.
+    /// </summary>
+    public void Restarted(int lost, int newer)
+    {
+        var now = _clock.GetUtcNow();
+        var at = now.UtcTicks.ToString(CultureInfo.InvariantCulture);
+        if (lost > 0) Record(new Notice($"{Notices.Lost}-restart-{at}", Notices.Lost, now, Count: lost), said: false);
+        if (newer > 0) Record(new Notice($"{Notices.Newer}-restart-{at}", Notices.Newer, now), said: false);
     }
 
     /// <summary>
@@ -374,6 +388,7 @@ public sealed class NoticesStateSlice
         Optional("route", notice.Route);
         Optional("act", notice.Act);
         Optional("code", notice.Code);
+        if (notice.Count is { } count) picked["count"] = count;
         return picked;
 
         void Optional(string name, string? value)

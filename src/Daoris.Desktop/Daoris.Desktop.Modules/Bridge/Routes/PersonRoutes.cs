@@ -37,7 +37,9 @@ public sealed class PersonRoutes(DriverLoop loop)
     // where it was pressed (the UI/UX design's R3), or a toast where its card has gone with it. CONFIRMWAIT1a-i (the confirm-wait design
     // §5.2): a Confirm is answered once its grounds are judged, the card kept `checking` meanwhile: `{ answered: true }` where they held
     // and it runs; `{ answered: false, why: "changed", reason, values }` where one moved and nothing ran; `{ answered: false, why:
-    // "unread" }` where they could not be read just now and it still waits. The page waits for it as long as the press's `checkWithin`.
+    // "unread" }` where they could not be read just now and it still waits; CONFIRMWAIT1a-ii (§7.2): `{ answered: false, why: "draining" }`
+    // while Daoris closes or an update drains it, nothing taken and the press kept across the restart. The page waits for it as long as
+    // the press's `checkWithin`.
     // The confirmed press runs on the pipe, in its terminal's name, and publishes what it changes as it runs.
     [DriverRoute("PERSON_CONFIRM")]
     private async Task<object?> PersonConfirmAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -59,6 +61,9 @@ public sealed class PersonRoutes(DriverLoop loop)
                 false, "changed", $"Not done: {change.Sentence}.", change.Reason, change.Values),
             { Outcome: PipeAnswered.Unread } => new PersonConfirmRefused(
                 false, "unread", "Daoris could not read what this rests on just now; it still waits."),
+            // CONFIRMWAIT1a-ii (§7.2): an update drains Daoris, or it closes; the press is kept across the restart, and nothing was taken.
+            { Outcome: PipeAnswered.Draining } => new PersonConfirmRefused(
+                false, "draining", "Daoris is about to restart; this still waits."),
             _ => Gone(),
         };
 

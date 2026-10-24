@@ -153,22 +153,104 @@ public sealed class PipeConfirmationsTests : Bridge
         Assert.Equal(new PipeAnswer(PipeAnswered.Gone), await confirmations.AnswerAsync(seen.Shown.Id, confirm: true));
     }
 
+    /// <summary>
+    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.2): a press carrying a key is lost as Daoris closes, whatever it waits on, and the
+    /// person is told; the confirmations no longer end anything themselves as they are disposed.
+    /// </summary>
     [Fact]
-    public async Task The_close_ends_every_one_that_waits_and_each_is_noticed()
+    public async Task A_lost_press_ends_lost_and_is_noticed_and_disposing_ends_nothing()
     {
         using var log = new MachineLog(Home, "desktop");
         var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
         var noticed = new List<PipeConfirmationEnd>();
         confirmations.Noticed = (_, end) => noticed.Add(end);
-        var one = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
-        var two = confirmations.Ask(DriverModule.Name, "SESSION_DELETE", Values, Asker)!.Value;
+        var keyed = confirmations.Ask(confirmations.Hold()!, "DAORIS.REMOTES", "SET", Values, Asker, @as: new PipeAsAsked(Guid.NewGuid().ToString("N"), Keyed: true));
+        var kept = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
+        Assert.True(keyed.Shown.Keyed);
 
-        confirmations.Close();
+        Assert.True(confirmations.Lose(keyed.Shown.Id));
+        Assert.False(confirmations.Lose(keyed.Shown.Id));
+        confirmations.Dispose();
 
-        Assert.Equal(PipeConfirmationEnd.Closed, (await one.Ended).End);
-        Assert.Equal(PipeConfirmationEnd.Closed, (await two.Ended).End);
-        Assert.Equal([PipeConfirmationEnd.Closed, PipeConfirmationEnd.Closed], noticed);
-        Assert.Empty(confirmations.Now().Waiting);
+        Assert.Equal(PipeConfirmationEnd.Lost, (await keyed.Ended).End);
+        Assert.Equal([PipeConfirmationEnd.Lost], noticed);
+        Assert.False(kept.Ended.IsCompleted);
+        Assert.Equal(kept.Shown.Id, Assert.Single(confirmations.Now().Waiting).Id);
+        Assert.Equal(["asked", "asked", "lost"], States());
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1a-ii (§7.2 step 6, §8.1): a press restored from its record waits again under its record's id, asked and shown as the
+    /// record says, no terminal on its line, said as restored; it raises no balloon of its own, and the restore's one word is one balloon
+    /// for every press waiting again and one notice for those lost and those a newer Daoris wrote.
+    /// </summary>
+    [Fact]
+    public void A_restored_press_waits_again_as_its_record_says_and_the_restart_says_one_word()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        var clock = new HeldClock();
+        using var confirmations = new PipeConfirmations(Bus, log, clock);
+        var told = new List<(int Lost, int Newer)>();
+        confirmations.Restarted = (lost, newer) => told.Add((lost, newer));
+        var id = Guid.NewGuid().ToString("N");
+        var asked = clock.GetUtcNow() - TimeSpan.FromHours(5);
+
+        var restored = confirmations.Ask(confirmations.Hold()!, DriverModule.Name, Land, Values, Asker,
+            @as: new PipeAsAsked(id, asked, asked + TimeSpan.FromHours(1), Restored: true, WaitedOn: false));
+        confirmations.Restore(waiting: 1, lost: 2, newer: 1);
+        confirmations.Restore(waiting: 0, lost: 0, newer: 0);
+
+        var card = Assert.Single(confirmations.Now().Waiting);
+        Assert.Equal((id, asked, asked + TimeSpan.FromHours(1), true, false), (card.Id, card.Asked, card.ShownAt, card.Restored, card.WaitedOn));
+        Assert.Same(restored.Shown, card);
+        Assert.Equal([(2, 1)], told);
+        var attention = Raised.Where(each => each.Type == PipeConfirmations.AttentionType).Select(each => each.Payload).ToList();
+        var balloon = Assert.Single(attention);
+        Assert.Equal(PipeConfirmations.RestoredKind, balloon!.GetType().GetProperty("Kind")!.GetValue(balloon));
+        Assert.Equal(1, balloon.GetType().GetProperty("Count")!.GetValue(balloon));
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1a-ii (§7.2): a Confirm while Daoris closes or an update drains it takes nothing, and the press still waits; a
+    /// refusal is still the person's word, and a Confirm once the drain is over runs it.
+    /// </summary>
+    [Fact]
+    public async Task A_Confirm_while_Daoris_drains_takes_nothing_and_the_press_still_waits()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        var draining = true;
+        confirmations.Holding = () => draining;
+        var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker, judge: _ => Task.FromResult(PipeJudgement.Holding))!.Value;
+
+        Assert.Equal(new PipeAnswer(PipeAnswered.Draining), await confirmations.AnswerAsync(asked.Shown.Id, confirm: true));
+
+        Assert.False(Assert.Single(confirmations.Now().Waiting).Checking);
+        Assert.False(asked.Ended.IsCompleted);
+        draining = false;
+        Assert.Equal(new PipeAnswer(PipeAnswered.Answered), await confirmations.AnswerAsync(asked.Shown.Id, confirm: true));
+        Assert.Equal(PipeConfirmationEnd.Confirmed, (await asked.Ended).End);
+    }
+
+    /// <summary>CONFIRMWAIT1a-ii (§7.2): a drain that begins while a Confirm's grounds are read gives the press its buttons back.</summary>
+    [Fact]
+    public async Task A_drain_begun_while_a_Confirm_is_judged_gives_its_buttons_back()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        var draining = false;
+        confirmations.Holding = () => draining;
+        var judging = new TaskCompletionSource<PipeJudgement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker, judge: _ => judging.Task)!.Value;
+        var answer = confirmations.AnswerAsync(asked.Shown.Id, confirm: true);
+        Assert.True(Assert.Single(confirmations.Now().Waiting).Checking);
+
+        draining = true;
+        judging.SetResult(PipeJudgement.Holding);
+
+        Assert.Equal(new PipeAnswer(PipeAnswered.Draining), await answer);
+        Assert.False(Assert.Single(confirmations.Now().Waiting).Checking);
+        Assert.False(asked.Ended.IsCompleted);
     }
 
     [Fact]
