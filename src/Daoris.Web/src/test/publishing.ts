@@ -63,6 +63,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SESSION_ANSWER_ALONE: { scopes: ['sessions', 'driver'], session: 'session' },
   // SUPERVISOR1a-i: the owner's overrule of a supervisor's decision.
   SUPERVISOR_OVERRULE: { scopes: ['sessions', 'driver'], session: 'id' },
+  SUPERVISOR_ANSWER: { scopes: ['sessions', 'driver'], session: 'id' },
   // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish; and since HELPMODE1c3 the driver's, whose
   // helpGrants draws Ask Daoris's browser grant from the plugin's approval.
   PLUGIN_ACTION: { scopes: ['driver', 'plugins', 'harnesses'] },
@@ -102,6 +103,7 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   SET_ACCESS: { scopes: ['driver'] },
   // TERMTRUST1a (D201 point 5): the person's grant or revoke of the standing confirmation, in the window alone.
   SET_STANDING_CONFIRMATION: { scopes: ['driver'] },
+  SET_APPOINTMENT: { scopes: ['sessions', 'driver'] },
   SET_READ_ACROSS: { scopes: ['driver'] },
   SET_WRITE_ACROSS: { scopes: ['driver'] },
   SESSION_GO_AHEAD: { scopes: ['sessions', 'asks'], session: 'id' },

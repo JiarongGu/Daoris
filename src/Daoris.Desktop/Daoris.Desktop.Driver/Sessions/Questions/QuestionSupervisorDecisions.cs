@@ -275,6 +275,44 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         }, ct);
 
     /// <summary>
+    /// A revoke's or a replacing appointment's sweep (SUPERVISOR1a-ii; §5, §2.3), run only after the judge's mutation step has ended
+    /// and its lock is let go: each session with a live decision kept under <paramref name="generation"/>, in turn and under that
+    /// session's own decision lock, moves its held and released decisions of that generation to <c>stale</c> (<c>revoked</c>), a
+    /// released one's word taken back. A release or an admission already holding the lock finishes first and is swept after; an
+    /// admitted decision is a taken-in act, which a revoke does not recall.
+    /// </summary>
+    /// <returns>How many went stale.</returns>
+    public async Task<int> RevokedAsync(string generation, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var swept = 0;
+        var sessions = _live.Values.Where(each => each.Generation == generation).Select(each => each.Session).Distinct(StringComparer.Ordinal).ToList();
+        foreach (var session in sessions)
+        {
+            swept += await UnderAsync(session, async () =>
+            {
+                var moved = 0;
+                foreach (var decision in _live.Values.Where(each => each.Session == session && each.Generation == generation).ToList())
+                {
+                    if (decision.State is not (SupervisorState.Held or SupervisorState.Released)) continue;
+                    if (decision.Word is { } word) await takeBack(session, word, ct).ConfigureAwait(false);
+                    if (Move(decision, SupervisorState.Stale, now, SupervisorWhy.Revoked) == SupervisorState.Stale) moved++;
+                }
+
+                return moved;
+            }, ct).ConfigureAwait(false);
+        }
+
+        return swept;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="question"/> of <paramref name="session"/> has a decision, live or closed as the owner's (§3.1's
+    /// <c>answered</c> and <c>overruled</c>): what <c>SUPERVISOR_WAITING</c> leaves out.
+    /// </summary>
+    public bool Decided(string session, string question) =>
+        _closed.ContainsKey((session, question)) || _live.Values.Any(each => each.Session == session && each.Question.Id == question);
+
+    /// <summary>
     /// The owner's <b>Overrule</b> (§6.3, <c>SUPERVISOR_OVERRULE</c>), under the decision's lock: while held it moves to <c>overruled</c>
     /// with nothing to take back; while released its word is taken back first. From <c>admitted</c> on it changes nothing and answers
     /// the state. Null where no decision of this session is live by that id.

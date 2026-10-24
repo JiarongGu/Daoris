@@ -228,6 +228,44 @@ public sealed class TerminalModule : ModuleBase, IDisposable
         return new { open.Id, Shell = shell.Id, Cwd = directory };
     }
 
+    /// <summary>
+    /// The supervisor's holder's terminal (SUPERVISOR1a-ii, D208 §2.2; the owner's direction of 2026-10-24): a tab of this panel, never a
+    /// console window of the system's. The owner's shell with no profile, in the role's own emptied folder outside every repository, the
+    /// holder key in this one shell's environment block alone; its first lines written to the tab before the shell's own; and every
+    /// window told <c>TERMINAL_OPENED</c> {id, shell, cwd, title}, so the panel shows it as a tab. False where no PowerShell is here or
+    /// the shell would not start: nothing is appointed then.
+    /// </summary>
+    public async Task<bool> OpenHolderAsync(string home, string role, string key, DateTimeOffset at, CancellationToken ct = default)
+    {
+        if (HolderTerminal.ShellOf(_terminals.Shells()) is not { } shell) return false;
+        var folder = HolderTerminal.Emptied(home, role);
+        var open = new Open($"t{Guid.NewGuid():N}"[..9]);
+        open.Relay = new BatchRelay<string>(
+            handler => open.Sink = handler, _ => open.Sink = null,
+            (id, items) => _events.EmitAsync("DAORIS", "TERMINAL_OUTPUT", new { Id = id, Data = string.Concat(items) }),
+            OutputWindow);
+        _open[open.Id] = open;
+        open.Say(HolderTerminal.Intro(at));
+        var launch = new TerminalLaunch(shell, folder, HolderTerminal.Environment(home, key));
+        try
+        {
+            ITerminal? started = null;
+            await ProcessStarts.Shared.RunAsync(() => started = _terminals.Start(launch, open.Say, code => Ended(open, code)), ct)
+                .ConfigureAwait(false);
+            open.Hold(started!);
+        }
+        catch (Exception error) when (error is Win32Exception or IOException or PlatformNotSupportedException or OperationCanceledException)
+        {
+            _open.TryRemove(open.Id, out _);
+            open.Quiet();
+            return false;
+        }
+
+        await _events.EmitAsync("DAORIS", "TERMINAL_OPENED", new { open.Id, Shell = shell.Id, Cwd = folder, Title = HolderTerminal.Title })
+            .ConfigureAwait(false);
+        return true;
+    }
+
     /// <summary>A shell ended: its last output goes out first, then its end — unless the page closed it, and knows.</summary>
     private void Ended(Open open, int code)
     {

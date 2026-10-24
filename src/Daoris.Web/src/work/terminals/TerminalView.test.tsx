@@ -167,6 +167,15 @@ describe('the terminal view (CONSOLE4b)', () => {
     expect(screen.queryByText('PowerShell ended with code 3.')).toBeNull();
   });
 
+  /** SUPERVISOR1a-ii: the supervisor's holder's terminal, opened by the window itself, is a tab here and is shown; no OPEN is asked for it. */
+  it('adopts a terminal the window opened itself as a shown tab', async () => {
+    render(<Held />);
+    await waitFor(() => expect(screens).toHaveLength(1));
+    await act(() => eventHandlers.get('DAORIS.TERMINAL_OPENED')!({ id: 'tholder01', shell: 'pwsh', cwd: 'C:/home/work/rooms/roles/supervisor' }));
+    await waitFor(() => expect(screens).toHaveLength(2));
+    expect(calls('OPEN')).toHaveLength(1);
+  });
+
   it('takes the theme the person chooses', async () => {
     render(<Held />);
     await waitFor(() => expect(screens).toHaveLength(1));

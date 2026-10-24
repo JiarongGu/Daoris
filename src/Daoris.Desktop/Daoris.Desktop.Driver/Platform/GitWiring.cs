@@ -33,9 +33,12 @@ public static class GitWiring
         ["GIT_TRACE_REDACT"] = "1",
     };
 
-    /// <summary>Taken out of every child's environment: an inherited one could prompt, or trace a header or a secret.</summary>
+    /// <summary>
+    /// Taken out of every child's environment: an inherited one could prompt, or trace a header or a secret; and the holder key
+    /// (SUPERVISOR1a-ii, D208 §2.2), which only the holder's terminal is handed, added back by its own start alone.
+    /// </summary>
     public static readonly IReadOnlyList<string> Removed =
-        ["SSH_ASKPASS", "SSH_ASKPASS_REQUIRE", "GIT_TRACE_CURL", "GIT_CURL_VERBOSE", "GCM_TRACE", "GCM_TRACE_SECRETS"];
+        ["SSH_ASKPASS", "SSH_ASKPASS_REQUIRE", "GIT_TRACE_CURL", "GIT_CURL_VERBOSE", "GCM_TRACE", "GCM_TRACE_SECRETS", HolderKey.Variable];
 
     /// <summary>
     /// Taken out of a session's start alone (<c>Spawning.Shell</c>, §4.1): a session's <c>gh</c> or <c>az</c> would otherwise act

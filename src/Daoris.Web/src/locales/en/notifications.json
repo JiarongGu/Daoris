@@ -78,5 +78,12 @@
   "notifications.standing.line_other": "These presses from a terminal run without asking you: {{presses}}. Standing confirmation since {{since}}, used {{count}} times since Daoris started.",
   "notifications.standing.lineUndated": "These presses from a terminal run without asking you: {{presses}}. Used {{count}} time since Daoris started.",
   "notifications.standing.lineUndated_other": "These presses from a terminal run without asking you: {{presses}}. Used {{count}} times since Daoris started.",
-  "notifications.standing.off": "Turn off"
+  "notifications.standing.off": "Turn off",
+  "notifications.supervisor.label": "The supervisor",
+  "notifications.supervisor.line": "The supervisor answers questions in {{repository}} on your behalf, appointed {{since}}: each answer is said here and held five minutes for your overrule. {{count}} answer this run.",
+  "notifications.supervisor.line_other": "The supervisor answers questions in {{repository}} on your behalf, appointed {{since}}: each answer is said here and held five minutes for your overrule. {{count}} answers this run.",
+  "notifications.supervisor.lineUndated": "The supervisor answers questions in {{repository}} on your behalf: each answer is said here and held five minutes for your overrule. {{count}} answer this run.",
+  "notifications.supervisor.lineUndated_other": "The supervisor answers questions in {{repository}} on your behalf: each answer is said here and held five minutes for your overrule. {{count}} answers this run.",
+  "notifications.supervisor.dormant": "Supervisor appointment for {{repository}} found as Daoris started: press Appoint again in its Setup to use it.",
+  "notifications.supervisor.off": "Turn off"
 }

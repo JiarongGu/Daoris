@@ -8,5 +8,10 @@ namespace Daoris.Desktop.PieceStart;
 /// </summary>
 public static class Program
 {
-    public static int Main(string[] args) => PieceLauncher.Run(args, Console.Error, ProcessJob.JoinNamed, PieceLauncher.Start);
+    public static int Main(string[] args)
+    {
+        // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+        Environment.SetEnvironmentVariable("DAORIS_SUPERVISOR_KEY", null);
+        return PieceLauncher.Run(args, Console.Error, ProcessJob.JoinNamed, PieceLauncher.Start);
+    }
 }

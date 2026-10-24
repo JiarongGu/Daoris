@@ -160,6 +160,8 @@ export const HOME_ENTRIES = [
   row('proof', 'work', 'work/files/proof/*', 'proof/*'),
   row('usage-read', 'work', 'work/usage-read', 'usage-read'),
   row('brainstorm-rooms', 'work', 'work/brainstorm-rooms/*', 'brainstorm-rooms/*'),
+  // SUPERVISOR1a-ii (D208 §2.2): named here, never read by the CLI.
+  row('role-rooms', 'work', 'work/rooms/roles/*', 'work/rooms/roles/*'),
   row('toolchain', 'cache', 'cache/toolchain', 'toolchain'),
   row('tool-versions', 'cache', 'cache/tools', 'tools'),
   row('bin', 'cache', 'cache/bin', 'bin'),

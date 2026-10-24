@@ -33,6 +33,9 @@ using ModelContextProtocol.Server;
 //   DAORIS_KNOWLEDGE_DOCUMENTS / _INDEX  repository-relative folders read in each registered checkout:
 //                          documents a section each, a generated index a row each (ORIENT1c)
 
+// SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+Environment.SetEnvironmentVariable("DAORIS_SUPERVISOR_KEY", null);
+
 // JSON-RPC over stdio is UTF-8, and on Windows the console defaults to the system ANSI codepage —
 // so without this every em dash and every CJK character in the corpus arrives as mojibake. This
 // repository's doctrine is full of both, so it is not a rare edge: it is most answers. BOM-less,

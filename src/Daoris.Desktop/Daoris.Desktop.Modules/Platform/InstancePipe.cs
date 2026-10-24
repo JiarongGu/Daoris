@@ -493,7 +493,7 @@ public sealed class InstancePipe : IDisposable
     }
 
     /// <summary>The hello's answer, or its refusal.</summary>
-    private IpcResponse Hello(IpcRequest hello)
+    private IpcResponse Hello(IpcRequest hello, Connection connection)
     {
         var payload = hello.Payload;
         var protocol = payload is { ValueKind: JsonValueKind.Object } p && p.TryGetProperty("protocol", out var named)
@@ -507,7 +507,11 @@ public sealed class InstancePipe : IDisposable
             && id.ValueKind == JsonValueKind.String ? id.GetString() : null;
         if (home != _homeId) return Refuse(hello, WrongHome, "this Daoris runs on another home.");
         if (IsStopping) return RefuseStopping(hello);
-        return IpcResponse.CreateSuccess(hello.Id, new { protocol = Protocol, home = _homeId, version = _version, pid = Environment.ProcessId });
+        // SUPERVISOR1a-ii (D208 §2.2): a fresh nonce for this connection alone, which a holder's proof is bound to; an older verb ignores it.
+        return IpcResponse.CreateSuccess(hello.Id, new
+        {
+            protocol = Protocol, home = _homeId, version = _version, pid = Environment.ProcessId, nonce = connection.DrawNonce(),
+        });
     }
 
     /// <summary>
@@ -520,7 +524,7 @@ public sealed class InstancePipe : IDisposable
         {
             return (IpcJson.Serialize(request.Type switch
             {
-                "HELLO" => Hello(request),
+                "HELLO" => Hello(request, connection),
                 "ROUTES" => IpcResponse.CreateSuccess(request.Id, new { routes = _census.Routes.Select(Listed) }),
                 "RESULT" => Result(request),
                 _ => IpcResponse.CreateError(request.Id, IpcErrorCodes.NoRoute, null, $"the pipe has no route {request.Type}."),
@@ -551,6 +555,20 @@ public sealed class InstancePipe : IDisposable
 
         if (!IsKey(key)) return (IpcJson.Serialize(Refuse(request, KeyMissing, "a request carries a key of its own, 16 to 128 characters.")), null);
         if (!connection.HasRoom) return (IpcJson.Serialize(Refuse(request, Busy, "this terminal has as much under way as Daoris takes from one; send it again once one answers.")), null);
+
+        // SUPERVISOR1a-ii (D208 §2.2, the supervisor design §11 row 1a-ii): a role's act is judged by the judge's own role method, before
+        // the open path and before any card, under the same lock and caller look, then by the holder's proof over this connection's
+        // nonce, which this act uses up. Anything it does not cover is refused, logged, never asked.
+        RoleJudgement? role = null;
+        if (@class == PipeClass.Role)
+        {
+            role = StandingConfirmation.JudgeRole(request.Module, request.Type, request.Payload, connection.Client, connection.TakeNonce());
+            if (!role.Covered)
+            {
+                _log.Info("supervisor.refused", ("why", role.Why ?? ""), ("door", PipeDoor.Terminal));
+                return (IpcJson.Serialize(Refuse(request, role.Why ?? Unclassed, RoleRefusal(role.Why))), null);
+            }
+        }
 
         // RPC1c: a person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.
         IReadOnlyList<PipeConfirmationField>? fields = null;
@@ -596,7 +614,7 @@ public sealed class InstancePipe : IDisposable
         if (mine is null) return (null, answer);
         if (fields is null)
         {
-            _ = RunAsync(request, id, binding, mine);
+            _ = RunAsync(request, id, binding, mine, role: role);
             return (null, answer);
         }
 
@@ -711,6 +729,19 @@ public sealed class InstancePipe : IDisposable
 
     private static string Capitalized(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
+    /// <summary>A role's act refused at the door (SUPERVISOR1a-ii), in the terminal's words, by its code. Nothing was kept.</summary>
+    private static string RoleRefusal(string? why) => why switch
+    {
+        SupervisorWhy.NotOffered => "This Daoris does not offer appointments yet. Nothing was kept.",
+        SupervisorWhy.NotHolder => "This terminal did not prove the supervisor's key for this connection and this answer. Nothing was kept.",
+        SupervisorWhy.Dormant => "The supervisor was appointed before Daoris restarted: the owner presses Appoint again. Nothing was kept.",
+        SupervisorWhy.AppointmentChanged => "The appointment this answer names is not the one in force: read the question again. Nothing was kept.",
+        SupervisorWhy.Form => "The answer is not the supervisor's form: an id, the question, the generation, the proof, one choice and 1 to 5 reasons, each with its source. Nothing was kept.",
+        StandingWhy.InAgentJob => "An agent Daoris runs does not answer as the supervisor. Nothing was kept.",
+        StandingWhy.Untold => "Daoris could not tell this terminal is outside every agent it runs. Nothing was kept.",
+        _ => "No appointment covers this. Nothing was kept.",
+    };
+
     /// <summary>A route as <c>ROUTES</c> lists it: a route classed by its payload says its rule beside its class.</summary>
     private static object Listed(PipeRoute route) => new
     {
@@ -728,8 +759,10 @@ public sealed class InstancePipe : IDisposable
     /// line cannot be written is refused and never dispatched, so no id runs that the journal does not hold.
     /// </summary>
     /// <param name="standing">That the person's standing confirmation admitted it (TERMTRUST1a): run inside <see cref="PipeDoor.EnterStanding"/>.</param>
+    /// <param name="role">The role act the judge's role method covered (SUPERVISOR1a-ii): run inside <see cref="PipeDoor.EnterRole"/>.</param>
     private async Task RunAsync(
-        IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered, bool standing = false)
+        IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered, bool standing = false,
+        RoleJudgement? role = null)
     {
         string text;
         try
@@ -742,7 +775,7 @@ public sealed class InstancePipe : IDisposable
             else
             {
                 IpcResponse response;
-                using (standing ? PipeDoor.EnterStanding() : PipeDoor.Enter())
+                using (role is not null ? PipeDoor.EnterRole(role) : standing ? PipeDoor.EnterStanding() : PipeDoor.Enter())
                 {
                     response = await _dispatcher.DispatchAsync(request, _lifetime.Token).ConfigureAwait(false);
                 }
@@ -887,6 +920,37 @@ public sealed class InstancePipe : IDisposable
         /// </summary>
         public PipeClientProcess Client { get; } = PipeClientProcess.Of(stream);
 
+        // SUPERVISOR1a-ii (D208 §2.2): this connection's hello's nonce and when it was drawn, in memory for this connection alone.
+        private readonly Lock _nonceGate = new();
+        private string? _nonce;
+        private long _nonceAt;
+
+        /// <summary>How long a hello's nonce may be used: forgotten at its first use, at the connection's end or after this.</summary>
+        public static readonly TimeSpan NonceLife = TimeSpan.FromSeconds(60);
+
+        /// <summary>A fresh nonce for this connection's hello, replacing any it drew before.</summary>
+        public string DrawNonce()
+        {
+            lock (_nonceGate)
+            {
+                _nonce = SupervisorProof.Nonce();
+                _nonceAt = Environment.TickCount64;
+                return _nonce;
+            }
+        }
+
+        /// <summary>The hello's nonce for one act, forgotten as it is taken: null where none was drawn, it was used, or its minute passed.</summary>
+        public string? TakeNonce()
+        {
+            lock (_nonceGate)
+            {
+                var nonce = _nonce;
+                var fresh = nonce is not null && Environment.TickCount64 - _nonceAt <= (long)NonceLife.TotalMilliseconds;
+                _nonce = null;
+                return fresh ? nonce : null;
+            }
+        }
+
         /// <summary>Whether a press this connection sent has not been answered yet.</summary>
         public bool Answering => Volatile.Read(ref _underWay) > 0;
 
@@ -906,7 +970,7 @@ public sealed class InstancePipe : IDisposable
                     return;
                 }
 
-                var answered = pipe.Hello(hello);
+                var answered = pipe.Hello(hello, this);
                 await WriteAsync(IpcJson.Serialize(answered)).ConfigureAwait(false);
                 if (!answered.Success) return;
 
@@ -1069,6 +1133,7 @@ public sealed class InstancePipe : IDisposable
         public void Close()
         {
             if (Interlocked.Exchange(ref _closed, 1) == 1) return;
+            TakeNonce();
             stream.Dispose();
             Client.Dispose();
         }

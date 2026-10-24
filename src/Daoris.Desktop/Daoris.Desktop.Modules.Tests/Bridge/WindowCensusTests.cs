@@ -54,21 +54,46 @@ public sealed class WindowCensusTests
     public void Every_read_is_held_or_told_by_event_or_owed_and_nothing_is_both()
     {
         var byEvent = DriverModule.ByEventRoutes.ToHashSet(StringComparer.Ordinal);
-        var unclassed = Reads().Where(route => !Held.ContainsKey(route) && !byEvent.Contains(route) && !Owed.Contains(route))
+        var unclassed = Reads().Where(route => !Held.ContainsKey(route) && !byEvent.Contains(route) && !Owed.Contains(route)
+                && !TerminalOnly.ContainsKey(route))
             .Order(StringComparer.Ordinal).ToList();
         Assert.True(unclassed.Count == 0,
             $"read(s) computed on the window's request, neither held nor told by event (NOBLOCK1): {string.Join(", ", unclassed)}");
 
-        var twice = Held.Keys.Concat(Owed).Where(byEvent.Contains).Concat(Held.Keys.Where(Owed.Contains)).ToList();
+        var twice = Held.Keys.Concat(Owed).Concat(TerminalOnly.Keys).Where(byEvent.Contains).Concat(Held.Keys.Where(Owed.Contains)).ToList();
         Assert.True(twice.Count == 0, $"classed twice: {string.Join(", ", twice)}");
         Assert.True(Owed.Count <= OwedAtTheRule, $"{Owed.Count} owed, more than the {OwedAtTheRule} the rule began with: a new read is held or told by event");
+    }
+
+    /// <summary>
+    /// Reads only a terminal asks, never the window, with who asks them: the window's rule is that nothing it asks for waits on work,
+    /// so a read the page never sends holds no window. The page's sources are held to never naming one (the next fact).
+    /// </summary>
+    private static readonly Dictionary<string, string> TerminalOnly = new(StringComparer.Ordinal)
+    {
+        ["SUPERVISOR_WAITING"] = "the supervisor's holder, `daoris-driver sessions supervise` in its own terminal (SUPERVISOR1a-ii, D208 §3.1)",
+    };
+
+    /// <summary>A read the census holds as the terminal's alone is one the page's sources never name.</summary>
+    [Fact]
+    public void A_read_held_as_the_terminal_s_alone_is_never_named_by_the_page()
+    {
+        var at = new DirectoryInfo(AppContext.BaseDirectory);
+        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
+        var web = Path.Combine(at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary"), "src", "Daoris.Web", "src");
+        var named = Directory.EnumerateFiles(web, "*.ts*", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}node_modules{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .SelectMany(path => TerminalOnly.Keys.Where(route => File.ReadAllText(path).Contains(route, StringComparison.Ordinal))
+                .Select(route => $"{route} in {Path.GetRelativePath(web, path)}"))
+            .ToList();
+        Assert.True(named.Count == 0, $"a read held as the terminal's is asked by the page: {string.Join("; ", named)}");
     }
 
     [Fact]
     public void Every_name_the_census_holds_is_a_read_of_the_module()
     {
         var reads = Reads().ToHashSet(StringComparer.Ordinal);
-        var stray = Held.Keys.Concat(Owed).Where(route => !reads.Contains(route)).ToList();
+        var stray = Held.Keys.Concat(Owed).Concat(TerminalOnly.Keys).Where(route => !reads.Contains(route)).ToList();
         Assert.True(stray.Count == 0, $"no such read, or a press: {string.Join(", ", stray)} (a moved read leaves the census)");
     }
 

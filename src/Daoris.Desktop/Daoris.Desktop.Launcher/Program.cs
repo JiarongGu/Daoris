@@ -53,6 +53,9 @@ public static class Launcher
     [STAThread]
     public static int Main(string[] args)
     {
+        // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+        Environment.SetEnvironmentVariable("DAORIS_SUPERVISOR_KEY", null);
+
         // Before anything is shown: Windows reads a process's id when it first presents something. A
         // failure changes nothing a person can see but where a refusal's button goes.
         _ = SetCurrentProcessExplicitAppUserModelID(AppId);

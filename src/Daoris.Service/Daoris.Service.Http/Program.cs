@@ -53,6 +53,9 @@ using Daoris.Knowledge.Http;
 // A REGISTRATION'S ROOT NEVER LEAVES THE MACHINE (D46). The filesystem path a repository registers is
 // answered only to loopback callers — the local driver — so a remote deployment never serves anyone's
 // disk layout to the network.
+// SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+Environment.SetEnvironmentVariable("DAORIS_SUPERVISOR_KEY", null);
+
 if (OperatingSystem.IsWindows())
 {
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);

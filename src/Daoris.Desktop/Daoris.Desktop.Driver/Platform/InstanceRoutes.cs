@@ -18,6 +18,12 @@ public enum RouteClass
 
     /// <summary>What only a window does: no terminal verb sends it.</summary>
     Window,
+
+    /// <summary>
+    /// A role's act (SUPERVISOR1a-ii, D208): sent only by its holder's verb, with a proof by the holder key over the hello's nonce, and
+    /// judged by the instance with no card; refused where not covered, never done alone.
+    /// </summary>
+    Role,
 }
 
 /// <summary>A route a terminal verb sends over the pipe, with the class the census gives it (RPC1b).</summary>

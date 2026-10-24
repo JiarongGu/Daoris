@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// Each test serves its own pipe in this process, named by its own scratch home's id; where the terminal's process stands is a stand-in
 /// (<see cref="StandingConfirmationTests.Placed"/>), the system's look being <c>StandingCallerTests</c>'. Windows only.
 /// </remarks>
-public sealed class PipeStandingTests : Bridge
+public sealed partial class PipeStandingTests : Bridge
 {
     private (IMessageDispatcher Dispatcher, ServiceProvider Services) Compose(MachineLog log, params IIpcModule[] modules)
     {

@@ -95,6 +95,9 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// <summary><c>RESULT</c>'s state for a press it was asked about: <c>answered</c> (with <see cref="Data"/>), <c>running</c>, <c>unknown</c>, or <c>id-taken</c>, the refusal of another key's id.</summary>
     public string Result { get; set; } = "answered";
 
+    /// <summary>The nonce its hello draws (SUPERVISOR1a-ii): a fake server's own, or one it relays from a real instance.</summary>
+    public string Nonce { get; set; } = Daoris.Driver.SupervisorProof.Nonce();
+
     public int Connections => Volatile.Read(ref _connections);
 
     /// <summary>Every request it was sent, the hello and <c>RESULT</c> among them.</summary>
@@ -166,7 +169,7 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                 {
                     await WriteAsync(server, RefuseHello is { } code
                         ? Refusal(id, code, code == "stopping" ? new { why = StoppingWhy } : null)
-                        : Success(id, new { protocol = 1, home = HomeId, version = "0", pid = Environment.ProcessId }));
+                        : Success(id, new { protocol = 1, home = HomeId, version = "0", pid = Environment.ProcessId, nonce = Nonce }));
                     continue;
                 }
 

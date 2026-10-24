@@ -71,6 +71,9 @@ public sealed record SessionsAsk(string Verb)
     /// <c>running-here</c> where a process for the session runs here, and is moved by the ledger only from <c>awaiting-person</c>.
     /// </summary>
     public bool Standing { get; init; }
+
+    /// <summary>The supervisor's answer (SUPERVISOR1a-ii, <c>sessions supervise &lt;id&gt; --choice …</c>): its question, generation, label and reasons.</summary>
+    public SupervisorDraft? Supervised { get; init; }
 }
 
 /// <summary>
@@ -171,6 +174,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// by default, a test's without a process (MOD8).
     /// </summary>
     public Func<string, CancellationToken, Task<PieceBase>> PieceBase { get; init; } = PartnerPersonAsk.ReadTreeAsync;
+
+    /// <summary>
+    /// The holder key this verb took from its terminal's environment at its entry (SUPERVISOR1a-ii, <see cref="Daoris.Driver.HolderKey.Taken"/>), or
+    /// a test's sentinel: <c>sessions supervise</c>'s alone, never an argument.
+    /// </summary>
+    public Func<string?> HolderKey { get; init; } = () => Daoris.Driver.HolderKey.Taken;
 }
 
 /// <summary>
@@ -234,6 +243,7 @@ public static class SessionsCommand
                daoris-driver sessions helper --approve|--decline <ask>
                daoris-driver sessions partner <id> "<piece>" --agent <name> [--paths <path>…]
                daoris-driver sessions partner <id> --list  ·  sessions partner <piece> --stop
+               daoris-driver sessions supervise [<id>]  ·  sessions supervise <id> --question <qid> --generation <g> --choice <label> (--reason "…" --source <where>)…
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -331,6 +341,8 @@ public static class SessionsCommand
                 return null;
             case ["helper", ..]:
                 return SessionsHelperCommand.Read(args, out problem);
+            case ["supervise", ..]:
+                return SessionsSuperviseCommand.Read(args, out problem);
             case ["partner", ..]:
                 return SessionsPartnerCommand.Read(args, out problem);
         }
@@ -448,6 +460,8 @@ public static class SessionsCommand
                 Body(("id", ask.Ids[0]), ("piece", ask.Text), ("agent", ask.Agent), ("paths", ask.Paths.Count > 0 ? ask.Paths : null)),
                 () => SessionsPartnerCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
             "partner-list" => await SessionsPartnerCommand.ListAsync(world, ask.Ids[0], output).ConfigureAwait(false),
+            // SUPERVISOR1a-ii: the supervisor's holder's verb, through the running Daoris alone.
+            "supervise-list" or "supervise-print" or "supervise-answer" => await SessionsSuperviseCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             // A piece's stop is its partner's record's stop, the same press: the driver reads it as the person's and keeps the work.
             "partner-stop" => SessionsPartnerCommand.Working(world, ask.Ids[0], output) is { } partner
                 ? await ThroughAsync(

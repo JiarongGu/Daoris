@@ -25,7 +25,8 @@ public enum InstanceFound
 }
 
 /// <summary>What a verb found, with the sentence that says it and the connection where the instance answered.</summary>
-public sealed record InstanceLook(InstanceFound Found, string Why, InstanceClient? Client = null);
+/// <param name="Nonce">The hello's nonce for this connection (SUPERVISOR1a-ii), which a holder's proof is bound to; null from an older Daoris.</param>
+public sealed record InstanceLook(InstanceFound Found, string Why, InstanceClient? Client = null, string? Nonce = null);
 
 /// <summary>Where a verb looks for the running Daoris, and what it says while it waits: the process's own, or a test's.</summary>
 public sealed class InstanceWorld
@@ -65,6 +66,12 @@ public sealed class InstanceWorld
     /// test's, which needs no second elevation to meet a pipe it does not take.
     /// </summary>
     public IReadOnlySet<string>? Owners { get; init; }
+
+    /// <summary>
+    /// A check of the process serving the pipe, read from the pipe itself, made before anything is sent (SUPERVISOR1a-ii, D208 §2.2):
+    /// false refuses it (<see cref="InstanceDoor.NotInstall"/>). Null checks nothing, as every verb but the supervisor's answer.
+    /// </summary>
+    public Func<int?, bool>? ServedBy { get; init; }
 }
 
 /// <summary>
@@ -133,6 +140,36 @@ public static class InstanceDoor
     /// <summary>What a pipe that refused this terminal is said as (PIPEOWNER1): never a pipe that did not answer.</summary>
     internal const string NotThisUsers = "Its pipe belongs to another Windows account or elevation.";
 
+    /// <summary>The supervisor's verb's refusal of a pipe not served by the install's own application (SUPERVISOR1a-ii, D208 §2.2).</summary>
+    public const string NotInstall = "not-install";
+
+    /// <summary>
+    /// Whether <paramref name="server"/> runs the install's own application, <c>app/Daoris.Desktop.exe</c> under the root that carries
+    /// the verb (<paramref name="baseDirectory"/>), never the root's <c>Daoris.exe</c> launcher (SUPERVISOR1a-ii, D208 §2.2). Its limit,
+    /// said in §4.6: it binds a path, not the owner's instance. False for a workspace build, which no install carries.
+    /// </summary>
+    public static bool InstallApplication(int? server, string baseDirectory, Func<int, string?>? image = null)
+    {
+        if (server is not { } pid || DaorisHome.InstallOf(baseDirectory) is not { } install) return false;
+        var expected = Path.GetFullPath(Path.Combine(install, "app", "Daoris.Desktop.exe"));
+        return (image ?? ImageOf)(pid) is { } path && string.Equals(Path.GetFullPath(path), expected, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>The executable a process runs, as the system names it; null where it cannot be read.</summary>
+    public static string? ImageOf(int pid)
+    {
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById(pid);
+            return process.MainModule?.FileName;
+        }
+        catch (Exception error) when (error is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception
+                                          or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>The pipe connected and its hello said, or why not.</summary>
     private static async Task<InstanceLook> HelloAsync(
         string pipe, string? mine, InstanceWorld world, string silent, string refused, int? server, CancellationToken ct)
@@ -147,6 +184,14 @@ public static class InstanceDoor
             return new(InstanceFound.Silent, $"{silent} Its pipe is served by another process (pid {serving}), so nothing was sent to it.");
         }
 
+        // SUPERVISOR1a-ii (D208 §2.2): a verb that checks the pipe's server checks it here, before even the hello is sent.
+        if (world.ServedBy is { } check && !check(client.Server))
+        {
+            await client.DisposeAsync().ConfigureAwait(false);
+            return new(InstanceFound.Refused,
+                $"the pipe at {pipe} is not served by this install's `app/Daoris.Desktop.exe`, so nothing was sent to it ({NotInstall}).");
+        }
+
         var hello = await client.HelloAsync(mine, world.Answer, ct).ConfigureAwait(false);
         if (hello is not { } answer)
         {
@@ -156,7 +201,7 @@ public static class InstanceDoor
 
         if (Succeeded(answer) && answer.TryGetProperty("data", out var data) && InstanceClient.Text(data, "home") is { } home && home == mine)
         {
-            return new(InstanceFound.Answers, "", client);
+            return new(InstanceFound.Answers, "", client, InstanceClient.Text(data, "nonce"));
         }
 
         await client.DisposeAsync().ConfigureAwait(false);
