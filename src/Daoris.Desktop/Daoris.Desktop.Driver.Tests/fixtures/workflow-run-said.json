@@ -1,5 +1,5 @@
 {
-  "about": "One table of the English a run says (WORKFLOW1c5, D157, .claude/knowledge/twins.md). The driver's WorkflowRunWords.cs says it in a terminal, the page's workflow/runSaid.ts and the workflow.run.* catalogue say it on the page; WorkflowRunSaidTwinTests.cs and workflow/runSaid.test.ts each read every row. A row is a step's kind, state (working where omitted), detail and the facts its words use; said is the sentence, null where the state's word says it all. A row with a node is a graph run's node (FABRIC-CUTOVER1e): its own kind, its detail its record's state, on the subject it observes; graph is what a graph run says above its nodes, line for line. A name from a record is in backticks. A none row is a code a read that names no run answers (CHATFLOW1a, the chat-flow design §10): its code, the record's id or the workflow's id its words name, and its sentence, which the terminal says and the page's workflow.run.noRun.* says in en. The terminal's own words (the head line, the marks, this session, the presses under a step) and the step titles, which the page words by Current's own step, stay out.",
+  "about": "One table of the English a run says (WORKFLOW1c5, D157, .claude/knowledge/twins.md). The driver's WorkflowRunWords.cs says it in a terminal, the page's workflow/runSaid.ts and the workflow.run.* catalogue say it on the page; WorkflowRunSaidTwinTests.cs and workflow/runSaid.test.ts each read every row. A row is a step's kind, state (working where omitted), detail and the facts its words use; said is the sentence, null where the state's word says it all. A row with a node is a graph run's node (FABRIC-CUTOVER1e): its own kind, its detail its record's state, on the subject it observes; graph is what a graph run says above its nodes, line for line. A name from a record is in backticks. chatChecks is what a chat run says of its checks until they are enforced on its tree (CHATFLOW1c, the chat-flow design §4.4). A none row is a code a read that names no run answers (CHATFLOW1a, the chat-flow design §10): its code, the record's id or the workflow's id its words name, and its sentence, which the terminal says and the page's workflow.run.noRun.* says in en. The terminal's own words (the head line, the marks, this session, the presses under a step) and the step titles, which the page words by Current's own step, stay out.",
   "states": {
     "not-reached": "not reached",
     "working": "working",
@@ -13,6 +13,7 @@
     "stopped": "stopped",
     "paused": "paused"
   },
+  "chatChecks": { "checks": "light", "said": "Its checks (`light`) are not yet enforced for a conversation, so its tree is not held to them." },
   "added": {
     "chain": "A look added for this work by its chain's choice.",
     "ask": "A look added for this work by its ask's choice.",
@@ -42,6 +43,10 @@
     { "kind": "work", "state": "done", "detail": "submitted", "count": 2, "said": "The agent finished: 2 quests here are submitted, and close at the workflow's end." },
     { "kind": "work", "state": "waiting-on-agent", "detail": "reopened", "quest": "q1", "said": "You reopened quest #q1's submission: it waits for its agent to make it ready again." },
     { "kind": "work", "state": "waiting-on-you", "detail": "go-on", "quest": "q2", "said": "The work you reopened is ready again: quest #q2, its next step, waits for you to go on with it on the new work or abandon it." },
+    { "kind": "work", "state": "waiting-on-you", "detail": "talk", "said": "Your turn to talk: nothing stands beyond the line yet, so nothing waits to land." },
+    { "kind": "work", "state": "waiting-on-you", "detail": "land", "count": 1, "said": "1 commit beyond the line waits for you to accept it." },
+    { "kind": "work", "state": "waiting-on-you", "detail": "land", "count": 3, "said": "3 commits beyond the line wait for you to accept them." },
+    { "kind": "work", "state": "done", "detail": "landed", "said": "Its work landed at the commit its tree stands at." },
 
     { "kind": "opinion", "detail": "none", "said": "No second opinion is asked before this work lands." },
     { "kind": "opinion", "detail": "waits-chain", "quest": "q2", "said": "Waits for the chain's later step here, quest #q2: one opinion reads the whole work." },
@@ -72,6 +77,7 @@
     { "kind": "opinion", "detail": "answered", "said": "Your Accept answered the second opinion." },
     { "kind": "opinion", "detail": "answered", "code": "reviewed", "said": "Your Reviewed answered the second opinion." },
     { "kind": "opinion", "detail": "landed", "said": "It let the work go when the work landed." },
+    { "kind": "opinion", "state": "skipped", "detail": "chat-not-asked", "said": "No second opinion is asked for a conversation's work in this build yet." },
     { "kind": "opinion", "detail": "unread", "said": "Whether a second opinion holds it could not be read." },
     { "kind": "opinion", "detail": "unread", "words": "the record is damaged", "said": "Whether a second opinion holds it could not be read: the record is damaged" },
     { "kind": "opinion", "detail": "cannot-start", "said": "It cannot start: its workflow names reviewers its repository does not declare." },

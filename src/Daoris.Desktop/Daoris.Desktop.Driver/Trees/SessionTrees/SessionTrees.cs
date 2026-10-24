@@ -824,13 +824,14 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     /// <inheritdoc cref="TreeGates.GateAsync"/>
     public Task<LandingGate> GateAsync(
         string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null,
-        string? tip = null) =>
-        Gates.GateAsync(path, quest, world, session, ct, process, tip);
+        string? tip = null, string? run = null) =>
+        Gates.GateAsync(path, quest, world, session, ct, process, tip, run);
 
     /// <inheritdoc cref="TreeGates.ProcessAsync"/>
     public Task<WorkflowProcess> ProcessAsync(
-        DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct = default) =>
-        Gates.ProcessAsync(config, repository, workspace, quest, world, ct);
+        DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct = default,
+        string? run = null) =>
+        Gates.ProcessAsync(config, repository, workspace, quest, world, ct, run);
 
     /// <inheritdoc cref="TreeGates.WorkflowAsync"/>
     public Task<WorkflowGateState> WorkflowAsync(string tree, WorkflowProcess process, string? session, CancellationToken ct = default) =>

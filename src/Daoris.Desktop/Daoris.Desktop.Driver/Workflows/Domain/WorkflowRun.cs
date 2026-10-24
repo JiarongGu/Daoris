@@ -70,6 +70,12 @@ public static class WorkflowRunDetails
     /// <summary>Its session finished and its quest stays taken: the person's done closes it (QUESTCLOSE1).</summary>
     public const string Unclosed = "unclosed";
 
+    /// <summary>A chat run's conversation between turns with nothing beyond the line (CHATFLOW1c): it is the person's turn to talk.</summary>
+    public const string Talk = "talk";
+
+    /// <summary>A chat run's conversation between turns, or ended, with commits beyond the line, which its count names (CHATFLOW1c).</summary>
+    public const string Land = "land";
+
     /// <summary>Its last session failed.</summary>
     public const string Failed = "failed";
 
@@ -100,9 +106,18 @@ public static class WorkflowRunDetails
     /// </summary>
     public const string GoOn = "go-on";
 
-    // The second opinion: its details are its gate's own states (OpinionGateStates, XAGENT1f), and one more.
-    /// <summary>The work landed, and its landing record keeps no word of the opinion that let it go.</summary>
+    // The second opinion: its details are its gate's own states (OpinionGateStates, XAGENT1f), and two more.
+    /// <summary>
+    /// The work landed, and its landing record keeps no word of the opinion that let it go. On a chat run's work (CHATFLOW1c), a landing is
+    /// kept for the tip its tree stands at.
+    /// </summary>
     public const string Landed = "landed";
+
+    /// <summary>
+    /// A chat run's opinion before CHATFLOW1d (the chat-flow design §4.2, the Opus check's finding 2): no second opinion is asked for a
+    /// conversation's work in this build yet, so its press lands it with none, and the step is passed over.
+    /// </summary>
+    public const string ChatNotAsked = "chat-not-asked";
 
     // The look (the review's states, ReviewStates, where they stand at a step).
     public const string NotShown = "not-shown";
@@ -211,6 +226,29 @@ public sealed record WorkflowRunFacts(string Repository, CurrentWorkflow Current
 
     /// <summary>The due list's entries for the run's sessions (LAND2b).</summary>
     public IReadOnlyList<AutoLanding> AutoLandings { get; init; } = [];
+
+    /// <summary>
+    /// A chat run's own facts (CHATFLOW1c), where <see cref="Sessions"/> are its line's records in its tree and <see cref="Quests"/> none;
+    /// null for a quest's run.
+    /// </summary>
+    public ChatRunFacts? Chat { get; init; }
+}
+
+/// <summary>
+/// What a chat run reads of its tree and its conversation (CHATFLOW1c; the chat-flow design §4.2), read once for the view: the tip its tree
+/// stands at, the commits beyond the line as the review's offer counts them, and whether its newest record is between turns.
+/// </summary>
+/// <param name="Run">Its key, <c>chat-&lt;first&gt;</c>.</param>
+public sealed record ChatRunFacts(string Run)
+{
+    /// <summary>The tree's <c>HEAD</c>; null where the tree does not stand or git could not say.</summary>
+    public string? Tip { get; init; }
+
+    /// <summary>The commits beyond the line; null where git could not say or the tree does not stand.</summary>
+    public int? Beyond { get; init; }
+
+    /// <summary>Whether its newest record's turn ended with nothing said since.</summary>
+    public bool Between { get; init; }
 }
 
 /// <summary>
@@ -305,6 +343,12 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
     public string? Session { get; init; }
 
     /// <summary>
+    /// A chat run's key, <c>chat-&lt;first&gt;</c> (CHATFLOW1c); null for a quest's run. Its checks are not yet enforced for a conversation
+    /// (the chat-flow design §4.4), which the view says until CHATFLOW1h.
+    /// </summary>
+    public string? ChatRun { get; init; }
+
+    /// <summary>
     /// The run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e): its wires, its subjects and what its record says of it;
     /// null for a run D157's steps govern.
     /// </summary>
@@ -351,13 +395,21 @@ public static class WorkflowRuns
             .ToList();
 
         var steps = new List<WorkflowRunStep>();
-        var workStep = Work(Cell(facts, WorkflowKinds.Work), work, workSessions, facts);
+        // CHATFLOW1c (the chat-flow design §4.2, Codex's finding 7): a chat run's later steps are read by its candidate's readiness, never
+        // by its displayed work step, and its landing by the tip its tree stands at.
+        var chat = facts.Chat;
+        var landed = chat is null ? null : ChatLandedAt(facts, chat);
+        var workStep = chat is null
+            ? Work(Cell(facts, WorkflowKinds.Work), work, workSessions, facts)
+            : ChatWork(Cell(facts, WorkflowKinds.Work), facts, chat, landed);
         steps.Add(workStep);
-        var workDone = workStep.State == WorkflowRunStates.Done;
+        var workDone = chat is null ? workStep.State == WorkflowRunStates.Done : Candidate(facts, chat, landed);
 
         // The landing is read before the opinion and the look, since a landing done is what both let go.
-        var landing = Landing(Cell(facts, WorkflowKinds.Landing), workDone, workSessions, facts);
-        var opinion = Opinion(facts, workDone, landing);
+        var landing = chat is null
+            ? Landing(Cell(facts, WorkflowKinds.Landing), workDone, workSessions, facts)
+            : ChatLanding(Cell(facts, WorkflowKinds.Landing), workDone, facts, landed);
+        var opinion = chat is null ? Opinion(facts, workDone, landing) : ChatOpinion(facts, workDone, landed);
         if (opinion is not null) steps.Add(opinion);
 
         var look = Look(facts, workDone, landing);
@@ -407,8 +459,114 @@ public static class WorkflowRuns
             WorkflowGate = facts.WorkflowGate,
             Ask = ask,
             Session = newest?.Id,
+            ChatRun = chat?.Run,
         };
     }
+
+    /// <summary>A landing kept for the tip a chat's tree stands at (CHATFLOW1c): the record it names, how, when, and what it kept.</summary>
+    private sealed record ChatLanded(string Session, string Detail, DateTimeOffset At, LandedBranch? Entry, LandingOpinion? Opinion, string? AcceptedBy);
+
+    /// <summary>
+    /// The landing kept for the tip a chat's tree stands at (the chat-flow design §4.2, the Opus check's finding 1), or null. A branch landing
+    /// is kept for a tip where an entry naming a record of the line holds it as its own <c>Squashed ?? Tip</c>, or an advance's
+    /// <c>Squashed ?? To</c>. A merge acceptance keeps no tip, so it is read from the line: kept for the tip the tree stands at where nothing
+    /// stands beyond the line, since the line then holds that tip's work. A tree that no longer stands reads its line's newest landing.
+    /// </summary>
+    private static ChatLanded? ChatLandedAt(WorkflowRunFacts facts, ChatRunFacts chat)
+    {
+        var ids = new HashSet<string>(facts.Sessions.Select(session => session.Id), StringComparer.OrdinalIgnoreCase);
+        var kept = new List<(string Tip, ChatLanded Landed)>();
+        foreach (var entry in facts.Landings)
+        {
+            if (ids.Contains(entry.Session))
+            {
+                kept.Add((entry.Squashed ?? entry.Tip, new ChatLanded(entry.Session, WorkflowRunDetails.Branch, entry.LandedAt, entry, entry.Opinion, entry.AcceptedBy)));
+            }
+
+            foreach (var advance in entry.Advances.Where(advance => ids.Contains(advance.Session)))
+            {
+                kept.Add((advance.Squashed ?? advance.To, new ChatLanded(advance.Session, WorkflowRunDetails.Branch, advance.At, entry, advance.Opinion, advance.AcceptedBy)));
+            }
+        }
+
+        var accepted = facts.Accepted.Where(pair => ids.Contains(pair.Key)).OrderBy(pair => pair.Value).ToList();
+        var merge = accepted.Count == 0 ? null : new ChatLanded(accepted[^1].Key, WorkflowRunDetails.Merge, accepted[^1].Value, null, null, null);
+        if (chat.Tip is not { } tip)
+        {
+            return chat.Beyond is null ? kept.Select(each => each.Landed).Append(merge).OfType<ChatLanded>().MaxBy(each => each.At) : null;
+        }
+
+        if (kept.Where(each => SameCommit(each.Tip, tip)).Select(each => each.Landed).MaxBy(each => each.At) is { } branch) return branch;
+        return chat.Beyond == 0 ? merge : null;
+    }
+
+    /// <summary>
+    /// A chat run's candidate (the chat-flow design §4.2): commits beyond the line, between turns or ended; or a landing kept for the tip the
+    /// tree stands at, which it stays while that reads done. An opinion a press asked on a tip of the line is CHATFLOW1d's.
+    /// </summary>
+    private static bool Candidate(WorkflowRunFacts facts, ChatRunFacts chat, ChatLanded? landed) =>
+        landed is not null || (chat.Beyond > 0 && facts.Sessions.LastOrDefault() is { } newest && (!Live(newest) || chat.Between));
+
+    /// <summary>
+    /// A chat run's work (the chat-flow design §4.2): done once a landing is kept for the tip its tree stands at, read first; an agent at it
+    /// while a turn runs or words wait; the person's <i>Accept…</i> between turns, or ended, with commits beyond the line; their turn to
+    /// talk between turns with nothing beyond it; stopped once the conversation ended with nothing beyond it.
+    /// </summary>
+    private static WorkflowRunStep ChatWork(WorkflowStep cell, WorkflowRunFacts facts, ChatRunFacts chat, ChatLanded? landed)
+    {
+        if (facts.Sessions.LastOrDefault() is not { } newest) return new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
+        var on = new WorkflowRunStep(cell, "", "") { Session = newest.Id, Agent = newest.Adapter };
+        if (landed is not null) return on with { State = WorkflowRunStates.Done, Detail = WorkflowRunDetails.Landed, Session = landed.Session, At = landed.At };
+        var live = Live(newest);
+        if (live && !chat.Between) return on with { State = WorkflowRunStates.Working, Detail = WorkflowRunDetails.Agent, At = newest.Created };
+        if (chat.Beyond > 0) return on with { State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.Land, Count = chat.Beyond, At = newest.Updated };
+        return live
+            ? on with { State = WorkflowRunStates.WaitingOnYou, Detail = WorkflowRunDetails.Talk, At = newest.Updated }
+            : on with { State = WorkflowRunStates.Stopped, Detail = WorkflowRunDetails.Stopped, At = newest.Updated };
+    }
+
+    /// <summary>
+    /// A chat run's landing (the chat-flow design §4.2): done for the landing kept for the tip its tree stands at; else waiting on the
+    /// person's <i>Accept…</i> while it is a candidate, on the line's newest record, live or ended; not reached before.
+    /// </summary>
+    private static WorkflowRunStep ChatLanding(WorkflowStep cell, bool candidate, WorkflowRunFacts facts, ChatLanded? landed)
+    {
+        if (landed is not null)
+        {
+            return new WorkflowRunStep(cell, WorkflowRunStates.Done, landed.Detail)
+            {
+                Session = landed.Session, Branch = landed.Entry?.Branch, At = landed.At, Code = landed.AcceptedBy, Plugin = landed.Entry?.Plugin,
+            };
+        }
+
+        if (!candidate || facts.Sessions.LastOrDefault() is not { } newest) return new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
+        return new WorkflowRunStep(cell, WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Accept) { Session = newest.Id, At = newest.Updated };
+    }
+
+    /// <summary>
+    /// A chat run's second opinion before CHATFLOW1d (the chat-flow design §4.2, the Opus check's finding 2): passed over once the work is a
+    /// candidate, as its press passes it, and after a landing too unless that tip's landing kept one; never an earlier tip's.
+    /// </summary>
+    private static WorkflowRunStep? ChatOpinion(WorkflowRunFacts facts, bool candidate, ChatLanded? landed)
+    {
+        if (facts.Current.Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Opinion) is not { } cell) return null;
+        if (landed?.Opinion is { } kept)
+        {
+            return new WorkflowRunStep(cell, kept.Said == OpinionGateStates.Unavailable ? WorkflowRunStates.Skipped : WorkflowRunStates.Done, kept.Said)
+            {
+                Agent = kept.Reviewer, Commit = kept.Tip, At = kept.At, Words = kept.Words, Code = kept.Code, Count = kept.Disputes,
+            };
+        }
+
+        return candidate
+            ? new WorkflowRunStep(cell, WorkflowRunStates.Skipped, WorkflowRunDetails.ChatNotAsked) { Session = facts.Sessions.LastOrDefault()?.Id }
+            : new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
+    }
+
+    /// <summary>Whether two commits are one: equal, or one an abbreviation of the other of git's own floor or more.</summary>
+    private static bool SameCommit(string left, string right) =>
+        left.Length >= CommitNames.Digits && right.Length >= CommitNames.Digits
+        && (left.StartsWith(right, StringComparison.OrdinalIgnoreCase) || right.StartsWith(left, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The graph's step of a kind; the landing and the work are required (design §2.7).</summary>
     private static WorkflowStep Cell(WorkflowRunFacts facts, string kind) =>

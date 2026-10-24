@@ -98,6 +98,9 @@ public sealed class ChatRunner : IDisposable
     // users' calls (PART10g).
     private readonly ChatHandOver _handOver;
 
+    // CHATFLOW1c: a conversation's chat run, bound when its tree opens or at a turn's end (the chat-flow design §4.3).
+    private readonly ChatRunBinds _chatRuns;
+
     private readonly CurveMove _curve;
 
     // LIMITGOON1: a conversation whose turn its account's limit refused goes on, in the same conversation, on the next account.
@@ -164,6 +167,7 @@ public sealed class ChatRunner : IDisposable
         _events = UsageTurns.Watched(home, events ?? new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)));
         _context = new ChatContext(service, home, processes, output, _harnesses, _events);
         _handOver = new ChatHandOver(_context, this);
+        _chatRuns = new ChatRunBinds(home, service, _events);
         _curve = new CurveMove(_context, _handOver);
         _help = new ChatHelp(_context, this);
         _limit = new LimitMove(_context, this, _handOver, _help);
@@ -609,7 +613,13 @@ public sealed class ChatRunner : IDisposable
         // its new maker's attribution: the record it continues may carry a different maker's instruction (MAKERTRAIL1). Any other
         // conversation, in the person's checkout or Ask Daoris's, is told nothing ahead of the person's words (D164's amendment
         // point 4; MAKERTRAIL1b).
-        if (opened is not null) _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct).ConfigureAwait(false);
+        // CHATFLOW1c (the chat-flow design §4.3, §4.4): its run binds here, the record being its line's first in the tree it grew, and the
+        // landing it is told is planned with the process its run was bound to, so it is told the landing its press makes.
+        if (opened is not null)
+        {
+            var bound = _chatRuns.Opened(sessionId, known.Repository, known.Workspace, config);
+            _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct, bound).ConfigureAwait(false);
+        }
         else if (from is not null)
         {
             var commits = CommitRules.Resolve(config, known.Repository, known.Workspace);
@@ -1485,6 +1495,8 @@ public sealed class ChatRunner : IDisposable
         // Whether a turn's refusal was read for its account's limit since the last turn's end was judged (LIMITGOON1): set on the turn's
         // own thread, taken at its end.
         var limitedTurn = 0;
+        // Only a repository's chat has a chat run (CHATFLOW1c); Ask Daoris, a helper and a reviewer have none, which the bind reads too.
+        var bindsRun = actor == "chat";
         void Changed(ChatQueue queue)
         {
             QueueChanged?.Invoke(sessionId, queue);
@@ -1497,6 +1509,8 @@ public sealed class ChatRunner : IDisposable
             if (CurveMove.TurnJustEnded(queue, judged))
             {
                 judged = queue.LastTurnEnded;
+                // CHATFLOW1c: a chat whose run is not bound yet (its tree grew before this build, or its bind failed) binds now.
+                if (bindsRun) _ = _chatRuns.TurnEndedAsync(sessionId, workTree, config);
                 if (Interlocked.Exchange(ref limitedTurn, 0) == 1) _limit.Due(sessionId, config, onEnded);
                 else _curve.Due(sessionId, config, onEnded);
             }
@@ -2236,12 +2250,15 @@ public sealed class ChatRunner : IDisposable
     /// landing that cannot be read leaves its lead unsaid, never the start: the record is open, so the run that follows concludes
     /// it, cancelled or not, and the commit rule is said either way.
     /// </summary>
-    private async Task<ProcessBriefing> ProcessToldAsync(string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, ISessionAdapter adapter, CancellationToken ct)
+    /// <param name="process">The chat run's bound process (CHATFLOW1c), which plans its landing as its press's gate does; null reads the rule.</param>
+    private async Task<ProcessBriefing> ProcessToldAsync(
+        string tree, string sessionId, DriverConfig config, RepoView known, string? dependencies, ISessionAdapter adapter, CancellationToken ct,
+        WorkflowProcess? process = null)
     {
         LandingPlan? plan;
         try
         {
-            plan = await new SessionTrees(_home).PlanAsync(tree, new LandingSubject(sessionId, null, null), ct).ConfigureAwait(false);
+            plan = await new SessionTrees(_home).PlanAsync(tree, new LandingSubject(sessionId, null, null), ct, process).ConfigureAwait(false);
         }
         catch (Exception)
         {

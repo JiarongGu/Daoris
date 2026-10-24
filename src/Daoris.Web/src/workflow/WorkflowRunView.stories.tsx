@@ -3,7 +3,7 @@ import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../design/storyLanguage';
 import { Button } from '../design/ui';
 import {
-  answerOf, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_UNJUDGED,
+  answerOf, CHAT_RUN, FAILED, GO_AHEAD_REFUSAL, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_UNJUDGED,
   HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED, OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import type { NodeWordAsk } from './run';
@@ -135,6 +135,15 @@ export const Reading: Story = { args: { answer: undefined, reading: true } };
 export const Refused: Story = { args: { answer: undefined, refusal: 'the driver is still coming up — its service is not answering yet. A moment.' } };
 
 /** No run from a driver before its codes: the driver's sentence, whole. */
+/**
+ * CHATFLOW1c (the chat-flow design §4.2, §4.4): a chat's run, its conversation between turns with two commits beyond the line, its second
+ * opinion passed over before CHATFLOW1d, and its checks marked not yet enforced for a conversation.
+ */
+export const ChatRun: Story = { args: { answer: answerOf(CHAT_RUN), here: 'work' } };
+
+/** The same chat's run in 中文. */
+export const ChatRunChinese: Story = { ...ChatRun, decorators: [chinese] };
+
 export const NoRun: Story = { args: { answer: { runs: [], problem: 'session `c1` serves no quest, so no workflow runs for it.' }, here: null } };
 
 // CHATFLOW1b (the chat-flow design §10): no run, by its code, in the reader's language; the driver's English beside it is never shown.

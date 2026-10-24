@@ -445,6 +445,12 @@ public sealed class WorkflowPortsTests
 
         public NodeRecord? Record(string unit) => Records.TryGetValue(unit, out var record) ? record : new NodeRecord(unit);
 
+        public bool Bound(string run) => false;
+
+        public bool Between(string session) => false;
+
+        public Task<ChatTreeTip?> TipAsync(string tree, CancellationToken ct) => Task.FromResult<ChatTreeTip?>(null);
+
         public IReadOnlyList<GrownBranch> Branches()
         {
             BranchesRead++;

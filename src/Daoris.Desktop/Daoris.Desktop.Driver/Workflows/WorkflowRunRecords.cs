@@ -51,4 +51,31 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
 
     /// <summary>This machine's session branches, standing and traces.</summary>
     public IReadOnlyList<GrownBranch> Branches() => new SessionBranches(home).Entries();
+
+    /// <summary>Whether a run is bound here.</summary>
+    public bool Bound(string run) => WorkflowRunBindings.Bound(home, run);
+
+    /// <summary>Whether a live conversation is between turns, by what its runner wrote as each turn ended and each word was said.</summary>
+    public bool Between(string session)
+    {
+        try
+        {
+            return SessionEventText.IsId(session) && new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)).TurnEnded(session);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            // A record that does not read says no turn ended: the work reads as under way, never as waiting on the person.
+            return false;
+        }
+    }
+
+    /// <summary>A chat's tree's <c>HEAD</c> and its commits beyond the line, as the review's offer counts them.</summary>
+    public async Task<ChatTreeTip?> TipAsync(string tree, CancellationToken ct)
+    {
+        if (!Directory.Exists(tree)) return null;
+        var head = await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false);
+        var work = await new SessionTrees(home).WorkAsync(tree, ct).ConfigureAwait(false);
+        int? beyond = work is null || work.Commits is null ? null : LandOffer.Of(tree, work)?.Commits ?? 0;
+        return new ChatTreeTip(head, beyond);
+    }
 }

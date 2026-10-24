@@ -155,12 +155,23 @@ internal static class HistoryHome
             if (Plain(id) && !asks.Contains(id)) Add(folder, folder: true);
         }
 
-        // A run's binding no quest here holds any more (WORKFLOW1e3): a hand purge or an earlier clear left it.
+        // A run's binding no quest here holds any more (WORKFLOW1e3): a hand purge or an earlier clear left it. A chat run's is held by the
+        // record its key names, not by a quest (CHATFLOW1c, the chat-flow design §4.3), and kept while that record stands.
         foreach (var file in Files(WorkflowRunBindings.FolderOf(world.Home)))
         {
+            var run = Path.GetFileNameWithoutExtension(file);
+            if (string.Equals(Path.GetExtension(file), ".json", StringComparison.Ordinal) && WorkflowRunBindings.IsRunId(run)
+                && (ChatRuns.RecordOf(run) is { } record ? Gone(record) : !quests.Contains(run)))
+            {
+                Add(file, folder: false);
+            }
+        }
+
+        // A chat run's opinion gate and look (CHATFLOW1c) whose record is gone; a chain's gate file is its quest's, which this leaves.
+        foreach (var file in Files(ChatRuns.GatesFolder(world.Home)).Concat(Files(ChatRuns.LooksFolder(world.Home))))
+        {
             if (string.Equals(Path.GetExtension(file), ".json", StringComparison.Ordinal)
-                && WorkflowRunBindings.IsRunId(Path.GetFileNameWithoutExtension(file))
-                && !quests.Contains(Path.GetFileNameWithoutExtension(file)))
+                && ChatRuns.RecordOf(Path.GetFileNameWithoutExtension(file)) is { } record && Gone(record))
             {
                 Add(file, folder: false);
             }

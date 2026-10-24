@@ -22,7 +22,9 @@ time (D55, `docs/2026-09-21-working-surface-design.md`) — and exists only in t
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
 The session's Workflow view names its bound saved version, or Current for live declarations, and the route that
 chose it (FABRIC-PIPELINE1a). Unreadable bindings show a problem without a completed diagram. Both the head and diff pane
-show workflow holds before Accept, preserving the driver's explanation and available terminal doors. A repository's and a
+show workflow holds before Accept, preserving the driver's explanation and available terminal doors. A chat in a tree of its
+own draws its chat run there (CHATFLOW1c): its work, its landing for the tip its tree stands at, and its checks marked not yet
+enforced for a conversation (`chatChecksSaid`). A repository's and a
 workspace's Workflow tab draws its start node first, laid out by `Flow` (`workflow/WorkflowStartNode.tsx`): each route, the
 default, each kind by its label and paths, and the landed work, wired to the workflow it names; the landed route says where its
 gates stand against the line's tip and offers the person's *Accept the gates* (`WORKFLOW_LANDED`). A repository's Setup holds

@@ -113,6 +113,7 @@
   "work.delete.kept.held": "your words held for it",
   "work.delete.kept.landing": "its closed automatic landing",
   "work.delete.kept.archived": "its archive mark",
+  "work.delete.kept.run": "its workflow run",
   "work.delete.kept.other": "its {{name}}",
   "work.stop.title": "stop this session",
   "work.stop.drivenHeld": "Stops the session now. Its quest stays taken here, its tree keeps what it wrote, and the driver will not carry it on until you choose Try again.",

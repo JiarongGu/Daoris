@@ -7,7 +7,7 @@ import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
 import { type NodeWordAnswer, type NodeWordAsk, type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { whySaid } from './routeSaid';
-import { addedSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
+import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
 
@@ -206,6 +206,7 @@ function Run({ run, here, doors, controls, named, onNodeWord }: {
     }];
   }));
   const says = runShort(t, run);
+  const checks = chatChecksSaid(t, run);
 
   return (
     // The chart names itself by the repository (`workflow.chart`), so the run's own box needs no second name.
@@ -235,6 +236,8 @@ function Run({ run, here, doors, controls, named, onNodeWord }: {
           ))}
         </ul>
       )}
+      {/* CHATFLOW1c: a chat run's checks are not yet enforced for a conversation, so they are never shown as a limit its tree holds. */}
+      {checks && <p className="m-0 text-small text-ink-soft"><Inline text={checks} /></p>}
       {run.workflowGate?.holds && <WorkflowHold gate={run.workflowGate} />}
       {run.problem ? <Prose className="text-small"><Inline text={run.problem} /></Prose> : <WorkflowChart
         workflow={runWorkflow(run)}
@@ -315,7 +318,7 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
     <div className="grid min-w-0 gap-6">
       {answer.runs.map((run) => (
         <Run
-          key={`${run.repository}:${run.quests[0] ?? ''}`}
+          key={`${run.repository}:${run.chat?.run ?? run.quests[0] ?? ''}`}
           run={run}
           here={here}
           doors={doors}

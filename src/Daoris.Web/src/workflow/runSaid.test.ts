@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { GraphRun, RunStep } from './run';
-import { addedSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
+import { addedSaid, chatChecksSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { WORKING } from './runFixtures';
 
 // WORKFLOW1c5 (D157's WORKFLOW1c5 note, `.claude/knowledge/twins.md`): the English a run says is one table with the driver, its
@@ -16,6 +16,7 @@ const TABLE = JSON.parse(readFileSync(
   states: Record<string, string>;
   added: Record<string, string>;
   rows: Row[];
+  chatChecks: { checks: string; said: string };
   none: { code: string; id?: string; workflow?: string; said: string }[];
   graph: (Partial<Pick<GraphRun, 'quest' | 'branch' | 'judged' | 'unread' | 'ended'>> & { said: string[] })[];
 };
@@ -58,6 +59,15 @@ describe("a run's English, as the driver's table holds it", () => {
   // FABRIC-CUTOVER1e: what a graph run says above its nodes, line for line, as the driver's `WorkflowRunWords.GraphSaid` says it.
   it.each(TABLE.graph.map((row, index) => [index, row] as const))('says graph row %s in the table’s words', (_index, row) => {
     expect(graphSaid(t, graphOf(row))).toEqual(row.said);
+  });
+
+  // CHATFLOW1c (the chat-flow design §4.4): a chat run's checks, not yet enforced for a conversation, as the driver's `ChatChecks` says them.
+  it("says a chat run's checks not yet enforced in the table's words, and in Chinese", () => {
+    const chat = { ...WORKING, chat: { run: 'chat-c1', checks: TABLE.chatChecks.checks, enforced: false } };
+    expect(chatChecksSaid(t, chat)).toBe(TABLE.chatChecks.said);
+    expect(chatChecksSaid(i18n.getFixedT('zh'), chat)).toMatch(/[一-鿿]/);
+    expect(chatChecksSaid(t, { ...chat, chat: { ...chat.chat, enforced: true } })).toBeNull();
+    expect(chatChecksSaid(t, WORKING)).toBeNull();
   });
 
   it('says a graph run in Chinese too, every line and a node on its subject', () => {

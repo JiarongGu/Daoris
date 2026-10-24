@@ -240,6 +240,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.said-clear': { values: [] },
   // MODELROLE1c2 (D205 §4.6 item 1): a later choice of an actor's ran, each choice passed said in the walk's own words.
   'opening.actor': { values: ['actor', 'n', 'entry', 'passed'] },
+  // CHATFLOW1c (the chat-flow design §4.3): a chat run's binding, said once in the conversation that grew its tree: the named workflow and
+  // the repository or workspace that chose it (`owner`, set as code), the one bound with why it cannot land, or a bind the home did not keep.
+  'chat.workflow': { values: ['workflow', 'version', 'owner'] },
+  'chat.workflow-unread': { values: ['workflow', 'owner', 'problem'] },
+  'chat.workflow-failed': { values: ['problem'] },
   // A resumed conversation's first line (CONVNOTE2a): the adapter and whose words, a version that moved riding inside it.
   'resumed.opening': { values: ['adapter', 'why'], why: 'resumed' },
   'resumed.moved': { values: ['now', 'then'] },
@@ -632,6 +637,8 @@ export const NOTE_VALUES: Readonly<
   option: 'text', chosen: 'text', work: 'text', state: 'bgstate', repository: 'text',
   // SESSWATCH1a: the call a quiet session's agent was inside, its title as the record named it.
   call: 'text',
+  // CHATFLOW1c: a chat run's workflow, by its id, and why it cannot be bound or land, in the driver's words.
+  workflow: 'text', problem: 'text',
   // LIMITRESUME1b: the limit an attempt just after its reset met again, in the agent's own words.
   hit: 'text',
   // LIMITRESUME1i: the build an update installed when its close cut a run, as `version` is said.

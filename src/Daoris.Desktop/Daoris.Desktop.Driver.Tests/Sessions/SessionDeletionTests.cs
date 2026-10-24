@@ -124,6 +124,45 @@ public sealed class SessionDeletionTests : IDisposable
     }
 
     /// <summary>
+    /// CHATFLOW1c (the chat-flow design §4.3): a chat's delete takes its chat run's three files, its binding, its opinion gate's file and its
+    /// look's file, each named by the record its key names, under the name <c>run</c>; another line's run is untouched, and the delete of a
+    /// later record of the line takes none of them.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_s_delete_takes_its_run_s_binding_gate_file_and_look_file()
+    {
+        string[] Files(string id) =>
+        [
+            WorkflowRunBindings.PathOf(_home, $"chat-{id}"), Path.Combine(ChatRuns.GatesFolder(_home), $"chat-{id}.json"),
+            Path.Combine(ChatRuns.LooksFolder(_home), $"chat-{id}.json"),
+        ];
+        foreach (var id in new[] { "c1", "c2" })
+        {
+            Kept(id);
+            foreach (var file in Files(id))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+                File.WriteAllText(file, "{}");
+            }
+        }
+
+        var ledger = new Ledger(Record("c1"), Record("c2"), Record("c3"));
+        using var service = ledger.Client();
+
+        var later = await new SessionDeletion(_home).DeleteAsync(service, "c3", PluginEvents.Screen, log: null);
+        Assert.Equal(DeleteVerdict.Deleted, later.Verdict);
+        Assert.DoesNotContain(SessionHomeFiles.Run, later.Removed);
+        Assert.All(Files("c1"), file => Assert.True(File.Exists(file), file));
+
+        var outcome = await new SessionDeletion(_home).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
+
+        Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
+        Assert.Contains(SessionHomeFiles.Run, outcome.Removed);
+        Assert.All(Files("c1"), file => Assert.False(File.Exists(file), file));
+        Assert.All(Files("c2"), file => Assert.True(File.Exists(file), file));
+    }
+
+    /// <summary>
     /// SESSDEL1 (D126 §5.4, D153's HIST1j note): a file the disk will not let go of stays, and the delete says which, by the
     /// names what went is said in, as a clear says what it left over. The record's removal is as it was, and what went goes.
     /// </summary>

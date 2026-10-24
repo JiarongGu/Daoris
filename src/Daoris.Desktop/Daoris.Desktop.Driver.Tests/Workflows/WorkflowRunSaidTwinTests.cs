@@ -90,6 +90,14 @@ public sealed class WorkflowRunSaidTwinTests
         Assert.Equal(WorkflowNoRun.All, none.Select(row => Text(row, "code")));
     }
 
+    /// <summary>CHATFLOW1c (the chat-flow design §4.4): a chat run's checks are said not yet enforced, in the table's words.</summary>
+    [Fact]
+    public void A_chat_run_s_checks_are_said_not_yet_enforced_in_the_tables_words()
+    {
+        var row = Table().GetProperty("chatChecks");
+        Assert.Equal(Text(row, "said"), WorkflowRunWords.ChatChecks(Text(row, "checks")!));
+    }
+
     [Fact]
     public void Each_state_and_each_look_added_is_worded_as_the_table_has_it()
     {

@@ -243,6 +243,13 @@ public static class TreesWords
                        + $"a piece lands only through its lead, which takes it in with `git merge --no-ff {PieceRefs.Of(piece)}` in its own tree."], 1)
             : null;
 
+    /// <summary>
+    /// A chat run whose bind the home could not keep (CHATFLOW1c, the chat-flow design §4.3, <c>bind-failed</c>): the press is refused with
+    /// the reason, never landed under Current, which could skip what the repository's chosen workflow asks of the person.
+    /// </summary>
+    public static TreesSaid BindFailed(string session, string why) =>
+        new([], [$"trees: session `{session}`'s repository's workflow could not be bound, so its work cannot be landed yet: {why}."], 1);
+
     public static TreesSaid NoTreeToLand(string session) =>
         new([], [$"trees: session `{session}` names no working tree on this machine, so there is nothing here to land."], 1);
 

@@ -337,6 +337,92 @@ public sealed class ReviewLandingTests : IDisposable
 
     // ——— the world and the fixtures
 
+    /// <summary>
+    /// CHATFLOW1c (the chat-flow design §4.3): a press on a chat run whose repository chooses a graph version binds nothing first, and is
+    /// gated and landed as before, never refused <c>bind-failed</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_s_press_under_a_graph_choice_lands_as_before_and_is_never_refused_bind_failed()
+    {
+        var root = await RepositoryAsync("web-app");
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("web-graph", "A graph", "terminal", "2026-10-21T09:00:00Z", null, System.Text.Json.Nodes.JsonNode.Parse(
+            """{"schemaVersion":2,"entries":["claimed"],"end":"handed","nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},"""
+            + """{"id":"handed","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}""")), kept: []);
+        DriverConfig.Parse("""{"workflows":{"web-app":{"default":"web-graph"}}}""").Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        var tree = await ChatAsync(root);
+        var line = await HeadAsync(root);
+
+        var (landed, refused) = await ChatPressAsync(tree);
+
+        Assert.Null(refused);
+        Assert.True(landed!.Landed, landed.Message);
+        Assert.NotEqual(line, await HeadAsync(root));
+        Assert.False(WorkflowRunBindings.Bound(_home, "chat-c1a2b3c4"));
+    }
+
+    /// <summary>CHATFLOW1c (§4.3): a home that cannot keep the binding refuses the press, <c>bind-failed</c>, with nothing landed.</summary>
+    [Fact]
+    public async Task A_chat_s_press_on_a_home_that_cannot_keep_its_binding_is_refused_bind_failed()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(landing: null, required: false);
+        var tree = await ChatAsync(root);
+        var line = await HeadAsync(root);
+        var runs = WorkflowRunBindings.FolderOf(_home);
+        Directory.CreateDirectory(Path.GetDirectoryName(runs)!);
+        File.WriteAllText(runs, "not a folder");
+
+        var (landed, refused) = await ChatPressAsync(tree);
+
+        Assert.Null(landed);
+        Assert.StartsWith("trees: session `c1a2b3c4`'s repository's workflow could not be bound, so its work cannot be landed yet: ", refused!.Error[0]);
+        Assert.Equal(1, refused.Code);
+        Assert.Equal(line, await HeadAsync(root));
+    }
+
+    /// <summary>
+    /// CHATFLOW1c (§4.3): a named workflow that cannot be read is bound with its problem at the press's bind-first, never refused
+    /// <c>bind-failed</c> and never swapped for Current, and the gate holds the press by that problem, nothing landed.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_s_press_under_an_unreadable_named_workflow_is_held_by_its_problem()
+    {
+        var root = await RepositoryAsync("web-app");
+        DriverConfig.Parse("""{"workflows":{"web-app":{"default":"release-train"}}}""").Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        var tree = await ChatAsync(root);
+        var line = await HeadAsync(root);
+
+        var (landed, refused) = await ChatPressAsync(tree);
+
+        Assert.Null(refused);
+        Assert.False(landed!.Landed);
+        Assert.Contains("no workflow `release-train` is saved here", landed.Message);
+        Assert.Equal("no workflow `release-train` is saved here.", WorkflowRunBindings.Read(_home, "chat-c1a2b3c4")!.Problem);
+        Assert.Equal(line, await HeadAsync(root));
+    }
+
+    /// <summary>A chat's own tree, grown as a conversation grows one, with a commit of its work.</summary>
+    private async Task<string> ChatAsync(string root)
+    {
+        var opened = await new SessionTrees(_home).OpenAsync(root, "web-app", "aurora");
+        await CommitAsync(opened.Path, "chat.txt", "the chat's work", "the chat's work");
+        return opened.Path;
+    }
+
+    /// <summary>
+    /// A chat's press, as <c>LAND_SESSION_TREE</c> makes it (CHATFLOW1c): its run bound first, refused where the home cannot keep it, then
+    /// the gate read by its run's process and handed to the landing.
+    /// </summary>
+    private async Task<(TreeLanding? Landed, TreesSaid? Refused)> ChatPressAsync(string tree)
+    {
+        const string Session = "c1a2b3c4";
+        var run = ChatRuns.Prefix + Session;
+        if (ChatRuns.BindFirst(Config(), _home, run, tree, [], DateTimeOffset.UtcNow) is { Failed: { } failed }) return (null, TreesWords.BindFailed(Session, failed));
+        var trees = new SessionTrees(_home);
+        var gate = await trees.GateAsync(tree, null, _world, Session, run: run);
+        return (await trees.LandAsync(tree, new LandingSubject(Session, null, "The chat's work"), gate: gate), null);
+    }
+
     private static readonly DateTimeOffset Verdicted = new(2026, 10, 9, 9, 30, 0, TimeSpan.Zero);
 
     /// <summary>The service's quests and records, standing in.</summary>

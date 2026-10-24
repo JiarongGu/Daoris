@@ -595,6 +595,38 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.Equal(plan.Reading.Takes.Bytes, outcome.Bytes);
     }
 
+    /// <summary>
+    /// CHATFLOW1c (the chat-flow design §4.3): a chat run's binding, gate file and look file are held by the record their key names, not by a
+    /// quest. A workspace's clear keeps all three while that record stands, however long untouched, and takes them once it is gone.
+    /// </summary>
+    [Fact]
+    public async Task A_workspaces_clear_keeps_a_chat_run_s_files_while_their_record_stands_and_takes_them_once_it_is_gone()
+    {
+        var now = DateTimeOffset.UtcNow + TimeSpan.FromHours(2);
+        string[] Files(string id) =>
+        [
+            WorkflowRunBindings.PathOf(_home, $"chat-{id}"), Path.Combine(ChatRuns.GatesFolder(_home), $"chat-{id}.json"),
+            Path.Combine(ChatRuns.LooksFolder(_home), $"chat-{id}.json"),
+        ];
+        foreach (var file in Files("c1").Concat(Files("cgone")))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            File.WriteAllText(file, "{}");
+            File.SetLastWriteTimeUtc(file, DateTime.UtcNow - TimeSpan.FromHours(3));
+        }
+
+        var service = new StandIn { Records = [Record("c1", kind: "chat", workspace: "aurora")] };
+        service.Listings["workspace=aurora"] = [];
+        var world = World(service, clock: () => now);
+
+        var plan = await HistoryClearing.PlanAsync(world, HistoryScope.Workspace, "aurora");
+        await HistoryClearing.ClearAsync(world, HistoryScope.Workspace, "aurora", [], PluginEvents.Screen);
+
+        Assert.Equal(3, plan.Reading!.LeftOver);
+        Assert.All(Files("c1"), file => Assert.True(File.Exists(file), file));
+        Assert.All(Files("cgone"), file => Assert.False(File.Exists(file), file));
+    }
+
     // ——— A workspace.
 
     /// <summary>

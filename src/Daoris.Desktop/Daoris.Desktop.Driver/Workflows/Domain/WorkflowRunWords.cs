@@ -22,7 +22,8 @@ public static class WorkflowRunWords
             WorkflowRunDetails.Queued, WorkflowRunDetails.Agent, WorkflowRunDetails.Answered, WorkflowRunDetails.Park,
             WorkflowRunDetails.GoAhead, WorkflowRunDetails.Held, WorkflowRunDetails.Awaits, WorkflowRunDetails.Unclosed,
             WorkflowRunDetails.Failed, WorkflowRunDetails.Stopped, WorkflowRunDetails.Declined, WorkflowRunDetails.Finished,
-            WorkflowRunDetails.Submitted, WorkflowRunDetails.Reopened, WorkflowRunDetails.GoOn,
+            WorkflowRunDetails.Submitted, WorkflowRunDetails.Reopened, WorkflowRunDetails.GoOn, WorkflowRunDetails.Talk,
+            WorkflowRunDetails.Land, WorkflowRunDetails.Landed,
         ],
         [WorkflowKinds.Opinion] =
         [
@@ -30,6 +31,7 @@ public static class WorkflowRunWords
             OpinionGateStates.ReadAgain, OpinionGateStates.WithSession, OpinionGateStates.Disputed, OpinionGateStates.CommitsSince,
             OpinionGateStates.Unavailable, OpinionGateStates.Settled, OpinionGateStates.Anyway, OpinionGateStates.Myself,
             OpinionGateStates.Answered, WorkflowRunDetails.Landed, OpinionGateStates.Unread, OpinionGateStates.CannotStart,
+            WorkflowRunDetails.ChatNotAsked,
         ],
         [WorkflowKinds.Look] =
         [
@@ -146,6 +148,12 @@ public static class WorkflowRunWords
             // FABRIC-CLOSE1c7: made ready again, the started step the reopen held waits on the person's word.
             (WorkflowKinds.Work, WorkflowRunDetails.GoOn) =>
                 $"The work you reopened is ready again: quest #{quest}, its next step, waits for you to go on with it on the new work or abandon it.",
+            // CHATFLOW1c (the chat-flow design §4.2): a chat run's conversation between turns, its work beyond the line, and its landing.
+            (WorkflowKinds.Work, WorkflowRunDetails.Talk) => "Your turn to talk: nothing stands beyond the line yet, so nothing waits to land.",
+            (WorkflowKinds.Work, WorkflowRunDetails.Land) => count == 1
+                ? "1 commit beyond the line waits for you to accept it."
+                : $"{count} commits beyond the line wait for you to accept them.",
+            (WorkflowKinds.Work, WorkflowRunDetails.Landed) => "Its work landed at the commit its tree stands at.",
 
             (WorkflowKinds.Opinion, OpinionGateStates.None) => "No second opinion is asked before this work lands.",
             (WorkflowKinds.Opinion, OpinionGateStates.WaitsChain) =>
@@ -177,6 +185,8 @@ public static class WorkflowRunWords
                 ? "Your Reviewed answered the second opinion."
                 : "Your Accept answered the second opinion.",
             (WorkflowKinds.Opinion, WorkflowRunDetails.Landed) => "It let the work go when the work landed.",
+            // CHATFLOW1c (the Opus check's finding 2): before CHATFLOW1d, the press lands a conversation's work with no opinion asked.
+            (WorkflowKinds.Opinion, WorkflowRunDetails.ChatNotAsked) => "No second opinion is asked for a conversation's work in this build yet.",
             (WorkflowKinds.Opinion, OpinionGateStates.Unread) => step.Words is { } why
                 ? $"Whether a second opinion holds it could not be read: {why}"
                 : "Whether a second opinion holds it could not be read.",
@@ -316,13 +326,15 @@ public static class WorkflowRunWords
         {
             var run = runs[index];
             if (index > 0) said.Append('\n');
-            var quests = run.Quests.Count == 1 ? $"quest #{run.Quests[0]}" : $"quests {string.Join(", ", run.Quests.Select(id => $"#{id}"))}";
+            var quests = run.ChatRun is { } chat ? $"chat run {chat}"
+                : run.Quests.Count == 1 ? $"quest #{run.Quests[0]}" : $"quests {string.Join(", ", run.Quests.Select(id => $"#{id}"))}";
             var workflow = run.Process?.Named == true ? $"{run.Process.Name} workflow"
                 : run.Problem is not null ? "Workflow unread" : $"Current workflow, version {run.Current.Version}";
             said.Append($"{run.Repository} · {workflow} · {quests}");
             if (run.Ask is { } ask) said.Append($" · ask #{ask}");
             said.Append('\n');
             if (run.Problem is { } problem) said.Append($"  Cannot read this run: {problem}\n");
+            if (ChecksOf(run) is { } checks) said.Append($"  {ChatChecks(checks)}\n");
             if (run.WorkflowGate is { LetsGo: false } held) said.Append($"  {held.Says}\n");
             if (run.Graph is { } graph)
             {
@@ -345,6 +357,19 @@ public static class WorkflowRunWords
 
         return said.ToString();
     }
+
+    /// <summary>
+    /// A chat run's checks (CHATFLOW1c; the chat-flow design §4.4): its work step's <c>checks</c>, Current's <c>sessionChecks</c> or its
+    /// version's field, which the view marks not yet enforced until CHATFLOW1h; null for a quest's run and where none is set.
+    /// </summary>
+    public static string? ChecksOf(WorkflowRun run) =>
+        run.ChatRun is null ? null
+            : run.Current.Steps.Where(step => step.Kind == WorkflowKinds.Work)
+                .SelectMany(step => step.Settings).FirstOrDefault(setting => setting.Name == "checks")?.Value as string;
+
+    /// <summary>What a chat run says of its checks until CHATFLOW1h enforces them on its tree (§4.4): never a limit the tree holds.</summary>
+    public static string ChatChecks(string checks) =>
+        $"Its checks (`{checks}`) are not yet enforced for a conversation, so its tree is not held to them.";
 
     /// <summary>Where a step's words start, so a line under it starts there too: the mark, the title's 16 and the state's 19.</summary>
     private static readonly string Indent = new(' ', 2 + 2 + 16 + 2 + 19 + 2);
