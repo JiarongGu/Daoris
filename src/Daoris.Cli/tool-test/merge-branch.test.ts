@@ -3356,7 +3356,7 @@ test('a rehearsal that runs beside the git half builds what the Process lane bui
 test('the release rehearsal stages nothing a desktop test reads: they read the CLI package only under src/ and test/, which no pack writes', () => {
   const stager = readFileSync(join(repoRoot, 'tools', 'stage-package.mjs'), 'utf8');
   const staged = [...(/const STAGED = \[([^\]]+)\]/.exec(stager)?.[1] ?? '').matchAll(/'([^']+)'/g)].map((match) => match[1]!);
-  assert.deepEqual(staged, ['canon', 'LICENSE', 'README.md'], 'the stager has stopped saying what it stages: read it again');
+  assert.deepEqual(staged, ['canon', 'LICENSE', 'README.md', 'CHANGELOG.md'], 'the stager has stopped saying what it stages: read it again');
   assert.match(stager, /\[\.\.\.STAGED, 'dist'\]/, 'the stager no longer cleans dist/ with them: read it again');
   const unwritten = new Set(['src', 'test']);
   for (const folder of [...staged, 'dist']) assert.ok(!unwritten.has(folder), `a pack writes the CLI's ${folder}/`);
