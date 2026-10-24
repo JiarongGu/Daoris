@@ -251,6 +251,22 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Equal(1, code);
     }
 
+    /// <summary>
+    /// <c>trees land &lt;session&gt; --without-look</c> (CHATFLOW1d2): <c>LAND_WITHOUT_LOOK</c> is the same press, so it answers the verb's own
+    /// refusals as words, exit 1, never a route error the terminal could not print.
+    /// </summary>
+    [Fact]
+    public async Task Accepting_without_the_look_where_there_is_no_tree_is_the_verbs_sentence_exit_1()
+    {
+        var answer = await AnswerAsync(await ComeUpAsync(), "LAND_WITHOUT_LOOK", new { id = "s1a2b3c4", words = "no look for a conversation" });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        var (output, error, code) = Said(answer);
+        Assert.Empty(output);
+        Assert.Equal(TreesWords.NoTreeToLand("s1a2b3c4").Error, error);
+        Assert.Equal(1, code);
+    }
+
     [Fact]
     public async Task A_landing_the_review_already_reads_as_landed_is_not_again_exit_1()
     {

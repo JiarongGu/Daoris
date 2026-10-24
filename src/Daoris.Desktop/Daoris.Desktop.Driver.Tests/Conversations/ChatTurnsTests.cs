@@ -127,6 +127,36 @@ public sealed class ChatTurnsTests
         turns.Gone();
     }
 
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §6.1 (b), the Opus check's finding 4): the person's turn count is their own words in the line's
+    /// conversation history, each kept word once, plus those waiting. A turn they sent and finished after the press leaves nothing waiting,
+    /// and the count still rose; Daoris's words, another agent's, and a word shown twice by its id count nothing more.
+    /// </summary>
+    [Fact]
+    public void The_persons_turn_count_rises_over_a_turn_sent_and_finished_after_the_press()
+    {
+        var directory = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "chat-turns", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var events = new SessionEvents(directory);
+            events.Append("c1a2b3c4", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "make the change", Id = "w1" });
+            events.Append("c1a2b3c4", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "make the change", Id = "w1" });
+            events.Append("c1a2b3c4", new SessionEvent { Kind = SessionEventKind.User, Origin = "daoris", Text = "a second opinion's findings" });
+            var atPress = ChatPresses.TurnsOf(events, ["c1a2b3c4"]);
+            Assert.Equal(1, atPress);
+
+            // After the press: a hand-over's next record, where the person said one more thing and its turn ended.
+            events.Append("d2b3c4e5", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "one more thing", Id = "w2" });
+            Assert.Equal(2, ChatPresses.TurnsOf(events, ["c1a2b3c4", "d2b3c4e5"]));
+            Assert.Equal(3, ChatPresses.TurnsOf(events, ["c1a2b3c4", "d2b3c4e5"], waiting: 1));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     /// <summary>The conversation's turns as the press's operation reserves them, standing in for the runner that holds it.</summary>
     private sealed class Holding(ChatTurns turns) : IChatPressing
     {

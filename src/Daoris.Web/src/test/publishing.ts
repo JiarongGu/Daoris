@@ -11,6 +11,7 @@
  */
 export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; session?: string; subject?: string }>> = {
   LAND_SESSION_TREE: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], session: 'id' },
+  LAND_WITHOUT_LOOK: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], session: 'id' },
   // A line of work's one Accept and its ask's (ACCEPTALL1): every part's landing, so no one session's; under way for its entry or
   // its ask (ACCEPTALL1e).
   LAND_ENTRY: { scopes: ['sessions', 'landing', 'diff', 'handOff', 'sweep', 'treesSync'], subject: 'entry' },

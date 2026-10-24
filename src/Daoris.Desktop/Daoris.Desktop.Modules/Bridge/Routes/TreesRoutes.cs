@@ -490,8 +490,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [DriverRoute("LANDING")]
     [DriverRoute("LAND_SESSION_TREE")]
     [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
-    [DriverRoute(PressesTold.LandWithoutLook)]
-    [Publishes(PressesTold.LandWithoutLook, Lands, Session = "id")]
+    [DriverRoute("LAND_WITHOUT_LOOK")]
+    [Publishes("LAND_WITHOUT_LOOK", Lands, Session = "id")]
     private async Task<object?> LandAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -499,7 +499,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
         // CHATFLOW1d2 (the chat-flow design §5.3): Accept without the look… is the same press on a chat run's work, past its look.
-        var withoutLook = request.Type == PressesTold.LandWithoutLook;
+        var withoutLook = request.Type == "LAND_WITHOUT_LOOK";
         var press = request.Type == "LAND_SESSION_TREE" || withoutLook;
         // RPCOPEN1: `trees land --plan` asks for the verb's words (`said`) in place of the page's fields, and gets them for the two
         // cases the verb answers before it plans, as its alone path does: a landing its review reads as landed, and no tree to land.
