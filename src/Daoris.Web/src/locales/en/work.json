@@ -147,7 +147,7 @@
   "work.limit.waits": "Waiting for a limit to reset: it resumes by itself at {{time}}, on {{account}}.",
   "work.limit.noReset": "No reset was said: it tries again at {{time}}.",
   "work.limit.own": "It goes on in its own conversation.",
-  "work.limit.briefed": "It goes on in a new session, handed Daoris's brief.",
+  "work.limit.briefed": "It goes on as a new part of its session, handed Daoris's brief.",
   "work.limit.notLifted": "Its last reset did not lift the limit: {{hit}}.",
   "work.limit.goOnNow": "Go on now with…",
   "work.limit.stopWaiting": "Stop waiting",

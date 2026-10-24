@@ -2,6 +2,8 @@
   "work.parts.title": "各段",
   "work.parts.of": "第 {{n}} 段，共 {{total}} 段",
   "work.parts.number": "第 {{n}} 段",
+  "work.parts.earlier_one": "显示前一段",
+  "work.parts.earlier_other": "显示更早的 {{count}} 段",
   "work.parts.began.opened": "开始",
   "work.parts.began.retried": "接{{after}}重试",
   "work.parts.began.resumed": "接{{after}}继续",

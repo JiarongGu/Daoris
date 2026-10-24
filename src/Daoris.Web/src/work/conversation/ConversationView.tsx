@@ -96,7 +96,7 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
  */
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
-  reveal, toolbar, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
+  reveal, toolbar, began, onSession, onStartFrom, onGoOnBrief, onSayAgain, reasons = {}, cooling, names, marks, onToWait, callMark,
 }: {
   /**
    * *Go on with Daoris's brief* (SESSCTX1c part B, D189 point 3): beside the fresh start under a line saying the words wait for the person,
@@ -142,6 +142,11 @@ export function ConversationView({
   reveal?: string;
   /** The way through a long run, where the organism offers one — above the conversation, kept in view. */
   toolbar?: ReactNode;
+  /**
+   * How the part began, in the strip's words, where it began by no move and so holds no first line of its own (SWITCHCTX1c-i): the
+   * boundary above its first turn, one line, never a separator of the page's own.
+   */
+  began?: string;
   /**
    * Whether this session's door keeps a conversation's structure, as its harness declares (D76 §1) —
    * or undefined where that is not known. It is what an empty record is read by.
@@ -200,6 +205,7 @@ export function ConversationView({
           )}
           {/* Where the page began past the ask, the gap is inside its turn, after the ask (SESS1 S1). */}
           {earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
+          {began && <BeganLine words={began} />}
           {turns.map((turn, index) => (
             <TurnView
               key={turn.key}
@@ -215,6 +221,17 @@ export function ConversationView({
         </section>
       </WaitMarks.Provider>
     </SaidDoors.Provider>
+  );
+}
+
+/** A part's boundary where it began by no move (SWITCHCTX1c-i): the strip's *began* words, as one of the driver's lines. */
+function BeganLine({ words }: { words: string }) {
+  const { t } = useTranslation();
+  return (
+    <p className="m-0 text-small text-ink-soft wrap-anywhere">
+      <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
+      {words}
+    </p>
   );
 }
 
@@ -696,7 +713,7 @@ function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
       // A conversation's end, where it went on with another agent (MIXAGENT1b-i): the line, and a press to the new one.
       if (handedTo(block)) return <HandedLine block={block} to={handedTo(block)!} />;
       // A note worded by its parts (CONVNOTE1), or the driver's English where it has none.
-      return <NoteLine text={block.text ?? ''} parts={block.parts} />;
+      return <NoteLine text={block.text ?? ''} parts={block.parts} under={block.under} />;
     case 'held':
       return <HeldAsk block={block} />;
     default:
@@ -829,12 +846,13 @@ const LONG_NOTE = 240;
  * line the page cannot word as its record keeps it, marked. Its English is shown only where it has none, its backticks
  * drawn as code as a worded line's are (UX7d-1), never as backticks.
  */
-function NoteLine({ text, parts }: { text: string; parts?: readonly NotePart[] }) {
+function NoteLine({ text, parts, under }: { text: string; parts?: readonly NotePart[]; under?: readonly Block[] }) {
   const { t, i18n } = useTranslation();
   const { names } = useContext(SaidDoors);
   const worded = parts?.length ? noteText(t, { note: text, parts }, i18n.language, names) : text;
   const long = worded.length > LONG_NOTE;
   const [open, setOpen] = useState(!long);
+  const [unfolded, setUnfolded] = useState(false);
   return (
     <div className="text-small text-ink-soft">
       <p className={cn('m-0 wrap-anywhere', !open && 'line-clamp-2')}>
@@ -850,6 +868,20 @@ function NoteLine({ text, parts }: { text: string; parts?: readonly NotePart[] }
         >
           {open ? t('work.conversation.hide') : t('work.conversation.show')}
         </button>
+      )}
+      {/* The opening line of a part that began by a move (SWITCHCTX1c-i), folded under its boundary as a brief is. */}
+      {under && under.length > 0 && (
+        <>
+          <button
+            type="button"
+            aria-expanded={unfolded}
+            onClick={() => setUnfolded((was) => !was)}
+            className="ml-2 border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
+          >
+            {unfolded ? t('work.conversation.hide') : t('work.conversation.show')}
+          </button>
+          {unfolded && under.map((line) => <NoteLine key={line.key} text={line.text ?? ''} parts={line.parts} />)}
+        </>
       )}
     </div>
   );

@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's page now draws its whole line as one conversation (SWITCHCTX1c-i, D167). After a move or a hand-over, the parts the
+  one you are on continues are drawn above it, oldest first and read-only, so the new part no longer opens empty under a brief as if it
+  were a new session. The three nearest are drawn and a press (*Show the part before*, *Show 2 earlier parts*) draws up to three more; a
+  part running alongside stays in the *Parts* strip; pressing a part there attends it, scrolls to it and hides the parts after it. One
+  line closes the old part and one opens the new, and the account's opening line sits folded under it. Moves and hand-overs now read as
+  a new part of the same session, saying what the new part was handed (Daoris's brief or record, not the agent's own turns), in English and 中文.
 - The steward's desk is built and the steward is still not offered (STEWARDROLE1c, D209). Nothing you use changes until its
   activation. Once it is, any session or terminal can ask the steward for one of its acts with
   `daoris-driver steward request <act> <target> "<why>"`, and needs no key to do so. A request grants nothing: the steward reads it

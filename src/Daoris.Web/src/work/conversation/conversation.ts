@@ -296,6 +296,11 @@ export type Block = {
   continued?: boolean;
   /** When the call finished, by the driver's clock: the update that said it completed or failed (SESS1). */
   finished?: string;
+  /**
+   * For the note that is a part's first line where it began by a move or a hand-over (SWITCHCTX1c-i): the opening line the runner
+   * wrote beside it, folded under it so it never draws as a line of its own.
+   */
+  under?: Block[];
 };
 
 /**
@@ -790,6 +795,8 @@ export function toTurns(
     if (seen) ask.receipts = { ...seen, taken: ask.at };
   }
 
+  foldOpening(turns, where);
+
   // The first thing the agent did, after the ask: the driver's own note is not the agent answering, nor are the person's
   // words waiting to reach it.
   for (const turn of turns) {
@@ -802,6 +809,42 @@ export function toTurns(
   if (tail?.ask && !tail.ended && !tail.waiting && !tail.items.some(AGENT)) tail.waitingSince = tail.ask.at;
 
   return { turns, usage, where };
+}
+
+/**
+ * The codes of a part's first line where it began by a move or a hand-over (SWITCHCTX1c-i; the switch-context design §2.7): a briefed
+ * move's, a curve move's and a hand-over's. The old part's last lines (`moved.on`, `chat.moved`, `chat.handed-over`) are the other side.
+ */
+const BOUNDARY = new Set(['moved.from', 'chat.moved-from', 'chat.taken-over']);
+
+/** The codes of the opening line the runner writes at a part's open (`RotatedOpening.Say`: the account it opened on and why). */
+const OPENING = new Set(['opening.opened', 'opening.carried-on', 'opening.rest']);
+
+const noteCode = (block: Block) => (block.kind === 'note' ? block.parts?.[0]?.code ?? null : null);
+
+/** Whether the part holds a first line of its own that a move or a hand-over wrote: the page then draws no *began* words of its own. */
+export const beginsByMove = (turns: readonly Turn[]): boolean =>
+  turns.some((turn) => turn.items.some((item) => BOUNDARY.has(noteCode(item) ?? '')));
+
+/**
+ * Folds the opening line under the boundary of a part that began by a move (SWITCHCTX1c-i), as a briefed part's brief is folded, so a
+ * move reads as one line on each side. A part with no boundary keeps its opening line as it is.
+ */
+function foldOpening(turns: Turn[], where: Record<number, string>): void {
+  const boundary = turns.flatMap((turn) => turn.items).find((item) => BOUNDARY.has(noteCode(item) ?? ''));
+  if (!boundary) return;
+  const under: Block[] = [];
+  for (const turn of [...turns]) {
+    const folded = turn.items.filter((item) => OPENING.has(noteCode(item) ?? ''));
+    if (folded.length === 0) continue;
+    under.push(...folded);
+    turn.items = turn.items.filter((item) => !folded.includes(item));
+    // A turn that held nothing but the opening line is no turn once it is folded.
+    if (turn.items.length === 0 && !turn.ask && !turn.ended) turns.splice(turns.indexOf(turn), 1);
+  }
+  if (under.length === 0) return;
+  boundary.under = under;
+  for (const [seq, block] of Object.entries(where)) if (under.some((item) => item.key === block)) where[Number(seq)] = boundary.key;
 }
 
 /** What counts as the agent answering (WAITSHOWN1): its words, its thinking, its calls and its plan. */
@@ -889,6 +932,8 @@ export function settle(turns: Turn[], live: boolean): Turn[] {
   while (at >= 0 && settled[at]!.waiting) at -= 1;
   const last = settled[at];
   if (!last || last.ended) return settled;
+  // The driver's lines written after the turn before ended (a move's last line, SWITCHCTX1c-i) are no run the session left unfinished.
+  if (!last.ask && last.items.length > 0 && last.items.every((item) => item.kind === 'note') && settled[at - 1]?.ended) return settled;
   const cut: Turn = {
     ...last,
     cut: true,

@@ -32,7 +32,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/README.md` | 42 | 378 |
+| `src/Daoris.Web/README.md` | 43 | 388 |
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 967 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 49 | 896 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2251 |
@@ -48,7 +48,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/design/ui.test.tsx` | 64 | 1284 |
 | `src/Daoris.Web/src/design/ui.tsx` | 96 | 2009 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 62 | 1153 |
-| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 104 | 2069 |
+| `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 106 | 2099 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 824 |
 | `src/Daoris.Web/src/projects/ProjectsView.test.tsx` | 106 | 1861 |
 | `src/Daoris.Web/src/projects/ProjectsView.tsx` | 48 | 843 |
@@ -58,7 +58,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 60 | 1168 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 112 | 1942 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 97 | 1790 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 158 | 2735 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 160 | 2770 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 52 | 953 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 51 | 829 |
 | `src/Daoris.Web/src/work/attention/AttentionRow.test.tsx` | 40 | 788 |
@@ -66,13 +66,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/attention/attention.test.ts` | 67 | 1101 |
 | `src/Daoris.Web/src/work/attention/attention.ts` | 55 | 1021 |
 | `src/Daoris.Web/src/work/conversation/ConversationView.test.tsx` | 74 | 1388 |
-| `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 44 | 880 |
-| `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 71 | 1314 |
-| `src/Daoris.Web/src/work/conversation/conversation.ts` | 50 | 976 |
+| `src/Daoris.Web/src/work/conversation/ConversationView.tsx` | 45 | 912 |
+| `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 74 | 1375 |
+| `src/Daoris.Web/src/work/conversation/conversation.ts` | 52 | 1021 |
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 44 | 932 |
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 71 | 1337 |
 | `src/Daoris.Web/src/work/head/SessionHead.tsx` | 40 | 709 |
-| `src/Daoris.Web/src/work/noteLines.test.ts` | 90 | 1320 |
+| `src/Daoris.Web/src/work/noteLines.test.ts` | 94 | 1382 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 55 | 936 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 43 | 797 |

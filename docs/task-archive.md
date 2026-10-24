@@ -5,6 +5,24 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SWITCHCTX1c-i — a session's page draws its line as one conversation (2026-10-25)
+
+> **SWITCHCTX1c-i — a session's page draws its line as one conversation** (web; accepted 2026-10-25 under D191, D167's note; it reverses no decision). Today a repository's chat shows the attended part alone, so after a move the new part opens empty under the brief and reads as a new session (`work/WorkFrame.tsx:2471-2472`). The parts the attended one continues by `from` drawn above it, at most three with a press for more, each with its own liveness and read-only by a mode of its own, a part running alongside left to the strip, the attended part alone owning the scroll; an ended line opens at the attended record's head; pressing an earlier part attends it, scrolls to it and hides the later ones; one boundary line per side; the *new session* words reworded with the values their lines were written with, en and zh. Contract: `docs/2026-10-24-switch-context-design.md` §2.7 and its §6 row. Proof: its §6 page tests, `i18n:check`, `names:check -- --strict`.
+
+**Outcome.** Built as the row names it, web only (nothing in the driver, the modules or the service changed; nothing carries an
+agent's context, which is SWITCHCTX1a). `work/conversation/line.ts` walks the attended part's `from` links (inside its entry, on
+this machine, loop-safe) and `EarlierParts` draws the nearest three above it, a press drawing up to three more (`work.parts.earlier_one`
+and `_other`, chosen by the count since zh has one plural form). `SessionConversation` gained a `mode`: `earlier` reads the part with
+its own record's liveness and withholds the region's scroll, the frame's facts (usage, wait, limit's wait, tail, anchors) and every act;
+Ask Daoris's earlier parts take it too (they used to open the shared region at their own head). A part that began by a move holds its
+boundary as its first line with the runner's opening line folded under it (`beginsByMove`, `foldOpening`); any other part is bounded
+once by the strip's *began* words. `settle` no longer reads a move's last line, written after its turn ended, as a turn left unfinished.
+Pressing a part in the strip or on the flow's rail attends it and scrolls to it (`WorkFrame`'s `onShow`). Words: `moved.on`,
+`moved.from`, `chat.taken-over`, `limit.resume-refused` (its `{{why}}` kept), `work.limit.briefed` and `limit-went-on` say a new part
+and what was handed, with the values their lines were written with, en and zh. Proof: `line.test.ts`, `EarlierParts.test.tsx`,
+`SessionConversation.line.test.tsx`, `WorkFrame.line.test.tsx`, `conversation.test.ts`, `noteLines.test.ts`, `AskDaoris.test.tsx`,
+`LineView.stories.tsx`. Detail: D167's note of 2026-10-25, the web README.
+
 ## MAINRED1 — make main's git half green again (2026-10-24)
 
 > Build MAINRED1: make main's git half green again (the CI on 16769207d failed driver-process-git, each class failing again alone; main must be green for the owner's next republish). Two defects, neither from a build waiting to land. (Asked as a quest, never a backlog row; its full words are the quest's.)

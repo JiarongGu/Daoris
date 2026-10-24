@@ -817,16 +817,16 @@ describe('noteLines', () => {
       const took = (why: string) =>
         coded('chat.taken-over', 'The conversation went on from claude-code conversation ab12cd34, …', { agent: 'claude-code', session: 'ab12cd34', why });
       expect(noteLines(t, { parts: [took('limit')] }, 'en')[0].text)
-        .toBe('This conversation went on from claude-code conversation ab12cd34, handed over because its account reached its limit.');
+        .toBe("This conversation went on from claude-code conversation ab12cd34, handed over because its account reached its limit; it was handed Daoris's record of it, not its own turns.");
       expect(noteLines(zh, { parts: [took('press')] }, 'zh')[0].text)
-        .toBe('这段对话是从 claude-code 的对话 ab12cd34 转交过来继续的，原因：你要求转交。');
+        .toBe('这段对话是从 claude-code 的对话 ab12cd34 转交过来继续的，原因：你要求转交；交给它的是 Daoris 对其的记录，而非它自己的轮次。');
       // A reason this build does not know leaves the line as recorded.
       expect(noteLines(t, { parts: [took('moved-on')] }, 'en')[0].kind).toBe('recorded');
       // SWITCH1c-i: Daoris moved it by the usage curve.
       expect(noteLines(t, { parts: [took('curve')] }, 'en')[0].text)
-        .toBe('This conversation went on from claude-code conversation ab12cd34, handed over because its account was over its usage curve.');
+        .toBe("This conversation went on from claude-code conversation ab12cd34, handed over because its account was over its usage curve; it was handed Daoris's record of it, not its own turns.");
       expect(noteLines(zh, { parts: [took('curve')] }, 'zh')[0].text)
-        .toBe('这段对话是从 claude-code 的对话 ab12cd34 转交过来继续的，原因：它的账户超出了用量曲线。');
+        .toBe('这段对话是从 claude-code 的对话 ab12cd34 转交过来继续的，原因：它的账户超出了用量曲线；交给它的是 Daoris 对其的记录，而非它自己的轮次。');
     });
 
     /**
@@ -1315,6 +1315,68 @@ describe('the page’s map of codes', () => {
       const key = entry.key ?? `note.${code}`;
       expect(i18n.exists(key, { lng: 'en' }), key).toBe(true);
       expect(i18n.exists(key, { lng: 'zh' }), key).toBe(true);
+    }
+  });
+});
+
+/**
+ * SWITCHCTX1c-i (the switch-context design §2.7): a move is said in the session's words, a new part and never a new session; a
+ * line written before keeps the values it was written with, so it reads whole in the new words, its `tokens` and `count` shown.
+ */
+describe('a move said as a part of one session', () => {
+  // The pair a briefed move wrote before the rewording: the values the catalogue's sentences were given.
+  const WRITTEN = { session: 'ab12cd34', agent: 'claude-code', account: 'work', why: 'limit', tokens: 182000, count: 4096 };
+  const on = coded('moved.on', 'Went on in session ab12cd34 …', WRITTEN);
+  const from = coded('moved.from', 'Continues session ab12cd34 …', WRITTEN);
+
+  it("words the old part's last line and the new part's first with every value it was written with", () => {
+    expect(noteLines(t, { parts: [on] }, 'en')[0]).toEqual({
+      kind: 'said',
+      text: 'Went on as a new part of this session, ab12cd34, with claude-code as `work`, because its account reached its limit: '
+        + "its context stood at 182,000 tokens, and the new part was handed Daoris's brief of it, 4,096 characters.",
+    });
+    expect(noteLines(t, { parts: [from] }, 'en')[0]).toEqual({
+      kind: 'said',
+      text: 'Continues the part before it, ab12cd34, which ran on claude-code as `work`, because its account reached its limit: '
+        + "its context stood at 182,000 tokens, and it was handed Daoris's brief of it, 4,096 characters.",
+    });
+    expect(noteLines(zh, { parts: [on] }, 'zh')[0].text).toContain('以本会话的新一段 ab12cd34 继续，由 claude-code（账户 `work`）运行');
+    expect(noteLines(zh, { parts: [on] }, 'zh')[0].text).toContain('182,000 个 token，新的一段收到了 Daoris 对它的简报，4,096 个字符');
+    expect(noteLines(zh, { parts: [from] }, 'zh')[0].text).toContain('接续前一段 ab12cd34（由 claude-code 以账户 `work` 运行）');
+  });
+
+  it("says a hand-over's new part was handed Daoris's record, not its own turns", () => {
+    const took = coded('chat.taken-over', '…', { agent: 'claude-code', session: 'ab12cd34', why: 'press' });
+    expect(noteLines(t, { parts: [took] }, 'en')[0].text).toBe(
+      'This conversation went on from claude-code conversation ab12cd34, handed over because you asked for it; '
+      + "it was handed Daoris's record of it, not its own turns.",
+    );
+    expect(noteLines(zh, { parts: [took] }, 'zh')[0].text).toBe(
+      '这段对话是从 claude-code 的对话 ab12cd34 转交过来继续的，原因：你要求转交；交给它的是 Daoris 对其的记录，而非它自己的轮次。',
+    );
+  });
+
+  it("keeps a refused resume's reason, and says the part went on with the brief", () => {
+    const refused = coded('limit.resume-refused', '…', { why: 'gone' });
+    expect(noteLines(t, { parts: [refused] }, 'en')[0].text)
+      .toBe("Its own conversation could not be resumed (the agent no longer has its conversation), so it went on as a new part with Daoris's brief.");
+    expect(noteLines(zh, { parts: [refused] }, 'zh')[0].text)
+      .toBe('无法回到它的原对话（智能体已没有它的对话），因此它带着 Daoris 的简报以新的一段继续。');
+  });
+
+  it("says a limit's move to a brief the same way in the page's and the notification's words", () => {
+    expect(t('work.limit.briefed')).toBe("It goes on as a new part of its session, handed Daoris's brief.");
+    expect(zh('work.limit.briefed')).toBe('它将以会话的新一段继续，并附上 Daoris 的简报。');
+    expect(t('notifications.done.look.limit-went-on'))
+      .toBe("A quest's work, cut off by an account's limit, went on as a new part of its session, handed Daoris's brief");
+    expect(zh('notifications.done.look.limit-went-on')).toBe('因账户额度用尽而中断的工作已作为会话的新一段继续，并附上 Daoris 的简报');
+  });
+
+  it('calls none of them a new session', () => {
+    for (const key of ['note.moved.on', 'note.moved.from', 'note.chat.taken-over', 'note.limit.resume-refused', 'work.limit.briefed',
+      'notifications.done.look.limit-went-on']) {
+      expect(t(key), key).not.toMatch(/new session/i);
+      expect(zh(key), key).not.toContain('新会话');
     }
   });
 });

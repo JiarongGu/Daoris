@@ -74,7 +74,7 @@ describe('a limited line\'s wait', () => {
     await i18n.changeLanguage('zh');
     expect(limitWaitSaid(t, briefed, label)).toEqual([
       `正在等待额度重置：将于 ${moment(SOON)} 在 a 上自动继续。`,
-      '它将在新会话中继续，并附上 Daoris 的简报。',
+      '它将以会话的新一段继续，并附上 Daoris 的简报。',
       '上次重置未解除额度限制：weekly。',
     ]);
   });

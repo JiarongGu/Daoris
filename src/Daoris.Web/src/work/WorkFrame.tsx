@@ -62,6 +62,8 @@ import { answeredPark, failure, type Notify, SESSION_ACTIVE, useErrorNotify } fr
 import type { FrameIntent } from '../menus/commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { type AnchorState, BackToBottom, SessionConversation, type TailState, ToTheTop } from './conversation/SessionConversation';
+import { type EarlierPart, EarlierParts } from './conversation/EarlierParts';
+import { ancestryOf } from './conversation/line';
 import { useAwayFromTop } from './conversation/followTail';
 import type { Level, RunningCall, Usage } from './conversation/conversation';
 import { useNow } from './useNow';
@@ -107,6 +109,7 @@ import { listChoice, type ListSpec, useFrameWidth, useGoOver, useListMode, type 
 import { ViewMain } from './frame/ViewMain';
 import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './frame/placements';
 import { relationsOf } from './head/relations';
+import { beganLine } from './head/partsLife';
 import { store, stored } from '../lib/stored';
 import { cn } from '../lib/cn';
 
@@ -2328,6 +2331,32 @@ export function WorkFrame({
       onMakeTask={onMakeTask}
     />
   );
+  // The line the attended part continues (SWITCHCTX1c-i; the switch-context design §2.7): each part's record and place as the strip
+  // reads them, the parts it continues by `from` (a part running alongside is not among them), and how each began.
+  const partRows = Object.fromEntries((sessions.data ?? []).map((row) => [row.id, {
+    session: row, root: rootOf(row.repository), where: where[row.id], spent: spent[row.id],
+  }]));
+  const beganOf = (id: string) => {
+    const part = attendedEntry?.parts.find((each) => each.session === id);
+    return attendedEntry && part && part.began !== 'opened' ? beganLine(t, part, attendedEntry.parts, partRows) : undefined;
+  };
+  const line: EarlierPart[] = attended && here
+    ? ancestryOf(sessions.data ?? [], attended.id, attendedEntry ? new Set(attendedEntry.parts.map((part) => part.session)) : null)
+      .flatMap((id) => {
+        const row = (sessions.data ?? []).find((each) => each.id === id);
+        return row
+          ? [{ id, adapter: row.adapter, chat: row.kind === 'chat', tree: row.tree, live: SESSION_ACTIVE.has(row.state), began: beganOf(id) }]
+          : [];
+      })
+    : [];
+  // Pressing a part in the strip or on the flow's rail attends it and scrolls to it, so the part shown is the one in view.
+  const [seeking, setSeeking] = useState(0);
+  const partBox = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (seeking === 0) return undefined;
+    const frame = requestAnimationFrame(() => partBox.current?.scrollIntoView?.({ block: 'start' }));
+    return () => cancelAnimationFrame(frame);
+  }, [seeking]);
   const drawerDown = (close: () => void) => () => {
     close();
     if (listOpened.current) listOpened.current = false;
@@ -2407,10 +2436,11 @@ export function WorkFrame({
             parts={attended && entryOfSession(entries, attended.id) ? {
               entry: entryOfSession(entries, attended.id)!,
               attended: attended.id,
-              rows: Object.fromEntries((sessions.data ?? []).map((row) => [row.id, {
-                session: row, root: rootOf(row.repository), where: where[row.id], spent: spent[row.id],
-              }])),
-              onShow: (id: string) => attend(id),
+              rows: partRows,
+              onShow: (id: string) => {
+                attend(id);
+                setSeeking((count) => count + 1);
+              },
             } : undefined}
             entryAccept={entryAccept}
             // Its ask's channel, kept to this line of work (SESSONE2c): a post is the person's words, and a refusal is the service's code.
@@ -2468,65 +2498,70 @@ export function WorkFrame({
             <div className="mt-2 min-w-0">
               {/* A file a tool card names opens in the side bar's preview (PREVIEW1, D111). */}
               <FileOpener.Provider value={openPreview}>
-                <SessionConversation
-                  session={attended.id}
-                  adapter={attended.adapter}
-                  chat={attended.kind === 'chat'}
-                  tree={attended.tree}
-                  live={live}
-                  // A conversation the driver answers for is working while a turn is in flight, and not
-                  // under words its agent said after the turn ended (found looking at CONSOLE2).
-                  turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
-                  // The driver's word that its call waits for the person's answer (AUTONOMY1b3e).
-                  callMark={grouping?.calling ?? undefined}
-                  scroller={centre}
-                  // *Back to bottom* is the waiting panel's to draw, above it (WAITPANEL1), not the transcript's foot.
-                  onTail={setTail}
-                  onUsage={onUsage}
-                  onWaiting={onWaiting}
-                  // Its limit's wait, read from its events (LIMITRESUME1d2): the head and the foot say it.
-                  onLimitWait={(session, held) => setChatHeld((was) => (held
-                    ? { session, held }
-                    : was?.session === session ? null : was))}
-                  // Each wait's raising event, and the way between them (WAITFOOT1c, D168 point 4).
-                  waits={waits ? {
-                    waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null,
-                    proposals: rulesAsked(waits.rules?.proposals, attended.id),
-                    helpers: waits.helpers?.asks,
-                    permissions: waits.permissions?.waits,
-                  } : undefined}
-                  onAnchors={(session, state) => setAnchored({ session, ...state })}
-                  onToWait={(wait) => {
-                    const anchor = anchorOf(wait);
-                    if (!anchor) return;
-                    // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's; a park's
-                    // question and go-aheads to the box that answers them (PARKVIEW1), which is always drawn.
-                    const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
-                    setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
-                  }}
-                  // Where the person's words went, a door to that session; and words that cannot go on here, one press
-                  // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
-                  onSession={(id) => attend(id)}
-                  onStartFrom={rootOf(attended.repository) ? onStartFrom : undefined}
-                  // SESSCTX1c part B: and beside it, the same session going on in a new part handed Daoris's brief.
-                  onGoOnBrief={rootOf(attended.repository) ? onGoOnBrief : undefined}
-                  // *Say it again* (COWORK1c): the person's own words that may have reached the agent before a restart, said anew.
-                  onSayAgain={onSayAgain}
-                  // Words its cooling account holds, and *Go on in a new session* with what it came to (MSG1g2, D137 §2.2).
-                  cooling={coolsUntil ? {
-                    until: coolsUntil,
-                    quest: attended.quest,
-                    onGoOnNew,
-                    pending: goOnNew.isPending,
-                    answer: newSession?.session === attended.id ? newSession.answer : null,
-                  } : undefined}
-                  reasons={{
-                    from: attended.adapter,
-                    to: harnesses.data?.adapter,
-                    adapter: harnesses.data?.adapter,
-                    agent: roster.find((row) => row.harness === attended.adapter)?.product || attended.adapter,
-                  }}
-                />
+                {/* The parts it continues, above it and read-only (SWITCHCTX1c-i); keyed by the part, so attending another starts the count again. */}
+                {line.length > 0 && <EarlierParts key={attended.id} line={line} scroller={centre} />}
+                <div ref={partBox} data-part={attended.id} data-attended className="min-w-0 scroll-mt-12">
+                  <SessionConversation
+                    session={attended.id}
+                    began={beganOf(attended.id)}
+                    adapter={attended.adapter}
+                    chat={attended.kind === 'chat'}
+                    tree={attended.tree}
+                    live={live}
+                    // A conversation the driver answers for is working while a turn is in flight, and not
+                    // under words its agent said after the turn ended (found looking at CONSOLE2).
+                    turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
+                    // The driver's word that its call waits for the person's answer (AUTONOMY1b3e).
+                    callMark={grouping?.calling ?? undefined}
+                    scroller={centre}
+                    // *Back to bottom* is the waiting panel's to draw, above it (WAITPANEL1), not the transcript's foot.
+                    onTail={setTail}
+                    onUsage={onUsage}
+                    onWaiting={onWaiting}
+                    // Its limit's wait, read from its events (LIMITRESUME1d2): the head and the foot say it.
+                    onLimitWait={(session, held) => setChatHeld((was) => (held
+                      ? { session, held }
+                      : was?.session === session ? null : was))}
+                    // Each wait's raising event, and the way between them (WAITFOOT1c, D168 point 4).
+                    waits={waits ? {
+                      waits: standing, goAheads: waits.goAheads, opinion: opinionAsked(waits.landing)?.opinion ?? null,
+                      proposals: rulesAsked(waits.rules?.proposals, attended.id),
+                      helpers: waits.helpers?.asks,
+                      permissions: waits.permissions?.waits,
+                    } : undefined}
+                    onAnchors={(session, state) => setAnchored({ session, ...state })}
+                    onToWait={(wait) => {
+                      const anchor = anchorOf(wait);
+                      if (!anchor) return;
+                      // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's; a park's
+                      // question and go-aheads to the box that answers them (PARKVIEW1), which is always drawn.
+                      const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
+                      setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
+                    }}
+                    // Where the person's words went, a door to that session; and words that cannot go on here, one press
+                    // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
+                    onSession={(id) => attend(id)}
+                    onStartFrom={rootOf(attended.repository) ? onStartFrom : undefined}
+                    // SESSCTX1c part B: and beside it, the same session going on in a new part handed Daoris's brief.
+                    onGoOnBrief={rootOf(attended.repository) ? onGoOnBrief : undefined}
+                    // *Say it again* (COWORK1c): the person's own words that may have reached the agent before a restart, said anew.
+                    onSayAgain={onSayAgain}
+                    // Words its cooling account holds, and *Go on in a new session* with what it came to (MSG1g2, D137 §2.2).
+                    cooling={coolsUntil ? {
+                      until: coolsUntil,
+                      quest: attended.quest,
+                      onGoOnNew,
+                      pending: goOnNew.isPending,
+                      answer: newSession?.session === attended.id ? newSession.answer : null,
+                    } : undefined}
+                    reasons={{
+                      from: attended.adapter,
+                      to: harnesses.data?.adapter,
+                      adapter: harnesses.data?.adapter,
+                      agent: roster.find((row) => row.harness === attended.adapter)?.product || attended.adapter,
+                    }}
+                  />
+                </div>
               </FileOpener.Provider>
             </div>
           )}
