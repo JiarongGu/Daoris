@@ -26,7 +26,7 @@ public sealed class WorkflowNodeThroughInstanceTests
 
         Assert.Equal(0, exit);
         Assert.Equal(lines[0] + Environment.NewLine, output.ToString());
-        Assert.Equal($"workflow: waiting for you to confirm this in Daoris's window…{Environment.NewLine}", home.Error.ToString());
+        Assert.Matches(InstanceStandIn.WaitingAlone("workflow"), home.Error.ToString());
         var press = Assert.Single(standIn.Presses);
         Assert.Equal("WORKFLOW_NODE", press.GetProperty("type").GetString());
         Assert.Equal(payload, press.GetProperty("payload").GetRawText());

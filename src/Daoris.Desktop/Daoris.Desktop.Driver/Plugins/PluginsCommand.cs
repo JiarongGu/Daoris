@@ -29,7 +29,8 @@ public static class PluginsCommand
         + "       daoris-driver plugins show <id> [--json]\n"
         + "       daoris-driver plugins activity <id> [--since <30m|2h|3d>] [--json]\n"
         + "       daoris-driver plugins approve <id> <server> [--reads-only | --writes <tool,…>]\n"
-        + "       daoris-driver plugins withdraw <id> <server>";
+        + "       daoris-driver plugins withdraw <id> <server>\n"
+        + InstanceDoor.WaitUsage;
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {

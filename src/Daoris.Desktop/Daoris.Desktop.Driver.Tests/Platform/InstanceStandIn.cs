@@ -92,8 +92,21 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// <summary>Whether a press is told it runs under the person's standing confirmation (TERMTRUST1a, <c>STANDING</c>) before it is answered.</summary>
     public bool Standing { get; set; }
 
-    /// <summary><c>RESULT</c>'s state for a press it was asked about: <c>answered</c> (with <see cref="Data"/>), <c>running</c>, <c>unknown</c>, or <c>id-taken</c>, the refusal of another key's id.</summary>
+    /// <summary>
+    /// <c>RESULT</c>'s state for a press it was asked about: <c>answered</c> (with <see cref="Data"/>, or <see cref="ResultRefused"/>'s
+    /// refusal), <c>running</c>, <c>waiting</c> (CONFIRMWAIT1a-i's), <c>unknown</c>, or <c>id-taken</c>, the refusal of another key's id.
+    /// </summary>
     public string Result { get; set; } = "answered";
+
+    /// <summary>With <see cref="Result"/> <c>answered</c>, the code of the refusal the press ended with, or null for <see cref="Data"/>.</summary>
+    public string? ResultRefused { get; set; }
+
+    /// <summary>
+    /// <c>WITHDRAW</c>'s answer (CONFIRMWAIT1b, the confirm-wait design §4.3): <c>withdrawn</c>, <c>running</c>, <c>ended</c> (with
+    /// <see cref="Data"/>, or <see cref="ResultRefused"/>'s refusal), <c>id-taken</c>, or <c>no-route</c>, as today's instance answers a
+    /// route of the pipe it does not have.
+    /// </summary>
+    public string Withdraw { get; set; } = "withdrawn";
 
     /// <summary>The nonce its hello draws (SUPERVISOR1a-ii): a fake server's own, or one it relays from a real instance.</summary>
     public string Nonce { get; set; } = Daoris.Driver.SupervisorProof.Nonce();
@@ -114,6 +127,9 @@ internal sealed class InstanceStandIn : IAsyncDisposable
 
     /// <summary>The <c>RESULT</c>s it was asked.</summary>
     public IReadOnlyList<JsonElement> Results => [.. Sent.Where(each => each.GetProperty("type").GetString() == "RESULT")];
+
+    /// <summary>The <c>WITHDRAW</c>s it was asked.</summary>
+    public IReadOnlyList<JsonElement> Withdraws => [.. Sent.Where(each => each.GetProperty("type").GetString() == "WITHDRAW")];
 
     private async Task ServeAsync()
     {
@@ -183,8 +199,21 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                     }
 
                     await WriteAsync(server, Success(id, Result == "answered"
-                        ? new { state = "answered", answer = JsonNode.Parse(Success(asked, Data)) }
+                        ? new { state = "answered", answer = JsonNode.Parse(Ending(asked)) }
                         : (object)new { state = Result }));
+                    continue;
+                }
+
+                if (module == "DAORIS.PIPE" && type == "WITHDRAW")
+                {
+                    var asked = request.GetProperty("payload").GetProperty("id").GetString()!;
+                    await WriteAsync(server, Withdraw switch
+                    {
+                        "id-taken" => Refusal(id, "id-taken", null),
+                        "no-route" => Refusal(id, "NO_ROUTE", null),
+                        "ended" => Success(id, new { state = "ended", answer = JsonNode.Parse(Ending(asked)) }),
+                        _ => Success(id, new { state = Withdraw }),
+                    });
                     continue;
                 }
 
@@ -252,6 +281,21 @@ internal sealed class InstanceStandIn : IAsyncDisposable
             await server.DisposeAsync();
         }
     }
+
+    /// <summary>How a press it was asked about ended: <see cref="Data"/>, or the refusal <see cref="ResultRefused"/> names.</summary>
+    private string Ending(string asked) => ResultRefused is { } code ? Refusal(asked, code, null) : Success(asked, Data);
+
+    /// <summary>
+    /// The pattern of the line a verb named <paramref name="verb"/> says as its press waits for the window (CONFIRMWAIT1b, the
+    /// confirm-wait design §4.1): the request's id, whatever it is, and the two verbs that read and take it back.
+    /// </summary>
+    public static string Waiting(string verb) =>
+        System.Text.RegularExpressions.Regex.Escape(verb)
+        + @": waiting for you to confirm this in Daoris's window \(request (?<id>[0-9a-f-]{36})\); `daoris-driver result \k<id>` says how it "
+        + @"ended, and `daoris-driver withdraw \k<id>` takes it back…";
+
+    /// <summary><see cref="Waiting"/> as the whole of what was said: that one line.</summary>
+    public static string WaitingAlone(string verb) => @"\A" + Waiting(verb) + @"\r?\n\z";
 
     private static string Success(string id, object? data) =>
         JsonSerializer.Serialize(new { category = "ipc", id, success = true, data });

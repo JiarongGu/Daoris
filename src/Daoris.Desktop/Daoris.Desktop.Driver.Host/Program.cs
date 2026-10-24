@@ -234,6 +234,13 @@ using Daoris.Driver;
 //                 age until you say so (RECOVERYDROP1, CLEANUP1): each in one transaction that verifies the commit it names, a ref
 //                 a holder keeps or that moved is kept and said; only the process holding the home acts; --plan lists, changes nothing.
 //
+//   result <id>  ·  withdraw <id>
+//                 how a press this terminal sent ended, asked again by its id and the key it was sent with (RPC1j), and
+//                 while it waits for your Confirm, taken back by the pipe's own WITHDRAW (CONFIRMWAIT1b), never a confirmed one.
+//   --wait <minutes> | --no-wait
+//                 with any verb that presses: how long it waits on the window's Confirm, 0 to 30 (the default 30), taken
+//                 from the words first; --no-wait returns once the press is asked, its id said (CONFIRMWAIT1b).
+//
 //   sync [status | dismiss <quest>] [--workspace <name>]
 //                 one pass now, the tick's own, for every circle with a remote or the one named; with
 //                 `status`, where each circle stands — ahead, behind, in conflict, last synced (SYNC6a);
@@ -336,6 +343,17 @@ using Daoris.Driver;
 // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it. The verb is its one reader:
 // `sessions supervise` reads what was taken, and nothing else does.
 HolderKey.Take();
+
+// CONFIRMWAIT1b (the confirm-wait design §4.1): how long a press waits on its Confirm, taken from the words before any verb, lease or
+// family reads them, and set once on every world a verb is given (`InstanceHost.World`).
+if (!InstanceDoor.TakeWait(args, out var verbArgs, out var pressWait, out var waitProblem))
+{
+    Console.Error.WriteLine($"daoris-driver: {waitProblem}");
+    return 2;
+}
+
+args = verbArgs;
+Daoris.Driver.Host.InstanceHost.Wait = pressWait;
 
 if (OperatingSystem.IsWindows())
 {
@@ -706,6 +724,13 @@ try
     if (args is ["result", var resultId])
     {
         return await InstanceDoor.ResultAsync(resultId, Daoris.Driver.Host.InstanceHost.World("result"));
+    }
+
+    // A press this terminal sent that still waits for the person's Confirm, taken back (CONFIRMWAIT1b, the confirm-wait design §4.3):
+    // the pipe's own WITHDRAW with the key it was sent with, which never touches a press the person already confirmed.
+    if (args is ["withdraw", var withdrawId])
+    {
+        return await InstanceDoor.WithdrawAsync(withdrawId, Daoris.Driver.Host.InstanceHost.World("withdraw"));
     }
 
     // The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.

@@ -163,6 +163,8 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Contains("--cycle <file>|--no-cycle", DriverChoicesCommand.Usage, StringComparison.Ordinal);
         Assert.All(DriverWorkflowsCommand.Verbs, verb => Assert.Contains(verb, DriverChoicesCommand.Usage, StringComparison.Ordinal));
         Assert.DoesNotContain("still", DriverChoicesCommand.Usage, StringComparison.Ordinal);
+        // CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.
+        Assert.Contains(InstanceDoor.WaitUsage, DriverChoicesCommand.Usage, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -325,7 +327,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal("engine", press.GetProperty("payload").GetProperty("repository").GetString());
         Assert.True(press.GetProperty("payload").GetProperty("drivable").GetBoolean());
         Assert.StartsWith("daoris: this machine may drive `engine`.", running.Out.ToString(), StringComparison.Ordinal);
-        Assert.Contains("daoris: waiting for you to confirm this in Daoris's window…", running.Error.ToString(), StringComparison.Ordinal);
+        Assert.Matches(InstanceStandIn.Waiting("daoris"), running.Error.ToString());
         Assert.False(File.Exists(config));
     }
 

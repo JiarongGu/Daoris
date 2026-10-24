@@ -4800,7 +4800,8 @@
         "              · history <days>|never|default · floor <n>GB|<n>%|off|default]",
         "       daoris-driver driver actor [<actor>] · actor <actor> \"<agent> [<model>|-] [<effort>|-]\" … · actor <actor> --clear",
         "              · actor intake|ask-daoris off",
-        "`daoris driver …` runs these."
+        "`daoris driver …` runs these.",
+        "Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window."
       ],
       "after": null
     },

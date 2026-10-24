@@ -129,6 +129,13 @@ public sealed class InstanceClient : IAsyncDisposable
         RequestAsync(Guid.NewGuid().ToString(), PipeModule, "RESULT", new { id, key }, key: null, told: null, within, ct);
 
     /// <summary>
+    /// <c>WITHDRAW { id, key }</c> (CONFIRMWAIT1b, the confirm-wait design §4.3): takes back the press <paramref name="id"/> while it
+    /// still waits for the person, the whole envelope, or null where none came. Never the kit's cancel, which reaches a confirmed press.
+    /// </summary>
+    public Task<JsonElement?> WithdrawAsync(string id, string key, TimeSpan within, CancellationToken ct = default) =>
+        RequestAsync(Guid.NewGuid().ToString(), PipeModule, "WITHDRAW", new { id, key }, key: null, told: null, within, ct);
+
+    /// <summary>
     /// One request, and its answer's whole envelope; null where the connection was lost or nothing answered within
     /// <paramref name="within"/>. Each notification naming it on the way is handed to <paramref name="told"/>.
     /// </summary>

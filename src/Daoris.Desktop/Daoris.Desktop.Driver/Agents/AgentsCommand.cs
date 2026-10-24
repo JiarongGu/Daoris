@@ -181,6 +181,7 @@ public static class AgentsCommand
                daoris-driver agent update <agent> [--workspace <name>]
                daoris-driver agent pin <agent> <version> [--workspace <name>]
         `daoris agent …` runs these, every verb of the family.
+        Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
     private const string Prefix = "daoris";

@@ -235,7 +235,7 @@ public sealed class AgentsCommandTests : IDisposable
         Assert.True(press.GetProperty("payload").GetProperty("accept").GetBoolean());
         Assert.StartsWith("daoris: accepted #p0000007 — allow `WebFetch` for every session on this machine is now in the rules.",
             running.Out.ToString(), StringComparison.Ordinal);
-        Assert.Contains("daoris: waiting for you to confirm this in Daoris's window…", running.Error.ToString(), StringComparison.Ordinal);
+        Assert.Matches(InstanceStandIn.Waiting("daoris"), running.Error.ToString());
         Assert.Equal(before, File.ReadAllText(proposal));
         Assert.False(File.Exists(PermissionRules.PathOf(running.Home)));
     }
@@ -432,6 +432,8 @@ public sealed class AgentsCommandTests : IDisposable
     {
         Assert.Equal(0, await AgentsCommand.RunAsync(["--help"], World(), CancellationToken.None));
         Assert.Contains(AgentsCommand.Usage, _out.ToString(), StringComparison.Ordinal);
+        // CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.
+        Assert.Contains(InstanceDoor.WaitUsage, AgentsCommand.Usage, StringComparison.Ordinal);
 
         // Every verb of the family is the program's since PUSH1f2e, `pin` the last: a word none is stands in for one it lacks.
         Assert.Equal(2, await AgentsCommand.RunAsync(["frobnicate", "claude-code"], World(), CancellationToken.None));

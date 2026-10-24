@@ -510,7 +510,11 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         Assert.Equal(0, await verb.WaitAsync(Poll.Patience));
         Assert.Equal("sessions: archived done1." + Environment.NewLine, output.ToString());
-        Assert.Equal("sessions: waiting for you to confirm this in Daoris's window…" + Environment.NewLine, error.ToString());
+        // CONFIRMWAIT1b (the confirm-wait design §4.1): the request's id and the two verbs that read and take it back, said at once.
+        Assert.Matches(
+            @"\Asessions: waiting for you to confirm this in Daoris's window \(request (?<id>[0-9a-f-]{36})\); `daoris-driver result \k<id>` "
+            + @"says how it ended, and `daoris-driver withdraw \k<id>` takes it back…\r?\n\z",
+            error.ToString());
         Assert.Contains("done1", new SessionArchive(Home).Marks().Keys);
         Assert.Empty(pipe.Confirmations.Now().Waiting);
     }

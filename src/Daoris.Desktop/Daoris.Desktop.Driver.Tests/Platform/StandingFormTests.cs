@@ -95,11 +95,9 @@ public sealed class StandingFormTests
         await RunAsync("sessions stop s1a2b3c4", running);
 
         var said = running.Error.ToString();
-        Assert.Contains(
-            why is null
-                ? "sessions: waiting for you to confirm this in Daoris's window…"
-                : "sessions: waiting for you to confirm this in Daoris's window (",
-            said, StringComparison.Ordinal);
+        // CONFIRMWAIT1b: the request's id first, then the standing confirmation's why where it says one, then the two verbs.
+        if (why is null) Assert.Matches(InstanceStandIn.Waiting("sessions"), said);
+        else Assert.Matches(@"sessions: waiting for you to confirm this in Daoris's window \(request [0-9a-f-]{36}; ", said);
         if (why is not null) Assert.Contains(why, said, StringComparison.Ordinal);
     }
 }

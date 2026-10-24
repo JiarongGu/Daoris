@@ -107,6 +107,8 @@ public sealed class PluginsCommandTests : IDisposable
         Assert.Equal(2, refused);
         Assert.Contains("`run_command`", why);
         Assert.Contains("plugins approve <id> <server> [--reads-only | --writes <tool,…>]", PluginsCommand.Usage);
+        // CONFIRMWAIT1b (the confirm-wait design §4.1): an approval and a withdrawal wait on their Confirm, and the usage says for how long.
+        Assert.Contains(InstanceDoor.WaitUsage, PluginsCommand.Usage, StringComparison.Ordinal);
     }
 
     /// <summary>HELPPLUG1c: the page accepts each write on its own, and its terminal twin takes the same list (D50).</summary>

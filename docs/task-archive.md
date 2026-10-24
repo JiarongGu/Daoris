@@ -20343,3 +20343,14 @@ and the card says *The supervisor left this to you* with the bound and sourced r
 question, en and zh. The co-working canon skill gains *Holding a role for the person*, synced to this repository and both examples.
 Each proof seen failing first. **Not built:** *What needs you*'s row saying *left to you* (§4.2); the park stays a wait as today.
 Detail: D208's SUPERVISOR1b note.
+
+## CONFIRMWAIT1b — the verb: the request's id at once, its wait bounded, withdraw (2026-10-24, D156)
+
+> **CONFIRMWAIT1b — the verb** (driver, host), **first**. The id at `CONFIRMING`; `--wait` and `--no-wait` taken in the host's entry and set on the `InstanceWorld`; the verb's end chosen by `RESULT`'s state, `waiting` its exit 1 and `already` its exit 0; `result`'s `waiting`, its exit codes aligned and its `unknown` sentence; `withdraw <id>`; `SentPresses` keeping a waiting press, at most thirty days; the four Ctrl+C sentences. Held by the driver's `InstanceDoorTests`, `SentPressesTests`, `DriverCommandTests.The_usage_names_every_verb_the_host_answers`, and each family's usage test and golden its usage text changes (`DriverCommand`, `AgentsCommand`, `ToolsCommand`, `DriverChoicesCommand`, the plugin commands, and the `daoris` forwards' `cli-usage.test.ts` where a forward's line names `--wait`). It is safe against today's instance, which never answers `waiting`.
+
+(Row 1b of `docs/2026-10-24-confirm-wait-design.md` §10, of the backlog's CONFIRMWAIT1; quest `#f4d1ce00c10a`.)
+
+**Outcome** 2026-10-24. The row as named, terminal side only and safe against today's instance: the id and both verbs at
+`CONFIRMING`, `--wait`/`--no-wait` from the host's entry, `waiting` exit 1, `already` exit 0, `withdraw <id>` by the pipe's own
+`WITHDRAW`, a waiting press kept thirty days, one Ctrl+C sentence. Each case seen failing first. **Not built:** the instance's half
+(1a-i, 1a-ii). Detail: D156's CONFIRMWAIT1b note.

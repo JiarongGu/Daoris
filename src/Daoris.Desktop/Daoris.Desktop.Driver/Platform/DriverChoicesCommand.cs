@@ -196,6 +196,7 @@ public static class DriverChoicesCommand
                daoris-driver driver actor [<actor>] · actor <actor> "<agent> [<model>|-] [<effort>|-]" … · actor <actor> --clear
                       · actor intake|ask-daoris off
         `daoris driver …` runs these.
+        Each change takes --wait <minutes> (0 to 30, the default 30) or --no-wait: how long to wait on its Confirm in Daoris's window.
         """;
 
     /// <summary>The marker a shell Daoris started carries (D194 point 5): its session's record id.</summary>
