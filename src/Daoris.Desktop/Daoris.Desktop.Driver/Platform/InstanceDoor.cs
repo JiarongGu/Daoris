@@ -235,7 +235,8 @@ public static class InstanceDoor
     /// take it back at once (CONFIRMWAIT1b); the confirmed press's answer is said in the verb's words, and the person's refusal or the
     /// two minutes' end is the instance's sentence, exit 1, nothing done here. The verb's own wait over with the press still
     /// <c>waiting</c> is exit 1 too, and an instance from before CONFIRMWAIT1a-i, which answers <c>running</c> then, is said as before,
-    /// exit 2. A window's route is never sent: no terminal verb has one.</para>
+    /// exit 2; so is the close's answer <c>waiting</c> (CONFIRMWAIT1a-ii), the press kept across the restart. A window's route is never
+    /// sent: no terminal verb has one.</para>
     /// </remarks>
     /// <param name="payload">The route's payload, as a window's press sends it.</param>
     /// <param name="alone">The verb acting from its own process, as it does where no instance runs.</param>
@@ -303,6 +304,15 @@ public static class InstanceDoor
         }
 
         var (code, message, _) = Refusal(answer.Value);
+        // CONFIRMWAIT1a-ii (§4.1, §7.2): the close answers a line waiting on a press `waiting`, the press kept in its record across the
+        // restart; said as this verb's own wait's end.
+        if (code == Waiting)
+        {
+            if (world.Home is { } home) new SentPresses(home).Waiting(id, DateTimeOffset.UtcNow);
+            await world.Error.WriteLineAsync(StillWaiting(world.Verb, id)).ConfigureAwait(false);
+            return 1;
+        }
+
         await world.Error.WriteLineAsync($"{world.Verb}: {message} ({code})").ConfigureAwait(false);
         return RefusalExit(code);
     }
