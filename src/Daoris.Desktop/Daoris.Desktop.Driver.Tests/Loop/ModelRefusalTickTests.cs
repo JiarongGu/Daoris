@@ -135,6 +135,120 @@ public sealed class ModelRefusalTickTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 MODELROLE1c3's proof (D205 §3.3's pipe exception): the pipe door has no offer list, so account-1's refusal of `opus` arrives as row
+    /// a's measured words on a silent turn, after its prompt was handed. Its part ends failed with the account's `account.refused-model`
+    /// line and no strike (one failure would park the quest here), the reading kept; the next look's walk passes account-1 without spawning
+    /// it and runs choice 1 on account-2, which takes and closes the quest.
+    /// </summary>
+    [Fact]
+    public async Task A_pipe_stub_refusing_opus_on_a_silent_turn_passes_that_account_at_the_next_start_with_no_strike()
+    {
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        var (driver, _) = PipeDriver(service.Url, "account-1:opus");
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        var refused = service.Session("s1");
+        Assert.Equal(("failed", "account-1"), (refused["state"]!.GetValue<string>(), refused["profile"]!.GetValue<string>()));
+        var codes = refused["noteParts"]!.AsArray().Select(part => part?["code"]?.GetValue<string>()).ToList();
+        Assert.Equal("account.refused-model", codes[^1]);
+        Assert.DoesNotContain("account-1", refused["note"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal("Open", service.Status("q1"));
+        Assert.NotNull(AgentOffers.Judge(AgentOffers.Read(_home), PipeStub.Named, null, "account-1", "opus", DateTimeOffset.UtcNow));
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        var ran = service.Session("s2");
+        Assert.Equal(("completed", "account-2"), (ran["state"]!.GetValue<string>(), ran["profile"]!.GetValue<string>()));
+        Assert.Equal("1", ran["choice"]?.GetValue<string>());
+        Assert.Equal("Done", service.Status("q1"));
+
+        // Two spawns, each handed `--model opus`: account-1 was never spawned again.
+        Assert.Equal([("account-1", "opus", false), ("account-2", "opus", true)],
+            Runs().Select(run => (run["account"]!.GetValue<string>(), run["model"]?.GetValue<string>(), run["prompted"]!.GetValue<bool>())));
+    }
+
+    private (Daoris.Driver.Driver Driver, HarnessRoster Roster) PipeDriver(string url, string refuses)
+    {
+        var built = AdapterSet.Built();
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter>(
+            built.Names.Select(name => KeyValuePair.Create(name, built.Resolve(name))).Append(KeyValuePair.Create(PipeStub.Named, (ISessionAdapter)new PipeStub())),
+            StringComparer.OrdinalIgnoreCase));
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var config = ActorChoices.With(
+            DriverConfig.Empty with
+            {
+                Drivable = ["engine"],
+                Trees = ["engine"],
+                Adapter = PipeStub.Named,
+                TestBound = 1,
+                PollSeconds = 1,
+                Strikes = 1,
+                Commands = new Dictionary<string, IReadOnlyList<string>> { [PipeStub.Named] = ["node", PipeAgent(), Log, refuses] },
+            },
+            "build",
+            [new ActorChoice(PipeStub.Named, "opus"), new ActorChoice(PipeStub.Named, "sonnet")]);
+        return (new Daoris.Driver.Driver(new ServiceClient(url, null), config, adapters, _home, processes: new SessionProcesses(), harnesses: roster),
+            roster);
+    }
+
+    /// <summary>
+    /// A pipe door on the stub's accounts that speaks Claude Code's <c>stream-json</c>, its model handed as <c>--model</c> by the native
+    /// carrier, as Claude Code's pipe door is.
+    /// </summary>
+    private sealed class PipeStub : ISessionAdapter
+    {
+        public const string Named = "pipe-stub";
+
+        public string Name => Named;
+
+        public IStreamMapper? StructuredOutput() => new ClaudeStreamJson();
+
+        public HarnessToolchain? Toolchain => new(
+            Binary: [], VersionArguments: [], ProfileVariable: StubAdapter.ConfigVariable, AccountOf: "stub", ProbeByPresence: true,
+            RunsInOwnHome: true);
+
+        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
+            Spawning.InRoot(target, command![0], command.Skip(1).Concat(target.Asked?.NativeArguments(command) ?? []));
+    }
+
+    /// <summary>
+    /// The pipe door's stand-in: refuses the models its argument names for its account with row a's measured frames on a silent turn and
+    /// exits 1; otherwise takes and closes its quest. It writes down each run's account and the model it was handed.
+    /// </summary>
+    private string PipeAgent()
+    {
+        var script = Path.Combine(_home, "pipe-agent.mjs");
+        File.WriteAllText(script, """
+            import { appendFileSync } from 'node:fs';
+            import { basename } from 'node:path';
+            const [log, refuses, ...rest] = process.argv.slice(2);
+            const home = process.env.DAORIS_STUB_CONFIG_DIR ?? '';
+            const account = home ? basename(home) : '(own)';
+            const at = rest.indexOf('--model');
+            const model = at >= 0 ? rest[at + 1] : null;
+            const refused = refuses.split(',').some((pair) => pair === `${account}:${model}`);
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            send({ type: 'system', subtype: 'init', session_id: 'c1', model: model ?? 'default', tools: [] });
+            if (refused) {
+              const words = `There's an issue with the selected model (${model}). It may not exist or you may not have access to it. Run --model to pick a different model.`;
+              send({ type: 'assistant', message: { id: 'm0', model: '<synthetic>', content: [{ type: 'text', text: words }] }, error: 'model_not_found', session_id: 'c1' });
+              send({ type: 'result', subtype: 'success', is_error: true, api_error_status: 404, num_turns: 1, modelUsage: {}, result: words });
+              appendFileSync(log, JSON.stringify({ account, model, prompted: false }) + '\n');
+              process.exit(1);
+            }
+            const url = process.env.DAORIS_SERVICE_URL;
+            const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
+              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+            await respond({ action: 'take' });
+            await respond({ action: 'done', reason: `ran ${model} on ${account}` });
+            send({ type: 'assistant', message: { id: 'm1', model: `claude-${model}`, content: [{ type: 'text', text: 'Done.' }] }, session_id: 'c1' });
+            send({ type: 'result', subtype: 'success', is_error: false, num_turns: 1, result: 'Done.' });
+            appendFileSync(log, JSON.stringify({ account, model, prompted: true }) + '\n');
+            process.exit(0);
+            """);
+        return script;
+    }
+
+    /// <summary>
     /// The protocol door's stand-in on the stub's accounts: it lists Claude's three model values, refuses the models its argument names for
     /// its account at the set, writes down each open, and closes its quest on its first prompt.
     /// </summary>

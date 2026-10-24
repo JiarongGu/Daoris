@@ -55,6 +55,13 @@ public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<str
     public ModelRefusal? NotOffered { get; init; }
 
     /// <summary>
+    /// The pipe door refused the model it was handed (D205 §3.3's pipe exception, MODELROLE1c3): row a's measured words, the
+    /// <c>assistant</c> frame's <c>error: "model_not_found"</c>, on a turn with no output and no tool use, ended failed. That door has no
+    /// offer list and its prompt rides its arguments, so this is the one refusal read after a prompt was handed. False on every other run.
+    /// </summary>
+    public bool ModelRefused { get; init; }
+
+    /// <summary>
     /// A door that carries only text (AGT3c): its transcript's last lines, both its streams, beside the process's exit. Its
     /// agent's words are among them and cannot be told apart, so only an exit that was not 0 lets them be read. Unreadable
     /// is none.

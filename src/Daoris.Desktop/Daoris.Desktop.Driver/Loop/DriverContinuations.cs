@@ -711,6 +711,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
         conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);
+        // MODELROLE1c3 (D205 §3.5(a)): a pipe go-on run whose door refused its asked model on a silent turn keeps the account's reading and
+        // ends with its line, no strike; its words wait for the next look, whose resume judges the reading and carries them elsewhere.
+        conclusion = _driver.ModelRefused(conclusion, adapter.Name, selection, park.Asked?.NamedModel, ended, sessionId);
         (conclusion, var limited) = _driver.AccountLimited(
             conclusion, adapter, selection, turnFailed, sessionId, used,
             byCode: ended.Transient?.Last is { Kind: AgentErrorKind.Limit, Limit: { } coded } ? coded : null);

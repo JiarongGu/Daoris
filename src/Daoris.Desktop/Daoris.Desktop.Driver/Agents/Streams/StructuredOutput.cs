@@ -25,6 +25,12 @@ public sealed record StreamMapped(IReadOnlyList<string> Lines, IReadOnlyList<Ses
     /// other line, a turn that did not fail among them.
     /// </summary>
     public string? Failed { get; init; }
+
+    /// <summary>
+    /// The failed turn this line ended was the door's refusal of the model it was handed (D205 §3.3's pipe exception, MODELROLE1c3): the
+    /// harness's <c>model_not_found</c>, on a turn its model never answered and no tool ran. False for every other line.
+    /// </summary>
+    public bool ModelRefused { get; init; }
 }
 
 /// <summary>
@@ -114,6 +120,11 @@ public sealed class ClaudeStreamJson : IStreamMapper
     private readonly List<string?> _named = [];
     private IReadOnlyDictionary<string, TurnTokens>? _split;
 
+    // MODELROLE1c3 (D205 §3.3): whether this turn's tool message said `model_not_found`, and whether anything ran on it, a model's words
+    // or a tool call; begun again at each turn's result.
+    private bool _modelNotFound;
+    private bool _ran;
+
     public AcpUsage? Usage => _usage;
 
     /// <summary>
@@ -190,6 +201,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
                 };
                 if (kind is null || string.IsNullOrEmpty(text)) return StreamMapped.Nothing;
                 if (_message is not null) _streamed.Add(_message);
+                _ran = true;
                 return new([], [new SessionEvent { Kind = kind, Id = _message, Text = text }]);
             default:
                 return StreamMapped.Nothing;
@@ -208,11 +220,16 @@ public sealed class ClaudeStreamJson : IStreamMapper
         // The model that answered the turn (USAGECAP1a2): a subagent's answer, on a line of its own beside the session, names none.
         // 🔴 Nor does the tool's own message: a refused model or a limit is said as `<synthetic>` (MODELROLE1a's evidence), which
         // no model ran.
-        if ((!frame.TryGetProperty("parent_tool_use_id", out var parent) || parent.ValueKind != JsonValueKind.String)
-            && Text(message, "model") != "<synthetic>")
+        var synthetic = Text(message, "model") == "<synthetic>";
+        if ((!frame.TryGetProperty("parent_tool_use_id", out var parent) || parent.ValueKind != JsonValueKind.String) && !synthetic)
         {
             _named.Add(Text(message, "model"));
         }
+
+        // 🔴 MODELROLE1c3 (row a's measured refusal): the frame's own error word on the tool's message, never its sentence, which reads
+        // alike for a model unknown and one not entitled. A message a model wrote is the turn having run.
+        if (synthetic && Text(frame, "error") == "model_not_found") _modelNotFound = true;
+        else if (!synthetic && Blocks(message).Any()) _ran = true;
 
         var lines = new List<string>();
         var events = new List<SessionEvent>();
@@ -345,7 +362,11 @@ public sealed class ClaudeStreamJson : IStreamMapper
             Models = models,
         });
 
-        return new(lines, events) { Failed = failure };
+        // MODELROLE1c3 (D205 §3.3's pipe exception): a failed turn whose tool message said `model_not_found`, its model never answering and
+        // no tool running, is the door's refusal of the model it was handed.
+        var modelRefused = failed && !stopped && _modelNotFound && !_ran;
+        _modelNotFound = _ran = false;
+        return new(lines, events) { Failed = failure, ModelRefused = modelRefused };
     }
 
     /// <summary>A <c>permission_denied</c> frame, as the maker's reference types it (UNBLOCK5).</summary>

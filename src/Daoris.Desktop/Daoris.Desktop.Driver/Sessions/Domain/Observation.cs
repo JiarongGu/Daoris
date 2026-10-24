@@ -528,9 +528,16 @@ public static class FailedTurnWords
     /// <c>result</c> its harness ended with (<see cref="HarnessEnding.Failure"/>, which TURNFAIL2's words left read), so the bound
     /// marks a native run's words as it marks a protocol run's.
     /// </summary>
+    /// <remarks>
+    /// MODELROLE1c3 (D205 §3.5(a)): a pipe go-on run whose account refused its model, its line kept (<c>account.refused-model</c>), hands its
+    /// words to the next look, whose resume judges the reading and carries them to another account; they never wait for the person as a
+    /// second failure's do, since the fault was the account's.
+    /// </remarks>
     public static WordsAfter Judge(
         SessionConclusion conclusion, string? turnFailed, HarnessEnding ended, PriorSession before, bool limited = false) =>
-        Judge(conclusion, turnFailed is { Length: > 0 } ? turnFailed : ended.Failure, before, limited);
+        conclusion.State == "failed" && conclusion.Parts?.Any(part => part.Code == NoteCodes.AccountRefusedModel.Code) == true
+            ? WordsAfter.Wait
+            : Judge(conclusion, turnFailed is { Length: > 0 } ? turnFailed : ended.Failure, before, limited);
 
     /// <summary>The line the record's note and its conversation say why the words wait by; null for words taken.</summary>
     public static Noted? Line(WordsAfter after) => after switch
@@ -558,6 +565,7 @@ public sealed class HarnessWords
     private readonly Dictionary<string, string> _running = new(StringComparer.Ordinal);
     private readonly List<string> _cut = [];
     private bool _turnEnded;
+    private bool _modelRefused;
 
     /// <summary>A run begins: what the run before it said is not this one's ending.</summary>
     public void Begin()
@@ -566,6 +574,7 @@ public sealed class HarnessWords
         {
             _lines.Clear();
             _failure = null;
+            _modelRefused = false;
             _running.Clear();
             _cut.Clear();
             _turnEnded = false;
@@ -647,9 +656,15 @@ public sealed class HarnessWords
         lock (_gate) _failure = failure;
     }
 
+    /// <summary>The failed turn was the door's refusal of the model it was handed (MODELROLE1c3, <see cref="HarnessEnding.ModelRefused"/>).</summary>
+    public void ModelRefused()
+    {
+        lock (_gate) _modelRefused = true;
+    }
+
     /// <summary>The run's ending, with the process's exit.</summary>
     public HarnessEnding Ended(int? exit)
     {
-        lock (_gate) return new(exit, _failure, [.. _lines]) { BackgroundCut = [.. _cut] };
+        lock (_gate) return new(exit, _failure, [.. _lines]) { BackgroundCut = [.. _cut], ModelRefused = _modelRefused };
     }
 }
