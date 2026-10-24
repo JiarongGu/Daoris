@@ -701,6 +701,85 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
+    /// CONFIRMWAIT1, Codex's finding 7 (the confirm-wait design §15.2 item 7): the restore holds each record whole and alone. Two records of
+    /// one terminal id, identical, collapse into the first; two that conflict are each lost, and neither overwrites an ending the journal
+    /// already holds; a record whose grounds lack one its row reads, or add one it does not, is lost.
+    /// </summary>
+    [Fact]
+    public async Task The_restore_collapses_a_duplicate_loses_a_conflict_and_holds_each_record_s_grounds_to_its_row()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, services) = Compose(log, driver);
+        using var _ = services;
+        const string Key = "the-first-terminal-s-key-0123456789";
+        var land = new { id = "s1a2b3c4" };
+        var twin = WriteRecord("twin", DriverModule.Name, Land, land, Key, minutes: 1);
+        var again = WriteRecord("twin", DriverModule.Name, Land, land, Key, minutes: 2);
+        WriteRecord("split", DriverModule.Name, Land, land, Key, minutes: 3);
+        WriteRecord("split", DriverModule.Name, Land, new { id = "s5e6f7a8" }, Key, minutes: 4,
+            grounds: [new { kind = "session", subject = "s5e6f7a8", value = "" }, new { kind = "branch", subject = "s5e6f7a8", value = "" }, new { kind = "plan", subject = "LANDING", value = "p" }]);
+        WriteRecord("short", DriverModule.Name, Land, land, Key, minutes: 5, grounds: [LandGrounds[0]]);
+        WriteRecord("long", DriverModule.Name, Land, land, Key, minutes: 6,
+            grounds: [.. LandGrounds, new { kind = "repository", subject = "Lyntai", value = "registered" }]);
+
+        using var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", clock: new HeldClock()) { Grounds = grounds };
+        var told = new List<(int Lost, int Newer)>();
+        pipe.Confirmations.Restarted = (lostCount, newerCount) => told.Add((lostCount, newerCount));
+        pipe.Restore();
+
+        var card = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(System.IO.Path.GetFileNameWithoutExtension(twin), card.Id);
+        Assert.Equal([twin], Records());
+        Assert.False(File.Exists(again));
+        Assert.Equal([(4, 0)], told);
+
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+        Assert.Equal("waiting", (await client.ResultAsync("twin", Key)).GetProperty("state").GetString());
+        foreach (var each in new[] { "split", "short", "long" })
+        {
+            Assert.Equal(InstancePipe.Lost, Code((await client.ResultAsync(each, Key)).GetProperty("answer")));
+        }
+
+        Assert.Equal(0, driver.Ran);
+    }
+
+    /// <summary>A conflict over an id the journal already ended leaves that ending as it was.</summary>
+    [Fact]
+    public async Task A_restored_conflict_never_overwrites_an_ending_the_journal_holds()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new HeldModule(DriverModule.Name);
+        driver.Let.SetResult();
+        var (dispatcher, services) = Compose(log, driver);
+        using var _ = services;
+        const string Key = "the-first-terminal-s-key-0123456789";
+        var journal = DaorisHome.Entry(Home, HomeEntry.Pipe);
+        Directory.CreateDirectory(journal);
+        var now = DateTimeOffset.UtcNow;
+        var bound = $"\"request\":\"DAORIS.DRIVER.{Land}\",\"payload\":\"{Sha("""{"id":"s1a2b3c4"}""")}\",\"key\":\"{Sha(Key)}\"";
+        File.WriteAllText(System.IO.Path.Combine(journal, $"{now:yyyy-MM-dd}.jsonl"),
+            $"{{\"id\":\"done\",\"at\":\"{now.AddMinutes(-5):O}\",\"state\":\"answered\",{bound},\"answer\":{{\"id\":\"done\",\"success\":true,\"data\":{{\"done\":true}}}}}}\n");
+        WriteRecord("done", DriverModule.Name, Land, new { id = "s1a2b3c4" }, Key, minutes: 1);
+        WriteRecord("done", DriverModule.Name, Land, new { id = "s5e6f7a8" }, Key, minutes: 2);
+
+        using var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", clock: new HeldClock()) { Grounds = new StubGrounds() };
+        pipe.Restore();
+
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Empty(Records());
+        await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
+        await client.HelloAsync(HomeId);
+        var read = await client.ResultAsync("done", Key);
+        Assert.True(read.GetProperty("answer").GetProperty("success").GetBoolean(), read.GetRawText());
+    }
+
+    /// <summary>
     /// The design's journal row (§10, §7.1): a refused press whose journal line cannot be written still has its record removed, since
     /// the record said it ended first, and a restart asks nothing again.
     /// </summary>
@@ -935,6 +1014,17 @@ public sealed class PipeConfirmTests : Bridge
             .Order(StringComparer.Ordinal),
     ];
 
+    /// <summary>
+    /// The grounds a landing of <c>s1a2b3c4</c> reads, as its record keeps them (§15.2 item 7: whole, by kind and subject): its session, its
+    /// tree's head and its plan.
+    /// </summary>
+    private static readonly object[] LandGrounds =
+    [
+        new { kind = "session", subject = "s1a2b3c4", value = "completed|" + new DateTimeOffset(2026, 10, 20, 9, 0, 0, TimeSpan.Zero).UtcTicks, words = "completed" },
+        new { kind = "branch", subject = "s1a2b3c4", value = "" },
+        new { kind = "plan", subject = "LANDING", value = "p" },
+    ];
+
     private static string Sha(string text) =>
         Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)));
 
@@ -945,7 +1035,7 @@ public sealed class PipeConfirmTests : Bridge
     /// </summary>
     private string WriteRecord(
         string request, string module, string route, object payload, string key, string state = "waiting", string? answer = null,
-        string? fingerprint = null, int minutes = 0, int version = 1, object? extra = null)
+        string? fingerprint = null, int minutes = 0, int version = 1, object? extra = null, object[]? grounds = null)
     {
         var text = JsonSerializer.Serialize(payload, Shenora.Core.Ipc.IpcJson.Options);
         var id = Guid.NewGuid().ToString("N");
@@ -958,7 +1048,7 @@ public sealed class PipeConfirmTests : Bridge
             module,
             route,
             payload = text,
-            grounds = new[] { new { kind = "session", subject = "s1a2b3c4", value = "completed|" + new DateTimeOffset(2026, 10, 20, 9, 0, 0, TimeSpan.Zero).UtcTicks, words = "completed" } },
+            grounds = grounds ?? LandGrounds,
             asker = new { process = "pwsh", pid = 7 },
             asked = new DateTimeOffset(2026, 10, 20, 9, minutes, 0, TimeSpan.Zero),
             keyed = false,
