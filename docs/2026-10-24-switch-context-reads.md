@@ -1,6 +1,6 @@
-# SWITCHCTX1: the reads of rounds 1 to 3 (D191)
+# SWITCHCTX1: the reads of rounds 1 to 4 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-switch-context-design.md` and its notes at `ff2461081`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed; under D191's note of 2026-10-24 this design, which reverses D189 point 1 on an agent's own transcript, is not accepted on one maker's read. The Opus foundation reader asks another round (12 findings, 4 blocking). Round 2 answers it. The Opus read of round 2 follows, which round 3 takes in the design's §9, and Codex's read of round 3, which round 4 answers in the design's §10.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-switch-context-design.md` and its notes at `ff2461081`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed; under D191's note of 2026-10-24 this design, which reverses D189 point 1 on an agent's own transcript, is not accepted on one maker's read. The Opus foundation reader asks another round (12 findings, 4 blocking). Round 2 answers it. The Opus read of round 2 follows, which round 3 takes in the design's §9, and Codex's read of round 3, which round 4 answers in the design's §10. Both makers then read round 4, neither shown the other's read, and SWITCHCTX1c-i, the line view, was accepted alone on those two reads (the design's Standing).
 
 ## Opus (foundation), round 1
 
@@ -695,5 +695,354 @@ Read-only review completed; nothing changed. I formed my findings before reading
 #### 6. A smaller shape
 
 1. **Non-blocking — retain the two halves, reduce the carry protocol.** First ship the corrected line view; then support Claude ACP on the curve path using one durable carry record containing phase, source/destination, compatibility identity, anchor and pending delivery disposition (`docs/2026-10-24-switch-context-design.md:368`). Fall back before prompting whenever proof fails, preserve ordinary uncertainty handling after execution starts, and extend that same protocol to limits and other doors; another agent continues through today’s brief.
+
+**Verdict: another round.**
+
+## Opus (foundation), round 4
+
+The independent Opus 5.5 reader's foundation read of round 4 at `4698728a5`: 11 findings, 4 blocking; accept after named changes.
+
+### 0. Codex's round-3 findings
+
+Paths without a root are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, and page paths are under `src/Daoris.Web/src/`, as in the design. I read `4698728a5`. Its `src/` is the same as `972b17577`'s.
+
+| # | Codex (blocking in bold) | Round 4's answer | Checked against the code | Standing |
+|---|---|---|---|---|
+| **1.1** | **Child replay is not filtered** | During the load, drop updates on the conversation's own id and on `<id>:replay-subagent:*`; count only the own id | `Replayed` matches the own id only (`Acp.cs:3431-3435`, applied at `:2489`), and a child falls into the parent's record (`Acp.cs:2519-2533`, `AcpStreams.cs:95-99`). The answer holds, but it depends on the package's shape for a child's id. Dropping every update while the load is answered is safer (finding 5) | Taken |
+| **1.2** | **`LimitHeld` cannot recognise the exception** | Exception withdrawn; the lists must be equal | `LimitHeld.cs:17-56` reads coded cooling lines; `AccountLimits.cs:60-67` reads the door's failure alone | Taken |
+| **1.3** | **The adapter's version does not identify the transcript's writer** | The identity is the adapter's version plus the CLI's | `HarnessSelection.cs:603-608` holds. Nothing says how a start reads the CLI's version (finding 7) | Taken, residue |
+| 1.4 | Package evidence is not in the checkout | 1a checks in a fixture | It is a plan, not evidence. Errors in the reading fail safe (§2) | Taken |
+| **2.1** | **Duplicate prompts** | U/R decided before any prompt | Holds for one carry. Two limited carries in a row can hand the same words twice (finding 3) | Open in part |
+| **2.2** | **The fallback can repeat tool work** | Only `refusal` or a prompt `Fatal` with no `Tool` event falls back | Holds for tool calls (`Acp.cs:3100-3112`; a subagent's card, `AcpStreams.cs:169-181`). "Nothing ran" claims more than that (finding 6) | Taken |
+| **2.3** | **Assistant ids do not establish context** | Messages, thoughts and tool calls by id; equal lists; claim narrowed | `Acp.cs:3091-3112` keeps each id | Taken |
+| **2.4** | **The copy is not protected against another writer** | Create-only, never replace | A move refuses a name that already exists. The cost is real (finding 8) | Taken |
+| **2.5** | **Recovery has no committed delivery state** | A carry record, its phases, a come-up table | The success path holds. The chat's open runs after the take has already spoken (finding 2), and the fallback's own boundaries are missing (finding 4) | Open in part |
+| 2.6 | Name `Toolchain.Owner` | Named | `Harnesses.cs:281`; `CurveMove.cs:86` | Taken |
+| **3.1** | **D125/D189's ban on copying** | Answered through 1.1, 2.3 and 2.4 | Holds | Taken |
+| **3.2** | **The record reversal** | A further part; no record names a second conversation | Holds, except that a shell ended inside a fallback can rewrite `harness.json` (finding 4) | Taken, residue |
+| 3.3 | Compaction's reason; keep the cost unmeasured | Kept unmeasured | — | Taken |
+| **3.4** | **D197/D206 inherit the delivery rules** | U/R, and new notes | Finding 3 | Open |
+| **4.1** | **Earlier does not mean ended** | Ancestry by `from`, each part's own liveness, a read-only mode | `conversation.ts:881-901`; `D167.md:73-82` | Taken |
+| **4.2** | **`handed` misses the push chain** | Added to `Fields`, a declared change, slice tests | `SessionsStateSlice.cs:39-47`. Precedent at `StatePublisher.cs:258-264`. The seam between driver and modules is not named (finding 10) | Taken |
+| 4.3 | Driver authority for the endpoint | Its door row | `PersonDoors.cs:256` | Taken |
+| 4.4 | Translation | Family `carry`, `{{why}}` kept | `noteLines.ts:316`, `:795-806` | Taken |
+| **5.1** | **SWITCHCTX1c-i** | Lifecycle, siblings, one scroll owner | `SessionConversation.tsx:161-200`; `followTail.ts:49-61` | Taken |
+| **5.2** | **1a's stand-in** | Each case named | The main proof passes only on a fixture that holds `Ran.Entries` (finding 1). Cases for findings 2 and 4 are missing | Taken, residue |
+| **5.3** | **SWITCHCTX1b** | Consecutive carries; delivery at come-up | The consecutive proof claims more than the rule gives (finding 3) | Open |
+| 5.4 | 1c-ii's prerequisites | After 1c-i and 1a | Its codes belong to the driver (finding 10) | Taken |
+| 5.5 | 1d's dependence | After 1a and 1b | — | Taken |
+| **5.6** | **SWITCHCTX1e** | A read-back of its own and a row keyed by the CLI | — | Taken |
+| 5.7 | 1f names which case ran | Named | — | Taken |
+| 6.1 | A smaller shape | Adopted. The first-turn fallback and D206's box are kept apart, each with a reason | Both reasons hold | Taken |
+
+### 1. Claims about the code
+
+These claims are wrong:
+
+- **§1.7, and both `model` rows of §2.1.** The design says "the part's last acknowledged model and effort are the last of `Ran.Entries` (`ActorRun.cs:119`, `:151-154`)".
+  - Only a composer change writes an `ActorEntry` (`ChatRunner.cs:2106`).
+  - A new part's watch starts with no prior: `ChatRunner.cs:1468` passes `goOn?.Record.Ran`.
+  - A driven run is handed only its own record (`Loop/Driver.cs:3652-3665`), and no driven path writes an entry.
+  - So a part whose model nobody changed holds no entry.
+- **§2.1, "the session's acknowledged options (`LastAcknowledgedOptions`) name both".**
+  - That property holds only the list a set returned, and is null where nothing was set (`Acp.cs:597`, `:604-605`).
+  - `CarryAsync` sets nothing where the current value already equals what was asked (`Acp.cs:723`). That is exactly the case §1.7 expects after a load lands on the transcript's model.
+- **§2.3 *Where it runs* ("in each, in this order … 6. the spawn; the agent's `session/load` … 7. … `verified`"), and §2.4 step 6 writing the lines after it.**
+  - `ChatRunner.StartAsync` returns as soon as the process is spawned and its watch started (`ChatRunner.cs:1609-1630`).
+  - The protocol open belongs to the watch (`CaptureProtocolAsync`, `:2645-2647`), and `chat.Opened` (`:2647`) releases the queued words.
+  - By then `HandOverTake.RunAsync` has queued its message and written the old part's last line (`HandOver.cs:256-276`).
+  - The live `LimitMove` has queued the refused words in the same way (`LimitMove.cs:141-172`).
+- **§2.5, "on the same process … opens `session/new`".**
+  - An `AcpSession` opens once: its handshake refuses a second open (`Acp.cs:1614`, `:1658`).
+  - After a load answers, updates on any non-child id reach the session (`Acp.cs:2496-2533`): a `config_option_update` replaces the options and a usage frame is measured, whatever the id.
+- **§2.5, the further part "by today's move".**
+  - The hand-over's judge refuses the same agent on the same account (`HandOver.cs:162-166`).
+  - `LimitHeld` reads only turns refused while the account cooled (`LimitHeld.cs:31-37`).
+  - So nothing today opens a further part, or reads the words, of a first turn that ended `refusal`.
+- **§2.4, "Consecutive limited carries … its own prompt is in the transcript, so nothing it was handed goes twice".** The rule does not give this (finding 3; `LimitHeld.cs:17-56`; `ChatRunner.cs:2149-2165`, `:2198-2204`).
+- **§2.2, `projects/<Flatten(tree)>/`.** The code itself says Claude Code names a folder longer than 200 characters with a hash of its own, which `Flatten` does not reproduce (`Platform/ToolHomeLeftovers.cs:36`, `:49-50`).
+- **§2.3, `KeepHandedAsync`.** The name is already used for KEEP1b's downloads (`Loop/Driver.cs:3015`, `Platform/DownloadKeeping.cs:33`, and the service's `OpinionStore.cs:130`).
+
+These I checked and found as written:
+
+- The curve and the take: `CurveMove.cs:36-37`, `:62-118`; `ChatHandOver.cs:16`, `:145-157`, `:224-230`; `HandOver.cs:135-174`, `:232-296`.
+- The driven carry-on: `Loop/Driver.cs:2445-2462`, `:2544-2549`, `:2563`, `:2643`, `:2735`, `:4582-4626`.
+- `LimitMove`: `:12-13`, `:51-189`, `:205-313`, `:352-379`, `:411-436`.
+- The resume machinery: `Acp.cs:671-756`, `:804-853`, `:3355-3435`; `ChatRunner.cs:496-648`, `:2618-2667`.
+- The record of a turn: `Acp.cs:3084-3129`.
+- `Continuation.cs:170-239`, `:585-593`; `HarnessConversations.cs:8-56`; `SessionHomeFiles.cs:34-35`; `AgentErrors.cs:5-19`.
+- The actor door: `Sessions.cs:1406-1423`, `Program.cs:1398-1409`, `PersonDoors.cs:256`, `ServiceClient.cs:2266`.
+- The slice: `SessionsStateSlice.cs:39-47`, `:62-67`.
+- The homes: `HarnessSettings.cs:878-882`, `DaorisHome.cs:373`, `HarnessSelection.cs:579-580`.
+- The page: `conversation.ts:881-901`, `SessionConversation.tsx:161-200`, `WorkFrame.tsx:2471-2472`, `PartsStrip.tsx:90-113`, `AskConversation.tsx:870-876`, `locales/en/note.json:202-214`, `noteLines.ts:296-318`.
+- No reader of a kept id looks a record up by its conversation (`ChatGoOn.cs:480`, `LimitWaits.cs:224`, `DriverContinuations.cs:43`, `:62`, `:208`, `:1220`, `HelpConversations.cs:296`, `ToolHomeLeftovers.cs:149`, `SessionGroups.cs:958`). Two records naming one id therefore confuse none of them.
+
+### 2. The carry
+
+**A carried context reaching an account or agent it must not.** None found.
+
+- `own-home` checks both records. The homes are reached only through `ProfileHome(…, Toolchain.Owner(adapter), …)`.
+- `agent` holds the adapter unchanged.
+- A teammate's record never moves (`CurveMove.cs:73`, `LimitMove.cs:66`), and `handed` stays off the sync wire.
+- The destination is always an account the start was already allowed to run (D197 point 1).
+- The never-copied list is per agent, and a path through a link is refused.
+
+**A turn lost, doubled or replayed.** Three holes, all in delivery rather than the copy:
+
+1. **The brief goes into the carried conversation.** The take queues its brief before the carried open even runs (finding 2). As the code stands, the brief would be the carried conversation's first prompt. That gives the agent both the brief and its own transcript, and spends a turn on the new account that nobody asked for — exactly what §5 rejects.
+2. **Words handed twice.** Two limited carries in a row, each finding none of the refused prompts in the transcript, hand the earlier refused words twice (finding 3).
+3. **A delivery lost.** A shell that ends inside a fallback, after the carry record is removed but before the brief and words are kept, loses that delivery (finding 4).
+
+The replay itself is never kept, which holds (`Acp.cs:2489`).
+
+**A tool call run twice.**
+
+- At the open, nothing is prompted, once finding 2's order is fixed.
+- At the first turn, the test of whether the turn's record holds a `Tool` event is sound for tool calls: background work starts from a recorded call, and a subagent becomes a card.
+- It does not show that nothing ran at all: the prompt's hooks run before the model does (finding 6).
+- On the driven path, a refused first turn is also a failed run that the look will carry on. Nothing stops the design's further part and the look's own carry-on from both opening (finding 10).
+
+**A file replaced.**
+
+- Create-only moves hold: neither `File.Move` without overwrite nor `Directory.Move` writes over a name that exists.
+- The names this carry wrote are recorded only at `copied`. A shell that ends mid-copy leaves this carry's own names, which the come-up then reads as `exists` (finding 7).
+
+**A crash between the carry record's phases.**
+
+- The success path's rows hold.
+- The fallback has no row. It names its `session/new` in `harness.json` through `onConversation` (`ChatRunner.cs:2623`, `Acp.cs:1640`) while the record still says `copied`. A come-up at `copied` then reruns the carry and writes the carried id over the fallback's.
+- The record is removed before the fallback's brief and words are handed by today's `say`, which is not durable (`HandOver.cs:271`, `LimitMove.cs:167`).
+- At `opened` or `copied` on a curve move, the come-up spawns a record that has nothing to say. It could instead leave the record for its next word's carried way.
+
+**A session read as finished when it is not.** None found.
+
+- The line view takes each part's own liveness, which holds.
+- A carry record whose new part went on elsewhere before its first answer stays pending forever and is never ended. In 1a this happens on today's limit move of a carried part (finding 10).
+
+**The fallback's proof that nothing ran.**
+
+- At the open, the proof holds by construction, provided `chat.Opened` comes only after `verified` or the fallback (finding 2).
+- At the first turn, it proves that no tool call started, not that nothing ran (finding 6).
+
+**The package's claims and the fixture plan.** Enough for what they are used for.
+
+- Every misreading of the package fails safe: an id stamped differently gives `short-replay`, a tool result replayed as a user message gives `suffix`, and an unread CLI gives `version`.
+- The one unsafe gap is between the adapter's replay (read by the SDK's `getSessionMessages`) and what the CLI actually loads into context. The design names it as unmeasured (§2.3, §3.1), and SWITCHCTX1f is where it is measured.
+- The fixture is a transcription. It is enough to shape the stand-in, provided it also states how a start reads the CLI's version (finding 7) and the rule for naming the project folder, including its 200-character bound.
+
+### 3. The reversals and the line view
+
+- **D125, and D189 points 1 and 5 (copying between account homes).**
+  - The reason is sufficient: copy by name only, after the writer has exited, never over a name that stands, never into or out of the person's own home, held to the pinned identity, and read back before any prompt.
+  - What rested on the old rule is named: `HarnessSettings.cs:878`, `HarnessConversations.cs:8-10`, `LimitMove.cs:12-13`.
+  - The deletion inventory's "never the harness's conversation" still holds, with one copy per home the line ran on.
+- **D131 points 2, 4 and 5 and their rejections; D137 point 8 and its two rejections; D167 point 1.**
+  - The reason is sufficient: D167's entry is the fold, and no reader keys a record by its conversation (§1).
+  - D131's "one conversation would have two homes" is the copy itself, answered by point 6 standing.
+- **D189 point 7 (compaction at a move).** Sufficient: no way on is claimed cheaper (session-context design `:288-289`).
+- **Unnamed reversal.** D189 point 3's last sentence also changes: *a carry-on after a limit and a hand-over stay new parts, handed the brief*. So does its *Why*: *without reaching into an account's home* (finding 9).
+- **SWITCHCTX1c-i** draws only the attended part's ancestry by `from`, each part with its own record's liveness, read-only by a mode of its own, and leaves alongside parts to the strip. One scroll owner holds as specified. It reverses nothing (D167 point 5 keeps *every act on the part shown*). Three things are left unsaid (finding 11):
+  - An ended line opens at the region's top (`followTail.ts:56`), which now means the attended record's head followed by the oldest part.
+  - Pressing an earlier part hides the parts after it.
+  - Nothing bounds how many parts a long line loads.
+
+### 4. The rows
+
+- **SWITCHCTX1c-i** can be built alone, in the web lane only. Its rewordings keep every placeholder, so `NoteCodesTests` (`NoteCodesTests.cs:52-60`) still passes. Its proofs prove its claims; it should add the ended line's opening position.
+- **SWITCHCTX1a** cannot prove its main claim as specified.
+  - Its stand-in passes only where the old part holds `Ran.Entries`, which no real chat that kept its default model has (finding 1).
+  - It has no proof that the take waits for the open's outcome (finding 2), and none for a shell ending inside a fallback (finding 4).
+  - It cannot write the carried lines' codes without their en and zh entries, which belong to 1c-ii (`NoteCodesTests.cs:8-12`). It should say that it writes today's curve lines until then (finding 10).
+- **SWITCHCTX1b** comes after 1a.
+  - Its proof "two limited carries in a row: the second hands nothing the transcript holds" fails when neither carry found the refused prompts in the transcript (finding 3).
+  - These are unnamed: the driven come-up, the driven go-on's carried way (`DriverContinuations.cs:61`, `:209`, `:1220`), the driven `SayMoved` (`Driver.cs:2549`) moving after the open, and when `.help.json`'s `Handed` is written (today `brief`, at `LimitMove.cs:424`, before the outcome is known).
+- **SWITCHCTX1c-ii** spans two lanes: its codes are the driver's (`NoteCodes`, `HandOverNotes`), and its words are the web's.
+- **SWITCHCTX1d, 1e and 1f** are gated correctly, and their proofs fit their claims.
+
+### 5. Findings
+
+1. **Blocking. The model condition cannot be met in the owner's case.** §1.7, §2.1, §2.5.
+   - **What is wrong.** `Ran.Entries` is written only by a composer change (`ChatRunner.cs:2106`) and is never carried into a new part (`ChatRunner.cs:1468`; `Loop/Driver.cs:3652-3665`). So the first judgement refuses `model` on every curve move of a chat whose model nobody changed, on every driven carry, and on every second carry. Each is said as `moved.carry-failed`.
+   - **Also wrong.** `LastAcknowledgedOptions` is null where `CarryAsync` set nothing (`Acp.cs:597`, `:604-605`, `:723`), which is the case expected after a load.
+   - **Smallest change:**
+     - Keep what ran as an `ActorEntry` from the session's current options after every protocol open's set (the carried part's included) as well as at each composer change.
+     - Judge "what ran" on the session's current options after `CarryAsync`, and on `LastAcknowledgedOptions` only where a set returned one.
+     - 1a proves a line whose old part never changed its model, and two carries in a row.
+2. **Blocking. The carry's steps do not run inside the start.** §2.3, §2.4 steps 4-6.
+   - **What is wrong.** The chat start returns before the protocol open (`ChatRunner.cs:1609-1630`, `:2645-2647`). The take and the limit move write their lines and queue the brief or the words before the outcome is known (`HandOver.cs:256-276`; `LimitMove.cs:141-172`).
+   - **Smallest change:**
+     - `ChatStart` carries the open's outcome: a task the watch completes at `verified` or at the fallback's `session/new`.
+     - `HandOverTake`, `LimitMove` and `HelpStartAsync` await it before writing their lines and `session.moved`, and before saying anything.
+     - `chat.Opened` comes only after it. The driven `SayMoved` moves after the run's open.
+     - 1a proves that no brief is ever queued to a carried part.
+3. **Blocking. Two limited carries in a row can hand the earlier refused words twice.** §2.4 step 5; D197's and D206's round-4 notes; 1b.
+   - **What is wrong.** R and the words to hand are read across the parts by `LimitHeld.Of`. The carried part's own refused prompt is recorded as the person's words (`ChatRunner.cs:2149-2165`, `:2198-2204`), and it already held the earlier words wherever U was 0.
+     - With U = 0 twice, those earlier words go once as their own turn's and again inside the carried part's.
+     - With the mixed orders, the count fits neither case and falls back.
+     - D206's box come-up composes the refused words whatever the disposition (`LimitMove.cs:296-313`, `:376-379`).
+   - **Smallest change:**
+     - Count R and U from the still-pending earlier carry record's disposition: only refused turns after that read-back, and only user messages after its last matched item.
+     - Hand only the newest part's refused words, since an earlier carried prompt settled the ones before it.
+     - The box's come-up applies the carry record's disposition, not only dropping the brief.
+     - 1b proves the orders (0,0), (0,1), (R,0) and (R,1).
+4. **Blocking. A fallback's own boundaries are not recoverable.** §2.4 *Recovery*, §2.5.
+   - **What is wrong.**
+     - The fallback's `session/new` is named in `harness.json` while the record still says `copied` (`ChatRunner.cs:2623`, `Acp.cs:1640`). The come-up then reruns the carry over it.
+     - The carry record is removed before the brief and words are kept. Today's `say` is not durable (`HandOver.cs:271`, `LimitMove.cs:167`), so a crash in between loses the brief, and on a limit move the refused words. D197's note claims the opposite.
+   - **Smallest change:**
+     - Write a phase `falling-back`, with its code, before the fallback opens anything.
+     - At the come-up, a record at `falling-back` finishes the fallback (the brief from the recipe and the words by their disposition, kept through the dispatcher) and never reruns the carry.
+     - Remove the carry record only once that delivery is kept on the new record.
+     - Leave a curve move found at `opened` or `copied` to its next word.
+     - 1a proves a shell ended inside the fallback.
+5. **Not blocking. The same-process fallback is a new door path, and the child filter rests on the package.** §2.3, §2.5.
+   - **What is wrong.** Covered in §1 (`Acp.cs:1614`, `:1658`, `:2496-2533`, `:3431-3435`).
+   - **Smallest change:**
+     - Name the second `session/new` on one handshake, or respawn for the fallback.
+     - After the fallback, drop every update not on its own id.
+     - While the load is answered, drop every update whatever its id, and count only the own id's.
+6. **Not blocking. The first-turn rule claims more than the record shows, and its further part has no opener.** §2.5.
+   - **What is wrong.**
+     - The absence of a `Tool` event shows that no tool call started, not that nothing ran: a prompt's hooks run before the model does.
+     - `refusal` does not distinguish a provider refusing the carried history from one refusing the prompt.
+     - The hand-over's judge refuses the same account (`HandOver.cs:162-166`), and `LimitHeld` does not read a turn ended `refusal` (`LimitHeld.cs:31-37`).
+   - **Smallest change:**
+     - Word the rule as "no tool call started".
+     - Name the opener: `LostAsync`'s shape, why `retry`.
+     - Name a reader for the words of a turn that ended `refusal`.
+     - `conversation.carried` keeps the class of the provider's words for 1f.
+7. **Not blocking. The table's identity and names are underspecified.** §2.1, §2.2.
+   - **What is wrong.**
+     - Nothing says how a start reads the CLI's version: the SDK's `package.json` under the pinned adapter, or the pinned `claude`.
+     - The folder rule ignores the code's own 200-character and unproven-name bounds (`ToolHomeLeftovers.cs:36`, `:49-50`).
+     - The names this carry writes are recorded only at `copied`.
+   - **Smallest change:**
+     - Name the CLI version's read.
+     - Refuse a tree whose flattened name is unproven (`tree`), rather than meeting it as `not-found`.
+     - Write each name to the carry record before its move.
+8. **Not blocking. Create-only costs most where the owner works.** §2.2, §3.2.
+   - **What is wrong.** With the curve's 30-minute hold and a few accounts, every return to an account goes by the brief.
+   - **Smallest change:**
+     - Say so in the owner's terms in §2.2 and §3.2, and have 1f count `exists`.
+     - Leave a set-aside of the left copy (renamed, never deleted or written) to a later row, if the count shows it is worth it.
+9. **Not blocking. A reversal is unnamed.**
+   - **What is wrong.** The carry also changes D189 point 3's last sentence and D189's *Why* (*without reaching into an account's home*) (`D189.md:22-24`, `:45-46`).
+   - **Smallest change.** Name both in §4 and in D189's note.
+10. **Not blocking. The rows, the lanes and the names are incomplete.** §6, §2.3.
+    - **What is wrong.**
+      - The carried lines' codes need their catalogue entries before the driver can write them (`NoteCodesTests.cs:8-12`).
+      - The seam from the driver's `handed` write to `StatePublisher.Publish` (`StatePublisher.cs:258-264`) is not named.
+      - `KeepHandedAsync` is a name already in use.
+      - A carry record whose new part went on elsewhere before its first answer has no end.
+      - On the driven path, the further part and the look's own carry-on can both open.
+    - **Smallest change:**
+      - 1a writes today's curve lines until 1c-ii lands, and 1c-ii is a driver-and-web row.
+      - Name the publish seam, and rename the update, for example to `KeepHowHandedAsync`.
+      - Add a come-up row that ends a carry record whose part went on elsewhere.
+      - 1b names the driven come-up and the driven go-on's carried way, opens one further part only, and writes `Handed` after the outcome.
+11. **Not blocking. Three things in 1c-i are left unsaid.** §2.7.
+    - **What is wrong.** Where an ended line opens (`followTail.ts:56`), that pressing an earlier part hides the later ones, and that a long line's parts are unbounded.
+    - **Smallest change.** State the first two in the row's proofs, and bound the parts drawn, with a press for more.
+
+11 findings, 4 blocking.
+
+**Verdict: accept after named changes the steward can check without another read.** This is my read's verdict; by D191's note of 2026-10-24 the design still waits for Codex's read of round 4. Round 4's answers to Codex hold against the code where they reach it: the child filter, equal lists by id, create-only landing, the further part keeping each record to one conversation, and the line view's lifecycle and scroll. The reversals have sufficient reasons; the one unnamed amendment (finding 9) is a wording change. What blocks is in the plumbing. The model condition reads a field only the composer writes, so the carry would never run in the owner's own case (finding 1). The carry's steps are placed inside a start that returns before the protocol open, so as the code stands the brief would be queued into the carried conversation (finding 2). Two limited carries in a row can hand words twice (finding 3). The fallback, which will be the commonest outcome at first, is outside the recovery table (finding 4). Each change is local and stated against the lines that show it, and so are findings 5 to 11. Finding 3 is 1b's alone. SWITCHCTX1c-i is sound as round 4 writes it; finding 11 can be taken in the same pass.
+
+## Codex, round 4
+
+Codex's read of round 4 at `4698728a5`: 22 findings, 9 blocking; another round. It ran read-only on main from outside the install, its links made repository-relative.
+
+Reviewed HEAD `4698728a5`. Nothing changed; I read neither `local/` nor files outside this checkout. The installed adapter bundle is unavailable within that boundary.
+
+Below, **design** means `docs/2026-10-24-switch-context-design.md`. Driver source paths are relative to `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+
+**0. Round-3 findings**
+
+“Taken” assesses the design contract, not an implementation that already exists. Severity below describes what remains blocking now.
+
+| Round-3 finding | Disposition | Basis |
+|---|---|---|
+| 1.1 Child replay | Taken — **non-blocking** | `design:457` filters parent and replay-child updates. |
+| 1.2 Limit sentence exception | Taken — **non-blocking** | `design:466` removes the unsupported exception. |
+| 1.3 Transcript writer’s version | Taken — **non-blocking** | `design:312` requires adapter and CLI identities. |
+| 1.4 Package evidence unavailable | Deferred — **non-blocking** | `design:361` requires checked-in evidence before building the carry. |
+| 2.1 Duplicate prompts | Open — **blocking** | `design:544` substitutes counts for prompt identity; see 2.1 below. |
+| 2.2 Post-execution fallback | Open — **blocking** | `design:608` trusts an event log that can lose tool events. |
+| 2.3 Incomplete context proof | Taken — **non-blocking** | `design:476` expressly limits what verification proves. |
+| 2.4 Concurrent replacement | Taken — **non-blocking** | `design:374` requires create-only moves. |
+| 2.5 Recovery and delivery commitment | Open — **blocking** | `design:438`, `:567`, `:601` leave intermediate writes unresolved. |
+| 2.6 Account-home ownership | Taken — **non-blocking** | `design:347` names `Toolchain.Owner`. |
+| 3.1 Copying prohibition | Taken — **non-blocking** | `design:394` answers the reasons with a bounded exception. |
+| 3.2 Record/conversation attribution | Taken — **non-blocking** | `design:622` retains refused events and usage on the carried record. |
+| 3.3 Compaction and cost | Taken — **non-blocking** | `design:739` keeps retention and cost unmeasured. |
+| 3.4 Limit amendments | Open — **blocking** | `D197.md:392`, `D206.md:331` still promise unsupported “each once.” |
+| 4.1 Earlier versus ended | Taken — **non-blocking** | `design:640` separates ancestry, liveness and read-only controls. |
+| 4.2 Pushed `handed` | Taken — **non-blocking** | `design:507` includes projection, wake and projection tests. |
+| 4.3 Endpoint authority | Taken — **non-blocking** | `design:503` requires `DoorClass.Driver` and keyless refusal. |
+| 4.4 Translation contract | Taken — **non-blocking** | `design:694`, `:718` specify the family and placeholder checks. |
+| 5.1 Line-view row | Taken — **non-blocking** | `design:921` includes lifecycle, ancestry and scroll proofs. |
+| 5.2 Carry stand-in | Open — **blocking** | `design:916` tests saved phases, not every intervening effect. |
+| 5.3 Other moves and restart | Open — **blocking** | `design:923` names the cases, but their delivery assertions remain unsettled. |
+| 5.4 Carried presentation prerequisites | Taken — **non-blocking** | `design:924` requires both preceding rows and pushed-state tests. |
+| 5.5 Codex prerequisites | Taken — **non-blocking** | `design:925` requires the common protocol and readable evidence. |
+| 5.6 Pipe verification | Taken — **non-blocking** | `design:769` keeps it disabled until all three prerequisites hold. |
+| 5.7 Case-specific measurement | Taken — **non-blocking** | `design:754` names measured and unmeasured cases separately. |
+| 6.1 Smaller shape | Taken — **non-blocking** | `design:1043` adopts the scope; the protocol defects below remain. |
+
+None of the round-3 findings is shown wrong. The outstanding package evidence has a reasonable implementation-stage home, but remains independently unverified here.
+
+**1. Claims about existing code and the pinned package**
+
+1. **Blocking — the dispatcher does not guarantee the delivery durability claimed.** `design:535` and `:569` rely on keeping and attempting words before sending them. However, `Conversations/Chat/ChatTurns.cs:177` permits process-only delivery after a keep failure, and `Conversations/SaidDoor.cs:86` explicitly permits sending after an attempt-mark failure. The carry needs a checked persistence path, or must acknowledge the resulting loss/replay possibility.
+
+2. **Non-blocking — the detailed package claims remain unverified.** `design:264` through `:291` cite installed package internals absent from this checkout; `Agents/Adapters/Adapters.cs:1895` documents a different package/SDK pair. Preserve the exact identity and auditable source-derived evidence in SWITCHCTX1a before enabling its row; the current repository alone cannot establish those claims.
+
+**2. The carry**
+
+1. **Blocking — `U = R` does not establish which prompts survived.** `design:544` treats equal counts as proof that every refused prompt is present, while `design:478` explicitly declines to verify prompt identity. One missing refused prompt plus one unrelated user message produces the same count, with unchanged agent/tool anchors; terminal turns outside the record are expressly possible (`docs/2026-10-03-session-messages-design.md:291`). Persist a correspondence to the actual composed prompts and their constituent words, and refuse ambiguous suffixes; also define that correspondence when several refused words become one subsequent prompt.
+
+2. **Blocking — “no recorded tool” is not positive evidence that nothing ran.** The fallback at `design:614` can repeat tool work because `Sessions/Events/SessionEventLog.cs:84` swallows event-write failures and `Agents/Acp/Acp.cs:2554` likewise tolerates failed recording. Furthermore, `Agents/Errors/AgentErrors.cs:17` includes unread failures in `Fatal`, which proves no pre-execution rejection. Require execution evidence independent of successful event logging and an explicit pre-execution rejection; incomplete evidence must retain ordinary uncertainty handling.
+
+3. **Blocking — opening the new record is not recoverably idempotent.** `design:438` opens the ledger record and only afterward saves its ID in the carry record, but `design:565` assumes `judged` means no new record exists. The store generates a fresh ID on every create (`src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs:799`), and the open has no operation key (`SessionLedger.cs:652`). Define recovery of a committed open whose answer or subsequent carry write was lost, rather than repeating an unidentified open.
+
+4. **Blocking — delivery needs a durable terminal disposition.** `design:567` distinguishes delivery not kept, kept and attempted, but does not define the committed handoff after a word leaves `said`. The existing door removes it once written (`Agents/Acp/Acp.cs:2076`; `Conversations/Chat/ChatTurns.cs:1121`), before an answer, so queue absence cannot distinguish “never kept” from “already sent.” Specify durable delivery identity and attempted/sent-or-uncertain state, including the D206 box’s ownership, before recovery may enqueue anything.
+
+5. **Blocking — fallback discards its recovery recipe too early.** `design:601` removes the carry record before handing the brief and words, leaving a crash window with an empty fallback conversation and no pending recipe. “As today” does not close it: `Conversations/Chat/ChatHandOver.cs:248` uses process-only `Take`, and `Conversations/SaidDoor.cs:33` persists `Text`, not the message’s `Brief` metadata. Keep a journaled fallback target and recipe until its delivery reaches a durable disposition, including the further-part fallback at `design:622`.
+
+6. **Non-blocking — the replacement problem is answered.** `design:374` requires absence checks followed by moves that refuse existing destinations, including a destination created between the check and move. Partial copies may remain after failure, as explicitly stated at `design:380`; no described copy path replaces an existing file.
+
+**3. Reversals and their dependents**
+
+1. **Non-blocking — D125 and D189 have a sufficient reason for the bounded copying exception.** `design:394` addresses account boundaries, changing formats and maker boundaries separately, while restoring left-copy fallback (`D189.md:291`). Existing home-ownership comments must change as listed at `design:825`; the delivery defects above still prevent accepting the complete mechanism.
+
+2. **Non-blocking — D131, D137 and D167 have a sufficient record-shape reason.** The entry supplies the grouping, and the further-part fallback preserves conversation attribution (`design:782`, `:805`; `D137.md:772`). The newest-part restriction remains essential to resume selection and to aggregating anchors; it must not become a lookup by conversation ID alone.
+
+3. **Non-blocking — D165 and D189’s compaction reversal is adequately bounded.** Continuity explains retaining the larger conversation, and `design:799` withdraws any cheaper-way claim. `D165.md:377` correctly limits installed evidence to the case that actually ran.
+
+4. **Blocking — D197 and D206’s promises exceed the delivery proof.** `D197.md:392` and `D206.md:331` assert that replay counts prevent duplicate delivery, but findings 2.1 and 2.4 show why they do not. Amend those notes together with the corrected prompt correspondence and recovery protocol; retaining the built box is reasonable only with one explicit delivery owner.
+
+**4. Other decided rules and line view**
+
+1. **Non-blocking — the earlier D182, person-door and translation omissions are addressed.** `design:503` names driver authority, `:507` includes the pushed projection and wake, and `:718` requires bilingual reason and placeholder tests. These match `PersonDoors.cs:256`, `SessionsStateSlice.cs:39` and the existing reason-family reader in `src/Daoris.Web/src/work/noteLines.ts:795`.
+
+2. **Non-blocking — SWITCHCTX1c-i now has a buildable contract.** `design:640` excludes alongside siblings, preserves each ancestor’s liveness and gives only the attended part automatic scroll ownership. Those changes answer the actual behavior at `src/Daoris.Web/src/work/conversation/conversation.ts:881` and `SessionConversation.tsx:161`; the row’s proofs at `design:921` cover the relevant regressions.
+
+3. **Non-blocking — D191’s standing is now honest.** `design:13` and `:1054` require both round-4 reads and leave the carry proposed. The independent line-view row is clearly separated from accepting the reversals.
+
+**5. Rows and order**
+
+1. **Non-blocking — SWITCHCTX1c-i can remain first.** Its ancestry, lifecycle, scrolling and historical-wording assertions are concrete (`design:921`). It need not wait for the carry protocol.
+
+2. **Blocking — SWITCHCTX1a still leaves recovery assertions to the builder.** `design:922` needs crash points between ledger creation and journal update, between fallback creation and delivery, and after delivery leaves `said`. Add failed event-write, failed keep and failed attempt-mark cases; saved-phase tests alone cannot prove the stated guarantees.
+
+3. **Blocking — SWITCHCTX1b names scenarios without settling their word mapping.** `design:923` needs assertions for a missing prompt replaced by an unrelated one, batched refused words across consecutive limits, and restart ownership across the carry record and D206 box. It correctly follows 1a once those contracts are settled.
+
+4. **Non-blocking — SWITCHCTX1c-ii has the right dependencies.** `design:924` tests absent, `own` and `brief` through pushed state. Its presentation work can follow the corrected 1a without waiting for every later door.
+
+5. **Non-blocking — SWITCHCTX1d has an explicit evidence dependency.** `design:925` leaves Codex disabled until its file layout and replay anchor are read. A builder is waiting for evidence, not being asked to invent compatibility.
+
+6. **Non-blocking — SWITCHCTX1e is correctly held.** `design:926` requires missing-ID evidence, its own versioned row and a read-back without prompting. If that read-back does not exist, the row remains unavailable and the brief remains the path.
+
+7. **Non-blocking — SWITCHCTX1f measures an appropriately narrow claim.** `design:927` records the actual case and preserves every other case as unmeasured. Its evidence must follow the corrected delivery guarantees before the next real move can reasonably be described as risking “nothing lost” (`design:752`).
 
 **Verdict: another round.**
