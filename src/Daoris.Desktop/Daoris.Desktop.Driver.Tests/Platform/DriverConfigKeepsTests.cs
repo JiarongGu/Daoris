@@ -151,6 +151,8 @@ public sealed class DriverConfigKeepsTests
             "hand-over" => HandOverRules.Apply(
                 config, new HandOverEdit { Repository = Text("repository"), Set = new HandOverSet { Mode = Text("mode"), ModeGiven = true } }),
             "notify" => config.WithNotify(edit.GetProperty("on").GetBoolean()),
+            // AGENTERRORS1a2: Try again's transient release, through the act RETRY_QUEST and the terminal's `retry` write.
+            "transient-release" => config.WithTransientReleased(Text("quest"), Text("session"), DateTimeOffset.Parse(Text("ended"), System.Globalization.CultureInfo.InvariantCulture)),
             // KEEP1d: one kind's keep rule, through the judgement SET_KEEP, the terminal's `keep` and Ask Daoris's door make.
             "keep" => config.WithKeep(new KeepSet(
                 Text("kind"),

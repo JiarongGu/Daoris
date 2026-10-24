@@ -46,10 +46,17 @@ internal static class TransientRetries
                 output?.Append(sessionId, noted.Note);
                 events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
             },
-            Tried = (episode, number, next) => log?.Write("info", "agent.transient", [
-                ("session", sessionId), ("adapter", adapter.Name), ("account", profile), ("by", episode.First.By), ("try", number),
-                ("next", next),
-            ]),
+            Tried = (episode, number, next) =>
+            {
+                log?.Write("info", "agent.transient", [
+                    ("session", sessionId), ("adapter", adapter.Name), ("account", profile), ("by", episode.First.By), ("try", number),
+                    ("next", next),
+                ]);
+                // AGENTERRORS1a2 (§5.1, §8): the record's quiet event, a try going, which the head says nothing for.
+                events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Transient, Try = number }, say: null);
+            },
+            // And a wait beginning, with when it ends: the head's *Trying again at* while it runs.
+            WaitsUntil = (_, until) => events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Transient, Next = until }, say: null),
             // The wait's end stamps the session heard (round 3, R2-O7): a try's quiet counts from its prompt, never from the last line.
             Waits = waiting =>
             {

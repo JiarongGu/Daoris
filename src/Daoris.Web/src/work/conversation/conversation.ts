@@ -29,7 +29,7 @@ export const CONVERSATION_CODES: Readonly<Record<string, string>> = {
 
 /** Daoris's event kinds — `SessionEventKind` in the driver. */
 export type SessionEventKind =
-  | 'user' | 'message' | 'thought' | 'tool' | 'plan' | 'usage' | 'turn' | 'note' | 'raw' | 'receipt';
+  | 'user' | 'message' | 'thought' | 'tool' | 'plan' | 'usage' | 'turn' | 'note' | 'raw' | 'receipt' | 'transient';
 
 /** What a tool call carries: text, a diff, or a terminal — ACP's three shapes. */
 export type ToolContent = {
@@ -136,6 +136,10 @@ export type SessionEvent = {
   output?: string | null;
   entries?: PlanEntry[] | null;
   used?: number | null;
+  /** For `transient` (AGENTERRORS1a2, D210 §5.1): the try going, counted from one; absent on a wait. */
+  try?: number | null;
+  /** For `transient` (AGENTERRORS1a2): when the wait beginning ends and the next try goes; absent on a try. */
+  next?: string | null;
   size?: number | null;
   stopReason?: string | null;
   /** For `turn`: what it consumed, where the wire said (CONV5). */
@@ -696,6 +700,9 @@ export function toTurns(
         where[event.seq] = key;
         break;
       }
+      case 'transient':
+        // AGENTERRORS1a2 (D210 §5.1, §8): a try or a wait of a transient episode is quiet, never a line; the head reads it (`retryingAt`).
+        break;
       case 'receipt': {
         // COWORK1c (the design §7, §8.2): no block of its own; it folds under the ask its word became, below.
         if (event.id && (event.receipt === 'sent' || event.receipt === 'answered')) {
@@ -763,6 +770,20 @@ const lastAgent = (turn: Turn): Block | undefined => [...turn.items].reverse().f
  */
 const doorFailed = (event: SessionEvent): boolean =>
   event.parts?.[0]?.code === 'door.failed' || (!event.parts?.length && (event.text ?? '').startsWith('— the ACP session failed:'));
+
+/**
+ * When a transient episode tries again (AGENTERRORS1a2, D210 §5.1, §8): the latest `transient` event's `next`, while no turn has ended
+ * after it, so a try that works clears it and a later wait sets it again; undefined while a try runs, and where none waits. Whether it
+ * is still ahead is the reader's, against its own clock.
+ */
+export function retryingAt(events: readonly SessionEvent[]): string | undefined {
+  for (let at = events.length - 1; at >= 0; at -= 1) {
+    const event = events[at]!;
+    if (event.kind === 'turn') return undefined;
+    if (event.kind === 'transient') return event.next ?? undefined;
+  }
+  return undefined;
+}
 
 /** When the turn the agent is on was asked, while it has not answered yet (WAITSHOWN1); undefined once it has, or when none is open. */
 export const firstAnswerWait = (turns: readonly Turn[]): string | undefined => turns[turns.length - 1]?.waitingSince;

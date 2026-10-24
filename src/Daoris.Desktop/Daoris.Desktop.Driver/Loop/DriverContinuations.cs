@@ -71,14 +71,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     internal async Task<(PriorSession Record, string Word)?> KeepLimitWordAsync(PriorSession limited, CancellationToken ct)
     {
         SayAnswer said;
+        // AGENTERRORS1a2 (the agent-errors design §5.1): a record Try again released from its transient hold takes the same step, with the
+        // episode's go-on under the key of the end released.
+        var (text, key) = Planner.EndedTransient(limited) ? LimitResume.TransientWord(limited)
+            : LimitResume.UpdateBuild(limited) is { } build ? (ShellClose.Words, DaorisKeys.Restart(limited.Session, build))
+            : (LimitResume.Words, DaorisKeys.LimitReset(limited.Session, LimitResume.Until(limited)));
         try
         {
-            said = await _context.Service.SayAsync(
-                    limited.Session, LimitResume.UpdateBuild(limited) is not null ? ShellClose.Words : LimitResume.Words,
-                    ct: ct, from: DaorisWords.From,
-                    key: LimitResume.UpdateBuild(limited) is { } build ? DaorisKeys.Restart(limited.Session, build)
-                        : DaorisKeys.LimitReset(limited.Session, LimitResume.Until(limited)))
-                .ConfigureAwait(false);
+            said = await _context.Service.SayAsync(limited.Session, text, ct: ct, from: DaorisWords.From, key: key).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
@@ -700,6 +700,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         var episode = ended.Transient?.Opened == true;
         if (episode) await TransientRetries.GoOnOffAsync(service, sessionId, ct).ConfigureAwait(false);
+
+        // 🔴 AGENTERRORS1a2, nothing prompted (the design §5.1, §5.6; round 3's read, R3-O9): an open that failed past its bound sent none of
+        // the resume's words. Daoris's go-on comes off by its id whatever `words` reads below; the person's carried words stay on the record
+        // unmarked, and the hold's word rule holds them, since they were said before this end, until a word of theirs said after it.
+        if (stop is null && !resume.Prompted && ended.Transient?.Episode is { Exhausted: true, AtOpen: true })
+        {
+            await TakeLimitWordsOffAsync(sessionId, LimitResume.WordIds(resume.Words), ct).ConfigureAwait(false);
+        }
 
         conclusion = _driver.AccountRefused(conclusion, adapter, selection, ended);
         conclusion = _driver.AccountSignedOut(conclusion, adapter, selection, turnFailed);

@@ -20394,3 +20394,22 @@ built:** the page's words (row b) and every later row. Detail: D157's CHATFLOW1a
 English word for word; a chat with no tree of its own says so in both languages, and an own-tree chat reads `chat-own-tree`; an
 unknown code shows the driver's sentence; `unanswered` offers *Try again* (重试), which reads again. A story per code. Each case seen
 failing first. **Not built:** rows c to i. Detail: D157's CHATFLOW1b note.
+
+## AGENTERRORS1a2 — shape 2, the open, and Try again's keyed release beside its press and the page (2026-10-24, D210)
+
+> **AGENTERRORS1a2** (the agent-errors design §11's second row; driver, web). Shape 2 (a mid-turn word's prompt refused after it was
+> taken is the turn's prompt failing); the open (§5.6) by the raw operation, never `OpenAsync`/`ResumeAsync` again, and its *nothing
+> prompted* end; *Try again*'s keyed release beside its press (`TransientReleased`, `TransientReleasedFrom` widened, `Retry`'s case,
+> `LimitResume.Line`, `DaorisKeys.TransientRelease`), `ended.transient` and `held.transient` widened to name it; the page: the head's
+> *Trying again at {{time}}*, *Try again* offered on an `ended.transient` record, in en and zh, the glossary's *try again* widened.
+
+(Quest `#7da2ee478b5b`.)
+
+**Outcome** 2026-10-24, in four commits and this record. *Try again* on a session held past its transient bound releases that end
+alone (`driver.json`'s `transientReleased`), resuming the same conversation by D206's step 1, and the same record exhausted again is
+held again across looks and a restart; an Open quest with no commits resumes its own conversation. A taken mid-turn word's refused
+prompt and a refused open are tried again on the same schedule, the open repeating its raw operation and then sending the original
+prompt once; an open past the bound holds the carried words until a new word of the person's. The head says *trying again at …*
+while a wait runs, from a quiet `transient` record event. Each case seen failing first. **Not proved:** the open past the bound with
+every side write failing, and the server half of `HoldsQuest` for the transient verdict (D210's AGENTERRORS1a2 note). Detail: D210's
+AGENTERRORS1a2 note.

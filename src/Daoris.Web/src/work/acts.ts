@@ -52,6 +52,11 @@ export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; dan
   copy: { label: 'work.rail.menu.copy', icon: 'copy' },
 };
 
+/** A record past its transient bound (AGENTERRORS1a, D210 §8): its note's first part is `ended.transient`. */
+export function endedTransient(session: Pick<Session, 'noteParts'>): boolean {
+  return session.noteParts?.[0]?.code === 'ended.transient';
+}
+
 /**
  * A session's acts as a menu's rows (CTX1, D138): each by its one name and glyph, its press reported. A row's ⋯ and its
  * right-click, and the page header's ⋯ and the page's right-click, each draw this one list, so they never disagree.
@@ -105,8 +110,8 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  * @remarks
  * - **Answer…** for a session waiting on you, on its row: its header's card keeps the answer. Not for a park the person
  *   answered, which goes on at the driver's next look and has no box to answer in (ANSWER1c).
- * - **Stop…** for a live session this machine runs. **Try again** for a parked quest's last session, and a stopped one
- *   whose stop holds its quest. **Review** where there is work to read: its tree, its landing, or a place in To review.
+ * - **Stop…** for a live session this machine runs. **Try again** for a parked quest's last session, a stopped one
+ *   whose stop holds its quest, and a failed one past its transient bound that holds it (AGENTERRORS1a2, D210 §8). **Review** where there is work to read: its tree, its landing, or a place in To review.
  * - **Go on with another agent…** (or **Stop and hand over…** while it works) for a conversation of this machine's own: not
  *   an intake, Ask Daoris's, nor a quest's session (MIXAGENT1b-i, D163). One act with two names; it asks under the header.
  * - **Ask another agent…** in the header of a session of this machine's own that may ask, driven or a conversation, live or
@@ -155,6 +160,8 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
     if (wordless) { /* nothing to resume or try again: the record takes no words */ }
     else if (pausedBy) offered.add(pausedBy.scope === 'ask' ? 'resumeAsk' : 'resumeQuest');
     else if (grouping?.shown === 'parked' || (session.state === 'stopped' && grouping?.holdsQuest)) offered.add('retry');
+    // AGENTERRORS1a2 (D210 §5.1, §8): a record past its transient bound, its quest's last here, which the planner holds for the person.
+    else if (session.state === 'failed' && grouping?.holdsQuest && endedTransient(session)) offered.add('retry');
     if (!intake && !isHelp(session)
       && (grouping?.group === 'review' || Boolean(where?.landed) || (Boolean(session.tree) && !where?.treeGone))) {
       offered.add('review');

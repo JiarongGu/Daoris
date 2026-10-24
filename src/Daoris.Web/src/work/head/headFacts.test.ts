@@ -51,6 +51,21 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', waitingSince: since }).join()).not.toMatch(/no answer/);
   });
 
+  /**
+   * AGENTERRORS1a2 (D210 §5.1, §8): a working session whose provider failed says when Daoris tries again, while that is still ahead,
+   * in place of the first answer's wait it explains; nothing once past, and in Chinese with 重试.
+   */
+  it('says a working session is trying again at its next try while it waits, and nothing once that is past', async () => {
+    const retrying = '2026-10-05T10:16:00Z';
+    const facts = sessionFacts(t, { session: session(), shown: 'working', retrying, waitingSince: '2026-10-05T09:49:00Z' });
+    expect(facts[2]).toMatch(/^trying again at .+/);
+    expect(facts.join()).not.toMatch(/no answer/);
+    expect(sessionFacts(t, { session: session(), shown: 'working', retrying: '2026-10-05T09:59:00Z' })).toEqual(['engine', '2m']);
+    expect(sessionFacts(t, { session: session({ state: 'failed' }), shown: 'failed', retrying }).join()).not.toMatch(/trying again/);
+    await i18n.changeLanguage('zh');
+    expect(sessionFacts(t, { session: session(), shown: 'working', retrying })[2]).toMatch(/^将于 .+ 重试$/);
+  });
+
   /** WAITSAY1: a working session inside a long call names it and says for how long. */
   it('says a working session is running a call, and for how long', () => {
     const calling = { title: 'npm test', since: '2026-10-05T09:40:00Z' };

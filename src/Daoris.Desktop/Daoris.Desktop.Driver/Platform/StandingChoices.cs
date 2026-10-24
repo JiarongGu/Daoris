@@ -102,7 +102,8 @@ public static class StandingChoices
     /// <summary>
     /// *Try again* on <paramref name="quest"/> (RETRY1, SESSUX1b, D126 §3.4), judged from the planner's <paramref name="verdicts"/>: a
     /// quest parked on its failed sessions is marked at its failures (RETRY1b), a verdict carrying no count at the least count the
-    /// planner parks at; one the person's stop holds is released from that session, with no mark, since a stop is not a strike.
+    /// planner parks at; one the person's stop holds is released from that session, with no mark, since a stop is not a strike; one
+    /// held past its transient bound (AGENTERRORS1a2) is released for that record's end alone, keyed to its <c>updated</c>.
     /// </summary>
     /// <exception cref="ChoiceRefusal">The quest is paused (PAUSE1b), or neither parked nor held: nothing is written.</exception>
     public static RetryDecision Retry(string quest, IReadOnlyList<Consideration> verdicts)
@@ -117,6 +118,11 @@ public static class StandingChoices
                     config => config.WithForgiven(quest, exhausted.Failures ?? config.ForgivenAt(quest) + config.Strikes));
             case { Verdict: StartVerdict.Stopped, HeldBy: { } stop }:
                 return new(quest, RetryDecision.Released, stop.Session, config => config.WithReleased(quest, stop.Session));
+            case { Verdict: StartVerdict.TransientHeld, HeldBy: { Updated: { } ended } exhausted }:
+                // AGENTERRORS1a2 (D210, the agent-errors design §5.1): a transient hold released for the end the press read, never the
+                // stop's session-keyed release, so the same record's next exhaustion is held again. No mark: an outage is not a strike.
+                return new(quest, RetryDecision.Released, exhausted.Session,
+                    config => config.WithTransientReleased(quest, exhausted.Session, ended));
             case { Verdict: StartVerdict.Paused, PausedBy: { } pause }:
                 // A pause is the reason before a stop and the strikes (PAUSE1b, D132 §6.1): Resume moves it, and nothing is written.
                 throw pause.Scope == WorkScope.Ask

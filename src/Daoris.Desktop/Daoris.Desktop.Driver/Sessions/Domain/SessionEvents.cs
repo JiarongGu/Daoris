@@ -36,6 +36,13 @@ public static class SessionEventKind
     /// <summary>The driver's own sentence about this session — a refusal, a missing connector.</summary>
     public const string Note = "note";
 
+    /// <summary>
+    /// A transient episode's quiet event (AGENTERRORS1a2, D210, the agent-errors design §5.1, §8): a try going, its number in
+    /// <see cref="SessionEvent.Try"/>, or a wait beginning, the moment it ends in <see cref="SessionEvent.Next"/>. Never a line: the
+    /// session's head reads it, saying <i>Trying again at</i> while a wait runs and nothing while a try runs.
+    /// </summary>
+    public const string Transient = "transient";
+
     /// <summary>Something the wire said that this build has no kind for — kept, never dropped.</summary>
     public const string Raw = "raw";
 
@@ -364,6 +371,12 @@ public sealed record SessionEvent
     public IReadOnlyList<PlanEntry>? Entries { get; init; }
 
     public long? Used { get; init; }
+
+    /// <summary>For <see cref="SessionEventKind.Transient"/> (AGENTERRORS1a2): the try going, counted from one; null for a wait.</summary>
+    public int? Try { get; init; }
+
+    /// <summary>For <see cref="SessionEventKind.Transient"/> (AGENTERRORS1a2): when the wait beginning ends and the next try goes.</summary>
+    public DateTimeOffset? Next { get; init; }
 
     public long? Size { get; init; }
 

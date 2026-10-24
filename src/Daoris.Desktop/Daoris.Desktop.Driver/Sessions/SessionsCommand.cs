@@ -877,7 +877,13 @@ public static class SessionsCommand
                 : $"{held.Held.Said}, in its tree {discards.Tree}, which stays: {held.Stays}";
         }
 
-        if (row.HoldsQuest && record.Quest is { } quest) yield return $"held here until you try again: daoris driver retry {quest} --session {row.Session}";
+        // AGENTERRORS1a2: a transient hold (a failed record) is released for its end by the plain retry, never the stop's `--session`.
+        if (row.HoldsQuest && record.Quest is { } quest)
+        {
+            yield return record.State == "failed"
+                ? $"held here until you try again: daoris driver retry {quest}"
+                : $"held here until you try again: daoris driver retry {quest} --session {row.Session}";
+        }
         // PAUSE1b (D132 §6.1): a pause, never a hold, in its words: Resume is the press that moves it.
         if (row.PausedBy is { } pause)
         {

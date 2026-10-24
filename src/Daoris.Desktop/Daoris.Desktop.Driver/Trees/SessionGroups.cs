@@ -522,8 +522,9 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     public DiscardOffer? Discards { get; init; }
 
     /// <summary>
-    /// Whether this session's stop holds its quest here (SESSUX1b, D126 §2.2): the person stopped it, it is its quest's
-    /// last session here, and nothing starts that quest on this machine until they choose *Try again*.
+    /// Whether this session holds its quest here for the person (SESSUX1b, D126 §2.2): the person stopped it, or (AGENTERRORS1a2) it
+    /// ended past its transient bound; it is its quest's last session here, and nothing starts that quest on this machine until they
+    /// choose *Try again*.
     /// </summary>
     public bool HoldsQuest { get; init; }
 
@@ -1162,7 +1163,8 @@ public static class SessionGroups
             var verdict = VerdictOnLast(record);
             // SESSUX1b (D126 §2.2): its line says the stop holds its quest, in whichever group it rests; and PAUSE1b (D132
             // §6.1), that a pause does, since a pause is the reason before a stop.
-            row = row with { HoldsQuest = verdict?.Verdict == StartVerdict.Stopped, PausedBy = verdict?.PausedBy };
+            // AGENTERRORS1a2 (D210 §5.1, §8): so does its end past its transient bound, which *Try again* releases for that end alone.
+            row = row with { HoldsQuest = verdict?.Verdict is StartVerdict.Stopped or StartVerdict.TransientHeld, PausedBy = verdict?.PausedBy };
 
             // MSG1f2 (D137 §3.2): the person's words wait on it, so it goes on with them, working, where the planner starts
             // it; else it resumes later, its line naming what holds them, the planner's own verdict. Before parked and to

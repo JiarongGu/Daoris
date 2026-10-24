@@ -145,10 +145,22 @@ public static class DaorisKeys
 
     /// <summary>Whether a word's key is a transient episode's go-on (<see cref="TransientRetry"/>): what both conclusions take off as the fallback.</summary>
     public static bool IsTransientRetry(string? key) => key?.StartsWith(TransientRetryKind + "/", StringComparison.Ordinal) == true;
+
+    public const string TransientReleaseKind = "transient-release";
+
+    /// <summary>
+    /// Daoris's go-on's key at <i>Try again</i>'s step-1 resume (AGENTERRORS1a2, the agent-errors design §5.1): the session and the end the
+    /// release names, since <see cref="TransientRetry"/> names no episode across runs, so a start tried again at a later look keeps one word.
+    /// No quest's fact: <see cref="Read"/> names none.
+    /// </summary>
+    public static string TransientRelease(string session, DateTimeOffset ended) =>
+        $"{TransientReleaseKind}/{session}/{ended.UtcDateTime.ToString("yyyy-MM-dd'T'HH-mm-ss.fffffff'Z'", System.Globalization.CultureInfo.InvariantCulture)}";
+
+    public static bool IsTransientRelease(string? key) => key?.StartsWith(TransientReleaseKind + "/", StringComparison.Ordinal) == true;
     public const string RestartKind = "restart";
     public static string Restart(string session, string build) => $"{RestartKind}/{session}/{build}";
     public static bool IsRestart(string? key) => key?.StartsWith(RestartKind + "/", StringComparison.Ordinal) == true;
-    public static bool IsResume(string? key) => IsLimitReset(key) || IsRestart(key);
+    public static bool IsResume(string? key) => IsLimitReset(key) || IsRestart(key) || IsTransientRelease(key);
 
     /// <summary>
     /// The limit word's key (LIMITRESUME1, D206 §3.3 step 1, §3.5): the session its account's limit cut off, and the cool-off's

@@ -256,8 +256,8 @@ public static class Observation
         var minutes = (int)Math.Round(episode.Waited.TotalMinutes);
         var line = Noted.Of(
             NoteCodes.EndedTransient,
-            $"Its provider kept failing after {episode.Tries} tries, with {minutes} minutes of waits between them. It waits for your words, "
-            + "which go on in the same conversation:",
+            $"Its provider kept failing after {episode.Tries} tries, with {minutes} minutes of waits between them. It waits for you: your "
+            + "words, or Try again, go on in the same conversation:",
             ("count", episode.Tries), ("minutes", minutes));
         return SessionConclusion.Of("failed", episode.Words is { Length: > 0 } words ? line.Then(" ", Noted.Said(words, NoteBy.Program)) : line);
     }

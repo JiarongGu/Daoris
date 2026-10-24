@@ -58,6 +58,12 @@ public sealed class TransientRetry
     /// </summary>
     public Action<bool>? Waits { get; init; }
 
+    /// <summary>
+    /// Told as each wait begins, with the moment it ends and the next try goes (AGENTERRORS1a2): the quiet <c>agent.transient</c> event
+    /// the session's head reads for its <i>Trying again at</i>.
+    /// </summary>
+    public Action<TransientEpisode, DateTimeOffset>? WaitsUntil { get; init; }
+
     /// <summary>The go-on's words, with the provider's own sentence (<c>retry.go-on</c>): the agent's word, English only, as <c>limit.reset</c> is.</summary>
     public static string GoOnText(string? words) =>
         $"The last request failed on the provider's side ({words ?? "no words"}). Go on where you stopped, after anything said above.";
@@ -151,6 +157,13 @@ public sealed class TransientEpisode(DateTimeOffset began, AgentError first)
     /// <summary>Whether the run ended past the bound (<c>ended.transient</c>).</summary>
     public bool Exhausted { get; internal set; }
 
+    /// <summary>
+    /// Whether it opened at the open (AGENTERRORS1a2, §5.6): the opening operation was refused, so nothing was prompted. Past the bound, its
+    /// end is <i>nothing prompted</i>: Daoris's go-on comes off by its id, and the person's carried words wait for a word of theirs said
+    /// after the end, by the hold's word rule's time, with no mark written.
+    /// </summary>
+    public bool AtOpen { get; internal set; }
+
     /// <summary>The go-on as its dispatcher kept it, once its first try was written; null before, and where it was kept nowhere.</summary>
     public string? GoOnId { get; internal set; }
 }
@@ -159,6 +172,17 @@ public sealed class TransientEpisode(DateTimeOffset began, AgentError first)
 /// A run that ended past its transient bound (§5.1): its provider kept failing after every try, so the record ends <c>failed</c> with
 /// <c>ended.transient</c>, no strike, and the planner holds its quest for the person.
 /// </summary>
+/// <summary>
+/// Shape 2 (AGENTERRORS1a2, the design §0, §4.2): a word the person said during a turn was taken, and its own prompt was then refused, so
+/// the turn that failed is the one the word opened. Carried from the word's send to the run's loop, which reads <see cref="Refusal"/> as
+/// any prompt site's failure; never past the run.
+/// </summary>
+public sealed class AcpWordTurnFailed(AcpRefusal refusal) : DriverException(refusal.Message)
+{
+    /// <summary>The refusal that answered the word's prompt, as the door said it.</summary>
+    public AcpRefusal Refusal { get; } = refusal;
+}
+
 public sealed class AcpTransientExhausted(TransientEpisode episode)
     : DriverException($"the ACP agent's provider kept failing after {episode.Tries} tries: {episode.Words}")
 {

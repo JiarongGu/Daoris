@@ -1961,6 +1961,9 @@ public sealed class Driver(
         // B1): the same look would plan the carry-on, and its walk land briefed on the account just freed. A hand-over made from it is the
         // person's press and decides the start instead (step 0).
         var limitedLine = LimitResume.Line(start, handedFrom);
+        // AGENTERRORS1a2: a released transient record's words go on by MSG1b's GoOn, their words alone and no go-on of Daoris's, on an
+        // account no limit cools (the design §5.1, R3-O4, R3-O8); only Try again's start with no word waiting takes step 1's go-on.
+        var limitedWords = limitedLine is not null && !Planner.EndedTransient(limitedLine);
         // Whether this start resumes that record's own conversation on its own account: the limit's intent, separate from any words waiting.
         var limitResume = false;
         try
@@ -1973,10 +1976,10 @@ public sealed class Driver(
                 resume = await Context.Harnesses
                     .ResumeAsync(
                         agent, config, start.Workspace, words.Profile, StartKind.Driven, Context.NewSessions.Covers(words), ct: ct,
-                        limited: limitedLine is not null, model: words.Asked?.NamedModel)
+                        limited: limitedWords, model: words.Asked?.NamedModel)
                     .ConfigureAwait(false);
                 selection = resume.Selection;
-                limitResume = limitedLine is not null && resume.Own == NextHold.Ready && selection.Allowed;
+                limitResume = limitedWords && resume.Own == NextHold.Ready && selection.Allowed;
             }
             else if (!start.GoesOn && limitedLine is not null && GoOns.LimitResumes(limitedLine, agent)
                      && await Context.Harnesses

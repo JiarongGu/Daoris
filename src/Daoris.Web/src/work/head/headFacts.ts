@@ -58,6 +58,13 @@ export type SessionFactsOf = {
    * the rail's line says it (`heavyLine`), in place of the call, which is that run. Absent where it holds and waits for no slot.
    */
   heavy?: string | null;
+  /**
+   * When a transient episode tries again (AGENTERRORS1a2, D210 §5.1, §8), as its conversation reads its quiet events (`retryingAt`):
+   * *Trying again at* while it is still ahead, and nothing once past or while a try runs. Absent where none waits.
+   */
+  retrying?: string | null;
+  /** The reader's clock for `retrying`; the moment it is read where absent. */
+  now?: Date;
 };
 
 /**
@@ -175,8 +182,12 @@ function factsOf(t: TFunction, of: SessionFactsOf, whole: boolean): string[] {
     // UX7c (D152): the fact that matters most on a retried quest, another try and how many failed before it.
     const failed = typeof grouping?.strikes === 'number' && grouping.strikes > 0 ? grouping.strikes : null;
     if (failed !== null && session.kind !== 'chat') facts.push(t('work.facts.attempt', { count: failed, attempt: failed + 1 }));
+    // AGENTERRORS1a2 (D210 §5.1, §8): its provider failed and Daoris waits to try again in the same conversation; the one line in the
+    // conversation says why, and this says when, nothing while a try runs. In place of the first answer's wait, which it explains.
+    const retrying = of.retrying && Date.parse(of.retrying) > (of.now ?? new Date()).getTime() ? of.retrying : null;
+    if (retrying && session.state === 'working') facts.push(t('work.facts.retrying', { time: moment(retrying) }));
     // WAITSHOWN1: its agent has said nothing since it was asked; a resumed long conversation can wait many minutes.
-    if (of.waitingSince && session.state === 'working') facts.push(t('work.facts.firstAnswer', { time: moment(of.waitingSince) }));
+    else if (of.waitingSince && session.state === 'working') facts.push(t('work.facts.firstAnswer', { time: moment(of.waitingSince) }));
     // WAITSAY1: a call that runs for minutes is what the session waits on; said with how long, and only while it is working.
     // RAILLINE1: the call the row says, the driver's (pushed since WAITSAY1c2, so it moves live), which also marks a call held for
     // the person's answer (AUTONOMY1b3b); the record read here only where no reader answered. HEAVYSLOT1: a heavy run held or

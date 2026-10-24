@@ -21,15 +21,25 @@ internal static class LimitResume
     /// <summary>
     /// The limited record a start would resume in its own conversation: the last part of an open or taken quest that waits on nothing,
     /// ended by an account's limit or an update, and not the record its quest was handed over from (step 0: a hand-over names the agent it goes on
-    /// with). Null for every other start.
+    /// with). Also a record ended past its transient bound (AGENTERRORS1a2, the agent-errors design §5.1): the planner plans one only once
+    /// <i>Try again</i> released that end, so its start takes this step 1 too, the go-on kept under <see cref="DaorisKeys.TransientRelease"/>.
+    /// Null for every other start.
     /// </summary>
     public static PriorSession? Line(Consideration start, bool handedFrom) =>
         !handedFrom
         && start.Quest is { Status: "Open" or "Taken", Awaits: null or "" }
         && start.Resumes is { Parked: false } limited
-        && (limited is { Limit: true, State: "failed" } || UpdateBuild(limited) is not null)
+        && (limited is { Limit: true, State: "failed" } || UpdateBuild(limited) is not null || Planner.EndedTransient(limited))
             ? limited
             : null;
+
+    /// <summary>
+    /// Daoris's word at a released transient record's step 1 (AGENTERRORS1a2): the episode's go-on (<c>retry.go-on</c>) with the provider's
+    /// sentence the record's end quotes, and its key, the record's session and the end released.
+    /// </summary>
+    public static (string Text, string Key) TransientWord(PriorSession record) =>
+        (TransientRetry.GoOnText(record.NoteParts?.FirstOrDefault(part => part.By == NoteBy.Program)?.Words),
+         DaorisKeys.TransientRelease(record.Session, record.Updated ?? DateTimeOffset.UnixEpoch));
 
     public static string? UpdateBuild(PriorSession record) => record.State == "stopped" && record.Interrupted
         ? record.NoteParts?.FirstOrDefault(part => part.Code == NoteCodes.UpdateClosed.Code)?.Value("build")?.ToString()

@@ -455,6 +455,289 @@ public sealed class AcpTransientTests
         Assert.DoesNotContain("wait", told.Lines);
     }
 
+    /// <summary>
+    /// The agent of shape 2 (the design §0): it queues prompts during a turn, holds its first prompt open, and answers the second by
+    /// <paramref name="second"/>, handed the first prompt's frame; a third or later prompt answers <c>end_turn</c>.
+    /// </summary>
+    private static Agent Queued(Action<JsonElement, JsonElement, Agent> second, List<int>? prompts = null)
+    {
+        JsonElement first = default;
+        var count = 0;
+        return new Agent((frame, self) =>
+        {
+            switch (frame.TryGetProperty("method", out var m) ? m.GetString() : null)
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    var n = Interlocked.Increment(ref count);
+                    if (n == 1)
+                    {
+                        first = frame.Clone();
+                        return null;
+                    }
+
+                    if (n == 2)
+                    {
+                        second(first, frame.Clone(), self);
+                        return null;
+                    }
+
+                    return Answer(frame, "end_turn");
+                default:
+                    return frame.TryGetProperty("id", out _) && frame.TryGetProperty("method", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1a2, shape 2 taken (the design §0, §4.2): a word the person said during the turn is taken when the prompt before it
+    /// answers <c>end_turn</c>; the provider's error streams in its turn and then refuses its prompt with the 529. That is the turn's prompt
+    /// failing: tried again in the same session after a minute with the go-on, never left clean to park on the person, the word received
+    /// once and never sent again. Red before shape 2: the refusal was the word's note, and the run closed clean with two prompts.
+    /// </summary>
+    [Fact]
+    public async Task A_mid_turn_word_refused_after_it_was_taken_is_the_turn_s_prompt_failing_and_is_tried_again()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Queued((first, word, self) =>
+        {
+            // claude-agent-acp settles the running prompt at the queued word's echo, then the word's turn meets the provider's error.
+            self.Push(Answer(first, "end_turn"));
+            self.Push(Said("API Error: 529 Overloaded."));
+            self.Push(Failed(word));
+        });
+        var retry = Retry(clock, told);
+        var inbox = new DrivenInbox(_ => { });
+        var taken = new List<string>();
+        var events = new List<SessionEvent>();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => { lock (events) events.Add(e); });
+
+        var run = session.RunAsync(
+            "D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, asked: words => { lock (taken) taken.Add(words.Text); }, retry: retry);
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("use port 9090", [])));
+        await PassAsync(told, clock, run, 1);
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal([["serve the report"], ["use port 9090"], [TransientRetry.GoOnText(Overloaded)]], agent.Prompts);
+        Assert.Equal(["use port 9090"], taken);
+        Assert.Equal(1, retry.Episode!.Tries);
+        Assert.Empty(retry.Uncertain);
+        lock (events) Assert.DoesNotContain(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
+    }
+
+    /// <summary>
+    /// AGENTERRORS1a2, shape 2 untaken (§4.2): a word refused while the turn before it still runs was never taken, so its refusal is that
+    /// word's, today's note under its id, and the running turn then ends well: no episode, the turn clean. Held both ways with the case above.
+    /// </summary>
+    [Fact]
+    public async Task A_mid_turn_word_refused_before_it_was_taken_is_its_own_note_and_the_running_turn_ends_well()
+    {
+        var retry = Retry(new MovedClock(), new Told());
+        var agent = Queued((first, word, self) =>
+        {
+            self.Push(Failed(word));
+            self.Push(Said("Served."));
+            self.Push(Answer(first, "end_turn"));
+        });
+        var inbox = new DrivenInbox(_ => { });
+        var events = new List<SessionEvent>();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => { lock (events) events.Add(e); });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("use port 9090", []) { Id = "said-1" }));
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(2, agent.Prompts.Count);
+        Assert.False(retry.Opened);
+        lock (events) Assert.Contains(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
+    }
+
+    /// <summary>
+    /// AGENTERRORS1a2 (§4.2, round 2, C3): attribution is by the word's taken mark as its error came, never by a later update. An update
+    /// the agent streams after the refusal of an untaken word changes nothing: still that word's note, no episode.
+    /// </summary>
+    [Fact]
+    public async Task An_unrelated_update_after_an_untaken_word_s_refusal_changes_nothing()
+    {
+        var retry = Retry(new MovedClock(), new Told());
+        var agent = Queued((first, word, self) =>
+        {
+            self.Push(Failed(word));
+            // An update after the refusal: the running turn's, which may take a word late, but this one's prompt has already left.
+            self.Push(Said("Still serving."));
+            self.Push(Answer(first, "end_turn"));
+        });
+        var inbox = new DrivenInbox(_ => { });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("use port 9090", [])));
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(("end_turn", 2, false), (outcome.StopReason, agent.Prompts.Count, retry.Opened));
+    }
+
+    /// <summary>
+    /// AGENTERRORS1a2 (§4.2): a steer the agent refuses with the 529 stays that word's note under a retry too. The steering lane answers
+    /// <c>injected</c> at once and never carries the provider's error, so its refusal is never the turn's (<c>SteeredAsync</c>).
+    /// </summary>
+    [Fact]
+    public async Task A_refused_steer_stays_its_note_under_a_retry()
+    {
+        var first = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, """{"protocolVersion":1,"_meta":{"steering":{"supported":true}},"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""");
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    first.SetResult(frame.Clone());
+                    return null;
+                case "_session/steering":
+                    self.Push(Failed(frame));
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var retry = Retry(new MovedClock(), new Told());
+        var inbox = new DrivenInbox(_ => { });
+        var events = new List<SessionEvent>();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => { lock (events) events.Add(e); });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await first.Task.WaitAsync(Poll.Patience);
+        Assert.Equal(new SentNow("now", true, null), await inbox.HoldNowAsync(new ChatMessage("one more thing", [])));
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(("end_turn", 1, false), (outcome.StopReason, agent.Prompts.Count, retry.Opened));
+        lock (events) Assert.Contains(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
+    }
+
+    /// <summary>
+    /// The agent of the open (§5.6): it refuses its opening operation, <paramref name="method"/>, by <paramref name="open"/> (the n-th
+    /// attempt counted from one, null to answer it), and answers every prompt <c>end_turn</c>.
+    /// </summary>
+    private static Agent Opening(string method, Func<int, JsonElement, string?> open)
+    {
+        var count = 0;
+        return new Agent((frame, self) =>
+        {
+            var name = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            if (name == method && open(Interlocked.Increment(ref count), frame) is { } refused) return refused;
+            return name switch
+            {
+                "initialize" => Ok(frame, """{"protocolVersion":1,"agentCapabilities":{"loadSession":true,"sessionCapabilities":{"resume":{}}}}"""),
+                "session/new" => Ok(frame, """{"sessionId":"s-1"}"""),
+                "session/resume" => Ok(frame, "{}"),
+                "session/prompt" => Answer(frame, "end_turn"),
+                _ => frame.TryGetProperty("id", out _) && frame.TryGetProperty("method", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1a2, the open (§5.6): <c>session/new</c> refused with the 529 twice, then answered. The SAME raw operation is repeated
+    /// on the schedule, never the handshake, and then the run's own first prompt goes once, with no go-on, since nothing was asked. Red
+    /// before the open's phase: the refusal ended the run.
+    /// </summary>
+    [Fact]
+    public async Task A_transient_session_new_failure_repeats_the_raw_open_then_sends_the_original_prompt_once()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Opening("session/new", (n, frame) => n <= 2 ? Failed(frame) : null);
+        var retry = Retry(clock, told);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, retry: retry);
+        await PassAsync(told, clock, run, 1, 2);
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/new", "session/new", "session/new", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal([["serve the report"]], agent.Prompts);
+        Assert.Equal((2, true, false, DoorWhere.Open), (retry.Episode!.Tries, retry.Episode.AtOpen, retry.Episode.Exhausted, retry.Last!.Failure.Where));
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1a2, the open after a session id exists (§5.6): <c>session/resume</c> of the record's conversation refused with the 529
+    /// twice, then answered; the resume's words then go once, in their one prompt, with no go-on.
+    /// </summary>
+    [Fact]
+    public async Task A_transient_session_resume_failure_repeats_the_raw_resume_then_sends_the_resume_s_words_once()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Opening("session/resume", (n, frame) => n <= 2 ? Failed(frame) : null);
+        var retry = Retry(clock, told);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync(
+            "D:/fam/Game", "unused", CancellationToken.None, resume: "conv-1", blocks: ["go on with port 9090"], retry: retry);
+        await PassAsync(told, clock, run, 1, 2);
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/resume", "session/resume", "session/resume", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal([["go on with port 9090"]], agent.Prompts);
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1a2: an open refused transient every try ends past the bound after five tries and 31 minutes of waits, with NOTHING
+    /// prompted (§5.1's nothing prompted end).
+    /// </summary>
+    [Fact]
+    public async Task An_open_refused_every_try_ends_past_the_bound_with_nothing_prompted()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Opening("session/resume", (_, frame) => Failed(frame));
+        var retry = Retry(clock, told);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "unused", CancellationToken.None, resume: "conv-1", blocks: ["go on"], retry: retry);
+        await PassAsync(told, clock, run, 1, 2, 4, 8, 16);
+        var exhausted = await Assert.ThrowsAsync<AcpTransientExhausted>(() => run.WaitAsync(Poll.Patience));
+
+        Assert.Equal((5, TimeSpan.FromMinutes(31), true, true), (exhausted.Episode.Tries, exhausted.Episode.Waited, exhausted.Episode.Exhausted, exhausted.Episode.AtOpen));
+        Assert.Empty(agent.Prompts);
+        Assert.Equal(6, agent.Methods.Count(method => method == "session/resume"));
+    }
+
+    /// <summary>
+    /// AGENTERRORS1a2 (§5.6): the codes read before the open's transient reading pass through at once: a conversation the agent no longer
+    /// has (<c>resource_not_found</c>) is today's refused resume, with no wait, whatever its words.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_refused_resource_not_found_is_today_s_refusal_with_no_wait()
+    {
+        var agent = Opening("session/resume", (_, frame) => JsonSerializer.Serialize(new
+        {
+            jsonrpc = "2.0", id = frame.GetProperty("id").GetInt32(),
+            error = new { code = -32002, message = Overloaded, data = new { errorKind = "overloaded" } },
+        }));
+        var retry = Retry(new MovedClock(), new Told());
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        await Assert.ThrowsAsync<AcpResumeRefused>(
+            () => session.RunAsync("D:/fam/Game", "unused", CancellationToken.None, resume: "conv-1", blocks: ["go on"], retry: retry));
+        Assert.False(retry.Opened);
+    }
+
     /// <summary>The person's stop or Daoris's shutdown during a wait ends the run as that stop does today: the wait is cancelled with it.</summary>
     [Fact]
     public async Task A_shutdown_during_a_wait_cancels_it_with_the_run()
