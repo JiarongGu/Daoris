@@ -19,7 +19,7 @@ public sealed class WorkRecordStoreTests : IAsyncLifetime
     private WorkRecordStore _records = null!;
     private KnowledgeService _service = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-10-24T10:00:00Z");
-    private const string Tree = "/home/work/trees/games/Owner/s-1";
+    private const string Tree = "/work/trees/games/Owner/s-1";
 
     public async Task InitializeAsync()
     {
@@ -95,7 +95,7 @@ public sealed class WorkRecordStoreTests : IAsyncLifetime
         var first = await Ran("base0", Now.AddHours(-4));
         var second = await Ran("c2", Now.AddHours(-3));
         var later = await Ran("c3", Now.AddMinutes(-1));
-        var elsewhere = await Ran("base0", Now.AddHours(-4), tree: "/home/work/trees/games/Owner/s-2");
+        var elsewhere = await Ran("base0", Now.AddHours(-4), tree: "/work/trees/games/Owner/s-2");
 
         var (record, _) = await _records.PostAsync(
             Post(commits: [Commit("c1", "One"), Commit("c2", "Two"), Commit("c3", "Three")]), Now);

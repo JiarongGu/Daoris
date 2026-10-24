@@ -70,6 +70,10 @@ ran in, read-only: Daoris removes none of them yet, and the card says a person c
 with what keeps each, read only once the row opens it, and `SYSTEM_DOWNLOADS_CLEAR` removes those nothing uses, saying what it kept.
 The list also carries the downloads' rule (`days`) and, for each version nothing uses, the day the rule takes it (`goes`), which the
 row says beside it; a version a running session was handed is kept (`running`, KEEP1b).
+The *Disk space* card (`wiring/WiringSpace.tsx`) says beside each kind's next removal what waits with no rule's date (`waiting`,
+KEEPSIZE1b): set-aside folders awaiting their record, whose manifest does not read, or recorded where the registry names no checkout of
+their repository (`unnamed`), none of them ever named as next; its press (`wiring/WiringSpaceFree.tsx`) lists the early group's folders
+by class, those with no date left out of the count before theirs.
 *AI features* (`AiDomain.tsx`) draws Ask Daoris's *Configured access* (`help/access/ConfiguredAccess.tsx`) under its access row
 while restricted: each grant the driver serves comes from `STATE`'s `helpGrants`, with the operations it acts on (`built`), and is
 pressed over `SET_HELP_GRANT` one operation at a time; an operation not built is drawn disabled, and a grant the driver does not
