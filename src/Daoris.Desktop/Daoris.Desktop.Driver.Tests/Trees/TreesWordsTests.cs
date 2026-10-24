@@ -85,6 +85,23 @@ public sealed class TreesWordsTests : IAsyncLifetime
     public Task A_landing_is_its_sentence() =>
         AssertSameAsync(TreesWords.Land(new TreeLanding(true, "Landed on `main`."), []));
 
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2): a chat run's press refused by itself, a turn running, another window holding it, the opinion
+    /// asked at this press or the work moved under it, is its sentence, exit 1, on the route and on the terminal alike.
+    /// </summary>
+    [Theory]
+    [InlineData(ChatPresses.TurnRunningSays)]
+    [InlineData(ChatPresses.HeldElsewhereSays)]
+    [InlineData(ChatPresses.MovedSays)]
+    [InlineData("A second opinion is asked: `codex-acp` reads it from the driver's next look; press Accept again once it settles.")]
+    public async Task A_chat_run_s_refused_press_is_its_sentence_exit_1(string says)
+    {
+        var said = TreesWords.Land(new TreeLanding(false, says) { Refusal = AutoLandingCode.Refused }, []);
+        Assert.Equal([$"trees: {says}"], said.Out);
+        Assert.Equal(1, said.Code);
+        await AssertSameAsync(said);
+    }
+
     [Fact]
     public async Task A_landing_through_a_plugin_says_the_plugins_lines_first_and_a_failed_push_is_exit_1()
     {

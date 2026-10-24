@@ -269,6 +269,30 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Contains("Nothing was landed again", answer.GetProperty("message").GetString());
     }
 
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2): a chat in a tree of its own presses through the one operation, bound first; a press it refuses
+    /// by itself answers its code (<c>chat</c>), which the page words, beside the verb's sentence, exit 1. Here git cannot read a tree that
+    /// is not there, so nothing is judged and nothing lands.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_run_s_press_answers_its_code_beside_the_verbs_sentence_exit_1()
+    {
+        var tree = Path.Combine(new SessionTrees(Home).TreesRoot, "aurora", "engine", "s-c1a2b3c4");
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(tree, kind: "chat"))));
+
+        var answer = await AnswerAsync(module, "LAND_SESSION_TREE", new { id = "s1a2b3c4" });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Equal(ChatPressCodes.Unread, answer.GetProperty("chat").GetProperty("code").GetString());
+        var (output, error, code) = Said(answer);
+        Assert.Equal(["trees: git could not read the tree's tip, so nothing was judged or landed."], output);
+        Assert.Empty(error);
+        Assert.Equal(1, code);
+        Assert.True(WorkflowRunBindings.Bound(Home, "chat-s1a2b3c4"));
+    }
+
     [Fact]
     public async Task A_plan_of_a_session_with_no_tree_is_still_the_refusal_the_page_reads()
     {
@@ -277,13 +301,13 @@ public sealed class DriverModuleTreesWordsTests : DriverModuleBridge
         Assert.Contains("no working tree", refusal);
     }
 
-    private sealed class StandInService(string? tree = null, string state = "working") : HttpMessageHandler
+    private sealed class StandInService(string? tree = null, string state = "working", string kind = "driven") : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
             Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
             {
                 Content = new StringContent(tree is not null && request.RequestUri!.AbsolutePath == "/api/sessions"
-                    ? JsonSerializer.Serialize(new[] { new { id = "s1a2b3c4", repository = "engine", tree, state } }) : "[]",
+                    ? JsonSerializer.Serialize(new[] { new { id = "s1a2b3c4", repository = "engine", tree, state, kind } }) : "[]",
                     System.Text.Encoding.UTF8, "application/json"),
             });
     }

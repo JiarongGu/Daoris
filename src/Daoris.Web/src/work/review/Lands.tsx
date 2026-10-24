@@ -17,6 +17,7 @@ import { ReviewGate, type ReviewGateActs } from '../gates/ReviewGate';
 import type { WaitEvents } from '../waits/anchors';
 import { InConversation } from '../waits/WaitAnchor';
 import { landingStands } from '../waits/waits';
+import { WithoutLook } from './WithoutLook';
 
 /** How long a typed branch name rests before the landing plan is asked with it (LANDNAME1b). */
 const NAME_PAUSE = 300;
@@ -65,7 +66,14 @@ export function landsOnBranch(
 }
 
 /** The review's gate as the head draws it (REVIEWENV1g): the set-up step's record where the frame holds it, and the presses. */
-export type HeadReview = { step?: Quest | null; served?: boolean | null; acts?: ReviewGateActs; busy?: boolean };
+export type HeadReview = {
+  step?: Quest | null; served?: boolean | null; acts?: ReviewGateActs; busy?: boolean;
+  /**
+   * *Accept without the look…* (CHATFLOW1d2): a chat run's way past a look its rule requires and no set-up step can show, the Accept
+   * with the person's words. Absent for a quest's work, whose skip is the review's own.
+   */
+  withoutLook?: (answered: Answered, words: string) => void;
+};
 
 /**
  * The second opinion as the head draws it (XAGENT1g): its findings beside their answers where the frame read them, the presses,
@@ -191,7 +199,7 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
       )}
       {/* Where its findings were handed to the session (WAITFOOT1c): the turn they were handed as. */}
       {second && toEvent?.opinion && <p className="m-0"><InConversation onPress={toEvent.opinion} /></p>}
-      {waits && (
+      {waits && !(waits.state === 'cannot-start' && review?.withoutLook) && (
         <ReviewGate
           environment={waits.environment ?? ''}
           state={reviewState(waits.state)}
@@ -203,6 +211,8 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
           busy={review?.busy}
         />
       )}
+      {/* CHATFLOW1d2: a conversation's look cannot start, and the person's way past it is theirs. */}
+      {waits && waits.state === 'cannot-start' && review?.withoutLook && <WithoutLook onPress={review.withoutLook} busy={busy} />}
       {onLand && asking && acceptable && (
         <InlineConfirm
           tone="primary"

@@ -113,5 +113,17 @@
   "work.review.failed.next.SESSION_RANGE_UNREADABLE": "Read again; if its tree was moved or discarded, its timeline still lists the commits it reported.",
   "work.review.failed.next.DRIVER_NOT_READY": "The review reads again by itself once the driver answers.",
   "work.review.failed.next.TIMEOUT": "It waited {{minutes}} minutes for git, which a session with many changes can take. Read again to ask once more.",
-  "work.review.failed.next.other": "Read again to ask once more."
+  "work.review.failed.next.other": "Read again to ask once more.",
+  "work.review.chatPress.turn-running": "A turn is running; press Accept once it ends.",
+  "work.review.chatPress.held-elsewhere": "Another window holds this conversation; press Accept there.",
+  "work.review.chatPress.opinion-asked": "A second opinion is asked: {{reviewer}} reads it from the driver's next look. Press Accept again once it settles.",
+  "work.review.chatPress.opinion-askedAnyone": "A second opinion is asked: another agent reads it from the driver's next look. Press Accept again once it settles.",
+  "work.review.chatPress.moved": "The work moved while it was judged; press Accept again.",
+  "work.review.chatPress.unread": "Git could not read the tree's tip, so nothing was judged or landed.",
+  "work.review.chatPress.no-words": "Accept without the look takes your words: say why it lands without one.",
+  "work.review.withoutLook": "Accept without the look…",
+  "work.review.withoutLookWords": "Why it lands without the look",
+  "work.review.withoutLookLimit": "A conversation publishes no set-up step, so no look can be set up for its work. Your words are kept with its landing, for this commit and the ones before it.",
+  "work.review.withoutLookPress": "Accept without the look",
+  "work.review.withoutLookWaits": "Waits for your review, and it cannot start: a conversation publishes no set-up step, so no look can be set up for its work."
 }

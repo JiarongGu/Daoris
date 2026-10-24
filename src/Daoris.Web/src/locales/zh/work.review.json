@@ -113,5 +113,17 @@
   "work.review.failed.next.SESSION_RANGE_UNREADABLE": "请重新读取；如果它的工作树已被移动或丢弃，它的时间线仍列出它报告过的提交。",
   "work.review.failed.next.DRIVER_NOT_READY": "驱动应答后，审阅会自动重新读取。",
   "work.review.failed.next.TIMEOUT": "已为 git 等了 {{minutes}} 分钟，改动多的会话可能需要这么久。重新读取会再问一次。",
-  "work.review.failed.next.other": "重新读取会再问一次。"
+  "work.review.failed.next.other": "重新读取会再问一次。",
+  "work.review.chatPress.turn-running": "有一轮正在进行；等它结束后再按采纳。",
+  "work.review.chatPress.held-elsewhere": "另一个窗口占着这段对话；请在那里按采纳。",
+  "work.review.chatPress.opinion-asked": "已征询第二意见：{{reviewer}} 会在驱动下次查看时阅读它。它了结后再按一次采纳。",
+  "work.review.chatPress.opinion-askedAnyone": "已征询第二意见：另一个智能体会在驱动下次查看时阅读它。它了结后再按一次采纳。",
+  "work.review.chatPress.moved": "工作在判断期间变了；请再按一次采纳。",
+  "work.review.chatPress.unread": "git 读不到工作树的最新提交，所以没有判断，也没有落地。",
+  "work.review.chatPress.no-words": "不经审阅采纳需要你的话：说说它为什么不经审阅就落地。",
+  "work.review.withoutLook": "不经审阅采纳…",
+  "work.review.withoutLookWords": "它为什么不经审阅就落地",
+  "work.review.withoutLookLimit": "对话不会发布搭建步骤，所以无法为它的工作搭建审阅。你的话会随它的落地保存，适用于这个提交及其之前的提交。",
+  "work.review.withoutLookPress": "不经审阅采纳",
+  "work.review.withoutLookWaits": "等你审阅，但它无法开始：对话不会发布搭建步骤，所以无法为它的工作搭建审阅。"
 }

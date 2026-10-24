@@ -10,6 +10,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
+import i18n from '../locales/i18n';
 import { watchScreen } from '../test/onScreen';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
 import {
@@ -1167,6 +1168,61 @@ describe('acting on what a session landed', () => {
     await userEvent.click(within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).getByRole('button', { name: 'Accept' }));
     expect(await within(screen.getByRole('group', { name: 'accept daoris/s-4e6837ed' })).findByRole('alert'))
       .toHaveTextContent('which a branch would leave behind.');
+  });
+
+  /**
+   * CHATFLOW1d (the chat-flow design §5.2): a chat run's Accept is refused while it asks the second opinion, and the foot's ask says so in
+   * the person's language, naming the reviewer, never the driver's English; a turn running is said the same way. CHATFLOW1d2 (§5.3): its
+   * look cannot start, which the page says, and *Accept without the look…* takes the person's words and presses the Accept with them.
+   */
+  it('words a chat run’s refused Accept in both languages and presses Accept without the look with the person’s words', async () => {
+    const tree = 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-c0ffee11';
+    SESSIONS = [{ ...CHAT, tree }];
+    let answer: unknown = { session: 'c0ffee11', done: false, message: 'A second opinion is asked: `codex-acp` reads it from the driver\'s next look; press Accept again once it settles.',
+      chat: { code: 'opinion-asked', reviewer: 'codex-acp' } };
+    let review: unknown = null;
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 'c0ffee11', group: 'review', shown: 'working', archived: false, teammate: false,
+          lands: { branch: 'daoris/s-c0ffee11', tree: 's-c0ffee11', commits: 1, uncommitted: 0 } }] };
+      }
+      if (type === 'LANDING') return { session: 'c0ffee11', form: 'merge', target: 'main', source: 'workspace', review };
+      if (type === 'LAND_SESSION_TREE') return answer;
+      if (type === 'SESSION_DIFF') return DIFF;
+      return DRIVER_STATE;
+    });
+
+    try {
+      show('c0ffee11');
+      const head = within(screen.getByRole('main'));
+      await userEvent.click(await head.findByRole('button', { name: 'Accept…' }));
+      await userEvent.click(within(screen.getByRole('group', { name: 'accept daoris/s-c0ffee11' })).getByRole('button', { name: 'Accept' }));
+      expect(await within(screen.getByRole('group', { name: 'accept daoris/s-c0ffee11' })).findByRole('alert'))
+        .toHaveTextContent('A second opinion is asked: codex-acp reads it from the driver\'s next look. Press Accept again once it settles.');
+
+      await act(async () => { await i18n.changeLanguage('zh'); });
+      answer = { session: 'c0ffee11', done: false, message: 'a turn is running; press Accept once it ends.', chat: { code: 'turn-running', reviewer: null } };
+      await userEvent.click(within(screen.getByRole('group', { name: '采纳 daoris/s-c0ffee11' })).getByRole('button', { name: '采纳' }));
+      expect(await within(screen.getByRole('group', { name: '采纳 daoris/s-c0ffee11' })).findByText('有一轮正在进行；等它结束后再按采纳。')).toBeInTheDocument();
+    } finally {
+      await act(async () => { await i18n.changeLanguage('en'); });
+    }
+    cleanup();
+
+    review = { state: 'cannot-start', level: 'repository', says: 'Waits for your review, and it cannot start: a conversation publishes no set-up step.' };
+    answer = { session: 'c0ffee11', done: true, message: 'merged its work into `main` — 1 commit(s).', chat: { code: null, reviewer: null } };
+    const notify = vi.fn();
+    show('c0ffee11', notify);
+    const main = within(screen.getByRole('main'));
+    expect(await main.findByText('Waits for your review, and it cannot start: a conversation publishes no set-up step, so no look can be set up for its work.'))
+      .toBeInTheDocument();
+    await userEvent.click(main.getByRole('button', { name: 'Accept without the look…' }));
+    const ask = screen.getByRole('group', { name: 'Accept without the look' });
+    expect(within(ask).getByRole('button', { name: 'Accept without the look' })).toBeDisabled();
+    await userEvent.type(within(ask).getByRole('textbox', { name: 'Why it lands without the look' }), 'a copy change only');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Accept without the look' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', { payload: { id: 'c0ffee11', withoutLook: 'a copy change only' }, timeoutMs: 6 * 60_000 });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('merged its work into `main` — 1 commit(s).'));
   });
 
   /**

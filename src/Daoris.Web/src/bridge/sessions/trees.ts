@@ -9,6 +9,7 @@ import type { OpinionDetail, OpinionGate, OpinionWait } from '../../work/gates/o
 import type { TreeFile } from '../../work/review/preview';
 import type { SessionProcessAnswer } from '../../work/head/process';
 import type { ReviewWaits } from '../../work/gates/review';
+import type { ChatPressAnswer } from '../../work/review/chatPress';
 import { call, pluginBound } from '../call';
 
 export type { DiffFile, SessionDiff } from '../../work/review/diff';
@@ -513,18 +514,23 @@ export const useLandSessionTree = () =>
   useMutation({
     // Keyed by its route, so every view of the session reads it under way, not only the one that pressed (STATEHUB1c).
     mutationKey: ['LAND_SESSION_TREE'],
-    mutationFn: (land: string | { id: string; answers?: string | null; branch?: string | null }) => {
-      const { id, answers, branch } = typeof land === 'string' ? { id: land, answers: null, branch: null } : land;
+    mutationFn: (land: string | { id: string; answers?: string | null; branch?: string | null; withoutLook?: string | null }) => {
+      const { id, answers, branch, withoutLook } = typeof land === 'string' ? { id: land, answers: null, branch: null, withoutLook: null } : land;
       // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
       const named = branch?.trim();
       // LANDSYNC1: what it left out because the line holds it, and the conflict a refusal names with the words to rebase with.
       // FABRIC-CLOSE1h9: why its push was held back, where it landed with no plugin told; a shell before it answers none.
+      // CHATFLOW1d: a chat run's press answers its own code (`chat`), which the page words; CHATFLOW1d2: `withoutLook` carries the
+      // person's words for Accept without the look.
       return call<TreeAct & {
         branch?: string; plugin?: PluginLanding; withheld?: string | null;
         leftOut?: LeftOutCommit[] | null;
         conflict?: LandingConflict | null;
+        chat?: ChatPressAnswer;
       }>(
-        'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound });
+        'LAND_SESSION_TREE',
+        { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}), ...(withoutLook ? { withoutLook } : {}) },
+        { timeoutMs: pluginBound });
     },
   });
 

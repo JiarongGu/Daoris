@@ -19,7 +19,7 @@ const DETAILS: Record<string, readonly string[]> = {
   // The second opinion's gate's own states (XAGENT1f, `OpinionGateStates`), and a landing that let it go.
   opinion: [
     'none', 'waits-chain', 'not-asked', 'reading', 'read-again', 'with-session', 'disputed', 'commits-since', 'unavailable', 'settled',
-    'anyway', 'myself', 'answered', 'landed', 'unread', 'cannot-start', 'chat-not-asked',
+    'anyway', 'myself', 'answered', 'landed', 'unread', 'cannot-start', 'chat-at-press',
   ],
   look: ['not-shown', 'being-set-up', 'shown', 'not-yet', 'not-held', 'reviewed', 'skip', 'off', 'unread'],
   landing: ['accept', 'automatic', 'branch', 'merge', 'already', 'nothing', 'refused', 'gone', 'elsewhere'],
@@ -70,6 +70,8 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
     case 'work.land': return t(at, { count: step.count ?? 0 });
     case 'opinion.reading': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.readingAnyone');
     case 'opinion.read-again': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.readingAnyone');
+    // CHATFLOW1d: a chat run's opinion, asked by the person's Accept from the reviewer named.
+    case 'opinion.chat-at-press': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.chat-at-pressAnyone');
     case 'opinion.with-session':
     case 'opinion.disputed':
     case 'opinion.commits-since': return t(at, { count: step.count ?? 0 });

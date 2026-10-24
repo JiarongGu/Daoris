@@ -88,6 +88,52 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Equal(ReviewerLabels.SameAgent, Assert.Single(new OpinionGates(_home).Read("q1", "reports").Asks).Label);
     }
 
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2 points 3 and 6, §7): an opinion a chat run's press asked is due on its run, with no chain. The
+    /// look asks its pass at the tip the press captured, never the tree's HEAD a later turn moved, from where the work leaves the line,
+    /// handing the conversation's opening and no quest; the pass is kept at the run's gate; and once it settles the person is told by a
+    /// notice naming the conversation, once.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_run_s_opinion_is_asked_at_its_press_s_tip_with_its_opening_and_its_settling_is_told_once()
+    {
+        const string Chat = "c1a2b3c4";
+        var (host, tree, line) = await DoneAsync(required: false);
+        new OpinionDues(_home).Close("s1", OpinionRules.Landing, OpinionDueClosed.Off, DateTimeOffset.UtcNow);
+        var pressed = await HeadAsync(tree);
+        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(Chat, new SessionEvent
+        {
+            Kind = SessionEventKind.User, Origin = "person", Text = "make the totals right",
+        });
+        new OpinionDues(_home).Due(new OpinionDue(Chat, null, "reports", "work", tree, OpinionRules.Landing, DateTimeOffset.UtcNow)
+        {
+            Run = ChatRuns.Prefix + Chat, Tip = pressed, Turns = 1,
+        });
+        await CommitAsync(tree, "later.txt", "a later turn's", "a turn after the press");
+        var driver = Driver(host);
+
+        var (_, passes) = await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+
+        Assert.Equal(1, passes);
+        var (ask, _) = Assert.Single(_passes);
+        Assert.Equal((Chat, pressed, line, "make the totals right"), (ask.Working, ask.Tip, ask.Base, ask.Opening));
+        Assert.Empty(ask.Quests);
+        Assert.Null(ask.Words);
+        Assert.Equal("op1", Assert.Single(new OpinionGates(_home).Read(ChatRuns.Prefix + Chat, "reports").Asks).Opinion);
+        Assert.DoesNotContain(Notices.Read(_home, DateTimeOffset.UtcNow) ?? [], notice => notice.Code == LookSaid.OpinionSettled);
+
+        for (var look = 0; look < 2; look++)
+        {
+            await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+            await driver.Running.SettledAsync();
+        }
+
+        var told = Assert.Single(Notices.Read(_home, DateTimeOffset.UtcNow)!, notice => notice.Code == LookSaid.OpinionSettled);
+        Assert.Equal((Notices.Look, Chat), (told.Kind, told.Session));
+        Assert.Single(_passes);
+    }
+
     [Fact]
     public async Task The_presses_keep_the_persons_answer_and_ask_a_pass_among_the_rules_reviewers_for_the_next_look()
     {

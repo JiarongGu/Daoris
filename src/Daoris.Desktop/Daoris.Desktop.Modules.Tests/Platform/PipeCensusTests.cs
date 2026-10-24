@@ -379,6 +379,8 @@ public sealed class PipeCensusTests
     [InlineData("SYSTEM_SPACE_FREE", """{"plan":false,"units":[]}""", PipeClass.Person)]
     [InlineData("SYSTEM_SPACE_FREE", """{"units":[{"kind":"logs","id":"2026-09-01.driver.jsonl"}]}""", PipeClass.Person)]
     [InlineData("SYSTEM_SPACE_FREE", """{"plan":true,"Plan":"yes"}""", PipeClass.Person)]
+    // CHATFLOW1d2 (the chat-flow design §5.3): Accept without the look is the Accept's own press with the person's words, never a look.
+    [InlineData("LAND_SESSION_TREE", """{"id":"c1a2b3c4","withoutLook":"a copy change only"}""", PipeClass.Person)]
     public void A_route_that_is_a_look_and_a_press_is_classed_by_its_payload(string route, string payload, PipeClass expected)
     {
         using var document = JsonDocument.Parse(payload);

@@ -73,6 +73,7 @@ import { doorLabel } from '../agents/tools';
 import type { QuestClose, Resolution } from './waits/AwaitingPerson';
 import { Composer } from './conversation/Composer';
 import { DiffPane } from './review/DiffPane';
+import { chatPressSaid } from './review/chatPress';
 import { keepDraft, useDraft } from './conversation/drafts';
 import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from './frame/RightDock';
 import { SessionTimeline } from './head/SessionTimeline';
@@ -1759,6 +1760,21 @@ export function WorkFrame({
       work: attended.quest ?? null,
       open: gateHolds.quest && onOpenQuest ? () => onOpenQuest(gateHolds.quest!) : undefined,
     }),
+    // CHATFLOW1d2 (the chat-flow design §5.3): a conversation's work, which no set-up step can show, lands past its look by the person's
+    // own Accept with their words, judged and landed at the tip that press captures.
+    withoutLook: gateHolds.state === 'cannot-start' && !attended.quest
+      ? (answered, words) => land.mutate({ id: attended.id, withoutLook: words }, {
+        onSuccess: (result) => {
+          if (!result.done) {
+            answered.refused(chatPressSaid(t, result.chat) ?? result.message);
+            return;
+          }
+          notify(result.message);
+          answered.done();
+        },
+        onError: (error) => answered.refused(sentence(error)),
+      })
+      : undefined,
   } : null;
   // The second opinion's gate before it (XAGENT1g, the second-agent design §7, §9): its findings beside their answers, read only
   // where a level asks one, and its presses by the one owner; a finding's place opens the side bar's preview.
@@ -1846,7 +1862,8 @@ export function WorkFrame({
     onLand: lands ? (answered, answers, branch) => land.mutate({ id: attended.id, answers, branch }, {
       onSuccess: (result) => {
         if (!result.done) {
-          answered.refused(result.message);
+          // CHATFLOW1d: a chat run's press says why in the person's language: a turn running, the opinion asked at this press.
+          answered.refused(chatPressSaid(t, result.chat) ?? result.message);
           return;
         }
         // FABRIC-CLOSE1h9: a push held back is said as such, with the hand-off its review offers, never as an ordinary landing.
