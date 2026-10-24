@@ -513,3 +513,42 @@ export const PausedWithItsAsk: Story = {
     acts: ['resumeAsk', 'review', 'openFolder', 'terminal', 'detach', 'copy'], primary: 'resumeAsk',
   },
 };
+
+// ——— The choice its actor ran (MODELROLE1c3, D205 §4.6 item 2, §7.1): the head's quiet *choice n* chip where a later choice than the
+// first ran, and *your pick* where the person picked the agent, on the facts line after the facts; at the frame's three widths, in
+// English and 中文. A start on its first choice wears none, as `Running` shows.
+
+const LATER: Session = { ...SESSION, choice: '2' };
+const PICKED: Session = { ...SESSION, choice: 'pick' };
+const CHOICE_FACTS = ['engine', '12m', 'attempt 2: the 1 before it failed'];
+const CHOICE_FACTS_ZH = ['engine', '12 分钟', '第 2 次尝试：之前 1 次失败'];
+
+/** Build's second choice ran, at 1546 px: *choice 2* after the facts, the line on one row. */
+export const ChoiceAt1546: Story = { args: { session: LATER, title: LONG_REQUEST, facts: CHOICE_FACTS }, decorators: [sessionWidths.wide] };
+
+/** The same at 680 px. */
+export const ChoiceAt680: Story = { args: { ...ChoiceAt1546.args }, decorators: [sessionWidths.half] };
+
+/** The same at the main area's 400 px floor: the facts are cut before the chip, never the chip. */
+export const ChoiceNarrow: Story = { args: { ...ChoiceAt1546.args }, decorators: [sessionWidths.narrow] };
+
+/** The person's pick, at 680 px: *your pick*. */
+export const YourPickAt680: Story = { args: { session: PICKED, title: LONG_REQUEST, facts: CHOICE_FACTS }, decorators: [sessionWidths.half] };
+
+/** *选择 2* in 中文, at 1546 px. */
+export const ChoiceChineseAt1546: Story = {
+  args: { session: LATER, title: '修复同步外观中的流式水合预算', facts: CHOICE_FACTS_ZH },
+  decorators: [sessionWidths.wide, chinese],
+};
+
+/** The same in 中文, at 680 px. */
+export const ChoiceChineseAt680: Story = { args: { ...ChoiceChineseAt1546.args }, decorators: [sessionWidths.half, chinese] };
+
+/** The same in 中文, at 400 px. */
+export const ChoiceChineseNarrow: Story = { args: { ...ChoiceChineseAt1546.args }, decorators: [sessionWidths.narrow, chinese] };
+
+/** *你指定的* in 中文, at 400 px. */
+export const YourPickChineseNarrow: Story = {
+  args: { session: PICKED, title: '修复同步外观中的流式水合预算', facts: CHOICE_FACTS_ZH },
+  decorators: [sessionWidths.narrow, chinese],
+};

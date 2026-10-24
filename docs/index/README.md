@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (294)
+## Files over 40 KB (295)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -45,8 +45,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/data/queries.ts` | 52 | 979 |
 | `src/Daoris.Web/src/design/Flow.tsx` | 45 | 890 |
 | `src/Daoris.Web/src/design/tokens.test.ts` | 48 | 856 |
-| `src/Daoris.Web/src/design/ui.test.tsx` | 63 | 1268 |
-| `src/Daoris.Web/src/design/ui.tsx` | 95 | 1990 |
+| `src/Daoris.Web/src/design/ui.test.tsx` | 64 | 1284 |
+| `src/Daoris.Web/src/design/ui.tsx` | 96 | 2009 |
 | `src/Daoris.Web/src/help/AskConversation.tsx` | 62 | 1151 |
 | `src/Daoris.Web/src/help/AskDaoris.test.tsx` | 104 | 2069 |
 | `src/Daoris.Web/src/menus/commands.ts` | 43 | 824 |
@@ -69,11 +69,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/conversation/conversation.test.ts` | 68 | 1265 |
 | `src/Daoris.Web/src/work/conversation/conversation.ts` | 48 | 930 |
 | `src/Daoris.Web/src/work/frame/frame.tsx` | 44 | 932 |
-| `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 69 | 1311 |
+| `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 71 | 1337 |
+| `src/Daoris.Web/src/work/head/SessionHead.tsx` | 40 | 709 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 90 | 1320 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 54 | 929 |
 | `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
-| `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 41 | 763 |
+| `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 43 | 797 |
 
 ### Web settings (`web-settings`)
 
@@ -156,9 +157,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/DrivenInbox.cs` | 52 | 1207 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpFacts.cs` | 56 | 939 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 55 | 971 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 292 | 4560 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 294 | 4592 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverBrainstorms.cs` | 41 | 750 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 86 | 1331 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 86 | 1334 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverHelpers.cs` | 64 | 1055 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverWatch.cs` | 66 | 1113 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverChoicesCommand.cs` | 127 | 2285 |
@@ -171,7 +172,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 136 | 2206 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 43 | 748 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 175 | 3074 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Observation.cs` | 42 | 655 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Observation.cs` | 42 | 670 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 65 | 1420 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Words.cs` | 41 | 760 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Questions/QuestionSupervisorDecisions.cs` | 45 | 812 |

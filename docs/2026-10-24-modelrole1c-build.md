@@ -118,3 +118,40 @@ was changed, so none was run.
   table). It does not keep later choices, since the verb names one agent.
 - Until row d, `SET_INTAKE` and `SET_HELPER` write their key and take their actor back to as before, so the key they write is what
   the next start reads.
+
+## MODELROLE1c3: what row c still owed
+
+Quest `#ec4d9e828b6e`, in two parts on one branch, each committed green.
+
+1. **The pipe door's model refusal** (built). `ClaudeStreamJson` reads row a's measured refusal by the frame's word: the
+   `assistant` frame's `error: "model_not_found"` on a `<synthetic>` message, on a turn whose model wrote nothing and ran no tool,
+   ended by a failed `result`. `HarnessWords` carries it to `HarnessEnding.ModelRefused`. `Driver.ModelRefused` keeps the account's
+   `refused` reading for the model the actor's choice named (`ActorAsked.NamedModel`) and adds `account.refused-model` to the
+   failure. A first start's conclusion and a go-on run's (`ConcludeResumedAsync`) both call it. A first start so ended raises no
+   *Ended* (`SessionEnded.NotOffered`). A go-on run's words wait for the next look (`FailedTurnWords.Judge`), never for the person.
+2. **The screen** (built). `limitedOr` and `shownState` read a `failed` record whose note carries `ended.choice-not-offered` as
+   *not started* (`work.notStarted.word`), neutral and ended. `notStartedLine` gives the code's sentence: `work.notStarted.here`
+   names the agent, the model and the record's account, and `work.notStarted.mirror` is used for a teammate's record, which has
+   none. The session row's facts line and the head say it, the head in place of the note. `SessionPageHead`'s stories hold the
+   chip at 80rem, 39rem and 25rem in en and zh, and a test composes them.
+
+**Remaining, filed as MODELROLE1c4:** the installed proof.
+
+### Checks run (MODELROLE1c3)
+
+Driver: `PipeModelRefusalTests` (new) and `ModelRefusalTickTests` with `process.runsettings`, each new case seen failing first. The
+focused classes covering the changed code all passed: `ClaudeStreamJsonTests`, `ContinuationTests`, `HandedRecordTests`,
+`NativeResumeTests`, `NativeStreamsTests`, `RefusedByTheHarnessTests`, `TranscriptAsSaidTests`, `UsageTurnsTests`, `StrikeTests`,
+`AttentionTests`, `NoteCodesTests`, `NoteSitesTests`, `AgentOffersTests`, `BuildWalkTests`, `StructureTests`, `ResumeAccountTests`.
+The driver's fast half passed: 14446 tests. The web: `ui.test.tsx`, the rail, the head, `actors`, `groups`, the quests, the map
+and the console's tests, `stories.test.tsx` and `storyWidths.test.tsx`; the typecheck, `check:web-rules`, `i18n:check` and
+`names-check.mjs --strict`.
+
+### Readings (MODELROLE1c3)
+
+- A first start the pipe door refused ends `failed` with the account's line, not `choice-not-offered`. The row names
+  `account.refused-model`, and on this door a prompt was handed, so the record did start a turn.
+- Its *Ended* notice is left out, as a `choice-not-offered` end's is, since the next look goes on by itself (§4.6).
+- The word is lower case, *not started*, by the glossary's `status` kind. The design's capital is the sentence's.
+- The account in the sentence is the record's own id (`profile`), which is what this machine answers. The person's display name for
+  it is not read on the list.

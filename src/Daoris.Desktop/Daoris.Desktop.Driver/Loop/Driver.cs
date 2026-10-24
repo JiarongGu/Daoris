@@ -2800,6 +2800,11 @@ public sealed class Driver(
 
                     conclusion = AccountRefused(conclusion, adapter, selection, ended);
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
+                    // MODELROLE1c3 (D205 §3.3's pipe exception): the pipe door refused the model its choice named on a silent turn, so the
+                    // account's reading is kept and the part ends with its line, no strike; the next look starts what the walk then answers.
+                    var refusedModel = ModelRefused(conclusion, adapter.Name, selection, target.Asked?.NamedModel, ended, sessionId);
+                    var modelRefused = !ReferenceEquals(refusedModel, conclusion);
+                    conclusion = refusedModel;
                     (conclusion, var limited) = AccountLimited(
                         conclusion, adapter, selection, turnFailed, sessionId, used,
                         // A limit read by its code on the door, with no sentence (§3.1): cooled for D125's unstated hour.
@@ -2862,7 +2867,7 @@ public sealed class Driver(
                             : new SessionEnded(
                                 sessionId, quest.To, conclusion.State,
                                 ByPerson: stop is { ByPerson: true }, conclusion.Note,
-                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile) { Limit = limited, NotOffered = notOffered });
+                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile) { Limit = limited, NotOffered = notOffered || modelRefused });
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3298,6 +3303,33 @@ public sealed class Driver(
     /// every look: it is held as AGT3b holds a refused one, until a person looks again.</para>
     /// </remarks>
     /// <param name="turnFailed">What the protocol door said refusing the call (ACPEND1), or null.</param>
+    /// <summary>
+    /// 🔴 The pipe door's refusal of the model its actor asked (D205 §3.3's pipe exception, §3.5(a), MODELROLE1c3), read from row a's
+    /// measured words on a silent turn (<see cref="HarnessEnding.ModelRefused"/>): the one refusal after a prompt was handed that is no
+    /// failure of the quest's. The account's <c>refused</c> reading for that model is kept, so the next start's walk passes the account
+    /// without spawning, and the part ends with the account's line, which no strike counts (<see cref="NoteCodes.AccountsOwn"/>), naming
+    /// the agent and the model but no account, since the note travels.
+    /// </summary>
+    /// <param name="model">The model its actor's choice named (<see cref="ActorAsked.NamedModel"/>); null keeps the conclusion, since a
+    /// model the person's own command or environment named is no choice a reading passes.</param>
+    internal SessionConclusion ModelRefused(
+        SessionConclusion conclusion, string agent, HarnessSelection selection, string? model, HarnessEnding ended, string sessionId)
+    {
+        if (conclusion.State != "failed" || !ended.ModelRefused || model is not { Length: > 0 }) return conclusion;
+
+        if (AgentOffers.Refused(home, agent, selection.Version, selection.Profile, model, DateTimeOffset.UtcNow) is { } unkept)
+        {
+            Log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", unkept)]);
+        }
+
+        Log?.Write("info", "actor.refused", [("session", sessionId), ("agent", agent), ("model", model), ("code", AgentOffers.RefusedCode)]);
+        return conclusion.Then(" ", Noted.Of(
+            NoteCodes.AccountRefusedModel,
+            $"`{agent}` refused `{model}` on the account it ran on, so that account is passed for that model until the agent offers it again. "
+            + "It is not counted as a failed session.",
+            ("agent", agent), ("model", model)));
+    }
+
     internal SessionConclusion AccountSignedOut(
         SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed) =>
         conclusion.State == "failed" && RefusedAccounts.SignInRefused(Context.Harnesses, adapter, selection.Profile, turnFailed) is { } line

@@ -24,7 +24,8 @@ public sealed record SessionEnded(
     /// <summary>
     /// Its agent refused the choice its actor asked at the open, before any prompt (D205 §3.5(c), MODELROLE1c2): it ended
     /// <c>choice-not-offered</c>, announced as any end, and the attention watch raises no <i>Ended</i> for it, since a fallback asks
-    /// nothing of the person (§4.6).
+    /// nothing of the person (§4.6). So too a pipe start whose door refused its model on a silent turn (§3.3's pipe exception,
+    /// MODELROLE1c3), ended with the account's <c>account.refused-model</c> line.
     /// </summary>
     public bool NotOffered { get; init; }
 }

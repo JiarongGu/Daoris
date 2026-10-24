@@ -158,6 +158,7 @@ internal static class HarnessCapture
             {
                 if (mapped.Outside) own.Said(line);
                 if (mapped.Failed is { } failure) own.Failed(failure);
+                if (mapped.ModelRefused) own.ModelRefused();
             }
 
             if (named is not null && !told && mapper.Conversation is { } conversation)

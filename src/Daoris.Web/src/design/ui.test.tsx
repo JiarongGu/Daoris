@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, Card, CardStack, CodeText, CountBadge, Dot, Drawer, EmptyState, FIELD_WIDTHS, FormField, FormGrid, FormRow, FRAME_HELD,
-  FrameHeld, Icon, Inline, Menu,
+  FrameHeld, Icon, Inline, limitedOr, Menu,
   MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented, SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SETTING_TRACK,
   SettingList, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile, Tip, Toasts, WaitingCard,
 } from './ui';
@@ -723,7 +723,7 @@ describe('the session tone map', () => {
   // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), the two words the
   // session list's reader derives from the session's quest (D126 §2.2), the park the person answered (ANSWER1c), a
   // record going on with their words (MSG1f), and a session waiting on its own helper (HELPERWAIT1).
-  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limited'];
+  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limited', 'not-started'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
@@ -833,6 +833,22 @@ describe('the session tone map', () => {
     expect(SESSION_TONE.limited).toBe('neutral');
     expect(SESSION_DOT.limited).toBe('ended');
     expect(shownKey('limited')).toBe('work.limit.word');
+  });
+
+  /**
+   * MODELROLE1c3 (D205 §3.5(c), §7.1): a `failed` record its agent's refusal of the choice ended before anything ran, its note's code
+   * `ended.choice-not-offered`, shows *Not started*, quiet and ended, never the failure's red. Any other failure is the failure it says.
+   */
+  it('shows a record ended choice-not-offered as not started, quietly', () => {
+    const parts = [{ code: 'ended.choice-not-offered', values: { agent: 'claude-code-acp', model: 'opus' } }];
+    expect(shownState({ kind: 'driven', state: 'failed', noteParts: parts }, undefined)).toBe('not-started');
+    expect(shownState({ kind: 'chat', state: 'failed', noteParts: parts }, false)).toBe('not-started');
+    expect(shownState({ kind: 'driven', state: 'failed', noteParts: [{ code: 'ended.untouched-exit' }] }, undefined)).toBe('failed');
+    expect(shownState({ kind: 'driven', state: 'completed', noteParts: parts }, undefined)).toBe('completed');
+    expect(limitedOr({ state: 'failed', noteParts: parts })).toBe('not-started');
+    expect(SESSION_TONE['not-started']).toBe('neutral');
+    expect(SESSION_DOT['not-started']).toBe('ended');
+    expect(shownKey('not-started')).toBe('work.notStarted.word');
   });
 
   /**

@@ -6,7 +6,9 @@ import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { code } from '../../test/code';
 import type { Answered } from '../InlineConfirm';
+import { composeStories } from '@storybook/react-vite';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
+import * as stories from './SessionPageHead.stories';
 
 // The session's page header (SESSUX1d, D126 §3.2) and its stop's ask (§3.3), as molecules: every state is reached by
 // passing it. Which acts apply is the rule's (`acts.test.ts`); this holds how the header draws what it is handed.
@@ -248,5 +250,30 @@ describe('the delete’s ask', () => {
     render(<DeleteAsk busy onDelete={() => {}} onClose={() => {}} />);
     expect(screen.getByRole('button', { name: '确认删除会话' })).toBeDisabled();
     expect(screen.getByRole('group', { name: '删除这个会话' })).toHaveTextContent('无法找回');
+  });
+});
+
+/**
+ * MODELROLE1c3 (D205 §4.6 item 2, §7.1): the head's choice chip is drawn at the frame's three widths in both languages, each story
+ * wearing its word on the facts line and at its width, so a reviewer sees it where the page puts it.
+ */
+describe('the head’s choice chip, in its stories', () => {
+  const composed = composeStories(stories);
+  const cases = [
+    [composed.ChoiceAt1546, 'choice 2', '80rem'], [composed.ChoiceAt680, 'choice 2', '39rem'], [composed.ChoiceNarrow, 'choice 2', '25rem'],
+    [composed.YourPickAt680, 'your pick', '39rem'],
+    [composed.ChoiceChineseAt1546, '选择 2', '80rem'], [composed.ChoiceChineseAt680, '选择 2', '39rem'],
+    [composed.ChoiceChineseNarrow, '选择 2', '25rem'], [composed.YourPickChineseNarrow, '你指定的', '25rem'],
+  ] as const;
+
+  it('wears its word at each of the three widths, in English and 中文', () => {
+    for (const [Story, word, width] of cases) {
+      const { container, unmount } = render(<Tooltip.Provider><Story /></Tooltip.Provider>);
+      const chip = container.querySelector('[data-choice]');
+      expect(chip, `${word} at ${width}`).not.toBeNull();
+      expect(chip).toHaveTextContent(word);
+      expect(container.querySelector('[data-main-width]')?.getAttribute('data-main-width')).toBe(width);
+      unmount();
+    }
   });
 });

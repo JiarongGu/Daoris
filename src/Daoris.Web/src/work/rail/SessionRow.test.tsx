@@ -114,6 +114,40 @@ describe('a session row', () => {
     }
   });
 
+  /**
+   * MODELROLE1c3 (D205 §3.5(c), §7.1): a record its agent's refusal of the choice ended before anything ran is `failed` on the wire,
+   * and the row says *not started*, quiet, never the failure's word or red, with the code's sentence: here, naming the account it was
+   * refused on; on a teammate's mirror, naming none, since the account is machine-local. In both languages.
+   */
+  it('says a record ended choice-not-offered is not started, quietly, with its sentence, in en and zh', async () => {
+    const parts = [{ code: 'ended.choice-not-offered', values: { agent: 'claude-code-acp', model: 'opus' } }];
+    const here = session({ state: 'failed', noteParts: parts, profile: 'account-1' });
+    const mirror = session({ id: 'jo/s9f8e7d6', state: 'failed', noteParts: parts });
+    const { container, unmount } = render(<SessionRow session={here} />);
+    expect(screen.getByText('not started')).toBeInTheDocument();
+    expect(screen.getByText(/Not started: claude-code-acp did not offer opus on account-1\./)).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('sessionState.failed'))).toBeNull();
+    expect(container.innerHTML).not.toMatch(/danger|declined/);
+    unmount();
+
+    const other = render(<SessionRow session={mirror} />);
+    expect(screen.getByText(/Not started: the agent did not offer the model\./)).toBeInTheDocument();
+    expect(other.container.innerHTML).not.toMatch(/account-1/);
+    other.unmount();
+
+    await i18n.changeLanguage('zh');
+    try {
+      const zh = render(<SessionRow session={here} />);
+      expect(screen.getByText('未启动')).toBeInTheDocument();
+      expect(screen.getByText(/未启动：claude-code-acp 在 account-1 上不提供 opus。/)).toBeInTheDocument();
+      zh.unmount();
+      render(<SessionRow session={mirror} />);
+      expect(screen.getByText(/未启动：智能体不提供该模型。/)).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /** LIMITRESUME1d2 (D206 §3.7): its row says when it goes on by itself, the head's own sentence, handed in worded. */
   it('says when a limited line goes on by itself, as its head says it', () => {
     const limited = session({ state: 'failed', limit: true, quest: '7a82cc' });
