@@ -71,6 +71,9 @@ public sealed class DriverModule : ModuleBase
     // The reads under way that an identical ask joins (SWEEPFLIGHT1), forgotten as a press answers.
     private readonly RouteFlights _flights = new();
 
+    // The answers of the reads told by event (NOBLOCK1), their works forgotten as a press answers.
+    private HeldAnswers _held;
+
     /// <remarks>
     /// The bus is held as well as handed to the base: this module both ANSWERS requests and, since
     /// D49 §3, raises one of its own — a conversation ending is news the page wants without asking.
@@ -87,6 +90,7 @@ public sealed class DriverModule : ModuleBase
         : base(events: events)
     {
         _context = new DriverContext(events, loop, openFolder, pickFile);
+        _held = new HeldAnswers(events);
         _handlers = [.. Domains.Select(domain => domain.Build(_context))];
         // Ask Daoris's room as START_HELP writes it, for a conversation going on in it (ASKHIST1). Since PARALLEL1a from the facts the
         // judges keep on the loop: their judges registered here, and the room written again as the facts it said not read yet land.
@@ -98,6 +102,7 @@ public sealed class DriverModule : ModuleBase
         _ = events.Subscribe(StatePublisher.Module, StatePublisher.Type, _ =>
         {
             _flights.Forget();
+            _held.Forget();
             return Task.CompletedTask;
         });
     }
@@ -107,6 +112,19 @@ public sealed class DriverModule : ModuleBase
     /// them, since the tests build doors through a module (<c>DriverModuleBridge.Module()</c>) rather than a context.
     /// </summary>
     public IHelpDoors HelpDoors(ServiceClient? service) => HelpRoutes.Doors(_context, service);
+
+    /// <summary>The answers of the reads told by event (NOBLOCK1): the tests' window on a work under way.</summary>
+    public HeldAnswers Held => _held;
+
+    /// <summary>
+    /// How long a first ask of a read told by event waits for its work (<see cref="HeldAnswers.Patience"/>): a test names its own,
+    /// zero to read the event's path alone.
+    /// </summary>
+    public TimeSpan Patience
+    {
+        get => _held.Patience;
+        init => _held = new HeldAnswers(_context.Events) { Patience = value };
+    }
 
     /// <summary>The reads a page may stop (GITAPP1a-iii), and who waits on them: the tests' window on a shared read's callers.</summary>
     public ReadLeaves Reads => _context.Reads;
@@ -172,6 +190,7 @@ public sealed class DriverModule : ModuleBase
     {
         if (request.Type is not { } type || !Table.TryGetValue(type, out var route)) throw UnknownType(request);
         var handler = _handlers[route.Domain];
+        if (route.ByEvent) return _held.AskAsync(HeldKey(request), HeldOf(request), token => route.Answer(handler, request, token));
         if (route.Shared is { } shared) return JoinAsync(route, shared, handler, type, request, cancellationToken);
 
         return route.Change is null ? route.Answer(handler, request, cancellationToken) : PressAsync(route, handler, request, cancellationToken);
@@ -187,6 +206,7 @@ public sealed class DriverModule : ModuleBase
         finally
         {
             _flights.Forget();
+            _held.Forget();
         }
     }
 
@@ -203,6 +223,19 @@ public sealed class DriverModule : ModuleBase
         return await _flights.JoinAsync(
             FlightOf(type, request, shared.By), token => route.Answer(handler, request, token), read.Token, read.Joined);
     }
+
+    /// <summary>The payload's <c>held</c>, the page's query a read told by event names (NOBLOCK1), where the page sent one.</summary>
+    private static string? HeldOf(IpcRequest request) =>
+        request.Payload is { ValueKind: System.Text.Json.JsonValueKind.Object } payload
+        && payload.TryGetProperty(HeldAnswers.HeldField, out var held) && held.ValueKind == System.Text.Json.JsonValueKind.String
+            ? held.GetString()
+            : null;
+
+    /// <summary>
+    /// The key a request of a read told by event is held under (NOBLOCK1): its route and payload, as a shared read's flight is.
+    /// What a test waits on when an ask was answered <see cref="HeldAnswers.Pending"/>.
+    /// </summary>
+    public static string HeldKey(IpcRequest request) => FlightOf(request.Type ?? "", request, null);
 
     /// <summary>The payload's <c>read</c> id, where the page sent one (GITAPP1a-iii).</summary>
     private static string? ReadOf(IpcRequest request) =>
@@ -227,6 +260,9 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>Every route this module answers, by name: what the page's bridge may call (MOD5).</summary>
     public static IReadOnlyCollection<string> Routes => Table.Keys;
+
+    /// <summary>The reads answered from what is held, their work told by event (NOBLOCK1), by name.</summary>
+    public static IReadOnlyCollection<string> ByEventRoutes => [.. Table.Where(entry => entry.Value.ByEvent).Select(entry => entry.Key)];
 
     /// <summary>The reads whose identical asks share the one under way (SWEEPFLIGHT1), by name.</summary>
     public static IReadOnlyCollection<string> OneFlightRoutes => [.. Table.Where(entry => entry.Value.Shared is not null).Select(entry => entry.Key)];
@@ -284,7 +320,7 @@ public sealed class DriverModule : ModuleBase
         var table = new Dictionary<string, Handler>(StringComparer.Ordinal);
         for (var place = 0; place < Domains.Length; place++)
         {
-            foreach (var (route, answer, change, shared) in Domains[place].Routes) table.Add(route, new Handler(place, answer, change, shared));
+            foreach (var (route, answer, change, shared, byEvent) in Domains[place].Routes) table.Add(route, new Handler(place, answer, change, shared, byEvent));
         }
 
         return table.ToFrozenDictionary(StringComparer.Ordinal);
@@ -292,17 +328,18 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>
     /// A route's entry in the table: its domain's place in <see cref="Domains"/>, the handler over that domain's instance, what
-    /// it declares a successful answer changed (D169), null for a read, and how its identical asks share one under way, null where they do not.
+    /// it declares a successful answer changed (D169), null for a read, how its identical asks share one under way, null where they do not,
+    /// and whether it is answered from what is held, its work told by event (NOBLOCK1).
     /// </summary>
     private readonly record struct Handler(
-        int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared);
+        int Domain, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, bool ByEvent);
 
     /// <summary>One line of <see cref="Domains"/>: how a domain's handler class is built over the context, and the routes that class marks.</summary>
     private sealed class Domain(
         Func<DriverContext, object> build,
-        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared)> routes)
+        IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, bool ByEvent)> routes)
     {
-        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared)> Routes => routes;
+        public IReadOnlyList<(string Route, Func<object, IpcRequest, CancellationToken, Task<object?>> Answer, StateChange? Change, OneFlightAttribute? Shared, bool ByEvent)> Routes => routes;
 
         public object Build(DriverContext context) => build(context);
 
@@ -314,15 +351,16 @@ public sealed class DriverModule : ModuleBase
         /// </summary>
         public static Domain Of<T>(Func<DriverContext, T> build) where T : class
         {
-            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?, OneFlightAttribute?)>();
+            var routes = new List<(string, Func<object, IpcRequest, CancellationToken, Task<object?>>, StateChange?, OneFlightAttribute?, bool)>();
             foreach (var method in typeof(T).GetMethods(BindingFlags.Instance | BindingFlags.NonPublic))
             {
                 var marks = method.GetCustomAttributes<DriverRouteAttribute>().ToList();
                 var publishes = method.GetCustomAttributes<PublishesAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
                 var shared = method.GetCustomAttributes<OneFlightAttribute>().ToDictionary(each => each.Route, StringComparer.Ordinal);
+                var byEvent = method.GetCustomAttributes<ByEventAttribute>().Select(each => each.Route).ToHashSet(StringComparer.Ordinal);
                 // A declaration for a route this method does not mark is a typo that would publish nothing: refused here, at the
                 // module's first use, as a route marked twice is.
-                if (publishes.Keys.Concat(shared.Keys).FirstOrDefault(route => marks.All(mark => mark.Type != route)) is { } stray)
+                if (publishes.Keys.Concat(shared.Keys).Concat(byEvent).FirstOrDefault(route => marks.All(mark => mark.Type != route)) is { } stray)
                 {
                     throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} declares `{stray}`, and marks no such route.");
                 }
@@ -333,13 +371,20 @@ public sealed class DriverModule : ModuleBase
                     throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} shares `{press}`, a press: only a read is shared.");
                 }
 
+                // A press answers what it did (NOBLOCK1): only a read is answered from what is held; and a read told by event
+                // already shares its work, so it is never a shared read too.
+                if (byEvent.FirstOrDefault(route => publishes.ContainsKey(route) || shared.ContainsKey(route)) is { } both)
+                {
+                    throw new InvalidOperationException($"{typeof(T).Name}.{method.Name} tells `{both}` by event, and it is a press or a shared read.");
+                }
+
                 foreach (var route in marks)
                 {
                     routes.Add((route.Type, method.GetParameters().Length == 1
                         ? Now(method.CreateDelegate<Func<T, IpcRequest, object?>>())
                         : Later(method.CreateDelegate<Func<T, IpcRequest, CancellationToken, Task<object?>>>()),
                         publishes.TryGetValue(route.Type, out var declared) ? new StateChange(declared.Changes, declared.Session, declared.Subject) : null,
-                        shared.GetValueOrDefault(route.Type)));
+                        shared.GetValueOrDefault(route.Type), byEvent.Contains(route.Type)));
                 }
             }
 
@@ -412,4 +457,17 @@ internal sealed class OneFlightAttribute(string route) : Attribute
     /// <c>SESSION_DIFF</c> by its <c>id</c>, its <c>read</c> id kept out); null shares by the whole payload.
     /// </summary>
     public string? By { get; set; }
+}
+
+/// <summary>
+/// One of a handler's reads answered at once from what is held, its work run on a task of its own and its answer told to the page
+/// as <c>DAORIS.ANSWERED</c> (NOBLOCK1, D56's NOBLOCK1 note; <see cref="HeldAnswers"/>): for a read whose answer is computed from
+/// the disk, git, the trees or the service, which the window would otherwise wait on. A press is never told by event, refused at
+/// the module's first use; named by its route, as <see cref="PublishesAttribute"/> is.
+/// </summary>
+/// <param name="route">The read it tells by event, one this method marks.</param>
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+internal sealed class ByEventAttribute(string route) : Attribute
+{
+    public string Route { get; } = route;
 }

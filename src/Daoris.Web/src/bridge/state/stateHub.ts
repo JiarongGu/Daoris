@@ -7,6 +7,7 @@ import { HELP_HISTORY, HELP_PROPOSALS, HELP_PUBLISHED, HELP_WIRED } from '../hel
 import { ALL_HISTORY } from '../sessions/history';
 import { treesSyncScopeKey } from '../repositories/lines';
 import { notPushed } from './slices';
+import { type Answered, answered } from './held';
 import { ALL_TOOLS } from '../agents/tools';
 
 /**
@@ -220,6 +221,8 @@ export function useStateHub() {
   const { isAvailable } = useShenora();
   useShenoraEvent<StateChanged>('DAORIS', 'STATE_CHANGED', (change) => stateChanged(client, change));
   useShenoraEvent<{ seq?: unknown; presses?: unknown }>('DAORIS', 'UNDER_WAY', (told) => underWay(client, told));
+  // NOBLOCK1: what a read the shell answered from what it held went on to answer, into the query that asked.
+  useShenoraEvent<Answered>('DAORIS', 'ANSWERED', (told) => answered(client, told));
   useEffect(() => {
     if (!isAvailable) return;
     void (async () => {

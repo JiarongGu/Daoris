@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -220,8 +220,50 @@ describe('the session rail', () => {
             { id: 'e5f6a7b8', tree: tidied },
             { id: 's1a2b3c4', tree: 'C:/somewhere/.daoris/trees/default/engine/streaming-budget' },
           ],
+          // NOBLOCK1: the query the shell's event names when its look answers.
+          held: expect.any(String),
         },
       });
+    });
+
+    /**
+     * NOBLOCK1: SESSION_WHERE held the window's thread up to 65.9 s. The shell answers what it holds, nothing yet on its first
+     * ask, and its look's answer comes as `ANSWERED` naming this query: the row says what it said until then, and where the
+     * work landed once it comes.
+     */
+    it('says what it held until the shell’s event brings where a session’s work went', async () => {
+      const tidied = 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9';
+      SESSIONS = [...LIVE, {
+        ...base, id: 'e5f6a7b8', quest: '7a82cc', repository: 'engine', state: 'completed',
+        created: at(400), updated: at(300), tree: tidied,
+      }];
+      answer((type) => (type === 'SESSION_WHERE' ? { pending: true } : undefined));
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      function Hub() {
+        useStateHub();
+        return null;
+      }
+      render(
+        <QueryClientProvider client={client}>
+          <Hub />
+          <Tooltip.Provider><SessionRail notify={() => {}} /></Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+
+      expect(await screen.findByText(/in s-2394e5d9/)).toBeInTheDocument();
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_WHERE', expect.anything()));
+      const asked = invoke.mock.calls.find((each) => each[1] === 'SESSION_WHERE')![2] as { payload: { held: string } };
+      expect(screen.queryByText(/landed on/)).toBeNull();
+
+      act(() => heard.get('ANSWERED')!({
+        held: asked.payload.held,
+        answer: { sessions: [{ session: 'e5f6a7b8', treeGone: true, landed: { repository: 'engine', branch: 'feature/7a82cc-streaming-budget', state: 'standing' } }] },
+      }));
+
+      expect(await screen.findByText(/landed on feature\/7a82cc-streaming-budget/)).toBeInTheDocument();
+      expect(screen.queryByText(/in s-2394e5d9/)).toBeNull();
+      // Told, not asked: the event's answer is drawn with no second ask.
+      expect(invoke.mock.calls.filter((each) => each[1] === 'SESSION_WHERE')).toHaveLength(1);
     });
 
     it('finds sessions by name at once, and by what was said with the words marked', async () => {

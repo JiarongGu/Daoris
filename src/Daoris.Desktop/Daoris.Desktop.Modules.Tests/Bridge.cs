@@ -101,18 +101,40 @@ public abstract class Bridge : IDisposable
     /// a page that shows a toast, and "what does the person actually see when this goes wrong" is half
     /// of any contract worth testing.
     /// </remarks>
-    protected static Task<IpcResponse> AskAsync(IIpcModule module, string type, object? payload = null) =>
-        module.HandleMessageAsync(
-            new IpcRequest
+    /// <remarks>
+    /// A read told by event (NOBLOCK1) answers what was held, or <see cref="HeldAnswers.Pending"/>, while the work the ask began
+    /// runs: the ask waits for that work, as the page waits for its event, and asks again, so a test reads what the work answered
+    /// now, never what an earlier ask held. What the held and pending answers do is <c>DriverModuleHeldTests</c>'.
+    /// </remarks>
+    protected static async Task<IpcResponse> AskAsync(IIpcModule module, string type, object? payload = null)
+    {
+        var request = new IpcRequest
+        {
+            Id = Guid.NewGuid().ToString("N")[..8],
+            Module = module.ModuleName,
+            Type = type,
+            Payload = payload is null
+                ? null
+                : JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(payload)),
+        };
+        var response = await module.HandleMessageAsync(request, CancellationToken.None);
+        if (module is not DriverModule driver || !DriverModule.ByEventRoutes.Contains(type)) return response;
+        for (var again = 0; again == 0 || (response.Success && HeldAnswers.IsPending(response.Data) && again < 3); again++)
+        {
+            try
             {
-                Id = Guid.NewGuid().ToString("N")[..8],
-                Module = module.ModuleName,
-                Type = type,
-                Payload = payload is null
-                    ? null
-                    : JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(payload)),
-            },
-            CancellationToken.None);
+                await driver.Held.LandedAsync(DriverModule.HeldKey(request));
+            }
+            catch
+            {
+                // The work's failure is the next ask's refusal.
+            }
+
+            response = await module.HandleMessageAsync(request, CancellationToken.None);
+        }
+
+        return response;
+    }
 
     /// <summary>
     /// A successful answer as the page receives it: serialized, then read back as JSON.

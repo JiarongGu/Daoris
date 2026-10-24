@@ -646,11 +646,17 @@ public sealed class SessionsRoutes(DriverContext context)
     /// <para><b>Only this home's trees are looked at.</b> The page sends the tree each record names; one outside the trees
     /// this home opened is a session in a repository's own checkout, which no landing tidies, and nothing is said of
     /// it. Nothing machine-local comes back.</para>
+    ///
+    /// <para><b>Told by event</b> (NOBLOCK1, D56's note): the landings' record parsed again per session and a folder listed per
+    /// row held the window's thread up to 65.9 s, so an ask is answered from what is held and this runs on a task of its own; the
+    /// record is read once per ask.</para>
     /// </remarks>
     [DriverRoute("SESSION_WHERE")]
+    [ByEvent("SESSION_WHERE")]
     private async Task<object?> SessionWhereAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var trees = new SessionTrees(_loop.Home);
+        var landings = trees.Recorded.Entries();
         var rows = new List<object>();
         if (request.Payload is { } payload && payload.TryGetProperty("sessions", out var sessions)
             && sessions.ValueKind == JsonValueKind.Array)
@@ -668,7 +674,9 @@ public sealed class SessionsRoutes(DriverContext context)
                 var tree = at.GetString()!;
                 if (!HeldTree(trees, tree)) continue;
 
-                var landing = trees.Recorded.Landing(id);
+                cancellationToken.ThrowIfCancellationRequested();
+                // As LandedBranches.Landing reads it: the newest entry naming the session.
+                var landing = landings.LastOrDefault(entry => entry.Names(id));
                 rows.Add(new
                 {
                     Session = id,
