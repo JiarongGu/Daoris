@@ -324,7 +324,7 @@ test('a refusal reaches the person verbatim', async ({ page }) => {
   await page.getByLabel('why, and the evidence').fill('y');
   await page.getByRole('button', { name: 'Publish quest' }).click();
 
-  await expect(page.getByText('a quest is work for someone else', { exact: false }).first()).toBeVisible();
+  await expect(page.getByText('a quest to it whole is work for someone else', { exact: false }).first()).toBeVisible();
 });
 
 /**

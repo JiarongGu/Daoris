@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - The CI on 5717fd1 failed three checks that no merge's own tests ran (ROUTERMERGE1, STEWARDROLE1a-ii, SELFASK1)
+
+- **Symptom:** the full CI on main at `5717fd195` failed two tool tests and one end-to-end test, each green on the merge that
+  caused it: *a stage forgives only known records…* (`docs/README.md` no longer a record), *every repository file a .NET suite
+  reads…* (`OwnerSetCensusTests` reads `PersonDoors.cs`, and a merge changing it does not run modules), and the page's *a refusal
+  reaches the person verbatim* (its sentence not found).
+- **Root cause:** three merges each changed something a check elsewhere reads. ROUTERMERGE1 moved the router from `merge=union` to
+  `merge=rows`, and `unionRecords` (`tools/merge-branch.mjs`) reads `merge=union` alone, so the stage stopped forgiving the router
+  and the lanes placed it as a plain file. STEWARDROLE1a-ii's census reads the service's `PersonDoors.cs` by its path, which the
+  lane table did not know, as PUSH1d2's slice test once read `ApiContracts.cs`. SELFASK1 reworded the self-addressed refusal to
+  *a quest to it whole is work for someone else*, and the end-to-end test held the old words.
+- **Fix:** `unionRecords` reads `merge=union` and `merge=rows`, the records that resolve themselves; a path rule makes a change to
+  `PersonDoors.cs` reach the modules beside the service lane's gates; the end-to-end test holds the new sentence.
+- **Verification:** the two tool tests, 2 of 2; `node tools/test-map.mjs --check` holds; the end-to-end test against a fresh
+  build of the page and the service's host, 1 of 1.
+
+## 2026-10-25 - HelpRoomScopeTests read the room plainly while the catch-up renamed it (FLAKE1)
+
+- **Symptom:** `HelpRoomScopeTests.The_catch_up_writes_again_only_its_own_workspace_s_room` failed under load in two landings'
+  driver fast halves (SETUPSTATE1's on 2026-10-23, STEWARDROLE1c's on 2026-10-25), each time green alone.
+- **Root cause:** the test polled the room with `File.ReadAllText`, which does not share deletion, while the catch-up wrote the
+  room through `AtomicFile`'s rename. BINDRACE1 measured that a reader meeting the rename is refused with a sharing violation,
+  and the poll's condition threw instead of looking again.
+- **Fix:** the poll reads through `AtomicFile.ReadText`, as READSHARE1 asks of every reader of a file those writes keep.
+- **Verification:** the class, 6 of 6. The race is a moment of the rename's, so a green run says little; the read now shares
+  deletion, which BINDRACE1 measured is never refused (0 of 700).
+
 ## 2026-10-25 - TransientRetryTickTests passed its waits by a guess, and a stand-in's own failure ended a case (AGENTERRORS1, the tick tests' determinism)
 
 - **Symptom:** on the steward's runs of the merged AGENTERRORS1 tree, `TransientRetryTickTests` (Process half) failed now and then and

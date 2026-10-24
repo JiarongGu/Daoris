@@ -200,7 +200,8 @@ public sealed class HelpRoomScopeTests : IDisposable
         catchUp.Landed();
 
         var alpha = Path.Combine(HelpRoom.PathOf(_home, "alpha"), "AGENTS.md");
-        await Poll.Until(() => File.ReadAllText(alpha) == HelpRoom.Render(landed.Within("alpha")));
+        // Read as the room's writer is read (READSHARE1): a plain read meeting the rename refuses, and failed this twice under load.
+        await Poll.Until(() => AtomicFile.ReadText(alpha) == HelpRoom.Render(landed.Within("alpha")));
         await Poll.Until(() => !catchUp.Writing);
         Assert.False(HelpRoom.SaidNotReadYet(_home, "alpha"));
         Assert.Equal("beta's room as written\n", File.ReadAllText(beta));
