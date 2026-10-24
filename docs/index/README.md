@@ -352,8 +352,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-confirm-wait-reads.md` | 77 | 812 |
 | `docs/2026-10-24-cowork-view-design.md` | 111 | 1097 |
 | `docs/2026-10-24-cowork-view-reads.md` | 54 | 656 |
-| `docs/2026-10-24-event-hook-design.md` | 145 | 1104 |
-| `docs/2026-10-24-event-hook-reads.md` | 87 | 831 |
+| `docs/2026-10-24-event-hook-design.md` | 163 | 1215 |
+| `docs/2026-10-24-event-hook-reads.md` | 110 | 1037 |
 | `docs/2026-10-24-keep-size-design.md` | 102 | 979 |
 | `docs/2026-10-24-keep-size-reads.md` | 121 | 1074 |
 | `docs/2026-10-24-steward-role-design.md` | 178 | 1386 |
