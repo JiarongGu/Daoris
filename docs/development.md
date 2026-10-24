@@ -15,6 +15,11 @@ npm ci
 npm --prefix src/Daoris.Web ci
 ```
 
+The root `npm ci` also configures the router's merge driver in this clone's own git configuration (its `prepare`
+runs `node tools/merge-rows.mjs --install`; ROUTERMERGE1). A clone whose dependencies came another way runs that command
+once; worktrees share it. Without it git merges `docs/README.md` as plain text, which conflicts on two neighbouring rows
+rather than merging them.
+
 The web package has its own lockfile and is not an npm workspace of the root. Windows is needed
 for the desktop application and deployment rehearsal; native AOT publishing needs the target
 platform's native toolchain. The individual [component guides](README.md#guides) explain their loops.
@@ -208,10 +213,13 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
 - **Publish a quest that builds on another row only once that row's landing is committed.** A session's tree starts from
   main as it stands. A quest that names a row as landed while its merge is still being tested sends the builder to ask
   whether to merge the unreviewed branch.
-- **A router row twice is a union merge's.** `docs/README.md` merges by union (`.gitattributes`), so a landing whose branch
-  changed a router row that `main` changed too leaves both rows, the older and the newer, and git reports no conflict. Run
-  `node --test test/doc-duplicates.test.ts` in `src/Daoris.Cli` before committing a merge, and drop the older row. On 2026-10-24
-  four designs' rows were held twice this way in one afternoon.
+- **A router row both sides changed is a conflict, not a row twice.** `docs/README.md` merges row by row through
+  `tools/merge-rows.mjs` (ROUTERMERGE1, `.gitattributes`): a landing whose branch changed a router row that `main` changed
+  too stops on that row, marked, and a branch still carrying a row `main` has since replaced leaves `main`'s. It merged by
+  union until then, which left both rows with no conflict (four designs' rows twice in one afternoon on 2026-10-24). A
+  clone without the driver configured merges the file as text (see *Prepare the workspace*); a branch cut from such a
+  merge can still carry a row twice, so run `node --test test/doc-duplicates.test.ts` in `src/Daoris.Cli` before committing
+  a merge, and drop the older row.
 - **A landing is done when Daoris says so.** After committing a session's landing, `daoris-driver trees land <session>
   --plan` must answer that its branch holds nothing `main` does not. Where it lists commits, `main` lacks them: a session
   told to rebase after its landing may have made new ones, and they are work to land, not a stale row. Work on `main` as a

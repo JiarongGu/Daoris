@@ -40,5 +40,11 @@ CHANGELOG.md merge=union
 docs/decisions/*.md merge=union
 docs/task-archive.md merge=union
 docs/FIX-LOG.md merge=union
-docs/README.md merge=union
 .claude/knowledge/twins.md merge=union
+
+# The router is not append-only: its rows change in place, and union kept both a changed row and the old one
+# (ROUTERMERGE1: six landings on 2026-10-24 left a row twice). `tools/merge-rows.mjs` merges its table rows by their
+# first cell three ways, a row both sides changed differently a conflict, and its prose as text. The driver is configured
+# by the repository's own setup (`npm ci` runs `node tools/merge-rows.mjs --install`); where it is not, git merges the
+# file as ordinary text, which conflicts rather than duplicates.
+docs/README.md merge=rows
