@@ -283,8 +283,8 @@ public sealed class InstancePipeTests : Bridge
     }
 
     /// <summary>
-    /// A press begun by an instance that stopped before it ended is unknown: <c>RESULT</c> says so, and the id sent again is
-    /// refused rather than run, since what the first did is not known (§6.1).
+    /// A press begun by an instance that stopped before it ended is unknown: <c>RESULT</c> answers it <c>interrupted</c>, and the id
+    /// sent again is refused rather than run, since what the first did is not known (§6.1).
     /// </summary>
     [Fact]
     public async Task A_press_an_instance_never_ended_is_unknown_and_never_run_again()
@@ -310,7 +310,10 @@ public sealed class InstancePipeTests : Bridge
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
-        Assert.Equal("unknown", (await client.ResultAsync("begun-before", key)).GetProperty("state").GetString());
+        // CONFIRMWAIT1 (the confirm-wait design §15.3 item 10): RESULT answers that it stopped while under way, as WITHDRAW does.
+        var interrupted = await client.ResultAsync("begun-before", key);
+        Assert.Equal("answered", interrupted.GetProperty("state").GetString());
+        Assert.Equal(InstancePipe.Interrupted, interrupted.GetProperty("answer").GetProperty("error").GetProperty("code").GetString());
         await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" }, "begun-before", key);
         Assert.Equal(InstancePipe.Interrupted, Code(await client.AnswerAsync("begun-before")));
         Assert.Equal(0, press.Ran);
