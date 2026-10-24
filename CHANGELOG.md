@@ -33,6 +33,11 @@ with the version and date at release.
   suites they reach, and moves `main` forward only when they pass and the checkout is clean. A branch that breaks something is
   found by the failure itself, run after each branch in turn, and handed back with why. A check that fails on `main` itself
   stops the queue until a commit fixes it or `--queue --recheck` finds it gone. `--queue` shows where everything stands.
+- The supervisor's bounds are built, and the supervisor is still not offered (SUPERVISOR1b, D208). A session's agent can mark a
+  question as yours alone (a sign-in, access, spending, deleting, a document that asks you, or your own taste): the supervisor never
+  answers it, even if the mark comes after it chose, and the question card says *Asked of you alone*. The supervisor can leave a
+  question to you, and the card then says why, with its reasons and their sources, above the answers. It never answers a third time
+  in a row with nobody between, counted with helpers' answers as one line.
 - The supervisor's door is built and not offered yet (SUPERVISOR1a-ii, D208). A repository's Setup → Driving has a *Supervisor*
   row that says it is not offered yet; once it is, *Appoint…* asks you once, then opens the supervisor's terminal as a tab of Daoris's
   own terminal panel with a key no page, clipboard or file ever holds, and *Notifications* says each appointment with *Turn off*. An

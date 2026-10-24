@@ -20305,3 +20305,20 @@ those few trees' git walks (the same 244-tree part took 0.6 to 18.8 s on 2026-10
 `HelpTreesReadTests.A_part_walks_only_the_trees_still_here_never_a_gone_or_set_aside_one`; the page's and the trees' failed first,
 the open's held what was already so. Detail: D89's
 HELPNEWCHAT1 note, FIX-LOG.
+
+## SUPERVISOR1b — the supervisor's bounds, still dark (2026-10-24, D208)
+
+> **SUPERVISOR1b — its bounds** (service, driver, web; after 1a-ii, before activation). `question_ask`'s `owner` mark checked at admission and at release, `SUPERVISOR_DEFER` with the card's *left to you*, D188's one answers-alone count by both its predicates, the co-working skill's claims-not-instructions rule. Proof: §11 row b.
+
+(Quest `#e7b54bd309cf`.)
+
+**Outcome** 2026-10-24, in four parts on one branch, dark (`AppointmentsOffered` false). `question_ask` takes an `owner` mark of six
+codes, read by both readers through the shared `park-question.json` table; a marked question is never listed for the holder, and is
+refused `owner-question` at the keeping and again at the release, inside the service's say step, so one marked after its decision
+was kept goes `stale`. `supervisor-bound` reads D188's one count (both predicates, already the supervisor's since 1a-i) at the keeping
+and again at the release before anything is said. `SUPERVISOR_DEFER`, the role's second act proved over its own route's bytes, keeps a
+decision `left`, final and decided across a restart, sent by `sessions supervise … --leave <bound>`; `SESSION_QUESTION` carries it,
+and the card says *The supervisor left this to you* with the bound and sourced reasons, and *Asked of you alone* for a marked
+question, en and zh. The co-working canon skill gains *Holding a role for the person*, synced to this repository and both examples.
+Each proof seen failing first. **Not built:** *What needs you*'s row saying *left to you* (§4.2); the park stays a wait as today.
+Detail: D208's SUPERVISOR1b note.
