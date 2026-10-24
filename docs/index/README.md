@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (286)
+## Files over 40 KB (287)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -343,6 +343,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-confirm-wait-reads.md` | 77 | 812 |
 | `docs/2026-10-24-cowork-view-design.md` | 87 | 924 |
 | `docs/2026-10-24-event-hook-design.md` | 61 | 586 |
+| `docs/2026-10-24-event-hook-reads.md` | 47 | 522 |
 | `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
 | `docs/2026-10-24-keep-size-reads.md` | 121 | 1074 |
 | `docs/2026-10-24-steward-role-design.md` | 178 | 1386 |
@@ -351,5 +352,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
 | `docs/2026-10-24-switch-context-design.md` | 64 | 579 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `docs/README.md` | 48 | 263 |
+| `docs/README.md` | 46 | 260 |
 | `src/Daoris.Desktop/README.md` | 166 | 801 |
