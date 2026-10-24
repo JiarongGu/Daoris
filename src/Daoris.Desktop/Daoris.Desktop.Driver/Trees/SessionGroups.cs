@@ -445,6 +445,15 @@ public sealed record WordsHold(string Why, string Reason)
     /// <summary>When the cool-off ends, for <see cref="Cooling"/>.</summary>
     public DateTimeOffset? Until { get; init; }
 
+    /// <summary>
+    /// The account that resets at <see cref="Until"/>, for <see cref="Cooling"/> (LIMITSWITCH1): the earliest of the line's accounts,
+    /// which the page says the wait on in D206 §3.7's words. Null for the tool's own sign-in.
+    /// </summary>
+    public string? Account { get; init; }
+
+    /// <summary>The name the person gave <see cref="Account"/>, where it has one (ACCT2b).</summary>
+    public string? AccountName { get; init; }
+
     /// <summary>Whose pause, for <see cref="Paused"/>.</summary>
     public PausedBy? PausedBy { get; init; }
 
@@ -462,7 +471,7 @@ public sealed record WordsHold(string Why, string Reason)
         StartVerdict.Paused => new(Paused, verdict.Reason) { PausedBy = verdict.PausedBy },
         StartVerdict.Held => new(Hold, verdict.Reason) { Repository = verdict.Quest.To },
         StartVerdict.AtCapacity => new(Cap, verdict.Reason),
-        StartVerdict.Blocked when wait?.Until is { } until => new(Cooling, verdict.Reason) { Until = until },
+        StartVerdict.Blocked when wait?.Until is { } until => new(Cooling, verdict.Reason) { Until = until, Account = wait.Account, AccountName = wait.Name },
         StartVerdict.RepositoryBusy => new(Busy, verdict.Reason),
         _ => new(Waits, verdict.Reason),
     };
@@ -948,7 +957,7 @@ public static class SessionGroups
             chats.Add(record.Id);
             if (NotYet(events, record.Id) is not { } reason) continue;
             held[record.Id] = Cooling(coolingOf, prior) is { } cooling
-                ? new WordsHold(WordsHold.Cooling, reason) { Until = cooling.Until }
+                ? CoolingHold(reason, cooling, home)
                 : new WordsHold(WordsHold.Waits, reason);
         }
 
@@ -970,18 +979,68 @@ public static class SessionGroups
                     continue;
                 }
 
-                var door = verdict.Quest.Status is "Open" or "Taken"
-                    ? ResumeWords.NewSessionDoor(words.Session)
-                    : ResumeWords.ChatDoor(words.Session);
-                held[words.Session] = new WordsHold(
-                    WordsHold.Cooling, $"{ResumeWords.Waits(cooling, zone, AccountNames.Of(home, cooling.Agent))} {door}")
+                // LIMITSWITCH1 (D137's note of 2026-10-25): the words of an open or taken quest's record never wait for their own account
+                // while another is ready, so the loop's look carries them on there and nothing is held; where every account cools, they wait
+                // for the earliest reset of any, as the roster's resume says.
+                var carried = verdict.Quest.Status is "Open" or "Taken";
+                var names = AccountNames.Of(home, cooling.Agent);
+                string sentence;
+                if (!carried)
                 {
-                    Until = cooling.Until,
-                };
+                    sentence = ResumeWords.Waits(cooling, zone, names);
+                }
+                else if (Soonest(coolingOf, home, adapter, cooling) is not { } soonest)
+                {
+                    continue;
+                }
+                else
+                {
+                    // Where the own account is not the earliest, the sentence is the roster's: whose reset comes first.
+                    sentence = soonest.Until < cooling.Until ? LimitResume.Waits(soonest, zone, names).Note : ResumeWords.Waits(cooling, zone, names);
+                    cooling = soonest;
+                }
+
+                var door = carried ? ResumeWords.NewSessionDoor(words.Session) : ResumeWords.ChatDoor(words.Session);
+                held[words.Session] = CoolingHold($"{sentence} {door}", cooling, home);
             }
         }
 
         return look with { ChatsWaiting = chats, Held = held };
+    }
+
+    /// <summary>A hold on an account's cool-off (MSG1g): when it ends and which account, by its id and the name the person gave it.</summary>
+    private static WordsHold CoolingHold(string reason, CoolingEntry cooling, string home) => new(WordsHold.Cooling, reason)
+    {
+        Until = cooling.Until,
+        Account = cooling.Account,
+        AccountName = cooling.Account is { } id && AccountNames.Of(home, cooling.Agent).TryGetValue(id, out var name) ? name : null,
+    };
+
+    /// <summary>
+    /// The earliest cool-off among the agent's accounts on this machine (LIMITSWITCH1), the own account's included; null where one of them
+    /// is not cooling, since the words then go on there (a sign-in or a refusal is the walk's to find, as before the first look).
+    /// </summary>
+    private static CoolingEntry? Soonest(Func<string?, string?, CoolingEntry?> coolingOf, string home, string adapter, CoolingEntry own)
+    {
+        IReadOnlyList<string> profiles;
+        try
+        {
+            profiles = HarnessSettings.Profiles(home, own.Agent);
+        }
+        catch (DriverException)
+        {
+            return own;
+        }
+
+        var cooling = new List<CoolingEntry> { own };
+        foreach (var profile in profiles)
+        {
+            if (string.Equals(profile, own.Account, StringComparison.OrdinalIgnoreCase)) continue;
+            if (coolingOf(adapter, profile) is not { } other) return null;
+            cooling.Add(other);
+        }
+
+        return cooling.MinBy(entry => entry.Until);
     }
 
     /// <summary>

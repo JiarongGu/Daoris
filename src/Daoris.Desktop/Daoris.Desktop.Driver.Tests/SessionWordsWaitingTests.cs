@@ -55,9 +55,10 @@ public sealed class SessionWordsWaitingTests : IDisposable
 
     private static string Json(params JsonObject[] records) => new JsonArray([.. records]).ToJsonString();
 
-    private SessionLook Waiting(string json, Consideration[]? considered = null, bool fresh = true) =>
+    private SessionLook Waiting(
+        string json, Consideration[]? considered = null, bool fresh = true, Func<string?, string?, CoolingEntry?>? coolingOf = null) =>
         SessionGroups.Waiting(
-            SessionLook.From(json, [], considered ?? [], _ => 0), json, _home, "claude-code", fresh, CoolingOf, TimeZoneInfo.Utc);
+            SessionLook.From(json, [], considered ?? [], _ => 0), json, _home, "claude-code", fresh, coolingOf ?? CoolingOf, TimeZoneInfo.Utc);
 
     [Fact]
     public void An_ended_chat_whose_words_wait_is_waiting_and_held_by_nothing()
@@ -158,10 +159,44 @@ public sealed class SessionWordsWaitingTests : IDisposable
         var held = Assert.Single(Waiting(json, [GoesOn(taken, json, "s1")]).Held);
 
         Assert.Equal("s1", held.Key);
-        Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset), (held.Value.Why, held.Value.Until));
+        Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset, "work"), (held.Value.Why, held.Value.Until, held.Value.Account));
         Assert.Equal(
             ResumeWords.Waits(Cooling, TimeZoneInfo.Utc, AccountNames.Of(_home, "claude")) + " " + ResumeWords.NewSessionDoor("s1"),
             held.Value.Reason);
+    }
+
+    /// <summary>
+    /// LIMITSWITCH1 (D137's note of 2026-10-25): where no loop has looked, a taken quest's record whose own account cools is held by
+    /// nothing while another account of its agent is ready, since the loop's look carries its words on there; with every account
+    /// cooling it is held for the earliest reset of any, naming that account; a closed quest's keeps the own account's.
+    /// </summary>
+    [Fact]
+    public void A_fresh_plan_holds_the_words_of_a_taken_quest_only_where_no_account_is_ready_and_for_the_earliest_reset()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude", "work"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude", "home"));
+        var json = Json(Record("s1", "completed", "q1", said: ["w1"]));
+        Consideration[] taken = [GoesOn(Quest("q1", "Taken"), json, "s1")];
+        Consideration[] closed = [GoesOn(Quest("q1", "Done"), json, "s1")];
+
+        // `home` is ready: the loop's look takes the words there, so nothing is held for a reset.
+        Assert.Empty(Waiting(json, taken).Held);
+        // A closed quest's session has nothing that carries its words on, so its own account's reset still holds them.
+        Assert.Equal(Reset, Waiting(json, closed).Held["s1"].Until);
+
+        // Every account cools, `home` first: the earliest reset of any holds them, naming it.
+        var earlier = new CoolingEntry("claude", "home", Reset.AddHours(-1), Stated: true, Window: null, Seen: T0, Session: null);
+        CoolingEntry? Both(string? adapter, string? profile) => profile == "home" ? earlier : CoolingOf(adapter, profile);
+        var held = Assert.Single(Waiting(json, taken, coolingOf: Both).Held).Value;
+        Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset.AddHours(-1), "home"), (held.Why, held.Until, held.Account));
+        Assert.StartsWith(LimitResume.Waits(earlier, TimeZoneInfo.Utc, AccountNames.Of(_home, "claude")).Note, held.Reason);
+
+        // The own account the earliest: its own words and its own account.
+        var own = Assert.Single(Waiting(json, taken, coolingOf: (adapter, profile) => profile == "home"
+            ? new CoolingEntry("claude", "home", Reset.AddHours(3), Stated: true, Window: null, Seen: T0, Session: null)
+            : CoolingOf(adapter, profile)).Held).Value;
+        Assert.Equal((Reset, "work"), (own.Until, own.Account));
+        Assert.StartsWith(ResumeWords.Waits(Cooling, TimeZoneInfo.Utc, AccountNames.Of(_home, "claude")), own.Reason);
     }
 
     /// <summary>A closed quest's session has nothing to carry its words on by itself: its door is a conversation with them.</summary>

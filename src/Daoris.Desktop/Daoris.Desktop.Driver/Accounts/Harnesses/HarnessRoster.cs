@@ -1026,8 +1026,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 // The own account's reset is the earliest where the walk found none sooner: its hold says its conversation is there.
                 if (walked.Cooling is { } soonest && soonest.Until < cooling.Until)
                 {
-                    var waits = LimitResume.Waits(soonest, Zone, names, ResumeWords.NotYet);
-                    return new ResumeChoice(new HarnessSelection(waits.Note) { Cooling = soonest, RefusalNote = waits }, own) { Waiting = waits };
+                    var waits = LimitResume.Waits(soonest, Zone, names);
+                    return new ResumeChoice(new HarnessSelection(waits.Note) { Cooling = soonest, RefusalNote = waits }, own)
+                    {
+                        Waiting = LimitResume.Waits(soonest, Zone, names, ResumeWords.NotYet),
+                    };
                 }
             }
 

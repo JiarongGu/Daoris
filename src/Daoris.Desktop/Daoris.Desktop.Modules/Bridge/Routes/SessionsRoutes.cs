@@ -1003,7 +1003,7 @@ public sealed class SessionsRoutes(DriverContext context)
         // PAUSE1b (D132 §6.1): whose pause holds its quest, which its line says and whose *Resume* stands in *Try again*'s place.
         PausedBy = row.PausedBy is { } pause ? new { Scope = pause.Word, pause.Id } : null,
         // MSG1f2 (D137 §3.2): what holds the person's words on a record that resumes later, which its line says.
-        Holds = row.Holds is { } holds ? new { holds.Why, holds.Reason, holds.Repository, holds.Until } : null,
+        Holds = row.Holds is { } holds ? new { holds.Why, holds.Reason, holds.Repository, holds.Until, holds.Account, holds.AccountName } : null,
         // SESSUX1f (D126 §5.4): *Delete…* is offered only where it would be taken.
         row.Deletable,
         // LAND4: what its own tree offers to land, whatever group it rests in, which its page offers Accept beside. The tree's
