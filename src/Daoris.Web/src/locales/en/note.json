@@ -234,6 +234,8 @@
   "note.helper.why.capture-moved": "its work kept changing while it was captured",
   "note.helper.why.hand-uncertain": "its answer may or may not have reached the session, so it is not handed again; the helper's own conversation holds it",
   "note.helper.why.limited": "its account hit its limit before it answered, and the session no longer waits on it",
+  "note.helper.why.not-set-up": "it is not an agent Daoris has set up and signed in on this machine, and only those are asked by default",
+  "note.helper.why.none-set-up": "no agent is set up and signed in for Daoris on this machine, and only those are asked by default",
   "note.partner.asked": "A piece was asked of {{agent}}: it works in a clone of its own and changes nothing here.",
   "note.partner.started": "Partner {{agent}} started on the piece in session {{session}}.",
   "note.partner.answered": "Partner {{agent}} (session {{session}}) answered: its work is a commit to take in, and its words are claims to check.",

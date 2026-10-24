@@ -399,7 +399,7 @@ describe("a workspace's commits and helpers", () => {
     withProcess({ onChange: commits }, { onChange: helpers });
 
     expect(section('Defaults')).toHaveAccessibleDescription(
-      "each checkout's own line (Daoris's default) · commits as it goes (Daoris's default) · helpers wait for your yes (Daoris's default)");
+      "each checkout's own line (Daoris's default) · commits as it goes (Daoris's default) · helpers start at once (Daoris's default)");
     await userEvent.click(section('Defaults'));
     expect(screen.getByText(code('daoris driver commits --workspace aurora --mode as-you-go|ask|at-end --convention "…"|--clear')))
       .toBeInTheDocument();
@@ -415,11 +415,11 @@ describe("a workspace's commits and helpers", () => {
     expect(commits).toHaveBeenLastCalledWith({ set: { mode: 'at-end', convention: 'Say why.' } });
 
     const helperRow = screen.getByText('Helpers', { selector: 'span' }).closest('[data-setting-row]') as HTMLElement;
-    expect(helperRow).toHaveTextContent('Each helper an agent asks for waits for your yes.');
+    expect(helperRow).toHaveTextContent("A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each. Only Daoris's own agents are asked");
     await userEvent.click(within(helperRow).getByRole('button', { name: 'Set for this workspace' }));
     await userEvent.type(within(helperRow).getByRole('textbox', { name: "The agents aurora's sessions may ask, in the order they are tried" }), 'codex-acp');
     await userEvent.click(within(helperRow).getByRole('button', { name: 'Save' }));
-    expect(helpers).toHaveBeenLastCalledWith({ set: { mode: 'ask', agents: ['codex-acp'] } });
+    expect(helpers).toHaveBeenLastCalledWith({ set: { mode: 'on', agents: ['codex-acp'] } });
   });
 
   it('opens on the rules it sets, says them as set for the workspace, and clears each', async () => {
