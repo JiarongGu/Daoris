@@ -91,6 +91,14 @@ internal sealed class ChatTurns(
     // Its open refused before any prompt, its words moved to the replacement opening for it (MODELROLE1d2, D205 §3.5(b)): every word
     // said to it since joins them, never this queue.
     private Func<ChatMessage, bool>? _onward;
+    // Reserved for a second opinion's send-back (CHATFLOW1e, the chat-flow design §6.1 (b)): from the reservation until the service's hand
+    // answers, a word is kept and waits, starting no turn, so the findings word the hand kept becomes the next turn ahead of it.
+    private bool _sendingBack;
+    // The turn in flight's message (CHATFLOW1e): a word of the person's on the wire counts in their turn count before its event is read.
+    private ChatMessage? _current;
+    // A word of the person's handed to the turn in flight at its next step or by *Send now* (CHATFLOW1e, §6.1 (c)): the answering turn's
+    // reading then holds their work too.
+    private bool _theirsSteered;
     private bool _gone;
     private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
@@ -516,7 +524,7 @@ internal sealed class ChatTurns(
             _waiting.Clear();
             _waiting.Add(compose(waited));
             _limited = false;
-            start = !_pumping && !_pressing;
+            start = !_pumping && !_pressing && !_sendingBack;
             if (start)
             {
                 _pumping = true;
@@ -565,7 +573,7 @@ internal sealed class ChatTurns(
             lock (_gate)
             {
                 if (_finishing || _gone || _held) return PressHold.Ending;
-                if (_pressing || _pumping || _opening || _holding is not null || _waiting.Count > 0) return PressHold.Busy;
+                if (_pressing || _sendingBack || _pumping || _opening || _holding is not null || _waiting.Count > 0) return PressHold.Busy;
                 _pressing = true;
                 Publish();
                 return PressHold.Held;
@@ -597,7 +605,7 @@ internal sealed class ChatTurns(
         {
             if (!_pressing) return;
             _pressing = false;
-            start = _waiting.Count > 0 && !_pumping && !_limited && !_gone && !_closeHeld;
+            start = _waiting.Count > 0 && !_pumping && !_limited && !_sendingBack && !_gone && !_closeHeld;
             if (start)
             {
                 _pumping = true;
@@ -625,6 +633,87 @@ internal sealed class ChatTurns(
             _onward = onward;
             Publish();
             return moved;
+        }
+    }
+
+    /// <summary>
+    /// A second opinion's send-back into this conversation (CHATFLOW1e, the chat-flow design §6.1 (b), Codex's findings 2 and 4, the Opus check's
+    /// finding 4): one operation of the keep, so a word of the person's whose keeping is in flight is kept and queued before anything is
+    /// tested. Then, under the turns' lock, the person's turn count (<paramref name="history"/>, plus their words waiting or on the wire) is
+    /// compared with the press's: risen, the findings are the person's (<see cref="SendBack.PersonWentOn"/>). Anything else taking, opening,
+    /// waiting, held, pressed or limited is activity that is not theirs (<see cref="SendBack.Waiting"/>). Otherwise it is reserved, and
+    /// the service's hand (<paramref name="hand"/>) is asked inside the same operation; the word it kept is the reserved turn's, taken at
+    /// once ahead of any word said meanwhile, which waits behind it as behind any turn.
+    /// </summary>
+    /// <remarks>Never at a next step nor by <i>Send now</i>: the findings are an ordinary word of their own turn, never steered (D137 point 2).</remarks>
+    /// <param name="pressed">The person's turn count the press recorded on the due.</param>
+    /// <param name="history">The person's own words in the line's conversation history (<see cref="ChatPresses.TurnsOf"/>), read with the keep held.</param>
+    /// <param name="hand">The service's hand: the findings word it kept, as this conversation's message; null where it refused.</param>
+    public async Task<SendBack> SendBackAsync(
+        int pressed, Func<int> history, Func<CancellationToken, Task<ChatMessage?>> hand, CancellationToken ct = default)
+    {
+        await _keeping.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            // A turn put in flight while the history was read may have moved a word of theirs into it: read again, a few times, else the next look does.
+            for (var read = 0; ; read++)
+            {
+                int turn;
+                lock (_gate)
+                {
+                    if (_finishing || _gone || _held || _onward is not null) return SendBack.Waiting;
+                    turn = _turn;
+                }
+
+                var counted = history();
+                lock (_gate)
+                {
+                    if (_finishing || _gone || _held || _onward is not null) return SendBack.Waiting;
+                    if (_turn != turn)
+                    {
+                        if (read < 3) continue;
+                        return SendBack.Waiting;
+                    }
+
+                    counted += _waiting.Count(message => message.Theirs) + (_holding is { Theirs: true } ? 1 : 0)
+                               + (_inFlight && _current is { Theirs: true } ? 1 : 0);
+                    if (counted > pressed) return SendBack.PersonWentOn;
+                    if (_pumping || _opening || _holding is not null || _waiting.Count > 0 || _pressing || _limited || _sendingBack) return SendBack.Waiting;
+                    _sendingBack = true;
+                    break;
+                }
+            }
+
+            ChatMessage? word = null;
+            try
+            {
+                word = await hand(ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                bool start;
+                lock (_gate)
+                {
+                    _sendingBack = false;
+                    if (word is not null && !_finishing && !_gone && !_held && _onward is null) _waiting.Insert(0, word with { Level = MessageLevel.Ordinary });
+                    else word = null;
+                    start = _waiting.Count > 0 && !_pumping && !_limited && !_pressing && !_gone && !_closeHeld && !_held;
+                    if (start)
+                    {
+                        _pumping = true;
+                        _drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    }
+                }
+
+                if (start) _ = PumpAsync();
+                lock (_gate) Publish();
+            }
+
+            return word is null ? SendBack.Refused : SendBack.Reserved;
+        }
+        finally
+        {
+            _keeping.Release();
         }
     }
 
@@ -678,13 +767,15 @@ internal sealed class ChatTurns(
             {
                 _steered.Add(answered);
                 _onTheirWay.Add(answered);
+                _theirsSteered |= message.Theirs;
                 return TurnReach.NextStep;
             }
 
             _waiting.Add(Stamped(message));
             // LIMITRESUME1c: waiting for the limit, a word waits with the rest and starts nothing; so does one said while the person's
-            // press holds the conversation (CHATFLOW1d), until it answers.
-            start = !_pumping && !_limited && !_pressing;
+            // press holds the conversation (CHATFLOW1d), until it answers, and one said while a send-back is reserved (CHATFLOW1e), which
+            // then waits behind the findings' turn.
+            start = !_pumping && !_limited && !_pressing && !_sendingBack;
             if (start)
             {
                 _pumping = true;
@@ -759,6 +850,7 @@ internal sealed class ChatTurns(
                 if (running && steerNow?.Invoke(Dispatched(message)) is { } steered)
                 {
                     _steered.Add(steered);
+                    _theirsSteered |= message.Theirs;
                     return Task.FromResult<SentNow?>(new SentNow(SendNowWhy.Spelled(TurnReach.Steered), Now: true, Why: null));
                 }
 
@@ -767,6 +859,7 @@ internal sealed class ChatTurns(
                 {
                     _steered.Add(stepped);
                     _onTheirWay.Add(stepped);
+                    _theirsSteered |= message.Theirs;
                     return Task.FromResult<SentNow?>(new SentNow(
                         SendNowWhy.Spelled(TurnReach.NextStep), Now: false, onTheirWay ? SendNowWhy.Behind : SendNowWhy.NoInterrupt));
                 }
@@ -1034,6 +1127,8 @@ internal sealed class ChatTurns(
                 if (message.Id is { } stamped && _stamped.Remove(stamped)) message = message with { Id = null };
                 _holding = null;
                 _inFlight = true;
+                _current = message;
+                _theirsSteered = false;
                 _turn++;
                 _sent = false;
                 _stopPending = false;
@@ -1063,6 +1158,8 @@ internal sealed class ChatTurns(
             // 🔴 The turn lasts until every word handed to it at its next step is answered (MSG1c, D137 §2.1): the agent
             // answers the prompt before them when it takes them, and works on. Found empty under the lock that ends the
             // turn, so no word is handed to a turn that has already ended.
+            bool wentOut;
+            bool theirs;
             while (true)
             {
                 Task[] steered;
@@ -1075,6 +1172,8 @@ internal sealed class ChatTurns(
                         // The end of a turn that reached the harness is the chat's last move (RAIL2), told
                         // at once: the next message may start straight away and leave nothing else changed
                         // for the page to hear. One that never went out moved nothing.
+                        wentOut = _sent;
+                        theirs = _theirsSteered;
                         if (_sent)
                         {
                             _lastEnded = DateTimeOffset.UtcNow;
@@ -1082,6 +1181,7 @@ internal sealed class ChatTurns(
                         }
 
                         _inFlight = false;
+                        _current = null;
                         _sent = false;
                         _stopPending = false;
                         break;
@@ -1095,6 +1195,21 @@ internal sealed class ChatTurns(
                 catch (Exception)
                 {
                     // Each word's door says what became of it; the turn ends all the same.
+                }
+            }
+
+            // 🔴 CHATFLOW1e (the chat-flow design §6.1 (c)): a send-back's turn has a completion of its own, not the pump's drain. Its ending tip
+            // and answers are frozen here, before the next queued word is taken, so a person's turn behind it never moves what it read. One that
+            // never went out answered nothing: its word stays on its record.
+            if (wentOut && message.Answering is { } answering)
+            {
+                try
+                {
+                    await answering(theirs).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // The reading's own caller says what it could not read; the turns go on either way.
                 }
             }
         }

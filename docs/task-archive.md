@@ -20703,3 +20703,22 @@ tried only on its own agent's entries on its own account, a refused continuation
 and Ask Daoris's panel follow the replacement; `not-offered` is a reason a record continues another by, worded in en and zh. Proved
 with real conversations on a stand-in that refuses a model per account (`ChatPendingProcessTests`). **Remaining, as MODELROLE1d3:**
 the installed proof. Detail: D205's MODELROLE1d2 note; `docs/2026-10-25-modelrole1d2-build.md`.
+
+## CHATFLOW1e — a chat run's send-back only between turns (2026-10-25, D157, D155)
+
+> **CHATFLOW1e — its send-back only between turns** (service, driver, modules; after d). §6.1's six: (a) the service's hand admitting
+> a chat run's `working` record of the line, and an ended chat record that is the newest of `opinion.Working`'s line in its tree;
+> (b) `LoopContext.SendsBack`, its reservation one operation of the dispatcher's keep, comparing the person's turn count with the
+> press's; (c) the answering turn's own completion and frozen reading; (d) `DeliverAsync` reading a chat run's record by the runner's
+> turn state; (e) findings handed before a hand-over re-handed once to the newest record; (f) an ended chat's path, the count compared
+> first. D155's automatic recheck reading the frozen reading; `opinion_answer` in a chat run's rules from its spawn.
+
+(Row e of `docs/2026-10-24-chat-flow-design.md` §11, of the backlog's CHATFLOW1; quest `#8db1454a3d47`.)
+
+**Outcome** 2026-10-25. The row as named and amended by Codex's findings 2 to 5 and 9 and the Opus check's findings 4, 6 and 7: a chat
+run's findings go back into its own conversation as an ordinary word with `by`, reserved only between turns in one operation of its
+keep; they go to the person (`person-went-on`) only where the person's turn count rose since the press, and wait only for activity
+not theirs, a conversation no runner here holds or a headless host. The answering turn's reading is frozen at its own end and read by
+the recheck; a hand-over's newest record and an ended chat take them by their own paths. Each proof seen failing first, the
+`OpinionResumeTickTests` `Process` case on both doors included. **Not reached:** no real conversation or agent ran. Detail: D157's
+CHATFLOW1e note.

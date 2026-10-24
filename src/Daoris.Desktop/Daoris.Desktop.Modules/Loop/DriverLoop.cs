@@ -918,6 +918,9 @@ public sealed class DriverLoop(
             HandsOver = (session, agent, token) => chat.HandOverAsync(
                 session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DriverConfig.Load(ConfigPath),
                 onEnded: (ended, state) => Ended(eventBus, ended, state), token),
+            // CHATFLOW1e: a chat run's second-opinion findings reach its conversation through this shell's chat runner, a turn of their own only
+            // between turns, or its ended conversation resumed with them.
+            SendsBack = chat,
             // SESSCTX1c part B: a closed quest's session whose conversation is proven lost goes on as a conversation in its tree, through
             // this shell's chat runner, handed Daoris's brief and the person's words.
             GoesOnLost = (session, why, token) => chat.GoOnLostAsync(

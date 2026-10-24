@@ -555,7 +555,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// connector's <c>opinion_answer</c>, which no default names. Without it the harness would ask, and every ask is refused
     /// (D52), so the session could check every finding and answer none. A deny the person wrote still wins (D72).
     /// </summary>
-    internal static readonly IReadOnlyList<string> AnswersFindings = [$"mcp__{KnowledgeConnector.ServerName}__opinion_answer"];
+    internal static IReadOnlyList<string> AnswersFindings => KnowledgeConnector.AnswersFindings;
 
     /// <summary>
     /// What a resumed run's turn carries after the person's words: the answers to the go-aheads its session asked (KNOWUSE1a,

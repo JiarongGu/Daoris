@@ -101,6 +101,12 @@ public sealed class DriverWatch(
     public Func<string, string, CancellationToken, Task<HandedOver>>? HandsOver { get; init; }
 
     /// <summary>
+    /// Handed to every look's driver (<see cref="Driver.SendsBack"/>): the shell's chat runner, which takes a chat run's findings into its
+    /// conversation only between turns (CHATFLOW1e). Null in the headless host, where the findings wait.
+    /// </summary>
+    public IChatSendBacks? SendsBack { get; init; }
+
+    /// <summary>
     /// Told after a look's news is kept as a notice (NOTIFY2h, <see cref="LookSaid"/>): the desktop wakes its notices slice, since a write
     /// this process marked wakes nothing on its own home watch. Null where no window reads the record: the headless host's.
     /// </summary>
@@ -635,7 +641,7 @@ public sealed class DriverWatch(
                     service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
                     _harnesses, usage, hooks, events, browser, Running)
                 {
-                    Runner = Runner, Stops = Stops, HandsOver = HandsOver, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
+                    Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
                     Part = part, Woke = taken.Woke,
                     LandingEnded = Reoffered, Wanted = token => WantedAsync(part, token), WokeBack = () => Unspent(taken, busy: false),
                     // FABRIC-CUTOVER1c: an ended graph run whose chain came back here re-arms link 8, which a wake then judges on what is there now.

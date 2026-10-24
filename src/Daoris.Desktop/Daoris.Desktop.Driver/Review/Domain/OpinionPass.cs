@@ -26,6 +26,15 @@ public sealed record OpinionPassAsk(
     public string? Opening { get; init; }
 
     /// <summary>
+    /// The chat run the opinion was asked on (CHATFLOW1e, the chat-flow design §6): its findings go back into its conversation, only between
+    /// turns. Null for a quest's work.
+    /// </summary>
+    public string? Run { get; init; }
+
+    /// <summary>The person's turn count at the press that asked it (CHATFLOW1e, §6.1 (b)), which the send-back compares; null for a quest's work.</summary>
+    public int? Turns { get; init; }
+
+    /// <summary>
     /// For the one recheck (XAGENT1e, design §6.5), the first pass whose findings it reads again and the working session's
     /// answers as the driver read them; null for a first pass. Its base is that pass's tip, and its tip the working tree's.
     /// </summary>

@@ -424,6 +424,459 @@ public sealed class OpinionDeliveryTests : IDisposable
         Assert.Null(store.PathOf("../elsewhere"));
     }
 
+    // ——— A chat run's send-back (CHATFLOW1e; the chat-flow design §6, §6.1, §6.2).
+
+    /// <summary>A chat run's first pass, asked at the person's press with their turn count then.</summary>
+    private static OpinionPassAsk OnRun(int turns = 0) => Asked with { Run = "chat-c1", Turns = turns };
+
+    private SessionEvents Events => new(DaorisHome.Entry(_home, HomeEntry.Sessions));
+
+    /// <summary>A tree of the conversation's own, standing, with the work read at its tip, a fix after it, and git over it.</summary>
+    private (StandInGit Git, string Tree, string Tip) ChatTree()
+    {
+        var tree = Path.Combine(_home, "s-c1");
+        Directory.CreateDirectory(tree);
+        File.WriteAllText(Path.Combine(tree, "README.md"), "a tree that stands");
+        var git = new StandInGit(tree);
+        git.Commit("base");
+        return (git, tree, git.Commit("the work read", ("src/report.ts", "v1")));
+    }
+
+    /// <summary>A conversation's turns, a door scripted in memory: each turn ends when the test says.</summary>
+    private sealed class Conversation
+    {
+        private readonly List<TaskCompletionSource> _ends = [];
+
+        public Conversation(Action<ChatMessage>? onTake = null) => Turns = new ChatTurns(
+            ready: () => Task.FromResult(true),
+            take: (message, sent) =>
+            {
+                var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                onTake?.Invoke(message);
+                lock (Took)
+                {
+                    Took.Add(message);
+                    _ends.Add(ended);
+                }
+
+                sent();
+                return ended.Task;
+            },
+            interrupt: () => Task.CompletedTask, changed: _ => { });
+
+        public ChatTurns Turns { get; }
+
+        public List<ChatMessage> Took { get; } = [];
+
+        public void End(int at)
+        {
+            lock (Took) _ends[at].TrySetResult();
+        }
+    }
+
+    /// <summary>
+    /// The shell's chat runner as the loop is handed it (<see cref="IChatSendBacks"/>), over real turns: a live conversation's send-back is its
+    /// turns' own operation, and an ended one goes on where it can, the findings its first turn.
+    /// </summary>
+    private sealed class Runner(SessionEvents events, OpinionStandIn host) : IChatSendBacks
+    {
+        public Dictionary<string, Conversation> Held { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>Where set, an ended conversation never goes on, for this reason.</summary>
+        public string? CannotGoOn { get; set; }
+
+        public List<string> WentOn { get; } = [];
+
+        public async Task<SentBack> SendBackAsync(ChatSendBackAsk ask, CancellationToken ct = default)
+        {
+            if (!Held.TryGetValue(ask.Session, out var chat)) return new(SendBack.NotHere);
+            return new(await chat.Turns.SendBackAsync(
+                ask.Pressed, () => ChatPresses.TurnsOf(events, ask.Line),
+                async token => await ask.Hand(ask.Session, token) is { } word ? ChatRunner.Findings(word, ask.Answered) : null, ct));
+        }
+
+        public async Task<SentBack> GoOnWithFindingsAsync(ChatSendBackAsk ask, CancellationToken ct = default)
+        {
+            if (CannotGoOn is { } never) return new(SendBack.CannotGoOn, never);
+            if (await ask.Hand(ask.Session, ct) is not { } word) return new(SendBack.Refused);
+            host.Move(ask.Session, "working");
+            var chat = Held[ask.Session] = new Conversation();
+            WentOn.Add(ask.Session);
+            chat.Turns.Take(ChatRunner.Findings(word, ask.Answered));
+            return new(SendBack.Reserved);
+        }
+
+        public bool? TurnEnded(string sessionId) =>
+            Held.TryGetValue(sessionId, out var chat) ? chat.Turns.State is { Taking: false, Opening: false, Queued.Count: 0 } : null;
+    }
+
+    /// <summary>A test double's agent that is never run (OpinionRecheckTests' machine): present by a file look on a command this test writes.</summary>
+    private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter
+    {
+        public string Name => name;
+
+        public HarnessToolchain? Toolchain => toolchain;
+
+        public System.Diagnostics.ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) => new("unused");
+    }
+
+    /// <summary>The build's own agents by name, each present by a file look, so a recheck's reviewer walk asks no real binary.</summary>
+    private (AdapterSet Adapters, HarnessRoster Roster) Machine()
+    {
+        var command = Path.Combine(_home, "agent-here");
+        File.WriteAllText(command, "");
+        var adapters = new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in new[] { "claude-code", "claude-code-acp", "codex-acp" })
+        {
+            var real = AdapterSet.Built().Resolve(name).Toolchain!;
+            adapters[name] = new Adapter(name, new HarnessToolchain(
+                Binary: [command], VersionArguments: [], ProfileVariable: real.ProfileVariable, AccountOf: real.AccountOf, ProbeByPresence: true,
+                Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
+        }
+
+        var set = new AdapterSet(adapters);
+        return (set, new HarnessRoster(set, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+    }
+
+    private Daoris.Driver.Driver ChatDriver(OpinionStandIn host, StandInGit git, IChatSendBacks? runner) =>
+        new(host.Client(), DriverConfig.Empty with { Adapter = "claude-code-acp" }, AdapterSet.Built(), _home)
+        {
+            OpinionGit = git.Read,
+            Passes = (_, _, _) => throw new InvalidOperationException("no recheck is asked here"),
+            SendsBack = runner,
+        };
+
+    /// <summary>
+    /// 🔴 Its send-back reaches the conversation only between turns (§6.1 (b)): while a turn that is not the person's runs (a Daoris word's),
+    /// the findings wait and nothing is handed; once it ends they are handed to the conversation's record and taken as a turn of their own,
+    /// an ordinary word with <c>by</c>, never steered; while that turn runs the delivery reads it by the turn state, never by the record.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_runs_send_back_reaches_its_conversation_only_between_turns()
+    {
+        var (git, tree, tip) = ChatTree();
+        var host = new OpinionStandIn().Chat("c1", "working", tree).Opinion("op1", "c1", weights: ["must", "should"], tip: tip);
+        var runner = new Runner(Events, host);
+        var chat = runner.Held["c1"] = new Conversation();
+        chat.Turns.Take(new ChatMessage("Daoris says the opinion was asked.", []) { Daoris = new DaorisWord("k1") });
+        var driver = ChatDriver(host, git, runner);
+
+        var waiting = await driver.DeliverAsync("op1", OnRun());
+        Assert.Equal(OpinionDeliveryStates.Waiting, waiting.State);
+        Assert.Empty(host.Hands);
+
+        chat.End(0);
+        await Poll.Until(() => !chat.Turns.Running, () => "Daoris's turn never ended");
+        var handed = await driver.DeliverAsync("op1", OnRun());
+
+        Assert.Equal((OpinionDeliveryStates.Handed, "c1"), (handed.State, handed.Session));
+        Assert.Equal(["c1"], host.HandsTo);
+        await Poll.Until(() => chat.Took.Count == 2, () => "the findings never became the conversation's next turn");
+        Assert.Equal(("op1", MessageLevel.Ordinary), (chat.Took[1].Helped!.By, chat.Took[1].Level));
+        Assert.Equal("ordinary", host.Said("c1")[0]!["level"]!.GetValue<string>());
+        Assert.Equal(OpinionDeliveryStates.WithSession, (await driver.DeliverAsync("op1", OnRun())).State);
+        Assert.Single(host.Hands, each => each == "op1");
+        chat.Turns.Gone();
+    }
+
+    /// <summary>
+    /// 🔴 To the person only where the person's turn count rose since the press (§6.1 (b), Codex's findings 2 and 4): their word waits, its
+    /// keeping is in flight when the send-back arrives, or their turn already ended with the chat idle. Their words go first, the findings are
+    /// theirs as <c>person-went-on</c>, nothing is handed, and no turn starts for them.
+    /// </summary>
+    [Theory]
+    [InlineData("waiting")]
+    [InlineData("keeping")]
+    [InlineData("answered")]
+    public async Task A_person_who_went_on_since_the_press_has_the_findings_and_their_words_go_first(string row)
+    {
+        var (git, tree, tip) = ChatTree();
+        var host = new OpinionStandIn().Chat("c1", "working", tree).Opinion("op1", "c1", weights: ["must"], tip: tip);
+        var runner = new Runner(Events, host);
+        var chat = runner.Held["c1"] = new Conversation();
+        var driver = ChatDriver(host, git, runner);
+        Task<OpinionDelivery> delivering;
+        switch (row)
+        {
+            case "waiting":
+                chat.Turns.Take(new ChatMessage("Daoris's word", []) { Daoris = new DaorisWord("k1") });
+                Assert.Equal(TurnReach.TurnEnd, chat.Turns.Take(new ChatMessage("rename it first", []) { Level = MessageLevel.Ordinary }));
+                delivering = driver.DeliverAsync("op1", OnRun());
+                break;
+            case "keeping":
+                // A word arriving between the reservation's check and its take: its service write held until the send-back waits on it.
+                var record = new Daoris.Driver.Tests.StandInSaid();
+                var keeping = new TaskCompletionSource();
+                record.Answering = _ => keeping.Task;
+                var kept = chat.Turns.KeepAsync(record, new ChatMessage("rename it first", []), default);
+                await Poll.Until(() => record.Said.Count == 1);
+                delivering = driver.DeliverAsync("op1", OnRun());
+                await Task.Yield();
+                keeping.SetResult();
+                await kept;
+                break;
+            default:
+                // A turn of theirs sent and finished after the press: nothing waits, and the chat is idle when the findings arrive.
+                Events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "rename it first", Id = "w1" });
+                delivering = driver.DeliverAsync("op1", OnRun());
+                break;
+        }
+
+        var delivered = await delivering;
+
+        Assert.Equal((OpinionDeliveryStates.ToPerson, OpinionToPerson.PersonWentOn), (delivered.State, delivered.Why));
+        Assert.Contains("your words went first", delivered.Line);
+        Assert.Empty(host.Hands);
+        Assert.DoesNotContain(chat.Took, message => message.Helped is not null);
+        Assert.Equal(OpinionToPerson.PersonWentOn, new OpinionDeliveries(_home).Read("op1").Person);
+        if (row == "answered") Assert.Empty(chat.Took);
+        chat.Turns.Gone();
+    }
+
+    /// <summary>
+    /// Waiting only for activity that is not the person's, a live chat no runner here holds, or a headless host (§6.1 (b)): the headless host
+    /// (<c>SendsBack</c> null) and a runner that holds another window's conversation leave the findings waiting, nothing handed.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_headless_host_or_a_conversation_no_runner_here_holds_leaves_them_waiting(bool headless)
+    {
+        var (git, tree, tip) = ChatTree();
+        var host = new OpinionStandIn().Chat("c1", "working", tree).Opinion("op1", "c1", weights: ["must"], tip: tip);
+
+        var delivered = await ChatDriver(host, git, headless ? null : new Runner(Events, host)).DeliverAsync("op1", OnRun());
+
+        Assert.Equal(OpinionDeliveryStates.Waiting, delivered.State);
+        Assert.Contains(headless ? "no conversation runs on this host" : "no runner here holds its conversation", delivered.Line);
+        Assert.Empty(host.Hands);
+        Assert.Null(new OpinionDeliveries(_home).Read("op1").Person);
+    }
+
+    /// <summary>
+    /// 🔴 The answers are read in the answering turn's frozen reading (§6.1 (c), Codex's finding 3): a person's turn queued behind it moves the
+    /// tree's <c>HEAD</c> as it starts, and the reading holds the answering turn's tip all the same. The next look asks the one recheck over that
+    /// reading, from the first pass's tip to the answering turn's end, never the tree's tip at the look.
+    /// </summary>
+    [Fact]
+    public async Task The_answers_are_read_in_the_answering_turns_frozen_reading_and_the_recheck_reads_that()
+    {
+        var (git, tree, tip) = ChatTree();
+        var host = new OpinionStandIn().Chat("c1", "working", tree).Opinion("op1", "c1", weights: ["must", "should"], tip: tip);
+        var runner = new Runner(Events, host);
+        string? fix = null;
+        var chat = runner.Held["c1"] = new Conversation(message =>
+        {
+            if (message.Text == "now rename it") git.Commit("the person's rename", ("src/report.ts", "v3"));
+        });
+        var asked = new List<OpinionPassAsk>();
+        var (adapters, roster) = Machine();
+        var driver = new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Adapter = "claude-code-acp" }, adapters, _home, harnesses: roster)
+        {
+            OpinionGit = git.Read,
+            SendsBack = runner,
+            Passes = (ask, choice, _) =>
+            {
+                asked.Add(ask);
+                host.Opinion("op2", "c1", state: "reading", pass: "recheck", rechecks: "op1", tip: ask.Tip, @base: ask.Base);
+                return Task.FromResult(new OpinionPassRun("opened  second opinion op2", true) { Opinion = "op2", Session = "r-op2" });
+            },
+        };
+
+        Assert.Equal(OpinionDeliveryStates.Handed, (await driver.DeliverAsync("op1", OnRun())).State);
+        await Poll.Until(() => chat.Took.Count == 1, () => "the findings never became the conversation's turn");
+        fix = git.Commit("the fix", ("src/report.ts", "v2"));
+        host.Answer("op1", 1, "fixed", commit: fix);
+        host.Answer("op1", 2, "rejected", evidence: "the twin test holds it");
+        chat.Turns.Take(new ChatMessage("now rename it", []));
+        chat.End(0);
+
+        await Poll.Until(() => new OpinionDeliveries(_home).Read("op1").Answered is not null, () => "the answering turn's reading was never kept");
+        await Poll.Until(() => chat.Took.Count == 2, () => "the person's turn never ran after the reading was frozen");
+        var reading = new OpinionDeliveries(_home).Read("op1").Answered!;
+        Assert.Equal(("c1", fix, false), (reading.Session, reading.Tip, reading.Steered));
+        Assert.Equal(["fixed", "rejected"], reading.Findings.Select(row => row.Counts));
+
+        var delivered = await driver.DeliverAsync("op1", OnRun() with { Workspace = "work" });
+
+        Assert.Equal(OpinionDeliveryStates.Answered, delivered.State);
+        var recheck = Assert.Single(asked);
+        Assert.Equal((tip, fix), (recheck.Base, recheck.Tip));
+        Assert.Equal("op2", new OpinionDeliveries(_home).Read("op1").Recheck);
+
+        // The run's gate reads `read-again` while the recheck reads, and never with nothing reading: the look asked it as the answers were kept.
+        var client = host.Client();
+        var gate = await OpinionGate.JudgeAsync(
+            new OpinionGateFacts("reports", new ResolvedOpinion(Asked.Rule, OpinionSource.Repository))
+            {
+                Session = "c1", Run = "chat-c1", Tip = fix, Asks = [new OpinionAskKept(DateTimeOffset.UnixEpoch, OpinionRules.Landing, "c1", tip) { Opinion = "op1" }],
+            },
+            new OpinionReads(
+                id => client.Opinions.ReadAsync(id), id => new OpinionDeliveries(_home).Read(id), _ => Task.FromResult<bool?>(true),
+                _ => Task.FromResult<int?>(0)));
+        Assert.Equal((OpinionGateStates.ReadAgain, "op2"), (gate.State, gate.Recheck?.Id));
+        chat.End(1);
+        chat.Turns.Gone();
+    }
+
+    /// <summary>
+    /// 🔴 Who rechecks is independent of the answer too (§6.2, Codex's finding 9): the record that answered after a hand-over is of the first
+    /// reviewer's family, so that reviewer is not presented as independent of the fixes; the recheck goes to another of the rule's reviewers,
+    /// and where none is left, to none, its findings the person's.
+    /// </summary>
+    [Fact]
+    public async Task A_recheck_is_never_read_by_the_family_of_the_successor_that_answered()
+    {
+        var (git, tree, tip) = ChatTree();
+        var host = new OpinionStandIn().Chat("c1", "completed", tree).Chat("c2", "working", tree, from: "c1", minute: 5, adapter: "codex-acp")
+            .Opinion("op1", "c1", weights: ["must"], tip: tip);
+        var runner = new Runner(Events, host);
+        var chat = runner.Held["c2"] = new Conversation();
+        var choices = new List<ReviewerChoice>();
+        var (adapters, roster) = Machine();
+        var driver = new Daoris.Driver.Driver(host.Client(), DriverConfig.Empty with { Adapter = "claude-code-acp" }, adapters, _home, harnesses: roster)
+        {
+            OpinionGit = git.Read,
+            SendsBack = runner,
+            Passes = (_, choice, _) =>
+            {
+                choices.Add(choice);
+                return Task.FromResult(OpinionPassRun.Unavailable(choice));
+            },
+        };
+
+        Assert.Equal((OpinionDeliveryStates.Handed, "c2"), ((await driver.DeliverAsync("op1", OnRun())).State, host.HandsTo.Single()));
+        await Poll.Until(() => chat.Took.Count == 1);
+        host.Answer("op1", 1, "fixed", commit: git.Commit("the fix", ("src/report.ts", "v2")));
+        chat.End(0);
+        await Poll.Until(() => new OpinionDeliveries(_home).Read("op1").Answered is not null);
+
+        var delivered = await driver.DeliverAsync("op1", OnRun() with { Workspace = "work" });
+
+        var choice = Assert.Single(choices);
+        Assert.False(choice.Chosen);
+        Assert.Equal(ReviewerUnavailable.NotIndependent, choice.Code);
+        Assert.Contains(choice.Working, family => family.Agent == "codex-acp");
+        Assert.Equal(ReviewerUnavailable.NotIndependent, new OpinionDeliveries(_home).Read("op1").RecheckWhy);
+        Assert.Equal(OpinionDeliveryStates.Answered, delivered.State);
+        chat.Turns.Gone();
+    }
+
+    /// <summary>
+    /// 🔴 A word of the person's steered into the answering turn marks its reading <c>person-steered</c> (§6.1 (c), the Opus check's finding 6):
+    /// no recheck is asked for it, and its answers go to the person, who presses again.
+    /// </summary>
+    [Fact]
+    public async Task A_reading_whose_turn_took_a_persons_word_asks_no_recheck()
+    {
+        var (git, tree, tip) = ChatTree();
+        var host = new OpinionStandIn().Chat("c1", "working", tree).Opinion("op1", "c1", weights: ["must"], tip: tip);
+        var steering = new Runner(Events, host);
+        var chat = steering.Held["c1"] = new Conversation();
+        var driver = ChatDriver(host, git, steering);
+        await driver.DeliverAsync("op1", OnRun());
+        await Poll.Until(() => chat.Took.Count == 1);
+        host.Answer("op1", 1, "fixed", commit: git.Commit("the fix", ("src/report.ts", "v2")));
+        new OpinionDeliveries(_home).Answered("op1", (await OpinionAnswers.ReadAsync(
+            (await host.Client().Opinions.ReadAsync("op1"))!, "c1", tree, git.Read, DateTimeOffset.UnixEpoch, CancellationToken.None)) with { Steered = true });
+
+        var delivered = await driver.DeliverAsync("op1", OnRun());
+
+        Assert.Equal(OpinionDeliveryStates.Answered, delivered.State);
+        Assert.Contains("your words reached the turn that answered", delivered.Line);
+        Assert.Equal(OpinionRechecks.PersonSteered, new OpinionDeliveries(_home).Read("op1").RecheckWhy);
+        chat.Turns.Gone();
+    }
+
+    /// <summary>
+    /// 🔴 Findings handed before a hand-over (§6.1 (e)): the record they went to ended before it answered, and they are handed again, once, to
+    /// the line's newest record in the same tree, which takes them as a turn of its own and answers them in its own frozen reading.
+    /// </summary>
+    [Fact]
+    public async Task Findings_handed_before_a_hand_over_are_handed_again_to_the_newest_record_which_answers_them()
+    {
+        var (git, tree, tip) = ChatTree();
+        var host = new OpinionStandIn().Chat("c1", "working", tree).Opinion("op1", "c1", weights: ["must"], tip: tip);
+        var runner = new Runner(Events, host);
+        var first = runner.Held["c1"] = new Conversation();
+        var driver = ChatDriver(host, git, runner);
+        Assert.Equal(OpinionDeliveryStates.Handed, (await driver.DeliverAsync("op1", OnRun())).State);
+
+        // The person handed the conversation over before its turn on the findings ran: c1 ended, and c2 goes on in the same tree.
+        first.Turns.Gone();
+        runner.Held.Remove("c1");
+        host.Move("c1", "completed");
+        host.Chat("c2", "working", tree, from: "c1", minute: 5, adapter: "codex-acp");
+        var next = runner.Held["c2"] = new Conversation();
+
+        var again = await driver.DeliverAsync("op1", OnRun());
+
+        Assert.Equal((OpinionDeliveryStates.Handed, "c2"), (again.State, again.Session));
+        Assert.Equal(["c1", "c2"], host.HandsTo);
+        Assert.Equal(("c2", "c1"), (host.Handed("op1")!["session"]!.GetValue<string>(), host.Handed("op1")!["from"]!.GetValue<string>()));
+        await Poll.Until(() => next.Took.Count == 1, () => "the newest record never took the findings");
+        host.Answer("op1", 1, "unresolved", why: "cannot reproduce");
+        next.End(0);
+        await Poll.Until(() => new OpinionDeliveries(_home).Read("op1").Answered is not null);
+        Assert.Equal("c2", new OpinionDeliveries(_home).Read("op1").Answered!.Session);
+        next.Turns.Gone();
+    }
+
+    /// <summary>
+    /// 🔴 An ended resumable chat with no words of the person's waiting (§6.1 (f), Codex's finding 5): the findings are handed to the ended record
+    /// and it goes on through its runner, answering them in its own conversation; a runner's definitive refusal sends them to the person, never
+    /// to a new session.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(ContinueWhy.Unkept)]
+    public async Task An_ended_resumable_chat_goes_on_with_the_findings_through_its_runner(string? never)
+    {
+        var (git, tree, tip) = ChatTree();
+        var host = new OpinionStandIn().Chat("c1", "completed", tree).Opinion("op1", "c1", weights: ["must"], tip: tip);
+        var runner = new Runner(Events, host) { CannotGoOn = never };
+
+        var delivered = await ChatDriver(host, git, runner).DeliverAsync("op1", OnRun());
+
+        if (never is not null)
+        {
+            Assert.Equal((OpinionDeliveryStates.ToPerson, never), (delivered.State, delivered.Why));
+            Assert.Empty(host.Hands);
+            Assert.Empty(runner.WentOn);
+            return;
+        }
+
+        Assert.Equal((OpinionDeliveryStates.Handed, "c1"), (delivered.State, delivered.Session));
+        Assert.Equal(["c1"], runner.WentOn);
+        Assert.Equal("op1", host.Said("c1")[0]!["by"]!.GetValue<string>());
+        var chat = runner.Held["c1"];
+        await Poll.Until(() => chat.Took.Count == 1);
+        host.Answer("op1", 1, "rejected", evidence: "the twin test holds it");
+        chat.End(0);
+        await Poll.Until(() => new OpinionDeliveries(_home).Read("op1").Answered is not null, () => "its own conversation's answers were never read");
+        chat.Turns.Gone();
+    }
+
+    /// <summary>
+    /// 🔴 (f), the Opus check's finding 7: the count compared first. A person who went on after the press and ended the chat again moved past the
+    /// findings: they go to the person as <c>person-went-on</c>, and the conversation is never resumed.
+    /// </summary>
+    [Fact]
+    public async Task A_person_who_went_on_after_the_press_and_ended_the_chat_again_has_the_findings()
+    {
+        var (git, tree, tip) = ChatTree();
+        var host = new OpinionStandIn().Chat("c1", "completed", tree).Opinion("op1", "c1", weights: ["must"], tip: tip);
+        var runner = new Runner(Events, host);
+        Events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "make the change", Id = "w1" });
+        Events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "one more thing", Id = "w2" });
+
+        var delivered = await ChatDriver(host, git, runner).DeliverAsync("op1", OnRun(turns: 1));
+
+        Assert.Equal((OpinionDeliveryStates.ToPerson, OpinionToPerson.PersonWentOn), (delivered.State, delivered.Why));
+        Assert.Empty(runner.WentOn);
+        Assert.Empty(host.Hands);
+    }
+
     /// <summary>The host's opinion reads whole: its candidate, reviewer, findings, recheck's words, where they went and answers.</summary>
     [Fact]
     public async Task The_host_s_opinion_reads_whole()

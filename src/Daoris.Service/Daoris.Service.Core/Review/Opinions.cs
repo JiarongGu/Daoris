@@ -87,7 +87,14 @@ public sealed record OpinionGiven(IReadOnlyList<OpinionFinding> Findings, string
 }
 
 /// <summary>Where the findings went (design §6.3): the working session, the word they wait in on its record, and when.</summary>
-public sealed record OpinionHanded(string Session, string Word, DateTimeOffset At);
+public sealed record OpinionHanded(string Session, string Word, DateTimeOffset At)
+{
+    /// <summary>
+    /// The record they were handed to first, where a hand-over ended it before it answered and they were handed again, once, to its line's
+    /// newest record (CHATFLOW1e, the chat-flow design §6.1 (e)); null for a first hand.
+    /// </summary>
+    public string? From { get; init; }
+}
 
 /// <summary>
 /// The working session's answer to one finding (design §6.4): <c>fixed</c> with the commit it names, which the driver checks is

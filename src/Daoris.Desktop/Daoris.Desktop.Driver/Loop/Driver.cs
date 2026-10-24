@@ -69,6 +69,13 @@ public sealed class Driver(
         init => Context.HandsOver = value;
     }
 
+    /// <summary>How a chat run's findings reach its conversation through the shell's chat runner (CHATFLOW1e): <see cref="LoopContext.SendsBack"/>.</summary>
+    public IChatSendBacks? SendsBack
+    {
+        get => Context.SendsBack;
+        init => Context.SendsBack = value;
+    }
+
     /// <summary>How a closed quest's lost session goes on as a conversation through the shell's chat runner (SESSCTX1c part B): <see cref="LoopContext.GoesOnLost"/>.</summary>
     public Func<string, ContinueReason, CancellationToken, Task<StartedFrom>>? GoesOnLost
     {

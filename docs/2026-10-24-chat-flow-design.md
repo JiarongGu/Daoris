@@ -945,7 +945,7 @@ met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one 
   the person) and one for **a word of theirs reaching that turn's end only** (run after the capture, the reading unmarked);
   `OpinionDeliveryTests` rows for **a person who went on after the press and ended the chat again** (to the person, never resumed) and a
   service row for **(a) admitting the ended newest record of the line after a hand-over**, and refusing an ended record that is not the
-  line's newest.
+  line's newest. *Built* (D157's CHATFLOW1e note).
 - [ ] **CHATFLOW1f — a graph-bound chat run** (driver; after d, e, FABRIC-CUTOVER1e). The bind of a graph version; the press reaching
   `claimed` at its tip and `handed` landing at that press; its `check` nodes and their send-back. Proof: `WorkflowGraphRunTests` and
   `GraphRunLandingTests` rows for a `run:chat-<first>` unit, and `chat-graph-later` no longer answered. **Amended by Codex's finding 8,

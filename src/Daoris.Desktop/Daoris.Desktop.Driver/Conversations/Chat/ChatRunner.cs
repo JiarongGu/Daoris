@@ -61,7 +61,7 @@ internal sealed record ConversationWalk(
 /// <para><b>An ended chat goes on</b> (MSG1c, D137 §2.2): the person's words kept on its record are taken up here at
 /// once, its record reopening and its own conversation resumed with them (<see cref="ChatGoOn"/>).</para>
 /// </remarks>
-public sealed class ChatRunner : IDisposable, IChatPressing
+public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _opening = new();
 
@@ -650,13 +650,17 @@ public sealed class ChatRunner : IDisposable, IChatPressing
         // point 4; MAKERTRAIL1b).
         // CHATFLOW1c (the chat-flow design §4.3, §4.4): its run binds here, the record being its line's first in the tree it grew, and the
         // landing it is told is planned with the process its run was bound to, so it is told the landing its press makes.
+        // CHATFLOW1e (§6): a chat run whose process names a second opinion is handed the tool that answers its findings from its spawn.
+        var answers = false;
         if (opened is not null)
         {
             var bound = _chatRuns.Opened(sessionId, known.Repository, known.Workspace, config);
+            answers = ChatRunBinds.AnswersFindings(bound);
             _toldProcess[sessionId] = await ProcessToldAsync(opened.Path, sessionId, config, known, opened.Dependencies, resolved, ct, bound).ConfigureAwait(false);
         }
         else if (from is not null)
         {
+            answers = await _chatRuns.AnswersAsync(sessionId, workTree, config).ConfigureAwait(false);
             var commits = CommitRules.Resolve(config, known.Repository, known.Workspace);
             // MAKERTRAIL2 (LIMITGOON2): a part on another maker than the one before it, which left work uncommitted in the tree, is told
             // that maker's trailer too, as a driven carry-on is.
@@ -672,7 +676,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing
         {
             return started = await RunAsync(
                 "chat", sessionId, message, resolved, selection, config,
-                RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued),
+                RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued, answers),
                 onEnded, ct, chosen: chosen, pending: _context.Pending.For(sessionId)).ConfigureAwait(false);
         }
         finally
@@ -688,15 +692,19 @@ public sealed class ChatRunner : IDisposable, IChatPressing
     /// </summary>
     /// <param name="repository">The repository as the conversation names it, which its rules are composed for.</param>
     /// <param name="continued">The parts its line continues, by id (SESSCTX1b): their kept folders are read as its own.</param>
+    /// <param name="answers">
+    /// A chat run whose process names a second opinion (CHATFLOW1e, the chat-flow design §6): handed <c>opinion_answer</c> from its spawn, since
+    /// a live conversation's rules are fixed then, as a driven run is at its resume (<see cref="KnowledgeConnector.AnswersFindings"/>).
+    /// </param>
     internal ChatPlace RepositoryPlace(
         DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree,
-        IReadOnlyList<string>? continued = null)
+        IReadOnlyList<string>? continued = null, bool answers = false)
     {
         var across = AcrossRules.Reach(config, registry, known.Repository, known.Workspace);
         IReadOnlyList<string> kept = [.. (continued ?? []).Where(SessionEventText.IsLocalId).Select(part => ChatFiles.Folder(_home, part))];
         return new ChatPlace(
             known.Repository, workTree,
-            (file, id) => RulesFor(file, known.Workspace, repository, workTree, ChatFiles.Folder(_home, id), across, kept),
+            (file, id) => RulesFor(file, known.Workspace, repository, workTree, ChatFiles.Folder(_home, id), across, kept, answers),
             Plugins: true, ConnectorOnPipe: false, Posture: null, ToolsUpFront: false)
         {
             Also = [.. across.Writes.Select(target => target.Path)],
@@ -714,13 +722,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing
     /// The kept folders of the parts its line continues (SESSCTX1b, the session-context design §3.1 item 5): a new part is handed their
     /// files by name and where they lie, so it may read exactly those folders too, as its own. None for a conversation that continues none.
     /// </param>
+    /// <param name="answers">Whether it is handed <c>opinion_answer</c>, a chat run whose process names a second opinion (CHATFLOW1e).</param>
     internal static RuleLists RulesFor(
         PermissionFile file, string? workspace, string repository, string tree, string kept, AcrossReach across,
-        IReadOnlyList<string>? continued = null)
+        IReadOnlyList<string>? continued = null, bool answers = false)
     {
         var composed = PermissionRules.Compose(file, workspace, repository);
         IReadOnlyList<string> folders = [kept, .. (continued ?? []).Where(folder => !string.Equals(folder, kept, StringComparison.OrdinalIgnoreCase))];
-        return (composed with { Allow = [.. composed.Allow, .. folders.Select(PermissionRules.ReadRule)] })
+        IReadOnlyList<string> job = answers ? [.. KnowledgeConnector.AnswersFindings.Where(rule => !composed.Allow.Contains(rule))] : [];
+        return (composed with { Allow = [.. composed.Allow, .. folders.Select(PermissionRules.ReadRule), .. job] })
             .Joined(AcrossRules.Rules(across, [tree, .. folders]));
     }
 
@@ -1695,6 +1705,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing
             : new ChatMessage(goOn.Ask.Prompt, [])
             {
                 GoesOn = goOn.Ask, Attempting = () => SaidDoor.AttemptedAsync(_context.Service, sessionId, goOn.Ask.Words),
+                // CHATFLOW1e (§6.1 (f)): a go-on with another agent's findings has the answering turn's completion of its own.
+                Answering = goOn.Answering,
             };
         if (first is not null)
         {
@@ -2315,6 +2327,52 @@ public sealed class ChatRunner : IDisposable, IChatPressing
         if (_context.Turned.TryGetValue(sessionId, out var chat)) chat.Turns.Pressed();
     }
 
+    /// <inheritdoc cref="IChatSendBacks.SendBackAsync"/>
+    /// <remarks>
+    /// The person's turn count reads their words in the line's history here and their words queued or on the wire in the turns, compared in
+    /// one operation of the keep (<see cref="ChatTurns.SendBackAsync"/>). The word the hand kept leaves the record once its turn is on the wire.
+    /// </remarks>
+    public async Task<SentBack> SendBackAsync(ChatSendBackAsk ask, CancellationToken ct = default)
+    {
+        if (_context.Closing || !_context.Turned.TryGetValue(ask.Session, out var chat)) return new(SendBack.NotHere);
+        chat.Turns.Keeps(new SaidDoor(_context.Service, ask.Session));
+        var outcome = await chat.Turns.SendBackAsync(
+                ask.Pressed, () => ChatPresses.TurnsOf(_events, ask.Line),
+                async token => await ask.Hand(ask.Session, token).ConfigureAwait(false) is { } word ? Findings(word, ask.Answered) : null, ct)
+            .ConfigureAwait(false);
+        return new(outcome);
+    }
+
+    /// <inheritdoc cref="IChatSendBacks.GoOnWithFindingsAsync"/>
+    public async Task<SentBack> GoOnWithFindingsAsync(ChatSendBackAsk ask, CancellationToken ct = default)
+    {
+        if (_context.Closing) return new(SendBack.Waiting, "the application is closing, so no conversation goes on now.");
+        if (_context.Turned.ContainsKey(ask.Session) || _context.Talking.ContainsKey(ask.Session) || _context.GoingOn.ContainsKey(ask.Session))
+        {
+            return new(SendBack.Waiting, $"conversation `{ask.Session}` runs here, or is going on already.");
+        }
+
+        var record = await _context.ReadAgainAsync(ask.Session, ct).ConfigureAwait(false);
+        if (record is not { Kind: "chat" }) return new(SendBack.CannotGoOn, ContinueWhy.Of(ContinueWhy.Refused).Code);
+        if (_goOn.CannotGoOnWithFindings(record) is { } never) return new(SendBack.CannotGoOn, never.Code);
+        if (await ask.Hand(ask.Session, ct).ConfigureAwait(false) is null) return new(SendBack.Refused);
+
+        var started = await _goOn.GoOnWithFindingsAsync(ask.Session, ask.Answered, ct).ConfigureAwait(false);
+        // Held, the findings wait on its record: the next word, a wake or the next look goes on with them; refused, the go-on marked why.
+        return started.SessionId is not null ? new(SendBack.Reserved) : new(SendBack.Waiting, started.Message);
+    }
+
+    /// <summary>Whether a conversation's spawn is handed <c>opinion_answer</c>: its chat run's process names a second opinion (CHATFLOW1e).</summary>
+    internal Task<bool> AnswersFindingsAsync(string sessionId, string tree, DriverConfig config) => _chatRuns.AnswersAsync(sessionId, tree, config);
+
+    /// <summary>
+    /// Another agent's findings as a conversation's turn (CHATFLOW1e, the chat-flow design §6): Daoris's words around that agent's claims, kept on
+    /// the record under the word's id with its <c>by</c>, never the person's; ordinary, so never steered into a turn in flight; with the
+    /// answering turn's completion.
+    /// </summary>
+    internal static ChatMessage Findings(SaidWordView word, Func<bool, Task> answered) =>
+        new(word.Text, []) { Helped = word, Id = word.Id, Kept = true, Level = MessageLevel.Ordinary, Answering = answered };
+
     /// <summary>
     /// Take back or reword one word a conversation holds for its turn (QUEUEEDIT1a); <see cref="QueueEdit.Taken"/> where a turn
     /// took it already, or nothing here holds the conversation.
@@ -2490,7 +2548,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing
             // Daoris's words around another agent's claim (MIXAGENT2a-iii), under the id the record gave them so they pair with the
             // event that showed them waiting; never the person's, so no preface and no browser line ride beside them.
             // COWORK1e: marked as that helper's, so the answers-alone bound counts the turn it prompts.
-            yield return new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Helper = helped.Helper, Id = helped.Id, Text = message.Text };
+            // CHATFLOW1e: a second opinion's findings by the opinion they carry, as a resumed run's are.
+            yield return new SessionEvent
+            {
+                Kind = SessionEventKind.User, Origin = "target", Helper = helped.Helper, Opinion = helped.By, Id = helped.Id, Text = message.Text,
+            };
             yield break;
         }
 

@@ -51,6 +51,8 @@ public sealed class OpinionStore
             CREATE INDEX IF NOT EXISTS opinions_session ON opinions (session);
             """;
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        // CHATFLOW1e: the record findings were first handed to, once they were handed again after a hand-over.
+        await SchemaColumns.EnsureAsync(_db, "opinions", "handed_from", "handed_from TEXT NULL", ct).ConfigureAwait(false);
     }
 
     /// <summary>Keep a new pass, as asked: nothing given, handed or answered yet.</summary>
@@ -140,6 +142,25 @@ public sealed class OpinionStore
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }, ct);
 
+    /// <summary>
+    /// Hand the findings again, once (CHATFLOW1e, the chat-flow design §6.1 (e)): moved from <see cref="OpinionHanded.From"/>, where they still
+    /// stand and were never handed again, to the record <paramref name="handed"/> names. False where they moved meanwhile.
+    /// </summary>
+    public Task<bool> KeepRehandedAsync(string id, OpinionHanded handed, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    {
+        await using var command = _db.Command();
+        command.CommandText = """
+            UPDATE opinions SET handed_to = $to, handed_word = $word, handed_at = $at, handed_from = $from
+            WHERE id = $id AND handed_to = $from AND handed_from IS NULL
+            """;
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$to", handed.Session);
+        command.Parameters.AddWithValue("$word", handed.Word);
+        command.Parameters.AddWithValue("$at", Moments.Write(handed.At));
+        command.Parameters.AddWithValue("$from", (object?)handed.From ?? DBNull.Value);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }, ct);
+
     /// <summary>Write the answers whole: a read, then the write it decides, inside the desk's lock.</summary>
     public Task<bool> KeepAnswersAsync(string id, IReadOnlyList<OpinionAnswer> answers, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
@@ -157,7 +178,7 @@ public sealed class OpinionStore
         if (Moments.Read(Column("asked")) is not { } asked) return null;
         var handed = Column("handed_to") is { } to && Column("handed_word") is { } word
             && Moments.Read(Column("handed_at")) is { } at
-                ? new OpinionHanded(to, word, at)
+                ? new OpinionHanded(to, word, at) { From = Column("handed_from") }
                 : null;
         return Opinions.Read(
             Column("id")!, Column("occasion")!, Column("pass")!, Column("working")!, Column("session")!, Column("rechecks"), asked,
