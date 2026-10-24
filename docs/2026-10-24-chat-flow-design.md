@@ -11,13 +11,18 @@ changes the steward checks without another read. Those changes are taken by Clau
 §16 says where each went. Codex's owed read of the accepted text, read at `16e0950e2` against main `7cda79f01` after rows a and b were
 built (12 findings, 8 blocking), reopened it on the boundaries below, keeping the refusing gate, the local run and the ordinary
 send-back direction; D157's note of 2026-10-24 reopens it on those points. Its findings are taken by Claude Opus 5.5 from the code on
-main at `5d19f6b3a`, and §17 says where each went; the notes stand again on the amended text (D157's amendment note).
+main at `5d19f6b3a`, and §17 says where each went; the notes stand again on the amended text (D157's amendment note). That amendment
+(`e9bca8aa5`) was checked by an independent Opus 5.5 reader standing in for Codex while its credits are out (12 findings, 1 blocking
+row c; row c may be built after named changes the steward can check). Its findings are taken by Claude Opus 5.5 from the code on main at
+`bcb97c274`, and §18 says where each went (D157's and D155's notes of the check).
 
 **What is built.** Rows a and b have landed (D157's CHATFLOW1a and CHATFLOW1b notes): the trace reads the six fields
 (`Sessions/Trace/Trace.cs:286-291`), `SessionResponse` carries `TookQuest` (`Daoris.Service.Http/ApiContracts.cs:457`), the route answers
 the code and its values (`Bridge/Routes/WorkflowRoutes.cs:243`), and the page words the codes it knows (`workflow/WorkflowRunView.tsx:303-309`).
 Row a's classifier is corrected by finding 6 (§4.1), in the change that carries this amendment. Rows c to i are not built. §1 is the
-baseline read before rows a and b, kept as it was read; the citations the remaining rows build from are re-pinned at `5d19f6b3a` in §17.
+baseline read before rows a and b, kept as it was read. The citations in §17's table were checked at `5d19f6b3a`, and those §18 names
+were re-pinned at `bcb97c274` (§6.1's `DriverContinuations.cs:658` is now `:660`); the other sections' citations are re-pinned by the
+row that builds from them, before it does.
 
 The row CHATFLOW1 in `TASKS.md` carries the case. A chat working in a tree of its own serves no quest, so the session's *Workflow*
 view shows only the driver's English sentence, in zh too, and its work reaches the review list with none of its repository's
@@ -45,6 +50,15 @@ turn of theirs completed since sends the findings to them (finding 4); an ended 
 through its owning runner (finding 5). A record's run is the concrete work its line continues, resolved before its origin, by one
 resolver the view and every door share (§4.1, finding 6). A chat's candidate readiness is apart from its displayed work state (§4.2,
 finding 7). A graph-bound chat run's subject and lifecycle are said before row f binds one (§4.5, finding 8).
+
+**What changed after the Opus check of that amendment.** A chat run's landing step follows `Candidate` as its later steps do: it reads
+the line's newest record live or ended, its commits from the tree, and `done` only for a landing or an acceptance kept for the tip the
+tree stands at (§4.2, finding 1). Before row d its opinion reads `skipped`, which is what the press does to it (finding 2), and a chat run
+whose line takes a quest is that quest's from the take on (§4.1, finding 3). The person's turn count only rises (finding 4); the press's
+reservation is a state of its own, held through the landing hold, and *Ask now* captures a tip and a count too (finding 5); a word of the
+person's steered into the answering turn marks its reading (finding 6); the ended chat's hand and go-on agree and compare the count
+(finding 7); row e states only its amended rules (finding 8); and a press over a submitted, unlanded graph candidate supersedes it in
+place (§4.5, finding 9).
 
 **What this is not.** It is not a quest. A chat stays the person's conversation: it takes no ask, publishes nothing and closes nothing.
 Ask Daoris, an intake, a helper, a partner and a second opinion's reviewer are conversations too, and each is left as it is (§9).
@@ -250,6 +264,14 @@ workspace's room, not in a repository's tree, and Daoris lands nothing from it e
 - **One run per tree, across its landings.** A hand-over and a limit's go-on open a new record on the same tree in the same line, so they
   read the same key. Its binding, its gate's file (`<home>/opinions/gates/chat-<first>.json`) and its look's file (§5.3) stay one. A tree
   that lands and goes on is the same run: LAND2c's advance lands it again under the same binding (§4.3).
+- **A chat run whose line later takes a quest** (the Opus check's finding 3). A chat can take a quest at any point of its life
+  (CHATTAKE1), and `WorkOf` reads a `tookQuest` from any record of the line in its tree (`Workflows/WorkflowRun.Read.cs:175`,
+  `:187-196`), so from the take on **the taken quest's run governs every record of the line**, and the chat run `chat-<first>` is read no
+  more. What the chat run landed before the take stays its own: the quest's run counts a landing or an acceptance on a record of the
+  line whose own `quest` is null only where it was made after the quest's take (`Planner.TakenAt`, `Quests/Domain/Planner.cs:2156`), so
+  a landing of the conversation's earlier work never reads as the quest's. The chat run's binding, gate file and look file are left as
+  they stand, read by nothing, and go with the session delete of the record `<first>` (§4.3); the leftover rule leaves them while that
+  record stands.
 - **A chat whose tree was discarded and that opened another** (a second *New conversation*) is a new run.
 
 ### 4.2 What the view reads
@@ -301,6 +323,9 @@ Current live (`TreeGates.cs:83-88`), so the view and the gate decide by one proc
 - `done` once a landing's record is kept for the tip the tree stands at, and `waiting-on-you`, `land` again once the tree moves past it;
 - `stopped` once the conversation has ended with nothing beyond the line.
 
+`done` is read first, before `talk` and `stopped`, by the landing's own reading below: a merge leaves nothing beyond the line, and the
+work it landed is then done, never talk or stopped.
+
 **Its later steps** are derived from the gate, the opinion, the landing record and the due list (`WorkflowRun.cs:344-411`), **by the
 candidate's readiness, never by the displayed work step** (Codex's finding 7). A quest's derivation reaches the later steps only once the
 work step is `done` (`workDone`, `Workflows/Domain/WorkflowRun.cs:354-363`): before it, the opinion (`:583`), the look (`:678`) and the
@@ -309,8 +334,37 @@ while a findings-answering turn runs, so that rule would hide its opinion and it
 run's facts carry **`Candidate`**: true once commits stand beyond the line, between turns or ended, or once the person's press has asked an
 opinion on a tip of it (§5.2). `Derive` reads `workDone` as `Candidate` for a chat run, and reads a quest's as today. While an answering
 turn runs, the opinion keeps its own state (`with-session`, then `read-again`), never `not-reached`; the work step alone says the turn
-runs. Until row d, the opinion's step reads `not-reached` with no words of when, since the gate does not ask it yet. Row d's words say *a
-second opinion from `<reviewer>` is asked when you press Accept*.
+runs.
+
+**Before row d, its opinion step reads `skipped`** (the Opus check's finding 2). With `Candidate` true the opinion step reads the gate
+(`WorkflowRun.cs:583`), and the gate answers `None` for a record with no quest (`Trees/SessionTrees/TreeGates.cs:141`), drawn as
+`skipped` (`WorkflowRun.cs:596`). That is what happens to the work: until row d the press lands it with no opinion asked. So a chat run
+whose process names an opinion reads `skipped` with a detail of its own, `chat-not-asked`, whose words say *no second opinion is asked
+for a conversation's work in this build yet*, worded en and zh in row c's web lane and held in English by the twin table; after a
+landing too, since its landing kept no opinion, never `done`, `landed`. Row d replaces it: its gate reads the run's opinion, and its
+words say *a second opinion from `<reviewer>` is asked when you press Accept*.
+
+**Its landing step follows `Candidate` too** (the Opus check's finding 1). A quest's landing reads only its ended records with evidence,
+and finds a landing by the record's id (`WorkflowRun.cs:730-760`). A chat run cannot be read that way: its record stays `working` between
+turns (§1.5), so a live chat waiting on the press would read `done`, `nothing` (`:740-743`); one record lands many tips (§4.1), so after
+its first landing every later tip would read `done` (`:749`, `:758`); and a merge leaves nothing beyond the line, so `Candidate` would
+fall and the landing read `not-reached` (`:735-738`) beside a work step that reads `done`. So a chat run's landing:
+
+- reads **the line's newest record in the tree, live or ended**, never only its ended records;
+- reads its **commits from the tree beyond the line, as the review's offer reads them** (`LandOffer.Of`, `Trees/SessionGroups.cs:287-292`:
+  commits git counts beyond the line, those the line holds by content counting none), never from the record's evidence. The chat run's
+  facts carry the tree's tip (`HEAD`) and that count, read once for the view;
+- reads **`done` only where a landing or an acceptance is kept for the tip the tree stands at**, and before `talk` and `stopped`. A
+  branch landing is kept for a tip where an entry naming a record of the line holds it as its own `Squashed ?? Tip`, or an advance's
+  `Squashed ?? To` (`Trees/LandedBranches.cs:14-15`, `:105-107`). **A merge acceptance keeps no tip** (`WorkflowRunRecords.cs:20-40`
+  read it from the conversation's note, which names none), so its tip is read from the line: a merge acceptance on a record of the line
+  is kept for the tip the tree stands at where nothing stands beyond the line, since the line then holds that tip's work. Otherwise it
+  reads `waiting-on-you`, `accept` while `Candidate` holds and `not-reached` before. The opinion beside a landing `done` is the one kept
+  on that tip's entry or advance, never an earlier tip's (`:573-580` reads the newest entry's);
+- reads **`Candidate` as true from commits beyond the line, between turns or ended, or from an opinion a press asked on a tip of the line,
+  until that tip lands; and it stays true while the landing reads `done` for the tip the tree stands at.** So after a merge landing under
+  a rule that names no opinion (the install's Current, §11), the work and the landing both read `done`, and a chat with nothing beyond
+  the line, no opinion asked and no landing kept for its tip reads `talk` with its later steps `not-reached`.
 
 **Its checks**, in the view: the run's `checks` (`light` or `heavy-at-end`), Current's `sessionChecks` or its version's field
 (`Sessions/Heavy/SessionChecks.cs:3-24`). A `check` step exists only under a graph version: a steps version naming one does not read
@@ -389,7 +443,12 @@ only once a different quest comes back to it (`:492-493`). A chat has none of th
   and `opinion`, `look` and `check` read the branch at the candidate's tip, as they read a quest's branch.
 - **Submitted at the person's press.** A press that captures a tip beyond the run's last landed candidate submits candidate *n* + 1 and
   reaches `claimed` on it; the same press then reads the gate as §5.2 says. A turn's end submits nothing, so an ordinary turn starts no
-  step (§3 rule 4). A press on the tip already submitted submits nothing again.
+  step (§3 rule 4). A press on the tip already submitted submits nothing again. **A press at a new tip while candidate *n* + 1 stands
+  submitted and unlanded** (the Opus check's finding 9: refused because an opinion was asked, then the person committed again)
+  **supersedes *n* + 1 in place**: the candidate keeps its number and takes the new tip, the earlier tip kept on it as superseded, and
+  `claimed` observes the resubmission. What was judged on the earlier tip is judged again at the new one as a quest's work's is: the
+  `opinion` covers what its tip holds by ancestry, so the gate shows `commits-since` for the rest (§5.2 point 9), and a `look`'s skip and
+  a `check`, which hold for their tip alone, are asked again. No candidate number is spent without a landing.
 - **`quest.close` is refused for a chat run.** A chat closes nothing (§2's *What this is not*), so a graph whose path from `claimed` to
   `handed` holds a `quest.close` node is refused at the bind with its reason, and the run reads `chat-graph-later` for it, with that reason
   as its words. A graph whose `quest.close` lies only after `handed` is refused the same way: no chat subject answers it.
@@ -400,7 +459,8 @@ only once a different quest comes back to it (`:492-493`). A chat has none of th
   the person. A hand-over keeps the run and the candidate, as §4.1 keeps the key.
 
 Row f's proof covers two successive landings of one run, a hand-over between submission and landing, a `quest.close` graph refused at
-the bind, and a failed check's single send-back on a candidate.
+the bind, a failed check's single send-back on a candidate, and a press at a new tip over a submitted, unlanded candidate superseding it
+in place, its opinion read again as `commits-since` and its check asked again.
 
 ## 5. The person's Accept, gated
 
@@ -429,9 +489,15 @@ is where the gate reads it.
    part of `GateAsync` in its fixed order **at that tip**, each keyed by the run where a quest's are keyed by the chain, and sets
    `LandingGate.Tip` to it, so the landing goes by the existing pinned path, which lands exactly that commit or refuses where the tree moved
    past it. A moved candidate is refused with *the work moved while it was judged; press Accept again*, never landed under the judgement
-   of an earlier tip. A word the person sends while the press holds the reservation waits behind it, as behind a turn, and the reservation
-   is let go when the press answers, landed or refused. Where every part lets go, it lands at once, as today, and the landing record says
-   what each part said.
+   of an earlier tip. Where every part lets go, it lands at once, as today, and the landing record says what each part said.
+   - **The reservation is a named state, `_pressing`** (the Opus check's finding 5). `Hold()` is the only reservation `ChatTurns` has,
+     and under it `KeepAsync` and `Take` drop the person's word (`Conversations/Chat/ChatTurns.cs:166`, `:579`), so the press does not use
+     it. Under `_pressing` a word is kept and waits but starts no turn, as under `_limited` (`:594-601`), and the conversation shows it
+     waiting for the press. It is let go when the press answers, landed or refused, and a word that waited then starts at once.
+   - **It is held through the landing hold.** The pin alone refuses a moved candidate, but the landing reads the tree itself: its dirty
+     check, and a merge's replay onto the line. So the person's word waits through the landing hold too, which lasts up to five minutes
+     (`Bridge/Routes/TreesRoutes.cs:594`); the press's existing wait words say so, and a hold that does not end in that time refuses the
+     press and lets `_pressing` go.
    - **On every door, by one driver operation** (with finding 11). The reservation, the capture, the judgement, the ask and the pinned
      landing are one driver operation, which the bridge's `LAND_SESSION_TREE`, the connected terminal and the standalone terminal
      (`Daoris.Desktop.Driver.Host/TreesConsole.cs:390`, `:417`, which today goes from the gate's read straight to the landing) each call.
@@ -446,7 +512,9 @@ is where the gate reads it.
    *Ask now*'s due on a chat run is written at `landing` too. The refusal says so: *a second opinion is asked: `<reviewer>` reads it from
    the driver's next look; press Accept again once it settles.* The look starts it as every owed pass. The due carries the press's
    captured tip and **the person's turn count at the press** (§6.1, finding 4), so the pass reads that candidate and its findings are
-   delivered only to the turns they were asked on.
+   delivered only to the turns they were asked on. **The person's own *Ask now* on a chat run captures the same two at its press** (the
+   Opus check's finding 5): the tree's `HEAD` and the turn count, read as this press reads them, under `_pressing` for the capture
+   alone, so its findings are delivered by the same rule (§6.1 (b)).
 4. **Asks nothing twice.** A press while a pass is `reading`, its findings are `with-session`, or its recheck reads (`read-again`) is
    refused with that state's words and asks nothing. The recheck is not the press's: D155 point 7's runs at the look after the answering
    turn ends (§6).
@@ -501,8 +569,8 @@ reads (`WorkflowRun.cs:396-401`), and once WORKFLOW1l gives a run its own go-ahe
 A send-back is a step's return of the work to its agent: a second opinion's findings (D155 point 7) or, under a graph version, a failed
 check's one send-back (D157 point 9, FABRIC-PIPELINE1f, CHATFLOW1f's). For a chat:
 
-- **Only after the person's press.** A pass is asked only by an *Accept…* (§5.2), so a send-back follows the person's own word that the work
-  was done.
+- **Only after the person's press.** A pass is asked only by the person's own press, an *Accept…* (§5.2) or their *Ask now* (§7), each
+  capturing its tip and the person's turn count, so a send-back follows the person's own word on the work it read.
 - **An ordinary word of its own, between turns.** It is not `Tell` as it stands, which is urgent and Daoris's (§1.5). It is a word at
   `Ordinary` level carrying `by`, shown as *Another agent's findings*, never as the person's or Daoris's, with `by` as D155 point 7 has it.
   It never takes `NextStep` or `Steered` (`ChatQueue.cs:49-65`), so it never enters a turn in flight. D137's door holds.
@@ -510,7 +578,10 @@ check's one send-back (D157 point 9, FABRIC-PIPELINE1f, CHATFLOW1f's). For a cha
   whether it waits, is being kept, or has already been answered by a turn that ended, theirs come first and the send-back goes to the
   person, kept with the reason `person-went-on` (§6.1 (b), findings 2 and 4). The driver cannot see a draft: where the person is
   typing when the send-back is taken, its turn starts, and their word then reaches it as any of their words reach a running turn, at its
-  end, or at its next step where they send it sooner (D136). That is accepted and said in the design, not hidden.
+  end, or at its next step where it is urgent or they send it sooner (D136). A word at the turn's end runs after the answering turn's
+  capture (§6.1 (c)), so its commits are never read as answers. **A word that reaches the answering turn itself**, steered at its next
+  step or sent now, marks that turn's reading (the Opus check's finding 6, §6.1 (c)): no recheck is asked for it, and its answers go to
+  the person, since the person's own work then lies inside the boundary.
 - **Its answer tool.** A chat run whose process names an opinion carries `opinion_answer` in its rules from its spawn, since a live chat's
   rules are fixed then (`ChatRunner.cs:1349-1360`), as `DriverContinuations.AnswersFindings` hands it to a driven run at its resume.
 
@@ -520,7 +591,7 @@ Today none of the delivery reaches a live chat. The service's hand refuses every
 (`CannotTake`, `Review/OpinionDesk.cs:480-492`; `Sessions.cs:321-322`), hands only to `opinion.Working` (`:248-253`), and lets only the
 record handed to answer (`:285-294`). The deliverer reads a `working` record as answering for ever (`Running`, `Quests/Domain/Planner.cs:361`;
 `Loop/OpinionDeliverer.cs:105-114`), and reads answers only at a driven resume's end (`:252-271`, called once, from
-`DriverContinuations.cs:658`) or once the record stops running. The loop reaches the shell's chat runner only through seams the modules
+`DriverContinuations.cs:660`) or once the record stops running. The loop reaches the shell's chat runner only through seams the modules
 wire (`Loop/LoopContext.cs:57-71`; `Modules/Loop/DriverLoop.cs:890-895`), and the headless host wires none. And reading `TurnEnded`
 (`ChatRunner.cs:1969-1972`) outside `ChatTurns`' lock and then calling `Take` is a race: `Take` queues an ordinary word as `TurnEnd` once a
 turn pumps (`ChatTurns.cs:594-608`), so a word the person sends between the two would put the send-back behind it, which §12 rejects.
@@ -536,14 +607,20 @@ before `RunAsync` (`:558-586`). So each boundary is its own. Row e is built in t
   chat (no quest, no ask, no opinion, no `serves`) whose line and tree are those of `opinion.Working`; it records that record as
   `Handed.Session`, so `AnswerAsync`'s own rule, only the record handed to answers (`:285-294`), lets it answer. Every other record is
   refused as today. The driver names the line's newest record in this tree as the target, never the record that pressed where a hand-over
-  ended it.
+  ended it. **It also admits an ended chat record that is the newest of `opinion.Working`'s line in its tree** (the Opus check's finding
+  7), so (f)'s hand to it, which after a hand-over is not `opinion.Working` itself, is admitted by (a)'s own rule; the same record is
+  `Handed.Session`, and only it answers.
 - **(b) An atomic take, through a seam, in the dispatcher's keep** (driver, modules; findings 2 and 4). `LoopContext` gains `SendsBack`,
   wired by `DriverLoop` to the shell's runner as `HandsOver` is. **The reservation is one operation of the dispatcher's keep:** it takes
   `_keeping` first, so a word of the person's whose keeping is in flight finishes being kept and reaches `Take` before the reservation tests
   anything, and only then tests, under `ChatTurns`' lock, that nothing is taking, opening, held or waiting and a turn has ended
-  (`TurnEnded`'s test read inside the lock). **The person's turn count** is the number of the person's words kept on the line's records in
-  this tree; the press that asked the opinion records it on the due (§5.2 point 3), and the reservation compares it atomically, under the
-  same two locks. The outcomes are distinct:
+  (`TurnEnded`'s test read inside the lock). **The person's turn count only rises** (the Opus check's finding 4). A word kept on a
+  record's `said` list leaves it once its turn is on the wire (`ChatTurns.cs:93-96`, `:957-964`; `Conversations/SaidDoor.cs:15-16`), so a
+  count of kept words falls back once the person's turn has run, and a turn they sent and finished after the press would never raise it.
+  So the count is **the person's own words in the line's conversation history** (their `user` events in `SessionEvents`, origin the
+  person and no `by`, on each record of the line in this tree), **plus the words waiting in the queue or being kept**. It is read the
+  same way at the press, which records it on the due (§5.2 point 3), and at the reservation, which compares it atomically, under the same
+  two locks. The outcomes are distinct:
   - **the person moved past it**: the count has risen since the press, whether their word waits, was being kept, or was already answered
     by a turn that has ended. The findings go to the person as `person-went-on`, nothing is handed, and nothing waits;
   - **activity that is not the person's**: a turn running, opening or held that the count does not show as theirs (a Daoris word's, a
@@ -560,7 +637,12 @@ before `RunAsync` (`:558-586`). So each boundary is its own. Row e is built in t
   **ending tip** and the answers the record kept, as one **frozen reading** (`OpinionReading`), and completes the turn's task with it. The
   seam's caller keeps that reading, as `OpinionsAnsweredAsync` keeps a resume's, and the recheck reads it (§6.2), never the tree's `HEAD`
   at a later look (`Review/OpinionAnswers.cs:87-92`; `Loop/OpinionDeliverer.cs:216-222`). A person's word queued behind the turn runs after
-  the capture, so its commits are never read as answers.
+  the capture, so its commits are never read as answers. **A person's word steered into the answering turn marks its reading** (the Opus
+  check's finding 6). The person's word is `Urgent` unless said (`Conversations/Domain/ChatMessage.cs:27`), and on a door that steers an
+  urgent word reaches the running turn at its next step (`ChatTurns.cs:586-591`), as does a word sent now; the person's work then falls
+  inside the boundary. So where the answering turn took a word of the person's, its frozen reading is kept `person-steered`: no recheck
+  is asked automatically for it, and its answers go to the person, who presses again (§6.2). The person's words keep their reach (D136);
+  only what the reading claims changes.
 - **(d) `DeliverAsync` reads a chat run's record by the runner's turn state**, not by `Running`: `with-session` while the send-back's turn
   runs, then its answers read. A chat no runner holds reads by its record as today.
 - **(e) Findings handed before a hand-over.** A hand-over ends the record they were handed to, and that record never takes another turn
@@ -568,7 +650,9 @@ before `RunAsync` (`:558-586`). So each boundary is its own. Row e is built in t
   line's newest record in the same tree (a), the delivery moving `Handed.Session` to it, and from then only that record answers. Where the
   newest record cannot take them, they go to the person as today.
 - **(f) An ended chat takes them by a path of its own** (finding 5). Waiting for a runner never ends for a conversation that has ended,
-  since nothing starts it, and its go-on needs words waiting that the hand would only keep after a reservation. So where the line's newest
+  since nothing starts it, and its go-on needs words waiting that the hand would only keep after a reservation. **The turn count is
+  compared first** (the Opus check's finding 7): a person who went on after the press and then ended the chat again has moved past the
+  findings, so a rise sends them to the person as `person-went-on`, as (b)'s does, and nothing is resumed. Otherwise, where the line's newest
   record has ended and is resumable, the deliverer asks the owning runner whether it can go on (its tree stands, the repository is
   registered, the record is a chat of this machine's); where it can, the service's hand keeps the findings word on that ended record, with
   its `by`, and the deliverer requests the record's existing go-on (`ChatGoOn`) through the owning runner, which consumes it as *another
@@ -581,8 +665,8 @@ before `RunAsync` (`:558-586`). So each boundary is its own. Row e is built in t
 - **Its commits void nothing.** No press is kept (§5), so the answering turn's commits move the tip and nothing else.
 - **D155's automatic recheck is kept.** At the look after the answering turn ends, `AnsweredAsync` asks the one recheck where it is due
   (`OpinionDeliverer.cs:174-184`), as for a quest's work. This is not a step started at the end of the person's turn, which rule 4 forbids:
-  the answering turn is one Daoris started, and the recheck is bounded to one (`OpinionDesk.cs:417-418`). **It reads the answering turn's
-  frozen reading** (§6.1 (c)): the commits from the first opinion's tip to the turn's ending tip, captured before another turn ran.
+  the answering turn is one Daoris started, and the recheck is bounded to one (`OpinionDesk.cs:417-418`). A reading kept
+  `person-steered` asks none: its answers go to the person (§6.1 (c)). **It reads the answering turn's frozen reading** (§6.1 (c)): the commits from the first opinion's tip to the turn's ending tip, captured before another turn ran.
   Ancestry alone does not say who made a commit (`Review/OpinionAnswers.cs:127-145` checks only that a fix lies between the two tips); the
   boundary is what bounds it, since no other turn ran in the tree between the take and the capture. A commit made in the tree outside any
   turn, by the person's own git, is not told apart, and the design says so (§14). **Who rechecks is independent of the answer too**
@@ -705,11 +789,15 @@ there while the page says otherwise.
 
 Each row ships both doors for its part (D50). By round 2's read's own measure, rows a and b may go ahead with finding 4's two
 classification rows; rows c, d and d2 once findings 3, 5, 7 and 8 are taken; and row e once findings 1 and 2 are. This text takes them
-all (§16), for the steward to check against the read without another; Codex's read stays owed under D191.
+all (§16), for the steward to check against the read without another. Codex's read has since been given (§17), and the Opus check of
+its amendment (§18).
 
 **After Codex's read** (§17), each blocking finding is taken before the row it names: finding 1 before d and d2; findings 2 to 5 before
 e; finding 6 as a correction to the built row a, with its test, before i; finding 7 before c; finding 8 before f. Each row below carries
 its amendment. Rows a and b are built; a's correction lands with this amendment.
+
+**After the Opus check of the amendment** (§18): finding 1, with findings 2 and 3, before c; findings 4 to 8 before d and e; finding 9
+before f; findings 10 to 12 are record fixes, 12's test built with this change.
 
 **What the owner's own repositories follow on the install, and row f.** On the install every run binding reads `current`: the home keeps
 no named workflow, and each of its run bindings, as of 2026-10-24, names `current` with two steps, the agent's work and a landing the
@@ -735,20 +823,24 @@ met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one 
   the ask**, **a quest inheriting its publisher's origin from another tree, its worker's continuation reading that quest's run and never
   `chat-own-tree`**, a genuine intake keeping its ask-wide view, and **a continuing conversation contributing its worker, its standing
   tree and its landing to the run** (`ReadAsync` over a stand-in service). The opinion read on that tree goes through the same work record;
-  the doors' use of the resolver, and its opinion and landing gate, are row i's proof.
+  the doors' use of the resolver, and its opinion and landing gate, are row i's proof. **Proved as Codex asked by the Opus check's finding
+  12**: a `ReadAsync` case for **a CHATTAKE1 chat in a tree of its own, no worker's, under a rule naming an opinion**, asserting that
+  tree is the one read, the opinion's gate read through the chat's record (`working`, `not-asked`, its session the chat's) and its
+  landing the chat's (`WorkflowRunTests.A_chat_that_took_a_quest_contributes_its_tree_opinion_and_landing_to_that_quests_run`). It passes
+  on the built correction: the view reader needed no change.
 - [ ] **CHATFLOW1b — the page words it** (web; after a). The view's codes in `workflow.run.json`, en and zh, the driver's sentence for an
   unknown code, and *Try again* on `unanswered`. Proof: `WorkflowRunView.test.tsx` renders each code in en and in zh and an unknown one as
   the sentence (`:285-295` amended): **a chat with no tree says so in both languages** (`chat-checkout`), and an own-tree chat reads
   `chat-own-tree`. Also stories per code, `npm --prefix src/Daoris.Web run i18n:check` and `names:check --strict`. *Built* (D157's
   CHATFLOW1b note), and stands for its translation scope.
-- [ ] **CHATFLOW1c — a chat's run, keyed and bound** (driver, modules, web; after a's correction and finding 7). `chat-<first>` from the stored line (§4.1); the binding
+- [ ] **CHATFLOW1c — a chat's run, keyed and bound** (driver, modules, web; after a's correction, finding 7 and the Opus check's findings 1 to 3). `chat-<first>` from the stored line (§4.1); the binding
   when the tree opens, never to a graph version (`chat-graph-later`); a failed bind said once, and a press on an unbound run binding first
   and refused `bind-failed` only for an unwritable home, a graph choice never refused and an unreadable named workflow bound with its
   `Problem` (§4.3); `ChainsOf`'s chat run read by the line, with the work step's states; `TreeGates.ProcessAsync` reading the chat run's
   process; the told landing planned with the bound process (§4.4); the view's checks marked not yet enforced until row h;
   `SessionHomeFiles` taking a chat run's three files and the leftover rule sweeping them (§4.3). The conversation is told nothing of its
   checks. Proof: `WorkflowRunTests`: **a chat's tree with commits shows its run and its checks** (Current's `sessionChecks`, and a steps
-  version's `checks`), marked not yet enforced, its opinion `not-reached` with no words of when, a hand-over's second record reading the
+  version's `checks`), marked not yet enforced, its opinion `skipped` with `chat-not-asked`'s words (the Opus check's finding 2), a hand-over's second record reading the
   same run, and an ended chat with commits reading `land`. `WorkflowRunBindingTests` (bound under the repository's default, never by a
   kind; a graph version bound nothing); `OpinionLandingTests` or `ReviewLandingTests` rows for the press's bind-first: a graph choice
   landing as today, never `bind-failed`; an unwritable home refused `bind-failed`; an unreadable named workflow held by its problem.
@@ -760,7 +852,16 @@ met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one 
   answering turn runs. Its proof adds `WorkflowRunTests` rows for the view **before the first Accept, during review, during the answer's
   delivery, after the recheck and after the landing**, the opinion and the landing visible before the landing throughout. **The web lane**
   (finding 11): the view's *not yet enforced* mark on the checks, en and zh, in `WorkflowRunView.test.tsx`, a story, `i18n:check` and
-  `names:check --strict`.
+  `names:check --strict`. **Amended by the Opus check of the amendment, findings 1 to 3** (§4.1, §4.2): the chat run's landing reads the
+  line's newest record live or ended, its commits from the tree beyond the line as the review's offer reads them, and `done` only for a
+  landing or an acceptance kept for the tip the tree stands at, a merge acceptance's tip read from the line, `done` before `talk` and
+  `stopped`; `Candidate` stays true while the landing reads `done`; before row d the opinion reads `skipped` with `chat-not-asked`, its
+  words en and zh in the web lane and its English in the twin table; and a chat run whose line takes a quest is governed by that quest's
+  run from the take on. Its proof adds `WorkflowRunTests` rows: **a live chat between turns with commits beyond the line reads
+  `waiting-on-you`, `accept`**, never `done`, `nothing`; **a merge landing under a rule that names no opinion reads `done` after it
+  lands**, the work and the landing both, never `not-reached`; **a second candidate after a branch landing reads `accept` again, with its
+  own opinion**, never the first landing's; and **a chat run that landed and whose line then takes a quest** reading the quest's run, the
+  earlier landing not counted there, the chat run's three files left until the delete of the record `<first>`.
 - [ ] **CHATFLOW1d — the gate refuses the press and asks the opinion** (driver, modules, web; after c). The opinion's part keyed by the
   run (`OpinionGates` under `chat-<first>`, `OpinionGate.JudgeAsync` with a run and no quest); `OpinionDue.Run`; the press asking at
   `not-asked` and nothing twice; `OpinionPresses.WorkAsync` reading a chat run; and the quest-keyed sites §7 names, each keyed by the run:
@@ -782,7 +883,14 @@ met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one 
   candidate after the gate's judgement** (a commit made between the judgement and the landing is refused, never landed), **while the
   press waits for the landing hold**, and **across a hand-over**; a press refused while a turn runs; a press on a conversation another
   process holds, through the pipe; each on both terminal paths (merge and branch forms) and through the bridge, the connected terminal and
-  the standalone terminal, with `TreesWordsTests` for each door's refusal words and exit code.
+  the standalone terminal, with `TreesWordsTests` for each door's refusal words and exit code. **Amended by the Opus check's findings 4
+  and 5, before d** (§5.2 point 1 and 3, §6.1 (b)): the reservation is `ChatTurns`' named state `_pressing`, in which a word is kept and
+  waits and starts no turn, held through the landing hold and let go when the press answers; *Ask now* on a chat run captures `HEAD` and
+  the person's turn count at its press; the count is the person's own words in the line's conversation history plus those waiting or
+  being kept, read the same way at the press and at the reservation. Its proof adds `ChatTurnsTests` rows for **a word sent under
+  `_pressing`** (kept, never dropped, starting once the press answers, landed or refused) and **a hold that outlasts its five minutes**
+  (refused, `_pressing` let go); an `OpinionLandingTests` row for *Ask now*'s due on a chat run carrying its tip and count; and a row for
+  the count **over a turn the person sent and finished after the press, with nothing left on `said`** (the count risen).
 - [ ] **CHATFLOW1d2 — the look on a chat run, and the person's way past it** (driver, modules, web; with d). The look's part `cannot-start`
   for a chat run under a rule or version that requires one; *Accept without the look…*, its file, the page's press and
   `trees land <id> --without-look`, a `Person` route. Proof: `ReviewLandingTests` (refused with the limit's words; the person's press
@@ -790,18 +898,26 @@ met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one 
   exit code), `PipeCensus`'s census row, `HelpCoverageTests` (exempt), and `WorkFrame.test.tsx` in en and zh. **Amended by Codex's
   finding 1, before d2** (§5.3): the skip is kept at the press's captured tip and the landing pinned to it; its proof adds a
   `ReviewLandingTests` row where the tree moves after the skip is judged, refused and never landed under the skip.
-- [ ] **CHATFLOW1e — its send-back only between turns** (service, driver, modules; after d). §6.1's five: (a) the service's hand admitting
-  a chat run's `working` record of the line, naming the line's newest record and letting it answer; (b) `LoopContext.SendsBack`, wired by
-  `DriverLoop` as `HandsOver` is, reserving the turns atomically under `ChatTurns`' lock as `TakeHeld` does, the findings an `Ordinary`
-  word with `by`, `person-went-on` where a word of the person's was first, and waiting where no runner holds the chat; (c) the answers read
-  at the send-back turn's end; (d) `DeliverAsync` reading a chat run's record by the runner's turn state; (e) findings handed before a
-  hand-over re-handed once to the newest record. D155's automatic recheck at the look after the answering turn (§6.2). `opinion_answer` in
-  a chat run's rules from its spawn. Proof: `OpinionDeliveryTests`: **its send-back reaches the conversation only between turns**.
-  Findings wait while a turn runs and while words are queued, and are taken as a turn of their own once it ends; a word the person sent
-  first goes first and the findings go to the person; **a word arriving between the check and the take** goes first and the findings go
-  to the person, never behind it; **the headless host** (`SendsBack` null) leaves them waiting; **findings handed before a hand-over**
-  re-handed to the newest record, which answers them; **the answers read at the send-back turn's end**, and the recheck started at the
-  next look, the gate `read-again` while it reads and never with nothing reading. A service row (`Daoris.Service.Tests`, beside
+- [ ] **CHATFLOW1e — its send-back only between turns** (service, driver, modules; after d). §6.1's six (rewritten by the Opus check's
+  finding 8): (a) the service's hand admitting a chat run's `working` record of the line, and an ended chat record that is the newest of
+  `opinion.Working`'s line in its tree, naming the line's newest record and letting it answer; (b) `LoopContext.SendsBack`, wired by
+  `DriverLoop` as `HandsOver` is, its reservation one operation of the dispatcher's keep, taking `_keeping` and then `ChatTurns`' lock,
+  comparing the person's turn count with the press's and adopting the hand's word as the reserved turn's, the findings an `Ordinary` word
+  with `by`; (c) the answering turn's own completion, its ending tip and answers frozen before another queued word runs, a reading whose
+  turn took a word of the person's kept `person-steered`; (d) `DeliverAsync` reading a chat run's record by the runner's turn state;
+  (e) findings handed before a hand-over re-handed once to the newest record; (f) an ended chat's path, the count compared first, then
+  the findings word handed to the ended record and its go-on requested through the owning runner. D155's automatic recheck at the look
+  after the answering turn, reading its frozen reading, none for a `person-steered` one (§6.2). `opinion_answer` in a chat run's rules
+  from its spawn. Its outcomes are distinct: **to the person**, as `person-went-on`, only where the person's turn count rose since the
+  press, whether their word waits, was being kept or was already answered by a turn that ended, live chat or ended; **waiting** only for
+  activity that is not the person's (a Daoris word's turn, a hand-over opening), for a live chat no runner here holds and for a headless
+  host; **reserved** otherwise, the send-back's turn taken at once. Proof: `OpinionDeliveryTests`: **its send-back reaches the
+  conversation only between turns**. Findings wait while a turn that is not the person's runs, and are taken as a turn of their own once
+  it ends; a word the person sent since the press, waiting, goes first and the findings go to the person; **a word arriving between the
+  check and the take** goes first and the findings go to the person, never behind it; **the headless host** (`SendsBack` null) leaves them
+  waiting; **findings handed before a hand-over** re-handed to the newest record, which answers them; **the answers read in the answering
+  turn's frozen reading**, and the recheck started at the next look over that reading, the gate `read-again` while it reads and never with
+  nothing reading. A service row (`Daoris.Service.Tests`, beside
   `McpOpinionToolTests`) for the hand admitting a chat run's `working` record and refusing every other active one; a `ChatTurnsTests` row
   for the reservation (refused while a word waits or a turn pumps; a word sent after it waits behind the send-back; never `NextStep`); a
   `DriverLoop` modules row for the seam's wiring; a `ChatRunnerTests` row for the rule handed at spawn. Also an `OpinionResumeTickTests`
@@ -818,14 +934,24 @@ met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one 
   **temporary activity that is not the person's** (waiting, then delivered), and for **an ended resumable chat with no person's words
   waiting** (handed to the ended record, gone on through its runner, answered in its own conversation), a runner's definitive refusal
   sending them to the person; and an `OpinionDeliveryTests` recheck row where **the answering successor is of the first reviewer's
-  family**, so that reviewer is not presented as independent of the fixes.
+  family**, so that reviewer is not presented as independent of the fixes. **Amended by the Opus check's findings 4, 6 and 7, before e**
+  (§6, §6.1, §6.2): the count only rises, read over the conversation history; a person's word steered into the answering turn marks its
+  reading; (a) admits the ended newest record of the line and (f) compares the count first. Its proof adds a `ChatTurnsTests` row for
+  **an urgent word of the person's steered into the answering turn** (its reading `person-steered`, no recheck asked, its answers to
+  the person) and one for **a word of theirs reaching that turn's end only** (run after the capture, the reading unmarked);
+  `OpinionDeliveryTests` rows for **a person who went on after the press and ended the chat again** (to the person, never resumed) and a
+  service row for **(a) admitting the ended newest record of the line after a hand-over**, and refusing an ended record that is not the
+  line's newest.
 - [ ] **CHATFLOW1f — a graph-bound chat run** (driver; after d, e, FABRIC-CUTOVER1e). The bind of a graph version; the press reaching
   `claimed` at its tip and `handed` landing at that press; its `check` nodes and their send-back. Proof: `WorkflowGraphRunTests` and
   `GraphRunLandingTests` rows for a `run:chat-<first>` unit, and `chat-graph-later` no longer answered. **Amended by Codex's finding 8,
   before f** (§4.5): the candidate as the subject, submitted at the press; `quest.close` refused at the bind; a later candidate reopening
   the same run at a press, never at a turn's end; the bind of a graph version stays disabled until this lands. Its proof covers **two
   successive landings of one run**, **a hand-over between submission and landing**, **a `quest.close` graph refused**, and **a failed
-  check's single send-back** on a candidate; a `run:chat-…` fixture alone does not.
+  check's single send-back** on a candidate; a `run:chat-…` fixture alone does not. **Amended by the Opus check's finding 9, before f**
+  (§4.5): a press at a new tip over a submitted, unlanded candidate supersedes it in place, keeping its number. Its proof adds a
+  `GraphRunLandingTests` row: candidate *n* + 1 submitted, the press refused for its opinion, a commit, and the next press superseding
+  *n* + 1 at the new tip, its `opinion` reading `commits-since` and its `check` asked again, never a second *n* + 1 nor an *n* + 2.
 - [ ] **CHATFLOW1g — on the install** (the parent; after a republish carrying a to e and d2). A chat in its own tree, under a workflow
   naming an opinion, refused at its first press with the opinion asked, read by another maker, answered between turns, and landed by the
   person's next press. A checkout chat and Ask Daoris say why they run none. Both languages at 1546 and 680 px. Proof: dated shots and a
@@ -919,13 +1045,21 @@ met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one 
   reservation is part of the dispatcher's keep, the person's turn count deciding whether the findings go to the person and activity
   that is not theirs whether they wait; the answering turn's frozen reading is what the recheck reads; an ended chat takes the findings
   through its own runner's go-on; and the recheck's reviewer is chosen outside the answering successor's line too.
+- **After the Opus check of that amendment** (§18). D157: a chat run's landing step is read by its candidate's readiness and the tip
+  the tree stands at, a merge acceptance's tip from the line; before row d its opinion reads `skipped`; a chat run whose line takes a
+  quest is that quest's from the take on; the press's reservation is a named state held through the landing hold; a graph candidate
+  pressed again at a new tip is superseded in place. D155: the person's turn count is their words in the conversation history plus those
+  waiting or being kept; *Ask now* on a chat run captures a tip and a count; a reading whose answering turn took a word of the person's
+  asks no recheck and goes to the person; the service's hand admits the line's ended newest record, and an ended chat's go-on compares
+  the count first.
 - **Standing.** D137 points 2 and 3 (the door), D136, D145 point 1, D154 point 8, D155 points 4, 6 and 8, D157 points 9 and 10, D164
   (Accept names the branch), D47 §4, D50, D110, D37.
 
 ## 14. What the checks do not cover
 
 Rows a and b are built, and row a's correction for finding 6 is built with this amendment (`WorkflowRunTests`, seen failing first); the
-rest is documents. Each statement in §1 was read at `ca046e7fe` and re-pinned at `507b1925d`, where §16's citations were read too; §17's
+Opus check's finding 12 adds one `WorkflowRunTests` case, which passed on the built correction and so was not seen failing; the
+rest is documents. §18's citations were read at `bcb97c274`. Each statement in §1 was read at `ca046e7fe` and re-pinned at `507b1925d`, where §16's citations were read too; §17's
 were read at `5d19f6b3a`. The answering turn's boundary bounds what other turns made, not a commit made in the tree by the person's own
 git outside any turn, which nothing tells apart (§6.2). The other sections' citations name what the change reads or narrows, and were checked to exist there. No chat was run on
 the install; what its run bindings name (§11) was read from the install's home, not from a run. The names `SendsBack` and the reservation
@@ -996,8 +1130,8 @@ read. The design and its D157 and D155 notes stay proposed.
 
 Every finding of Codex's owed read of the accepted text (`docs/2026-10-24-chat-flow-reads.md`, *Codex, the accepted text*, §4), taken
 as the read names it, each blocking one before the row it names. Each place was checked against the code on main at `5d19f6b3a`, whose
-`src/` is the read's `7cda79f01` plus rows a and b's later commits; the read's citations hold there to the line, and those below are
-re-pinned where they moved. §15 and §16 are kept as answered.
+`src/` is identical to the read's `7cda79f01` (rows a and b are in both; corrected by the Opus check's finding 10), so the read's
+citations hold there to the line. §15 and §16 are kept as answered.
 
 | # | Finding (blocking in bold) | Checked against | Where it went |
 |---|---|---|---|
@@ -1017,3 +1151,29 @@ re-pinned where they moved. §15 and §16 are kept as answered.
 **What it keeps.** The refusing gate, the local run and the ordinary send-back direction, as the read keeps them. **What stands now.**
 D157's and D155's CHATFLOW1 notes stand again on this amended text (D157's amendment note of 2026-10-24). Row a's correction is built;
 rows c to i may be built in their order, each with its amendment above.
+
+## 18. The Opus check of the amendment: where each went
+
+Every finding of the independent Opus 5.5 reader's check of the amendment (`e9bca8aa5`), standing in for Codex while its credits are out
+(`docs/2026-10-24-chat-flow-reads.md`, *Opus, the amendment checked*, §3), taken as the check names it. Each place was checked against
+the code on main at `bcb97c274`, whose `src/` is `5d19f6b3a`'s with row a's correction (`Workflows/WorkflowRun.Read.cs` and its tests).
+§15 to §17 are kept as answered.
+
+| # | Finding (blocking in bold) | Checked against | Where it went |
+|---|---|---|---|
+| **1** | **A chat run's landing step does not follow `Candidate`** (blocks row c) | `Workflows/Domain/WorkflowRun.cs:730-760` (`:732` ended only, `:740-743` `done`, `nothing`, `:749` and `:758` by the record's id, `:735-738` `not-reached`), `:374-379`, `:573-580`; `Workflows/WorkflowRunRecords.cs:20-40`; `Trees/LandedBranches.cs:14-15`, `:105-107`; `Trees/SessionGroups.cs:287-292` | §4.2's paragraph *Its landing step follows `Candidate` too*, saying the four things: the line's newest record live or ended; its commits from the tree beyond the line as the review's offer reads them; `done` only for a landing or an acceptance kept for the tip the tree stands at, a branch landing's tip its entry's or advance's `Squashed ?? Tip`, a merge acceptance's tip read from the line, `done` before `talk` and `stopped`; `Candidate` from commits beyond the line or an opinion a press asked, staying true while the landing reads `done`. The work step's list says `done` comes first. Row c's three proof rows: a live chat between turns reads `accept`; a merge landing under a rule that names no opinion reads `done` after it lands; a second candidate after a branch landing reads `accept` again, with its own opinion. |
+| 2 | Before row d, the opinion step reads `skipped`, not `not-reached` | `WorkflowRun.cs:583`, `:596`; `Trees/SessionTrees/TreeGates.cs:141` | The second way: §4.2 and row c's proof say `skipped`, with a detail `chat-not-asked` whose words say no second opinion is asked for a conversation's work in this build yet, en and zh in row c's web lane, after a landing too. It is what the press does before row d, which lands with no opinion asked; a rule of the run's own drawing `not-reached` would say a step lies ahead that the press passes over. |
+| 3 | A chat run whose line later takes a quest | `Workflows/WorkflowRun.Read.cs:175`, `:187-196`; `Quests/Domain/Planner.cs:2156` | §4.1's bullet: from the take on the taken quest's run governs every record of the line; a landing or an acceptance on a record whose own `quest` is null counts there only where made after the quest's take (`Planner.TakenAt`); the chat run's three files are left, read by nothing, until the session delete of the record `<first>`. Row c's proof row. |
+| 4 | The person's turn count is read from words the record drops | `Conversations/Chat/ChatTurns.cs:93-96`, `:957-964`; `Conversations/SaidDoor.cs:15-16` | §6.1 (b): the count only rises, the person's own `user` events in `SessionEvents` on each record of the line in the tree, plus the words waiting or being kept, read the same way at the press and at the reservation. Row d's proof: a turn the person sent and finished after the press, nothing left on `said`. |
+| 5 | The press's reservation has no named state, and *Ask now* has no tip or count | `ChatTurns.cs:166`, `:579`, `:594-601`; `Bridge/Routes/TreesRoutes.cs:594` | §5.2 point 1: `_pressing`, in which a word is kept and waits and starts no turn, as under `_limited`, let go when the press answers; held through the landing hold, since the landing reads the tree itself, a hold past its five minutes refusing the press. §5.2 point 3, §6 and row d: *Ask now* on a chat run captures `HEAD` and the count at its press, so §6's *only after the person's press* names both presses. Row d's proof rows. |
+| 6 | An urgent word steered into the answering turn defeats the boundary | `Conversations/Domain/ChatMessage.cs:27`; `ChatTurns.cs:586-591` | The second way: §6.1 (c) keeps a reading whose turn took a word of the person's `person-steered`, §6.2 asks no recheck for it and its answers go to the person; §6's bullet on the person's words says so in place of *accepted and said*. The person's words keep their reach (D136). Row e's proof: an urgent word steered into the answering turn, and one reaching only its end. |
+| 7 | (a) and (f) disagree, and (f) ignores the count | `Review/OpinionDesk.cs:248-249`, `:480-492`; `Conversations/Chat/ChatGoOn.cs:440-443`, `:583` | §6.1 (a) also admits an ended chat record that is the newest of `opinion.Working`'s line in its tree; §6.1 (f) compares the count first, a rise sending the findings to the person. Row e's proof: a service row for each of (a)'s admissions, and a person who went on and ended the chat again. |
+| 8 | Row e's body states the old rules | design §11 row e, before this change | Row e's body rewritten to §6.1's six things and their three distinct outcomes; *as `TakeHeld` does*, *at the send-back turn's end* and *findings wait … while words are queued* dropped. |
+| 9 | A submitted graph candidate whose tip moves before it lands | design §4.5 | §4.5: a press at a new tip over a submitted, unlanded *n* + 1 supersedes it in place, keeping its number; its `opinion` is read again by ancestry (`commits-since`), its `look` skip and `check` asked again. Row f's proof row. |
+| 10 | Stale and wrong statements | `git diff 7cda79f01 5d19f6b3a -- src/` (empty); `Loop/DriverContinuations.cs:660` | §11 no longer says Codex's read is owed; §17's lead says `5d19f6b3a`'s `src/` is identical to `7cda79f01`'s; the standing narrows the re-pin to §17's table and §18's, and §6.1's citation is re-pinned to `:660`. |
+| 11 | The router has a duplicate row | `docs/README.md` | Already done on main by `bcb97c274` (one reads row); its row now names this check as taken in §18. |
+| 12 | Row a's correction proves less than Codex asked | `Workflows/WorkflowRun.Read.cs:210-214`, `:248-253` | `WorkflowRunTests.A_chat_that_took_a_quest_contributes_its_tree_opinion_and_landing_to_that_quests_run`: a CHATTAKE1 chat in a tree of its own, no worker's, under a rule naming an opinion, its tree the one read, the opinion's gate read through its record and its landing its own. It passes on the built correction; row a's proof names it. |
+
+**What stands now.** The check's required change, finding 1, is in §4.2 with its three proof rows, and findings 2 and 3 are in the same
+edit, so row c may be built. Findings 4 to 8 are taken before rows d and e, and 9 before f. D157's and D155's notes of the check say the
+same.
