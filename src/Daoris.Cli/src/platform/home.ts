@@ -138,6 +138,9 @@ export const HOME_ENTRIES = [
   row('standing-confirmation', 'data', 'data/standing-confirmation.json', 'data/standing-confirmation.json'),
   // MODELROLE1c2 (D205 §9.2): named here, never read by the CLI.
   row('agent-offers', 'data', 'data/agent-offers.json', 'data/agent-offers.json'),
+  // CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, kept across a restart; named here,
+  // never read by the CLI.
+  row('pipe-waiting', 'data', 'data/pipe-waiting', 'data/pipe-waiting'),
   row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
   row('remotes', 'profiles', 'profiles/remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'profiles/agents/*/*', 'harnesses/*/*'),
