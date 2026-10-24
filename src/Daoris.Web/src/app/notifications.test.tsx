@@ -253,6 +253,25 @@ describe('Notifications, in the window', () => {
     await waitFor(() => expect(cards()).toHaveLength(1));
   });
 
+  // CONFIRMWAIT1c (the confirm-wait design §8.1): a press resting on a plan opens that plan's own page from its card, its own scope.
+  it("opens a set-up's repository from its card's door, where its plan is drawn", async () => {
+    waiting = [{
+      id: 'c4', module: 'DAORIS.DRIVER', route: 'SETUP_PRESS', asker: { process: 'bash', pid: 4120 }, asked: base.updated, expires: null,
+      fields: [{ name: '/repository', type: 'string', value: 'game' }], named: [{ role: 'repository', name: '/repository', value: 'game' }],
+    }];
+    start();
+    await waitFor(() => expect(within(bell()).getByText('1')).toBeInTheDocument());
+    await userEvent.click(bell());
+    await screen.findByRole('tab', { name: 'Notifications', selected: true });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Look at it now' }));
+
+    await screen.findByRole('tab', { name: 'Details', selected: true });
+    expect(within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Repositories', current: 'page' }))
+      .toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'game' })).toBeInTheDocument();
+  });
+
   it('gives its region back from the bell: closed where it was closed, else the view it held', async () => {
     start();
     await waitFor(() => expect(within(bell()).getByText('1')).toBeInTheDocument());

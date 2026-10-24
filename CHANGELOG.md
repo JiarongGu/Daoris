@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A terminal's change that waits for your Confirm and rests on a plan now has *Look at it now* on its card (CONFIRMWAIT1c): a land
+  opens its session's review, a set-up its repository's page, a sweep or a bring-up-to-date its workspace's Branches, and a history
+  clear the workspace, quest or ask it clears. You see what it would act on as it stands now before you confirm a change asked hours
+  ago. The card keeps waiting meanwhile.
 - A session that asks its own repository for work is now told how a repository asks itself (SELFASK1). Before, the refusal said
   only to use its backlog, so a chat ran its rows one sub-agent at a time in its own tree. Where the repository declares lanes, the
   refusal names them and how to address one as a quest, each a session of its own. Where it declares none, it says a

@@ -1,4 +1,5 @@
 import type { AgentPart } from '../agents/agents';
+import type { PlanDoor } from '../person/Confirmations';
 import type { View } from '../menus/commands';
 import type { StarterDoor } from '../help/starters';
 import type { KnowledgeMode } from '../knowledge/modes';
@@ -165,4 +166,33 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
  */
 export function doorOpening(door: StarterDoor, here: string | null = null): Opening {
   return opening(door.view, door.item ?? door.section, door, here);
+}
+
+/**
+ * Where a press's plan door leads (CONFIRMWAIT1c, the confirm-wait design §8.1, §15.3 item 13): the page that shows the plan the
+ * press rests on, as it stands now, scoped as the press is. A land opens its session at its review (`review`, the Work frame's
+ * intent); a set-up its repository's Details, where its Set up is drawn; a sweep or a sync its workspace's Branches, a repository's
+ * sync the workspace holding it (`holding`), and either naming none the one in view (`here`); a clear its workspace's Details,
+ * where *Kept on this machine* is, or its quest's or its ask's page.
+ */
+export function planOpening(
+  door: PlanDoor, here: string | null, holding: (repository: string) => string | null,
+): { opening: Opening; review?: true } {
+  switch (door.plan) {
+    case 'land':
+      return { opening: opening('sessions', door.session), review: true };
+    case 'setup':
+      return { opening: opening('projects', door.repository, { tab: 'details' }) };
+    case 'sweep':
+    case 'sync': {
+      const workspace = door.workspace ?? (door.plan === 'sync' && door.repository ? holding(door.repository) : null);
+      return { opening: opening('projects', workspace ? workspaceItem(workspace) : null, { workspaceTab: 'branches' }, here) };
+    }
+    case 'clear':
+      return {
+        opening: door.scope === 'workspace'
+          ? opening('projects', workspaceItem(door.id), { workspaceTab: 'details' })
+          : opening('quests', door.scope === 'ask' ? askItem(door.id) : door.id),
+      };
+  }
 }

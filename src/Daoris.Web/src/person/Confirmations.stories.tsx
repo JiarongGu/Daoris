@@ -95,5 +95,16 @@ export const NoLongerWaiting: Story = {
   args: { waiting: [STOP], onAnswer: async () => ({ answered: false, why: 'gone', message: '' }) },
 };
 
+/** A land asked hours ago, its card's door to the session's review beside its buttons (CONFIRMWAIT1c, the confirm-wait design §8.1). */
+const LAND: Confirmation = {
+  source: 'pipe', id: 'c6', module: 'DAORIS.DRIVER', route: 'LAND_SESSION_TREE',
+  fields: [{ name: '/id', type: 'string', value: '3f2a91c4' }, { name: '/branch', type: 'string', value: 'main' }],
+  named: [{ role: 'session', name: '/id', value: '3f2a91c4' }],
+  asker: { process: 'bash', pid: 4120 }, asked: new Date(Date.now() - 3 * 3_600_000).toISOString(), expires: null, waitedOn: false,
+};
+
+export const PlanDoor: Story = { args: { waiting: [LAND], onOpenPlan: () => {} } };
+export const PlanDoorChinese: Story = { args: { waiting: [LAND], onOpenPlan: () => {} }, decorators: [chinese] };
+
 /** The adoption notice, which stays one line under the strip (§3.1). */
 export const AdoptionNotice: Story = { render: () => <Notice onDismiss={() => {}} /> };

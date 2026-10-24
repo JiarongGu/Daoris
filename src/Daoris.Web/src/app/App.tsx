@@ -33,7 +33,8 @@ import { commandForKey } from '../menus/shortcuts';
 import { focusRegion } from '../work/frame/regions';
 import type { StarterDoor } from '../help/starters';
 import {
-  askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
+  askItem, type Compose, doorOpening, type OpenGroup, type Opening, type OpenPart, opening as plannedOpening, planOpening, questsItem,
+  workspaceItem,
 } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { Drawer, failure, Prose, Toasts, useToasts } from '../design/ui';
@@ -1357,6 +1358,13 @@ export function App() {
                   notify={notify}
                   onShown={pressShown}
                   names={pressNames}
+                  // A press's door to its plan (CONFIRMWAIT1c, §8.1): the plan's own page, scoped as the press is; a land's at its review.
+                  onOpenPlan={(door) => {
+                    const plan = planOpening(door, circle, (repository) =>
+                      holdings.data?.find((each) => each.members.includes(repository))?.name ?? null);
+                    apply(plan.opening);
+                    if (plan.review) setWorkIntent('review');
+                  }}
                   at={notificationsAt}
                   onVisible={setNotificationsOpen}
                   notices={notices}
