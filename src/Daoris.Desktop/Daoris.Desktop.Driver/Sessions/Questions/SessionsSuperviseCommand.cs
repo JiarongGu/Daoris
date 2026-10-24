@@ -123,17 +123,37 @@ public static class SessionsSuperviseCommand
     }
 
     /// <summary>What waits, one line each; null where the instance did not answer.</summary>
+    /// <summary>How often the verb asks again while the instance's answer is pending or older than its first ask.</summary>
+    internal static readonly TimeSpan AskAgain = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>
+    /// What waits, as the instance computed it after this verb first asked: the read is told by event (NOBLOCK1), so an ask is answered
+    /// at once from what is held, <c>pending</c> where nothing is, and each ask starts its work again. The verb asks until an answer
+    /// whose <c>at</c> is not before its first ask, within the instance's wait; an answer with no <c>at</c>, from an instance before the
+    /// field, is taken as it comes. Null where the instance did not answer.
+    /// </summary>
     private static async Task<IReadOnlyList<JsonElement>?> WaitingAsync(InstanceWorld instance, CancellationToken ct)
     {
-        IReadOnlyList<JsonElement>? waiting = null;
-        await InstanceDoor.TryReadAsync(Waiting, new { }, data =>
+        var asked = DateTimeOffset.UtcNow.AddSeconds(-1);
+        var until = DateTimeOffset.UtcNow + instance.Wait;
+        while (true)
         {
-            waiting = data.TryGetProperty("waiting", out var listed) && listed.ValueKind == JsonValueKind.Array
-                ? [.. listed.EnumerateArray().Select(each => each.Clone())]
-                : [];
-            return 0;
-        }, instance, ct).ConfigureAwait(false);
-        return waiting;
+            IReadOnlyList<JsonElement>? waiting = null;
+            var fresh = false;
+            var answered = await InstanceDoor.TryReadAsync(Waiting, new { }, data =>
+            {
+                if (data.ValueKind != JsonValueKind.Object || data.TryGetProperty("pending", out _)) return 0;
+                fresh = Moments.Read(data, "at") is not { } at || at >= asked;
+                waiting = data.TryGetProperty("waiting", out var listed) && listed.ValueKind == JsonValueKind.Array
+                    ? [.. listed.EnumerateArray().Select(each => each.Clone())]
+                    : [];
+                return 0;
+            }, instance, ct).ConfigureAwait(false);
+            if (answered is null) return null;
+            if (fresh) return waiting;
+            if (DateTimeOffset.UtcNow >= until) return null;
+            await Task.Delay(AskAgain, ct).ConfigureAwait(false);
+        }
     }
 
     private static async Task<int> ListAsync(InstanceWorld instance, TextWriter output, CancellationToken ct)

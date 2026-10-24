@@ -600,11 +600,14 @@ public sealed class SessionsRoutes(DriverContext context)
         await SupervisorDoor.AnswerAsync(_loop, request.Payload, cancellationToken).ConfigureAwait(false);
 
     // What waits for the supervisor's holder (SUPERVISOR1a-ii, D208 §3.2): the parked sessions here with a recorded question and no
-    // decision on it, in a repository a live appointment names, each with its generation. A read naming no key:
-    // `{ waiting: [{ session, repository, question, asked, generation }] }`.
+    // decision on it, in a repository a live appointment names, each with its generation. Told by event (NOBLOCK1): it reads the
+    // service and the question files, so an ask is answered from what is held and the verb asks until an answer computed after
+    // its own first ask (`at`) comes. A read naming no key:
+    // `{ waiting: [{ session, repository, question, asked, generation }], at }`.
     [DriverRoute("SUPERVISOR_WAITING")]
+    [ByEvent("SUPERVISOR_WAITING")]
     private async Task<object?> SupervisorWaitingAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false) };
+        new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
 
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "

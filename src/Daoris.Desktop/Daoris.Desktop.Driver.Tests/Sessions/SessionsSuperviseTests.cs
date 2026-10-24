@@ -200,6 +200,33 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.False(SupervisorProof.Verify(hash, _standIn.Nonce, Canonical("Weekly"), proof));
     }
 
+    /// <summary>
+    /// NOBLOCK1: the listing is told by event, so the instance answers at once from what it holds; the verb asks again past
+    /// <c>pending</c> and past an answer computed before its first ask, and lists the one computed after it.
+    /// </summary>
+    [Fact]
+    public async Task The_listing_asks_past_a_pending_and_a_stale_answer_for_one_computed_after_its_ask()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var asks = 0;
+        _standIn = new InstanceStandIn(_pipe, _id)
+        {
+            Respond = (type, _) => type != SupervisorRoutes.Waiting ? null : Interlocked.Increment(ref asks) switch
+            {
+                1 => new { pending = true },
+                2 => new { waiting = new[] { new { session = "old", repository = "engine", question = "q-0", asked = "2026-10-24T08:00:00Z", generation = "g-0" } }, at = "2020-01-01T00:00:00Z" },
+                _ => new { waiting = new[] { new { session = "s1", repository = "engine", question = "q-1", asked = "2026-10-24T08:00:00Z", generation = "g-1" } }, at = Moments.Write(DateTimeOffset.UtcNow.AddMinutes(1)) },
+            },
+        };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, said) = await RunAsync(["supervise"], Instance());
+        Assert.Equal(0, exit);
+        Assert.Contains("s1  engine  question q-1", said, StringComparison.Ordinal);
+        Assert.DoesNotContain("old", said, StringComparison.Ordinal);
+        Assert.Equal(3, Volatile.Read(ref asks));
+    }
+
     /// <summary>§4.4: the print fences each part with a nonce of its own, a planted fence line escaped, and names the generation.</summary>
     [Fact]
     public async Task The_print_fences_the_asking_agents_claims_and_escapes_a_planted_fence()
