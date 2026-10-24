@@ -576,12 +576,14 @@ public static class SystemSpace
         var goes = new List<(DateTimeOffset At, string Folder)>();
         // KEEPSIZE1a: every place of the trees entry, the folders set aside before the home's layout moved included.
         foreach (var root in roots)
-        foreach (var workspace in Directory.EnumerateDirectories(root))
+        foreach (var workspace in SetAsideEligibility.Workspaces(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
             if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
-            goes.Add((moved + policy.SetAside.Days, $"{Path.GetFileName(workspace)}/{Path.GetFileName(repository)}/{Path.GetFileName(folder)}"));
+            // KEEPSIZE1b (the keep-size design §3.4): a recorded folder an hour after its record; one awaiting its record has no next.
+            if (SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole).Due is not { } due) continue;
+            goes.Add((due, $"{Path.GetFileName(workspace)}/{Path.GetFileName(repository)}/{Path.GetFileName(folder)}"));
         }
 
         return Earliest(goes, reading?.Folders);

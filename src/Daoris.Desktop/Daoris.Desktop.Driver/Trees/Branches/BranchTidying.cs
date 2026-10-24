@@ -276,6 +276,7 @@ public sealed class BranchTidying(string home)
 
         // One budget for the pass's removals (§3.1): what the set-aside folders spent, the downloads do not spend again.
         var spent = System.Diagnostics.Stopwatch.StartNew();
+        if (setAside) lines.AddRange(await RecordSetAsideAsync(trees, service, met, ct).ConfigureAwait(false));
         if (setAside) lines.AddRange(KeepSetAside(trees, run, log, met, ct));
         var left = Budget - spent.Elapsed;
         lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
@@ -570,6 +571,38 @@ public sealed class BranchTidying(string home)
             lock (_gate)
             {
                 if (First(met, "", KeepingRecord.PathOf(home), "unwritten")) lines.Add(Look.Retry("tidy", $"tidy  {Clause(refused)}."));
+            }
+        }
+
+        return lines;
+    }
+
+    /// <summary>
+    /// The finished trees' steps after the hold (KEEPSIZE1b, the keep-size design §3.5), before the purge reads their classes: each stopped or
+    /// refused folder resumed, each record due composed from its manifest and posted, each recorded folder's holding check at its hour. Each
+    /// folder that waits is said the first look it is met, with why.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> RecordSetAsideAsync(SessionTrees trees, ServiceClient service, HashSet<string> met, CancellationToken ct)
+    {
+        var lines = new List<string>();
+        IReadOnlyList<RepoView> registry;
+        try
+        {
+            registry = await service.RegistryAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            registry = [];
+        }
+
+        var steps = await trees.RecordSetAsideAsync(SessionTrees.RootsOf(registry), service.PostWorkRecordAsync, Clock(), ct).ConfigureAwait(false);
+        lock (_gate)
+        {
+            foreach (var step in steps)
+            {
+                var name = Path.GetFileName(step.Folder);
+                if (step.To == SlimStates.Recorded) lines.Add(Look.Progress("tidy", $"tidy  {name}'s record is kept; its folder goes an hour from now."));
+                else if (step.Why is { } why && First(met, step.Folder, "record", why)) lines.Add(Look.Retry("tidy", $"tidy  {name} waits: {Clause(why)}."));
             }
         }
 

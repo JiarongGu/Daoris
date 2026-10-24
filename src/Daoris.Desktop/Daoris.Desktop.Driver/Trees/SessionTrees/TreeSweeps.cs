@@ -155,9 +155,13 @@ internal sealed class TreeSweeps(
             // removed, for the record of it (PLUGHOOK1a, design §2.5). And what that judgement's proof rested on (FABRIC-END4a, third
             // review), each ref at the commit it read: the delete verifies exactly these, and nothing looks for them again.
             var rests = new List<(string Ref, string Commit)>();
+            // KEEPSIZE1b (the keep-size design §3.5 step 1): the moment before the judgement reads what the tree holds, the finished
+            // folder's threshold, and what it held that no commit holds, which its record names.
+            var read = DateTimeOffset.UtcNow;
+            var seen = new List<ContentHolds.TreeHolds>();
             var (now, judged) = await JudgeAsync(
                     root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct,
-                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch), byItself, landings, fresh, rests)
+                    follows.MovedOnTo(listed, item.Workspace, item.Repository, item.Branch), byItself, landings, fresh, rests, seen)
                 .ConfigureAwait(false);
             if (!goes(now) || judged is null)
             {
@@ -176,9 +180,11 @@ internal sealed class TreeSweeps(
             // From here each step removes, or finishes a removal: none is cancelled halfway.
             var done = CancellationToken.None;
 
-            // Held by content (SQUASHTIDY1c): its commits are kept on a ref of their own before anything goes.
+            // Held by content (SQUASHTIDY1c): its commits are kept on a ref of their own before anything goes. KEEPSIZE1b (the keep-size
+            // design §3.1): and wherever the line's own branch does not hold the tip by ancestry, a squash's, a carried branch's, a landing
+            // branch's and origin's form of the line included, on both paths: the exact tip is held by a ref that stays.
             string? kept = null;
-            if (now.HeldBy is not null)
+            if (now.HeldBy is not null || !await LineOwnHoldsAsync(root, line, judged, done).ConfigureAwait(false))
             {
                 var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, now.Branch, judged, done).ConfigureAwait(false);
                 if (reference is null)
@@ -194,8 +200,14 @@ internal sealed class TreeSweeps(
             string? movedTo = null;
             if (now.Tree is { } tree && byItself)
             {
+                // KEEPSIZE1b (§3.3): every finished tree's manifest carries the record's inputs; one not written keeps the tree.
+                var grown = context.Grown.Of(now.Repository, now.Branch);
+                var finished = new FinishedTree(
+                    read, now.Workspace, tree, line, judged, grown?.From, grown?.Unit,
+                    new FinishedHold(now.Hold ?? now.Kind, now.Where, now.Where is null ? null : now.Where.StartsWith("origin/", StringComparison.Ordinal) ? "origin" : "branch"),
+                    kept, FinishedLeft.Of(seen.FirstOrDefault()), KeepPolicy.Of(context.Home).SetAside.Whole);
                 // The look never deletes a tree's folder: a write that lands after its last look lands in the folder moved aside.
-                var moved = await setAside.MoveAsideAsync(root, now, done, slim).ConfigureAwait(false);
+                var moved = await setAside.MoveAsideAsync(root, now, done, slim, finished).ConfigureAwait(false);
                 if (!moved.Gone)
                 {
                     // AUTOTIDY2a: a content-held branch the look kept lets go of the ref it kept its commits on, as the press's
@@ -237,6 +249,10 @@ internal sealed class TreeSweeps(
             // Only while it is still the commit judged (SQUASHTIDY1c), and in one transaction with what its proof rested on (FABRIC-END4a,
             // second and third reviews): exactly what the judgement returned.
             var stays = await content.DeleteJudgedAsync(root, now.Branch, judged, rests, done).ConfigureAwait(false);
+            // KEEPSIZE1b (§3.5 step 5): the manifest says the delete's outcome; a refused one is never armed.
+            if (movedTo is not null) TreeSetAside.Mark(SlimManifest.PathFor(movedTo), stays is null ? SlimStates.Deleted : SlimStates.Refused, DateTimeOffset.UtcNow);
+            // §3.5's resume: the delete of a branch with no tree marks the manifest of its folder moved aside before, at that branch and tip.
+            if (stays is null && now.Tree is null) setAside.MarkDeletedOf(now.Workspace, now.Repository, now.Branch, judged, DateTimeOffset.UtcNow);
             if (stays is not null)
             {
                 await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
@@ -290,7 +306,8 @@ internal sealed class TreeSweeps(
     private async Task<(SweepItem Item, string? Tip)> JudgeAsync(
         string root, string repository, string workspace, string branch, string? tree, string? line,
         HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct, string? treeOn = null, bool byItself = false,
-        IReadOnlyList<LineLanding>? landings = null, RefSnapshot? refs = null, List<(string Ref, string Commit)>? rests = null)
+        IReadOnlyList<LineLanding>? landings = null, RefSnapshot? refs = null, List<(string Ref, string Commit)>? rests = null,
+        List<ContentHolds.TreeHolds>? seen = null)
     {
         // The ignored paths its tree shares with the checkout, on every row once read (AUTOTIDY1). Whether it made commits since it
         // grew, on every row once its tip is read (AUTOTIDY2a): a tree that never moved is a conversation's place (D137), whatever its kind.
@@ -307,10 +324,12 @@ internal sealed class TreeSweeps(
             // Everything no commit holds, whatever git's settings hide (SQUASHTIDY1c): what a removal would destroy.
             var holds = await ContentHolds.HoldsAsync(tree, root, ct).ConfigureAwait(false);
             if (holds is null) return (Item(SweepKind.Dirty, detail: "git could not say what its tree holds") with { Unread = true }, null);
+            seen?.Add(holds);
             shared = holds.Shared.Count;
             if (holds.Uncommitted.Count > 0) return (Item(SweepKind.Dirty, detail: $"{holds.Uncommitted.Count} path(s) uncommitted"), null);
-            // The press deletes the tree's folder, so what only it holds keeps it; the look moves the folder aside whole for
-            // fourteen days, so an ignored path, the tree's own scratch included, is kept there and keeps nothing (AUTOTIDY2a).
+            // The press deletes the tree's folder, so what only it holds keeps it. The look takes a tree whose only holds are ignored paths,
+            // the tree's own scratch included: by the owner's decision a finished session's scratch goes with its tree, named in its record
+            // (KEEPSIZE1b, the keep-size design §3.2), not kept for fourteen days as AUTOTIDY2a's ground was.
             if (!byItself && holds.OwnSaid is { } own) return (Item(SweepKind.Dirty, detail: own), null);
         }
 
@@ -353,7 +372,7 @@ internal sealed class TreeSweeps(
                     rests?.AddRange(held.Rests);
                 }
 
-                return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))) with { OnLine = squashOnLine }, tip);
+                return (Item(SweepKind.Landed, unlanded.Length, squashedOn.Branch, string.Join('\n', unlanded.Take(3))) with { OnLine = squashOnLine, Hold = "squash" }, tip);
             }
 
             // PLUGHOOK1a: a squash left these commits on no branch of the person's, and a completed pull request carried them.
@@ -361,7 +380,7 @@ internal sealed class TreeSweeps(
             if ((tree is null || context.Holds(tree)) && await PullRequestAsks.CarrierOfAsync(root, tip, carriers, ct).ConfigureAwait(false) is { } carrier)
             {
                 rests?.AddRange(carrier.Rests);
-                return (Item(SweepKind.Carried, unlanded.Length, carrier.Entry.Branch, string.Join('\n', unlanded.Take(3))) with { CarriedBy = carrier.Entry }, tip);
+                return (Item(SweepKind.Carried, unlanded.Length, carrier.Entry.Branch, string.Join('\n', unlanded.Take(3))) with { CarriedBy = carrier.Entry, Hold = "carried" }, tip);
             }
 
             // SQUASHTIDY1: the review's Discard's proof by content, so the list offers what that door would take unforced. Its
@@ -374,7 +393,7 @@ internal sealed class TreeSweeps(
                     // FABRIC-END4a, third review: the ref it found the work on, at the commit it compared.
                     rests?.AddRange(proof.Rests);
                     return (Item(SweepKind.Landed, unlanded.Length, held.Where, string.Join('\n', unlanded.Take(3)))
-                        with { HeldBy = held, OnLine = byItself && IsLineForm(held.Where, line) }, tip);
+                        with { HeldBy = held, OnLine = byItself && IsLineForm(held.Where, line), Hold = "content" }, tip);
                 }
 
                 // PROOF-UNREAD1: a proof git could not read is no "unlanded" finding: the row is kept as unread, as the reads above are.
@@ -396,7 +415,7 @@ internal sealed class TreeSweeps(
             if (ahead.Trim() == "0")
             {
                 rests?.Add((against, againstAt));
-                return (Item(SweepKind.Empty, where: line), tip);
+                return (Item(SweepKind.Empty, where: line) with { Hold = "empty" }, tip);
             }
         }
 
@@ -422,15 +441,17 @@ internal sealed class TreeSweeps(
             : null;
         // AUTOTIDY2b: or the form a landing's branch that holds it was proven on: the line holds this work through that branch, which
         // the look takes after this one, as the press does. Waiting for the line by ancestry, a squash merge would keep both.
+        var hold = onLine is not null ? "line" : "branch";
         if (byItself && onLine is null && await LandingHoldingAsync(root, tip, landings, ct).ConfigureAwait(false) is { } landing)
         {
             onLine = landing.Line;
+            hold = "landing";
             // FABRIC-END4a, fourth review: and on what that landing's proof rested on, so the line rewound since it was proved keeps it.
             rests?.Add(($"refs/heads/{landing.Branch}", landing.Tip));
             rests?.AddRange(landing.Rests);
         }
 
-        return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where) with { OnLine = onLine is not null }, tip);
+        return (Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, onLine ?? where) with { OnLine = onLine is not null, Hold = hold }, tip);
     }
 
     /// <summary>
@@ -447,6 +468,17 @@ internal sealed class TreeSweeps(
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Whether the line's own branch, <c>refs/heads/&lt;line&gt;</c>, holds <paramref name="tip"/> by ancestry (KEEPSIZE1b, §3.1): the one hold
+    /// that needs no recovery ref. Any other answer, origin's copy alone included, writes one.
+    /// </summary>
+    private static async Task<bool> LineOwnHoldsAsync(string root, string? line, string tip, CancellationToken ct)
+    {
+        if (line is null) return false;
+        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, $"refs/heads/{line}"], ct).ConfigureAwait(false);
+        return code == 0;
     }
 
     /// <summary>Whether a content proof's holder is a form of the line (<see cref="LandedProofs.LineFormsAsync"/>'s names), not a branch of the person's.</summary>

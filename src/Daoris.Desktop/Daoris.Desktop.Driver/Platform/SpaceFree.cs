@@ -61,6 +61,12 @@ public sealed record SpaceUnit(string Kind, string Id, bool Early, long? Bytes)
 
     /// <summary>A set-aside folder holds files of its own (written after its move, or a link in it): the person's to weigh.</summary>
     public bool? Own { get; init; }
+
+    /// <summary>A set-aside folder's class (KEEPSIZE1b, <see cref="SetAsideClass"/>), which the press lists it by: recorded, awaiting its record, stopped, refused, unmarked.</summary>
+    public string? Class { get; init; }
+
+    /// <summary>A recorded folder's recovery ref at its tip, where one holds it.</summary>
+    public string? Ref { get; init; }
 }
 
 /// <summary>What the press lists (<see cref="SpaceFree.Plan"/>): what each rule takes now, what could go early in groups, and the doors of the kinds with presses of their own.</summary>
@@ -100,6 +106,18 @@ public sealed record SpaceFreeWorld(string Home)
     /// <summary>A rename aside; a test's refuses, as a program holding the folder makes Windows refuse.</summary>
     public Action<string, string>? Move { get; init; }
 
+    /// <summary>
+    /// The registry's repositories (KEEPSIZE1b), whose checkouts the finished trees' record pass reads git in, read-only; null where the press
+    /// has no service, and then no record is posted and no folder resumed before it lists.
+    /// </summary>
+    public Func<CancellationToken, Task<IReadOnlyList<RepoView>>>? Registry { get; init; }
+
+    /// <summary>The service's door for a finished tree's record (KEEPSIZE1b): null where it keeps it, else why not.</summary>
+    internal Func<FinishedPost, CancellationToken, Task<string?>>? PostRecord { get; init; }
+
+    /// <summary>This world with the service's registry and record door (KEEPSIZE1b), for the window's press.</summary>
+    public SpaceFreeWorld WithService(ServiceClient service) => this with { Registry = service.RegistryAsync, PostRecord = service.PostWorkRecordAsync };
+
     /// <summary>The terminal's world alone: this home's downloads judged from its files, its running sessions by the process markers.</summary>
     public static SpaceFreeWorld OfThisTerminal(string home, MachineLog? log) => new(home)
     {
@@ -138,6 +156,40 @@ public static class SpaceFree
     /// <summary>The machine log's days by the person's rule (KEEP1d), which the press lists and removes by as the look's prune does.</summary>
     private static int LogDays(KeepPolicy policy) => (int)policy.Logs.Days.TotalDays;
 
+    /// <summary>
+    /// The list, after the finished trees' steps (KEEPSIZE1b, the keep-size design §5): each stopped or refused folder resumed and each record
+    /// due posted first, from its manifest, so a folder whose branch went reaches its record before the person's word can remove it.
+    /// </summary>
+    public static async Task<SpacePlan> PlanAsync(SpaceFreeWorld world, CancellationToken ct = default)
+    {
+        await RecordAsync(world, null, ct).ConfigureAwait(false);
+        return Plan(world, ct);
+    }
+
+    /// <summary>The finished trees' record pass at the press (KEEPSIZE1b); nothing where it has no service.</summary>
+    private static async Task RecordAsync(SpaceFreeWorld world, Func<string, bool>? only, CancellationToken ct)
+    {
+        if (world.Registry is not { } registry) return;
+        IReadOnlyList<RepoView> rows;
+        try
+        {
+            rows = await registry(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            rows = [];
+        }
+
+        try
+        {
+            await new SessionTrees(world.Home).RecordSetAsideAsync(SessionTrees.RootsOf(rows), world.PostRecord, world.Now(), ct, only).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        {
+            // The list reads the folders as they stand.
+        }
+    }
+
     /// <summary>The list, read and never written.</summary>
     public static SpacePlan Plan(SpaceFreeWorld world, CancellationToken ct = default)
     {
@@ -157,6 +209,7 @@ public static class SpaceFree
                 var unit = new SpaceUnit("set-aside", folder.Id, Early: false, bytes)
                 {
                     At = folder.Goes, Workspace = folder.Workspace, Repository = folder.Repository, Own = folder.Own,
+                    Class = folder.Class, Ref = folder.Ref,
                 };
                 if (folder.Past && folder.Kept is null) units.Add(unit with { Why = "past" });
                 if (folder.Slim) units.Add(unit with { Why = "slim", Bytes = null });
@@ -244,7 +297,11 @@ public static class SpaceFree
             {
                 switch (kind)
                 {
-                    case "set-aside": SetAside(world, mine, tally, ct); break;
+                    case "set-aside":
+                        // KEEPSIZE1b (§5): the listed folders' steps again, a record due posted first, before any of them goes.
+                        await RecordAsync(world, null, ct).ConfigureAwait(false);
+                        SetAside(world, mine, tally, ct);
+                        break;
                     case "downloads": await DownloadsAsync(world, mine, tally, run.Door, ct).ConfigureAwait(false); break;
                     case "logs": Logs(world, mine, tally); break;
                     case "browser-cache": await CachesAsync(world, mine, tally, ct).ConfigureAwait(false); break;
@@ -564,6 +621,15 @@ public static class SpaceFree
     }
 
     /// <summary>The list as the route and <c>--json</c> answer it, field for field: every field added, never renamed.</summary>
+    /// <summary>How many of a group's set-aside folders are of each class (KEEPSIZE1b), stopped and refused joined: their branch stands.</summary>
+    private static JsonObject Classes(IReadOnlyList<SpaceUnit> units) => new()
+    {
+        ["recorded"] = units.Count(unit => unit.Class == SetAsideClass.Recorded),
+        ["awaiting"] = units.Count(unit => unit.Class == SetAsideClass.Awaiting),
+        ["stands"] = units.Count(unit => unit.Class is SetAsideClass.Stopped or SetAsideClass.Refused),
+        ["unmarked"] = units.Count(unit => unit.Class is null or SetAsideClass.Unmarked),
+    };
+
     public static JsonObject Json(SpacePlan plan)
     {
         var now = new JsonArray();
@@ -581,6 +647,8 @@ public static class SpaceFree
                 ["count"] = units.Count,
                 ["bytes"] = units.All(unit => unit.Bytes is not null) ? units.Sum(unit => unit.Bytes!.Value) : null,
                 ["own"] = units.Count(unit => unit.Own == true),
+                // KEEPSIZE1b (the keep-size design §5): the set-aside folders by class, each said with what the list can say of it.
+                ["classes"] = group == "set-aside" ? Classes(units) : null,
                 ["units"] = listed,
             });
         }
@@ -602,6 +670,7 @@ public static class SpaceFree
     {
         ["kind"] = unit.Kind, ["id"] = unit.Id, ["early"] = unit.Early, ["why"] = unit.Why, ["bytes"] = unit.Bytes,
         ["at"] = Moments.Write(unit.At), ["workspace"] = unit.Workspace, ["repository"] = unit.Repository, ["own"] = unit.Own,
+        ["class"] = unit.Class, ["ref"] = unit.Ref,
     };
 
     /// <summary>

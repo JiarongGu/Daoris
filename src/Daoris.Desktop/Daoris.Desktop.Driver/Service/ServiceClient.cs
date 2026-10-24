@@ -893,6 +893,85 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         }
     }
 
+    /// <summary>
+    /// Post a finished tree's record (KEEPSIZE1b, the keep-size design §2.2) to <c>POST /api/trees/record</c>: the manifest's facts and the
+    /// commits read from the tip. Null where the service keeps it, a second post of a kept identity included; else why it does not, in its
+    /// words, a store a newer build stamped among them.
+    /// </summary>
+    internal async Task<string?> PostWorkRecordAsync(FinishedPost record, CancellationToken ct = default)
+    {
+        var tree = record.Tree;
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("workspace", record.Workspace);
+            writer.WriteString("repository", record.Repository);
+            writer.WriteString("folder", record.Folder);
+            writer.WriteString("tree", tree.Tree);
+            writer.WriteString("moved", record.Moved.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+            Optional("unit", tree.Unit);
+            writer.WriteString("branch", record.Manifest.Branch);
+            Optional("line", tree.Line);
+            writer.WriteStartObject("hold");
+            writer.WriteString("kind", tree.Hold.Kind);
+            Optional("where", tree.Hold.Where);
+            Optional("form", tree.Hold.Form);
+            writer.WriteEndObject();
+            writer.WriteString("tip", tree.Tip);
+            Optional("grewFrom", tree.GrewFrom);
+            Optional("ref", tree.Ref);
+            if (record.Commits is { } commits)
+            {
+                writer.WriteStartArray("commits");
+                foreach (var commit in commits)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("id", commit.Id);
+                    writer.WriteString("subject", commit.Subject);
+                    writer.WriteStartArray("files");
+                    foreach (var (path, added, removed) in commit.Files)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("path", path);
+                        writer.WriteNumber("added", added);
+                        writer.WriteNumber("removed", removed);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+            }
+            else
+            {
+                writer.WriteNull("commits");
+            }
+
+            Optional("commitsUnread", record.Unread);
+            writer.WriteStartObject("left");
+            writer.WriteStartArray("names");
+            foreach (var name in tree.Left.Names) writer.WriteStringValue(name);
+            writer.WriteEndArray();
+            writer.WriteNumber("count", tree.Left.Count);
+            writer.WriteBoolean("cut", tree.Left.Cut);
+            writer.WriteEndObject();
+            writer.WriteBoolean("whole", tree.Whole);
+            writer.WriteEndObject();
+
+            void Optional(string name, string? text)
+            {
+                if (text is null) writer.WriteNull(name);
+                else writer.WriteString(name, text);
+            }
+        });
+
+        var (ok, status, payload, root) = await PostJsonAsync("/api/trees/record", body, ct).ConfigureAwait(false);
+        if (ok) return null;
+        return (root is { } refused ? Text(refused, "error") : null) ?? (status == 404 ? "the service has no door for a finished tree's record yet" : payload);
+    }
+
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
     public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
     {

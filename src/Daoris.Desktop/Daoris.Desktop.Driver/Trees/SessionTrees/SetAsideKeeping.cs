@@ -34,7 +34,8 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
     {
         var clock = Stopwatch.StartNew();
         bool Spent() => clock.Elapsed >= budget || ct.IsCancellationRequested;
-        var purged = setAside.PurgeSetAside(now, policy.SetAside.Days, Spent, out var stopped, purge);
+        // KEEPSIZE1b (the keep-size design §3.4): one purge, the hour's and the days', each folder by its class.
+        var purged = setAside.PurgeSetAside(now, policy.SetAside.Days, policy.SetAside.Whole, Spent, out var stopped, purge);
         var slims = new List<SlimResult>();
         if (!stopped && !policy.SetAside.Whole) stopped = SlimDue(now, Spent, slims, slim);
         return new(purged, slims) { Stopped = stopped };
@@ -50,15 +51,22 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
         var listed = new List<SetAsideListed>();
         // KEEPSIZE1a: every place of the trees entry, the folders set aside before the home's layout moved included.
         foreach (var root in setAside.SetAsideRoots.Where(Directory.Exists))
-        foreach (var workspace in Directory.EnumerateDirectories(root))
+        foreach (var workspace in SetAsideEligibility.Workspaces(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
             if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
-            var kept = setAside.Kept(folder, moved);
-            var past = now - moved >= policy.SetAside.Days;
+            // KEEPSIZE1b (§3.4, §5): its class, and its threshold for a write, from its manifest.
+            var judged = SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole);
+            var kept = setAside.Kept(folder, judged.Threshold);
+            var past = judged.Due is { } due && now >= due;
             var slim = !past && !policy.SetAside.Whole && kept is null && SlimDueOf(folder, now);
-            listed.Add(new(folder, Path.GetFileName(workspace), Path.GetFileName(repository), moved, moved + policy.SetAside.Days, past, slim, kept?.Code));
+            listed.Add(new(folder, Path.GetFileName(workspace), Path.GetFileName(repository), moved, judged.Due ?? moved + policy.SetAside.Days, past, slim, kept?.Code)
+            {
+                Class = judged.Class,
+                Ref = judged.Manifest?.Finished?.Ref,
+                Why = judged.Manifest?.Why,
+            });
         }
 
         return listed;
@@ -66,7 +74,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
 
     /// <summary>Whether <paramref name="folder"/>'s manifest reads at <c>moved</c>, an hour after its move, with a path left to take.</summary>
     private static bool SlimDueOf(string folder, DateTimeOffset now) =>
-        SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest is { State: SlimStates.Moved, Moved: { } moved } manifest
+        SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest is { Moved: { } moved } manifest && Slimmable(manifest)
         && now - moved >= KeepKinds.SetAsideSettle
         && manifest.Paths.Any(path => !path.Final && !Waits(path, now));
 
@@ -76,27 +84,21 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
     /// where the list said it held none changed since the list, and is kept. Never following a link inside it.
     /// </summary>
     /// <param name="listedOwn">Whether the list the person read said it holds files of its own.</param>
-    internal (long Bytes, string? Kept) RemoveEarly(string folder, bool listedOwn)
+    /// <param name="listedClass">The class the list said it was (KEEPSIZE1b); one that reads another now is kept, <c>changed</c>.</param>
+    internal (long Bytes, string? Kept) RemoveEarly(string folder, bool listedOwn, string? listedClass = null)
     {
         if (!Directory.Exists(folder)) return (0, SpaceKept.Gone);
         if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) return (0, SpaceKept.Refused);
         if (context.Worktrees.LinkBelowTreesRoot(folder) is not null) return (0, SetAsideKept.Linked);
-        var kept = setAside.Kept(folder, moved);
+        // KEEPSIZE1b (§3.4): a finished folder's threshold is its manifest's `read`; a class changed since the list keeps it.
+        var judged = SetAsideEligibility.Of(folder, moved, TimeSpan.Zero, whole: true);
+        if (listedClass is not null && listedClass != judged.Class) return (0, SpaceKept.Changed);
+        var kept = setAside.Kept(folder, judged.Threshold);
         if (kept is { Code: SetAsideKept.Unread }) return (0, SetAsideKept.Unread);
         if (kept is not null && !listedOwn) return (0, SpaceKept.Changed);
-        long bytes;
-        try
-        {
-            bytes = TreeSetAside.DeleteNeverFollowing(folder);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            // What went before the failure stays gone; the rest waits its days, or the next press.
-            return (0, SpaceKept.Failed);
-        }
-
-        TreeSetAside.TryDelete(SlimManifest.PathFor(folder));
-        return (bytes, null);
+        // Renamed into `.going` first, then deleted (§3.4): a refused rename keeps it whole.
+        var (bytes, refused) = TreeSetAside.Remove(folder);
+        return refused is null ? (bytes, null) : (0, refused.Value.Code == TidyKept.Busy ? SpaceKept.InUse : SpaceKept.Failed);
     }
 
     /// <summary>The slims due: each manifest at <c>moved</c> an hour after its move; true where the budget or a stop ended the pass.</summary>
@@ -104,7 +106,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
     {
         // KEEPSIZE1a: every place; a folder at the old place set aside before KEEP1a has no manifest, so it is never slimmed.
         foreach (var root in setAside.SetAsideRoots.Where(Directory.Exists))
-        foreach (var workspace in Directory.EnumerateDirectories(root))
+        foreach (var workspace in SetAsideEligibility.Workspaces(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var file in Directory.EnumerateFiles(repository, "*" + SlimManifest.Suffix).ToList())
         {
@@ -119,6 +121,8 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
 
             // A manifest that does not read is unknown: its folder stays whole, and the purge reads it whole.
             if (SlimManifest.Read(file).Manifest is not { } manifest) continue;
+            // KEEPSIZE1b (§3.5): a finished tree's manifest at `judged` holds its record's inputs, so it is never dropped; its folder stays whole.
+            if (manifest.State == SlimStates.Judged && manifest.Finished is not null) continue;
             if (manifest.State == SlimStates.Judged)
             {
                 // Left between the move and its `moved`: what was authorized is unknown, so the folder is kept whole for its days.
@@ -126,7 +130,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
                 continue;
             }
 
-            if (manifest.State != SlimStates.Moved || manifest.Moved is not { } moved || now - moved < KeepKinds.SetAsideSettle) continue;
+            if (!Slimmable(manifest) || manifest.Moved is not { } moved || now - moved < KeepKinds.SetAsideSettle) continue;
             if (manifest.Paths.All(path => path.Final || Waits(path, now))) continue;
             if (spent()) return true;
             var (result, stopped) = Slim(folder, file, manifest, now, spent);
@@ -136,6 +140,14 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
 
         return false;
     }
+
+    /// <summary>
+    /// Whether the slim may take a manifest's paths: a schema-1 one at <c>moved</c>, as built; a finished tree's at any step after its move,
+    /// since its folder waits its days or its record and the slim stays for those (the keep-size design §3.6).
+    /// </summary>
+    private static bool Slimmable(SlimManifest manifest) =>
+        manifest.Finished is null ? manifest.State == SlimStates.Moved
+            : manifest.State is SlimStates.Moved or SlimStates.Refused or SlimStates.Deleted or SlimStates.Recorded or SlimStates.Unmarked;
 
     private static bool Waits(SlimPath path, DateTimeOffset now) => path.Tried is { } tried && now - tried < Again;
 
@@ -256,6 +268,15 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
 internal sealed record SetAsideListed(
     string Folder, string Workspace, string Repository, DateTimeOffset Moved, DateTimeOffset Goes, bool Past, bool Slim, string? Kept)
 {
+    /// <summary>Its class (KEEPSIZE1b, <see cref="SetAsideClass"/>), which the press lists and checks again before it removes.</summary>
+    public string Class { get; init; } = SetAsideClass.Unmarked;
+
+    /// <summary>A finished tree's recovery ref at its tip, where one holds it; null where the line does, or none is known.</summary>
+    public string? Ref { get; init; }
+
+    /// <summary>Why it waits, as its manifest says: the last post's or check's words.</summary>
+    public string? Why { get; init; }
+
     /// <summary>It holds files of its own: something written in it after its move, or a link in it.</summary>
     public bool Own => Kept is SetAsideKept.Written or SetAsideKept.Linked;
 

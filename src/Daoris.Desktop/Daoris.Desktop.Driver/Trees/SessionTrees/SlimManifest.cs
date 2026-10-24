@@ -14,6 +14,10 @@ namespace Daoris.Driver;
 /// stopped between the move and that write, is unknown, so its folder is kept whole for its days. An older build reads no manifest: its
 /// purge keeps a slimmed folder as written, which keeps more than it should, never less (<c>compatible-builds.md</c>). A manifest of
 /// another schema is never read as this one.
+/// <para>KEEPSIZE1b (the keep-size design §3.3): the move writes one for <b>every finished tree</b>, schema 2, its paths possibly empty,
+/// <c>whole</c> included, carrying the record's inputs (<see cref="Finished"/>) and its steps (<c>judged</c>, <c>moved</c>, <c>refused</c>,
+/// <c>deleted</c>, <c>recorded</c>). This build reads both schemas: a schema-1 manifest is a folder from before this build, unmarked
+/// (<see cref="SetAsideEligibility"/>), slimmed as before. An older build reads no schema-2 manifest and purges its folder by its days.</para>
 /// </remarks>
 /// <param name="Judged">When the look judged it, before the move.</param>
 /// <param name="Moved">When the move ended and git let go of the tree; null before.</param>
@@ -21,8 +25,23 @@ namespace Daoris.Driver;
 internal sealed record SlimManifest(
     string State, DateTimeOffset Judged, DateTimeOffset? Moved, string Repository, string Branch, IReadOnlyList<SlimPath> Paths)
 {
-    /// <summary>The shape this build writes and reads.</summary>
+    /// <summary>The shape a folder from before KEEPSIZE1b carries: the slim's alone.</summary>
     internal const int Schema = 1;
+
+    /// <summary>The shape of a finished tree's manifest (KEEPSIZE1b): the slim's, and the record's inputs and steps.</summary>
+    internal const int Finishing = 2;
+
+    /// <summary>The finished tree's facts, the record's inputs; null for a schema-1 manifest.</summary>
+    internal FinishedTree? Finished { get; init; }
+
+    /// <summary>When the branch's delete succeeded (<c>deleted</c>).</summary>
+    internal DateTimeOffset? Deleted { get; init; }
+
+    /// <summary>When the service answered the record's post (<c>recorded</c>): the hour's clock (§3.4).</summary>
+    internal DateTimeOffset? Recorded { get; init; }
+
+    /// <summary>Why the record is not kept yet: the last post's words; null where nothing is said.</summary>
+    internal string? Why { get; init; }
 
     /// <summary>What follows the folder's name in its manifest's.</summary>
     internal const string Suffix = ".slim.json";
@@ -55,7 +74,7 @@ internal sealed record SlimManifest(
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
-                || !root.TryGetProperty("schema", out var schema) || !schema.TryGetInt32(out var stamped) || stamped != Schema
+                || !root.TryGetProperty("schema", out var schema) || !schema.TryGetInt32(out var stamped) || stamped is not (Schema or Finishing)
                 || Text(root, "state") is not { } state || At(root, "judged") is not { } judged
                 || Text(root, "repository") is not { } repository || Text(root, "branch") is not { } branch
                 || !root.TryGetProperty("paths", out var paths) || paths.ValueKind != JsonValueKind.Array)
@@ -74,7 +93,34 @@ internal sealed record SlimManifest(
                 read.Add(new(relative, at, Text(each, "why"), At(each, "tried"), At(each, "ended")));
             }
 
-            return (new(state, judged, At(root, "moved"), repository, branch, read), null);
+            FinishedTree? finished = null;
+            if (stamped == Finishing)
+            {
+                if (At(root, "read") is not { } judgedRead || Text(root, "workspace") is not { } workspace || Text(root, "tree") is not { } tree
+                    || Text(root, "tip") is not { } tip || !root.TryGetProperty("hold", out var hold) || hold.ValueKind != JsonValueKind.Object
+                    || Text(hold, "kind") is not { } kind || !root.TryGetProperty("left", out var left) || left.ValueKind != JsonValueKind.Object
+                    || !left.TryGetProperty("names", out var names) || names.ValueKind != JsonValueKind.Array)
+                {
+                    return (null, "it is no finished tree's manifest of this build's shape");
+                }
+
+                finished = new FinishedTree(
+                    judgedRead, workspace, tree, Text(root, "line"), tip, Text(root, "grewFrom"), Text(root, "unit"),
+                    new FinishedHold(kind, Text(hold, "where"), Text(hold, "form")), Text(root, "ref"),
+                    new FinishedLeft(
+                        [.. names.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)],
+                        left.TryGetProperty("count", out var count) && count.TryGetInt32(out var counted) ? counted : 0,
+                        left.TryGetProperty("cut", out var cut) && cut.ValueKind == JsonValueKind.True),
+                    root.TryGetProperty("whole", out var whole) && whole.ValueKind == JsonValueKind.True);
+            }
+
+            return (new(state, judged, At(root, "moved"), repository, branch, read)
+            {
+                Finished = finished,
+                Deleted = At(root, "deleted"),
+                Recorded = At(root, "recorded"),
+                Why = Text(root, "why"),
+            }, null);
         }
         catch (JsonException error)
         {
@@ -94,12 +140,40 @@ internal sealed record SlimManifest(
     internal void Write(string path) => AtomicFile.WriteText(path, JsonFile.Serialize(writer =>
     {
         writer.WriteStartObject();
-        writer.WriteNumber("schema", Schema);
+        writer.WriteNumber("schema", Finished is null ? Schema : Finishing);
         writer.WriteString("state", State);
         writer.WriteString("judged", Said(Judged));
         WriteMoment(writer, "moved", Moved);
         writer.WriteString("repository", Repository);
         writer.WriteString("branch", Branch);
+        if (Finished is { } finished)
+        {
+            writer.WriteString("read", Said(finished.Read));
+            writer.WriteString("workspace", finished.Workspace);
+            writer.WriteString("tree", finished.Tree);
+            Optional(writer, "line", finished.Line);
+            writer.WriteString("tip", finished.Tip);
+            Optional(writer, "grewFrom", finished.GrewFrom);
+            Optional(writer, "unit", finished.Unit);
+            writer.WriteStartObject("hold");
+            writer.WriteString("kind", finished.Hold.Kind);
+            Optional(writer, "where", finished.Hold.Where);
+            Optional(writer, "form", finished.Hold.Form);
+            writer.WriteEndObject();
+            Optional(writer, "ref", finished.Ref);
+            writer.WriteStartObject("left");
+            writer.WriteStartArray("names");
+            foreach (var name in finished.Left.Names) writer.WriteStringValue(name);
+            writer.WriteEndArray();
+            writer.WriteNumber("count", finished.Left.Count);
+            writer.WriteBoolean("cut", finished.Left.Cut);
+            writer.WriteEndObject();
+            writer.WriteBoolean("whole", finished.Whole);
+            WriteMoment(writer, "deleted", Deleted);
+            WriteMoment(writer, "recorded", Recorded);
+            Optional(writer, "why", Why);
+        }
+
         writer.WriteStartArray("paths");
         foreach (var each in Paths)
         {
@@ -117,6 +191,12 @@ internal sealed record SlimManifest(
         writer.WriteEndObject();
     }));
 
+    private static void Optional(Utf8JsonWriter writer, string name, string? text)
+    {
+        if (text is not null) writer.WriteString(name, text);
+        else writer.WriteNull(name);
+    }
+
     private static string Said(DateTimeOffset at) => at.UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture);
 
     private static void WriteMoment(Utf8JsonWriter writer, string name, DateTimeOffset? at)
@@ -127,6 +207,36 @@ internal sealed record SlimManifest(
 
     /// <summary>The paths the slim removed, in the manifest's order.</summary>
     internal IReadOnlyList<string> Removed => [.. Paths.Where(path => path.State == SlimStates.Removed).Select(path => path.Path)];
+}
+
+/// <summary>
+/// A finished tree's facts in its schema-2 manifest (KEEPSIZE1b, the keep-size design §3.3), written at <c>judged</c>: the record's inputs,
+/// so the pass, the press and a restart compose the same post from it alone. Never a session: the service resolves those from its rows.
+/// </summary>
+/// <param name="Read">The moment before the judgement's read of what the tree holds: the folder's threshold (§3.5's race).</param>
+/// <param name="Tree">Its path before the move.</param>
+/// <param name="Tip">The commit judged.</param>
+/// <param name="GrewFrom">The commit it grew from, from <c>session-branches.json</c>; null where none is kept.</param>
+/// <param name="Unit">Its work unit, where <c>session-branches.json</c> names one.</param>
+/// <param name="Ref">The recovery ref at the tip, or null where <c>refs/heads/&lt;line&gt;</c> held it by ancestry (§3.1).</param>
+/// <param name="Whole">Whether <c>whole</c> was set at the move.</param>
+internal sealed record FinishedTree(
+    DateTimeOffset Read, string Workspace, string Tree, string? Line, string Tip, string? GrewFrom, string? Unit, FinishedHold Hold, string? Ref,
+    FinishedLeft Left, bool Whole);
+
+/// <summary>Which hold kept the commits at the judgement (§1.1): <c>line</c>, <c>landing</c>, <c>squash</c>, <c>content</c>, <c>carried</c> or <c>empty</c>.</summary>
+internal sealed record FinishedHold(string Kind, string? Where, string? Form);
+
+/// <summary>What the tree held that no commit holds, by name, at most <see cref="TreeScratch.ScratchWalkLimit"/>, the rest counted (§2.1).</summary>
+internal sealed record FinishedLeft(IReadOnlyList<string> Names, int Count, bool Cut)
+{
+    /// <summary>The judgement's <c>Ignored</c>, <c>Written</c> and <c>TooLarge</c>, a build folder's contents unnamed, bounded.</summary>
+    internal static FinishedLeft Of(ContentHolds.TreeHolds? holds)
+    {
+        var all = holds is null ? [] : holds.Ignored.Concat(holds.Written).Concat(holds.TooLarge)
+            .Where(path => !TreeScratch.UnderBuildFolder(path)).Distinct(StringComparer.Ordinal).ToList();
+        return new([.. all.Take(TreeScratch.ScratchWalkLimit)], all.Count, all.Count > TreeScratch.ScratchWalkLimit);
+    }
 }
 
 /// <summary>One package folder in a manifest, and its state (the cleanup design §5).</summary>
@@ -148,6 +258,21 @@ public static class SlimStates
 
     /// <summary>The manifest: the move ended and git let go of the tree. Only such a manifest is slimmed.</summary>
     public const string Moved = "moved";
+
+    /// <summary>A finished tree's (KEEPSIZE1b): the move done, the branch's delete refused, the branch standing. Never armed.</summary>
+    public const string Refused = "refused";
+
+    /// <summary>A finished tree's (KEEPSIZE1b): its branch deleted, its record not yet kept.</summary>
+    public const string Deleted = "deleted";
+
+    /// <summary>A finished tree's (KEEPSIZE1b): its branch deleted, its record kept. Its folder goes an hour after.</summary>
+    public const string Recorded = "recorded";
+
+    /// <summary>
+    /// A finished tree's whose holding check failed (KEEPSIZE1b, the keep-size design §3.4: its ref dropped, its line rewound, its repository
+    /// not resolved): unmarked from then on, it waits its days, and <see cref="SlimManifest.Why"/> says why.
+    /// </summary>
+    public const string Unmarked = "unmarked";
 
     /// <summary>A path: waiting for the slim.</summary>
     public const string Pending = "pending";
