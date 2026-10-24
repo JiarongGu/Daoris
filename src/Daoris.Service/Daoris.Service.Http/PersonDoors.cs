@@ -254,6 +254,10 @@ public static class PersonDoors
         // KEEP1b: the driver spawns it, so it is the half that knows the downloaded versions a start of a record was handed.
         new("POST", "/api/sessions/{id}/resolved", DoorClass.Driver, "the downloaded versions a session's start was handed"),
         new("POST", "/api/sessions/{id}/actor", DoorClass.Driver, "the actor's choice and reported models"),
+        // KEEPSIZE1b: the driver moves a finished tree aside, so it is the half that knows the record's facts.
+        new("POST", "/api/trees/record", DoorClass.Driver, "a finished tree's record"),
+        // KEEPSIZE1b: the driver's daily clear of history ages the records no session names.
+        new("POST", "/api/trees/record/age", DoorClass.Driver, "history's age applied to finished trees' records"),
         // SUPERVISOR1a-i (D208 §6.3): the driver puts back a park it took up and could not hand.
         new("POST", "/api/sessions/{id}/restore", DoorClass.Driver, "a park the driver could not hand, put back"),
         // COWORK1d: an entry's acknowledgment of a channel message, written by the driver that hands it to a part of the entry.

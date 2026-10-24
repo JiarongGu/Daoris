@@ -111,6 +111,9 @@ internal sealed class ContentHolds(TreeContext context)
     /// <summary>What a delete that found its branch moved since the judgement says (SQUASHTIDY1c).</summary>
     internal const string MovedSince = "it moved since it was judged";
 
+    /// <summary>What a delete whose judgement named nothing its proof rested on says (FABRIC-END4a), and the sweep before it (KEEPSIZE1b).</summary>
+    internal const string NothingRested = "nothing its proof rested on was named, so its proof cannot be checked as it goes";
+
     /// <summary>
     /// Where a session branch's work is held by content (SQUASHTIDY1), asked only once D88's proof found commits no branch of the
     /// person's holds: the owner squash-merged a session's work as a pull request, the platform deleted the pull request's branch,
@@ -453,7 +456,7 @@ internal sealed class ContentHolds(TreeContext context)
     internal async Task<string?> DeleteJudgedAsync(
         string root, string branch, string judged, IReadOnlyList<(string Ref, string Commit)> held, CancellationToken ct)
     {
-        if (held.Count == 0) return "nothing its proof rested on was named, so its proof cannot be checked as it goes";
+        if (held.Count == 0) return NothingRested;
         if (context.BeforeDeleting is { } seam) await seam(branch).ConfigureAwait(false);
         // git branch -D refuses a branch a working tree has checked out; update-ref does not ask, so this does. A list git could
         // not give is no answer to that (AUTOTIDY1).

@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- The steward's desk is built and the steward is still not offered (STEWARDROLE1c, D209). Nothing you use changes until its
+  activation. Once it is, any session or terminal can ask the steward for one of its acts with
+  `daoris-driver steward request <act> <target> "<why>"`, and needs no key to do so. A request grants nothing: the steward reads it
+  as the asker's words and either makes the act itself, which closes the request, or declines it with a reason. One asker may have
+  ten requests waiting and the desk a hundred. *Notifications* shows the desk under the steward's line: each request, its words as
+  written, and whether it waits, was done or was declined, with the steward's reason.
 - A terminal's change that waits for your Confirm and rests on a plan now has *Look at it now* on its card (CONFIRMWAIT1c): a land
   opens its session's review, a set-up its repository's page, a sweep or a bring-up-to-date its workspace's Branches, and a history
   clear the workspace, quest or ask it clears. You see what it would act on as it stands now before you confirm a change asked hours
@@ -117,6 +123,14 @@ with the version and date at release.
 - The window no longer stops answering while the session list works out where each session's work went (NOBLOCK1). That
   look, a repository's heavy-run slot, a conversation's first words, Ask Daoris's proposals and the tools list now show what
   the window already had at once, and fill in when the work is done. Typing is no longer held up by them.
+- A finished session's tree now goes an hour after Daoris keeps its record, rather than after 14 days (KEEPSIZE1b). The record keeps
+  the tree's commits and their subjects, the files they changed, how it landed, and the names of the scratch files it left. The
+  commits stay reachable on a recovery ref wherever the line itself does not hold them, a squashed landing's included. A session's
+  own scratch goes with its tree. A tree whose record could not be kept yet waits for it, past its days. *Keep each folder whole*
+  now keeps a finished tree for its days, its record kept all the same. *Free up space…* says which folders have their record kept,
+  which wait for it, and which came from before this version. Before a finished tree's folder goes, Daoris checks
+  again that its commits are still held, and keeps it where they are not. The *Disk space* card says how many folders wait for their
+  record, or for the registry to name their repository's checkout, and *Free up space…* lists each folder with what holds its commits.
 - Trees set aside before Daoris's folder layout moved are now removed at their days, like the rest (KEEPSIZE1a). Until now they
   stayed under the old place for good. The *Disk space* card counts them under *Set-aside trees* rather than *Everything else*, and
   *Free space* and `trees list` name them.
@@ -141,6 +155,10 @@ with the version and date at release.
   suites they reach, and moves `main` forward only when they pass and the checkout is clean. A branch that breaks something is
   found by the failure itself, run after each branch in turn, and handed back with why. A check that fails on `main` itself
   stops the queue until a commit fixes it or `--queue --recheck` finds it gone. `--queue` shows where everything stands.
+- The supervisor's scope and overrule window are built, and the supervisor is still not offered (SUPERVISOR1e, D208). Once it is,
+  a workspace's Setup has its own *Supervisor* row, appointing one for every repository of the workspace, one added later included;
+  a repository's own supervisor wins over its workspace's, and its row says when the workspace's covers it. When you appoint one you
+  choose how long its answers wait for your overrule, from 1 to 60 minutes; five unless you choose another.
 - The supervisor's bounds are built, and the supervisor is still not offered (SUPERVISOR1b, D208). A session's agent can mark a
   question as yours alone (a sign-in, access, spending, deleting, a document that asks you, or your own taste): the supervisor never
   answers it, even if the mark comes after it chose, and the question card says *Asked of you alone*. The supervisor can leave a

@@ -1,6 +1,6 @@
 # Keeping as a chat app does: a finished session kept as its text record, its tree let go, and Daoris within an allowance the person sets (accepted, 2026-10-24)
 
-**Standing:** accepted 2026-10-24 by the steward under D191 (D195's acceptance note; Codex's read of this text owed), a note amending D195 (KEEPSIZE1), round 3 with its named changes (§11). Round 1 (the same day, `d57b7f8d6`, merged at `16769207d`)
+**Standing:** accepted 2026-10-24 by the steward under D191 (D195's acceptance note), a note amending D195 (KEEPSIZE1), round 3 with its named changes (§11), **amended 2026-10-24 after Codex's read of the accepted text** (11 findings, 8 blocking, *stands after named amendments*; §12 says where each went). Round 1 (the same day, `d57b7f8d6`, merged at `16769207d`)
 proposed a size limit per kind beside its days and the floor as a share; its §6 holds the proofs rows KEEPSIZE1a and 1e still take.
 KEEPSIZE1a, the set-aside folders at every place of the trees entry, is built on main (`0f6f76b79`, D195's KEEPSIZE1a note,
 2026-10-24), and §1.4 and its row in §7 say it as built. Round 2 (`a2993a3bb`) was
@@ -91,7 +91,9 @@ the branch is removable (empty, landed or carried, `Trees/Landing/Landing.cs:506
 line holds the branch at its tip (`AutoTidies.cs:233-254`), at the look's five-minute pace (`BranchTidying.cs:30, 74-130`) and on the
 repository's facts changing (`TidyEffect.cs:34-52`): a finished tree goes aside within minutes of its work reaching the line. A tree
 a session is in is `InUse` (`TreeSweeps.cs:302`), the sessions, their waits and reviews are asked again inside the repository's hold
-(`AutoTidies.cs:291-294`; `BranchTidying.cs:143`), and Windows refuses the rename of a folder with a file open in it (`busy`,
+(`AutoTidies.cs:291-294`; `BranchTidying.cs:143`), and Windows refuses the rename of a folder with a file open in it where that handle
+does not share deletion (`busy`; *corrected 2026-10-24*, Codex's read of the accepted text, finding 11: a writer that permits deletion, as
+`MachineLog.cs:351`'s does, lets the rename through, so `busy` is what `Directory.Move` refusing says, not what an open file proves;
 `TreeSetAside.cs:245-265`). Uncommitted and untracked paths keep a tree (`TreeSweeps.cs:311`; `--untracked-files=all`,
 `ContentHolds.cs:562-563`).
 
@@ -159,7 +161,7 @@ locally at `KnowledgeIndex.cs:41` and on the fed path at `KnowledgeService.cs:65
 | `set-aside` | the slim an hour after the move; the purge at 1 to 90 days, 14 by default; `whole` (`KeepKinds.cs:17-23`) | none |
 | `downloads` | 0 to 365 days into a version's unused stretch, 7 by default, or `never` (`:31-37`) | none |
 | `browser-cache` | the engine's own; cleared by the press and below the floor while the browser does not run (`SpaceFree`, `SpaceFloor.cs:502-529`) | none |
-| `logs` | 7 to 30 days (`:44-47`) | 20 MiB a file, one file a day for each process that writes (`MachineLog.cs:37, 40, 349`) |
+| `logs` | 7 to 30 days (`:44-47`) | 20 MiB a file, one file a day for each source that writes (`driver`, `shell`…), not each process (*corrected 2026-10-24*, finding 11; `MachineLog.cs:37, 40, 68, 72, 349-350`) |
 | `history` | the press, or an age the person sets (`:55-61`) | none |
 | the floor | the smaller of 10% of a volume and 20 GB (`FloorPolicy.Of`, `KeepKinds.cs:216-222`); below it the slims due, unused downloads and the browser's caches go at once (`SpaceFloor.cs:311-529`) | — |
 
@@ -180,7 +182,7 @@ The record of a finished tree is **text**, and nothing of its tree but names:
 |---|---|---|
 | The conversations: each session's person's words and agent's messages, in order, with their times | `sessions/<id>.events.jsonl` of every session the record names | yes, as history; the record indexes it, it does not move it |
 | Its notes: each session's `Note` and `NoteParts`, the quest's closing answer and its requirements' answers | the sessions' rows; `quest_log` | yes |
-| The landing: the branch it landed as, the line, when, and which hold of §1.1 kept the commits, in which form | the manifest (§3.3), from the judgement | **no** |
+| The landing: the branch it landed as, the line, when, and which hold of §1.1 kept the commits, in which form | the manifest (§3.3): the hold from the judgement, the landing captured at `judged` from the landings' record (*amended 2026-10-24*, finding 6) | **no** |
 | The tip, the commit it grew from and its work unit | the manifest, from the judgement and `session-branches.json` | **no** once the trace retires |
 | Its commits: each id, its subject and the files it changed, by name with the lines added and removed | `git log --first-parent --numstat <grew from>..<tip>`, read from the tip while a ref holds it (§3.5 step 6): a merge of the line into the branch is one commit of the tree's, with its first-parent changes, never the line's commits it brought in | **no** |
 | Which session made which commits | each session's `BaseCommit`, **only where the bases bound the range** (a chain's later session based on its predecessor's tip); otherwise the record names the tree's commits and the sessions that ran in it, never an attribution it cannot read | **no** |
@@ -208,12 +210,20 @@ replaces whole and a schema bump drops, §1.3):
 - **Kept, not derived** (Opus finding 13): `work_records` and `work_record_sessions` carry their own schema version and migrate; the
   index's rebuild never drops them. `work_records_fts` carries its own version and is rebuilt from `work_records` and the
   conversations' files.
+- **Each session's contribution is its own** (*amended 2026-10-24*, Codex's read of the accepted text, finding 7): a record's text is the
+  record's own facts (its landing, tip, ref, commits, named scratch), which no session owns, and each linked session's conversation and
+  notes, which that session owns. Deleting a session removes its link, its attributed commits and its contribution to the record's text
+  and index in the same transaction, the surviving record and its other sessions' words left whole; the record goes with its last session.
+  1b keeps no session's words in the record (its rows hold the record's own facts and the links), so the rule binds 1c's
+  `work_records_fts`, whose rows are per session; 1c proves it with two linked sessions of distinct words.
 - **Gone with its sessions**: `Sessions.DeleteAsync` (`Sessions.cs:1522-1528`), which both the history clear (`Asks/History.cs:303-323`)
   and the single delete (`SessionLedger.cs:1996-2003`) call inside their transaction, deletes the session's links, and a record left
   with no session in the same statement's transaction.
 - **A record with no session** (posted when no session row names the tree, because its sessions were cleared while it awaited its
   record or because no row ever named it) is history too: it ages by its own `at` under history's age where the person set one
   (KEEP1g), and *Clear history…* takes it with the sessions it clears, by `at` within the clear's range. Its folder goes as recorded.
+  *Amended 2026-10-24* (Codex's read of the branch, finding 8): its age needs no session cleared beside it: the driver's daily clear of
+  history sends its cutoff to `POST /api/trees/record/age`, and each such record kept at or before it goes by its own `at`.
 - **A newer schema is refused**, as the index's is (KSCHEMA1, `SqliteKnowledgeStore.cs:104-108` on main): an older build that finds
   `work_records` or `work_record_sessions` stamped newer than its own reads and writes none of their rows and never migrates them back;
   its record's post is refused, so the folder stays `deleted`, awaiting its record past its days (§3.4), and says why.
@@ -240,7 +250,9 @@ today.
 **The person's *Clean up…* and *Discard* keep no record** in this design. Their path removes the tree with `git worktree remove`
 (`TreeSweeps.cs:210-235` on main) and writes no manifest; §3.1's tip ref is written on it all the same, and the sessions' rows and
 conversations stay as history, so what goes unrecorded is the landing, the commits' list and the named scratch. The press is the person's
-word on a tree the look leaves, landed on a branch of theirs or holding its own scratch (`TreeSetAside.cs:26-29`, `TreeSweeps.cs:314`).
+word on a tree the look leaves, landed on a branch of theirs (`TreeSetAside.cs:26-29`). *Amended 2026-10-24 (Codex's read of the accepted
+text, finding 11):* the press does not take a tree holding its own scratch: its sweep keeps such a tree as `dirty` (`TreeSweeps.cs:314`), and
+only the look takes one, by the owner's decision (§3.2).
 A record on that path (a manifest under `.tidied` with no folder, posted after the hold as the look's is) is a later row's, not 1b's.
 
 ## 3. When a finished tree goes
@@ -252,12 +264,21 @@ A record on that path (a manifest under `.tidied` with no folder, posted after t
 `ContentHolds.KeepDiscardedAsync`, as a content hold's is today (`TreeSweeps.cs:179-191`). That covers a squashing landing's record
 (whose branch holds a squash, not the session's commits), a carried branch, a landing branch's hold and a line held only by
 `origin/<line>`. It is written on **both** of `SweepAsync`'s paths, the look's and the person's *Clean up…* (`TreeSweeps.cs:181` serves
-both). A ref that cannot be written keeps the branch and the tree, as a content hold's does today. Where the line later holds the tip, the
-ref goes 30 days on by `RecoveryRetention`; where nothing else holds it (a squash's or a carried branch's), it is kept until the person
-drops it, and the inventory says so (`WorkInventories.cs:88`).
+both). A ref that cannot be written keeps the branch and the tree, as a content hold's does today. Where a branch or a tag of the person's
+holds the tip, the ref goes by `RecoveryRetention`, whose 30 days count from the ref's own creation (its reflog's first entry, the commit's
+date where none reads), never from when a holder appeared (*corrected 2026-10-24*, Codex's read of the accepted text, finding 11;
+`RecoveryRetention.cs:25, 29, 110`); where nothing else holds it (a squash's or a carried branch's), it is kept until the person drops it,
+and the inventory says so (`WorkInventories.cs:88`).
 
 This is one `update-ref` inside the repository's hold for the kinds that had none (KEEP1a kept that hold free of new git, Fable F1.5):
 it must precede the branch's delete, which is inside the hold, so it cannot move out.
+
+**Amended 2026-10-24 (Codex's read of the accepted text, finding 1): the exact tip's holder rests in the delete's own transaction.** Writing
+the ref first does not make it a rest the delete verifies, and the line's own branch read for ancestry can move before the delete. So the
+holder the sweep chose joins the rests `DeleteJudgedAsync` verifies (`.claude/knowledge/ref-removal-transactions.md`), at the commit read:
+the recovery ref at the tip, or `refs/heads/<line>` at the commit that held it, beside every rest the judgement's own proof returned (a
+content holder, a landing's branch, a squash's branch). Removing or moving that holder between its protection and the delete refuses the
+delete: the branch stands with its commits, and the folder is `refused`, never armed.
 
 ### 3.2 What of a tree is kept, and for how long
 
@@ -293,11 +314,18 @@ at them. **Running an older build loses the records still awaited** once their f
 | `left` | the judgement's `Ignored`, `Written`, `TooLarge`, bounded as §2.1 says | `judged` |
 | `paths` | the package folders to slim, as today; empty where none or under `whole` | `judged` |
 | `whole` | whether `whole` was set at the move | `judged` |
-| `deleted`, `recorded` | when the branch's delete succeeded; when the service answered the record's post | those steps |
+| `landing`, `landingWhy` | the landing that carried the work, `{ branch, line, at, pullRequest }`, from the landings' record: the one the hold names (a landing's or a squash's branch), else the one whose units hold the branch's work unit; else none, with why (*added 2026-10-24*, Codex's read of the accepted text, finding 6) | `judged` |
+| `deleted`, `recorded` | when the branch's delete succeeded; when the service answered the record's post, read after its answer (§3.5 step 6) | those steps |
+| `why` | why the folder waits: the last post's or check's words | each step |
 
 **A manifest that cannot be written keeps the tree** (Codex finding 6): no move, the branch and the tree stand, kept `unread`, and the
 next look tries again; today the move goes on whole without one (`TreeSetAside.cs:204, 280-296`). A manifest never names a session: the
 service resolves those from its rows (§2.2).
+
+**The landing is captured, never composed later** (*Amended 2026-10-24*, Codex's read of the accepted text, finding 6): the cleanup's judgement
+returns the line or a content holder, not the landing, and the landings' trace retires (`LandedBranches.cs:565-575`), so the record's
+landing comes from the manifest's `landing`, captured at `judged`. Where none can be established it says so; a judgement's or a move's
+moment never stands in for the landing's.
 
 ### 3.4 Which folder may go, by which door: one judgement
 
@@ -312,21 +340,36 @@ Every removal of a set-aside folder (the hour's purge, the days' purge, the allo
 | **awaiting record** | a finished tree at `deleted`: its branch deleted, its record not yet kept |
 | **stopped between steps** | a finished tree at `judged` or `moved` (§3.5) |
 | **refused** | a finished tree at `refused`: the move done, the branch's delete refused, the branch standing |
-| **unmarked** | no manifest, one of schema 1, or one that does not read: a stray, a pass's leftover, a folder from before this build, at either place of the trees entry |
+| **unread** | a manifest beside it that does not read, or of a schema this build does not know: no rule takes it, it waits, said, and the press lists it (*Amended 2026-10-24*, Codex's read of the accepted text, finding 3) |
+| **unmarked** | no manifest, or one of schema 1: a stray, a pass's leftover, a folder from before this build, at either place of the trees entry; or a finished tree's whose holding check said for certain that nothing holds its tip as recorded |
 
 **The guards every door keeps**, judged again right before the removal: a link on the way to the folder; a link in it outside a build
 folder; a folder that does not read; anything in it written or created after its threshold, which is the manifest's `read` for a
-finished tree (§3.5's race) and the moment in its name for any other (`TreeSetAside.cs:518-593`).
+finished tree (§3.5's race) and the moment in its name for any other (`TreeSetAside.cs:518-593`). For a finished tree the folder's own top
+is read against `read` too, since an entry deleted at the top leaves no later time on anything that stays (*Amended 2026-10-24*, finding 2).
+
+**The guards by door** (*Amended 2026-10-24*, Codex's read of the accepted text, finding 10): a link on the way, a link outside a build folder
+and a folder that does not read refuse every door absolutely. Contents written after the threshold refuse the rules' doors (the hour, the
+days, the allowance); the person's press removes them where its list disclosed them (*holds files written after it was judged*) and the
+person chose that folder, and keeps the folder `changed` where the list did not. What the press compares between its list and its run is
+the folder's listed class and the ref its tip was listed on (`SpaceAsked.Class`, `Ref`), and whether it held files of its own.
 
 **The holding check** for `recorded`, judged again right before the removal (Codex finding 3): the branch is absent, and the
 manifest's `tip` is an ancestor of the manifest's `ref`, or of `refs/heads/<line>` where `ref` is none. Where it fails (the person
 dropped the ref, the line was rewound), the folder is **unmarked** from then on: it waits its days and says why.
+*Amended 2026-10-24* (Codex's read of the branch, finding 1): it runs **right before each removal's rename**, in the purge itself, never
+read from an earlier pass's result: a check passed before is no authorization. It answers three ways: *passed*; *failed*, only where git
+said so for certain (the branch stands, by `show-ref --exists` exiting 0; the holder missing, exiting 2; the tip no ancestor, exiting 1),
+which makes the folder unmarked; and *unread*, for a root not given or any answer git does not define, which keeps the folder as it is and
+asks again (Codex's read of the accepted text, finding 3). A purge with no registry to run it in takes no folder by the hour.
 
 **Git outside the hold** (round 3's finding 7): the holding check, the record's commits (§3.5 step 6) and the resume read git from the
 Keeping pass and the press, which today touch no git and no live tree (`SetAsideKeeping.cs:5-9`, `BranchTidying.cs:237-245` on main).
 They read it **read-only** (`show-ref`, `merge-base --is-ancestor`, `log`, never a write), outside every repository's hold, in the root
-the registry gives the manifest's workspace and repository. **A repository it cannot resolve or read makes the folder unmarked**: it
-waits its days and says why, as a failed holding check does.
+the registry gives the manifest's workspace and repository. ~~A repository it cannot resolve or read makes the folder unmarked~~
+*Amended 2026-10-24* (Codex's read of the accepted text, finding 3): **a repository it cannot resolve or read is unread, never certain**:
+the folder keeps its class and its protection, says why, and is asked again; a registry that did not read is not one that names no
+checkout, and then no step runs at all. Only git's own *missing* establishes a branch's absence.
 
 **The hour's clock** (round 3's finding 6) is the manifest's `recorded`: a finished folder goes an hour after its record is kept, so
 a record kept late still leaves the person an hour with both. The days' clock stays the moment in the folder's name, as the purge reads
@@ -336,9 +379,10 @@ it today (`TreeSetAside.cs:400` on main).
 |---|---|---|---|---|
 | recorded, the holding check passing, `whole` not set | **an hour after `recorded`** | — | yes | yes |
 | recorded, `whole` set at the move or now | no | at its days | **no** (Opus finding 17) | yes |
-| awaiting record | no | **no**: it waits for its record, said on the card | no | yes, its record posted first; where the service does not take it, listed *its record is not kept* and removed only as listed |
+| awaiting record | no | **no**: it waits for its record, said on the card, whatever the service answers, a 404 included | no | yes, its record posted first; where the service does not take it, listed *its record is not kept* and removed only as listed |
 | stopped between steps | no | resumed (§3.5), else at its days | no | yes, resumed first, then listed as what it is |
 | refused | no | resumed (§3.5), else at its days (the branch holds its commits) | no | yes, resumed first |
+| unread | no | **no** | never | yes, listed *its manifest does not read* |
 | unmarked | no | at its days, as built | **never** | yes, listed |
 
 **Why the days' purge stays for unmarked folders and the allowance does not** (Codex finding 4): the days are D195's standing rule,
@@ -354,10 +398,21 @@ pass over every place.
 
 **Renamed before it is deleted** (Opus finding 19): a folder that goes is renamed first into `.tidied/.going/`, as the press moves an
 earlier build's folders aside first (`SpaceFree.cs:127`); a refused rename keeps it whole, `busy`, and nothing is half deleted under
-the name a person opened. A folder left in `.going/` by a stop is deleted by the next pass. **Every other reader of `.tidied`
+the name a person opened. ~~A folder left in `.going/` by a stop is deleted by the next pass.~~ *Amended 2026-10-24* (Codex's read of the
+accepted text, finding 5): **a removal's own record goes beside it in `.going/`** before the rename (`<name>.going.json`: its door, when,
+the threshold, and whether its delete began), the folder keeps its workspace, repository and name there, and its manifest stays at its
+place until the delete ends. The next pass resumes each: one whose delete never began, or whose record does not read, goes back to its
+place whole, saying why; one whose delete began finishes only where no file in it was written since its removal began and, for the hour's
+door, its holding check passes now, else what remains goes back, saying why. Nothing in `.going/` reached through a link is touched, and
+its resume runs within the pass's budget. **Every other reader of `.tidied`
 passes over `.going/`**, since each enumerates its children as workspaces: the purge (`TreeSetAside.cs:396` on main), the press's list
 and the slim (`SetAsideKeeping.cs:53, 107`), the trees' list and the inventory (`SessionTrees.cs:547`) and the card's *next*
 (`SystemSpace.SetAsideNext`, `SystemSpace.cs:579`). The card's size walk counts what lies in `.going/` under `set-aside` until it is gone.
+*Amended 2026-10-25* (the check of KEEPSIZE1b's last fixes, finding 8): the rules' doors read the folder again under `.going/` before its
+delete begins, and a write since the purge's read puts it back whole, `written`; a begun delete put back, for a late write or a holding
+check that did not pass or could not run, leaves its manifest `unmarked` with that why, since part of it is gone. Two windows stay open
+and are said, not closed: a write after that read and before the delete ends is taken with the folder unless the delete stops; and a
+holder moved between the holding check and the rename is taken too, its record kept.
 
 ### 3.5 The steps, and what each stop or refusal leaves
 
@@ -368,7 +423,12 @@ Inside the repository's hold, at the look's sweep (`AutoTidies.cs:291-297`, `Tre
 3. **Write the manifest `judged`** (§3.3). Not written: the ref of step 2 is dropped as a refused move's is (`TreeSweeps.cs:203`),
    nothing moves, kept `unread`.
 4. **Move and let git go** as today, then mark `moved`. Refused: the manifest is forgotten, the ref dropped, the folder put back, as
-   today (`TreeSetAside.cs:213-234`).
+   today (`TreeSetAside.cs:213-234`). *Amended 2026-10-24* (Codex's read of the accepted text, findings 2 and 4): before git lets go, a
+   finished tree's status is read again in the moved folder, while git still knows it (`--no-optional-locks status --porcelain
+   --untracked-files=all`); anything it holds that no commit does, or a read git could not make, puts the folder back and keeps the tree,
+   as a refusal does. **The manifest is forgotten only once the folder is back**: where the put-back fails, the manifest stays at `judged`
+   beside the folder aside, with its facts and its tip's ref, and the next look meets the registration whose folder is gone, removes it and
+   the branch, and marks the manifest `deleted`.
 5. **Delete the branch** at the commit judged (`DeleteJudgedAsync`, `TreeSweeps.cs:239`). Succeeded: mark `deleted`, then the record's
    inputs are complete. **Refused: mark `refused`**; the branch stands and holds the commits, and the folder is never armed (Opus
    finding 5, Codex finding 3). A content hold's ref is dropped as today (`:242`), and the tip ref of step 2 likewise. A refusal is
@@ -380,17 +440,25 @@ After the hold, outside it (Opus finding 18):
 6. **Compose and post the record** from the manifest: `git log --first-parent --numstat <grewFrom>..<tip>` (read from the tip,
    which the ref or the line holds; §2.1), and the post of §2.2. Answered: mark `recorded`. Not answered, or refused: it stays `deleted` and every later pass, the
    press, or a restart composes the same post again from the manifest (Opus finding 6). Where the tip no longer reads (the ref dropped
-   by hand), the record is posted without its commits, saying so.
-7. **The hour's purge** takes a `recorded` folder an hour after its `recorded`, by §3.4's judgement.
+   by hand), the record is posted without its commits, saying so. *Amended 2026-10-24* (Codex's reads): `recorded` is the moment read
+   after the service's answer, never one read before the pass's git and the post; a 404, a service with no door for it, is a refusal like
+   any other, kept `deleted` and posted again; a git read that failed posts nothing (only git's own *missing* tip, `cat-file -e` exiting
+   1, or a range not known posts without commits); the commits are read NUL-delimited with no rename detection, so a file's name is git's
+   own; and the pass runs within the Keeping pass's budget, the purge given what it left.
+7. **The hour's purge** takes a `recorded` folder an hour after its `recorded`, by §3.4's judgement, its holding check run right before
+   its rename.
 
-**The race the hour does not cover** (Codex finding 2): a write after the judgement's read and before the folder's name was chosen
+**The race the hour does not cover** (Codex finding 2; *amended 2026-10-24*, Codex's read of the accepted text, finding 2: a time read is no
+check of uncommitted state, so step 4's status read in the moved folder closes the judgement-to-move race, and the times below are the
+later guard): a write after the judgement's read and before the folder's name was chosen
 predates the moment in its name, so the move's moment cannot be the threshold. A finished folder's threshold is `read` (§3.4): anything
 written or created in it after the judgement began reading keeps it, and anything written before was seen by that read, which keeps a
 tree holding an uncommitted path (`TreeSweeps.cs:311`). The judgement's own read writes nothing in the tree (`--no-optional-locks`,
 `ContentHolds.cs:562`), and the rename and `git worktree remove` of the moved path write nothing inside it. A folder so kept is said
 *written after it was judged*, waits its days, and is the press's.
 
-**Resuming a stop or a refusal: one rule** (round 3's finding 1), at each pass before the purge, and at the press before it lists,
+**Resuming a stop or a refusal: one rule** (round 3's finding 1), at each pass before the purge, and at the press's run before it removes
+(*amended 2026-10-24*: the list reads the classes as they stand, and changes nothing),
 for each finished folder at `judged` (its folder present), `moved` or `refused`:
 - **Where the manifest's `branch` is absent and the holding check passes** (§3.4), mark `deleted` and go on at step 6.
 - **Where the branch stands**, git has let go of the tree, or will once the next look meets the folder gone from its tree's path.
@@ -439,7 +507,10 @@ its one removal with every guard it has, and only units §3.4 makes eligible:
    earlier in the same pass, under the same guards and budget (§3.4), so the step adds no removal of its own: it stands in the order
    so that the whole's sum (§4.3) counts them.
 2. **The browser's caches** (made again by browsing): cleared together, only while the shell's browser host says it does not run
-   (`BrowserCacheClearing`, `Platform/BrowserCaches.cs:24-33`).
+   (`BrowserCacheClearing`, `Platform/BrowserCaches.cs:24-33`). *Amended 2026-10-24* (Codex's read of the accepted text, finding 9): a
+   clearing renames each cache to a suffixed sibling before deleting it (`BrowserCaches.cs:67-85`); where the delete fails, that residue
+   keeps its exact identity as a pending removal, counted under `browser-cache` (not the profile around it) and retried through the same
+   guarded remover at the next clearing. 1d proves a failed delete taken up at the next pass.
 3. **Unused downloads** (fetched again): oldest by the start of their unused stretch, past the hour's settle, through CACHECLEAR1's
    act; **never one whose rule is `never`**, nor one pinned, used or held by a running session (D195 point 6).
 
@@ -465,7 +536,7 @@ compares the kind with it, and over it the kind's row names the classes that hol
 | `set-aside` | 8 GB | `max(1, ⌊8 × N / 48⌋)` GB | 1 GB to N, in whole GB |
 | `downloads` | 5 GB | `max(1, ⌊5 × N / 48⌋)` GB | 1 GB to N, in whole GB |
 | `browser-cache` | 2 GB | `max(1, ⌊2 × N / 48⌋)` GB | 1 GB to N, in whole GB |
-| `logs` | none: its days, at most one 20 MiB file a day for each process that writes (`MachineLog.cs:37, 40, 349`) | — | — |
+| `logs` | none: its days, at most one 20 MiB file a day for each source that writes (`MachineLog.cs:37, 40, 68, 72, 349-350`) | — | — |
 | everything else | the rest of N | — | said, never taken |
 
 **Whole GB** (Opus finding 22, Codex finding 7): N and each part are whole GB, as the floor's size is (`KeepChoices.FloorGb`,
@@ -519,6 +590,14 @@ At each Keeping pass, after the purge and the slims (the cleanup design §3.1 st
   "set-aside").Folders` today; Opus finding 7), never a walk inside the repository's hold. A folder newer than the walk is unknown: it
   counts as at least nothing and is not taken by the whole's step until counted. **A size not counted is unknown, and the unknown
   keeps** (D195 §6). The card shows *at least* where a kind holds an unknown.
+- **A walk's end is no proof of a fresh count** (*amended 2026-10-24*, Codex's read of the accepted text, finding 8): a walk stamped when it
+  finishes may have counted a live tree before it moved, and a set-aside walk after it counts the same bytes again. So each kind keeps a
+  **mutation generation** Daoris raises at every change it makes to the kind (a move into `.tidied` raises `trees` and `set-aside`, a purge
+  or slim `set-aside`, a clearing its kind); a walk reads the generation when it starts and again when it ends, and one that saw it change
+  is **interrupted**, kept as no count. A destructive step reads only counts whose generation still stands. **The whole's total and its
+  reachability (step 2 above) need every kind's count trustworthy**, the kinds the allowance cannot remove and incomplete readings
+  included: a stale or interrupted count of any kind, or a partial one, takes nothing by the whole, so stale tree bytes never authorize
+  removing fresh downloads or caches. 1d proves a move during a walk and stale tree bytes refusing another kind's removal.
 
 ### 4.4 Over the allowance, or over a part, with nothing left that may go
 
@@ -665,6 +744,13 @@ gain is one-off: the install's 27.9 GB, which the person's press frees now and w
   - `whole` keeping the folder its days with its record kept;
   - the history clear and the single delete taking the record with its last session (Opus finding 13);
   - a file held open keeping the folder whole, `busy` (Opus finding 19).
+  - *Amended 2026-10-24* (Codex's reads): the exact tip's holder removed, or the line rewound, between its protection and the delete
+    refusing the delete; a tracked file deleted at the top between the judgement and the move keeping the tree; git's let-go and the
+    put-back both refused, then the restart reaching the record; a stop after the move and after a removal's rename resumed; an unread
+    manifest, an unresolved repository and an unread registry each keeping the folder past its days, then recovering; a 404 keeping the
+    folder awaiting; a holding check passed before never authorizing a later removal; the hour starting after the record's
+    acknowledgement; the press's listed class compared before it removes; the landing recorded after its trace retired; a squashing
+    landing's and a carried branch's tip refs on the look's path and the press's.
 - **KEEPSIZE1a — the set-aside folders at every place of the trees entry** (driver; the defect, under D195 as it stands). **Built on
   main** at `0f6f76b79`, merged at `485c68121` (D195's KEEPSIZE1a note). Every reader reads `.tidied` under each of
   `TreeContext.TreesRoots`, the new place first (`TreeSetAside.SetAsideRoots`, `TreeSetAside.cs:46-47`), so the days, the press, the
@@ -687,7 +773,8 @@ gain is one-off: the install's 27.9 GB, which the person's press frees now and w
     `work_records`, scoped as the search is, and the session page shows its tree's record: landing, tip, ref looked up now, commits,
     the named scratch;
   - **records written before 1c** indexed from `work_records` and the conversations' files at its first open.
-  Proof: a record found by a word of its conversation and by a commit's subject, scoped by workspace; search → read → clear, both forms
+  *Amended 2026-10-24* (§2.2, Codex finding 7): a session's words in `work_records_fts` are its own row, removed with its link in the same
+  transaction. Proof: two linked sessions of distinct words, one cleared, its words gone and the other's and the record kept; and a record found by a word of its conversation and by a commit's subject, scoped by workspace; search → read → clear, both forms
   gone; a repository's refresh and an index rebuild leaving records whole; a 1b record indexed at 1c's first open; a no-kinds search
   not crowded; the shared host never answering one.
 - **KEEPSIZE1d — the allowance, its parts and the browser's kind** (driver, modules, web). §4: `keep.allowance` and each part's `gb`,
@@ -707,7 +794,10 @@ gain is one-off: the install's 27.9 GB, which the person's press frees now and w
     a part refused above N; the lowered N (set-aside 40, then N = 41) refused through each door, `SET_KEEP`, the terminal, *Change…*
     and Ask Daoris's proposal, by the one sum; a file whose sum is above N dropping set parts in reverse table order until it fits;
     a volume whose half is under 3 GB offering no part; the parts' sum at most N in every case; the both-ways test over the new choices;
-  - the card's stories at wide, half and narrow in both languages, with a part over and the whole within, and *at least*.
+  - the card's stories at wide, half and narrow in both languages, with a part over and the whole within, and *at least*;
+  - *amended 2026-10-24* (Codex's read of the accepted text, findings 8 and 9): a tree moved during a walk, its walk interrupted and not
+    counted; stale tree bytes refusing the whole's removal of downloads or caches; a cache's delete failing, its residue counted under
+    `browser-cache` and removed at the next pass.
 - **KEEPSIZE1e — the browser's caches checked at the browser's start** (shell, driver). Only the start: the check inside the host's
   start gate (`EngineBrowserHost.cs:113`), from 1d's kind and part. Proof: round 1's §6 at `d57b7f8d6`, a browser over its part
   starting with its caches cleared, one within it untouched.
@@ -839,6 +929,31 @@ row.
 | 22 | §4.6's shape | holds: `KeepChoices.cs:40` | **Taken**: whole GB; a part above a lowered N refused at the door and not read from the file, as KEEP1d reads every rule; `KeepKinds.BrowserCache` in 1d alone |
 
 **Deferred**: none to a later round. What the rows build is named in each row's proof (§7).
+
+## 12. Codex's read of the accepted text: the amendment (2026-10-24)
+
+Codex's read of the accepted text, owed since its credits ran out, came in with its read of KEEPSIZE1b's branch at `427fb6cda`; both are
+kept in `docs/2026-10-24-keep-size-reads.md`. Its verdict: *stands after named amendments*, findings 1 to 6 amending KEEPSIZE1b before it
+merges, 7's ownership rule before 1b's schema, 8 amending 1d. Each is taken in the text as a dated amendment, the accepted words kept
+where they are corrected; each place was checked against the code on the branch, where 1b builds 1 to 6.
+
+| # | Finding | Where it went | Checked against |
+|---|---|---|---|
+| 1 | **Blocking.** The exact-tip hold is not bound to the branch's delete | §3.1, *the exact tip's holder rests in the delete's own transaction* | `TreeSweeps.cs` (the holder added to `rests` at the commit read; `LineOwnHoldsAsync` returns that commit); `KeepSizeStopsGitTests.A_tip_ref_removed_before_the_delete_refuses_it_and_the_refusal_resumes` |
+| 2 | **Blocking.** `read` does not close the uncommitted-change race | §3.5 step 4 (status read again in the moved folder) and *the race*; §3.4's guards (a finished folder's top read too) | `TreeSetAside.UncommittedAsync`, `WrittenSince`'s `top`; `KeepSizeStopsGitTests.A_tracked_file_deleted_between_the_judgement_and_the_move_keeps_the_tree` |
+| 3 | **Blocking.** Unread inputs become permission to purge | §3.4: the class `unread`, the holding check's three answers, an unresolved repository unread; the table's `unread` row | `SetAsideEligibility.Of`, `HoldingAsync`, `Holding`; `KeepSizeGitTests.A_manifest_that_does_not_read_keeps_the_folder_until_it_reads`, `A_repository_the_registry_cannot_resolve_keeps_the_folder_recorded`, `A_registry_that_did_not_read_runs_no_step` |
+| 4 | **Blocking.** A failed rollback destroys the resume inputs | §3.5 step 4: the manifest forgotten only once the folder is back | `TreeSetAside.PutBack`; `TreeSweeps` (the ref kept where the folder stays aside; a registration whose folder is gone marks its manifest); `KeepSizeStopsGitTests.A_failed_put_back_keeps_the_manifest_and_resumes_to_the_record` |
+| 5 | **Blocking.** `.going/` has no complete restart protocol | §3.4, *renamed before it is deleted*: the removal's record, the manifest kept at its place, the resume rule | `GoingRecord`, `TreeSetAside.Remove`, `ResumeGoingAsync`; `KeepSizeStopsGitTests.A_stop_after_the_rename_puts_the_folder_back_and_a_late_write_keeps_it` |
+| 6 | **Blocking.** The manifest cannot produce the landing record | §2.1's landing row; §3.3's `landing` field and *the landing is captured* | `TreeSweeps.LandingOf`, `FinishedTree.Landing`; the service's `work_records.landing`; `KeepSizeGitTests.The_landing_is_recorded_after_its_trace_is_gone` |
+| 7 | **Blocking.** Clearing one linked session leaves its words indexed | §2.2, *each session's contribution is its own*; 1c's row | 1b stores no session's words (`WorkRecords.cs`: the record's own facts and the links); 1c owes the index and its proof |
+| 8 | **Blocking.** A walk's end does not establish a fresh count | §4.3, *a walk's end is no proof of a fresh count*; 1d's row | design text for 1d; nothing of it is built |
+| 9 | The browser's interrupted clearing leaves residue outside its kind | §4.1 step 2; 1d's row | design text for 1d |
+| 10 | The shared guards contradict the person's disposal | §3.4, *the guards by door* | `SetAsideKeeping.RemoveEarly` (`listedOwn`, the listed class and ref compared); `KeepSizeGitTests.The_press_keeps_a_folder_whose_class_changed_since_its_list` |
+| 11 | Correct the remaining prose | §2.3 (*Clean up…* keeps own scratch), §1.1 (`busy`), §1.4 and §4.2 (logs by source), §3.1 (retention from the ref's creation) | `TreeSweeps.cs:314`, `MachineLog.cs:68, 72, 351`, `RecoveryRetention.cs:25, 29, 110` |
+
+The rows (§7): KEEPSIZE1b's proof gains the cases above; 1c's gains two linked sessions of distinct words, one cleared, its words gone
+and the other's and the record's kept; 1d's gains a move during a walk, stale tree bytes refusing another kind's removal, and an
+interrupted cache delete taken up at the next pass.
 
 ## 11. Round 3's read: where each named change went
 

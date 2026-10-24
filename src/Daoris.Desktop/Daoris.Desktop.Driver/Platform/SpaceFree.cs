@@ -61,6 +61,12 @@ public sealed record SpaceUnit(string Kind, string Id, bool Early, long? Bytes)
 
     /// <summary>A set-aside folder holds files of its own (written after its move, or a link in it): the person's to weigh.</summary>
     public bool? Own { get; init; }
+
+    /// <summary>A set-aside folder's class (KEEPSIZE1b, <see cref="SetAsideClass"/>), which the press lists it by: recorded, awaiting its record, stopped, refused, unmarked.</summary>
+    public string? Class { get; init; }
+
+    /// <summary>A recorded folder's recovery ref at its tip, where one holds it.</summary>
+    public string? Ref { get; init; }
 }
 
 /// <summary>What the press lists (<see cref="SpaceFree.Plan"/>): what each rule takes now, what could go early in groups, and the doors of the kinds with presses of their own.</summary>
@@ -74,7 +80,18 @@ public sealed record SpacePlan(DateTimeOffset At, IReadOnlyList<SpaceUnit> Units
 }
 
 /// <summary>One unit a press asked removed, as the page or the terminal sends it back from the list.</summary>
-public sealed record SpaceAsked(string Kind, string Id, bool Early, string? Why, bool Own);
+public sealed record SpaceAsked(string Kind, string Id, bool Early, string? Why, bool Own)
+{
+    /// <summary>
+    /// A set-aside folder's class as the list gave it (KEEPSIZE1b, <see cref="ListedClass"/>), and the ref it named the folder's tip on: the
+    /// run removes it only while both still read so, else keeps it <c>changed</c> (Codex's read of the branch, finding 4). Null from a list
+    /// that gave none, an older page's.
+    /// </summary>
+    public string? Class { get; init; }
+
+    /// <inheritdoc cref="Class"/>
+    public string? Ref { get; init; }
+}
 
 /// <summary>What the press is handed (<see cref="SpaceFree"/>): the home, and the reads and seams a test stands in for.</summary>
 public sealed record SpaceFreeWorld(string Home)
@@ -99,6 +116,18 @@ public sealed record SpaceFreeWorld(string Home)
 
     /// <summary>A rename aside; a test's refuses, as a program holding the folder makes Windows refuse.</summary>
     public Action<string, string>? Move { get; init; }
+
+    /// <summary>
+    /// The registry's repositories (KEEPSIZE1b), whose checkouts the finished trees' record pass reads git in, read-only; null where the press
+    /// has no service, and then no record is posted and no folder resumed before it lists.
+    /// </summary>
+    public Func<CancellationToken, Task<IReadOnlyList<RepoView>>>? Registry { get; init; }
+
+    /// <summary>The service's door for a finished tree's record (KEEPSIZE1b): null where it keeps it, else why not.</summary>
+    internal Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? PostRecord { get; init; }
+
+    /// <summary>This world with the service's registry and record door (KEEPSIZE1b), for the window's press.</summary>
+    public SpaceFreeWorld WithService(ServiceClient service) => this with { Registry = service.RegistryAsync, PostRecord = service.PostWorkRecordAsync };
 
     /// <summary>The terminal's world alone: this home's downloads judged from its files, its running sessions by the process markers.</summary>
     public static SpaceFreeWorld OfThisTerminal(string home, MachineLog? log) => new(home)
@@ -138,6 +167,40 @@ public static class SpaceFree
     /// <summary>The machine log's days by the person's rule (KEEP1d), which the press lists and removes by as the look's prune does.</summary>
     private static int LogDays(KeepPolicy policy) => (int)policy.Logs.Days.TotalDays;
 
+    /// <summary>
+    /// The finished trees' record pass at the press's run (KEEPSIZE1b, the keep-size design §5), before it removes: each stopped or refused
+    /// folder resumed and each record due posted first, from its manifest, so a folder whose branch went reaches its record before the
+    /// person's word can remove it, and a recorded folder's hour is checked. The list never runs it: it reads the classes as they stand, and
+    /// changes nothing (the second maker's read, finding 7). Nothing where it has no service, or its registry did not read: then no recorded
+    /// folder's hour is due (finding 1).
+    /// </summary>
+    /// <returns>The registry's checkouts, for the run's holding checks; null where it has none, or it did not read.</returns>
+    private static async Task<Func<string, string, string?>?> RecordAsync(SpaceFreeWorld world, Func<string, bool>? only, CancellationToken ct)
+    {
+        if (world.Registry is not { } registry) return null;
+        IReadOnlyList<RepoView>? rows;
+        try
+        {
+            rows = await registry(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            rows = null;
+        }
+
+        var roots = SessionTrees.RootsOf(rows);
+        try
+        {
+            await new SessionTrees(world.Home).RecordSetAsideAsync(roots, world.PostRecord, world.Now, ct, only).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        {
+            // The run reads the folders as they stand.
+        }
+
+        return roots;
+    }
+
     /// <summary>The list, read and never written.</summary>
     public static SpacePlan Plan(SpaceFreeWorld world, CancellationToken ct = default)
     {
@@ -157,6 +220,7 @@ public static class SpaceFree
                 var unit = new SpaceUnit("set-aside", folder.Id, Early: false, bytes)
                 {
                     At = folder.Goes, Workspace = folder.Workspace, Repository = folder.Repository, Own = folder.Own,
+                    Class = ListedClass.Of(folder), Ref = folder.Ref,
                 };
                 if (folder.Past && folder.Kept is null) units.Add(unit with { Why = "past" });
                 if (folder.Slim) units.Add(unit with { Why = "slim", Bytes = null });
@@ -244,7 +308,16 @@ public static class SpaceFree
             {
                 switch (kind)
                 {
-                    case "set-aside": SetAside(world, mine, tally, ct); break;
+                    case "set-aside":
+                    {
+                        // KEEPSIZE1b (§5): the listed folders' steps again, a record due posted first, before any of them goes. The last fixes'
+                        // check, finding 3: each listed class is compared with the class read before this run's own record pass, which moves a
+                        // stopped folder to its record by the press's own word, so it is no change since the list.
+                        var before = ClassesNow(world);
+                        var checkouts = await RecordAsync(world, null, ct).ConfigureAwait(false);
+                        await SetAsideAsync(world, mine, tally, checkouts, before, ct).ConfigureAwait(false);
+                        break;
+                    }
                     case "downloads": await DownloadsAsync(world, mine, tally, run.Door, ct).ConfigureAwait(false); break;
                     case "logs": Logs(world, mine, tally); break;
                     case "browser-cache": await CachesAsync(world, mine, tally, ct).ConfigureAwait(false); break;
@@ -285,7 +358,25 @@ public static class SpaceFree
         }
     }
 
-    private static void SetAside(SpaceFreeWorld world, IReadOnlyList<SpaceAsked> units, SpaceTally tally, CancellationToken ct)
+    /// <summary>Each set-aside folder's class and ref as the list words them, by its id, read now; none where the folders do not read.</summary>
+    private static Dictionary<string, (string Class, string? Ref)> ClassesNow(SpaceFreeWorld world)
+    {
+        try
+        {
+            return new SessionTrees(world.Home).ListSetAside(world.Policy(world.Home), world.Now())
+                .ToDictionary(folder => folder.Id, folder => (ListedClass.Of(folder), folder.Ref), StringComparer.Ordinal);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or HomeEntryTwiceException)
+        {
+            return new(StringComparer.Ordinal);
+        }
+    }
+
+    /// <param name="checkouts">The registry's checkouts, for a recorded folder's holding check right before its rename; with none, none goes by the hour.</param>
+    /// <param name="before">Each folder's class and ref read before the run's record pass (<see cref="ClassesNow"/>), which its listed ones are compared with.</param>
+    private static async Task SetAsideAsync(
+        SpaceFreeWorld world, IReadOnlyList<SpaceAsked> units, SpaceTally tally, Func<string, string, string?>? checkouts,
+        IReadOnlyDictionary<string, (string Class, string? Ref)> before, CancellationToken ct)
     {
         var trees = new SessionTrees(world.Home);
         var roots = trees.SetAsideRoots;
@@ -305,7 +396,7 @@ public static class SpaceFree
         var slim = folders.Where(each => !each.Key.Early && each.Key.Why == "slim").Select(each => Path.GetFullPath(each.Value)).ToHashSet(same);
         if (purge.Count > 0 || slim.Count > 0)
         {
-            var done = trees.KeepSetAside(world.Policy(world.Home), world.Now(), TimeSpan.MaxValue, ct,
+            var done = await trees.KeepSetAsideAsync(world.Policy(world.Home), world.Now(), TimeSpan.MaxValue, ct, checkouts,
                 folder => purge.Contains(Path.GetFullPath(folder)), folder => slim.Contains(Path.GetFullPath(folder)));
             var met = new HashSet<string>(same);
             foreach (var folder in done.Purged.Where(folder => purge.Contains(Path.GetFullPath(folder.Folder))))
@@ -335,7 +426,28 @@ public static class SpaceFree
         foreach (var (unit, folder) in folders.Where(each => each.Key.Early))
         {
             ct.ThrowIfCancellationRequested();
-            var (bytes, kept) = trees.RemoveSetAsideEarly(folder, unit.Own);
+            if (unit.Class is not null && before.TryGetValue(unit.Id, out var was) && (unit.Class, unit.Ref) != was)
+            {
+                tally.Keep(SpaceKept.Changed, early: true);
+                continue;
+            }
+
+            // What it reads now, after the run's record pass: the removal compares this with what it reads right before its rename.
+            var judged = TreeSetAside.MovedAt(Path.GetFileName(folder)) is { } moved ? SetAsideEligibility.Of(folder, moved, TimeSpan.Zero, whole: true) : null;
+            var now = judged is null ? null : ListedClass.Of(judged.Class, judged.Manifest?.Why, judged.Manifest?.Finished is not null);
+            // The last fixes' check, finding 4: a folder listed recorded, or recorded now, is checked for its holder right before it goes, as the
+            // hour's door checks it, and kept `changed` unless the check passes; with no registry, it cannot pass.
+            if ((unit.Class == SetAsideClass.Recorded || now == SetAsideClass.Recorded) && judged?.Manifest is { Finished: { } finished } manifest)
+            {
+                var (held, _) = await SetAsideEligibility.HoldingAsync(checkouts?.Invoke(finished.Workspace, manifest.Repository), manifest, ct).ConfigureAwait(false);
+                if (held != Holding.Passed)
+                {
+                    tally.Keep(SpaceKept.Changed, early: true);
+                    continue;
+                }
+            }
+
+            var (bytes, kept) = trees.RemoveSetAsideEarly(folder, unit.Own, unit.Class is null ? null : now, judged?.Manifest?.Finished?.Ref);
             if (kept is null) tally.Remove(bytes, early: true);
             else tally.Keep(kept, early: true);
         }
@@ -563,6 +675,22 @@ public static class SpaceFree
         }
     }
 
+    /// <summary>
+    /// How many of a group's set-aside folders are of each listed class (KEEPSIZE1b, <see cref="SpaceUnit.Class"/>): what the list can say of
+    /// each and nothing more (the second maker's read, finding 9).
+    /// </summary>
+    private static JsonObject Classes(IReadOnlyList<SpaceUnit> units) => new()
+    {
+        ["recorded"] = units.Count(unit => unit.Class == SetAsideClass.Recorded),
+        ["awaiting"] = units.Count(unit => unit.Class == SetAsideClass.Awaiting),
+        ["stands"] = units.Count(unit => unit.Class == ListedClass.Stands),
+        ["stopped"] = units.Count(unit => unit.Class is SetAsideClass.Stopped or SetAsideClass.Refused),
+        ["unheld"] = units.Count(unit => unit.Class == ListedClass.Unheld),
+        // The last fixes' check, finding 9: a folder whose manifest does not read is listed early too, and counted as what it is.
+        ["unread"] = units.Count(unit => unit.Class == SetAsideClass.Unread),
+        ["unmarked"] = units.Count(unit => unit.Class is null or SetAsideClass.Unmarked),
+    };
+
     /// <summary>The list as the route and <c>--json</c> answer it, field for field: every field added, never renamed.</summary>
     public static JsonObject Json(SpacePlan plan)
     {
@@ -581,6 +709,8 @@ public static class SpaceFree
                 ["count"] = units.Count,
                 ["bytes"] = units.All(unit => unit.Bytes is not null) ? units.Sum(unit => unit.Bytes!.Value) : null,
                 ["own"] = units.Count(unit => unit.Own == true),
+                // KEEPSIZE1b (the keep-size design §5): the set-aside folders by class, each said with what the list can say of it.
+                ["classes"] = group == "set-aside" ? Classes(units) : null,
                 ["units"] = listed,
             });
         }
@@ -602,6 +732,7 @@ public static class SpaceFree
     {
         ["kind"] = unit.Kind, ["id"] = unit.Id, ["early"] = unit.Early, ["why"] = unit.Why, ["bytes"] = unit.Bytes,
         ["at"] = Moments.Write(unit.At), ["workspace"] = unit.Workspace, ["repository"] = unit.Repository, ["own"] = unit.Own,
+        ["class"] = unit.Class, ["ref"] = unit.Ref,
     };
 
     /// <summary>
@@ -626,13 +757,37 @@ public static class SpaceFree
                 }
 
                 var own = each.TryGetProperty("own", out var said) && said.ValueKind == JsonValueKind.True;
-                asked.Add(new SpaceAsked(kind, id, early, Text("why"), own));
+                asked.Add(new SpaceAsked(kind, id, early, Text("why"), own) { Class = Text("class"), Ref = Text("ref") });
             }
         }
 
         if (asked.Count == 0) throw new ArgumentException("a press names `units` or `early` to remove.");
         return asked;
     }
+}
+
+/// <summary>
+/// The class a set-aside folder is listed by (KEEPSIZE1b, the keep-size design §5): its <see cref="SetAsideClass"/>, but a stopped or refused
+/// folder whose check said its branch stands is <see cref="Stands"/>, and a finished folder unmarked by a failed check is <see cref="Unheld"/>
+/// (the second maker's read, finding 9).
+/// </summary>
+internal static class ListedClass
+{
+    /// <summary>Stopped or refused, and the last check said its branch stands.</summary>
+    public const string Stands = "stands";
+
+    /// <summary>A finished tree's folder whose holding check failed: what holds its commits could not be confirmed.</summary>
+    public const string Unheld = "unheld";
+
+    internal static string Of(SetAsideListed folder) => Of(folder.Class, folder.Why, folder.Finished);
+
+    /// <summary>A class as it is listed, from the folder's class, its manifest's why and whether it is a finished tree's.</summary>
+    internal static string Of(string cls, string? why, bool finished) => cls switch
+    {
+        SetAsideClass.Stopped or SetAsideClass.Refused when why == SetAsideEligibility.BranchStands => Stands,
+        SetAsideClass.Unmarked when finished => Unheld,
+        var other => other,
+    };
 }
 
 /// <summary>What a run's kind removed and kept, as it goes.</summary>

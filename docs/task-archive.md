@@ -24,6 +24,7 @@ MAINRED1 note. The name repeats the 2026-10-20 MAINRED1 below, as the quest name
 `SESSION_OPENINGS`, `HELP_PROPOSALS`, `TOOLS_LIST`) answer from what is held and tell their work's answer as `DAORIS.ANSWERED`
 (`HeldAnswers`, `[ByEvent]`, `bridge/state/held.ts`); `DAORIS.UPDATE.STATE` already read only memory and is unchanged.
 `WindowCensusTests` holds the rule, with 88 routes owed their move. Detail: D56's NOBLOCK1 note, the fix log's entry.
+A backlog row filed for it while the quest was building stood open after it landed; it was removed on 2026-10-25.
 
 ## MAINT2 — close review findings (2026-10-10)
 
@@ -20268,7 +20269,7 @@ segment stream and the media player are new surface it does not use; the Chromiu
 Daoris's window is a WinForms form hosting a `ChromiumView`. None of KITREQ1's four requests is answered (`ChromiumEngine`,
 `ChromiumChildBrowser` and the single-instance code are unchanged since 0.22.0), so no workaround goes and KITREQ1 stays open. The
 desktop builds; the driver's, modules' and both service projects' fast halves, the web's unit tests and typecheck pass. Detail: D22's and D171's
-SHENORA024 notes.
+SHENORA024 notes. A backlog row filed for it while the quest was building stood open after it landed; it was removed on 2026-10-25.
 
 ## SUPERVISOR1a-ii — the door, built dark (2026-10-24, D208)
 
@@ -20623,3 +20624,65 @@ an end-to-end test of a live conversation's terminal press through the pipe. Det
 the terminal offer the person's way past it (`LAND_WITHOUT_LOOK`, `--without-look`), kept at the press's captured tip and landed
 there, a later commit asking again and a moved tree never landed under the skip; each proof seen failing first. Detail: D157's
 CHATFLOW1d note.
+## STEWARDROLE1c — the steward's desk, built dark (2026-10-25, D209)
+
+> **STEWARDROLE1c — the steward's desk** (modules, driver; after 1a-i, sequenced after 1b). `STEWARD_REQUEST`, an open route any caller files, bounded per caller by its agent job or long-lived ancestor and in all, listed to the holder as claims, admitting nothing, closed by an act or a reasoned decline. Proof: the design's §10 row 1c.
+
+(Row 1c of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6b5e7d93ca83`.)
+
+**Outcome** 2026-10-25, dark: `StewardOffered` stays false, so a request is refused `not-offered` and the page draws nothing of the
+desk. The modules: `STEWARD_REQUEST` and `STEWARD_DESK`, both `Open`, the desk in the judge's memory (`StewardDesk`), ten open per
+caller keyed by `DeskCaller` (the agent job, else the nearest ancestor alive a minute) and a hundred in all, closed by the steward's
+act on what it named or the holder's `desk-decline`, and `STATE`'s `stewardDesk`. The driver: `daoris-driver steward desk`, fenced
+as the callers' claims, `steward desk decline` and `steward request`; the holder's brief at r3. The web: the desk under the
+*Notifications* line, in en and zh. Proof: `StewardDeskTests`, `DriverModuleAppointmentTests`' desk routes, `StewardCommandTests`'
+desk cases and the line's and the reader's page tests, each case seen failing first. Detail and readings: D209's STEWARDROLE1c note.
+## SUPERVISOR1e — scope and window, still dark (2026-10-25, D208)
+
+> **SUPERVISOR1e — scope and window** (modules, web; after 1a-ii). A workspace's appointment, the repository's own winning; the overrule window set by the owner, 1 to 60 minutes. Proof: §11 row e.
+
+(Quest `#739e08f3c54b`.)
+
+**Outcome** 2026-10-25, in three parts on one branch, dark (`SupervisorOffered` false). The supervisor may be appointed for
+`workspace:<name>`, covering every repository the registry places there as each act is judged, a later one included; the
+repository's own appointment wins, and one made over the workspace's makes that workspace's held and released decisions for the
+repository `stale` (`appointment-changed`), the workspace's standing for its others. `SET_APPOINTMENT`'s `window`, 1 to 60 minutes,
+five where none, is written beside the appointment and handed to the decisions through the admission, which hold for it. A
+workspace's Setup gains a *Supervisor* section; both asks set the window; a repository row says the workspace's that covers it;
+*Notifications*' line names a workspace's appointment and each one's window, and turns one off by its scope; en and zh. Proof:
+`SupervisorScopeTests`, `SupervisorDecisionTests`, `SupervisorRow.test.tsx`, `WorkspaceSetup.test.tsx`, `SupervisorLine.test.tsx`,
+`person.standing.test.tsx`, each case seen failing first. Detail: D208's SUPERVISOR1e note.
+
+## KEEPSIZE1b — a finished tree's record kept, and its tree let go an hour after (2026-10-24, D195)
+
+> **KEEPSIZE1b — a finished tree's record kept, and its tree let go an hour after** (driver, service, web words). §2 and §3 with the record's write and store but not yet its search: the tip's recovery ref on both paths (§3.1); the schema-2 manifest for every finished tree, a manifest not written keeping the tree (§3.3); `SetAsideEligibility` read by the hour's purge, the days' purge and the press (§3.4); one purge call with `after` per class; the rename before the delete; the steps, the `read` threshold and the resume (§3.5); `work_records`, `work_record_sessions` and their migration, the post and its retry; `Sessions.DeleteAsync` taking the record; `whole`'s meaning; the card's set-aside words and its classes. (The keep-size design §7's first row.)
+
+(Quest `#9c24a0a8c55e`.)
+
+**Outcome** 2026-10-24, on its branch, its merge waiting on a second maker's read of the branch and Codex's read of the design's accepted
+text: the service keeps a finished tree's record in `work_records` and `work_record_sessions` (`Sessions/WorkRecords.cs`, their own
+stamp, a newer one refused), posted by the driver to `POST /api/trees/record`, kept once by its identity, gone with its last session
+through `SessionStore.DeleteAsync` or with a clear of history by its `at`. The driver holds the exact tip on a recovery ref wherever
+the line's own branch does not, writes a schema-2 manifest for every finished tree (one not written keeps the tree), marks its steps,
+composes and posts the record after the hold at each Keeping pass and at the press's run before it removes, and purges by class in one call (a recorded
+folder an hour after its record, an awaiting one never, the rest at their days), renaming each folder into `.tidied/.going` first. The
+card says the new rule, and the press says each folder's class, in both languages. Proof: `KeepSizeGitTests` (14 cases over real git),
+`KeepingSlimTests`' first case retold for a service that does not answer, `WorkRecordStoreTests` and `WorkRecordHostTests`. The run:
+`KeepSizeGitTests` and `KeepingSlimTests` 19 of 19 with `git.process.runsettings`, the service's suites 2,710 and 332, the driver's fast
+half 14,319 after one fix. Seen failing first: the landed and origin-only cases with the hour's rule and §3.1's ref taken out, and the
+service's delete cases with the record's removal taken out; the squash case passed either way, since a squash held by content had its
+ref before this row, and the other cases were written beside the code and seen failing only on their own first run. What the row left
+is KEEPSIZE1b2 in `TASKS.md`. *After the second maker's read* (2026-10-24): its findings 1 to 4 and 6 to 11 taken on the branch,
+`KeepSizeGitTests` (18 cases) and `KeepingSlimTests` passing 23 of 23 together, the hour's and the link's cases seen failing with their guards taken out;
+finding 5's proofs added to KEEPSIZE1b2. *After Codex's reads* (2026-10-24): the design amended where they named (§12); on the
+branch, a recorded folder goes only on a holding check run right before its rename, the exact tip's holder rests in the delete's
+transaction, a 404 keeps the record awaited, the press compares its listed class and ref, the hour starts after the acknowledgement, a
+failed put-back and a stop in `.going` resume, and the landing is captured; `KeepSizeGitTests` (18 cases) and `KeepSizeStopsGitTests`
+(11), each blocking finding's case seen failing with its guard taken out. Its outcome above is corrected: the press's run, not its list,
+resumes and posts first. *After the check of its last fixes* (2026-10-25, 9 findings, 2 blocking): a stop inside a begun delete
+(`SetAsideFault.StopInDelete`) resumed over real git through both doors; a repository the registry does not name posts nothing, its why
+kept and the folder `deleted`, until it is named; the press's class compared before its own record pass and its holder checked before it
+goes; the sweep's empty rests kept, said; the landing found by its branch; an unnamed repository's folder counted as waiting; the rules'
+doors read again under `.going`; and a slim's stamped end read as its millisecond's end, which that read again exposed.
+`KeepSizeStopsGitTests` and `KeepSizeGitTests` gained the blocking cases, each seen failing with its guard taken out. Detail: D195's
+KEEPSIZE1b notes.

@@ -544,7 +544,7 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
 
         // KEEPSIZE1a: the folders moved aside at every place of the trees, the old place's included.
         foreach (var aside in SetAsides.SetAsideRoots.Where(Directory.Exists))
-        foreach (var workspace in Directory.EnumerateDirectories(aside))
+        foreach (var workspace in SetAsideEligibility.Workspaces(aside))
         foreach (var repository in Repositories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
@@ -740,16 +740,38 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     /// <inheritdoc cref="TreeSetAside.PurgeSetAside(DateTimeOffset, TimeSpan)"/>
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after) => SetAsides.PurgeSetAside(now, after);
 
+    /// <inheritdoc cref="FinishedRecords.RunAsync"/>
+    internal Task<IReadOnlyList<FinishedStep>> RecordSetAsideAsync(
+        Func<string, string, string?>? rootOf, Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? post, Func<DateTimeOffset> clock,
+        CancellationToken ct, Func<string, bool>? only = null, Func<bool>? spent = null) =>
+        new FinishedRecords(SetAsides).RunAsync(rootOf, post, clock, ct, only, spent);
+
+    /// <summary>
+    /// The registry's checkouts, by workspace and repository, for the record pass's git reads outside every hold (the keep-size design §3.4):
+    /// a repository it does not name is unresolved, and its folder waits its days. Null where the registry did not read: then no step runs.
+    /// </summary>
+    internal static Func<string, string, string?>? RootsOf(IReadOnlyList<RepoView>? registry) => registry is null ? null :
+        (workspace, repository) => registry.FirstOrDefault(row =>
+            string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(RemoteTarget.Workspace(row.Workspace), workspace, StringComparison.OrdinalIgnoreCase))?.Root;
+
     /// <inheritdoc cref="SetAsideKeeping.Run"/>
     internal SetAsideRun KeepSetAside(
         KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct, Func<string, bool>? purge = null, Func<string, bool>? slim = null) =>
         Keeping.Run(policy, now, budget, ct, purge, slim);
 
+    /// <inheritdoc cref="SetAsideKeeping.RunAsync"/>
+    internal Task<SetAsideRun> KeepSetAsideAsync(
+        KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct, Func<string, string, string?>? rootOf,
+        Func<string, bool>? purge = null, Func<string, bool>? slim = null) =>
+        Keeping.RunAsync(policy, now, budget, ct, purge, slim, rootOf);
+
     /// <inheritdoc cref="SetAsideKeeping.List"/>
     internal IReadOnlyList<SetAsideListed> ListSetAside(KeepPolicy policy, DateTimeOffset now) => Keeping.List(policy, now);
 
     /// <inheritdoc cref="SetAsideKeeping.RemoveEarly"/>
-    internal (long Bytes, string? Kept) RemoveSetAsideEarly(string folder, bool listedOwn) => Keeping.RemoveEarly(folder, listedOwn);
+    internal (long Bytes, string? Kept) RemoveSetAsideEarly(string folder, bool listedOwn, string? listedClass = null, string? listedRef = null) =>
+        Keeping.RemoveEarly(folder, listedOwn, listedClass, listedRef);
 
     /// <inheritdoc cref="TreeSetAside.LastLookAsync"/>
     internal Task<(string Code, string Sentence, string? Cause)?> LastLookAsync(
