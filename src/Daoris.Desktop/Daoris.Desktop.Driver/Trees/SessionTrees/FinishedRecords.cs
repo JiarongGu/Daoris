@@ -117,8 +117,8 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
                 continue;
             }
 
-            // The hour come, the holding check again right before the purge reads the class: a ref dropped by hand, a line rewound, unmarks it;
-            // a check that passes stamps its moment, the only one the hour's purge takes the folder on (finding 1).
+            // The hour come, the holding check again: a ref dropped by hand, a line rewound, unmarks it. One that passes authorizes nothing and
+            // writes nothing: the purge runs its own right before each rename (Codex's read of the branch, finding 1).
             if (state == SlimStates.Recorded && manifest.Recorded is { } recorded && clock() - recorded >= KeepKinds.SetAsideSettle && !finished.Whole)
             {
                 var (held, why) = await SetAsideEligibility.HoldingAsync(root, manifest, ct).ConfigureAwait(false);

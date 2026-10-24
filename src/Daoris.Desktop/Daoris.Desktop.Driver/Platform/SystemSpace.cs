@@ -570,14 +570,14 @@ public static class SystemSpace
         }
     }
 
-    /// <summary>The set-aside folders: each goes its days after its move (the purge), its bytes from the kind's last walk.</summary>
     /// <summary>
-    /// How many set-aside folders wait with no rule's date (KEEPSIZE1b): awaiting their record, or whose manifest does not read. Read from the
-    /// manifests beside them, no walk; null where none waits.
+    /// How many set-aside folders wait with no rule's date (KEEPSIZE1b): awaiting their record, whose manifest does not read, or recorded where the
+    /// registry names no checkout of their repository, so no holding check can run (<c>unnamed</c>, the last fixes' check, finding 7). Read from
+    /// the manifests beside them, no walk; null where none waits.
     /// </summary>
     internal static JsonObject? SetAsideWaiting(string home, KeepPolicy policy)
     {
-        int awaiting = 0, unread = 0;
+        int awaiting = 0, unread = 0, unnamed = 0;
         foreach (var root in DaorisHome.Places(home, HomeEntry.Trees).Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).Where(Directory.Exists))
         foreach (var workspace in SetAsideEligibility.Workspaces(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
@@ -587,11 +587,17 @@ public static class SystemSpace
             var judged = SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole);
             if (judged.Class == SetAsideClass.Awaiting) awaiting++;
             else if (judged.Class == SetAsideClass.Unread) unread++;
+            else if (Unnamed(judged)) unnamed++;
         }
 
-        return awaiting + unread == 0 ? null : new JsonObject { ["awaiting"] = awaiting, ["unread"] = unread };
+        return awaiting + unread + unnamed == 0 ? null : new JsonObject { ["awaiting"] = awaiting, ["unread"] = unread, ["unnamed"] = unnamed };
     }
 
+    /// <summary>A recorded folder whose last holding check found no checkout of its repository named: it waits, never next (finding 7).</summary>
+    private static bool Unnamed(SetAsideEligibility judged) =>
+        judged.Class == SetAsideClass.Recorded && judged.Manifest?.Why == SetAsideEligibility.NoCheckout;
+
+    /// <summary>The set-aside folders: each goes when its class says (the hour after its record, else its days), its bytes from the kind's last walk.</summary>
     internal static (JsonObject? Next, string? Why) SetAsideNext(string home, KeepPolicy policy, KindReading? reading)
     {
         var roots = DaorisHome.Places(home, HomeEntry.Trees).Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).Where(Directory.Exists).ToList();
@@ -604,8 +610,10 @@ public static class SystemSpace
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
             if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
-            // KEEPSIZE1b (the keep-size design §3.4): a recorded folder an hour after its record; one awaiting its record has no next.
-            if (SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole).Due is not { } due) continue;
+            // KEEPSIZE1b (the keep-size design §3.4): a recorded folder an hour after its record; one awaiting its record has no next, nor one
+            // whose repository the registry no longer names, which the waiting line counts (the last fixes' check, finding 7).
+            var judged = SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole);
+            if (judged.Due is not { } due || Unnamed(judged)) continue;
             goes.Add((due, $"{Path.GetFileName(workspace)}/{Path.GetFileName(repository)}/{Path.GetFileName(folder)}"));
         }
 

@@ -686,6 +686,8 @@ public static class SpaceFree
         ["stands"] = units.Count(unit => unit.Class == ListedClass.Stands),
         ["stopped"] = units.Count(unit => unit.Class is SetAsideClass.Stopped or SetAsideClass.Refused),
         ["unheld"] = units.Count(unit => unit.Class == ListedClass.Unheld),
+        // The last fixes' check, finding 9: a folder whose manifest does not read is listed early too, and counted as what it is.
+        ["unread"] = units.Count(unit => unit.Class == SetAsideClass.Unread),
         ["unmarked"] = units.Count(unit => unit.Class is null or SetAsideClass.Unmarked),
     };
 

@@ -573,9 +573,11 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByText(`${size(143.5 * 1024 ** 3)} of ${size(1024 ** 4)}`)).toBeTruthy();
     expect(scope.getByText('Set-aside trees')).toBeTruthy();
     expect(scope.getByText("a finished session's tree goes an hour after its record is kept; others after 14 days")).toBeTruthy();
-    // KEEPSIZE1b (the keep-size design §4.5): what waits for its record is said beside *next*, never silent past its days.
+    // KEEPSIZE1b (the keep-size design §4.5): what waits for its record is said beside *next*, never silent past its days; and a recorded
+    // folder whose repository the registry no longer names, with its reason (the last fixes' check, finding 7).
     expect(scope.getByText(
       `next: 3 folders, ${size(0.6 * 1024 ** 3)} on ${dayOf('2026-10-29T09:00:00.000+00:00')} · 2 waiting for their record · `
+      + "1 with its record kept, waiting for the registry to name its repository's checkout · "
       + `last: ${clockOf('2026-10-16T08:10:00.000+00:00')}, 2 removed, ${size(1.1 * 1024 ** 3)}`,
     )).toBeTruthy();
     expect(scope.getByText('an unused version goes 7 days after it was found unused')).toBeTruthy();
@@ -652,12 +654,14 @@ describe('Settings → This Daoris', () => {
     expect(list.getByText('What could go early, by your word')).toBeTruthy();
     // KEEPSIZE1b (the keep-size design §5): each set-aside folder's class, said with what the list can say of it.
     expect(list.getByText(
-      // One awaits its record, which has no date (the second maker's read, finding 9).
-      '1 folder before its date · 1 holds files of its own · 1 with its record kept · 1 whose record is not kept yet',
+      // One awaits its record and one's manifest does not read, neither with a date (the second maker's read, finding 9; the last fixes'
+      // check, finding 9).
+      '1 folder before its date · 1 holds files of its own · 1 with its record kept · 1 whose record is not kept yet · 1 whose manifest does not read',
     )).toBeTruthy();
     // And each folder with its class and its holder (Codex's read of the branch, finding 12); the names and the ref are content.
     expect(list.getByText('games/Daoris/s-3-20261014T090000000Z: its record kept, its tip on refs/daoris/discarded/daoris/s-3')).toBeTruthy();
     expect(list.getByText('games/Kobo/s-4-20261015T090000000Z: its record is not kept yet')).toBeTruthy();
+    expect(list.getByText('games/Kobo/s-5-20261016T090000000Z: its manifest does not read')).toBeTruthy();
     expect(list.getByText('kept while the browser runs')).toBeTruthy();
     expect(list.getByText('2 folders · webview2, browser/profile')).toBeTruthy();
     expect(list.getByText("With their own press: Clear history… on a workspace's page · Clean up… on its Branches.")).toBeTruthy();
@@ -685,7 +689,7 @@ describe('Settings → This Daoris', () => {
     await userEvent.click(list.getAllByRole('button', { name: 'Remove…' })[0]!);
     expect(list.getByText(/These folders go whole, before their date/)).toBeTruthy();
     expect(freeCalls()).toHaveLength(1);
-    await userEvent.click(list.getByRole('button', { name: 'Remove 2' }));
+    await userEvent.click(list.getByRole('button', { name: 'Remove 3' }));
 
     await vi.waitFor(() => expect(freeCalls()).toHaveLength(2));
     expect(freeCalls()[1]).toEqual({

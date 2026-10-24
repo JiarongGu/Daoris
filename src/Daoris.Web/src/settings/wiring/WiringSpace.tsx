@@ -284,6 +284,8 @@ function NextAndLast({ kind }: { kind: SpaceKind }) {
   // KEEPSIZE1b (the keep-size design §4.5): what waits with no rule's date, said so a folder kept past its days is never silent.
   if (kind.waiting?.awaiting) parts.push(t('settings.daoris.space.waiting.awaiting', { count: kind.waiting.awaiting }));
   if (kind.waiting?.unread) parts.push(t('settings.daoris.space.waiting.unread', { count: kind.waiting.unread }));
+  // The last fixes' check, finding 7: a recorded folder whose repository the registry no longer names waits, said, and is never next.
+  if (kind.waiting?.unnamed) parts.push(t('settings.daoris.space.waiting.unnamed', { count: kind.waiting.unnamed }));
   if (runs(kind)) {
     if (kind.last) {
       parts.push(t('settings.daoris.space.last', { when: clockOf(kind.last.at), count: kind.last.removed.count, size: size(kind.last.removed.bytes) }));

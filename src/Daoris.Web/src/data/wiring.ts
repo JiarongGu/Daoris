@@ -136,8 +136,11 @@ export type SpaceKind = {
   settable: boolean;
   bounds?: { min: number; max: number; whole: boolean; never: boolean } | null;
   next: { at: string; count: number; bytes: number | null } | null; nextWhy: Why;
-  /** KEEPSIZE1b: the set-aside folders no rule may take yet, awaiting their record or unread; absent from a driver before it. */
-  waiting?: { awaiting: number; unread: number } | null;
+  /**
+   * KEEPSIZE1b: the set-aside folders no rule may take yet, awaiting their record or unread, or recorded where the registry names no checkout
+   * of their repository (`unnamed`, absent from a driver before it); absent from a driver before KEEPSIZE1b.
+   */
+  waiting?: { awaiting: number; unread: number; unnamed?: number } | null;
   last: { at: string; door: string; removed: { count: number; bytes: number }; kept: Record<string, number> } | null; lastWhy: Why;
 };
 
@@ -225,6 +228,9 @@ export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadab
 /**
  * The set-aside folders of the press's early group by class (KEEPSIZE1b, the keep-size design §5): recorded, its tip held by a ref or the
  * line; awaiting its record; its branch standing; stopped between its steps; what holds its commits not confirmed (`unheld`); and
- * unmarked, from before this build or not a finished tree. `stopped` and `unheld` are absent from a driver before them.
+ * unmarked, from before this build or not a finished tree; and `unread`, whose manifest does not read. `stopped`, `unheld` and `unread` are
+ * absent from a driver before them.
  */
-export type SetAsideClasses = { recorded: number; awaiting: number; stands: number; stopped?: number; unheld?: number; unmarked: number };
+export type SetAsideClasses = {
+  recorded: number; awaiting: number; stands: number; stopped?: number; unheld?: number; unread?: number; unmarked: number;
+};

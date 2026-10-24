@@ -330,6 +330,9 @@ public sealed class KeepSizeGitTests : KeepSizeFixture
 
         Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
         Assert.Equal((false, SetAsideKept.Unheld), (kept.Purged, kept.Code));
+        // The last fixes' check, finding 7: the card counts it in its waiting line, with its reason, and never names it next.
+        Assert.Equal(1, (int?)SystemSpace.SetAsideWaiting(_home, KeepPolicy.Default)?["unnamed"]);
+        Assert.Null(SystemSpace.SetAsideNext(_home, KeepPolicy.Default, null).Next);
         Assert.True(Assert.Single(await PurgeAsync(trees, now.AddDays(20), root)).Purged);
     }
 
@@ -353,6 +356,10 @@ public sealed class KeepSizeGitTests : KeepSizeFixture
         Assert.Empty(await PurgeAsync(trees, now.AddDays(20), root));
         Assert.Empty(_posts);
         Assert.Equal(SetAsideClass.Unread, Assert.Single(trees.ListSetAside(KeepPolicy.Default, now)).Class);
+        // The last fixes' check, finding 9: the press's early group counts it as what it is, never among the unmarked.
+        var plan = SpaceFree.Json(SpaceFree.Plan(new SpaceFreeWorld(_home) { Sizes = new SpaceSizes(), Now = () => now }));
+        var group = Assert.Single(plan["early"]!.AsArray(), each => (string?)each!["group"] == "set-aside")!;
+        Assert.Equal((1, 0), ((int)group["classes"]!["unread"]!, (int)group["classes"]!["unmarked"]!));
 
         await File.WriteAllTextAsync(path, whole);
         await RecordAsync(trees, root, now);

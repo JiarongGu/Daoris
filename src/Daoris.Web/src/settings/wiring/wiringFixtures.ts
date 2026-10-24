@@ -224,7 +224,7 @@ export const SPACE: SystemSpace = {
       next: { at: '2026-10-29T09:00:00.000+00:00', count: 3, bytes: 0.6 * GB },
       last: { at: '2026-10-16T08:10:00.000+00:00', door: 'look', removed: { count: 2, bytes: 1.1 * GB }, kept: {} },
       // KEEPSIZE1b: what waits with no rule's date.
-      waiting: { awaiting: 2, unread: 0 },
+      waiting: { awaiting: 2, unread: 0, unnamed: 1 },
     }),
     spaceKind('downloads', {
       entries: ['toolchain', 'tool-versions'], bytes: 1.4 * GB,
@@ -319,10 +319,11 @@ export const SPACE_PLAN: SpacePlan = {
   ],
   early: [
     {
-      group: 'set-aside', count: 2, bytes: 1.5 * GB, own: 1, classes: { recorded: 1, awaiting: 1, stands: 0, unmarked: 0 },
+      group: 'set-aside', count: 3, bytes: 1.5 * GB, own: 1, classes: { recorded: 1, awaiting: 1, stands: 0, unread: 1, unmarked: 0 },
       units: [
         { kind: 'set-aside', id: 'games/Daoris/s-3-20261014T090000000Z', early: true, why: 'early', bytes: 0.5 * GB, at: '2026-10-28T09:00:00.000+00:00', workspace: 'games', repository: 'Daoris', own: true, class: 'recorded', ref: 'refs/daoris/discarded/daoris/s-3' },
         { kind: 'set-aside', id: 'games/Kobo/s-4-20261015T090000000Z', early: true, why: 'early', bytes: 1.0 * GB, at: '2026-10-29T09:00:00.000+00:00', workspace: 'games', repository: 'Kobo', own: false, class: 'awaiting', ref: null },
+        { kind: 'set-aside', id: 'games/Kobo/s-5-20261016T090000000Z', early: true, why: 'early', bytes: null, at: null, workspace: 'games', repository: 'Kobo', own: false, class: 'unread', ref: null },
       ],
     },
     {
