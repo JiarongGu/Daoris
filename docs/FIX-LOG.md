@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - TransientRetryTickTests passed its waits by a guess, and a stand-in's own failure ended a case (AGENTERRORS1, the tick tests' determinism)
+
+- **Symptom:** on the steward's runs of the merged AGENTERRORS1 tree, `TransientRetryTickTests` (Process half) failed now and then and
+  passed alone: `A_driven_session_failing_transient_twice_goes_on_in_the_same_conversation_and_ends_as_its_work_does` once in three
+  runs, and `A_limit_at_the_open_after_a_transient_failure_cools_its_account` (`open-limit`) in another.
+- **Root cause:** three things in the tests, none in the driver. (1) `PassAsync` waited for `MovedClock.Waiting`, *any* timer
+  due, then moved the clock by the schedule's minutes from wherever it stood. Under load the timer seen could be another one on
+  the same clock, so the move could land before the run's own retry timer was made, or reach it from the wrong moment, and the
+  case's later waits went out of step with the run's. The refused resume's fallback was drained the same way, by a
+  guessed sixteen minutes a step. (2) The stand-in agent's `line` handler was an `async` function whose rejection nobody caught: a
+  `fetch` to the stand-in service the machine's load refused ended the agent's process, and its stream's end is a case's own
+  subject. (3) `SaidStandIn`'s serving loop let one request's exception, in the answer or in writing it, escape the loop, so every
+  later request of the case went unanswered and the case ran out its patience saying something else.
+- **Fix:** `PassAsync` waits on the record's own state (`.claude/knowledge/held-clocks.md`): the session's next quiet `transient`
+  event names when its try goes, and the clock moves only once `MovedClock.Pending` holds a timer due at exactly that moment, to
+  that moment; the gap is asserted to be the schedule's minutes, and a resume's wait is read on its own session (`s2`, D79).
+  `DrainAsync` moves to the earliest pending timer instead of a guess. The stand-in agent retries its own call to the service and
+  logs a failure of its own as `stand-in-failed`, which fails the case in `Dispose`; `SaidStandIn` answers a throwing request 500 and
+  keeps it in `Faults`, said by each failure message. The cooling assertion reads `AccountCooling` on the machine's clock, the one
+  `HarnessRoster.Clock` writes it on, not the retry's held clock. What each case proves is unchanged.
+- **Verification:** `TransientRetryTickTests` with `src/Daoris.Desktop/process.runsettings`, ten runs in a row: 12 of 12 in
+  each, 120 of 120. The driver's whole Process half: the class 12 of 12 within it; 789 of 794 overall, the other five failing
+  outside the class, four on a tree that had not built `Daoris.Service.Mcp` and one `SessionWatchProcessTests` case, all nine
+  of those classes green again once it was built (9 of 9). The driver's fast half: 14,471 of 14,471.
+
 ## 2026-10-24 - A session's own git read a committed file past 260 characters in its tree as deleted (TREELONG1)
 
 - **Symptom:** seen on the install's work workspace. A file at 242 characters in a repository's checkout is at 265 in a session's
