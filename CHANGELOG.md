@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- A terminal's change that waits for your Confirm in Daoris's window now names its request at once (CONFIRMWAIT1b). The line says
+  the request's id, that `daoris-driver result <id>` says how it ended, and that `daoris-driver withdraw <id>` takes it back.
+  `--wait <minutes>`, 0 to 30, says how long a verb waits for your answer, and `--no-wait` returns once it is asked. Ctrl+C still
+  takes nothing back. The window's half follows: until it lands, a request still ends unanswered after its two minutes, and
+  `withdraw <id>` says that this Daoris cannot take one back yet. Then the new `withdraw <id>` takes back a request that still
+  waits, never one you already confirmed. A request still waiting when the verb stops ends the verb with exit 1, and `result <id>`
+  keeps it for up to thirty days.
 - When a repository's own git hook refuses the merge commit as you accept a session's work, Daoris now says so (HOOKMERGE1). It
   says that the hook refused it and nothing conflicted, and quotes what the hook printed. Before, it said only that git would not
   merge. Daoris still runs the repository's hooks and never skips them. Change what the hook refuses, or merge the branch yourself.
