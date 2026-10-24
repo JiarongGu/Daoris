@@ -315,7 +315,7 @@ public static class WorkflowRunReader
     /// A chat's run (CHATFLOW1c; the chat-flow design §4.2): no chain, its records the line's in its tree, its session the line's newest, its
     /// repository the tree's owner, and its process the binding its key names, else the rules live. Every fact is selected by the line:
     /// the landings and acceptances its records name, and its tree's tip and the commits beyond the line, read once. The look and the
-    /// second opinion are a quest's alone before rows d and d2, so they read as the press passes them: none.
+    /// second opinion read the run's own gate (CHATFLOW1d, CHATFLOW1d2), keyed by its run, as its press reads them.
     /// </summary>
     private static async Task<WorkflowRun> ChatRunAsync(TracedSession session, string run, IReadOnlyList<TracedSession> sessions, Reads reads)
     {
@@ -339,12 +339,29 @@ public static class WorkflowRunReader
         var tree = session.Tree!;
         var tip = await reads.Records.TipAsync(tree, reads.Ct).ConfigureAwait(false);
         var ids = new HashSet<string>(line.Select(each => each.Id), StringComparer.OrdinalIgnoreCase);
+        var trees = new SessionTrees(sources.Home);
         var workflow = process.Named && tip is not null
-            ? await new SessionTrees(sources.Home).WorkflowAsync(tree, process, newest.Id, reads.Ct).ConfigureAwait(false) : null;
+            ? await trees.WorkflowAsync(tree, process, newest.Id, reads.Ct).ConfigureAwait(false) : null;
+        // CHATFLOW1d, CHATFLOW1d2 (the chat-flow design §5.2, §5.3): the look and the second opinion read the run's own gate, as its press
+        // does, through this same process; with no tree here neither can be read.
+        var review = new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository });
+        OpinionGateState? opinion = null;
+        if (tip is not null)
+        {
+            review = await ReviewGate.ReadAsync(reads.World, sources.Config, tree, repository, workspace, null, reads.Ct, process, tip.Head,
+                chat: new ChatLooks(sources.Home).For(run, newest.Id)).ConfigureAwait(false);
+            if (current.Steps.Any(step => step.Kind == WorkflowKinds.Opinion))
+            {
+                opinion = await trees.OpinionAsync(tree, repository, workspace, null, newest.Id, reads.World, review, OpinionRules.Landing, reads.Ct, process, tip.Head, run)
+                    .ConfigureAwait(false);
+            }
+        }
+
         var facts = new WorkflowRunFacts(repository, current)
         {
             Sessions = line,
-            Review = new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository }),
+            Review = review,
+            Opinion = opinion,
             Process = process,
             WorkflowGate = workflow,
             Landings = [.. reads.Landings.Where(entry => ids.Any(entry.Names))],

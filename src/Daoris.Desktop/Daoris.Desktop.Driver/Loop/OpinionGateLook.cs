@@ -208,7 +208,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                 .ConfigureAwait(false)
             : null;
         var gate = await _context.Trees.OpinionAsync(
-                due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, review, due.Occasion, ct, process, due.Run)
+                due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, review, due.Occasion, ct, process, run: due.Run)
             .ConfigureAwait(false);
         ToldSettled(due, gate);
         var kept = review is null

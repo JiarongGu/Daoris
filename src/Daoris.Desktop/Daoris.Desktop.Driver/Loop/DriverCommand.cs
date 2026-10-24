@@ -226,7 +226,7 @@ public static class DriverCommand
               goes to the running Daoris's window to confirm where one runs, and is made here where none does; an add
               over an installed plugin replaces it here alone; `plugin --help` says each verb's words.
           trees [list | remove <path|session|branch> [--repository <name>] [--force]
-                | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]
+                | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>] [--without-look "…"]
                 | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]
                 | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
                 | state [--entries]

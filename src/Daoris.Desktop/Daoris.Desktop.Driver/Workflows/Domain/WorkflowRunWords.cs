@@ -31,7 +31,7 @@ public static class WorkflowRunWords
             OpinionGateStates.ReadAgain, OpinionGateStates.WithSession, OpinionGateStates.Disputed, OpinionGateStates.CommitsSince,
             OpinionGateStates.Unavailable, OpinionGateStates.Settled, OpinionGateStates.Anyway, OpinionGateStates.Myself,
             OpinionGateStates.Answered, WorkflowRunDetails.Landed, OpinionGateStates.Unread, OpinionGateStates.CannotStart,
-            WorkflowRunDetails.ChatNotAsked,
+            WorkflowRunDetails.ChatAtPress,
         ],
         [WorkflowKinds.Look] =
         [
@@ -185,8 +185,10 @@ public static class WorkflowRunWords
                 ? "Your Reviewed answered the second opinion."
                 : "Your Accept answered the second opinion.",
             (WorkflowKinds.Opinion, WorkflowRunDetails.Landed) => "It let the work go when the work landed.",
-            // CHATFLOW1c (the Opus check's finding 2): before CHATFLOW1d, the press lands a conversation's work with no opinion asked.
-            (WorkflowKinds.Opinion, WorkflowRunDetails.ChatNotAsked) => "No second opinion is asked for a conversation's work in this build yet.",
+            // CHATFLOW1d (the chat-flow design §5.2): a conversation's work is read by another agent when the person presses Accept.
+            (WorkflowKinds.Opinion, WorkflowRunDetails.ChatAtPress) => step.Agent is { } reviewer
+                ? $"A second opinion from `{reviewer}` is asked when you press Accept."
+                : "A second opinion from another agent is asked when you press Accept.",
             (WorkflowKinds.Opinion, OpinionGateStates.Unread) => step.Words is { } why
                 ? $"Whether a second opinion holds it could not be read: {why}"
                 : "Whether a second opinion holds it could not be read.",

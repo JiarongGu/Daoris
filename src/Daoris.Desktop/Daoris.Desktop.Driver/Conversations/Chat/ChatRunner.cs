@@ -1986,6 +1986,22 @@ public sealed class ChatRunner : IDisposable
             : null;
 
     /// <summary>
+    /// Reserve a conversation's turns for the person's Accept on its chat run (CHATFLOW1d, the chat-flow design §5.2 point 1): reserved
+    /// where nothing takes, opens or waits, a word then kept and waiting until <see cref="Pressed"/>; running otherwise; none where
+    /// nothing here holds it, so no turn of it can start in this process.
+    /// </summary>
+    public async Task<ChatHold> PressAsync(string sessionId, CancellationToken ct = default) =>
+        _context.Turned.TryGetValue(sessionId, out var chat)
+            ? await chat.Turns.PressAsync(ct).ConfigureAwait(false) ? ChatHold.Reserved : ChatHold.Running
+            : ChatHold.None;
+
+    /// <summary>The press answered (CHATFLOW1d): the reservation let go, and a word that waited under it starts at once.</summary>
+    public void Pressed(string sessionId)
+    {
+        if (_context.Turned.TryGetValue(sessionId, out var chat)) chat.Turns.Pressed();
+    }
+
+    /// <summary>
     /// Take back or reword one word a conversation holds for its turn (QUEUEEDIT1a); <see cref="QueueEdit.Taken"/> where a turn
     /// took it already, or nothing here holds the conversation.
     /// </summary>

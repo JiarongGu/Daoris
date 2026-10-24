@@ -63,6 +63,16 @@ public static class ChatRuns
         return sessions.FirstOrDefault(each => Same(each.Id, session)) is { } record ? ChatOf(record, sessions, holds) : null;
     }
 
+    /// <summary>
+    /// The ids of the records of <paramref name="session"/>'s line in its tree (CHATFLOW1d), oldest first, read from the service's records
+    /// as they were answered: whose words the person's turn count reads. The record alone where none answers it.
+    /// </summary>
+    public static IReadOnlyList<string> LineIdsOf(string session, string recordsJson)
+    {
+        var sessions = Trace.ParseSessions(recordsJson);
+        return sessions.FirstOrDefault(each => Same(each.Id, session)) is { } record ? [.. LineOf(record, sessions).Select(each => each.Id)] : [session];
+    }
+
     /// <summary>The run a record's line in its tree is, <c>chat-&lt;first&gt;</c> (§4.1); null for a teammate's record or one with no tree.</summary>
     public static string? KeyOf(TracedSession session, IReadOnlyList<TracedSession> sessions)
     {

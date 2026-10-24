@@ -550,6 +550,9 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // choice binds nothing and is gated as before; a plan binds nothing.
         var chatRun = questId is null ? ChatRuns.ChatOf(id, recordsJson, trees.Holds) : null;
         if (press && chatRun is not null && ChatRunBound(chatRun, tree) is { Failed: { } failed }) return Refused(id, TreesWords.BindFailed(id, failed));
+        // CHATFLOW1d (the chat-flow design §5.2): a chat run's press is the one driver operation every door calls, reserving the
+        // conversation's turns in this shell's runner, judging at one captured tip, asking the opinion or landing that tip pinned.
+        if (press && chatRun is not null) return await ChatPressAsync(request, id, chatRun, tree, trees, service, recordsJson, records, pluginLines, cancellationToken);
 
         // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review. What holds the press says so before it,
         // and the press refuses it.
@@ -619,6 +622,50 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     }
 
     /// <summary>
+    /// A chat run's press (CHATFLOW1d, CHATFLOW1d2; the chat-flow design §5.2, §5.3): <see cref="ChatPresses.PressAsync"/> with this shell's
+    /// chat runner as its reach, the person's turn count read over the line's records, and the door's own landing; <c>withoutLook</c>
+    /// carries the person's words for <i>Accept without the look…</i>. Answered as every press is, with <c>chat</c>'s code beside it.
+    /// </summary>
+    private async Task<object?> ChatPressAsync(
+        IpcRequest request, string id, string run, string tree, SessionTrees trees, ServiceClient service, string recordsJson,
+        IReadOnlyList<SessionRecord> records, List<string> pluginLines, CancellationToken cancellationToken)
+    {
+        var line = ChatRuns.LineIdsOf(id, recordsJson);
+        var reach = new ChatPressDoor(
+            async (session, token) => _loop.Chat is { } chat ? await chat.PressAsync(session, token) : ChatHold.None,
+            session => _loop.Chat?.Pressed(session),
+            (session, _) => Task.FromResult(ChatPresses.TurnsOf(_loop.Events, line, _loop.Chat?.Queue(session).Queued.Count ?? 0)));
+        PressSteps.Reach(PressSteps.Gate);
+        var pressed = await ChatPresses.PressAsync(trees, id, run, tree, new ServiceReviewWorld(service), reach, async (gate, token) =>
+        {
+            var quests = new PressQuests(service.FindQuestAsync);
+            var subject = Entering(await trees.OwnSubjectAsync(
+                tree, id, null, records, quest => quests.FindAsync(quest, token),
+                named => _loop.Events.Openings([named]).GetValueOrDefault(named), gate.Process, token), request);
+            PressSteps.Reach(PressSteps.Landing);
+            // LANDHOLD2: a landing of this tree still under way holds the press for up to five minutes, the turns held with it.
+            using var waiting = PressSteps.WhileWaiting(PressSteps.Landing);
+            return await trees.LandAsync(tree, subject, token, async inUse => await LinesRoutes.InUseAsync(service, inUse), gate: gate, joins: subject.Joins);
+        }, Optional(request, "withoutLook"), Optional(request, "answers"), ReviewDoors.Screen, cancellationToken);
+
+        var landed = pressed.Landed;
+        if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), each => _loop.Output.Append(id, each));
+        if (pressed.Gate is { } judged && _loop.Log is { } log && LandingGateWords.Held(id, trees.Owner(tree), judged, landed, ReviewDoors.Screen) is { } held)
+        {
+            SessionLog.WriteLanding(log, held);
+        }
+
+        _loop.Nudge();
+        var followed = landed.Landed && Flag(request, "follow")
+            ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
+            : null;
+        var chat = new { pressed.Code, pressed.Reviewer };
+        return pressed.Gate is { } gated
+            ? Pressed(id, landed, gated, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? [], chat)
+            : Refused(id, TreesWords.Land(landed, pluginLines), chat);
+    }
+
+    /// <summary>
     /// What a press that reached the landing answers: whether it landed, the driver's sentence, the branch and what its plugin said,
     /// the gate's parts, what it left out or the conflict that refused it, and the verb's words.
     /// </summary>
@@ -627,7 +674,11 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// <c>withheld</c> says why it was held, the branch standing and no plugin told, for the page to offer the hand-off. Null wherever
     /// the push went on or was never asked about; a page before it reads the answer as before.
     /// </remarks>
-    public static object Pressed(string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed) => new
+    /// <param name="chat">
+    /// A chat run's press's own answer (CHATFLOW1d): its code, which the page words in the person's language, and the reviewer it asked;
+    /// null for every other press.
+    /// </param>
+    public static object Pressed(string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed, object? chat = null) => new
     {
         Session = id, Done = landed.Landed, landed.Message, landed.Branch,
         Plugin = landed.Plugin is { } plugin
@@ -643,6 +694,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // RPC1b3: what `trees land` prints, the plugin's lines first, and its exit code (§7.3).
         Said = said.ToWire(),
         Followed = followed,
+        Chat = chat,
     };
 
     /// <summary>
@@ -657,11 +709,11 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         DriverConfig.Load(_loop.ConfigPath), _loop.Home, run, tree, WorkflowCurrent.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names)),
         DateTimeOffset.UtcNow);
 
-    private static object Refused(string session, TreesSaid said) => new
+    private static object Refused(string session, TreesSaid said, object? chat = null) => new
     {
         Session = session, Done = false, Message = Sentence(said), Branch = (string?)null, Plugin = (object?)null, Withheld = (string?)null,
         Review = (object?)null, Opinion = (object?)null, Workflow = (object?)null, LeftOut = (object?)null, Conflict = (object?)null,
-        Said = said.ToWire(), Followed = Array.Empty<string>(),
+        Said = said.ToWire(), Followed = Array.Empty<string>(), Chat = chat,
     };
 
     /// <summary>The sentence a refusal's words carry without the verb's <c>trees: </c> lead, as the page shows it.</summary>
@@ -784,7 +836,15 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     private async Task<object?> OpinionPressAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
-        var presses = new OpinionPresses(_loop.Home, service);
+        // CHATFLOW1d (the chat-flow design §5.2 point 3): a chat run's Ask now reserves its turns in this shell's runner for its capture.
+        var presses = new OpinionPresses(_loop.Home, service)
+        {
+            Reach = new ChatPressDoor(
+                async (session, token) => _loop.Chat is { } chat ? await chat.PressAsync(session, token) : ChatHold.None,
+                session => _loop.Chat?.Pressed(session),
+                async (session, token) => ChatPresses.TurnsOf(
+                    _loop.Events, ChatRuns.LineIdsOf(session, await service.SessionRecordsJsonAsync(token)), _loop.Chat?.Queue(session).Queued.Count ?? 0)),
+        };
         // RPC1e: `daoris-driver opinion …` sent over the pipe asks for the verb's own words, a refusal among them as its exit 1.
         if (Flag(request, "said"))
         {

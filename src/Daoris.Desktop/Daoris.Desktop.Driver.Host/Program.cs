@@ -213,7 +213,7 @@ using Daoris.Driver;
 //                 A person's press from a session's terminal is refused, exit 1.
 //
 //   trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--workspace <name>] [--yes]
-//         | land <session> [--plan] [--branch <name>] | hand <session|branch> [...]
+//         | land <session> [--plan] [--branch <name>] [--without-look "…"] | hand <session|branch> [...]
 //         | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]
 //                 the session worktrees this machine has grown (D51): list them, or remove one, or a session's
 //                 branch by the session or the branch (LAND3) —

@@ -336,6 +336,9 @@ internal static class TreesConsole
                 // LANDNAME1a: the name the person enters replaces the rule's. A --branch with no name is the usage, not the rule's name.
                 var entered = Option(args, "--branch");
                 if (args.Contains("--branch") && entered is null) return Usage("`--branch` takes a branch name.");
+                // CHATFLOW1d2 (the chat-flow design §5.3): the person's way past a chat run's look, with their words.
+                var withoutLook = Option(args, "--without-look");
+                if (args.Contains("--without-look") && string.IsNullOrWhiteSpace(withoutLook)) return Usage("`--without-look` takes your words: say why it lands without the look.");
                 // RPCOPEN1: the plan is the running Daoris's where one answers (LANDING), in the alone path's words.
                 if (args.Contains("--plan") && await InstanceDoor.TryReadAsync(
                         OpenRoutes.Landing, new { id = session, branch = entered, said = true },
@@ -385,9 +388,26 @@ internal static class TreesConsole
                 // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
                 var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log));
 
+                // CHATFLOW1d (the chat-flow design §5.2): a chat run's press is the bridge's one operation, bound first, judged at one captured
+                // tip and landed pinned; its plan binds and asks nothing. A conversation this terminal cannot reserve, live where a running
+                // Daoris holds it, is refused there.
+                var recordsJson = await service.SessionRecordsJsonAsync().ConfigureAwait(false);
+                var chatRun = questId is null ? ChatRuns.ChatOf(session, recordsJson, landing.Holds) : null;
+                if (withoutLook is not null && chatRun is null)
+                {
+                    return Usage("`--without-look` is a conversation's way past a look its work cannot have; this session's work is gated as its quest's.");
+                }
+
+                if (chatRun is not null && !args.Contains("--plan"))
+                {
+                    var chatSaid = await ChatLandAsync(home, log, service, landing, events, session, chatRun, tree, recordsJson, entered, withoutLook).ConfigureAwait(false);
+                    chatSaid.Print(Console.Out, Console.Error);
+                    return chatSaid.Code;
+                }
+
                 // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review, read once for the plan, and handed to
                 // the landing, which refuses the first that holds.
-                var gate = await landing.GateAsync(tree, questId, new ServiceReviewWorld(service), session).ConfigureAwait(false);
+                var gate = await landing.GateAsync(tree, questId, new ServiceReviewWorld(service), session, run: chatRun).ConfigureAwait(false);
                 // Named for the chain's first quest (WSR5), as the review's press names it, and a part of an entry with others for its
                 // entry's first part, on the entry's one branch (ACCEPTALL1f, D167's 2026-10-15 amendment point 2): the driver's one call.
                 // FABRIC-CLOSE1h3: its quests read once, as the route reads them.
@@ -571,12 +591,69 @@ internal static class TreesConsole
         }
     }
 
+    /// <summary>
+    /// A chat run's press from a terminal (CHATFLOW1d, CHATFLOW1d2; the chat-flow design §5.2, §5.3): bound first, as the bridge binds it,
+    /// then <see cref="ChatPresses.PressAsync"/>, the one operation every door calls. A terminal holds no conversation's turns: where a
+    /// running Daoris on this home answers and the conversation is live, its turns are that window's, which this terminal cannot reserve,
+    /// so the press is refused there; otherwise nothing can start a turn of it, and nothing is reserved. The words are the route's.
+    /// </summary>
+    private static async Task<TreesSaid> ChatLandAsync(
+        string home, MachineLog? log, ServiceClient service, SessionTrees landing, SessionEvents events, string session, string run, string tree,
+        string recordsJson, string? entered, string? withoutLook)
+    {
+        var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(home, AdapterSet.Built().Names));
+        if (ChatRuns.BindFirst(DriverConfig.Load(DriverConfig.ResolvePath(home)), home, run, tree, plugins, DateTimeOffset.UtcNow) is { Failed: { } failed })
+        {
+            return TreesWords.BindFailed(session, failed);
+        }
+
+        var line = ChatRuns.LineIdsOf(session, recordsJson);
+        var reach = new ChatPressDoor(
+            async (named, token) =>
+            {
+                var live = (await service.ActiveSessionsAsync(token).ConfigureAwait(false)).Any(each => string.Equals(each.Id, named, StringComparison.OrdinalIgnoreCase));
+                return live && (await InstanceDoor.PeekAsync(InstanceHost.World(home, "trees"), token).ConfigureAwait(false)).Found == InstanceFound.Answers
+                    ? ChatHold.Elsewhere
+                    : ChatHold.None;
+            },
+            _ => { },
+            (_, _) => Task.FromResult(ChatPresses.TurnsOf(events, line)));
+        var records = await service.SessionRecordsAsync().ConfigureAwait(false);
+        var pressed = await ChatPresses.PressAsync(landing, session, run, tree, new ServiceReviewWorld(service), reach, async (gate, token) =>
+        {
+            var quests = new PressQuests(service.FindQuestAsync);
+            var subject = await landing.OwnSubjectAsync(
+                tree, session, null, records, quest => quests.FindAsync(quest, token),
+                named => events.Openings([named]).GetValueOrDefault(named), gate.Process, token).ConfigureAwait(false);
+            // LANDHOLD2: said once where the landing has to wait behind another landing of this session's work.
+            using var waiting = SayWaiting(Console.WriteLine);
+            return await landing.LandAsync(tree, subject with { Entered = entered }, token, inUse: async inUse => (await service.ActiveSessionsAsync(inUse).ConfigureAwait(false))
+                .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase), gate: gate, joins: subject.Joins).ConfigureAwait(false);
+        }, withoutLook, door: ReviewDoors.Terminal).ConfigureAwait(false);
+
+        var landed = pressed.Landed;
+        Told(home, PressesTold.Land, session);
+        if (pressed.Gate is { } gate && log is not null && LandingGateWords.Held(session, landing.Owner(tree), gate, landed, ReviewDoors.Terminal) is { } held)
+        {
+            SessionLog.WriteLanding(log, held);
+        }
+
+        if (landed.Landed)
+        {
+            events.Keep(session, LandingRules.Note(landed), line => Console.Error.WriteLine($"trees: {line}"));
+            await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
+        }
+
+        return TreesWords.Land(landed, []);
+    }
+
     /// <summary>The verb's usage, after what was not understood where something was said; exit 2.</summary>
     private static int Usage(string? problem)
     {
         if (problem is not null) Console.Error.WriteLine($"trees: {problem}");
         Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path|session|branch> [--repository <name>] [--force]");
-        Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]");
+        Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>] [--without-look \"…\"]");
         Console.Error.WriteLine("                           | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]");
         Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
         Console.Error.WriteLine("                           | state [--entries]");

@@ -114,10 +114,10 @@ public static class WorkflowRunDetails
     public const string Landed = "landed";
 
     /// <summary>
-    /// A chat run's opinion before CHATFLOW1d (the chat-flow design §4.2, the Opus check's finding 2): no second opinion is asked for a
-    /// conversation's work in this build yet, so its press lands it with none, and the step is passed over.
+    /// A chat run's opinion not asked yet (CHATFLOW1d, the chat-flow design §4.2, §5.2): the person's Accept asks it, from the reviewer named,
+    /// and is refused until it settles. It replaces row c's <c>chat-not-asked</c>, which said no opinion was asked in that build.
     /// </summary>
-    public const string ChatNotAsked = "chat-not-asked";
+    public const string ChatAtPress = "chat-at-press";
 
     // The look (the review's states, ReviewStates, where they stand at a step).
     public const string NotShown = "not-shown";
@@ -424,8 +424,9 @@ public static class WorkflowRuns
         if (look is not null) steps.Add(look);
 
         // Nothing lands past a gate that holds it (D155 §7, D154 point 7): the landing is not reached until the opinion and the
-        // look are settled.
-        if (landing.State != WorkflowRunStates.Done
+        // look are settled. A chat run's Accept is the press that asks its opinion and answers its look (CHATFLOW1d, the chat-flow
+        // design §4.2, Codex's finding 7), so its landing stays in view, waiting on that press, beside what holds it.
+        if (chat is null && landing.State != WorkflowRunStates.Done
             && ((opinion is not null && !WorkflowRunStates.Settled(opinion.State)) || (look is not null && !WorkflowRunStates.Settled(look.State))))
         {
             landing = new WorkflowRunStep(landing.Step, WorkflowRunStates.NotReached, "");
@@ -544,8 +545,9 @@ public static class WorkflowRuns
     }
 
     /// <summary>
-    /// A chat run's second opinion before CHATFLOW1d (the chat-flow design §4.2, the Opus check's finding 2): passed over once the work is a
-    /// candidate, as its press passes it, and after a landing too unless that tip's landing kept one; never an earlier tip's.
+    /// A chat run's second opinion (CHATFLOW1d, the chat-flow design §4.2, §5.2): once the work is a candidate, the run's own gate as its
+    /// press reads it, where <c>not-asked</c> waits on the person's Accept, which asks it; after a landing, what that tip's landing kept,
+    /// never an earlier tip's, or passed over where it kept none. A tree that no longer stands reads no gate: not reached.
     /// </summary>
     private static WorkflowRunStep? ChatOpinion(WorkflowRunFacts facts, bool candidate, ChatLanded? landed)
     {
@@ -558,9 +560,17 @@ public static class WorkflowRuns
             };
         }
 
-        return candidate
-            ? new WorkflowRunStep(cell, WorkflowRunStates.Skipped, WorkflowRunDetails.ChatNotAsked) { Session = facts.Sessions.LastOrDefault()?.Id }
-            : new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
+        if (landed is not null) return new WorkflowRunStep(cell, WorkflowRunStates.Skipped, OpinionGateStates.None) { Session = facts.Sessions.LastOrDefault()?.Id };
+        if (!candidate || facts.Opinion is not { } gate) return new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
+        if (gate.State == OpinionGateStates.NotAsked)
+        {
+            return new WorkflowRunStep(cell, WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.ChatAtPress)
+            {
+                Session = gate.Session, Agent = gate.Rule?.Rule.Reviewers is { Count: > 0 } reviewers ? reviewers[0] : null,
+            };
+        }
+
+        return OnGate(cell, gate);
     }
 
     /// <summary>Whether two commits are one: equal, or one an abbreviation of the other of git's own floor or more.</summary>
@@ -740,7 +750,13 @@ public static class WorkflowRuns
 
         if (!workDone) return Step(WorkflowRunStates.NotReached, "");
         if (facts.Opinion is not { } gate) return Step(WorkflowRunStates.NotKnown, OpinionGateStates.Unread);
+        return OnGate(cell, gate);
+    }
 
+    /// <summary>The opinion's step where its gate stands (§2.7's table), a quest's and a chat run's alike.</summary>
+    private static WorkflowRunStep OnGate(WorkflowStep cell, OpinionGateState gate)
+    {
+        WorkflowRunStep Step(string state, string detail) => new(cell, state, detail);
         var opinion = gate.Opinion;
         var on = Step("", gate.State) with
         {
