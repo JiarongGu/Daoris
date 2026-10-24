@@ -63,3 +63,18 @@ reasons now nine), `src/help/AskDaoris*.test.tsx`, `src/work/head`, `src/bridge`
 `check:web-rules`, `i18n:check`, `names-check.mjs --strict` (its three budget lines are on keys this row did not touch). The
 driver's note, catalogue, hand-over, locale and twin tests (1,029 passed), `NoteCodesTests`' list of reasons gaining
 `not-offered`, which part 2 had left failing.
+
+## Readings
+
+- **The event's name.** The design names the event `chat.replaced { from, to }`; every event the shell tells the page is an upper-case
+  type (`SESSION_ENDED`, `SESSION_OPTIONS_CHANGED`), so it is told as `CHAT_REPLACED { from, to }` (`DriverLoop.ReplacedType`).
+- **Which starts own a pending start.** Those that ask an entry of their actor's order on the protocol door: a new Chat or Ask Daoris,
+  and a continuation handed an order (LIMITGOON2's move). A hand-over or a briefed move on its record's agent is handed no order and
+  keeps MODELROLE1d's not-carried reading; the pipe door's refusal is §3.3's exception, as MODELROLE1c3 built it.
+- **A pick's go-on stays on the refused record's account.** §3.5(b) says a pick tries "the picked agent's other entries on the same
+  account"; §3.5(d) lets an agent-only pick walk its agent's accounts. A record does not say whether the person named the account, so
+  the go-on after an interruption takes (b)'s words and pins the record's account; within the press, the pick's own `profile` is kept
+  (null for an agent-only pick, which walks its agent's accounts).
+- **A moved word is held in this process on the replacement**, never kept again on its record: the refused record keeps the words
+  that were kept on it until the replacement's turn takes them, so a shell cut off between finds them on the refused record, whose
+  go-on is the fresh start above.
