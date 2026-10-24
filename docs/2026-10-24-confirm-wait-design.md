@@ -1,6 +1,6 @@
-# A terminal's press waits until the person answers: no two minutes, no ten, a row in Notifications until it is confirmed, refused or withdrawn, kept across a restart (proposed, round 2 with its named changes, 2026-10-24)
+# A terminal's press waits until the person answers: no two minutes, no ten, a row in Notifications until it is confirmed, refused or withdrawn, kept across a restart (accepted, 2026-10-24)
 
-**Standing:** proposed, round 2 with its named changes, a note amending D156 (CONFIRMWAIT1), under D191. Round 1 was written by Claude
+**Standing:** accepted 2026-10-24 by the steward under D191 (D156's CONFIRMWAIT1 acceptance note; Codex's read of this text owed), round 2 with its named changes, a note amending D156 (CONFIRMWAIT1). Round 1 was written by Claude
 Opus 5.5 from the code on main at `aa16658e7` and read at `c44121e2a` by the independent Opus foundation reader alone, its read verbatim
 in `docs/2026-10-24-confirm-wait-reads.md`: 25 findings, 7 blocking, another round; Codex's read is owed, its credits out. Round 2 is
 written by Claude Opus 5.5 from the code on main at `ffcf42926`, where nothing round 1 or the read cites has changed (the one commit
