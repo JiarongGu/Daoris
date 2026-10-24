@@ -1002,7 +1002,7 @@ public sealed class InstancePipe : IDisposable
         if (mine is null) return (null, answer);
         if (fields is null)
         {
-            _ = RunAsync(request, id, binding, mine, role: role);
+            _ = RunAsync(request, id, binding, mine, role: role, client: connection.Client);
             return (null, answer);
         }
 
@@ -1399,9 +1399,10 @@ public sealed class InstancePipe : IDisposable
     /// <param name="standing">That the person's standing confirmation admitted it (TERMTRUST1a): run inside <see cref="PipeDoor.EnterStanding"/>.</param>
     /// <param name="role">The role act the judge's role method covered (SUPERVISOR1a-ii): run inside <see cref="PipeDoor.EnterRole"/>.</param>
     /// <param name="begun">Told once the journal's first line is written or failed, before anything runs (CONFIRMWAIT1a-ii, §7.1).</param>
+    /// <param name="client">The connection's client, which an open route that counts its caller reads (<see cref="PipeDoor.Client"/>; STEWARDROLE1c).</param>
     private async Task RunAsync(
         IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered, bool standing = false,
-        RoleJudgement? role = null, Action? begun = null)
+        RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null)
     {
         string text;
         try
@@ -1416,7 +1417,7 @@ public sealed class InstancePipe : IDisposable
             else
             {
                 IpcResponse response;
-                using (role is not null ? PipeDoor.EnterRole(role) : standing ? PipeDoor.EnterStanding() : PipeDoor.Enter())
+                using (role is not null ? PipeDoor.EnterRole(role, client) : standing ? PipeDoor.EnterStanding(client) : PipeDoor.Enter(client))
                 {
                     response = await _dispatcher.DispatchAsync(request, _lifetime.Token).ConfigureAwait(false);
                 }

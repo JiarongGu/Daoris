@@ -170,6 +170,47 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         Assert.Equal((JsonValueKind.Null, 0), (read.GetProperty("generation").ValueKind, read.GetProperty("acts").GetArrayLength()));
     }
 
+    /// <summary>
+    /// STEWARDROLE1c (D209 §6.2): the desk's routes over the bridge. In this build, which offers no steward, a request is refused
+    /// <c>not-offered</c> and the desk reads empty; where the build offers it, a request is kept, read back by <c>STEWARD_DESK</c> and by
+    /// <c>STATE</c>'s <c>stewardDesk</c> with its words as the caller wrote them, and never the caller's key.
+    /// </summary>
+    [Fact]
+    public async Task The_desk_keeps_a_request_only_where_the_steward_is_offered_and_reads_it_back()
+    {
+        var (loop, module, dispatcher, services) = Compose();
+        using var composed = services;
+        var request = new { act = "drive", target = "engine", why = "the next row is engine's" };
+        Assert.Equal((false, DeskWhy.NotOffered), Filed(await AnswerAsync(module, "STEWARD_REQUEST", request)));
+
+        using (var dark = new InstancePipe(dispatcher, Bus, Home, standing: Judge()))
+        {
+            loop.Pipe = dark;
+            Assert.Equal((false, DeskWhy.NotOffered), Filed(await AnswerAsync(module, "STEWARD_REQUEST", request)));
+            Assert.Equal(0, (await AnswerAsync(module, "STEWARD_DESK")).GetProperty("requests").GetArrayLength());
+            Assert.Empty((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("stewardDesk").EnumerateArray());
+        }
+
+        var judge = new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), steward: true,
+            walk: new StandingConfirmationTests.Walked(), desk: new DeskCaller(_ => null, new SystemProcesses(), TimeProvider.System, Environment.ProcessId));
+        using var pipe = new InstancePipe(dispatcher, Bus, Home, standing: judge);
+        loop.Pipe = pipe;
+        var filed = await AnswerAsync(module, "STEWARD_REQUEST", request);
+        Assert.True(filed.GetProperty("filed").GetBoolean(), filed.GetRawText());
+
+        var desk = Assert.Single((await AnswerAsync(module, "STEWARD_DESK")).GetProperty("requests").EnumerateArray());
+        var shown = Assert.Single((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("stewardDesk").EnumerateArray());
+        foreach (var each in new[] { desk, shown })
+        {
+            Assert.Equal((filed.GetProperty("request").GetString(), "drive", "engine", "the next row is engine's", "open"),
+                (each.GetProperty("id").GetString(), each.GetProperty("act").GetString(), each.GetProperty("target").GetString(),
+                    each.GetProperty("why").GetString(), each.GetProperty("state").GetString()));
+            Assert.False(each.TryGetProperty("caller", out _));
+        }
+
+        static (bool, string?) Filed(JsonElement answer) => (answer.GetProperty("filed").GetBoolean(), answer.GetProperty("why").GetString());
+    }
+
     /// <summary>D208 §2.3: this build does not offer appointments, so the window's press is refused and nothing starts.</summary>
     [Fact]
     public async Task This_build_refuses_an_appointment_not_offered_and_starts_nothing()

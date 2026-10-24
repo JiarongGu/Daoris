@@ -101,6 +101,9 @@ public sealed record StandingNow(
 
     /// <summary>The steward's acts this run, newest first (STEWARDROLE1b, D209 §5.3), from memory alone: the line's entries.</summary>
     public IReadOnlyList<StewardActNow> StewardActs { get; init; } = [];
+
+    /// <summary>The steward's desk this run, newest first (STEWARDROLE1c, D209 §6.2), from memory alone: what the line shows under the role's acts.</summary>
+    public IReadOnlyList<DeskRequestNow> StewardDesk { get; init; } = [];
 }
 
 /// <summary>
@@ -371,9 +374,10 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <param name="supervisor">Whether the supervisor is offered (<see cref="SupervisorOfferedInThisBuild"/> where none is named), whatever D201's grant is.</param>
     /// <param name="steward">Whether the steward is offered (<see cref="StewardOfferedInThisBuild"/> where none is named), whatever D201's grant is.</param>
     /// <param name="walk">The configuration walk every <c>Role</c> route's admission runs (<see cref="HolderWalk.System"/> where none is named).</param>
+    /// <param name="desk">Who a desk request is counted against (<see cref="DeskCaller.System"/> where none is named; STEWARDROLE1c).</param>
     public StandingConfirmation(
         string home, MachineLog? log = null, IStandingCaller? caller = null, TimeProvider? clock = null, bool? offered = null,
-        string? machine = null, bool? supervisor = null, bool? steward = null, IHolderWalk? walk = null)
+        string? machine = null, bool? supervisor = null, bool? steward = null, IHolderWalk? walk = null, IDeskCaller? desk = null)
     {
         _home = home;
         _log = log ?? MachineLog.None;
@@ -386,6 +390,27 @@ public sealed class StandingConfirmation : IDecisionAdmission
         StewardOffered = steward ?? StewardOfferedInThisBuild;
         Walk = walk ?? HolderWalk.System;
         RunStarted = _clock.GetUtcNow();
+        DeskCaller = desk ?? (Caller is StandingCaller jobs ? Desktop.DeskCaller.System(jobs) : new DeskCaller(_ => null, new SystemProcesses(), _clock, Environment.ProcessId));
+        Desk = new StewardDesk(_clock);
+    }
+
+    /// <summary>The steward's desk (STEWARDROLE1c, D209 §6.2): the run's requests, which grant nothing.</summary>
+    public StewardDesk Desk { get; }
+
+    /// <summary>Who a desk request is counted against.</summary>
+    public IDeskCaller DeskCaller { get; }
+
+    /// <summary>
+    /// <c>STEWARD_REQUEST</c> (D209 §6.2): any caller's request kept on the desk, counted against the caller <paramref name="client"/> is
+    /// keyed by, the act one of the steward's table; refused <c>not-offered</c> while this build does not offer the steward. It reads
+    /// nothing of the appointments, admits nothing and registers no act.
+    /// </summary>
+    public DeskFiled FileRequest(JsonElement? payload, PipeClientProcess? client)
+    {
+        if (!StewardOffered) return new DeskFiled(false, null, DeskWhy.NotOffered);
+        var filed = Desk.File(payload, DeskCaller.KeyOf(client), StewardActs.Table.Keys);
+        _log.Info("steward.desk", ("outcome", filed.Filed ? "filed" : "refused"), ("why", filed.Why ?? ""));
+        return filed;
     }
 
     /// <summary>Whether this instance offers the grant (D201's note on order).</summary>
@@ -588,6 +613,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
             {
                 StewardActsOffered = StewardOffered ? OffersActs(Roles.Steward) : [],
                 StewardActs = stewardActs,
+                StewardDesk = StewardOffered ? Desk.Now() : [],
             };
         }
     }
@@ -1132,7 +1158,9 @@ public sealed class StandingConfirmation : IDecisionAdmission
         }
 
         if (!TableOf(role).TryGetValue(act.Act, out var row)) return RoleJudgement.Refused(RoleWhy.NotRole);
-        if (!appointed.Acts.Contains(act.Act, StringComparer.Ordinal) || (act.Act == StewardActs.Setup && !appointed.Setup))
+        // STEWARDROLE1c (§6.2): the desk's decline changes nothing of Daoris's controls, so every steward's appointment may make it.
+        var desk = role == Roles.Steward && StewardActs.Desk.Contains(act.Act, StringComparer.Ordinal);
+        if ((!desk && !appointed.Acts.Contains(act.Act, StringComparer.Ordinal)) || (act.Act == StewardActs.Setup && !appointed.Setup))
         {
             return RoleJudgement.Refused(RoleWhy.NotGranted);
         }
@@ -1299,6 +1327,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
     {
         lock (_gate) _stewardDone.Add(new StewardDone(id, act, repository, quest, session, _clock.GetUtcNow()));
         _log.Info("role.act", ("role", Roles.Steward), ("act", act), ("outcome", "done"));
+        // STEWARDROLE1c (§6.2): the act closes every open request on the desk that asked for it, by its act and what it acted on.
+        Desk.Answered(id, act, repository, quest, session);
     }
 
     /// <summary>
