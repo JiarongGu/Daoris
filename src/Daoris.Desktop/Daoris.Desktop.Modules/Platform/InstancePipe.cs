@@ -910,6 +910,7 @@ public sealed class InstancePipe : IDisposable
         SupervisorWhy.NotAppointed => "No appointment of this role is in force: the owner appoints it in the window. Nothing was done.",
         RoleWhy.NotRole => "That is the owner's to do; the role's appointment does not cover it. Nothing was done.",
         RoleWhy.NotGranted => "The owner's appointment of this role does not name that act. Nothing was done.",
+        RoleWhy.OwnerSet => "The owner acted on this themselves since Daoris started, so it is theirs until Daoris restarts. Nothing was done.",
         RoleWhy.HolderConfig =>
             "This act did not come from the role's terminal as Daoris started it, on Daoris's own configuration; its terminal is ended. Nothing was done.",
         SupervisorWhy.NotHolder => "This terminal did not prove the supervisor's key for this connection and this answer. Nothing was kept.",

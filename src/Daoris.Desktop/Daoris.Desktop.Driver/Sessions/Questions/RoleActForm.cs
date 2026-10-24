@@ -13,6 +13,15 @@ public static class RoleWhy
 
     /// <summary>The walk to the holder's harness found it started on another configuration, or the verb outside it.</summary>
     public const string HolderConfig = "holder-config";
+
+    /// <summary>
+    /// The owner acted on the act's target this run, through any of their doors (STEWARDROLE1a-ii, D209 §5.4): it is theirs until
+    /// Daoris restarts.
+    /// </summary>
+    public const string OwnerSet = "owner-set";
+
+    /// <summary>What the act depends on (its quest's repository, a repository's workspace) or its target's records could not be read: refused, fail-closed.</summary>
+    public const string Unread = "unread";
 }
 
 /// <summary>The role's route and its acts (STEWARDROLE1a-i, D209 §3.3): one route, every act a row of its role's table.</summary>

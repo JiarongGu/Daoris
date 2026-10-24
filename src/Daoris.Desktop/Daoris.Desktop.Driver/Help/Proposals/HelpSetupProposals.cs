@@ -29,6 +29,10 @@ internal sealed class HelpSetupProposals : IHelpProposalKind
     /// <summary>ASKSCOPE1c: its target is the repository it sets up.</summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) => new([proposal.Workspace], [proposal.Target, proposal.Repository]);
 
+    /// <summary>STEWARDROLE1a-ii (D209 §5.4): the set-up acts on its repository, which its Apply marks the owner's.</summary>
+    public HelpOwned Owned(HelpProposal proposal) =>
+        proposal.Target?.Trim() is { Length: > 0 } repository ? new HelpOwned([repository], [], []) : HelpOwned.Nothing;
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var name = proposal.Target?.Trim() ?? "";

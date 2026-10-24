@@ -208,6 +208,34 @@ public sealed class PersonDoorTableTests
     }
 
     /// <summary>
+    /// STEWARDROLE1a-ii (D209 §5.4): every person's door and form declares what its effect marks on a quest's records, one of the four
+    /// kinds with its evidence or none with why; no other door declares one; a publication, an ask's own added words and a session's
+    /// delete never mark; the person's done, answer and words do.
+    /// </summary>
+    [Fact]
+    public void Every_person_door_declares_what_it_marks_on_a_quests_records()
+    {
+        var person = PersonDoors.Table.Where(door => door.Class == Person)
+            .Select(door => ($"{door.Method} {door.Pattern}", door.Marks))
+            .Concat(PersonDoors.Table.Where(door => door.Form is { Class: Person })
+                .Select(door => ($"{door.Method} {door.Pattern} {door.Form!.Field}", door.Form.Marks)))
+            .ToList();
+
+        Assert.Empty(person.Where(each => each.Marks is null).Select(each => each.Item1));
+        Assert.All(person, each => Assert.Contains(each.Marks!.Kind, OwnerMarkKinds.All));
+        Assert.All(person, each => Assert.False(string.IsNullOrWhiteSpace(each.Marks!.Evidence), each.Item1));
+        Assert.Empty(PersonDoors.Table.Where(door => door.Class != Person && door.Marks is not null).Select(door => door.Pattern));
+
+        Assert.Equal(OwnerMarkKinds.None, PersonDoors.Find("POST", "/api/asks")!.Marks!.Kind);
+        Assert.Equal(OwnerMarkKinds.None, PersonDoors.Find("POST", "/api/sessions/{id}/added")!.Marks!.Kind);
+        Assert.Equal(OwnerMarkKinds.None, PersonDoors.Find("POST", "/api/quests/{id}/set-up-step")!.Marks!.Kind);
+        Assert.Equal(OwnerMark.Of(OwnerMarkKinds.Status, "note:quest.person-done"), PersonDoors.Find("POST", "/api/quests/{id}/done")!.Marks);
+        Assert.Equal(OwnerMarkKinds.SessionMove, PersonDoors.Find("POST", "/api/sessions/{id}/answer")!.Marks!.Kind);
+        Assert.Equal(OwnerMarkKinds.SessionWord, PersonDoors.Find("POST", "/api/sessions/{id}/say")!.Marks!.Kind);
+        Assert.Equal("instance:WORK_ABANDON", PersonDoors.Respond.Form!.Marks!.Evidence);
+    }
+
+    /// <summary>
     /// The hosts' own route tables: every route a local host maps is classed and none is a shared host's alone; every
     /// route a shared host maps that a local host does not is one; and the table holds nothing neither maps.
     /// </summary>

@@ -58,6 +58,13 @@ public sealed class DriverModule : ModuleBase
         init => _context.WiringWorlds = value;
     }
 
+    /// <summary>The owner's mark's reads (STEWARDROLE1a-ii): null is the loop's service; a test names its own. Held by the context.</summary>
+    public IOwnerScopes? OwnerScopes
+    {
+        get => _context.OwnerScopes;
+        init => _context.OwnerScopes = value;
+    }
+
     /// <summary>What *Free up space…* is handed, changed (KEEP1e): null is the window's own; a test names a browser host and a clock of its own.</summary>
     public Func<SpaceFreeWorld, SpaceFreeWorld>? SpaceFreeWorlds
     {
@@ -190,6 +197,38 @@ public sealed class DriverModule : ModuleBase
     {
         if (request.Type is not { } type || !Table.TryGetValue(type, out var route)) throw UnknownType(request);
         var handler = _handlers[route.Domain];
+        if (PipeDoor.Role is null && OwnerDoor(type, request.Payload) is { Count: > 0 } named)
+        {
+            return OwnedAsync(route, handler, type, request, named, cancellationToken);
+        }
+
+        return HandleAsync(route, handler, type, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// What an owner's door names (STEWARDROLE1a-ii, D209 §5.4): a person's or a window's route in the form <paramref name="payload"/>
+    /// gives it, dispatched from the window or a confirmed card (never a role's act, which the router passes by), by its census row
+    /// (<see cref="OwnerMarks.Of"/>); null for every other route and form.
+    /// </summary>
+    public static IReadOnlyList<OwnerNamed>? OwnerDoor(string type, System.Text.Json.JsonElement? payload)
+    {
+        var @class = PipeCensus.Daoris.Of(Name, type, payload);
+        return @class is PipeClass.Person or PipeClass.Window ? OwnerMarks.Of(Name, type, payload) : null;
+    }
+
+    /// <summary>
+    /// The owner's step before the handler (§5.4): what the press names resolved, its gates taken beside the owner's other presses, its
+    /// targets marked <c>owner-set</c> and every steward act and operation on them cancelled, then the handler inside the gates.
+    /// </summary>
+    private async Task<object?> OwnedAsync(Handler route, object handler, string type, IpcRequest request, IReadOnlyList<OwnerNamed> named, CancellationToken cancellationToken)
+    {
+        // No ConfigureAwait: the kit's pipeline keeps the caller's context, as the publisher's says.
+        await using var owned = await OwnerMarks.EnterAsync(_context.Loop.Pipe?.StandingConfirmation, _context.OwnerScopesOf(), named, PipeDoor.Standing, cancellationToken);
+        return await HandleAsync(route, handler, type, request, cancellationToken);
+    }
+
+    private Task<object?> HandleAsync(Handler route, object handler, string type, IpcRequest request, CancellationToken cancellationToken)
+    {
         if (route.ByEvent) return _held.AskAsync(HeldKey(request), HeldOf(request), token => route.Answer(handler, request, token));
         if (route.Shared is { } shared) return JoinAsync(route, shared, handler, type, request, cancellationToken);
 

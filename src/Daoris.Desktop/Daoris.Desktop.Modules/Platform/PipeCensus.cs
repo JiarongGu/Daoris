@@ -106,7 +106,8 @@ public sealed class PipeCensus
 
     /// <summary>
     /// What each person's press rests on (CONFIRMWAIT1a-i, the confirm-wait design §5.1): the grounds of every route this census makes
-    /// <see cref="PipeClass.Person"/>, in every form. D209's targets are the same table's other column, which STEWARDROLE1a fills.
+    /// <see cref="PipeClass.Person"/>, in every form. D209's targets are the same table's other column (<see cref="PipeTargets.Mark"/>, STEWARDROLE1a-ii): what each person's
+    /// and window's route marks <c>owner-set</c>.
     /// </summary>
     public PipeTargets Targets { get; }
 
