@@ -1291,6 +1291,13 @@ export const REACH = Object.freeze([
     gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment', 'modules'],
     why: "the service lane's own, and the modules' SessionsStateSliceTests holds the sessions slice's fields to its `SessionResponse` (PUSH1d2)",
   },
+  // STEWARDROLE1a-ii: the modules' OwnerSetCensusTests holds every person's door to the record kind it declares, reading the file by
+  // its path; a path rule replaces the service lane's, so its readers stay.
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs'],
+    gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment', 'modules'],
+    why: "the service lane's own, and the modules' OwnerSetCensusTests holds each person's door to the record kind it declares (STEWARDROLE1a-ii)",
+  },
   {
     lane: 'service',
     gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'web-unit', 'deployment'],
@@ -2598,12 +2605,16 @@ export function readLanes(root) {
   };
 }
 
-/** The paths `.gitattributes` marks `merge=union`: the records that resolve themselves. */
+/**
+ * The paths `.gitattributes` marks `merge=union`, and the router it marks `merge=rows` (ROUTERMERGE1, `tools/merge-rows.mjs`): the
+ * records that resolve themselves. The router stayed a record when its driver changed; read as union alone, a stage stopped
+ * forgiving it and its lane placement moved (the CI on 5717fd1, 2026-10-25).
+ */
 export function unionRecords(root) {
   const file = join(root, '.gitattributes');
   if (!existsSync(file)) return [];
   return readFileSync(file, 'utf8').replace(/\r\n/g, '\n').split('\n')
-    .map((line) => /^(\S+)\s(?:.*\s)?merge=union(?:\s|$)/.exec(line)?.[1])
+    .map((line) => /^(\S+)\s(?:.*\s)?merge=(?:union|rows)(?:\s|$)/.exec(line)?.[1])
     .filter((pattern) => pattern && !pattern.startsWith('#'));
 }
 

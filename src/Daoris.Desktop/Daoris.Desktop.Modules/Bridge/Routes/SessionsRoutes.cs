@@ -648,6 +648,37 @@ public sealed class SessionsRoutes(DriverContext context)
         ? new { Generation = judge.LiveGeneration(Roles.Steward), Acts = judge.StewardActsNow() }
         : new { Generation = (string?)null, Acts = (IReadOnlyList<StewardActNow>)[] };
 
+    // A request at the steward's desk (STEWARDROLE1c, D209 §6.2): `{ act, target, why }`, `Open` in the pipe's census, any caller's, kept
+    // in the judge's memory and counted against the caller's agent job or nearest long-lived ancestor (ten open each, a hundred in all).
+    // It grants nothing, admits no act and reaches no act's handler: the holder reads it as claims and answers it by an act, judged as
+    // ROLE_ACT judges every act, or declines it. `{ filed, request?, why? }`, refused as data (`not-offered` while the build does not offer
+    // the steward, `form`, `not-role`, `desk-full`).
+    [DriverRoute("STEWARD_REQUEST")]
+    [Publishes("STEWARD_REQUEST", StateScopes.Driver)]
+    private object? StewardRequest(IpcRequest request)
+    {
+        var filed = _loop.Pipe?.StandingConfirmation is { } judge
+            ? judge.FileRequest(request.Payload, PipeDoor.Client)
+            : new DeskFiled(false, null, DeskWhy.NotOffered);
+        return new { filed.Filed, Request = filed.Id, filed.Why };
+    }
+
+    // The steward's desk (STEWARDROLE1c, D209 §6.2), what its holder's `steward desk` prints, fenced, as the callers' claims: from the
+    // judge's memory alone, newest first, never a caller's key. A read: `{ requests: [{ id, act, target, why, filed, state, closed,
+    // answeredBy, reason }] }`, none while the build does not offer the steward.
+    [DriverRoute("STEWARD_DESK")]
+    private object? StewardDeskRead(IpcRequest request) => new
+    {
+        Requests = _loop.Pipe?.StandingConfirmation is { StewardOffered: true } judge ? judge.Desk.Now().Select(DeskRow).ToList() : new List<object>(),
+    };
+
+    /// <summary>One desk request as the verb and the page read it: its moments written as every route writes them.</summary>
+    internal static object DeskRow(DeskRequestNow each) => new
+    {
+        each.Id, each.Act, each.Target, each.Why, Filed = Moments.Write(each.Filed), each.State, Closed = Moments.Write(each.Closed),
+        each.AnsweredBy, each.Reason,
+    };
+
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";

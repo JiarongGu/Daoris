@@ -852,6 +852,14 @@ public sealed class DriverLoop(
             // STEWARDROLE1b (D209 §5.1a): a restart forgets every steward's release, so what an earlier run left in the file is withdrawn
             // before the first look; the owner's own releases are kept whole.
             if (served.StandingConfirmation.StewardOffered) RoleStarts.Sweep(served.StandingConfirmation, ConfigPath);
+            // SUPERVISOR1e (D208 §5): a workspace's appointment covers what the registry places in it as each act is judged.
+            served.StandingConfirmation.WorkspaceOf = repository => _placed.GetValueOrDefault(repository);
+            served.StandingConfirmation.DrivesIn = workspace =>
+            {
+                var placed = _placed;
+                return DriverConfig.Load(ConfigPath).Drivable.Any(repository =>
+                    placed.TryGetValue(repository, out var where) && string.Equals(where, workspace, StringComparison.OrdinalIgnoreCase));
+            };
             // CONFIRMWAIT1a-ii (the confirm-wait design §7.2): the presses that waited when Daoris last stopped come back here, before the pipe
             // is served, on this home's lease, which makes this loop their records' one writer; whatever Serve then answers, their cards are
             // back. What could not come back, and what a newer Daoris kept, is said once in Done and failed.
@@ -1325,12 +1333,26 @@ public sealed class DriverLoop(
         return true;
     }
 
+    /// <summary>
+    /// The workspace the registry placed each repository in, as the last tick read it (SUPERVISOR1e): what a workspace's appointment
+    /// covers, read by the judge under its lock, which never awaits. Empty until the first tick reads the registry.
+    /// </summary>
+    private volatile IReadOnlyDictionary<string, string> _placed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>What the registry holds, or null when the host could not answer — never a change.</summary>
-    private static async Task<string?> RegisteredAsync(ServiceClient service, CancellationToken ct)
+    private async Task<string?> RegisteredAsync(ServiceClient service, CancellationToken ct)
     {
         try
         {
-            return Repositories.Signature(await service.RegistryAsync(ct).ConfigureAwait(false));
+            var registry = await service.RegistryAsync(ct).ConfigureAwait(false);
+            var placed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var each in registry)
+            {
+                if (each.Workspace is { Length: > 0 } workspace) placed.TryAdd(each.Repository, workspace);
+            }
+
+            _placed = placed;
+            return Repositories.Signature(registry);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {

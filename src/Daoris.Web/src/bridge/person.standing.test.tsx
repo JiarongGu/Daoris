@@ -50,7 +50,7 @@ describe('the standing confirmation over the bridge', () => {
     })).toEqual({
       offered: true, on: true, presses: ['stop', 'hold'], built: ['stop', 'finish', 'hold', 'resume'], since: '2026-10-23T09:30:00Z',
       unread: null, unwritten: false, used: 2, held: ['engine'], appointmentsOffered: false, appointments: [],
-      supervisorOffered: false, stewardOffered: false, holders: [], stewardActsOffered: [], stewardActs: [],
+      supervisorOffered: false, stewardOffered: false, holders: [], stewardActsOffered: [], stewardActs: [], stewardDesk: [],
     });
     // SUPERVISOR1a-ii: the owner's appointments, each read field by field; one with no role or repository left out.
     expect(standingOf({
@@ -78,6 +78,21 @@ describe('the standing confirmation over the bridge', () => {
       holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }],
       appointments: [{ role: 'steward', repository: '', scope: 'machine', holderId: 'h1', answers: 2 }],
     });
+    // SUPERVISOR1e: a workspace's appointment names its workspace and no repository; each its overrule window, five where an older
+    // shell says none or one outside 1 to 60.
+    expect(standingOf({
+      appointments: [
+        { role: 'supervisor', scope: 'workspace:games', workspace: 'games', holder: 'terminal', window: 30 },
+        { role: 'supervisor', scope: 'workspace:other', holder: 'terminal' },
+        { role: 'supervisor', repository: 'engine', holder: 'terminal', window: 0 },
+        { role: 'supervisor', repository: 'atlas', holder: 'terminal', window: 61 },
+      ],
+    })?.appointments.map(({ repository, workspace, window }) => ({ repository, workspace, window }))).toEqual([
+      { repository: '', workspace: 'games', window: 30 },
+      { repository: '', workspace: 'other', window: 5 },
+      { repository: 'engine', workspace: '', window: 5 },
+      { repository: 'atlas', workspace: '', window: 5 },
+    ]);
     // The bridge leaves its nulls out: no since, no unread.
     expect(standingOf({ offered: false, on: false, presses: [], built: ['stop'], unwritten: true, used: 0, held: [] }))
       .toMatchObject({ offered: false, on: false, since: null, unread: null, unwritten: true });
@@ -114,6 +129,24 @@ describe('the standing confirmation over the bridge', () => {
     expect(standingOf({ appointments: [{ role: 'supervisor', repository: 'engine' }] })).toMatchObject({
       stewardActsOffered: [], stewardActs: [], appointments: [{ acts: [], setup: false }],
     });
+  });
+
+  // STEWARDROLE1c (D209 §6.2): the steward's desk, each request read field by field, its words as the caller wrote them; one with a
+  // field missing or a state this page does not know left out, and an older shell's missing desk read as empty.
+  it("reads the steward's desk field by field", () => {
+    expect(standingOf({
+      stewardOffered: true,
+      stewardDesk: [
+        { id: 'r2', act: 'stop', target: 's1', why: 'it loops <b>', filed: '2026-10-25T10:02:00Z', state: 'declined', closed: '2026-10-25T10:03:00Z', reason: 'the owner stops it' },
+        { id: 'r1', act: 'drive', target: 'engine', why: 'next row', filed: '2026-10-25T10:01:00Z', state: 'open' },
+        { id: 'r0', act: 'drive', target: 'engine', why: 'x', filed: '2026-10-25T10:00:00Z', state: 'granted' },
+        { id: 'r9', act: 'drive', target: 'engine', filed: '2026-10-25T10:00:00Z', state: 'open' }, 'drive',
+      ],
+    })?.stewardDesk).toEqual([
+      { id: 'r2', act: 'stop', target: 's1', why: 'it loops <b>', filed: '2026-10-25T10:02:00Z', state: 'declined', closed: '2026-10-25T10:03:00Z', answeredBy: null, reason: 'the owner stops it' },
+      { id: 'r1', act: 'drive', target: 'engine', why: 'next row', filed: '2026-10-25T10:01:00Z', state: 'open', closed: null, answeredBy: null, reason: null },
+    ]);
+    expect(standingOf({ stewardOffered: true })?.stewardDesk).toEqual([]);
   });
 
   it("sends the steward's appointment for the machine with its set-up tick, and the supervisor's without one", async () => {

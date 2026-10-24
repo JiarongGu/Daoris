@@ -3,8 +3,9 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
-import type {
-  AppointmentAnswer, AppointmentNow, HolderNow, StandingAnswer, StandingConfirmationNow, StandingUnread, StewardActNow,
+import {
+  type AppointmentAnswer, type AppointmentNow, type DeskRequestNow, type HolderNow, inWindow, type StandingAnswer,
+  type StandingConfirmationNow, type StandingUnread, type StewardActNow, WINDOW,
 } from '../person/standing';
 import { call, confirmBound, refusedNoRoute } from './call';
 import { notPushed } from './state/slices';
@@ -252,10 +253,34 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     // STEWARDROLE1b (D209 §2.3, §5.1): an older shell's missing fields read as none.
     stewardActsOffered: strings(shaped.stewardActsOffered),
     stewardActs: stewardActsOf(shaped.stewardActs),
+    // STEWARDROLE1c (D209 §6.2): an older shell's missing desk reads as empty.
+    stewardDesk: stewardDeskOf(shaped.stewardDesk),
   };
 }
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value.length > 0 ? value : null);
+
+const DESK_STATES: readonly DeskRequestNow['state'][] = ['open', 'answered', 'declined'];
+
+/**
+ * The steward's desk (STEWARDROLE1c, D209 §6.2), in the order sent, each read field by field; one with no id, act, target, why or time,
+ * or with a state this page does not know, is left out.
+ */
+function stewardDeskOf(raw: unknown): DeskRequestNow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((each): DeskRequestNow[] => {
+    if (typeof each !== 'object' || each === null) return [];
+    const shaped = each as Record<string, unknown>;
+    const id = text(shaped.id);
+    const act = text(shaped.act);
+    const target = text(shaped.target);
+    const why = text(shaped.why);
+    const filed = text(shaped.filed);
+    const state = DESK_STATES.find((known) => known === shaped.state);
+    if (id === null || act === null || target === null || why === null || filed === null || state === undefined) return [];
+    return [{ id, act, target, why, filed, state, closed: text(shaped.closed), answeredBy: text(shaped.answeredBy), reason: text(shaped.reason) }];
+  });
+}
 
 /** This run's steward acts (STEWARDROLE1b, D209 §5.1), in the order sent, each read field by field; one with no id, act or time is left out. */
 function stewardActsOf(raw: unknown): StewardActNow[] {
@@ -302,6 +327,10 @@ function appointmentsOf(raw: unknown): AppointmentNow[] {
       holderId: typeof shaped.holderId === 'string' && shaped.holderId.length > 0 ? shaped.holderId : null,
       acts: strings(shaped.acts),
       setup: shaped.setup === true,
+      // SUPERVISOR1e: the workspace its scope names, and its overrule window, five where a shell older than it says none.
+      workspace: typeof shaped.workspace === 'string' ? shaped.workspace
+        : scope.startsWith('workspace:') ? scope.slice('workspace:'.length) : '',
+      window: typeof shaped.window === 'number' && inWindow(shaped.window) ? shaped.window : WINDOW.standing,
     }];
   });
 }
@@ -325,19 +354,23 @@ function holdersOf(raw: unknown): HolderNow[] {
  * The owner's appointment of a role, or its turning off (SUPERVISOR1a-ii, D208 §2.3, §5; STEWARDROLE1a-i, D209 §2.2, §2.3): `on`
  * true appoints, which makes the window start a holder's tab, Daoris's own pinned harness with the key in its environment, or add the
  * role to a living holder; false turns that one appointment off at once. The scope is `repository:<name>` for a repository's role and
- * `machine` for the steward's; `share` is a later *Appoint…*'s choice while a holder lives, `own` or that holder's id. Sent from the
- * window alone (the census refuses it to a terminal). The answer is read field by field, so a refusal keeps its code; it never
- * carries a key. The route declares `sessions` and `driver`, so the state hub reads both again (D169 point 6). The steward's ask
+ * `machine` for the steward's, and `workspace:<name>` for the supervisor of a workspace (SUPERVISOR1e); `share` is a later
+ * *Appoint…*'s choice while a holder lives, `own` or that holder's id; `window` the supervisor's overrule window in minutes, 1 to 60.
+ * Sent from the window alone (the census refuses it to a terminal). The answer is read field by field, so a refusal keeps its code;
+ * it never carries a key. The route declares `sessions` and `driver`, so the state hub reads both again (D169 point 6). The steward's ask
  * sends its set-up tick as `setup` (STEWARDROLE1b, D209 §2.3), off unless the owner ticked it there; the supervisor's sends none.
  */
 export function useSetAppointment() {
   return useMutation({
-    mutationFn: async ({ role, repository, on, share, setup }: {
-      role: string; repository?: string; on: boolean; share?: string; setup?: boolean;
+    mutationFn: async ({ role, repository, workspace, on, share, setup, window }: {
+      role: string; repository?: string; workspace?: string; on: boolean; share?: string; setup?: boolean; window?: number;
     }): Promise<AppointmentAnswer> => {
-      const scope = repository ? `repository:${repository}` : 'machine';
+      const scope = repository ? `repository:${repository}` : workspace ? `workspace:${workspace}` : 'machine';
       const answer = await call<{ done?: boolean; why?: string | null; message?: string | null }>(
-        'SET_APPOINTMENT', { role, scope, holder: 'terminal', on, ...(share ? { share } : {}), ...(setup !== undefined ? { setup } : {}) });
+        'SET_APPOINTMENT', {
+          role, scope, holder: 'terminal', on, ...(share ? { share } : {}), ...(setup !== undefined ? { setup } : {}),
+          ...(on && window !== undefined ? { window } : {}),
+        });
       return { done: answer?.done === true, why: answer?.why ?? null, message: answer?.message ?? '' };
     },
   });

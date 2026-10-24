@@ -317,7 +317,7 @@ export function useProjectsView({
       note: !registration.adopted && door === 'pipe' ? t('projects.outside.directDoor') : undefined,
       // TERMTRUST1a: a hold a terminal made under the person's standing confirmation, as this run remembers it.
       heldStanding: named(standingOf(driver.data.standingConfirmation)?.held, repository),
-      supervisor: supervisorOf(repository),
+      supervisor: supervisorOf(repository, workspaceOf(registration)),
       // STEWARDROLE1b (D209 §5.1): what the steward set here, from this run's memory, where the build offers the steward.
       stewardSet: stewardSetOf(repository),
     };
@@ -332,24 +332,27 @@ export function useProjectsView({
   /**
    * The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5): the record's, live or dormant, and its presses. *Appoint* in the
    * ask is the owner's own press: the window starts the holder's terminal, and the answer, which never carries a key, says how it
-   * ended in the ask itself; *Turn off* asks nothing, a refusal said under the row.
+   * ended in the ask itself; *Turn off* asks nothing, a refusal said under the row. SUPERVISOR1e: with none of its own, the row says
+   * its workspace's appointment that covers it; its own, once made, wins over it.
    */
-  const supervisorOf = (repository: string): Driving['supervisor'] => {
+  const supervisorOf = (repository: string, workspace: string): Driving['supervisor'] => {
     const standing = standingOf(driver.data?.standingConfirmation);
     if (!standing) return undefined;
     const lower = repository.toLowerCase();
     const mine = appointed?.repository.toLowerCase() === lower ? appointed : null;
+    const supervising = standing.appointments.filter((each) => each.role === 'supervisor');
     return {
       // STEWARDROLE1a-i (D209 §2.4): the supervisor's own flag, never the steward's nor D201's.
       offered: standing.supervisorOffered,
-      appointment: standing.appointments.find((each) => each.role === 'supervisor' && each.repository.toLowerCase() === lower) ?? null,
+      appointment: supervising.find((each) => each.repository.toLowerCase() === lower) ?? null,
+      covering: supervising.find((each) => each.workspace !== '' && each.workspace.toLowerCase() === workspace.toLowerCase()) ?? null,
       holders: standing.holders,
       started: mine?.started,
       refused: mine?.refused ?? null,
       busy: setAppointment.isPending,
-      onAppoint: (answered, share) => {
+      onAppoint: (answered, share, window) => {
         setAppointed(null);
-        setAppointment.mutate({ role: 'supervisor', repository, on: true, share }, {
+        setAppointment.mutate({ role: 'supervisor', repository, on: true, share, window }, {
           onSuccess: (answer) => {
             if (answer.done) {
               setAppointed({ repository, started: true, refused: null });

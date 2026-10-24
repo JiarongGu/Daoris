@@ -196,6 +196,12 @@ public static class DriverCommand
               the steward's holder's verbs (D209), only in the terminal Daoris started for it: what the steward did
               this run, or one act sent to the running Daoris with a proof by the role's key, recorded as the
               steward's. No alone path.
+          steward desk  ·  steward desk decline <request> "<reason>"
+              the steward's desk (D209), read in its terminal: each request fenced as its caller's claims, and the
+              holder's decline of one with its reason, sent as its acts are.
+          steward request <act> <target> "<why>"
+              asks the steward for one of its acts, from any terminal, with no key: kept at the running Daoris's
+              desk (ten open per caller), it grants nothing, and the steward answers it by an act or declines it.
           help list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
           help resume <id> "…" [--file <path>]…  ·  help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
           help delete <id> [--yes]

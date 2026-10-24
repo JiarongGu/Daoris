@@ -20,14 +20,14 @@ vi.mock('@shenora/react', () => ({
 
 import i18n from '../locales/i18n';
 import { clockOf } from '../locales/format';
-import type { AppointmentNow, StandingConfirmationNow, StewardActNow } from '../person/standing';
+import type { AppointmentNow, DeskRequestNow, StandingConfirmationNow, StewardActNow } from '../person/standing';
 import { NotificationsStanding } from './NotificationsStanding';
 import { StewardLine } from './StewardLine';
 
 const OFFERED = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry'];
 const STEWARD: AppointmentNow = {
   role: 'steward', repository: '', holder: 'terminal', since: '2026-10-25T09:00:00Z', dormant: false, answers: 0, scope: 'machine',
-  holderId: 'h1', acts: OFFERED, setup: false,
+  holderId: 'h1', acts: OFFERED, setup: false, workspace: '', window: 5,
 };
 const act = (id: string, kind: string, at: string, more: Partial<StewardActNow> = {}): StewardActNow => ({
   id, act: kind, repository: null, quest: null, session: null, at, standing: true, waiting: false, ...more,
@@ -46,8 +46,24 @@ const ACTS: StewardActNow[] = [
 const STANDING: StandingConfirmationNow = {
   offered: false, on: false, presses: [], built: [], since: null, unread: null, unwritten: false, used: 0, held: [],
   appointmentsOffered: true, supervisorOffered: false, stewardOffered: true, appointments: [STEWARD], holders: [],
-  stewardActsOffered: OFFERED, stewardActs: ACTS,
+  stewardActsOffered: OFFERED, stewardActs: ACTS, stewardDesk: [],
 };
+/** The steward's desk this run, newest first (STEWARDROLE1c): one waiting, one declined with a reason, one answered by an act. */
+const DESK: DeskRequestNow[] = [
+  {
+    id: 'r3', act: 'retry', target: '#q3', why: 'the outage passed <b>now</b>', filed: '2026-10-25T10:09:00Z', state: 'open', closed: null,
+    answeredBy: null, reason: null,
+  },
+  {
+    id: 'r2', act: 'hold', target: 'atlas', why: 'atlas is mid-release', filed: '2026-10-25T10:05:00Z', state: 'declined',
+    closed: '2026-10-25T10:06:00Z', answeredBy: null, reason: 'the owner holds atlas during a release',
+  },
+  {
+    id: 'r1', act: 'trees', target: 'engine', why: 'engine needs trees', filed: '2026-10-25T10:02:00Z', state: 'answered',
+    closed: '2026-10-25T10:03:00Z', answeredBy: 'a3', reason: null,
+  },
+];
+const desk = () => within(screen.getByRole('list', { name: "The steward's desk" })).getAllByRole('listitem');
 
 const line = () => within(screen.getByRole('region', { name: 'The steward' }));
 const acts = () => within(screen.getByRole('list', { name: "The steward's acts" })).getAllByRole('listitem');
@@ -126,6 +142,54 @@ describe("Notifications' steward line", () => {
     expect(region.getAllByRole('button', { name: '重试' })).toHaveLength(2);
     expect(region.getByRole('button', { name: '停用' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '管家' }).textContent).not.toMatch(/这台机器|渠道|总管|任务|\{\{|undefined/);
+  });
+
+  // STEWARDROLE1c (D209 §6.2): the desk under the line, folded until opened, each request its caller's words as written, marked as
+  // granting nothing, and how the steward closed it; it offers the owner no press.
+  it("says the steward's desk under the line, each request as its caller wrote it and how the steward closed it", async () => {
+    render(<StewardLine standing={{ ...STANDING, stewardDesk: DESK }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    expect(line().getByText("The steward's desk · 1 waiting")).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: "The steward's desk" })).toBeNull();
+    await userEvent.click(line().getByRole('button', { name: "Show the steward's desk" }));
+
+    const rows = desk();
+    expect(rows).toHaveLength(3);
+    expect(within(rows[0]!).getByText('Try again')).toBeInTheDocument();
+    expect(within(rows[0]!).getByText('#q3')).toBeInTheDocument();
+    expect(within(rows[0]!).getByText(clockOf('2026-10-25T10:09:00Z'))).toBeInTheDocument();
+    // The caller's words as written, never read as markup.
+    expect(rows[0]!.querySelector('[data-desk-why]')?.textContent).toBe('the outage passed <b>now</b>');
+    expect(rows[0]!.querySelector('b')).toBeNull();
+    expect(within(rows[0]!).getByText('Waiting for the steward')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText('Declined by the steward')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText("The steward's reason: the owner holds atlas during a release")).toBeInTheDocument();
+    expect(within(rows[2]!).getByText('Done by the steward')).toBeInTheDocument();
+    for (const row of rows) {
+      expect(within(row).getByText('Words of whoever filed it, which grant nothing')).toBeInTheDocument();
+      expect(within(row).queryAllByRole('button')).toEqual([]);
+    }
+  });
+
+  it('draws the line for the desk alone, where none is appointed and the steward made no act', () => {
+    render(<StewardLine standing={{ ...STANDING, appointments: [], stewardActs: [], stewardDesk: DESK }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    expect(line().getByText("The steward's desk · 1 waiting")).toBeInTheDocument();
+    expect(line().queryByRole('button', { name: 'Turn off' })).toBeNull();
+  });
+
+  it('says the desk in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    render(<StewardLine standing={{ ...STANDING, stewardDesk: DESK }} onTurnOff={vi.fn()} onReverse={vi.fn()} />);
+    const region = within(screen.getByRole('region', { name: '管家' }));
+    expect(region.getByText('管家的待办 · 1 项等管家处理')).toBeInTheDocument();
+    await userEvent.click(region.getByRole('button', { name: '显示管家的待办' }));
+    const rows = within(region.getByRole('list', { name: '管家的待办' })).getAllByRole('listitem');
+    expect(within(rows[0]!).getByText('重试')).toBeInTheDocument();
+    expect(within(rows[0]!).getByText('等管家处理')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText('管家已谢绝')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText('管家的理由：the owner holds atlas during a release')).toBeInTheDocument();
+    expect(within(rows[2]!).getByText('管家已办')).toBeInTheDocument();
+    expect(region.getAllByText('提出者自己的话，不授予任何权限')).toHaveLength(3);
+    expect(screen.getByRole('region', { name: '管家' }).textContent).not.toMatch(/这台机器|渠道|总管|任务|请求|拒绝|\{\{|undefined/);
   });
 
   it("as Notifications holds it, sends each reverse press as the owner's ordinary route, and Turn off as the appointment's", async () => {

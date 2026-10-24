@@ -41,7 +41,7 @@ const shell = (standing: Record<string, unknown>, answer: unknown = { done: true
 /** D201's grant not offered, as this design keeps it; the steward offered, as the page tests set it. */
 const OFF = {
   offered: false, on: false, presses: [], built: ['stop', 'finish', 'hold', 'resume'], unwritten: false, used: 0, held: [],
-  appointmentsOffered: true, supervisorOffered: false, stewardOffered: true, stewardActsOffered: OFFERED, stewardActs: [],
+  appointmentsOffered: true, supervisorOffered: false, stewardOffered: true, stewardActsOffered: OFFERED, stewardActs: [], stewardDesk: [],
   appointments: [], holders: [],
 };
 const STEWARD = { role: 'steward', scope: 'machine', holder: 'terminal', since: SINCE, dormant: false, answers: 0, holderId: 'h1', acts: OFFERED, setup: false };
