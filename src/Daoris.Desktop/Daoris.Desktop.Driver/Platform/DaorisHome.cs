@@ -365,6 +365,9 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry StandingConfirmation = new("standing-confirmation", HomeCategory.Data, "data/standing-confirmation.json", "data/standing-confirmation.json");
     // MODELROLE1c2 (D205 §9.2): what each agent, version and account last offered and refused, a reading the walk judges.
     public static readonly HomeEntry AgentOffers = new("agent-offers", HomeCategory.Data, "data/agent-offers.json", "data/agent-offers.json");
+    // CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, one record each, kept across a restart in
+    // data/ (backed up), never run/ (anyone may clear it while Daoris is closed); never a key in it (D172 point 3).
+    public static readonly HomeEntry PipeWaiting = new("pipe-waiting", HomeCategory.Data, "data/pipe-waiting", "data/pipe-waiting");
     public static readonly HomeEntry Keys = new("keys", HomeCategory.Profiles, "profiles/keys.json", "keys.json");
     public static readonly HomeEntry Remotes = new("remotes", HomeCategory.Profiles, "profiles/remotes.json", "remotes.json");
     public static readonly HomeEntry AgentHomes = new("agent-homes", HomeCategory.Profiles, "profiles/agents/*/*", "harnesses/*/*");
@@ -376,6 +379,9 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry GitKnownHosts = new("git-known-hosts", HomeCategory.Profiles, "profiles/git/known_hosts", "profiles/git/known_hosts");
     public static readonly HomeEntry GitConfig = new("git-config", HomeCategory.Profiles, "profiles/git/global.gitconfig", "profiles/git/global.gitconfig");
     public static readonly HomeEntry Window = new("window", HomeCategory.Profiles, "profiles/window", "", "chromium", "config");
+    // CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as a press's card lives; a file
+    // that holds a key is a sign-in (D172 point 3), never under run/, which anyone may clear while Daoris is closed.
+    public static readonly HomeEntry PipeSent = new("pipe-sent", HomeCategory.Profiles, "profiles/pipe-sent", "profiles/pipe-sent");
     public static readonly HomeEntry Trees = new("trees", HomeCategory.Work, "work/trees/*/*/*", "trees/*/*/*");
     public static readonly HomeEntry HelpRoom = new("help-room", HomeCategory.Work, "work/rooms/help", "help", "CLAUDE.md");
     public static readonly HomeEntry HelpRooms = new("help-rooms", HomeCategory.Work, "work/rooms/help-*", "help-*", "CLAUDE.md");
@@ -418,8 +424,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
         PluginApprovals, Usage,
         Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
-        UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers,
-        Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitSshConfig, GitKnownHosts, GitConfig, Window,
+        UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting,
+        Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,
         Trees, HelpRoom, HelpRooms, Intake, OpinionPackets, QuestFiles, AskFiles, SessionFiles, Proof, UsageRead, BrainstormRooms, RoleRooms,
         Toolchain, ToolVersions, Bin,
         HomeLease, DriverLock, Running, Locks, Spawn, Starts, Hooks, Probing, SessionPids, Requests, EdgeRecord, Pipe, HomeMove,

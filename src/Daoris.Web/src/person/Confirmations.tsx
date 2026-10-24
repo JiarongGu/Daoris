@@ -53,6 +53,10 @@ export type Confirmation = {
   checking?: boolean;
   /** The longest that judgement may take, in milliseconds, which the Confirm waits for (§5.2). */
   checkWithin?: number | null;
+  /** That a terminal's press carries a key, so it is not kept across a restart (CONFIRMWAIT1a-ii, the confirm-wait design §7.1). */
+  keyed?: boolean;
+  /** That a terminal's press waits again from its record after a restart, its asker the record's (§7.2, §8.1). */
+  restored?: boolean;
 };
 
 /**
@@ -286,6 +290,7 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
   const left = waiting.expires ? Math.max(0, new Date(waiting.expires).getTime() - now) : 0;
   const old = waiting.asked ? now - new Date(waiting.asked).getTime() > HOUR : false;
   const checking = waiting.source === 'pipe' && waiting.checking === true;
+  const restored = waiting.source === 'pipe' && waiting.restored === true;
 
   return (
     <div
@@ -337,11 +342,12 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
           </div>
         )}
         <p className="m-0 text-small text-ink-soft">
+          {/* CONFIRMWAIT1a-ii (§8.1): a restored press's asker is said as its record's, which a process of the account could have written. */}
           {asker?.process && asker.pid != null
-            ? t('person.asker.process', { process: asker.process, pid: asker.pid })
+            ? t(restored ? 'person.restored' : 'person.asker.process', { process: asker.process, pid: asker.pid })
             : asker?.pid != null
-              ? t('person.asker.pid', { pid: asker.pid })
-              : t('person.asker.unknown')}
+              ? t(restored ? 'person.restoredPid' : 'person.asker.pid', { pid: asker.pid })
+              : t(restored ? 'person.restoredUnknown' : 'person.asker.unknown')}
           {waiting.asked
             ? <> · <span className={old ? 'font-semibold text-ink' : undefined}>{t('person.asked', { ago: ago(waiting.asked) })}</span></>
             : null}
@@ -350,6 +356,7 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
           <p className="m-0 text-small text-warn">
             {t('person.waits')}
             {waiting.waitedOn != null ? <> {t(waiting.waitedOn ? 'person.waitedOn' : 'person.notWaitedOn')}</> : null}
+            {waiting.keyed === true ? <> {t('person.keyed')}</> : null}
           </p>
         ) : (
           <p className="m-0 text-small text-warn">
@@ -416,6 +423,10 @@ function refusalOf(t: T, waiting: Confirmation, answer: Extract<ConfirmationAnsw
     return t(waiting.source === 'pipe' ? 'person.gone' : 'person.goneService');
   }
   if (answer.why === 'unread') return t('person.unread');
+  // CONFIRMWAIT1a-ii (§7.2): Daoris closing or an update draining took no Confirm, and the press waits on across the restart.
+  if (answer.why === 'draining') return t('person.draining');
+  // CONFIRMWAIT1 (§15.2 item 8): its record could not say the answer, so nothing was taken, and it waits on.
+  if (answer.why === 'unrecorded') return t('person.unrecorded');
   if (answer.why === 'changed' && answer.reason) {
     const values = answer.values ?? {};
     const state = STATES[answer.reason];

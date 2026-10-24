@@ -12,6 +12,22 @@ with the version and date at release.
   *Appoint…* asks whether to add the role to it or give it a terminal of its own. Turning one role off leaves the other answering,
   and closing the tab ends every role it held. `daoris-driver roles brief` prints what each role does and never does, and a role's
   tab runs only its roles' verbs and the reads they need. The holder key's variable is now `DAORIS_ROLE_KEY`.
+- A terminal's change that waits for your Confirm in Daoris's window now still waits after Daoris closes or restarts for an update
+  (CONFIRMWAIT1a-ii). Daoris keeps it on this machine and, when it starts again, checks it as if it were asked again. Its card then
+  names what sent it as the record says. One that cannot be brought back is said once in *Done and failed*, with how many. A
+  change that carries a key, such as wiring a workspace to a remote, says on its card that it does not wait across a restart.
+  Confirming while Daoris is about to restart does nothing, and the card says the change still waits.
+- A terminal's change that waits for your Confirm is checked more closely before it runs (CONFIRMWAIT1, Codex's read of the
+  design). Confirming refuses it with its reason if any of these moved while it waited:
+  - the commits it would land, sweep, hand off or bring up to date, even when there are as many as before;
+  - the tree it would discard, even when named by its folder;
+  - the pause it would release;
+  - where its repository's name points;
+  - the bytes of the files a terminal attached.
+
+  The terminal names the change's request at once, before Daoris has checked it. It can read or take back the change for as long as
+  the change waits, even after Daoris restarts or `run/` is cleared. If Daoris cannot keep your answer, nothing is done, and the card
+  says so and still waits.
 - A session's *Workflow* view now says in your language why no workflow runs for it (CHATFLOW1a, CHATFLOW1b). Before, it showed
   the driver's English sentence, in Chinese too. A chat in your checkout says its changes are yours to commit, and that a
   conversation with a tree of its own is how work gets a workflow. A chat in a tree of its own says this build reads no workflow
@@ -23,8 +39,7 @@ with the version and date at release.
   first checks that what it rests on has not moved while it waited (the session, the setting, the branch, the plan it would act on);
   if something moved, nothing is done and the card says why. If Daoris cannot check just now, it keeps waiting and you can confirm
   again. Ten may wait at once, and the terminal that sent one can take it back with `daoris-driver withdraw <id>`. A change taken
-  back after you saw its card, and one still waiting when Daoris closes, appear in *Done and failed*. Until the next change lands,
-  closing Daoris still ends what waits.
+  back after you saw its card appears in *Done and failed*.
 - A terminal's change that waits for your Confirm in Daoris's window now names its request at once (CONFIRMWAIT1b). The line says
   the request's id, that `daoris-driver result <id>` says how it ended, and that `daoris-driver withdraw <id>` takes it back.
   `--wait <minutes>`, 0 to 30, says how long a verb waits for your answer, and `--no-wait` returns once it is asked. Ctrl+C still

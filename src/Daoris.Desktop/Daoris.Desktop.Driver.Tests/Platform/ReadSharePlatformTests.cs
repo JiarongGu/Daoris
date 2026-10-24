@@ -223,7 +223,8 @@ public sealed class ReadSharePlatformTests : IDisposable
         var id = Guid.NewGuid().ToString();
         var presses = new SentPresses(_home);
         presses.Keep(new SentPress(id, "key-1", "SESSION_INPUT", now));
-        var path = Path.Combine(DaorisHome.Entry(_home, HomeEntry.Pipe), "sent", id + ".json");
+        // CONFIRMWAIT1a-ii keeps a sent press in its own home entry; the old `run/pipe/sent` is read only as a fallback.
+        var path = Path.Combine(DaorisHome.Entry(_home, HomeEntry.PipeSent), id + ".json");
 
         using (MoveHold.Take(path))
         {

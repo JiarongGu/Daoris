@@ -28,6 +28,10 @@ export type PipeConfirmation = {
   shownAt?: string | null;
   /** The values its sentence names by role (NOTIFY2b, the modules' `PipeWording`), beside `fields`; absent from a shell before them. */
   named?: ConfirmationNamed[] | null;
+  /** That it carries a key, so it is not kept across a restart (CONFIRMWAIT1a-ii, the confirm-wait design §7.1); absent before it. */
+  keyed?: boolean | null;
+  /** That it waits again from its record after a restart, its asker the record's (§7.2, §8.1); absent before it. */
+  restored?: boolean | null;
 };
 
 /** What waits, whole, numbered so the newest telling is kept (as `UNDER_WAY` is). */
@@ -60,6 +64,7 @@ const fromPipe = (waiting: PipeConfirmation): Confirmation => ({
   expires: waiting.expires ?? null, shown: waiting.shownAt != null,
   waitedOn: typeof waiting.waitedOn === 'boolean' ? waiting.waitedOn : null, checking: waiting.checking === true,
   checkWithin: typeof waiting.checkWithin === 'number' ? waiting.checkWithin : null,
+  keyed: waiting.keyed === true, restored: waiting.restored === true,
 });
 
 /**

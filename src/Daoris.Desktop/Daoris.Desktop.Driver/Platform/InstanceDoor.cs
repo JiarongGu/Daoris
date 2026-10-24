@@ -241,7 +241,8 @@ public static class InstanceDoor
     /// take it back at once (CONFIRMWAIT1b); the confirmed press's answer is said in the verb's words, and the person's refusal or the
     /// two minutes' end is the instance's sentence, exit 1, nothing done here. The verb's own wait over with the press still
     /// <c>waiting</c> is exit 1 too, and an instance from before CONFIRMWAIT1a-i, which answers <c>running</c> then, is said as before,
-    /// exit 2. A window's route is never sent: no terminal verb has one.</para>
+    /// exit 2; so is the close's answer <c>waiting</c> (CONFIRMWAIT1a-ii), the press kept across the restart. A window's route is never
+    /// sent: no terminal verb has one.</para>
     /// </remarks>
     /// <param name="payload">The route's payload, as a window's press sends it.</param>
     /// <param name="alone">The verb acting from its own process, as it does where no instance runs.</param>
@@ -305,12 +306,27 @@ public static class InstanceDoor
             }
         }
 
+        // CONFIRMWAIT1 (§15.2 item 6): its answer is its end, so its key keeps a day from now; a close's `waiting` is no end, marked below.
+        if (world.Home is { } sent && (Succeeded(answer.Value) || Refusal(answer.Value).Code != Waiting))
+        {
+            new SentPresses(sent).Ended(id, DateTimeOffset.UtcNow);
+        }
+
         if (Succeeded(answer.Value))
         {
             return words(answer.Value.TryGetProperty("data", out var data) ? data : default);
         }
 
         var (code, message, _) = Refusal(answer.Value);
+        // CONFIRMWAIT1a-ii (§4.1, §7.2): the close answers a line waiting on a press `waiting`, the press kept in its record across the
+        // restart; said as this verb's own wait's end.
+        if (code == Waiting)
+        {
+            if (world.Home is { } home) new SentPresses(home).Waiting(id, DateTimeOffset.UtcNow);
+            await world.Error.WriteLineAsync(StillWaiting(world.Verb, id)).ConfigureAwait(false);
+            return 1;
+        }
+
         await world.Error.WriteLineAsync($"{world.Verb}: {message} ({code})").ConfigureAwait(false);
         return RefusalExit(code);
     }
@@ -721,6 +737,9 @@ public static class InstanceDoor
                     $"{world.Verb}: waiting for you to confirm this in Daoris's window (request {id}{why}); `daoris-driver result {id}` says "
                     + $"how it ended, and `daoris-driver withdraw {id}` takes it back…");
                 world.Error.Flush();
+                // CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): its record is marked waiting as the id is said, before any RESULT, so a
+                // verb killed now leaves its key kept as long as the card may live.
+                if (world.Home is { } home) new SentPresses(home).Waiting(id, DateTimeOffset.UtcNow);
                 confirming = true;
                 continue;
             }

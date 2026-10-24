@@ -198,6 +198,26 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(notify).toHaveBeenCalledTimes(1);
   });
 
+  // CONFIRMWAIT1 (the confirm-wait design §15.3 item 11): the shell takes a changed press's card as its answer settles, so the removal can
+  // come before PERSON_CONFIRM answers; the reason is then toasted, in the reader's words, never lost.
+  it.each([
+    ['en', 'Confirm', 'Not done: the branch quest/x gained or lost commits while this waited.'],
+    ['zh', '确认', '未执行：等待期间分支 quest/x 的提交已有增减。'],
+  ])('toasts a changed reason whose card was taken before its answer came (%s)', async (language, confirm, words) => {
+    await i18n.changeLanguage(language);
+    let settle: (value: ConfirmationAnswer) => void = () => {};
+    const answer = vi.fn(() => new Promise<ConfirmationAnswer>((resolve) => { settle = resolve; }));
+    const notify = vi.fn();
+    const { rerender } = render(<Confirmations waiting={[STOP]} onAnswer={answer} notify={notify} />);
+
+    await userEvent.click(screen.getByRole('button', { name: confirm }));
+    rerender(<Confirmations waiting={[]} onAnswer={answer} notify={notify} />);
+    settle({ answered: false, why: 'changed', message: 'Not done.', reason: 'branch', values: { branch: 'quest/x' } });
+
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(words, 'error'));
+    expect(notify).toHaveBeenCalledTimes(1);
+  });
+
   it("says a service's time left, stepping, and a terminal's press that it waits until the person answers", () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
     try {
@@ -241,7 +261,9 @@ describe("the window's confirmation of a terminal's press", () => {
     ['en', 'Confirm', { reason: 'quest', values: { then: 'Open', now: 'Taken' } }, 'Not done: the quest moved on while this waited (it was open, it is taken).'],
     ['en', 'Confirm', { reason: 'setting', values: {} }, 'Not done: what this would set changed while this waited (stop a session).'],
     ['en', 'Confirm', { reason: 'branch', values: { branch: 'quest/x' } }, 'Not done: the branch quest/x gained or lost commits while this waited.'],
-    ['zh', '确认', { reason: 'repository', values: { repository: 'Lyntai' } }, '未执行：仓库 Lyntai 已不再登记在本机。'],
+    ['zh', '确认', { reason: 'repository', values: { repository: 'Lyntai' } }, '未执行：仓库 Lyntai 在本机的注册已与当时不同。'],
+    ['en', 'Confirm', { reason: 'repository', values: { repository: 'Lyntai' } },
+      'Not done: the repository Lyntai is no longer registered on this machine as it was.'],
     ['zh', '确认', { reason: 'ask', values: {} }, '未执行：等待期间该需求已关闭。'],
   ])('says why a press whose ground moved was not done (%s, %j)', async (language, confirm, changed, words) => {
     await i18n.changeLanguage(language);
@@ -265,6 +287,65 @@ describe("the window's confirmation of a terminal's press", () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(words);
     expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
+  });
+
+  // CONFIRMWAIT1a-ii (the confirm-wait design §7.2, §8.1, §8.3): a press restored after a restart names its asker as its record's, in the
+  // three forms the asker has; one carrying a key says it does not wait across a restart; a Confirm during an update's drain is refused on
+  // its card, and it still waits.
+  it.each([
+    ['en', { process: 'bash', pid: 4120 }, 'The record says it was sent by bash, process 4120, before Daoris restarted.'],
+    ['en', { process: null, pid: 77 }, 'The record says it was sent by process 77 before Daoris restarted.'],
+    ['en', null, 'The record does not say what sent it before Daoris restarted.'],
+    ['zh', { process: 'bash', pid: 4120 }, '记录显示它在 Daoris 重启前由 bash（进程 4120）发出。'],
+    ['zh', { process: null, pid: 77 }, '记录显示它在 Daoris 重启前由进程 77 发出。'],
+    ['zh', null, '记录未说明 Daoris 重启前是什么发出了它。'],
+  ])('names a restored press\'s asker as its record\'s (%s, %j)', async (language, asker, words) => {
+    await i18n.changeLanguage(language);
+    draw([{ ...STOP, restored: true, asker, waitedOn: false }]);
+
+    expect(screen.getByRole('group')).toHaveTextContent(words);
+    expect(screen.getByRole('group')).not.toHaveTextContent(language === 'en' ? 'Sent by' : '由 bash 发出');
+  });
+
+  it.each([
+    ['en', 'This carries a key, so it does not wait across a restart of Daoris.'],
+    ['zh', '它带有密钥，因此不会在 Daoris 重启后继续等待。'],
+  ])('says a press carrying a key does not wait across a restart (%s)', async (language, words) => {
+    await i18n.changeLanguage(language);
+    draw([{ ...STOP, keyed: true }, { ...STOP, id: 'plain' }]);
+
+    const [keyed, plain] = screen.getAllByRole('group');
+    expect(keyed).toHaveTextContent(words);
+    expect(plain).not.toHaveTextContent(words);
+  });
+
+  it.each([
+    ['en', 'Confirm', 'Daoris is about to restart; this still waits.'],
+    ['zh', '确认', 'Daoris 即将重启；此请求仍在等待。'],
+  ])('says a Confirm during an update\'s drain was refused and the press still waits (%s)', async (language, confirm, words) => {
+    await i18n.changeLanguage(language);
+    const answer = vi.fn(async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'draining', message: 'Daoris is about to restart; this still waits.' }));
+    draw([STOP], answer);
+
+    await userEvent.click(screen.getByRole('button', { name: confirm }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(words);
+    expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
+  });
+
+  // CONFIRMWAIT1 (the confirm-wait design §15.2 item 8): an answer Daoris could not keep is said on the card, which waits on, its buttons back.
+  it.each([
+    ['en', 'Refuse', 'Daoris could not keep your answer just now; nothing was done, and it still waits.'],
+    ['zh', '拒绝', 'Daoris 暂时无法记下你的回答；未执行任何操作，它仍在等待。'],
+  ])('says an answer it could not keep and the press still waits (%s)', async (language, refuse, words) => {
+    await i18n.changeLanguage(language);
+    const answer = vi.fn(async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'unrecorded', message: 'Daoris could not keep your answer just now; nothing was done, and it still waits.' }));
+    draw([STOP], answer);
+
+    await userEvent.click(screen.getByRole('button', { name: refuse }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(words);
+    expect(screen.getByRole('button', { name: refuse })).toBeEnabled();
   });
 
   it('says all of it in Chinese', async () => {

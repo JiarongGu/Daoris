@@ -224,7 +224,51 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
         if (state == "waiting") Assert.Contains(InstanceDoor.StillWaiting("trees", id), _error.ToString());
         else Assert.Contains($"Daoris was still working on it (request {id})", _error.ToString());
-        Assert.Equal(state == "waiting", new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2)) is not null);
+        // CONFIRMWAIT1 (§15.2 item 6): nothing found it ended, so its key is kept past the day either way.
+        Assert.NotNull(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2)));
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the verb marks its record waiting as soon as the instance says the id, before
+    /// any <c>RESULT</c>, so a verb whose harness is killed after the id, or whose <c>RESULT</c> does not read, leaves the key kept.
+    /// </summary>
+    [Fact]
+    public async Task The_record_is_marked_waiting_as_the_id_is_said()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Confirming = true;
+        standIn.Press = StandInPress.Hold;
+        standIn.Result = "id-taken";
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        await PressAsync(World(wait: TimeSpan.Zero), Open with { Class = RouteClass.Person });
+
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
+        Assert.NotNull(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2))?.WaitingAt);
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1a-ii (design §4.1, §7.2): the close answers a line waiting on a press <c>waiting</c>, <c>why: close</c>, the press kept
+    /// in its record across the restart: said as the verb's own wait's end, with the id and its two verbs, exit 1, and kept past the day.
+    /// </summary>
+    [Fact]
+    public async Task A_close_answering_waiting_is_the_verbs_own_waits_end()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Confirming = true;
+        standIn.Press = StandInPress.Refuse;
+        standIn.Code = "waiting";
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var exit = await PressAsync(World(), Open with { Class = RouteClass.Person });
+
+        Assert.Equal(1, exit);
+        Assert.Equal(0, _alone);
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
+        Assert.Contains(InstanceDoor.StillWaiting("trees", id), _error.ToString());
+        Assert.NotNull(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2))?.WaitingAt);
     }
 
     /// <summary>CONFIRMWAIT1b (design §4.1, §5.1): <c>already</c> is exit 0, its sentence on the error stream, nothing done alone.</summary>

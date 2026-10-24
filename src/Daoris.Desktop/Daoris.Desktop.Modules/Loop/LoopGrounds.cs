@@ -19,11 +19,38 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
         return records.FirstOrDefault(each => each.Id == id) is { } found ? (found.State, found.Updated) : null;
     }
 
-    public async Task<bool> RegisteredAsync(string name, CancellationToken cancellationToken)
+    public async Task<string?> RegistrationAsync(string name, CancellationToken cancellationToken)
+    {
+        // What the name resolves to (the confirm-wait design §15.1 item 4): each row it names, by its repository, workspace, adoption
+        // and full root, so a name registered again at another checkout reads moved though it is still registered.
+        var registry = await Service().RegistryAsync(cancellationToken).ConfigureAwait(false);
+        var rows = registry
+            .Where(each => string.Equals(each.Repository, name, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(each.Workspace, name, StringComparison.OrdinalIgnoreCase))
+            .Select(each => $"{each.Repository}|{each.Workspace}|{each.Adopted}|{(string.IsNullOrEmpty(each.Root) ? "" : Path.GetFullPath(each.Root))}")
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        return rows.Count == 0 ? null : string.Join(";", rows);
+    }
+
+    public async Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken)
     {
         var registry = await Service().RegistryAsync(cancellationToken).ConfigureAwait(false);
-        return registry.Any(each => string.Equals(each.Repository, name, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(each.Workspace, name, StringComparison.OrdinalIgnoreCase));
+        var root = registry.FirstOrDefault(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Root;
+        if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return null;
+        return await WorkingTree.TipsAsync(root, cancellationToken).ConfigureAwait(false)
+            ?? throw new IOException("git did not say the checkout's branches.");
+    }
+
+    public async Task<IReadOnlyDictionary<string, string>?> SessionTipsAsync(string session, CancellationToken cancellationToken)
+    {
+        var tree = await TreeOfAsync(session, cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrEmpty(tree) || !Directory.Exists(tree)) return null;
+        var tips = new Dictionary<string, string>(
+            await WorkingTree.TipsAsync(tree, cancellationToken).ConfigureAwait(false) ?? throw new IOException("git did not say the tree's branches."),
+            StringComparer.Ordinal);
+        if (await WorkingTree.HeadAsync(tree, cancellationToken).ConfigureAwait(false) is { } head) tips["HEAD"] = head;
+        return tips;
     }
 
     public async Task<string?> QuestAsync(string id, CancellationToken cancellationToken) =>
@@ -142,17 +169,31 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
                 ]);
             }
 
-            case "tree-uncommitted":
+            case "tree":
             {
-                // A forced discard skips its proof, so what it would lose is its ground: each uncommitted path, by its bytes.
-                var tree = PipeGround.Text(payload, "id") is { Length: > 0 } session
-                    ? await TreeOfAsync(session, cancellationToken).ConfigureAwait(false)
-                    : Rooted(PipeGround.Text(payload, "path"));
+                // The tree a discard removes, by `id` or by `path` as its handler resolves it (the confirm-wait design §15.1 item 2): its
+                // head and its index's staged entries; with `force`, which skips the proof, also each uncommitted path by its bytes.
+                var tree = PipeGround.Text(payload, "path") is { } named
+                    ? Rooted(named)
+                    : PipeGround.Text(payload, "id") is { Length: > 0 } session ? await TreeOfAsync(session, cancellationToken).ConfigureAwait(false) : null;
                 if (tree is null || !Directory.Exists(tree)) return "none";
+                var head = await WorkingTree.HeadAsync(tree, cancellationToken).ConfigureAwait(false);
+                var staged = await WorkingTree.StagedAsync(tree, cancellationToken).ConfigureAwait(false)
+                    ?? throw new IOException("git did not say what the tree's index holds.");
+                if (!Flag(payload, "force")) return PipeGround.Fingerprint([head, staged]);
                 var paths = await WorkingTree.UncommittedAsync(tree, cancellationToken).ConfigureAwait(false)
                     ?? throw new IOException("git did not say what the tree holds uncommitted.");
-                return PipeGround.Fingerprint(paths.Order(StringComparer.Ordinal).Select(path => $"{path}={Hash(Path.Combine(tree, path))}"));
+                return PipeGround.Fingerprint([
+                    head, staged,
+                    PipeGround.Fingerprint(paths.Order(StringComparer.Ordinal).Select(path => $"{path}={Hash(Path.Combine(tree, path))}")),
+                ]);
             }
+
+            case "attachments":
+                // A terminal's words with files (§15.1 item 5): each path as it was given, and a rooted file's bytes, which the press
+                // reads only once it is confirmed.
+                return PipeGround.Fingerprint(PipeGround.Texts(payload, "paths")
+                    .Select(path => $"{path}={(Rooted(path) is { } file ? Hash(file) : "unrooted")}"));
 
             case "file":
                 return Hash(Rooted(PipeGround.Text(payload, "file")));

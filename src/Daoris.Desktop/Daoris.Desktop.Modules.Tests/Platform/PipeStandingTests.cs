@@ -170,6 +170,8 @@ public sealed class PipeStandingTests : Bridge
         var waits = Assert.Single(told!.Value.GetProperty("payload").EnumerateArray());
         Assert.Equal(InstancePipe.Confirming, waits.GetProperty("type").GetString());
         Assert.Equal(StandingWhy.InAgentJob, waits.GetProperty("payload").GetProperty("standing").GetString());
+        // Told before its grounds are read (CONFIRMWAIT1 §15.2 item 9): the card, and its line, come once they are.
+        await Until(() => Lines(PipeConfirmations.LogEvent).Any(), () => "the press was never asked");
         var asked = Lines(PipeConfirmations.LogEvent).Single();
         Assert.Equal(
             """{"state":"asked","route":"DAORIS.DRIVER.STOP_SESSION","door":"terminal","standing":"in-agent-job"}""",

@@ -79,6 +79,29 @@ public sealed partial class SessionBalloonTests
         Assert.DoesNotContain(route, said.Title + said.Body, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.2 step 7): the restart's one balloon names how many presses from a terminal wait again,
+    /// in the window's language, a warning, and is never folded with a minute's asks.
+    /// </summary>
+    [Theory]
+    [InlineData("en", 1, "A terminal's presses still wait", "One press from a terminal still waits for you after Daoris restarted. Open Daoris to confirm or refuse it.")]
+    [InlineData("en", 3, "A terminal's presses still wait", "3 presses from a terminal still wait for you after Daoris restarted. Open Daoris to confirm or refuse them.")]
+    [InlineData("zh", 3, "终端的请求仍在等待", "Daoris 重启后，仍有 3 个终端的请求在等你。打开 Daoris 确认或拒绝它们。")]
+    [InlineData("none", 2, "A terminal's presses still wait", "2 presses from a terminal still wait for you after Daoris restarted. Open Daoris to confirm or refuse them.")]
+    public void The_restart_s_balloon_names_how_many_wait_again(string language, int count, string title, string body)
+    {
+        var facts = new BalloonFacts(PipeConfirmations.RestoredKind, "A terminal's presses still wait for you in Daoris's window") { Count = count };
+
+        var said = SessionBalloon.Words(facts, Words(language));
+
+        Assert.Equal((title, body, BalloonIcon.Warning), (said.Title, said.Body, said.Icon));
+        var shown = new List<BalloonFacts>();
+        using var fold = new BalloonFold(new HeldClock(), shown.Add);
+        fold.Offer(new BalloonFacts(PipeConfirmations.AttentionKind) { Module = DriverModule.Name, Route = "SESSION_INPUT" });
+        fold.Offer(facts);
+        Assert.Equal([PipeConfirmations.AttentionKind, PipeConfirmations.RestoredKind], shown.Select(each => each.Kind));
+    }
+
     /// <summary>An end is said by its state's own words (§6: a state by a key per state), and a state no words name is an ending, never its code.</summary>
     [Theory]
     [InlineData("completed")]

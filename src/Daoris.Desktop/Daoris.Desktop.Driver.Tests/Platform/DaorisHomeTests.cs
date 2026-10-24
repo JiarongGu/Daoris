@@ -381,6 +381,38 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
+    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, a data folder of its own after the
+    /// agent offers, as the three twins hold it; kept in <c>data/</c>, which D172 backs up, never under <c>run/</c>, which anyone may
+    /// clear while Daoris is closed. New since the layout, so its old place is its new one.
+    /// </summary>
+    [Fact]
+    public void The_waiting_presses_are_a_data_folder_after_the_agent_offers()
+    {
+        Assert.Same(HomeEntry.PipeWaiting, HomeEntry.Named("pipe-waiting"));
+        Assert.Equal(
+            (HomeCategory.Data, "data/pipe-waiting", "data/pipe-waiting"),
+            (HomeEntry.PipeWaiting.Category, HomeEntry.PipeWaiting.New, HomeEntry.PipeWaiting.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.AgentOffers) + 1, table.IndexOf(HomeEntry.PipeWaiting));
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as the press's card lives, a
+    /// profiles folder after the window's, as the three twins hold it. A file that holds a key is a sign-in (D172 point 3), and never under
+    /// <c>run/</c>, which anyone may clear while Daoris is closed. New since the layout, so its old place is its new one.
+    /// </summary>
+    [Fact]
+    public void The_sent_presses_keys_are_a_profiles_folder_after_the_window_s()
+    {
+        Assert.Same(HomeEntry.PipeSent, HomeEntry.Named("pipe-sent"));
+        Assert.Equal(
+            (HomeCategory.Profiles, "profiles/pipe-sent", "profiles/pipe-sent"),
+            (HomeEntry.PipeSent.Category, HomeEntry.PipeSent.New, HomeEntry.PipeSent.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.Window) + 1, table.IndexOf(HomeEntry.PipeSent));
+    }
+
+    /// <summary>
     /// HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file of the person's choices at the home's root, named
     /// with no <c>help-</c> prefix, since a workspace's room folder is matched by <c>help-*</c>.
     /// </summary>

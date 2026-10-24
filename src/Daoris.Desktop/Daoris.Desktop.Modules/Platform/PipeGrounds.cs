@@ -56,7 +56,7 @@ public sealed record PipeGroundChange(string Reason, IReadOnlyDictionary<string,
         "session" => $"the session moved on while this waited: it was {Value("then")}, it is {Value("now")}",
         "turn" => "the session ran another turn while this waited",
         "setting" => "what this would set changed while this waited",
-        "repository" => $"the repository {Value("repository")} is no longer registered on this machine",
+        "repository" => $"the repository {Value("repository")} is no longer registered on this machine as it was",
         "quest" => $"the quest moved on while this waited: it was {Value("then")}, it is {Value("now")}",
         "ask" => "the ask was closed while this waited",
         "plan" => "what this would act on changed while this waited; look at it again and ask again",
@@ -76,8 +76,11 @@ public interface IPipeGroundWorld
     /// <summary>A session's record by its id: its state's public spelling and when it last moved; null where no record has the id.</summary>
     Task<(string State, DateTimeOffset Updated)?> SessionAsync(string id, CancellationToken cancellationToken);
 
-    /// <summary>Whether a repository or a workspace of that name is registered on this machine.</summary>
-    Task<bool> RegisteredAsync(string name, CancellationToken cancellationToken);
+    /// <summary>
+    /// What a repository's or a workspace's name resolves to on this machine (the confirm-wait design §15.1 item 4): each registry row it
+    /// names, by its repository, workspace, whether it is adopted and its full root, in one text; null where the name has no row.
+    /// </summary>
+    Task<string?> RegistrationAsync(string name, CancellationToken cancellationToken);
 
     /// <summary>A quest's status by its id; null where the service has none.</summary>
     Task<string?> QuestAsync(string id, CancellationToken cancellationToken);
@@ -90,6 +93,15 @@ public interface IPipeGroundWorld
 
     /// <summary>The commit a session's tree's head points at, read as the landing reads its tree; null where it has none.</summary>
     Task<string?> SessionHeadAsync(string session, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every branch tip in <paramref name="repository"/>'s checkout, read at once (§15.1 item 1): each local branch by its name, each of
+    /// <c>origin</c>'s as <c>origin/&lt;name&gt;</c>, each a full commit id; null where it has no checkout here.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, string>?> TipsAsync(string repository, CancellationToken cancellationToken);
+
+    /// <summary>The same in a session's tree, with its <c>HEAD</c> beside its branches; null where it has no tree here.</summary>
+    Task<IReadOnlyDictionary<string, string>?> SessionTipsAsync(string session, CancellationToken cancellationToken);
 
     /// <summary>
     /// A read of <paramref name="module"/>'s own, called in process with <paramref name="payload"/> as a window would send it (§5.2): its
@@ -129,6 +141,12 @@ public abstract class PipeGround(PipeGroundKind kind, TimeSpan? bound = null)
 
     /// <summary>The payload fields it names, which the census test holds to what the route's handler reads.</summary>
     public abstract IReadOnlyList<string> Fields { get; }
+
+    /// <summary>
+    /// The readings <paramref name="payload"/>'s press yields, by kind and subject, without reading anything (the confirm-wait design
+    /// §15.2 item 7): what the restore holds a record's grounds to.
+    /// </summary>
+    public virtual IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) => [];
 
     /// <summary>A setting's ground: whether the value it reads is already what the press sets (§5.1's <c>already</c>). Others never.</summary>
     public virtual bool Already(IReadOnlyList<PipeReading> read, JsonElement? payload) => false;
@@ -171,11 +189,12 @@ public sealed class SessionGround(string named, bool many = false) : PipeGround(
 {
     public override IReadOnlyList<string> Fields => [named];
 
+    public override IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) => [.. Ids(payload).Select(id => (Kind, id))];
+
     public override async Task<IReadOnlyList<PipeReading>> ReadAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
-        IReadOnlyList<string> ids = many ? Texts(payload, named) : Text(payload, named) is { Length: > 0 } one ? [one] : [];
         var read = new List<PipeReading>();
-        foreach (var id in ids)
+        foreach (var id in Ids(payload))
         {
             var record = await world.SessionAsync(id, cancellationToken).ConfigureAwait(false);
             read.Add(record is { } found
@@ -185,23 +204,36 @@ public sealed class SessionGround(string named, bool many = false) : PipeGround(
 
         return read;
     }
+
+    private IReadOnlyList<string> Ids(JsonElement? payload) => many ? Texts(payload, named) : Text(payload, named) is { Length: > 0 } one ? [one] : [];
 }
 
-/// <summary>A repository or workspace the payload names, registered on this machine.</summary>
+/// <summary>
+/// A repository or workspace the payload names, registered on this machine, and as what (the confirm-wait design §15.1 item 4): the rows
+/// its name resolves to, so a name registered again at another checkout is moved though it is still registered.
+/// </summary>
 public sealed class RepositoryGround(params string[] named) : PipeGround(PipeGroundKind.Repository)
 {
     public override IReadOnlyList<string> Fields => named;
 
+    public override IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) =>
+        Name(payload) is { } name ? [(Kind, name)] : [];
+
     public override async Task<IReadOnlyList<PipeReading>> ReadAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken) =>
-        named.Select(each => Text(payload, each)).FirstOrDefault(each => !string.IsNullOrWhiteSpace(each)) is { } name
-            ? [new PipeReading(Kind, name, await world.RegisteredAsync(name, cancellationToken).ConfigureAwait(false) ? "registered" : "")]
+        Name(payload) is { } name
+            ? [new PipeReading(Kind, name, await world.RegistrationAsync(name, cancellationToken).ConfigureAwait(false) ?? "")]
             : [];
+
+    private string? Name(JsonElement? payload) => named.Select(each => Text(payload, each)).FirstOrDefault(each => !string.IsNullOrWhiteSpace(each));
 }
 
 /// <summary>A quest the payload names: its status.</summary>
 public sealed class QuestGround(string named) : PipeGround(PipeGroundKind.Quest)
 {
     public override IReadOnlyList<string> Fields => [named];
+
+    public override IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) =>
+        Id(Text(payload, named)) is { } id ? [(Kind, id)] : [];
 
     public override async Task<IReadOnlyList<PipeReading>> ReadAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
@@ -215,6 +247,9 @@ public sealed class QuestGround(string named) : PipeGround(PipeGroundKind.Quest)
 public sealed class AskGround(string named) : PipeGround(PipeGroundKind.Ask)
 {
     public override IReadOnlyList<string> Fields => [named];
+
+    public override IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) =>
+        Id(Text(payload, named)) is { } id ? [(Kind, id)] : [];
 
     public override async Task<IReadOnlyList<PipeReading>> ReadAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
@@ -244,6 +279,10 @@ public sealed class BranchGround(
 
     public override IReadOnlyList<string> Fields => fields;
 
+    public override IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) => sessionHead is not null
+        ? Text(payload, sessionHead) is { Length: > 0 } session ? [(Kind, session)] : []
+        : [.. refs!(payload).Select(each => (Kind, each.Branch))];
+
     public override async Task<IReadOnlyList<PipeReading>> ReadAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
         if (sessionHead is not null)
@@ -265,6 +304,17 @@ public sealed class BranchGround(
 }
 
 /// <summary>
+/// A branch a plan's answer names (the confirm-wait design §15.1 item 1): in a registered <paramref name="Repository"/>'s checkout, or in
+/// <paramref name="Session"/>'s tree, where <c>HEAD</c> is the tree's head.
+/// </summary>
+public sealed record PipeRef(string? Repository, string? Session, string Branch)
+{
+    public static PipeRef In(string repository, string branch) => new(repository, null, branch);
+
+    public static PipeRef Of(string session, string branch) => new(null, session, branch);
+}
+
+/// <summary>
 /// A read of the driver's own, projected (§5.1): a <c>plan</c> takes the fingerprint of the fields its row names; a <c>wait</c> whether
 /// the wait the press answers is still open under the same id; a <c>setting</c> the value it reads where it is kept, compared at the
 /// ask with the value the press sets (<see cref="Sets"/>). <paramref name="ask"/> builds the read's payload from the press's;
@@ -282,6 +332,15 @@ public sealed class ReadGround(
 
     /// <summary>For a <c>setting</c>: the value the press sets, as <paramref name="take"/> projects the read's; null where it says none.</summary>
     public Func<JsonElement?, string?>? Sets { get; init; }
+
+    /// <summary>
+    /// For a <c>plan</c> whose rows name branches (the confirm-wait design §15.1 item 1): the branches its answer names, each of whose full
+    /// tip is read and bound beside the projection, since a count or a short id stays the same while the commits change.
+    /// </summary>
+    public Func<JsonElement, JsonElement?, IEnumerable<PipeRef>>? Tips { get; init; }
+
+    /// <summary>The read's answer projected for <paramref name="payload"/>'s press, without its tips: what a setting's value compares.</summary>
+    public string Take(JsonElement answer, JsonElement? payload) => take(answer, payload);
 
     /// <summary>Whether the press's form names this ground (<c>SESSION_INPUT</c>'s <c>question</c>); every form where none is given.</summary>
     public Func<JsonElement?, bool>? When { get; private set; }
@@ -302,11 +361,29 @@ public sealed class ReadGround(
 
     public override IReadOnlyList<string> Fields => fields;
 
+    public override IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) =>
+        When is { } named && !named(payload) ? [] : [(Kind, Route)];
+
     public override async Task<IReadOnlyList<PipeReading>> ReadAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
         if (When is { } named && !named(payload)) return [];
         var answer = await world.ReadAsync(Module, Route, ask(payload), cancellationToken).ConfigureAwait(false);
-        return [new PipeReading(Kind, Route, take(answer, payload))];
+        var taken = take(answer, payload);
+        if (Tips is null) return [new PipeReading(Kind, Route, taken)];
+
+        // Each branch the answer names, by its full tip, read once per checkout or tree (§15.1 item 1).
+        var bound = new List<string>();
+        foreach (var where in Tips(answer, payload).Distinct().GroupBy(each => (each.Repository, each.Session)))
+        {
+            var (repository, session) = where.Key;
+            var tips = repository is not null
+                ? await world.TipsAsync(repository, cancellationToken).ConfigureAwait(false)
+                : await world.SessionTipsAsync(session!, cancellationToken).ConfigureAwait(false);
+            var at = repository is not null ? $"repository:{repository}" : $"session:{session}";
+            bound.AddRange(where.Select(each => $"{at}|{each.Branch}={tips?.GetValueOrDefault(each.Branch) ?? ""}"));
+        }
+
+        return [new PipeReading(Kind, Route, Fingerprint([taken, .. bound.Order(StringComparer.Ordinal)]))];
     }
 
     public override bool Already(IReadOnlyList<PipeReading> read, JsonElement? payload) =>
@@ -324,7 +401,7 @@ public sealed class LoopGround(PipeGroundKind kind, string what, IReadOnlyList<s
 
     /// <summary>The files <see cref="IPipeGroundWorld.FingerprintAsync"/> reads.</summary>
     public static readonly IReadOnlyList<string> Files =
-        ["plugin-folder", "plugin-new", "plugin-try", "plugin-offer", "plugin-update", "tree-uncommitted", "file", "declaration", "notices"];
+        ["plugin-folder", "plugin-new", "plugin-try", "plugin-offer", "plugin-update", "tree", "attachments", "file", "declaration", "notices"];
 
     /// <summary>A wait the loop holds, by the payload's <paramref name="fields"/>.</summary>
     public static LoopGround Wait(string wait, params string[] fields) => new(PipeGroundKind.Wait, wait, fields);
@@ -346,6 +423,9 @@ public sealed class LoopGround(PipeGroundKind kind, string what, IReadOnlyList<s
     }
 
     public override IReadOnlyList<string> Fields => fields;
+
+    public override IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) =>
+        When is { } named && !named(payload) ? [] : [(Kind, What)];
 
     public override async Task<IReadOnlyList<PipeReading>> ReadAsync(IPipeGroundWorld world, JsonElement? payload, CancellationToken cancellationToken)
     {
@@ -392,6 +472,9 @@ public sealed class PipeGroundRow(IReadOnlyList<PipeGround> grounds, string? tim
         return read;
     }
 
+    /// <summary>The readings <paramref name="payload"/>'s press yields across every ground, by kind and subject (§15.2 item 7).</summary>
+    public IReadOnlyList<(PipeGroundKind Kind, string Subject)> Expected(JsonElement? payload) => [.. Grounds.SelectMany(each => each.Expected(payload))];
+
     /// <summary>Whether a <c>setting</c> ground already reads what the press sets (§5.1's <c>already</c>).</summary>
     public bool Already(IReadOnlyList<PipeReading> read, JsonElement? payload) =>
         Grounds.OfType<ReadGround>().Any(ground =>
@@ -418,6 +501,23 @@ public sealed class PipeGroundRow(IReadOnlyList<PipeGround> grounds, string? tim
                 PipeGroundKind.Repository => new("repository", new Dictionary<string, string> { ["repository"] = asked.Subject }),
                 PipeGroundKind.Branch => new("branch", new Dictionary<string, string> { ["branch"] = asked.Subject }),
                 _ => new(Code(asked.Kind), new Dictionary<string, string>()),
+            };
+        }
+
+        // A ground read now that the ask's baseline lacks moved too (§15.2 item 7): a baseline missing a ground protects nothing it omitted.
+        foreach (var current in now)
+        {
+            if (then.Any(each => each.Kind == current.Kind && each.Subject == current.Subject)) continue;
+            return current.Kind switch
+            {
+                PipeGroundKind.Session or PipeGroundKind.Quest => new(Code(current.Kind), new Dictionary<string, string>
+                {
+                    ["then"] = "gone",
+                    ["now"] = current.Words ?? "gone",
+                }),
+                PipeGroundKind.Repository => new("repository", new Dictionary<string, string> { ["repository"] = current.Subject }),
+                PipeGroundKind.Branch => new("branch", new Dictionary<string, string> { ["branch"] = current.Subject }),
+                _ => new(Code(current.Kind), new Dictionary<string, string>()),
             };
         }
 

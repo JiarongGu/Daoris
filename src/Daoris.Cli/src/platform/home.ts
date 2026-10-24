@@ -138,6 +138,9 @@ export const HOME_ENTRIES = [
   row('standing-confirmation', 'data', 'data/standing-confirmation.json', 'data/standing-confirmation.json'),
   // MODELROLE1c2 (D205 §9.2): named here, never read by the CLI.
   row('agent-offers', 'data', 'data/agent-offers.json', 'data/agent-offers.json'),
+  // CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, kept across a restart; named here,
+  // never read by the CLI.
+  row('pipe-waiting', 'data', 'data/pipe-waiting', 'data/pipe-waiting'),
   row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
   row('remotes', 'profiles', 'profiles/remotes.json', 'remotes.json'),
   row('agent-homes', 'profiles', 'profiles/agents/*/*', 'harnesses/*/*'),
@@ -149,6 +152,9 @@ export const HOME_ENTRIES = [
   row('git-known-hosts', 'profiles', 'profiles/git/known_hosts', 'profiles/git/known_hosts'),
   row('git-config', 'profiles', 'profiles/git/global.gitconfig', 'profiles/git/global.gitconfig'),
   row('window', 'profiles', 'profiles/window', '', 'chromium', 'config'),
+  // CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as a press's card lives; named
+  // here, never read by the CLI.
+  row('pipe-sent', 'profiles', 'profiles/pipe-sent', 'profiles/pipe-sent'),
   row('trees', 'work', 'work/trees/*/*/*', 'trees/*/*/*'),
   row('help-room', 'work', 'work/rooms/help', 'help', 'CLAUDE.md'),
   row('help-rooms', 'work', 'work/rooms/help-*', 'help-*', 'CLAUDE.md'),

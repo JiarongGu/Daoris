@@ -129,6 +129,8 @@ public sealed class SessionNotifier : IDisposable
             Strikes = payload.GetType().GetProperty("Strikes")?.GetValue(payload) as int?,
             Module = Read(payload, "Module"),
             Route = Read(payload, "Route"),
+            // CONFIRMWAIT1a-ii (§7.2 step 7): how many presses a restart's one balloon names.
+            Count = payload.GetType().GetProperty("Count")?.GetValue(payload) as int?,
         };
 
         // A terminal's press names no session and is folded by the minute (§8.2); every other kind is shown as it comes.

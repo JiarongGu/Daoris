@@ -189,7 +189,7 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
     if (!notice || saidNotices.current.has(notice.id)) return;
     saidNotices.current.add(notice.id);
     if (typeof document === 'undefined' || document.visibilityState !== 'visible' || !document.hasFocus()) return;
-    notify(noticeWords(notice, t), notice.kind === 'expired' || notice.kind === 'closed' || notice.state === 'failed' ? 'error' : 'ok');
+    notify(noticeWords(notice, t), notice.kind === 'expired' || notice.kind === 'closed' || notice.kind === 'lost' || notice.state === 'failed' ? 'error' : 'ok');
   });
 
   // NOTIFY2g: the shell says an urgent message to everyone once per run, while the notify switch is on; never the desktop's.

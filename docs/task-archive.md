@@ -20468,3 +20468,27 @@ person's word its box does not yet name joins the box, after its own, before the
 come-up's replay of a box does the same. A word kept after the go-on goes to the new part by the say door, as before. The stand-in
 case was seen failing first, then passed: the word is handed once, in order, never to the old part. Detail: FIX-LOG's LIMITWORD1 entry
 and D189's LIMITWORD1 note.
+
+## CONFIRMWAIT1a-ii — the records and the restart: a terminal's press still waits after Daoris restarts (2026-10-24, D156)
+
+> **CONFIRMWAIT1a-ii — the records and the restart** (modules, web), directly after 1a-i. The record written at the ask in `data/pipe-waiting/` and named by the confirmation's id, no keyed payload in it; the ending's order; the close's `waiting` answer completing each waiting line and leaving `_running`, so the drain is not spent, and no withdrawal; a keyed press ended `Lost` at a close; the restore before `Serve` on the lease, and its re-judgement; the newer record left; the lost and newer notices; `restored` and the record's asker on the card; the restart's balloon; the drain's refusal on the card. Held by `PipeConfirmationsTests`, `PipeConfirmTests`, `InstancePipeTests`, `NoticesStateSliceTests`, the home twins' census (`home-census.test.ts`, and the driver's and the service's `DaorisHome` tests) for `pipe-waiting`, and the page's `person/Confirmations` and `app/notifications` tests, en and zh.
+
+(Row 1a-ii of `docs/2026-10-24-confirm-wait-design.md` §10, of the backlog's CONFIRMWAIT1; quest `#92fef84b16f6`.)
+
+**Outcome** 2026-10-24. The row as named: `PipeWaiting`'s record at the ask (`unrecorded` where it cannot be written; no payload or
+grounds for `DAORIS.REMOTES` `SET`), §7.1's ending order, the close answering `waiting` and draining at once, a keyed press `lost` at a
+close, the restore before `Serve` with its re-judgement, the `lost` and `newer` notices, the restart's one balloon, and the card's
+restored asker, `person.keyed` and `person.draining`, en and zh; the verb reads the close's `waiting` as its own wait's end. The
+notices' words are held in `notifications/DoneAndFailed`'s test. **Not built:** the card's door to a plan's page (`person.openPlan`),
+which no row names. Detail: D156's CONFIRMWAIT1a-ii note.
+
+**Amended on the same branch, 2026-10-24.** Codex's read of the accepted design (16 findings, 9 blocking, *reopen*) was taken before
+the row closed. The design's §15 and D156's amendment note have the decisions, and D156's CONFIRMWAIT1 amendment build note has the
+code:
+- the grounds bind full tips, a tree's head and index, a pause, a registration's rows and an attachment's bytes;
+- the restore holds each record whole and alone, and no ending is told or run before its record says it;
+- the grounding phase is a reservation the terminal hears at once, ended by `WITHDRAW` or a close;
+- the asker's key lives in `profiles/pipe-sent` as long as its card;
+- `RESULT` answers `interrupted`, and the census reads the handler itself.
+
+The FIX-LOG has entries for 1a-i's five defects. The plan's door is the new row CONFIRMWAIT1c.

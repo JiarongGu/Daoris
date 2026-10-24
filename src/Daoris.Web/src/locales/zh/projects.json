@@ -394,9 +394,9 @@
   "projects.supervisor.refused.unwritten": "它的记录无法写入，所以没有任命任何人。",
   "projects.supervisor.refused.unstarted": "无法启动主管的终端，所以没有任命任何人。",
   "projects.supervisor.refused.no-pipe": "这个 Daoris 不为终端提供服务，所以无法任命终端担任者。",
-  "projects.supervisor.refused.scope": "任命要写明范围：这个仓库，或对管家而言这台机器。",
+  "projects.supervisor.refused.scope": "任命要写明范围：这个仓库，或对管家而言本机。",
   "projects.supervisor.refused.choose-terminal": "Daoris 为某个职责启动的终端正开着：请选择把这个职责加入它，或给它单独的终端。",
   "projects.supervisor.refused.no-holder": "那个终端已不再担任任何职责：请给这个职责单独的终端。",
   "projects.supervisor.refused.revoked-holder": "自 Daoris 启动以来，这个职责已在那个终端中停用：再次任命只能给单独的终端。",
-  "projects.supervisor.refused.holder-harness": "Daoris 只把它自己固定版本的 Claude Code 作为职责的终端启动，而它没有经过验证的版本：请固定 Claude Code 的版本并从其官方渠道安装，然后再次任命。没有任命任何人。"
+  "projects.supervisor.refused.holder-harness": "Daoris 只把它自己固定版本的 Claude Code 作为职责的终端启动，而它没有经过验证的版本：请固定 Claude Code 的版本并用其厂商自己的方式安装，然后再次任命。没有任命任何人。"
 }

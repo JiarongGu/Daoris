@@ -79,6 +79,66 @@ repository.
   the helper's tests (61), `setup-kit.test.ts` (33), the three service tests with `doc-duplicates` and `dogfood` (70), the CLI's
   typecheck, `tools/test-map.mjs check` and `LoopbackListensTests` (2).
 
+## 2026-10-24 - A terminal's attachments were bound by their paths, not their bytes (CONFIRMWAIT1a-i, Codex's finding 5)
+
+- **Symptom:** none seen; Codex's read of the confirm-wait design found it in 1a-i on main, which no installed build carries.
+  `SESSION_INPUT` sent by the verb with files (`said`, `paths`) could be confirmed hours later after a file was replaced at the
+  same path. The session was then handed the new bytes, not what the asker attached.
+- **Root cause:** the route's grounds were the session and its question alone (`PipeTargetRows.cs`). The handler reads `paths`
+  only once the press runs (`ConversationRoutes.cs`, `SessionsCommand`), so the payload the record keeps held the reference and
+  not the content.
+- **Fix:** an `attachments` ground for that form: each path as given, and a rooted file's SHA-256 (`LoopGrounds`), kept in the record
+  like any other ground (the design §15.1 item 5).
+- **Verification:** `PipeGroundsBindingTests.A_terminal_s_attachment_replaced_at_its_path_moves_its_press` and
+  `LoopGroundsTests.A_terminal_s_attachments_are_read_by_their_bytes`, each failing before the change.
+
+## 2026-10-24 - A repository ground was the name's presence, not what it resolved to (CONFIRMWAIT1a-i, Codex's finding 4)
+
+- **Symptom:** none seen (1a-i is in no installed build). A repository unregistered and registered again at another checkout under
+  the same name kept its `repository` ground, and a waiting press such as a hand-off then ran against the other checkout.
+- **Root cause:** `IPipeGroundWorld.RegisteredAsync` answered a boolean, so the ground compared `registered` with `registered`.
+- **Fix:** `RegistrationAsync` answers the rows a name resolves to, each repository, workspace, adoption and full root, and the
+  ground compares that. The reason now reads *no longer registered on this machine as it was*, en and zh (the design §15.1 item 4).
+- **Verification:** `PipeGroundsBindingTests.A_name_registered_again_elsewhere_moves_its_repository_ground`, failing before the
+  change; `PipeConfirmTests`' stale-ground cases still green.
+
+## 2026-10-24 - An old Resume could release a newer pause (CONFIRMWAIT1a-i, Codex's finding 3)
+
+- **Symptom:** none seen (1a-i is in no installed build). A `WORK_RESUME` asked while a pause stood, then the pause removed and made
+  again, confirmed later, released the newer pause and its stops.
+- **Root cause:** `WORK_PAUSE` and `WORK_RESUME` were grounded on the ask's or the quest's state alone. A pause is a file, never a
+  state (`WorkPausing`), and the ask stays open throughout.
+- **Fix:** both read `WORK_PLAN`. Resume binds the pause's `at` and each stop. Pause binds each quest's status and pause act, each
+  session's state, and whether a pause stands (the design §15.1 item 3).
+- **Verification:** `PipeGroundsBindingTests.An_old_Resume_does_not_release_a_newer_pause` and `A_Pause_binds_the_work_it_stops`,
+  each failing before the change.
+
+## 2026-10-24 - A discarded tree named by its path bound no commits (CONFIRMWAIT1a-i, Codex's finding 2)
+
+- **Symptom:** none seen (1a-i is in no installed build). `DISCARD_SESSION_TREE` by `path` with `force`, asked on a clean tree,
+  passed its Confirm after new commits landed in the tree, and removed them. Staged bytes could also change under an unchanged
+  working file.
+- **Root cause:** the head was read by `id` alone (`BranchGround.HeadOf("id")`), and the forced ground fingerprinted the uncommitted
+  paths' working bytes, which were empty for a clean tree before and after.
+- **Fix:** a `tree` ground for both forms, resolved as the handler resolves the tree: its head, its index's staged entries
+  (`WorkingTree.StagedAsync`, `git diff --cached --raw --no-abbrev`), and with `force` each uncommitted path's bytes (the design
+  §15.1 item 2).
+- **Verification:** `LoopGroundsGitTests.A_tree_named_by_its_path_is_bound_by_its_head_and_its_index` over a real repository, and
+  `PipeGroundsBindingTests.A_discard_binds_the_tree_it_removes_by_id_or_path`, each failing before the change.
+
+## 2026-10-24 - Plan grounds bound counts and short ids, not commits (CONFIRMWAIT1a-i, Codex's finding 1)
+
+- **Symptom:** none seen (1a-i is in no installed build). A branch rewritten to different commits of the same count, its short id
+  unchanged, passed a sweep's, a sync's, a hand-off's or a landing's Confirm. An id-only hand-off named no branch for its `branch`
+  ground at all.
+- **Root cause:** the plan reads answer eight-character ids (`TreesRoutes.cs`, `EntriesRoutes.cs`, `LinesRoutes.cs`) and counts with
+  no tip. The projections took what the answers carried, which D156's 1a-i note said but did not bind.
+- **Fix:** a plan ground whose rows name branches also binds each branch's full tip, read by one `git for-each-ref` per checkout or
+  tree (`ReadGround.Tips`, `WorkingTree.TipsAsync`): the landing's tree head and target, each entry's parts and target, the hand-off's
+  resolved branch, the sweep's rows, and the sync's lines here and at origin, rebases and deletes (the design §15.1 item 1).
+- **Verification:** `PipeGroundsBindingTests.A_branch_rewritten_to_as_many_commits_moves_its_plan`, seven cases, each failing before
+  the change; `LoopGroundsGitTests.Every_branch_s_full_tip_is_read_at_once`.
+
 ## 2026-10-24 - The queue's runner formed a candidate from the queue as it stood before its hold (FLAKE1)
 
 - **Symptom:** the tool-test `merge-queue.test.ts`, *a red candidate of two*, now and then found its first red run's members

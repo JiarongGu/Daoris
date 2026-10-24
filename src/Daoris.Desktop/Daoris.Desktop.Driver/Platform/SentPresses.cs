@@ -12,19 +12,21 @@ public sealed record SentPress(string Id, string Key, string Route, DateTimeOffs
     public DateTimeOffset? EndedAt { get; init; }
 
     /// <summary>
-    /// Whether it is still kept at <paramref name="now"/>, the one rule the find and the prune read (the confirm-wait design §4.2): a
-    /// press last read waiting at most thirty days from when it was sent, else a day from when it was sent or a read found it ended.
+    /// Whether it is still kept at <paramref name="now"/>, the one rule the find and the prune read (the confirm-wait design §4.2, §15.2
+    /// item 6): a day from when its answer or a read found it ended; until then at most thirty days from when it was sent, waited on or
+    /// not, since a verb killed before it read the press waiting may leave a card whose only key this is.
     /// </summary>
     public bool KeptAt(DateTimeOffset now) =>
-        WaitingAt is not null ? now - At <= SentPresses.KeptWaiting : now - (EndedAt ?? At) <= SentPresses.Kept;
+        EndedAt is { } ended ? now - ended <= SentPresses.Kept : now - At <= SentPresses.KeptWaiting;
 }
 
 /// <summary>
-/// The presses a terminal sent to the running Daoris, kept under the home for a day (RPC1j, the terminal RPC design §6.1) so
-/// <c>daoris-driver result &lt;id&gt;</c> can ask <c>RESULT</c> for one whose answer did not reach the verb. Beside the instance's own
-/// journal in the home's <c>pipe</c> folder, in a folder of its own, one file per press. A press a read found waiting for the person's
-/// Confirm is kept past its day, at most thirty days from when it was sent, until a read finds it ended (CONFIRMWAIT1b, the
-/// confirm-wait design §4.2); its day then runs from that read.
+/// The presses a terminal sent to the running Daoris, each with the key that reads it (RPC1j, the terminal RPC design §6.1), so
+/// <c>daoris-driver result &lt;id&gt;</c> can ask <c>RESULT</c> for one whose answer did not reach the verb. One file per press in the
+/// home's <c>profiles/pipe-sent</c> (<see cref="HomeEntry.PipeSent"/>; CONFIRMWAIT1, the confirm-wait design §15.2 item 6): a file
+/// that holds a key is a sign-in (D172 point 3), and the card it reads may live for weeks in <c>data/</c>, so it is never under
+/// <c>run/</c>, which anyone may clear while Daoris is closed; one a build before kept under <c>run/pipe/sent</c> is still read there.
+/// A press is kept until its answer or a read finds it ended, then a day; thirty days from when it was sent at most.
 /// </summary>
 /// <remarks>
 /// <para>The key is a secret only this terminal's user holds, kept where only this user reads the home, as the pipe's own journal
@@ -39,7 +41,10 @@ public sealed class SentPresses(string home)
     /// <summary>How long a press last read waiting is kept at most, from when it was sent (the confirm-wait design §4.2).</summary>
     public static readonly TimeSpan KeptWaiting = TimeSpan.FromDays(30);
 
-    private string Folder => Path.Combine(DaorisHome.Entry(home, HomeEntry.Pipe), "sent");
+    private string Folder => DaorisHome.Entry(home, HomeEntry.PipeSent);
+
+    /// <summary>Where a build before CONFIRMWAIT1's amendment kept them: read where the kept place has none, never written.</summary>
+    private string Before => Path.Combine(DaorisHome.Entry(home, HomeEntry.Pipe), "sent");
 
     /// <summary>Keeps a press before it is sent, so an answer lost on the way can still be asked for. Never a failure of the press.</summary>
     public void Keep(SentPress press)
@@ -63,7 +68,7 @@ public sealed class SentPresses(string home)
         try
         {
             Prune(now);
-            return Read(PathOf(id)) is { } press && press.Id == id && press.KeptAt(now) ? press : null;
+            return (Read(PathOf(id)) ?? Read(Path.Combine(Before, id + ".json"))) is { } press && press.Id == id && press.KeptAt(now) ? press : null;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -74,16 +79,20 @@ public sealed class SentPresses(string home)
     /// <summary>A read found the press waiting at <paramref name="now"/>: kept past its day, thirty days at most from when it was sent.</summary>
     public void Waiting(string id, DateTimeOffset now) => Rewrite(id, press => press with { WaitingAt = now, EndedAt = null });
 
-    /// <summary>A read found the press ended, or unknown, at <paramref name="now"/>: one that waited keeps a day from then; any other is as it was.</summary>
-    public void Ended(string id, DateTimeOffset now) =>
-        Rewrite(id, press => press.WaitingAt is null ? null : press with { WaitingAt = null, EndedAt = now });
+    /// <summary>Its answer or a read found the press ended, or unknown, at <paramref name="now"/>: it keeps a day from then.</summary>
+    public void Ended(string id, DateTimeOffset now) => Rewrite(id, press => press with { WaitingAt = null, EndedAt = now });
 
     private void Rewrite(string id, Func<SentPress, SentPress?> change)
     {
         if (!IsId(id)) return;
         try
         {
-            if (Read(PathOf(id)) is { } press && press.Id == id && change(press) is { } changed) Write(changed);
+            // One a build before kept is written to the kept place from here on.
+            if ((Read(PathOf(id)) ?? Read(Path.Combine(Before, id + ".json"))) is { } press && press.Id == id && change(press) is { } changed)
+            {
+                Directory.CreateDirectory(Folder);
+                Write(changed);
+            }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -127,8 +136,7 @@ public sealed class SentPresses(string home)
     /// <summary>Deletes every record past its keep at <paramref name="now"/>, by the rule <see cref="Find"/> reads; one that does not read, a day after its file was written.</summary>
     private void Prune(DateTimeOffset now)
     {
-        if (!Directory.Exists(Folder)) return;
-        foreach (var path in Directory.EnumerateFiles(Folder, "*.json"))
+        foreach (var path in new[] { Folder, Before }.Where(Directory.Exists).SelectMany(folder => Directory.EnumerateFiles(folder, "*.json")))
         {
             try
             {
