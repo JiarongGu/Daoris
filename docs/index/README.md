@@ -138,7 +138,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/SessionGroupsTests.cs` | 80 | 1349 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/WireEvaluationTests.cs` | 53 | 1028 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowGateTests.cs` | 61 | 942 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowRunTests.cs` | 68 | 1038 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowRunTests.cs` | 71 | 1092 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessRoster.cs` | 132 | 2283 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSelection.cs` | 41 | 751 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSettings.cs` | 72 | 1330 |
@@ -335,7 +335,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-23-terminal-trust-design.md` | 66 | 603 |
 | `docs/2026-10-24-agent-errors-design.md` | 141 | 1004 |
 | `docs/2026-10-24-agent-errors-reads.md` | 125 | 1263 |
-| `docs/2026-10-24-chat-flow-design.md` | 120 | 1019 |
+| `docs/2026-10-24-chat-flow-design.md` | 142 | 1179 |
 | `docs/2026-10-24-chat-flow-reads.md` | 87 | 668 |
 | `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |

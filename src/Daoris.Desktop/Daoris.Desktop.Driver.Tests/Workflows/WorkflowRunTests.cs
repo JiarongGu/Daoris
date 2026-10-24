@@ -711,6 +711,60 @@ public sealed class WorkflowRunTests
         }
     }
 
+    /// <summary>
+    /// Finding 6's run facts for a chat that took a quest (CHATTAKE1; the Opus check of the amendment, finding 12): a conversation in a
+    /// tree of its own, no worker's, whose record keeps <c>quest</c> null, is the taken quest's work record under a rule naming an opinion.
+    /// The run reads its tree, the opinion's gate through its record, and its landing, so each is the chat's and no worker's.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_that_took_a_quest_contributes_its_tree_opinion_and_landing_to_that_quests_run()
+    {
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new TookService()));
+        var sources = new WorkflowRunSources(service, Path.Combine(AppContext.BaseDirectory, "no-home-" + Guid.NewGuid().ToString("N")[..8]),
+            DriverConfig.Parse(OpinionRule), [], _ => "aurora");
+        var asked = new List<string>();
+        var records = new Trees(stands: tree => { asked.Add(tree); return true; });
+
+        var run = Assert.Single((await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Session: "c4"), sources, records)).Runs);
+
+        Assert.Equal(["q4"], run.Quests);
+        Assert.Equal("c4", run.Session);
+        Assert.Equal(["trees/default/engine/s-c4c4c4c4"], asked.Distinct());
+        var opinion = run.Steps.Single(step => step.Step.Kind == WorkflowKinds.Opinion);
+        // The gate read on the chat's tree, through its record: owed and not asked yet, so the landing waits behind it.
+        Assert.Equal(("c4", WorkflowRunStates.Working, OpinionGateStates.NotAsked), (opinion.Session, opinion.State, opinion.Detail));
+        Assert.Equal(WorkflowRunStates.NotReached, run.Steps.Single(step => step.Step.Kind == WorkflowKinds.Landing).State);
+
+        records.Accepted["c4"] = T.AddMinutes(30);
+        var landed = Assert.Single((await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Session: "c4"), sources, records)).Runs);
+        var landing = landed.Steps.Single(step => step.Step.Kind == WorkflowKinds.Landing);
+        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Merge, "c4"), (landing.State, landing.Detail, landing.Session));
+        Assert.False(Directory.Exists(sources.Home));
+    }
+
+    /// <summary>The service a chat that took a quest reads: the quest the person published, done, and the chat that took it, in its own tree.</summary>
+    private sealed class TookService : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var body = request.RequestUri!.PathAndQuery switch
+            {
+                "/api/quests?includeClosed=true" =>
+                    """[{"id":"q4","from":"person","to":"engine","title":"Quest q4","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"}]""",
+                "/api/sessions?includeClosed=true" => """
+                    [{"id":"c4","repository":"engine","state":"completed","kind":"chat","tookQuest":"q4","adapter":"claude-code",
+                      "tree":"trees/default/engine/s-c4c4c4c4","entry":"session:c4/engine","created":"2026-10-09T09:00:00Z",
+                      "updated":"2026-10-09T09:50:00Z","evidence":"commits landed:\nabc1234 the change"}]
+                    """,
+                _ => "[]",
+            };
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
+
     /// <summary>Which trees this home opened and which still stand, for the reader's classification of a chat (CHATFLOW1a).</summary>
     private sealed class Trees(Func<string, bool>? holds = null, Func<string, bool>? stands = null) : IWorkflowRunRecords
     {
