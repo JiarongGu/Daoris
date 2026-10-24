@@ -227,6 +227,29 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.Equal(state == "waiting", new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2)) is not null);
     }
 
+    /// <summary>
+    /// CONFIRMWAIT1a-ii (design §4.1, §7.2): the close answers a line waiting on a press <c>waiting</c>, <c>why: close</c>, the press kept
+    /// in its record across the restart: said as the verb's own wait's end, with the id and its two verbs, exit 1, and kept past the day.
+    /// </summary>
+    [Fact]
+    public async Task A_close_answering_waiting_is_the_verbs_own_waits_end()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Confirming = true;
+        standIn.Press = StandInPress.Refuse;
+        standIn.Code = "waiting";
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var exit = await PressAsync(World(), Open with { Class = RouteClass.Person });
+
+        Assert.Equal(1, exit);
+        Assert.Equal(0, _alone);
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
+        Assert.Contains(InstanceDoor.StillWaiting("trees", id), _error.ToString());
+        Assert.NotNull(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2))?.WaitingAt);
+    }
+
     /// <summary>CONFIRMWAIT1b (design §4.1, §5.1): <c>already</c> is exit 0, its sentence on the error stream, nothing done alone.</summary>
     [Fact]
     public async Task Already_set_is_exit_0_with_its_sentence()
