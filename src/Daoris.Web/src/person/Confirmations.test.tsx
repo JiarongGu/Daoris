@@ -241,7 +241,9 @@ describe("the window's confirmation of a terminal's press", () => {
     ['en', 'Confirm', { reason: 'quest', values: { then: 'Open', now: 'Taken' } }, 'Not done: the quest moved on while this waited (it was open, it is taken).'],
     ['en', 'Confirm', { reason: 'setting', values: {} }, 'Not done: what this would set changed while this waited (stop a session).'],
     ['en', 'Confirm', { reason: 'branch', values: { branch: 'quest/x' } }, 'Not done: the branch quest/x gained or lost commits while this waited.'],
-    ['zh', '确认', { reason: 'repository', values: { repository: 'Lyntai' } }, '未执行：仓库 Lyntai 已不再登记在本机。'],
+    ['zh', '确认', { reason: 'repository', values: { repository: 'Lyntai' } }, '未执行：仓库 Lyntai 在本机的注册已与当时不同。'],
+    ['en', 'Confirm', { reason: 'repository', values: { repository: 'Lyntai' } },
+      'Not done: the repository Lyntai is no longer registered on this machine as it was.'],
     ['zh', '确认', { reason: 'ask', values: {} }, '未执行：等待期间该需求已关闭。'],
   ])('says why a press whose ground moved was not done (%s, %j)', async (language, confirm, changed, words) => {
     await i18n.changeLanguage(language);

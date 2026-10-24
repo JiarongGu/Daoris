@@ -68,6 +68,32 @@ public sealed class LoopGroundsTests : DriverModuleBridge
         Assert.NotEqual("none", await grounds.FingerprintAsync("plugin-new", Payload(new { folder = Home, id = "fresh" }), CancellationToken.None));
     }
 
+    /// <summary>
+    /// CONFIRMWAIT1 (the confirm-wait design §15.1 item 5): a terminal's attachments are read by their bytes, so a file replaced at the
+    /// same path moves the press; a path that is no rooted file is bound as it was given.
+    /// </summary>
+    [Fact]
+    public async Task A_terminal_s_attachments_are_read_by_their_bytes()
+    {
+        var (grounds, services, pipe) = Composed();
+        using var _ = services;
+        using var __ = pipe;
+        var notes = Path.Combine(Home, "notes.md");
+        File.WriteAllText(notes, "one");
+        var asked = Payload(new { id = "s1", text = "see", said = true, paths = new[] { notes, "relative.md" } });
+
+        var then = await grounds.FingerprintAsync("attachments", asked, CancellationToken.None);
+        var again = await grounds.FingerprintAsync("attachments", asked, CancellationToken.None);
+        File.WriteAllText(notes, "two");
+        var now = await grounds.FingerprintAsync("attachments", asked, CancellationToken.None);
+
+        Assert.Equal(then, again);
+        Assert.NotEqual(then, now);
+        Assert.NotEqual(
+            await grounds.FingerprintAsync("attachments", Payload(new { paths = new[] { "a.md" } }), CancellationToken.None),
+            await grounds.FingerprintAsync("attachments", Payload(new { paths = new[] { "b.md" } }), CancellationToken.None));
+    }
+
     [Fact]
     public async Task A_wait_no_read_lists_is_read_from_its_record_and_none_where_it_has_none()
     {

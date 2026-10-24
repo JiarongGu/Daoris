@@ -50,7 +50,7 @@
   "person.changed.session": "Not done: the session moved on while this waited (it was {{then}}, it is {{now}}).",
   "person.changed.turn": "Not done: the session ran another turn while this waited.",
   "person.changed.setting": "Not done: what this would set changed while this waited ({{act}}).",
-  "person.changed.repository": "Not done: the repository {{repository}} is no longer registered on this machine.",
+  "person.changed.repository": "Not done: the repository {{repository}} is no longer registered on this machine as it was.",
   "person.changed.quest": "Not done: the quest moved on while this waited (it was {{then}}, it is {{now}}).",
   "person.changed.ask": "Not done: the ask was closed while this waited.",
   "person.changed.plan": "Not done: what this would act on changed while this waited. Look at it again and ask again.",

@@ -19,6 +19,33 @@ internal static class PipeTargetRows
 {
     private static readonly TimeSpan Page = PipeGround.PageBound;
 
+    /// <summary>
+    /// The routes whose <c>setting</c> ground names no value it sets, so they are never <c>already</c>, each with why (the confirm-wait
+    /// design §15.3 item 12): an edit merged into a rule, an act beside the value, a list edited in place, or a key.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> NotAlready = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["SET_LANDING"] = "merges into the repository's landing rule",
+        ["SET_REVIEW"] = "merges into the repository's review rule",
+        ["SET_OPINION"] = "merges into the repository's opinion rule",
+        ["SET_HELPERS"] = "merges into the repository's helpers rule",
+        ["SET_HAND_OVER"] = "merges into the repository's hand-over rule",
+        ["SET_COMMITS"] = "merges into the repository's commits rule",
+        ["SET_ACCESS"] = "merges into the repository's access rule",
+        ["SET_READ_ACROSS"] = "merges into the repository's reading across",
+        ["SET_WRITE_ACROSS"] = "adds or removes one repository of the list it writes to",
+        ["RULE_ACTION"] = "edits a rule list in place",
+        ["SET_KEEP"] = "merges into a kind's keeping rule",
+        ["SET_AGENT_SETTINGS"] = "merges into a profile's settings",
+        ["SET_ACTOR"] = "edits an actor's row in place",
+        ["WORKFLOW_LANDED"] = "reads the gates at the line's tip and accepts them by their blob",
+        ["TOOLS_USE"] = "checks a file's version or downloads a managed one",
+        ["TOOLS_LOCATION"] = "edits the list of locations in place",
+        ["ACCOUNT_USE"] = "signs in or out of an account",
+        ["DAORIS.REMOTES.SET"] = "carries a key the read redacts",
+        ["DAORIS.REMOTES.REMOVE"] = "removes a workspace's wiring and its key",
+    };
+
     public static Dictionary<string, PipeGroundRow> All()
     {
         var rows = new Dictionary<string, PipeGroundRow>(StringComparer.Ordinal);
@@ -36,8 +63,10 @@ internal static class PipeTargetRows
             Row(route, new SessionGround("id"));
         }
 
+        // A terminal's words with files (`said`, `paths`) bind the files' bytes, since the press reads them only once confirmed (§15.1 item 5).
         Row("SESSION_INPUT", new SessionGround("id"), Wait("SESSION_QUESTION", ["id", "question"], p => new { id = Text(p, "id") },
-            (a, p) => Text(At(a, "question", "id")) == Text(p, "question") ? "open" : "").Only(p => Text(p, "question") is not null));
+                (a, p) => Text(At(a, "question", "id")) == Text(p, "question") ? "open" : "").Only(p => Text(p, "question") is not null),
+            LoopGround.Plan("attachments", Page, "paths").Only(p => True(Field(p, "said")) && Each(Field(p, "paths")).Any()));
         Row("SESSION_QUEUE_EDIT", Wait("SESSION_QUEUE", ["session", "id"], p => new { id = Text(p, "session") },
             (a, p) => Each(At(a, "queued")).Any(each => Text(At(each, "id")) == Text(p, "id")) ? "open" : ""));
         Row("SET_SESSION_OPTION", new SessionGround("id"), Setting("SESSION_OPTIONS", ["id", "option"], p => new { id = Text(p, "id") },
@@ -72,10 +101,17 @@ internal static class PipeTargetRows
 
         // Work, quests and asks.
         Row("RETRY_QUEST", new QuestGround("quest"));
-        Row("WORK_PAUSE", new AskGround("ask"), new QuestGround("quest"));
-        Row("WORK_RESUME", new AskGround("ask"), new QuestGround("quest"));
-        Row("WORK_ABANDON", new AskGround("ask"), new QuestGround("quest"), Plan("WORK_PLAN", ["ask", "quest", "pieces"],
-            p => Text(p, "ask") is { } ask ? new { ask } : new { quest = Text(p, "quest") },
+        // A pause is a file, never a state (§15.1 item 3): a Pause binds the work it would stop, and a Resume the pause it would remove.
+        Row("WORK_PAUSE", new AskGround("ask"), new QuestGround("quest"), Plan("WORK_PLAN", ["ask", "quest"], WorkOf,
+            (a, _) => Fp(
+                Rows(At(a, "quests"), "quest", "status", "pause"),
+                Rows(At(a, "sessions"), "session", "state"),
+                At(a, "paused") is null ? "unpaused" : "paused")));
+        Row("WORK_RESUME", new AskGround("ask"), new QuestGround("quest"), Plan("WORK_PLAN", ["ask", "quest"], WorkOf,
+            (a, _) => At(a, "paused") is { } paused
+                ? Fp(Text(At(paused, "at")), Rows(At(paused, "stopped"), "quest", "session"))
+                : "unpaused"));
+        Row("WORK_ABANDON", new AskGround("ask"), new QuestGround("quest"), Plan("WORK_PLAN", ["ask", "quest", "pieces"], WorkOf,
             (a, _) => Fp(
                 Rows(At(a, "quests"), "quest", "status", "joined", "key", "abandon"),
                 Rows(At(a, "sessions"), "session", "state"),
@@ -86,23 +122,32 @@ internal static class PipeTargetRows
         Row("WORKFLOW_NODE", LoopGround.Wait("workflow-node", "run", "node"));
         Row("CHANNEL_POST", new AskGround("ask"));
         Row("CHANNEL_FORWARD", new AskGround("ask"), new RepositoryGround("repository"));
+        // Each landing read binds each part's tree head and each target by its full tip (§15.1 item 1): the short ids it answers do not.
         Row("LAND_ASK", new AskGround("ask"), Plan("ASK_LANDING", ["ask"], p => new { ask = Text(p, "ask") },
-            (a, _) => Fp([.. Each(At(a, "entries")).OrderBy(each => Text(At(each, "entry")), StringComparer.Ordinal).Select(Entry)])));
-        Row("LAND_ENTRY", Plan("ENTRY_LANDING", ["entry"], p => new { entry = Text(p, "entry") }, (a, _) => Entry(a)));
+            (a, _) => Fp([.. Each(At(a, "entries")).OrderBy(each => Text(At(each, "entry")), StringComparer.Ordinal).Select(Entry)]),
+            tips: (a, _) => Each(At(a, "entries")).SelectMany(EntryTips)));
+        Row("LAND_ENTRY", Plan("ENTRY_LANDING", ["entry"], p => new { entry = Text(p, "entry") }, (a, _) => Entry(a), tips: (a, _) => EntryTips(a)));
 
         // Lands, hand-offs, reviews and trees.
         Row("LAND_SESSION_TREE", new SessionGround("id"), BranchGround.HeadOf("id"), Plan("LANDING", ["id", "branch"],
-            p => new { id = Text(p, "id"), branch = Text(p, "branch") }, (a, _) => Landing(a)));
+            p => new { id = Text(p, "id"), branch = Text(p, "branch") }, (a, _) => Landing(a),
+            tips: (a, p) => Text(p, "id") is { Length: > 0 } session
+                ? [PipeRef.Of(session, "HEAD"), .. Text(At(a, "target")) is { Length: > 0 } target ? [PipeRef.Of(session, target)] : Array.Empty<PipeRef>()]
+                : []));
+        // An id-only hand-off names no branch: the branch its plan resolved is bound by its tip.
         Row("HANDOFF", new SessionGround("id"), new RepositoryGround("repository"), BranchGround.Named("repository", "branch"),
             Plan("HANDOFF_PLAN", ["id", "branch", "repository", "plugin"],
                 p => new { id = Text(p, "id"), branch = Text(p, "branch"), repository = Text(p, "repository"), plugin = Text(p, "plugin") },
-                (a, _) => Fp(Pick(a, "session", "branch", "repository", "plugin", "problem", "commits"))));
+                (a, _) => Fp(Pick(a, "session", "branch", "repository", "plugin", "problem", "commits")),
+                tips: (a, _) => Text(At(a, "repository")) is { Length: > 0 } repository && Text(At(a, "branch")) is { Length: > 0 } branch
+                    ? [PipeRef.In(repository, branch)]
+                    : []));
         Row("OPINION_ANYWAY", new SessionGround("id"), OpinionGate());
         Row("OPINION_MYSELF", new SessionGround("id"), OpinionGate());
         Row("ASK_OPINION", new SessionGround("id"), BranchGround.HeadOf("id"));
         Row("STOP_OPINION", LoopGround.Wait("opinion", "opinion"));
-        Row("DISCARD_SESSION_TREE", new SessionGround("id"), BranchGround.HeadOf("id"),
-            LoopGround.Plan("tree-uncommitted", Page, "id", "path", "force").Only(p => True(Field(p, "force"))));
+        // The tree it removes, by `id` or by `path`: its head and index, and with `force` its uncommitted bytes (§15.1 item 2).
+        Row("DISCARD_SESSION_TREE", new SessionGround("id"), BranchGround.HeadOf("id"), LoopGround.Plan("tree", Page, "id", "path", "force"));
         Row("DISCARD_SESSION_BRANCH", new RepositoryGround("repository"), BranchGround.Named("repository", "branch", "named"));
         Row("RECOVERY_DROP", new RepositoryGround("repository"), new BranchGround(["repository", "refs"], payload =>
             PipeGround.Text(payload, "repository") is { Length: > 0 } repository
@@ -111,7 +156,9 @@ internal static class PipeTargetRows
         Row("SWEEP", Plan("SWEEP_PLAN", ["workspace", "only"], p => new { workspace = Text(p, "workspace") },
             (a, _) => Fp(
                 Rows(At(a, "branches"), ["repository", "branch"], "kind", "commits", "removable", "discardable"),
-                Rows(At(a, "landed"), ["repository", "branch"], "kind", "commits", "removable"))));
+                Rows(At(a, "landed"), ["repository", "branch"], "kind", "commits", "removable")),
+            tips: (a, _) => Branches(At(a, "branches"), "branch").Concat(Branches(At(a, "landed"), "branch"))));
+        // Each line bound by its tip here and at origin, each rebase and delete by its branch's tip.
         Row("TREES_SYNC", Plan("TREES_SYNC_PLAN", ["repository", "workspace", "all", "also", "only"],
             p => new { repository = Text(p, "repository"), workspace = Text(p, "workspace"), all = Field(p, "all"), also = Field(p, "also") },
             (a, _) => Fp(
@@ -119,7 +166,11 @@ internal static class PipeTargetRows
                 Rows(At(a, "rebases"), ["repository", "branch"], "kind", "commits", "replays"),
                 Rows(At(a, "deletes"), ["repository", "branch"], "kind", "commits", "removable")),
             // `lookBound` of a count the press does not say (`bridge/repositories/lines.ts`'s 32): eighteen minutes.
-            TimeSpan.FromMinutes(18)));
+            TimeSpan.FromMinutes(18),
+            tips: (a, _) => Branches(At(a, "lines"), "line")
+                .Concat(Branches(At(a, "lines"), "line").Select(each => each with { Branch = $"origin/{each.Branch}" }))
+                .Concat(Branches(At(a, "rebases"), "branch"))
+                .Concat(Branches(At(a, "deletes"), "branch"))));
         Row("HISTORY_CLEAR", Plan("HISTORY_PLAN", ["workspace", "quest", "ask", "units"],
             p => new { workspace = Text(p, "workspace"), quest = Text(p, "quest"), ask = Text(p, "ask"), failed = Field(p, "failed") },
             (a, _) => Fp(string.Join(",", Each(At(a, "units"))
@@ -160,8 +211,9 @@ internal static class PipeTargetRows
         Row("SET_SESSION_CHECKS", new RepositoryGround("repository"), State(["repository", "checks"],
             (a, p) => Text(At(Named(At(a, "sessionChecks"), "repository", Text(p, "repository")), "checks"))?.ToLowerInvariant() ?? "",
             p => Text(p, "checks")?.ToLowerInvariant() ?? ""));
+        // Set whole, in order (§15.3 item 12): each gate by its name, its run and its folder; none, or an empty list, as none.
         Row("SET_HEAVY_GATES", new RepositoryGround("repository"), State(["repository", "gates"],
-            (a, p) => Raw(At(Named(At(a, "heavyGates"), "repository", Text(p, "repository")), "gates")) ?? ""));
+            (a, p) => Gates(At(Named(At(a, "heavyGates"), "repository", Text(p, "repository")), "gates")), p => Gates(Field(p, "gates"))));
         Scoped(rows, "SET_LINE", "lines", "workspaceLines", sets: "branch");
         Scoped(rows, "SET_LANGUAGE", "languages", "workspaceLanguages", sets: "language");
         Scoped(rows, "SET_LANDING", "landings", "workspaceLandings");
@@ -237,8 +289,37 @@ internal static class PipeTargetRows
         return rows;
     }
 
-    private static ReadGround Plan(string route, string[] fields, Func<JsonElement?, object?> ask, Func<JsonElement, JsonElement?, string> take, TimeSpan? bound = null) =>
-        new(PipeGroundKind.Plan, route, fields, ask, take, bound ?? Page);
+    private static ReadGround Plan(
+        string route, string[] fields, Func<JsonElement?, object?> ask, Func<JsonElement, JsonElement?, string> take, TimeSpan? bound = null,
+        Func<JsonElement, JsonElement?, IEnumerable<PipeRef>>? tips = null) =>
+        new(PipeGroundKind.Plan, route, fields, ask, take, bound ?? Page) { Tips = tips };
+
+    /// <summary><c>WORK_PLAN</c>'s payload for the ask or the quest a work press names.</summary>
+    private static object WorkOf(JsonElement? payload) => Text(payload, "ask") is { } ask ? new { ask } : new { quest = Text(payload, "quest") };
+
+    /// <summary>An entry's branches as its landing answers them: its target in its repository, and each part's tree head.</summary>
+    private static IEnumerable<PipeRef> EntryTips(JsonElement entry)
+    {
+        if (Text(At(entry, "repository")) is { Length: > 0 } repository && Text(At(entry, "target")) is { Length: > 0 } target)
+        {
+            yield return PipeRef.In(repository, target);
+        }
+
+        foreach (var part in Each(At(entry, "parts")))
+        {
+            if (Text(At(part, "session")) is { Length: > 0 } session) yield return PipeRef.Of(session, "HEAD");
+        }
+    }
+
+    /// <summary>Each row's branch, by its <paramref name="field"/>, in its repository.</summary>
+    private static IEnumerable<PipeRef> Branches(JsonElement? rows, string field) =>
+        Each(rows).Select(each => (Repository: Text(At(each, "repository")), Branch: Text(At(each, field))))
+            .Where(each => each.Repository is { Length: > 0 } && each.Branch is { Length: > 0 })
+            .Select(each => PipeRef.In(each.Repository!, each.Branch!));
+
+    /// <summary>Heavy gates as set (§15.3 item 12): each gate's name, run and folder, in order; none or an empty list as none.</summary>
+    private static string Gates(JsonElement? gates) =>
+        Each(gates).Any() ? Fp([.. Each(gates).Select(each => $"{Text(At(each, "name"))}|{Text(At(each, "run"))}|{Text(At(each, "cwd"))}")]) : "";
 
     private static ReadGround Wait(string route, string[] fields, Func<JsonElement?, object?> ask, Func<JsonElement, JsonElement?, string> take) =>
         new(PipeGroundKind.Wait, route, fields, ask, take, Page);

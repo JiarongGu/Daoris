@@ -50,7 +50,7 @@
   "person.changed.session": "未执行：等待期间该会话已有进展（当时{{then}}，现在{{now}}）。",
   "person.changed.turn": "未执行：等待期间该会话又运行了一轮。",
   "person.changed.setting": "未执行：等待期间它要设置的内容已被更改（{{act}}）。",
-  "person.changed.repository": "未执行：仓库 {{repository}} 已不再注册在本机。",
+  "person.changed.repository": "未执行：仓库 {{repository}} 在本机的注册已与当时不同。",
   "person.changed.quest": "未执行：等待期间该委托已有进展（当时{{then}}，现在{{now}}）。",
   "person.changed.ask": "未执行：等待期间该需求已关闭。",
   "person.changed.plan": "未执行：等待期间它要处理的内容已变化。请重新查看后再发起。",

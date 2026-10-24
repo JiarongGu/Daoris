@@ -32,6 +32,12 @@ public sealed class PipeTargets
     /// <summary>Every row by its module and route, as the census test reads them.</summary>
     public IReadOnlyDictionary<string, PipeGroundRow> Rows => _rows;
 
+    /// <summary>
+    /// The rows whose <c>setting</c> ground names no value it sets, so they are never <c>already</c>, each with why (the confirm-wait
+    /// design §15.3 item 12).
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> NotAlready => PipeTargetRows.NotAlready;
+
     /// <summary>A row's key: the route alone for the driver's, <c>MODULE.ROUTE</c> for another module's.</summary>
     public static string Key(string module, string route) =>
         string.Equals(module, DriverModule.Name, StringComparison.OrdinalIgnoreCase) ? route : $"{module.ToUpperInvariant()}.{route}";
