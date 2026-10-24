@@ -208,6 +208,10 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
 - **Publish a quest that builds on another row only once that row's landing is committed.** A session's tree starts from
   main as it stands. A quest that names a row as landed while its merge is still being tested sends the builder to ask
   whether to merge the unreviewed branch.
+- **A router row twice is a union merge's.** `docs/README.md` merges by union (`.gitattributes`), so a landing whose branch
+  changed a router row that `main` changed too leaves both rows, the older and the newer, and git reports no conflict. Run
+  `node --test test/doc-duplicates.test.ts` in `src/Daoris.Cli` before committing a merge, and drop the older row. On 2026-10-24
+  four designs' rows were held twice this way in one afternoon.
 - **A landing is done when Daoris says so.** After committing a session's landing, `daoris-driver trees land <session>
   --plan` must answer that its branch holds nothing `main` does not. Where it lists commits, `main` lacks them: a session
   told to rebase after its landing may have made new ones, and they are work to land, not a stale row. Work on `main` as a
