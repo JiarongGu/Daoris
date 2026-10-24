@@ -862,6 +862,13 @@ public static class NoteCodes
     // record only, never the record's note: the actor by its id, the choice's number, the entry that ran and each one passed.
     public static readonly NoteCode OpeningActor = new("opening.actor", ["actor", "n", "entry", "passed"]);
 
+    // ——— A chat run's binding (CHATFLOW1c, the chat-flow design §4.3), said once in the conversation that grew its tree: the named workflow
+    // and the repository or workspace that chose it, the one bound with why it cannot land the work, or a bind the home could not keep.
+    // Under Current nothing is said, as a start's binding says nothing.
+    public static readonly NoteCode ChatWorkflow = new("chat.workflow", ["workflow", "version", "owner"]);
+    public static readonly NoteCode ChatWorkflowUnread = new("chat.workflow-unread", ["workflow", "owner", "problem"]);
+    public static readonly NoteCode ChatWorkflowFailed = new("chat.workflow-failed", ["problem"]);
+
     // ——— A resumed conversation's first line (CONVNOTE2a, Continuations.Opening): the adapter it resumed on is a fact, and
     // a version that moved is a part riding inside it. The conversation's record never leaves the machine (D76 §2).
     public static readonly NoteCode ResumedOpening = new("resumed.opening", ["adapter", "why"]) { Why = Resumed };

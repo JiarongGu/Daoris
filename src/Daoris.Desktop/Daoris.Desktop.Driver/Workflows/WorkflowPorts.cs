@@ -87,7 +87,25 @@ public interface IWorkflowRunRecords
 
     /// <summary>This machine's session branches (<see cref="SessionBranches"/>), which name a branch unit by its branch (FABRIC-CUTOVER1e).</summary>
     IReadOnlyList<GrownBranch> Branches();
+
+    /// <summary>Whether a run is bound here (<see cref="WorkflowRunBindings.Bound(string, string)"/>): a chat's tree gone reads its bound run (CHATFLOW1c).</summary>
+    bool Bound(string run);
+
+    /// <summary>
+    /// Whether a live conversation is between turns (CHATFLOW1c): its turn ended and nothing said since, as its runner wrote each turn's end
+    /// (<see cref="SessionEvents.TurnEnded"/>, <see cref="SessionGroups.Between"/>'s record of its turns), so every door reads it alike.
+    /// </summary>
+    bool Between(string session);
+
+    /// <summary>
+    /// Where a chat's tree stands (CHATFLOW1c, the chat-flow design §4.2): its <c>HEAD</c>, and the commits beyond the line as the review's
+    /// offer counts them (<see cref="LandOffer.Of"/>), those the line holds by content counting none; null where the tree does not stand.
+    /// </summary>
+    Task<ChatTreeTip?> TipAsync(string tree, CancellationToken ct);
 }
+
+/// <summary>Where a chat's tree stands (CHATFLOW1c): its <c>HEAD</c>, and the commits beyond the line, each null where git could not say.</summary>
+public sealed record ChatTreeTip(string? Head, int? Beyond);
 
 /// <summary>
 /// The ports over a home's files, for a caller that holds only the home (STRUCT3b; D166's STRUCT3b note): the one place Workflows'

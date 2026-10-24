@@ -530,7 +530,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         }
 
         var questId = await service.SessionQuestAsync(id, cancellationToken);
-        var records = await service.SessionRecordsAsync(cancellationToken);
+        var recordsJson = await service.SessionRecordsJsonAsync(cancellationToken);
+        var records = SessionRecords.Parse(recordsJson);
         // COAGENT1b (D199 point 3): a partner's record lands nothing, at the press, the plan and the verb alike.
         if (TreesWords.PartnerLands(records, id) is { } partner)
         {
@@ -544,11 +545,17 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
             _loop.Home, say: SayTo(pluginLines), log: _loop.Log, health: _loop.Health));
 
+        // CHATFLOW1c (the chat-flow design §4.2, §4.3): a chat in a tree of its own is gated by its chat run's process. A press on a run
+        // not bound yet binds it first; one the home cannot keep refuses the press (`bind-failed`), never falling back to Current. A graph
+        // choice binds nothing and is gated as before; a plan binds nothing.
+        var chatRun = questId is null ? ChatRuns.ChatOf(id, recordsJson, trees.Holds) : null;
+        if (press && chatRun is not null && ChatRunBound(chatRun, tree) is { Failed: { } failed }) return Refused(id, TreesWords.BindFailed(id, failed));
+
         // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review. What holds the press says so before it,
         // and the press refuses it.
         // Said to every window while the press is under way (PRESSSTEP1); a plan is no press and says it to nobody.
         PressSteps.Reach(PressSteps.Gate);
-        var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken);
+        var gate = await trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, cancellationToken, run: chatRun);
         // Named for the chain's first quest (WSR5), and a part of an entry with others for its entry's first part, on the entry's one
         // branch (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): the call every door that lands one session makes (ACCEPTALL1f).
         // A name the person entered still lands as entered. FABRIC-CLOSE1h3: its quests read once, the press made on its own.
@@ -584,7 +591,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var shown = gate;
         gate = await GraphPasses.PressAsync(
             token => new OpinionPresses(_loop.Home, service).PressedAsync(id, shown, Optional(request, "answers"), tree, questId, token),
-            token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token), _loop.PassWholeAsync, cancellationToken);
+            token => trees.GateAsync(tree, questId, new ServiceReviewWorld(service), id, token, run: chatRun), _loop.PassWholeAsync, cancellationToken);
         // FABRIC-CLOSE1h3 (D173's note): the result the press is made on, its quest as read for its name, judged again under the tree's
         // hold and before the push, so a press that waited behind another landing makes nothing where that result moved meanwhile.
         var pressed = await quests.PressedAsync(id, questId, ct: cancellationToken);
@@ -642,6 +649,14 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// A press the verb refuses before it lands anything (RPC1b4): the page's fields as a refusal reads them, nothing landed, and the
     /// verb's words, with its code, beside them.
     /// </summary>
+    /// <summary>
+    /// A chat run bound before its press is gated (CHATFLOW1c, the chat-flow design §4.3), by its tree's owner: bound already, bound now, a
+    /// graph choice that binds nothing, or why the home could not keep it.
+    /// </summary>
+    private ChatRunBound ChatRunBound(string run, string tree) => ChatRuns.BindFirst(
+        DriverConfig.Load(_loop.ConfigPath), _loop.Home, run, tree, WorkflowCurrent.PluginsOf(PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names)),
+        DateTimeOffset.UtcNow);
+
     private static object Refused(string session, TreesSaid said) => new
     {
         Session = session, Done = false, Message = Sentence(said), Branch = (string?)null, Plugin = (object?)null, Withheld = (string?)null,

@@ -36,16 +36,17 @@ internal sealed class TreeGates(TreeContext context)
     /// was judged and made at (<see cref="LandingGate.Tip"/>), so a commit made on the tree after it, which the push does not carry, holds
     /// nothing back. Null judges the tree's <c>HEAD</c>, as every door before the landing does.
     /// </param>
+    /// <param name="run">A chat run's key where the work serves no quest (CHATFLOW1c), whose bound process is read in place of the rules live.</param>
     internal async Task<LandingGate> GateAsync(
         string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null,
-        string? tip = null)
+        string? tip = null, string? run = null)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
         // WORKFLOW1f (the workflow design §2.3, §4.6): the run's bound version where it names one, the rules live where it does not,
         // read once and handed to every part, so the look, the opinion and the landing decide by one process.
         var config = context.Config();
-        process ??= await ProcessAsync(config, repository, workspace, quest, world, ct).ConfigureAwait(false);
+        process ??= await ProcessAsync(config, repository, workspace, quest, world, ct, run).ConfigureAwait(false);
         var workflow = await WorkflowAsync(full, process, session, ct, tip).ConfigureAwait(false);
         var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process, tip).ConfigureAwait(false);
         var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct, process, tip)
@@ -78,13 +79,18 @@ internal sealed class TreeGates(TreeContext context)
 
     /// <summary>
     /// The process a quest's work here follows (WORKFLOW1f, <see cref="WorkflowProcesses.ReadAsync"/>): its run's bound version, or the
-    /// rules live; a conversation's work, which serves no quest, reads the rules live.
+    /// rules live. A conversation's work, which serves no quest, reads its chat run's (CHATFLOW1c, the chat-flow design §4.2), so the view
+    /// and the gate decide by one process; one with no chat run named reads the rules live.
     /// </summary>
+    /// <param name="run">The chat run's key, <c>chat-&lt;first&gt;</c>, where the work serves no quest; null for none.</param>
     internal async Task<WorkflowProcess> ProcessAsync(
-        DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct = default) =>
-        quest is null
-            ? WorkflowProcess.Current(config, repository, workspace)
-            : await WorkflowProcesses.ReadAsync(context.Home, config, world, quest, repository, workspace, ct).ConfigureAwait(false);
+        DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct = default,
+        string? run = null) =>
+        quest is not null
+            ? await WorkflowProcesses.ReadAsync(context.Home, config, world, quest, repository, workspace, ct).ConfigureAwait(false)
+            : ChatRuns.IsChatRun(run)
+                ? WorkflowProcesses.Read(context.Home, config, repository, workspace, run)
+                : WorkflowProcess.Current(config, repository, workspace);
 
     /// <summary>
     /// The run's own part of the gate for a tree (WORKFLOW1f, the workflow design §4.4): the process judged, and where its kind chose

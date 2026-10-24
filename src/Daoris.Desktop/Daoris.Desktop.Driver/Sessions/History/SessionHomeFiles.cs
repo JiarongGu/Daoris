@@ -62,6 +62,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Landing = "landing";
     public const string Archived = "archived";
 
+    /// <summary>A chat run's binding, opinion gate and look (CHATFLOW1c), named by the record its key names, <c>chat-&lt;id&gt;</c>.</summary>
+    public const string Run = "run";
+
     /// <summary>Where a session's file lies under the home.</summary>
     private enum Place
     {
@@ -79,6 +82,15 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 
         /// <summary>Its process's marker: <see cref="HomeEntry.SessionPids"/>, at each of its places.</summary>
         Pids,
+
+        /// <summary><c>workflows/runs/</c>, a chat run's binding, named <c>chat-&lt;id&gt;</c> (<see cref="ChatRuns"/>).</summary>
+        Runs,
+
+        /// <summary><c>opinions/gates/</c>, a chat run's opinion gate, named the same.</summary>
+        Gates,
+
+        /// <summary><c>workflows/looks/</c>, a chat run's look, named the same.</summary>
+        Looks,
     }
 
     /// <summary>
@@ -121,6 +133,11 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Help, Place.Sessions, HelpWired.Suffix, false, Beside),
         // ASKQUESTS1: the asks and quests its Applies published, Ask Daoris's too.
         new(Help, Place.Sessions, HelpPublished.Suffix, false, Beside),
+        // CHATFLOW1c (the chat-flow design §4.3): a chat run's three files, which go with the record its key names, the line's first
+        // in its tree; a later record of the line names none of them.
+        new(Run, Place.Runs, ".json", false, Beside),
+        new(Run, Place.Gates, ".json", false, Beside),
+        new(Run, Place.Looks, ".json", false, Beside),
     ];
 
     /// <summary>
@@ -159,6 +176,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     private IReadOnlyList<string> PathsOf(SessionFile file, string id) => file.Place switch
     {
         Place.Spawn => [Path.Combine(SpawnFolder, id + file.Suffix)],
+        Place.Runs => [Path.Combine(WorkflowRunBindings.FolderOf(home), ChatRuns.Prefix + id + file.Suffix)],
+        Place.Gates => [Path.Combine(ChatRuns.GatesFolder(home), ChatRuns.Prefix + id + file.Suffix)],
+        Place.Looks => [Path.Combine(ChatRuns.LooksFolder(home), ChatRuns.Prefix + id + file.Suffix)],
         Place.Files => [.. new[] { DaorisHome.Places(home, HomeEntry.SessionFiles, id)[0], Path.Combine(Sessions, id) }
             .DistinctBy(path => Path.GetFullPath(path), StringComparer.OrdinalIgnoreCase)],
         // And beside its records, where a tracker handed the sessions' folder for its markers kept it.

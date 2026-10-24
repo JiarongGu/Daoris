@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// run reads (its quests and their sessions, the go-aheads on its ask, the review's gate, the second opinions, the landing record,
 /// the acceptance a session's record keeps, the due list and a pull request's kept answer) and says where each step stands.
 /// </summary>
-public sealed class WorkflowRunTests
+public sealed partial class WorkflowRunTests
 {
     private static readonly DateTimeOffset T = new(2026, 10, 9, 9, 0, 0, TimeSpan.Zero);
 
@@ -612,7 +612,12 @@ public sealed class WorkflowRunTests
         NoRun("hp1", WorkflowNoRun.Helper);
         NoRun("c3", WorkflowNoRun.ChatTreeGone);
         NoRun("c1", WorkflowNoRun.ChatCheckout);
-        NoRun("c2", WorkflowNoRun.ChatOwnTree);
+        // CHATFLOW1c: a chat in a tree of its own reads its chat run, never `chat-own-tree`; one whose tree is gone reads it once bound.
+        var own = WorkflowRunReader.ChainsOf(new(Session: "c2"), quests, sessions, trees);
+        Assert.Equal(((string?)null, (string?)null, "c2"), (own.Code, own.Problem, own.Chat?.Id));
+        trees.BoundRuns.Add("chat-c3");
+        Assert.Equal("c3", WorkflowRunReader.ChainsOf(new(Session: "c3"), quests, sessions, trees).Chat?.Id);
+        trees.BoundRuns.Clear();
         Assert.Equal(((string?)WorkflowNoRun.NoQuest, (string?)"No quest `#q9` is here."), (Read(new(Quest: "q9")).Code, Read(new(Quest: "q9")).Problem));
         Assert.Equal(((string?)WorkflowNoRun.AskNoQuest, (string?)WorkflowNoRun.Said(WorkflowNoRun.AskNoQuest, "a2")), (Read(new(Ask: "a2")).Code, Read(new(Ask: "a2")).Problem));
 
@@ -660,7 +665,7 @@ public sealed class WorkflowRunTests
         Assert.Equal([["q1"]], Chains("g1"));
         Assert.Equal([["q7"]], Chains("g7"));
         Assert.Equal([["q1"], ["q6"]], Chains("i1"));
-        Assert.Equal(WorkflowNoRun.ChatOwnTree, WorkflowRunReader.ChainsOf(new(Session: "pub"), quests, sessions, trees).Code);
+        Assert.Equal("pub", WorkflowRunReader.ChainsOf(new(Session: "pub"), quests, sessions, trees).Chat?.Id);
         Assert.Equal(["q1", "q7", null, null], new[] { "g1", "g7", "pub", "i1" }.Select(id => WorkflowRunReader.WorkOf(sessions.First(each => each.Id == id), sessions)));
     }
 
@@ -765,10 +770,21 @@ public sealed class WorkflowRunTests
         }
     }
 
-    /// <summary>Which trees this home opened and which still stand, for the reader's classification of a chat (CHATFLOW1a).</summary>
+    /// <summary>
+    /// Which trees this home opened and which still stand, for the reader's classification of a chat (CHATFLOW1a); and for a chat run
+    /// (CHATFLOW1c), the landings kept, the runs bound, the records between turns and where each tree stands.
+    /// </summary>
     private sealed class Trees(Func<string, bool>? holds = null, Func<string, bool>? stands = null) : IWorkflowRunRecords
     {
-        public IReadOnlyList<LandedBranch> Landings() => [];
+        public List<LandedBranch> Landed { get; } = [];
+
+        public HashSet<string> BoundRuns { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public HashSet<string> BetweenTurns { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public Dictionary<string, ChatTreeTip> Tips { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public IReadOnlyList<LandedBranch> Landings() => Landed;
 
         public IReadOnlyList<AutoLanding> AutoLandings() => [];
 
@@ -783,6 +799,12 @@ public sealed class WorkflowRunTests
         public NodeRecord? Record(string unit) => null;
 
         public IReadOnlyList<GrownBranch> Branches() => [];
+
+        public bool Bound(string run) => BoundRuns.Contains(run);
+
+        public bool Between(string session) => BetweenTurns.Contains(session);
+
+        public Task<ChatTreeTip?> TipAsync(string tree, CancellationToken ct) => Task.FromResult(Tips.TryGetValue(tree, out var tip) ? tip : null);
     }
 
     /// <summary>
@@ -951,7 +973,7 @@ public sealed class WorkflowRunTests
 
         WorkflowRun Read(WorkflowRunAsk asked, bool reopened)
         {
-            var (chains, _, only, _, _) =WorkflowRunReader.ChainsOf(asked, [Here(reopened), There(reopened)], sessions, new Trees());
+            var (chains, _, only, _, _, _) =WorkflowRunReader.ChainsOf(asked, [Here(reopened), There(reopened)], sessions, new Trees());
             var chain = chains.Single();
             Assert.Equal("engine", only);
             return WorkflowRuns.Derive(new WorkflowRunFacts("engine", current)

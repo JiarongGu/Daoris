@@ -113,6 +113,7 @@
   "work.delete.kept.held": "为它留着的你的话",
   "work.delete.kept.landing": "它已结束的自动落地",
   "work.delete.kept.archived": "它的归档标记",
+  "work.delete.kept.run": "它的工作流进展",
   "work.delete.kept.other": "它的 {{name}}",
   "work.stop.title": "停止这个会话",
   "work.stop.drivenHeld": "立即停止这个会话。它的委托仍由本机接着，工作树保留它写下的内容；在你选择重试之前，驱动不会继续它。",
