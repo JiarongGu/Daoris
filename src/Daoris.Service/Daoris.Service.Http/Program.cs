@@ -2887,6 +2887,8 @@ static string SayRefusal(SessionSayRefusal refusal) => refusal switch
     SessionSayRefusal.NoQuest => "no-quest",
     SessionSayRefusal.QuestionChanged => "question-changed",
     SessionSayRefusal.NotOfferedChoice => "not-offered-choice",
+    // SUPERVISOR1b (D208 §3.1, §4.1): the question's owner mark, checked again at the release.
+    SessionSayRefusal.OwnerQuestion => "owner-question",
     SessionSayRefusal.GoAheadOpen => "go-ahead-open",
     SessionSayRefusal.GoAheadUnread => "go-ahead-unread",
     SessionSayRefusal.OwnerAnswered => "owner-answered",
