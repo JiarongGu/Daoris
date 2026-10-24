@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - A session's own git read a committed file past 260 characters in its tree as deleted (TREELONG1)
+
+- **Symptom:** seen on the install's work workspace. A file at 242 characters in a repository's checkout is at 265 in a session's
+  tree, which sits deeper under the trees home. The session's `git status` showed it changed and its `diff` showed it deleted,
+  though the file on disk was the committed one; an agent's `git add -A` could have committed the deletion.
+- **Root cause:** Daoris's own git says `-c core.longpaths=true` on every call (`WorkingTree.GitStart`, D109), but that is a
+  command-line word of Daoris's own git alone. The environment a session's start is handed (`Spawning.Shell`) scoped only the author
+  (`GitAuthor.Hand`) and the remote helper (`GitWiring.Hand`), so a session's git ran without long paths. Without it Git for Windows
+  cannot open a path past 260 characters: under its own system default `core.fscache` the file reads as deleted, and without that it
+  says "Filename too long" and lists nothing.
+- **Fix:** `Spawning.Shell` scopes `core.longpaths=true` into every session's git environment beside the author's, through
+  `GitRouting.Scope` (`GitLongPaths.Hand`). `GitLongPaths.NeededAsync` reads `git config --show-scope --get-all core.longpaths` in the
+  start's root and leaves the setting out where a scope of the person's names it, either way; the command scope there is Daoris's own
+  `-c`, and is not the person's. The setting is also left out where the inherited command scope already names it.
+- **Verification:** `GitLongPathsProcessTests.A_sessions_git_reads_a_tree_past_260_characters_clean` commits a file at about 240
+  characters, adds a session's tree where it passes 260, and runs `git status` there through the stub adapter's prepared start and
+  through a git handed nothing, with the person's system and global configuration kept out and `core.fscache` on. With the hand
+  disabled it failed: the handed status read ` D` for the committed file. With it, the handed status is clean, and the bare git still
+  reads the file as deleted. `A_person_whose_configuration_says_it_is_handed_nothing` holds the person's `core.longpaths=false`.
+  `GitLongPathsProcessTests` passed with `process.runsettings` (2 of 2); `GitLongPathsTests` and the fast classes that build a
+  session's start passed (387 of 387).
+
 ## 2026-10-24 - The router's union merge left a changed row twice, the older copy coming back (ROUTERMERGE1)
 
 - **Symptom:** on 2026-10-24 six landings left a design's or a reads file's row in `docs/README.md` twice, an older copy

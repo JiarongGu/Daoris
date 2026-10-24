@@ -15,6 +15,10 @@ with the version and date at release.
   signed in on this machine; one it names that is not is refused, and the session reads why. A rule you set still wins: *Ask me* still
   waits for your yes and *Not offered* still offers none. To keep a workspace on *Ask me*, set it on its Setup or run
   `daoris driver helpers --workspace <name> --mode ask`.
+- A session's own git now reads its tree with long paths, as Daoris's own git does (TREELONG1). Before, a committed file whose path
+  passed Windows' 260 characters in a session's tree, deeper than your checkout, showed as deleted in the session's `git status`,
+  and an agent's `git add -A` could commit the deletion. Where your own git configuration already sets `core.longpaths`, either way,
+  it is left as you set it.
 - The steward's door is built and no role is offered yet (STEWARDROLE1a-i, D209). Nothing you use changes until the steward's
   activation. Once a role is offered, *Appoint…* opens a tab of Daoris's terminal panel that runs Daoris's own pinned Claude Code,
   checked against the bytes its install verified, never the `claude` on your PATH. It starts on a configuration Daoris writes, with

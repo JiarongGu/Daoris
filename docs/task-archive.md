@@ -20515,3 +20515,13 @@ default those agents (`HelperRule.Over`). An agent's ask naming another is refus
 the default in English and Chinese, and the page words both reasons. `HelperLookTests`' HELPERDEFAULT1 rows (no rule set and an agent
 set up started without a card; a repository's and a workspace's `ask` still waiting; an agent not set up refused with its reason; none
 set up refused) were seen failing on the old code first. D163's HELPERDEFAULT1 note has the rule and the reason.
+## TREELONG1 — a session's own git reads its tree with long paths, as Daoris's does (2026-10-24, D109)
+
+> **TREELONG1 — a session's own git reads its tree with long paths, as Daoris's does** (driver; seen 2026-10-24 on the install's work workspace). Daoris's own git calls say `core.longpaths` (D109; `WorkingTree.cs:936`, `SessionTrees.cs:368`), but the environment a session's git is handed scopes only the author and the remote helper (`GitWiring.cs:92`, `GitAuthor.cs:42`). A tree under the trees home sits deeper than the repository's own checkout, so a file at 242 characters there is at 265 in the tree, past Windows' 260: the session's `git status` shows it changed and its `diff` shows it deleted, though the file on disk is the committed one, and an agent's `git add -A` could commit the deletion. Scope `core.longpaths=true` into every session's git environment beside the author's, unless the person's own configuration says it. Proof: a Process class over real git with a tracked file past 260 characters in a session's tree, its status clean through the handed environment and changed without it.
+
+(Quest `#35cb09c70458`.)
+
+**Outcome** 2026-10-24. Every session's start (`Spawning.Shell`) scopes `core.longpaths=true` into its git environment beside the
+author's, through `GitRouting.Scope` (`Platform/GitLongPaths.cs`), unless a scope of the person's configuration or the inherited
+command scope already names it. `GitLongPathsProcessTests` was seen failing first (the handed status read the committed file as
+` D`), then passed; `GitLongPathsTests` holds the shapes. Detail: FIX-LOG's TREELONG1 entry and D109's TREELONG1 note.
