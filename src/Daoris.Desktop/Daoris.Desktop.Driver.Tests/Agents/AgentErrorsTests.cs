@@ -145,4 +145,21 @@ public sealed class AgentErrorsTests
         var refused = lines with { Words = "Failed to authenticate. API Error: 401 API key is invalid." };
         Assert.Equal(AgentErrorKind.Access, AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), refused, Seen, TimeZoneInfo.Utc).Kind);
     }
+
+    /// <summary>
+    /// 🔴 Codex's owed read of D210, finding 8: the source is read before any kind. A harness-only line that matches a weekly limit's
+    /// sentence, or names a limit's code, is no limit, so it neither cools an account nor is tried again; only its credential's refusal
+    /// is read there. Red before the guard moved ahead of the limit's reading: <c>Limit</c>.
+    /// </summary>
+    [Fact]
+    public void A_harness_line_never_reads_a_limit_by_its_sentence_or_its_code()
+    {
+        var weekly = new DoorFailure("protocol", null, null, null, "You've hit your weekly limit · resets Oct 26, 10pm (UTC)", DoorWhere.Harness);
+        var read = AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), weekly, Seen, TimeZoneInfo.Utc);
+        Assert.Equal((AgentErrorKind.Fatal, (LimitSeen?)null), (read.Kind, read.Limit));
+
+        var coded = new DoorFailure("protocol", -32603, "rate_limit", 429, "Internal error", DoorWhere.Harness);
+        Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), coded, Seen, TimeZoneInfo.Utc).Kind);
+        Assert.Equal(AgentErrorKind.Fatal, AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), coded with { Kind = "overloaded", Status = 529 }, Seen, TimeZoneInfo.Utc).Kind);
+    }
 }
