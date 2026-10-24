@@ -996,7 +996,7 @@ public static class SessionGroups
                 else
                 {
                     // Where the own account is not the earliest, the sentence is the roster's: whose reset comes first.
-                    sentence = soonest.Until < cooling.Until ? LimitResume.Waits(soonest, zone, names).Note : ResumeWords.Waits(cooling, zone, names);
+                    sentence = soonest.Until < cooling.Until ? ResumeWords.LimitWaits(soonest, zone, names).Note : ResumeWords.Waits(cooling, zone, names);
                     cooling = soonest;
                 }
 

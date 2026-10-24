@@ -93,7 +93,7 @@ public static class AttentionStateSlice
         ["placed"] = ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds"],
         ["placedWork"] = ["commits", "uncommitted", "branch"],
         ["pausedBy"] = ["scope", "id"],
-        ["wordsHeld"] = ["why", "reason", "repository", "until"],
+        ["wordsHeld"] = ["why", "reason", "repository", "until", "account", "accountName"],
         ["sitting"] = ["quest", "repository", "verdict", "reason", "strikes", "since"],
         // POOL1c: `own`, a hold on the own sign-in's file, which the page draws with no grant (D197 point 3).
         ["trust"] = ["folder", "trustFile", "own"],

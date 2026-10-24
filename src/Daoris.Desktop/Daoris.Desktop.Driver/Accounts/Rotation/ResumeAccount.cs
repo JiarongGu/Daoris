@@ -214,6 +214,22 @@ public static class ResumeWords
     }
 
     /// <summary>
+    /// The hold where no account a line may run on is ready (<c>held.limit-waits</c>, D206 §3.3 step 3; LIMITSWITCH1 for words that wait): the
+    /// earliest moment one is ready again, the cool-off's <c>until</c> with its margin, and whose account, by the person's name in the English
+    /// and by its id in the values. The loop's <c>LimitResume.Waits</c> is its name there.
+    /// </summary>
+    /// <param name="lead">What leads the English, part of its text: a record's words waiting lead with <see cref="NotYet"/>.</param>
+    public static Noted LimitWaits(CoolingEntry earliest, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null, string lead = "")
+    {
+        var said = $"{lead}Every account it may run on is at its limit: it goes on by itself once {CoolingWords.Who(earliest, names)} is ready again "
+                   + $"at {CoolingWords.When(earliest.Until, zone)}.";
+        (string Name, object? Value)[] facts = [("owner", earliest.Agent), ("until", NoteCodes.Moment(earliest.Until))];
+        return earliest.Account is { } account
+            ? Noted.Of(NoteCodes.HeldLimitWaits, said, [("account", account), .. facts])
+            : Noted.Of(NoteCodes.HeldLimitWaitsOwn, said, facts);
+    }
+
+    /// <summary>
     /// The conversation's line while its words wait for its account (CONVNOTE2g, MSG1g): <see cref="NotYet"/>, why, and the door
     /// out of the wait, each a line by code and the English as it was always written, which the sessions listing and the driver
     /// read by its prefix and whole. A wait nothing coded keeps its English with no parts, never half of it worded (D152's UX7d-1
