@@ -20581,3 +20581,22 @@ words waiting for the next look (`Driver.ModelRefused`); a `choice-not-offered` 
 strip and both heads, with the code's sentence, its account here and none on a teammate's mirror; the head chip's stories at the
 three widths in en and zh. The proof's first half runs on a pipe stand-in (`ModelRefusalTickTests`). **Remaining, as
 MODELROLE1c4:** the installed proof. Detail: D205's MODELROLE1c3 note; `docs/2026-10-24-modelrole1c-build.md`.
+
+## MODELROLE1d2 — what row d still owed (2026-10-25, D205; what remains MODELROLE1d3 and MODELROLE1d4)
+
+> - [ ] **MODELROLE1d2 — what row d still owes** (driver, modules, web; after MODELROLE1d). §3.5(b)'s pending conversation start: `ChatPending`, keyed by the issued id, owning a Chat's or Ask Daoris's attempt from placement until dispatched or exhausted, a refusal at the open re-asked within the same press, the refused record ended `choice-not-offered` and its replacement opened (Ask Daoris in its workspace's room), the queued words moved to it under the queue's lock, `chat.replaced { from, to }` and the window following; a `choice-not-offered` chat's go-on a fresh start of its actor; a pick never walked afresh; a refused continuation's brief recomposed through `BriefedMove`'s seam. The curve move judging each candidate's reading for the record's model. Today a conversation whose model its account refuses at the open runs at account default, said as *not carried* (`docs/2026-10-24-modelrole1d-build.md`). Proof: design §13's §3.5(b) tests (Ask Daoris refused after `START_HELP` returned, words reaching the replacement once; a pick's recovery; a refused continuation's brief); on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart.
+
+(Quest `#aec91ccbdc36`.)
+
+**Outcome** 2026-10-25, in four parts. **Built:** a new conversation's pending start (`ChatPending`, keyed by the issued id) owns a Chat's
+or Ask Daoris's attempt on the protocol door, and LIMITGOON2's part on another agent; its agent's refusal of the model at the open is
+kept as the account's reading and re-asked within the start, a same-account later entry set on the open session, a pick trying only its
+agent's entries on its own account; anything else ends the refused record `choice-not-offered` and opens the walk's answer in its place
+within the same press (a Chat continuing it by the new reason `not-offered`, Ask Daoris in the same workspace's room, linked in its
+history), the words said meanwhile moved under the start's lock and reaching it once, every word door asked by the issued id answering
+for the replacement, the window following it (`SESSION_REPLACED`). A `choice-not-offered` conversation's go-on is a fresh start of its
+actor, never a resume; a pick is never walked afresh; a refused continuation's brief is recomposed over its line's last part that held a
+conversation. The curve move judges each candidate's reading for the conversation's model. Proved with real conversations on stand-in
+agents (`PendingStartProcessTests`) and `CurveMoveTests`, each case seen failing first. **Remaining, as MODELROLE1d3:** a pipe chat's
+measured refusal on its silent first turn, re-asked within its start; **as MODELROLE1d4:** the installed proof. Detail: D205's MODELROLE1d2
+note; `docs/2026-10-25-modelrole1d2-build.md`.

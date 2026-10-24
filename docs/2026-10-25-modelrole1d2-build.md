@@ -64,4 +64,23 @@ Part 4: the web's new `WorkFrame.replaced.test.tsx` and the Ask Daoris scope sui
 typecheck, `i18n:check`, `names-check.mjs --strict`, `check:web-rules`; modules `SessionWords*`, `DriverModuleConversation*`,
 `DriverModuleHelp*`.
 
+## Remaining
+
+- **MODELROLE1d3**: a pipe chat's measured refusal on its silent first turn (§3.5(b)'s last sentence), re-asked within its start. The pipe
+  door has no open that lists or sets a model, and the row names the refusal *at the open*; the backlog carries it.
+- **MODELROLE1d4**: the installed proof, which no branch can give.
+
 ## Readings
+
+- A Chat's replacement continues the refused record by a new reason, `not-offered`: §3.5(b) names the link (*a Chat's `from`*) and no
+  reason, and none of the eight a record continues by fits (each names a hand-over, a carry-on or a lost conversation), so the page and
+  the brief would have misnamed it.
+- §3.5(b)'s *the event `chat.replaced { from, to }`* is three things here: the shell's event to the windows, named as its other live
+  conversation events are (`SESSION_REPLACED`); the machine log's line (`chat.replaced`); and the replacement's coded note
+  (`chat.replaced`), which says where it came from in both languages.
+- A pending start is made only where a start asks an entry of its actor's order (a new conversation, LIMITGOON2's part on another
+  agent). A hand-over, a curve move or a briefed move names no entry and asks no model, so nothing there can be refused at the open.
+- Where nothing can replace the refused record, the moved words not already kept on it are kept there through the say door, so they
+  wait as §3.5(b) says (*the first words wait on the refused record*); its go-on then walks afresh, which may answer once a choice frees.
+- Each case was written with its code; *seen failing first* was shown by running each new case with the new path left out of the run
+  (the pending start, the go-on's branch, each page follow) and restoring it, recorded per part above.

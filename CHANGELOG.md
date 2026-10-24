@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- A new conversation whose agent refuses its chosen model as it opens now goes on at once with the next choice that can run
+  (MODELROLE1d2). Before, it ran at the account's default model and said the choice was not carried. Your *Chat* or *Ask Daoris*
+  order is walked again within the same press: another account of the same choice, or the next choice, in the same tree or the same
+  workspace's room. The words you said while it opened go to the new conversation once, and the window follows it. A conversation
+  started on an agent you picked only tries that agent's other models on the same account, then waits and says why. Words left on
+  such a conversation after a restart start your order afresh, handed what Daoris kept of the conversation before it, where there
+  was one.
 - A terminal's change that waits for your Confirm and rests on a plan now has *Look at it now* on its card (CONFIRMWAIT1c): a land
   opens its session's review, a set-up its repository's page, a sweep or a bring-up-to-date its workspace's Branches, and a history
   clear the workspace, quest or ask it clears. You see what it would act on as it stands now before you confirm a change asked hours
