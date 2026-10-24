@@ -1,4 +1,4 @@
-# COWORKVIEW1: the reads of round 1 (D191)
+# COWORKVIEW1: the reads of rounds 1 and 2 (D191)
 
 The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it.
 
@@ -355,3 +355,302 @@ openly, and no model is involved. But four of its foundations do not hold as wri
 F9 and F10 are mechanical. F1's partition, F3's rule, F4's path and F7's run or turn each need a design choice, and that choice
 should be checked against the code. The next round can be narrow: §1.3, §1.9, §3.1-§3.2, §3.6-§3.7, §4, §6 and §7, with the
 other findings taken in passing.
+
+## Opus (foundation), round 2
+
+The independent Opus 5.5 reader's foundation read of round 2 at `eb11f2f5f`: 13 findings, 3 blocking; accept after named changes the steward can check without another read. Codex's read is owed.
+
+### 0. Round 1's findings, checked
+
+Read on main at `ffa1cfa9c`. Its `src/` differs from the design's `426ed2b73` in two workflow files only (`WorkflowRun.Read.cs` and
+its tests), which this design does not touch. Paths use the design's abbreviations. Design line numbers refer to
+`docs/2026-10-24-cowork-view-design.md` at `eb11f2f5f`.
+
+| # | Round 1's finding | Status | Checked against the code |
+|---|---|---|---|
+| **1** | A lane quest to the session's own repository makes a further part of its line | **Taken** | Holds. The origin rule is `Core/Sessions/SessionEntries.cs:95-121`. Helpers and reviewers keep their own entries (`:76-77`). Further parts are planned at `Driver/Quests/Domain/Planner.cs:1716-1767`. The part is drawn once (§2 point 4, §3.1). Residues: the view's order disagrees with the strip's (F7). A part planned after the lead waits goes into the lead's tree, not alongside (F2). |
+| **2** | The routing doctrine parks a driven lead on the person | **Taken** | Holds for the park. A clean end holding the quest parks (`Driver/Sessions/Domain/Observation.cs:173-174`, `:216-219`). A new wait ends `completed` with `ended.awaits` (`:104-111`, `:292-293`). The exchange refuses no wait on one's own lane's quest (`Core/Quests/QuestExchange.cs:1454-1505`). The wait it prescribes opens a new hole (F2, F3). |
+| **3** | The routing names no rule of the person's and no precondition | **Taken** (the second way; the reason holds) | `Consider` never reads the publisher: drive (`Planner.cs:1889-1893`) and the cap (`:2046-2053`) bound every quest alike. Residues: trees decide alongside or after, not whether a quest starts (`:2010-2021`; F13e). The chat case has no drive precondition (F11). |
+| **4** | None of §4's wakes reaches a held read | **Taken** | Holds. `STATE_CHANGED` leads to the hub's invalidation (`Web/bridge/state/stateHub.ts:93-100`), then the re-ask, then `HeldAnswers` (`Modules/Bridge/HeldAnswers.cs:74-106`). Every `STATE_CHANGED` also forgets the works under way (`Modules/Bridge/DriverModule.cs:102-107`), so a wake never joins a stale work. Residues: the narrowing by session (F1) and the stream-rate telling (F5). |
+| **5** | The `acp` line omits the parent and can write a false end | **Taken** | Holds. A child speaks under its own `params.sessionId`, which is its `subagentSessionId` (`Driver/Agents/Acp/AcpStreams.cs:95-98`, `:155-164`), so an `acp` line's parent joins the announcing child. A stop ends the part unclean (`ChatRunner.cs:2497`), and the part's `end` closes open children as `lost` (`ChildBindings.cs:241-244`). |
+| **6** | The join's fallback draws one child twice; the evidence is on record | **Taken** | Holds in shape. Residue: the generation suffix is the adapter source's word, not a measurement. The count's words assert what no record holds (F8). |
+| **7** | No record keeps a turn | **Wrong in part** (taken) | The session's event log keeps each turn's end as a `turn` event with its stop reason (`Driver/Sessions/Domain/SessionEvents.cs:33-34`). The protocol door emits it at each prompt's response (`Driver/Agents/Acp/Acp.cs:1999-2005`). On that door the adapter holds the parent's turn open until the children it spawned end (`docs/2026-09-28-console2-streams-evidence.md:74-77`). The answer, grouping by the agent process, still stands. The claims built on the finding do not (F4). |
+| **8** | *Last heard* stays still while a child works | **Taken** | Holds. `SessionOutput` keeps no moment today (`ConsoleLine(Sequence, Text)`, `SessionOutput.cs:9`; `Buffer`, `:98-112`), so §3.6 rightly names it new memory. Residues: §3.7's present tense (F13d) and the telling's route (F5). |
+| **9** | *Team at work* and `sessions team` take D203's word and verb | **Taken** | Holds. Residues: the new scope reuses `work`, the word §11 rejects for the read (F9). The D203 note names the wrong design (F13a). |
+| **10** | Rows a and b are layers | **Taken** | Holds: row a runs from the driver to the page, with the measurement as its first step. |
+| 11 | A chat can take a quest | **Taken** | Holds for parts (`Session.Quest ?? Session.TookQuest`). Residue: the units' executors miss a chat's take (F6). |
+| 12 | A null `PublishedBy` is not "by you" | **Taken** | Holds (`QuestUnits.cs:27-29`). |
+| 13 | An untaken quest is shown without its reason | **Taken** | Holds (`Planner.cs:2048-2052`; `Web/data/signals.ts:145-158`). |
+| 14 | Smaller claims | **Taken** | Each holds (`Mcp/QuestTools.cs:37-40`; `DaorisHome.cs:340`; rows cited by id). |
+| 15 | Three Chinese words against the glossary | **Taken** | Holds (段, 账户, *subagent*). Residue: four words it calls the glossary's are not glossary terms (F10). |
+| 16 | The stories use the main area's widths | **Taken** | Holds (`layout.ts` `DOCK`; `AskPanel.stories.tsx:336-342`). |
+| 17 | Row c's proof cannot happen in one run | **Taken** | Holds. A go-on keeps the record and its lineage file (`ChatRunner.cs:2423`; `ChildBindings.cs:176-177`). Residue: the installed proof never draws *ended with its part* (F12). |
+| 18 | A Codex lead's children are seen only when they call | **Taken** | Holds. |
+| 19 | The quests group re-derives the units | **Taken** | Holds in shape. Residue: the inputs `QuestUnits.Read` needs are held by no route (F6). |
+
+### 1. Claims about the code
+
+Most of the design holds as cited. These parts were checked and stand:
+- **The lineage.** `ChildLineage.cs:35`, `:52`, `:118-139`; `ChildBindings.cs:167-178`, `:241-244`, `:268-281`, `:298-323`;
+  `lineage-hook.mjs:24-46`; `ChatRunner.cs:1349-1360`, `:2497`. Nothing outside tests calls `ChildLineage.Read`.
+- **The protocol door.** `AcpStreams.cs:77-204`, with a card for a root's child only (`:169-181`, `:202`). Driven sessions are
+  handed streams as chats are (`Driver.cs:4250`, `ChatRunner.cs:2593`).
+- **The entry rule and its parts.** `SessionEntries.cs:71-121`; `EntryParts.cs:24-45`; `Planner.cs:1716-1767`, `:1889-1893`,
+  `:1964-2060`; D167's amendments.
+- **Waits and units.** `Observation.cs:104-111`, `:164-174`; `QuestExchange.cs:1454-1505`; `QuestUnits.cs:20-41`.
+- **The pipeline.** `HeldAnswers.cs`; `DriverModule.cs:102-107`, `:189-211`; `stateHub.ts:27-100`; `held.ts:24-52`;
+  `StatePublisher.cs` (the scopes and `Publish`); `QuestsStateSlice.cs:128-146`; `HomeWatch.cs:274-280`, `:316-344`;
+  `DriverLoop.cs:806-816`.
+- **The frame and the words.** `placements.ts:9`, `:22`; `layout.ts`'s `DOCK`; the panel's end words (`work.panel.json:16-20`).
+
+These are wrong or incomplete. Each is a finding in §4:
+- **No record keeps a turn, and a background child holds none** (:221-223, :364-365, :674, :849-851; D173.md:5443). The event log
+  keeps each turn's end, and the adapter holds the turn until its children end (F4).
+- **A wake names the session it is about** (:520-523, :539). A ledger wake carries families (`QuestsStateSlice.cs:132-137`). A home
+  wake carries its topic's fixed subject (`HomeWatch.cs:342`). Neither names a session or a file (F1).
+- **A waiting lead's lane part runs alongside** (:118-122, :267, row b). A part planned after the lead's turn ended goes into the
+  lead's tree, and the lead resumes without the part's commits (F2).
+- **"The quests and sessions the driver holds"** (:545-547). No route holds them. The loop's snapshot keeps open and taken quests
+  and active sessions only (`Planner.cs:888-891`, `:1770-1771`) (F6).
+- **"The view and the strip list the same parts in the same order"** (:307-308, :560-561, :812-813). Yet §3.1 orders lead, live,
+  then ended folded (:327) (F7).
+- **"A child's end reads the same in the panel and the view"** (:626-628). This is not so for an end the driver made (F10).
+- **Four words called the glossary's** (:667-669) are not glossary terms (F10).
+- **Smaller claims.** `SessionOutput` "keeps" a moment (:455-456). §9's unmeasured chat holder is answered by the code
+  (:871-872). HomeWatch's limit is given as the watch's (:256, :854-855). The D203 § citations are the coworker design's. Trees are
+  given as a bound on starting (:751-753) (F13).
+
+### 2. The mechanism's holes
+
+- **Parts shown that are not there, or missed that are.**
+  - A lead that waits is `completed`, which is not live (`Web/data/api.ts:423-424`). So the lead rule moves the lead to the
+    lane part it waits on, and the fold hides the waiting part among *earlier parts* (F3).
+  - A quest a chat took, or a teammate took, has no executor in its unit (`QuestUnits.cs:36-37`), so it would read *not taken
+    yet* (F6).
+  - A part opened by a sibling request of the same ask has no routing words (F7).
+  - The hook's unjoined children are counted under words that claim their agent did not announce them (F8).
+  - Helpers and partners keep their own entries (`SessionEntries.cs:77`) and appear once, under *Co-workers*. Brainstorm voices
+    are rightly row f's.
+- **State read from text.** None. The labels are the wire's structured fields. A task's first line may name a path, which
+  changes the lineage file's class (F13f).
+- **The window's thread (NOBLOCK1).** The composition runs off the thread, and nothing polls. But the stream wake goes through
+  `STATE_CHANGED` at ten seconds per working session. Each telling forgets every read under way, in every route (F5), and every
+  composition makes two whole-store service reads (F6).
+- **Routing.** The doctrine's "wait on one of them where your own work cannot go on without it" resumes the lead with the
+  answer in its instruction and not the part's commits. Its start syncs the tree with the line alone (`Driver.cs:533-547`), and
+  only a chain step is synced to its source (`:549-575`) (F2).
+  - Whether the part runs alongside or in the lead's own tree is a race with the planner's look (`Planner.cs:1742-1767`;
+    `WaitingInTree` holds a tree only for a helper's wait, `:2195-2199`, `HelperWaits.cs:36-38`).
+  - The resume after a lane part's done is D79's quest door. D188 point 5 leaves that door unchanged, so no turn D188 forbids
+    is started. Drive, cap and strikes bound the chain, which §6.5 should say.
+  - A chat may hand rows out with no drive precondition (F11).
+- **Names.**
+  - The new scope `work` sits beside the pushed slice `work` (`WorkStateSlice.cs:45`). *Lead* is already the code's name for an
+    entry's first part (`EntryAccepts.EntryLead`, `EntryAccepts.cs:32-44`) (F9).
+  - D203's *team* is kept off the window, as round 1 asked.
+- **Widths, themes, languages.**
+  - The widths and themes hold.
+  - `unannounced`'s zh counts 智能体 where the en counts subagents, and it ends on a dangling 的 (F10).
+  - The hints' three conditions overlap and leave a case unworded (F11).
+
+### 3. The rows
+
+- **Row a, *a chat's subagents seen*,** can be built alone. It is the row that gives the owner the most: it is the owner's case.
+  - Its unit proofs cover the fold, the door's lines, the end words, the join and the timing.
+  - Its installed proof draws *completed*, *lost* and *working*, but never *ended with its part*, which §11 says it names apart
+    (F12).
+  - It sets the scope's name (F9) and the stream wake's route (F5), which every later row inherits.
+- **Row b** can be built after a. Its proof cannot happen as written.
+  - Under a cap of 1, a driven publisher holds the one slot itself (`Planner.cs:904`, `:1301`), so no lane part runs alongside
+    it.
+  - The other repository's session needs that slot to have started. The proof holds only with a chat publisher (CAPCOUNT1) and
+    the other repository's quest started and waiting first (F12).
+  - It must draw a waiting lead as live (F3). Its *runs alongside* is a race once the lead waits (F2).
+- **Row c** holds. Its box wake cannot name the asker through `HomeWatch` (F1).
+- **Row d** cannot refresh as §4 is written. An ask-keyed read is never invalidated by a wake that names sessions (F1).
+- **Row e** depends on no view row for its skill section, which could land first, but only once F2 is answered. Its hints need
+  F11's order.
+- **Row f** holds, and waits on BRAINSTORM1d and AGENTROOM1b.
+
+### 4. Findings
+
+1. **The `work` wake's narrowing by session cannot be carried, and would miss the reads that hold the part that moved.
+   Blocking.**
+   - **What the design says.** §4 tells `work` "naming the session where it is one session's", and has the hub invalidate
+     `SESSION_AT_WORK` "for the sessions named" (:520-523). A lineage move or a box is to tell `work` for that session or its
+     asker (:539).
+   - **What the wakes carry.** A ledger wake's subject is a list of families (`QuestsStateSlice.cs:132-137`). A home topic's
+     wake carries its fixed subject, never which file moved (`HomeWatch.cs:316-344`, `_wake(topic, known.Subject)` at `:342`).
+   - **What narrowing would miss.**
+     - Attended part X's read draws part Y's state, children's count and *last heard*. A wake that names Y leaves X's query
+       alone.
+     - An ask's read is keyed by the ask, so it is never invalidated by a wake that names sessions. Row d's view would go
+       stale.
+   - **Smallest change.** The `work` scope names no session, and the hub asks every held `SESSION_AT_WORK` again. These reads are
+     few (the attended views and the head), and the hub and `HeldAnswers` already coalesce them. Alternatively, name the entry
+     and the ask, and key the hub's entry by them.
+
+2. **The doctrine's wait on a lane part resumes the lead without the part's work, and may give the part the lead's tree.
+   Blocking.**
+   - **Without the part's work.** §6.2 has a driven lead "wait on one of them … where its own work cannot go on without that one"
+     (:717-721).
+     - The resume starts the lead in its own earlier tree (`Planner.cs:1773-1801`), with the answer in its instruction
+       (`QuestExchange.cs:1503-1505`).
+     - That start syncs the tree with the line alone (`Driver.cs:533-547`, LANDSYNC2). Only a chain step going on is synced to
+       its source's submission (`:549-575`).
+     - A lane part that ran alongside lands on the entry's branch, never in the lead's tree. So the lead resumes without the
+       code it waited for.
+   - **The lead's tree.** A D79 wait holds no tree: `WaitingInTree` reads only `ended.awaits-helper` (`Planner.cs:2195-2199`;
+     `HelperWaits.cs:36-38`).
+     - A lane quest the planner looks at after the lead's turn ended therefore goes *into* the lead's tree (`Planner.cs:1762-1767`),
+       with whatever the lead left uncommitted. It does not run alongside.
+     - Which of the two happens is a race between the lead's end and the planner's look.
+   - **Smallest change.** §6.2 says three things.
+     - A lead waits on a lane part for its answer, never for its code. Work the lead's next step builds on is not handed out,
+       or the lead finishes its quest and lets the entry's one *Accept* join the parts.
+     - The lead commits before it waits, since its tree may go to the next part.
+     - The resume after a lane part's done is D79's door, unchanged by D188 point 5, bounded by the drive, the cap and the
+       strikes.
+   - **The alternative.** File a row that syncs a resumed lead's tree with the part it waited on, as `GoOnInSyncAsync` does for
+     a step's source.
+   - Either way, §1.2, §6.1 and row b say that *alongside* holds only while the lead is live, and the view reads *alongside* from
+     the part's own tree.
+
+3. **A waiting part reads as ended, so the lead moves off it and the fold hides it. Blocking.**
+   - **The states.** A lead waiting on its quest (`ended.awaits`) or its helper (`ended.awaits-helper`) is `completed`
+     (`Observation.cs:104-111`, `:164-165`), which is outside the page's active set (`Web/data/api.ts:423-424`).
+   - **What the view does with it.**
+     - §3.1 leaves *live* undefined. Read as active, its lead rule moves the lead to the newest live part (:321-323), which is the
+       very lane part the lead waits on.
+     - Its *This session* folds the waiting lead with the ended parts behind *{{count}} earlier parts* (:327). The person loses
+       the wait the routing produces, exactly where row b's proof looks for it.
+   - **Smallest change.** Define *live* as active, or completed with its quest taken and a wait code (`ended.awaits`,
+     `ended.awaits-helper`). Such a part is never folded, and its own wait is the *Waiting on* line. Row b's proof has a lead
+     waiting on its lane part.
+
+4. **The turn claims are wrong: the event log keeps each turn's end, and the adapter holds the turn for its children. Not
+   blocking.**
+   - **The turn's end.** It is a `turn` event with its stop reason (`SessionEvents.cs:33-34`), emitted at each prompt's
+     response on the protocol door (`Acp.cs:1999-2005`).
+   - **The children.** CONSOLE2 measured that the adapter "held the parent's turn open until the child ended" and defers
+     settling a turn for the subagents it spawned (`docs/2026-09-28-console2-streams-evidence.md:74-77`).
+   - **What follows.** The grouping by process still stands. The lineage is the process's, and a turn boundary would need a join
+     by time across two files. But "No record keeps a turn" (:221), "a background child holds no turn" (:223, :364-365),
+     "*Turn* is not a boundary any record keeps" (:674), §8's reason (:849-851) and D173's note (D173.md:5443) are false.
+   - **Smallest change.** Correct them: the events keep turns, but the lineage keeps none, and the view groups by what the
+     lineage holds. On the protocol door the heading may say *its turn waits for them* where a child is working.
+
+5. **The stream wake goes through `STATE_CHANGED`, which forgets every read under way. Not blocking.**
+   - **The rate.** §4 tells `work` up to once per ten seconds per working session for *last heard* (:540-541).
+   - **The cost.** Every `STATE_CHANGED` makes `DriverModule` forget every shared flight and held work (`DriverModule.cs:102-107`).
+     Every window then re-asks, and each re-ask is a composition with two whole-store reads (F6). The joining that NOBLOCK1's
+     heavy reads rely on weakens at the agents' rate.
+   - **Smallest change.** Push *last heard* as a keyed partition of the `calls` slice, judged from memory as `quiet` is
+     (`CallsStateSlice.cs:37-41`), with no `STATE_CHANGED`. The head and the view read it beside the held answer.
+
+6. **The quests group's inputs are held by no route, and its units miss a chat's or a teammate's take. Not blocking.**
+   - **The inputs.** `QuestUnits.Read` takes `QuestView`s and `SessionRecord`s (`QuestUnits.cs:20`). Routes get them from the
+     service, every quest and every record (`HelpRoutes.cs:293-294`; `WorkUnits.cs:66-71`). The loop's snapshot holds open and
+     taken quests and active sessions only (`Planner.cs:888-891`, `:1770-1771`), not the closed quests and ended parts the view
+     draws.
+   - **The executors.** A unit's executors are records whose `Quest` is the quest (`QuestUnits.cs:36-37`). A quest a chat took
+     (`TookQuest`) or another machine took has none.
+   - **Smallest change.**
+     - §4 names the two service reads per composition, on the held work's task, and their cost per wake.
+     - *Not taken yet* is said only where the quest's status is `Open`. A taken quest with no executor here reads *taken by
+       {conversation}* through `TookQuest`, or *taken on another machine*.
+
+7. **The parts group's order contradicts the strip's, and one way a part joins has no words. Not blocking.**
+   - **The order.** §3.1 draws the lead first, then live parts, then ended ones folded (:327). §2 point 4, §5.1 and row b promise
+     the strip's order (:307-308, :560-561, :812-813). The strip draws parts oldest first, as lineage (`SessionEntries.Read`;
+     `Web/work/head/partsLife.test.ts:11`, `:88`).
+   - **The missing words.** §3.4 has no routing for a part opened by a sibling request of the same ask (`SessionEntries.cs:97`;
+     D167 point 2).
+   - **Smallest change.** Promise the same parts, each once, ordered lead, live, ended. Row b asserts the set and one row each. Add
+     *the ask's request #{quest}*.
+
+8. **The join's residue: the count's words assert what no record holds. Not blocking.**
+   - **The evidence.** The generation suffix is "according to the source" (`console2-streams-evidence.md:61-62`). Whether the
+     hook's `agent_id` on a re-run is the same id or a new one is unknown.
+   - **A new id.** The re-run's hook child joins nothing, and `unannounced` says *its agent did not announce* a child it did
+     announce (:433-434, :644).
+   - **No join at all.** If row a's measure finds that the door's ids never join the hook's, every hook child on an `acp` part
+     is counted. Each child then reads twice, once as a row and once as a count.
+   - **Smallest change.**
+     - Word the count as the record holds it: *{{count}} more seen only by its hook*.
+     - Where the measure finds no join on a door, the hook's children on that door's parts are neither rows nor a count, and
+       D173's note records it.
+
+9. **Two names collide. Not blocking.**
+   - **The scope.** §11 rejects `SESSION_WORK` because "`work` already names the units and `WORK_STATE`" (:911). Then §4 names the
+     scope `work` (:520-521), beside the pushed slice `work` (`WorkStateSlice.cs:45`).
+   - **The lead.** The code's `EntryLead` is an entry's first part, the one its *Accept* is named for (`EntryAccepts.cs:32-44`;
+     `TreesRoutes.cs:681-682`). The view's lead is the attended or the newest live part (:321).
+   - **Smallest change.** Call the scope `atWork`. Say in §3.1 that the view's lead is not `EntryLead`, and name the type's field
+     `attended` or `leadPart`.
+
+10. **Words. Not blocking.**
+    - **(a) Not glossary terms.** Four words §5.4 calls "the glossary's words kept" (:667-669) are none:
+      - co-worker 同事, lead 主导, alongside 并行 and *not driven here* 不在本机驱动;
+      - `glossary.json` holds none of them, and 同事 is in no zh catalogue;
+      - so `names:check -- --strict` holds nothing for them. Add them to *New glossary terms* (co-worker and lead as D203 point 9
+        names them).
+    - **(b) `unannounced`'s zh.** 另有 {{count}} 个智能体未通告的 counts agents, where the en counts subagents, and ends on 的. It
+      changes with F8's wording anyway.
+    - **(c) The driver-made end.** The panel and the conversation's card say a child the driver closed "ended with its session"
+      (`AcpStreams.cs:134-139`; `work.panel.json:20`). The view says *ended with its part* or *lost when its session stopped*.
+      Either say that §5.4's sameness (:626-628) holds for the wire's words only, or let the panel's tab take the lineage's word.
+
+11. **The hints overlap, and the chat's case has no drive precondition. Not blocking.**
+    - **(a) The hints.** No order is given among the three (:738-745).
+      - A repository with no lanes that is not driven gets `not-driven`, which speaks of "a quest to its lanes". That may be the
+        owner's own case.
+      - One with no lanes, driven, without trees of its own gets none of the three.
+      - Give the order: `not-driven`, then `no-lanes`, then `one-at-a-time`. Word each for a repository with no lanes.
+    - **(b) The chat's case.** §6.2 opens the way for "a chat whose person asked it" (:705-707) without the drive the driven case
+      has by construction. A chat in a repository not driven here hands out rows that never start here. Add "and its repository is
+      driven here" to the chat's case.
+
+12. **Two proofs need correcting, and one row can move. Not blocking.**
+    - **(a) Row b under a cap of 1** (:809-814). A driven publisher holds the slot itself (`Planner.cs:904`, `:1301`), so no lane
+      part runs alongside it. The other repository's session needs the slot to have started. Name a chat publisher (CAPCOUNT1)
+      and the order: the other repository's quest taken and waiting, then the lane quests.
+    - **(b) Row a's installed proof** (:798-802) never draws *ended with its part*, a clean end with a child still open. Add it
+      to a run, or say that only `ChildBindingsTests` holds it.
+    - **(c) Row e's skill section** depends on no view row. It may land early, once F2's answer is in it.
+
+13. **Smaller claims. Not blocking.**
+    - **(a) Section citations.** "D203 §6.4", "§8.3", "§3.3" and "§3.4" (:346, :625, :768, :838) are the coworker design's
+      sections, not D203's, which has points. The D203 note's "leaving `work.team.*` to this design's section"
+      (D203.md:208-210) means the coworker design's.
+    - **(b) §9's unmeasured chat holder** (:871-872) is answered by the code. A repository's holder is drawn from every active
+      session, conversations included (`Planner.cs:1290-1292`; CAPCOUNT1's remark, `:1300`). A working chat holds a one-at-a-time
+      repository, so `one-at-a-time` is true of a chat.
+    - **(c) The watch's limit.** HomeWatch has no remove, but its `ChangeWatch` does (`Unwatch`, `ChangeWatch.cs:316-339`). §1.8's
+      and §8's reason (:256, :854-855) is HomeWatch's surface, not the watch's. The fixed part remains a fine choice.
+    - **(d) `SessionOutput`'s moment.** §3.7 says `SessionOutput` "keeps each stream's newest moment … (`SessionOutput.cs:90-110`)"
+      (:455-456). It keeps none (`:9`, `:98-112`). This is §3.6's new memory.
+    - **(e) Trees as a bound.** §6.5 and the D115 note (D115.md:572-573) give "with trees of its own" as part of what bounds a
+      quest. A lane quest to a driven repository without trees still starts, one at a time (`Planner.cs:2010-2021`). Drive and cap
+      bound whether it starts; trees decide whether it runs alongside or after.
+    - **(f) The lineage's twin row.** `.claude/knowledge/twins.md:180` says a lineage value is "kept only where it is shaped as an
+      id … so no path is written". A task's first line can name a path. Row a amends the twin row, and the D173 note says the
+      file becomes transcript-class, kept on this machine (D47).
+
+**Findings: 13, of which 3 are blocking (1-3).**
+
+**Verdict: accept after named changes the steward can check without another read.** Round 2 takes every round-1 finding, and
+each answer holds against the code. F7's premise was wrong in part, but the answer it drew still stands. The foundations now hold:
+- a lane part is a part, drawn once;
+- the `acp` line carries its parent and only the wire's end;
+- the wakes reach the held read through the hub;
+- the routing names its rule and its preconditions.
+
+What remains is narrower:
+- F1: the `work` wake must ask every held `SESSION_AT_WORK` read again (one sentence in §4).
+- F2: §6.2 must say that a lead waits on a lane part for its answer, never its code, and commits before it waits, or file the
+  resume-sync row.
+- F3: §3.1 must count a waiting part as live.
+
+Each is a sentence or a rule that the steward can check against the lines cited, and F4-F13 can be taken in passing. Under D191
+the design still waits on Codex's read.
