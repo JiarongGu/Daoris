@@ -30,6 +30,9 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+        Daoris.Driver.HolderKey.Strip();
+
         // The start, timed stage by stage from the process's start (STARTFAST1): one `start.stages` line, a stopwatch's cost.
         var stages = StartStages.Begin();
 

@@ -11,6 +11,8 @@ public static class Program
 {
     public static int Main(string[] args)
     {
+        // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+        Environment.SetEnvironmentVariable("DAORIS_SUPERVISOR_KEY", null);
         var name = Path.GetFileNameWithoutExtension(Environment.ProcessPath ?? "");
         var folder = Environment.CurrentDirectory;
         if (name.StartsWith("git-remote-", StringComparison.OrdinalIgnoreCase))
