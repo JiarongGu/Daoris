@@ -81,4 +81,34 @@ public static class SessionMoves
         "stopped" => Noted.Of(NoteCodes.StoppedCheckpointStopped, "The person stopped this at a checkpoint."),
         _ => Noted.Of(NoteCodes.StoppedCheckpointMoved, "The person moved this at a checkpoint."),
     };
+
+    /// <summary>
+    /// What the record says when the steward moved a parked session (STEWARDROLE1b, D209 §5.1): its own code, a behavioural sibling of
+    /// the person's, so every reader of the person's reads the steward's and none says the person did it.
+    /// </summary>
+    public static Noted ByTheStewardNoted(string state) => state switch
+    {
+        "completed" => Noted.Of(NoteCodes.StoppedCheckpointFinishedSteward, "The steward finished this at a checkpoint."),
+        _ => Noted.Of(NoteCodes.StoppedCheckpointStoppedSteward, "The steward stopped this at a checkpoint."),
+    };
+
+    /// <summary>
+    /// A parked session finished by the steward (STEWARDROLE1b, D209 §3.1 row 7, D201's finish): never through the request folder and
+    /// with no process ended, moved by the ledger only from <c>awaiting-person</c> in its own step, the record saying the steward did it.
+    /// It neither accepts nor closes its quest: an open or taken quest stays so for the owner's done (finding 14).
+    /// </summary>
+    /// <exception cref="DriverException">The ledger refused the move: the record is no longer waiting on the person.</exception>
+    public static Task<string> FinishByStewardAsync(ServiceClient service, string id, CancellationToken ct = default) =>
+        service.AdvanceAsync(id, "completed", ByTheStewardNoted("completed"), ct: ct, expected: "awaiting-person");
+
+    /// <summary>
+    /// A parked session stopped by the steward (STEWARDROLE1b, D209 §3.1 row 6): moved by the ledger only from <c>awaiting-person</c>,
+    /// with the steward's own note; a process of it this registry runs is let go first.
+    /// </summary>
+    /// <exception cref="DriverException">The ledger refused the move.</exception>
+    public static async Task<string> StopParkedByStewardAsync(Func<string, bool> stop, ServiceClient service, string id, CancellationToken ct = default)
+    {
+        stop(id);
+        return await service.AdvanceAsync(id, "stopped", ByTheStewardNoted("stopped"), ct: ct, expected: "awaiting-person").ConfigureAwait(false);
+    }
 }

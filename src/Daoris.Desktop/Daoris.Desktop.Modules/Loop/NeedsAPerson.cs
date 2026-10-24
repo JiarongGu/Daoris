@@ -282,6 +282,19 @@ public static class NeedsAPerson
             rows.Add(row);
         }
 
+        // STEWARDROLE1b (D209 §5.3): a quest the steward's stop holds waits on a Try again, the steward's or the owner's: *Stopped by the
+        // steward*, the one act of the steward's that can leave something waiting on the owner. Read from the planner's verdict by its code.
+        foreach (var consideration in facts.Considered.Where(consideration => Text(consideration, "verdict") == "Stopped"
+                     && consideration["said"] is JsonObject said && Text(said, "code") == SittingFact.Steward))
+        {
+            var held = quests.GetValueOrDefault(Text(consideration, "quest") ?? "");
+            var row = Row("steward-stopped", Text(consideration, "quest"), Text(consideration, "since") ?? Text(held, "updated"), held is null ? null : Scope(held));
+            row["where"] = Text(consideration, "repository");
+            row["session"] = Text((JsonObject)consideration["said"]!, "session");
+            row["sitting"] = consideration.DeepClone();
+            rows.Add(row);
+        }
+
         // A quest this deployment has no registration for its receiver: no agent will pull it, whatever the receiver's case.
         var registered = facts.Registry.Select(row => Text(row, "repository")?.ToLowerInvariant()).OfType<string>().ToHashSet(StringComparer.Ordinal);
         foreach (var quest in facts.Quests.Where(quest => Text(quest, "status") == "Open" && !registered.Contains((Text(quest, "to") ?? "").ToLowerInvariant())))

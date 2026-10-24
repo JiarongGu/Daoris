@@ -32,22 +32,26 @@ public interface IRoleAct
 }
 
 /// <summary>What an act's handler is handed: its admitted act's id, its role's judge (whose run's memory it registers a pending operation in), and its form.</summary>
-public sealed record RoleActRun(string Id, string Role, string Act, JsonElement Form, StandingConfirmation Judge);
+public sealed record RoleActRun(string Id, string Role, string Act, JsonElement Form, StandingConfirmation Judge)
+{
+    /// <summary>What the steward's acts read and change (STEWARDROLE1b): the driver bridge's own, or a test's stand-in; null for none.</summary>
+    public IStewardWorld? World { get; init; }
+}
 
 /// <summary>
-/// The steward's acts (D209 §3.1, §10): its table, empty in STEWARDROLE1a-i, each later row adding its act behind its own look, and the
-/// set this build offers, which an appointment's <c>acts</c> keeps as its ask named it (§2.3).
+/// The steward's acts (D209 §3.1, §10): its table, each row adding its act behind its own look, and the set this build offers, which an
+/// appointment's <c>acts</c> keeps as its ask named it (§2.3). STEWARDROLE1b adds rows 1 to 8.
 /// </summary>
 public static class StewardActs
 {
-    /// <summary>The acts this build offers a new appointment: none until STEWARDROLE1b.</summary>
-    public static IReadOnlyList<string> Offered { get; } = [];
+    /// <summary>The acts this build offers a new appointment, in §3.1's order: rows 1 to 8 (STEWARDROLE1b).</summary>
+    public static IReadOnlyList<string> Offered { get; } = [.. StewardActRows.All.Select(each => each.Name)];
 
     /// <summary>The set-up act (§3.1 row 12), refused without the appointment's own tick.</summary>
     public const string Setup = "setup";
 
-    /// <summary>The steward's table: none in this build.</summary>
-    public static IReadOnlyDictionary<string, IRoleAct> Table { get; } = new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
+    /// <summary>The steward's table: §3.1 rows 1 to 8.</summary>
+    public static IReadOnlyDictionary<string, IRoleAct> Table { get; } = StewardActRows.All.ToDictionary(each => each.Name, StringComparer.Ordinal);
 
     /// <summary>Each role's table for <c>ROLE_ACT</c>: the steward's; the supervisor's acts are its own routes, so its table here is empty.</summary>
     public static IReadOnlyDictionary<string, IRoleAct> TableOf(string role) =>
@@ -117,6 +121,23 @@ internal sealed class RoleActsMemory
 
     /// <summary>The act's target, or null where no act has the id.</summary>
     public RoleScope? TargetOf(string id) => _acts.TryGetValue(id, out var act) ? new RoleScope(act.Kind, act.Target) : null;
+
+    /// <summary>
+    /// A session's act re-keyed to the quest its session resolved to (STEWARDROLE1b, D209 §5.4: a session resolved to its quest), so an
+    /// owner's mark on the quest cancels it as it cancels the quest's own acts.
+    /// </summary>
+    public void Retarget(string id, RoleScope target)
+    {
+        if (_acts.TryGetValue(id, out var act)) _acts[id] = new Admitted(act.Id, act.Role, act.Act, act.Generation, act.Holder, target.Name, target.Kind)
+        {
+            State = act.State, ByOwner = act.ByOwner,
+        };
+    }
+
+    /// <summary>Whether a live pending operation of any stage acts on <paramref name="target"/> (§3.1a: a start a steward's act caused).</summary>
+    public bool Pending(string target, Func<string, bool> live) =>
+        _operations.Values.Any(each => each.State is RoleOperationStates.Pending or RoleOperationStates.Bound
+                                       && string.Equals(each.Target, target, StringComparison.OrdinalIgnoreCase) && live(each.Generation));
 
     /// <summary>An admitted act refused at its gates' step by the owner's mark: cancelled, never run.</summary>
     public void Refuse(string id)

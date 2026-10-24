@@ -81,6 +81,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'watch.quiet-work': { values: ['minutes', 'works'] },
   'watch.left': { values: [] },
   'ended.stopped': { values: [] },
+  // STEWARDROLE1b (D209 §5.1): the steward's sibling of the person's stop, its own record.
+  'ended.stopped-steward': { values: [] },
   'ended.lost-claim': { values: [] },
   'ended.lost-claim-reopened': { values: [] },
   'ended.handed-over': { values: ['agent'] },
@@ -126,6 +128,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.words-taken': { values: ['quest', 'session'] },
   'started.answer': { values: ['quest', 'session'] },
   'started.released': { values: ['quest', 'session'] },
+  'started.released-steward': { values: ['quest', 'session'] },
   'started.cut-off': { values: ['quest', 'session'] },
   // An open quest carried on in the tree whose session committed work and failed before it took it (RETRYWORK1).
   'started.carried-work': { values: ['quest', 'session'] },
@@ -163,6 +166,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'stopped.abandoned-quest': { values: ['quest'] },
   'stopped.checkpoint-finished': { values: [] },
   'stopped.checkpoint-stopped': { values: [] },
+  'stopped.checkpoint-finished-steward': { values: [] },
+  'stopped.checkpoint-stopped-steward': { values: [] },
   'stopped.checkpoint-moved': { values: [] },
   'stopped.orphan': { values: [] },
   'standing.terminal': { values: [] },

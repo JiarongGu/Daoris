@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, CheckField, Prose, SettingRow } from '../../design/ui';
 import { moment } from '../../locales/format';
@@ -15,10 +15,13 @@ import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm'
  *   ones alone and waits in the ask until the driver answers, a refusal said inside it. With none ticked it cannot be pressed.
  * - **Turn off asks nothing** (design §4.3): its refusal, or a revoke whose record could not be written, is said under the row (R3).
  * - **Not offered yet** (D201's note on order): no *Turn on…*, and the row says why; one on anyway still offers *Turn off*.
+ * - ***Roles*** (STEWARDROLE1b, D209 §2.4, §5.3): where the build offers the steward, the row is renamed *Roles* and holds the
+ *   steward's row (`roles`). D201's grant stays not offered and is not said as a missing feature there; one on anyway still says
+ *   so and offers *Turn off*, as before.
  *
  * A molecule: drawn from props; the domain holds the press (`WiringDomain`).
  */
-export function WiringStanding({ standing, busy = false, refused = null, unwritten = false, onTurnOn, onTurnOff }: {
+export function WiringStanding({ standing, busy = false, refused = null, unwritten = false, onTurnOn, onTurnOff, roles }: {
   standing: StandingConfirmationNow;
   /** A press of it on its way: both buttons wait. */
   busy?: boolean;
@@ -29,6 +32,8 @@ export function WiringStanding({ standing, busy = false, refused = null, unwritt
   /** *Turn on*'s press: the presses ticked, and how to tell the ask how it ended. */
   onTurnOn: (presses: string[], answered: Answered) => void;
   onTurnOff: () => void;
+  /** The roles this build offers, the steward's row (`WiringSteward`): drawn under the row, which is then named *Roles*. */
+  roles?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
@@ -52,11 +57,14 @@ export function WiringStanding({ standing, busy = false, refused = null, unwritt
       : t('settings.daoris.standing.onUndated', { presses })
     : t('settings.daoris.standing.off');
 
+  // Under *Roles*, D201's own grant is said only while it is on: off and not offered, it is no longer a thing the owner can turn on.
+  const grant = !roles || standing.on;
+  const notOffered = !standing.offered && !roles;
   return (
     <SettingRow
-      label={t('settings.daoris.label.standing')}
-      hint={t('settings.daoris.standing.hint')}
-      control={(
+      label={t(roles ? 'settings.daoris.label.roles' : 'settings.daoris.label.standing')}
+      hint={t(roles ? 'settings.daoris.roles.hint' : 'settings.daoris.standing.hint')}
+      control={grant && (
         <>
           <span className="text-small text-ink-soft">{now}</span>
           {standing.on
@@ -67,10 +75,11 @@ export function WiringStanding({ standing, busy = false, refused = null, unwritt
         </>
       )}
     >
-      {(standing.unread || !standing.offered || standing.unwritten || unwritten || refused || asking) && (
+      {(roles || standing.unread || notOffered || standing.unwritten || unwritten || refused || asking) && (
         <div className="grid gap-1.5">
-          {standing.unread && <p className="m-0 text-small text-ink-soft">{t(`settings.daoris.standing.unread.${standing.unread}`)}</p>}
-          {!standing.offered && <p className="m-0 text-small text-ink-soft">{t('settings.daoris.standing.notOffered')}</p>}
+          {roles}
+          {grant && standing.unread && <p className="m-0 text-small text-ink-soft">{t(`settings.daoris.standing.unread.${standing.unread}`)}</p>}
+          {notOffered && <p className="m-0 text-small text-ink-soft">{t('settings.daoris.standing.notOffered')}</p>}
           {(standing.unwritten || unwritten) && <p className="m-0 text-small text-ink-soft">{t('settings.daoris.standing.unwritten')}</p>}
           {refused && <Refused sentence={refused} />}
           {asking && (

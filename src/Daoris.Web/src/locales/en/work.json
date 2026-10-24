@@ -361,6 +361,8 @@
   "work.sitting.SourceReopened_withdrawn": "Quest `#{{quest}}` grew from the work of `#{{other}}`, which you reopened: it is withdrawn, and nothing starts it until you go on with it on the new work or abandon it.",
   "work.sitting.SourceReopened_held": "Quest `#{{quest}}` grew from the work of `#{{other}}`, which you reopened: it is set aside, and nothing carries it on until you go on with it on the new work or abandon it.",
   "work.sitting.TransientHeld_transient": "Its last session's provider kept failing: it waits for your words or Try again.",
+  "work.sitting.Stopped_steward": "The steward stopped session `{{session}}`; Try again, by the steward or the owner, carries it on.",
+  "work.sitting.Blocked_checkout": "Its earlier work is in your checkout, so carrying it on is yours.",
   "work.scope.ask": "ask #{{id}}",
   "work.scope.quest": "quest #{{id}}",
   "work.facts.ran": "ran {{time}}",

@@ -259,6 +259,13 @@ public sealed record PriorSession(
     public bool PersonStopped => string.Equals(State, "stopped", StringComparison.OrdinalIgnoreCase) && !Interrupted;
 
     /// <summary>
+    /// Whether that stop was the steward's (STEWARDROLE1b, D209 §5.1), by its note's code, never its English: a sibling of the person's
+    /// stop that holds its quest the same way, for the steward's or the owner's <i>Try again</i>, and is said as the steward's.
+    /// </summary>
+    public bool StewardStopped => PersonStopped && NoteParts?.Any(part =>
+        part.Code == NoteCodes.EndedStoppedSteward.Code || part.Code == NoteCodes.StoppedCheckpointStoppedSteward.Code) == true;
+
+    /// <summary>
     /// The account it ran on, as its record names it, or null for the tool's own home (D49 §4): what a carry-on is
     /// compared with, to say whether it runs on another account (TOOL4f, D125 §3.5). Served on loopback alone, which is
     /// where this machine's driver reads its own records.
@@ -600,6 +607,15 @@ public sealed record SittingFact(string Code)
 
     /// <summary><see cref="StartVerdict.TransientHeld"/>: its last session's provider kept failing past its bound (AGENTERRORS1a).</summary>
     public const string Transient = "transient";
+
+    /// <summary><see cref="StartVerdict.Stopped"/>: the steward stopped its last session (STEWARDROLE1b, D209 §5.1).</summary>
+    public const string Steward = "steward";
+
+    /// <summary>
+    /// <see cref="StartVerdict.Blocked"/>: a start a steward's act caused would work in the owner's checkout, so it is held for the owner
+    /// (STEWARDROLE1b, D209 §3.1a, <c>held.checkout</c>).
+    /// </summary>
+    public const string Checkout = "checkout";
 }
 
 /// <summary>
@@ -1250,9 +1266,20 @@ public static class Considerations
         IReadOnlyDictionary<string, SignedOutAccounts>? signedOut = null) =>
         plan.Select(c =>
                 c.Verdict == StartVerdict.Start && heldAt.TryGetValue(c.Quest.Id, out var why)
-                    ? c with { Verdict = StartVerdict.Blocked, Reason = why, SignedOut = signedOut?.GetValueOrDefault(c.Quest.Id) }
+                    ? c with
+                    {
+                        Verdict = StartVerdict.Blocked, Reason = why, SignedOut = signedOut?.GetValueOrDefault(c.Quest.Id),
+                        // STEWARDROLE1b (D209 §3.1a): the checkout hold by its code, for the page to word.
+                        Said = why == CheckoutHeld ? new(SittingFact.Checkout) { Session = c.Resumes?.Session } : c.Said,
+                    }
                     : c)
             .ToList();
+
+    /// <summary>
+    /// The hold of a start a steward's act caused that would work in the owner's checkout (STEWARDROLE1b, D209 §3.1a, <c>held.checkout</c>):
+    /// held for the owner, never relocated, until their own Try again or Drive.
+    /// </summary>
+    public const string CheckoutHeld = "Its earlier work is in your checkout, so carrying it on is yours.";
 }
 
 /// <summary>
@@ -1279,8 +1306,12 @@ public static class Planner
     /// design §2.1). Defaults to none, the headless loop's case, so a caller that does not know sits such a step rather than
     /// start one with nowhere to show it.
     /// </param>
+    /// <param name="roles">
+    /// The run's memory of a role's acts (STEWARDROLE1b, D209 §5.1a): a role's release in <see cref="DriverConfig.RoleReleases"/> is a
+    /// release only where it holds that release's operation at <c>released</c>. Null honours none, as a build before the key reads it.
+    /// </param>
     public static IReadOnlyList<Consideration> Plan(
-        Snapshot snapshot, DriverConfig config, SessionWire door = SessionWire.Pipe, bool window = false)
+        Snapshot snapshot, DriverConfig config, SessionWire door = SessionWire.Pipe, bool window = false, IRoleStarts? roles = null)
     {
         var considerations = new List<Consideration>();
         // 🔴 Grouped, never keyed straight off the list: two active sessions in one repository is a
@@ -1518,10 +1549,19 @@ public static class Planner
             && snapshot.LastRun.TryGetValue(quest.Id, out var last)
             && last.PersonStopped
             && !config.Releases(quest.Id, last.Session)
+            && !RoleReleased(quest, last)
             // The stop that handed the quest to another agent is its own release (MIXAGENT1a-ii): the person asked for it.
             && !HandedFrom(quest, last)
                 ? last
                 : null;
+
+        // STEWARDROLE1b (D209 §3.1 row 8, §5.1a, finding 7): the steward's Try again of its own stop, written in the role's own key and
+        // a release only while this run's memory holds its operation at `released`; a file's entry alone releases nothing.
+        bool RoleReleased(QuestView quest, PriorSession last) =>
+            config.RoleReleaseFor(quest.Id) is { Kind: RoleReleaseKinds.Stop } release
+            && string.Equals(release.Session, last.Session, StringComparison.Ordinal)
+            && last.StewardStopped
+            && roles?.Released(quest.Id, release) == true;
 
         // Whether the person's words wait on this quest's record here for it to go on with (see WordsOn).
         bool WrittenTo(QuestView quest) => WordsOn(quest) is not null;
@@ -1618,12 +1658,21 @@ public static class Planner
         // Held by the person's stop (SESSUX1b, D126 §3.3): the sentence says whose stop, what Try again does, and the
         // terminal's door, which names the session since `daoris driver` cannot see this verdict (D50).
         static Consideration Stopped(QuestView quest, PriorSession stop) =>
-            new(quest, StartVerdict.Stopped,
-                $"you stopped session `{stop.Session}`; Try again {(quest.Status == "Taken" ? "carries it on" : "starts it again")} — "
-                + $"`daoris driver retry {quest.Id} --session {stop.Session}`.")
-            {
-                HeldBy = stop,
-            };
+            stop.StewardStopped
+                // STEWARDROLE1b (D209 §5.1): the steward's stop, held the same way and said as the steward's, never as the person's.
+                ? new(quest, StartVerdict.Stopped,
+                    $"the steward stopped session `{stop.Session}`; Try again, by the steward or the owner, "
+                    + $"{(quest.Status == "Taken" ? "carries it on" : "starts it again")} — `daoris driver retry {quest.Id} --session {stop.Session}`.")
+                {
+                    HeldBy = stop,
+                    Said = new(SittingFact.Steward) { Session = stop.Session },
+                }
+                : new(quest, StartVerdict.Stopped,
+                    $"you stopped session `{stop.Session}`; Try again {(quest.Status == "Taken" ? "carries it on" : "starts it again")} — "
+                    + $"`daoris driver retry {quest.Id} --session {stop.Session}`.")
+                {
+                    HeldBy = stop,
+                };
 
         // A cut-off (D80): this machine's session took the quest and failed before closing it — timed
         // out, refused, crashed, or ended by the sweep or a shutdown (D104) — so the take is still here
@@ -1654,6 +1703,8 @@ public static class Planner
                               + $"`{cutOff.Session}` stopped where that work was reopened."
                         : cutOff.PersonStopped && snapshot.Handed.TryGetValue(quest.Id, out var handed) && HandedFrom(quest, cutOff)
                             ? $"carrying on in `{quest.To}` — session `{cutOff.Session}` was handed over to {handed.Agent}."
+                        : cutOff.StewardStopped
+                            ? $"carrying on in `{quest.To}` — the steward stopped session `{cutOff.Session}`, and it was released."
                         : cutOff.PersonStopped
                             ? $"carrying on in `{quest.To}` — you stopped session `{cutOff.Session}`, and released it."
                         // LIMITRESUME1b: an open quest whose session an account's limit cut off before it took the quest.

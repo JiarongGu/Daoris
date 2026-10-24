@@ -424,7 +424,10 @@ describe('sittingSentence', () => {
       ['WaitsForOpinion', { code: 'steps', quest: 'q1', state: null }, 'Waits for a second opinion on the step before it, `#q1`, before it starts: it is not judged yet.', /上一步 `#q1` 的第二意见：还没有评定/],
       ['SourceReopened', { code: 'withdrawn', quest: 'q1' }, 'Quest `#9a9492` grew from the work of `#q1`, which you reopened: it is withdrawn, and nothing starts it until you go on with it on the new work or abandon it.', /它已撤回/],
       ['SourceReopened', { code: 'held', quest: 'q1' }, 'Quest `#9a9492` grew from the work of `#q1`, which you reopened: it is set aside, and nothing carries it on until you go on with it on the new work or abandon it.', /它已搁置/],
-      ['TransientHeld', { code: 'transient', session: 's1' }, "Its last session's provider kept failing: it waits for your words.", /服务方一直出错：它在等你的话/],
+      ['TransientHeld', { code: 'transient', session: 's1' }, "Its last session's provider kept failing: it waits for your words or Try again.", /服务方一直出错：它在等你的话或「重试」/],
+      // STEWARDROLE1b (D209 §5.1, §3.1a): the steward's stop held for a Try again, and a start held out of the owner's checkout.
+      ['Stopped', { code: 'steward', session: 's1' }, 'The steward stopped session `s1`; Try again, by the steward or the owner, carries it on.', /^管家停止了会话 `s1`；管家或所有者「重试」会让它继续。$/],
+      ['Blocked', { code: 'checkout', session: 's1' }, 'Its earlier work is in your checkout, so carrying it on is yours.', /^它之前的工作在你的检出里，所以由你来让它继续。$/],
     ];
 
     it.each(cases)('words %s by its code in English and in 中文 (%#)', async (verdict, said, english, chinese) => {

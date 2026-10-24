@@ -260,6 +260,10 @@ const SAID: Record<string, readonly string[]> = {
   SourceReopened: ['withdrawn', 'held'],
   // AGENTERRORS1a (D210 §5.1, §8's `held.transient`): its last session's provider kept failing past its bound.
   TransientHeld: ['transient'],
+  // STEWARDROLE1b (D209 §5.1): the steward's stop, held for a Try again by the steward or the owner; never said as the person's.
+  Stopped: ['steward'],
+  // STEWARDROLE1b (D209 §3.1a): a start held because its earlier work is in the owner's checkout (`held.checkout`).
+  Blocked: ['checkout'],
 };
 
 /**

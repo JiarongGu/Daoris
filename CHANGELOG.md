@@ -28,6 +28,14 @@ with the version and date at release.
   passed Windows' 260 characters in a session's tree, deeper than your checkout, showed as deleted in the session's `git status`,
   and an agent's `git add -A` could commit the deletion. It is handed always, as Daoris's own git calls always pass it, and the start
   reads no git configuration for it.
+- The steward's acts are built and the steward is still not offered (STEWARDROLE1b, D209). Nothing you use changes until its
+  activation. Once it is, the steward you appoint under Settings → This Daoris → *Roles* can drive a repository or stop driving it,
+  give its sessions trees of their own, hold or resume it, stop a quest's session, finish one that waits with nothing said to it, and
+  try again a quest it stopped itself. It never accepts or closes a quest. It drives only a repository whose landing does not push and
+  whose sessions open trees of their own, and Daoris never starts a session in your checkout because of its act. Each act is recorded
+  as the steward's, never as yours, and listed in *Notifications* with your own press that reverses it. A quest it stopped shows in
+  *What needs you* as *Stopped by the steward* until a *Try again*, its or yours. `daoris-driver steward` is its verb, run only in its
+  tab.
 - The steward's door is built and no role is offered yet (STEWARDROLE1a-i, D209). Nothing you use changes until the steward's
   activation. Once a role is offered, *Appoint…* opens a tab of Daoris's terminal panel that runs Daoris's own pinned Claude Code,
   checked against the bytes its install verified, never the `claude` on your PATH. It starts on a configuration Daoris writes, with

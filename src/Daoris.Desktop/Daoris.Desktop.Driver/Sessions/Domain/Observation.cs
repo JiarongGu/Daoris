@@ -390,6 +390,12 @@ public static class Observation
     public static Noted Stopped => Noted.Of(NoteCodes.EndedStopped, "the person stopped it.");
 
     /// <summary>
+    /// The steward's stop (STEWARDROLE1b, D209 §5.1): its own record, never the person's with a suffix, handed in at the driver's own
+    /// stop so nothing on disk carries its attribution. It holds its quest for <i>Try again</i> as the person's stop does.
+    /// </summary>
+    public static Noted StoppedBySteward => Noted.Of(NoteCodes.EndedStoppedSteward, "the steward stopped it.");
+
+    /// <summary>
     /// State E's note line (SESSWATCH1a, D200): its agent's process exited, something it started held its output, and Daoris ended what
     /// was left. Never the conclusion: the run concludes by its exit.
     /// </summary>

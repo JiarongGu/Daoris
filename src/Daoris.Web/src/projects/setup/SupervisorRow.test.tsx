@@ -27,6 +27,7 @@ import { SupervisorRow, type SupervisorSetup } from './SupervisorRow';
 const SINCE = '2026-10-24T14:02:00Z';
 const LIVE: AppointmentNow = {
   role: 'supervisor', repository: 'engine', holder: 'terminal', since: SINCE, dormant: false, answers: 3, scope: 'repository:engine', holderId: 'h1',
+  acts: [], setup: false,
 };
 const FOUND: AppointmentNow = { ...LIVE, dormant: true, answers: 0, holderId: null };
 

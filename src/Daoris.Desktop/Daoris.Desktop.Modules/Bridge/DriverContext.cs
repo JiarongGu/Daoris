@@ -78,6 +78,17 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     private IOwnerScopes? _ownerScopes;
 
     /// <summary>
+    /// What the steward's acts read and change (STEWARDROLE1b, D209 §3.1): the bridge's own loop and service; a test names a stand-in,
+    /// so no act starts a process. Set by <see cref="DriverModule"/>'s initializer, as <see cref="OwnerScopes"/> is.
+    /// </summary>
+    public IStewardWorld? StewardWorld { get; set; }
+
+    /// <summary>The steward's acts' world: the one named, else the bridge's own.</summary>
+    public IStewardWorld StewardWorldOf() => StewardWorld ?? (_stewardWorld ??= new DriverStewardWorld(this));
+
+    private IStewardWorld? _stewardWorld;
+
+    /// <summary>
     /// What This Daoris's read is handed (WIRING1b), changed: null is the window's own; a test hands the account's and the
     /// machine's variables of its own and sizes of its own, so it reads nothing of the machine it runs on. Set by
     /// <see cref="DriverModule"/>'s initializer, as <see cref="SetupWorlds"/> is.

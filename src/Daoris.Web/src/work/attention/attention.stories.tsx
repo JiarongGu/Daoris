@@ -36,7 +36,7 @@ const ACTS: Required<AttentionActs> = {
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
-  parked: () => {}, 'parked-quest': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
+  parked: () => {}, 'parked-quest': () => {}, 'steward-stopped': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
   departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {}, 'account-wait': () => {}, 'signed-out': () => {},
   'set-up': () => {}, opinion: () => {}, helper: () => {}, answer: () => {}, 'hand-over': () => {}, quiet: () => {},
 };
@@ -135,6 +135,17 @@ const PARKED_QUEST: Attention = {
   detail: '3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris driver retry 7a82cc` starts it again once you know why.',
 };
 
+/** A quest the steward stopped (STEWARDROLE1b, D209 §5.3): its session said, its one act Try again; its door the quest's page. */
+const STEWARD_STOPPED: Attention = {
+  id: '7a82cd',
+  kind: 'steward-stopped',
+  title: 'Cap hydration per frame',
+  where: 'engine',
+  session: 's1a2b3c4',
+  since: at(12),
+  detail: 'The steward stopped session `s1a2b3c4`; Try again, by the steward or the owner, carries it on.',
+};
+
 /** An ask waiting on a person (INT4d): its place is its circle, named as one; its declarations named two receivers. */
 const PROPOSAL: Attention = {
   id: '7c1e9a04b2d5',
@@ -231,7 +242,7 @@ export default meta;
  * two counted.
  */
 const BAND: Attention[] = [
-  TRUST_ROW, UNREAD, PARKED_QUEST, GO_AHEAD, PARKED, ACCOUNT_WAIT, SIGNED_OUT,
+  TRUST_ROW, UNREAD, PARKED_QUEST, STEWARD_STOPPED, GO_AHEAD, PARKED, ACCOUNT_WAIT, SIGNED_OUT,
   PROPOSAL, { ...PROPOSAL, id: '1b2c3d4e5f6a', title: 'Fix the pipeline’s knowledge check', since: at(170), publishTo: ['engine'], detail: 'The declarations propose engine. Nothing is published until you choose.' },
   DEPARTURE, SET_UP_ROW, OPINION_ROW, OPINION_NONE, RULE,
   ...REVIEWS,
@@ -296,7 +307,7 @@ export const BandStaleGoAheadsNarrowChinese: StoryObj = {
  * Each row that is a step waiting on the person with its door into the run (WORKFLOW1c, the workflow design §7): *Workflow*,
  * quieter than the row's own, on a parked quest, a go-ahead, a parked session, a departure, a set-up and the reviews.
  */
-const IN_A_RUN: ReadonlySet<Attention['kind']> = new Set(['parked-quest', 'go-ahead', 'parked', 'departure', 'set-up', 'review']);
+const IN_A_RUN: ReadonlySet<Attention['kind']> = new Set(['parked-quest', 'steward-stopped', 'go-ahead', 'parked', 'departure', 'set-up', 'review']);
 export const BandWithRuns: StoryObj = {
   render: () => (
     <Main width={1180}>

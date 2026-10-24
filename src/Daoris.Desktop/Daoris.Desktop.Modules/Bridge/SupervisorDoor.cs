@@ -74,6 +74,8 @@ public static class SupervisorDoor
                 DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         }
 
+        // STEWARDROLE1b (§5.1a): the steward's releases the revoke cancelled are withdrawn from the driver's file, the owner's kept.
+        if (loop.Pipe is { } pipe) RoleStarts.Sweep(pipe.StandingConfirmation, loop.ConfigPath);
         loop.Nudge();
     }
 
@@ -89,11 +91,36 @@ public static class SupervisorDoor
     /// dependent conditions are judged again (<see cref="IRoleAct.UnderGatesAsync"/>). A dependency or a record that cannot be read
     /// refuses the act <c>unread</c>. The gates are held across the handler and released as it returns.
     /// </remarks>
-    public static async Task<object?> ActAsync(InstancePipe? pipe, System.Text.Json.JsonElement? payload, CancellationToken ct, IOwnerScopes? scopes = null)
+    public static async Task<object?> ActAsync(
+        InstancePipe? pipe, System.Text.Json.JsonElement? payload, CancellationToken ct, IOwnerScopes? scopes = null, IStewardWorld? world = null)
     {
         if (PipeDoor.Role is not { ActId: { } id, Role: { } role, Act: { } act } judged || pipe is null) return Acted(false, SupervisorWhy.NotHolder, null);
         var judge = pipe.StandingConfirmation;
         var target = judge.ActTarget(id);
+
+        // STEWARDROLE1b (§5.4: a session resolved to its quest): a session's act is its quest's, its gates and `owner-set` the quest's;
+        // a session that names no quest is no quest's own session, refused before any gate.
+        if (target is { Kind: OwnerKinds.Session } session)
+        {
+            string? resolved;
+            try
+            {
+                resolved = scopes is null ? null : await scopes.QuestOfSessionAsync(session.Name, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not (OperationCanceledException or OutOfMemoryException))
+            {
+                resolved = null;
+            }
+
+            if (resolved is null)
+            {
+                judge.ActDone(id);
+                return Acted(false, StewardWhy.NotQuestSession, judged.Roles);
+            }
+
+            target = new RoleScope(OwnerKinds.Quest, resolved);
+            judge.Retarget(id, target);
+        }
         IReadOnlyList<RoleScope>? gates = target is null ? [] : await DependenciesAsync(target, scopes, ct).ConfigureAwait(false);
         if (gates is null)
         {
@@ -131,7 +158,7 @@ public static class SupervisorDoor
                 return Acted(false, RoleWhy.NotRole, judged.Roles);
             }
 
-            var run = new RoleActRun(id, role, act, form.Form, judge);
+            var run = new RoleActRun(id, role, act, form.Form, judge) { World = world };
             if (await row.UnderGatesAsync(run, ct).ConfigureAwait(false) is { } refused) return Acted(false, refused, judged.Roles);
             var answer = await row.RunAsync(run, ct).ConfigureAwait(false);
             return new { Done = true, Why = (string?)null, Answer = answer, Roles = judged.Roles ?? [], Brief = RolesBrief.Revision };

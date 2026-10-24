@@ -19,6 +19,7 @@ import { LineField, type RepositoryLine } from '../../settings/repository/Lines'
 import { type OpinionEdit, OpinionField, opinionRowSays, opinionSummary, type RepositoryOpinion } from '../../settings/repository/Opinions';
 import { type RepositoryReview, type ReviewEdit, ReviewField, reviewRowSays, reviewSummary } from '../../settings/repository/Reviews';
 import { Button, CheckField, Chip, Icon, Segmented, SelectField, SettingRow } from '../../design/ui';
+import { clockOf } from '../../locales/format';
 import { type SupervisorSetup, SupervisorRow } from './SupervisorRow';
 import type { Answered } from '../../work/InlineConfirm';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
@@ -83,6 +84,11 @@ export type Driving = {
   heldStanding?: boolean;
   /** The supervisor's appointment here (SUPERVISOR1a-ii, D208 §5), beside the hold; absent on a shell older than it. */
   supervisor?: SupervisorSetup;
+  /**
+   * When the steward last set this repository's driving (STEWARDROLE1b, D209 §5.1), from this run's memory: the newest of its drive,
+   * undrive, trees, hold and resume here that still stands. Null or absent where none does.
+   */
+  stewardSet?: string | null;
 };
 
 /** Its line and how its work lands (WSR1, WSR2), as the driver resolves them, and the presses that set or clear them. */
@@ -211,7 +217,7 @@ const JOIN = ' · ';
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function RepositorySetup({ repository, driving, work, access, heavy, landed, sessions, reach, busy = false, open, onOpenPlugin }: RepositorySetupProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const marked = (value: string, source: 'repository' | 'workspace' | 'daoris') =>
     source === 'repository' ? value : t(`projects.setup.marked.${source}`, { value });
 
@@ -328,6 +334,11 @@ export function RepositorySetup({ repository, driving, work, access, heavy, land
             control={<CheckField checked={driving.drivable} disabled={busy} onChange={driving.onDrive} label={t('projects.driver.drive')} hideLabel />}
           >
             {driving.note && <p className="m-0 text-small text-ink-soft">{driving.note}</p>}
+            {driving.stewardSet && (
+              <p data-steward-set="" className="m-0 text-small text-ink-soft">
+                {t('projects.setup.stewardSet', { time: clockOf(driving.stewardSet, undefined, i18n.language) })}
+              </p>
+            )}
           </SettingRow>
           {/* A hold appears only once the repository is driven: a hold on nothing is noise. */}
           {driving.drivable && (

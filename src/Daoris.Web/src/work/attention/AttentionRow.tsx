@@ -22,7 +22,7 @@ import { TrustAsk } from '../waits/TrustAsk';
 
 /** The kinds of thing *What needs you* lists (design §6.2), each in one of its three groups (`ATTENTION_GROUP`). */
 export type AttentionKind =
-  | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
+  | 'parked' | 'parked-quest' | 'steward-stopped' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'set-up' | 'rule' | 'unanswerable'
   | 'review' | 'opinion' | 'helper' | 'hand-over' | 'work' | 'permission' | 'answer' | 'confirmation' | 'space' | 'git-held'
   | 'quiet' | 'helper-ended';
@@ -41,6 +41,9 @@ export type AttentionKind =
  * proposal to widen what agents may do (PERM2, D74), which never applies without the person. A
  * `parked-quest` row is a quest parked on its failed sessions here (SESSUX1i, D126 §4.6), which only the
  * person's *Try again* starts again.
+ *
+ * **STEWARDROLE1b added `steward-stopped`** (D209 §5.3): a quest the steward stopped, waiting on a *Try again*, the steward's or the
+ * person's; its one act is the parked quest's *Try again*, and its row names the session stopped and the quest's repository.
  *
  * **UX6c added three** (design §6.2): a `go-ahead` a session asked on an ask (KNOWUSE1a), which holds that session's
  * act; a `departure`, a done held for the person's yes because it departed from what they required (DRIFT1d2); and

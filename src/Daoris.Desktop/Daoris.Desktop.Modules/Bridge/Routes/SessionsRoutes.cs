@@ -628,7 +628,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [DriverRoute("ROLE_ACT")]
     [Publishes("ROLE_ACT", StateScopes.Sessions | StateScopes.Driver)]
     private async Task<object?> RoleActAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await SupervisorDoor.ActAsync(_loop.Pipe, request.Payload, cancellationToken, _context.OwnerScopesOf()).ConfigureAwait(false);
+        await SupervisorDoor.ActAsync(_loop.Pipe, request.Payload, cancellationToken, _context.OwnerScopesOf(), _context.StewardWorldOf()).ConfigureAwait(false);
 
     // What waits for the supervisor's holder (SUPERVISOR1a-ii, D208 §3.2): the parked sessions here with a recorded question and no
     // decision on it, in a repository a live appointment names, each with its generation. Told by event (NOBLOCK1): it reads the
@@ -639,6 +639,14 @@ public sealed class SessionsRoutes(DriverContext context)
     [ByEvent("SUPERVISOR_WAITING")]
     private async Task<object?> SupervisorWaitingAsync(IpcRequest request, CancellationToken cancellationToken) =>
         new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
+
+    // The steward's acts this run, newest first, and its live appointment's generation (STEWARDROLE1b, D209 §3.3), what its holder's verb
+    // reads before it proves an act: from the judge's memory alone, so it answers at once. A read naming no key:
+    // `{ generation, acts: [{ id, act, repository, quest, session, at, standing, waiting }] }`, the generation null where none is live.
+    [DriverRoute("STEWARD_ACTS")]
+    private object? StewardActs(IpcRequest request) => _loop.Pipe?.StandingConfirmation is { } judge
+        ? new { Generation = judge.LiveGeneration(Roles.Steward), Acts = judge.StewardActsNow() }
+        : new { Generation = (string?)null, Acts = (IReadOnlyList<StewardActNow>)[] };
 
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "

@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type DownloadCleared, refusedNoRoute, type SpacePlan, type SpaceStarted, standingOf, useClearDownloads, useDriver, useOpenLogFolder,
-  useSetStandingConfirmation, useSpaceFree, useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
+  useSetAppointment, useSetStandingConfirmation, useSpaceFree, useSystemDownloads, useSystemSpace, useSystemWiring, useUpdateState,
 } from '../bridge/shell';
 import { useSetKeep } from '../bridge/driver';
 import { failure, useErrorNotify } from '../design/ui';
 import { sentence } from '../locales/format';
-import { standingSaid } from '../person/standing';
+import { standingSaid, stewardAppointmentSaid } from '../person/standing';
 import type { StarterDoor } from '../help/starters';
 import { DomainLoading } from './DomainLoading';
 import type { SettingsDomainProps } from './domains';
@@ -17,6 +17,7 @@ import { WiringOlder } from './wiring/WiringHead';
 import { WiringSpace } from './wiring/WiringSpace';
 import { WiringSpaceFree } from './wiring/WiringSpaceFree';
 import { WiringStanding } from './wiring/WiringStanding';
+import { WiringSteward } from './wiring/WiringSteward';
 
 /** Where each file's door goes: the read names the place by a word, and the page knows its door (§3.4). */
 const FILE_DOORS: Record<string, StarterDoor> = {
@@ -77,6 +78,10 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
   const setStanding = useSetStandingConfirmation();
   const [offRefused, setOffRefused] = useState<string | null>(null);
   const [offUnwritten, setOffUnwritten] = useState(false);
+  // STEWARDROLE1b (D209 §5.3): the steward's appointment under *Roles*, where the build offers it; what its last press came to.
+  const setAppointment = useSetAppointment();
+  const [stewardStarted, setStewardStarted] = useState(false);
+  const [stewardRefused, setStewardRefused] = useState<string | null>(null);
   const asked = useRef(false);
   const older = query.isError && refusedNoRoute(query.error);
   // An older shell's refusal is the page's state, not a failure to tell the person of.
@@ -168,6 +173,39 @@ export function WiringDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify
           busy={setStanding.isPending}
           refused={offRefused}
           unwritten={offUnwritten}
+          roles={standing.stewardOffered && (
+            <WiringSteward
+              steward={{
+                appointment: standing.appointments.find((each) => each.role === 'steward') ?? null,
+                offered: standing.stewardActsOffered,
+                acts: standing.stewardActs.length,
+                holders: standing.holders,
+                started: stewardStarted,
+                busy: setAppointment.isPending,
+                refused: stewardRefused,
+                onAppoint: (answered, setup, share) => {
+                  setStewardStarted(false);
+                  setStewardRefused(null);
+                  setAppointment.mutate({ role: 'steward', on: true, setup, share }, {
+                    onSuccess: (answer) => {
+                      if (!answer.done) return answered.refused(stewardAppointmentSaid(t, answer.why, answer.message));
+                      setStewardStarted(true);
+                      answered.done();
+                    },
+                    onError: (error) => answered.refused(sentence(error)),
+                  });
+                },
+                onTurnOff: () => {
+                  setStewardStarted(false);
+                  setStewardRefused(null);
+                  setAppointment.mutate({ role: 'steward', on: false }, {
+                    onSuccess: (answer) => { if (!answer.done) setStewardRefused(stewardAppointmentSaid(t, answer.why, answer.message)); },
+                    onError: (error) => setStewardRefused(sentence(error)),
+                  });
+                },
+              }}
+            />
+          )}
           onTurnOn={(presses, answered) => {
             setOffRefused(null);
             setOffUnwritten(false);

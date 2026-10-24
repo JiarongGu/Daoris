@@ -684,6 +684,8 @@ public sealed partial class HelpCoverageTests
         ("work", "useAnswerGoAhead", null, AnswerGoAhead),
         ("work", "useAcceptQuest", null, new Door("accept", "accept")),
         ("work", "useRetryQuest", null, new Door("setting", "retry")),
+        // STEWARDROLE1b (D209 §5.4): the steward's line's reverse press of its stop, the owner's own Try again.
+        ("notifications", "useRetryQuest", null, new Door("setting", "retry")),
         ("work", "useHandOffPress", null, new Door("hand", "hand")),
         // PAUSE1f-b (D132 §7.4): the pages' Pause… and a session's Pause ask… and Pause quest…, and every Resume.
         ("work", "usePauseWork", null, new Door("pause", "pause")),
@@ -1050,6 +1052,11 @@ public sealed partial class HelpCoverageTests
             "it grants or revokes the person's standing confirmation, which lets a terminal's presses run without the card; it is made "
             + "only in the window, with the person's own press, and no verb, door or setting grant reaches it, since an agent that could "
             + "propose it would be one command from the grant (D201 point 5). Turning it off asks nothing, and is the person's too.")),
+        // STEWARDROLE1b (D209 §5.3): This Daoris's Roles, the steward's Appoint… and Turn off.
+        ("wiring", "useSetAppointment", null, new Exempt(
+            "it appoints the steward, which makes development's management acts on the owner's behalf, or turns it off; it is made only in "
+            + "the window, with the owner's own press, and no verb, door, card or setting grant appoints it (D209 §2.3, D208 §2.1 point 1). "
+            + "Turning it off asks nothing, and is the owner's too.")),
         // CACHECLEAR1: the Downloads row's clearing, listed first and then pressed (D88's shape).
         // KEEP1d: each kind's keep rule from the Disk space card's Change…, as `setting keep` proposes it.
         ("wiring", "useSetKeep", null, new Door("setting", "keep")),

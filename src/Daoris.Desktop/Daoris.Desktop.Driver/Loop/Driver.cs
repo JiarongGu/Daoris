@@ -1025,7 +1025,9 @@ public sealed class Driver(
         using (Stages.Begin("plan"))
         {
             snapshot = snapshot with { Starting = [.. reservedBefore.Union(Context.Runs.Reserved)] };
-            plan = Planner.Plan(snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null);
+            plan = Planner.Plan(
+                snapshot, passes > 0 ? config with { Cap = Math.Max(0, config.Cap - passes) } : config, Door(), window: Context.Browser is not null,
+                roles: Context.Roles);
         }
 
         var progressed = false;
@@ -2194,6 +2196,27 @@ public sealed class Driver(
         }
 
         var workTree = opened?.Path ?? resumedIn ?? joinedIn ?? root;
+
+        // 🔴 STEWARDROLE1b (D209 §3.1a, Codex's final read, finding 2): a start a steward's act caused works only in a tree this home
+        // opened, judged here where its directory is actually chosen, since a new part resumes its record's directory and an earlier
+        // session may have worked in the checkout. Otherwise it is held for the owner, never relocated, and the steward's operation on it
+        // ends; the owner's own Try again or Drive makes it theirs, and the start then runs as before.
+        if (Context.Roles is { } roles && roles.Caused(quest.To, quest.Id) && !Context.Trees.Holds(workTree))
+        {
+            await fresh.LetGoAsync().ConfigureAwait(false);
+            roles.HeldForOwner(quest.Id);
+            return Hold(Considerations.CheckoutHeld);
+        }
+
+        // STEWARDROLE1b (§5.1a, finding 8): the steward's Try again is consumed here, its final consumer, in one step of the run's memory
+        // after every await above; a revoke or the owner's act since cancelled it, and the start runs nothing of the steward's.
+        if (start.Resumes is { StewardStopped: true } released && config.RoleReleaseFor(quest.Id) is { Kind: RoleReleaseKinds.Stop } release
+            && string.Equals(release.Session, released.Session, StringComparison.Ordinal) && !config.Releases(quest.Id, released.Session)
+            && Context.Roles?.Take(quest.Id, release) != true)
+        {
+            await fresh.LetGoAsync().ConfigureAwait(false);
+            return Hold($"the steward's Try again of session `{released.Session}` was withdrawn before it started, so nothing of the steward's starts it.");
+        }
 
         // FABRIC-CUTOVER1g (D190's binding moment, the cutover design §8; amends D157 point 11): the run is bound here, once its tree is
         // open and before its take names a closure graph below, so the take names the graph its run is bound to and no look binds it later
@@ -3484,6 +3507,9 @@ public sealed class Driver(
                 ? Noted.Of(
                     NoteCodes.StartedBroughtForward,
                     $"carries `#{quest.Id}` on: you brought the work of session `{session}` forward after its take lost", facts)
+            // STEWARDROLE1b (D209 §5.1): the steward's stop released, said as the steward's in the resumed brief, never as the person's.
+            : resumes.StewardStopped
+                ? Noted.Of(NoteCodes.StartedReleasedSteward, $"carries `#{quest.Id}` on: the steward stopped session `{session}`, and it was released", facts)
             : resumes.PersonStopped
                 ? Noted.Of(NoteCodes.StartedReleased, $"carries `#{quest.Id}` on: you stopped session `{session}`, and released it", facts)
             // RETRYWORK1: an open quest carried on in the tree its failed session committed work in before it took the quest.

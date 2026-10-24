@@ -3,7 +3,9 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
-import type { AppointmentAnswer, AppointmentNow, HolderNow, StandingAnswer, StandingConfirmationNow, StandingUnread } from '../person/standing';
+import type {
+  AppointmentAnswer, AppointmentNow, HolderNow, StandingAnswer, StandingConfirmationNow, StandingUnread, StewardActNow,
+} from '../person/standing';
 import { call, confirmBound, refusedNoRoute } from './call';
 import { notPushed } from './state/slices';
 
@@ -247,7 +249,33 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     stewardOffered: shaped.stewardOffered === true,
     appointments: appointmentsOf(shaped.appointments),
     holders: holdersOf(shaped.holders),
+    // STEWARDROLE1b (D209 §2.3, §5.1): an older shell's missing fields read as none.
+    stewardActsOffered: strings(shaped.stewardActsOffered),
+    stewardActs: stewardActsOf(shaped.stewardActs),
   };
+}
+
+const text = (value: unknown): string | null => (typeof value === 'string' && value.length > 0 ? value : null);
+
+/** This run's steward acts (STEWARDROLE1b, D209 §5.1), in the order sent, each read field by field; one with no id, act or time is left out. */
+function stewardActsOf(raw: unknown): StewardActNow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((each): StewardActNow[] => {
+    if (typeof each !== 'object' || each === null) return [];
+    const shaped = each as Record<string, unknown>;
+    const id = text(shaped.id);
+    const act = text(shaped.act);
+    const at = text(shaped.at);
+    if (id === null || act === null || at === null) return [];
+    return [{
+      id, act, at,
+      repository: text(shaped.repository),
+      quest: text(shaped.quest),
+      session: text(shaped.session),
+      standing: shaped.standing === true,
+      waiting: shaped.waiting === true,
+    }];
+  });
 }
 
 /**
@@ -272,6 +300,8 @@ function appointmentsOf(raw: unknown): AppointmentNow[] {
       answers: typeof shaped.answers === 'number' && Number.isFinite(shaped.answers) ? shaped.answers : 0,
       scope,
       holderId: typeof shaped.holderId === 'string' && shaped.holderId.length > 0 ? shaped.holderId : null,
+      acts: strings(shaped.acts),
+      setup: shaped.setup === true,
     }];
   });
 }
@@ -297,14 +327,17 @@ function holdersOf(raw: unknown): HolderNow[] {
  * role to a living holder; false turns that one appointment off at once. The scope is `repository:<name>` for a repository's role and
  * `machine` for the steward's; `share` is a later *Appoint…*'s choice while a holder lives, `own` or that holder's id. Sent from the
  * window alone (the census refuses it to a terminal). The answer is read field by field, so a refusal keeps its code; it never
- * carries a key. The route declares `sessions` and `driver`, so the state hub reads both again (D169 point 6).
+ * carries a key. The route declares `sessions` and `driver`, so the state hub reads both again (D169 point 6). The steward's ask
+ * sends its set-up tick as `setup` (STEWARDROLE1b, D209 §2.3), off unless the owner ticked it there; the supervisor's sends none.
  */
 export function useSetAppointment() {
   return useMutation({
-    mutationFn: async ({ role, repository, on, share }: { role: string; repository?: string; on: boolean; share?: string }): Promise<AppointmentAnswer> => {
+    mutationFn: async ({ role, repository, on, share, setup }: {
+      role: string; repository?: string; on: boolean; share?: string; setup?: boolean;
+    }): Promise<AppointmentAnswer> => {
       const scope = repository ? `repository:${repository}` : 'machine';
       const answer = await call<{ done?: boolean; why?: string | null; message?: string | null }>(
-        'SET_APPOINTMENT', { role, scope, holder: 'terminal', on, ...(share ? { share } : {}) });
+        'SET_APPOINTMENT', { role, scope, holder: 'terminal', on, ...(share ? { share } : {}), ...(setup !== undefined ? { setup } : {}) });
       return { done: answer?.done === true, why: answer?.why ?? null, message: answer?.message ?? '' };
     },
   });

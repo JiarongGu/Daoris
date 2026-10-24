@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
+import { clockOf } from '../../locales/format';
 import { code } from '../../test/code';
 import { START } from '../../workflow/fixtures';
 import { SETUP_DEFAULTS, SETUP_OWN } from '../fixtures';
@@ -134,6 +135,21 @@ describe("Setup's Driving", () => {
     await i18n.changeLanguage('zh');
     rerender(<Tooltip.Provider><RepositorySetup {...SETUP_DEFAULTS} driving={held} /></Tooltip.Provider>);
     expect(screen.getByText('由终端按长期确认暂停')).toBeInTheDocument();
+  });
+
+  /** STEWARDROLE1b (D209 §5.1): a driving choice the steward set, from this run's memory, says so in the section. */
+  it('says a setting the steward set, at its time, and nothing where none stands', async () => {
+    const at = '2026-10-25T10:02:00Z';
+    const { rerender } = draw({ ...SETUP_DEFAULTS, driving: { ...SETUP_DEFAULTS.driving!, stewardSet: at } });
+    await userEvent.click(head('Driving'));
+    expect(within(section('Driving')).getByText(`Set by the steward at ${clockOf(at)}`)).toBeInTheDocument();
+
+    rerender(<Tooltip.Provider><RepositorySetup {...SETUP_DEFAULTS} driving={{ ...SETUP_DEFAULTS.driving!, stewardSet: null }} /></Tooltip.Provider>);
+    expect(within(section('Driving')).queryByText(/steward/)).toBeNull();
+
+    await i18n.changeLanguage('zh');
+    rerender(<Tooltip.Provider><RepositorySetup {...SETUP_DEFAULTS} driving={{ ...SETUP_DEFAULTS.driving!, stewardSet: at }} /></Tooltip.Provider>);
+    expect(screen.getByText(`管家于 ${clockOf(at, undefined, 'zh')} 设置`)).toBeInTheDocument();
   });
 });
 

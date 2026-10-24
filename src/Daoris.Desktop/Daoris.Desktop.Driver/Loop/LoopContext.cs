@@ -184,6 +184,12 @@ internal sealed class LoopContext(
     public SessionTrees Trees { get; } = new(home);
 
     /// <summary>
+    /// The run's memory of a role's acts as a start reads it (STEWARDROLE1b, D209 §3.1a, §5.1a), handed by the application holding the
+    /// judge; null for a loop with none, whose starts no role caused and which honours no role's release.
+    /// </summary>
+    public IRoleStarts? Roles { get; set; }
+
+    /// <summary>
     /// The adapters this tick spawns with: the build's, plus whatever the plugins read this tick declare (D64 §3). Set once per tick,
     /// before any start is run.
     /// </summary>

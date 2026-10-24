@@ -20581,3 +20581,18 @@ words waiting for the next look (`Driver.ModelRefused`); a `choice-not-offered` 
 strip and both heads, with the code's sentence, its account here and none on a teammate's mirror; the head chip's stories at the
 three widths in en and zh. The proof's first half runs on a pipe stand-in (`ModelRefusalTickTests`). **Remaining, as
 MODELROLE1c4:** the installed proof. Detail: D205's MODELROLE1c3 note; `docs/2026-10-24-modelrole1c-build.md`.
+
+## STEWARDROLE1b — the steward's immediate acts and their records, built dark (2026-10-25, D209)
+
+> **STEWARDROLE1b — the steward's immediate acts and their records** (modules, driver, web; after 1a-i and 1a-ii; dark). The design's §3.1 rows 1 to 8 (drive refused `no-tree` where the repository opens no session trees, and every start a steward's act causes held out of the checkout at the start, `held.checkout`; undrive, trees on, hold, resume, stop, finish, *Try again* on its own stop), the steward's releases in a role-only `roleReleases` no older reader takes as the owner's, *Try again*'s deferred authority proved, finish neither accepting nor closing its quest, the steward's own move notes with every reader updated by code, *Set by the steward*, *Roles* and the *Notifications* line. Proof: the design's §10 row 1b.
+
+(Row 1b of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6a7d452f729f`.)
+
+**Outcome** 2026-10-25, dark: `StewardOffered` stays false, so every steward's act is refused `not-offered` and the page draws
+nothing of it. The modules: `ROLE_ACT`'s steward table holds the eight acts in their exact forms (`StewardActRows`), each judged again
+under its gates, with `STEWARD_ACTS` and `STATE`'s `stewardActsOffered` and `stewardActs`. The driver: the steward's own move notes,
+`roleReleases` in `driver.json` that no owner's reader takes, the start's `held.checkout`, and `daoris-driver steward`. The web:
+*Roles* with the steward's ask, the *Notifications* line with the owner's reverse presses, *Set by the steward*, *Stopped by the
+steward* in *What needs you*, and 管家 in the glossary. Proof: `RoleActTests`, `RoleReleasesTests`, `StewardNotesTests`,
+`StewardCommandTests`, `PlannerTests`, `AttentionStateSliceTests`, `CheckoutHoldTickTests` and the page's tests in en and zh, each
+case seen failing first. Detail and readings: D209's STEWARDROLE1b note.

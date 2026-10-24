@@ -14,6 +14,7 @@ import { SupervisorLine } from './SupervisorLine';
 const SINCE = '2026-10-24T14:02:00Z';
 const LIVE: AppointmentNow = {
   role: 'supervisor', repository: 'engine', holder: 'terminal', since: SINCE, dormant: false, answers: 2, scope: 'repository:engine', holderId: 'h1',
+  acts: [], setup: false,
 };
 
 describe("Notifications' supervisor line", () => {
