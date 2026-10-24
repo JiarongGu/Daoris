@@ -955,9 +955,13 @@ internal sealed class TreeSetAside(TreeContext context)
                 removing.Add(path.Path);
                 passedOver.Add(above);
             }
-            else if (path.State == SlimStates.Removed && path.Ended is { } end)
+            else if (path.State == SlimStates.Removed && path.Ended is { } stamped)
             {
-                ended[above] = ended.TryGetValue(above, out var was) && was > end.UtcDateTime ? was : end.UtcDateTime;
+                // The manifest keeps a moment to the millisecond, floored, and the folder's own time to 100 ns: a removal that ended within
+                // the millisecond it is stamped with leaves the folder above later than its stamp, so the stamp is read as that millisecond's end
+                // (KEEPSIZE1b, seen once the read under `.going` met a folder's time the first read had not yet).
+                var end = stamped.UtcDateTime.AddMilliseconds(1);
+                ended[above] = ended.TryGetValue(above, out var was) && was > end ? was : end;
             }
             else if (path.State == SlimStates.Removed)
             {
