@@ -38,7 +38,15 @@ public sealed class TransientRetryTickTests : IDisposable
 
     public void Dispose()
     {
+        // The stand-in's own failures are no case's subject: one it logged fails the case it happened under, whatever it asserted.
+        var failed = File.Exists(Log) ? Heard().Where(line => line["method"]!.GetValue<string>() == "stand-in-failed").Select(line => line.ToJsonString()).ToList() : [];
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        Assert.True(failed.Count == 0, $"the stand-in agent failed on its own: {string.Join(" | ", failed)}");
+    }
+
+    private static string Faults(SaidStandIn service)
+    {
+        lock (service.Faults) return string.Join(" | ", service.Faults);
     }
 
     private string Log => Path.Combine(_home, "agent.log");
@@ -70,19 +78,63 @@ public sealed class TransientRetryTickTests : IDisposable
         };
     }
 
-    /// <summary>Passes each wait the run makes on the held clock, once it waits: <paramref name="minutes"/>, one wait at a time.</summary>
-    private static async Task PassAsync(MovedClock clock, Task tick, params int[] minutes)
+    /// <summary>The waits each session's record has said and this test has passed, by the session (the determinism of the waits).</summary>
+    private readonly Dictionary<string, int> _passed = new(StringComparer.Ordinal);
+
+    /// <summary>Passes each wait of <c>s1</c>'s run: <see cref="PassAsync(MovedClock, Task, string, int[])"/>.</summary>
+    private Task PassAsync(MovedClock clock, Task tick, params int[] minutes) => PassAsync(clock, tick, "s1", minutes);
+
+    /// <summary>
+    /// Passes each wait <paramref name="session"/>'s run makes on the held clock, one at a time, by the record's own state, never by
+    /// time (the steward's determinism, <c>.claude/knowledge/held-clocks.md</c>): the record's next quiet <c>transient</c> event says
+    /// the wait began and when its try goes, and the clock holds a timer due at exactly that moment, which says the run waits on it.
+    /// Only then is the clock moved, to that moment and no other; the wait's length is the schedule's, <paramref name="minutes"/>.
+    /// </summary>
+    private async Task PassAsync(MovedClock clock, Task tick, string session, params int[] minutes)
     {
         foreach (var each in minutes)
         {
-            await Poll.Until(() => clock.Waiting || tick.IsCompleted, () => "the run never waited to try again", Poll.Patience);
-            Assert.False(tick.IsCompleted, "the tick ended where its run should have waited");
-            clock.Advance(TimeSpan.FromMinutes(each));
+            var wait = _passed.GetValueOrDefault(session) + 1;
+            DateTimeOffset? until = null;
+            await Poll.Until(
+                () =>
+                {
+                    until = Waits(session).Skip(wait - 1).FirstOrDefault();
+                    return (until is { } at && clock.Pending.Contains(at)) || tick.IsCompleted;
+                },
+                () => $"{session}'s wait {wait} never began on the held clock\n{Seen(clock)}", Poll.Patience);
+            Assert.False(tick.IsCompleted, $"the tick ended where {session}'s run should have waited ({wait})\n{Seen(clock)}");
+            Assert.Equal(TimeSpan.FromMinutes(each), until!.Value - clock.GetUtcNow());
+            _passed[session] = wait;
+            clock.Advance(until.Value - clock.GetUtcNow());
         }
     }
 
+    /// <summary>
+    /// Passes every wait the look's runs make until it ends, each to the moment the clock's earliest timer is due: for a run whose
+    /// waits the case does not count (a refused resume's briefed fallback, which meets the 529 as every first prompt here does).
+    /// </summary>
+    private static async Task DrainAsync(MovedClock clock, Task tick)
+    {
+        while (!tick.IsCompleted)
+        {
+            await Poll.Until(() => clock.Pending.Count > 0 || tick.IsCompleted, () => "the look never ended", Poll.Patience);
+            if (clock.Pending is [var due, ..]) clock.Advance(due - clock.GetUtcNow());
+        }
+    }
+
+    /// <summary>When each of the session's waits ends, as its record's quiet <c>transient</c> events said them, in order.</summary>
+    private IReadOnlyList<DateTimeOffset> Waits(string session) =>
+        [.. Events(session).Where(e => e.Kind == SessionEventKind.Transient && e.Next is not null).Select(e => e.Next!.Value)];
+
+    /// <summary>Everything a failure needs said: the record, its events' kinds and notes, what the agent heard and the clock's timers.</summary>
+    private string Seen(MovedClock clock, string session = "s1") =>
+        $"clock: {clock.GetUtcNow():O}, pending: {string.Join(", ", clock.Pending.Select(at => at.ToString("O")))}\n"
+        + $"events: {string.Join(" | ", Events(session).Select(e => $"{e.Kind}{(e.Next is { } next ? $" next {next:O}" : "")}{(e.Try is { } number ? $" try {number}" : "")}{(e.Text is { Length: > 0 } text ? $" {text[..Math.Min(text.Length, 120)]}" : "")}"))}\n"
+        + $"heard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
+
     private string Seen(SaidStandIn service, object? look = null) =>
-        $"look: {look}\nrecord: {service.Record("s1")}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
+        $"look: {look}\nrecord: {service.Record("s1")}\nfaults: {Faults(service)}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
 
     /// <summary>
     /// 🔴 Shape 1 (the design §0): the prompt fails <c>-32603</c> with <c>data.errorKind: "overloaded"</c> twice, then the agent works.
@@ -360,7 +412,8 @@ public sealed class TransientRetryTickTests : IDisposable
 
         service.Close("q2", "Done", "POST /notes takes { text }.");
         var tick = driver.RunOnceAsync();
-        await PassAsync(clock, tick, 1);
+        // The resume is a session of its own (D79), whose record says its wait.
+        await PassAsync(clock, tick, "s2", 1);
         var look = await tick.WaitAsync(Poll.Patience);
 
         var seen = Seen(service, string.Join(" | ", look.Events));
@@ -424,7 +477,7 @@ public sealed class TransientRetryTickTests : IDisposable
 
         var method = mode.EndsWith("-load", StringComparison.Ordinal) ? "session/load" : "session/resume";
         Assert.Equal(2, Heard().Count(line => line["method"]!.GetValue<string>() == method));
-        Assert.True(AccountCooling.Read(_home, clock.GetUtcNow()).Count > 0, Seen(service));
+        Assert.True(AccountCooling.Read(_home, DateTimeOffset.UtcNow).Count > 0, Seen(service));
         Assert.Equal(6, Prompts().Length);
     }
 
@@ -450,12 +503,7 @@ public sealed class TransientRetryTickTests : IDisposable
         await PassAsync(clock, resuming, 1);
         // The stub's own sign-in runs in its own home whatever its reading (OWNSPACE1a), so the refused resume's briefed fallback starts
         // a session of its own, which meets the 529 as every first prompt here does: its waits are passed too.
-        while (!resuming.IsCompleted)
-        {
-            await Poll.Until(() => clock.Waiting || resuming.IsCompleted, () => "the look never ended", Poll.Patience);
-            if (!resuming.IsCompleted) clock.Advance(TimeSpan.FromMinutes(16));
-        }
-
+        await DrainAsync(clock, resuming);
         await resuming.WaitAsync(Poll.Patience);
         var method = mode.EndsWith("-load", StringComparison.Ordinal) ? "session/load" : "session/resume";
         Assert.Equal(2, Heard().Count(line => line["method"]!.GetValue<string>() == method));
@@ -463,7 +511,7 @@ public sealed class TransientRetryTickTests : IDisposable
             AccountReads.Of(_home, "stub").Own?.Login == LoginState.Out,
             $"reads: {(File.Exists(AccountReads.PathOf(_home)) ? File.ReadAllText(AccountReads.PathOf(_home)) : "none")}\n"
             + $"notes: {string.Join(" | ", Events("s1").Where(e => e.Kind == SessionEventKind.Note).TakeLast(4).Select(e => e.Text))}\n{Seen(service)}");
-        Assert.False(AccountCooling.Read(_home, clock.GetUtcNow()).Count > 0, "an access refusal cooled an account");
+        Assert.False(AccountCooling.Read(_home, DateTimeOffset.UtcNow).Count > 0, "an access refusal cooled an account");
         Assert.Equal(6, Prompts().Count(prompt => prompt["conversation"]!.GetValue<string>() == "conv-s1"));
     }
 
@@ -495,8 +543,19 @@ public sealed class TransientRetryTickTests : IDisposable
             const session = process.env.DAORIS_SESSION_ID;
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
             const heard = (what) => appendFileSync(log, JSON.stringify({ ...what, session }) + '\n');
-            const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
-              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+            // The stand-in's own call to the service never decides a case (the steward's determinism): one the machine's load failed
+            // is made again until the service answers it, and one that never is says so in the log rather than ending the agent.
+            const respond = async (body) => {
+              for (let attempt = 1; ; attempt++) {
+                try {
+                  return await fetch(`${url}/api/quests/q1/respond`, {
+                    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+                } catch (error) {
+                  if (attempt >= 100) { heard({ method: 'stand-in-failed', what: body.action, error: String(error) }); throw error; }
+                  await new Promise((done) => setTimeout(done, 50));
+                }
+              }
+            };
             const overloaded = 'API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.';
             let conversation = null;
             let resumed = false;
@@ -508,7 +567,10 @@ public sealed class TransientRetryTickTests : IDisposable
             const say = (text) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
               update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } } });
             const lines = createInterface({ input: process.stdin });
-            lines.on('line', async (line) => {
+            // A failure of the stand-in's own is in the log, never the agent's process ending under a case (its stream's end is a case's
+            // own subject); every case's failure message shows the log.
+            lines.on('line', (line) => handle(line).catch((error) => heard({ method: 'stand-in-failed', what: 'frame', error: String(error) })));
+            const handle = async (line) => {
               const frame = JSON.parse(line);
               if (frame.method === 'initialize') {
                 send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1,
@@ -584,7 +646,7 @@ public sealed class TransientRetryTickTests : IDisposable
               } else if (frame.id !== undefined && frame.method) {
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
               }
-            });
+            };
             // stdin closed: the ending. Never process.exit (STUB1): the process ends when the loop drains.
             lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });
             """);

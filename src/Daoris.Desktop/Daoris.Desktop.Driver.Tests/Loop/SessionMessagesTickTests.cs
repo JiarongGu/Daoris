@@ -1062,14 +1062,37 @@ public sealed class SessionMessagesTickTests : IDisposable
                 try { context = await _listener.GetContextAsync(); }
                 catch (Exception error) when (error is HttpListenerException or ObjectDisposedException or InvalidOperationException) { return; }
 
-                var (status, body) = Answer(context.Request);
-                var bytes = Encoding.UTF8.GetBytes(body);
-                context.Response.StatusCode = status;
-                context.Response.ContentType = "application/json";
-                await context.Response.OutputStream.WriteAsync(bytes);
-                context.Response.Close();
+                // 🔴 One request never ends the serving (AGENTERRORS1, the tick tests' determinism): an answer that throws is a 500 kept in
+                // Faults, and a client gone before its answer is written costs that answer alone. Escaping the loop, either left every
+                // later request of the case unanswered, a hang its patience said as anything but this.
+                (int Status, string Body) answer;
+                try
+                {
+                    answer = Answer(context.Request);
+                }
+                catch (Exception error)
+                {
+                    lock (Faults) Faults.Add($"{context.Request.HttpMethod} {context.Request.Url?.AbsolutePath}: {error.GetType().Name}: {error.Message}");
+                    answer = (500, System.Text.Json.JsonSerializer.Serialize(new { error = error.Message }));
+                }
+
+                try
+                {
+                    var bytes = Encoding.UTF8.GetBytes(answer.Body);
+                    context.Response.StatusCode = answer.Status;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.OutputStream.WriteAsync(bytes);
+                    context.Response.Close();
+                }
+                catch (Exception error) when (error is HttpListenerException or IOException or ObjectDisposedException or InvalidOperationException)
+                {
+                    lock (Faults) Faults.Add($"{context.Request.HttpMethod} {context.Request.Url?.AbsolutePath}: its answer was not written: {error.Message}");
+                }
             }
         }
+
+        /// <summary>What the stand-in could not answer, or not write, in the order it met them: said by a failing case, empty when none.</summary>
+        public List<string> Faults { get; } = [];
 
         /// <summary>
         /// A record as the wire answers it to this machine: its words waiting, and the person's joined as `answer` (a helper's answer is
