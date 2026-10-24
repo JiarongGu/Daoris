@@ -288,12 +288,15 @@ public static class SpaceFree
     private static void SetAside(SpaceFreeWorld world, IReadOnlyList<SpaceAsked> units, SpaceTally tally, CancellationToken ct)
     {
         var trees = new SessionTrees(world.Home);
-        var root = trees.SetAsideRoot;
+        var roots = trees.SetAsideRoots;
         var same = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
         var folders = new Dictionary<SpaceAsked, string>();
         foreach (var unit in units)
         {
-            if (Under(root, unit.Id, 3) is { } folder) folders[unit] = folder;
+            // KEEPSIZE1a: a listed id names its folder at whichever place of the trees holds it, the new first; where neither does, the new
+            // place's path, which the removal finds gone.
+            var at = roots.Select(root => Under(root, unit.Id, 3)).ToList();
+            if (at[0] is not null) folders[unit] = at.FirstOrDefault(Directory.Exists) ?? at[0]!;
             else tally.Keep(SpaceKept.Refused, unit.Early);
         }
 

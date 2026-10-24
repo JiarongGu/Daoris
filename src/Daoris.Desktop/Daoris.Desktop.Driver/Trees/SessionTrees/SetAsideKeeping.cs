@@ -48,8 +48,9 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
     internal IReadOnlyList<SetAsideListed> List(KeepPolicy policy, DateTimeOffset now)
     {
         var listed = new List<SetAsideListed>();
-        if (!Directory.Exists(setAside.SetAsideRoot)) return listed;
-        foreach (var workspace in Directory.EnumerateDirectories(setAside.SetAsideRoot))
+        // KEEPSIZE1a: every place of the trees entry, the folders set aside before the home's layout moved included.
+        foreach (var root in setAside.SetAsideRoots.Where(Directory.Exists))
+        foreach (var workspace in Directory.EnumerateDirectories(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
@@ -101,8 +102,9 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
     /// <summary>The slims due: each manifest at <c>moved</c> an hour after its move; true where the budget or a stop ended the pass.</summary>
     private bool SlimDue(DateTimeOffset now, Func<bool> spent, List<SlimResult> slims, Func<string, bool>? only)
     {
-        if (!Directory.Exists(setAside.SetAsideRoot)) return false;
-        foreach (var workspace in Directory.EnumerateDirectories(setAside.SetAsideRoot))
+        // KEEPSIZE1a: every place; a folder at the old place set aside before KEEP1a has no manifest, so it is never slimmed.
+        foreach (var root in setAside.SetAsideRoots.Where(Directory.Exists))
+        foreach (var workspace in Directory.EnumerateDirectories(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var file in Directory.EnumerateFiles(repository, "*" + SlimManifest.Suffix).ToList())
         {

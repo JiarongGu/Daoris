@@ -542,8 +542,8 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
                 code == 0 ? branch.Trim() : branch == SessionTree.NotATree ? branch : "(unreadable)"));
         }
 
-        var aside = SetAsides.SetAsideRoot;
-        if (!Directory.Exists(aside)) return found;
+        // KEEPSIZE1a: the folders moved aside at every place of the trees, the old place's included.
+        foreach (var aside in SetAsides.SetAsideRoots.Where(Directory.Exists))
         foreach (var workspace in Directory.EnumerateDirectories(aside))
         foreach (var repository in Repositories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
@@ -733,6 +733,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
 
     /// <inheritdoc cref="TreeSetAside.SetAsideRoot"/>
     public string SetAsideRoot => SetAsides.SetAsideRoot;
+
+    /// <inheritdoc cref="TreeSetAside.SetAsideRoots"/>
+    internal IReadOnlyList<string> SetAsideRoots => SetAsides.SetAsideRoots;
 
     /// <inheritdoc cref="TreeSetAside.PurgeSetAside(DateTimeOffset, TimeSpan)"/>
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after) => SetAsides.PurgeSetAside(now, after);
