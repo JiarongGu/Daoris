@@ -1456,6 +1456,15 @@ if (mode == ServiceMode.Local)
         }
     });
 
+    // History's age applied to the finished trees' records no session names (KEEPSIZE1b, Codex's read of the branch, finding 8): the driver's
+    // daily clear of history sends its cutoff, and each such record kept at or before it goes by its own `at`. Machine-local, as the post is.
+    app.MapPost("/api/trees/record/age", async (ComposedService s, HttpContext http, WorkRecordAgeRequest body, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        if (body.Before is not { } before) return Results.BadRequest(new ErrorResponse("before is required — the history age's cutoff"));
+        return Results.Ok(new WorkRecordAgeResponse(await s.Records.ForgetOrphansAsync(before, body.Workspace, ct)));
+    });
+
     // Deleting a conversation that served no quest (SESSUX1f, D126 §5.4): the ledger judges the record's half and removes
     // it, and the driver, which judged the machine's half first, removes what this machine kept of it after this yes. LOCAL
     // mode only, as D95's deletes are: a person deletes on their own machine, and a session record does not travel as a

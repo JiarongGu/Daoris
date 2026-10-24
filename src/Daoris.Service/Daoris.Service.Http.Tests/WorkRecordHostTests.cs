@@ -49,6 +49,26 @@ public sealed class WorkRecordHostTests(LocalHost host) : IClassFixture<LocalHos
         Assert.Equal(["c1", "c2"], named.GetProperty("commits").EnumerateArray().Select(each => each.GetString()));
     }
 
+    /// <summary>
+    /// History's age through its door (Codex's read of the branch, finding 8): a record no session names, kept before the cutoff, goes by its
+    /// own <c>at</c>; a cutoff missing is a 400, and off this machine nothing answers.
+    /// </summary>
+    [Fact]
+    public async Task A_record_no_session_names_goes_by_history_s_age()
+    {
+        var posted = await host.PostAsync("/api/trees/record", Record("keeper-age-20261001T100000000Z", host.RootOf("keeper-age-nobody")));
+        Assert.Equal(200, posted.Status);
+
+        var early = await host.PostAsync("/api/trees/record/age", new { before = DateTimeOffset.UtcNow.AddDays(-1) });
+        var due = await host.PostAsync("/api/trees/record/age", new { before = DateTimeOffset.UtcNow.AddMinutes(1), workspace = "default" });
+
+        Assert.Equal((200, 200), (early.Status, due.Status));
+        Assert.Equal(0, early.Json.GetProperty("cleared").GetInt32());
+        Assert.True(due.Json.GetProperty("cleared").GetInt32() >= 1);
+        Assert.Equal(400, (await host.PostAsync("/api/trees/record/age", new { })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/trees/record/age", new { before = DateTimeOffset.UtcNow }, DaorisHost.OffMachine)).Status);
+    }
+
     /// <summary>A part missing is a 400; a caller off this machine is answered nothing.</summary>
     [Fact]
     public async Task A_partial_record_is_refused_and_off_the_machine_nothing_answers()

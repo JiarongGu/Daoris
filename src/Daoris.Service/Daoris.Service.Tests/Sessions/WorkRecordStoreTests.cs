@@ -206,6 +206,59 @@ public sealed class WorkRecordStoreTests : IAsyncLifetime
         Assert.Equal(0, await _records.CountAsync());
     }
 
+    /// <summary>
+    /// 🔴 Codex's read of the branch, finding 9: a handle opened before a newer build stamped the store refuses from then on, read inside its
+    /// operation, as one opened after does.
+    /// </summary>
+    [Fact]
+    public async Task An_already_open_handle_refuses_once_a_newer_build_stamps_the_store()
+    {
+        await _records.PostAsync(Post(), Now);
+        await using (var stamp = _connection.CreateCommand())
+        {
+            stamp.CommandText = $"UPDATE work_record_version SET version = {WorkRecordStore.Version + 1}";
+            await stamp.ExecuteNonQueryAsync();
+        }
+
+        await Assert.ThrowsAsync<NewerWorkRecordsException>(() => _records.PostAsync(Post("another"), Now));
+        await Assert.ThrowsAsync<NewerWorkRecordsException>(() => _records.FindAsync("default", "Owner", "s-1-20261024T090000000Z"));
+        Assert.Equal(0, await _records.CountAsync());
+        Assert.Equal(1, await Count("work_records"));
+    }
+
+    /// <summary>Codex's read of the design, finding 6: the landing the driver captured before the move is kept, and read back as posted.</summary>
+    [Fact]
+    public async Task A_records_landing_is_kept_as_posted()
+    {
+        var landed = Now.AddHours(-5);
+        await _records.PostAsync(Post() with { Landing = new WorkRecordLanding("feature/q1-work", "main", landed, null) }, Now);
+        await _records.PostAsync(Post("s-2-20261024T090000000Z") with { LandingWhy = "no landing is recorded for its work unit" }, Now);
+
+        var read = await _records.FindAsync("default", "Owner", "s-1-20261024T090000000Z");
+        Assert.Equal(new WorkRecordLanding("feature/q1-work", "main", landed, null), read!.Post.Landing);
+        var none = await _records.FindAsync("default", "Owner", "s-2-20261024T090000000Z");
+        Assert.Equal((null, "no landing is recorded for its work unit"), (none!.Post.Landing, none.Post.LandingWhy));
+    }
+
+    /// <summary>
+    /// 🔴 Codex's read of the branch, finding 8: a record no session names ages by its own <c>at</c> under history's age, with no session cleared
+    /// beside it; one a session still names, or kept after the cutoff, stays.
+    /// </summary>
+    [Fact]
+    public async Task A_record_no_session_names_ages_by_its_own_at()
+    {
+        await _records.PostAsync(Post("s-old-20261001T090000000Z"), Now.AddDays(-40));
+        await _records.PostAsync(Post("s-new-20261020T090000000Z"), Now.AddDays(-2));
+        await Ran("base0", Now.AddHours(-3));
+        await _records.PostAsync(Post("s-named-20261024T090000000Z"), Now.AddDays(-40));
+
+        Assert.Equal(1, await _records.ForgetOrphansAsync(Now.AddDays(-30), null));
+
+        Assert.Null(await _records.FindAsync("default", "Owner", "s-old-20261001T090000000Z"));
+        Assert.NotNull(await _records.FindAsync("default", "Owner", "s-new-20261020T090000000Z"));
+        Assert.NotNull(await _records.FindAsync("default", "Owner", "s-named-20261024T090000000Z"));
+    }
+
     private HistoryDesk Desk() => new(_quests, _sessions, _asks, _service);
 
     private async Task<Quest> Closed(string title = "Finished")

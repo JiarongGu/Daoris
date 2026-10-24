@@ -627,17 +627,26 @@ public sealed record ResolvedKeepRequest(List<string>? Resolved);
 public sealed record WorkRecordPostRequest(
     string? Workspace, string? Repository, string? Folder, string? Tree, DateTimeOffset? Moved, string? Unit, string? Branch, string? Line,
     WorkRecordHold? Hold, string? Tip, string? GrewFrom, string? Ref, List<WorkRecordCommit>? Commits, string? CommitsUnread,
-    WorkRecordLeft? Left, bool Whole = false)
+    WorkRecordLeft? Left, bool Whole = false, WorkRecordLanding? Landing = null, string? LandingWhy = null)
 {
     /// <summary>The post, where every part the record is keyed or read by is here; null otherwise.</summary>
     public WorkRecordPost? ToPost() =>
         Blank(Workspace) || Blank(Repository) || Blank(Folder) || Blank(Tree) || Moved is not { } moved || Blank(Branch) || Hold is null
         || Blank(Hold.Kind) || Blank(Tip) || Left is null || Left.Names is null
             ? null
-            : new(Workspace!, Repository!, Folder!, Tree!, moved, Unit, Branch!, Line, Hold, Tip!, GrewFrom, Ref, Commits, CommitsUnread, Left, Whole);
+            : new(Workspace!, Repository!, Folder!, Tree!, moved, Unit, Branch!, Line, Hold, Tip!, GrewFrom, Ref, Commits, CommitsUnread, Left, Whole)
+            {
+                Landing = Landing is { Branch.Length: > 0 } ? Landing : null,
+                LandingWhy = LandingWhy,
+            };
 
     private static bool Blank(string? text) => string.IsNullOrWhiteSpace(text);
 }
+// KEEPSIZE1b (Codex's read of the branch, finding 8): the finished trees' records no session names, kept at or before `before`, cleared by
+// history's age on their own `at`; `workspace` narrows it to one circle.
+public sealed record WorkRecordAgeRequest(DateTimeOffset? Before, string? Workspace = null);
+// The records it cleared.
+public sealed record WorkRecordAgeResponse(int Cleared);
 // The record as kept: whether this post kept it (false for a second post of a kept identity, which wrote nothing), when, and its sessions.
 public sealed record WorkRecordResponse(bool Kept, DateTimeOffset At, IReadOnlyList<WorkRecordSession> Sessions);
 // `Interrupted` (D104): a move to `stopped` that was not the person's. `Limit` (TOOL4c): a move to `failed`

@@ -16,6 +16,12 @@ public sealed record WorkRecordCommit(string Id, string Subject, IReadOnlyList<W
 /// </summary>
 public sealed record WorkRecordHold(string Kind, string? Where, string? Form);
 
+/// <summary>
+/// The landing that carried a finished tree's work, captured by the driver before the move (Codex's read of the design, finding 6): the
+/// branch it made, the line, when it landed, and its pull request where one was opened.
+/// </summary>
+public sealed record WorkRecordLanding(string Branch, string? Line, DateTimeOffset At, string? PullRequest);
+
 /// <summary>What a finished tree held that no commit holds, by name (§2.1's last row): at most the walk's limit of names, the rest counted.</summary>
 /// <param name="Count">Every such path, named or not.</param>
 /// <param name="Cut">The names stop at the limit; <paramref name="Count"/> says how many there were.</param>
@@ -32,7 +38,14 @@ public sealed record WorkRecordLeft(IReadOnlyList<string> Names, int Count, bool
 public sealed record WorkRecordPost(
     string Workspace, string Repository, string Folder, string Tree, DateTimeOffset Moved, string? Unit, string Branch, string? Line,
     WorkRecordHold Hold, string Tip, string? GrewFrom, string? Ref, IReadOnlyList<WorkRecordCommit>? Commits, string? CommitsUnread,
-    WorkRecordLeft Left, bool Whole);
+    WorkRecordLeft Left, bool Whole)
+{
+    /// <summary>Its landing, where one could be established before the move; null with <see cref="LandingWhy"/> where none could.</summary>
+    public WorkRecordLanding? Landing { get; init; }
+
+    /// <summary>Why no landing is named.</summary>
+    public string? LandingWhy { get; init; }
+}
 
 /// <summary>A session the record names (§2.2's <c>work_record_sessions</c>), and the commits its base attributes to it, or null where none can be read.</summary>
 public sealed record WorkRecordSession(string Session, IReadOnlyList<string>? Commits);
@@ -95,6 +108,20 @@ public sealed class WorkRecordStore
     {
         await using (var command = _db.Command())
         {
+            command.CommandText = VersionTable;
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        // Codex's read of the branch, finding 9: the stamp read before any table of a schema is made or changed, so a newer build's
+        // tables are never touched by this one's setup.
+        if (await StampAsync(_db, ct).ConfigureAwait(false) is { } found && found > Version)
+        {
+            NewerVersion = found;
+            return;
+        }
+
+        await using (var command = _db.Command())
+        {
             command.CommandText = Schema;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
@@ -115,12 +142,16 @@ public sealed class WorkRecordStore
         }, ct).ConfigureAwait(false);
     }
 
-    /// <summary>The tables, made where missing; never dropped. Version 1 is the first, so there is nothing yet to migrate from.</summary>
-    internal const string Schema = """
+    /// <summary>The version's own table, made first, read before the rest.</summary>
+    internal const string VersionTable = """
         CREATE TABLE IF NOT EXISTS work_record_version (
           one     INTEGER PRIMARY KEY CHECK (one = 1),
           version INTEGER NOT NULL
         );
+        """;
+
+    /// <summary>The tables, made where missing; never dropped. Version 1 is the first, so there is nothing yet to migrate from.</summary>
+    internal const string Schema = """
         CREATE TABLE IF NOT EXISTS work_records (
           workspace  TEXT NOT NULL,
           repository TEXT NOT NULL,
@@ -138,6 +169,8 @@ public sealed class WorkRecordStore
           unread     TEXT NULL,
           left_names TEXT NOT NULL,
           whole      INTEGER NOT NULL,
+          landing    TEXT NULL,
+          landing_why TEXT NULL,
           at         TEXT NOT NULL,
           schema     INTEGER NOT NULL,
           PRIMARY KEY (workspace, repository, folder)
@@ -155,6 +188,28 @@ public sealed class WorkRecordStore
 
     private NewerWorkRecordsException? Refusal => NewerVersion is { } found ? new(found, Version) : null;
 
+    /// <summary>The stamp the store carries now; null where it carries none.</summary>
+    private static async Task<int?> StampAsync(ConnectionGate db, CancellationToken ct)
+    {
+        await using var read = db.Command();
+        read.CommandText = "SELECT version FROM work_record_version WHERE one = 1";
+        return await read.ExecuteScalarAsync(ct).ConfigureAwait(false) is { } found and not DBNull ? Convert.ToInt32(found) : null;
+    }
+
+    /// <summary>
+    /// Refuses where the store is stamped newer, read inside the operation's own gate or transaction (Codex's read of the branch, finding 9):
+    /// a handle opened before a newer build stamped the store refuses from then on, as one opened after does.
+    /// </summary>
+    private async Task RefuseNewerAsync(CancellationToken ct)
+    {
+        if (Refusal is { } known) throw known;
+        if (await StampAsync(_db, ct).ConfigureAwait(false) is { } found && found > Version)
+        {
+            NewerVersion = found;
+            throw new NewerWorkRecordsException(found, Version);
+        }
+    }
+
     /// <summary>
     /// Keep a finished tree's record (§2.2), idempotent on <c>(workspace, repository, folder)</c>: a second post of a kept identity answers
     /// as the first did and writes nothing. The sessions are this store's rows that name the tree and were made before its move.
@@ -166,6 +221,7 @@ public sealed class WorkRecordStore
         if (Refusal is { } refused) throw refused;
         return _db.InTransactionAsync<(WorkRecord, bool)>(async (_, inside) =>
         {
+            await RefuseNewerAsync(inside).ConfigureAwait(false);
             if (await FindInsideAsync(post.Workspace, post.Repository, post.Folder, inside).ConfigureAwait(false) is { } kept) return (kept, false);
 
             var sessions = Attributed(post, await SessionsOfAsync(post, inside).ConfigureAwait(false));
@@ -173,9 +229,9 @@ public sealed class WorkRecordStore
             {
                 insert.CommandText = """
                     INSERT INTO work_records (workspace, repository, folder, tree, moved, unit, branch, line, hold, tip, grew_from, ref, commits,
-                      unread, left_names, whole, at, schema)
+                      unread, left_names, whole, landing, landing_why, at, schema)
                     VALUES ($workspace, $repository, $folder, $tree, $moved, $unit, $branch, $line, $hold, $tip, $grew, $ref, $commits,
-                      $unread, $left, $whole, $at, $schema)
+                      $unread, $left, $whole, $landing, $landingWhy, $at, $schema)
                     """;
                 Key(insert, post.Workspace, post.Repository, post.Folder);
                 insert.Parameters.AddWithValue("$tree", post.Tree);
@@ -191,6 +247,8 @@ public sealed class WorkRecordStore
                 insert.Parameters.AddWithValue("$unread", (object?)post.CommitsUnread ?? DBNull.Value);
                 insert.Parameters.AddWithValue("$left", JsonSerializer.Serialize(post.Left, Json));
                 insert.Parameters.AddWithValue("$whole", post.Whole ? 1 : 0);
+                insert.Parameters.AddWithValue("$landing", post.Landing is null ? DBNull.Value : JsonSerializer.Serialize(post.Landing, Json));
+                insert.Parameters.AddWithValue("$landingWhy", (object?)post.LandingWhy ?? DBNull.Value);
                 insert.Parameters.AddWithValue("$at", Moments.Write(now));
                 insert.Parameters.AddWithValue("$schema", RecordSchema);
                 await insert.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
@@ -218,12 +276,22 @@ public sealed class WorkRecordStore
     public Task<WorkRecord?> FindAsync(string workspace, string repository, string folder, CancellationToken ct = default)
     {
         if (Refusal is { } refused) throw refused;
-        return _db.RunAsync(() => FindInsideAsync(workspace, repository, folder, ct), ct);
+        return _db.RunAsync(async () =>
+        {
+            await RefuseNewerAsync(ct).ConfigureAwait(false);
+            return await FindInsideAsync(workspace, repository, folder, ct).ConfigureAwait(false);
+        }, ct);
     }
 
     /// <summary>How many records this machine keeps (the card says the count, §4.5); none where a newer build stamped them.</summary>
     public Task<int> CountAsync(CancellationToken ct = default) => Refusal is not null ? Task.FromResult(0) : _db.RunAsync(async () =>
     {
+        if (await StampAsync(_db, ct).ConfigureAwait(false) is { } found && found > Version)
+        {
+            NewerVersion = found;
+            return 0;
+        }
+
         await using var command = _db.Command();
         command.CommandText = "SELECT COUNT(*) FROM work_records";
         return Convert.ToInt32(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
@@ -260,6 +328,32 @@ public sealed class WorkRecordStore
     /// no session is history, taken by a clear of history by its own <c>at</c>, within the clear's range); how many went. Run inside the
     /// clear's transaction. Nothing where the tables are not this build's.
     /// </summary>
+    /// <summary>
+    /// The records no session names, kept at or before <paramref name="before"/>, gone: history's age applied to their own <c>at</c>, needing
+    /// no session to be cleared beside them (Codex's read of the branch, finding 8); in <paramref name="workspace"/> alone where one is named.
+    /// How many went. Nothing where a newer build stamped them.
+    /// </summary>
+    public Task<int> ForgetOrphansAsync(DateTimeOffset before, string? workspace, CancellationToken ct = default) =>
+        _db.InTransactionAsync<int>(async (_, inside) =>
+        {
+            if (!await OursAsync(_db, inside).ConfigureAwait(false)) return 0;
+            var circles = new List<string>();
+            await using (var read = _db.Command())
+            {
+                read.CommandText = "SELECT DISTINCT workspace FROM work_records";
+                await using var rows = await read.ExecuteReaderAsync(inside).ConfigureAwait(false);
+                while (await rows.ReadAsync(inside).ConfigureAwait(false)) circles.Add(rows.GetString(0));
+            }
+
+            var gone = 0;
+            foreach (var circle in circles.Where(each => workspace is null || string.Equals(each, workspace, StringComparison.OrdinalIgnoreCase)))
+            {
+                gone += await ForgetOrphansAsync(_db, circle, before, inside).ConfigureAwait(false);
+            }
+
+            return gone;
+        }, ct);
+
     internal static async Task<int> ForgetOrphansAsync(ConnectionGate db, string workspace, DateTimeOffset through, CancellationToken ct)
     {
         if (!await OursAsync(db, ct).ConfigureAwait(false)) return 0;
@@ -311,7 +405,7 @@ public sealed class WorkRecordStore
         await using (var read = _db.Command())
         {
             read.CommandText = """
-                SELECT tree, moved, unit, branch, line, hold, tip, grew_from, ref, commits, unread, left_names, whole, at, schema
+                SELECT tree, moved, unit, branch, line, hold, tip, grew_from, ref, commits, unread, left_names, whole, at, schema, landing, landing_why
                 FROM work_records WHERE workspace = $workspace AND repository = $repository AND folder = $folder
                 """;
             Key(read, workspace, repository, folder);
@@ -322,7 +416,11 @@ public sealed class WorkRecordStore
                 workspace, repository, folder, row.GetString(0), Moments.ReadRequired(row.GetString(1)), Text(2), row.GetString(3), Text(4),
                 JsonSerializer.Deserialize<WorkRecordHold>(row.GetString(5), Json)!, row.GetString(6), Text(7), Text(8),
                 Text(9) is { } commits ? JsonSerializer.Deserialize<List<WorkRecordCommit>>(commits, Json) : null, Text(10),
-                JsonSerializer.Deserialize<WorkRecordLeft>(row.GetString(11), Json)!, row.GetInt32(12) != 0);
+                JsonSerializer.Deserialize<WorkRecordLeft>(row.GetString(11), Json)!, row.GetInt32(12) != 0)
+            {
+                Landing = Text(15) is { } landing ? JsonSerializer.Deserialize<WorkRecordLanding>(landing, Json) : null,
+                LandingWhy = Text(16),
+            };
             at = Moments.ReadRequired(row.GetString(13));
             schema = row.GetInt32(14);
         }
