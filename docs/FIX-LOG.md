@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - A session its landing replayed stayed to review, and its tree needed --force (REVIEWLANDED1)
+
+- **Symptom:** on the install a session whose landing replayed its commits onto a line that had moved, and merged them, kept its row
+  in *To review* and *What needs you* for two days, and `trees remove` refused its tree without `--force`, while `trees land --plan`
+  said its branch held nothing `main` lacked. Seen again with nine sessions each landed on a `quest/` branch the parent merged and
+  pruned. Sessions told to rebase after their landing made new commits, which showed as the same stale row, every commit counted.
+- **Root cause:** two readings of one question. The landing's plan reads each commit against the line (`LineHolds`: the walk by
+  content, then patch identity), so a replay reads landed. The review row (`TreeWorkReads.WorkAsync`), the removals and the clean-up
+  asked ancestry, then the content proof (squash tree, files, SQUASHSEEN1's merge). A replay's commits have ids of their own, so
+  ancestry missed them, and once the `quest/` branch was pruned nothing held them by ancestry at all. And a tree the content proof did
+  hold still counted to review (SQUASHTIDY1b kept the groups as they were).
+- **Fix:** the content proof asks the landing's reading as a fourth form (`ReplayHolds`), held to the line as it stands: a differing
+  file's newest change on the line, by the graph, must hold one of the branch's patches (D148). A tree held on the line by content
+  whose discard would go leaves the review (`TreeWork.Holds`). Where the reading lacks some commits, they alone are counted, offered
+  and named as work to land (`ContentProof.Lacks`).
+- **Verify:** `ReviewLandedTests` 4 of 4 (`git.process.runsettings`, run twice), `ContentHoldWordsTests` 22 of 22; the covering
+  `Process` classes by filter (`SquashSeenTests`, `EndJudgementGitTests`, `ContentHeldTests`, `ContentLandingTests`,
+  `ContentOfferTests`, `ContentProofLossTests`, `SessionTreeWorkTests`, `LandGitCountTests`, whose ceilings held unchanged).
+  `ContentHeldTests`' squash row now expects `OnLine`. The first run of the pruned-branch test read the line's newest change by date
+  and picked the wrong one of two commits made in one second; the log reads `--topo-order` now. Detail: D102's REVIEWLANDED1 note.
+
 ## 2026-10-24 - The supervisor's decisions lived only as long as the look that kept them (SUPERVISOR1a-i)
 
 - **Symptom:** found while wiring the release into the look, not seen running: the decisions' memory was `LoopContext.Supervisor`,

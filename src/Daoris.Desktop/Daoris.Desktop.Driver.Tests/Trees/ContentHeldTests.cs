@@ -152,7 +152,7 @@ public sealed class ContentHeldTests : LandedFixture
 
         var squashedRow = plan.Single(item => item.Branch == squashed.Branch);
         Assert.Equal((SweepKind.Landed, "main", true), (squashedRow.Kind, squashedRow.Where, squashedRow.Removable));
-        Assert.Equal(new ContentHold("main", Squash: true), squashedRow.HeldBy);
+        Assert.Equal(new ContentHold("main", Squash: true) { OnLine = true }, squashedRow.HeldBy);
         var pickedRow = plan.Single(item => item.Branch == picked.Branch);
         Assert.Equal((SweepKind.Landed, "feature/x", true), (pickedRow.Kind, pickedRow.Where, pickedRow.Removable));
         Assert.Equal(new ContentHold("feature/x", Squash: false), pickedRow.HeldBy);

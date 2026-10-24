@@ -205,9 +205,11 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
   whether to merge the unreviewed branch.
 - **A landing is done when Daoris says so.** After committing a session's landing, `daoris-driver trees land <session>
   --plan` must answer that its branch holds nothing `main` does not. Where it lists commits, `main` lacks them: a session
-  told to rebase after its landing may have made new ones, and they are work to land, not a stale row. Where the work is on
-  `main` only as a replay or by a hand-resolved conflict, a no-content merge (`git merge -s ours <its branch>`) records it as
-  held, and a press of *Accept* then lands nothing and clears its review row (REVIEWLANDED1 is the fix in Daoris).
+  told to rebase after its landing may have made new ones, and they are work to land, not a stale row. Work on `main` as a
+  replay, its `quest/` branch merged and pruned or not, is read as landed by content (REVIEWLANDED1, D102's note): its session
+  leaves the review and its tree goes without `--force`. Only where a hand-resolved conflict left neither its patches nor a
+  clean merge on `main` does a no-content merge (`git merge -s ours <its branch>`) still record it as held, and a press of
+  *Accept* then lands nothing and clears its review row.
 
 ### The CI between releases
 

@@ -233,9 +233,14 @@ public sealed record TreeWork(int? Commits, int? Uncommitted)
 {
     /// <summary>
     /// Whether there is work nobody has accepted yet. Only a proven zero is none: a count git could not give is kept, as
-    /// the clean-up keeps what it cannot clear (D88).
+    /// the clean-up keeps what it cannot clear (D88). Commits the line holds by content, a squash's or a landing's replay, are
+    /// landed (REVIEWLANDED1): none, where an unforced discard of the tree would go; a tree that stays for what no commit holds
+    /// is still the person's to review.
     /// </summary>
-    public bool Holds => Commits != 0 || Uncommitted != 0;
+    public bool Holds => (Commits != 0 && !Landed) || Uncommitted != 0;
+
+    /// <summary>The commits counted are on a form of the line by content and the tree would go unforced (REVIEWLANDED1).</summary>
+    public bool Landed => Held is { Held.OnLine: true, Keeps: not null };
 
     /// <summary>
     /// Where the commits D88 counted are held by content (SQUASHTIDY1b): a squash merge or a cherry-pick put them elsewhere, so

@@ -55,8 +55,12 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
 
         // SQUASHTIDY1b: a squash merge or a cherry-pick holds commits ancestry cannot see, and landing them again would make a
         // branch of work already there.
-        return work.Commits is > 0 && judged is not null && await HeldWorkAsync(tree, judged, own, here, ct).ConfigureAwait(false) is { } found
-            ? work with { Held = found }
+        if (work.Commits is not > 0 || judged is null) return work;
+        var (found, lacks) = await HeldWorkAsync(tree, judged, own, here, ct).ConfigureAwait(false);
+        // REVIEWLANDED1: where the line holds some of its commits under ids of their own (a landing replayed them, and the session was told
+        // to rebase and made more), only the commits it lacks are work to land, as the landing's plan counts them.
+        return found is not null ? work with { Held = found }
+            : lacks is { Count: > 0 } && lacks.Count < work.Commits ? work with { Commits = lacks.Count }
             : work;
     }
 
@@ -119,14 +123,16 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
     /// <param name="treeBranch">The tree's own branch (TREEFOLLOW1) as the judgement read it a moment ago (LANDGIT1b), null where it is on its session
     /// branch or detached: the same read of the head, not a second one.</param>
     /// <param name="read">The tree's repository and branch as a landing read them (LANDGIT1b); null reads them here.</param>
-    private async Task<HeldWork?> HeldWorkAsync(string tree, string judged, string? treeBranch, TreeGit.CommonDirAndBranch? read, CancellationToken ct)
+    /// <returns>Where the work is held; else, where the line holds some of its commits, those it lacks (REVIEWLANDED1).</returns>
+    private async Task<(HeldWork? Held, IReadOnlyList<LandingCommit>? Lacks)> HeldWorkAsync(
+        string tree, string judged, string? treeBranch, TreeGit.CommonDirAndBranch? read, CancellationToken ct)
     {
         try
         {
             var full = Path.GetFullPath(tree);
             // Its repository, and the branch the discard below names, in one start (PROC1d-iii); a landing's own read, where it hands one.
             var here = read ?? await TreeGit.CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
-            if (here.Code != 0) return null;
+            if (here.Code != 0) return (null, null);
             var root = Path.GetDirectoryName(here.CommonDir.Trim())!;
             var (workspace, repository) = context.OwnerOf(full);
             var line = (await context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
@@ -137,25 +143,26 @@ internal sealed class TreeWorkReads(TreeContext context, TreeSquashes squashes, 
                 notHolders = new HashSet<string>(notHolders, StringComparer.Ordinal) { ownBranch };
             }
 
-            if (await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false) is not { Hold: { } held }) return null;
+            var proof = await ContentHolds.HeldByContentAsync(full, judged, line, notHolders, ct).ConfigureAwait(false);
+            if (proof.Hold is not { } held) return (null, proof.Lacks);
 
             var holds = await ContentHolds.HoldsAsync(full, root, ct).ConfigureAwait(false);
             var stays = holds is null ? "Daoris cannot tell what it holds beyond its commits"
                 : holds.Uncommitted.Count > 0 ? $"it has {holds.Uncommitted.Count} uncommitted path(s), which a discard would destroy"
                 : holds.OwnSaid is { } own ? $"it holds {own}, which a discard would destroy"
                 : null;
-            if (stays is not null) return new HeldWork(held, null, stays);
+            if (stays is not null) return (new HeldWork(held, null, stays), null);
 
             // The name the discard keeps its commits under: the tree's branch, or for a detached tree the one its layout names.
             var named = here.Branch.Trim() is { Length: > 0 } branch and not "HEAD" ? branch : follows.BranchOfTree(full)?.Branch ?? "HEAD";
-            return await DiscardedNameAsync(root, named, judged, ct).ConfigureAwait(false) is { } keeps
+            return (await DiscardedNameAsync(root, named, judged, ct).ConfigureAwait(false) is { } keeps
                 ? new HeldWork(held, keeps, null)
-                : new HeldWork(held, null, "every name for a ref to keep its commits at is taken");
+                : new HeldWork(held, null, "every name for a ref to keep its commits at is taken"), null);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
             // A comparison that could not be made proves nothing: its commits are offered to land as ancestry counted them.
-            return null;
+            return (null, null);
         }
     }
 

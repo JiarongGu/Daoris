@@ -18,12 +18,26 @@ public sealed record ContentHold(string Where, bool Squash)
     /// </summary>
     public bool Carried { get; init; }
 
+    /// <summary>
+    /// A landing replayed it (REVIEWLANDED1, <see cref="ReplayHolds"/>): each of its commits is on the line under an id of its own, as a
+    /// landing reads them. Never set with <see cref="Squash"/> or <see cref="Carried"/>.
+    /// </summary>
+    public bool Replayed { get; init; }
+
+    /// <summary>
+    /// <see cref="Where"/> is a form of the line, not a branch of the person's (REVIEWLANDED1): the work landed, so the session leaves the
+    /// review (<see cref="TreeWork.Holds"/>).
+    /// </summary>
+    public bool OnLine { get; init; }
+
     /// <summary>How its work was found held: the clause a removal's sentence and the clean-up's row in the terminal say.</summary>
     public string Said => Squash
         ? $"its work is on `{Where}` by content (a squash merge)"
         : Carried
             ? $"its work is on `{Where}` by content (a squash carried it: merging it there adds nothing)"
-            : $"its work is on `{Where}` by content (each file it changed reads the same there)";
+            : Replayed
+                ? $"its work is on `{Where}` by content (a landing replayed each of its commits there)"
+                : $"its work is on `{Where}` by content (each file it changed reads the same there)";
 
     /// <summary>
     /// Where the commits a content-held removal deleted are kept (SQUASHTIDY1c), and the two things a person may do with them:
@@ -51,6 +65,21 @@ internal sealed record ContentProof(ContentHold? Hold, string? Unread)
     /// on, and what its delete verifies. Null where the work is not held.
     /// </summary>
     internal (string Ref, string Commit)? At { get; init; }
+
+    /// <summary>
+    /// The commits the line lacks, as a landing reads them (REVIEWLANDED1, <see cref="ReplayHolds"/>), where the work is not held and the line
+    /// holds some of its commits under ids of their own: what a session told to rebase after its landing still has to land. Null where that
+    /// reading was not asked (the line has not moved since the branch left it) or lacks none of them.
+    /// </summary>
+    internal IReadOnlyList<LandingCommit>? Lacks { get; init; }
+
+    /// <summary>
+    /// The commits a refusal names as not taken, one a line: those the line lacks where the reading found them (REVIEWLANDED1), else
+    /// <paramref name="unlanded"/>, the ones ancestry counted, as git's <c>--oneline</c> listed them.
+    /// </summary>
+    internal string Lacking(string unlanded) => Lacks is { Count: > 0 } lacks
+        ? string.Join('\n', lacks.Select(each => $"{TextBounds.ShortCommit(each.Sha, 7)} {each.Subject}"))
+        : unlanded.Trim();
 
     /// <summary>What a removal by it rests on: <see cref="At"/>, or nothing.</summary>
     internal IReadOnlyList<(string Ref, string Commit)> Rests => At is { } at ? [at] : [];
@@ -94,6 +123,8 @@ internal sealed class ContentHolds(TreeContext context)
     /// of the branch onto a line that had not moved makes exactly that commit, and the line may have moved on after it.</item>
     /// <item><b>Its files</b>: every file it changed since then reads on the line's tip as the branch left it — D102's proof by
     /// content, as a landed branch is judged.</item>
+    /// <item><b>A landing's replay</b> (REVIEWLANDED1): the line holds each of its commits as a landing reads them, and has not changed a
+    /// file it changed since taking its patch (<see cref="ReplayHolds"/>). Where it holds some, the rest are <see cref="ContentProof.Lacks"/>.</item>
     /// <item><b>A squash that carried it with other work</b> (SQUASHSEEN1): merging it into the line's tip adds nothing, generated
     /// files and the backlog's rows aside (<see cref="SquashCarries"/>).</item>
     /// </list>
@@ -133,6 +164,8 @@ internal sealed class ContentHolds(TreeContext context)
         if (treeCode != 0) return ContentProof.UnreadBy($"git could not read the branch's tree: {Said(treeErr)}");
 
         IReadOnlyList<string>? changed = null;
+        // REVIEWLANDED1: what the line lacks of the branch's commits, from the first form whose per-commit reading found any lacking.
+        IReadOnlyList<LandingCommit>? lacks = null;
         foreach (var (form, formRef, formId) in forms)
         {
             var (baseCode, mergeBase, baseErr) = await WorkingTree.GitAsync(cwd, ["merge-base", tip, formId], ct).ConfigureAwait(false);
@@ -158,25 +191,36 @@ internal sealed class ContentHolds(TreeContext context)
             if (logCode != 0) unread ??= $"git could not read `{form}`'s commits: {Said(logErr)}";
             else if (trees.Split('\n', StringSplitOptions.TrimEntries).Contains(tree.Trim(), StringComparer.Ordinal))
             {
-                return ContentProof.Of(new ContentHold(form, Squash: true), formRef, formId);
+                return ContentProof.Of(new ContentHold(form, Squash: true) { OnLine = true }, formRef, formId);
             }
 
-            switch (await SameFilesAsync(cwd, tip, formId, paths, ct).ConfigureAwait(false))
+            var differs = await DifferingAsync(cwd, tip, formId, paths, ct).ConfigureAwait(false);
+            switch (differs?.Count)
             {
-                case true: return ContentProof.Of(new ContentHold(form, Squash: false), formRef, formId);
+                case 0: return ContentProof.Of(new ContentHold(form, Squash: false) { OnLine = true }, formRef, formId);
                 case null: unread ??= $"git could not compare the branch's files with `{form}`"; break;
             }
 
-            // SQUASHSEEN1: a squash carried it with other work, so merging it into the line adds nothing. A line with no commit
-            // since the branch left it carries nothing, so an ordinary landing asks git nothing more (LANDGIT1's counts).
-            if (logCode == 0 && !string.IsNullOrWhiteSpace(trees)
-                && await SquashCarries.HeldAsync(cwd, tip, mergeBase.Trim(), formId, paths, ct).ConfigureAwait(false))
+            // A line with no commit since the branch left it holds none of its commits under ids of their own and carries nothing, so
+            // an ordinary landing asks git nothing more (LANDGIT1's counts).
+            if (logCode != 0 || string.IsNullOrWhiteSpace(trees)) continue;
+
+            // REVIEWLANDED1: a landing replayed each of its commits onto the line, read as the landing reads them (patch identity first).
+            if (differs is not null && await ReplayHolds.ReadAsync(cwd, tip, formId, line, differs, ct).ConfigureAwait(false) is { } replay)
             {
-                return ContentProof.Of(new ContentHold(form, Squash: false) { Carried = true }, formRef, formId);
+                if (replay.Held) return ContentProof.Of(new ContentHold(form, Squash: false) { Replayed = true, OnLine = true }, formRef, formId);
+                lacks ??= replay.Lacks;
+            }
+
+            // SQUASHSEEN1: a squash carried it with other work, so merging it into the line adds nothing.
+            if (await SquashCarries.HeldAsync(cwd, tip, mergeBase.Trim(), formId, paths, ct).ConfigureAwait(false))
+            {
+                return ContentProof.Of(new ContentHold(form, Squash: false) { Carried = true, OnLine = true }, formRef, formId);
             }
         }
 
-        if (changed is null) return unread is null ? ContentProof.NotHeld : ContentProof.UnreadBy(unread);
+        var notHeld = unread is null ? ContentProof.NotHeld with { Lacks = lacks } : ContentProof.UnreadBy(unread);
+        if (changed is null) return notHeld;
         // Newest first: a cherry-pick is a recent commit, so the holder is usually found before the rest are compared.
         var (refsCode, byDate, refsErr) = await WorkingTree.GitAsync(
             cwd, ["for-each-ref", "--sort=-committerdate", "--format=%(objectname) %(refname)", "refs/heads/"], ct).ConfigureAwait(false);
@@ -199,7 +243,7 @@ internal sealed class ContentHolds(TreeContext context)
             }
         }
 
-        return unread is null ? ContentProof.NotHeld : ContentProof.UnreadBy(unread);
+        return unread is null ? notHeld : ContentProof.UnreadBy(unread);
     }
 
     /// <summary>Git's own words for a failure, or that it said none.</summary>
@@ -207,12 +251,16 @@ internal sealed class ContentHolds(TreeContext context)
     internal static string Said(string error) => string.IsNullOrWhiteSpace(error) ? "git said nothing" : FirstLine(error);
 
     /// <summary>Whether every one of <paramref name="paths"/> reads on <paramref name="holder"/> as on <paramref name="tip"/>; null where git could not say.</summary>
-    private static async Task<bool?> SameFilesAsync(string cwd, string tip, string holder, IReadOnlyList<string> paths, CancellationToken ct)
+    private static async Task<bool?> SameFilesAsync(string cwd, string tip, string holder, IReadOnlyList<string> paths, CancellationToken ct) =>
+        await DifferingAsync(cwd, tip, holder, paths, ct).ConfigureAwait(false) is { } differs ? differs.Count == 0 : null;
+
+    /// <summary>Those of <paramref name="paths"/> that read otherwise on <paramref name="holder"/> than on <paramref name="tip"/>; null where git could not say.</summary>
+    private static async Task<IReadOnlyList<string>?> DifferingAsync(string cwd, string tip, string holder, IReadOnlyList<string> paths, CancellationToken ct)
     {
         var differing = await LandedProofs.NamesAsync(cwd, tip, holder, ct).ConfigureAwait(false);
         if (differing is null) return null;
         var differs = new HashSet<string>(differing, StringComparer.Ordinal);
-        return !paths.Any(differs.Contains);
+        return [.. paths.Where(differs.Contains)];
     }
 
     /// <summary>The branches a landing made and recorded in <paramref name="repository"/>: never a holder by content (SQUASHTIDY1c).</summary>
