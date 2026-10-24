@@ -213,6 +213,8 @@ public sealed class InstancePipe : IDisposable
     // own lock, never the pipe's, since it writes a file.
     private readonly PipeWaiting _records;
     private readonly Dictionary<string, PipeWaitingRecord> _kept = new(StringComparer.Ordinal);
+    // CONFIRMWAIT1 (§15.2 item 9): each press whose grounds are being read before its card, by its request's id.
+    private readonly Dictionary<string, Reserved> _reserved = new(StringComparer.Ordinal);
     // CONFIRMWAIT1 (§15.2 item 8): each ending's answer by its confirmation's id, as its record was rewritten with it, for its line.
     private readonly Dictionary<string, string> _endings = new(StringComparer.Ordinal);
     private readonly Lock _recording = new();
@@ -609,30 +611,48 @@ public sealed class InstancePipe : IDisposable
     {
         if (Interlocked.Exchange(ref _stopping, 1) == 1) return;
         (string Id, string Confirmation, TaskCompletionSource<string>? Line)[] waiting;
+        Reserved[] reserved;
         lock (_gate)
         {
             waiting = [.. _waitingFor.Select(each => (each.Key, each.Value, _lines.GetValueOrDefault(each.Key)))];
+            reserved = [.. _reserved.Values];
+            _reserved.Clear();
         }
 
-        foreach (var (id, confirmation, line) in waiting)
+        // CONFIRMWAIT1 (§15.2 item 9): a press whose grounds are still being read was never asked, so the close ends it `stopping` at once,
+        // journaled, and the drain is not spent on its read.
+        foreach (var each in reserved)
         {
-            if (KeyedRecord(confirmation))
-            {
-                Confirmations.Lose(confirmation);
-                continue;
-            }
-
-            lock (_gate)
-            {
-                _running.Remove(id);
-                _owners.Remove(id);
-                _lines.Remove(id);
-            }
-
-            Confirmations.WaitedOn(confirmation, false);
-            line?.TrySetResult(IpcJson.Serialize(IpcResponse.CreateError(id, Waiting, new Dictionary<string, string> { ["why"] = "close" },
-                $"Daoris is closing; this still waits for your confirmation (request {id}).")));
+            each.Reading.Cancel();
+            Confirmations.Let(each.Place);
+            EndReserved(each, RefuseStopping(each.Request));
         }
+
+        foreach (var (id, confirmation, line) in waiting) KeepAtClose(id, confirmation, line);
+    }
+
+    /// <summary>
+    /// The close's step for one press waiting for the person (§7.2): its line answered <see cref="Waiting"/>, <c>why: close</c>, and the
+    /// press out of what is under way, its record kept; one carrying a key is lost.
+    /// </summary>
+    private void KeepAtClose(string id, string confirmation, TaskCompletionSource<string>? line)
+    {
+        if (KeyedRecord(confirmation))
+        {
+            Confirmations.Lose(confirmation);
+            return;
+        }
+
+        lock (_gate)
+        {
+            _running.Remove(id);
+            _owners.Remove(id);
+            _lines.Remove(id);
+        }
+
+        Confirmations.WaitedOn(confirmation, false);
+        line?.TrySetResult(IpcJson.Serialize(IpcResponse.CreateError(id, Waiting, new Dictionary<string, string> { ["why"] = "close" },
+            $"Daoris is closing; this still waits for your confirmation (request {id}).")));
     }
 
     /// <summary>
@@ -1012,7 +1032,16 @@ public sealed class InstancePipe : IDisposable
             return (Settled(request, id, mine, Refuse(request, Full, FullSentence())), null);
         }
 
-        _ = AskThenRunAsync(request, id, binding, mine, place, row, fields, connection, why);
+        // CONFIRMWAIT1 (the confirm-wait design §15.2 item 9): from here the press is a reservation, its id said to its terminal before its
+        // grounds are read, so a withdrawal, a close or a lost line has a press to end; every ending from here is journaled.
+        var reserved = new Reserved(request, binding, mine, connection, place, _clock.GetUtcNow());
+        lock (_gate)
+        {
+            _reserved[id] = reserved;
+        }
+
+        _ = connection.WriteAsync(Waits(id, why, checking: true));
+        _ = AskThenRunAsync(reserved, row, fields, why);
         return (null, answer);
     }
 
@@ -1086,39 +1115,44 @@ public sealed class InstancePipe : IDisposable
     private static string Count(int count, string unit) => count == 1 ? $"1 {unit} ago" : $"{count} {unit}s ago";
 
     /// <summary>
-    /// A person's press on its held place (§5.2): its grounds read outside every lock, bounded; one that does not read, or reads that its
-    /// setting is already as it asks, lets the place go and is answered so, nothing asked. Otherwise its card is shown, its terminal told
-    /// it waits, and it runs once the person confirms it with its grounds still holding.
+    /// A person's press on its reservation (§5.2, §15.2 item 9): its grounds read outside every lock, bounded, and cancelled where a
+    /// withdrawal or a close ended it meanwhile. Then the reservation is claimed, and one ended meanwhile asks nothing more. One that does
+    /// not read, or reads that its setting is already as it asks, lets the place go and is answered so, journaled, nothing asked.
+    /// Otherwise its card is shown and it runs once the person confirms it with its grounds still holding.
     /// </summary>
-    private async Task AskThenRunAsync(
-        IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> mine, PipePlace place, PipeGroundRow row,
-        IReadOnlyList<PipeConfirmationField> fields, Connection connection, string? why)
+    private async Task AskThenRunAsync(Reserved reserved, PipeGroundRow row, IReadOnlyList<PipeConfirmationField> fields, string? why)
     {
+        var (request, binding, mine, connection, place) = (reserved.Request, reserved.Binding, reserved.Line, reserved.Connection, reserved.Place);
+        var id = request.Id;
         IReadOnlyList<PipeReading> asked;
         try
         {
-            asked = await row.ReadAsync(Grounds, request.Payload, _clock, _lifetime.Token).ConfigureAwait(false);
+            using var reading = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token, reserved.Reading.Token);
+            asked = await row.ReadAsync(Grounds, request.Payload, _clock, reading.Token).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
+            if (!Claimed(reserved)) return;
             Confirmations.Let(place);
             _log.Info("pipe.grounds", ("state", "unread"), ("route", $"{request.Module}.{request.Type}"), ("error", error.GetType().Name));
-            Settled(request, id, mine, Refuse(request, UnreadGrounds,
+            EndReserved(reserved, Refuse(request, UnreadGrounds,
                 "Daoris could not read what this press rests on just now, so it was not asked; nothing was kept. Send it again."));
             return;
         }
 
+        // A withdrawal or a close that ended it while its grounds were read already answered it: nothing more is asked.
+        if (!Claimed(reserved)) return;
         if (row.Already(asked, request.Payload))
         {
             Confirmations.Let(place);
-            Settled(request, id, mine, Refuse(request, Already, "This is already set as this asks; nothing was asked."));
+            EndReserved(reserved, Refuse(request, Already, "This is already set as this asks; nothing was asked."));
             return;
         }
 
         if (IsStopping)
         {
             Confirmations.Let(place);
-            Settled(request, id, mine, RefuseStopping(request));
+            EndReserved(reserved, RefuseStopping(request));
             return;
         }
 
@@ -1128,7 +1162,7 @@ public sealed class InstancePipe : IDisposable
         var record = new PipeWaitingRecord(
             Guid.NewGuid().ToString("N"), id, binding, request.Module, request.Type,
             keyed ? null : request.Payload is { ValueKind: not JsonValueKind.Undefined } sent ? sent.GetRawText() : "",
-            keyed ? [] : asked, connection.Asker, _clock.GetUtcNow(), null, keyed, PipeWaitingRecord.Waiting);
+            keyed ? [] : asked, connection.Asker, reserved.Asked, null, keyed, PipeWaitingRecord.Waiting);
         lock (_recording)
         {
             if (_records.Write(record)) _kept[record.Confirmation] = record;
@@ -1138,27 +1172,89 @@ public sealed class InstancePipe : IDisposable
         if (record is null)
         {
             Confirmations.Let(place);
-            Settled(request, id, mine, Refuse(request, Unrecorded,
+            EndReserved(reserved, Refuse(request, Unrecorded,
                 "Daoris could not keep this press while it waits for the person, so it was not asked; nothing was kept. Send it again."));
             return;
         }
 
         // RPC1c (D156 §4.2): the person's press waits for the window, which shows it naming this terminal, and runs on Confirm alone,
         // its grounds read again then (§5.2). The id is bound before the window is asked, so the same id sent again meanwhile joins this
-        // one and asks nothing.
+        // one and asks nothing. Its terminal heard its id before the read (§15.2 item 9); a line that ended meanwhile waits on it no more.
+        bool waitedOn;
+        lock (_gate)
+        {
+            waitedOn = _connections.Contains(connection) && _owners.GetValueOrDefault(id) == connection;
+        }
+
         var payload = request.Payload;
         var shown = Confirmations.Ask(
             place, request.Module, request.Type, fields, connection.Asker, why,
             judge: row.Grounds.Count == 0 ? null : ct => JudgeAsync(row, payload, asked, ct), checkWithin: row.Grounds.Count == 0 ? null : row.Bound,
-            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed));
+            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed, WaitedOn: waitedOn));
         lock (_gate)
         {
             _waitingFor[id] = shown.Shown.Id;
             _lines[id] = mine;
         }
 
-        await connection.WriteAsync(Waits(id, why)).ConfigureAwait(false);
+        // A close that began after the claim keeps it as any press waiting: its record kept and its line answered (§15.2 item 9).
+        if (IsStopping) KeepAtClose(id, shown.Shown.Id, mine);
         await ConfirmThenRunAsync(request, id, binding, mine, shown.Ended, record.Confirmation).ConfigureAwait(false);
+    }
+
+    /// <summary>The reservation taken from those the pipe holds, once: false where a withdrawal or a close ended it first.</summary>
+    private bool Claimed(Reserved reserved)
+    {
+        lock (_gate)
+        {
+            return _reserved.TryGetValue(reserved.Request.Id, out var held) && ReferenceEquals(held, reserved) && _reserved.Remove(reserved.Request.Id);
+        }
+    }
+
+    /// <summary>
+    /// A reservation ended before its card (§15.2 item 9): its answer journaled where it can be, so <c>RESULT</c> and the same id sent
+    /// again say it, taken out of what is under way, and its line answered.
+    /// </summary>
+    private void EndReserved(Reserved reserved, IpcResponse answer)
+    {
+        var (id, binding) = (reserved.Request.Id, reserved.Binding);
+        var text = IpcJson.Serialize(answer);
+        try
+        {
+            if (_journal!.Begin(id, binding)) _journal.End(id, binding, text);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Not kept: its terminal still hears it now.
+        }
+
+        lock (_gate)
+        {
+            _running.Remove(id);
+            _owners.Remove(id);
+        }
+
+        reserved.Line.TrySetResult(text);
+    }
+
+    /// <summary>A press whose grounds are being read before its card (§15.2 item 9): what ends it meanwhile, and what it was sent with.</summary>
+    private sealed class Reserved(
+        IpcRequest request, PipeBinding binding, TaskCompletionSource<string> line, Connection connection, PipePlace place, DateTimeOffset asked)
+    {
+        public IpcRequest Request { get; } = request;
+
+        public PipeBinding Binding { get; } = binding;
+
+        public TaskCompletionSource<string> Line { get; } = line;
+
+        public Connection Connection { get; } = connection;
+
+        public PipePlace Place { get; } = place;
+
+        public DateTimeOffset Asked { get; } = asked;
+
+        /// <summary>Cancelled where a withdrawal or a close ends it while its grounds are read.</summary>
+        public CancellationTokenSource Reading { get; } = new();
     }
 
     /// <summary>The grounds read again at the Confirm, outside every lock, and compared with the ask's (§5.2): a failed read is unread.</summary>
@@ -1184,9 +1280,16 @@ public sealed class InstancePipe : IDisposable
     /// none ends it (CONFIRMWAIT1a-i). With <c>standing</c>, why the person's standing confirmation, on and naming the press, did not cover
     /// it (TERMTRUST1a, §5 step 5), a field an older terminal ignores.
     /// </summary>
-    private static string Waits(string id, string? standing) => standing is null
-        ? Told(Confirming, new { id })
-        : Told(Confirming, new { id, standing });
+    /// <param name="checking">
+    /// That its grounds are being read before its card (CONFIRMWAIT1, §15.2 item 9): the terminal hears its id then, before any read.
+    /// </param>
+    private static string Waits(string id, string? standing, bool checking = false) => (standing, checking) switch
+    {
+        (null, false) => Told(Confirming, new { id }),
+        (null, true) => Told(Confirming, new { id, checking }),
+        (_, false) => Told(Confirming, new { id, standing }),
+        _ => Told(Confirming, new { id, standing, checking }),
+    };
 
     /// <summary>A notification of the pipe's own to the terminal that sent a press.</summary>
     private static string Told(string type, object payload) => JsonSerializer.Serialize(
@@ -1394,6 +1497,17 @@ public sealed class InstancePipe : IDisposable
             if (_running.TryGetValue(id, out var running))
             {
                 if (running.Binding.Key != holder) return RefuseTaken(request);
+                // CONFIRMWAIT1 (§15.2 item 9): its grounds are being read before its card; it waits, checking.
+                if (_reserved.TryGetValue(id, out var reserved))
+                {
+                    return IpcResponse.CreateSuccess(request.Id, new
+                    {
+                        state = "waiting", asked = reserved.Asked, checking = true,
+                        waitedOn = _connections.Contains(reserved.Connection) && _owners.GetValueOrDefault(id) == reserved.Connection,
+                        shownAt = (DateTimeOffset?)null,
+                    });
+                }
+
                 if (WaitingCard(id) is { } card)
                 {
                     return IpcResponse.CreateSuccess(request.Id, new
@@ -1442,14 +1556,19 @@ public sealed class InstancePipe : IDisposable
         if (!IsKey(key)) return Refuse(request, KeyMissing, "WITHDRAW carries the key its request was sent with.");
         var holder = PipeBinding.Fingerprint(key!);
         string? waiting = null;
+        Reserved? reserved = null;
         lock (_gate)
         {
             if (_running.TryGetValue(id, out var running))
             {
                 if (running.Binding.Key != holder) return RefuseTaken(request);
-                waiting = _waitingFor.GetValueOrDefault(id);
-                // Marked before the confirmations are asked, so the press's ending says it was this route's.
-                if (waiting is not null) _withdrawn.Add(id);
+                // CONFIRMWAIT1 (§15.2 item 9): one whose grounds are still being read is taken back at once, before it has a card.
+                if (!_reserved.Remove(id, out reserved))
+                {
+                    waiting = _waitingFor.GetValueOrDefault(id);
+                    // Marked before the confirmations are asked, so the press's ending says it was this route's.
+                    if (waiting is not null) _withdrawn.Add(id);
+                }
             }
             else if (_journal?.Find(id) is { } seen && seen.Binding.Key == holder)
             {
@@ -1465,6 +1584,16 @@ public sealed class InstancePipe : IDisposable
             {
                 return RefuseTaken(request);
             }
+        }
+
+        if (reserved is not null)
+        {
+            reserved.Reading.Cancel();
+            Confirmations.Let(reserved.Place);
+            EndReserved(reserved, IpcResponse.CreateError(id, Withdrawn, null,
+                "This terminal took its request back before the person answered it. Nothing was done."));
+            _log.Info("pipe.withdrawn", ("request", id));
+            return IpcResponse.CreateSuccess(request.Id, new { state = "withdrawn" });
         }
 
         var withdrawal = waiting is null ? PipeWithdrawal.Checking : Confirmations.Withdraw(waiting);

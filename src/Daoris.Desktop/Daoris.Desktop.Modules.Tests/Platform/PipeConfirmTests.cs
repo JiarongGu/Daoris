@@ -84,7 +84,9 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(id, waits.GetProperty("payload").GetProperty("id").GetString());
         Assert.False(waits.GetProperty("payload").TryGetProperty("expires", out var _____));
 
-        // The window is shown the press by its route, every value it carries, and the terminal by its process; nothing ran.
+        // The window is shown the press by its route, every value it carries, and the terminal by its process; nothing ran. Its terminal
+        // heard its id before its grounds were read (CONFIRMWAIT1 §15.2 item 9), so the card comes once they are.
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         var shown = Assert.Single(pipe.Confirmations.Now().Waiting);
         Assert.Equal(DriverModule.Name, shown.Module);
         Assert.Equal(Land, shown.Route);
@@ -187,6 +189,7 @@ public sealed class PipeConfirmTests : Bridge
 
         var id = await client.SendAsync(DriverModule.Name, "SESSION_ARCHIVE", new { ids = new[] { "s1a2b3c4" }, archived = true });
         await client.NotificationAsync(Poll.Patience);
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         var shown = Assert.Single(pipe.Confirmations.Now().Waiting);
 
         Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(shown.Id, confirm: false)).Outcome);
@@ -804,6 +807,103 @@ public sealed class PipeConfirmTests : Bridge
         using var next = Pipe(Compose(log, driver).Dispatcher, log, grounds: grounds);
         next.Restore();
         Assert.Empty(next.Confirmations.Now().Waiting);
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1, Codex's finding 9 (the confirm-wait design §15.2 item 9): the terminal hears the id before the grounds are read, and
+    /// <c>RESULT</c> says the press waits, checking. A withdrawal while the first read is held open ends it at once, journaled: no card ever
+    /// comes, no record is kept, and the id read again or sent again says it was taken back.
+    /// </summary>
+    [Fact]
+    public async Task A_withdrawal_while_the_grounds_are_first_read_leaves_no_card()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        grounds.Hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+
+        var told = await client.NotificationAsync(Poll.Patience);
+        var waits = Assert.Single(told!.Value.GetProperty("payload").EnumerateArray()).GetProperty("payload");
+        Assert.Equal(id, waits.GetProperty("id").GetString());
+        Assert.True(waits.GetProperty("checking").GetBoolean());
+        var reading = await client.ResultAsync(id);
+        Assert.Equal("waiting", reading.GetProperty("state").GetString());
+        Assert.True(reading.GetProperty("checking").GetBoolean());
+
+        var withdrawn = await client.AnswerAsync(await client.SendAsync(InstancePipe.Module, "WITHDRAW", new { id, key = client.KeyOf(id) }));
+        Assert.Equal("withdrawn", withdrawn.GetProperty("data").GetProperty("state").GetString());
+        Assert.Equal(InstancePipe.Withdrawn, Code(await client.AnswerAsync(id)));
+        grounds.Hold.SetResult();
+        await Task.Delay(200);
+
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Empty(Records());
+        Assert.NotNull(pipe.Confirmations.Hold());
+        Assert.Equal(InstancePipe.Withdrawn, Code((await client.ResultAsync(id)).GetProperty("answer")));
+        await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" }, id: id);
+        Assert.Equal(InstancePipe.Withdrawn, Code(await client.AnswerAsync(id)));
+        Assert.Equal(0, driver.Ran);
+    }
+
+    /// <summary>
+    /// Finding 9: a close while the first read is held open ends the press <c>stopping</c> at once, journaled, its line answered: the drain
+    /// is not spent on it, and no card or record comes once the read answers.
+    /// </summary>
+    [Fact]
+    public async Task A_close_while_the_grounds_are_first_read_leaves_no_card_and_drains_at_once()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        await using var ___ = client;
+        grounds.Hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await client.NotificationAsync(Poll.Patience);
+
+        pipe.BeginStopping();
+
+        Assert.Equal(InstancePipe.Stopping, Code(await client.AnswerAsync(id)));
+        Assert.True(pipe.Drain(TimeSpan.FromSeconds(15)));
+        grounds.Hold.SetResult();
+        await Task.Delay(200);
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Empty(Records());
+        Assert.Equal(InstancePipe.Stopping, Code((await client.ResultAsync(id)).GetProperty("answer")));
+        Assert.Equal(0, driver.Ran);
+        Assert.Empty(Logged("pipe.drained"));
+        pipe.Dispose();
+    }
+
+    /// <summary>Finding 9: a terminal that left while the grounds were first read is no terminal on the card's line.</summary>
+    [Fact]
+    public async Task A_terminal_that_left_while_the_grounds_were_first_read_is_not_waited_on()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+        grounds.Hold = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var gone = await PipeClient.ConnectAsync(pipe.Name!);
+        await gone.HelloAsync(HomeId);
+        await gone.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await gone.NotificationAsync(Poll.Patience);
+        await gone.DisposeAsync();
+        await Task.Delay(200);
+
+        grounds.Hold.SetResult();
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+
+        Assert.False(pipe.Confirmations.Now().Waiting[0].WaitedOn);
     }
 
     /// <summary>A conflict over an id the journal already ended leaves that ending as it was.</summary>
