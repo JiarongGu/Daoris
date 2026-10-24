@@ -49,7 +49,16 @@ public sealed class StandingCallerTests : IDisposable
     }
 
     /// <summary>The look with this process's own containment taken as part (i) would give it, and no instance pipes beside it.</summary>
-    private static StandingCaller Look() => new() { OwnContained = _ => true, Servers = _ => [] };
+    private static StandingCaller Look() => new() { OwnContained = _ => true, Servers = _ => [], List = Own };
+
+    /// <summary>
+    /// This Windows session's named objects as the system lists them, every job kept and only this test's own <c>-open</c> event: another
+    /// Daoris's tests on this machine (an install's session running the driver's tests) can hold an uncontained agent's event of their
+    /// own, which leaves the real look untold, as it should, and this test's every case with it (the CI on deb766f, 2026-10-25).
+    /// </summary>
+    private static StandingListing? Own() => StandingCaller.ListSession() is { } listing
+        ? listing with { Open = [.. listing.Open.Where(name => name == StandingCaller.Prefix + Other + StandingCaller.OpenSuffix)] }
+        : null;
 
     private SafeFileHandle Job(string? name)
     {
@@ -132,12 +141,12 @@ public sealed class StandingCallerTests : IDisposable
         // The namespace not read.
         Assert.Equal(StandingPlace.Untold, new StandingCaller { OwnContained = _ => true, Servers = _ => [], List = () => null }.Place(me));
         // This process's own agents not contained: until part (i) lands, it holds no job of the prefix.
-        Assert.Equal(StandingPlace.Untold, new StandingCaller { Servers = _ => [] }.Place(me));
+        Assert.Equal(StandingPlace.Untold, new StandingCaller { Servers = _ => [], List = Own }.Place(me));
         // An instance pipe whose server holds no job of the prefix, a Daoris from before TERMTRUST1a; and the pipes not read.
-        Assert.Equal(StandingPlace.Untold, new StandingCaller { OwnContained = _ => true, Servers = _ => [424242] }.Place(me));
-        Assert.Equal(StandingPlace.Untold, new StandingCaller { OwnContained = _ => true, Servers = _ => null }.Place(me));
+        Assert.Equal(StandingPlace.Untold, new StandingCaller { OwnContained = _ => true, Servers = _ => [424242], List = Own }.Place(me));
+        Assert.Equal(StandingPlace.Untold, new StandingCaller { OwnContained = _ => true, Servers = _ => null, List = Own }.Place(me));
         // One whose server holds one is a Daoris of this build, and takes nothing.
-        Assert.Equal(StandingPlace.Outside, new StandingCaller { OwnContained = _ => true, Servers = _ => [int.Parse(Other, CultureInfo.InvariantCulture)] }.Place(me));
+        Assert.Equal(StandingPlace.Outside, new StandingCaller { OwnContained = _ => true, Servers = _ => [int.Parse(Other, CultureInfo.InvariantCulture)], List = Own }.Place(me));
         // No client at all.
         Assert.Equal(StandingPlace.Untold, Look().Place(null));
         Assert.Equal(StandingPlace.Untold, Look().Place(PipeClientProcess.Unknown));

@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - StandingCallerTests read every uncontained agent's event in the session, another Daoris's test run's included (TERMTRUST1a)
+
+- **Symptom:** the CI on `deb766f20` failed the modules' Process half on four `StandingCallerTests` cases, each again alone and again
+  in the checkout: every place read `Untold` where the case expected `Outside` or `InAgentJob`.
+- **Root cause:** the cases list this Windows session's real named objects (`StandingCaller.ListSession`), and an `-open` event of the
+  agents' prefix anywhere leaves the look untold, as D201 point 4 has it. An install session was running the driver's tests at the
+  time, whose cases raise their own stand-ins' `-open` events (`AgentJobs.OpenNameOf`); the cases name their own jobs for a process id
+  no Daoris holds, but read every other Daoris's events with them.
+- **Fix:** the cases' listing keeps every job and only their own `-open` event; the case that raises one still proves it leaves the
+  look untold. The judge is unchanged: a real uncontained agent beside it still makes it untold.
+- **Verification:** the class with `process.runsettings`, 10 of 10, while the install's session ran the driver's tests.
+
 ## 2026-10-25 - Two branch-tidying tests still asserted no recovery ref after KEEPSIZE1b held every squashed tip (KEEPSIZE1b)
 
 - **Symptom:** the CI on `deb766f20` failed the driver's Process half on `BranchTidyingLandingKeptTests` and
