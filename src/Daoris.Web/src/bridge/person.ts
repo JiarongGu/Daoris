@@ -302,6 +302,9 @@ function appointmentsOf(raw: unknown): AppointmentNow[] {
       holderId: typeof shaped.holderId === 'string' && shaped.holderId.length > 0 ? shaped.holderId : null,
       acts: strings(shaped.acts),
       setup: shaped.setup === true,
+      workspace: typeof shaped.workspace === 'string' && shaped.workspace.length > 0 ? shaped.workspace
+        : scope.startsWith('workspace:') ? scope.slice('workspace:'.length) : null,
+      window: typeof shaped.window === 'number' && Number.isInteger(shaped.window) ? shaped.window : null,
     }];
   });
 }
@@ -324,20 +327,23 @@ function holdersOf(raw: unknown): HolderNow[] {
 /**
  * The owner's appointment of a role, or its turning off (SUPERVISOR1a-ii, D208 §2.3, §5; STEWARDROLE1a-i, D209 §2.2, §2.3): `on`
  * true appoints, which makes the window start a holder's tab, Daoris's own pinned harness with the key in its environment, or add the
- * role to a living holder; false turns that one appointment off at once. The scope is `repository:<name>` for a repository's role and
- * `machine` for the steward's; `share` is a later *Appoint…*'s choice while a holder lives, `own` or that holder's id. Sent from the
+ * role to a living holder; false turns that one appointment off at once. The scope is `repository:<name>` for a repository's role,
+ * `workspace:<name>` for the supervisor of a workspace (SUPERVISOR1e) and `machine` for the steward's; `window` the supervisor's
+ * overrule window in minutes; `share` is a later *Appoint…*'s choice while a holder lives, `own` or that holder's id. Sent from the
  * window alone (the census refuses it to a terminal). The answer is read field by field, so a refusal keeps its code; it never
  * carries a key. The route declares `sessions` and `driver`, so the state hub reads both again (D169 point 6). The steward's ask
  * sends its set-up tick as `setup` (STEWARDROLE1b, D209 §2.3), off unless the owner ticked it there; the supervisor's sends none.
  */
 export function useSetAppointment() {
   return useMutation({
-    mutationFn: async ({ role, repository, on, share, setup }: {
-      role: string; repository?: string; on: boolean; share?: string; setup?: boolean;
+    mutationFn: async ({ role, repository, workspace, on, share, setup, window }: {
+      role: string; repository?: string; workspace?: string; on: boolean; share?: string; setup?: boolean; window?: number;
     }): Promise<AppointmentAnswer> => {
-      const scope = repository ? `repository:${repository}` : 'machine';
-      const answer = await call<{ done?: boolean; why?: string | null; message?: string | null }>(
-        'SET_APPOINTMENT', { role, scope, holder: 'terminal', on, ...(share ? { share } : {}), ...(setup !== undefined ? { setup } : {}) });
+      const scope = repository ? `repository:${repository}` : workspace ? `workspace:${workspace}` : 'machine';
+      const answer = await call<{ done?: boolean; why?: string | null; message?: string | null }>('SET_APPOINTMENT', {
+        role, scope, holder: 'terminal', on, ...(share ? { share } : {}), ...(setup !== undefined ? { setup } : {}),
+        ...(on && window !== undefined ? { window } : {}),
+      });
       return { done: answer?.done === true, why: answer?.why ?? null, message: answer?.message ?? '' };
     },
   });

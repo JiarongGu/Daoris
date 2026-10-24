@@ -14,7 +14,7 @@ const OFFERED = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish'
 const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
 const live: AppointmentNow = {
   role: 'steward', repository: '', holder: 'terminal', since: hoursAgo(2), dormant: false, answers: 0, scope: 'machine', holderId: 'h1',
-  acts: OFFERED, setup: false,
+  acts: OFFERED, setup: false, workspace: null, window: null,
 };
 
 const meta = {

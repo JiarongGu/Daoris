@@ -35,6 +35,7 @@ import { WorkspaceTidied } from './WorkspaceTidied';
 import type { WorkspaceSection, WorkspaceTab } from '../tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
+import { useSupervisor } from '../setup/useSupervisor';
 import { WorkspaceSetup, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
 
 /** Matched without case, as the driver matches a workspace's name. */
@@ -144,7 +145,7 @@ export function WorkspaceView({
           />
         )
       : tab === 'setup'
-        ? <SetupPart workspace={workspace} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} onOpenPlugin={onOpenPlugin} />
+        ? <SetupPart workspace={workspace} repositories={repositories} notify={notify} open={wiring ? 'remote' : askedHere ?? asked ?? undefined} wiring={wiring} onOpenPlugin={onOpenPlugin} />
         : (
           <DetailsPart
             workspace={workspace}
@@ -369,8 +370,10 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
  * Setup: its defaults (WSR1, WSR2, LANG1c, READ1) and its remote and rules (D48 §5, PERM1), each from the answer the driver
  * gives every door and each change said as the toast Settings' cards said it.
  */
-function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
+function SetupPart({ workspace, repositories, notify, open, wiring, onOpenPlugin }: {
   workspace: string;
+  /** Its repositories in the list's registry, by name: those the supervisor's appointment for it covers now (SUPERVISOR1e). */
+  repositories: string[];
   onOpenPlugin?: (plugin: string) => void;
   notify: Notify;
   open?: WorkspaceSection;
@@ -402,6 +405,7 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   const act = useRuleAction();
   useErrorNotify(remotes.error ?? across.error ?? rules.error, notify);
   const onError = failure(notify);
+  const supervisorOf = useSupervisor(onError);
 
   const state = driver.data;
   const ofWorkspace = <R extends { workspace: string }>(rows: R[] | undefined) => (rows ?? []).find((row) => same(row.workspace, workspace));
@@ -441,6 +445,11 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
           }),
         }
       : null,
+    // SUPERVISOR1e (D208 §5): the supervisor's appointment for the workspace, covering every repository the registry places in it.
+    supervisor: (() => {
+      const own = supervisorOf({ workspace });
+      return own ? { ...own, repositories } : null;
+    })(),
     defaults: {
       line: state && {
         set: ofWorkspace(state.workspaceLines)?.branch,

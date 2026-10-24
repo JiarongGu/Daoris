@@ -78,6 +78,20 @@ describe('the standing confirmation over the bridge', () => {
       holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }],
       appointments: [{ role: 'steward', repository: '', scope: 'machine', holderId: 'h1', answers: 2 }],
     });
+    // SUPERVISOR1e (D208 §5, §6.3): a workspace's appointment names its workspace and no repository, with the window the owner set; one
+    // whose record says no window reads none, never a number the record did not hold.
+    expect(standingOf({
+      supervisorOffered: true,
+      appointments: [
+        { role: 'supervisor', repository: '', scope: 'workspace:games', holder: 'terminal', dormant: false, answers: 1, window: 12 },
+        { role: 'supervisor', repository: 'engine', scope: 'repository:engine', window: 2.5 },
+      ],
+    })).toMatchObject({
+      appointments: [
+        { role: 'supervisor', repository: '', scope: 'workspace:games', workspace: 'games', window: 12 },
+        { role: 'supervisor', repository: 'engine', scope: 'repository:engine', workspace: null, window: null },
+      ],
+    });
     // The bridge leaves its nulls out: no since, no unread.
     expect(standingOf({ offered: false, on: false, presses: [], built: ['stop'], unwritten: true, used: 0, held: [] }))
       .toMatchObject({ offered: false, on: false, since: null, unread: null, unwritten: true });

@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../../locales/i18n';
@@ -272,6 +272,31 @@ describe("a workspace's machines its remote counts undeclared", () => {
   it('holds every Retire while one is on its way', () => {
     at({ remote: { wiring: wired, rules: null, machines: { undeclared: ['m-gone', 'm-old'], retiring: 'm-gone', onRetire: vi.fn() } } });
     for (const button of screen.getAllByRole('button', { name: 'Retire' })) expect(button).toBeDisabled();
+  });
+
+  // SUPERVISOR1e (D208 §5): the supervisor's appointment for the workspace, beside its sessions' access, once offered or while on record.
+  it("draws the supervisor's row for the workspace once offered, opening its section while one is appointed", async () => {
+    const supervisor = { offered: true, appointment: null, repositories: ['engine'], onAppoint: vi.fn(), onTurnOff: vi.fn() };
+    at({ supervisor });
+    // Nothing appointed: its section waits folded, as the access Daoris decides does.
+    await userEvent.click(screen.getByRole('button', { name: /Sessions' access/ }));
+    expect(screen.getByText(/in any repository of aurora on your behalf/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
+    expect(screen.getByRole('group', { name: 'appoint the supervisor for aurora' })).toBeInTheDocument();
+    cleanup();
+
+    const appointment = {
+      role: 'supervisor', repository: '', holder: 'terminal', since: null, dormant: true, answers: 0, scope: 'workspace:aurora',
+      holderId: null, workspace: 'aurora', window: 30, acts: [], setup: false,
+    };
+    at({ supervisor: { ...supervisor, offered: false, appointment } });
+    expect(screen.getByText('Found as Daoris started: dormant until you press Appoint again.')).toBeInTheDocument();
+    expect(screen.getByText('Each answer is held 30 minutes for your overrule.')).toBeInTheDocument();
+  });
+
+  it('draws no supervisor row where the build does not offer it and none is on record', () => {
+    at({ supervisor: { offered: false, appointment: null, repositories: [], onAppoint: vi.fn(), onTurnOff: vi.fn() } });
+    expect(screen.queryByRole('button', { name: /Sessions' access/ })).toBeNull();
   });
 
   it('says every machine declared, with no Retire', () => {

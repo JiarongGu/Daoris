@@ -28,6 +28,7 @@ const SINCE = '2026-10-24T14:02:00Z';
 const LIVE: AppointmentNow = {
   role: 'supervisor', repository: 'engine', holder: 'terminal', since: SINCE, dormant: false, answers: 3, scope: 'repository:engine', holderId: 'h1',
   acts: [], setup: false,
+  workspace: null, window: null,
 };
 const FOUND: AppointmentNow = { ...LIVE, dormant: true, answers: 0, holderId: null };
 
@@ -105,7 +106,7 @@ describe("Setup's supervisor row", () => {
 
     await userEvent.click(add);
     await userEvent.click(within(ask).getByRole('button', { name: 'Appoint' }));
-    expect(onAppoint).toHaveBeenCalledWith(expect.anything(), 'h1');
+    expect(onAppoint).toHaveBeenCalledWith(expect.anything(), 'h1', 5);
   });
 
   it('sends a terminal of its own as the share', async () => {
@@ -131,6 +132,110 @@ describe("Setup's supervisor row", () => {
     await userEvent.click(screen.getByRole('button', { name: 'Appoint' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
       'DAORIS.DRIVER', 'SET_APPOINTMENT', { payload: { role: 'supervisor', scope: 'repository:engine', holder: 'terminal', on: true, share: 'own' } }));
+  });
+
+  // SUPERVISOR1e (D208 §5, §6.3, §12): the overrule window the owner sets in the ask, 1 to 60 minutes, five unset; never 0.
+  it('asks the overrule window, five unset, holds Appoint outside 1 to 60, and sends the window set', async () => {
+    invoke.mockResolvedValue({ done: true });
+    function Pressed() {
+      const appoint = useSetAppointment();
+      return (
+        <SupervisorRow
+          repository="engine"
+          supervisor={setup({
+            onAppoint: (answered, share, window) => appoint.mutate({ role: 'supervisor', repository: 'engine', on: true, share, window }, {
+              onSuccess: () => answered.done(),
+            }),
+          })}
+        />
+      );
+    }
+
+    render(<QueryClientProvider client={new QueryClient()}><Pressed /></QueryClientProvider>);
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
+    const ask = screen.getByRole('group', { name: 'appoint the supervisor for engine' });
+    const window = within(ask).getByRole('spinbutton', { name: 'Overrule window' });
+    expect(window).toHaveValue(5);
+    expect(within(ask).getByText(/held for the window you set here for your overrule/)).toBeInTheDocument();
+    const appoint = within(ask).getByRole('button', { name: 'Appoint' });
+
+    for (const refused of ['0', '61', '2.5', '']) {
+      await userEvent.clear(window);
+      if (refused) await userEvent.type(window, refused);
+      expect(appoint).toBeDisabled();
+      expect(within(ask).getByText('A whole number of minutes from 1 to 60.')).toBeInTheDocument();
+    }
+
+    await userEvent.clear(window);
+    await userEvent.type(window, '30');
+    expect(appoint).toBeEnabled();
+    await userEvent.click(appoint);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'SET_APPOINTMENT', { payload: { role: 'supervisor', scope: 'repository:engine', holder: 'terminal', on: true, window: 30 } }));
+  });
+
+  it('says the window an appointment set, and the ask opens on it', async () => {
+    render(<SupervisorRow repository="engine" supervisor={setup({ appointment: { ...LIVE, window: 12 } })} />);
+    expect(screen.getByText('Each answer is held 12 minutes for your overrule.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint again…' }));
+    expect(screen.getByRole('spinbutton', { name: 'Overrule window' })).toHaveValue(12);
+  });
+
+  // SUPERVISOR1e (§5): a workspace's appointment, every repository of it here and one added later, sent as `workspace:<name>`.
+  it("appoints for a workspace, naming its repositories and those added later, and sends the workspace's scope", async () => {
+    invoke.mockResolvedValue({ done: true });
+    function Pressed() {
+      const appoint = useSetAppointment();
+      return (
+        <SupervisorRow
+          workspace="games"
+          repositories={['engine', 'tools']}
+          supervisor={setup({
+            onAppoint: (answered, share, window) => appoint.mutate({ role: 'supervisor', workspace: 'games', on: true, share, window }, {
+              onSuccess: () => answered.done(),
+            }),
+          })}
+        />
+      );
+    }
+
+    render(<QueryClientProvider client={new QueryClient()}><Pressed /></QueryClientProvider>);
+    expect(screen.getByText(/in any repository of games on your behalf/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
+    const ask = screen.getByRole('group', { name: 'appoint the supervisor for games' });
+    expect(within(ask).getByText(
+      "The supervisor for every repository of games on this machine (engine and tools), and any added to it later, until Daoris restarts. A repository's own appointment wins over this one there.",
+    )).toBeInTheDocument();
+    await userEvent.click(within(ask).getByRole('button', { name: 'Appoint' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'SET_APPOINTMENT', { payload: { role: 'supervisor', scope: 'workspace:games', holder: 'terminal', on: true, window: 5 } }));
+  });
+
+  it("says a repository its workspace's appointment covers, and that one made here wins over it", async () => {
+    const games: AppointmentNow = { ...LIVE, repository: '', scope: 'workspace:games', workspace: 'games', window: 20 };
+    const { rerender } = render(<SupervisorRow repository="engine" supervisor={setup({ covering: games })} />);
+    expect(screen.getByText("Answered under games's appointment: an appointment here wins over it for this repository.")).toBeInTheDocument();
+    expect(screen.getByText('Each answer is held 20 minutes for your overrule.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
+    expect(screen.getByText(/this one wins over it for this repository, and an answer of it still held here is dropped/)).toBeInTheDocument();
+
+    // The repository's own appointment wins: the workspace's is no longer said here.
+    rerender(<SupervisorRow repository="engine" supervisor={setup({ appointment: LIVE, covering: games })} />);
+    expect(screen.queryByText(/Answered under games's appointment/)).toBeNull();
+    expect(screen.queryByText(/held 20 minutes/)).toBeNull();
+  });
+
+  it('says the workspace, the cover and the window in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    const games: AppointmentNow = { ...LIVE, repository: '', scope: 'workspace:games', workspace: 'games', window: 1 };
+    const { unmount } = render(<SupervisorRow repository="engine" open supervisor={setup({ covering: games })} />);
+    expect(screen.getByText('按 games 的任命回答：在这里任命，会在这个仓库取代它。')).toBeInTheDocument();
+    expect(screen.getByText('每个回答保留 1 分钟供你否决。')).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: '否决时限' })).toHaveValue(5);
+    unmount();
+    render(<SupervisorRow workspace="games" repositories={[]} open supervisor={setup()} />);
+    expect(screen.getByRole('group', { name: '为 games 任命主管' })).toBeInTheDocument();
+    expect(screen.getByText(/本机上 games 每个仓库的主管（目前还没有仓库）/)).toBeInTheDocument();
   });
 
   it('says the choice of terminal in Chinese', async () => {

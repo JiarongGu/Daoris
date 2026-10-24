@@ -27,7 +27,7 @@ import { StewardLine } from './StewardLine';
 const OFFERED = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry'];
 const STEWARD: AppointmentNow = {
   role: 'steward', repository: '', holder: 'terminal', since: '2026-10-25T09:00:00Z', dormant: false, answers: 0, scope: 'machine',
-  holderId: 'h1', acts: OFFERED, setup: false,
+  holderId: 'h1', acts: OFFERED, setup: false, workspace: null, window: null,
 };
 const act = (id: string, kind: string, at: string, more: Partial<StewardActNow> = {}): StewardActNow => ({
   id, act: kind, repository: null, quest: null, session: null, at, standing: true, waiting: false, ...more,

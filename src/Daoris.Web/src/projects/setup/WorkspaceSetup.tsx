@@ -15,6 +15,7 @@ import { type ReviewEdit, ReviewField, type ReviewRule, reviewRowSays, reviewSum
 import { shellWord } from '../../lib/shellWord';
 import { Button, FormField, FormGrid, FormRow, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../../design/ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
+import { type SupervisorSetup, SupervisorRow } from './SupervisorRow';
 import type { AccessSetup } from './RepositorySetup';
 import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
 import type { WorkspaceSection } from '../tabs';
@@ -86,6 +87,11 @@ export type WorkspaceSetupProps = {
    * pause as it resolves from the workspace, this machine or Daoris's default; absent on a shell older than it.
    */
   access?: Omit<AccessSetup, 'workspace'> | null;
+  /**
+   * The supervisor's appointment for the workspace (SUPERVISOR1e, D208 §5), beside its sessions' access: every repository the
+   * registry places in it, `repositories` those it places there now; absent on a shell older than it.
+   */
+  supervisor?: (SupervisorSetup & { repositories: string[] }) | null;
   remote: WorkspaceRemote;
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
@@ -118,7 +124,7 @@ const plain = (text: string) => text.replace(/`/g, '');
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function WorkspaceSetup({
-  workspace, defaults, access, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin,
+  workspace, defaults, access, supervisor, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin,
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
@@ -156,11 +162,13 @@ export function WorkspaceSetup({
 
   // Sessions' access (AUTONOMY1d): the same rows as a repository's, one level up.
   const accessShown = access && access.pauses.length > 0 ? access : null;
+  // SUPERVISOR1e: the supervisor's row, once this build offers it or while one is on record.
+  const supervisorShown = supervisor && (supervisor.offered || supervisor.appointment) ? supervisor : null;
 
   const opensItself: Record<WorkspaceSection, boolean> = {
     defaults: Boolean(line?.set || landing?.set || landing?.unread || language?.set || read?.set !== undefined || review?.set || opinion?.set
       || commits?.set || helpers?.set || handOver?.set),
-    access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
+    access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace') || supervisorShown?.appointment),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
   };
 
@@ -329,20 +337,30 @@ export function WorkspaceSetup({
       ),
     });
   }
-  if (accessShown) {
+  if (accessShown || supervisorShown) {
     sections.push({
       id: 'access',
-      summary: accessSummary(t, accessShown.pauses, 'workspace'),
+      summary: [
+        ...(accessShown ? [accessSummary(t, accessShown.pauses, 'workspace')] : []),
+        ...(supervisorShown?.appointment ? [t('projects.supervisor.workspace.summary')] : []),
+      ].join(JOIN) || t('projects.supervisor.label'),
       body: (
-        <AccessRows
-          owner="workspace"
-          name={workspace}
-          pauses={accessShown.pauses}
-          aboveFull={accessShown.aboveFull}
-          busy={busy}
-          setHere={t('projects.workspace.setHere')}
-          onChange={accessShown.onChange}
-        />
+        <>
+          {accessShown && (
+            <AccessRows
+              owner="workspace"
+              name={workspace}
+              pauses={accessShown.pauses}
+              aboveFull={accessShown.aboveFull}
+              busy={busy}
+              setHere={t('projects.workspace.setHere')}
+              onChange={accessShown.onChange}
+            />
+          )}
+          {supervisorShown && (
+            <SupervisorRow workspace={workspace} repositories={supervisorShown.repositories} supervisor={supervisorShown} />
+          )}
+        </>
       ),
     });
   }

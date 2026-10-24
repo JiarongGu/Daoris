@@ -146,7 +146,18 @@ export type AppointmentNow = {
   acts: string[];
   /** The owner's set-up tick at the appointment (§2.3, §3.1 row 12); never read into an ask, which shows it off. */
   setup: boolean;
+  /** The workspace its scope names (SUPERVISOR1e): every repository of it here, a repository's own appointment winning there; null for any other scope. */
+  workspace: string | null;
+  /** The supervisor's overrule window in minutes, 1 to 60 (SUPERVISOR1e); null for the steward's, or where the record does not say one. */
+  window: number | null;
 };
+
+/** The overrule window the owner sets at the supervisor's appointment (SUPERVISOR1e, the supervisor design §6.3): 1 to 60 minutes, five unset. */
+export const OVERRULE_WINDOW = { least: 1, most: 60, default: 5 } as const;
+
+/** Whether `minutes` is a window an appointment may set: a whole number from 1 to 60. */
+export const windowAllowed = (minutes: number) =>
+  Number.isInteger(minutes) && minutes >= OVERRULE_WINDOW.least && minutes <= OVERRULE_WINDOW.most;
 
 /** An appointment's or a dismissal's answer (`SET_APPOINTMENT`): done, or refused as data with a code the page words. Never a key. */
 export type AppointmentAnswer = { done: boolean; why: string | null; message: string };
@@ -154,7 +165,7 @@ export type AppointmentAnswer = { done: boolean; why: string | null; message: st
 /** The codes an appointment is refused by (the modules' `PersonRoutes`, `StandingConfirmation`), each said in the catalogue's words. */
 const APPOINT_REFUSALS = new Set([
   'window-only', 'not-offered', 'unknown-role', 'unknown-repository', 'newer', 'unwritten', 'unstarted', 'no-pipe',
-  'scope', 'choose-terminal', 'no-holder', 'revoked-holder', 'holder-harness',
+  'scope', 'choose-terminal', 'no-holder', 'revoked-holder', 'holder-harness', 'unknown-workspace', 'window',
 ]);
 
 /** A refusal of an appointment in words, by its code, else the driver's own sentence. */
