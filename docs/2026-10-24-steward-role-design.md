@@ -1,6 +1,6 @@
 # The steward: a role the owner appoints, making development's management acts on their behalf (STEWARDROLE1, 2026-10-24)
 
-**Status: proposed (D209), round 3.** Round 1 was written by Claude Opus from the code at `d580caeb4` and read at `48f9b3cff` by Codex
+**Status: accepted (D209) 2026-10-24 by the owner's decision (D209's acceptance note; Codex's read of this text owed), round 3 with its named changes.** Round 1 was written by Claude Opus from the code at `d580caeb4` and read at `48f9b3cff` by Codex
 (another round) and the independent Opus foundation reader (accept after named changes, 20 findings, 7 blocking), their reads verbatim in
 `docs/2026-10-24-steward-role-reads.md`. Round 2 was written by Claude Opus 5.5 from the code on main at `f5c515f0b`, where SUPERVISOR1a-ii's
 door is merged, and read at `92dd03ec5` by Codex (another round, 12 findings, 8 blocking) and the Opus foundation reader (accept after named
