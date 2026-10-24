@@ -336,7 +336,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-agent-errors-design.md` | 141 | 1004 |
 | `docs/2026-10-24-agent-errors-reads.md` | 125 | 1263 |
 | `docs/2026-10-24-chat-flow-design.md` | 120 | 1019 |
-| `docs/2026-10-24-chat-flow-reads.md` | 70 | 522 |
+| `docs/2026-10-24-chat-flow-reads.md` | 87 | 668 |
 | `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
 | `docs/2026-10-24-confirm-wait-design.md` | 107 | 871 |
@@ -351,5 +351,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
 | `docs/2026-10-24-switch-context-design.md` | 64 | 579 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `docs/README.md` | 49 | 264 |
+| `docs/README.md` | 48 | 263 |
 | `src/Daoris.Desktop/README.md` | 166 | 801 |

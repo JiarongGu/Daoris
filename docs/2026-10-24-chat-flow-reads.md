@@ -520,3 +520,149 @@ These are additional findings beyond the earlier reads’ fixes. They affect who
 **12 findings, 8 blocking.**
 
 **Verdict: reopen.** The refusing gate, local run and ordinary send-back direction stand, but the settled mechanism still lacks a reliable boundary for the person’s earlier words, the answering turn and the candidate their press lands. Findings 1–8 require amendments before d/d2, e, corrected a/i, c and f respectively. Rows a and b’s completed work remains useful; their existence does not establish those remaining boundaries.
+
+## Opus, the amendment checked
+
+An independent Opus 5.5 reader's check of the amendment that took Codex's owed read (`e9bca8aa5`), standing in for Codex while its credits are out: 12 findings, 1 blocking row c; row c may be built after named changes the steward can check.
+
+### 1. Codex's eight blocking findings
+
+Paths are the design's: the driver's under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, the modules' and the service's as its standing names them. `design:` is `docs/2026-10-24-chat-flow-design.md` on main.
+
+**1. The landing is bound to the judged candidate (before d and d2).** The text answers it: §5.2 point 1 (`design:422-440`), point 7 (`:459-462`), §5.3 (`:484-485`), rows d and d2 (`:778-792`) and §12 (`:888-889`). The answer holds against main. `TreeGates.GateAsync` already judges every part at a passed `tip` (`Trees/SessionTrees/TreeGates.cs:39-55`). `LandingGate.Tip` is the pin (`Review/Domain/OpinionGate.cs:673-679`), and the landing refuses a branch that moved off it in both forms (`Trees/SessionTrees/TreeLands.cs:420-431`, `:601-605`). The bridge and the standalone terminal read and land where the design says (`Bridge/Routes/TreesRoutes.cs:551`, `:596`; `Daoris.Desktop.Driver.Host/TreesConsole.cs:390`, `:417`). Three things are open:
+- **The reservation has no named state.** `Hold()` is the only reservation `ChatTurns` has, and it makes `KeepAsync` and `Take` drop the person's word (`Conversations/Chat/ChatTurns.cs:166`, `:579`). So "a word the person sends while the press holds the reservation waits behind it" (`design:432`) needs a state the design never names.
+- **The wait can be long.** The person's words would also wait through the landing hold, which lasts up to five minutes (`TreesRoutes.cs:594`).
+- ***Ask now* has no tip or count.** Its due on a chat run carries neither the captured tip nor the person's turn count (finding 5).
+
+**2. The reservation overtaking an earlier word (before e).** The text answers it in §6.1 (b) (`design:540-555`), and the answer holds. `KeepAsync` takes `_keeping` before the service's keep and releases it only after `Take` (`ChatTurns.cs:159-209`). A reservation that takes `_keeping` first therefore cannot overtake a keep in flight. The only thing left open comes through finding 4's count: a word the service did not keep still reaches `Take` (`:169-182`), but it never reaches the record the count reads.
+
+**3. The answering turn's own boundary (before e).** The text answers it in §6.1 (c) (`design:558-563`), §6.2 (`:582-593`) and §12 (`:890-891`). The answer holds:
+- `TakeHeld` returns the pump's drain (`ChatTurns.cs:552-566`, `:865-869`).
+- The pump passes a point between a turn's end and its next take (`:975-997`, then `:862-876`), and a capture fits there.
+- The recheck already reads the reading's tip, never `HEAD` (`Loop/OpinionDeliverer.cs:221`, `Tip = reading.Tip!`).
+
+What is open is steering. The person's word defaults to `Urgent` (`Conversations/Domain/ChatMessage.cs`, `Level`). On a door that steers, an urgent word reaches the running answering turn at its next step (`ChatTurns.cs:586-591`). The person's work then falls inside the boundary, and the recheck reads it as answers (finding 6).
+
+**4. A completed intervening turn (before e).** The text answers it in §5.2 point 3 (`design:447-449`), §6.1 (b) (`:544-550`) and §7 (`:611-616`). The answer does not hold as worded:
+- The count is "the number of the person's words kept on the line's records" (`design:544-545`; D157's amendment note, *Readings taken*).
+- In this code a kept word is one on the record's `said` list, and it leaves that list once its turn is on the wire (`ChatTurns.cs:93-96`, `:957-964`; `Conversations/SaidDoor.cs:15-16`; `Quests/Domain/Planner.cs:355`).
+- Take a turn the person sent and finished after the press, which is finding 4's own case. Its word is off the record when the findings arrive, so the count never rises (finding 4).
+
+**5. An ended chat waiting forever (before e).** The text answers it in §6.1 (f) (`design:570-577`) and §6.2 (`:599-600`). The answer holds against the go-on, which needs an ended chat with words waiting (`Conversations/Chat/ChatGoOn.cs:440-443`) and already treats such words as another agent's answer (`:583`). Today the service hands findings to an ended `opinion.Working` (`Review/OpinionDesk.cs:248-249`; `CannotTake`, `:480-492`). Two things are open:
+- **(a) blocks (f).** (a) admits only a `working` record and refuses "every other record … as today" (`design:535-539`). After a hand-over, the line's newest record is not `opinion.Working`. So the hand to it that (f) needs is refused by (a)'s own words.
+- **(f) compares no turn count** (finding 7).
+
+**6. The work that governs a record, resolved before its origin (a correction to row a, before i).** The text answers it in §4.1 (`design:231-241`), §4.2 (`:264`, `:281-286`) and rows a and i (`:732-738`, `:847-851`). The answer holds against the code:
+- `WorkOf` follows §4.1's order (`Workflows/WorkflowRun.Read.cs:165-176`).
+- `ChainsOf` reads it before an intake's or an ask's origin (`:114-116`).
+- `RunAsync` selects its work records by it (`:210-214`).
+
+The new `WorkflowRunTests` cases (`Daoris.Desktop.Driver.Tests/Workflows/WorkflowRunTests.cs:641`, `:672`) cover a worker of a quest an ask sent, a publisher in another tree, a genuine intake and a continuation's landing. Open: the taken-quest case's run facts and the opinion fact (finding 12), and a chat run whose line takes a quest later (finding 3).
+
+**7. Later steps derived by readiness (before c).** The text answers it in §4.2 (`design:304-313`) and row c (`:758-761`). The answer does not hold against `Derive`. `Candidate` replaces `workDone`, but two other parts of `Derive` are unchanged (findings 1 and 2):
+- The landing step still reads only ended records, and finds a landing by the record's id.
+- The opinion step reads a gate that answers `None` for a record with no quest.
+
+**8. A graph-bound chat run's subject and lifecycle (before f).** The text answers it in §4.5 (`design:380-403`), §4.3 (`:327-332`) and row f (`:824-828`). The answer holds. `claimed` and `quest.close` observe a quest (`Trees/Nodes/GraphRuns.cs:226-228`), an ended run is judged again only when a different quest comes back (`Trees/Nodes/NodeRuntime.cs:492-493`), and binding a graph version stays disabled until row f. Open: a submitted candidate whose tip moves before it lands (finding 9).
+
+### 2. What the amendment broke or left inconsistent
+
+- **Row c's proof against its own mechanism.** Before row d, `Candidate` is true, so the opinion step reads the gate (`WorkflowRun.cs:583`). The gate answers `None` for a null quest (`TreeGates.cs:141`), which is drawn as `skipped` (`WorkflowRun.cs:596`). `design:312` and row c's proof (`:751`) say `not-reached`. The landing step has the same kind of gap (finding 1).
+- **Row e's body keeps the rules its amendment replaces.** It still says:
+  - "§6.1's five";
+  - "as `TakeHeld` does";
+  - "(c) the answers read at the send-back turn's end";
+  - findings "wait … while words are queued" and also "go to the person" (`design:793-803`).
+
+  Its amendment says "six things" and gives distinct outcomes (`:808-814`). Together these are the mixed outcomes Codex's row e cell named.
+- **§6 now contradicts §6.1 and §7 in two places.**
+  - "A pass is asked only by an *Accept…*" (`design:504`) sits against *Ask now* on a chat run at any time (`:608-610`). That matters now, because every run's due carries a tip and a count.
+  - The next-step reach is "accepted and said" (`:511-513`). That sits against (c)'s "its commits are never read as answers" (`:562-563`) and §6.2's "no other turn ran" (`:587`).
+- **Stale or wrong claims about the records.**
+  - §11 still says "Codex's read stays owed under D191" (`design:708`).
+  - §17 says `5d19f6b3a`'s `src/` is `7cda79f01` "plus rows a and b's later commits" (`:999`). In fact `git diff 7cda79f01 5d19f6b3a -- src/` is empty, because rows a and b are in both.
+  - The standing says the citations the remaining rows build from are re-pinned in §17 (`:20`). Only §17's table is re-pinned: §6.1's `DriverContinuations.cs:658` is now `:660` (`design:523`).
+- **The router lists the reads twice.** `docs/README.md:141` (updated) and `:143` (the old "Codex's read owed" row) both name `2026-10-24-chat-flow-reads.md`. The commit added a row instead of replacing one.
+
+### 3. Findings
+
+1. **A chat run's landing step does not follow `Candidate`. Blocking row c.**
+
+   §4.2 reads `workDone` as `Candidate` (`design:309-310`) and leaves `Landing` as a quest's. But `Landing` reads only ended records with evidence, and finds a landing by the record's id (`WorkflowRun.cs:730-760`). That breaks in three places:
+   1. **A live chat between turns.** Its record stays `working` (§1.5), so it is not `ended` (`:732`; `Live`, `:464`). With `Candidate` true, the landing reads `done`, `nothing` (`:740-743`). `Derive` never holds a landing that reads `done` behind an unsettled opinion (`:374-379`). So the view says there is nothing to land at exactly the moment the work waits on the press.
+   2. **Every tip after the first landing.** Once a record has a landing or an acceptance (`:749`, `:758`), its landing reads `done` for every later tip, and the opinion shows the kept landing's opinion (`:573-580`). Yet §4.2's work step returns to `land` once the tree moves (`design:301`), and one run spans every landing (§4.1). The run's acceptances also carry no tip (`WorkflowRunRecords.cs:20-40`). So "a landing's record is kept for the tip the tree stands at" cannot be read for a merge landing.
+   3. **After a merge landing under a rule that names no opinion.** This is the install's Current (§11). Nothing stands beyond the line and no opinion was asked, so `Candidate` is false. The landing then reads `not-reached` (`:735-738`) beside a work step that reads `done`.
+
+   Row c's proof ("the landing visible … after the landing", `design:759-761`) cannot pass from this text.
+
+   **Smallest change:** one paragraph in §4.2, saying four things:
+   - A chat run's landing reads the line's newest record in the tree, live or ended.
+   - Its commits are read from the tree beyond the line, as the review's offer reads them.
+   - It reads `done` only where a landing or an acceptance is kept for the tip the tree stands at. The paragraph says where a merge acceptance's tip is read, and that `done` comes before `talk` and `stopped`.
+   - `Candidate` is true from commits beyond the line, between turns or ended, or from an opinion a press asked, until that tip lands. It stays true while the landing reads `done`.
+
+   Three proof rows go with it:
+   - A live chat between turns reads `waiting-on-you`, `accept`.
+   - A merge landing under a rule that names no opinion reads `done` after it lands.
+   - A second candidate after a branch landing reads `accept` again, with its own opinion.
+
+2. **Before row d, the opinion step reads `skipped`, not `not-reached`. Not blocking.** This is §2's first bullet. **Smallest change:** pick one:
+   - say in §4.2 that until row d, a chat run whose process names an opinion reads `not-reached` by a rule of the run's own, so the null-quest gate's `None` is never drawn as a skip; or
+   - change `:312` and row c's proof to `skipped`, with words saying that no opinion is asked for a conversation's work yet.
+
+3. **A chat run whose line later takes a quest. Not blocking.**
+
+   `WorkOf` reads a `tookQuest` from any record of the line in this tree, newest first (`WorkflowRun.Read.cs:175`, `:187-196`), and a chat can take a quest at any point in its life (CHATTAKE1). So a chat run already bound as `chat-<first>`, whether it has landed or not, then reads the taken quest's run:
+   - its earlier landings are counted there;
+   - its binding, gate and look files are left unread until the session delete.
+
+   §4.1's "one run per tree, across its landings" (`design:250-252`) does not say this. **Smallest change:** one sentence in §4.1 saying which run governs from the take on and what becomes of the chat run's three files, plus one row in row c's proof.
+
+4. **The person's turn count is read from words the record drops. Not blocking c; needed before d, which records it, and e.** This is §1's finding 4. **Smallest change:**
+   - Define the count as something that only rises: the person's own words in the line's conversation history (their `user` events in `SessionEvents`, on each record of the line in the tree), plus the words waiting or being kept.
+   - Read it the same way at the press and at the reservation.
+   - Prove it with a turn the person sent and finished after the press, with nothing left on `said`.
+
+5. **The press's reservation has no named state, and *Ask now* has no tip or count. Not blocking c; needed before d.** This is §1's finding 1 and §2's third bullet. **Smallest change:**
+   - Name a reserved state in which a word is kept and waits but starts no turn, as `_limited` behaves (`ChatTurns.cs:594-601`), let go when the press answers.
+   - Say whether it is held through the landing hold, or let go once the tip is pinned. The pin alone already refuses a moved candidate.
+   - Say that *Ask now* on a chat run captures `HEAD` and the count at its press. Otherwise `:504` stands, and *Ask now*'s findings go to the person.
+
+6. **An urgent word steered into the answering turn defeats finding 3's boundary. Not blocking c; needed before e.** This is §1's finding 3 and §2's third bullet. **Smallest change:** pick one, and add one row to row e's proof:
+   - while a send-back's turn runs, the person's words reach it only at its end (`TurnEnd`), unless they press *Send now*; or
+   - a reading whose turn took a word of the person's is marked as such, no recheck is asked automatically, and its answers go to the person.
+
+7. **(a) and (f) disagree, and (f) ignores the count. Not blocking c; needed before e.** This is §1's finding 5. A person who went on after the press and then ended the chat again would have the findings resumed into work they have moved past. **Smallest change:**
+   - (a) also admits an ended chat record that is the newest of `opinion.Working`'s line in its tree.
+   - (f) compares the count first, and a rise sends the findings to the person.
+   - Add a proof row for each.
+
+8. **Row e's body states the old rules. Not blocking c; needed before e.** This is §2's second bullet. **Smallest change:** rewrite row e's body to §6.1's six things and their distinct outcomes, and drop "as `TakeHeld` does", "at the send-back turn's end" and "findings wait … while words are queued".
+
+9. **A submitted graph candidate whose tip moves before it lands. Not blocking c; needed before f.**
+
+   §4.5 covers two presses (`design:390-392`):
+   - a press beyond the last landed candidate submits candidate *n* + 1;
+   - a press on the tip already submitted submits nothing.
+
+   It does not cover a press at a new tip while *n* + 1 stands submitted and unlanded: the press was refused because an opinion was asked, then the person committed again. Is that a second *n* + 1, an *n* + 2, or *n* + 1 superseded? And what becomes of the `opinion`, `look` and `check` already judged on the earlier tip? **Smallest change:** one sentence in §4.5 and one row in row f's proof.
+
+10. **Stale and wrong statements. Not blocking.** This is §2's fourth bullet. **Smallest change:**
+    - drop "Codex's read stays owed" (`:708`);
+    - say at `:999` that `src/` is identical to `7cda79f01`'s;
+    - narrow the re-pin claim at `:20` to §17's table, or re-pin §4 to §7 (for example `DriverContinuations.cs:660`).
+
+11. **The router has a duplicate row. Not blocking.** Delete `docs/README.md:143`.
+
+12. **Row a's correction proves less than Codex asked. Not blocking.**
+
+    Codex asked for a chat that took a quest contributing run facts, with the worker, the tree, the opinion and the landing all asserted (reads `:427`, `:480`). The new cases cover a `From` continuation of a worker (`WorkflowRunTests.cs:641`, `:672`), and fall short in three ways:
+    - no CHATTAKE1 chat's facts are tested;
+    - no opinion fact is tested, though `RunAsync` reads it through the same record (`WorkflowRun.Read.cs:248-253`);
+    - the tree asserted is also the worker's, so the test cannot tell that the continuation contributed it.
+
+    The design defers the opinion to row i (`design:737-738`), but row i proves the doors, which are another reader. **Smallest change:** one `ReadAsync` case for a CHATTAKE1 chat under a rule naming an opinion, asserting its tree, opinion and landing, before row c builds on the same work records.
+
+**12 findings, 1 blocking row c.**
+
+**Verdict:** row c may be built after named changes the steward can check. The required change is finding 1: §4.2's paragraph on a chat run's landing, with its three proof rows. Findings 2 and 3 are row c's own text and should go in the same edit; none of the three needs another read. The amendment otherwise answers Codex's eight blocking findings in the text, not only in §17's table, and the answers hold against main, including the built correction for finding 6. The exception is finding 7, whose answer swaps the gate on later steps but not the landing step's own reading of live records and tips. Findings 4 to 8 must land before rows d and e and finding 9 before row f; 10 to 12 are record fixes the steward can make at any time.
