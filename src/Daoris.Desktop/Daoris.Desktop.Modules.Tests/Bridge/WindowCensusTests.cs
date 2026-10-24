@@ -21,6 +21,7 @@ public sealed class WindowCensusTests
     {
         ["STATE_SLICE"] = "a pushed slice's snapshot, held by its owner",
         ["UNDER_WAY"] = "the presses under way, held by the publisher",
+        ["STEWARD_ACTS"] = "the steward's live generation and this run's acts, held by the standing confirmation's judge (STEWARDROLE1b)",
     };
 
     /// <summary>

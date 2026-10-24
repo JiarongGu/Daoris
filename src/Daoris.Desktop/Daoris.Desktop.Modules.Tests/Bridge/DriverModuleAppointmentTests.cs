@@ -152,6 +152,24 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
         Assert.Equal((false, StandingConfirmation.Scope), (unscoped.GetProperty("done").GetBoolean(), unscoped.GetProperty("why").GetString()));
     }
 
+    /// <summary>
+    /// STEWARDROLE1b (D209 §3.3): <c>STEWARD_ACTS</c>, the steward's verbs' open read, answers from the judge's memory alone; in a build
+    /// that offers no steward it names no live generation and no act, and with no pipe neither.
+    /// </summary>
+    [Fact]
+    public async Task The_steward_s_acts_read_names_no_generation_and_no_act_while_the_steward_is_not_offered()
+    {
+        var (loop, module, dispatcher, services) = Compose();
+        using var composed = services;
+        var bare = await AnswerAsync(module, "STEWARD_ACTS");
+        Assert.Equal((JsonValueKind.Null, 0), (bare.GetProperty("generation").ValueKind, bare.GetProperty("acts").GetArrayLength()));
+
+        using var pipe = new InstancePipe(dispatcher, Bus, Home, standing: Judge());
+        loop.Pipe = pipe;
+        var read = await AnswerAsync(module, "STEWARD_ACTS");
+        Assert.Equal((JsonValueKind.Null, 0), (read.GetProperty("generation").ValueKind, read.GetProperty("acts").GetArrayLength()));
+    }
+
     /// <summary>D208 §2.3: this build does not offer appointments, so the window's press is refused and nothing starts.</summary>
     [Fact]
     public async Task This_build_refuses_an_appointment_not_offered_and_starts_nothing()

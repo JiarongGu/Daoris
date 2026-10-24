@@ -10,27 +10,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class StewardCommandTests : IDisposable
 {
-    private readonly string _home;
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "steward-command-tests", Guid.NewGuid().ToString("N")[..8]);
 
-    public StewardCommandTests()
-    {
-        var root = new DirectoryInfo(AppContext.BaseDirectory);
-        while (root is not null && !File.Exists(Path.Combine(root.FullName, "daoris.json"))) root = root.Parent;
-        _home = Path.Combine(root!.FullName, "_fixtures", "steward-command-tests", Guid.NewGuid().ToString("N")[..8]);
-        Directory.CreateDirectory(_home);
-    }
+    public StewardCommandTests() => Directory.CreateDirectory(_home);
 
-    public void Dispose()
-    {
-        try
-        {
-            Directory.Delete(_home, recursive: true);
-        }
-        catch (IOException)
-        {
-            // The scratch is the checkout's, and its parent is ignored.
-        }
-    }
+    public void Dispose() => GitSeed.Remove(_home);
 
     [Theory]
     [InlineData("drive engine", "drive", """{"repository":"engine","drivable":true}""")]
