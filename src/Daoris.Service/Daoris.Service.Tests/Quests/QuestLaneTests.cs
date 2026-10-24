@@ -149,14 +149,20 @@ public sealed class QuestLaneTests : IAsyncLifetime
     /// <summary>
     /// D115 amends the exchange's self-address refusal: work for another lane is work for another
     /// session, so a repository may ask one of its own lanes. To itself with no lane is still refused,
-    /// with the sentence it always had.
+    /// and the refusal names its lanes as the way it asks itself (SELFASK1).
     /// </summary>
     [Fact]
     public async Task A_repository_may_ask_its_own_lane_and_never_itself_whole()
     {
         var whole = await Publish("engine", from: "engine");
         Assert.Equal(QuestPublishRefusal.SelfAddressed, whole.Refusal);
-        Assert.Equal("That is the repository you are in — a quest is work for someone else. Use its own backlog.", whole.Message);
+        Assert.Equal(
+            "That is the repository you are in — a quest to it whole is work for someone else. "
+            + "Its own lanes are how it asks itself, each lane's quest work for another session: "
+            + "`core` (Core), `assets` (Assets). "
+            + "Address one as `engine:core`, or several as `engine:<lane>+<lane>`.",
+            whole.Message);
+        Assert.Empty(await _quests.ListAsync());
 
         var own = await Publish("engine:core", from: "engine");
         Assert.Equal(QuestPublishRefusal.None, own.Refusal);
@@ -165,6 +171,24 @@ public sealed class QuestLaneTests : IAsyncLifetime
 
         var unknown = await Publish("engine:nope", from: "engine");
         Assert.Equal(QuestPublishRefusal.UnknownLane, unknown.Refusal);
+    }
+
+    /// <summary>
+    /// SELFASK1: a repository that declares no lanes and asks itself is told what would let it hand its
+    /// own work out — a lanes file with a steward lane — rather than only to use its backlog.
+    /// </summary>
+    [Fact]
+    public async Task A_repository_with_no_lanes_asking_itself_is_told_a_lanes_file_is_the_way()
+    {
+        var whole = await Publish("game", from: "game");
+
+        Assert.Equal(QuestPublishRefusal.SelfAddressed, whole.Refusal);
+        Assert.Equal(
+            "That is the repository you are in — a quest to it whole is work for someone else. Use its own backlog. "
+            + "`game` declares no lanes: a `daoris.lanes.json` with a steward lane is what lets it dispatch its own work "
+            + "as Daoris sessions, each a quest to `game:<lane>`.",
+            whole.Message);
+        Assert.Empty(await _quests.ListAsync());
     }
 
     /// <summary>A quest's lanes survive its history: the log replays them, and the wire carries them.</summary>

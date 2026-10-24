@@ -530,21 +530,27 @@ public sealed class QuestExchange(
         var address = QuestAddress.Parse(ask.To);
         var (from, to, title, body) = (ask.From, address.Repository, ask.Title, ask.Body);
 
-        // Work for another lane is work for another session, so a repository may ask one of its own
-        // lanes (D115, amending this refusal). To itself whole is still its own backlog's.
-        if (!address.Named && string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
-        {
-            return new(
-                QuestPublishRefusal.SelfAddressed,
-                "That is the repository you are in — a quest is work for someone else. Use its own backlog.",
-                Quest: null, Addressable: []);
-        }
-
         // Unscoped deliberately: the clause below needs BOTH sides' workspaces, and a registry already
         // narrowed to one would answer the cross-workspace case as "no such repository" — a refusal
         // that sends the asker looking for a name they can see perfectly well.
         var registered = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
         var sender = registered.Named(from);
+
+        // Work for another lane is work for another session, so a repository may ask one of its own
+        // lanes (D115, amending this refusal). To itself whole is still refused, and the refusal says
+        // how it asks itself: its lanes, or the file that would give it some (SELFASK1).
+        if (!address.Named && string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
+        {
+            const string whole = "That is the repository you are in — a quest to it whole is work for someone else.";
+            var declared = sender?.DeclaredLanes ?? [];
+            return new(
+                QuestPublishRefusal.SelfAddressed,
+                declared.Count > 0
+                    ? $"{whole} Its own lanes are how it asks itself, each lane's quest work for another session: "
+                      + $"{LaneList(declared)}. {HowToAddress(sender!.Repository, declared)}"
+                    : $"{whole} Use its own backlog. {NoLanesWay(sender?.Repository ?? to)}",
+                Quest: null, Addressable: []);
+        }
         // A registered sender's row decides its circle. A sender with none — an ask (D65 §1a) — names
         // its own, and silence places it where an unregistered sender always was.
         var home = sender?.InWorkspace ?? Workspaces.Normalize(ask.Workspace);
@@ -716,8 +722,8 @@ public sealed class QuestExchange(
                         + $"`{target.Repository}`, not `{asked}`.");
         }
 
-        var theirs = string.Join(", ", declared.Select(lane => $"`{lane.Id}`" + (lane.Title.Length > 0 ? $" ({lane.Title})" : "")));
-        var how = $"Address one as `{target.Repository}:{declared[0].Id}`, or several as `{target.Repository}:<lane>+<lane>`.";
+        var theirs = LaneList(declared);
+        var how = HowToAddress(target.Repository, declared);
         if (address.Lanes.Count == 0)
         {
             return ([], $"`{asked}` names no lane after the colon. `{target.Repository}`'s lanes: {theirs}. {how}");
@@ -745,6 +751,20 @@ public sealed class QuestExchange(
 
         return (kept.Order(StringComparer.Ordinal).ToList(), null);
     }
+
+    /// <summary>
+    /// What would let a repository that declares no lanes hand its own work out (SELFASK1, D115 §2.2): the
+    /// same words at the self-address refusal and on its registry row.
+    /// </summary>
+    public static string NoLanesWay(string repository) =>
+        $"`{repository}` declares no lanes: a `daoris.lanes.json` with a steward lane is what lets it dispatch its own "
+        + $"work as Daoris sessions, each a quest to `{repository}:<lane>`.";
+
+    private static string LaneList(IReadOnlyList<DeclaredLane> declared) =>
+        string.Join(", ", declared.Select(lane => $"`{lane.Id}`" + (lane.Title.Length > 0 ? $" ({lane.Title})" : "")));
+
+    private static string HowToAddress(string repository, IReadOnlyList<DeclaredLane> declared) =>
+        $"Address one as `{repository}:{declared[0].Id}`, or several as `{repository}:<lane>+<lane>`.";
 
     /// <summary>
     /// Every step of a chain must be publishable when its turn comes — so each is judged as its own

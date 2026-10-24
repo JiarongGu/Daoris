@@ -20492,3 +20492,14 @@ code:
 - `RESULT` answers `interrupted`, and the census reads the handler itself.
 
 The FIX-LOG has entries for 1a-i's five defects. The plan's door is the new row CONFIRMWAIT1c.
+## SELFASK1 — a repository asking itself is told the lanes way (2026-10-24, D115)
+
+> **SELFASK1 — a repository asking itself is told the lanes way** (service; seen 2026-10-24 on the Lyntai kit's own chat). A session that asks its own repository is refused with *That is the repository you are in — a quest is work for someone else. Use its own backlog.* (`QuestExchange.cs:535-540`), which never says that a repository's own lanes are how it asks itself (D115 §2.2), so a kit's chat ran its tasks one sub-agent at a time in its own tree instead of as Daoris sessions. The refusal names the repository's lanes where it declares some, and where it declares none says that a `daoris.lanes.json` with a steward lane is what lets it dispatch its own work; the registry's row says the same for a repository with no lanes. Proof: both refusals' words in the service's quest tests, and the registry's row for a repository with and without lanes.
+
+(Quest `#ad72b46fbe68`.)
+
+**Outcome** 2026-10-24. The self-address refusal reads the sender's registration: where it declares lanes it names them and how
+to address one, each lane's quest work for another session; where it declares none it says a `daoris.lanes.json` with a steward
+lane is what lets it dispatch its own work. The `registry` tool's row for a repository with no lanes says the same words
+(`QuestExchange.NoLanesWay`). Both refusals' words (`QuestLaneTests`) and the registry's row with and without lanes
+(`McpToolsTests`) were seen failing first, then passed. Detail: D115's SELFASK1 note.

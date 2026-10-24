@@ -111,6 +111,38 @@ public sealed class McpToolsTests : McpToolsFixture
     }
 
     /// <summary>
+    /// SELFASK1: the registry's row for a repository with no lanes says what would let it hand its own work
+    /// out, in the words the exchange's self-address refusal uses; a row with lanes lists them instead.
+    /// </summary>
+    [Fact]
+    public async Task The_registrys_row_for_a_repository_with_no_lanes_says_a_lanes_file_is_the_way()
+    {
+        var owner = (await _service.RegistryAsync()).Named("Owner")!;
+        await _service.RegisterAsync(
+            owner with { Lanes = [new("core", "Core", "The runtime."), new("records", "Records", "The backlog.", Steward: true)] },
+            DateTimeOffset.UtcNow);
+
+        var registry = await _search.RegistryAsync();
+        var laned = Row(registry, "Owner");
+        var bare = Row(registry, "Checker");
+
+        Assert.Contains("`Owner:core`", laned);
+        Assert.DoesNotContain("daoris.lanes.json", laned);
+        Assert.Contains(
+            "- **lanes:** none. `Checker` declares no lanes: a `daoris.lanes.json` with a steward lane is what lets it "
+            + "dispatch its own work as Daoris sessions, each a quest to `Checker:<lane>`.",
+            bare);
+
+        static string Row(string registry, string repository)
+        {
+            var start = registry.IndexOf($"## `{repository}`", StringComparison.Ordinal);
+            Assert.True(start >= 0, registry);
+            var end = registry.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
+            return end < 0 ? registry[start..] : registry[start..end];
+        }
+    }
+
+    /// <summary>
     /// An intake's connector (D65 §1b): the room is no repository, so the quest is asked BY THE ASK, in
     /// the ask's circle — and because the session publishing is the ask's own intake, the ask says a
     /// harness decided. The `from` an agent fills in is not what decides who asked.
