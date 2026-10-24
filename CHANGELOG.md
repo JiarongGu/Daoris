@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- The supervisor's door is built and not offered yet (SUPERVISOR1a-ii, D208). A repository's Setup → Driving has a *Supervisor*
+  row that says it is not offered yet; once it is, *Appoint…* asks you once, then opens the supervisor's terminal as a tab of Daoris's
+  own terminal panel with a key no page, clipboard or file ever holds, and *Notifications* says each appointment with *Turn off*. An
+  appointment lasts until Daoris restarts. `daoris-driver sessions supervise` is the supervisor's verb, run only in that tab.
 - Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208). A
   session that goes on with no words of yours, a helper's answer or Daoris's alone, now says whose words they are, never *your answer*.
   Nothing is offered yet and nothing you see changes: its answer can only be kept as the supervisor's, never as yours. Your own

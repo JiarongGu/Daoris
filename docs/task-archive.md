@@ -20195,3 +20195,19 @@ and effort) and `IntakeTests` (a walk past a missing agent; a first account's re
 the room's goldens and the web's AI features tests. **Remaining, as MODELROLE1d2:** §3.5(b)'s pending conversation start and what
 follows it, and the curve move's reading; the installed-window proof. Detail: D205's MODELROLE1d note;
 `docs/2026-10-24-modelrole1d-build.md`.
+
+## SUPERVISOR1a-ii — the door, built dark (2026-10-24, D208)
+
+> **SUPERVISOR1a-ii — the door** (modules, driver, web; after 1a-i; lands dark). The appointment in D201's record with its generation, the holder key's hash in memory alone and an appointment found at a start dormant, the holder's terminal started by the appointment with the key in its environment and the key stripped from every other start, the verb sending only a proof over the hello's nonce to the install's `app/Daoris.Desktop.exe`, every write of the record one mutation step and a revoke's sweep after it, the `Role` class judged by its own method and the key, `SUPERVISOR_ANSWER` with one offered choice and sourced reasons, `sessions supervise` with its fenced print and no alone path, Setup's row, the key never shown and the *Notifications* line; `AppointmentsOffered` stays false. Proof: §11 row 1a-ii.
+
+(Quest `#03a01480b7ea`.)
+
+**Outcome** 2026-10-24, in four parts on one branch, dark (`AppointmentsOffered` false). The appointments in D201's record with
+their generation, the key's hash in memory alone and an appointment read at a start dormant; one mutation step for every write and
+a revoke's sweep after it; `PipeClass.Role` judged by the judge's own method, the caller look first, then an HMAC proof over each
+connection's hello nonce; `SET_APPOINTMENT`, `SUPERVISOR_ANSWER` and `SUPERVISOR_WAITING`; the key stripped at every entry and from
+every start; `sessions supervise` with its fenced print, its install-image check and no alone path; Setup → Driving's row and its
+ask, and the *Notifications* line. **By the owner's direction during the build:** the holder's terminal is a tab of Daoris's own
+terminal panel, never a console window of the system's, the key in that shell's environment alone, and its tests use stand-ins,
+after a test that started a real console opened windows on the owner's screen. **Remaining, in SUPERVISOR1a-iii's row:** the
+positive case on a real install's `app/Daoris.Desktop.exe`, and the installed look. Detail: D208's SUPERVISOR1a-ii note.
