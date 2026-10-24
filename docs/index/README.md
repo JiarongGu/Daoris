@@ -363,8 +363,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-steward-role-reads.md` | 127 | 1237 |
 | `docs/2026-10-24-supervisor-design.md` | 197 | 1609 |
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
-| `docs/2026-10-24-switch-context-design.md` | 136 | 1070 |
-| `docs/2026-10-24-switch-context-reads.md` | 106 | 1048 |
+| `docs/2026-10-24-switch-context-design.md` | 193 | 1447 |
+| `docs/2026-10-24-switch-context-reads.md` | 144 | 1511 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 47 | 262 |
 | `src/Daoris.Desktop/README.md` | 176 | 815 |
