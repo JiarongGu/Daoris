@@ -287,15 +287,19 @@ internal sealed class TreeLands(
         string[] merge = replay is not null ? ["merge", "--no-ff", "-m", $"Merge branch '{branch}'", replay.Now]
             : pinned is not null ? ["merge", "--no-ff", "-m", $"Merge branch '{branch}'", pinned]
             : ["merge", "--no-ff", "--no-edit", branch];
-        var (mergeCode, _, mergeErr) = await WorkingTree.GitAsync(root, merge, ct).ConfigureAwait(false);
+        var (mergeCode, mergeOut, mergeErr) = await WorkingTree.GitAsync(root, merge, ct).ConfigureAwait(false);
         if (mergeCode != 0)
         {
+            // HOOKMERGE1: a merge that stands staged with nothing unmerged was refused by the repository's own hook (`pre-merge-commit`
+            // or `commit-msg`), never by a conflict, and the hook's words are the reason. Read before the abort takes that state away.
+            var hooked = await HookRefusedAsync(root, ct).ConfigureAwait(false);
             // Leave the root as it was found. Nothing here resolves a conflict: the person does that
             // where the context is, and a half-merged checkout is worse than an honest refusal.
             await WorkingTree.GitAsync(root, ["merge", "--abort"], ct).ConfigureAwait(false);
-            return new(false,
-                $"git would not merge `{branch}` into `{canonical}`: {FirstLine(mergeErr)} "
-                + "The merge was aborted and the checkout is as it was.");
+            return new(false, hooked
+                ? HookRefused(branch, canonical, mergeErr, mergeOut)
+                : $"git would not merge `{branch}` into `{canonical}`: {FirstLine(mergeErr)} "
+                    + "The merge was aborted and the checkout is as it was.");
         }
 
         var landed = ahead.Trim().Split('\n').Length;
@@ -309,6 +313,37 @@ internal sealed class TreeLands(
 
     /// <summary>What a landing says of the tree it leaves — dropped when a tidy removed it; the squash's advance says it too.</summary>
     internal const string TreeStays =" The tree is still there; discard it when you are done with it.";
+
+    /// <summary>How much of a refusing hook's output the sentence quotes.</summary>
+    private const int HookSaidLimit = 600;
+
+    /// <summary>
+    /// Whether a failed merge was refused by the repository's own hook (HOOKMERGE1): git stopped with the merge staged
+    /// (<c>MERGE_HEAD</c> stands) and nothing unmerged, which a conflict never leaves. Read from git's state, not its words, which
+    /// may be in the person's language.
+    /// </summary>
+    private static async Task<bool> HookRefusedAsync(string root, CancellationToken ct)
+    {
+        var (headCode, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--quiet", "--verify", "MERGE_HEAD"], ct).ConfigureAwait(false);
+        if (headCode != 0) return false;
+        var (code, unmerged, _) = await WorkingTree.GitAsync(root, ["diff", "--name-only", "--diff-filter=U"], ct).ConfigureAwait(false);
+        return code == 0 && string.IsNullOrWhiteSpace(unmerged);
+    }
+
+    /// <summary>
+    /// What a merge its repository's hook refused says (HOOKMERGE1): that it was the hook and no conflict, the hook's own output, and
+    /// that Daoris does not skip a repository's hooks (this merge never passes <c>--no-verify</c>, as the git writes design's §4.1
+    /// proposes for the person's own acts), so the person changes what the hook refuses or merges by hand. git runs a hook with its output on stderr; its own closing line, where it is in English, is left out.
+    /// </summary>
+    internal static string HookRefused(string branch, string canonical, string stderr, string stdout)
+    {
+        var said = string.Join(" ", (stderr.Length > 0 ? stderr : stdout).Split('\n').Select(line => line.Trim())
+            .Where(line => line.Length > 0 && !line.StartsWith("Not committing merge", StringComparison.Ordinal)));
+        var quoted = said.Length > 0 ? $" It said: {TextBounds.Clip(said, HookSaidLimit)}" : " It said nothing.";
+        return $"the repository's own git hook (`pre-merge-commit` or `commit-msg`) refused the merge commit, so `{branch}` did not merge "
+            + $"into `{canonical}`; nothing conflicted.{quoted} Daoris does not skip a repository's hooks: change what the hook "
+            + "refuses there, or merge the branch yourself. The merge was aborted and the checkout is as it was.";
+    }
 
     /// <summary>
     /// The press on a reviewed session (WSR1, D87): its work lands as its repository's rule says —
