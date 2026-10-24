@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- Words you write to a finished session whose account is cooling no longer wait days for that account's reset while another account
+  is ready (LIMITSWITCH1, D137). For work that is open or taken, they go on at once as a new part of the same session on the ready
+  account, handed Daoris's brief, as work cut off by a limit already did, and arrive once. Only when every account is at its limit do
+  they wait, until the first of them is ready again. Such a session's row and page now say *Waiting for a limit to reset: it resumes by
+  itself at {time}, on {account}*, in English and 中文, instead of only that it completed. A conversation's words still wait for their
+  own account for now (LIMITSWITCH2).
 - A session's page now draws its whole line as one conversation (SWITCHCTX1c-i, D167). After a move or a hand-over, the parts the
   one you are on continues are drawn above it, oldest first and read-only, so the new part no longer opens empty under a brief as if it
   were a new session. The three nearest are drawn and a press (*Show the part before*, *Show 2 earlier parts*) draws up to three more; a
