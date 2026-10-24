@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - Two branch-tidying tests still asserted no recovery ref after KEEPSIZE1b held every squashed tip (KEEPSIZE1b)
+
+- **Symptom:** the CI on `deb766f20` failed the driver's Process half on `BranchTidyingLandingKeptTests` and
+  `BranchTidyingLandingBranchesTests`, each again alone: a `refs/daoris/discarded/daoris/s-…` ref stood where each asserted none (or
+  only the squashed landing's own).
+- **Root cause:** KEEPSIZE1b (the keep-size design §3.1) holds a removed session branch's exact tip on a recovery ref wherever the line
+  does not hold it by ancestry, a squash's form of the line included, so the tip stays reachable once its tree is let go. The two
+  AUTOTIDY2b tests squash their landings and still held the old rule. Its landing ran the Process classes it changed, and these
+  were not among them; the full CI is the check that reaches them.
+- **Fix:** the tests assert the new rule: each squashed session branch the look takes keeps its tip on its recovery ref, a merged one
+  needs none, and a kept landing branch writes none.
+- **Verification:** both classes with `process.runsettings`, 3 of 3.
+
 ## 2026-10-25 - The CI on 5717fd1 failed three checks that no merge's own tests ran (ROUTERMERGE1, STEWARDROLE1a-ii, SELFASK1)
 
 - **Symptom:** the full CI on main at `5717fd195` failed two tool tests and one end-to-end test, each green on the merge that

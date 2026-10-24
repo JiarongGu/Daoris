@@ -98,8 +98,12 @@ public sealed class BranchTidyingLandingBranchesTests : BranchTidyingFixture
 
         Assert.Contains(open.Branch, branches, StringComparison.Ordinal);
         Assert.Contains(open.Tree.Branch, branches, StringComparison.Ordinal);
-        var discarded = (await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/daoris/discarded/")).Trim();
-        Assert.Equal($"refs/daoris/discarded/{squashed.Branch}", discarded);
+        // KEEPSIZE1b (the keep-size design §3.1): where the line does not hold a session branch's tip by ancestry, a squash's form of it,
+        // the session branch the look takes keeps its exact tip on a recovery ref, beside the squashed landing's own; a merged one needs none.
+        var discarded = $"refs/daoris/discarded/{squashed.Branch}";
+        Assert.Equal(
+            new[] { $"refs/daoris/discarded/{squashed.Tree.Branch}", discarded }.Order(StringComparer.Ordinal),
+            (await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/daoris/discarded/")).Split('\n', StringSplitOptions.RemoveEmptyEntries));
         Assert.Equal(4, said.Count);
         Assert.Equal(2, said.Count(line => line.Contains("a branch a landing made", StringComparison.Ordinal)));
         Assert.Contains($"tidy  engine: removed `{merged.Branch}`, a branch a landing made, since its work is on `main`.", said);
@@ -171,7 +175,11 @@ public sealed class BranchTidyingLandingKeptTests : BranchTidyingFixture
         }
 
         Assert.DoesNotContain(said, line => line.Contains("feature/", StringComparison.Ordinal));
-        Assert.Empty((await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/daoris/discarded/")).Trim());
+        // KEEPSIZE1b (§3.1): the two session branches taken keep their exact tips on recovery refs, the line holding their work by a
+        // squash, never by ancestry; the landing branches the look keeps write none.
+        Assert.Equal(
+            new[] { $"refs/daoris/discarded/{checkedOut.Tree.Branch}", $"refs/daoris/discarded/{pushed.Tree.Branch}" }.Order(StringComparer.Ordinal),
+            (await GitAsync(root, "for-each-ref", "--format=%(refname)", "refs/daoris/discarded/")).Split('\n', StringSplitOptions.RemoveEmptyEntries));
         Assert.Empty(Events("branch.kept"));
         Assert.DoesNotContain(Events("branch.tidied"), data => data.TryGetProperty("session", out _));
     }
