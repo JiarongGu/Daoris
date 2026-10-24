@@ -59,6 +59,52 @@ internal sealed class StandInLedger : HttpMessageHandler
     private ForwardTake? _claimForward;
 
     /// <summary>
+    /// The finished trees' records posted to <c>/api/trees/record</c> (KEEPSIZE1b), each once by its <c>workspace/repository/folder</c>, as the
+    /// service keeps them; a second post of a kept one answers as the first and keeps nothing more.
+    /// </summary>
+    public IReadOnlyList<JsonObject> Records
+    {
+        get { lock (_gate) return [.. _records.Select(each => (JsonObject)each.DeepClone())]; }
+    }
+
+    private readonly List<JsonObject> _records = [];
+
+    /// <summary>How many posts the record door has answered, a second of a kept identity included.</summary>
+    public int RecordPosts
+    {
+        get { lock (_gate) return _recordPosts; }
+    }
+
+    private int _recordPosts;
+
+    /// <summary>The record door does not answer (KEEPSIZE1b's retry): a 503, as a service that is down.</summary>
+    public bool RecordsDown
+    {
+        get { lock (_gate) return _recordsDown; }
+        set { lock (_gate) _recordsDown = value; }
+    }
+
+    private bool _recordsDown;
+
+    /// <summary>The stand-in has no record door, as a service older than the driver (the second maker's read, finding 4): a bare 404.</summary>
+    public bool RecordsMissing
+    {
+        get { lock (_gate) return _recordsMissing; }
+        set { lock (_gate) _recordsMissing = value; }
+    }
+
+    private bool _recordsMissing;
+
+    /// <summary>The record door answers as a service whose records a newer build stamped: 409, <c>RECORDS_NEWER</c> (KEEPSIZE1b).</summary>
+    public bool RecordsNewer
+    {
+        get { lock (_gate) return _recordsNewer; }
+        set { lock (_gate) _recordsNewer = value; }
+    }
+
+    private bool _recordsNewer;
+
+    /// <summary>
     /// The person brings this machine's lost take forward now (SYNCMERGE1a): its fresh take, made after every record so far, stands as
     /// <paramref name="standing"/>, and so does the claim, unless it lost again.
     /// </summary>
@@ -897,6 +943,27 @@ internal sealed class StandInLedger : HttpMessageHandler
                         if (body![key] is { } value) session[key] = value.DeepClone();
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" });
                 }
+                // A finished tree's record (KEEPSIZE1b): kept once by its identity, as the service keeps it.
+                case ("POST", "/api/trees/record"):
+                {
+                    if (_recordsMissing) return new HttpResponseMessage(HttpStatusCode.NotFound);
+                    if (_recordsNewer)
+                    {
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = "The records of finished trees were written by a newer Daoris (version 2; this build reads 1), so this one keeps none of them.",
+                            ["code"] = "RECORDS_NEWER",
+                        });
+                    }
+
+                    if (_recordsDown) return Answer(HttpStatusCode.ServiceUnavailable, new JsonObject { ["error"] = "the stand-in's record door is down" });
+                    _recordPosts++;
+                    var key = $"{body!["workspace"]}/{body["repository"]}/{body["folder"]}";
+                    var kept = _records.FirstOrDefault(each => $"{each["workspace"]}/{each["repository"]}/{each["folder"]}" == key);
+                    if (kept is null) _records.Add((JsonObject)body.DeepClone());
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["kept"] = kept is null, ["at"] = _clock.ToString("O"), ["sessions"] = new JsonArray() });
+                }
+
                 // The resolved door (KEEP1b): the downloaded versions a start was handed, added to the record's, as the ledger keeps them.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/resolved", StringComparison.Ordinal):
                 {

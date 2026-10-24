@@ -94,10 +94,20 @@ function EarlyGroup({ group, busy, onRemove }: { group: SpacePlan['early'][numbe
   const [asking, setAsking] = useState(false);
   const word = FREE_KIND[group.group] ?? 'setAside';
   const details: string[] = [];
-  details.push(t(`settings.daoris.space.freeing.early.${word}`, { count: group.count }));
+  // KEEPSIZE1b: a folder awaiting its record has no date, so it is not counted among those before theirs (the second maker's read, finding 9).
+  const dated = group.count - (group.classes?.awaiting ?? 0);
+  if (dated > 0) details.push(t(`settings.daoris.space.freeing.early.${word}`, { count: dated }));
   // An earlier build's folders are named by their paths, which are content and stay as written.
   if (group.group === 'left-over') details.push(group.units.map((unit) => unit.id).join(', '));
   if (group.own > 0) details.push(t('settings.daoris.space.freeing.early.own', { count: group.own }));
+  // KEEPSIZE1b: each class the list can say of the set-aside folders, so the person weighs what goes before pressing.
+  for (const each of ['recorded', 'awaiting', 'stands', 'stopped', 'unheld', 'unmarked'] as const) {
+    const count = group.classes?.[each] ?? 0;
+    if (count > 0) details.push(t(`settings.daoris.space.freeing.early.class.${each}`, { count }));
+  }
+  // KEEPSIZE1b: and each folder with what the list can say of it, its holder named (Codex's read of the branch, finding 12). The folder's
+  // name and the ref are content, as written.
+  const folders = group.group === 'set-aside' ? group.units.filter((unit) => unit.class) : [];
   return (
     <li className="grid gap-1">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small">
@@ -106,6 +116,18 @@ function EarlyGroup({ group, busy, onRemove }: { group: SpacePlan['early'][numbe
         {group.bytes !== null && <span className="text-ink-faint">{size(group.bytes)}</span>}
         {!asking && <Button variant="ghost" disabled={busy} onClick={() => setAsking(true)}>{t('settings.daoris.space.freeing.remove')}</Button>}
       </div>
+      {folders.length > 0 && (
+        <ul className="m-0 grid list-none gap-0.5 p-0 text-small text-ink-faint">
+          {folders.map((unit) => (
+            <li key={unit.id}>
+              {t(`settings.daoris.space.freeing.folder.${unit.class === 'recorded' && !unit.ref ? 'recordedLine' : unit.class}`, {
+                folder: unit.id, ref: unit.ref ?? '',
+                defaultValue: t('settings.daoris.space.freeing.folder.unmarked', { folder: unit.id }),
+              })}
+            </li>
+          ))}
+        </ul>
+      )}
       {asking && (
         <div className="grid gap-1.5 border-l-[3px] border-warn pl-3">
           <Prose className="text-small text-ink-soft">{t(`settings.daoris.space.freeing.say.${word}`)}</Prose>

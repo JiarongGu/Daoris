@@ -217,6 +217,33 @@ public sealed class HeldFactsGitTests : LandedFixture
     }
 
     /// <summary>
+    /// 🔴 KEEPSIZE1b (the keep-size design §3.1; Codex's reads, the row's squash case): a squashing landing's record holds a session's work by a
+    /// squash, never its own commits. The look takes the session branch on that record, writes its exact tip on a ref of its own, names the
+    /// hold <c>squash</c> in its manifest, and the session's own commit and message read from that ref after the landing's branch is gone too.
+    /// </summary>
+    [Fact]
+    public async Task A_squashing_landings_session_keeps_its_own_commits_on_its_tips_ref()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (tree, branch, landing) = await OlderSquashAsync(trees, root);
+        var tip = (await GitAsync(root, "rev-parse", branch)).Trim();
+        using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
+
+        var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>()));
+
+        var removed = Assert.Single(pass.Results, result => result.Removed && result.Item.Branch == branch);
+        var manifest = SlimManifest.Read(SlimManifest.PathFor(removed.MovedTo!)).Manifest!;
+        Assert.Equal(("squash", $"refs/daoris/discarded/{branch}"), (manifest.Finished!.Hold.Kind, manifest.Finished.Ref));
+        Assert.False(Directory.Exists(tree));
+        await GitAsync(root, "branch", "-D", landing);
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", manifest.Finished.Ref!)).Trim());
+        var (commits, unread, failed) = await FinishedRecords.CommitsAsync(root, manifest.Finished, CancellationToken.None);
+        Assert.Equal((null, null), (unread, failed));
+        Assert.Equal(["the work"], commits!.Select(commit => commit.Subject));
+    }
+
+    /// <summary>
     /// 🔴 FABRIC-END2d (b): a landing inside another whose own proof ended it is kept ended inside that one (D102's group, as the clean-up's
     /// <c>Inside</c> proves it), its fact resting on that branch at the commit read; and the session branch it carries ends with it. With no
     /// units (an install from before END2), the session branch ends through the landing whose branch holds its work.

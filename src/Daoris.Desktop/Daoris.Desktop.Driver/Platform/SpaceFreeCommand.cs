@@ -77,7 +77,7 @@ public static class SpaceFreeCommand
 
         var asked = plan.Units
             .Where(unit => unit.Early ? groups.Contains(unit.Kind) : kinds.Count == 0 || kinds.Contains(unit.Kind))
-            .Select(unit => new SpaceAsked(unit.Kind, unit.Id, unit.Early, unit.Why, unit.Own == true))
+            .Select(unit => new SpaceAsked(unit.Kind, unit.Id, unit.Early, unit.Why, unit.Own == true) { Class = unit.Class, Ref = unit.Ref })
             .ToList();
         if (asked.Count == 0)
         {

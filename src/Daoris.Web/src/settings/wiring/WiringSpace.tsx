@@ -40,11 +40,9 @@ function ruleOwnWords(t: T, kind: SpaceKind): string {
   const { rule } = kind;
   if (rule.kind === 'days' && kind.id === 'downloads') return t('settings.daoris.space.rule.downloads', { count: rule.days });
   if (rule.kind === 'days' && kind.id === 'history') return t('settings.daoris.space.rule.history', { count: rule.days });
+  // KEEPSIZE1b: a finished session's tree goes an hour after its record is kept; `whole` keeps it its days, its record kept all the same.
   if (rule.kind === 'days' && kind.id === 'set-aside') {
-    return t('settings.daoris.space.rule.joined', {
-      days: t('settings.daoris.space.rule.days', { count: rule.days }),
-      then: t(rule.whole ? 'settings.daoris.space.rule.whole' : 'settings.daoris.space.rule.slim'),
-    });
+    return t(rule.whole ? 'settings.daoris.space.rule.finishedWhole' : 'settings.daoris.space.rule.finished', { count: rule.days });
   }
   if (rule.kind === 'days') return t('settings.daoris.space.rule.days', { count: rule.days });
   if (rule.kind === 'own') return t(`settings.daoris.space.whose.${rule.whose ?? 'each'}`, { defaultValue: t('settings.daoris.space.whose.each') });
@@ -283,6 +281,9 @@ function NextAndLast({ kind }: { kind: SpaceKind }) {
   } else if (kind.nextWhy) {
     parts.push(t('settings.daoris.space.nextUnread'));
   }
+  // KEEPSIZE1b (the keep-size design §4.5): what waits with no rule's date, said so a folder kept past its days is never silent.
+  if (kind.waiting?.awaiting) parts.push(t('settings.daoris.space.waiting.awaiting', { count: kind.waiting.awaiting }));
+  if (kind.waiting?.unread) parts.push(t('settings.daoris.space.waiting.unread', { count: kind.waiting.unread }));
   if (runs(kind)) {
     if (kind.last) {
       parts.push(t('settings.daoris.space.last', { when: clockOf(kind.last.at), count: kind.last.removed.count, size: size(kind.last.removed.bytes) }));

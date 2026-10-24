@@ -20468,3 +20468,31 @@ person's word its box does not yet name joins the box, after its own, before the
 come-up's replay of a box does the same. A word kept after the go-on goes to the new part by the say door, as before. The stand-in
 case was seen failing first, then passed: the word is handed once, in order, never to the old part. Detail: FIX-LOG's LIMITWORD1 entry
 and D189's LIMITWORD1 note.
+
+## KEEPSIZE1b — a finished tree's record kept, and its tree let go an hour after (2026-10-24, D195)
+
+> **KEEPSIZE1b — a finished tree's record kept, and its tree let go an hour after** (driver, service, web words). §2 and §3 with the record's write and store but not yet its search: the tip's recovery ref on both paths (§3.1); the schema-2 manifest for every finished tree, a manifest not written keeping the tree (§3.3); `SetAsideEligibility` read by the hour's purge, the days' purge and the press (§3.4); one purge call with `after` per class; the rename before the delete; the steps, the `read` threshold and the resume (§3.5); `work_records`, `work_record_sessions` and their migration, the post and its retry; `Sessions.DeleteAsync` taking the record; `whole`'s meaning; the card's set-aside words and its classes. (The keep-size design §7's first row.)
+
+(Quest `#9c24a0a8c55e`.)
+
+**Outcome** 2026-10-24, on its branch, its merge waiting on a second maker's read of the branch and Codex's read of the design's accepted
+text: the service keeps a finished tree's record in `work_records` and `work_record_sessions` (`Sessions/WorkRecords.cs`, their own
+stamp, a newer one refused), posted by the driver to `POST /api/trees/record`, kept once by its identity, gone with its last session
+through `SessionStore.DeleteAsync` or with a clear of history by its `at`. The driver holds the exact tip on a recovery ref wherever
+the line's own branch does not, writes a schema-2 manifest for every finished tree (one not written keeps the tree), marks its steps,
+composes and posts the record after the hold at each Keeping pass and at the press's run before it removes, and purges by class in one call (a recorded
+folder an hour after its record, an awaiting one never, the rest at their days), renaming each folder into `.tidied/.going` first. The
+card says the new rule, and the press says each folder's class, in both languages. Proof: `KeepSizeGitTests` (14 cases over real git),
+`KeepingSlimTests`' first case retold for a service that does not answer, `WorkRecordStoreTests` and `WorkRecordHostTests`. The run:
+`KeepSizeGitTests` and `KeepingSlimTests` 19 of 19 with `git.process.runsettings`, the service's suites 2,710 and 332, the driver's fast
+half 14,319 after one fix. Seen failing first: the landed and origin-only cases with the hour's rule and §3.1's ref taken out, and the
+service's delete cases with the record's removal taken out; the squash case passed either way, since a squash held by content had its
+ref before this row, and the other cases were written beside the code and seen failing only on their own first run. What the row left
+is KEEPSIZE1b2 in `TASKS.md`. *After the second maker's read* (2026-10-24): its findings 1 to 4 and 6 to 11 taken on the branch,
+`KeepSizeGitTests` (18 cases) and `KeepingSlimTests` passing 23 of 23 together, the hour's and the link's cases seen failing with their guards taken out;
+finding 5's proofs added to KEEPSIZE1b2. *After Codex's reads* (2026-10-24): the design amended where they named (§12); on the
+branch, a recorded folder goes only on a holding check run right before its rename, the exact tip's holder rests in the delete's
+transaction, a 404 keeps the record awaited, the press compares its listed class and ref, the hour starts after the acknowledgement, a
+failed put-back and a stop in `.going` resume, and the landing is captured; `KeepSizeGitTests` (18 cases) and `KeepSizeStopsGitTests`
+(11), each blocking finding's case seen failing with its guard taken out. Its outcome above is corrected: the press's run, not its list,
+resumes and posts first. Detail: D195's KEEPSIZE1b notes.

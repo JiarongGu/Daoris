@@ -554,6 +554,12 @@ public sealed record SweepItem(
     /// one, or gone. The tree is that branch's: it is never taken with this one.
     /// </summary>
     public string? TreeOn { get; init; }
+
+    /// <summary>
+    /// Which hold the judgement found keeps its commits (KEEPSIZE1b, the keep-size design §1.1, §3.3): <c>line</c>, <c>landing</c>,
+    /// <c>squash</c>, <c>content</c>, <c>carried</c>, <c>empty</c>, or <c>branch</c> for a branch of the person's; null where none was found.
+    /// </summary>
+    public string? Hold { get; init; }
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>

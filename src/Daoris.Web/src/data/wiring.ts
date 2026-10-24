@@ -136,6 +136,8 @@ export type SpaceKind = {
   settable: boolean;
   bounds?: { min: number; max: number; whole: boolean; never: boolean } | null;
   next: { at: string; count: number; bytes: number | null } | null; nextWhy: Why;
+  /** KEEPSIZE1b: the set-aside folders no rule may take yet, awaiting their record or unread; absent from a driver before it. */
+  waiting?: { awaiting: number; unread: number } | null;
   last: { at: string; door: string; removed: { count: number; bytes: number }; kept: Record<string, number> } | null; lastWhy: Why;
 };
 
@@ -190,6 +192,8 @@ export type SystemSpace = {
 export type SpaceUnit = {
   kind: string; id: string; early: boolean; why: string | null; bytes: number | null; at: string | null;
   workspace: string | null; repository: string | null; own: boolean | null;
+  /** KEEPSIZE1b: a set-aside folder's listed class and the ref its tip is on; the press sends both back, and the run keeps one changed since. */
+  class?: string | null; ref?: string | null;
 };
 
 /** `SYSTEM_SPACE_FREE`'s list (KEEP1e): what each rule takes now, what could go early in groups, the kinds with presses of their own. */
@@ -197,7 +201,11 @@ export type SpacePlan = {
   schema: number;
   at: string;
   now: SpaceUnit[];
-  early: { group: string; count: number; bytes: number | null; own: number; units: SpaceUnit[] }[];
+  early: {
+    group: string; count: number; bytes: number | null; own: number; units: SpaceUnit[];
+    /** KEEPSIZE1b: the set-aside folders by class; absent from a driver before it, and on every other group. */
+    classes?: SetAsideClasses | null;
+  }[];
   doors: string[];
   unread: Record<string, string>;
 };
@@ -213,3 +221,10 @@ export type ActorEntry = { agent: string; model?: string | null; effort?: string
 
 /** One actor as `ACTORS` answers it (MODELROLE1c, D205 §9.4): set, as before, off, or an entry in driver.json that does not read. */
 export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null };
+
+/**
+ * The set-aside folders of the press's early group by class (KEEPSIZE1b, the keep-size design §5): recorded, its tip held by a ref or the
+ * line; awaiting its record; its branch standing; stopped between its steps; what holds its commits not confirmed (`unheld`); and
+ * unmarked, from before this build or not a finished tree. `stopped` and `unheld` are absent from a driver before them.
+ */
+export type SetAsideClasses = { recorded: number; awaiting: number; stands: number; stopped?: number; unheld?: number; unmarked: number };
