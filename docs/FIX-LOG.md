@@ -18,8 +18,10 @@ repository.
   held by patch and the walk could find none, the line holds none of the branch's commits: no replay, and nothing lacked that a
   landing counts otherwise. That costs two starts, and the walk is not asked.
 - **Verify:** `HelpTreesReadTests` 4 of 4, the moved-on read 1273 starts where the first made 1409 (1616 before the fix, on the
-  same machine); `ReviewLandedTests` and `ContentHoldWordsTests` by filter with `git.process.runsettings`, and the covering content
-  proof classes. Detail: D102's MAINRED1 note.
+  same machine). With `git.process.runsettings`, `HelpTreesReadTests` and `ReviewLandedTests` passed 8 of 8, and the covering classes
+  69 of 69 (`SquashSeenTests`, `EndJudgementGitTests`, `ContentHeldTests`, `ContentLandingTests`, `ContentOfferTests`,
+  `ContentProofLossTests`, `SessionTreeWorkTests`, `LandGitCountTests`, `BranchTidyingProcessTests`). The driver's fast half passed
+  14316 of 14316, `ContentHoldWordsTests` among them. Detail: D102's MAINRED1 note.
 
 ## 2026-10-24 - Three tidy tests met a machine log file the calendar had aged (MAINRED1)
 
@@ -34,8 +36,9 @@ repository.
 - **Fix:** the fixture's log writes on the real clock, so its file is today's and no look in these tests (at most fifteen days
   ahead) finds it past thirty days. Nothing the tests assert about the folders changed. `BranchTidyingTests` keeps its fixed
   clock: it never runs a look, only `Said`, so no prune reads its file.
-- **Verify:** `BranchTidyingFolderTests` 13 of 13 with `git.process.runsettings`, where the two failed before the fix; the other
-  fixture classes by filter.
+- **Verify:** `BranchTidyingFolderTests` 13 of 13 with `git.process.runsettings`, where the two failed before the fix, and
+  `BranchTidyingProcessTests`, which shares the fixture, in the covering run of the replay fix above. `BranchTidyingLandingTests`
+  and `BranchTidyingWatchTests` were not run.
 
 ## 2026-10-24 - The set-aside folders at the trees entry's old place were never purged or counted (KEEPSIZE1a)
 
