@@ -326,7 +326,7 @@ internal sealed class TreeLands(
     {
         var (headCode, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--quiet", "--verify", "MERGE_HEAD"], ct).ConfigureAwait(false);
         if (headCode != 0) return false;
-        var (code, unmerged, _) = await WorkingTree.GitAsync(root, ["diff", "--name-only", "--diff-filter=U"], ct).ConfigureAwait(false);
+        var (code, unmerged, _) = await WorkingTree.GitAsync(root, ["--no-optional-locks", "diff", "--name-only", "--diff-filter=U"], ct).ConfigureAwait(false);
         return code == 0 && string.IsNullOrWhiteSpace(unmerged);
     }
 

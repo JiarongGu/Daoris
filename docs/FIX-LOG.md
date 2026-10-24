@@ -38,6 +38,10 @@ repository.
   is one file again, the second file's body folded into the first, its summary kept as comments.
 - **Verification:** `SystemWiringTests` 31 of 31, the two folded classes 59 of 59, `node tools/partials.mjs` clean; the next full CI.
   The same CI's `tool-tests` failure, the merge queue's red-candidate case, failed once more alone and then passed: FLAKE1's.
+- **The next CI (`de3febc9e`) found two more.** The search's new case named `_fixtures` in `SystemWiringTests`, which deletes scratch of
+  its own, so `GitSeedTests`' census read it as a test deleting its scratch by itself: the case is its own class, `WiringSearchTests`.
+  And HOOKMERGE1's hook check ran `git diff` without `--no-optional-locks` (`TreeLands.cs:329`), which `verify`'s optional-locks check
+  refuses and the merge tool's quick gates do not run. `npm run verify` passes, and the touched classes 60 of 60.
 
 ## 2026-10-24 - The trees read made more git starts when the line moved on than at its first read (MAINRED1)
 
