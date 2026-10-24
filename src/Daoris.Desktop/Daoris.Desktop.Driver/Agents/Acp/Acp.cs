@@ -424,6 +424,15 @@ public sealed class AcpSession(
     private DrivenInbox? _inbox;
 
     /// <summary>
+    /// A conversation's words (AGENTERRORS1b, the design §7), read by the transient episode where a run has no inbox: its turns' queue.
+    /// Set once the conversation's session is open, never at the open.
+    /// </summary>
+    private IEpisodeWords? _episodeWords;
+
+    /// <summary>Whose words an episode holds, waits on and carries: a run's inbox, or a conversation's turns.</summary>
+    private IEpisodeWords? EpisodeWords => _episodeWords ?? _inbox;
+
+    /// <summary>
     /// One prompt on the wire: the person's words, or null for the driver's own — and whether the session has taken them.
     /// </summary>
     private sealed class OpenPrompt(ChatMessage? words, IReadOnlyList<ChatMessage>? together = null)
@@ -1253,7 +1262,7 @@ public sealed class AcpSession(
         var retry = _retry!;
         var clock = retry.Clock;
         var episode = retry.Open(first);
-        _inbox?.Settling();
+        EpisodeWords?.Settling();
         SayUncertain();
         Said(() => retry.Began?.Invoke(episode, clock.GetUtcNow() + TransientRetry.Delays[0]));
         var atOnce = false;
@@ -1261,7 +1270,7 @@ public sealed class AcpSession(
         while (true)
         {
             // The wire settles first: each word sent behind the failed turn runs its own turn (§5.1's settling turns), and no word joins it.
-            _inbox?.Settling();
+            EpisodeWords?.Settling();
             if (await SettleAsync(Spent).ConfigureAwait(false) is { } settled) atOnce = settled;
 
             if (episode.Tries >= TransientRetry.Bound)
@@ -1277,7 +1286,7 @@ public sealed class AcpSession(
             // its harness woke; the run closes as at a turn's end.
             if (!await AdmitAsync(retry, ct).ConfigureAwait(false))
             {
-                _inbox?.Waited();
+                EpisodeWords?.Waited();
                 return WokenStop;
             }
 
@@ -1332,7 +1341,7 @@ public sealed class AcpSession(
     private async Task<bool?> SettleAsync(Action failed, Action<string>? answered = null)
     {
         bool? last = null;
-        while (_inbox?.TakeSent() is { } settling)
+        while (EpisodeWords?.TakeSent() is { } settling)
         {
             try
             {
@@ -1423,7 +1432,7 @@ public sealed class AcpSession(
         var started = retry.Clock.GetUtcNow();
         using var cut = CancellationTokenSource.CreateLinkedTokenSource(ct);
         // At the open (§5.6) no session is there to wake and no word flows yet: only the schedule ends the wait.
-        var word = opening ? Task.Delay(Timeout.Infinite, cut.Token) : _inbox?.Waiting() ?? Task.Delay(Timeout.Infinite, cut.Token);
+        var word = opening ? Task.Delay(Timeout.Infinite, cut.Token) : EpisodeWords?.Waiting() ?? Task.Delay(Timeout.Infinite, cut.Token);
         var delay = TransientRetry.Delays[Math.Min(episode.Tries, TransientRetry.Bound - 1)];
         Volatile.Write(ref _waitsOnTransient, true);
         Said(() => retry.Waits?.Invoke(true));
@@ -1455,7 +1464,7 @@ public sealed class AcpSession(
     private async Task<string> TryAsync(TransientEpisode episode, CancellationToken ct)
     {
         var retry = _retry!;
-        var held = _inbox?.TakeHeld() ?? [];
+        var held = EpisodeWords?.TakeHeld() ?? [];
         var text = TransientRetry.GoOnText(episode.Words);
         ChatMessage? goOn = null;
         if (episode.Tries == 1 && retry.KeepGoOn is { } keep)
@@ -1509,7 +1518,7 @@ public sealed class AcpSession(
                     {
                         // On the wire: a word said from now goes as it did, and the go-on leaves the record by its id (R3-O5). Where the try
                         // fails, the episode holds them again before it settles (finding 2).
-                        _inbox?.Waited();
+                        EpisodeWords?.Waited();
                         foreach (var each in wrote) each();
                         if (goOn?.Id is { } id) episode.GoOnId = id;
                     }),
@@ -1826,8 +1835,31 @@ public sealed class AcpSession(
     /// </exception>
     public Task<string> SayAsync(ChatMessage words, CancellationToken ct) =>
         _takesWordsMidTurn
-            ? SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words)
+            ? MidTurnAsync(words, ct)
             : throw new DriverException("this agent did not say it takes words during a turn — they wait for the turn to end.");
+
+    /// <summary>
+    /// A conversation's session is handed its transient retry (AGENTERRORS1b, D210, the agent-errors design §5.1, §7), once it is open: a
+    /// failure at the open keeps today's end, and the conversation's turns are the words an episode holds, waits on and carries.
+    /// </summary>
+    internal void Retries(TransientRetry retry, IEpisodeWords words)
+    {
+        _retry = retry;
+        _episodeWords = words;
+    }
+
+    /// <summary>
+    /// One turn's prompt of a conversation, read for a transient failure (AGENTERRORS1b): its stop reason, or that of the try that answered.
+    /// Any other failure is thrown as it came, and so is one past the bound (<see cref="AcpTransientExhausted"/>).
+    /// </summary>
+    internal Task<string> RetriedAsync(Func<Task<string>> prompt, CancellationToken ct) => PromptingAsync(prompt, ct);
+
+    /// <summary>
+    /// A word handed to a running turn whose own prompt was refused after the word was taken (<see cref="AcpWordTurnFailed"/>, shape 2): the
+    /// turn that failed is the one it opened, so its refusal is read as any prompt's, a transient one opening the episode.
+    /// </summary>
+    internal Task<string> RecoveredAsync(AcpRefusal refusal, CancellationToken ct) =>
+        PromptingAsync(() => Task.FromException<string>(refusal), ct);
 
     /// <summary>Whether the person's *Send now* steers into this session's running turn (<see cref="SteersNow"/>, STEER2a).</summary>
     public bool Steers => _steersNow;

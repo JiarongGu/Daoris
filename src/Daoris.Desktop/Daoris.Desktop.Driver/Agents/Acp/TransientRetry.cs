@@ -140,6 +140,29 @@ public sealed class TransientRetry
 }
 
 /// <summary>
+/// The words a transient episode holds, waits on and carries (AGENTERRORS1a, AGENTERRORS1b): a driven run's inbox
+/// (<see cref="DrivenInbox"/>) or a conversation's turns (<see cref="ChatTurns"/>). The episode is the session's own, so the one seat
+/// serves both; what differs is where the person's words wait.
+/// </summary>
+internal interface IEpisodeWords
+{
+    /// <summary>From the episode's first failure and each try's: every word is held, none goes alone, so the turns to settle are only those already written.</summary>
+    void Settling();
+
+    /// <summary>A wait begins: completes once a word that makes a turn is held, at once where one already is.</summary>
+    Task Waiting();
+
+    /// <summary>The wait is over, a try is on the wire: a word said from now goes as it did.</summary>
+    void Waited();
+
+    /// <summary>The answer of the oldest word already on the wire and not yet settled, or null where none is.</summary>
+    Task<string>? TakeSent();
+
+    /// <summary>Every held word a try carries, in the order said, each dispatched as its door dispatches one.</summary>
+    IReadOnlyList<ChatMessage> TakeHeld();
+}
+
+/// <summary>
 /// One transient episode (§5.1): from its first failure to a try that answers, another kind, the owner's no, or the bound. Named by when
 /// its first failure was read.
 /// </summary>

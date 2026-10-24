@@ -46,6 +46,11 @@ namespace Daoris.Driver;
 /// never stops a turn, since a word may be on its way (D136 point 4). Called under the turns' own lock. Null for a door that
 /// never does.
 /// </param>
+/// <param name="settled">
+/// Awaited by the pump after a turn is taken and again each time the words handed to it have all been answered (AGENTERRORS1b), before
+/// the turn is found to have ended: the door settles there what those words' own turns came to, so a word taken whose turn failed
+/// transient is tried again inside the turn, which lasts. Never faults the pump. Null for a door that settles nothing.
+/// </param>
 internal sealed class ChatTurns(
     Func<Task<bool>> ready,
     Func<ChatMessage, Action, Task> take,
@@ -53,7 +58,8 @@ internal sealed class ChatTurns(
     Action<ChatQueue> changed,
     Func<ChatMessage, Task?>? steer = null,
     Func<ChatMessage, Task?>? steerNow = null,
-    Func<bool>? nextStep = null)
+    Func<bool>? nextStep = null,
+    Func<Task>? settled = null)
 {
     private readonly object _gate = new();
     private readonly List<ChatMessage> _waiting = [];
@@ -100,6 +106,10 @@ internal sealed class ChatTurns(
     // reading then holds their work too.
     private bool _theirsSteered;
     private bool _gone;
+    // A transient episode is waiting, or settling its wire, on the turn in flight (AGENTERRORS1b, the agent-errors design §5.1, §7): every word
+    // is kept and waits, handed to no turn alongside it, and a word of the person's that waits ends the wait at once as the next try.
+    private bool _retrying;
+    private TaskCompletionSource _woke = Completed();
     private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
     private DateTimeOffset? _lastEnded;
@@ -406,7 +416,7 @@ internal sealed class ChatTurns(
     private bool IntoTheTurn(ChatMessage word, int at)
     {
         if (word.Level == MessageLevel.Ordinary || Answer(word) || !_inFlight || !_sent || _stopped || _stopPending
-            || _holding is not null) return false;
+            || _holding is not null || _retrying) return false;
 
         // Without the queue's id, as a turn is sent (QUEUEEDIT1a): the door gives a word handed to the turn its own.
         var stamped = word.Id is { } queued && _stamped.Remove(queued) ? queued : null;
@@ -762,7 +772,8 @@ internal sealed class ChatTurns(
             // never enters a turn in flight, and an urgent one goes past it, since its sender chose sooner (COWORK1a, the design
             // §2.1). A helper's answer is a turn of its own, never handed to the running one (MIXAGENT2a-iii), unless its ask was
             // urgent (COWORK1d). COWORK1c: a kept word goes to the door to be attempted before the wire and taken off the record once written.
-            if (steer is not null && !Answer(message) && message.Level != MessageLevel.Ordinary && _inFlight && _sent
+            // AGENTERRORS1b: never while a transient episode waits or settles on the turn (_retrying); the word waits, and the wait ends.
+            if (steer is not null && !Answer(message) && message.Level != MessageLevel.Ordinary && _inFlight && _sent && !_retrying
                 && !_stopped && !_stopPending && _holding is null && !UrgentWaiting() && steer(Dispatched(message)) is { } answered)
             {
                 _steered.Add(answered);
@@ -772,6 +783,7 @@ internal sealed class ChatTurns(
             }
 
             _waiting.Add(Stamped(message));
+            if (_retrying && Carries(message)) _woke.TrySetResult();
             // LIMITRESUME1c: waiting for the limit, a word waits with the rest and starts nothing; so does one said while the person's
             // press holds the conversation (CHATFLOW1d), until it answers, and one said while a send-back is reserved (CHATFLOW1e), which
             // then waits behind the findings' turn.
@@ -818,6 +830,75 @@ internal sealed class ChatTurns(
     }
 
     /// <summary>
+    /// Whether a word waiting is one a transient try carries (AGENTERRORS1b, the agent-errors design §5.1): the person's own, which the
+    /// record has not shown waiting already. A helper's answer, Daoris's word and the words a conversation goes on with are turns of their
+    /// own, kept for after the turn that failed.
+    /// </summary>
+    private static bool Carries(ChatMessage message) => message.Theirs && message.GoesOn is null && message.Answering is null;
+
+    /// <summary>
+    /// A transient episode settles its wire (AGENTERRORS1b, from its first failure and each try's): every word waits from now, handed to no
+    /// turn alongside the one that failed, so the turns the episode settles are only those already written.
+    /// </summary>
+    internal void Settling()
+    {
+        lock (_gate) _retrying = true;
+    }
+
+    /// <summary>
+    /// A transient episode's wait begins (AGENTERRORS1b): every word waits, and the wait ends once a word of the person's does, at once
+    /// where one waits already. A word said meanwhile is kept on its record and shown queued, as any word is.
+    /// </summary>
+    internal Task Waiting()
+    {
+        lock (_gate)
+        {
+            _retrying = true;
+            _woke = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (_waiting.Any(Carries)) _woke.TrySetResult();
+            return _woke.Task;
+        }
+    }
+
+    /// <summary>The episode's wait is over, a try is on the wire (or the episode ended): a word said from now goes as it did.</summary>
+    internal void Waited()
+    {
+        lock (_gate) _retrying = false;
+    }
+
+    /// <summary>
+    /// Every word of the person's that waits, handed to a transient try in the order said (AGENTERRORS1b, the design §5.1): off the queue
+    /// the page shows, each dispatched as its door dispatches one, marked attempted before the wire and taken off the record once written.
+    /// Their turn counts as the person's, as a word handed to a turn at its next step does.
+    /// </summary>
+    internal IReadOnlyList<ChatMessage> TakeHeld()
+    {
+        lock (_gate)
+        {
+            List<ChatMessage> taken = [];
+            for (var at = 0; at < _waiting.Count;)
+            {
+                if (!Carries(_waiting[at]))
+                {
+                    at++;
+                    continue;
+                }
+
+                taken.Add(Dispatched(Unstamped(_waiting[at])));
+                _waiting.RemoveAt(at);
+            }
+
+            if (taken.Count > 0)
+            {
+                _theirsSteered = true;
+                Publish();
+            }
+
+            return taken;
+        }
+    }
+
+    /// <summary>
     /// The person's words at <c>now</c> (STEER2a, COWORK1a), carried out by the door it has: with no turn running the words are the
     /// next turn at once; into a turn on the wire whose agent steers, they are steered at once (<c>now</c>) and the turn lasts until
     /// the steer is answered; on a door that takes words only at its next step they go there, said so; on a door that takes none
@@ -844,7 +925,8 @@ internal sealed class ChatTurns(
                 // past them (COWORK1a). A helper's answer is never the person's press (MIXAGENT2a-iii).
                 var onTheirWay = OnTheirWay();
                 var behind = onTheirWay || _holding is not null || UrgentWaiting();
-                var running = _sent && !_stopped && !_stopPending;
+                // AGENTERRORS1b: nothing is steered into a turn a transient episode waits on; the word waits and ends the wait.
+                var running = _sent && !_stopped && !_stopPending && !_retrying;
                 // 🔴 Steered past whatever is ahead (the owner's case): the steer cuts the step in flight, not the prompt a word on
                 // its way is queued as, which is still taken at its next step; what waits keeps its place. The person chose now.
                 if (running && steerNow?.Invoke(Dispatched(message)) is { } steered)
@@ -865,6 +947,7 @@ internal sealed class ChatTurns(
                 }
 
                 _waiting.Add(Stamped(message));
+                if (_retrying && Carries(message)) _woke.TrySetResult();
                 // Held for the turn's end: behind what is ahead on a door that takes words at its next step, and on any other, or
                 // behind the person's own stop, because nothing interrupts a turn for them.
                 var why = !_stopped && !_stopPending && (onTheirWay || nextStep?.Invoke() == true)
@@ -1162,6 +1245,20 @@ internal sealed class ChatTurns(
             bool theirs;
             while (true)
             {
+                // AGENTERRORS1b: what the words handed to this turn came to is settled before it is found to have ended, so one whose
+                // own turn failed transient is tried again within it. Read again each time those words have all been answered.
+                if (settled is not null)
+                {
+                    try
+                    {
+                        await settled().ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        // The door says what became of them in its own words; the turn ends all the same.
+                    }
+                }
+
                 Task[] steered;
                 lock (_gate)
                 {

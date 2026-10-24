@@ -423,6 +423,13 @@ public static class NoteCodes
     public static readonly NoteCode AgentTransientRetrying = new("agent.transient-retrying", ["agent", "count", "minutes", "at"]);
 
     /// <summary>
+    /// AGENTERRORS1b (the design §5.1, §7, §8): a conversation's turn ended <c>error</c> because its provider kept failing after every try,
+    /// followed by the provider's words. The conversation stays, and the person's next word is a turn of the same conversation: no record
+    /// state changes, as a chat's failed turn changes none today.
+    /// </summary>
+    public static readonly NoteCode ChatTransientStopped = new("chat.transient-stopped", ["agent"]);
+
+    /// <summary>
     /// MODELROLE1c2 (D205 §3.3, §3.5(c)): its agent did not offer, or refused, the model its actor asked at the open, before any prompt:
     /// <c>failed</c> with this end, no strike, its quest planned again, no <i>Ended</i> notice, and a quiet row. Naming no account, since
     /// the note travels; the account is the record's own.

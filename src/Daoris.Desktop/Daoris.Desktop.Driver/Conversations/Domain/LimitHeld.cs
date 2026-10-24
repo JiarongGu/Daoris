@@ -32,6 +32,14 @@ public sealed record LimitHeld(IReadOnlyList<SessionEvent> Words, int Before)
             {
                 cooled = true;
             }
+            else if (e.Kind == SessionEventKind.Transient)
+            {
+                // AGENTERRORS1b (D210, the agent-errors design §6.1, round 3's R2-C2 and R3-O6): a transient episode's quiet event follows a
+                // prompt the provider's failure answered, the turn's own or a try's. Each of the person's words asked until then went on the
+                // wire with it, and may have been read, so it is never held to be sent again: a limit that ends the episode holds only the
+                // words no try carried, and not the failed turn's own. Every word said since is carried by a later try, or waits unrecorded.
+                asked.Clear();
+            }
             else if (e.Kind == SessionEventKind.Turn)
             {
                 var limited = cooled && e.StopReason == "error";

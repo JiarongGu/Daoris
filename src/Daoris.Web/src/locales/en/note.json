@@ -6,6 +6,7 @@
   "note.ended.provider-refused": "Its model's provider refused its turn, so the run failed and goes on as a failed run does:",
   "note.ended.transient": "Its provider kept failing after {{count}} tries, with {{minutes}} minutes of waits between them. It waits for you: your words, or Try again, go on in the same conversation:",
   "note.agent.transient-retrying": "{{agent}}'s provider failed. Daoris tries again in this conversation: up to {{count}} times, after {{minutes}} minutes of waits between them, the next at {{at}}:",
+  "note.chat.transient-stopped": "{{agent}}'s provider kept failing, so this turn ends; your next words go on in this conversation:",
   "note.ended.choice-not-offered": "Not started: `{{agent}}` did not offer `{{model}}` on its account, so nothing ran; the next look chooses again by its actor's order.",
   "note.ended.parked-asked": "It stopped with its quest still taken, to ask you:",
   "note.ended.parked-transcript": "It stopped with its quest still taken, to ask you; what it needs ends its transcript.",

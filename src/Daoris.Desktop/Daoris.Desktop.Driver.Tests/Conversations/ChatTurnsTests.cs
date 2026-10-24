@@ -322,6 +322,116 @@ public sealed class ChatTurnsTests
         turns.Gone();
     }
 
+    /// <summary>
+    /// 🔴 AGENTERRORS1b (D210, the agent-errors design §5.1, §7): while a transient episode waits on the turn in flight, a word of the person's
+    /// is kept and shown queued, never handed to the turn at its next step as it would be, and ends the wait at once; the try takes it, first
+    /// and once, off the queue the page shows. When the try is on the wire a word said goes as it did.
+    /// </summary>
+    [Fact]
+    public async Task A_word_said_while_a_transient_episode_waits_is_queued_ends_the_wait_and_is_handed_to_the_try_once()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        Assert.Equal(TurnReach.Now, turns.Take(new ChatMessage("read the five files", [])));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+
+        var waiting = turns.Waiting();
+        Assert.False(waiting.IsCompleted);
+
+        // Urgent by default, and the door takes words at the next step: held all the same, and the wait ends.
+        Assert.Equal(TurnReach.TurnEnd, turns.Take(new ChatMessage("use port 9090", [])));
+        await waiting.WaitAsync(Poll.Patience);
+        Assert.Empty(door.Steered);
+        Assert.Equal(["use port 9090"], turns.State.Queued.Select(each => each.Text));
+        Assert.True(turns.Running);
+
+        var held = turns.TakeHeld();
+
+        Assert.Equal(["use port 9090"], held.Select(each => each.Text));
+        Assert.Empty(turns.State.Queued);
+        Assert.Empty(turns.TakeHeld());
+        Assert.Single(door.Took);
+
+        // The try is on the wire: a word said from now goes at the next step again.
+        turns.Waited();
+        Assert.Equal(TurnReach.NextStep, turns.Take(new ChatMessage("and the tests", [])));
+        Assert.Equal(["and the tests"], door.Steered);
+        door.EndTurn(0);
+        door.Step.SetResult();
+        await Poll.Until(() => !turns.Running, () => "the turn never ended");
+    }
+
+    /// <summary>
+    /// A wait that begins with a word of the person's waiting ends at once; and what a try carries is the person's alone: a helper's answer
+    /// and Daoris's own word are turns of their own, kept for after the turn that failed.
+    /// </summary>
+    [Fact]
+    public async Task A_wait_ends_at_once_for_a_word_waiting_and_a_try_carries_only_the_persons()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        turns.Take(new ChatMessage("first", []));
+        await Poll.Until(() => door.Took.Count == 1);
+
+        turns.Settling();
+        turns.Take(new ChatMessage("a step's go-on", []) { Daoris = new DaorisWord("gone-on/step/m/1") });
+        turns.Take(new ChatMessage("another agent says five", []) { Helped = new SaidWordView(null, "another agent says five", DateTimeOffset.UtcNow, [], false) { Helper = "h1" } });
+        var waiting = turns.Waiting();
+        Assert.False(waiting.IsCompleted);
+
+        turns.Take(new ChatMessage("the person's", []));
+        await waiting.WaitAsync(Poll.Patience);
+        Assert.Equal(["the person's"], turns.TakeHeld().Select(each => each.Text));
+
+        // Theirs is gone from the queue; the others wait for the turn's end, as turns of their own.
+        door.EndTurn(0);
+        await Poll.Until(() => door.Took.Count == 2, () => "the next turn never reached the door");
+        Assert.Equal("a step's go-on", door.Took[1]);
+        turns.Waited();
+        turns.Gone();
+    }
+
+    /// <summary>
+    /// What the words handed to a turn came to is settled before the turn is found to have ended (AGENTERRORS1b): the turn lasts, and the next
+    /// word waits, until that is done, so a taken word whose own turn failed transient is tried again inside the turn.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_lasts_until_what_its_words_came_to_is_settled()
+    {
+        var settling = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var settled = 0;
+        var took = new List<string>();
+        var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var turns = new ChatTurns(
+            ready: () => Task.FromResult(true),
+            take: (message, sent) =>
+            {
+                lock (took) took.Add(message.Text);
+                sent();
+                return ended.Task;
+            },
+            interrupt: () => Task.CompletedTask, changed: _ => { },
+            settled: async () =>
+            {
+                Interlocked.Increment(ref settled);
+                await settling.Task;
+            });
+        turns.Take(new ChatMessage("first", []));
+        turns.Take(new ChatMessage("second", []));
+        await Poll.Until(() => took.Count == 1);
+
+        ended.SetResult();
+        await Poll.Until(() => Volatile.Read(ref settled) == 1, () => "the turn ended without settling");
+        await Task.Delay(100);
+        Assert.True(turns.Running);
+        lock (took) Assert.Equal(["first"], took);
+
+        settling.SetResult();
+        await Poll.Until(() => !turns.Running, () => "the turn never ended once it was settled");
+        lock (took) Assert.Equal(["first", "second"], took);
+        Assert.True(Volatile.Read(ref settled) >= 2);
+    }
+
     /// <summary>The conversation's turns as the press's operation reserves them, standing in for the runner that holds it.</summary>
     private sealed class Holding(ChatTurns turns) : IChatPressing
     {

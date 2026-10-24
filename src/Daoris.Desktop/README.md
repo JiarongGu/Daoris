@@ -47,6 +47,14 @@ refused after the word was taken (shape 2) and for the open, whose raw `session/
 try keeps a quiet `transient` record event (`next`, `try`) the head reads; and *Try again* releases the hold for that end alone,
 `driver.json`'s `transientReleased` (quest → `{session, ended}`), apart from the stop's `released`.
 
+A conversation's turn (Ask Daoris and a repository's chat, on the protocol door) is tried again the same way since AGENTERRORS1b, inside
+the turn, on the conversation's own process: `ProtocolChat` hands its session the same `TransientRetry` once it is open (`ChatRetry`, the
+runner's `RetryClock`), and the session's one episode reads the conversation's turns as the words it holds, waits on and carries
+(`IEpisodeWords`, `ChatTurns.Waiting` and `TakeHeld`). The turn stays one: no failed try releases the queue, ends a turn in the record,
+moves the curve, notifies or reads a limit. Past the bound it ends `error` with `chat.transient-stopped`, and the next word is a turn of
+the same conversation. `LimitHeld.Of` leaves out every word asked before a quiet `transient` event, so a limit that ends an episode holds
+only the words no try carried.
+
 The accounts are one set per agent (D197): `HarnessSettings` folds the wiring to one order per agent, and only the agents the
 adapters and plugin harnesses name are folded (`HarnessSettings.AgentsKnown`, POOLSTRAY1). A stray folder under the agent homes is
 said once in the machine log and never read as an agent, and a stray entry already in the wiring is dropped at the next fold.
