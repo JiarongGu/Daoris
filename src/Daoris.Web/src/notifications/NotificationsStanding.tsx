@@ -62,9 +62,9 @@ export function NotificationsStanding({ notify, onOpen }: { notify: Notify; onOp
         appointments={standing?.appointments ?? []}
         busy={setAppointment.isPending}
         refused={dismissRefused}
-        onTurnOff={(repository) => {
+        onTurnOff={(scope) => {
           setDismissRefused(null);
-          setAppointment.mutate({ role: 'supervisor', repository, on: false }, {
+          setAppointment.mutate({ role: 'supervisor', ...scope, on: false }, {
             onSuccess: (answer) => { if (!answer.done) setDismissRefused(appointmentSaid(t, answer.why, answer.message)); },
             onError: failure(notify),
           });

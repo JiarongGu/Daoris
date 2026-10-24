@@ -25,10 +25,25 @@ describe("Notifications' supervisor line", () => {
   it('says the appointment and turns it off at once', async () => {
     const onTurnOff = vi.fn();
     render(<SupervisorLine appointments={[LIVE]} onTurnOff={onTurnOff} />);
-    expect(screen.getByText(`The supervisor answers questions in engine on your behalf, appointed ${moment(SINCE)}: each answer is said here and held five minutes for your overrule. 2 answers this run.`))
+    expect(screen.getByText(`The supervisor answers questions in engine on your behalf, appointed ${moment(SINCE)}: each answer is said here and held 5 minutes for your overrule. 2 answers this run.`))
       .toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Turn off' }));
-    expect(onTurnOff).toHaveBeenCalledWith('engine');
+    expect(onTurnOff).toHaveBeenCalledWith({ repository: 'engine' });
+  });
+
+  // SUPERVISOR1e: a workspace's appointment is named as every repository of it, says its own window, and is turned off by its scope.
+  it("says a workspace's appointment with its own window and turns it off by its workspace", async () => {
+    const onTurnOff = vi.fn();
+    const workspace: AppointmentNow = { ...LIVE, repository: '', scope: 'workspace:games', workspace: 'games', window: 1, answers: 1 };
+    const { rerender } = render(<SupervisorLine appointments={[LIVE, workspace]} onTurnOff={onTurnOff} />);
+    expect(screen.getByText(`The supervisor answers questions in every repository of games on your behalf, appointed ${moment(SINCE)}: each answer is said here and held 1 minute for your overrule. 1 answer this run.`))
+      .toBeInTheDocument();
+    await userEvent.click(screen.getAllByRole('button', { name: 'Turn off' })[1]);
+    expect(onTurnOff).toHaveBeenCalledWith({ workspace: 'games' });
+
+    await i18n.changeLanguage('zh');
+    rerender(<SupervisorLine appointments={[workspace]} onTurnOff={onTurnOff} />);
+    expect(screen.getByText(/主管代你回答 games 的每个仓库 中的问题.*并保留 1 分钟供你否决/)).toBeInTheDocument();
   });
 
   it('says one found as Daoris started dormant, and is drawn only where one is appointed', async () => {

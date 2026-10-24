@@ -20634,6 +20634,7 @@ CHATFLOW1d note.
 repository's own appointment wins, and one made over the workspace's makes that workspace's held and released decisions for the
 repository `stale` (`appointment-changed`), the workspace's standing for its others. `SET_APPOINTMENT`'s `window`, 1 to 60 minutes,
 five where none, is written beside the appointment and handed to the decisions through the admission, which hold for it. A
-workspace's Setup gains a *Supervisor* section; both asks set the window; a repository row says the workspace's that covers it; en
-and zh. Proof: `SupervisorScopeTests`, `SupervisorDecisionTests`, `SupervisorRow.test.tsx`, `WorkspaceSetup.test.tsx`,
+workspace's Setup gains a *Supervisor* section; both asks set the window; a repository row says the workspace's that covers it;
+*Notifications*' line names a workspace's appointment and each one's window, and turns one off by its scope; en and zh. Proof:
+`SupervisorScopeTests`, `SupervisorDecisionTests`, `SupervisorRow.test.tsx`, `WorkspaceSetup.test.tsx`, `SupervisorLine.test.tsx`,
 `person.standing.test.tsx`, each case seen failing first. Detail: D208's SUPERVISOR1e note.
