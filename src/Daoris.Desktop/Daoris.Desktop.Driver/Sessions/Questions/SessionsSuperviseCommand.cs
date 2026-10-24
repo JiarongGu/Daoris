@@ -4,8 +4,11 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>sessions supervise … --choice</c> carries (§3.1): the question, the generation, one offered label and its reasons.</summary>
-public sealed record SupervisorDraft(string Question, string Generation, string Choice, IReadOnlyList<SupervisorReason> Reasons);
+/// <summary>
+/// What <c>sessions supervise … --choice</c> carries (§3.1): the question, the generation, one offered label and its reasons; or, for
+/// <c>--leave</c> (SUPERVISOR1b), the bound it leaves the question to the owner by, and no choice.
+/// </summary>
+public sealed record SupervisorDraft(string Question, string Generation, string? Choice, IReadOnlyList<SupervisorReason> Reasons, string? Bound = null);
 
 /// <summary>
 /// <c>daoris-driver sessions supervise</c> (SUPERVISOR1a-ii, D208; the supervisor design §3.2, §4.4, §2.2): the supervisor's holder's
@@ -27,6 +30,9 @@ public static class SessionsSuperviseCommand
 {
     /// <summary>The supervisor's reads and answer as the pipe's census classes them.</summary>
     public static InstanceRoute Answer { get; } = new(TreesRoutes.DriverModule, SupervisorRoutes.Answer, RouteClass.Role);
+
+    /// <summary>The holder's leaving a question to the owner (SUPERVISOR1b), the role's second act.</summary>
+    public static InstanceRoute Defer { get; } = new(TreesRoutes.DriverModule, SupervisorRoutes.Defer, RouteClass.Role);
 
     public static InstanceRoute Waiting { get; } = new(TreesRoutes.DriverModule, SupervisorRoutes.Waiting, RouteClass.Open);
 
@@ -56,17 +62,24 @@ public static class SessionsSuperviseCommand
             case ["supervise", var id] when Id(id):
                 return new SessionsAsk("supervise-print") { Ids = [id] };
             case ["supervise", var id, ..] when Id(id) && ReadDraft(args.Skip(2).ToList()) is { } draft:
-                return new SessionsAsk("supervise-answer") { Ids = [id], Supervised = draft };
+                if (draft.Bound is { } bound && !SupervisorBounds.Known(bound))
+                {
+                    problem = $"`--leave` names one of the owner's bounds: {string.Join(", ", SupervisorBounds.All)}.";
+                    return null;
+                }
+
+                return new SessionsAsk(draft.Bound is null ? "supervise-answer" : "supervise-leave") { Ids = [id], Supervised = draft };
         }
 
         problem = "`supervise` lists what waits; `supervise <id>` prints its question; `supervise <id> --question <qid> --generation <g> "
-            + "--choice <label> --reason \"…\" --source <where>` answers it, one to five reasons, each with its source.";
+            + "--choice <label> --reason \"…\" --source <where>` answers it, one to five reasons, each with its source; and with "
+            + "`--leave <bound>` in place of `--choice`, leaves it to the owner.";
         return null;
     }
 
     private static SupervisorDraft? ReadDraft(IReadOnlyList<string> args)
     {
-        string? question = null, generation = null, choice = null;
+        string? question = null, generation = null, choice = null, bound = null;
         var reasons = new List<SupervisorReason>();
         string? says = null;
         for (var at = 0; at + 1 < args.Count; at += 2)
@@ -80,8 +93,11 @@ public static class SessionsSuperviseCommand
                 case "--generation" when generation is null:
                     generation = value;
                     break;
-                case "--choice" when choice is null:
+                case "--choice" when choice is null && bound is null:
                     choice = value;
+                    break;
+                case "--leave" when bound is null && choice is null:
+                    bound = value;
                     break;
                 case "--reason" when says is null:
                     says = value;
@@ -97,8 +113,9 @@ public static class SessionsSuperviseCommand
 
         // Every word in pairs, and every reason with its source (D135 point 4).
         if (args.Count % 2 != 0 || says is not null) return null;
-        return question is { Length: > 0 } && generation is { Length: > 0 } && choice is { Length: > 0 } && reasons.Count is >= 1 and <= 5
-            ? new SupervisorDraft(question, generation, choice, reasons)
+        return question is { Length: > 0 } && generation is { Length: > 0 } && (choice is { Length: > 0 } || bound is { Length: > 0 })
+               && reasons.Count is >= 1 and <= 5
+            ? new SupervisorDraft(question, generation, choice, reasons, bound)
             : null;
     }
 
@@ -109,7 +126,7 @@ public static class SessionsSuperviseCommand
         if (world.Instance is not { } instance) return await NoInstanceAsync(output).ConfigureAwait(false);
         return ask.Verb switch
         {
-            "supervise-answer" => await AnswerAsync(world, instance, ask.Ids[0], ask.Supervised!, output, ct).ConfigureAwait(false),
+            "supervise-answer" or "supervise-leave" => await AnswerAsync(world, instance, ask.Ids[0], ask.Supervised!, output, ct).ConfigureAwait(false),
             "supervise-print" => await PrintAsync(world, instance, ask.Ids[0], output, ct).ConfigureAwait(false),
             _ => await ListAsync(instance, output, ct).ConfigureAwait(false),
         };
@@ -230,6 +247,7 @@ public static class SessionsSuperviseCommand
         print.Append($"generation: {Text(listed, "generation")}\n");
         print.Append($"answer: daoris-driver sessions supervise {id} --question {asked.Id} --generation {Text(listed, "generation")} "
             + "--choice \"<label>\" --reason \"…\" --source \"<where>\"\n");
+        print.Append($"or leave it to the owner: … --leave <{string.Join("|", SupervisorBounds.All)}> --reason \"…\" --source \"<where>\"\n");
         await output.WriteAsync(print.ToString()).ConfigureAwait(false);
         return 0;
     }
@@ -295,16 +313,22 @@ public static class SessionsSuperviseCommand
             return 2;
         }
 
-        var proof = SupervisorProof.Prove(world.HolderKey()!, nonce, SupervisorProof.Canonical(id, draft.Question, draft.Generation, draft.Choice, draft.Reasons));
+        // The answer, or the leave as the role's second act (SUPERVISOR1b), each proved over its own route's canonical bytes.
+        var route = draft.Bound is null ? Answer : Defer;
+        var chosen = draft.Bound ?? draft.Choice!;
+        var proof = SupervisorProof.Prove(
+            world.HolderKey()!, nonce, SupervisorProof.Canonical(route.Route, id, draft.Question, draft.Generation, chosen, draft.Reasons));
         if (proof is null)
         {
             await output.WriteLineAsync("sessions supervise: Daoris's nonce is not one this verb reads; nothing was sent.").ConfigureAwait(false);
             return 2;
         }
 
-        var form = new SupervisorForm(id, draft.Question, draft.Generation, proof, draft.Choice, draft.Reasons);
+        var payload = draft.Bound is { } bound
+            ? new SupervisorDeferForm(id, draft.Question, draft.Generation, proof, bound, draft.Reasons).Payload()
+            : new SupervisorForm(id, draft.Question, draft.Generation, proof, chosen, draft.Reasons).Payload();
         var answer = await client.RequestAsync(
-            Guid.NewGuid().ToString(), Answer.Module, Answer.Route, form.Payload(), Guid.NewGuid().ToString("N"), told: null, instance.Wait, ct)
+            Guid.NewGuid().ToString(), route.Module, route.Route, payload, Guid.NewGuid().ToString("N"), told: null, instance.Wait, ct)
             .ConfigureAwait(false);
         if (answer is not { } envelope)
         {
@@ -320,7 +344,15 @@ public static class SessionsSuperviseCommand
         }
 
         var data = envelope.GetProperty("data");
-        if (data.TryGetProperty("kept", out var kept) && kept.ValueKind == JsonValueKind.True)
+        if (data.TryGetProperty("kept", out var kept) && kept.ValueKind == JsonValueKind.True && draft.Bound is not null)
+        {
+            await output.WriteLineAsync(
+                $"sessions supervise: left to the owner as decision {Text(data, "decision")}; nothing reaches the session, and the owner's "
+                + "card says why.").ConfigureAwait(false);
+            return 0;
+        }
+
+        if (data.TryGetProperty("kept", out kept) && kept.ValueKind == JsonValueKind.True)
         {
             await output.WriteLineAsync(
                 $"sessions supervise: kept as decision {Text(data, "decision")}, held for the owner's overrule; it goes on at "

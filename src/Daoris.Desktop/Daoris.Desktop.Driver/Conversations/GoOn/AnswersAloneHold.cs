@@ -60,20 +60,34 @@ public sealed class AnswersAloneHold(SessionEvents events, GoOnMarks marks)
             .ToList();
         if (candidates.Count == 0) return 0;
 
-        IReadOnlyDictionary<string, PriorSession> records;
+        var records = await RecordsAsync(service, ct).ConfigureAwait(false);
+        return candidates.Count(record => Holds(record, records, at));
+    }
+
+    /// <summary>
+    /// The service's records by id, for a line's parts; unread, none, so each line is its record alone, and a line that went on across a
+    /// hand-over is judged again at the next look.
+    /// </summary>
+    public static async Task<IReadOnlyDictionary<string, PriorSession>> RecordsAsync(ServiceClient service, CancellationToken ct)
+    {
         try
         {
-            records = ServiceClient.ReadRecords(await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false));
+            return ServiceClient.ReadRecords(await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false));
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException
                                           || (error is OperationCanceledException && !ct.IsCancellationRequested))
         {
-            // Unread, each line is its record alone: a line that went on across a hand-over is judged again at the next look.
-            records = new Dictionary<string, PriorSession>(StringComparer.Ordinal);
+            return new Dictionary<string, PriorSession>(StringComparer.Ordinal);
         }
-
-        return candidates.Count(record => Holds(record, records, at));
     }
+
+    /// <summary>
+    /// Whether <paramref name="session"/>'s line is at the bound now (SUPERVISOR1b, the supervisor design §4.3): the supervisor's route
+    /// asks it at the keeping and its release asks it again, so a supervisor's word is never kept only to be held behind the bound. A
+    /// record not this machine's counts nothing, as the hold's own judgement does.
+    /// </summary>
+    public bool AtBound(string session, IReadOnlyDictionary<string, PriorSession> records) =>
+        SessionEventText.IsLocalId(session) && AnswersAlone.AtBound(Line(session, records));
 
     /// <summary>
     /// The line <paramref name="session"/> ends, oldest part first, as this machine keeps its events: it, then by each record's <c>from</c>

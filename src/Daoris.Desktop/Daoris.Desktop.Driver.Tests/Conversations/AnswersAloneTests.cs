@@ -232,4 +232,58 @@ public sealed class AnswersAloneTests
         Assert.Equal(2, AnswersAlone.Count([.. once, .. Turn(forged)]));
         Assert.Equal(2, AnswersAlone.Count([.. once, .. Turn(Helper("w2"), forged)]));
     }
+
+    // ——— SUPERVISOR1b (D208; the supervisor design §4.3): the route's `supervisor-bound` reads the same one count.
+
+    /// <summary>
+    /// A line is at the bound where its count by the event predicate is D188's two, whichever answers took it there: the supervisor's,
+    /// a helper's, an opinion's, mixed; the person's or Daoris's word puts it back. At the bound a waiting supervisor's word, by the
+    /// waiting-word predicate, is one the hold would keep, so the route refuses to keep a decision only to be held behind it.
+    /// </summary>
+    [Fact]
+    public void The_supervisors_route_is_at_the_bound_by_both_predicates()
+    {
+        IEnumerable<SessionEvent> once = [.. Turn(Started()), .. Turn(Supervisor())];
+        IEnumerable<SessionEvent> twice = [.. once, .. Turn(Helper("w6"))];
+
+        Assert.False(AnswersAlone.AtBound(once));
+        Assert.True(AnswersAlone.AtBound(twice));
+        Assert.True(AnswersAlone.AtBound([.. Turn(Started()), .. Turn(Supervisor()), .. Turn(Supervisor("w5"))]));
+        Assert.True(AnswersAlone.AtBound([.. Turn(Started()), .. Turn(Findings()), .. Turn(Supervisor(), Helper("w6"))]));
+        Assert.False(AnswersAlone.AtBound([.. twice, .. Turn(Person())]));
+        Assert.False(AnswersAlone.AtBound([.. twice, .. Turn(Daoris())]));
+        Assert.True(AnswersAlone.Holds([Supervised()], twice));
+        Assert.False(AnswersAlone.Holds([Supervised()], once));
+    }
+
+    /// <summary>
+    /// The hold answers the route from this machine's own events, read across the line's parts as the look reads them: at the bound
+    /// after two go-ons alone, short of it after one, and never for a record that is not this machine's. Each test its own scratch home.
+    /// </summary>
+    [Fact]
+    public void The_hold_reads_the_bound_from_the_lines_events_here()
+    {
+        var home = Path.Combine(AppContext.BaseDirectory, "alone-bound", Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
+            var hold = new AnswersAloneHold(events, new GoOnMarks(home));
+            foreach (var e in Turn(Started())) events.Append("s0", e);
+            foreach (var e in Turn(Supervisor())) events.Append("s0", e);
+            var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal)
+            {
+                ["s1"] = new("s1", null, "awaiting-person") { From = "s0" },
+            };
+
+            Assert.False(hold.AtBound("s0", records));
+            foreach (var e in Turn(Helper("w6"))) events.Append("s1", e);
+            Assert.True(hold.AtBound("s1", records));
+            Assert.False(hold.AtBound("s1", new Dictionary<string, PriorSession>(StringComparer.Ordinal)));
+            Assert.False(hold.AtBound("peer/s1", records));
+        }
+        finally
+        {
+            if (Directory.Exists(home)) Directory.Delete(home, recursive: true);
+        }
+    }
 }

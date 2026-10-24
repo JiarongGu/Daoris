@@ -359,7 +359,9 @@ public sealed class SessionsRoutes(DriverContext context)
 
     // A parked session's question to the person (PARKVIEW1, the park's ask design §2), as its agent asked it through `question_ask`
     // and the driver kept it for the park its last turn ended in: its words, the answers it offers with what it does on each, the one
-    // it recommends with why (QUESTIONUI1a) and by when, each the agent's own; null where none is kept, and for a record that is not
+    // it recommends with why (QUESTIONUI1a) and by when, and its mark that the question is the owner's alone (SUPERVISOR1b), each the
+    // agent's own; beside them the supervisor's defer on it (`left`: its bound and sourced reasons, SUPERVISOR1b), Daoris's record of
+    // the holder's act; null where none is kept, and for a record that is not
     // parked (Fable's read, Q7), whatever a file says. A read off the home's sessions folder, the files leaving the window's thread
     // first (UIFREEZE1): it declares nothing, and the page asks it only of a park of this machine's.
     [DriverRoute("SESSION_QUESTION")]
@@ -371,6 +373,10 @@ public sealed class SessionsRoutes(DriverContext context)
         return await Task.Run<object?>(() =>
         {
             var asked = new QuestionFiles(_loop.Home).Read(id);
+            // SUPERVISOR1b (§4.2): the supervisor's defer on this question, which the card says above its answers; never its holder.
+            var left = asked is null
+                ? null
+                : _loop.Supervisor.History(id).LastOrDefault(each => each.State == SupervisorState.Left && each.Question.Id == asked.Id);
             return new
             {
                 Question = asked is null ? null : new
@@ -381,6 +387,12 @@ public sealed class SessionsRoutes(DriverContext context)
                     asked.Recommend,
                     asked.Why,
                     asked.By,
+                    asked.Owner,
+                    Left = left is null ? null : new
+                    {
+                        left.Bound,
+                        Reasons = left.Reasons.Select(reason => new { reason.Says, reason.Source }).ToList(),
+                    },
                     At = Moments.Write(asked.At),
                 },
             };
@@ -561,6 +573,7 @@ public sealed class SessionsRoutes(DriverContext context)
         view.Id,
         Question = new { view.Question.Id, Text = view.Question.Question, Choices = view.Question.Choices.Select(choice => choice.Label).ToList() },
         view.Choice,
+        view.Bound,
         Reasons = view.Reasons.Select(reason => new { reason.Says, reason.Source }).ToList(),
         Holder = new { view.Holder.Kind, view.Holder.Parent },
         State = SupervisorStates.Spell(view.State),
@@ -598,6 +611,14 @@ public sealed class SessionsRoutes(DriverContext context)
     [Publishes("SUPERVISOR_ANSWER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SupervisorAnswerAsync(IpcRequest request, CancellationToken cancellationToken) =>
         await SupervisorDoor.AnswerAsync(_loop, request.Payload, cancellationToken).ConfigureAwait(false);
+
+    // The supervisor's leaving a question to the owner (SUPERVISOR1b, D208 §3.1): `{ id, question, generation, proof, bound, reasons }`,
+    // the role's second act, `Role` in the pipe's census and judged as the answer is. Kept as a decision of state `left`, final at once:
+    // nothing reaches the session, and the owner's card says *left to you* with the bound and the reasons. `{ kept, decision?, why? }`.
+    [DriverRoute("SUPERVISOR_DEFER")]
+    [Publishes("SUPERVISOR_DEFER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
+    private async Task<object?> SupervisorDeferAsync(IpcRequest request, CancellationToken cancellationToken) =>
+        await SupervisorDoor.DeferAsync(_loop, request.Payload, cancellationToken).ConfigureAwait(false);
 
     // What waits for the supervisor's holder (SUPERVISOR1a-ii, D208 §3.2): the parked sessions here with a recorded question and no
     // decision on it, in a repository a live appointment names, each with its generation. Told by event (NOBLOCK1): it reads the

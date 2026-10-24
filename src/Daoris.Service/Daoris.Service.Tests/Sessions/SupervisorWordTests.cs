@@ -31,14 +31,15 @@ public sealed class SupervisorWordTests : GoAheadFixture
         return session;
     }
 
-    private void File(string session, string question)
+    private void File(string session, string question, string? owner = null)
     {
         var path = QuestionBox.PathOf(Home, session);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var mark = owner is null ? "null" : $"\"{owner}\"";
         System.IO.File.WriteAllText(path, $$"""
             { "id": "{{question}}", "session": "{{session}}", "question": "Which report?",
               "choices": [ { "label": "The monthly one", "does": "I push to origin now." }, { "label": "The weekly one", "does": "I write it." } ],
-              "recommend": 1, "by": "now" }
+              "recommend": 1, "by": "now", "owner": {{mark}} }
             """);
     }
 
@@ -147,6 +148,28 @@ public sealed class SupervisorWordTests : GoAheadFixture
         Assert.Equal(SessionSayRefusal.GoAheadUnread, (await Release(third.Id, ledger: unread)).Refusal);
 
         foreach (var id in new[] { asking.Id, working.Id, onNoAsk.Id, third.Id }) Assert.Empty((await Record(id)).Said);
+    }
+
+    /// <summary>
+    /// SUPERVISOR1b (D208; the supervisor design §3.1, §4.1): the question's <c>owner</c> mark is checked again at the release, from the
+    /// file the service reads inside the say's step, so a question marked the owner's after a decision was admitted is never answered
+    /// by the supervisor: refused <c>owner-question</c>, keeping nothing, its wire word the route's.
+    /// </summary>
+    [Fact]
+    public async Task The_release_is_refused_where_the_question_on_file_is_marked_the_owners()
+    {
+        var parked = await ParkedOnAQuestion();
+        File(parked.Id, Question, owner: "sign-in");
+
+        Assert.Equal(SessionSayRefusal.OwnerQuestion, (await Release(parked.Id)).Refusal);
+        Assert.Empty((await Record(parked.Id)).Said);
+
+        // A mark this build does not know is still the agent's word that the question is the owner's: the safe side.
+        File(parked.Id, Question, owner: "something-later");
+        Assert.Equal(SessionSayRefusal.OwnerQuestion, (await Release(parked.Id)).Refusal);
+
+        File(parked.Id, Question);
+        Assert.Equal(SessionSayRefusal.None, (await Release(parked.Id)).Refusal);
     }
 
     /// <summary>

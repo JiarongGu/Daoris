@@ -64,6 +64,8 @@ export const DECLARED: Readonly<Record<string, { scopes: readonly string[]; sess
   // SUPERVISOR1a-i: the owner's overrule of a supervisor's decision.
   SUPERVISOR_OVERRULE: { scopes: ['sessions', 'driver'], session: 'id' },
   SUPERVISOR_ANSWER: { scopes: ['sessions', 'driver'], session: 'id' },
+  // SUPERVISOR1b: the holder's leaving a question to the owner.
+  SUPERVISOR_DEFER: { scopes: ['sessions', 'driver'], session: 'id' },
   // The plugins' presses (STATEHUB1d), which the Plugins view's tests publish; and since HELPMODE1c3 the driver's, whose
   // helpGrants draws Ask Daoris's browser grant from the plugin's approval.
   PLUGIN_ACTION: { scopes: ['driver', 'plugins', 'harnesses'] },

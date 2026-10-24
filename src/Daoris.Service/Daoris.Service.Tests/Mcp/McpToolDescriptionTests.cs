@@ -300,6 +300,20 @@ public sealed partial class McpToolDescriptionTests
     }
 
     /// <summary>
+    /// SUPERVISOR1b (D208; the supervisor design §4.1): `question_ask`'s `owner` mark is said with each of its six codes, as what the
+    /// owner alone answers, so an agent knows when to set it; and that it only narrows.
+    /// </summary>
+    [Fact]
+    public void The_question_tool_says_each_owner_mark()
+    {
+        var question = string.Join(" ", Descriptions().Where(d => d.Tool == "question_ask").Select(d => d.Text));
+
+        foreach (var mark in Daoris.Knowledge.QuestionBox.OwnerMarks) Assert.Contains($"`{mark}`", question);
+        Assert.Contains("the owner's alone", question);
+        Assert.Contains("supervisor", question);
+    }
+
+    /// <summary>
     /// SESSCTX1f (the session-context design §3.5): what a session reads of `line_read` says it changes nothing, reads this machine's
     /// record and never over the network, reads its own session's line and refuses any other record, and never shows the agent's
     /// thoughts; it is the one tool of its kind.

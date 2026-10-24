@@ -655,7 +655,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
         lock (_gate)
         {
             if (!AppointsOffered) return RoleJudgement.Refused(SupervisorWhy.NotOffered);
-            if (!string.Equals(module, DriverModuleName, StringComparison.OrdinalIgnoreCase) || route != SupervisorRoutes.Answer)
+            if (!string.Equals(module, DriverModuleName, StringComparison.OrdinalIgnoreCase) || !SupervisorRoutes.Acts.Contains(route))
             {
                 return RoleJudgement.Refused(StandingWhy.NotNamed);
             }
@@ -663,7 +663,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
             var place = Caller.Place(client);
             if (place == StandingPlace.InAgentJob) return RoleJudgement.Refused(StandingWhy.InAgentJob);
             if (place != StandingPlace.Outside) return RoleJudgement.Refused(StandingWhy.Untold);
-            if (SupervisorForm.Read(payload) is not { } form) return RoleJudgement.Refused(SupervisorWhy.Form);
+            // The answer's form or the defer's (SUPERVISOR1b), each proved over its own route's canonical bytes.
+            if (SupervisorActs.Read(route, payload) is not { } form) return RoleJudgement.Refused(SupervisorWhy.Form);
             if (_appointments.FirstOrDefault(each => each.Role == Roles.Supervisor && each.Generation == form.Generation) is not { } appointed)
             {
                 return RoleJudgement.Refused(SupervisorWhy.AppointmentChanged);

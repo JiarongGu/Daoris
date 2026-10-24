@@ -40,6 +40,14 @@ public sealed class QuestionBox(string? home)
 
     public const string Suffix = ".question.json";
 
+    /// <summary>
+    /// The marks an agent sets on a question it knows is the owner's alone (SUPERVISOR1b, D208; the supervisor design §4.1): a sign-in,
+    /// widening access, spending, deleting, a repository document that asks the owner, and the owner's own taste. A marked question is
+    /// never answered by the supervisor; the mark only narrows, so an unmarked question is still judged by its holder. The driver's
+    /// <c>SupervisorBounds.All</c> and the page's <c>OWNER_MARKS</c> name the same six; both readers take any mark as one.
+    /// </summary>
+    public static readonly IReadOnlyList<string> OwnerMarks = ["sign-in", "access", "spending", "delete", "repository-asks", "preference"];
+
     private const string NoSession =
         "This connector speaks for no session the driver started here, so there is no park of yours to ask the person in: say exactly "
         + "what you need from them in your last message, and end your turn.";
@@ -58,9 +66,10 @@ public sealed class QuestionBox(string? home)
     /// <param name="choices">The answers it offers, each its label and what it does on it, in its order; null or empty for none.</param>
     /// <param name="recommend">The answer it recommends, by its number from 1, or null.</param>
     /// <param name="why">Why it recommends that answer (QUESTIONUI1a), or null: said only with a recommendation.</param>
+    /// <param name="owner">One of <see cref="OwnerMarks"/> where the agent knows the question is the owner's alone (SUPERVISOR1b), or null.</param>
     public (string? Id, string Message) Ask(
         Session? asker, string? named, string? question, IReadOnlyList<(string? Label, string? Does)>? choices, int? recommend, string? by,
-        DateTimeOffset at, string? why = null)
+        DateTimeOffset at, string? why = null, string? owner = null)
     {
         if (string.IsNullOrWhiteSpace(named)) return (null, $"{NoSession} Nothing was asked.");
         if (asker is not { Origin: null }) return (null, $"No session `{named.Trim()}` of this machine's is held to ask in. Nothing was asked.");
@@ -114,6 +123,13 @@ public sealed class QuestionBox(string? home)
 
         var when = by?.Trim() is { Length: > 0 } said ? said : null;
         if (when is { Length: > MaxBy }) return (null, $"By when is at most {MaxBy} characters, and this is {when.Length}. Nothing was asked.");
+        var mark = owner?.Trim() is { Length: > 0 } marked ? marked : null;
+        if (mark is not null && !OwnerMarks.Contains(mark, StringComparer.Ordinal))
+        {
+            return (null, $"`{mark}` is not one of the owner's marks ({string.Join(", ", OwnerMarks.Select(each => $"`{each}`"))}): set one, "
+                          + "or leave it out. Nothing was asked.");
+        }
+
         if (Home is null) return (null, $"{Capital(DaorisHome.Sentence)} Nothing was asked.");
 
         var id = Guid.NewGuid().ToString("N")[..8];
@@ -135,6 +151,7 @@ public sealed class QuestionBox(string? home)
             if (recommend is { } chosen) writer.WriteNumber("recommend", chosen); else writer.WriteNull("recommend");
             if (reason is null) writer.WriteNull("why"); else writer.WriteString("why", reason);
             if (when is null) writer.WriteNull("by"); else writer.WriteString("by", when);
+            if (mark is null) writer.WriteNull("owner"); else writer.WriteString("owner", mark);
             writer.WriteString("at", Moments.Write(at));
         });
 
@@ -203,6 +220,7 @@ public sealed class QuestionBox(string? home)
             return new QuestionKept(id, Text(root, "session") ?? session, question, choices, recommend, Text(root, "by"), Text(root, "at"))
             {
                 Why = Text(root, "why"),
+                Owner = Text(root, "owner") is { Length: > 0 } owner ? owner : null,
             };
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
@@ -237,6 +255,12 @@ public sealed record QuestionKept(
 {
     /// <summary>Why it recommends its answer (QUESTIONUI1a), or null where it gave no reason.</summary>
     public string? Why { get; init; }
+
+    /// <summary>
+    /// The agent's mark that the question is the owner's alone (SUPERVISOR1b), as the file says it, or null: any mark at all, one this
+    /// build does not know included, keeps the supervisor from answering it, the safe side.
+    /// </summary>
+    public string? Owner { get; init; }
 }
 
 /// <summary>One answer a question offers: the words on its press, and what the agent does on it.</summary>

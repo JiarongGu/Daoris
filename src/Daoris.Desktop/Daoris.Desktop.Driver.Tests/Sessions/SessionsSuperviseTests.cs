@@ -200,6 +200,55 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
         Assert.False(SupervisorProof.Verify(hash, _standIn.Nonce, Canonical("Weekly"), proof));
     }
 
+    private static readonly string[] LeaveArgs =
+    [
+        "supervise", "s1", "--question", "q-1", "--generation", "g-1", "--leave", "sign-in",
+        "--reason", "The ticket says monthly.", "--source", "the quest's line 2",
+    ];
+
+    /// <summary>
+    /// SUPERVISOR1b (§3.1 <c>SUPERVISOR_DEFER</c>): <c>--leave &lt;bound&gt;</c> in place of <c>--choice</c> leaves the question to the
+    /// owner, a bound §4.1 names and each reason with its source; never both, never a bound it does not name.
+    /// </summary>
+    [Fact]
+    public void The_verb_reads_a_leave_in_place_of_a_choice_naming_one_of_the_bounds()
+    {
+        var leave = SessionsCommand.Read(LeaveArgs, out _)!;
+        Assert.Equal(("supervise-leave", "sign-in", null), (leave.Verb, leave.Supervised!.Bound, leave.Supervised.Choice));
+        Assert.Equal(Reasons, leave.Supervised.Reasons);
+
+        Assert.Null(SessionsCommand.Read([.. LeaveArgs, "--choice", "Monthly"], out _));
+        Assert.Null(SessionsCommand.Read([.. LeaveArgs[..7], "because", .. LeaveArgs[8..]], out var unnamed));
+        Assert.Contains("sign-in", unnamed, StringComparison.Ordinal);
+        Assert.Null(SessionsCommand.Read([.. LeaveArgs[..8]], out _));
+    }
+
+    /// <summary>
+    /// The leave goes as the role's second act, <c>SUPERVISOR_DEFER</c>, in its exact form with a proof over its own route's canonical
+    /// bytes, never the key; the answer's proof does not verify for it.
+    /// </summary>
+    [Fact]
+    public async Task A_leave_is_sent_as_the_defer_with_a_proof_over_its_own_route()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        _standIn = new InstanceStandIn(_pipe, _id) { Data = new { kept = true, decision = "d1" } };
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        var (exit, said) = await RunAsync(LeaveArgs, Instance(_ => true));
+        Assert.Equal(0, exit);
+        Assert.Contains("left to the owner as decision d1", said, StringComparison.Ordinal);
+
+        var press = Assert.Single(_standIn.Presses);
+        Assert.Equal(SupervisorRoutes.Defer, press.GetProperty("type").GetString());
+        var payload = press.GetProperty("payload");
+        Assert.Equal(["id", "question", "generation", "proof", "bound", "reasons"], payload.EnumerateObject().Select(each => each.Name));
+        var proof = payload.GetProperty("proof").GetString();
+        var hash = HolderKey.Hash(Key)!;
+        Assert.True(SupervisorProof.Verify(hash, _standIn.Nonce, SupervisorProof.Canonical(SupervisorRoutes.Defer, "s1", "q-1", "g-1", "sign-in", Reasons), proof));
+        Assert.False(SupervisorProof.Verify(hash, _standIn.Nonce, Canonical("sign-in"), proof));
+        Assert.DoesNotContain(Key, string.Concat(_standIn.Sent.Select(each => each.GetRawText())), StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>
     /// NOBLOCK1: the listing is told by event, so the instance answers at once from what it holds; the verb asks again past
     /// <c>pending</c> and past an answer computed before its first ask, and lists the one computed after it.

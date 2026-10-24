@@ -45,11 +45,12 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
             new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
     }
 
-    private void Asked(string session)
+    private void Asked(string session, string? owner = null)
     {
         Directory.CreateDirectory(DaorisHome.Entry(Home, HomeEntry.Sessions));
-        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions, session + QuestionFiles.Suffix), """
-            {"id":"q-1","session":"s1","question":"Which report?","choices":[{"label":"Monthly","does":"I write it."},{"label":"Weekly","does":"I write that."}],"recommend":1,"at":"2026-10-24T08:00:00Z"}
+        var mark = owner is null ? "null" : $"\"{owner}\"";
+        File.WriteAllText(DaorisHome.Entry(Home, HomeEntry.Sessions, session + QuestionFiles.Suffix), $$"""
+            {"id":"q-1","session":"s1","question":"Which report?","choices":[{"label":"Monthly","does":"I write it."},{"label":"Weekly","does":"I write that."}],"recommend":1,"owner":{{mark}},"at":"2026-10-24T08:00:00Z"}
             """);
     }
 
@@ -202,6 +203,77 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
             Assert.True((await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = false })).GetProperty("done").GetBoolean());
             var swept = Assert.Single(loop.Supervisor.LiveOf("s1"));
             Assert.Equal((SupervisorState.Stale, SupervisorWhy.Revoked), (swept.State, swept.Why));
+        }
+        finally
+        {
+            SupervisorDoor.Starter = null;
+        }
+    }
+
+    /// <summary>
+    /// SUPERVISOR1b (§3.1, §4.1): a question its agent marked the owner's is not listed for the holder, and a covered terminal's answer to
+    /// it is refused <c>owner-question</c>, keeping nothing; the holder's defer on it is kept <c>left</c> over the same door, its bound on
+    /// the row the page reads, and the page's own door is refused it as the answer is.
+    /// </summary>
+    [Fact]
+    public async Task A_marked_question_is_never_listed_nor_answered_and_a_defer_is_kept_left()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (loop, module, dispatcher, services) = Compose();
+        using var composed = services;
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new Service([]))));
+        Asked("s1", owner: "sign-in");
+        var judge = Judge();
+        using var pipe = new InstancePipe(dispatcher, Bus, Home, standing: judge);
+        Assert.NotNull(pipe.Serve());
+        loop.Pipe = pipe;
+        string? key = null;
+        SupervisorDoor.Starter = handed => Task.FromResult((key = handed) is not null);
+        try
+        {
+            Assert.True((await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", repository = "engine", on = true })).GetProperty("done").GetBoolean());
+            var generation = judge.Admit("engine").Generation!;
+            Assert.Empty((await AnswerAsync(module, "SUPERVISOR_WAITING")).GetProperty("waiting").EnumerateArray());
+
+            SupervisorReason[] reasons = [new("A sign-in is the owner's.", "D191 point 3")];
+            async Task<JsonElement> SendAsync(string route, Func<string, object> form)
+            {
+                await using var client = await PipeClient.ConnectAsync(pipe.Name!);
+                var nonce = (await client.HelloAsync(HomeIdentity.Read(Home)!)).GetProperty("data").GetProperty("nonce").GetString()!;
+                var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, route, form(nonce)));
+                Assert.True(answer.GetProperty("success").GetBoolean(), answer.GetRawText());
+                return answer.GetProperty("data");
+            }
+
+            object Answer(string nonce) => new SupervisorForm(
+                "s1", "q-1", generation, SupervisorProof.Prove(key!, nonce, SupervisorProof.Canonical("s1", "q-1", generation, "Monthly", reasons))!,
+                "Monthly", reasons).Payload();
+            object Defer(string nonce) => new SupervisorDeferForm(
+                "s1", "q-1", generation,
+                SupervisorProof.Prove(key!, nonce, SupervisorProof.Canonical(SupervisorRoutes.Defer, "s1", "q-1", generation, "sign-in", reasons))!,
+                "sign-in", reasons).Payload();
+
+            var answered = await SendAsync("SUPERVISOR_ANSWER", Answer);
+            Assert.Equal((false, SupervisorWhy.OwnerQuestion), (answered.GetProperty("kept").GetBoolean(), answered.GetProperty("why").GetString()));
+            Assert.Empty(loop.Supervisor.LiveOf("s1"));
+
+            var page = await AnswerAsync(module, "SUPERVISOR_DEFER", Defer(SupervisorProof.Nonce()));
+            Assert.Equal((false, "not-holder"), (page.GetProperty("kept").GetBoolean(), page.GetProperty("why").GetString()));
+
+            var left = await SendAsync("SUPERVISOR_DEFER", Defer);
+            Assert.True(left.GetProperty("kept").GetBoolean(), left.GetRawText());
+            var decision = Assert.Single(loop.Supervisor.LiveOf("s1"));
+            Assert.Equal((SupervisorState.Left, "sign-in"), (decision.State, decision.Bound));
+            var row = Assert.Single((await AnswerAsync(module, "SESSION_SUPERVISOR", new { id = "s1" })).GetProperty("decisions").EnumerateArray());
+            Assert.Equal(("left", "sign-in"), (row.GetProperty("state").GetString(), row.GetProperty("bound").GetString()));
+
+            // The card reads it beside the question it was left on, with the agent's mark (§4.2).
+            var asked = (await AnswerAsync(module, "SESSION_QUESTION", new { id = "s1" })).GetProperty("question");
+            Assert.Equal("sign-in", asked.GetProperty("owner").GetString());
+            var leftOn = asked.GetProperty("left");
+            Assert.Equal("sign-in", leftOn.GetProperty("bound").GetString());
+            var reason = Assert.Single(leftOn.GetProperty("reasons").EnumerateArray());
+            Assert.Equal(("A sign-in is the owner's.", "D191 point 3"), (reason.GetProperty("says").GetString(), reason.GetProperty("source").GetString()));
         }
         finally
         {

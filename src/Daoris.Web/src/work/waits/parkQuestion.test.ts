@@ -36,8 +36,19 @@ describe('readQuestion', () => {
     const words = (value: unknown) => (typeof value === 'number' ? 'x'.repeat(value) : value);
     expect(read).toEqual({
       id: row.read.id, question: words(row.read.question), choices: row.read.choices, recommend: row.read.recommend,
-      why: words(row.read.why), by: row.read.by, at: row.file.at,
+      why: words(row.read.why), by: row.read.by, owner: row.read.owner ?? null, at: row.file.at,
     });
+  });
+
+  /** SUPERVISOR1b: the route carries the supervisor's defer on the question beside it; read field by field, a part that does not read left out. */
+  it('reads the supervisor\'s defer the route carries beside the question, and none where it does not read', () => {
+    const asked = { id: 'q1', question: 'Which?', choices: [], at: '2026-10-24T09:00:00Z' };
+    const left = readQuestion({ question: { ...asked, left: { bound: 'sign-in', reasons: [{ says: 'Yours.', source: 'D191 point 3' }, { says: 'no source' }] } } });
+    expect(left?.left).toEqual({ bound: 'sign-in', reasons: [{ says: 'Yours.', source: 'D191 point 3' }] });
+
+    expect(readQuestion({ question: asked })?.left).toBeUndefined();
+    expect(readQuestion({ question: { ...asked, left: { reasons: [] } } })?.left).toBeUndefined();
+    expect(readQuestion({ question: { ...asked, left: 'sign-in' } })?.left).toBeUndefined();
   });
 
   it('reads none from an older shell, and nothing at all', () => {

@@ -63,6 +63,12 @@ public static class SupervisorRoutes
     /// <summary>The holder's answer: <c>Role</c> in the pipe's census, judged by the judge's role method.</summary>
     public const string Answer = "SUPERVISOR_ANSWER";
 
+    /// <summary>The holder's leaving a question to the owner (SUPERVISOR1b): <c>Role</c>, judged as the answer is.</summary>
+    public const string Defer = "SUPERVISOR_DEFER";
+
+    /// <summary>The role's acts, each judged by the judge's role method and nothing else.</summary>
+    public static readonly IReadOnlyList<string> Acts = [Answer, Defer];
+
     /// <summary>What waits for the holder: <c>Open</c>.</summary>
     public const string Waiting = "SUPERVISOR_WAITING";
 
@@ -76,13 +82,71 @@ public static class SupervisorRoutes
 /// each exactly <c>{ says: 1-300, source: 1-200 }</c>.
 /// </summary>
 public sealed record SupervisorForm(
-    string Id, string Question, string Generation, string Proof, string Choice, IReadOnlyList<SupervisorReason> Reasons)
+    string Id, string Question, string Generation, string Proof, string Choice, IReadOnlyList<SupervisorReason> Reasons) : ISupervisorAct
 {
     /// <summary>The form's canonical bytes, which the proof is over.</summary>
     public byte[] Canonical => SupervisorProof.Canonical(Id, Question, Generation, Choice, Reasons);
 
     /// <summary>The form <paramref name="payload"/> is, or null where it is anything more or less.</summary>
-    public static SupervisorForm? Read(JsonElement? payload)
+    public static SupervisorForm? Read(JsonElement? payload) =>
+        SupervisorActs.Fields(payload, "choice", 80) is { } read
+            ? new SupervisorForm(read.Id, read.Question, read.Generation, read.Proof, read.Chosen, read.Reasons)
+            : null;
+
+    /// <summary>The form as the verb sends it: its fields in the form's order.</summary>
+    public object Payload() => new
+    {
+        id = Id, question = Question, generation = Generation, proof = Proof, choice = Choice,
+        reasons = Reasons.Select(reason => new { says = reason.Says, source = reason.Source }).ToArray(),
+    };
+}
+
+/// <summary>
+/// <c>SUPERVISOR_DEFER</c>'s exact form (SUPERVISOR1b; §3.1): <c>{ id, question, generation, proof, bound, reasons }</c>, held as
+/// <c>SUPERVISOR_ANSWER</c>'s is, <c>bound</c> one of <see cref="SupervisorBounds.All"/>. Its proof is over its own route's canonical
+/// bytes, so no answer's proof is a defer's, nor a defer's an answer's.
+/// </summary>
+public sealed record SupervisorDeferForm(
+    string Id, string Question, string Generation, string Proof, string Bound, IReadOnlyList<SupervisorReason> Reasons) : ISupervisorAct
+{
+    public byte[] Canonical => SupervisorProof.Canonical(SupervisorRoutes.Defer, Id, Question, Generation, Bound, Reasons);
+
+    /// <summary>The form <paramref name="payload"/> is, or null where it is anything more or less, or names a bound §4.1 does not.</summary>
+    public static SupervisorDeferForm? Read(JsonElement? payload) =>
+        SupervisorActs.Fields(payload, "bound", 40) is { } read && SupervisorBounds.Known(read.Chosen)
+            ? new SupervisorDeferForm(read.Id, read.Question, read.Generation, read.Proof, read.Chosen, read.Reasons)
+            : null;
+
+    public object Payload() => new
+    {
+        id = Id, question = Question, generation = Generation, proof = Proof, bound = Bound,
+        reasons = Reasons.Select(reason => new { says = reason.Says, source = reason.Source }).ToArray(),
+    };
+}
+
+/// <summary>What the judge reads of either role's act: the generation it names, its proof, and the bytes the proof is over.</summary>
+public interface ISupervisorAct
+{
+    string Generation { get; }
+    string Proof { get; }
+    byte[] Canonical { get; }
+}
+
+/// <summary>The role's two forms read alike (SUPERVISOR1b): every field named once, of its type and bound, and nothing else.</summary>
+public static class SupervisorActs
+{
+    /// <summary>The act <paramref name="route"/> names, read from <paramref name="payload"/>; null for any other route or form.</summary>
+    public static ISupervisorAct? Read(string route, JsonElement? payload) => route switch
+    {
+        SupervisorRoutes.Answer => SupervisorForm.Read(payload),
+        SupervisorRoutes.Defer => SupervisorDeferForm.Read(payload),
+        _ => null,
+    };
+
+    internal sealed record ActFields(string Id, string Question, string Generation, string Proof, string Chosen, IReadOnlyList<SupervisorReason> Reasons);
+
+    /// <summary>The six fields of either form, <paramref name="chosen"/> its fifth (<c>choice</c> or <c>bound</c>), up to <paramref name="most"/>.</summary>
+    internal static ActFields? Fields(JsonElement? payload, string chosen, int most)
     {
         if (payload is not { ValueKind: JsonValueKind.Object } body) return null;
         var fields = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
@@ -91,11 +155,11 @@ public sealed record SupervisorForm(
             if (!fields.TryAdd(property.Name, property.Value)) return null;
         }
 
-        string[] named = ["id", "question", "generation", "proof", "choice", "reasons"];
+        string[] named = ["id", "question", "generation", "proof", chosen, "reasons"];
         if (fields.Count != named.Length || !named.All(fields.ContainsKey)) return null;
         if (Text(fields["id"], 128) is not { } id || Text(fields["question"], 128) is not { } question
             || Text(fields["generation"], 128) is not { } generation || Text(fields["proof"], 64) is not { } proof
-            || Text(fields["choice"], 80) is not { } choice || fields["reasons"].ValueKind != JsonValueKind.Array)
+            || Text(fields[chosen], most) is not { } choice || fields["reasons"].ValueKind != JsonValueKind.Array)
         {
             return null;
         }
@@ -121,20 +185,13 @@ public sealed record SupervisorForm(
 
         return reasons.Count is 0 or > QuestionSupervisorDecisions.MostReasons
             ? null
-            : new SupervisorForm(id, question, generation, proof, choice, reasons);
+            : new ActFields(id, question, generation, proof, choice, reasons);
 
         // A string of 1 to max characters, not blank. Its words are kept as written: the reasons are the owner's to read.
         static string? Text(JsonElement value, int max) =>
             value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } text && text.Length <= max
             && text.Trim().Length > 0 ? text : null;
     }
-
-    /// <summary>The form as the verb sends it: its fields in the form's order.</summary>
-    public object Payload() => new
-    {
-        id = Id, question = Question, generation = Generation, proof = Proof, choice = Choice,
-        reasons = Reasons.Select(reason => new { says = reason.Says, source = reason.Source }).ToArray(),
-    };
 }
 
 /// <summary>
@@ -154,17 +211,25 @@ public static class SupervisorProof
     /// The form's canonical bytes: every field of <c>SUPERVISOR_ANSWER</c> but <c>proof</c>, in the form's order, as one compact JSON
     /// array, UTF-8. One function on both sides, so the verb and the judge read the same bytes from the same values.
     /// </summary>
-    public static byte[] Canonical(string id, string question, string generation, string choice, IReadOnlyList<SupervisorReason> reasons)
+    public static byte[] Canonical(string id, string question, string generation, string choice, IReadOnlyList<SupervisorReason> reasons) =>
+        Canonical(SupervisorRoutes.Answer, id, question, generation, choice, reasons);
+
+    /// <summary>
+    /// <paramref name="route"/>'s canonical bytes (SUPERVISOR1b): its name first, so a proof over one act is never another's; then the
+    /// form's fields but <c>proof</c> in its order, <paramref name="chosen"/> the answer's <c>choice</c> or the defer's <c>bound</c>.
+    /// </summary>
+    public static byte[] Canonical(
+        string route, string id, string question, string generation, string chosen, IReadOnlyList<SupervisorReason> reasons)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream))
         {
             writer.WriteStartArray();
-            writer.WriteStringValue("SUPERVISOR_ANSWER");
+            writer.WriteStringValue(route);
             writer.WriteStringValue(id);
             writer.WriteStringValue(question);
             writer.WriteStringValue(generation);
-            writer.WriteStringValue(choice);
+            writer.WriteStringValue(chosen);
             writer.WriteStartArray();
             foreach (var reason in reasons)
             {

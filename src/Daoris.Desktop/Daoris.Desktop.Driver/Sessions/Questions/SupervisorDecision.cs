@@ -98,12 +98,31 @@ public static class SupervisorWhy
     public const string OwnerAnswered = "owner-answered";
     public const string Form = "form";
 
+    /// <summary>The question carries the agent's <c>owner</c> mark (SUPERVISOR1b, §4.1): refused at the keeping and again at the release.</summary>
+    public const string OwnerQuestion = "owner-question";
+
+    /// <summary>The line's answers-alone count is at D188's bound (SUPERVISOR1b, §4.3): refused at the keeping and again at the release.</summary>
+    public const string SupervisorBound = "supervisor-bound";
+
     // Why a decision went stale (§6.1's `supervisor.stale`).
     public const string Tampered = "tampered";
     public const string Forged = "forged";
     public const string Revoked = "revoked";
     public const string Restarted = "restarted";
     public const string CannotGoOn = "cannot-go-on";
+}
+
+/// <summary>
+/// The bounds a holder leaves a question to the owner by (SUPERVISOR1b; the supervisor design §4.1), as <c>SUPERVISOR_DEFER</c> names
+/// them: the six an asking agent may also mark its question with (<see cref="QuestionFiles"/>'s <c>owner</c>), and the four only the
+/// holder's judgement reaches.
+/// </summary>
+public static class SupervisorBounds
+{
+    public static readonly IReadOnlyList<string> All =
+        ["go-ahead", "sign-in", "access", "spending", "delete", "repository-asks", "preference", "unrecorded", "contradicts", "instructed"];
+
+    public static bool Known(string? bound) => bound is not null && All.Contains(bound, StringComparer.Ordinal);
 }
 
 /// <summary>A reason the holder gave, naming its source (D135 point 4): the owner's to read, never handed to the session.</summary>
@@ -120,18 +139,34 @@ public sealed record SupervisorAnswer(
     string Session, string Question, string Generation, string Choice, IReadOnlyList<SupervisorReason> Reasons, SupervisorHolder Holder);
 
 /// <summary>
+/// What a holder leaves to the owner (SUPERVISOR1b; §3.1's <c>SUPERVISOR_DEFER</c> less its proof, which the door checks): one of
+/// <see cref="SupervisorBounds.All"/> and one to five reasons, each with a source. Kept as a decision of state <c>left</c>.
+/// </summary>
+public sealed record SupervisorDefer(
+    string Session, string Question, string Generation, string Bound, IReadOnlyList<SupervisorReason> Reasons, SupervisorHolder Holder);
+
+/// <summary>
 /// What the handler read of the park at the keeping (§3.1's checks the driver makes): its repository, whether it is parked here and
-/// holds a quest, the question on file, whether a word of the owner's waits, and whether the ask's go-aheads are open or unread.
+/// holds a quest, the question on file, whether a word of the owner's waits, whether the ask's go-aheads are open or unread, and
+/// whether its line's answers-alone count is at D188's bound (SUPERVISOR1b, §4.3).
 /// </summary>
 public sealed record SupervisedPark(
-    string Repository, bool Parked, bool HoldsQuest, ParkQuestion? Filed, bool OwnerWaits, bool GoAheadOpen, bool GoAheadUnread);
+    string Repository, bool Parked, bool HoldsQuest, ParkQuestion? Filed, bool OwnerWaits, bool GoAheadOpen, bool GoAheadUnread,
+    bool AtBound = false);
+
+/// <summary>
+/// Whether <paramref name="session"/>'s line is at D188's answers-alone bound now (SUPERVISOR1b, §4.3), asked by the release under the
+/// decision's lock: a supervisor's word going on would be one more answer alone past it.
+/// </summary>
+public delegate Task<bool> SupervisorBound(string session, CancellationToken ct);
 
 /// <summary>A decision as it stands, for the page and the tests: whole, from memory, or from the files as history.</summary>
 /// <param name="Earlier">Read from the files of an earlier run of Daoris: history, granting nothing (§6.1).</param>
+/// <param name="Bound">A defer's bound (SUPERVISOR1b, state <c>left</c>), its <paramref name="Choice"/> empty; null for an answer.</param>
 public sealed record SupervisorDecisionView(
     string Id, string Session, ParkQuestion Question, string Choice, IReadOnlyList<SupervisorReason> Reasons, SupervisorHolder Holder,
     string Generation, DateTimeOffset KeptAt, DateTimeOffset GoesOnAt, SupervisorState State, DateTimeOffset StateAt, string? Why,
-    string? Word, bool Earlier);
+    string? Word, bool Earlier, string? Bound = null);
 
 /// <summary>What a keeping answered: kept with the decision and when it goes on, or refused with why, keeping nothing.</summary>
 public sealed record SupervisorKept(bool Kept, string? Decision, DateTimeOffset? GoesOnAt, string? Why);

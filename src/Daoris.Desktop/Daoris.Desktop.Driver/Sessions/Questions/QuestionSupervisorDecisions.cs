@@ -53,6 +53,10 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         public required string Repository { get; init; }
         public required ParkQuestion Question { get; init; }
         public required string Choice { get; init; }
+
+        /// <summary>A defer's bound (SUPERVISOR1b, <c>left</c>), its choice empty; null for an answer.</summary>
+        public string? Bound { get; init; }
+
         public required IReadOnlyList<SupervisorReason> Reasons { get; init; }
         public required SupervisorHolder Holder { get; init; }
         public required string Generation { get; init; }
@@ -111,10 +115,10 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
                 return Task.FromResult(new SupervisorKept(false, null, null, why));
             }
 
-            if (_closed.ContainsKey((answer.Session, answer.Question)))
+            if (Closed(answer.Session, answer.Question) is { } closed)
             {
-                log?.Info("supervisor.refused", ("why", SupervisorWhy.Overruled));
-                return Task.FromResult(new SupervisorKept(false, null, null, SupervisorWhy.Overruled));
+                log?.Info("supervisor.refused", ("why", closed));
+                return Task.FromResult(new SupervisorKept(false, null, null, closed));
             }
 
             // The generation rechecked at the keeping, under the decision's lock: a revoke between the judgement and here keeps nothing.
@@ -129,7 +133,8 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             {
                 Id = id, Session = answer.Session, Repository = park.Repository, Question = park.Filed!, Choice = answer.Choice,
                 Reasons = answer.Reasons, Holder = answer.Holder, Generation = generation, KeptAt = now, GoesOnAt = now + Window,
-                Written = DecisionJson(id, answer, park.Filed!, generation, now, now + Window), StateAt = now,
+                Written = DecisionJson(id, answer.Session, answer.Choice, null, answer.Reasons, answer.Holder, park.Filed!, generation, now, now + Window),
+                StateAt = now,
             };
             Directory.CreateDirectory(FolderOf(answer.Session));
             AtomicFile.WriteText(FileOf(answer.Session, id), decision.Written);
@@ -144,26 +149,97 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     /// <summary>§3.1's refusals the park and the form answer, before memory is read; null where none applies.</summary>
     private static string? Judge(SupervisorAnswer answer, SupervisedPark park)
     {
-        // D135 point 4: a reason with no source is refused by name; Daoris checks that one is named, never what it says.
-        if (answer.Reasons.Any(reason => string.IsNullOrWhiteSpace(reason.Source))) return SupervisorWhy.NoSource;
-        if (answer.Reasons.Count is 0 or > MostReasons || answer.Choice.Length == 0
-            || answer.Reasons.Any(reason => reason.Says.Trim().Length is 0 or > MaxSays || reason.Source.Length > MaxSource))
-        {
-            return SupervisorWhy.Form;
-        }
-
-        if (!park.Parked) return SupervisorWhy.NotParked;
-        if (!park.HoldsQuest) return SupervisorWhy.NoQuest;
-        if (park.Filed is not { } filed || filed.Id != answer.Question) return SupervisorWhy.QuestionChanged;
+        if ((Refused(answer.Reasons, answer.Choice.Length > 0) ?? Parked(answer.Question, park)) is { } refused) return refused;
+        var filed = park.Filed!;
+        // SUPERVISOR1b (§4.1): the agent's mark, any at all, makes the question the owner's; checked again at the release.
+        if (filed.Owner is not null) return SupervisorWhy.OwnerQuestion;
         if (!filed.Choices.Any(choice => string.Equals(choice.Label, answer.Choice, StringComparison.Ordinal))) return SupervisorWhy.NotOfferedChoice;
         if (park.GoAheadUnread) return SupervisorWhy.GoAheadUnread;
         if (park.GoAheadOpen) return SupervisorWhy.GoAheadOpen;
-        return park.OwnerWaits ? SupervisorWhy.OwnerAnswered : null;
+        if (park.OwnerWaits) return SupervisorWhy.OwnerAnswered;
+        // SUPERVISOR1b (§4.3): a word that would go on past D188's bound is never kept only to be held behind it.
+        return park.AtBound ? SupervisorWhy.SupervisorBound : null;
     }
+
+    /// <summary>The form's refusals both acts share: every reason naming its source, and their count and bounds.</summary>
+    private static string? Refused(IReadOnlyList<SupervisorReason> reasons, bool named)
+    {
+        // D135 point 4: a reason with no source is refused by name; Daoris checks that one is named, never what it says.
+        if (reasons.Any(reason => string.IsNullOrWhiteSpace(reason.Source))) return SupervisorWhy.NoSource;
+        return reasons.Count is 0 or > MostReasons || !named
+               || reasons.Any(reason => reason.Says.Trim().Length is 0 or > MaxSays || reason.Source.Length > MaxSource)
+            ? SupervisorWhy.Form
+            : null;
+    }
+
+    /// <summary>The park's refusals both acts share: parked here, holding a quest, and its question on file the one named.</summary>
+    private static string? Parked(string question, SupervisedPark park) =>
+        !park.Parked ? SupervisorWhy.NotParked
+        : !park.HoldsQuest ? SupervisorWhy.NoQuest
+        : park.Filed is not { } filed || filed.Id != question ? SupervisorWhy.QuestionChanged
+        : null;
+
+    /// <summary>Why a question a decision closed refuses another act on it: the owner's again (<c>overruled</c>), or left (<c>answered</c>).</summary>
+    private string? Closed(string session, string question) =>
+        _closed.TryGetValue((session, question), out var state)
+            ? state == SupervisorState.Left ? SupervisorWhy.Answered : SupervisorWhy.Overruled
+            : null;
 
     private static bool Same(Live held, SupervisorAnswer answer) =>
         held.Choice == answer.Choice && held.Generation == answer.Generation && held.Holder == answer.Holder
         && held.Reasons.SequenceEqual(answer.Reasons);
+
+    // ——— Leaving it to the owner (SUPERVISOR1b; §3.1 `SUPERVISOR_DEFER`, §3.6 `left`, §4.2).
+
+    /// <summary>
+    /// Keep a defer for <paramref name="defer"/> on the park the handler read: a decision of state <c>left</c>, final at once, its bound
+    /// and reasons kept for the owner's card and nothing ever said to the session. Its checks are the form's, the park's and the
+    /// generation's; a go-ahead, the owner's words or the question's mark refuse none, since leaving it to the owner is always the safe
+    /// side. A retry of the same defer answers kept with the same decision; any other act on a decided question is refused.
+    /// </summary>
+    public Task<SupervisorKept> LeaveAsync(SupervisorDefer defer, SupervisedPark park, DateTimeOffset now, CancellationToken ct = default) =>
+        UnderAsync(defer.Session, () =>
+        {
+            var refused = Refused(defer.Reasons, SupervisorBounds.Known(defer.Bound)) ?? Parked(defer.Question, park);
+            if (refused is null && _live.Values.FirstOrDefault(each => each.Session == defer.Session && each.Question.Id == defer.Question) is { } held)
+            {
+                if (held.State == SupervisorState.Left && held.Bound == defer.Bound && held.Generation == defer.Generation
+                    && held.Holder == defer.Holder && held.Reasons.SequenceEqual(defer.Reasons))
+                {
+                    return Task.FromResult(new SupervisorKept(true, held.Id, null, null));
+                }
+
+                refused = SupervisorStates.OwnersAgain(held.State) ? SupervisorWhy.Overruled : SupervisorWhy.Answered;
+            }
+
+            refused ??= Closed(defer.Session, defer.Question);
+            if (refused is null && (admission.Admit(park.Repository) is not { Why: null, Generation: { } effective } || effective != defer.Generation))
+            {
+                refused = SupervisorWhy.AppointmentChanged;
+            }
+
+            if (refused is not null)
+            {
+                log?.Info("supervisor.refused", ("why", refused));
+                return Task.FromResult(new SupervisorKept(false, null, null, refused));
+            }
+
+            var id = Guid.NewGuid().ToString("N")[..12];
+            var decision = new Live
+            {
+                Id = id, Session = defer.Session, Repository = park.Repository, Question = park.Filed!, Choice = "", Bound = defer.Bound,
+                Reasons = defer.Reasons, Holder = defer.Holder, Generation = defer.Generation, KeptAt = now, GoesOnAt = now,
+                Written = DecisionJson(id, defer.Session, null, defer.Bound, defer.Reasons, defer.Holder, park.Filed!, defer.Generation, now, now),
+                StateAt = now,
+            };
+            Directory.CreateDirectory(FolderOf(defer.Session));
+            AtomicFile.WriteText(FileOf(defer.Session, id), decision.Written);
+            Append(decision, SupervisorState.Left, now, why: null);
+            AtomicFile.WriteText(PointerOf(defer.Session), PointerJson(defer.Question, id));
+            _live[id] = decision;
+            log?.Info("supervisor.left", ("session", defer.Session), ("bound", defer.Bound), ("reasons", defer.Reasons.Count));
+            return Task.FromResult(new SupervisorKept(true, id, null, null));
+        }, ct);
 
     // ——— Release (§3.4).
 
@@ -175,7 +251,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     /// </summary>
     /// <returns>The states the session's decisions moved to; a word a refusal leaves claiming the decision is the quarantine's.</returns>
     public async Task<IReadOnlyList<SupervisorState>> ReleaseAsync(
-        string session, SupervisorSay say, DateTimeOffset now, CancellationToken ct = default)
+        string session, SupervisorSay say, DateTimeOffset now, CancellationToken ct = default, SupervisorBound? bound = null)
     {
         var moved = new List<SupervisorState>();
         foreach (var id in LiveIds(session))
@@ -189,7 +265,14 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
                     return Move(decision, SupervisorState.Stale, now, SupervisorWhy.Revoked);
                 }
 
-                decision.Receipt ??= Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+                // SUPERVISOR1b (§4.3): the line's count read again here, under the decision's lock, before anything is said; the question's
+                // mark is read again by the service's own step, which refuses `owner-question` from the file it reads.
+                if (bound is not null && await bound(session, ct).ConfigureAwait(false))
+                {
+                    return Move(decision, SupervisorState.Stale, now, SupervisorWhy.SupervisorBound);
+                }
+
+                decision.Receipt ??=Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
                 SupervisorSaid said;
                 try
                 {
@@ -535,7 +618,8 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
                 }
 
                 var state = closed ?? earlier.State;
-                if (SupervisorStates.OwnersAgain(state)) _closed[(session, earlier.Question.Id)] = state;
+                // A question left to the owner (SUPERVISOR1b) stays decided across the restart, as one closed as theirs does.
+                if (SupervisorStates.OwnersAgain(state) || state == SupervisorState.Left) _closed[(session, earlier.Question.Id)] = state;
             }
         }
 
@@ -603,7 +687,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
 
     private SupervisorDecisionView View(Live each) => new(
         each.Id, each.Session, each.Question, each.Choice, each.Reasons, each.Holder, each.Generation, each.KeptAt, each.GoesOnAt,
-        each.State, each.StateAt, each.Why, each.Word, Earlier: false);
+        each.State, each.StateAt, each.Why, each.Word, Earlier: false, each.Bound);
 
     /// <summary>A decision read from its files as history: never live, never handable.</summary>
     private SupervisorDecisionView? Earlier(string session, string id)
@@ -615,7 +699,9 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("question", out var asked)) return null;
             var question = QuestionFiles.Parsed(asked.GetRawText(), session, () => DateTimeOffset.MinValue);
-            if (question is null || Json.Text(root, "choice") is not { } choice) return null;
+            // An answer names its choice; a defer (SUPERVISOR1b) its bound, and no choice.
+            var bound = Json.Text(root, "bound");
+            if (question is null || (Json.Text(root, "choice") ?? (bound is null ? null : "")) is not { } choice) return null;
             var reasons = Json.Items(root, "reasons")
                 .Select(reason => new SupervisorReason(Json.Text(reason, "says") ?? "", Json.Text(reason, "source") ?? ""))
                 .ToList();
@@ -634,7 +720,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
 
             return new SupervisorDecisionView(
                 id, session, question, choice, reasons, holder, Json.Text(root, "appointment") ?? "", kept,
-                Moments.Read(root, "goesOnAt") ?? kept, state, at, why, word, Earlier: true);
+                Moments.Read(root, "goesOnAt") ?? kept, state, at, why, word, Earlier: true, bound);
         }
         catch (JsonException)
         {
@@ -664,20 +750,22 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         writer.WriteString("decision", decision);
     }) + "\n";
 
+    /// <summary>A decision's file: an answer's names its <paramref name="choice"/>, a defer's its <paramref name="bound"/> (SUPERVISOR1b).</summary>
     private static string DecisionJson(
-        string id, SupervisorAnswer answer, ParkQuestion question, string generation, DateTimeOffset kept, DateTimeOffset goesOn) => Written(writer =>
+        string id, string session, string? choice, string? bound, IReadOnlyList<SupervisorReason> reasons, SupervisorHolder holder,
+        ParkQuestion question, string generation, DateTimeOffset kept, DateTimeOffset goesOn) => Written(writer =>
     {
         writer.WriteString("decision", id);
-        writer.WriteString("session", answer.Session);
+        writer.WriteString("session", session);
         writer.WriteStartObject("question");
         writer.WriteString("id", question.Id);
         writer.WriteString("question", question.Question);
         writer.WriteStartArray("choices");
-        foreach (var choice in question.Choices)
+        foreach (var offered in question.Choices)
         {
             writer.WriteStartObject();
-            writer.WriteString("label", choice.Label);
-            writer.WriteString("does", choice.Does);
+            writer.WriteString("label", offered.Label);
+            writer.WriteString("does", offered.Does);
             writer.WriteEndObject();
         }
 
@@ -685,11 +773,13 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         if (question.Recommend is { } recommend) writer.WriteNumber("recommend", recommend);
         if (question.By is not null) writer.WriteString("by", question.By);
         if (question.Why is not null) writer.WriteString("why", question.Why);
+        if (question.Owner is not null) writer.WriteString("owner", question.Owner);
         writer.WriteString("at", Moments.Write(question.At));
         writer.WriteEndObject();
-        writer.WriteString("choice", answer.Choice);
+        if (choice is not null) writer.WriteString("choice", choice);
+        if (bound is not null) writer.WriteString("bound", bound);
         writer.WriteStartArray("reasons");
-        foreach (var reason in answer.Reasons)
+        foreach (var reason in reasons)
         {
             writer.WriteStartObject();
             writer.WriteString("says", reason.Says);
@@ -699,8 +789,8 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
 
         writer.WriteEndArray();
         writer.WriteStartObject("holder");
-        writer.WriteString("kind", answer.Holder.Kind);
-        if (answer.Holder.Parent is not null) writer.WriteString("parent", answer.Holder.Parent);
+        writer.WriteString("kind", holder.Kind);
+        if (holder.Parent is not null) writer.WriteString("parent", holder.Parent);
         writer.WriteEndObject();
         writer.WriteString("appointment", generation);
         writer.WriteString("keptAt", Moments.Write(kept));

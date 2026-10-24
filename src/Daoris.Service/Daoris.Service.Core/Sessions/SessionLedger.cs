@@ -164,6 +164,12 @@ public enum SessionSayRefusal
     /// <summary>The choice is not one of the question's labels exactly (§3.1 <c>not-offered-choice</c>).</summary>
     NotOfferedChoice,
 
+    /// <summary>
+    /// The question on file carries the agent's <c>owner</c> mark (SUPERVISOR1b, §3.1 <c>owner-question</c>, §4.1): checked again at the
+    /// release, so a question marked the owner's after the decision was kept is never answered by the supervisor.
+    /// </summary>
+    OwnerQuestion,
+
     /// <summary>A go-ahead on the session's ask is open: go-aheads are the owner's alone (D135 point 2; §3.1 <c>go-ahead-open</c>).</summary>
     GoAheadOpen,
 
@@ -1129,6 +1135,12 @@ public sealed class SessionLedger(
         if (QuestionBox.Read(home!, id) is not { } filed || !string.Equals(filed.Id, question, StringComparison.Ordinal))
         {
             return Refused(SessionSayRefusal.QuestionChanged, $"The question on file for session `{id}` is not `{question}`: nothing was kept.");
+        }
+
+        // SUPERVISOR1b (§4.1): the agent's mark, read again here from the file, so a question marked after the keeping is still the owner's.
+        if (filed.Owner is { } owner)
+        {
+            return Refused(SessionSayRefusal.OwnerQuestion, $"Session `{id}`'s question is marked the owner's ({owner}): the supervisor answers none of it.");
         }
 
         if (!filed.Choices.Any(offered => string.Equals(offered.Label, choice, StringComparison.Ordinal)))

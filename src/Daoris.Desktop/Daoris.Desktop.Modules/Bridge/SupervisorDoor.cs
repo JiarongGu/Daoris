@@ -71,6 +71,25 @@ public static class SupervisorDoor
     }
 
     /// <summary>
+    /// The holder's leaving a question to the owner (SUPERVISOR1b; §3.1 <c>SUPERVISOR_DEFER</c>), on the role's door alone as the answer
+    /// is: kept as a decision of state <c>left</c>, final at once, nothing said to the session. Refused as data, keeping nothing.
+    /// </summary>
+    public static async Task<KeptAnswer> DeferAsync(DriverLoop loop, System.Text.Json.JsonElement? payload, CancellationToken ct)
+    {
+        if (PipeDoor.Role is not { Repository: { } appointed, Generation: { } generation }) return Refused(SupervisorWhy.NotHolder);
+        if (SupervisorDeferForm.Read(payload) is not { } form) return Refused(SupervisorWhy.Form);
+        if (form.Generation != generation) return Refused(SupervisorWhy.AppointmentChanged);
+        var service = loop.Service ?? throw DriverArguments.NotReady();
+        if (await ParkAsync(loop, service, form.Id, ct).ConfigureAwait(false) is not { } park) return Refused(SupervisorWhy.NotParked);
+        if (!string.Equals(park.Repository, appointed, StringComparison.OrdinalIgnoreCase)) return Refused(SupervisorWhy.NotAppointed);
+
+        var kept = await loop.Supervisor.LeaveAsync(
+            new SupervisorDefer(form.Id, form.Question, form.Generation, form.Bound, form.Reasons, new SupervisorHolder(RoleHolders.Terminal, null)),
+            park, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        return kept.Kept ? new KeptAnswer(true, kept.Decision, null, null) : Refused(kept.Why ?? SupervisorWhy.NotParked);
+    }
+
+    /// <summary>
     /// What waits for the holder (§3.1, §3.2): the parked sessions here with a recorded question and no decision on it, in a repository a
     /// live appointment names, each with that appointment's generation. Names no key.
     /// </summary>
@@ -83,7 +102,8 @@ public static class SupervisorDoor
         {
             if (record.Repository is not { } repository || admission.Admit(repository) is not { Why: null, Generation: { } generation }) continue;
             var asked = await Task.Run(() => new QuestionFiles(loop.Home).Read(record.Session), ct).ConfigureAwait(false);
-            if (asked is null || loop.Supervisor.Decided(record.Session, asked.Id)) continue;
+            // A question its agent marked the owner's (SUPERVISOR1b, §4.1) is never the holder's to look at.
+            if (asked is null || asked.Owner is not null || loop.Supervisor.Decided(record.Session, asked.Id)) continue;
             waiting.Add(new
             {
                 Session = record.Session, Repository = repository, Question = asked.Id, Asked = Moments.Write(asked.At), Generation = generation,
@@ -95,8 +115,8 @@ public static class SupervisorDoor
 
     /// <summary>
     /// The park as the keeping reads it (§3.1's checks the driver makes): its repository, whether it is parked here and holds a quest, the
-    /// question on file, whether a word of the owner's waits, and whether its ask's go-aheads are open or cannot be read. Null where no
-    /// record of this machine has the id.
+    /// question on file, whether a word of the owner's waits, whether its ask's go-aheads are open or cannot be read, and whether its line
+    /// is at D188's answers-alone bound (SUPERVISOR1b). Null where no record of this machine has the id.
     /// </summary>
     public static async Task<SupervisedPark?> ParkAsync(DriverLoop loop, ServiceClient service, string id, CancellationToken ct)
     {
@@ -119,7 +139,10 @@ public static class SupervisorDoor
             }
         }
 
-        return new SupervisedPark(record.Repository ?? "", record.Parked, record.Quest is not null, filed, ownerWaits, open, unread);
+        // SUPERVISOR1b (§4.3): D188's one count, read from this machine's events across the line's parts, as the look's hold reads it.
+        var atBound = record.Parked && new AnswersAloneHold(loop.Events, new GoOnMarks(loop.Home))
+            .AtBound(id, await AnswersAloneHold.RecordsAsync(service, ct).ConfigureAwait(false));
+        return new SupervisedPark(record.Repository ?? "", record.Parked, record.Quest is not null, filed, ownerWaits, open, unread, atBound);
     }
 
     private static KeptAnswer Refused(string why) => new(false, null, null, why);

@@ -16,8 +16,33 @@ export type ParkQuestion = {
   why: string | null;
   /** By when the work needs the answer, as the agent knows it; null where it named none. Its claim: Daoris keeps no deadline. */
   by: string | null;
+  /**
+   * The agent's mark that the question is the owner's alone (SUPERVISOR1b, the supervisor design §4.1): one of `OWNER_MARKS`, or a mark
+   * a later build knows, as written; null or absent for none. The supervisor answers no marked question.
+   */
+  owner?: string | null;
+  /**
+   * The supervisor left this question to the owner (SUPERVISOR1b, the supervisor design §4.2, the decision's state `left`): the bound,
+   * one of `SUPERVISOR_BOUNDS` or a later one, and its reasons, each naming its source. Carried by `SESSION_QUESTION` beside the question
+   * it was left on; absent where none was.
+   */
+  left?: SupervisorLeft;
   at: string;
 };
+
+/** The supervisor's defer, as the card says it: why the question is yours, and its sourced reasons (the owner's to read). */
+export type SupervisorLeft = { bound: string; reasons: { says: string; source: string }[] };
+
+/** The marks `question_ask` takes (`QuestionBox.OwnerMarks`), each with its own words on the card. */
+export const OWNER_MARKS = ['sign-in', 'access', 'spending', 'delete', 'repository-asks', 'preference'] as const;
+
+/** The bounds a supervisor leaves a question to the owner by (§4.1), the marks among them: `SupervisorBounds.All`. */
+export const SUPERVISOR_BOUNDS = ['go-ahead', ...OWNER_MARKS, 'unrecorded', 'contradicts', 'instructed'] as const;
+export type SupervisorBound = (typeof SUPERVISOR_BOUNDS)[number];
+
+/** Whether a bound or a mark is one this build has words for; any other is said as the owner's without naming why. */
+export const knownBound = (bound: string | null | undefined): bound is SupervisorBound =>
+  (SUPERVISOR_BOUNDS as readonly string[]).includes(bound ?? '');
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value : null);
 
@@ -56,7 +81,27 @@ export function readQuestion(answer: unknown): ParkQuestion | null {
   const recommend = typeof asked.recommend === 'number' && Number.isInteger(asked.recommend)
     && asked.recommend >= 1 && asked.recommend <= choices.length ? asked.recommend : null;
   // Its reason explains the recommendation (QUESTIONUI1a): with none recommended, there is nothing for it to explain.
-  return { id, question, choices, recommend, why: recommend === null ? null : why, by, at: typeof asked.at === 'string' ? asked.at : '' };
+  const left = readLeft(asked.left);
+  return {
+    id, question, choices, recommend, why: recommend === null ? null : why, by, owner: text(asked.owner),
+    ...(left ? { left } : {}),
+    at: typeof asked.at === 'string' ? asked.at : '',
+  };
+}
+
+/** The supervisor's defer beside the question, field by field: a bound in words, each reason with its source; none where neither reads. */
+function readLeft(value: unknown): SupervisorLeft | undefined {
+  const left = value as { bound?: unknown; reasons?: unknown } | null | undefined;
+  const bound = text(left?.bound);
+  if (!left || typeof left !== 'object' || !bound) return undefined;
+  const reasons = Array.isArray(left.reasons)
+    ? left.reasons.flatMap((reason) => {
+      const says = text((reason as { says?: unknown } | null)?.says);
+      const source = text((reason as { source?: unknown } | null)?.source);
+      return says && source ? [{ says, source }] : [];
+    })
+    : [];
+  return { bound, reasons };
 }
 
 /**

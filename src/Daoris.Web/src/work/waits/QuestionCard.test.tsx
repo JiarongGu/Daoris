@@ -119,6 +119,50 @@ describe('QuestionCard', () => {
     expect(screen.getByText('It says it needs your answer by: before Friday')).toBeInTheDocument();
   });
 
+  /** SUPERVISOR1b (D208, the supervisor design §4.2): the supervisor's defer, above the choices, the bound in words and each reason with its source. */
+  it('says above the answers that the supervisor left it to you, its bound in words and each reason with its source', () => {
+    render(<Held question={{
+      ...QUESTION,
+      left: { bound: 'sign-in', reasons: [{ says: 'It needs your account.', source: 'D191 point 3' }, { says: 'Nothing records it.', source: 'docs/x.md:4' }] },
+    }} />);
+
+    const left = screen.getByRole('note', { name: 'The supervisor left this to you: a sign-in' });
+    expect(within(left).getByText('It needs your account.')).toBeInTheDocument();
+    expect(within(left).getByText('Source: D191 point 3')).toBeInTheDocument();
+    expect(within(left).getByText('Source: docs/x.md:4')).toBeInTheDocument();
+    // Above the choices, which stay the person's to press.
+    expect(left.compareDocumentPosition(screen.getByRole('radiogroup')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (const radio of screen.getAllByRole('radio')) expect(radio).not.toBeChecked();
+  });
+
+  /** SUPERVISOR1b (§4.1, §4.2): the agent's mark that the question is the owner's alone, by its words; a mark this build does not know, unnamed. */
+  it('says a question its agent marked as yours alone, by the mark\'s words, and a mark it does not know without naming it', () => {
+    const { unmount } = render(<QuestionCard question={{ ...QUESTION, owner: 'spending' }} />);
+    expect(screen.getByText('Asked of you alone: spending')).toBeInTheDocument();
+    unmount();
+
+    const { unmount: gone } = render(<QuestionCard question={{ ...QUESTION, owner: 'a-later-mark' }} />);
+    expect(screen.getByText('Asked of you alone')).toBeInTheDocument();
+    expect(screen.queryByText(/a-later-mark/)).toBeNull();
+    gone();
+
+    render(<QuestionCard question={QUESTION} />);
+    expect(screen.queryByText(/Asked of you alone/)).toBeNull();
+    expect(screen.queryByRole('note')).toBeNull();
+  });
+
+  it('says the supervisor\'s defer and the mark in 中文, the reasons as written', async () => {
+    await i18n.changeLanguage('zh');
+    render(<QuestionCard question={{
+      ...QUESTION, owner: 'sign-in', left: { bound: 'unrecorded', reasons: [{ says: 'Nothing records it.', source: 'D135 point 5' }] },
+    }} />);
+
+    expect(screen.getByText('只问你：登录')).toBeInTheDocument();
+    const left = screen.getByRole('note', { name: '主管把这个留给你：记录里没有答案' });
+    expect(within(left).getByText('Nothing records it.')).toBeInTheDocument();
+    expect(within(left).getByText('来源：D135 point 5')).toBeInTheDocument();
+  });
+
   it('says its chrome in 中文 and the agent\'s words as written', async () => {
     await i18n.changeLanguage('zh');
     render(<Held />);
