@@ -3,8 +3,8 @@
 **Standing:** proposed, a note amending D195 (KEEPSIZE1). It adds removal nobody presses (a kind over its limit), amends D195's
 §3.4 (*nothing that cannot be made again goes before its rule's time*: the time becomes its days or its limit, whichever comes
 first) and changes the floor's default, so D191's reads come next: Codex and Fable read it, and the steward checks each finding
-against the code and settles it. Nothing here is built. The rows (§6) build it, and the first one (KEEPSIZE1a) is a defect in
-the current build that needs no new rule.
+against the code and settles it. The rows (§6) build it, and the first one (KEEPSIZE1a) is a defect in the current build that
+needs no new rule: it is built (D195's KEEPSIZE1a note, 2026-10-24), and nothing else here is.
 
 Read for it: the row KEEPSIZE1 in `TASKS.md`; D195 and the cleanup design (`docs/2026-10-21-cleanup-design.md`: §1, §2, §3, §4.1,
 §5, §7, §9); D172's layout and `DaorisHome.Entry` and `Places` (`DaorisHome.cs:119-164, 265-271`); D51's TREEDEPS1. Every statement

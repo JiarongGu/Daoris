@@ -20249,3 +20249,16 @@ Daoris's window is a WinForms form hosting a `ChromiumView`. None of KITREQ1's f
 `ChromiumChildBrowser` and the single-instance code are unchanged since 0.22.0), so no workaround goes and KITREQ1 stays open. The
 desktop builds; the driver's, modules' and both service projects' fast halves, the web's unit tests and typecheck pass. Detail: D22's and D171's
 SHENORA024 notes.
+
+## KEEPSIZE1a — the set-aside folders at every place of the trees entry (2026-10-24, D195)
+
+> **KEEPSIZE1a — the set-aside folders at every place of the trees entry** (driver; a defect, buildable now under D195; found by KEEPSIZE1's measurement, 2026-10-24). 164 folders (76.7 GB) set aside before the home's layout moved lie in `data/trees/.tidied`. The purge, the slim, the floor, the press, the look's report and the card read `TreesRoot/.tidied` alone (`TreeSetAside.cs:38`), so none of them reaches those folders (keep-size design §1.1). Read `.tidied` under each of `TreeContext.TreesRoots`. Proof: keep-size design §6's KEEPSIZE1a, a home with a folder at each place, both purged at their days, listed and counted under `set-aside`. *2026-10-24, beside it:* the steward removed the install's old place `data/trees/.tidied` (158 folders, about 77 GB, 2026-10-15 to 23) by hand on the owner's go-ahead, so the defect remains for any other home that moved.
+
+(Quest `#73b74e19fd73`.)
+
+**Outcome** 2026-10-24: `TreeSetAside.SetAsideRoots` is `.tidied` under each place of the trees entry, the new first, and every
+reader the design lists reads it: the purge (each place with its own `purge-failed.json`), the slim, the press's list and removal,
+the floor's first act, the look's Keeping pass, the trees' list and the work inventory, and the card's walk and *next*. A folder still
+moves into the new place alone; one at the old place with no manifest is purged at its days and never slimmed. The card's `trees`
+kind reads both places too, so neither falls under `rest`. Proof: `SetAsidePlacesTests`, seen failing first. Detail: D195's KEEPSIZE1a
+note; FIX-LOG 2026-10-24.
