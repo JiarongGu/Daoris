@@ -873,7 +873,7 @@ export function useAskConversation(
   const conversation = shown ? (<>
     {earlierParts.map((id) => (
       <SessionConversation key={id} session={id} adapter={helpSessions.find((part) => part.id === id)?.adapter ?? shown.adapter}
-        chat live={false} scroller={scroller} />
+        mode="earlier" chat live={false} scroller={scroller} />
     ))}
     <SessionConversation
       key={shown.id}

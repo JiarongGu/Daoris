@@ -25,7 +25,7 @@ import { en, zh } from '../../locales';
 import { useChatTurns, useSay, useSessionEvents, useSessionReach } from '../../bridge/shell';
 import { driverSource } from '../../test/driverSource';
 import {
-  CONVERSATION_CODES, firstAnswerWait, mergeEvents, retryingAt, runCount, runningCall, segments, type SessionEvent, settle, toTurns,
+  beginsByMove, CONVERSATION_CODES, firstAnswerWait, mergeEvents, retryingAt, runCount, runningCall, segments, type SessionEvent, settle, toTurns,
 } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
@@ -1310,5 +1310,66 @@ describe('toTurns, through a transient episode (AGENTERRORS1a, D210 §5.1, §8)'
     const texts = turns.flatMap((turn) => turn.items).filter((item) => item.kind === 'message').map((item) => item.text);
 
     expect(texts).toEqual([before, error, 'Reading the report code.', quoted]);
+  });
+});
+
+/**
+ * SWITCHCTX1c-i (the switch-context design §2.7): where a part began by a move or a hand-over, its first line is the boundary, and
+ * the opening line the runner wrote beside it is folded under it, never a third line.
+ */
+describe('a part’s boundary line', () => {
+  const at = '2026-10-25T00:00:00Z';
+  const note = (seq: number, code: string, values: Record<string, unknown> = {}): SessionEvent => ({
+    seq, at, kind: 'note', text: code, parts: [{ code, values, text: code }],
+  });
+  const opening = note(1, 'opening.opened', { account: 'work', why: 'kept' });
+  const moved = note(2, 'moved.from', { session: 's0', agent: 'claude-code', account: 'work', why: 'limit', tokens: 1, count: 2 });
+  const asked = (seq: number): SessionEvent => ({ seq, at, kind: 'user', origin: 'target', text: 'brief', continues: 's0' });
+
+  it('folds the opening line under the boundary a move wrote, whichever is first', () => {
+    for (const events of [[opening, moved, asked(3), said(4)], [moved, opening, asked(3), said(4)]]) {
+      const { turns, where } = toTurns(events);
+      const lines = turns.flatMap((turn) => turn.items).filter((item) => item.kind === 'note');
+      expect(lines.map((line) => line.parts?.[0]?.code)).toEqual(['moved.from']);
+      expect(lines[0]!.under?.map((line) => line.parts?.[0]?.code)).toEqual(['opening.opened']);
+      // A jump to the folded line lands on the boundary that holds it.
+      expect(where[1]).toBe(lines[0]!.key);
+    }
+  });
+
+  it('folds it under a curve move’s and a hand-over’s boundary as well', () => {
+    for (const code of ['chat.moved-from', 'chat.taken-over']) {
+      const { turns } = toTurns([opening, note(2, code), said(3)]);
+      const lines = turns.flatMap((turn) => turn.items).filter((item) => item.kind === 'note');
+      expect(lines.map((line) => line.parts?.[0]?.code)).toEqual([code]);
+      expect(lines[0]!.under).toHaveLength(1);
+    }
+  });
+
+  it('leaves the opening line a part that did not begin by a move draws today', () => {
+    const { turns } = toTurns([opening, said(2)]);
+    const lines = turns.flatMap((turn) => turn.items).filter((item) => item.kind === 'note');
+    expect(lines.map((line) => line.parts?.[0]?.code)).toEqual(['opening.opened']);
+    expect(lines[0]!.under).toBeUndefined();
+    expect(beginsByMove(turns)).toBe(false);
+  });
+
+  it('does not read the old part’s last line, written after its turn ended, as a turn the session left unfinished', () => {
+    const events: SessionEvent[] = [
+      { seq: 1, at, kind: 'user', origin: 'person', text: 'go' }, said(2), { seq: 3, at, kind: 'turn', stopReason: 'end_turn' },
+      note(4, 'moved.on'), note(5, 'chat.moved'),
+    ];
+    const settled = settle(toTurns(events).turns, false);
+    expect(settled.map((turn) => Boolean(turn.cut))).toEqual([false, false]);
+    // A turn the session did leave open is still cut.
+    expect(settle(toTurns(events.slice(0, 2)).turns, false).map((turn) => Boolean(turn.cut))).toEqual([true]);
+  });
+
+  it('says whether the part holds a boundary of its own', () => {
+    expect(beginsByMove(toTurns([opening, moved, said(3)]).turns)).toBe(true);
+    expect(beginsByMove(toTurns([note(1, 'chat.moved-from'), said(2)]).turns)).toBe(true);
+    expect(beginsByMove(toTurns([note(1, 'chat.taken-over'), said(2)]).turns)).toBe(true);
+    // The old part’s last lines are not the new part’s first.
+    expect(beginsByMove(toTurns([said(1), note(2, 'moved.on'), note(3, 'chat.moved'), note(4, 'chat.handed-over')]).turns)).toBe(false);
   });
 });

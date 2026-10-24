@@ -147,7 +147,7 @@
   "work.limit.waits": "正在等待额度重置：将于 {{time}} 在 {{account}} 上自动继续。",
   "work.limit.noReset": "未告知重置时间：将于 {{time}} 再试。",
   "work.limit.own": "它将在原对话中继续。",
-  "work.limit.briefed": "它将在新会话中继续，并附上 Daoris 的简报。",
+  "work.limit.briefed": "它将以会话的新一段继续，并附上 Daoris 的简报。",
   "work.limit.notLifted": "上次重置未解除额度限制：{{hit}}。",
   "work.limit.goOnNow": "改用其他选择继续…",
   "work.limit.stopWaiting": "停止等待",

@@ -73,7 +73,7 @@
   "notifications.done.look.reopen-tree-gone": "A reopened quest's session was told nothing: its tree is gone, so no work is made again",
   "notifications.done.look.plugin-unsound": "A plugin stopped after exiting three times within an hour: it starts again once you try it again",
   "notifications.done.look.limit-waits": "A quest's work, cut off by an account's limit, waits for an account to be ready again and goes on by itself then",
-  "notifications.done.look.limit-went-on": "A quest's work, cut off by an account's limit, went on in a new session, handed Daoris's brief",
+  "notifications.done.look.limit-went-on": "A quest's work, cut off by an account's limit, went on as a new part of its session, handed Daoris's brief",
   "notifications.done.look.limit-resumed": "A quest's work, cut off by an account's limit, resumed in its own conversation once its account was ready again",
   "notifications.done.look.opinion-settled": "The second opinion on a chat's work settled: press Accept again to land it",
   "notifications.nothingUnread": "Nothing unread.",

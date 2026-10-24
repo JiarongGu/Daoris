@@ -1320,6 +1320,36 @@ describe('Ask Daoris’s history', () => {
     }));
   });
 
+  /**
+   * SWITCHCTX1c-i (the switch-context design §2.7): an earlier part owns neither the region's scroll nor the frame's facts. Ended,
+   * it used to open the shared region at its own head, so the line opened mid-way; only the part shown follows the tail.
+   */
+  it('lets the part shown alone own the region’s scroll, no earlier part opening it at its own head', async () => {
+    SESSIONS = [EARLIER, HELP];
+    withHistory([row({ session: HELP.id, live: true, from: EARLIER.id, handed: 'brief', parts: [EARLIER.id, HELP.id] })]);
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, body?: { payload?: { id?: string } }) => {
+      if (type === 'SESSION_HISTORY') {
+        const id = body?.payload?.id;
+        return { session: id, events: [
+          { seq: 1, kind: 'user', origin: 'person', text: id === EARLIER.id ? 'Original question' : 'Held words', at: HELP.created },
+          { seq: 2, kind: 'message', text: id === EARLIER.id ? 'Earlier answer' : 'Continued answer', at: HELP.created },
+        ], earlier: false, latest: 2 };
+      }
+      return answered(module, type, body);
+    });
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(5000);
+    const set = vi.spyOn(Element.prototype, 'scrollTop', 'set');
+    show();
+
+    expect(await screen.findByText('Earlier answer')).toBeInTheDocument();
+    expect(await screen.findByText('Continued answer')).toBeInTheDocument();
+    expect(set.mock.calls.length).toBeGreaterThan(0);
+    expect(set.mock.calls.map(([top]) => top)).not.toContain(0);
+    set.mockRestore();
+    vi.restoreAllMocks();
+  });
+
   it('goes on in an earlier conversation the person chose from the history, with their words', async () => {
     withHistory([row({})]);
     show();

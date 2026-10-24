@@ -2,6 +2,8 @@
   "work.parts.title": "Parts",
   "work.parts.of": "Part {{n}} of {{total}}",
   "work.parts.number": "part {{n}}",
+  "work.parts.earlier_one": "Show the part before",
+  "work.parts.earlier_other": "Show {{count}} earlier parts",
   "work.parts.began.opened": "started",
   "work.parts.began.retried": "retried after {{after}}",
   "work.parts.began.resumed": "resumed after {{after}}",

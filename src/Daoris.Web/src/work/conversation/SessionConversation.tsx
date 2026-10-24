@@ -7,7 +7,7 @@ import { useHarnesses, useSessionEvents, useSessionSearch } from '../../bridge/s
 import { Icon } from '../../design/ui';
 import { accountNames } from '../accountNames';
 import { type AnchorAsks, type Anchors, anchorsOf, type AnchorWait, marksOf } from '../waits/anchors';
-import { firstAnswerWait, lastWords, retryingAt, type RunningCall, runningCall, settle, toTurns, type Usage } from './conversation';
+import { beginsByMove, firstAnswerWait, lastWords, retryingAt, type RunningCall, runningCall, settle, toTurns, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
 import { type CallMark, type Cooling, ConversationView } from './ConversationView';
 import type { ReasonValues } from '../say';
@@ -81,7 +81,7 @@ export function ToTheTop({ onPress, className }: { onPress: () => void; classNam
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
 export function SessionConversation({
-  session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
+  session, adapter, chat = false, tree, live, mode = 'attended', began, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
   waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait,
 }: {
   /** *Go on with Daoris's brief* (SESSCTX1c part B), beside the fresh start where the words wait for the person — `ConversationView`'s. */
@@ -116,6 +116,18 @@ export function SessionConversation({
   onStartFrom?: (words: string[]) => void;
   /** What a reason the driver gave by code may name (D137 §5.1). */
   reasons?: ReasonValues;
+  /**
+   * **`earlier`: a part of a line the attended one continues** (SWITCHCTX1c-i; the switch-context design §2.7), drawn read-only above
+   * it. It is read with its own record's `live` and no other, since `settle` reads a part that is not live as ended; it owns neither
+   * the region's scroll nor any fact of the frame, so it tells its host nothing of its usage, its wait, its limit's wait, its tail or
+   * its anchors, and offers no act, no wait and no way through itself. `attended` is the part the page is on, which owns all of them.
+   */
+  mode?: 'attended' | 'earlier';
+  /**
+   * How the part began, in the strip's words, drawn as its one boundary line where it began by no move (a sibling's request, a
+   * *Try again*, a resume into a new part) and its events hold no first line of a move's own (SWITCHCTX1c-i).
+   */
+  began?: string;
   session: string;
   /** The harness it runs on — whose declaration says whether its door keeps a conversation (D76 §1). */
   adapter?: string;
@@ -142,6 +154,8 @@ export function SessionConversation({
   onLimitWait?: (session: string, held: ChatLimitHeld | null) => void;
 }) {
   const { events, opening, firstFailure, earlier, loaded, loadEarlier } = useSessionEvents(session);
+  // An earlier part of a line owns none of what the attended one does (SWITCHCTX1c-i): the scroll, the frame's facts, the acts.
+  const own = mode === 'attended';
   // The door's own word on what an empty record means — undefined until the roster answers, which reads
   // as the console sentence: it claims least.
   const harnesses = useHarnesses();
@@ -159,7 +173,7 @@ export function SessionConversation({
   // Told on a change of reading only: a callback that changed on every render would otherwise tell the
   // frame, which re-renders, which hands a new callback, round and round.
   const report = useRef(onUsage);
-  report.current = onUsage;
+  report.current = own ? onUsage : undefined;
   useEffect(() => { report.current?.(session, usage); }, [session, usage]);
   // The wait for the first answer goes up the same way (WAITSHOWN1), for the head's facts; only while the session is live.
   const waitingSince = live ? firstAnswerWait(turns) : undefined;
@@ -170,16 +184,16 @@ export function SessionConversation({
   // AGENTERRORS1a2 (D210 §5.1, §8): and when a transient episode tries again, read from its quiet events, for the head's *Trying again at*.
   const retrying = live ? retryingAt(events) : undefined;
   const reportWait = useRef(onWaiting);
-  reportWait.current = onWaiting;
+  reportWait.current = own ? onWaiting : undefined;
   useEffect(() => {
     reportWait.current?.(session, waitingSince, callTitle && callSince ? { title: callTitle, since: callSince } : undefined, retrying);
   }, [session, waitingSince, callTitle, callSince, retrying]);
 
   // Its limit's wait goes up the same way (LIMITRESUME1d2), told again only where the line it reads changes.
-  const held = useMemo(() => (chat ? chatLimitHeldOf(events) : null), [chat, events]);
+  const held = useMemo(() => (chat && own ? chatLimitHeldOf(events) : null), [chat, own, events]);
   const heldKey = held ? `${held.until}:${held.stated}` : '';
   const reportHeld = useRef(onLimitWait);
-  reportHeld.current = onLimitWait;
+  reportHeld.current = own ? onLimitWait : undefined;
   const heldNow = useRef(held);
   heldNow.current = held;
   useEffect(() => { reportHeld.current?.(session, heldNow.current); }, [session, heldKey]);
@@ -188,19 +202,21 @@ export function SessionConversation({
   // What changes when the conversation grows: the last event, and its text as chunks join it.
   const last = events[events.length - 1];
   // An ended session opens at its head, which says how it ended (SESS2 H1); a live one follows its tail.
-  const { atTail, toTail } = useFollowTail(scroller, `${last?.seq ?? 0}:${turns.length}`, `${session}:${loaded}`, !live);
+  // An earlier part follows nothing and opens nothing: it is handed no region, so the attended part alone owns the scroll.
+  const nobody = useRef<HTMLElement | null>(null);
+  const { atTail, toTail } = useFollowTail(own ? scroller : nobody, `${last?.seq ?? 0}:${turns.length}`, `${session}:${loaded}`, !live);
   // Told on a change only, as the usage is; and at the tail again once this conversation is gone, so no host keeps a press
   // for a transcript it no longer shows.
   const tell = useRef(onTail);
-  tell.current = onTail;
-  const away = !atTail && turns.length > 0;
+  tell.current = own ? onTail : undefined;
+  const away = own && !atTail && turns.length > 0;
   useEffect(() => {
     tell.current?.({ atTail: !away, toTail: () => toTail(true) });
   }, [away, toTail]);
   useEffect(() => () => tell.current?.({ atTail: true, toTail: () => {} }), []);
 
   // The way through a long run (SESS1 S9).
-  const long = earlier || turns.reduce((count, turn) => count + turn.items.length, 0) > LONG;
+  const long = own && (earlier || turns.reduce((count, turn) => count + turn.items.length, 0) > LONG);
   const [query, setQuery] = useState('');
   const settled = useDebounced(query, 300);
   const found = useSessionSearch(long ? settled : '', session);
@@ -239,20 +255,20 @@ export function SessionConversation({
 
   // Where each wait was raised (WAITFOOT1c, D168 point 4), read from what the page holds: the asks compared by value, since the
   // frame hands a new object on every render.
-  const asked = JSON.stringify(waits ?? null);
+  const asked = JSON.stringify(own ? waits ?? null : null);
   const from = events[0]?.at;
   const anchors = useMemo(
-    () => (waits ? anchorsOf(turns, { ...waits, session }, { earlier, from }) : NO_ANCHORS),
+    () => (own && waits ? anchorsOf(turns, { ...waits, session }, { earlier, from }) : NO_ANCHORS),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `asked` stands for `waits`
     [turns, asked, session, earlier, from],
   );
-  const marks = useMemo(() => (onToWait && waits ? marksOf(waits.waits, anchors.held) : undefined),
+  const marks = useMemo(() => (own && onToWait && waits ? marksOf(waits.waits, anchors.held) : undefined),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `asked` stands for `waits`
     [anchors, asked, Boolean(onToWait)]);
   const anchored = [...Object.keys(anchors.held), ...anchors.earlier] as AnchorWait[];
   const said = anchored.join(' ');
   const tellAnchors = useRef(onAnchors);
-  tellAnchors.current = onAnchors;
+  tellAnchors.current = own ? onAnchors : undefined;
   useEffect(() => {
     tellAnchors.current?.(session, { anchored: said ? said.split(' ') as AnchorWait[] : [], show: setSeeking });
   }, [session, said]);
@@ -298,20 +314,21 @@ export function SessionConversation({
         chat={chat}
         live={live}
         turnRunning={turnRunning}
-        callMark={callMark}
+        callMark={own ? callMark : undefined}
+        began={!earlier && !beginsByMove(turns) ? began : undefined}
         loaded={loaded}
         earlier={earlier}
         onLoadEarlier={() => void loadEarlier()}
         reveal={reveal?.key}
-        onSession={onSession}
-        onStartFrom={onStartFrom}
-        onGoOnBrief={onGoOnBrief}
-        onSayAgain={onSayAgain}
+        onSession={own ? onSession : undefined}
+        onStartFrom={own ? onStartFrom : undefined}
+        onGoOnBrief={own ? onGoOnBrief : undefined}
+        onSayAgain={own ? onSayAgain : undefined}
         reasons={reasons}
-        cooling={cooling}
+        cooling={own ? cooling : undefined}
         names={names}
         marks={marks}
-        onToWait={onToWait}
+        onToWait={own ? onToWait : undefined}
         toolbar={long ? (
           <ConversationFind
             hasFailure={firstFailure !== null}
@@ -332,7 +349,7 @@ export function SessionConversation({
       />
       {/* Where no host draws it: at the transcript's foot, held in view as it scrolls (Sessions' centre, a detached window,
           the monitor's tile). */}
-      {away && !onTail && (
+      {away && own && !onTail && (
         <BackToBottom onPress={() => toTail(true)} className="sticky bottom-2 ml-auto bg-overlay shadow-sm" />
       )}
     </>

@@ -295,6 +295,16 @@ leading part runs on where its parts ran on more than one (`leadingAgentOf`). Th
 person chose the list (`Flow`'s `rail`), and a press on a node, or Enter on it, shows that part as the strip's button did. The
 measured check (`e2e:measured`) draws both flows' stories in a rendered browser, each frame with a ceiling of crossings.
 
+A session's page draws its line as one conversation (SWITCHCTX1c-i, D167's note of 2026-10-25): `work/conversation/line.ts`
+walks the attended part's `from` links to the parts it continues, oldest first, and `EarlierParts` draws the nearest three above
+it (a press, *Show the part before* or *Show N earlier parts*, draws up to three more), each a `SessionConversation` in its
+`earlier` mode: read with its own record's liveness, never as ended for being earlier, and owning neither the region's scroll nor any
+fact of the frame (no usage, wait, limit's wait, tail or anchor), so the attended part below alone does. A part running alongside
+continues none by `from` and stays in the strip. Pressing a part attends it, so its own ancestry is drawn and the later parts are
+not, and the page scrolls to it. A part that began by a move holds its boundary line as its first (`beginsByMove`), the runner's
+opening line folded under it (`foldOpening`); any other part is bounded by the strip's *began* words, once. Ask Daoris's earlier
+parts take the same mode.
+
 A landed branch's page draws how it landed (FLOWCHART1c, D186): a section above its commits, folded until it is opened, then read
 by the branch (`projects/git/RepositoryGitView.tsx`'s `useLandingDoor`): `TRACE` for the session its landing record names, whose
 landing carries the session it was made for, each advance with its session, and the units it carries, and `WORK_STATE` for the
