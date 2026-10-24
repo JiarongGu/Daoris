@@ -29,8 +29,13 @@ public sealed class SupervisorDecisionTests : IDisposable
     {
         public string? Generation { get; set; } = "g-1";
 
+        /// <summary>The overrule window the appointment set (SUPERVISOR1e); null sets none.</summary>
+        public TimeSpan? Window { get; set; }
+
         public DecisionAdmitted Admit(string repository) =>
-            Generation is { } generation && repository == Repository ? new(generation, null) : DecisionAdmitted.Refused("not-appointed");
+            Generation is { } generation && repository == Repository
+                ? new(generation, null) { Window = Window }
+                : DecisionAdmitted.Refused("not-appointed");
     }
 
     private readonly Appointed _appointed = new();
@@ -430,6 +435,45 @@ public sealed class SupervisorDecisionTests : IDisposable
             snapshot with { LastRun = new Dictionary<string, PriorSession> { ["q1"] = answered } }, second, ledger.Say, ledger.TakeBack,
             Kept.AddMinutes(9), CancellationToken.None);
         Assert.Equal(SupervisorState.Superseded, second.LiveOf(Session).Single().State);
+    }
+
+    /// <summary>
+    /// SUPERVISOR1e (§6.3, §12): the overrule window is the one the effective appointment set, 1 to 60 minutes: a decision kept under a
+    /// twelve-minute appointment is held past row 1's five and released at twelve, its file saying so; a window outside the bounds,
+    /// 0 among them, is never taken, and five holds.
+    /// </summary>
+    [Fact]
+    public async Task The_window_the_appointment_set_holds_the_decision_from_one_to_sixty_minutes()
+    {
+        _appointed.Window = TimeSpan.FromMinutes(12);
+        var decisions = Decisions();
+        var ledger = new Ledger();
+        var kept = await decisions.KeepAsync(Answer(), Park(), Kept);
+        Assert.Equal((true, Kept.AddMinutes(12)), (kept.Kept, kept.GoesOnAt));
+        using (var file = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(Folder, kept.Decision + ".json"))))
+        {
+            Assert.Equal(Kept.AddMinutes(12), Moments.Read(file.RootElement.GetProperty("goesOnAt").GetString()));
+        }
+
+        var parked = new PriorSession(Session, "tree", "awaiting-person");
+        var snapshot = new Snapshot([], [], []) { LastRun = new Dictionary<string, PriorSession> { ["q1"] = parked } };
+        var five = await SupervisorQuarantine.DecideAsync(snapshot, decisions, ledger.Say, ledger.TakeBack, Kept.AddMinutes(5), CancellationToken.None);
+        Assert.True(five.SupervisorHolds(parked));
+        Assert.Equal(SupervisorState.Held, decisions.LiveOf(Session).Single().State);
+        await SupervisorQuarantine.DecideAsync(snapshot, decisions, ledger.Say, ledger.TakeBack, Kept.AddMinutes(12), CancellationToken.None);
+        Assert.Equal(SupervisorState.Released, decisions.LiveOf(Session).Single().State);
+
+        // The bounds: one and sixty taken, and anything outside them held for row 1's five.
+        foreach (var (minutes, held) in new[] { (1, 1), (60, 60), (0, 5), (61, 5), (-3, 5) })
+        {
+            _appointed.Window = TimeSpan.FromMinutes(minutes);
+            var question = $"q-w{minutes}";
+            var each = await Decisions().KeepAsync(Answer(question: question), Park(Question(question)), Kept);
+            Assert.Equal(Kept.AddMinutes(held), each.GoesOnAt);
+        }
+
+        _appointed.Window = null;
+        Assert.Equal(Kept.AddMinutes(5), (await Decisions().KeepAsync(Answer(question: "q-none"), Park(Question("q-none")), Kept)).GoesOnAt);
     }
 
     /// <summary>

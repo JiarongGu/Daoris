@@ -15,7 +15,7 @@ const minutesAgo = (count: number) => new Date(Date.now() - count * 60_000).toIS
 const OFFERED = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry'];
 const STEWARD: AppointmentNow = {
   role: 'steward', repository: '', holder: 'terminal', since: minutesAgo(90), dormant: false, answers: 0, scope: 'machine', holderId: 'h1',
-  acts: OFFERED, setup: false,
+  acts: OFFERED, setup: false, workspace: '', window: 5,
 };
 const act = (id: string, kind: string, at: number, more: Partial<StewardActNow> = {}): StewardActNow => ({
   id, act: kind, repository: null, quest: null, session: null, at: minutesAgo(at), standing: true, waiting: false, ...more,

@@ -20636,3 +20636,18 @@ act on what it named or the holder's `desk-decline`, and `STATE`'s `stewardDesk`
 as the callers' claims, `steward desk decline` and `steward request`; the holder's brief at r3. The web: the desk under the
 *Notifications* line, in en and zh. Proof: `StewardDeskTests`, `DriverModuleAppointmentTests`' desk routes, `StewardCommandTests`'
 desk cases and the line's and the reader's page tests, each case seen failing first. Detail and readings: D209's STEWARDROLE1c note.
+## SUPERVISOR1e — scope and window, still dark (2026-10-25, D208)
+
+> **SUPERVISOR1e — scope and window** (modules, web; after 1a-ii). A workspace's appointment, the repository's own winning; the overrule window set by the owner, 1 to 60 minutes. Proof: §11 row e.
+
+(Quest `#739e08f3c54b`.)
+
+**Outcome** 2026-10-25, in three parts on one branch, dark (`SupervisorOffered` false). The supervisor may be appointed for
+`workspace:<name>`, covering every repository the registry places there as each act is judged, a later one included; the
+repository's own appointment wins, and one made over the workspace's makes that workspace's held and released decisions for the
+repository `stale` (`appointment-changed`), the workspace's standing for its others. `SET_APPOINTMENT`'s `window`, 1 to 60 minutes,
+five where none, is written beside the appointment and handed to the decisions through the admission, which hold for it. A
+workspace's Setup gains a *Supervisor* section; both asks set the window; a repository row says the workspace's that covers it;
+*Notifications*' line names a workspace's appointment and each one's window, and turns one off by its scope; en and zh. Proof:
+`SupervisorScopeTests`, `SupervisorDecisionTests`, `SupervisorRow.test.tsx`, `WorkspaceSetup.test.tsx`, `SupervisorLine.test.tsx`,
+`person.standing.test.tsx`, each case seen failing first. Detail: D208's SUPERVISOR1e note.

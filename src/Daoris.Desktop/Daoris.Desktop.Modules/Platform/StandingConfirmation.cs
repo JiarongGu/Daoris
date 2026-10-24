@@ -132,7 +132,8 @@ public static class Roles
 
 /// <summary>
 /// An appointment's scope (D209 §2.3): <c>machine</c>, every repository the service's registry names here as each act is judged (the
-/// steward's), or <c>repository:&lt;name&gt;</c> (the supervisor's).
+/// steward's), <c>repository:&lt;name&gt;</c> (the supervisor's), or <c>workspace:&lt;name&gt;</c> (the supervisor's, SUPERVISOR1e: every
+/// repository the registry places in that workspace as each act is judged, a repository added later included).
 /// </summary>
 public static class RoleScopes
 {
@@ -140,19 +141,31 @@ public static class RoleScopes
 
     private const string RepositoryPrefix = "repository:";
 
+    private const string WorkspacePrefix = "workspace:";
+
     /// <summary>The scope of one repository.</summary>
     public static string Repository(string name) => RepositoryPrefix + name;
 
+    /// <summary>The scope of one workspace (SUPERVISOR1e).</summary>
+    public static string Workspace(string name) => WorkspacePrefix + name;
+
     /// <summary>The repository a scope names, or null for <c>machine</c> or any other.</summary>
-    public static string? RepositoryOf(string scope) =>
-        scope.StartsWith(RepositoryPrefix, StringComparison.Ordinal) && scope.Length > RepositoryPrefix.Length ? scope[RepositoryPrefix.Length..] : null;
+    public static string? RepositoryOf(string scope) => Named(scope, RepositoryPrefix);
+
+    /// <summary>The workspace a scope names, or null for any other.</summary>
+    public static string? WorkspaceOf(string scope) => Named(scope, WorkspacePrefix);
+
+    private static string? Named(string scope, string prefix) =>
+        scope.StartsWith(prefix, StringComparison.Ordinal) && scope.Length > prefix.Length ? scope[prefix.Length..] : null;
 
     /// <summary>Whether <paramref name="scope"/> is one a record or a form may name.</summary>
-    public static bool Known(string scope) => scope == Machine || RepositoryOf(scope) is not null;
+    public static bool Known(string scope) => scope == Machine || RepositoryOf(scope) is not null || WorkspaceOf(scope) is not null;
 
-    /// <summary>Two scopes the same, a repository's name compared as the registry compares names.</summary>
+    /// <summary>Two scopes the same, a repository's or a workspace's name compared as the registry compares names.</summary>
     public static bool Same(string a, string b) =>
-        RepositoryOf(a) is { } left && RepositoryOf(b) is { } right ? string.Equals(left, right, StringComparison.OrdinalIgnoreCase) : a == b;
+        RepositoryOf(a) is { } left && RepositoryOf(b) is { } right ? string.Equals(left, right, StringComparison.OrdinalIgnoreCase)
+        : WorkspaceOf(a) is { } one && WorkspaceOf(b) is { } other ? string.Equals(one, other, StringComparison.OrdinalIgnoreCase)
+        : a == b;
 }
 
 /// <summary>Who holds a role (the supervisor design §2.2): a terminal the window started with the holder key, or Daoris's own actor.</summary>
@@ -167,11 +180,28 @@ public static class RoleHolders
 /// generation (an opaque id drawn at each appointment, never reused), when, the acts its ask named from the build's offered set, and
 /// the owner's own set-up tick. Never the key nor its hash, nor which holder holds it, which is this run's memory alone.
 /// </summary>
+/// <param name="Window">
+/// The supervisor's overrule window in minutes, set at the appointment (SUPERVISOR1e, §6.3): 1 to 60, five where none was set. A record
+/// read at a start only shows it: <i>Appoint again</i> sets its own.
+/// </param>
 public sealed record Appointment(
-    string Role, string Scope, string Holder, string Generation, DateTimeOffset Since, IReadOnlyList<string> Acts, bool Setup = false)
+    string Role, string Scope, string Holder, string Generation, DateTimeOffset Since, IReadOnlyList<string> Acts, bool Setup = false,
+    int Window = Appointment.DefaultWindow)
 {
-    /// <summary>The repository its scope names, or null for <c>machine</c>.</summary>
+    /// <summary>The window where an appointment sets none, in minutes: row 1's five (§6.3).</summary>
+    public const int DefaultWindow = 5;
+
+    /// <summary>The bounds an appointment's window keeps, in minutes (§6.3, §12: never 0).</summary>
+    public const int ShortestWindow = 1, LongestWindow = 60;
+
+    /// <summary>The repository its scope names, or null for <c>machine</c> or a workspace.</summary>
     public string? Repository => RoleScopes.RepositoryOf(Scope);
+
+    /// <summary>The workspace its scope names (SUPERVISOR1e), or null.</summary>
+    public string? Workspace => RoleScopes.WorkspaceOf(Scope);
+
+    /// <summary>Whether <paramref name="minutes"/> is a window an appointment may set.</summary>
+    public static bool InWindow(long minutes) => minutes is >= ShortestWindow and <= LongestWindow;
 }
 
 /// <summary>
@@ -182,9 +212,11 @@ public sealed record Appointment(
 /// <param name="Answers">How many acts its holder made under it since this Daoris started.</param>
 /// <param name="Scope">Its scope (D209 §2.3).</param>
 /// <param name="HolderId">The living holder that holds it this run; null where it is dormant.</param>
+/// <param name="Workspace">The workspace its scope names (SUPERVISOR1e); null for any other scope.</param>
+/// <param name="Window">Its overrule window in minutes (SUPERVISOR1e).</param>
 public sealed record AppointmentNow(
     string Role, string? Repository, string Holder, DateTimeOffset Since, bool Dormant, int Answers, string Scope = RoleScopes.Machine,
-    string? HolderId = null)
+    string? HolderId = null, string? Workspace = null, int Window = Appointment.DefaultWindow)
 {
     /// <summary>The acts its ask named (STEWARDROLE1b, D209 §2.3).</summary>
     public IReadOnlyList<string> Acts { get; init; } = [];
@@ -197,14 +229,22 @@ public sealed record AppointmentNow(
 public sealed record HolderNow(string Id, DateTimeOffset Since, IReadOnlyList<string> Roles);
 
 /// <summary>An appointment's change: its answer, and the generations it ended, which the caller sweeps after its step (§5).</summary>
-public sealed record AppointmentChange(StandingChange Answer, IReadOnlyList<string> Ended);
+public sealed record AppointmentChange(StandingChange Answer, IReadOnlyList<string> Ended)
+{
+    /// <summary>
+    /// SUPERVISOR1e (§5): a workspace's generation a repository's own appointment replaced for that repository alone, which the caller
+    /// sweeps after its step for that repository's decisions, as it sweeps <see cref="Ended"/>.
+    /// </summary>
+    public IReadOnlyList<(string Generation, string Repository)> Narrowed { get; init; } = [];
+}
 
 /// <summary>
-/// The window's appointment (<c>SET_APPOINTMENT { role, scope, holder, on, share?, setup? }</c>, D209 §2.3): <paramref name="Share"/> is a
+/// The window's appointment (<c>SET_APPOINTMENT { role, scope, holder, on, share?, setup?, window? }</c>, D209 §2.3): <paramref name="Share"/> is a
 /// later <i>Appoint…</i>'s choice while a holder lives, <c>own</c> for a terminal of its own or a living holder's id to add the role
-/// to it; <paramref name="Setup"/> the owner's own set-up tick, the steward's alone.
+/// to it; <paramref name="Setup"/> the owner's own set-up tick, the steward's alone; <paramref name="Window"/> the supervisor's overrule
+/// window in minutes, 1 to 60, five where none is named (SUPERVISOR1e).
 /// </summary>
-public sealed record AppointRequest(string Role, string Scope, string Holder, bool On, string? Share = null, bool Setup = false);
+public sealed record AppointRequest(string Role, string Scope, string Holder, bool On, string? Share = null, bool Setup = false, long? Window = null);
 
 /// <summary>
 /// The judge's role method's answer (the supervisor design §2.2, §3.1; D209 §3.3): covered, with the appointment it acted under, its
@@ -303,6 +343,12 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     /// <summary>An appointment naming a repository Daoris does not drive here.</summary>
     public const string UnknownRepository = "unknown-repository";
+
+    /// <summary>An appointment naming a workspace whose repositories Daoris's registry does not place here (SUPERVISOR1e).</summary>
+    public const string UnknownWorkspace = "unknown-workspace";
+
+    /// <summary>An appointment's overrule window outside 1 to 60 minutes (SUPERVISOR1e, §6.3, §12).</summary>
+    public const string WindowRefused = "window";
 
     /// <summary>A terminal appointment whose holder's terminal could not be started: nothing was kept.</summary>
     public const string Unstarted = "unstarted";
@@ -457,6 +503,15 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>Whether a repository is one Daoris drives on this machine (the loop's registry, which the loop hands in); none is none.</summary>
     public Func<string, bool> Drives { get; set; } = _ => false;
 
+    /// <summary>
+    /// The workspace the registry places a repository in (SUPERVISOR1e), as the loop last read it; null where it places it in none or the
+    /// registry is not read yet, so a workspace's appointment covers nothing it cannot place. Read under the judge's lock: it never awaits.
+    /// </summary>
+    public Func<string, string?> WorkspaceOf { get; set; } = _ => null;
+
+    /// <summary>Whether the registry places a repository Daoris drives here in a workspace (SUPERVISOR1e); none is none.</summary>
+    public Func<string, bool> DrivesIn { get; set; } = _ => false;
+
     /// <summary>Where a terminal's process stands.</summary>
     public IStandingCaller Caller { get; }
 
@@ -580,7 +635,11 @@ public sealed class StandingConfirmation : IDecisionAdmission
                         ? [.. listed.EnumerateArray().Where(act => act.ValueKind == JsonValueKind.String).Select(act => act.GetString()!)]
                         : [];
                     var setup = each.TryGetProperty("setup", out var ticked) && ticked.ValueKind == JsonValueKind.True;
-                    appointments.Add(new Appointment(role, scope, holder, generation, at, acts, setup));
+                    // SUPERVISOR1e: its window as written where it is within the bounds, five otherwise; it only shows it.
+                    var window = each.TryGetProperty("window", out var minutes) && minutes.TryGetInt64(out var set) && Appointment.InWindow(set)
+                        ? (int)set
+                        : Appointment.DefaultWindow;
+                    appointments.Add(new Appointment(role, scope, holder, generation, at, acts, setup, window));
                 }
             }
 
@@ -604,7 +663,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
                 [.. _held.Keys.Order(StringComparer.OrdinalIgnoreCase)], AppointsOffered,
                 [.. _appointments.Select(each => new AppointmentNow(
                     each.Role, each.Repository, each.Holder, each.Since, !_holderOf.ContainsKey(each.Generation),
-                    _answers.GetValueOrDefault(each.Generation), each.Scope, _holderOf.GetValueOrDefault(each.Generation))
+                    _answers.GetValueOrDefault(each.Generation), each.Scope, _holderOf.GetValueOrDefault(each.Generation),
+                    each.Workspace, each.Window)
                 {
                     Acts = each.Acts, Setup = each.Setup,
                 })],
@@ -734,6 +794,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
                 foreach (var act in each.Acts) writer.WriteStringValue(act);
                 writer.WriteEndArray();
                 writer.WriteBoolean("setup", each.Setup);
+                // SUPERVISOR1e (§6.3): the supervisor's overrule window, in minutes; schema 1 still, an older build ignoring it.
+                if (each.Role == Roles.Supervisor) writer.WriteNumber("window", each.Window);
                 writer.WriteEndObject();
             }
 
@@ -766,17 +828,33 @@ public sealed class StandingConfirmation : IDecisionAdmission
         if (!RoleOffered(role)) return Refuse(NotOffered, $"This Daoris does not offer the {role}'s appointment yet.");
         // The actor holds a role only once it is measured (SUPERVISOR1c, 1d): until then a terminal alone.
         if (holder != RoleHolders.Terminal) return Refuse(NotOffered, $"This Daoris does not offer the `{holder}` holder yet.");
-        if (role == Roles.Steward ? scope != RoleScopes.Machine : RoleScopes.RepositoryOf(scope) is null)
+        if (role == Roles.Steward ? scope != RoleScopes.Machine : RoleScopes.RepositoryOf(scope) is null && RoleScopes.WorkspaceOf(scope) is null)
         {
             return Refuse(Scope, role == Roles.Steward
                 ? "The steward is appointed for this machine, every repository its registry names."
-                : "The supervisor is appointed for one repository.");
+                : "The supervisor is appointed for one repository or one workspace.");
         }
 
         if (RoleScopes.RepositoryOf(scope) is { } repository && !Drives(repository))
         {
             return Refuse(UnknownRepository, $"Daoris does not drive a repository `{repository}` here.");
         }
+
+        // SUPERVISOR1e (§5): a workspace's appointment names one the registry places a repository Daoris drives in.
+        if (RoleScopes.WorkspaceOf(scope) is { } workspace && !DrivesIn(workspace))
+        {
+            return Refuse(UnknownWorkspace, $"Daoris drives no repository of a workspace `{workspace}` here.");
+        }
+
+        // SUPERVISOR1e (§6.3, §12): the supervisor's overrule window, set by the owner at the appointment, 1 to 60 minutes, never 0.
+        if (request.Window is { } minutes && (role != Roles.Supervisor || !Appointment.InWindow(minutes)))
+        {
+            return Refuse(WindowRefused, role == Roles.Supervisor
+                ? $"The supervisor's answers are held from {Appointment.ShortestWindow} to {Appointment.LongestWindow} minutes for your overrule."
+                : $"The {role} holds no answer for an overrule window.");
+        }
+
+        var window = (int)(request.Window ?? Appointment.DefaultWindow);
 
         // §2.3: the acts the build offers, and the owner's own tick, never what a file says.
         IReadOnlyList<string> acts = OffersActs(role);
@@ -835,9 +913,10 @@ public sealed class StandingConfirmation : IDecisionAdmission
             }
         }
 
-        var appointed = new Appointment(role, scope, holder, Guid.NewGuid().ToString("N"), now, acts, setup);
+        var appointed = new Appointment(role, scope, holder, Guid.NewGuid().ToString("N"), now, acts, setup, window);
         var told = new List<(string Tab, string Line, string? Title)>();
         IReadOnlyList<string> ended;
+        IReadOnlyList<(string Generation, string Repository)> narrowed = [];
         AppointmentChange? refused = null;
         int cancelled;
         lock (_gate)
@@ -906,6 +985,14 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
                     _unread = null;
                     ended = [.. replaced.Select(each => each.Generation)];
+                    // SUPERVISOR1e (§5): a repository's own appointment wins over its workspace's from this step on, so the
+                    // workspace's decisions for that repository are swept after it; the workspace's stands for its other repositories.
+                    if (role == Roles.Supervisor && appointed.Repository is { } own && WorkspaceOf(own) is { } placed
+                        && next.FirstOrDefault(each => each.Role == Roles.Supervisor && RoleScopes.Same(each.Scope, RoleScopes.Workspace(placed)))
+                            is { } covering)
+                    {
+                        narrowed = [(covering.Generation, own)];
+                    }
                 }
             }
         }
@@ -920,8 +1007,9 @@ public sealed class StandingConfirmation : IDecisionAdmission
         Said(told);
         if (cancelled > 0) _log.Info("role.cancelled", ("role", role), ("count", Count(cancelled)));
         _log.Info(LogEvent, ("state", "appointed"), ("role", role), ("holder", holder));
-        _log.Info(RoleLogEvent, ("state", shared is null ? "appointed" : "added"), ("role", role), ("scope", RoleScopes.RepositoryOf(scope) is null ? scope : "repository"));
-        return new AppointmentChange(new StandingChange(true, null, null), ended);
+        _log.Info(RoleLogEvent, ("state", shared is null ? "appointed" : "added"), ("role", role),
+            ("scope", RoleScopes.RepositoryOf(scope) is not null ? "repository" : RoleScopes.WorkspaceOf(scope) is not null ? "workspace" : scope));
+        return new AppointmentChange(new StandingChange(true, null, null), ended) { Narrowed = narrowed };
     }
 
     /// <summary>
@@ -1039,22 +1127,47 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// its generation, read under the lock for this synchronous answer alone; refused <c>not-offered</c> (the supervisor's own flag,
     /// D209 §2.4), <c>not-appointed</c> or <c>dormant</c>.
     /// </summary>
+    /// <remarks>
+    /// SUPERVISOR1e (§5): <b>one effective appointment per question</b>, the repository's own winning over its workspace's, the
+    /// workspace the one <see cref="WorkspaceOf"/> places the repository in now; answered with that appointment's overrule window.
+    /// </remarks>
     public DecisionAdmitted Admit(string repository)
     {
         lock (_gate)
         {
             if (!SupervisorOffered) return DecisionAdmitted.Refused(SupervisorWhy.NotOffered);
-            if (_appointments.FirstOrDefault(each => each.Role == Roles.Supervisor && RoleScopes.Same(each.Scope, RoleScopes.Repository(repository)))
-                is not { } appointed)
-            {
-                return DecisionAdmitted.Refused(SupervisorWhy.NotAppointed);
-            }
-
+            if (Effective(repository) is not { } appointed) return DecisionAdmitted.Refused(SupervisorWhy.NotAppointed);
             return Live(appointed.Generation)
-                ? new DecisionAdmitted(appointed.Generation, null)
+                ? new DecisionAdmitted(appointed.Generation, null) { Window = TimeSpan.FromMinutes(appointed.Window) }
                 : DecisionAdmitted.Refused(SupervisorWhy.Dormant);
         }
     }
+
+    /// <summary>
+    /// Whether the supervisor's appointment of <paramref name="generation"/> is the effective one for <paramref name="repository"/>
+    /// (SUPERVISOR1e, §5), which the holder's answer and defer check against the park's repository: null where it is;
+    /// <c>appointment-changed</c> where its scope covers the repository but another appointment is effective there (a repository's own
+    /// made over its workspace's); <c>not-appointed</c> where its scope does not cover it.
+    /// </summary>
+    public string? Covers(string generation, string repository)
+    {
+        lock (_gate)
+        {
+            if (Effective(repository) is { } effective && effective.Generation == generation) return null;
+            var named = _appointments.FirstOrDefault(each => each.Role == Roles.Supervisor && each.Generation == generation);
+            var covering = named is not null && (RoleScopes.Same(named.Scope, RoleScopes.Repository(repository))
+                || (named.Workspace is { } workspace && WorkspaceOf(repository) is { } placed
+                    && string.Equals(workspace, placed, StringComparison.OrdinalIgnoreCase)));
+            return covering ? SupervisorWhy.AppointmentChanged : SupervisorWhy.NotAppointed;
+        }
+    }
+
+    // Under the lock: the supervisor's effective appointment for a repository (§5), its own, else its workspace's; null where none.
+    private Appointment? Effective(string repository) =>
+        _appointments.FirstOrDefault(each => each.Role == Roles.Supervisor && RoleScopes.Same(each.Scope, RoleScopes.Repository(repository)))
+        ?? (WorkspaceOf(repository) is { } workspace
+            ? _appointments.FirstOrDefault(each => each.Role == Roles.Supervisor && RoleScopes.Same(each.Scope, RoleScopes.Workspace(workspace)))
+            : null);
 
     /// <summary>
     /// The judge's role method (SUPERVISOR1a-ii; amended by STEWARDROLE1a-i, D209 §3.4), for every route of the census's <c>Role</c>
