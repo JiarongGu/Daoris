@@ -375,10 +375,26 @@ public sealed class StandingConfirmationTests : Bridge
     // write is one mutation step, and a revoke sweeps its decisions after it, never inside.
     private const string Engine = "engine";
 
-    /// <summary>A judge whose appointments are offered, with <see cref="Engine"/> a repository it drives.</summary>
-    private StandingConfirmation Appointing(StandingPlace place = StandingPlace.Outside, MachineLog? log = null)
+    /// <summary>A walk that answers one thing for every act (STEWARDROLE1a-i): null admits; the walk itself is <c>PipeStandingTests</c>' and <c>HolderWalkTests</c>'.</summary>
+    internal sealed class Walked(string? why = null) : IHolderWalk
     {
-        var standing = new StandingConfirmation(Home, log, new Placed(place), offered: true, appointments: true)
+        public string? Why { get; set; } = why;
+
+        public string? Check(PipeClientProcess? client, HolderProcess? harness) => Why;
+    }
+
+    /// <summary>A holder's tab as a stand-in opens it: named by the holder, its harness a process nobody started.</summary>
+    internal static HolderOpened Opened(HolderOpen open) =>
+        new($"t-{open.Holder}", new HolderProcess(4242, DateTime.UnixEpoch, @"C:\home\toolchain\claude-code\2.1.300\bin\claude.exe", @"C:\home\config"), null, null);
+
+    /// <summary>The supervisor's appointment for <paramref name="repository"/>, a terminal of its own where a holder lives.</summary>
+    internal static AppointRequest Supervising(string repository, bool on = true, string? share = "own") =>
+        new(Roles.Supervisor, RoleScopes.Repository(repository), RoleHolders.Terminal, on, share);
+
+    /// <summary>A judge whose supervisor is offered, with <see cref="Engine"/> a repository it drives.</summary>
+    private StandingConfirmation Appointing(StandingPlace place = StandingPlace.Outside, MachineLog? log = null, bool steward = false)
+    {
+        var standing = new StandingConfirmation(Home, log, new Placed(place), offered: true, supervisor: true, steward: steward, walk: new Walked())
         {
             Drives = repository => repository is Engine or "other",
         };
@@ -386,17 +402,20 @@ public sealed class StandingConfirmationTests : Bridge
         return standing;
     }
 
-    /// <summary>Appoint the supervisor for <paramref name="repository"/>, the terminal's start a stand-in that keeps the key it was handed.</summary>
-    private static (AppointmentChange Change, string? Key) Appoint(StandingConfirmation standing, string repository = Engine)
+    /// <summary>Appoint the supervisor for <paramref name="repository"/>, the tab's start a stand-in that keeps the key it was handed.</summary>
+    private static (AppointmentChange Change, string? Key) Appoint(StandingConfirmation standing, string repository = Engine, string? share = "own")
     {
         string? handed = null;
-        var change = standing.Appoint(Roles.Supervisor, repository, RoleHolders.Terminal, on: true, key =>
+        var change = standing.Appoint(Supervising(repository, share: share), open =>
         {
-            handed = key;
-            return true;
+            handed = open.Key;
+            return Opened(open);
         });
         return (change, handed);
     }
+
+    private static AppointmentChange TurnOff(StandingConfirmation standing, string repository = Engine) =>
+        standing.Appoint(Supervising(repository, on: false), _ => throw new InvalidOperationException("a dismissal opens no tab"));
 
     private static string GenerationOf(StandingConfirmation standing, string repository = Engine) =>
         standing.Admit(repository).Generation ?? throw new InvalidOperationException("not admitted");
@@ -428,11 +447,12 @@ public sealed class StandingConfirmationTests : Bridge
         using (var document = JsonDocument.Parse(text))
         {
             var appointment = Assert.Single(document.RootElement.GetProperty("appointments").EnumerateArray());
+            // STEWARDROLE1a-i (D209 §2.3): `scope`, `acts` and `setup` in place of the built `repository`; never which holder holds it.
             Assert.Equal(
-                ["role", "repository", "holder", "generation", "since"],
+                ["role", "scope", "holder", "generation", "since", "acts", "setup"],
                 appointment.EnumerateObject().Select(each => each.Name));
-            Assert.Equal((Roles.Supervisor, Engine, RoleHolders.Terminal), (
-                appointment.GetProperty("role").GetString(), appointment.GetProperty("repository").GetString(),
+            Assert.Equal((Roles.Supervisor, RoleScopes.Repository(Engine), RoleHolders.Terminal), (
+                appointment.GetProperty("role").GetString(), appointment.GetProperty("scope").GetString(),
                 appointment.GetProperty("holder").GetString()));
             Assert.Equal(["stop"], document.RootElement.GetProperty("presses").EnumerateArray().Select(each => each.GetString()));
         }
@@ -450,7 +470,7 @@ public sealed class StandingConfirmationTests : Bridge
         Assert.True(standing.Set([]).Done);
         Assert.Single(standing.Now().Appointments!);
         Assert.True(standing.Set([StandingPresses.Hold]).Done);
-        var off = standing.Appoint(Roles.Supervisor, Engine, RoleHolders.Terminal, on: false, _ => throw new InvalidOperationException());
+        var off = TurnOff(standing);
         Assert.True(off.Answer.Done);
         Assert.Single(off.Ended);
         Assert.Empty(standing.Now().Appointments!);
@@ -572,7 +592,7 @@ public sealed class StandingConfirmationTests : Bridge
         var standing = Appointing();
         var (_, key) = Appoint(standing);
         var old = GenerationOf(standing);
-        standing.Appoint(Roles.Supervisor, Engine, RoleHolders.Terminal, on: false, _ => true);
+        TurnOff(standing);
         var (_, renewed) = Appoint(standing);
         var nonce = SupervisorProof.Nonce();
         Assert.Equal(SupervisorWhy.AppointmentChanged, JudgeRole(standing, Answer(key!, nonce, old), nonce).Why);
@@ -587,27 +607,35 @@ public sealed class StandingConfirmationTests : Bridge
     public void An_appointment_this_build_does_not_offer_or_cannot_start_keeps_nothing()
     {
         Assert.False(StandingConfirmation.AppointmentsOffered);
-        var dark = new StandingConfirmation(Home, null, new Placed(StandingPlace.Outside), offered: true) { Drives = _ => true };
+        Assert.False(StandingConfirmation.SupervisorOfferedInThisBuild);
+        Assert.False(StandingConfirmation.StewardOfferedInThisBuild);
+        var dark = new StandingConfirmation(Home, null, new Placed(StandingPlace.Outside), offered: true, walk: new Walked()) { Drives = _ => true };
         dark.Load();
         Assert.Equal(StandingConfirmation.NotOffered, Appoint(dark).Change.Answer.Why);
-        Assert.False(new StandingConfirmation(Home, null, new Placed(StandingPlace.Outside), offered: false, appointments: true).AppointsOffered);
+        // D209 §2.4: a role's flag is its own, whatever D201's grant is.
+        Assert.True(new StandingConfirmation(Home, null, new Placed(StandingPlace.Outside), offered: false, supervisor: true).AppointsOffered);
         var nonce = SupervisorProof.Nonce();
         Assert.Equal(SupervisorWhy.NotOffered, JudgeRole(dark, Answer(HolderKey.Draw(), nonce, "g"), nonce).Why);
         Assert.Equal(SupervisorWhy.NotOffered, dark.Admit(Engine).Why);
 
         var standing = Appointing();
         var started = 0;
-        bool Start(string _)
+        HolderOpened Start(HolderOpen open)
         {
             started++;
-            return true;
+            return Opened(open);
         }
 
-        Assert.Equal(StandingConfirmation.UnknownRole, standing.Appoint("steward", Engine, RoleHolders.Terminal, true, Start).Answer.Why);
-        Assert.Equal(StandingConfirmation.NotOffered, standing.Appoint(Roles.Supervisor, Engine, RoleHolders.Actor, true, Start).Answer.Why);
-        Assert.Equal(StandingConfirmation.UnknownRepository, standing.Appoint(Roles.Supervisor, "elsewhere", RoleHolders.Terminal, true, Start).Answer.Why);
+        Assert.Equal(StandingConfirmation.UnknownRole, standing.Appoint(new AppointRequest("clerk", RoleScopes.Machine, RoleHolders.Terminal, true), Start).Answer.Why);
+        Assert.Equal(StandingConfirmation.NotOffered, standing.Appoint(new AppointRequest(Roles.Steward, RoleScopes.Machine, RoleHolders.Terminal, true), Start).Answer.Why);
+        Assert.Equal(StandingConfirmation.NotOffered, standing.Appoint(Supervising(Engine) with { Holder = RoleHolders.Actor }, Start).Answer.Why);
+        Assert.Equal(StandingConfirmation.UnknownRepository, standing.Appoint(Supervising("elsewhere"), Start).Answer.Why);
+        Assert.Equal(StandingConfirmation.Scope, standing.Appoint(Supervising(Engine) with { Scope = RoleScopes.Machine }, Start).Answer.Why);
         Assert.Equal(0, started);
-        Assert.Equal(StandingConfirmation.Unstarted, standing.Appoint(Roles.Supervisor, Engine, RoleHolders.Terminal, true, _ => false).Answer.Why);
+        Assert.Equal(StandingConfirmation.Unstarted,
+            standing.Appoint(Supervising(Engine), _ => new HolderOpened(null, null, StandingConfirmation.Unstarted, null)).Answer.Why);
+        Assert.Equal(HolderHarness.Refused,
+            standing.Appoint(Supervising(Engine), _ => new HolderOpened(null, null, HolderHarness.Refused, "no version of claude-code is pinned")).Answer.Why);
         Assert.False(File.Exists(standing.RecordPath));
         Assert.Empty(standing.Now().Appointments!);
         Assert.Equal(SupervisorWhy.NotAppointed, standing.Admit(Engine).Why);
@@ -653,7 +681,7 @@ public sealed class StandingConfirmationTests : Bridge
             await Task.WhenAll(
                 Task.Run(() => standing.Set(presses)),
                 Task.Run(() => Appoint(standing, Engine)),
-                Task.Run(() => standing.Appoint(Roles.Supervisor, "other", RoleHolders.Terminal, round % 3 != 0, _ => true)),
+                Task.Run(() => standing.Appoint(Supervising("other", on: round % 3 != 0), Opened)),
                 Task.Run(() => standing.Set([StandingPresses.Hold])));
 
             var memory = standing.Now();
@@ -702,7 +730,7 @@ public sealed class StandingConfirmationTests : Bridge
 
             var revoke = Task.Run(async () =>
             {
-                var change = standing.Appoint(Roles.Supervisor, Engine, RoleHolders.Terminal, on: false, _ => true);
+                var change = TurnOff(standing);
                 foreach (var ended in change.Ended) await decisions.RevokedAsync(ended, TakeBack, at.AddMinutes(5));
             });
             var keep = Task.Run(() => decisions.KeepAsync(answer, park, at));
@@ -725,6 +753,269 @@ public sealed class StandingConfirmationTests : Bridge
 
             Assert.False((await decisions.KeepAsync(answer with { Question = "later" }, park with { Filed = asked with { Id = "later" } }, at)).Kept);
         }
+    }
+
+    // STEWARDROLE1a-i (D209 §2.2 to §2.4, §3.4; the steward design §10 row 1a-i's StandingConfirmationTests): a holder apart from its
+    // appointment, shared or its own; a role revoked alone, the holder's hash kept to its last; a holder ended by its last role or its tab;
+    // the record's scope, acts and setup, a planted record dormant and Appoint again naming the build's acts with the tick off; and each
+    // role offered by its own flag.
+
+    /// <summary>A judge offering both roles, the steward's table holding <paramref name="probe"/>.</summary>
+    private StandingConfirmation Both(RoleKit.Probe probe, List<(string Tab, string Line, string? Title)>? told = null, List<IReadOnlyList<string>>? ended = null)
+    {
+        var standing = Appointing(steward: true).Probing(probe);
+        standing.Tell = (tab, line, title) => told?.Add((tab, line, title));
+        standing.Ended = generations => ended?.Add(generations);
+        return standing;
+    }
+
+    [Fact]
+    public void A_second_role_is_added_to_the_living_holder_or_given_a_terminal_of_its_own_and_neither_is_preselected()
+    {
+        var told = new List<(string Tab, string Line, string? Title)>();
+        var standing = Both(new RoleKit.Probe(), told);
+        var (_, key) = Appoint(standing);
+        var holder = Assert.Single(standing.Now().Holders!);
+        Assert.Equal([Roles.Supervisor], holder.Roles);
+
+        // A holder lives: no choice is refused, and nothing opens.
+        var opened = 0;
+        Assert.Equal(StandingConfirmation.ChooseTerminal,
+            standing.Appoint(RoleKit.Stewarding(share: null), open => { opened++; return Opened(open); }).Answer.Why);
+        Assert.Equal(StandingConfirmation.NoHolder, standing.Appoint(RoleKit.Stewarding(share: "h-gone"), Opened).Answer.Why);
+        Assert.Equal(0, opened);
+
+        // Added to the terminal Daoris started: the same key, no second tab, a new appointment and generation; its title and words told.
+        var added = standing.Appoint(RoleKit.Stewarding(share: holder.Id), open => { opened++; return Opened(open); });
+        Assert.True(added.Answer.Done, added.Answer.Message);
+        Assert.Equal(0, opened);
+        var shared = Assert.Single(standing.Now().Holders!);
+        Assert.Equal(holder.Id, shared.Id);
+        Assert.Equal([Roles.Steward, Roles.Supervisor], shared.Roles);
+        var line = Assert.Single(told);
+        Assert.Equal(($"t-{holder.Id}", "Daoris: the steward's and supervisor's terminal"), (line.Tab, line.Title));
+        Assert.Contains("The steward was added to this terminal", line.Line, StringComparison.Ordinal);
+        var nonce = SupervisorProof.Nonce();
+        Assert.True(RoleKit.JudgeAct(standing, RoleKit.Act(key!, nonce, RoleKit.GenerationOf(standing, Roles.Steward)), nonce).Covered);
+
+        // A terminal of its own: a second holder with a key of its own.
+        var (own, second) = Appoint(standing, "other");
+        Assert.True(own.Answer.Done);
+        Assert.NotEqual(key, second);
+        Assert.Equal(2, standing.Now().Holders!.Count);
+    }
+
+    [Fact]
+    public void A_role_revoked_this_run_is_never_added_back_to_the_holder_that_held_it()
+    {
+        var standing = Both(new RoleKit.Probe());
+        Appoint(standing);
+        var holder = Assert.Single(standing.Now().Holders!).Id;
+        Assert.True(standing.Appoint(RoleKit.Stewarding(share: holder), Opened).Answer.Done);
+        Assert.True(standing.Appoint(RoleKit.Stewarding(on: false), Opened).Answer.Done);
+
+        Assert.Equal(StandingConfirmation.RevokedHolder, standing.Appoint(RoleKit.Stewarding(share: holder), Opened).Answer.Why);
+        var (own, _) = RoleKit.Appoint(standing, RoleKit.Stewarding(share: "own"));
+        Assert.True(own.Answer.Done);
+        Assert.Equal(2, standing.Now().Holders!.Count);
+    }
+
+    /// <summary>D209 §2.2, Codex's final read, finding 10: revoking either role of a shared holder ends that appointment alone, and the other goes on.</summary>
+    [Theory]
+    [InlineData(Roles.Steward)]
+    [InlineData(Roles.Supervisor)]
+    public void A_shared_holder_s_role_revoked_alone_leaves_the_other_answering_and_its_hash_goes_with_the_last(string revoked)
+    {
+        var told = new List<(string Tab, string Line, string? Title)>();
+        var probe = new RoleKit.Probe();
+        var standing = Both(probe, told);
+        var (_, key) = Appoint(standing);
+        var holder = Assert.Single(standing.Now().Holders!).Id;
+        Assert.True(standing.Appoint(RoleKit.Stewarding(share: holder), Opened).Answer.Done);
+        var supervisor = GenerationOf(standing);
+        var steward = RoleKit.GenerationOf(standing, Roles.Steward);
+
+        var off = revoked == Roles.Steward ? standing.Appoint(RoleKit.Stewarding(on: false), Opened) : TurnOff(standing);
+
+        Assert.Equal([revoked == Roles.Steward ? steward : supervisor], off.Ended);
+        var nonce = SupervisorProof.Nonce();
+        var answer = JudgeRole(standing, Answer(key!, nonce, supervisor), nonce);
+        var act = RoleKit.JudgeAct(standing, RoleKit.Act(key!, nonce, steward), nonce);
+        if (revoked == Roles.Steward)
+        {
+            Assert.True(answer.Covered, answer.Why);
+            Assert.Equal(SupervisorWhy.NotAppointed, act.Why);
+            Assert.Equal([Roles.Supervisor], answer.Roles);
+        }
+        else
+        {
+            Assert.True(act.Covered, act.Why);
+            Assert.Equal(SupervisorWhy.NotAppointed, standing.Admit(Engine).Why);
+            Assert.Equal([Roles.Steward], act.Roles);
+        }
+
+        Assert.Equal(holder, Assert.Single(standing.Now().Holders!).Id);
+        Assert.DoesNotContain(told, each => each.Line == HolderTerminal.TurnedOff);
+
+        // The last role off: the holder's hash goes, and its tab is told.
+        var last = revoked == Roles.Steward ? TurnOff(standing) : standing.Appoint(RoleKit.Stewarding(on: false), Opened);
+        Assert.Single(last.Ended);
+        Assert.Empty(standing.Now().Holders!);
+        Assert.Contains(told, each => each.Tab == $"t-{holder}" && each.Line == HolderTerminal.TurnedOff);
+        var again = SupervisorProof.Nonce();
+        Assert.False(RoleKit.JudgeAct(standing, RoleKit.Act(key!, again, steward), again).Covered);
+    }
+
+    /// <summary>
+    /// D209 §2.2: a holder's tab ending, by whichever of its paths (the module tells each once, <c>HolderTerminalTests</c>), drops its hash
+    /// and every appointment it holds in one step, swept after it; a tab that ends while its appointment opens it leaves nothing written.
+    /// </summary>
+    [Fact]
+    public void A_holder_ends_with_its_tab_and_every_appointment_it_holds_goes_with_it()
+    {
+        var ended = new List<IReadOnlyList<string>>();
+        var standing = Both(new RoleKit.Probe(), ended: ended);
+        var (_, key) = Appoint(standing);
+        var holder = Assert.Single(standing.Now().Holders!).Id;
+        Assert.True(standing.Appoint(RoleKit.Stewarding(share: holder), Opened).Answer.Done);
+        var generations = new[] { GenerationOf(standing), RoleKit.GenerationOf(standing, Roles.Steward) };
+
+        Assert.Equal(generations.Order(), standing.HolderEnded($"t-{holder}").Order());
+
+        Assert.Equal(generations.Order(), Assert.Single(ended).Order());
+        Assert.Empty(standing.Now().Holders!);
+        Assert.Empty(standing.Now().Appointments!);
+        Assert.Empty(StandingConfirmation.Read(File.ReadAllText(standing.RecordPath), Machine).Appointments);
+        var nonce = SupervisorProof.Nonce();
+        Assert.False(JudgeRole(standing, Answer(key!, nonce, generations[0]), nonce).Covered);
+        Assert.Empty(standing.HolderEnded($"t-{holder}"));
+
+        // The next Appoint draws a new key and a new tab, asked for no choice since no holder lives.
+        var (renewed, fresh) = Appoint(standing, share: null);
+        Assert.True(renewed.Answer.Done);
+        Assert.NotEqual(key, fresh);
+
+        // A tab that ends while its appointment still opens it: the appointment is never written.
+        var exiting = standing.Appoint(Supervising("other"), open =>
+        {
+            standing.HolderEnded($"t-{open.Holder}");
+            return Opened(open);
+        });
+        Assert.Equal(StandingConfirmation.Unstarted, exiting.Answer.Why);
+        Assert.DoesNotContain(standing.Now().Appointments!, each => each.Repository == "other");
+    }
+
+    /// <summary>D209 §2.3: a steward record planted while Daoris was down turns nothing on; Appoint again names the build's acts with the tick off, never the file's.</summary>
+    [Fact]
+    public void A_planted_steward_record_is_dormant_and_appoint_again_names_the_build_s_acts_with_the_tick_off()
+    {
+        var path = new StandingConfirmation(Home).RecordPath;
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, $$"""
+            {"schemaVersion":1,"presses":[],"machine":"{{Machine}}","appointments":[{"role":"steward","scope":"machine","holder":"terminal",
+            "generation":"planted","since":"2026-10-24T06:00:00Z","acts":["drive","setup","trees-off"],"setup":true}]}
+            """);
+        var probe = new RoleKit.Probe();
+        var standing = Both(probe);
+
+        var found = Assert.Single(standing.Now().Appointments!);
+        Assert.Equal((Roles.Steward, RoleScopes.Machine, true, (string?)null), (found.Role, found.Scope, found.Dormant, found.Repository));
+        var nonce = SupervisorProof.Nonce();
+        Assert.Equal(SupervisorWhy.Dormant, RoleKit.JudgeAct(standing, RoleKit.Act(HolderKey.Draw(), nonce, "planted"), nonce).Why);
+
+        var (again, _) = RoleKit.Appoint(standing, RoleKit.Stewarding(share: null, setup: false));
+        Assert.True(again.Answer.Done);
+        Assert.Equal(["planted"], again.Ended);
+        var written = Assert.Single(StandingConfirmation.Read(File.ReadAllText(path), Machine).Appointments);
+        Assert.Equal([RoleKit.Probe.Named], written.Acts);
+        Assert.False(written.Setup);
+        Assert.NotEqual("planted", written.Generation);
+    }
+
+    /// <summary>D209 §2.3: a record the built door wrote, <c>repository</c> and no <c>scope</c>, is read as <c>repository:&lt;name&gt;</c>.</summary>
+    [Fact]
+    public void The_built_supervisor_record_is_read_as_its_scope()
+    {
+        var path = new StandingConfirmation(Home).RecordPath;
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, $$"""
+            {"schemaVersion":1,"presses":[],"machine":"{{Machine}}","appointments":[{"role":"supervisor","repository":"engine","holder":"terminal",
+            "generation":"built","since":"2026-10-24T06:00:00Z"}]}
+            """);
+        var standing = Appointing();
+
+        var found = Assert.Single(standing.Now().Appointments!);
+        Assert.Equal((RoleScopes.Repository(Engine), Engine, true), (found.Scope, found.Repository, found.Dormant));
+        Assert.Equal(SupervisorWhy.Dormant, standing.Admit(Engine).Why);
+        Assert.Equal(["built"], Appoint(standing).Change.Ended);
+    }
+
+    /// <summary>D209 §2.4: each role by its own flag: the steward on never opens the supervisor, nor the supervisor the steward.</summary>
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void Each_role_is_offered_by_its_own_flag_alone(bool steward, bool supervisor)
+    {
+        var standing = new StandingConfirmation(Home, null, new Placed(StandingPlace.Outside), offered: false, supervisor: supervisor, steward: steward, walk: new Walked())
+        {
+            Drives = repository => repository == Engine,
+        }.Probing(new RoleKit.Probe());
+        standing.Load();
+        Assert.Equal((supervisor, steward, true), (standing.SupervisorOffered, standing.StewardOffered, standing.AppointsOffered));
+
+        var (supervising, supervisorKey) = Appoint(standing, share: null);
+        var (stewarding, stewardKey) = RoleKit.Appoint(standing, RoleKit.Stewarding(share: "own"));
+        var nonce = SupervisorProof.Nonce();
+        if (steward)
+        {
+            Assert.Equal(StandingConfirmation.NotOffered, supervising.Answer.Why);
+            Assert.True(stewarding.Answer.Done);
+            Assert.Equal(SupervisorWhy.NotOffered, JudgeRole(standing, Answer(HolderKey.Draw(), nonce, "g"), nonce).Why);
+            Assert.Equal(SupervisorWhy.NotOffered, standing.JudgeRole(Driver, SupervisorRoutes.Defer, Defer(HolderKey.Draw(), nonce, "g"), null, nonce).Why);
+            Assert.Equal(SupervisorWhy.NotOffered, standing.Admit(Engine).Why);
+            Assert.True(RoleKit.JudgeAct(standing, RoleKit.Act(stewardKey!, nonce, RoleKit.GenerationOf(standing, Roles.Steward)), nonce).Covered);
+        }
+        else
+        {
+            Assert.True(supervising.Answer.Done);
+            Assert.Equal(StandingConfirmation.NotOffered, stewarding.Answer.Why);
+            Assert.Equal(SupervisorWhy.NotOffered, RoleKit.JudgeAct(standing, RoleKit.Act(HolderKey.Draw(), nonce, "g"), nonce).Why);
+            Assert.True(JudgeRole(standing, Answer(supervisorKey!, nonce, GenerationOf(standing)), nonce).Covered);
+        }
+    }
+
+    /// <summary>D209 §3.4: a role's act in the role's table but not the appointment's acts, an act no table names, and another form, each refused.</summary>
+    [Fact]
+    public void A_role_act_is_judged_in_order_and_admitted_once_with_an_id_daoris_draws()
+    {
+        var probe = new RoleKit.Probe();
+        var standing = Both(probe);
+        var (_, key) = RoleKit.Appoint(standing, RoleKit.Stewarding(share: null));
+        var generation = RoleKit.GenerationOf(standing, Roles.Steward);
+        RoleJudgement Judge(JsonElement payload, string nonce) => RoleKit.JudgeAct(standing, payload, nonce);
+        string Nonce() => SupervisorProof.Nonce();
+
+        var n = Nonce();
+        var admitted = Judge(RoleKit.Act(key!, n, generation), n);
+        Assert.True(admitted.Covered, admitted.Why);
+        Assert.Equal((Roles.Steward, RoleKit.Probe.Named, (string?)null), (admitted.Role, admitted.Act, admitted.Repository));
+        Assert.Equal(RoleActStates.Admitted, standing.ActState(admitted.ActId!));
+
+        n = Nonce();
+        Assert.Equal(RoleWhy.NotRole, Judge(RoleKit.Act(key!, n, generation, act: "drive"), n).Why);
+        n = Nonce();
+        Assert.Equal(SupervisorWhy.Form, Judge(RoleKit.Act(key!, n, generation, form: """{"repository":"engine","extra":1}"""), n).Why);
+        n = Nonce();
+        Assert.Equal(SupervisorWhy.AppointmentChanged, Judge(RoleKit.Act(key!, n, "older"), n).Why);
+        n = Nonce();
+        Assert.Equal(SupervisorWhy.NotHolder, Judge(RoleKit.Act(HolderKey.Draw(), n, generation), n).Why);
+
+        // An act the appointment's ask did not name: the table grew after it.
+        standing.TableOf = role => new Dictionary<string, IRoleAct>(StringComparer.Ordinal) { [RoleKit.Probe.Named] = probe, ["later"] = probe };
+        n = Nonce();
+        Assert.Equal(RoleWhy.NotGranted, Judge(RoleKit.Act(key!, n, generation, act: "later"), n).Why);
+        Assert.Empty(StewardActs.Offered);
+        Assert.Empty(StewardActs.Table);
     }
 
     private static string ReadShared(string path)

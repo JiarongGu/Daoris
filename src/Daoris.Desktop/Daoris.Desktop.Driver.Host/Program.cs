@@ -183,9 +183,13 @@ using Daoris.Driver;
 //   sessions supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
 //                 the supervisor's holder's verb (SUPERVISOR1a-ii, D208), run only in the terminal Daoris started at the owner's
 //                 appointment: what waits; one question's fenced print, the asking agent's claims never instructions; and the
-//                 answer, one offered label with one to five sourced reasons, its proof by the key in DAORIS_SUPERVISOR_KEY over the
+//                 answer, one offered label with one to five sourced reasons, its proof by the key in DAORIS_ROLE_KEY over the
 //                 hello's nonce sent only to the install's app/Daoris.Desktop.exe, never the key. No alone path: no-instance, exit 2.
 //                 `--leave` (SUPERVISOR1b) leaves the question to the owner by one of the design's §4.1 bounds, SUPERVISOR_DEFER.
+//   roles brief
+//                 the holder's brief (STEWARDROLE1a-i, D209 §2.2): what each role this build knows does, never does and how its
+//                 verbs answer, headed by its revision, from Daoris's own text; names no key and no appointment. In a role's
+//                 terminal only its roles' verbs and the open reads run: any other verb is refused role-terminal, exit 2.
 //
 //   driver [list | <choice> | work-cycle | brainstorms | workflow …]
 //                 this machine's standing choices, workflows and cycles (PUSH1f2a, PUSH1f2b, D194): the words `daoris driver …`
@@ -354,6 +358,17 @@ if (!InstanceDoor.TakeWait(args, out var verbArgs, out var pressWait, out var wa
 
 args = verbArgs;
 Daoris.Driver.Host.InstanceHost.Wait = pressWait;
+
+// STEWARDROLE1a-i (D209 §3.3): a role's terminal, by the entry's marker, runs its roles' verbs and the open reads its holder needs, and
+// nothing else: no person's press and no verb acting alone. Those it runs refuse their own alone paths (`InstanceDoor`).
+if (RoleTerminal.AtEntry(args, Console.Error) is { } roleRefused) return roleRefused;
+
+// The holder's brief (STEWARDROLE1a-i, D209 §2.2): Daoris's own text, an open verb that reads nothing and names no key.
+if (args is ["roles", "brief"])
+{
+    Console.Out.Write(RolesBrief.Text);
+    return 0;
+}
 
 if (OperatingSystem.IsWindows())
 {

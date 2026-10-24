@@ -168,6 +168,14 @@ public sealed class ReleaseChannelTests : IDisposable
             transport.Asked);
         Assert.Contains(said, line => line.Contains("signature"));
         Assert.Contains(said, line => line.Contains("SHA-256"));
+
+        // STEWARDROLE1a-i (D209 §6.1): the hash that verified lands beside the binary, and names it; a changed binary is told apart.
+        var verified = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(binary));
+        Assert.Equal(verified, VerifiedBinary.Recorded(where, executable));
+        Assert.Equal(verified, VerifiedBinary.HashOf(executable));
+        Assert.Null(VerifiedBinary.Recorded(where, Path.Combine(where, "bin", "other.exe")));
+        File.WriteAllText(executable, "changed");
+        Assert.NotEqual(VerifiedBinary.Recorded(where, executable), VerifiedBinary.HashOf(executable));
     }
 
     [Fact]

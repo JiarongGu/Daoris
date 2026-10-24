@@ -25,8 +25,10 @@ import type { AppointmentNow } from '../../person/standing';
 import { SupervisorRow, type SupervisorSetup } from './SupervisorRow';
 
 const SINCE = '2026-10-24T14:02:00Z';
-const LIVE: AppointmentNow = { role: 'supervisor', repository: 'engine', holder: 'terminal', since: SINCE, dormant: false, answers: 3 };
-const FOUND: AppointmentNow = { ...LIVE, dormant: true, answers: 0 };
+const LIVE: AppointmentNow = {
+  role: 'supervisor', repository: 'engine', holder: 'terminal', since: SINCE, dormant: false, answers: 3, scope: 'repository:engine', holderId: 'h1',
+};
+const FOUND: AppointmentNow = { ...LIVE, dormant: true, answers: 0, holderId: null };
 
 const setup = (overrides: Partial<SupervisorSetup> = {}): SupervisorSetup =>
   ({ offered: true, appointment: null, onAppoint: vi.fn(), onTurnOff: vi.fn(), ...overrides });
@@ -53,7 +55,10 @@ describe("Setup's supervisor row", () => {
     const ask = screen.getByRole('group', { name: 'appoint the supervisor for engine' });
     expect(within(ask).getByText('The supervisor for engine, on this machine, until Daoris restarts.')).toBeInTheDocument();
     expect(within(ask).getByText(/never copy the key out of it/)).toBeInTheDocument();
-    expect(within(ask).getByText(/press Appoint again, and start the supervisor's session again in the new terminal/)).toBeInTheDocument();
+    expect(within(ask).getByText(/press Appoint again, and Daoris starts the session again in a new terminal/)).toBeInTheDocument();
+    expect(within(ask).getByText(/It starts signed out: sign in once in its tab/)).toBeInTheDocument();
+    // No holder lives: no choice of terminal is asked.
+    expect(within(ask).queryByRole('radio')).toBeNull();
     expect(within(ask).getByText(/It never answers what is yours: a go-ahead, a sign-in/)).toBeInTheDocument();
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Appoint' }));
@@ -65,7 +70,7 @@ describe("Setup's supervisor row", () => {
     render(<SupervisorRow repository="engine" supervisor={setup({ appointment: LIVE, started: true, onTurnOff })} />);
     expect(screen.getByText(`Appointed since ${moment(SINCE)}, held by the terminal Daoris started at your appointment · 3 answers this run`))
       .toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent("Opened the supervisor's terminal in Daoris's terminal panel: start its session there.");
+    expect(screen.getByRole('status')).toHaveTextContent("Opened the supervisor's terminal in Daoris's terminal panel, running Daoris's own Claude Code");
     await userEvent.click(screen.getByRole('button', { name: 'Turn off' }));
     expect(onTurnOff).toHaveBeenCalledTimes(1);
   });
@@ -79,6 +84,59 @@ describe("Setup's supervisor row", () => {
     // Nothing is installed before its Appoint: the press opened the ask and sent nothing.
     expect(onAppoint).not.toHaveBeenCalled();
     expect(screen.getByRole('group', { name: 'appoint the supervisor for engine' })).toBeInTheDocument();
+  });
+
+  // STEWARDROLE1a-i (D209 §2.2): while a holder lives, the ask offers adding the role to its terminal or a terminal of its own, neither
+  // preselected, and Appoint waits for the choice; the choice is sent as the appointment's `share`.
+  it('offers adding the role to the living terminal or one of its own, neither preselected, and sends the choice', async () => {
+    const onAppoint = vi.fn();
+    const holders = [{ id: 'h1', since: SINCE, roles: ['steward'] }];
+    render(<SupervisorRow repository="engine" supervisor={setup({ onAppoint, holders })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
+    const ask = screen.getByRole('group', { name: 'appoint the supervisor for engine' });
+    expect(within(ask).getByText(/reads the questions and messages of the agents it supervises while it can also drive, stop and hand over/))
+      .toBeInTheDocument();
+    const add = within(ask).getByRole('radio', { name: `Add to the terminal Daoris started at ${moment(SINCE)}` });
+    const own = within(ask).getByRole('radio', { name: 'A terminal of its own' });
+    expect(add).not.toBeChecked();
+    expect(own).not.toBeChecked();
+    expect(within(ask).getByRole('button', { name: 'Appoint' })).toBeDisabled();
+
+    await userEvent.click(add);
+    await userEvent.click(within(ask).getByRole('button', { name: 'Appoint' }));
+    expect(onAppoint).toHaveBeenCalledWith(expect.anything(), 'h1');
+  });
+
+  it('sends a terminal of its own as the share', async () => {
+    invoke.mockResolvedValue({ done: true });
+    function Pressed() {
+      const appoint = useSetAppointment();
+      return (
+        <SupervisorRow
+          repository="engine"
+          supervisor={setup({
+            holders: [{ id: 'h1', since: SINCE, roles: ['steward'] }],
+            onAppoint: (answered, share) => appoint.mutate({ role: 'supervisor', repository: 'engine', on: true, share }, {
+              onSuccess: () => answered.done(),
+            }),
+          })}
+        />
+      );
+    }
+
+    render(<QueryClientProvider client={new QueryClient()}><Pressed /></QueryClientProvider>);
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'A terminal of its own' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'SET_APPOINTMENT', { payload: { role: 'supervisor', scope: 'repository:engine', holder: 'terminal', on: true, share: 'own' } }));
+  });
+
+  it('says the choice of terminal in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    render(<SupervisorRow repository="engine" open supervisor={setup({ holders: [{ id: 'h1', since: SINCE, roles: ['steward'] }] })} />);
+    expect(screen.getByRole('radio', { name: `加入 ${moment(SINCE)} 启动的终端` })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: '单独的终端' })).toBeInTheDocument();
   });
 
   it('says it in Chinese with the glossary’s words', async () => {
@@ -119,7 +177,7 @@ describe("Setup's supervisor row", () => {
     await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
     await userEvent.click(screen.getByRole('button', { name: 'Appoint' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
-      'DAORIS.DRIVER', 'SET_APPOINTMENT', { payload: { role: 'supervisor', repository: 'engine', holder: 'terminal', on: true } }));
+      'DAORIS.DRIVER', 'SET_APPOINTMENT', { payload: { role: 'supervisor', scope: 'repository:engine', holder: 'terminal', on: true } }));
     expect(JSON.stringify(received)).not.toContain(key);
     expect(JSON.stringify(received)).not.toMatch(/[0-9a-f]{64}/);
     expect(writeText).not.toHaveBeenCalled();

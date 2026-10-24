@@ -7,7 +7,9 @@ import { SupervisorRow } from './SupervisorRow';
 // ask *Appoint…* and *Appoint again…* open, at the main area's widths. The key is never drawn: the row holds none.
 
 const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
-const live: AppointmentNow = { role: 'supervisor', repository: 'engine', holder: 'terminal', since: hoursAgo(2), dormant: false, answers: 3 };
+const live: AppointmentNow = {
+  role: 'supervisor', repository: 'engine', holder: 'terminal', since: hoursAgo(2), dormant: false, answers: 3, scope: 'repository:engine', holderId: 'h1',
+};
 
 const meta = {
   title: 'Projects/SupervisorRow',
@@ -32,6 +34,21 @@ export const Off: Story = {};
 
 /** The ask open, naming its scope, with its plain sentences; at the 400 px floor. */
 export const Asking: Story = { args: { open: true }, decorators: [storyWidths.narrow] };
+
+/**
+ * The ask open while a role's terminal lives (STEWARDROLE1a-i, D209 §2.2): add the role to it or give it a terminal of its own, what
+ * sharing means said, neither preselected and *Appoint* waiting for the choice; at the 400 px floor.
+ */
+export const AskingWithATerminalOpen: Story = {
+  args: {
+    open: true,
+    supervisor: {
+      offered: true, appointment: null, holders: [{ id: 'h1', since: hoursAgo(1), roles: ['steward'] }],
+      onAppoint: (answered) => answered.done(), onTurnOff: () => {},
+    },
+  },
+  decorators: [storyWidths.narrow],
+};
 
 /** Appointed: since when, held by the terminal Daoris started, its answers this run; *Appoint again…* and *Turn off*. */
 export const Appointed: Story = {

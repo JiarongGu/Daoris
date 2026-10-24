@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, SettingRow } from '../../design/ui';
+import { Button, ChoiceRow, SettingRow } from '../../design/ui';
 import { moment } from '../../locales/format';
-import type { AppointmentNow } from '../../person/standing';
+import type { AppointmentNow, HolderNow } from '../../person/standing';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 
 /** The supervisor's appointment for one repository, as Setup → Driving draws it (SUPERVISOR1a-ii, D208; the supervisor design §5, §6.4). */
@@ -17,8 +17,16 @@ export type SupervisorSetup = {
   busy?: boolean;
   /** What *Turn off* was refused with, in words. */
   refused?: string | null;
-  /** *Appoint* in the ask: the window starts the holder's terminal, and the ask is told how it ended. */
-  onAppoint: (answered: Answered) => void;
+  /**
+   * The holders living this run (STEWARDROLE1a-i, D209 §2.2): while one lives, the ask offers adding the role to its terminal or a
+   * terminal of its own, neither preselected.
+   */
+  holders?: HolderNow[];
+  /**
+   * *Appoint* in the ask: the window starts the holder's terminal, or adds the role to the one chosen, and the ask is told how it
+   * ended. `share` is the ask's choice while a holder lives: `own`, or that holder's id.
+   */
+  onAppoint: (answered: Answered, share?: string) => void;
   onTurnOff: () => void;
 };
 
@@ -40,7 +48,10 @@ export function SupervisorRow({ repository, supervisor, open: opened = false }: 
 }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(opened);
+  const [share, setShare] = useState<string | null>(null);
+  const shareId = useId();
   const { appointment, offered } = supervisor;
+  const holders = supervisor.holders ?? [];
   const status = !appointment
     ? t(offered ? 'projects.supervisor.off' : 'projects.supervisor.notOffered')
     : appointment.dormant
@@ -76,6 +87,7 @@ export function SupervisorRow({ repository, supervisor, open: opened = false }: 
           tone="warn"
           block
           busy={supervisor.busy}
+          ready={holders.length === 0 || share !== null}
           label={t('projects.supervisor.ask.label', { repository })}
           meanIt={t('projects.supervisor.ask.appoint')}
           says={(
@@ -91,9 +103,38 @@ export function SupervisorRow({ repository, supervisor, open: opened = false }: 
               <p className="m-0">{t('projects.supervisor.ask.restart')}</p>
             </div>
           )}
-          onConfirm={supervisor.onAppoint}
-          onClose={() => setAsking(false)}
-        />
+          onConfirm={(answered) => supervisor.onAppoint(answered, holders.length > 0 ? share ?? undefined : undefined)}
+          onClose={() => {
+            setAsking(false);
+            setShare(null);
+          }}
+        >
+          {holders.length > 0 && (
+            <div data-supervisor-share="" className="grid gap-1.5 text-small text-ink">
+              <p id={`${shareId}-legend`} className="m-0 font-medium">{t('projects.supervisor.ask.share.legend')}</p>
+              <p className="m-0">{t('projects.supervisor.ask.share.means')}</p>
+              <div role="radiogroup" aria-labelledby={`${shareId}-legend`} className="grid gap-1.5">
+                {holders.map((holder) => (
+                  <ChoiceRow
+                    key={holder.id}
+                    name={shareId}
+                    value={holder.id}
+                    checked={share === holder.id}
+                    onChange={() => setShare(holder.id)}
+                    labelledBy={`${shareId}-${holder.id}`}
+                  >
+                    <span id={`${shareId}-${holder.id}`}>
+                      {t('projects.supervisor.ask.share.add', { time: holder.since ? moment(holder.since) : t('projects.supervisor.thisRun') })}
+                    </span>
+                  </ChoiceRow>
+                ))}
+                <ChoiceRow name={shareId} value="own" checked={share === 'own'} onChange={() => setShare('own')} labelledBy={`${shareId}-own`}>
+                  <span id={`${shareId}-own`}>{t('projects.supervisor.ask.share.own')}</span>
+                </ChoiceRow>
+              </div>
+            </div>
+          )}
+        </InlineConfirm>
       )}
     </SettingRow>
   );

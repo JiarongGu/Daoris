@@ -5,6 +5,13 @@ with the version and date at release.
 
 ## Unreleased
 
+- The steward's door is built and no role is offered yet (STEWARDROLE1a-i, D209). Nothing you use changes until the steward's
+  activation. Once a role is offered, *Appoint…* opens a tab of Daoris's terminal panel that runs Daoris's own pinned Claude Code,
+  checked against the bytes its install verified, never the `claude` on your PATH. It starts on a configuration Daoris writes, with
+  no hooks, plugins or instruction files, and signed out until you sign in once in that tab. While that tab is open, a second
+  *Appoint…* asks whether to add the role to it or give it a terminal of its own. Turning one role off leaves the other answering,
+  and closing the tab ends every role it held. `daoris-driver roles brief` prints what each role does and never does, and a role's
+  tab runs only its roles' verbs and the reads they need. The holder key's variable is now `DAORIS_ROLE_KEY`.
 - A session's *Workflow* view now says in your language why no workflow runs for it (CHATFLOW1a, CHATFLOW1b). Before, it showed
   the driver's English sentence, in Chinese too. A chat in your checkout says its changes are yours to commit, and that a
   conversation with a tree of its own is how work gets a workflow. A chat in a tree of its own says this build reads no workflow

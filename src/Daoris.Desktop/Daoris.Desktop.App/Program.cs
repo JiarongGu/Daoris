@@ -373,12 +373,12 @@ internal static class Program
         });
 
         using var app = builder.Build();
-        // SUPERVISOR1a-ii (D208 §2.2; the owner's direction of 2026-10-24): the supervisor's holder's terminal is a tab of this window's
-        // own terminal panel, never a console window of the system's; the module is read as the appointment is pressed.
-        SupervisorDoor.Panel = (home, role, key, at, ct) =>
-            app.Services.GetServices<IIpcModule>().OfType<TerminalModule>().FirstOrDefault() is { } terminals
-                ? terminals.OpenHolderAsync(home, role, key, at, ct)
-                : Task.FromResult(false);
+        // SUPERVISOR1a-ii (D208 §2.2; the owner's direction of 2026-10-24): a role holder's terminal is a tab of this window's own terminal
+        // panel, never a console window of the system's; the module is read as the appointment is pressed. STEWARDROLE1a-i (D209 §2.2):
+        // its tab runs Daoris's own pinned harness, and every way the tab ends is told to the judge.
+        TerminalModule? Terminals() => app.Services.GetServices<IIpcModule>().OfType<TerminalModule>().FirstOrDefault();
+        SupervisorDoor.Panel = new TerminalHolderPanel(Terminals);
+        if (Terminals() is { } holderPanel) holderPanel.HolderEnded = SupervisorDoor.HolderEnded;
         // And each choice the page sets from here, for the next start.
         using var keeping = KeptScheme.Keep(app.Services.GetRequiredService<IColorScheme>(), keptScheme, log);
         // An exception leaving the application is written while the log is open (MACHINELOGAPPEND1, HOSTSTART2's finding for

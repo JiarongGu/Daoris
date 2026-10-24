@@ -332,14 +332,16 @@ export function useProjectsView({
     const lower = repository.toLowerCase();
     const mine = appointed?.repository.toLowerCase() === lower ? appointed : null;
     return {
-      offered: standing.appointmentsOffered,
+      // STEWARDROLE1a-i (D209 §2.4): the supervisor's own flag, never the steward's nor D201's.
+      offered: standing.supervisorOffered,
       appointment: standing.appointments.find((each) => each.role === 'supervisor' && each.repository.toLowerCase() === lower) ?? null,
+      holders: standing.holders,
       started: mine?.started,
       refused: mine?.refused ?? null,
       busy: setAppointment.isPending,
-      onAppoint: (answered) => {
+      onAppoint: (answered, share) => {
         setAppointed(null);
-        setAppointment.mutate({ role: 'supervisor', repository, on: true }, {
+        setAppointment.mutate({ role: 'supervisor', repository, on: true, share }, {
           onSuccess: (answer) => {
             if (answer.done) {
               setAppointed({ repository, started: true, refused: null });

@@ -108,7 +108,7 @@ public sealed class PseudoConsole : ITerminal
             // own are redirected (a test host, a service) writes to THOSE, and the console shows only its
             // own first frame. Measured: `cmd /c echo` under the test runner printed nothing here until this.
             startup.StartupInfo.Flags = UseStdHandles;
-            environment = Marshal.StringToHGlobalUni(EnvironmentBlock(launch.Environment));
+            environment = Marshal.StringToHGlobalUni(launch.Whole ? WholeBlock(launch.Environment) : EnvironmentBlock(launch.Environment));
 
             if (!CreateProcessW(
                     null, new StringBuilder(CommandLine(launch.Shell.Path, launch.Shell.Arguments)), IntPtr.Zero, IntPtr.Zero,
@@ -122,7 +122,11 @@ public sealed class PseudoConsole : ITerminal
             var job = ProcessJob.Hold(started.Process);
             ResumeThread(started.Thread);
             CloseHandle(started.Thread);
-            return new PseudoConsole(console, inputWrite, outputRead, started.Process, job, output, exited);
+            return new PseudoConsole(console, inputWrite, outputRead, started.Process, job, output, exited)
+            {
+                ProcessId = started.ProcessId,
+                Created = GetProcessTimes(started.Process, out var created, out _, out _, out _) ? DateTime.FromFileTimeUtc(created) : default,
+            };
         }
         catch
         {
@@ -142,6 +146,12 @@ public sealed class PseudoConsole : ITerminal
             if (environment != IntPtr.Zero) Marshal.FreeHGlobal(environment);
         }
     }
+
+    /// <inheritdoc/>
+    public int ProcessId { get; private init; }
+
+    /// <inheritdoc/>
+    public DateTime Created { get; private init; }
 
     public void Write(string data)
     {
@@ -337,6 +347,17 @@ public sealed class PseudoConsole : ITerminal
         return block.Append('\0').ToString();
     }
 
+    /// <summary>
+    /// <paramref name="whole"/> as the block CreateProcess reads, and nothing else (STEWARDROLE1a-i, D209 §6.1): no variable of this
+    /// process's, no tools' — the holder's harness, whose environment Daoris composes whole.
+    /// </summary>
+    internal static string WholeBlock(IReadOnlyDictionary<string, string> whole)
+    {
+        var block = new StringBuilder();
+        foreach (var (name, value) in whole.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)) block.Append(name).Append('=').Append(value).Append('\0');
+        return block.Append('\0').ToString();
+    }
+
     private static Coord Size(int columns, int rows) => new()
     {
         X = (short)Math.Clamp(columns, 1, short.MaxValue),
@@ -441,4 +462,8 @@ public sealed class PseudoConsole : ITerminal
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CloseHandle(IntPtr handle);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetProcessTimes(IntPtr process, out long created, out long exited, out long kernel, out long user);
 }

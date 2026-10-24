@@ -60,8 +60,9 @@ public sealed class PipeCensusTests
         Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (defer.Module, PipeCensus.Daoris.Of(defer.Module, defer.Route), defer.Class));
         Assert.Equal((PipeClass.Open, Daoris.Driver.RouteClass.Open), (PipeCensus.Daoris.Of(waiting.Module, waiting.Route), waiting.Class));
         Assert.Equal(PipeClass.Window, PipeCensus.Daoris.Of(DriverModule.Name, Daoris.Driver.SupervisorRoutes.Appoint));
+        // STEWARDROLE1a-i (D209 §3.3): the steward's one route beside the supervisor's two, and nothing else of the class.
         Assert.Equal(
-            Daoris.Driver.SupervisorRoutes.Acts.Order(),
+            Daoris.Driver.SupervisorRoutes.Acts.Append(Daoris.Driver.RoleRoutes.Act).Order(),
             PipeCensus.Daoris.Routes.Where(route => route.Class == PipeClass.Role).Select(route => route.Route).Order());
     }
 

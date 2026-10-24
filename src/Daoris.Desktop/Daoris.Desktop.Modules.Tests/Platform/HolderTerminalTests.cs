@@ -4,21 +4,28 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// SUPERVISOR1a-ii (D208 point 2; the supervisor design §2.2 and §11 row 1a-ii; the owner's direction of 2026-10-24): the holder's
-/// terminal is a tab of Daoris's own terminal panel, never a console window of the system's. The panel opens the owner's shell with no
-/// profile, in the role's emptied folder outside every repository, the key in that one shell's environment alone; its first lines say what
-/// it is and how to start the session, and none holds the key; the page is told the tab; and nothing opens where no PowerShell is here.
+/// SUPERVISOR1a-ii (D208 point 2), amended by STEWARDROLE1a-i (D209 §2.2, §6.1 and §10 row 1a-i's <c>HolderTerminalTests</c>): a role
+/// holder's terminal is a tab of Daoris's own terminal panel, never a console window of the system's, whose process is Daoris's own
+/// pinned harness with <see cref="HolderTerminal.SessionArguments"/> as its argument vector, stated whole; in the holder's own folder by
+/// its id, never moved or emptied while it lives, two holders of one role in two folders; on the holders' configuration directory, its
+/// owned files written and the harness's own state left in place; its first lines say what it is and none holds the key; and a role
+/// added to a running holder changes its title and its tab's words, not its folder.
 /// </summary>
 /// <remarks>
-/// 🔴 A stand-in terminal factory throughout: no case starts a shell, a console or a window (the owner's direction, after a Process case
-/// opened a console window that took the keyboard). The panel's real pseudo-console is <c>TerminalModuleTests</c>' own.
+/// 🔴 A stand-in terminal factory throughout: no case starts a shell, a harness, a console or a window (the owner's direction, after a
+/// Process case opened a console window that took the keyboard). The panel's real pseudo-console is <c>TerminalModuleTests</c>' own; the
+/// harness is a file nobody runs (<see cref="HolderHarnessTests"/> holds how it is found and checked).
 /// </remarks>
 public sealed class HolderTerminalTests : Bridge
 {
     private const string Sentinel = "5e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a15e17e1a1";
 
-    private sealed class Shell : ITerminal
+    internal sealed class Started(int id) : ITerminal
     {
+        public int ProcessId { get; } = id;
+
+        public DateTime Created { get; } = DateTime.UnixEpoch.AddSeconds(id);
+
         public void Write(string data)
         {
         }
@@ -32,75 +39,196 @@ public sealed class HolderTerminalTests : Bridge
         }
     }
 
-    /// <summary>The panel's factory as a stand-in: it records each launch and starts nothing.</summary>
-    private sealed class Terminals(params TerminalShell[] shells) : ITerminalFactory
+    /// <summary>The panel's factory as a stand-in: it records each launch and starts nothing; its exits are the test's to call.</summary>
+    internal sealed class Terminals(params TerminalShell[] shells) : ITerminalFactory
     {
         public List<TerminalLaunch> Launched { get; } = [];
+
+        public List<Action<int>> Exits { get; } = [];
+
+        /// <summary>Called inside the start, as a harness that exits at once would end it while its appointment still opens it.</summary>
+        public bool ExitAtOnce { get; set; }
 
         public IReadOnlyList<TerminalShell> Shells() => shells;
 
         public ITerminal Start(TerminalLaunch launch, Action<string> output, Action<int> exited)
         {
-            lock (Launched) Launched.Add(launch);
-            return new Shell();
+            lock (Launched)
+            {
+                Launched.Add(launch);
+                Exits.Add(exited);
+            }
+
+            if (ExitAtOnce) exited(1);
+            return new Started(4000 + Launched.Count);
         }
     }
 
-    private static readonly TerminalShell Pwsh = new(TerminalShells.Pwsh, @"C:\Program Files\PowerShell\7\pwsh.exe", ["-NoLogo"]);
     private static readonly System.Text.Json.JsonSerializerOptions Relaxed = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-    private static readonly TerminalShell Cmd = new(TerminalShells.Cmd, @"C:\Windows\System32\cmd.exe", []);
+    private string Binary => Path.Combine(Home, "toolchain-stand-in", "claude.exe");
+
+    /// <summary>The module with a harness that is found and checked: a file nobody runs.</summary>
+    private TerminalModule Module(Terminals terminals)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Binary)!);
+        File.WriteAllText(Binary, "MZ-not-really-a-binary");
+        return new TerminalModule(Bus, terminals) { Harness = _ => (Binary, null), App = Path.Combine(Home, "app") };
+    }
+
+    private static HolderOpen Open(string holder, IReadOnlyList<string>? living = null, params string[] roles) =>
+        new(holder, Sentinel, roles.Length == 0 ? [Roles.Supervisor] : roles, DateTimeOffset.Parse("2026-10-24T14:02:00Z"), living ?? []);
 
     [Fact]
-    public async Task The_appointment_opens_a_tab_of_the_panel_with_no_profile_in_its_emptied_folder_and_the_key_in_its_environment()
+    public void The_argument_vector_is_stated_whole_its_settings_arriving_with_their_quotes_and_the_initial_prompt_last()
     {
-        var folder = HolderTerminal.Folder(Home, Roles.Supervisor);
-        Directory.CreateDirectory(folder);
-        File.WriteAllText(Path.Combine(folder, ".mcp.json"), """{"mcpServers":{"planted":{"command":"node"}}}""");
-        File.WriteAllText(Path.Combine(folder, "CLAUDE.md"), "planted");
+        Assert.Equal(
+            [
+                "--setting-sources", "user", "--settings", "{\"disableAllHooks\":true}", "--strict-mcp-config", "--mcp-config", "{\"mcpServers\":{}}",
+                "--allowedTools", "Read", "Grep", "Glob", "Bash(daoris-driver sessions supervise:*)", "Bash(daoris-driver steward:*)",
+                "Bash(daoris-driver roles brief)", "Bash(daoris-driver sessions --json:*)", "Bash(daoris-driver notices:*)",
+                "Bash(daoris-driver history:*)",
+                "You hold a role Daoris appointed. Run `daoris-driver roles brief` and do as it says.",
+            ],
+            HolderTerminal.SessionArguments);
+        Assert.Equal(HolderTerminal.InitialPrompt, HolderTerminal.SessionArguments[^1]);
+        Assert.DoesNotContain(HolderTerminal.SessionArguments, each => each.StartsWith("Bash(daoris-driver sessions:", StringComparison.Ordinal));
+        // The prompt names no key, no appointment and no particular role.
+        Assert.DoesNotContain(HolderKey.Variable, HolderTerminal.InitialPrompt, StringComparison.Ordinal);
+        Assert.DoesNotContain(Roles.Supervisor, HolderTerminal.InitialPrompt, StringComparison.Ordinal);
+        Assert.DoesNotContain(Roles.Steward, HolderTerminal.InitialPrompt, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_appointment_opens_a_tab_of_the_panel_running_the_harness_in_the_holders_folder_and_the_key_in_its_environment()
+    {
         var said = new List<EventMessage>();
         using var output = Bus.Subscribe("DAORIS", "TERMINAL_OUTPUT", message => { lock (said) said.Add(message); return Task.CompletedTask; });
         using var opened = Bus.Subscribe("DAORIS", "TERMINAL_OPENED", message => { lock (said) said.Add(message); return Task.CompletedTask; });
-        var terminals = new Terminals(Cmd, Pwsh);
-        using var module = new TerminalModule(Bus, terminals);
+        var terminals = new Terminals();
+        using var module = Module(terminals);
 
-        Assert.True(await module.OpenHolderAsync(Home, Roles.Supervisor, Sentinel, DateTimeOffset.Parse("2026-10-24T14:02:00Z")));
+        var tab = await module.OpenHolderAsync(Home, Open("h1"));
 
+        Assert.NotNull(tab.Tab);
         var launch = Assert.Single(terminals.Launched);
-        Assert.Equal(TerminalShells.Pwsh, launch.Shell.Id);
-        Assert.Equal(["-NoLogo", "-NoProfile"], launch.Shell.Arguments);
-        Assert.Equal(folder, launch.Directory);
-        Assert.Empty(Directory.EnumerateFileSystemEntries(folder));
-        Assert.StartsWith(DaorisHome.Entry(Home, HomeEntry.RoleRooms, Roles.Supervisor), folder, StringComparison.Ordinal);
+        Assert.Equal((Binary, HolderTerminal.SessionArguments), (launch.Shell.Path, launch.Shell.Arguments));
+        Assert.True(launch.Whole);
+        Assert.Equal(HolderTerminal.Folder(Home, "h1"), launch.Directory);
+        Assert.StartsWith(DaorisHome.Entry(Home, HomeEntry.RoleRooms, "holders"), launch.Directory, StringComparison.Ordinal);
         Assert.Equal(Sentinel, launch.Environment[HolderKey.Variable]);
+        Assert.Equal(HolderTerminal.Config(Home), launch.Environment[HolderTerminal.ConfigVariable]);
+        Assert.Equal((4001, Binary, HolderTerminal.Config(Home)), (tab.Process!.Id, tab.Process.Image, tab.Process.Config));
 
-        // The tab's first lines, and the page told of the tab: none holds the key.
         string Told()
         {
             lock (said) return string.Join('\n', said.Select(each => System.Text.Json.JsonSerializer.Serialize(each.Payload, Relaxed)));
         }
 
-        // The output batch and the tab's word arrive apart: both, before anything is read.
-        await UntilAsync(() => Told().Contains("start only the supervisor's session here", StringComparison.Ordinal)
-                               && Told().Contains(HolderTerminal.Title, StringComparison.Ordinal));
+        await UntilAsync(() => Told().Contains("Daoris started its own pinned Claude Code here", StringComparison.Ordinal)
+                               && Told().Contains("Daoris: the supervisor's terminal", StringComparison.Ordinal));
         var told = Told();
         Assert.DoesNotContain(Sentinel, told, StringComparison.Ordinal);
-        Assert.Contains("start only the supervisor's session here", told, StringComparison.Ordinal);
-        Assert.Contains("never print the environment", told, StringComparison.Ordinal);
-        Assert.Contains("--setting-sources user --strict-mcp-config", told, StringComparison.Ordinal);
-        Assert.Contains(HolderTerminal.Title, told, StringComparison.Ordinal);
+        Assert.Contains("never print the", told, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task No_PowerShell_here_opens_nothing()
+    public async Task Two_holders_of_one_role_open_in_two_folders_and_neither_empties_the_other()
     {
-        var terminals = new Terminals(Cmd);
-        using var module = new TerminalModule(Bus, terminals);
-        Assert.False(await module.OpenHolderAsync(Home, Roles.Supervisor, Sentinel, DateTimeOffset.UtcNow));
-        Assert.Empty(terminals.Launched);
+        var terminals = new Terminals();
+        using var module = Module(terminals);
+        await module.OpenHolderAsync(Home, Open("h1"));
+        var first = HolderTerminal.Folder(Home, "h1");
+        File.WriteAllText(Path.Combine(first, "notes.txt"), "the harness's own");
+
+        await module.OpenHolderAsync(Home, Open("h2", living: ["h1"]));
+
+        Assert.Equal([first, HolderTerminal.Folder(Home, "h2")], terminals.Launched.Select(each => each.Directory));
+        Assert.True(File.Exists(Path.Combine(first, "notes.txt")));
+
+        // A holder no longer living is removed at the next holder's start; a living one never is.
+        await module.OpenHolderAsync(Home, Open("h3", living: ["h2"]));
+        Assert.False(Directory.Exists(first));
+        Assert.True(Directory.Exists(HolderTerminal.Folder(Home, "h2")));
     }
 
-    /// <summary>The panel's environment block never inherits the key: only the holder's own launch adds it.</summary>
+    [Fact]
+    public async Task The_configuration_directory_s_owned_files_are_written_and_the_harness_s_own_state_left_in_place()
+    {
+        var config = HolderTerminal.Config(Home);
+        Directory.CreateDirectory(Path.Combine(config, "plugins"));
+        Directory.CreateDirectory(Path.Combine(config, "projects"));
+        File.WriteAllText(Path.Combine(config, "settings.json"), """{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"planted"}]}]}}""");
+        File.WriteAllText(Path.Combine(config, "CLAUDE.md"), "planted");
+        File.WriteAllText(Path.Combine(config, ".credentials.json"), "the owner's sign-in");
+        File.WriteAllText(Path.Combine(config, "projects", "history.jsonl"), "the harness's own");
+        var terminals = new Terminals();
+        using var module = Module(terminals);
+
+        await module.OpenHolderAsync(Home, Open("h1"));
+
+        Assert.Equal(HolderTerminal.Settings, File.ReadAllText(Path.Combine(config, "settings.json")));
+        Assert.Equal("{\"disableAllHooks\":true}", File.ReadAllText(Path.Combine(config, "settings.json")));
+        Assert.False(File.Exists(Path.Combine(config, "CLAUDE.md")));
+        Assert.False(Directory.Exists(Path.Combine(config, "plugins")));
+        Assert.Equal("the owner's sign-in", File.ReadAllText(Path.Combine(config, ".credentials.json")));
+        Assert.Equal("the harness's own", File.ReadAllText(Path.Combine(config, "projects", "history.jsonl")));
+        Assert.Null(HolderTerminal.Owned(config));
+        File.WriteAllText(Path.Combine(config, "commands"), "x");
+        Assert.Equal("commands", HolderTerminal.Owned(config));
+    }
+
+    [Fact]
+    public async Task A_role_added_to_a_running_holder_leaves_its_folder_in_place_and_changes_its_title_and_words()
+    {
+        var said = new List<EventMessage>();
+        using var output = Bus.Subscribe("DAORIS", "TERMINAL_OUTPUT", message => { lock (said) said.Add(message); return Task.CompletedTask; });
+        using var opened = Bus.Subscribe("DAORIS", "TERMINAL_OPENED", message => { lock (said) said.Add(message); return Task.CompletedTask; });
+        var terminals = new Terminals();
+        using var module = Module(terminals);
+        var tab = (await module.OpenHolderAsync(Home, Open("h1"))).Tab!;
+        var folder = HolderTerminal.Folder(Home, "h1");
+        File.WriteAllText(Path.Combine(folder, "session.txt"), "kept");
+
+        string[] roles = [Roles.Steward, Roles.Supervisor];
+        Assert.True(module.TellHolder(tab, HolderTerminal.Added(Roles.Steward, DateTimeOffset.Parse("2026-10-24T14:05:00Z"), roles), HolderTerminal.Title(roles)));
+
+        Assert.Single(terminals.Launched);
+        Assert.True(File.Exists(Path.Combine(folder, "session.txt")));
+        Assert.Equal("Daoris: the steward's and supervisor's terminal", HolderTerminal.Title(roles));
+        string Told()
+        {
+            lock (said) return string.Join('\n', said.Select(each => System.Text.Json.JsonSerializer.Serialize(each.Payload, Relaxed)));
+        }
+
+        await UntilAsync(() => Told().Contains("The steward was added to this terminal at", StringComparison.Ordinal)
+                               && Told().Contains("Daoris: the steward's and supervisor's terminal", StringComparison.Ordinal));
+        Assert.False(module.TellHolder("t-gone", "x"));
+    }
+
+    /// <summary>D209 §2.2: the tab's end reaches the judge by one callback on every path, once each: the page's close, the harness's exit, the module's disposal, and an exit while it opens.</summary>
+    [Fact]
+    public async Task Every_path_a_holder_s_tab_ends_by_is_told_once()
+    {
+        var ended = new List<string>();
+        var terminals = new Terminals();
+        var module = Module(terminals);
+        module.HolderEnded = tab => { lock (ended) ended.Add(tab); };
+
+        var closed = (await module.OpenHolderAsync(Home, Open("h1"))).Tab!;
+        Assert.True((await AnswerAsync(module, "CLOSE", new { id = closed })).GetProperty("closed").GetBoolean());
+        var exited = (await module.OpenHolderAsync(Home, Open("h2"))).Tab!;
+        terminals.Exits[1](0);
+        terminals.Exits[1](0);
+        var disposed = (await module.OpenHolderAsync(Home, Open("h3"))).Tab!;
+        terminals.ExitAtOnce = true;
+        var opening = (await module.OpenHolderAsync(Home, Open("h4"))).Tab!;
+        module.Dispose();
+
+        Assert.Equal([closed, exited, opening, disposed], ended);
+    }
+
+    /// <summary>The panel's environment block never inherits the key: only the holder's own launch adds it, and a whole block inherits nothing.</summary>
     [Fact]
     public void A_tab_of_the_panel_never_inherits_the_key()
     {
@@ -108,6 +236,10 @@ public sealed class HolderTerminalTests : Bridge
         Assert.DoesNotContain(Sentinel, Block(new Dictionary<string, string>(), inherited), StringComparison.Ordinal);
         Assert.Contains($"{HolderKey.Variable}={Sentinel}",
             Block(new Dictionary<string, string> { [HolderKey.Variable] = Sentinel }, new Dictionary<string, string>()), StringComparison.Ordinal);
+        var whole = (string)typeof(PseudoConsoleTerminals).Assembly.GetType("Daoris.Driver.PseudoConsole")!
+            .GetMethod("WholeBlock", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!
+            .Invoke(null, [new Dictionary<string, string> { ["B"] = "2", ["A"] = "1" }])!;
+        Assert.Equal("A=1\0B=2\0\0", whole);
     }
 
     private static string Block(IReadOnlyDictionary<string, string> added, IReadOnlyDictionary<string, string> inherited) =>

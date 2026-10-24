@@ -349,6 +349,7 @@ public static class SessionsSuperviseCommand
             await output.WriteLineAsync(
                 $"sessions supervise: left to the owner as decision {Text(data, "decision")}; nothing reaches the session, and the owner's "
                 + "card says why.").ConfigureAwait(false);
+            await HeldAsync(data, output).ConfigureAwait(false);
             return 0;
         }
 
@@ -357,11 +358,24 @@ public static class SessionsSuperviseCommand
             await output.WriteLineAsync(
                 $"sessions supervise: kept as decision {Text(data, "decision")}, held for the owner's overrule; it goes on at "
                 + $"{Text(data, "goesOnAt")} unless they overrule it.").ConfigureAwait(false);
+            await HeldAsync(data, output).ConfigureAwait(false);
             return 0;
         }
 
         await output.WriteLineAsync($"sessions supervise: nothing was kept ({Text(data, "why")}).").ConfigureAwait(false);
+        await HeldAsync(data, output).ConfigureAwait(false);
         return 1;
+    }
+
+    /// <summary>
+    /// The roles the holder holds now and the brief's revision (STEWARDROLE1a-i, D209 §2.2), as the role's door answered them: the line
+    /// the brief tells the session to compare with what it last read. Nothing where the answer names none (an older Daoris).
+    /// </summary>
+    private static async Task HeldAsync(JsonElement data, TextWriter output)
+    {
+        if (!data.TryGetProperty("roles", out var roles) || roles.ValueKind != JsonValueKind.Array) return;
+        var held = roles.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!).ToList();
+        await output.WriteLineAsync($"sessions supervise: {RolesBrief.Said(held)}").ConfigureAwait(false);
     }
 
     private static string? Text(JsonElement element, string name) => InstanceClient.Text(element, name);
