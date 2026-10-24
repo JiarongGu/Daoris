@@ -2109,6 +2109,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             var cutOff = (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase) && !Limit(session) && !AccountRefused(session))
                          || (string.Equals(state, "stopped", StringComparison.OrdinalIgnoreCase) && Interrupted(session));
             if (NotePart.Read(session)?.Any(part => part.Code == NoteCodes.UpdateClosed.Code) == true) continue;
+            // AGENTERRORS1a (D210 §5.1): an end past a transient bound is its provider's outage, never the quest's: no strike, its
+            // quest held for the person instead.
+            if (NotePart.Read(session)?.Any(part => part.Code == NoteCodes.EndedTransient.Code) == true) continue;
             // D205 §3.5(c): a choice its agent refused at the open, before any prompt, is the account's, never the quest's.
             if (NotOffered(session)) continue;
             if (!cutOff) continue;

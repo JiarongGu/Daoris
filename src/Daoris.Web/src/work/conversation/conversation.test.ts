@@ -1194,3 +1194,43 @@ describe('toTurns, on a resumed turn whose door failed (TURNFAIL1, USERSHOWN1)',
     expect(turns[1]!.items).toMatchObject([{ kind: 'held', id: 'w9', reaches: 'resume' }]);
   });
 });
+
+describe('toTurns, through a transient episode (AGENTERRORS1a, D210 §5.1, §8)', () => {
+  const at = (time: string) => `2026-10-24T${time}Z`;
+  const error = 'API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.';
+  const words = `Internal error: ${error}`;
+  const goOn = `The last request failed on the provider's side (${words}). Go on where you stopped, after anything said above.`;
+  const streamed = (seq: number, time: string): SessionEvent => ({ seq, at: at(time), kind: 'message', text: error });
+  const record: SessionEvent[] = [
+    { seq: 1, at: at('00:20:00'), kind: 'user', origin: 'target', text: 'Serve the report.' },
+    { seq: 2, at: at('00:20:05'), kind: 'message', text: 'Reading the report code.' },
+    streamed(3, '00:23:35'),
+    {
+      seq: 4, at: at('00:23:35'), kind: 'note', text: `claude-code-acp's provider failed. Daoris tries again in this conversation: … ${words}`,
+      parts: [
+        { code: 'agent.transient-retrying', values: { agent: 'claude-code-acp', count: 5, minutes: 31, at: '2026-10-24T00:24:35Z' }, text: "claude-code-acp's provider failed. …" },
+        { words, by: 'program' },
+      ],
+    },
+    // The first try's go-on, kept and shown once; each later try carries it as a block neither kept nor shown.
+    { seq: 5, at: at('00:24:35'), kind: 'user', origin: 'target', from: 'daoris', id: 'w1', text: goOn },
+    streamed(6, '00:24:40'),
+    streamed(7, '00:26:45'),
+    streamed(8, '00:30:50'),
+    { seq: 9, at: at('00:39:00'), kind: 'message', text: 'Served.' },
+    { seq: 10, at: at('00:39:01'), kind: 'turn', stopReason: 'end_turn' },
+  ];
+
+  it("shows the provider's error once, the go-on once and one line, through three failed tries", () => {
+    const { turns, where } = toTurns(record);
+    const items = turns.flatMap((turn) => turn.items);
+
+    expect(items.filter((item) => item.kind === 'message' && item.text === error)).toEqual([]);
+    expect(items.filter((item) => item.kind === 'note' && item.parts?.[0]?.code === 'agent.transient-retrying')).toHaveLength(1);
+    expect(turns.filter((turn) => turn.ask?.text === goOn)).toHaveLength(1);
+    expect(items.filter((item) => item.kind === 'message').map((item) => item.text)).toEqual(['Reading the report code.', 'Served.']);
+    // A jump to a repeat lands on a block that is there, or on its turn, never on a block that is gone.
+    const keys = new Set([...turns.map((turn) => turn.key), ...items.map((item) => item.key)]);
+    for (const seq of [3, 6, 7, 8]) expect(keys.has(where[seq]!)).toBe(true);
+  });
+});

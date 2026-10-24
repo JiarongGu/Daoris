@@ -15,6 +15,15 @@ internal sealed class MovedClock : TimeProvider
     /// <summary>Done once the code has made its first timer on this clock.</summary>
     public Task Timed => _timed.Task;
 
+    /// <summary>Whether a timer made on this clock is due and has not fired (AGENTERRORS1a): the code waits on it now.</summary>
+    public bool Waiting
+    {
+        get
+        {
+            lock (_gate) return _timers.Any(timer => timer.Due is not null);
+        }
+    }
+
     public override DateTimeOffset GetUtcNow()
     {
         lock (_gate) return _now;

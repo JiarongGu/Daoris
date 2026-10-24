@@ -4,6 +4,8 @@
   "note.ended.turn-failed-taken": "The agent's turn failed with the quest still taken:",
   "note.ended.turn-failed-open": "The agent's turn failed before it took its quest:",
   "note.ended.provider-refused": "Its model's provider refused its turn, so the run failed and goes on as a failed run does:",
+  "note.ended.transient": "Its provider kept failing after {{count}} tries, with {{minutes}} minutes of waits between them. It waits for your words, which go on in the same conversation:",
+  "note.agent.transient-retrying": "{{agent}}'s provider failed. Daoris tries again in this conversation: up to {{count}} times, after {{minutes}} minutes of waits between them, the next at {{at}}:",
   "note.ended.choice-not-offered": "Not started: `{{agent}}` did not offer `{{model}}` on its account, so nothing ran; the next look chooses again by its actor's order.",
   "note.ended.parked-asked": "It stopped with its quest still taken, to ask you:",
   "note.ended.parked-transcript": "It stopped with its quest still taken, to ask you; what it needs ends its transcript.",

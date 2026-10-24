@@ -597,6 +597,9 @@ public sealed record SittingFact(string Code)
 
     /// <summary><see cref="StartVerdict.SourceReopened"/>: taken, so held until the person chooses.</summary>
     public const string HeldByReopen = "held";
+
+    /// <summary><see cref="StartVerdict.TransientHeld"/>: its last session's provider kept failing past its bound (AGENTERRORS1a).</summary>
+    public const string Transient = "transient";
 }
 
 /// <summary>
@@ -1106,6 +1109,13 @@ public enum StartVerdict
     /// chooses to go on with it on the new work or to abandon it. Daoris never chooses. No strike: nothing ran.
     /// </summary>
     SourceReopened,
+
+    /// <summary>
+    /// Held for the person (AGENTERRORS1a, D210, the agent-errors design §5.1): its last session here ended past its transient bound,
+    /// <c>ended.transient</c>, read by that code. Nothing carries it on, starts it afresh or resumes it until a word of the person's said
+    /// after that end, or a hand-over from that record; never a loop with nobody between. No strike and no slot.
+    /// </summary>
+    TransientHeld,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -1337,6 +1347,23 @@ public static class Planner
                 continue;
             }
 
+            // 🔴 AGENTERRORS1a (D210, the agent-errors design §5.1): a quest, Open or Taken, whose last session here ended past its
+            // transient bound is held for the person, read by its note's code and never a mark, before every other path: no carry-on,
+            // no fresh start and no resume until their word (WordsOn above, by the hold's word rule) or a hand-over from that record.
+            if (TransientHolding(quest) is { } exhausted)
+            {
+                considerations.Add(TransientHeld(quest, exhausted));
+                continue;
+            }
+
+            // The hand-over made from that held record (round 3's read, R3-O3): an Open quest is carried on from it in its tree, as
+            // D206's step 0 carries a limited one, whatever its tree holds, never started afresh with no brief.
+            if (quest.Status == "Open" && TransientReleasedFrom(quest) is { } released)
+            {
+                considerations.Add(CarryOn(quest, released));
+                continue;
+            }
+
             // 🔴 RETRYWORK1 (D80's note): a session that committed work and failed before it took its quest (its connector could not
             // start, QUESTOPENLOCK1) left the quest open, and was started again in a new tree, which built the same work from nothing.
             // Where its tree holds commits beyond its start, the quest is carried on there, as a cut-off of a take is; the strikes
@@ -1455,6 +1482,28 @@ public static class Planner
         bool HandedFrom(QuestView quest, PriorSession stop) =>
             snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, stop.Session, StringComparison.Ordinal);
 
+        // AGENTERRORS1a (the design §5.1): the quest's last session here ended past its transient bound, where nothing released it:
+        // its hold. A hand-over made from that record passes it (as StopHolding passes one), and so, from row 1a2, will Try again.
+        PriorSession? TransientHolding(QuestView quest) =>
+            quest.Status is "Open" or "Taken"
+            && snapshot.LastRun.TryGetValue(quest.Id, out var last)
+            && EndedTransient(last)
+            && !HandedFrom(quest, last)
+                ? last
+                : null;
+
+        // The held record a hand-over was made from (round 3's read, R3-O3): what an Open quest is carried on from, in its tree.
+        PriorSession? TransientReleasedFrom(QuestView quest) =>
+            snapshot.LastRun.TryGetValue(quest.Id, out var last) && EndedTransient(last) && HandedFrom(quest, last) ? last : null;
+
+        // Held for the person (the design §5.1, §8's `held.transient`): no slot; the record is its HeldBy, as a stop's verdict names its stop.
+        static Consideration TransientHeld(QuestView quest, PriorSession exhausted) =>
+            new(quest, StartVerdict.TransientHeld, "Its last session's provider kept failing: it waits for your words.")
+            {
+                HeldBy = exhausted,
+                Said = new(SittingFact.Transient) { Session = exhausted.Session },
+            };
+
         // The person's stop of the quest's last session here, where it still holds the quest (SESSUX1b), or null.
         PriorSession? StopHolding(QuestView quest) =>
             quest.Status is "Open" or "Taken"
@@ -1502,7 +1551,11 @@ public static class Planner
             // SUPERVISOR1a-i (the supervisor design §6.3): never while a supervisor's decision on it is held for the owner's overrule.
             bool Waits(PriorSession record) =>
                 record.WordsWaiting && !GoOnMarks.Judged(record, snapshot.Unable.GetValueOrDefault(record.Session))
-                && !Observation.IsQuietPressed(record.NoteParts) && !snapshot.SupervisorHolds(record);
+                && !Observation.IsQuietPressed(record.NoteParts) && !snapshot.SupervisorHolds(record)
+                // 🔴 AGENTERRORS1a, the hold's word rule (the design §5.1, round 3, R2-C4; round 3's read, R3-O9): a record past its transient
+                // bound goes on only with a word of the person's said after it ended. A helper's answer, Daoris's word or another session's
+                // message would resume an exhausted line with nobody between; a word said before the end never releases it.
+                && (!EndedTransient(record) || HandedFrom(quest, record) || record.Waiting.Any(word => word.Persons && record.Updated is { } ended && word.At > ended));
         }
 
         // Words going on in the record they were said to (MSG1b, D137 §2.2), `continuing` it: a park is still an active record
@@ -2012,6 +2065,14 @@ public static class Planner
         || last is { State: "completed", Answer: not null }
         // The person's reopen of the work it grew from stopped it (FABRIC-CLOSE1c2): carried on once they go on, held until then.
         || StoppedByReopen(last);
+
+    /// <summary>
+    /// Whether <paramref name="last"/> ended past its transient bound (AGENTERRORS1a, <see cref="NoteCodes.EndedTransient"/>): <c>failed</c>,
+    /// by its note's code, never its English and never a mark, so no write beside the conclusion can fail the hold open.
+    /// </summary>
+    internal static bool EndedTransient(PriorSession last) =>
+        string.Equals(last.State, "failed", StringComparison.OrdinalIgnoreCase)
+        && last.NoteParts?.Any(part => part.Code == NoteCodes.EndedTransient.Code) == true;
 
     /// <summary>
     /// Whether <paramref name="last"/> ended because the person reopened the work its quest grew from (FABRIC-CLOSE1c2,

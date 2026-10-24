@@ -446,6 +446,8 @@ export function toTurns(
   let current: Turn | null = null;
   // Which block each event is part of (SESS1 S9): a jump lands on an event, and shows its block.
   const where: Record<number, string> = {};
+  // The provider's words each transient episode's line quotes (AGENTERRORS1a), whose repeats as the agent's words read as that line.
+  const transient: string[] = [];
 
   const open = (key: string, ask?: Ask): Turn => {
     const turn: Turn = { key, ask, items: [] };
@@ -636,6 +638,11 @@ export function toTurns(
         }
         break;
       case 'note': {
+        // AGENTERRORS1a (D210 §5.1, §8): a transient episode's one line quotes the provider's words its tries each stream.
+        if (event.parts?.[0]?.code === 'agent.transient-retrying') {
+          const words = event.parts.find((part) => part.words)?.words ?? event.text;
+          if (words?.trim()) transient.push(words);
+        }
         if (doorFailed(event)) {
           // 🔴 USERSHOWN1: a word taken at a next step by the very answer that was the door's failure was never read. The
           // install's record kept "stuck?" as the ask of a turn holding only the failure; it waits where it was said again,
@@ -699,6 +706,28 @@ export function toTurns(
       default:
         here(key).items.push({ key, kind: 'raw', at: event.at, title: event.title, text: event.text, raw: event.raw });
         where[event.seq] = key;
+    }
+  }
+
+  // 🔴 AGENTERRORS1a (D210 §5.1, §8): each try of a transient episode streams the provider's error as its agent's words before the
+  // door's failure, as the first failure did. The episode's one line says it, so each repeat reads as that line, never as the
+  // agent answering, and the provider's error is shown once.
+  if (transient.length > 0) {
+    // As the door says it and as the agent streamed it: the words, and the words past the door's own preface (`Internal error: `).
+    const quoted = transient.flatMap((words) => [words, words.slice(words.indexOf(': ') + 2)]).filter((text) => text.trim().length > 20);
+    for (const turn of turns) {
+      const repeats: Block[] = [];
+      for (const item of turn.items) {
+        if (item.kind !== 'message' || !item.text) continue;
+        // Consecutive chunks are one block, so a repeat may follow the agent's own words or another repeat in the same block.
+        const left = quoted.reduce((text, said) => text.split(said).join(''), item.text);
+        if (left === item.text) continue;
+        if (left.trim()) item.text = left.trim();
+        else repeats.push(item);
+      }
+      if (repeats.length === 0) continue;
+      turn.items = turn.items.filter((item) => !repeats.includes(item));
+      for (const [seq, block] of Object.entries(where)) if (repeats.some((item) => item.key === block)) where[Number(seq)] = turn.key;
     }
   }
 

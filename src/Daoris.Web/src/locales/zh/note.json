@@ -4,6 +4,8 @@
   "note.ended.turn-failed-taken": "智能体这一轮失败，委托仍已接下：",
   "note.ended.turn-failed-open": "智能体这一轮在接下委托前失败：",
   "note.ended.provider-refused": "模型的提供方拒绝了这一轮，因此本次运行失败，并像失败的运行一样继续：",
+  "note.ended.transient": "它的服务方在 {{count}} 次重试后仍然出错，各次之间共等待 {{minutes}} 分钟。它在等你的话，你的话会在同一对话中继续：",
+  "note.agent.transient-retrying": "{{agent}} 的服务方出错。Daoris 会在本对话中重试：最多 {{count}} 次，各次之间共等待 {{minutes}} 分钟，下一次在 {{at}}：",
   "note.ended.choice-not-offered": "未启动：`{{agent}}` 在其账户上不提供 `{{model}}`，因此什么也没有运行；下一次查看会按其角色的顺序重新选择。",
   "note.ended.parked-asked": "它停了下来，委托仍已接下，想问你：",
   "note.ended.parked-transcript": "它停了下来，委托仍已接下，想问你；它需要什么写在记录末尾。",

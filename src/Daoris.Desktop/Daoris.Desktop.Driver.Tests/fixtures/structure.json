@@ -334,6 +334,7 @@
     "ToolsTests.cs": "Agents",
     "TraceChainTests.cs": "Sessions",
     "TraceTests.cs": "Sessions",
+    "TransientRetryTickTests.cs": "Loop",
     "TreeDiffSplitTests.cs": "Trees",
     "TreeDiffTests.cs": "Trees",
     "TreeFilesTests.cs": "Trees",

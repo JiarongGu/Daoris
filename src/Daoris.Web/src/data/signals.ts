@@ -258,6 +258,8 @@ const SAID: Record<string, readonly string[]> = {
   NotAdopted: ['unregistered', 'noRoot', 'noConnector'],
   WaitsForOpinion: ['landing', 'steps'],
   SourceReopened: ['withdrawn', 'held'],
+  // AGENTERRORS1a (D210 §5.1, §8's `held.transient`): its last session's provider kept failing past its bound.
+  TransientHeld: ['transient'],
 };
 
 /**
