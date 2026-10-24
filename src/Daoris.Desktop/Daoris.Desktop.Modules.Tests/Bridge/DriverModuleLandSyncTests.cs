@@ -56,8 +56,10 @@ public sealed class DriverModuleLandSyncTests
         var read = Read(TreesRoutes.Pressed("s1a2b3c4", landed, LandingGate.Open("engine"), TreesWords.Land(landed, []), []));
 
         Assert.Equal(JsonValueKind.Null, read.GetProperty("withheld").ValueKind);
+        // CHATFLOW1d: `press` is what refused a chat run's press, null on every other.
+        Assert.Equal(JsonValueKind.Null, read.GetProperty("press").ValueKind);
         Assert.Equal(
-            ["session", "done", "message", "branch", "plugin", "withheld", "review", "opinion", "workflow", "leftOut", "conflict", "said", "followed"],
+            ["session", "done", "message", "branch", "plugin", "withheld", "review", "opinion", "workflow", "leftOut", "conflict", "said", "followed", "press"],
             read.EnumerateObject().Select(field => field.Name));
     }
 
