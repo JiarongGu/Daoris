@@ -147,6 +147,8 @@ public static class WiringVariables
         if (path.Contains(".test.", StringComparison.Ordinal) || path.Contains(".stories.", StringComparison.Ordinal)) return false;
         var parts = path.Split('/');
         return !parts.Any(part => part.EndsWith(".Tests", StringComparison.Ordinal)
-            || part is "test" or "tests" or "e2e" or "bin" or "obj" or "node_modules" or "dist" or "wwwroot" or "fixtures");
+            || part is "test" or "tests" or "e2e" or "bin" or "obj" or "node_modules" or "dist" or "wwwroot" or "fixtures"
+                // A test's scratch (the CLI's `_fixtures/`, written while another gate's census reads `src/`).
+                or "_fixtures");
     }
 }

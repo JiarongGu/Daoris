@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - The wiring census read the CLI tests' scratch as a source, and two test classes were split by hand
+
+- **Symptom:** the CI on `ffcf42926` failed `driver` on `SystemWiringTests.Every_variable_the_sources_name_is_on_the_list_shown_or_set_aside_with_its_reason`,
+  naming `DAORIS_STUB_QUEUEING`, which no source under `src/` spells; it passed in the checkout, alone and in the fast half. The same
+  CI failed `cli` on PART1's partials check: `PipeStandingTests` and `StandingConfirmationTests` were each declared `partial` in two
+  hand-written files (SUPERVISOR1a-ii's `.Role.cs` and `.Appointments.cs`).
+- **Root cause:** the census walks every file under `src/` and filters by path (`WiringVariables.Searched`), skipping `fixtures` but
+  not `_fixtures`. The CLI's tests keep their scratch at `src/Daoris.Cli/_fixtures/` (`test/_fixture.ts:9`), and the deployment test
+  writes the rehearsal kit's stub agent there (`deployment-rehearsal.test.ts:576`), whose text names the stub's switch. CI runs the
+  `cli` and `driver` gates side by side in one gate tree, so the census read the stub while it stood. The merge tool's quick gates
+  do not run the partials check, so the split classes reached main unseen.
+- **Fix:** `Searched` skips `_fixtures` beside `fixtures`, held by `The_search_reads_code_and_never_a_tests_scratch`; each split class
+  is one file again, the second file's body folded into the first, its summary kept as comments.
+- **Verification:** `SystemWiringTests` 31 of 31, the two folded classes 59 of 59, `node tools/partials.mjs` clean; the next full CI.
+  The same CI's `tool-tests` failure, the merge queue's red-candidate case, failed once more alone and then passed: FLAKE1's.
+
 ## 2026-10-24 - The trees read made more git starts when the line moved on than at its first read (MAINRED1)
 
 - **Symptom:** the CI on `16769207d` failed `driver-process-git`: `HelpTreesReadTests`' 145-tree proof made 1616 git starts once the
