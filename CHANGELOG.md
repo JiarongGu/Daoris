@@ -141,6 +141,10 @@ with the version and date at release.
   suites they reach, and moves `main` forward only when they pass and the checkout is clean. A branch that breaks something is
   found by the failure itself, run after each branch in turn, and handed back with why. A check that fails on `main` itself
   stops the queue until a commit fixes it or `--queue --recheck` finds it gone. `--queue` shows where everything stands.
+- The supervisor's scope and overrule window are built, and the supervisor is still not offered (SUPERVISOR1e, D208). Once it is,
+  a workspace's Setup has its own *Supervisor* row, appointing one for every repository of the workspace, one added later included;
+  a repository's own supervisor wins over its workspace's, and its row says when the workspace's covers it. When you appoint one you
+  choose how long its answers wait for your overrule, from 1 to 60 minutes; five unless you choose another.
 - The supervisor's bounds are built, and the supervisor is still not offered (SUPERVISOR1b, D208). A session's agent can mark a
   question as yours alone (a sign-in, access, spending, deleting, a document that asks you, or your own taste): the supervisor never
   answers it, even if the mark comes after it chose, and the question card says *Asked of you alone*. The supervisor can leave a

@@ -20623,3 +20623,17 @@ an end-to-end test of a live conversation's terminal press through the pipe. Det
 the terminal offer the person's way past it (`LAND_WITHOUT_LOOK`, `--without-look`), kept at the press's captured tip and landed
 there, a later commit asking again and a moved tree never landed under the skip; each proof seen failing first. Detail: D157's
 CHATFLOW1d note.
+## SUPERVISOR1e — scope and window, still dark (2026-10-25, D208)
+
+> **SUPERVISOR1e — scope and window** (modules, web; after 1a-ii). A workspace's appointment, the repository's own winning; the overrule window set by the owner, 1 to 60 minutes. Proof: §11 row e.
+
+(Quest `#739e08f3c54b`.)
+
+**Outcome** 2026-10-25, in three parts on one branch, dark (`SupervisorOffered` false). The supervisor may be appointed for
+`workspace:<name>`, covering every repository the registry places there as each act is judged, a later one included; the
+repository's own appointment wins, and one made over the workspace's makes that workspace's held and released decisions for the
+repository `stale` (`appointment-changed`), the workspace's standing for its others. `SET_APPOINTMENT`'s `window`, 1 to 60 minutes,
+five where none, is written beside the appointment and handed to the decisions through the admission, which hold for it. A
+workspace's Setup gains a *Supervisor* section; both asks set the window; a repository row says the workspace's that covers it; en
+and zh. Proof: `SupervisorScopeTests`, `SupervisorDecisionTests`, `SupervisorRow.test.tsx`, `WorkspaceSetup.test.tsx`,
+`person.standing.test.tsx`, each case seen failing first. Detail: D208's SUPERVISOR1e note.
