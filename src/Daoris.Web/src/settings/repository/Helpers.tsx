@@ -5,8 +5,8 @@ import { Button, Segmented } from '../../design/ui';
 
 /**
  * A helpers rule as the driver answers it (MIXAGENT2a-i, D163 point 3): what a helper a session's agent asks for does, `ask`
- * (the default: it waits for the person's yes), `on` (it starts at once within the limits) or `off` (none is offered), and the
- * agents that may be asked, in the order they are tried.
+ * (it waits for the person's yes), `on` (it starts at once within the limits; the default, for Daoris's own agents, HELPERDEFAULT1)
+ * or `off` (none is offered), and the agents that may be asked, in the order they are tried.
  */
 export type HelperRule = { mode: string; agents: string[] };
 
@@ -25,8 +25,11 @@ export type HelperEdit = { set?: HelperSet; clear?: true };
 /** The edit for a repository or a workspace, as `SET_HELPERS` takes it. */
 export type HelperChange = { repository?: string; workspace?: string } & HelperEdit;
 
-/** What stands where nothing is set: the twins' `HelperRule.Default`. */
-export const HELPER_DEFAULT: HelperRule = { mode: 'ask', agents: [] };
+/**
+ * What stands where nothing is set: the twins' `HelperRule.Default` (HELPERDEFAULT1, D163's 2026-10-24 note), `on` for Daoris's own
+ * agents, those it has set up and signed in on this machine, which the driver reads from its accounts as it judges each ask.
+ */
+export const HELPER_DEFAULT: HelperRule = { mode: 'on', agents: [] };
 
 const MODES = ['ask', 'on', 'off'] as const;
 
@@ -50,10 +53,14 @@ export function helperSays(t: TFunction, rule: HelperRule): string[] {
   ];
 }
 
-/** What a Setup row says of the rule standing: the door's sentences, then where it was set, the default included. */
+/**
+ * What a Setup row says of the rule standing: the door's sentences, then where it was set, the default included. The default
+ * asks only the agents Daoris set up and signed in on this machine (HELPERDEFAULT1), which it says in place of a list.
+ */
 export function helperRowSays(t: TFunction, rule: HelperRule, from: { source?: HelperSource | null; workspace?: string }): string {
+  const own = from.source === 'repository' || from.source === 'workspace';
   return [
-    ...helperSays(t, rule),
+    ...(own ? helperSays(t, rule) : [t('settings.helpers.says.on'), t('settings.helpers.says.setUpAgents')]),
     from.source === 'repository' ? t('settings.helpers.from.repository')
       : from.source === 'workspace' ? t('settings.helpers.from.workspace', { workspace: from.workspace })
         : t('settings.helpers.from.default'),

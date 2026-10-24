@@ -525,6 +525,9 @@ export const HELPER_REASONS: Readonly<Record<string, { key: string; values: read
   'hand-uncertain': { key: 'note.helper.why.hand-uncertain', values: [] },
   // LIMITRESUME1h: a limit cut it off and the session no longer waits on it (its line is `helper.limited`, which says when).
   limited: { key: 'note.helper.why.limited', values: [] },
+  // HELPERDEFAULT1: under the default, only the agents Daoris set up and signed in on this machine are asked.
+  'not-set-up': { key: 'note.helper.why.not-set-up', values: [] },
+  'none-set-up': { key: 'note.helper.why.none-set-up', values: [] },
 };
 
 /**

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
-import { HelperField, type HelperRule, helperRowSays, helperSays, helperSummary, helperToast } from './Helpers';
+import { HELPER_DEFAULT, HelperField, type HelperRule, helperRowSays, helperSays, helperSummary, helperToast } from './Helpers';
 
 // DOORS1b (D163 point 3, D164's amendment point 3): what a helper a repository's agent asks for does, set on its Setup's
 // *Sessions* and on a workspace's Defaults as `daoris driver helpers` sets it from a terminal (D50). Each mode's sentence is the
@@ -40,9 +40,14 @@ describe('what a helpers rule says', () => {
   });
 
   it('says where it was set, the default included, and folds to its mode', () => {
-    expect(helperRowSays(t, { mode: 'ask', agents: [] }, { source: 'default' })).toBe(
+    // HELPERDEFAULT1: the default starts Daoris's own agents at once, those set up and signed in here.
+    expect(helperRowSays(t, HELPER_DEFAULT, { source: 'default' })).toBe(
+      'A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each. Only Daoris\'s own '
+      + "agents are asked, those it has set up and signed in on this machine: the one the session names, else another maker's; one "
+      + "it names that is not among them is refused with the reason. Daoris's default: nothing is set.");
+    expect(helperRowSays(t, { mode: 'ask', agents: [] }, { source: 'workspace', workspace: 'work' })).toBe(
       'Each helper an agent asks for waits for your yes. No agent is named here, so a session may ask any: the one it names, else '
-      + "another maker's agent. Daoris's default: nothing is set.");
+      + "another maker's agent. From the workspace work.");
     expect(helperRowSays(t, { mode: 'off', agents: [] }, { source: 'workspace', workspace: 'work' }))
       .toBe('A helper is not offered to a session here: only your own press asks one. From the workspace work.');
     expect(helperRowSays(t, { mode: 'off', agents: [] }, { source: 'repository' }))
@@ -68,6 +73,7 @@ describe('what a helpers rule says', () => {
       '只有 `codex-acp`，其次 `dsh` 可以帮忙；会话没有点名其中一个时，按这个顺序尝试。',
     ]);
     expect(helperRowSays(t, { mode: 'off', agents: [] }, { source: 'repository' })).toBe('这里的会话没有助手可请：只有你自己按下才会请一位。为这个仓库设定。');
+    expect(helperRowSays(t, HELPER_DEFAULT, { source: 'default' })).toContain('只请 Daoris 自己的智能体');
     expect(helperSummary(t, { mode: 'ask', agents: [] })).toBe('助手需你同意');
     expect(helperToast(t, 'web-app', { clear: true })).toBe('web-app 重新沿用上一级的助手规则。');
   });

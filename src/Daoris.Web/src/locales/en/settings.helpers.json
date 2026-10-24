@@ -9,6 +9,7 @@
   "settings.helpers.says.agentsOne": "Only {{agents}} may help.",
   "settings.helpers.says.agentsMany": "Only {{agents}}, may help, tried in that order unless the session names one of them.",
   "settings.helpers.says.anyAgent": "No agent is named here, so a session may ask any: the one it names, else another maker's agent.",
+  "settings.helpers.says.setUpAgents": "Only Daoris's own agents are asked, those it has set up and signed in on this machine: the one the session names, else another maker's; one it names that is not among them is refused with the reason.",
   "settings.helpers.elseJoin": ", else ",
   "settings.helpers.from.repository": "Set for this repository.",
   "settings.helpers.from.workspace": "From the workspace {{workspace}}.",

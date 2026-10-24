@@ -10,6 +10,11 @@ with the version and date at release.
   refusal names them and how to address one as a quest, each a session of its own. Where it declares none, it says a
   `daoris.lanes.json` with a steward lane is what lets the repository hand its own work out, and the `registry` tool's row for that
   repository says the same.
+- A session's agent may now ask Daoris's own agents for help without waiting for your yes (HELPERDEFAULT1). Where you set no
+  helpers rule for a repository or its workspace, a helper it asks for starts at once if it is one of the agents Daoris has set up and
+  signed in on this machine; one it names that is not is refused, and the session reads why. A rule you set still wins: *Ask me* still
+  waits for your yes and *Not offered* still offers none. To keep a workspace on *Ask me*, set it on its Setup or run
+  `daoris driver helpers --workspace <name> --mode ask`.
 - The steward's door is built and no role is offered yet (STEWARDROLE1a-i, D209). Nothing you use changes until the steward's
   activation. Once a role is offered, *Appoint…* opens a tab of Daoris's terminal panel that runs Daoris's own pinned Claude Code,
   checked against the bytes its install verified, never the `claude` on your PATH. It starts on a configuration Daoris writes, with

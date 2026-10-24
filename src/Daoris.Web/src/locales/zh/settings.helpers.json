@@ -9,6 +9,7 @@
   "settings.helpers.says.agentsOne": "只有 {{agents}} 可以帮忙。",
   "settings.helpers.says.agentsMany": "只有 {{agents}} 可以帮忙；会话没有点名其中一个时，按这个顺序尝试。",
   "settings.helpers.says.anyAgent": "这里没有指定智能体，所以会话可以请任何智能体帮忙：它点名的那个，否则是另一家厂商的智能体。",
+  "settings.helpers.says.setUpAgents": "只请 Daoris 自己的智能体，即它在本机上设置好并已登录的那些：会话点名的那个，否则是另一家厂商的；点名其他智能体会被拒绝并说明原因。",
   "settings.helpers.elseJoin": "，其次 ",
   "settings.helpers.from.repository": "为这个仓库设定。",
   "settings.helpers.from.workspace": "沿用工作区 {{workspace}}。",

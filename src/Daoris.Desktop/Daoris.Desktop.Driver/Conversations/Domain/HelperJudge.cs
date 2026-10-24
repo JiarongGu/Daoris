@@ -35,7 +35,9 @@ public sealed record HelperVerdict(string Kind, string? Code = null)
 /// <remarks>
 /// <para><b>The person's rule is for an agent's ask.</b> <c>off</c> refuses it, <c>ask</c> holds it <c>waiting</c> until the
 /// person approves (MIXAGENT2b's press) or says no (HELPERNO1's, a refusal <see cref="HelperWhy.Declined"/> the bridge writes with
-/// its note, past judging here like any refusal), <c>on</c> starts it within the limits. An ask the person wrote themselves (the
+/// its note, past judging here like any refusal), <c>on</c> starts it within the limits. Where nothing is set, the default is
+/// <c>on</c> for the agents Daoris set up and signed in on this machine (HELPERDEFAULT1), and an ask naming another is refused
+/// <see cref="HelperWhy.NotSetUp"/>, as one with none set up is <see cref="HelperWhy.NoneSetUp"/>. An ask the person wrote themselves (the
 /// terminal verb) is theirs: they said yes by typing it, so it goes whatever the rule says.</para>
 ///
 /// <para><b>The limits</b> (design §5): at most two helpers at once per asker, refused in a coded sentence the asker reads past
@@ -65,6 +67,14 @@ public static class HelperJudge
         if (ask.AskedBy == HelperAsk.ByAgent)
         {
             if (rule.Mode == HelperRules.Off) return HelperVerdict.Refuse(HelperWhy.Off);
+            // HELPERDEFAULT1 (D163's 2026-10-24 note): the default asks Daoris's own agents alone, those set up and signed in here.
+            if (rule.SetUp && ask.Agent is { Length: > 0 } named
+                           && !rule.Agents.Any(agent => string.Equals(agent, named, StringComparison.OrdinalIgnoreCase)))
+            {
+                return HelperVerdict.Refuse(HelperWhy.NotSetUp);
+            }
+
+            if (rule.SetUp && rule.Agents.Count == 0) return HelperVerdict.Refuse(HelperWhy.NoneSetUp);
             // A cooling ask already ran once (LIMITRESUME1h): the yes it started under holds for its run again.
             if (rule.Mode == HelperRules.Ask && state is not { State: HelperStates.Approved or HelperStates.Cooling }) return HelperVerdict.Wait(null);
         }

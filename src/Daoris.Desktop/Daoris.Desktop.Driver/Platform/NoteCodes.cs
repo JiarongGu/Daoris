@@ -619,6 +619,9 @@ public static class NoteCodes
         new(HelperWhy.HandUncertain, [], "note.helper.why.hand-uncertain"),
         // LIMITRESUME1h: a limit ended its turn and the session no longer waits on it (its note is `helper.limited`, which says when).
         new(HelperWhy.Limited, [], "note.helper.why.limited"),
+        // HELPERDEFAULT1: under the default, only the agents Daoris set up and signed in on this machine are asked (a reason is additive).
+        new(HelperWhy.NotSetUp, [], "note.helper.why.not-set-up"),
+        new(HelperWhy.NoneSetUp, [], "note.helper.why.none-set-up"),
     ]);
 
     /// <summary>Why a piece was refused, held or uncertain (COAGENT1b, <see cref="PartnerWhy"/>): the page's <c>note.partner.why.*</c>.</summary>

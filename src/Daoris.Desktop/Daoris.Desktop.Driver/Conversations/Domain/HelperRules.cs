@@ -4,14 +4,27 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a helper an agent asks for does (MIXAGENT2a-i, D163 point 5; the mixed agents design §5): <c>ask</c> (the default) waits
-/// for the person's yes, <c>on</c> starts it at once within the limits, <c>off</c> offers no tool. <see cref="Agents"/> are the
-/// adapters the person lets be asked, in the order they are tried; none named is any other maker's first (D155 point 4).
+/// What a helper an agent asks for does (MIXAGENT2a-i, D163 point 5; the mixed agents design §5): <c>ask</c> waits for the person's
+/// yes, <c>on</c> starts it at once within the limits, <c>off</c> offers no tool. <see cref="Agents"/> are the adapters the person
+/// lets be asked, in the order they are tried; none named is any other maker's first (D155 point 4).
 /// </summary>
 public sealed record HelperRule(string Mode, IReadOnlyList<string> Agents)
 {
-    /// <summary>What stands where nothing is set: each ask waits for the person's yes, and no agent is named.</summary>
-    public static HelperRule Default { get; } = new(HelperRules.Ask, []);
+    /// <summary>
+    /// What stands where nothing is set (HELPERDEFAULT1, D163's 2026-10-24 note): <c>on</c> for Daoris's own agents, those it has set
+    /// up and signed in on this machine (<see cref="SetUp"/>), which the driver reads from its accounts at each judgement
+    /// (<see cref="Over"/>). Never written to <c>driver.json</c>: a rule the person sets there replaces it whole.
+    /// </summary>
+    public static HelperRule Default { get; } = new(HelperRules.On, []) { SetUp = true };
+
+    /// <summary>
+    /// The default's agents are this machine's set-up ones (HELPERDEFAULT1): an agent's ask naming another is refused
+    /// <see cref="HelperWhy.NotSetUp"/>, and one naming none with none set up <see cref="HelperWhy.NoneSetUp"/>.
+    /// </summary>
+    public bool SetUp { get; init; }
+
+    /// <summary>The default with this machine's set-up agents as its agents; a rule the person set is returned as it is.</summary>
+    public HelperRule Over(IReadOnlyList<string> setUp) => SetUp ? this with { Agents = setUp } : this;
 }
 
 /// <summary>Where a repository's helpers rule was set: <see cref="HelperRules.DefaultSource"/> where nothing was.</summary>
@@ -148,7 +161,8 @@ public static class HelperRules
 
     /// <summary>
     /// The rule standing for a repository: its own, else its workspace's (one in no workspace being in <c>default</c>), else
-    /// <see cref="HelperRule.Default"/> from <see cref="DefaultSource"/> — names matched in any case, as every door matches them.
+    /// <see cref="HelperRule.Default"/> from <see cref="DefaultSource"/> — names matched in any case, as every door matches them. The
+    /// default's agents are left for the driver to read from this machine's accounts (<see cref="HelperRule.Over"/>).
     /// </summary>
     public static ResolvedHelpers Resolve(DriverConfig config, string repository, string? workspace) =>
         config.Helpers.TryGetValue(repository.Trim(), out var own)

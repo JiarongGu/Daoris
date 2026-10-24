@@ -66,7 +66,8 @@ public sealed class DriverModuleHelpersTests : DriverModuleBridge
 
         Assert.Equal(["engine", "game", "tools"], helpers.Select(row => row.GetProperty("repository").GetString()));
         Assert.Equal(["workspace", "repository", "default"], helpers.Select(row => row.GetProperty("source").GetString()));
-        Assert.Equal(["on", "off", "ask"], helpers.Select(row => row.GetProperty("rule").GetProperty("mode").GetString()));
+        // HELPERDEFAULT1: the default is `on`, its agents those set up here, which the driver reads as it judges each ask.
+        Assert.Equal(["on", "off", "on"], helpers.Select(row => row.GetProperty("rule").GetProperty("mode").GetString()));
         Assert.Equal(["codex-acp"], helpers[0].GetProperty("rule").GetProperty("agents").EnumerateArray().Select(each => each.GetString()));
         Assert.Equal("aurora", helpers[0].GetProperty("workspace").GetString());
         Assert.Empty(helpers[2].GetProperty("rule").GetProperty("agents").EnumerateArray());
