@@ -65,8 +65,14 @@ public sealed class TransientRetry
     public Action<TransientEpisode, DateTimeOffset>? WaitsUntil { get; init; }
 
     /// <summary>The go-on's words, with the provider's own sentence (<c>retry.go-on</c>): the agent's word, English only, as <c>limit.reset</c> is.</summary>
+    /// <remarks>
+    /// Its last clause is the guarantee's other half (Codex's owed read of D210, finding 9): Daoris never replays the original prompt or
+    /// an accepted word, but an effect whose result the failure cut off may or may not have landed, so the agent checks before it
+    /// repeats one.
+    /// </remarks>
     public static string GoOnText(string? words) =>
-        $"The last request failed on the provider's side ({words ?? "no words"}). Go on where you stopped, after anything said above.";
+        $"The last request failed on the provider's side ({words ?? "no words"}). Go on where you stopped, after anything said above. "
+        + "Before you repeat a step whose result you did not see, check whether it already took effect.";
 
     private readonly Lock _gate = new();
     private readonly List<ChatMessage> _uncertain = [];
@@ -148,8 +154,14 @@ public sealed class TransientEpisode(DateTimeOffset began, AgentError first)
     /// <summary>The provider's own sentence, as the first failure said it: what the line, the go-on and the end quote.</summary>
     public string? Words => First.Failure.Words;
 
-    /// <summary>The tries made so far, a failed settling turn among them.</summary>
+    /// <summary>The tries made so far, a failed settling turn among them; never past <see cref="TransientRetry.Bound"/>.</summary>
     public int Tries { get; internal set; }
+
+    /// <summary>
+    /// The turns already on the wire that failed while the wire settled after the tries were spent (Codex's owed read of D210, finding 2):
+    /// written before the episode could hold them, so each runs its own turn, and none counts a try past the bound or authorizes one.
+    /// </summary>
+    public int SettledPast { get; internal set; }
 
     /// <summary>The time actually waited between tries, read off the handed clock.</summary>
     public TimeSpan Waited { get; internal set; }

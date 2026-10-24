@@ -454,8 +454,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 // MODELROLE1c2 (D205 §3.5(a)): a resume keeps its asked choice and never moves to another, so a refusal at the open ends the
                 // open and puts the record back (ConcludeResumedAsync); what the open lists is kept as its account's reading.
                 offers: new OpenOffers(selection.Version, selection.Profile, _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
-                // AGENTERRORS1a (D210 §5.1, §5.5): a continuation of a driven quest session is tried again as its start is.
-                transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, retryCt),
+                // AGENTERRORS1a (D210 §5.1, §5.5): a continuation of a driven quest session is tried again as its start is, read against
+                // the quest as the look planned it, so a closed quest's word and an answered question's resume are this run's (finding 5).
+                transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, quest.Status, quest.Awaits, retryCt),
                 conclude: (exitCode, used, turnFailed, ended) =>
                     ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended,
                         openedAt, ct))
@@ -595,6 +596,39 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// <para><b>The words leave the record by their ids</b>, once they went and before the conclusion moves it, so a park the
     /// conclusion makes, which clears what waits, never drops one the session took without keeping it on the ask.</para>
     /// </remarks>
+    /// <summary>
+    /// A resume's open refused with a limit or an access failure, read by the transient retry's reader (Codex's owed read of D210, finding
+    /// 6): its account's policy as a failed run's conclusion applies it, read from the refusal's own words. A limit cools its account,
+    /// by its sentence or, read by its code alone, for D125's unstated hour; an access failure marks its account as the reader read it:
+    /// refused by a credential's refusal, the adapter's words or its owner's (the reader closes <c>AccountRefused</c>'s missing owner's
+    /// fallback, the design §1.2), and signed out by a sign-in's words or an access code. The record's own end stays the refused resume's.
+    /// </summary>
+    private void OpeningAccount(AgentError opening, ISessionAdapter adapter, HarnessSelection selection, string sessionId)
+    {
+        var words = opening.Failure.Words is { Length: > 0 } said ? said : opening.By;
+        if (opening.Kind == AgentErrorKind.Limit)
+        {
+            _driver.AccountLimited(
+                SessionConclusion.Of("failed", DoorNotes.Failed(words)), adapter, selection, words, sessionId, used: null, byCode: opening.Limit);
+            return;
+        }
+
+        if (opening.By.EndsWith(":words:refused", StringComparison.Ordinal))
+        {
+            _driver.RefuseAccount(adapter, selection, adapter.Toolchain?.Owner(adapter.Name) ?? adapter.Name);
+            return;
+        }
+
+        if (opening.By.EndsWith(":words:sign-in", StringComparison.Ordinal))
+        {
+            _driver.AccountSignedOut(SessionConclusion.Of("failed", DoorNotes.Failed(words)), adapter, selection, words);
+            return;
+        }
+
+        // Read by a code the door declares (`AuthRequiredCode`, an access kind or status): its sign-in is what it says ended.
+        _context.Harnesses.SignedOut(adapter.Name, selection.Profile);
+    }
+
     private async Task<(StartRun? Run, ContinueReason? FellBack)> ConcludeResumedAsync(
         QuestView quest, PriorSession park, ISessionAdapter adapter, HarnessSelection selection, ResumeAsk resume,
         string workTree, string transcript, string? before, int? exitCode, AcpUsage? used, string? turnFailed, HarnessEnding ended,
@@ -629,6 +663,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         // 🔴 Whether its quest had closed, as the look planned the run: never as the run left it, since a resumed run closes
         // its own quest, and read after it an answered park that finished its work took a closed quest's ending (MSG1b).
         var closed = quest.Status is not ("Open" or "Taken");
+
+        // 🔴 Codex's owed read of D210, finding 6: an open refused with a limit or an access failure after a transient one was wrapped as
+        // a refused resume, whose fallback below came first and read no account. The typed reading keeps its account's policy, applied as
+        // a failed run's conclusion applies it, before the fallback is chosen; the person's words still go back unprompted.
+        if (resume.Refused is not null && _context.Processes.StopMade(sessionId) is null && ended.Transient?.Last is
+                { Failure.Where: DoorWhere.Open, Kind: AgentErrorKind.Limit or AgentErrorKind.Access } opening)
+        {
+            OpeningAccount(opening, adapter, selection, sessionId);
+        }
 
         if (resume.Refused is { } refused)
         {

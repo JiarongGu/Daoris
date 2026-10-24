@@ -621,7 +621,7 @@ internal sealed class ChatTurns(
         {
             if (_finishing || _gone) return false;
             // Off the record once steered (COWORK1c): waiting again in this process alone.
-            _waiting.Insert(0, message with { Kept = false, Attempting = null, Went = null });
+            _waiting.Insert(0, message with { Kept = false, Attempting = null, Marking = null, Went = null });
             start = !_pumping;
             if (start)
             {

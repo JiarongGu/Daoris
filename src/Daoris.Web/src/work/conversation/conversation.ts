@@ -402,6 +402,36 @@ export type Turn = {
   waitingSince?: string;
 };
 
+/** A transient episode's one line (AGENTERRORS1a, D210 §8), by its code. */
+const transientLine = (event: SessionEvent): boolean => event.kind === 'note' && event.parts?.[0]?.code === 'agent.transient-retrying';
+
+/**
+ * The message blocks a transient episode's failed attempts streamed (Codex's owed read of D210, finding 10), by key: each followed,
+ * past its own chunks and the meters, by the episode's line, by a try or a wait, or by the driver's note at its end, never by an
+ * answer; none before the episode's first failure, which its line follows.
+ */
+const failedAttempts = (events: readonly SessionEvent[], where: Record<number, string>): Set<string> => {
+  const failed = new Set<string>();
+  const lines = events.filter(transientLine).map((event) => event.seq);
+  if (lines.length === 0) return failed;
+  const first = Math.min(...lines);
+  let block: string | undefined;
+  let last = 0;
+  for (const event of events) {
+    if (event.kind === 'message') {
+      block = where[event.seq];
+      last = event.seq;
+      continue;
+    }
+    if (event.kind === 'usage' || event.kind === 'receipt') continue;
+    if (block !== undefined && (transientLine(event) || (last > first && (event.kind === 'transient' || event.kind === 'note')))) {
+      failed.add(block);
+    }
+    block = undefined;
+  }
+  return failed;
+};
+
 /** Context as the harness reported it: the latest reading and the highest (TOOL3's high-water mark). */
 export type Usage = { used: number; size: number; most: number };
 
@@ -498,6 +528,8 @@ export function toTurns(
   const takers = new Map<Turn, Turn>();
   // A word said at a next step, taken by the event just before this one (USERSHOWN1): the door's failure right after undoes it.
   let taken: { turn: Turn; word: string; seq: number; at: number; was: { turn: Turn; key: string; seq: number; block: Block } } | null = null;
+  // A transient episode's try or wait (AGENTERRORS1a2) parts the words on either side: each attempt's stream is its own block.
+  let parted = false;
 
   for (const event of events) {
     const key = `e${event.seq}`;
@@ -584,7 +616,8 @@ export function toTurns(
         const last = turn.items[turn.items.length - 1];
         // Chunks of one message join; a chunk of another message, by the ids the wire gives them,
         // begins anew (found looking at CONSOLE2: "DONESubagent finished"). No id joins, as before.
-        const same = last && last.kind === event.kind && (!last.id || !event.id || last.id === event.id);
+        const same = !parted && last && last.kind === event.kind && (!last.id || !event.id || last.id === event.id);
+        parted = false;
         if (same) {
           last.text = `${last.text ?? ''}${event.text ?? ''}`;
           last.id ??= event.id;
@@ -702,6 +735,7 @@ export function toTurns(
       }
       case 'transient':
         // AGENTERRORS1a2 (D210 §5.1, §8): a try or a wait of a transient episode is quiet, never a line; the head reads it (`retryingAt`).
+        parted = true;
         break;
       case 'receipt': {
         // COWORK1c (the design §7, §8.2): no block of its own; it folds under the ask its word became, below.
@@ -722,13 +756,25 @@ export function toTurns(
   if (transient.length > 0) {
     // As the door says it and as the agent streamed it: the words, and the words past the door's own preface (`Internal error: `).
     const quoted = transient.flatMap((words) => [words, words.slice(words.indexOf(': ') + 2)]).filter((text) => text.trim().length > 20);
+    const failed = failedAttempts(events, where);
     for (const turn of turns) {
       const repeats: Block[] = [];
       for (const item of turn.items) {
-        if (item.kind !== 'message' || !item.text) continue;
-        // Consecutive chunks are one block, so a repeat may follow the agent's own words or another repeat in the same block.
-        const left = quoted.reduce((text, said) => text.split(said).join(''), item.text);
-        if (left === item.text) continue;
+        if (item.kind !== 'message' || !item.text || !failed.has(item.key)) continue;
+        // 🔴 Codex's owed read of D210, finding 10: only a failed attempt's stream, and only the error it ends on. Consecutive chunks are
+        // one block, so a repeat may follow the agent's own words or another repeat; a quotation inside them, or in any other message
+        // before or after the episode, stays as written.
+        let left = item.text.trimEnd();
+        for (let cut = true; cut;) {
+          cut = false;
+          for (const said of quoted) {
+            if (left.endsWith(said.trim())) {
+              left = left.slice(0, left.length - said.trim().length).trimEnd();
+              cut = true;
+            }
+          }
+        }
+        if (left === item.text.trimEnd()) continue;
         if (left.trim()) item.text = left.trim();
         else repeats.push(item);
       }

@@ -1228,26 +1228,40 @@ describe('toTurns, through a transient episode (AGENTERRORS1a, D210 §5.1, §8)'
   const at = (time: string) => `2026-10-24T${time}Z`;
   const error = 'API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.';
   const words = `Internal error: ${error}`;
-  const goOn = `The last request failed on the provider's side (${words}). Go on where you stopped, after anything said above.`;
+  const goOn = `The last request failed on the provider's side (${words}). Go on where you stopped, after anything said above. `
+    + 'Before you repeat a step whose result you did not see, check whether it already took effect.';
   const streamed = (seq: number, time: string): SessionEvent => ({ seq, at: at(time), kind: 'message', text: error });
+  // A try going and a wait beginning (AGENTERRORS1a2): the quiet events each try's failure sits between, as the record keeps them.
+  const tried = (seq: number, time: string, number: number): SessionEvent => ({ seq, at: at(time), kind: 'transient', try: number });
+  const waits = (seq: number, time: string, next: string): SessionEvent => ({ seq, at: at(time), kind: 'transient', next: at(next) });
+  const line = (seq: number): SessionEvent => ({
+    seq, at: at('00:23:35'), kind: 'note', text: `claude-code-acp's provider failed. Daoris tries again in this conversation: … ${words}`,
+    parts: [
+      { code: 'agent.transient-retrying', values: { agent: 'claude-code-acp', count: 5, minutes: 31, at: '2026-10-24T00:24:35Z' }, text: "claude-code-acp's provider failed. …" },
+      { words, by: 'program' },
+    ],
+  });
+  // The first try's go-on, kept and shown once; each later try carries it as a block neither kept nor shown.
+  const kept = (seq: number): SessionEvent => ({ seq, at: at('00:24:35'), kind: 'user', origin: 'target', from: 'daoris', id: 'w1', text: goOn });
   const record: SessionEvent[] = [
     { seq: 1, at: at('00:20:00'), kind: 'user', origin: 'target', text: 'Serve the report.' },
     { seq: 2, at: at('00:20:05'), kind: 'message', text: 'Reading the report code.' },
     streamed(3, '00:23:35'),
-    {
-      seq: 4, at: at('00:23:35'), kind: 'note', text: `claude-code-acp's provider failed. Daoris tries again in this conversation: … ${words}`,
-      parts: [
-        { code: 'agent.transient-retrying', values: { agent: 'claude-code-acp', count: 5, minutes: 31, at: '2026-10-24T00:24:35Z' }, text: "claude-code-acp's provider failed. …" },
-        { words, by: 'program' },
-      ],
-    },
-    // The first try's go-on, kept and shown once; each later try carries it as a block neither kept nor shown.
-    { seq: 5, at: at('00:24:35'), kind: 'user', origin: 'target', from: 'daoris', id: 'w1', text: goOn },
-    streamed(6, '00:24:40'),
-    streamed(7, '00:26:45'),
-    streamed(8, '00:30:50'),
-    { seq: 9, at: at('00:39:00'), kind: 'message', text: 'Served.' },
-    { seq: 10, at: at('00:39:01'), kind: 'turn', stopReason: 'end_turn' },
+    line(4),
+    waits(5, '00:23:35', '00:24:35'),
+    tried(6, '00:24:35', 1),
+    kept(7),
+    streamed(8, '00:24:40'),
+    waits(9, '00:24:40', '00:26:40'),
+    tried(10, '00:26:40', 2),
+    streamed(11, '00:26:45'),
+    waits(12, '00:26:45', '00:30:45'),
+    tried(13, '00:30:45', 3),
+    streamed(14, '00:30:50'),
+    waits(15, '00:30:50', '00:38:50'),
+    tried(16, '00:38:50', 4),
+    { seq: 17, at: at('00:39:00'), kind: 'message', text: 'Served.' },
+    { seq: 18, at: at('00:39:01'), kind: 'turn', stopReason: 'end_turn' },
   ];
 
   it("shows the provider's error once, the go-on once and one line, through three failed tries", () => {
@@ -1260,6 +1274,41 @@ describe('toTurns, through a transient episode (AGENTERRORS1a, D210 §5.1, §8)'
     expect(items.filter((item) => item.kind === 'message').map((item) => item.text)).toEqual(['Reading the report code.', 'Served.']);
     // A jump to a repeat lands on a block that is there, or on its turn, never on a block that is gone.
     const keys = new Set([...turns.map((turn) => turn.key), ...items.map((item) => item.key)]);
-    for (const seq of [3, 6, 7, 8]) expect(keys.has(where[seq]!)).toBe(true);
+    for (const seq of [3, 8, 11, 14]) expect(keys.has(where[seq]!)).toBe(true);
+  });
+
+  /**
+   * 🔴 Codex's owed read of D210, finding 10: the suppression is the failed attempts' alone. Each failed attempt's stream is followed by
+   * the episode's line, a wait or the end's note, never by an answer; an authored message that quotes the provider's error before the
+   * episode, or after it in a turn that answered, merged into a larger message or alone, stays verbatim. Red before: every message in
+   * every turn lost the quoted error, and a quotation alone disappeared.
+   */
+  it('removes only the failed attempts’ provider error, and keeps a quotation before or after the episode verbatim', () => {
+    const before = `Earlier the log said: ${error} I will watch for it.`;
+    const quoted = `Served. The overload (${error}) is over.`;
+    const episode: SessionEvent[] = [
+      { seq: 1, at: at('00:10:00'), kind: 'user', origin: 'target', text: 'Serve the report.' },
+      { seq: 2, at: at('00:10:05'), kind: 'message', text: before },
+      { seq: 3, at: at('00:10:06'), kind: 'tool', id: 't1', title: 'Read report.ts', status: 'completed' },
+      { seq: 4, at: at('00:12:00'), kind: 'message', text: error },
+      { seq: 5, at: at('00:12:01'), kind: 'turn', stopReason: 'end_turn' },
+      { seq: 6, at: at('00:20:00'), kind: 'user', origin: 'person', text: 'Go on.' },
+      { seq: 7, at: at('00:20:05'), kind: 'message', text: 'Reading the report code.' },
+      { seq: 8, at: at('00:23:35'), kind: 'message', text: error },
+      line(9),
+      waits(10, '00:23:35', '00:24:35'),
+      tried(11, '00:24:35', 1),
+      kept(12),
+      streamed(13, '00:24:40'),
+      waits(14, '00:24:40', '00:26:40'),
+      tried(15, '00:26:40', 2),
+      { seq: 16, at: at('00:30:00'), kind: 'message', text: quoted },
+      { seq: 17, at: at('00:30:01'), kind: 'turn', stopReason: 'end_turn' },
+    ];
+
+    const { turns } = toTurns(episode);
+    const texts = turns.flatMap((turn) => turn.items).filter((item) => item.kind === 'message').map((item) => item.text);
+
+    expect(texts).toEqual([before, error, 'Reading the report code.', quoted]);
   });
 });

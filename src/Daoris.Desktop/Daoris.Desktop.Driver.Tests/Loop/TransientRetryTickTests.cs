@@ -342,6 +342,131 @@ public sealed class TransientRetryTickTests : IDisposable
             last["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
     }
 
+    /// <summary>
+    /// 🔴 Codex's owed read of D210, finding 5, a D79 continuation: the quest's session asked another repository and ended waiting; its
+    /// answer came, and the resume's first prompt meets the 529. The question it names stays on the quest once answered, which is
+    /// history, not this run's wait: the run is tried again and finishes its quest. Red before: the owner's check read the named
+    /// question as a wait, sent no try, and the quest stayed taken.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_after_its_answered_question_is_tried_again_through_a_transient_failure()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        service.Question();
+        var clock = new MovedClock();
+        var driver = Protocol(service, "asks", clock);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal("Taken", service.Status("q1"));
+
+        service.Close("q2", "Done", "POST /notes takes { text }.");
+        var tick = driver.RunOnceAsync();
+        await PassAsync(clock, tick, 1);
+        var look = await tick.WaitAsync(Poll.Patience);
+
+        var seen = Seen(service, string.Join(" | ", look.Events));
+        Assert.True(service.Status("q1") == "Done", seen);
+        var resumed = Prompts().Where(prompt => prompt["session"]!.GetValue<string>() != "s1").ToList();
+        Assert.True(resumed.Count == 2, seen);
+        Assert.StartsWith(
+            "The last request failed on the provider's side", Assert.Single(resumed[1]["blocks"]!.AsArray())!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// 🔴 Finding 5, the person's explicit continuation of a closed quest: their word resumes a done quest's conversation, and its prompt
+    /// meets the 529. The quest was closed before their word began, so its close is no new completion: the run is tried again and
+    /// answers them. Red before: the check read the closed quest as done, sent no try, and the record ended as though it had answered.
+    /// </summary>
+    [Fact]
+    public async Task The_person_s_word_to_a_closed_quest_s_session_is_tried_again_through_a_transient_failure()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var clock = new MovedClock();
+        var driver = Protocol(service, "closed-then", clock);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
+
+        await service.SayAsync("s1", "Also log the port.");
+        var tick = driver.RunOnceAsync();
+        await PassAsync(clock, tick, 1);
+        await tick.WaitAsync(Poll.Patience);
+
+        var seen = Seen(service);
+        var resumed = Prompts().Where(prompt => prompt["resumed"]!.GetValue<bool>()).ToList();
+        Assert.True(resumed.Count == 2, seen);
+        Assert.Equal(["Also log the port."], resumed[0]["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
+        Assert.StartsWith("The last request failed on the provider's side", Assert.Single(resumed[1]["blocks"]!.AsArray())!.GetValue<string>());
+        Assert.True(service.Said("s1").Count == 0, seen);
+    }
+
+    /// <summary>
+    /// 🔴 Finding 6: the person's word resumes the held record, and its open meets the 529 and then a limit by its code alone
+    /// (<c>rate_limit</c>, no sentence), at <c>session/resume</c> and at <c>session/load</c>. The limit keeps its policy through the
+    /// resume's wrapper: its account cools for D125's unstated hour before the refused resume's fallback is chosen. Red before: the
+    /// wrapper's refusal took the fallback first, and nothing cooled.
+    /// </summary>
+    [Theory]
+    [InlineData("open-limit")]
+    [InlineData("open-limit-load")]
+    public async Task A_limit_at_the_open_after_a_transient_failure_cools_its_account(string mode)
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var clock = new MovedClock();
+        var driver = Protocol(service, mode, clock);
+        var tick = driver.RunOnceAsync();
+        await PassAsync(clock, tick, 1, 2, 4, 8, 16);
+        await tick.WaitAsync(Poll.Patience);
+        Assert.True(service.State("s1") == "failed", Seen(service));
+
+        await service.SayAsync("s1", "Go on where the overload stopped you.");
+        var resuming = driver.RunOnceAsync();
+        await PassAsync(clock, resuming, 1);
+        await resuming.WaitAsync(Poll.Patience);
+
+        var method = mode.EndsWith("-load", StringComparison.Ordinal) ? "session/load" : "session/resume";
+        Assert.Equal(2, Heard().Count(line => line["method"]!.GetValue<string>() == method));
+        Assert.True(AccountCooling.Read(_home, clock.GetUtcNow()).Count > 0, Seen(service));
+        Assert.Equal(6, Prompts().Length);
+    }
+
+    /// <summary>
+    /// 🔴 Finding 6, access: the same open meets the 529 and then the stub's refused credential (<c>API Error: 401</c>), at
+    /// <c>session/resume</c> and at <c>session/load</c>. The account is marked as an access failure marks it, signed out, before the
+    /// fallback. Red before: nothing marked it.
+    /// </summary>
+    [Theory]
+    [InlineData("open-access")]
+    [InlineData("open-access-load")]
+    public async Task An_access_refusal_at_the_open_after_a_transient_failure_marks_its_account(string mode)
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var clock = new MovedClock();
+        var driver = Protocol(service, mode, clock);
+        var tick = driver.RunOnceAsync();
+        await PassAsync(clock, tick, 1, 2, 4, 8, 16);
+        await tick.WaitAsync(Poll.Patience);
+
+        await service.SayAsync("s1", "Go on where the overload stopped you.");
+        var resuming = driver.RunOnceAsync();
+        await PassAsync(clock, resuming, 1);
+        // The stub's own sign-in runs in its own home whatever its reading (OWNSPACE1a), so the refused resume's briefed fallback starts
+        // a session of its own, which meets the 529 as every first prompt here does: its waits are passed too.
+        while (!resuming.IsCompleted)
+        {
+            await Poll.Until(() => clock.Waiting || resuming.IsCompleted, () => "the look never ended", Poll.Patience);
+            if (!resuming.IsCompleted) clock.Advance(TimeSpan.FromMinutes(16));
+        }
+
+        await resuming.WaitAsync(Poll.Patience);
+        var method = mode.EndsWith("-load", StringComparison.Ordinal) ? "session/load" : "session/resume";
+        Assert.Equal(2, Heard().Count(line => line["method"]!.GetValue<string>() == method));
+        Assert.True(
+            AccountReads.Of(_home, "stub").Own?.Login == LoginState.Out,
+            $"reads: {(File.Exists(AccountReads.PathOf(_home)) ? File.ReadAllText(AccountReads.PathOf(_home)) : "none")}\n"
+            + $"notes: {string.Join(" | ", Events("s1").Where(e => e.Kind == SessionEventKind.Note).TakeLast(4).Select(e => e.Text))}\n{Seen(service)}");
+        Assert.False(AccountCooling.Read(_home, clock.GetUtcNow()).Count > 0, "an access refusal cooled an account");
+        Assert.Equal(6, Prompts().Count(prompt => prompt["conversation"]!.GetValue<string>() == "conv-s1"));
+    }
+
     private static async Task<string> SessionsJsonAsync(SaidStandIn service)
     {
         using var http = new HttpClient();
@@ -353,7 +478,11 @@ public sealed class TransientRetryTickTests : IDisposable
     /// first two prompts with the 529, streaming the error as its agent's words first as the adapter does, then closes the quest done;
     /// <c>always</c> fails every prompt; <c>always-open</c> too, never taking its quest. A resumed prompt is logged and closes the quest,
     /// but under <c>relentless</c>, which takes its quest and fails every prompt, a resumed one included. <c>open-fails</c> is
-    /// <c>always</c> whose first six resumes meet the 529 at the open, before any prompt, and whose seventh works.
+    /// <c>always</c> whose first six resumes meet the 529 at the open, before any prompt, and whose seventh works. <c>open-limit</c> and
+    /// <c>open-access</c> are <c>always</c> whose resume meets the 529 at the open and then a limit by its code alone, or the stub's refused
+    /// credential; with <c>-load</c> the agent offers no resume, so the open is <c>session/load</c>. <c>asks</c> takes its quest and waits on
+    /// <c>q2</c> (D79), and the resume's session meets the 529 once, then finishes; <c>closed-then</c> closes its quest done at once, and a
+    /// resumed prompt meets the 529 once, then is answered.
     /// </summary>
     private string Agent()
     {
@@ -372,6 +501,10 @@ public sealed class TransientRetryTickTests : IDisposable
             let conversation = null;
             let resumed = false;
             let prompts = 0;
+            let resumedPrompts = 0;
+            let opens = 0;
+            const fail = (frame, error) => send({ jsonrpc: '2.0', id: frame.id, error });
+            const overload = { code: -32603, message: 'Internal error: ' + 'API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.', data: { errorKind: 'overloaded' } };
             const say = (text) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
               update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } } });
             const lines = createInterface({ input: process.stdin });
@@ -379,7 +512,7 @@ public sealed class TransientRetryTickTests : IDisposable
               const frame = JSON.parse(line);
               if (frame.method === 'initialize') {
                 send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1,
-                  agentCapabilities: { loadSession: true, sessionCapabilities: { resume: {}, close: {} } } } });
+                  agentCapabilities: { loadSession: true, sessionCapabilities: mode.endsWith('-load') ? { close: {} } : { resume: {}, close: {} } } } });
               } else if (frame.method === 'session/new') {
                 conversation = 'conv-' + session;
                 heard({ method: 'session/new', conversation });
@@ -391,6 +524,14 @@ public sealed class TransientRetryTickTests : IDisposable
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: ' + overloaded, data: { errorKind: 'overloaded' } } });
                   return;
                 }
+                // open-limit, open-access: the open meets the 529, then a limit by its code alone or the stub's refused credential.
+                if (mode.startsWith('open-limit') || mode.startsWith('open-access')) {
+                  opens++;
+                  if (opens === 1) return fail(frame, overload);
+                  if (opens === 2) return fail(frame, mode.startsWith('open-limit')
+                    ? { code: -32603, message: 'Internal error: Rate limited.', data: { errorKind: 'rate_limit' } }
+                    : { code: -32603, message: 'Internal error: API Error: 401 API key is invalid.' });
+                }
                 conversation = frame.params.sessionId;
                 resumed = true;
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
@@ -398,6 +539,33 @@ public sealed class TransientRetryTickTests : IDisposable
                 prompts++;
                 const blocks = (frame.params?.prompt ?? []).filter((block) => block.type === 'text').map((block) => block.text);
                 heard({ method: 'session/prompt', conversation: frame.params?.sessionId, blocks, resumed });
+                if (mode === 'asks') {
+                  // D79: the first session takes its quest and asks q2; the resume's session meets the 529 once, then finishes.
+                  if (session === 's1') {
+                    await respond({ action: 'take' });
+                    await respond({ action: 'wait', on: 'q2' });
+                  } else if (prompts === 1) {
+                    say(overloaded);
+                    return fail(frame, overload);
+                  } else {
+                    say('Served.');
+                    await respond({ action: 'done', reason: 'served the report' });
+                  }
+                  return send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                }
+                if (mode === 'closed-then') {
+                  // The quest done at once; the person's word to its closed session meets the 529 once, then is answered.
+                  if (!resumed) {
+                    await respond({ action: 'take' });
+                    await respond({ action: 'done', reason: 'served the report' });
+                  } else if (++resumedPrompts === 1) {
+                    say(overloaded);
+                    return fail(frame, overload);
+                  } else {
+                    say('Logged the port.');
+                  }
+                  return send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                }
                 if (resumed && mode !== 'relentless') {
                   say('Went on where it stopped.');
                   await respond({ action: 'done', reason: 'went on' });

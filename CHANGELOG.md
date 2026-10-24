@@ -86,6 +86,11 @@ with the version and date at release.
   that keeps failing is held again (AGENTERRORS1a2). While Daoris waits to try again, the session's head says when. A word you
   added during a turn that the provider then refused, and a failure while the session opens, are tried again the same way, instead
   of leaving the session waiting on you or failing it.
+- While Daoris waits to try again after a provider failure, a word you say waits for the next try instead of going on its own, and
+  a word the agent may already have read is never sent again, even when the connection drops (AGENTERRORS1, Codex's read of D210).
+  Five tries stay five when queued words take a try's turn over. A session resumed after another repository answered it, and your
+  word to a finished quest's session, are tried again too. A limit or a refused sign-in met as a session reopens now cools or marks
+  its account, as one met in a turn does. The conversation keeps your own quotations of the provider's error as written.
 - When a repository's own git hook refuses the merge commit as you accept a session's work, Daoris now says so (HOOKMERGE1). It
   says that the hook refused it and nothing conflicted, and quotes what the hook printed. Before, it said only that git would not
   merge. Daoris still runs the repository's hooks and never skips them. Change what the hook refuses, or merge the branch yourself.
