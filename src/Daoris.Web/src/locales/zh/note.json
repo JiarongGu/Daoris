@@ -280,6 +280,7 @@
   "note.handed.why.resume": "它自己的对话已丢失",
   "note.handed.why.carry-on": "它在工作完成前停下了",
   "note.handed.why.retry": "它自己的对话无法恢复",
+  "note.handed.why.not-offered": "它的智能体在其账户上不提供所要求的模型",
   "note.handover.asked": "它的智能体要求转交这个会话；转交给 {{agent}} 前，等你同意或拒绝。",
   "note.handover.taking": "它的智能体要求转交这个会话：本轮结束后由 {{agent}} 接着做。",
   "note.handover.refused": "它的智能体要求转交这个会话，被拒绝：{{why}}。",

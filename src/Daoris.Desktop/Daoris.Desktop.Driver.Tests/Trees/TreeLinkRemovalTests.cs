@@ -114,7 +114,7 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
         Assert.StartsWith(Removed(tree), Assert.Single(said), StringComparison.Ordinal);
         Assert.False(Directory.Exists(tree.Path));
         Assert.Equal(Persons, await File.ReadAllTextAsync(file));
-        await PurgedAsync(file);
+        await PurgedAsync(file, root);
     }
 
     /// <summary>
@@ -153,7 +153,7 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
         Assert.StartsWith("tidy  engine: removed `daoris/s-0e0ded00`, whose tree's opening was cut off", Assert.Single(said), StringComparison.Ordinal);
         Assert.False(Directory.Exists(cut));
         Assert.Equal(Persons, await File.ReadAllTextAsync(file));
-        await PurgedAsync(file);
+        await PurgedAsync(file, root);
     }
 
     /// <summary>
@@ -192,13 +192,18 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
         return file;
     }
 
-    /// <summary>The one folder the look moved aside, purged once its wait is over: gone, and <paramref name="file"/> as it was.</summary>
-    private async Task PurgedAsync(string file)
+    /// <summary>
+    /// The one folder the look moved aside, purged once its wait is over: gone, and <paramref name="file"/> as it was. KEEPSIZE1b: a finished
+    /// tree's folder, its record kept, goes by the hour on a holding check in <paramref name="root"/>, run right before its rename; one the
+    /// look's tidy took that is no finished tree's goes at its days.
+    /// </summary>
+    private async Task PurgedAsync(string file, string root)
     {
         var aside = Assert.Single(Directory.GetDirectories(DaorisHome.Entry(_home, HomeEntry.Trees, ".tidied", "default", "engine")));
         var moved = TreeSetAside.MovedAt(Path.GetFileName(aside))!.Value;
 
-        var purged = new SessionTrees(_home).PurgeSetAside(moved.AddDays(15), KeepKinds.SetAside.Days);
+        var purged = (await new SessionTrees(_home).KeepSetAsideAsync(
+            KeepPolicy.Default, moved.AddDays(15), TimeSpan.FromMinutes(5), CancellationToken.None, (_, _) => root)).Purged;
 
         Assert.True(Assert.Single(purged).Purged, purged[0].Kept);
         Assert.False(Directory.Exists(aside));

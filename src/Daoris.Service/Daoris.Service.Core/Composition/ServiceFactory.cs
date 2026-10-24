@@ -182,6 +182,12 @@ public sealed record ComposedService(
     /// </summary>
     public OpinionDesk Opinions { get; init; } = null!;
 
+    /// <summary>
+    /// Finished trees' records (KEEPSIZE1b, the keep-size design §2.2): kept beside the session records, machine-local, posted by the
+    /// driver on loopback. Composed on every host and reached by none at a shared deployment, which maps no door to it.
+    /// </summary>
+    public WorkRecordStore Records { get; init; } = null!;
+
     /// <summary>A helper's record and its answer's return (MIXAGENT2a-ii, D163 point 2): a local host's two doors; a shared host's refuse.</summary>
     public HelperDesk Helpers { get; init; } = null!;
 
@@ -297,6 +303,7 @@ public static class ServiceFactory
         var quests = await QuestStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var sessions = await SessionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var opinions = await OpinionStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
+        var records = await WorkRecordStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var registrations = await RegistrationStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var keys = await ApiKeyStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
         var asks = await AskStore.OpenAsync(store.Connection, ct).ConfigureAwait(false);
@@ -399,6 +406,7 @@ public static class ServiceFactory
             Channel = new ChannelDesk(channel,askDesk, asks, ledger, quests, new StoreEntryFacts(quests, sessions)),
             History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals, channel),
             Opinions = new OpinionDesk(opinions, sessions, local: mode == ServiceMode.Local),
+            Records = records,
             Helpers = new HelperDesk(sessions, local: mode == ServiceMode.Local),
             Partners = new PartnerDesk(sessions, local: mode == ServiceMode.Local),
         };

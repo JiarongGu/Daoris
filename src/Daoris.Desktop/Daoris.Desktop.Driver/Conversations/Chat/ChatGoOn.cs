@@ -463,6 +463,16 @@ internal sealed class ChatGoOn
         new SessionArchive(_context.Home).Unarchive([sessionId]);
         _context.Marks.Clear(sessionId);
 
+        // 🔴 MODELROLE1d2 (D205 §3.5(b)): one its agent refused at the open began no conversation there, so it is never resumed: its go-on
+        // is a fresh start of its actor, its words the first message, a pick trying only its own agent's entries on its own account, and a
+        // refused continuation handed the brief of its line first. The come-up's go-on takes the same path.
+        if (record.NotOffered)
+        {
+            var fresh = await _move.NotOfferedAsync(record, json, config, onEnded, ct).ConfigureAwait(false);
+            if (fresh.SessionId is null) _context.Note(sessionId, LimitNotes.NotMoved(fresh.Message));
+            return new(fresh.SessionId, fresh.Message);
+        }
+
         // Its conversation is the adapter's that opened it, so it goes on on that one or not at all.
         var ranOn = record.Adapter ?? config.Adapter;
         ISessionAdapter? adapter = null;

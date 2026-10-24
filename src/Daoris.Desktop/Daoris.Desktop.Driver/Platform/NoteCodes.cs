@@ -596,6 +596,8 @@ public static class NoteCodes
         new(HandOverWhy.Resume, [], "note.handed.why.resume"),
         new(HandOverWhy.CarryOn, [], "note.handed.why.carry-on"),
         new(HandOverWhy.Retry, [], "note.handed.why.retry"),
+        // MODELROLE1d2 (D205 §3.5(b)): a replacement of a record its agent refused at the open.
+        new(HandOverWhy.NotOffered, [], "note.handed.why.not-offered"),
     ]);
 
     /// <summary>Why no helper answered a question (MIXAGENT2a-ii, <see cref="HelperWhy"/>): the page's <c>note.helper.why.*</c>.</summary>

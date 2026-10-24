@@ -76,13 +76,15 @@ public sealed class KeepingSlimTests : BranchTidyingFixture
     {
         var (_, tree, library, linked) = await PackagedTreeAsync();
         using var log = Log();
+        // KEEPSIZE1b: the service does not answer the record's post, so the folder waits its days and its record, and the slim takes it.
+        _ledger.RecordsDown = true;
 
         await new BranchTidying(_home).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
         var aside = AsideFolder();
         var manifest = SlimManifest.Read(SlimManifest.PathFor(aside)).Manifest;
         Assert.NotNull(manifest);
-        Assert.Equal((SlimStates.Moved, "engine", tree.Branch), (manifest.State, manifest.Repository, manifest.Branch));
+        Assert.Equal((SlimStates.Deleted, "engine", tree.Branch), (manifest.State, manifest.Repository, manifest.Branch));
         Assert.Equal(["node_modules", "web/node_modules"], manifest.Paths.Select(path => path.Path));
         Assert.True(Directory.Exists(Path.Combine(aside, "node_modules")));
 
@@ -123,7 +125,15 @@ public sealed class KeepingSlimTests : BranchTidyingFixture
 
         Assert.Equal(["node_modules", "web/node_modules"], Assert.Single(await new SessionTrees(_home).ListAsync()).Slimmed);
 
-        var purged = await Tidying(TimeSpan.FromDays(15)).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+        // KEEPSIZE1b (the keep-size design §3.4): a folder awaiting its record is kept past its days; once the service answers, its record
+        // is kept from the manifest alone, and the folder goes an hour after that.
+        await Tidying(TimeSpan.FromDays(15)).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+        Assert.True(Directory.Exists(aside));
+        _ledger.RecordsDown = false;
+        await Tidying(TimeSpan.FromDays(15)).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
+        Assert.Equal(SlimStates.Recorded, SlimManifest.Read(SlimManifest.PathFor(aside)).Manifest!.State);
+        Assert.Single(_ledger.Records);
+        var purged = await Tidying(TimeSpan.FromDays(15) + TimeSpan.FromMinutes(61)).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
         Assert.Contains(purged, line => line.StartsWith($"tidy  deleted the folder moved aside to {aside} on ", StringComparison.Ordinal));
         Assert.False(Directory.Exists(aside));

@@ -668,9 +668,9 @@ recorded decision, goes beyond copies. The changes before KEEPSIZE1b builds are:
 Findings 3, 4 and 5 settle the counts, the parts' one sum and the set-aside part before KEEPSIZE1d. Finding 9 is the merge with main's
 built KEEPSIZE1a. Each is a sentence or a rule, not a new mechanism.
 
-## Codex, the accepted text (owed)
+## Codex, the accepted text (2026-10-24)
 
-Codex's read of the accepted design and D195's note at `16e0950e2`, owed since round 3 when its credits ran out: 11 findings, 8 blocking; stands after named amendments, findings 1 to 6 amending KEEPSIZE1b before it merges.
+Codex's read of the accepted design and D195's note at `16e0950e2`, owed since round 3 when its credits ran out, verbatim: 11 findings, 8 blocking; stands after named amendments, findings 1 to 6 amending KEEPSIZE1b before it merges. The amendment it names is the design's §12.
 
 ### 1. Claims about the code
 
@@ -961,9 +961,9 @@ Sound. The only defect is the record-content loss in finding 3.
 
 **Verdict:** merge after named changes the steward can check. The build follows the accepted design closely. The sweep's order, the schema-2 manifest, `refused` never armed, the resume, the `read` threshold, the rename before the delete, `--first-parent`, the per-tree record and its idempotent, version-guarded store are right, and most listed cases are proved over real git. Two things must change before it merges. First, the hour must not remove a recorded folder that no holding check has passed since its hour (finding 1): a stamp written by the check, read by `SetAsideEligibility`, and one test. Second, `ClearGoing` and `Remove` must keep the link guard every other door keeps (finding 2): one call each, and one test. The rest can follow in KEEPSIZE1b2 or a small follow-up. Finding 4 should land before the install takes this build, and finding 3 is worth taking with it. Codex's read of the accepted design text, which D195's note also makes a condition of this merge, is still owed.
 
-## Codex, KEEPSIZE1b's branch
+## Codex, KEEPSIZE1b's branch at `427fb6cda` (2026-10-24)
 
-Codex's read of the branch at `427fb6cda`.
+Codex's read of the branch, verbatim. What it named is taken on the branch (D195's KEEPSIZE1b notes).
 
 ### 1. What could delete what it must not
 

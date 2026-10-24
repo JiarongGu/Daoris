@@ -196,7 +196,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
    */
   it('words every reason a conversation was handed to another agent', () => {
     const handed = reasons('Handed');
-    expect(handed.length).toBe(8);
+    expect(handed.length).toBe(9);
     const page = Object.values(HANDED_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...handed].sort(byKey));

@@ -306,10 +306,26 @@ public sealed class HistoryDesk(
                     named, await LookAsync(within: true, inside).ConfigureAwait(false), wiring, inside).ConfigureAwait(false);
                 if (judged.Refusal is not null) return (judged, false);
 
+                // KEEPSIZE1b (the keep-size design §2.2): the clear's range ends at its sessions' last move, read before they go.
+                DateTimeOffset? through = null;
+                foreach (var session in judged.Sessions)
+                {
+                    if (await sessions.FindAsync(session, inside).ConfigureAwait(false) is { } found && (through is null || found.Updated > through))
+                    {
+                        through = found.Updated;
+                    }
+                }
+
                 foreach (var quest in judged.Quests) await quests.ForgetAsync(quest, now, inside).ConfigureAwait(false);
                 foreach (var session in judged.Sessions.Concat(judged.Teammates))
                 {
                     await sessions.DeleteAsync(session, inside).ConfigureAwait(false);
+                }
+
+                // A finished tree's record its sessions' clear left with none, or one posted after they went, goes by its own `at`.
+                if (judged.Workspace is { } circle && through is { } end)
+                {
+                    await sessions.ForgetOrphanRecordsAsync(circle, end, inside).ConfigureAwait(false);
                 }
 
                 foreach (var ask in judged.Asks)
