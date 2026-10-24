@@ -1228,7 +1228,8 @@ describe('toTurns, through a transient episode (AGENTERRORS1a, D210 §5.1, §8)'
   const at = (time: string) => `2026-10-24T${time}Z`;
   const error = 'API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.';
   const words = `Internal error: ${error}`;
-  const goOn = `The last request failed on the provider's side (${words}). Go on where you stopped, after anything said above.`;
+  const goOn = `The last request failed on the provider's side (${words}). Go on where you stopped, after anything said above. `
+    + 'Before you repeat a step whose result you did not see, check whether it already took effect.';
   const streamed = (seq: number, time: string): SessionEvent => ({ seq, at: at(time), kind: 'message', text: error });
   // A try going and a wait beginning (AGENTERRORS1a2): the quiet events each try's failure sits between, as the record keeps them.
   const tried = (seq: number, time: string, number: number): SessionEvent => ({ seq, at: at(time), kind: 'transient', try: number });
