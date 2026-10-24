@@ -5,6 +5,15 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## NOBLOCK1 — nothing the window asks for waits on work (2026-10-24)
+
+> Build NOBLOCK1 (the owner's direction, 2026-10-24; D56 and its UIFREEZE1 note): nothing the window asks for waits on work. (Asked as a quest, never a backlog row.)
+
+**Outcome.** The five driver reads the install's `ui.stalled` ranked (`SESSION_WHERE` first, then `HEAVY_SLOT`,
+`SESSION_OPENINGS`, `HELP_PROPOSALS`, `TOOLS_LIST`) answer from what is held and tell their work's answer as `DAORIS.ANSWERED`
+(`HeldAnswers`, `[ByEvent]`, `bridge/state/held.ts`); `DAORIS.UPDATE.STATE` already read only memory and is unchanged.
+`WindowCensusTests` holds the rule, with 88 routes owed their move. Detail: D56's NOBLOCK1 note, the fix log's entry.
+
 ## MAINT2 — close review findings (2026-10-10)
 
 > - [ ] **MAINT2 — close review findings** (review follow-up). Reconcile fixed findings and resolve the remaining integration defects within the owner's requested scope. Contract: D157/D159; proof: defect regressions, reached gates and explicit cleanup outcomes. Closure ledger: `docs/2026-10-10-code-and-docs-review.md`.

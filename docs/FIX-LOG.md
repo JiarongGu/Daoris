@@ -25,6 +25,30 @@ repository.
   `ContentOfferTests`, `ContentProofLossTests`, `SessionTreeWorkTests`, `LandGitCountTests`, whose ceilings held unchanged).
   `ContentHeldTests`' squash row now expects `OnLine`. The first run of the pruned-branch test read the line's newest change by date
   and picked the wrong one of two commits made in one second; the log reads `--topo-order` now. Detail: D102's REVIEWLANDED1 note.
+## 2026-10-24 - The window could not be typed into while a read worked on its thread (NOBLOCK1)
+
+- **Symptom:** the owner could not type while the window stalled. The install's machine log ranked `ui.stalled` by its slowest
+  route: `DAORIS.DRIVER.SESSION_WHERE` 1,439 times, up to 65.9 s; `HEAVY_SLOT` 51, up to 2.9 s; `DAORIS.UPDATE.STATE` 50, up to
+  1.9 s; `SESSION_OPENINGS` 46, up to 7.5 s; `HELP_PROPOSALS` 36, up to 1.3 s; `TOOLS_LIST` 8, up to 1.4 s.
+- **Root cause:** UIFREEZE1 moved a route's awaits off the window's thread, but its part before the first wait still runs there,
+  and these reads did their work in that part. `SESSION_WHERE` was synchronous whole: for each session the rail shows it parsed
+  `landings.json` again (`LandedBranches.Landing`, under the record's lock) and listed the tree's folder, so a rail of hundreds of
+  sessions was hundreds of parses on the thread. `SESSION_OPENINGS` read each session's record synchronously; `HELP_PROPOSALS`
+  read the pending proposals' files and `TOOLS_LIST` the tools' files and the system's path before their first wait;
+  `HEAVY_SLOT` waited on the service's registry. `DAORIS.UPDATE.STATE` reads a field under a lock held only for assignments
+  (`InstallUpdater.State`): its time was the thread stopped by something else while it was the route on it (the stall's `events`
+  and `gc2` count what), not work of its own, so it is unchanged.
+- **Fix:** a read marked `[ByEvent]` is answered at once from what the driver's module holds (`HeldAnswers`), `{pending: true}`
+  while nothing is; its work runs on a task of its own (`Task.Run`, so not a line of it on the asker's thread), joined by identical
+  asks, forgotten by a press, and its answer, where it moved, told as `DAORIS.ANSWERED` naming the page's query by the payload's
+  `held` (never the payload, whose trees are paths). The page's state hub writes it into that query (`bridge/state/held.ts`), read
+  as the query's own ask reads it, and a pending answer keeps what the query held. The five driver routes are marked;
+  `SESSION_WHERE` also reads the landings' record once per ask.
+- **Verify:** `DriverModuleHeldTests` (each marked route's ask timed under `UiStallWatch.Bound` with its work held back by the
+  `BeforeWork` seam, the event naming the query, the held answer after it, no event for an unmoved answer; SESSION_WHERE's landing
+  told by event; a press overtaking a work; a failed work told and refused), `WindowCensusTests` (every route declaring no change
+  held, told by event or owed, the owed only falling), the route suites through the test bridge (553 of 553 in the filtered run),
+  `held.test.ts` and `SessionRail.test.tsx`'s event case.
 
 ## 2026-10-24 - The supervisor's decisions lived only as long as the look that kept them (SUPERVISOR1a-i)
 
