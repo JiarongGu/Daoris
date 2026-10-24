@@ -38,7 +38,10 @@ public sealed record BalloonFacts(string? Kind, string? Headline = null, string?
     /// <inheritdoc cref="Module"/>
     public string? Route { get; init; }
 
-    /// <summary>How many presses from a terminal a folded balloon names (<see cref="BalloonFold.FoldedKind"/>).</summary>
+    /// <summary>
+    /// How many presses from a terminal a folded balloon names (<see cref="BalloonFold.FoldedKind"/>), or a restart's
+    /// (<see cref="PipeConfirmations.RestoredKind"/>, CONFIRMWAIT1a-ii).
+    /// </summary>
     public int? Count { get; init; }
 }
 
@@ -95,6 +98,9 @@ public static partial class SessionBalloon
         [Prefix + "confirmingMany.title"] = "Presses from a terminal wait",
         [Prefix + "confirmingMany.body_one"] = "One waits for your confirmation. Open Daoris to confirm or refuse it.",
         [Prefix + "confirmingMany.body_other"] = "{{count}} wait for your confirmation. Open Daoris to confirm or refuse them.",
+        [Prefix + "restored.title"] = "A terminal's presses still wait",
+        [Prefix + "restored.body_one"] = "One press from a terminal still waits for you after Daoris restarted. Open Daoris to confirm or refuse it.",
+        [Prefix + "restored.body_other"] = "{{count}} presses from a terminal still wait for you after Daoris restarted. Open Daoris to confirm or refuse them.",
         [Prefix + "holding.title"] = "{{repository}}: a session holds a tool call for you",
         [Prefix + "holding.help"] = "Ask Daoris holds a tool call for you",
         [Prefix + "holding.body"] = "Open Daoris to answer it before it is refused by itself.",
@@ -145,6 +151,13 @@ public static partial class SessionBalloon
                 {
                     ["count"] = facts.Count?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
                 })),
+            // CONFIRMWAIT1a-ii (§7.2 step 7): a restart's one balloon for every press from a terminal waiting again, naming how many.
+            PipeConfirmations.RestoredKind => (Word(Prefix + "restored.title"), Fill(
+                Word(Prefix + (facts.Count == 1 ? "restored.body_one" : "restored.body_other")),
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["count"] = facts.Count?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
+                })),
             _ => (string.IsNullOrWhiteSpace(facts.Headline) ? "Daoris" : facts.Headline, Written(Prefix + "ended.body")),
         };
 
@@ -156,7 +169,8 @@ public static partial class SessionBalloon
     /// WAITING on somebody. An ending, an answer or a wait for an account is news.
     /// </summary>
     public static BalloonIcon Icon(string? kind) =>
-        kind is "Parked" or "QuestParked" or PipeConfirmations.AttentionKind or BalloonFold.FoldedKind or HeldCallAnnouncements.AttentionKind
+        kind is "Parked" or "QuestParked" or PipeConfirmations.AttentionKind or BalloonFold.FoldedKind or PipeConfirmations.RestoredKind
+            or HeldCallAnnouncements.AttentionKind
             ? BalloonIcon.Warning
             : BalloonIcon.Info;
 

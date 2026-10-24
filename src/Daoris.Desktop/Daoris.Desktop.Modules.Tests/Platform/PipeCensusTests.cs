@@ -427,4 +427,24 @@ public sealed class PipeCensusTests
         Assert.Equal(PipeClass.Person, census.Of(DriverModule.Name, "LAND_SESSION_TREE"));
         Assert.Null(PipeCensus.Daoris.Of("TEST.PRESS", "MOVE"));
     }
+
+    /// <summary>
+    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.1): the person's routes whose payload carries a key D172 point 3 keeps in
+    /// <c>profiles/</c> alone are keyed, kept in no record across a restart: today <c>DAORIS.REMOTES</c> <c>SET</c> alone, whose
+    /// <c>key</c> is the workspace's deployment key (<c>remotes</c>, a <c>profiles</c> entry); each keyed route is a person's.
+    /// </summary>
+    [Fact]
+    public void The_keyed_routes_are_the_remotes_set_alone_and_each_is_the_person_s()
+    {
+        Assert.Equal(["DAORIS.REMOTES.SET"], PipeCensus.KeyedRoutes.Order(StringComparer.Ordinal));
+        Assert.Equal(Daoris.Driver.HomeCategory.Profiles, Daoris.Driver.HomeEntry.Remotes.Category);
+        Assert.True(PipeCensus.Keyed("daoris.remotes", "SET"));
+        Assert.False(PipeCensus.Keyed("DAORIS.REMOTES", "REMOVE"));
+        Assert.False(PipeCensus.Keyed(DriverModule.Name, "SET_DRIVABLE"));
+        foreach (var keyed in PipeCensus.KeyedRoutes)
+        {
+            var at = keyed.LastIndexOf('.');
+            Assert.Equal(PipeClass.Person, PipeCensus.Daoris.Of(keyed[..at], keyed[(at + 1)..]));
+        }
+    }
 }

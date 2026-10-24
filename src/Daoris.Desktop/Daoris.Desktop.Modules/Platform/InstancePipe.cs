@@ -69,8 +69,10 @@ public sealed class PipeLimits
 /// <c>RESULT</c> are the pipe's own.</para>
 ///
 /// <para><b>The census decides what runs</b> (§4.2, <see cref="PipeCensus"/>): an open route runs; a person's is shown to the
-/// window (<see cref="Confirmations"/>, RPC1c) and runs only on the person's <b>Confirm</b> within two minutes, the terminal told
-/// it waits (<see cref="Confirming"/>) and, refused, expired or withdrawn, how it ended; a window's is refused
+/// window (<see cref="Confirmations"/>, RPC1c) and runs only on the person's <b>Confirm</b>, however long it waits (CONFIRMWAIT1a-i),
+/// the terminal told it waits (<see cref="Confirming"/>) and, refused, changed, withdrawn or lost, how it ended; each waiting press is
+/// kept in a record of its own under <c>data/pipe-waiting/</c> and brought back after a restart (<see cref="Restore"/>,
+/// CONFIRMWAIT1a-ii); a window's is refused
 /// <see cref="WindowOnly"/>; a module the census does not name <see cref="Unclassed"/>. Nothing refused reaches the dispatcher.</para>
 ///
 /// <para><b>A request's id is durable</b> (§6.1, <see cref="PipeJournal"/>): a press runs on the instance's lifetime, not the
@@ -84,8 +86,9 @@ public sealed class PipeLimits
 /// answered <see cref="Busy"/>, and lines sent past <see cref="PipeLimits.Queued"/> ahead of the instance close it.</para>
 ///
 /// <para><b>Stopping</b> (§6.3): from <see cref="BeginStopping"/>, or while the update drains (<see cref="Draining"/>), every new
-/// hello and every new press is refused <see cref="Stopping"/>, and <see cref="Drain"/> lets the presses under way answer; the
-/// loop then takes its address away and lets the home go.</para>
+/// hello and every new press is refused <see cref="Stopping"/>, a line waiting on the person's Confirm is answered
+/// <see cref="Waiting"/>, the press kept in its record (CONFIRMWAIT1a-ii), and <see cref="Drain"/> lets the presses under way answer;
+/// the loop then takes its address away and lets the home go.</para>
 ///
 /// <para>A request that came over the pipe is said as the terminal's (<see cref="PipeDoor"/>): the refusal log and the pipe's own
 /// refusals write <c>door: terminal</c>.</para>
@@ -176,6 +179,18 @@ public sealed class InstancePipe : IDisposable
     /// <summary>A connection with as many requests under way as it may have (<see cref="PipeLimits.InFlight"/>).</summary>
     public const string Busy = "busy";
 
+    /// <summary>
+    /// The close's answer to a line waiting on a press (CONFIRMWAIT1a-ii, the confirm-wait design §4.1, §7.2), <c>why: close</c>: the press
+    /// still waits, kept in its record across the restart.
+    /// </summary>
+    public const string Waiting = "waiting";
+
+    /// <summary>
+    /// A press not kept across a restart (§7.1, §7.2): one carrying a key at the close, or a record the restore could not bring back.
+    /// Nothing ran.
+    /// </summary>
+    public const string Lost = "lost";
+
     private readonly IMessageDispatcher _dispatcher;
     private readonly IEventBus _bus;
     private readonly string _home;
@@ -192,6 +207,14 @@ public sealed class InstancePipe : IDisposable
     private readonly Dictionary<string, string> _waitingFor = new(StringComparer.Ordinal);
     // CONFIRMWAIT1a-i (§4.3): the ids the pipe's own WITHDRAW took back, answered `withdrawn`; the kit's CANCEL is answered as before.
     private readonly HashSet<string> _withdrawn = new(StringComparer.Ordinal);
+    // CONFIRMWAIT1a-ii (§7.2): each waiting press's line answer by its request's id, which the close completes `waiting`.
+    private readonly Dictionary<string, TaskCompletionSource<string>> _lines = new(StringComparer.Ordinal);
+    // CONFIRMWAIT1a-ii (§7.1): each waiting press's record by its confirmation's id, rewritten as it is shown and as it ends, under its
+    // own lock, never the pipe's, since it writes a file.
+    private readonly PipeWaiting _records;
+    private readonly Dictionary<string, PipeWaitingRecord> _kept = new(StringComparer.Ordinal);
+    private readonly Lock _recording = new();
+    private int _restored;
     private readonly HashSet<Connection> _connections = [];
     private SemaphoreSlim? _slots;
     private PipeJournal? _journal;
@@ -223,6 +246,10 @@ public sealed class InstancePipe : IDisposable
         _limits = limits ?? new PipeLimits();
         _clock = clock ?? TimeProvider.System;
         Confirmations = new PipeConfirmations(bus, _log, clock, _limits.Waiting);
+        // CONFIRMWAIT1a-ii (§7.1, §7.2): a press's record keeps when it was first shown, and a Confirm while this closes or drains takes nothing.
+        _records = new PipeWaiting(DaorisHome.Entry(home, HomeEntry.PipeWaiting));
+        Confirmations.ShownFirst = Shown;
+        Confirmations.Holding = () => IsStopping;
         StandingConfirmation = standing ?? new StandingConfirmation(home, _log, clock: clock);
         // Every window is told a use (§5 step 4), which the line in Notifications counts; never a value, only the count and its moment.
         StandingConfirmation.Used ??= (seq, at) => _bus.Emit(StatePublisher.Module, StandingConfirmation.UsedEvent, new { Seq = seq, At = at });
@@ -246,6 +273,191 @@ public sealed class InstancePipe : IDisposable
     /// standing confirmation's are. None reads nothing, so every press that names a ground is refused <see cref="UnreadGrounds"/>.
     /// </summary>
     public IPipeGroundWorld? Grounds { get; set; }
+
+    /// <summary>
+    /// Bring back the presses that waited when Daoris last stopped (CONFIRMWAIT1a-ii, the confirm-wait design §7.2): once, before
+    /// <see cref="Serve"/>, on the home's lease, which makes this instance the one writer of its records.
+    /// </summary>
+    /// <remarks>
+    /// Each record in <c>asked</c> order (§7.2): a name that is no confirmation's id is removed; a newer Daoris's record is left, said
+    /// once; one <c>begun</c> answers <c>interrupted</c> and one <c>ended</c> its ending, journaled where the journal lacks it, and is
+    /// removed; one carrying a key is lost; one waiting is judged again as <see cref="Accept"/> judges a press, from its module, route and
+    /// payload alone (the census's <c>Person</c>, its binding, its shape, a grounds row, an id the journal does not hold, the bound), its
+    /// card made from its payload and never read from the record, and waits again; one that fails or does not read is lost, journaled
+    /// where its terminal's id reads, removed and never asked. The person is told once: a notice for the lost, one for a newer Daoris's,
+    /// and one balloon for those waiting again.
+    /// </remarks>
+    public void Restore()
+    {
+        if (Interlocked.Exchange(ref _restored, 1) == 1) return;
+        lock (_gate)
+        {
+            _journal ??= new PipeJournal(DaorisHome.Entry(_home, HomeEntry.Pipe), _limits.Kept);
+        }
+
+        int waiting = 0, lost = 0, newer = 0;
+        foreach (var file in _records.Read().OrderBy(each => each.Record?.Asked ?? DateTimeOffset.MaxValue).ThenBy(each => each.Name, StringComparer.Ordinal))
+        {
+            if (!PipeWaiting.IsName(file.Name))
+            {
+                PipeWaiting.Delete(file.Path);
+                _log.Warn("pipe.restore", ("state", "misnamed"));
+                continue;
+            }
+
+            if (file.Newer)
+            {
+                newer++;
+                _log.Warn("pipe.restore", ("state", "newer"));
+                continue;
+            }
+
+            if (file.Record is not { } record || record.Confirmation != file.Name)
+            {
+                lost++;
+                PipeWaiting.Delete(file.Path);
+                _log.Warn("pipe.restore", ("state", "unread"));
+                continue;
+            }
+
+            switch (record.State)
+            {
+                case PipeWaitingRecord.Begun:
+                    Journaled(record, IpcJson.Serialize(IpcResponse.CreateError(record.Request, Interrupted, null,
+                        "Daoris stopped while this request was under way, so whether it was done is not known; it was not run again.")));
+                    _records.Remove(record.Confirmation);
+                    continue;
+                case PipeWaitingRecord.Ended when record.Answer is { } answer:
+                    Journaled(record, answer);
+                    _records.Remove(record.Confirmation);
+                    continue;
+            }
+
+            if (record.State == PipeWaitingRecord.Waiting && !record.Keyed && Rejudged(record)) waiting++;
+            else
+            {
+                lost++;
+                Journaled(record, IpcJson.Serialize(IpcResponse.CreateError(record.Request, Lost, null, record.Keyed
+                    ? "Daoris restarted while this waited, and it carries a key, so it does not wait across a restart; nothing was done. Send it again."
+                    : "Daoris restarted while this waited and could not bring it back, so it was not done. Send it again.")));
+                _records.Remove(record.Confirmation);
+            }
+        }
+
+        _log.Info("pipe.restored", ("waiting", waiting), ("lost", lost), ("newer", newer));
+        Confirmations.Restore(waiting, lost, newer);
+    }
+
+    /// <summary>
+    /// A waiting record judged again as <see cref="Accept"/> judges a press (§7.2 step 6), and waiting again where it passes: its card
+    /// made from its payload, its grounds the record's, no terminal on its line. False, and nothing asked, where it fails.
+    /// </summary>
+    private bool Rejudged(PipeWaitingRecord record)
+    {
+        if (record.Request is not { Length: > 0 and <= 128 } id || record.Payload is not { } text) return false;
+        JsonElement? payload;
+        try
+        {
+            payload = text.Length == 0 ? null : JsonDocument.Parse(text).RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        if (_census.Of(record.Module, record.Route, payload) != PipeClass.Person
+            || record.Binding.Request != $"{record.Module}.{record.Route}"
+            || record.Binding.Payload != PipeBinding.Fingerprint(text)
+            || PipeConfirmations.FieldsOf(payload) is not ({ } fields, null)
+            || _census.Targets.Row(record.Module, record.Route, payload) is not { } row)
+        {
+            return false;
+        }
+
+        lock (_gate)
+        {
+            if (_running.ContainsKey(id) || _journal!.Find(id) is not null) return false;
+        }
+
+        if (Confirmations.Hold() is not { } place) return false;
+        var request = new IpcRequest { Id = id, Module = record.Module, Type = record.Route, Payload = payload };
+        var line = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (_recording)
+        {
+            _kept[record.Confirmation] = record;
+        }
+
+        var asked = record.Grounds;
+        var shown = Confirmations.Ask(
+            place, record.Module, record.Route, fields, record.Asker,
+            judge: row.Grounds.Count == 0 ? null : ct => JudgeAsync(row, payload, asked, ct), checkWithin: row.Grounds.Count == 0 ? null : row.Bound,
+            @as: new PipeAsAsked(record.Confirmation, record.Asked, record.ShownAt, Restored: true, WaitedOn: false));
+        lock (_gate)
+        {
+            _running[id] = (record.Binding, line.Task);
+            _waitingFor[id] = shown.Shown.Id;
+            _lines[id] = line;
+        }
+
+        _ = ConfirmThenRunAsync(request, id, record.Binding, line, shown.Ended, record.Confirmation);
+        return true;
+    }
+
+    /// <summary>
+    /// <paramref name="record"/>'s ending journaled as <paramref name="answer"/> where its terminal's id reads and the journal holds no line
+    /// for it (§7.2), so <c>RESULT</c> and the same id sent again say it.
+    /// </summary>
+    private void Journaled(PipeWaitingRecord record, string answer)
+    {
+        if (record.Request is not { Length: > 0 and <= 128 } id) return;
+        lock (_gate)
+        {
+            if (_running.ContainsKey(id) || _journal!.Find(id) is not null) return;
+        }
+
+        if (_journal!.Begin(id, record.Binding)) _journal.End(id, record.Binding, answer);
+    }
+
+    /// <summary>A press's card shown for the first time (§7.1): its record keeps when.</summary>
+    private void Shown(PipeConfirmation card)
+    {
+        lock (_recording)
+        {
+            if (!_kept.TryGetValue(card.Id, out var record)) return;
+            _kept[card.Id] = record = record with { ShownAt = card.ShownAt };
+            _records.Write(record);
+        }
+    }
+
+    /// <summary>A press's record rewritten as it ends (§7.1's order): <c>begun</c>, or <c>ended</c> with its answer.</summary>
+    private void Rewrite(string confirmation, string state, string? answer = null)
+    {
+        lock (_recording)
+        {
+            if (!_kept.TryGetValue(confirmation, out var record)) return;
+            _kept[confirmation] = record = record with { State = state, Answer = answer };
+            _records.Write(record);
+        }
+    }
+
+    /// <summary>A press's record removed once its ending is journaled, or its run begun; one that cannot be is left, and the next start removes it.</summary>
+    private void Forget(string confirmation)
+    {
+        lock (_recording)
+        {
+            _kept.Remove(confirmation);
+            _records.Remove(confirmation);
+        }
+    }
+
+    /// <summary>Whether a waiting press's record says it carries a key.</summary>
+    private bool KeyedRecord(string confirmation)
+    {
+        lock (_recording)
+        {
+            return _kept.TryGetValue(confirmation, out var record) && record.Keyed;
+        }
+    }
 
     /// <summary>Whether an update drains this instance (UPDATE1, D139): a drain is a stop's beginning (§6.3).</summary>
     public Func<bool>? Draining { get; set; }
@@ -290,7 +502,8 @@ public sealed class InstancePipe : IDisposable
             // TERMTRUST1a (§4.2): the standing confirmation's record is read before the pipe serves, and kept in memory.
             StandingConfirmation.Load();
             // The journal's folder is D172's `pipe` entry, asked of the table as every home path is (HOMELAYOUT2).
-            _journal = new PipeJournal(DaorisHome.Entry(_home, HomeEntry.Pipe), _limits.Kept);
+            // CONFIRMWAIT1a-ii (§7.2): made by the restore where it ran first, which journals what it brought back or lost.
+            _journal ??= new PipeJournal(DaorisHome.Entry(_home, HomeEntry.Pipe), _limits.Kept);
             _slots = new SemaphoreSlim(_limits.Connections - 1, _limits.Connections);
             _progress = _bus.Subscribe("*", IpcRequestEvents.Updated, Progressed);
             Name = name;
@@ -301,14 +514,40 @@ public sealed class InstancePipe : IDisposable
     }
 
     /// <summary>
-    /// The stop begins (§6.3): every new hello and every new press is refused <see cref="Stopping"/> from here, and what waits for
-    /// the window is ended and answered <see cref="Stopping"/>, so nothing the person has not yet confirmed runs as Daoris closes; each
-    /// said to the person as a notice (CONFIRMWAIT1a-i, until 1a-ii keeps them across the close).
+    /// The stop begins (§6.3): every new hello and every new press is refused <see cref="Stopping"/> from here. What waits for the window
+    /// is not ended (CONFIRMWAIT1a-ii, the confirm-wait design §7.2): each line waiting on one is answered <see cref="Waiting"/>,
+    /// <c>why: close</c>, and the press leaves what is under way, so the drain is not spent on it, its record kept for the next start; a
+    /// Confirm meanwhile takes nothing. A press carrying a key keeps no payload to wait on, so it ends <see cref="Lost"/>, said to its
+    /// terminal and the person. Once: a second call does nothing more.
     /// </summary>
     public void BeginStopping()
     {
-        Interlocked.Exchange(ref _stopping, 1);
-        Confirmations.Close();
+        if (Interlocked.Exchange(ref _stopping, 1) == 1) return;
+        (string Id, string Confirmation, TaskCompletionSource<string>? Line)[] waiting;
+        lock (_gate)
+        {
+            waiting = [.. _waitingFor.Select(each => (each.Key, each.Value, _lines.GetValueOrDefault(each.Key)))];
+        }
+
+        foreach (var (id, confirmation, line) in waiting)
+        {
+            if (KeyedRecord(confirmation))
+            {
+                Confirmations.Lose(confirmation);
+                continue;
+            }
+
+            lock (_gate)
+            {
+                _running.Remove(id);
+                _owners.Remove(id);
+                _lines.Remove(id);
+            }
+
+            Confirmations.WaitedOn(confirmation, false);
+            line?.TrySetResult(IpcJson.Serialize(IpcResponse.CreateError(id, Waiting, new Dictionary<string, string> { ["why"] = "close" },
+                $"Daoris is closing; this still waits for your confirmation (request {id}).")));
+        }
     }
 
     /// <summary>
@@ -793,20 +1032,50 @@ public sealed class InstancePipe : IDisposable
             return;
         }
 
+        if (IsStopping)
+        {
+            Confirmations.Let(place);
+            Settled(request, id, mine, RefuseStopping(request));
+            return;
+        }
+
+        // CONFIRMWAIT1a-ii (§7.1): its record is written before the window is asked and the terminal told, named by the confirmation's own
+        // id; a press carrying a key keeps no payload and no grounds in it. One that cannot be written is not asked.
+        var keyed = PipeCensus.Keyed(request.Module, request.Type);
+        var record = new PipeWaitingRecord(
+            Guid.NewGuid().ToString("N"), id, binding, request.Module, request.Type,
+            keyed ? null : request.Payload is { ValueKind: not JsonValueKind.Undefined } sent ? sent.GetRawText() : "",
+            keyed ? [] : asked, connection.Asker, _clock.GetUtcNow(), null, keyed, PipeWaitingRecord.Waiting);
+        lock (_recording)
+        {
+            if (_records.Write(record)) _kept[record.Confirmation] = record;
+            else record = null;
+        }
+
+        if (record is null)
+        {
+            Confirmations.Let(place);
+            Settled(request, id, mine, Refuse(request, Unrecorded,
+                "Daoris could not keep this press while it waits for the person, so it was not asked; nothing was kept. Send it again."));
+            return;
+        }
+
         // RPC1c (D156 §4.2): the person's press waits for the window, which shows it naming this terminal, and runs on Confirm alone,
         // its grounds read again then (§5.2). The id is bound before the window is asked, so the same id sent again meanwhile joins this
         // one and asks nothing.
         var payload = request.Payload;
         var shown = Confirmations.Ask(
             place, request.Module, request.Type, fields, connection.Asker, why,
-            judge: row.Grounds.Count == 0 ? null : ct => JudgeAsync(row, payload, asked, ct), checkWithin: row.Grounds.Count == 0 ? null : row.Bound);
+            judge: row.Grounds.Count == 0 ? null : ct => JudgeAsync(row, payload, asked, ct), checkWithin: row.Grounds.Count == 0 ? null : row.Bound,
+            @as: new PipeAsAsked(record.Confirmation, record.Asked, Keyed: keyed));
         lock (_gate)
         {
             _waitingFor[id] = shown.Shown.Id;
+            _lines[id] = mine;
         }
 
         await connection.WriteAsync(Waits(id, why)).ConfigureAwait(false);
-        await ConfirmThenRunAsync(request, id, binding, mine, shown.Ended).ConfigureAwait(false);
+        await ConfirmThenRunAsync(request, id, binding, mine, shown.Ended, record.Confirmation).ConfigureAwait(false);
     }
 
     /// <summary>The grounds read again at the Confirm, outside every lock, and compared with the ask's (§5.2): a failed read is unread.</summary>
@@ -850,21 +1119,26 @@ public sealed class InstancePipe : IDisposable
     /// <summary>
     /// A person's press once the window has answered (RPC1c): run, once, where the person confirmed it and the instance is not
     /// closing; otherwise answered with how it ended and kept as its ending, so <c>RESULT</c> and the same id sent again say it.
+    /// CONFIRMWAIT1a-ii (§7.1): its record says what happened at each step. Confirmed, it is rewritten <c>begun</c>, then the journal's
+    /// first line, then it is removed, then the run; ended otherwise, it is rewritten <c>ended</c> with its answer, then the journal's line,
+    /// then it is removed, even where that line failed.
     /// </summary>
     private async Task ConfirmThenRunAsync(
-        IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered, Task<PipeEnding> ended)
+        IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered, Task<PipeEnding> ended, string confirmation)
     {
         var ending = await ended.ConfigureAwait(false);
         bool byWithdraw;
         lock (_gate)
         {
             _waitingFor.Remove(id);
+            _lines.Remove(id);
             byWithdraw = _withdrawn.Remove(id);
         }
 
         if (ending.End == PipeConfirmationEnd.Confirmed && !IsStopping)
         {
-            await RunAsync(request, id, binding, answered).ConfigureAwait(false);
+            Rewrite(confirmation, PipeWaitingRecord.Begun);
+            await RunAsync(request, id, binding, answered, begun: () => Forget(confirmation)).ConfigureAwait(false);
             return;
         }
 
@@ -878,11 +1152,15 @@ public sealed class InstancePipe : IDisposable
                 $"The person confirmed this in Daoris's window, but {change.Sentence}. Nothing was done."),
             { End: PipeConfirmationEnd.Withdrawn } when byWithdraw => IpcResponse.CreateError(id, Withdrawn, null,
                 "This terminal took its request back before the person answered it. Nothing was done."),
+            // CONFIRMWAIT1a-ii (§7.1): a press carrying a key keeps no payload to wait on across the close.
+            { End: PipeConfirmationEnd.Lost } => IpcResponse.CreateError(id, Lost, null,
+                "Daoris closed while this waited, and it carries a key, so it does not wait across a restart; nothing was done. Send it again once Daoris is back."),
             _ when IsStopping => RefuseStopping(request),
             _ => IpcResponse.CreateError(id, IpcErrorCodes.OperationCancelled, null,
                 "This terminal took its request back before the person answered it. Nothing was done."),
         };
         var text = IpcJson.Serialize(response);
+        Rewrite(confirmation, PipeWaitingRecord.Ended, text);
         try
         {
             if (_journal!.Begin(id, binding)) _journal.End(id, binding, text);
@@ -892,13 +1170,16 @@ public sealed class InstancePipe : IDisposable
             // Not kept: the terminal still hears it now, and RESULT says it does not know, which is so.
         }
 
+        // Removed even where the journal's line failed: the record already said it ended, so no restart asks it again.
+        Forget(confirmation);
         lock (_gate)
         {
             _running.Remove(id);
             _owners.Remove(id);
         }
 
-        answered.SetResult(text);
+        // The close may have answered its line already (`waiting`): this ending is still kept, and RESULT says it.
+        answered.TrySetResult(text);
     }
 
     private static string Capitalized(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
@@ -939,14 +1220,17 @@ public sealed class InstancePipe : IDisposable
     /// </summary>
     /// <param name="standing">That the person's standing confirmation admitted it (TERMTRUST1a): run inside <see cref="PipeDoor.EnterStanding"/>.</param>
     /// <param name="role">The role act the judge's role method covered (SUPERVISOR1a-ii): run inside <see cref="PipeDoor.EnterRole"/>.</param>
+    /// <param name="begun">Told once the journal's first line is written or failed, before anything runs (CONFIRMWAIT1a-ii, §7.1).</param>
     private async Task RunAsync(
         IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered, bool standing = false,
-        RoleJudgement? role = null)
+        RoleJudgement? role = null, Action? begun = null)
     {
         string text;
         try
         {
-            if (!_journal!.Begin(id, binding))
+            var journaled = _journal!.Begin(id, binding);
+            begun?.Invoke();
+            if (!journaled)
             {
                 text = IpcJson.Serialize(Refuse(request, Unrecorded,
                     "Daoris could not keep this request in its journal, so it was not run; run it again."));
@@ -975,7 +1259,7 @@ public sealed class InstancePipe : IDisposable
             _owners.Remove(id);
         }
 
-        answered.SetResult(text);
+        answered.TrySetResult(text);
     }
 
     /// <summary>
@@ -1043,7 +1327,7 @@ public sealed class InstancePipe : IDisposable
             if (_running.TryGetValue(id, out var running))
             {
                 if (running.Binding.Key != holder) return RefuseTaken(request);
-                if (Waiting(id) is { } card)
+                if (WaitingCard(id) is { } card)
                 {
                     return IpcResponse.CreateSuccess(request.Id, new
                     {
@@ -1065,7 +1349,7 @@ public sealed class InstancePipe : IDisposable
     }
 
     /// <summary>The card of a press still waiting for the person and not being judged, by its request's id; null otherwise. Under the lock.</summary>
-    private PipeConfirmation? Waiting(string id) =>
+    private PipeConfirmation? WaitingCard(string id) =>
         _waitingFor.TryGetValue(id, out var confirmation)
             ? Confirmations.Now().Waiting.FirstOrDefault(each => each.Id == confirmation && !each.Checking)
             : null;
