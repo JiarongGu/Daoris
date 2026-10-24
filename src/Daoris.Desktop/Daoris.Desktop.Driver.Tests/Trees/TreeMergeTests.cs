@@ -154,6 +154,37 @@ public sealed class TreeMergeTests : IDisposable
         Assert.DoesNotContain("<<<<<<<", readme);
     }
 
+    /// <summary>
+    /// HOOKMERGE1: a repository whose own commit-msg hook refuses the merge's message (one naming the session's branch, found in a
+    /// repository scanning messages for a private name) is told that it was the hook, with the hook's own words, and never that it
+    /// conflicted; the hook is not skipped, and the checkout is as it was.
+    /// </summary>
+    [Fact]
+    public async Task A_merge_its_repositorys_hook_refuses_says_the_hook_and_its_words()
+    {
+        var root = await MakeRepositoryAsync();
+        var trees = new SessionTrees(_home);
+        var opened = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitInAsync(opened.Path, "budget.ts", "cap the work", "cap hydration");
+        // Installed after the session's commit, as a repository's own hooks are: outside the checkout, so it stays clean.
+        var hooks = Path.Combine(_scratch, "hooks");
+        Directory.CreateDirectory(hooks);
+        await File.WriteAllTextAsync(Path.Combine(hooks, "commit-msg"),
+            "#!/bin/sh\nif grep -q '^Merge' \"$1\"; then echo 'check-sensitive: blocked, private ban pattern aurora' >&2; exit 1; fi\n");
+        await GitAsync(root, "config", "core.hooksPath", hooks.Replace('\\', '/'));
+
+        var head = (await GitAsync(root, "rev-parse", "HEAD")).Trim();
+        var merged = await trees.MergeAsync(opened.Path);
+
+        Assert.False(merged.Merged, merged.Message);
+        Assert.Contains("hook", merged.Message);
+        Assert.Contains("check-sensitive: blocked, private ban pattern aurora", merged.Message);
+        Assert.Contains("nothing conflicted", merged.Message);
+        Assert.Equal(head, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
+        // Not left mid-merge: the abort took the staged merge away.
+        Assert.Equal("", (await GitAsync(root, "status", "--porcelain")).Trim());
+    }
+
     /// <summary>A checkout Daoris did not open is never merged FROM, whatever git would say.</summary>
     [Fact]
     public async Task It_refuses_anything_that_is_not_a_session_tree()

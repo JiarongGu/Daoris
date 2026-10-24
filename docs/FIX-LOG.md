@@ -39,6 +39,25 @@ repository.
 - **Verify:** `BranchTidyingFolderTests` 13 of 13 with `git.process.runsettings`, where the two failed before the fix, and
   `BranchTidyingProcessTests`, which shares the fixture, in the covering run of the replay fix above. `BranchTidyingLandingTests`
   and `BranchTidyingWatchTests` were not run.
+## 2026-10-24 - A merge its repository's commit-msg hook refused read as git refusing the merge (HOOKMERGE1)
+
+- **Symptom:** a sibling repository reported (quest `#a2a221f5e2c3`) that accepting a session's branch always failed at the merge,
+  with no conflict and a fast-forward possible. Its commit-msg hook scans each message for private names, one of which matches
+  `daoris`, so the merge message `Merge branch 'daoris/s-…'` was blocked. The landing said only `git would not merge …` and git's
+  first line, so the hook's own output was the only place the cause showed.
+- **Root cause:** `TreeLands.MergeAsync` read every failed `git merge --no-ff` as git refusing the merge and quoted the first line of
+  its stderr. A merge's commit runs the repository's `pre-merge-commit` and `commit-msg` hooks. When one refuses, git leaves the
+  merge staged with `MERGE_HEAD` standing and nothing unmerged, and says *Not committing merge*. The landing aborted that state
+  without reading it.
+- **Fix:** before the abort, the merge reads git's state (`MERGE_HEAD` and no unmerged paths), not its words, which may be
+  localised. A hook's refusal now says that the repository's own hook refused the merge commit and nothing conflicted, quotes the
+  hook's output (up to 600 characters, without git's closing line), and says Daoris does not skip a repository's hooks. The person
+  changes what the hook refuses, or merges by hand. The merge stays `--no-ff` with the branch in its message, and no `--no-verify`
+  is passed: a fast-forward would also avoid the hook, but it would give up the one merge commit a person can read and
+  revert as a unit, which the merge door makes on purpose.
+- **Verify:** `TreeMergeTests` 9 of 9 by filter, with
+  `A_merge_its_repositorys_hook_refuses_says_the_hook_and_its_words` new: a real repository whose `core.hooksPath` holds a
+  commit-msg hook that refuses merge messages, the hook's words in the sentence, the checkout's head and status as found.
 
 ## 2026-10-24 - The set-aside folders at the trees entry's old place were never purged or counted (KEEPSIZE1a)
 
