@@ -59,6 +59,14 @@
   "review.ask.skip": "跳过这些工作的审阅：它不展示给你就落地。你的话（如果有）会和它一起保存。",
   "review.ask.skipWords": "原因，如果你想说",
   "review.ask.skipMeanIt": "跳过审阅",
+  "review.state.cannot-start": "无法开始",
+  "review.says.cannot-start": "这些工作在等待一次无法开始的审阅。",
+  "review.says.cannot-start-chat": "对话不发布设置步骤，所以无法为它的工作设置审阅。不经审阅采纳它（可附上你的话），它就在当前所在的提交处落地。",
+  "review.act.withoutLook": "不经审阅采纳…",
+  "review.ask.withoutLookTitle": "不经审阅采纳",
+  "review.ask.withoutLook": "不经审阅采纳这段对话的工作：它在当前所在的提交处落地，之后的提交会再次询问。你的话（如果有）会保存在它的落地记录上。",
+  "review.ask.withoutLookWords": "原因，如果你想说",
+  "review.ask.withoutLookMeanIt": "不经审阅采纳",
   "review.said.notYet": "你的话已作为下一轮发给会话 {{session}}。",
   "review.said.notYetUnheard": "你的话已保存，但这里没有会话听到：请在 Daoris 的窗口中对会话 {{session}} 说，或运行 `daoris-driver sessions say {{session}} \"…\"`。"
 }

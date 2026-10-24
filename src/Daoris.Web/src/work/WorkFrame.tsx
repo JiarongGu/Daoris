@@ -11,7 +11,7 @@ import {
   NO_TURNS, useChatTurns, useSessionEntries, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionSpent, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, useGoOnBrief, type WordsAnswer,
-  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useSessionDiff,
+  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch, useLanding, useLandSessionTree, useLandWithoutLook, useSessionDiff,
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
@@ -1358,6 +1358,7 @@ export function WorkFrame({
           stepId={gateHolds.quest ?? null}
           served={headReview.served ?? null}
           said={gateHolds.says ?? null}
+          chat={Boolean(gateHolds.chatRun)}
           acts={headReview.acts}
           busy={headReview.busy}
         />
@@ -1742,6 +1743,25 @@ export function WorkFrame({
   // Another session's page is another ask: a name typed for one is not carried to the next.
   useEffect(() => setLandName(''), [attended?.id]);
   const land = useLandSessionTree();
+  const landWithoutLook = useLandWithoutLook();
+  // CHATFLOW1d (the chat-flow design §5.2): a chat run's press refused for what the page can word says it in the reader's language; any
+  // other refusal is the driver's sentence, as before.
+  const pressRefusal = (result: { message: string; press?: string | null }) =>
+    result.press && ['busy', 'elsewhere', 'moved', 'asked'].includes(result.press) ? t(`work.review.chatPress.${result.press}`) : result.message;
+  // A landing's answer told back to the press that made it, *Accept…*'s and *Accept without the look…*'s alike.
+  const landed = (answered: Answered) => ({
+    onSuccess: (result: { done: boolean; message: string; withheld?: string | null; press?: string | null }) => {
+      if (!result.done) {
+        answered.refused(pressRefusal(result));
+        return;
+      }
+      // FABRIC-CLOSE1h9: a push held back is said as such, with the hand-off its review offers, never as an ordinary landing.
+      if (result.withheld) notify(`${result.message} ${t('work.review.pushHeldReview')}`, 'error');
+      else notify(result.message);
+      answered.done();
+    },
+    onError: (error: unknown) => answered.refused(sentence(error)),
+  });
   // The review's gate where it holds that work (REVIEWENV1g, design §3.1): the set-up step's record, whether Daoris still serves
   // its tab here, and the verdict's presses, each by the one owner; *Set it up* follows the session's own quest.
   const reviewActs = useReviewActs({ notify });
@@ -1751,14 +1771,20 @@ export function WorkFrame({
   const headReview: HeadReview | null = gateHolds && attended ? {
     step: gateStep,
     served: inReview && gateHolds.quest ? inReview.find((row) => row.quest === gateHolds.quest)?.served ?? false : null,
-    busy: reviewActs.busy,
-    acts: reviewActs.actsFor({
-      state: reviewState(gateHolds.state),
-      step: gateHolds.quest ?? null,
-      record: gateStep,
-      work: attended.quest ?? null,
-      open: gateHolds.quest && onOpenQuest ? () => onOpenQuest(gateHolds.quest!) : undefined,
-    }),
+    busy: reviewActs.busy || landWithoutLook.isPending,
+    acts: {
+      ...reviewActs.actsFor({
+        state: reviewState(gateHolds.state),
+        step: gateHolds.quest ?? null,
+        record: gateStep,
+        work: attended.quest ?? null,
+        open: gateHolds.quest && onOpenQuest ? () => onOpenQuest(gateHolds.quest!) : undefined,
+      }),
+      // CHATFLOW1d2 (the chat-flow design §5.3): a chat run's way past the look no set-up step can show, the person's own press.
+      ...(gateHolds.chatRun && here ? {
+        withoutLook: (words: string | null, answered: Answered) => landWithoutLook.mutate({ id: attended.id, words }, landed(answered)),
+      } : {}),
+    },
   } : null;
   // The second opinion's gate before it (XAGENT1g, the second-agent design §7, §9): its findings beside their answers, read only
   // where a level asks one, and its presses by the one owner; a finding's place opens the side bar's preview.
@@ -1777,7 +1803,8 @@ export function WorkFrame({
   // Its line of work's one Accept, or its ask's, lands it too (ACCEPTALL1h): the head's own press waits while either is under way.
   const lineLandsNow = useUnderWaySubject('LAND_ENTRY', attendedEntry?.entry ?? null);
   const askLandsNow = useUnderWaySubject('LAND_ASK', channelAsk);
-  const landsNow = useUnderWay('LAND_SESSION_TREE', attended?.id ?? null) || lineLandsNow || askLandsNow;
+  const withoutLookNow = useUnderWay('LAND_WITHOUT_LOOK', attended?.id ?? null);
+  const landsNow = useUnderWay('LAND_SESSION_TREE', attended?.id ?? null) || withoutLookNow || lineLandsNow || askLandsNow;
   const discardsNow = useUnderWay('DISCARD_SESSION_TREE', attended?.id ?? null);
   // Its one press, for the head and, in Accept's place, the review (SQUASHTIDY1f): never forced from here, a refusal the
   // driver's sentence inside the ask, and the review's Discard the door that asks twice.
@@ -1843,19 +1870,7 @@ export function WorkFrame({
     landing: landing.data,
     planning: landing.isPlaceholderData,
     // The second opinion's token rides with the press that answers what it showed (XAGENT1g).
-    onLand: lands ? (answered, answers, branch) => land.mutate({ id: attended.id, answers, branch }, {
-      onSuccess: (result) => {
-        if (!result.done) {
-          answered.refused(result.message);
-          return;
-        }
-        // FABRIC-CLOSE1h9: a push held back is said as such, with the hand-off its review offers, never as an ordinary landing.
-        if (result.withheld) notify(`${result.message} ${t('work.review.pushHeldReview')}`, 'error');
-        else notify(result.message);
-        answered.done();
-      },
-      onError: (error) => answered.refused(sentence(error)),
-    }) : undefined,
+    onLand: lands ? (answered, answers, branch) => land.mutate({ id: attended.id, answers, branch }, landed(answered)) : undefined,
     onSayRebase: (text) => say.mutateAsync({ id: attended.id, text }).then((answer) => answer.sent),
     onName: lands ? setLandName : undefined,
     // SQUASHTIDY1b: its discard, never forced from here (`discardHeld`).

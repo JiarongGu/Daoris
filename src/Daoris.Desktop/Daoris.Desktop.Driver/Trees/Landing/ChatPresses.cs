@@ -34,6 +34,12 @@ public sealed record ChatLookPress(string? Words, string Door);
 /// <summary>What the press came to: the landing, or its refusal, and the gate it was judged by at the captured tip; and the tip.</summary>
 public sealed record ChatPressed(TreeLanding Landed, LandingGate? Gate, string? Tip)
 {
+    /// <summary>
+    /// What refused it, where the page words it in the reader's language (CHATFLOW1d): <c>busy</c>, <c>elsewhere</c>, <c>moved</c> or <c>asked</c>;
+    /// null where the landing's own sentence says it.
+    /// </summary>
+    public string? Code { get; init; }
+
     /// <summary>Whether this press asked the run's second opinion (§5.2 point 3).</summary>
     public bool Asked { get; init; }
 }
@@ -55,6 +61,15 @@ public sealed record ChatPressed(TreeLanding Landed, LandingGate? Gate, string? 
 /// </remarks>
 public static class ChatPresses
 {
+    /// <summary>The codes a refusal of the press carries for the page (<see cref="ChatPressed.Code"/>).</summary>
+    public static class Codes
+    {
+        public const string Busy = "busy";
+        public const string Elsewhere = "elsewhere";
+        public const string Moved = "moved";
+        public const string Asked = "asked";
+    }
+
     /// <summary>A turn runs or waits: the press waits for its end, never lands beside it.</summary>
     public const string Busy = "a turn is running in this conversation; press Accept once it ends.";
 
@@ -78,8 +93,8 @@ public static class ChatPresses
         Func<CancellationToken, Task<string?>>? head = null)
     {
         var hold = holder is null ? PressHold.NotHere : await holder.HoldAsync(ask.Session, ct).ConfigureAwait(false);
-        if (hold is PressHold.Busy or PressHold.Ending) return Refused(Busy);
-        if (hold == PressHold.NotHere && ask.Live) return Refused(Elsewhere);
+        if (hold is PressHold.Busy or PressHold.Ending) return Refused(Busy) with { Code = Codes.Busy };
+        if (hold == PressHold.NotHere && ask.Live) return Refused(Elsewhere) with { Code = Codes.Elsewhere };
 
         try
         {
@@ -109,12 +124,12 @@ public static class ChatPresses
             // nothing again.
             if (judged.Workflow is not { LetsGo: false } && judged.Opinion is { State: OpinionGateStates.NotAsked, Run: not null } opinion)
             {
-                if (opinion.Asked) return new(Refusal(opinion.Says, AutoLandingCode.Opinion), judged, tip);
+                if (opinion.Asked) return new(Refusal(opinion.Says, AutoLandingCode.Opinion), judged, tip) { Code = Codes.Asked };
                 new OpinionDues(home).Due(new OpinionDue(ask.Session, "", ask.Repository, ask.Workspace, ask.Tree, OpinionRules.Landing, DateTimeOffset.UtcNow)
                 {
                     Run = ask.Run, Tip = tip, Turns = turns(),
                 });
-                return new(Refusal(OpinionGate.AskedAtPress(opinion), AutoLandingCode.Opinion), judged, tip) { Asked = true };
+                return new(Refusal(OpinionGate.AskedAtPress(opinion), AutoLandingCode.Opinion), judged, tip) { Asked = true, Code = Codes.Asked };
             }
 
             var landed = await land(judged, ct).ConfigureAwait(false);
@@ -125,7 +140,7 @@ public static class ChatPresses
                 landed = landed with { Message = Moved };
             }
 
-            return new(landed, judged, tip);
+            return new(landed, judged, tip) { Code = landed.Message == Moved ? Codes.Moved : null };
         }
         finally
         {

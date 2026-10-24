@@ -199,6 +199,7 @@ export function Lands({ session, lands, landing, planning, onReview, onLand, onS
           stepId={waits.quest ?? null}
           served={review?.served ?? null}
           said={waits.says ?? null}
+          chat={Boolean(waits.chatRun)}
           acts={review?.acts}
           busy={review?.busy}
         />

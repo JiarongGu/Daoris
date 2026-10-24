@@ -10,6 +10,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
+import i18n from '../locales/i18n';
 import { watchScreen } from '../test/onScreen';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
 import {
@@ -1486,6 +1487,67 @@ describe('acting on what a session landed', () => {
       expect(await within(strip).findByRole('button', { name: 'Accept…' })).toBeInTheDocument();
       // The head's and the foot's, one press (D56).
       expect(screen.getAllByRole('button', { name: 'Accept…' })).toHaveLength(2);
+    });
+
+    /**
+     * CHATFLOW1d (the chat-flow design §5.2): a chat run's press refused for its second opinion, asked at that press, says so at the foot
+     * in the reader's language from the press's code, never the driver's English alone.
+     */
+    it.each([
+      ['en', 'A second opinion is asked on this work; press Accept again once it settles.', 'Accept…', 'Accept'],
+      ['zh', '已为这些工作请求第二意见；它有定论后再按一次采纳。', '采纳…', '采纳'],
+    ])('says a chat run’s press refused for the opinion it asked at the foot, in %s', async (language, words, open, press) => {
+      SESSIONS = [TALK];
+      const base = answering(BEYOND);
+      invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => type === 'LAND_SESSION_TREE'
+        ? { session: 'c0ffee11', done: false, message: 'A second opinion is asked: `codex` reads it from the driver\'s next look; press Accept again once it settles.', press: 'asked' }
+        : base(module, type, ...(rest as [])));
+      await i18n.changeLanguage(language);
+      try {
+        show('c0ffee11');
+        const strip = await screen.findByRole('region', { name: language === 'en' ? 'Waiting on you' : '等你处理' });
+        await userEvent.click(await within(strip).findByRole('button', { name: open }));
+        const ask = within(strip).getByRole('group', { name: /daoris\/s-c0ffee11/ });
+        await vi.waitFor(() => expect(within(ask).getByRole('button', { name: press })).toBeEnabled());
+        await userEvent.click(within(ask).getByRole('button', { name: press }));
+        expect(await within(ask).findByRole('alert')).toHaveTextContent(words);
+      } finally {
+        await i18n.changeLanguage('en');
+      }
+    });
+
+    /**
+     * CHATFLOW1d2 (the chat-flow design §5.3): a chat run whose rule asks a look reads it as one that cannot start, and offers the person's
+     * own way past it, *Accept without the look…*, with their words, through its own press; in the reader's language.
+     */
+    it.each([
+      ['en', 'Accept without the look…', 'Accept without the look', 'why, if you want to say'],
+      ['zh', '不经审阅采纳…', '不经审阅采纳', '原因，如果你想说'],
+    ])('offers Accept without the look… on a chat run’s look that cannot start, in %s', async (language, open, press, field) => {
+      SESSIONS = [TALK];
+      const base = answering(BEYOND);
+      invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+        if (type === 'LANDING') {
+          return { session: 'c0ffee11', form: 'branch', target: 'feature/delta', source: 'workspace',
+            review: { state: 'cannot-start', environment: null, level: 'repository', quest: null, chatRun: 'chat-c0ffee11',
+              says: 'Waits for your look, and it cannot start.' } };
+        }
+        if (type === 'LAND_WITHOUT_LOOK') return { session: 'c0ffee11', done: true, message: 'put its work on `feature/delta` — 1 commit(s).' };
+        return base(module, type, ...(rest as []));
+      });
+      await i18n.changeLanguage(language);
+      try {
+        show('c0ffee11');
+        const strip = await screen.findByRole('region', { name: language === 'en' ? 'Waiting on you' : '等你处理' });
+        await userEvent.click(await within(strip).findByRole('button', { name: open }));
+        const ask = within(strip).getByRole('group', { name: press });
+        await userEvent.type(within(ask).getByRole('textbox', { name: field }), 'no environment for this');
+        await userEvent.click(within(ask).getByRole('button', { name: press }));
+        await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith(
+          'DAORIS.DRIVER', 'LAND_WITHOUT_LOOK', { payload: { id: 'c0ffee11', words: 'no environment for this' }, timeoutMs: 6 * 60_000 }));
+      } finally {
+        await i18n.changeLanguage('en');
+      }
     });
 
     it('offers none while a turn runs, and offers it the moment the turn ends', async () => {

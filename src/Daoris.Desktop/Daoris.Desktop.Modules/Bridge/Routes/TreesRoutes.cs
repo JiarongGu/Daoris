@@ -674,7 +674,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         var followed = Flag(request, "follow") && landed.Landed
             ? await TreesWords.FollowMovedAsync(service, _loop.Home, () => DriverConfig.Load(_loop.ConfigPath), _loop.Log, cancellationToken)
             : null;
-        return Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? []);
+        return Pressed(id, landed, gate, TreesWords.Land(landed, pluginLines).Followed(followed), followed?.Out ?? [], pressed.Code);
     }
 
     /// <summary>
@@ -686,7 +686,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// <c>withheld</c> says why it was held, the branch standing and no plugin told, for the page to offer the hand-off. Null wherever
     /// the push went on or was never asked about; a page before it reads the answer as before.
     /// </remarks>
-    public static object Pressed(string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed) => new
+    public static object Pressed(string id, TreeLanding landed, LandingGate gate, TreesSaid said, IReadOnlyList<string> followed, string? press = null) => new
     {
         Session = id, Done = landed.Landed, landed.Message, landed.Branch,
         Plugin = landed.Plugin is { } plugin
@@ -702,6 +702,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
         // RPC1b3: what `trees land` prints, the plugin's lines first, and its exit code (§7.3).
         Said = said.ToWire(),
         Followed = followed,
+        // CHATFLOW1d: what refused a chat run's press, which the page words in the reader's language; null for every other.
+        Press = press,
     };
 
     /// <summary>
@@ -1016,7 +1018,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     /// </summary>
     public static object? Waits(ReviewGateState review) => review.LetsGo
         ? null
-        : new { review.State, review.Decision.Environment, review.Decision.Level, Quest = review.Decision.SetUpStep?.Id, Says = review.Says };
+        : new { review.State, review.Decision.Environment, review.Decision.Level, Quest = review.Decision.SetUpStep?.Id, Says = review.Says, review.Decision.ChatRun };
 
     // A branch a landing made, handed to a landing plugin afterwards (WSR5b): what a press would do,
     // said before it, and the press — `daoris-driver trees hand` is the terminal's door (D50).
