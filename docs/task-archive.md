@@ -20445,6 +20445,19 @@ of admitted acts, pending operations by their stages and bindings; the configura
 appointment by scope and the choice of terminal. Each case seen failing first. Detail, and what 1a-ii to 1g still owe: D209's
 STEWARDROLE1a-i note.
 
+## STEWARDROLE1a-ii — `owner-set`'s census and the gates, built dark (2026-10-25, D209)
+
+> **STEWARDROLE1a-ii — `owner-set`'s census and the gates** (modules, driver, service; after 1a-i; lands dark). `owner-set` at every owner door, `none` only by its closed reasons and reviewed exemptions (naming told from mutating), the record kinds that mark, the sweep cross-checked against each handler, the gates of each act's target and its dependencies (a workspace resolved to its repositories) in a fixed order. Proof: the design's §10 row 1a-ii. *1a-i and 1a-ii were STEWARDROLE1a, split by round 3's read (finding 13).*
+
+(Row 1a-ii of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#92a1c81fb4ad`.)
+
+**Outcome** 2026-10-25, dark: an owner's door marks only where the build offers the steward, which it does not yet. Every person's
+and window's route has its mark in the census (`PipeTargets.Mark`), set by the driver module's router under the gates of what it
+resolves to before its handler; Ask Daoris's Apply marks by its plan; the service's person doors declare what they leave on a quest's
+records (`Door.Marks`), read by `OwnerRecords`; a role's act takes its target's and dependencies' gates alone in the fixed order
+(`RoleGates`), refused `owner-set` or `unread` under them, its dependent conditions judged again. Proof: `OwnerSetCensusTests`,
+`OwnerSetTests`, `PersonDoorTableTests`, each case seen failing first. Detail and readings: D209's STEWARDROLE1a-ii note.
+
 ## ROUTERMERGE1 — the router merges row by row, never by union (2026-10-24)
 
 > **ROUTERMERGE1 — the router merges row by row, never by union** (tools; seen 2026-10-24). `docs/README.md` merges by union (`.gitattributes:43`), so a branch that changed a router row `main` also changed, or that carries a row `main` has since replaced, leaves both rows with no conflict: on 2026-10-24 six landings left a design's or a reads file's row twice, an older copy coming back each time, and only `doc-duplicates` caught it. Give the router (and any record whose rows are keyed by their first cell) a merge driver in `tools/` that merges its table rows by key three ways (base, ours, theirs): a row one side changed takes that side, a row both changed differently is a conflict, a row one side removed and the other left alone goes, and prose outside the tables merges as text; declared in `.gitattributes` with its driver configured by the repository's own setup, and the union kept for the append-only records it suits. Proof: the driver's tests over a base and two sides for each case, and a scratch repository's merge of two branches that each edited one row leaving each row once.
