@@ -6488,9 +6488,13 @@ async function queueStep(home) {
     // The tool's own tests hold the runner before it forms, so one candidate can take several branches queued one by one.
     const hold = process.env.MERGE_BRANCH_QUEUE_HOLD;
     if (hold && !existsSync(hold)) return 'wait';
-    const head = queue.queued[0];
-    const { members } = nextMembers(queue.queued, { oneAtATime: head.oneAtATime === true });
-    withQueue(home, (q) => ({ queue: { ...q, queued: q.queued.filter((each) => !members.some((member) => member.branch === each.branch && member.tip === each.tip)) } }));
+    // FLAKE1: the members are taken from the queue as it stands under its lock, never from the step's first read, which a
+    // request queued, dropped or queued again since (or while the hold was waited on) has left behind.
+    const { members } = withQueue(home, (q) => {
+      const taken = nextMembers(q.queued, { oneAtATime: q.queued[0]?.oneAtATime === true });
+      return { queue: { ...q, queued: taken.rest }, members: taken.members };
+    });
+    if (!members.length) return 'next';
     await formNext(home, members, mainTip, {});
     return 'next';
   }
