@@ -29,7 +29,11 @@ and which remain.
    A pick is never walked afresh: its recovery order on its own account, the refused entry passed by the reading kept, else it
    waits saying why. A refused continuation, whose line holds an earlier part that held a conversation, is handed Daoris's brief
    of its line first (`ContextBriefs.ComposeAsync`), then the words; a refused new conversation goes on with its words alone.
-4. **The window follows `chat.replaced`** (to do).
+4. **The window follows `chat.replaced`** (built). The shell's `CHAT_REPLACED { from, to }` (the design's `chat.replaced`) moves a
+   window showing the refused conversation to its replacement (`ShellSignals`), and Ask Daoris's panel follows a chosen one
+   (`useChatReplaced`); the panel otherwise shows its workspace's newest, which the replacement is. The new reason a record
+   continues another by, `not-offered`, is declared in the driver's `NoteCodes.Handed` and worded in both catalogues
+   (*its agent did not offer the model asked on its account* / *它的智能体在其账户上不提供所要求的模型*).
 
 ## Checks run
 
@@ -53,3 +57,9 @@ only part A's history held before the words. Beside them, both halves of `Access
 `ChatGoesOnProcessTests`, `DrivenAccessTests`, `GoOnBriefedTests`, `NoteSitesTests`, `OpinionDeliveryTests`,
 `SessionWordsWaitingTests`, `HelpGoOnTests`, `LimitWaitsProcessTests`, `LimitGoesOnProcessTests`, `LimitGoesElsewhereProcessTests`,
 `ChatWordsRestartProcessTests`, `PlannerTests`, `ServiceClientTests` (245 and 43 passed).
+
+Part 4: the web's `ShellSignals.test.tsx` (the follow seen failing first with its handler off) and `locales/note.test.ts` (the
+reasons now nine), `src/help/AskDaoris*.test.tsx`, `src/work/head`, `src/bridge` (697 passed); `typecheck:web`,
+`check:web-rules`, `i18n:check`, `names-check.mjs --strict` (its three budget lines are on keys this row did not touch). The
+driver's note, catalogue, hand-over, locale and twin tests (1,029 passed), `NoteCodesTests`' list of reasons gaining
+`not-offered`, which part 2 had left failing.
