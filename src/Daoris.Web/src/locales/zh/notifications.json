@@ -127,5 +127,22 @@
   "notifications.steward.reverse.treesOff": "停用工作树",
   "notifications.steward.reverse.resume": "恢复",
   "notifications.steward.reverse.hold": "暂停",
-  "notifications.steward.reverse.retry": "重试"
+  "notifications.steward.reverse.retry": "重试",
+  "notifications.steward.desk.line": "管家的待办 · {{count}} 项等管家处理",
+  "notifications.steward.desk.show": "显示管家的待办",
+  "notifications.steward.desk.hide": "收起管家的待办",
+  "notifications.steward.desk.list": "管家的待办",
+  "notifications.steward.desk.claims": "提出者自己的话，不授予任何权限",
+  "notifications.steward.desk.reason": "管家的理由：{{reason}}",
+  "notifications.steward.desk.state.open": "等管家处理",
+  "notifications.steward.desk.state.answered": "管家已办",
+  "notifications.steward.desk.state.declined": "管家已谢绝",
+  "notifications.steward.desk.act.drive": "驱动",
+  "notifications.steward.desk.act.undrive": "停止驱动",
+  "notifications.steward.desk.act.trees": "启用工作树",
+  "notifications.steward.desk.act.hold": "暂停",
+  "notifications.steward.desk.act.resume": "恢复",
+  "notifications.steward.desk.act.stop": "停止",
+  "notifications.steward.desk.act.finish": "完成",
+  "notifications.steward.desk.act.retry": "重试"
 }
