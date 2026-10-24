@@ -1645,6 +1645,8 @@ internal static class Spawning
         // GITAUTH1c (the git-auth design §3.6): a session's commits carry origin's identity's author where its repository names none,
         // read at the start. Off the caller's thread: a home where no identity commits as anyone starts no git for it.
         GitAuthor.Hand(info.Environment, Task.Run(() => GitAuthor.OfAsync(home ?? DaorisHome.Resolve(), root, CancellationToken.None)).GetAwaiter().GetResult());
+        // TREELONG1: a session's own git reads its tree with long paths, as Daoris's own does, unless the person's configuration says it.
+        GitLongPaths.Hand(info.Environment, Task.Run(() => GitLongPaths.NeededAsync(root, CancellationToken.None)).GetAwaiter().GetResult());
 
         return info;
     }
