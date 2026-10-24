@@ -115,6 +115,12 @@ public sealed class SystemRoutes(DriverContext context)
     {
         var loop = _context.Loop;
         var world = new SpaceFreeWorld(loop.Home) { Judge = Judge, Caches = loop.BrowserCaches, Log = loop.Log };
+        // KEEPSIZE1b (the keep-size design §5): the press's run resumes the finished trees' steps and posts a record due before it removes.
+        if (loop.Service is { } service)
+        {
+            world = world.WithService(service);
+        }
+
         return _context.SpaceFreeWorlds?.Invoke(world) ?? world;
     }
 

@@ -1,14 +1,23 @@
 # A move keeps the agent's own context, and a session goes on as one conversation whatever runs it (SWITCHCTX1, 2026-10-24)
 
-**Standing: proposed, round 3, under D191.** Round 1 was written by Claude Opus 5.5 from the code on main at `ddf0a24fd` and read
+**Standing: proposed, round 4, under D191.** Round 1 was written by Claude Opus 5.5 from the code on main at `ddf0a24fd` and read
 at `ff2461081` by the independent Opus foundation reader, its read verbatim in `docs/2026-10-24-switch-context-reads.md`: 12
 findings, 4 blocking, another round. Round 2, written from main at `426ed2b73`, answered them in §8 and was read by the same reader
-at `260881273`: 10 findings, 3 blocking, accept after named changes. Round 3 takes those named changes, each in §9, checked against
-the code on main at `0d3af537b`, whose `src/` is the same as `260881273`'s, and against the pinned adapter's own package (§1.7).
-Codex's read is owed, its credits out. Nothing here is built. The design reverses decided rules other designs rest on (§4 names
-each), among them D189 point 1 on an agent's own transcript, so by D191's note of 2026-10-24 it is not accepted on one maker's read:
-it stays proposed until Codex's read lands. The line view (SWITCHCTX1c-i) reverses nothing and is split out as a row of its own
-(§6). The notes on D125, D131, D137, D165, D167, D189, D197 and D206 say *proposed* and point here.
+at `260881273`: 10 findings, 3 blocking, accept after named changes. Round 3 took those in §9, from main at `0d3af537b`. Codex read
+round 3 at `972b17577`: 26 findings, 17 blocking, another round, its read recorded in the same file. Round 4 answers every one in
+§10. It is written from main at `972b17577`, the commit Codex read, whose lines every citation of §0 to §7 names, and checked
+against the pinned adapter's own package (§1.7). It adopts Codex's smaller shape (§10): the corrected line view first, then the
+carry on the curve's move alone through one durable carry record, falling back before any prompt wherever its proof fails, then the
+same protocol on every other move of the same agent. Nothing here is built. The design reverses decided rules other designs rest
+on (§4 names each), among them D189 point 1 on an agent's own transcript, so by D191's note of 2026-10-24 it is not accepted on one
+maker's read: it stays proposed until both readers, Codex and the independent Opus reader, have read round 4. The line view
+(SWITCHCTX1c-i) reverses nothing and is a row of its own (§6); Codex found it blocked as round 3 wrote it (§10, 4.1 and 5.1), so its
+round-4 text waited for the same two reads, though not for the carry's acceptance. **SWITCHCTX1c-i was accepted on 2026-10-25,
+alone, by the steward under D191**: both makers' reads of round 4 (the reads record) found its round-4 text buildable, Codex's in
+its §4 item 2 and §5 item 1 and the Opus reader's in its §3, §4 and finding 11, whose three points §2.7 and §6 now state (where an
+ended line opens, that pressing an earlier part hides the later ones, and a bound on the parts drawn). Everything else here stays
+proposed. The notes on D125, D131, D137, D165, D167, D189, D197 and D206 say *proposed* and point here; D167's of 2026-10-25 records
+the line view's acceptance.
 
 The row SWITCHCTX1 in `TASKS.md` carries the case and the owner's direction of 2026-10-24: an account switch, and a switch to
 another agent such as Codex, continue the session rather than start a new one. On the install a kit's chat moved at 06:52 UTC from
@@ -17,10 +26,11 @@ every record on the line's one entry as its parts.
 
 A path without a root is under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; page paths are under `src/Daoris.Web/src/`. *An
 account's home* is the configuration home Daoris makes per account, `HarnessSettings.ProfileHome(home, agent, account)`
-(`Accounts/Harnesses/HarnessSettings.cs:881-882`): the entry `agent-homes`, at `profiles/agents/<agent>/<account>` since HOMELAYOUT3
-and `harnesses/<agent>/<account>` for an account made before it (`Platform/DaorisHome.cs:324`, `:370`). This design reaches either
-only through `ProfileHome`. *The person's own tool home* is the agent's home outside Daoris's accounts, the person's own sign-in
-(D197 point 3), where a record names no account.
+(`Accounts/Harnesses/HarnessSettings.cs:881-882`), its `agent` the adapter's account owner, `Toolchain.Owner(adapter)`
+(`Accounts/Harnesses/Harnesses.cs:281`), which is `claude-code` for both of Claude Code's doors: the entry `agent-homes`, at
+`profiles/agents/<agent>/<account>` since HOMELAYOUT3 and `harnesses/<agent>/<account>` for an account made before it
+(`Platform/DaorisHome.cs:324`, `:373`). This design reaches either only through `ProfileHome`. *The person's own tool home* is the
+agent's home outside Daoris's accounts, the person's own sign-in (D197 point 3), where a record names no account.
 
 ## 0. The direction, and the two halves
 
@@ -30,14 +40,18 @@ The direction is that none of these reads as, or works as, a fresh start. Two ha
 agent's own memory:
 
 1. **The same agent from one of Daoris's accounts to another** keeps its own conversation: the conversation's own files are
-   carried to the next account's home, and the same conversation resumes there by the agent's own resume, read back before it is
-   counted. Where that does not hold, at the open or at the carried part's first turn, the move goes on as it does today, from
-   Daoris's brief, and says so.
+   carried to the next account's home, and the same conversation is loaded there by the agent's own load and read back against
+   Daoris's record before anything is prompted. Where that proof does not hold, the move goes on as it does today, from Daoris's
+   brief, and says so; where the carried part's first turn is refused before it ran anything, the line goes on in a further part
+   from the brief.
 2. **Another agent** cannot take the first agent's own conversation: one maker's store is not another's. The line goes on from
    Daoris's record of it, the brief, as LIMITGOON1's and LIMITGOON2's go-on does today, and the page says so.
 
-**On the page, either half reads as one conversation**: the earlier parts' turns above, the move said once between, never a
-fresh session.
+**On the page, either half reads as one conversation**: the parts the attended one continues drawn above it, the move said once
+between, never a fresh session.
+
+**In this order** (§6): the line view first, which serves both halves; then the carry on the curve's move alone; then every other
+move of the same agent by the same protocol; and another door only once it can read a carried conversation back.
 
 ## 1. Today, read from the code
 
@@ -47,7 +61,7 @@ fresh session.
   `SwitchChoice` (`:10`): `Stay` with a reason (`:17`, reasons `:33-48`), `ReadOthers` (`:23`) or `MoveTo(Account, Window, Used,
   Curve)` (`:29`). A move is held for thirty minutes after the last (`Hold`, `:68`).
 - **A conversation moves at its turn's end.** `ChatRunner` hands a turn's end to `CurveMove.Due`, or to the limit's move where
-  the turn was limited (`Conversations/Chat/ChatRunner.cs:1497-1501`). The curve judges only a turn's end with nothing running,
+  the turn was limited (`Conversations/Chat/ChatRunner.cs:1509-1515`). The curve judges only a turn's end with nothing running,
   opening or queued, so **no words wait at a curve move** (`CurveMove.TurnJustEnded`, `Conversations/Chat/CurveMove.cs:36-37`).
   `CurveMove.MoveAsync` (`:62`) passes Ask Daoris, teammates' records, intakes and a record with no account by (`:70-77`: it
   requires `Profile: { Length: > 0 }`), keeps the `MoveTo` (`:106`), and asks the hand-over with the agent unchanged, why `curve`,
@@ -62,12 +76,12 @@ fresh session.
   ends **or after fifteen seconds** (`ChatHandOver.cs:16`, `:225-230`); `LimitMove` ends the old part by the same call
   (`Conversations/Chat/LimitMove.cs:133`).
 - **A quest's session moves by its carry-on.** `Driver.ContinuesFrom` names the why: a hand-over, then `limit` on another account,
-  then `curve` where the walk's step was over the curve or the most room (`Loop/Driver.cs:4548-4559`, called at `:2422`); the
-  carry-on opens a new record `from` it (`:2431-2439`), handed the brief (`:2521-2525`), its lines `moved.on` and `moved.from`
-  (`SayMoved`, `:4515-4528`, called at `:2526`; `HandOverNotes.MovedOn`/`MovedFrom`, `HandOverRecords.cs:159`, `:169`) and the
+  then `curve` where the walk's step was over the curve or the most room (`Loop/Driver.cs:4615-4626`, called at `:2445`); the
+  carry-on opens a new record `from` it (`:2454-2462`), handed the brief (`:2544-2548`), its lines `moved.on` and `moved.from`
+  (`SayMoved`, `:4582-4595`, called at `:2549`; `HandOverNotes.MovedOn`/`MovedFrom`, `HandOverRecords.cs:159`, `:169`) and the
   machine log's `session.moved` (`Conversations/Domain/Continuation.cs:585-593`, its field `briefed`). A driven start also reads what
-  waited on the ask's channel for the entry's next part into its instruction (`Driver.cs:2540`, `:2620`) and marks it handed once
-  the record works (`:2712`).
+  waited on the ask's channel for the entry's next part into its instruction (`Driver.cs:2563`, `:2643`) and marks it handed once
+  the record works (`:2735`).
 
 So every move over the curve is a new part on a new conversation, handed the brief. The account-switch design said what that
 costs and left this row to measure it (`docs/2026-10-12-account-switch-design.md:132-135`).
@@ -82,19 +96,21 @@ costs and left this row to measure it (`docs/2026-10-12-account-switch-design.md
   brief carries it: *the agent's own conversation is in the cooling account's home, which Daoris never reads, copies or writes
   (D189 point 5), so it cannot resume on the next account* (`LimitMove.cs:12-13`). D197's LIMITGOON1 note and D189's say the same
   (`docs/decisions/D197.md:371-379`; `docs/decisions/D189.md:246-250`).
-- **An ended record held by its limit** moves by a durable box, `LimitMoveBox`, holding the reason, the refused turns' bounds, the
-  ids of the waiting words and the new part (`LimitMove.cs:250`, `:266`); the brief is composed again from those
-  (`:293-310`). The live limit move, the curve's take and a driven carry-on have no such box.
+- **An ended record held by its limit** moves by a durable box, `LimitMoveBox` (`Conversations/Chat/LimitBox.cs:16`), holding the
+  reason, the refused turns' bounds, the ids of the waiting words and the new part, written at `LimitMove.cs:250` and naming the
+  new part at `:269`; the brief is composed again from it (`:296-313`). The live limit move, the curve's take and a driven
+  carry-on have no such box.
 - **LIMITGOON2**: where no account of its agent has room, `ElsewhereAsync` walks its actor's effective order without that agent and
-  opens the new part on the first choice that can run (`LimitMove.cs:92`, `:426`), handed the same brief and words: D205's (e)
+  opens the new part on the first choice that can run (`LimitMove.cs:92`, `:444`), handed the same brief and words: D205's (e)
   (`docs/2026-10-23-actors-design.md:478-494`), *never the transcript*.
-- **Ask Daoris moves only by a limit**, by `LimitMove.HelpStartAsync`, in the room `HelpRoom.GoesOnIn` returns (`LimitMove.cs:402-416`),
+- **Ask Daoris moves only by a limit**, by `LimitMove.HelpStartAsync`, in the room `HelpRoom.GoesOnIn` returns (`LimitMove.cs:420-434`),
   never by the curve (`CurveMove.cs:70-77`) or a hand-over (`HandOver.cs:190-193`). That room is the workspace's, which is not always
   the previous part's (ASKSCOPE1b, `Conversations/Chat/ChatGoOn.cs:648-649`).
 - **One conversation on the page, for Ask Daoris only.** Ask Daoris's history folds a part handed the brief into its line
   (`HelpConversation.Parts`, `Help/HelpConversations.cs:22`, the fold at `:233-249`, the link `Brief = "brief"` at `:124`), and
   the page follows a chosen conversation to its newest part (`help/AskConversation.tsx:202-207`) and draws the earlier parts above
-  it, read-only (`:870-876`). LIMITGOON1's note says a repository's chat *was one session by its parts already* (D189.md:255-258).
+  it (`:870-876`), each a `SessionConversation` with `live={false}` on the same scroll region. LIMITGOON1's note says a
+  repository's chat *was one session by its parts already* (D189.md:255-258).
 
 ### 1.3 A hand-over to another agent
 
@@ -103,7 +119,7 @@ D163 point 1: *a hand-over is a carry-on with its agent named*, in the same tree
 summary* (D163.md:21-22). It goes by `HandOverTake.RunAsync` as §1.1's move does, the opening line `chat.taken-over` and the
 last `chat.handed-over` (`HandOver.cs:270`, `:274`; `HandOverRecords.cs:134`, `:148`). The judge requires no account on the record
 or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on their own sign-in to an account, or the reverse.
-`chat.taken-over` says where it came from and why, and nothing of what the new agent was given (`locales/en/note.json:195`), where
+`chat.taken-over` says where it came from and why, and nothing of what the new agent was given (`locales/en/note.json:202`), where
 `moved.from` says *handed Daoris's brief*.
 
 ### 1.4 A line's parts, and what the page shows of them
@@ -113,31 +129,44 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
   conversation's origin its own `session:<id>`, and a record that continues another takes that one's origin through its `from`
   (`src/Daoris.Service/Daoris.Service.Core/Sessions/SessionEntries.cs:26-37`, `:74`, `:87-89`; written at open,
   `Sessions.cs:818-819`). So a line's key is `session:<first>/<repository>`, `<first>` its first record (the fallback,
-  `Trees/SessionGroups.cs:129`).
+  `Trees/SessionGroups.cs:129`). Since D167's amendment of 2026-10-14 an entry may also hold parts running **alongside**, a
+  sibling's request in a tree of its own, which continue no part by `from` (`D167.md:73-82`).
 - **The page shows one part at a time.** A repository's chat draws the *Parts* strip, one button per part, oldest first, how each
   began read from its `fromWhy`, *Part 2 of 3* (`work/head/PartsStrip.tsx:90-113`, hidden for one part, `:107`), and the
-  conversation of the attended part alone (`work/WorkFrame.tsx:2456-2457`). Pressing an earlier part shows it in place of the
+  conversation of the attended part alone (`work/WorkFrame.tsx:2471-2472`). Pressing an earlier part shows it in place of the
   newest, and *every act on the page stays the part shown's* (`PartsStrip.tsx:91-95`). **This is what read as a fresh session on
   the install**: after the move the attended part is the new one, its conversation opens empty under the brief, and the turns
   before it are a press away.
+- **A conversation's own view owns its region.** `SessionConversation` reads a part that is not live as ended: `settle` cuts its
+  last unfinished turn and marks its open calls stopped (`work/conversation/conversation.ts:881-901`). It follows the tail of the
+  region it is handed, or opens an ended one at its head (`work/conversation/SessionConversation.tsx:191`), and tells the frame its
+  usage, its wait, its limit's wait and its tail (`:161-200`).
 - **How a part was handed** is kept only for Ask Daoris, as `Handed` in its `.help.json` (`HelpConversations.cs:11`, `:156`,
   `:188`); a repository's chat and a driven part keep no such value.
 - **The words call it a new session.** `note.moved.on` and `note.moved.from` say *went on in session {{session}}* and *the new
-  session* (`locales/en/note.json:197-198`); `note.limit.resume-refused` says *it went on in a new session* (`:206`);
-  `work.limit.briefed` says *It goes on in a new session* (`locales/en/work.json:146`) and
-  `notifications.done.look.limit-went-on` *went on in a new session* (`locales/en/notifications.json:69`); zh the same at the same
+  session* (`locales/en/note.json:204-205`); `note.limit.resume-refused` says *it went on in a new session* (`:213`);
+  `work.limit.briefed` says *It goes on in a new session* (`locales/en/work.json:150`) and
+  `notifications.done.look.limit-went-on` *went on in a new session* (`locales/en/notifications.json:76`); zh the same at the same
   lines. The glossary's *session* is the whole line and a run is a *part*, *each with its own conversation (D167)*
   (`locales/glossary.json`, rows `session` and `part`).
 
 ### 1.5 Where each harness keeps a conversation, per account home
 
 - **The homes.** `HarnessSettings.ProfileHome` (`HarnessSettings.cs:881-882`) is the one way to an account's home, at either
-  spelling of `agent-homes` (`DaorisHome.cs:324`, `:370`); its contract says *Daoris owns this location and nothing inside it*
+  spelling of `agent-homes` (`DaorisHome.cs:324`, `:373`); its contract says *Daoris owns this location and nothing inside it*
   (`HarnessSettings.cs:878`). `HarnessSelection.Apply` creates it and names it to the agent by its variable
   (`Accounts/Harnesses/HarnessSelection.cs:579-580`): `CLAUDE_CONFIG_DIR` for Claude Code on both doors
-  (`Agents/Adapters/Adapters.cs:1927`, `:2365`), `CODEX_HOME` for Codex (`:2110`; `Accounts/SignIns/CodexAccounts.cs:42`). The one
+  (`Agents/Adapters/Adapters.cs:1930`, `:2368`), `CODEX_HOME` for Codex (`:2113`; `Accounts/SignIns/CodexAccounts.cs:42`). The one
   write Daoris already makes inside one is the trust grant to `.claude.json`, on the person's own act
   (`Accounts/SignIns/ClaudeTrust.cs:69-73`).
+- **What writes the transcript.** On the protocol door the adapter's Agent SDK runs a `claude` CLI: the managed one the pipe door
+  pins, where one is pinned, by `CLAUDE_CODE_EXECUTABLE` (`HarnessSelection.cs:603-608`, `Adapters.cs:2131-2153`), and otherwise
+  the SDK's own (the pinned package's `claudeCliPath`, l. 626-662, used at l. 6638). So the adapter's version does not name the
+  program that writes the conversation's file. On the install no `claude` is pinned (its toolchain holds claude-code-acp, codex and
+  codex-acp alone), and claude-agent-acp 0.84.0 runs the SDK 0.3.284's own CLI, whose `package.json` says `claudeCodeVersion`
+  2.1.284. The record keeps the adapter's version alone (`harnessVersion`). A comment of the code reads another pair,
+  claude-agent-acp 0.91.0 on the SDK 0.3.300 (`Adapters.cs:1895`, HELPPLUG1b's reading of plugins); the pin read here is the
+  install's.
 - **Claude Code** keeps a conversation as `projects/<folder>/<id>.jsonl` under its home, `<folder>` the working directory with
   every character but a letter or a digit turned into `-` (`Platform/ToolHomeLeftovers.cs:30-31`, `Flatten` `:55`); its resume
   reads it there and refuses a missing one with `resource_not_found` (`docs/2026-10-02-answer-continues-design.md:36-38`). Read on
@@ -146,7 +175,7 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
   configuration, a tree's trust among it, `ClaudeTrust.cs:82`), `sessions/` (running processes' files), `session-env/`,
   `shell-snapshots/`, `plugins/`, `skills/`, `cache/`, `state/`, `telemetry/`, `backups/`, the policy and remote settings files,
   and `usage-read/`. Claude Code versions have also kept files keyed by the conversation id in other places (`todos/`,
-  `file-history/<id>/`, `session-env/<id>/`, `debug/<id>`), which a names-only read on the pinned version classes (§2.2). A folder
+  `file-history/<id>/`, `session-env/<id>/`, `debug/<id>`), which a names-only read on the pinned identity classes (§2.2). A folder
   is the same on every account home for the same tree, since a move keeps its tree (D189 point 2).
 - **Codex** files a session by the date it ran under its home's `sessions/`, the folder it ran in said only inside its file, which
   Daoris never reads (`ToolHomeLeftovers.cs:41-42`). No Codex account home on this install holds a session, so the file's name and
@@ -155,30 +184,30 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
   `resumable` (`ToolHomeLeftovers.cs:9`, `:122-123`).
 - **The ids.** The agent's conversation id is kept per record in `<home>/sessions/<record>.harness.json`, never read from the
   agent's home (`Conversations/GoOn/HarnessConversations.cs:8-10`, `Keep` `:31`, `Read` `:54`), as `HarnessConversation(Adapter,
-  Conversation)` (`Conversations/Domain/GoOnRecords.cs:35`), kept for a chat at `ChatRunner.cs:2369`.
+  Conversation)` (`Conversations/Domain/GoOnRecords.cs:35`), kept for a chat at `ChatRunner.cs:2396`.
 - **The resumes.** The protocol door resumes by `session/resume` where the agent advertises it, else `session/load`
-  (`Agents/Acp/Acp.cs:3224`, `:3270-3288`), `resource_not_found` read as `gone` (`:3245`), for claude-code-acp and codex-acp alike
-  (`Adapters.cs:1506`, `:1828`, `:2060`). `session/resume` replays nothing; a load's replay arrives as updates and is dropped
-  (`Acp.cs:3214-3216`, `:3236`, `:3290-3294`). Neither a load nor a resume names an id on this door: the id is the one asked for
-  (`:3218-3221`), kept without telling a listener (`:3255`). A resume carries its record's chosen model and effort again
-  (`:3260-3261`). **A choice the account does not offer ends differently by start.** Only the driven start hands a re-ask
-  (`ModelRefused`, `Loop/Driver.cs:4259`): there the re-ask's later choice is set on the same session (`Acp.cs:676-706`), and the
-  open ends `ChoiceNotOffered` only where no later choice comes (`:678`), caught by the one-shot run (`:814-821`). A chat's session
-  is built with no re-ask (`ChatRunner.cs:2591-2601`), so the set's refusal is not judged (`Acp.cs:673`): the model is set aside as
-  not carried (`:729-733`, told by `Carried`, `:710`), and the session runs on the account's default. Only the driven run takes
-  the one-shot `AcpSession.RunAsync` (`:798-812`), whose resume always sends the run's prompt as its next turn (`:811-847`); a
+  (`Agents/Acp/Acp.cs:3365`, `:3411-3429`), `resource_not_found` read as `gone` (`:3386`), for claude-code-acp and codex-acp alike
+  (`Adapters.cs:1506`, `:1831`, `:2063`). `session/resume` replays nothing; a load's replay arrives as updates and is dropped
+  (`Acp.cs:3355-3357`, `:3377`, `:3431-3435`). Neither a load nor a resume names an id on this door: the id is the one asked for
+  (`:3359-3362`), kept without telling a listener (`:3396`). A resume carries its record's chosen model and effort again
+  (`:3401-3402`). **A choice the account does not offer ends differently by start.** Only the driven start hands a re-ask
+  (`ModelRefused`, `Loop/Driver.cs:4326`): there the re-ask's later choice is set on the same session (`Acp.cs:682-712`), and the
+  open ends `ChoiceNotOffered` only where no later choice comes (`:684`), caught by the one-shot run (`:820-827`). A chat's session
+  is built with no re-ask (`ChatRunner.cs:2618-2628`), so the set's refusal is not judged (`Acp.cs:679`): the model is set aside as
+  not carried (`:735-739`, told by `Carried`, `:716`), and the session runs on the account's default. Only the driven run takes
+  the one-shot `AcpSession.RunAsync` (`:804-818`), whose resume always sends the run's prompt as its next turn (`:817-853`); a
   chat's session, Ask Daoris's among them, resumes or opens in `ChatRunner.RunAsync` and then waits for words
-  (`ChatRunner.cs:2618-2619`; Ask Daoris's own go-on, `ChatGoOn.cs:651-653`). The pipe door is Claude Code's alone, `--resume <id>`
-  (`Adapters.cs:2212`, `:2219-2223`, `:2279`; `ChatRunner.cs:1311`); `CodexAcpAdapter` (`Adapters.cs:2060`) is the only Codex
+  (`ChatRunner.cs:2645-2646`; Ask Daoris's own go-on, `ChatGoOn.cs:651-653`). The pipe door is Claude Code's alone, `--resume <id>`
+  (`Adapters.cs:2215`, `:2222-2226`, `:2282`; `ChatRunner.cs:1321`); `CodexAcpAdapter` (`Adapters.cs:2063`) is the only Codex
   adapter.
 - **No resume follows a move.** A fresh start passes no `GoingOn` to `RunAsync` (`ChatRunner.StartCoreAsync`,
-  `ChatRunner.cs:492-638`, the run at `:628-631`), so the protocol door opens with `session/new` (`:2618-2619`). The record's id is
-  created inside the start, by the ledger's open (`:582-587`; the driven open `Driver.cs:2431-2439`). The resume's judge,
+  `ChatRunner.cs:496-642`, the run at `:638-641`), so the protocol door opens with `session/new` (`:2645-2646`). The record's id is
+  created inside the start, by the ledger's open (`:586-591`; the driven open `Driver.cs:2454-2462`). The resume's judge,
   `Continuations.Judge`, is the go-on's for a record whose words wait: it answers `ended` where none wait (`Continuation.cs:217`)
   and refuses a record whose account is not the one it ran on, *another account would not find it* (`:177-181`, `:226-229`); its
   callers are the ended-record go-ons (`ChatGoOn.cs:483`, `:525`, `:615`; `Loop/DriverContinuations.cs:61`, `:209`). A refused
-  resume kills the process (`ChatRunner.cs:2622-2640`), under the rule that a new session would be *a new conversation under the
-  same record* (`:2616-2617`, D137 point 8).
+  resume kills the process (`ChatRunner.cs:2649-2667`), under the rule that a new session would be *a new conversation under the
+  same record* (`:2643-2644`, D137 point 8).
 - **HOMELAYOUT5** (open, `TASKS.md:120`) asks the neighbouring question, whether a conversation resumes from a *moved folder*
   (`docs/2026-10-16-install-layout-design.md:166-167`, `:243-245`, `:272-273`): the tree moved and the home kept. Here the tree is
   kept and the home changes, so its answer is not this one's, and neither has been measured.
@@ -195,7 +224,7 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
   first* (`:41-47`). Its reason: one record standing for one conversation makes the page, the log, the review and a teammate's
   view show one session *without each learning a fold* (`:37-38`).
 - D137 point 8: *One record per harness conversation; Daoris resumes only by the id it kept* (`docs/decisions/D137.md:31`), which
-  the code reads as *never a new conversation under the same record* (`ChatRunner.cs:2616-2617`).
+  the code reads as *never a new conversation under the same record* (`ChatRunner.cs:2643-2644`).
 - D167 point 1: *A part is still one harness conversation and one record* (`D167.md:15`).
 - D189 point 1: the agent's own conversation is *one per record* and *never read, copied or written by Daoris*; point 5: never
   handed *anything read or written in a harness's store*; point 6: *A left conversation is not resumed again … going back to its
@@ -204,7 +233,8 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
   reasons: it acts inside an account's home, it depends on a format the harness changes at will, and it can never cross makers
   (`docs/2026-10-20-session-context-design.md:368-371`).
 - D206 (LIMITRESUME1) rejects *copying the transcript to another account's home: D189 point 5, D125's rejection*
-  (`docs/2026-10-23-limit-resume-design.md:673`).
+  (`docs/2026-10-23-limit-resume-design.md:673`). Its own-account wake sends the refused turns' words again, since it cannot see
+  whether the transcript kept them (`:360-366`).
 - D165 point 3 moves a conversation *by the hand-over with its agent unchanged* (`docs/decisions/D165.md:17-19`), and the
   account-switch design's row SWITCHCTX1 was an evidence row spending two short turns (`:198`).
 - D49 §4, D66 §3 and D197 point 3 keep the person's own tool home and sign-in outside Daoris's accounts.
@@ -216,22 +246,25 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
   later request* (`D189.md:37-38`, `:46-48`). The code states the rule too: `LimitMove.cs:12-13`, `HarnessConversations.cs:8-10`
   (*never read from the agent's own home … which D125 rejected*) and `Continuation.cs:177-181` (*another account would not find
   it*).
+- The session-messages design §4.3: the person may open Daoris's conversation in their own terminal with the account's home, and
+  *Daoris neither offers nor prevents it* (`docs/2026-10-03-session-messages-design.md:291-295`).
 
 ### 1.7 What the record keeps, and what the pinned adapter replays
 
-- **The record of a turn.** It keeps the person's words (`ChatMessage.Words`, `Conversations/Domain/ChatMessage.cs:188-200`); what
+- **The record of a turn.** It keeps the person's words (`ChatMessage.Words`, `Conversations/Domain/ChatMessage.cs:195-207`); what
   the agent was sent, and stored, is the composed prompt: the brief, the briefing, the told process and the preface, then the words
-  (`:174-175`); a go-on sends each word as a block of its own (`Conversations/Domain/ResumeAsk.cs:65-66`); and the record keeps the
-  door's echo of a prompt as a person's `User` event (`Acp.cs:2956-2957`). So a person's turn has no stated counterpart in what
-  the agent stores. **The agent's own messages are kept as the wire gave them**, each event with the update's `messageId`
-  (`Acp.cs:2950-2952`).
+  (`:181-182`); a go-on sends each word as a block of its own (`Conversations/Domain/ResumeAsk.cs:65-66`); and the record keeps the
+  door's echo of a prompt as a person's `User` event, with no id (`Acp.cs:3097-3098`). So a person's turn has no stated counterpart
+  in what the agent stores. **The agent's own messages and thoughts are kept as the wire gave them**, each event with the update's
+  `messageId` (`Acp.cs:3091-3096`), and **each tool call with its `toolCallId`** (`:3100-3103`).
 - **What a part last ran.** `PriorSession.Ran.Models` is a bounded set of every model any turn reported, first seen first, up to
-  eight (`Sessions/Domain/ActorRun.cs:120`, `:142-150`): provenance for a maker's trailer (`LimitMove.cs:453-455`), holding no
+  eight (`Sessions/Domain/ActorRun.cs:120`, `:142-150`): provenance for a maker's trailer (`LimitMove.cs:471-473`), holding no
   effort. The part's last acknowledged model and effort are the last of `Ran.Entries` (`ActorRun.cs:119`, `:151-154`). A curve
   move's new part asks no model: the take starts with no order (`ChatHandOver.cs:156-157`), so what it asks is
-  `ActorAsked.Before`, the account's default (`ChatRunner.cs:499`, `:1268`; `ActorRun.cs:9`), which sets nothing (`Acp.cs:715`).
-- **The pinned adapter's load, read from its package with no turn spent**, as `Acp.cs:3218-3221` read its capabilities: the
-  install's pin is claude-agent-acp 0.84.0 (`harnesses.json`'s `versions`), on the Agent SDK 0.3.284, its `dist/acp-agent.js`:
+  `ActorAsked.Before`, the account's default (`ChatRunner.cs:503`, `:1278`; `ActorRun.cs:9`), which sets nothing (`Acp.cs:721`).
+- **The pinned adapter's load, read from its package with no turn spent**, as `Acp.cs:3359-3362` read its capabilities: the
+  install's pin is claude-agent-acp 0.84.0 (`harnesses.json`'s `versions`), on the Agent SDK 0.3.284, its CLI 2.1.284 (§1.5), read
+  for round 3 and again for round 4 from the install's toolchain, its `dist/acp-agent.js`:
   - `loadSession` (l. 1345-1360) reads the transcript by the SDK's `getSessionMessages(id)`, which searches every project folder
     under the home's `projects/` and builds the conversation's chain by its `parentUuid` links, answering an empty list for an id
     it does not find (`sdk.d.ts`, `getSessionMessages`); it then opens the session resumed and replays (`replaySessionHistory`,
@@ -240,18 +273,26 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
     transcript's last real assistant record and reports it as current (`resumed-session.js`, `resumedModelFromTranscript`;
     `session-model.js`, `getAvailableModels`, l. 335-365, and `matchResumedModel`, l. 141-162).
   - **The replay.** Every user and assistant message of the chain goes out as updates, each stamped with
-    `messageIdForGrouping(message)` (l. 7635-7646): an assistant message's API id, else its uuid. Live, a streamed message's chunks
-    carry the same API id, taken from its `message_start` (l. 4324, l. 4427). **So the agent's own messages replay with the
-    `messageId` they had live**, which the record already keeps. A user message replays the composed prompt, local command
-    metadata stripped. A tool call and its result replay as tool updates. The synthetic sign-in message is skipped. A synthetic
-    usage-limit message replays as a typed failure only to a client that takes them, which Daoris does not advertise
-    (`Acp.cs:1622-1635`), so it replays as the agent's text. A compaction's summary replays as user text, since Daoris advertises
-    no compaction updates.
-  - **What else it reads in the home.** With `subagents` advertised, as Daoris does where it streams (`Acp.cs:1627-1628`), a
-    launched subagent's history is read from the conversation's own `<id>/subagents/` and replayed to a child session
-    `<id>:replay-subagent:<tool use id>`, which the door's replay filter, keyed on the conversation's own id, already passes over
-    (`Acp.cs:3290-3294`). Nothing else in the home is read for the conversation; the spawn reads the account's own settings and
-    sign-in as every spawn does.
+    `messageIdForGrouping(message)` (l. 7635-7646): an assistant message's API id, else its uuid, the persisted uuid being the
+    live one (l. 5490-5494 says so of a prompt). Live, a streamed message's chunks carry the same API id, taken from its
+    `message_start` (l. 4324, l. 4427). **So the agent's own messages replay with the `messageId` they had live**, and a thought with
+    its message's. **A tool call replays with its tool use's own id as `toolCallId`, as it had live** (`tool-calls/renderer.js`
+    l. 64, 84). A user message replays the composed prompt, local command metadata stripped. The synthetic sign-in message is
+    skipped. A compaction's summary replays as user text, since Daoris advertises no compaction updates.
+  - **A limit's message.** To a client that takes no typed failures, as Daoris (`Acp.cs:1756-1769`), the synthetic usage-limit
+    message is forwarded live as the agent's text, stamped by the same `messageIdForGrouping` (it is skipped live only for a
+    client that takes them, l. 4659-4668; stamped at l. 4712), so the record keeps it by its id; on replay it goes out as the
+    agent's text again, a typed failure only to a client that takes them (l. 5490-5504).
+  - **What else it reads in the home, and where a child's replay goes.** With subagents advertised, as Daoris does where it streams
+    (`Acp.cs:1761-1762`), a launched subagent's history is read from the conversation's own `<id>/subagents/` and replayed to a
+    child session `<id>:replay-subagent:<tool use id>` (l. 5363, 5405, 5427), announced by `subagent_spawned` on the parent's own
+    id (l. 5446-5459); the launch's own tool call is not replayed (l. 5563-5568), as live Daoris keeps the child's card in its place
+    (`Agents/Acp/AcpStreams.cs:169-181`). **Round 3 said the door's replay filter already passes over the child; it does not**: the
+    filter drops only updates of the conversation's own id (`Acp.cs:3431-3435`), so the announcement is dropped, the child is never
+    registered, and its messages, under the child's id, pass the filter, find no child (`AcpStreams.cs:95-99`) and fall through into
+    the parent's record (`Acp.cs:2517-2533`). No load reaches this today, since claude-agent-acp advertises `session/resume`, which
+    the door takes first (`:3411-3429`); a carried load would, so the carry filters it (§2.3). Nothing else in the home is read for
+    the conversation; the spawn reads the account's own settings and sign-in as every spawn does.
 
 ## 2. The design
 
@@ -259,38 +300,41 @@ or the ask (`HandOver.cs:135-174`), so the person may hand a conversation on the
 
 A move **carries** where all of these hold, and only there. They are judged by a carry judge of its own, `Carries.Judge`, pure
 but for the looks it is handed, beside `Continuations.Judge` and never through it (the go-on's judge answers `ended` with no
-words waiting, §1.5). Each refusal is a code, said on the new part and in the log (§2.3):
+words waiting, §1.5). Each refusal is a code, in the log (§2.3); a refusal by the move's kind (`agent`, `own-home`, `tree`,
+`room`) is today's briefed move and says nothing more on the page, and every other refusal is said on the new part
+(`moved.carry-failed`, its reason worded from the family `carry`, §2.7):
 
 | Condition | Refused as |
 |---|---|
 | the agent is the same (its adapter unchanged) | `agent` |
-| **both records name an account of Daoris's**: the old record's `Profile` and the start's settled `selection.Profile`, each non-empty, each a profile of that agent; a part on the person's own sign-in, on either side, moves by the brief (D49 §4, D66 §3, D197 point 3) | `own-home` |
+| **both records name an account of Daoris's**: the old record's `Profile` and the start's settled `selection.Profile`, each non-empty, each a profile of that agent's owner (`Toolchain.Owner`); a part on the person's own sign-in, on either side, moves by the brief (D49 §4, D66 §3, D197 point 3) | `own-home` |
 | the account changes | (not a move) |
 | the tree is the same (every move keeps it, D189 point 2), so the conversation's folder is the same name in both homes; for Ask Daoris, the room `HelpRoom.GoesOnIn` returns is the previous part's tree | `tree`, `room` |
 | the old record kept a conversation id (`HarnessConversations.Read`), held to the grammar `[A-Za-z0-9-]{1,128}` | `unkept`, `id` |
 | the old part's process has exited: its watch ended, not the fifteen seconds (§1.1), and the process registry holds none for it | `busy` |
-| the door resumes by a load whose replay can be matched: the protocol door where the table's row names the replay's anchor (§2.3), and the pipe door only once LIMITRESUME1f has recorded that its `--resume` of a missing id fails closed (§3.3); and the old part's record holds at least one agent message with a `messageId` | `door` |
-| the agent's carry table (§2.2) has a row for the adapter's pinned version, which is both the old record's `HarnessVersion` and the start's `selection.Version`. This refuses a carry across a version, which D131 point 2 never refuses for a resume (§4) | `version` |
+| the door can read a carried conversation back: the protocol door where the table's row names the replay's anchor (§2.2), and the pipe door never until SWITCHCTX1e gives it a read-back of its own (§3.3); and the line's parts that name the kept id hold at least one agent message with a `messageId` | `door` |
+| **the compatibility identity is the same on both sides and the carry table has its row** (§2.2): the adapter's version and the version of the CLI it runs (§1.5), the old part's as kept beside its conversation id (§2.3) and the start's (`selection.Version` and the CLI its selection runs). This refuses a carry across either version, which D131 point 2 never refuses for a resume (§4); a conversation kept with no identity, before SWITCHCTX1a, is refused | `version` |
 | the old part acknowledged a model: the last of its `PriorSession.Ran.Entries` (`ActorRun.cs:119`), never `Ran.Models`, which is a provenance set (§1.7) | `model` |
-| until SWITCHCTX1f has measured the cross-account case, **what ran** is the same: the carried start asks that model and its effort explicitly, with no re-ask, and after the set the session's acknowledged options (`LastAcknowledgedOptions`) name both, with no `Carried` told (`Acp.cs:710`) and no set refused (§2.5) | `model` |
+| until SWITCHCTX1f has measured the cross-account case, **what ran** is the same: the carried start asks that model and its effort explicitly, with no re-ask, and after the set the session's acknowledged options (`LastAcknowledgedOptions`) name both, with no `Carried` told (`Acp.cs:716`) and no set refused (§2.5) | `model` |
 
 The moves that meet it: D165's curve move of a conversation (`CurveMove` → `HandOverTake`) and of a quest's session (the carry-on,
 why `curve`); LIMITGOON1's move to another account of the agent (`LimitMove`, live or ended); D206's briefed move of a limit-held
 conversation to another account that frees first; the person's own hand-over to another account of the same agent; a quest's
 carry-on why `limit`; and Ask Daoris's limit move (`HelpStartAsync`) where its room is the previous part's tree. Everything else
 (another agent, the person's own sign-in on either side, a teammate's record, an intake, a tree or room that differs, an id never
-kept) goes by the brief, as today.
+kept) goes by the brief, as today. SWITCHCTX1a builds the first of them alone, a conversation's curve move; the rest are
+SWITCHCTX1b's, by the same protocol (§6).
 
 The judge runs twice: **before the old part ends**, on what is known then (the agent, the old record's account, its tree, its kept
-id, the door and the record's anchor, the version, the old part's acknowledged model), so a hand-over that will carry asks no
+id, the door and the line's anchor, the identity, the old part's acknowledged model), so a hand-over that will carry asks no
 closing note (§2.4 step 2); and **after the start's selection settles the account**, on all of it, the old process's exit among
-it. Only the second decides whether to copy. The model's last condition is judged on the wire after the load, since what ran is
-known only there; a refusal there falls back at the open (§2.5).
+it. Only the second decides whether the carry record is written (§2.3). The model's last condition is judged on the wire after
+the load, since what ran is known only there; a refusal there falls back at the open (§2.5).
 
 **The model, judged on what ran.** A curve move asks the account's default today (§1.7), which is unknown before the spawn, so the
 condition never compares what two starts *ask*. A carried start asks the old part's last acknowledged model and effort as values
 of source `entry`, carried, and hands no re-ask on any path, the driven one included: a re-ask would set another model on the
-carried conversation (`Acp.cs:676-706`). The pinned adapter's load already lands on the transcript's model (§1.7), so the set
+carried conversation (`Acp.cs:682-712`). The pinned adapter's load already lands on the transcript's model (§1.7), so the set
 confirms it where the next account offers it. Where the set is refused, or the acknowledged model or effort is another, or
 `Carried` is told, the carry falls back `model`, and the fallback opens `session/new` with **the choice today's move would have
 asked** (a curve move's or a hand-over's: the account's default, `ChatHandOver.cs:156-157`; a limit's move or a driven carry-on:
@@ -301,21 +345,27 @@ without going on because it tried to carry.
 
 The carry copies **the conversation's own files and nothing else**, named by its id, whole and byte for byte. Daoris never parses
 them, never edits them and never writes into them. What it does is a narrow read and write inside two account homes, by name only:
-it reads the previous home's files of a conversation the line owns and writes them into the next home. That amends the homes'
-contract, *Daoris owns this location and nothing inside it* (`HarnessSettings.cs:878`), for these names alone; its one precedent is
-the trust grant to `.claude.json` on the person's act (`ClaudeTrust.cs:69-73`). Both homes are reached only through
-`HarnessSettings.ProfileHome(home, agent, account)` with the accounts §2.1 settled, never by a path read from a record, so the
-person's own tool home is never a source or a destination.
+it reads the previous home's files of a conversation the line owns and writes them into the next home where nothing of that name
+stands. That amends the homes' contract, *Daoris owns this location and nothing inside it* (`HarnessSettings.cs:878`), for these
+names alone; its one precedent is the trust grant to `.claude.json` on the person's act (`ClaudeTrust.cs:69-73`). Both homes are
+reached only through `HarnessSettings.ProfileHome(home, Toolchain.Owner(adapter), account)` with the accounts §2.1 settled, never by
+a path read from a record, so the person's own tool home is never a source or a destination.
 
-**The carry table**, per agent and per pinned adapter version, beside the adapters. Each row classes **every place in the home
-where a name holds the conversation's id** on that version, read by listing names only, as `copy` or `never`, and names **the
-replay's anchor**, read from that version's package (§2.3); a version with no row carries nothing (`version`), a row with no
-anchor carries nothing (`door`), and the row is read again when the pin moves.
+**The carry table**, per agent, door and **compatibility identity**, beside the adapters. Each row classes **every place in the
+home where a name holds the conversation's id** on that identity, read by listing names only, as `copy` or `never`, and names
+**the replay's anchor**, read from that identity's package (§2.3); an identity with no row carries nothing (`version`), a row with
+no anchor carries nothing (`door`), and the row is read again when a pin moves.
 
-| Agent, version | `copy` | `never` (each name holding the id) | Replay's anchor | Read on |
+| Agent and door, identity | `copy` | `never` (each name holding the id) | Replay's anchor | Read on |
 |---|---|---|---|---|
-| Claude Code (both doors), claude-agent-acp 0.84.0 | `projects/<Flatten(tree)>/<id>.jsonl`; `projects/<Flatten(tree)>/<id>/` where it stands (its `subagents/` is read by the load, §1.7) | `todos/<id>*` (the agent's own plan, which Daoris's record holds), `file-history/<id>/` (rewind checkpoints, which no resume needs), `session-env/<id>/` (a process's environment), `debug/<id>*` | the agent's own messages' `messageId`, the API id live and on replay (§1.7) | the anchor read from the package for this round (§1.7); the names written by SWITCHCTX1a from a names-only listing of an account home on the pin; §1.5's listing of 2026-10-24 names the first two and `session-env/` |
+| Claude Code over its ACP adapter: claude-agent-acp 0.84.0 on the SDK 0.3.284, running that SDK's own CLI, 2.1.284 (no `claude` pinned) | `projects/<Flatten(tree)>/<id>.jsonl`; `projects/<Flatten(tree)>/<id>/` where it stands (its `subagents/` is read by the load, §1.7) | `todos/<id>*` (the agent's own plan, which Daoris's record holds), `file-history/<id>/` (rewind checkpoints, which no resume needs), `session-env/<id>/` (a process's environment), `debug/<id>*` | the agent's own messages and thoughts by `messageId` and its tool calls by `toolCallId`, the same live and on replay (§1.7) | the anchor read from the package for rounds 3 and 4 (§1.7); the names written by SWITCHCTX1a from a names-only listing of an account home on that identity; §1.5's listing of 2026-10-24 names the first two and `session-env/`. A `claude` pinned, or another SDK, is another identity, with no row until it is read |
+| Claude Code's pipe door: the `claude` CLI's own version | the same names, once read on that version | the same, once read | none known: its `--resume` replays nothing to Daoris (§3.3) | not read: SWITCHCTX1e's |
 | Codex (codex-acp) | the one file under `sessions/` whose **name** holds `<id>`, at the same relative path | not read | not read | not read: no Codex home here holds a session (§1.5); the row is SWITCHCTX1d's, and until then Codex moves by the brief |
+
+**Held to its identity, in the checkout.** A row names the exact packages and versions, the adapter's, the SDK's and the CLI's.
+SWITCHCTX1a checks in, beside its stand-in, a fixture of the replay's frames as read from that package, naming each identity and
+the lines read (§1.7), so the stand-in follows a checked-in reading, never this document's or a reader's memory of it. The pair a
+code comment names (`Adapters.cs:1895`) has no row.
 
 **Never copied, per agent**, whatever the table says. For every agent: the account's credentials, its own configuration, its
 history of prompts across conversations, another conversation's files, its plugins, skills, caches, telemetry, policy and usage
@@ -325,17 +375,18 @@ its row names, since `sessions/` is where Codex keeps every conversation. A name
 outside the grammar of §2.1 is refused before any path is built (a `:` names an alternate data stream on Windows), and a resolved
 path that leaves the home, or passes through a link, is refused; either falls back (§2.5).
 
-**How it lands.** Only once the old part's process has exited (§2.1, `busy`). Each file is copied to a name of its own beside its
-destination and then renamed into place, so a reader never sees half a file. **Nothing that is not the line's is ever overwritten.**
-A destination of the same name stands where a line moves back to an account it ran on before, and the person may since have run
-that conversation in their own terminal with the account's home (the session-messages design §4.3,
-`docs/2026-10-03-session-messages-design.md:292-293`: turns run there are in the harness's conversation and not in the record), which D137 will not adopt in place (`D137.md:56`). So:
-
-- a destination `<id>.jsonl` is replaced only where it is a **byte prefix of the source**: the source is then the same file grown
-  since, and the copy there is still what the line left;
-- under `<id>/`, only the files that are missing are added; a file standing there is never replaced;
-- otherwise the destination is left as it is and the carry falls back (`exists`), and a rename the disk refuses falls back the
-  same way.
+**How it lands: never over a name that stands.** Only once the old part's process has exited (§2.1, `busy`). Before writing
+anything, every name the row classes `copy` is looked for at the destination; where any stands, the `<id>.jsonl`, the `<id>/`
+folder or anything in it, the carry writes nothing and falls back (`exists`). Each entry is copied to a temporary name of the
+carry's own beside its destination (the old record's id in it) and moved into place by a move the disk refuses where the name
+already exists, never one that replaces: the `<id>/` folder first and the `<id>.jsonl` last, so the conversation is there only once
+whole. A move refused, because another client made the name in between, is `exists` too; what this carry already moved into place
+stays, as the copy of a carry that fell back does, and its temporary names are removed. **Why never replace**: no exclusion can be
+held against a client Daoris does not run. The person may open Daoris's conversation in their own terminal with the account's home,
+which Daoris neither offers nor prevents (§1.6), and a look followed by a replace could write over turns made between them, which
+D137 rejects (`D137.md:56`). Round 3 replaced a destination that was a byte prefix of its source; a prefix shows how the two files
+stood when read, not that nobody writes before the move (§5). **The cost**: a line that moves back to an account still holding its
+left copy goes by the brief there (`exists`), and its next move carries the conversation that fallback opened.
 
 The source is **copied, never moved or removed**: the left conversation stays in its account's home, and the line's next part owns
 the copy. **A carried line leaves one copy of its conversation in every account home it ran on**, as a line leaves one today, and
@@ -345,96 +396,136 @@ nothing else removes it: a delete or a clear never removes the harness's convers
 (`ToolHomeLeftovers.cs:25-27`), which a carry never touches.
 
 **Reasons, against §1.6's.** *It acts inside an account's home*: it does, narrowly, by name, on the line's own conversation only,
-after its writer has exited, never on an account's credentials, identity or another conversation, and never on the person's own
-tool home. *It depends on a format the harness changes at will*: the table is held to a version, so a new version carries nothing
-until its row, its anchor among it, is read; and since a change that keeps the names but moves meaning elsewhere would resume
-without the turns, a resume is counted only once its replay agrees with Daoris's record (§2.3), so a resume missing turns falls
-back rather than counting. Daoris never parses the file: it reads the agent's wire, which states the anchor.
-*It can never cross makers*: it does not, which is why the other half is the brief.
+after its writer has exited, never over a name that stands, never on an account's credentials, identity or another conversation,
+and never on the person's own tool home. *It depends on a format the harness changes at will*: the table is held to an identity,
+the adapter's and the CLI's versions, so a new version carries nothing until its row, its anchor among it, is read; and since a
+change that keeps the names but moves meaning elsewhere would load without the turns, nothing is prompted until the load's replay
+agrees with Daoris's record (§2.3), so a load missing turns falls back rather than going on. Daoris never parses the file: it reads
+the agent's wire, which states the anchor. *It can never cross makers*: it does not, which is why the other half is the brief.
 
 **A carried transcript names its first home.** A persisted tool output's path inside the file names the home it was written in
 (§3.1); the carry copies `<id>/tool-results/` beside it, so the outputs are in the new home at the same relative place, but the text
 still names the old. Once that account is removed (D66 §3), those paths point nowhere, and the agent reading one finds nothing, as
 it would for any file gone since. SWITCHCTX1f records whether the agent reads them at all.
 
-### 2.3 The ids, the record, and where the carry runs
+### 2.3 The ids, the record, the carry record, and where the carry runs
 
 - **The record.** A carried move is still a **new part**: a new record on the new account, `from` the old with the move's why
   (`curve`, `limit`, `press`), since a record names one account (D131 point 2). The entry is unchanged,
-  `session:<first>/<repository>`. Each record names one conversation id, the one kept in its own `harness.json`; two records of
-  one line name the same id, each in its own home, and only the newest part's is ever resumed. A copy left behind by a carry is
-  never resumed as it was left: a move back to its account first replaces it with the line's newest (§2.2), so what resumes there
-  is the line's conversation as it last ran, and only where the copy there is still what the line left (§2.2).
+  `session:<first>/<repository>`. **Each record names one conversation id, the first it names, and never another** (§2.5): two
+  records of one line name the same id, each in its own home, and only the newest part's is ever resumed. A copy left behind is
+  never resumed: the carry never writes over it (§2.2), so a move back to its account goes by the brief, as D189 point 6 has it.
+- **The carry record.** One durable record per carried move, `<home>/sessions/<old record>.carry.json`, keyed by the record the move
+  leaves, as D206's box and D163's `HandOverBox` are, and in the session's file inventory under `hand-over`
+  (`SessionHomeFiles.cs:52-53`, `:126`), so a delete and a clear take it with the record. It holds:
+  - its **phase**: `judged`, `opened`, `copied`, `verified` (below);
+  - the **source and destination**: the old record, its kept id, the two accounts by profile name, and, once opened, the new
+    record;
+  - the **compatibility identity** (§2.2);
+  - the **anchor**: the line's records that name the kept id, oldest first, whose events the replay is counted against;
+  - the **brief's recipe** (§2.5): the move's why, the bound of the events the brief is composed up to, and the agent's own
+    hand-over note where one was written (`HandOver.cs:247-251`);
+  - the **pending delivery** and its disposition (§2.4 step 5): none, a limit's (the refused turns' bound and the waiting words'
+    ids), or a driven instruction's recipe and the channel's held messages' ids;
+  - the names this carry wrote.
+
+  Never a word's text, a path or an account's key. On the ended-record move D206's box keeps the delivery it keeps today
+  (`LimitMove.cs:250`, `:269`), and the carry record names that box. Each step below writes its phase before the next begins, and
+  each is safe to run again.
 - **Where it runs.** The carry is an ask handed to the start, `CarryAsk` (the old record, its kept id, the move's why, and the
-  brief's recipe, §2.5), taken by the three starts that open a moved part: `ChatRunner.StartAsync` (the curve's take, the person's
-  hand-over, LIMITGOON1's live move, D206's ended move), the driven open (the carry-on, `Driver.cs:2422-2439`), and
-  `LimitMove.HelpStartAsync` (`LimitMove.cs:402-416`). In each, in this order:
+  brief's recipe), taken by the three starts that open a moved part: `ChatRunner.StartAsync` (the curve's take, the person's
+  hand-over, LIMITGOON1's live move, D206's ended move), the driven open (the carry-on, `Driver.cs:2445-2462`), and
+  `LimitMove.HelpStartAsync` (`LimitMove.cs:420-434`). In each, in this order:
   1. the selection settles the account (`LimitMove` passes `profile: null`, so its account is known only here);
   2. `Carries.Judge` decides, on that account (§2.1);
-  3. the ledger opens the new record, which creates its id (`ChatRunner.cs:582-587`; `Driver.cs:2431-2439`; `PlaceHelpAsync` for
-     Ask Daoris);
-  4. the copy runs (§2.2) and the new record's `harness.json` is written as `HarnessConversation(adapter, carried id)`, with the
-     carry's own file beside it (§2.5). **The write is checked**: `HarnessConversations.Keep` swallows a failed write today
-     (`HarnessConversations.cs:33-43`), so the carry writes through a call that says whether it landed and reads the id back; where
-     it did not, the carry falls back `unkept` before the spawn, and no carried process ever runs under a record with no id;
-  5. the spawn, and the carried id is resumed as a `GoingOn` is, each by the path that runs it: a repository's chat and Ask
-     Daoris's new part by `ChatRunner.RunAsync`, the chat's protocol path, which resumes at `ChatRunner.cs:2618` (Ask Daoris's by
-     `LimitMove.cs:414-417`, as its own go-on does, `ChatGoOn.cs:651-653`); the driven run by the one-shot
-     `AcpSession.RunAsync`'s `resume` (`Acp.cs:798-812`).
-  The carried start takes the agent's `session/load` where it is advertised, not `session/resume`, then sets the old part's model
-  and effort and judges them (§2.1), then counts the replay (below).
-- **Read back before it counts.** `session/resume` replays nothing, so a resume the wire accepted proves only that the agent found an
-  id (`Acp.cs:3214-3216`). A carried start resumes by `session/load` and counts the replay the door already receives and drops
-  (`:3236`, `:3290-3294`). D131 rejected load-first because the record already holds the history (`D131.md:47`); a carry is the one
-  place where the replay is the check. **The unit and the anchor**, from the pinned adapter's replay as read (§1.7):
-  - **The unit is one agent message of the conversation's own session**: on the record's side, the old part's `Message` events
-    that carry an id (`SessionEvent.Id`, the update's `messageId`, `Acp.cs:2950-2952`), grouped by that id, in order; on the
-    replay's side, the load's `agent_message_chunk` updates for the conversation's own id (a subagent's replay goes to a child
-    session and is not counted, §1.7), grouped by `messageId`, in order. Thoughts, tool updates and the person's turns are not
-    counted: the agent stores the composed prompt where the record keeps the words (§1.7), so a person's turn has no stated
-    counterpart.
-  - **It is resumed** only where every id of the record's list is in the replay's list, in the same order, and no agent message of
-    the replay follows the record's last but one whose text is the limit's own sentence, which `LimitHeld` already reads
-    (`Conversations/Domain/LimitHeld.cs:7`, `:37`). Otherwise the carry falls back in the same start, `short-replay`.
-  - **The person's turns after it** are counted, never read: the number of user messages the replay holds after the record's last
-    matched message, which for a limit's carry says whether the refused turns' words already reached the transcript. The log keeps
-    the number; the words handed (§2.4 step 5) are not changed by it.
-  - **A version whose replay holds nothing that can be matched** carries nothing: its table row names no anchor (`door`, §2.1), and
-    the new part says so. A record that holds no agent message with an id (a part that never answered, or one written by a version
-    that stamped none) is refused the same way, at the first judgement.
+  3. the carry record is written: `judged`;
+  4. the ledger opens the new record, which creates its id (`ChatRunner.cs:586-591`; `Driver.cs:2454-2462`; `PlaceHelpAsync` for
+     Ask Daoris), and the carry record names it: `opened`;
+  5. the copy (§2.2), and the names it wrote: `copied`;
+  6. the spawn; the agent's `session/load` where it is advertised, not `session/resume`; the old part's model and effort set and
+     judged (§2.1); the replay counted (below). A repository's chat and Ask Daoris's new part load by `ChatRunner.RunAsync`, the
+     chat's protocol path (`ChatRunner.cs:2645`; Ask Daoris's by `LimitMove.cs:432-435`, as its own go-on does,
+     `ChatGoOn.cs:651-653`); the driven run by the one-shot `AcpSession.RunAsync`'s `resume` (`Acp.cs:804-818`);
+  7. where everything held, the new record's `harness.json` is written as `HarnessConversation(adapter, carried id, identity)`
+     through a write that says whether it landed and reads it back, since `HarnessConversations.Keep` swallows a failed write
+     (`HarnessConversations.cs:31-43`); then `verified`. Where anything failed, or the write did not land, the fallback at the
+     open (§2.5).
+
+  **Nothing is prompted in steps 1 to 7.** The record names no conversation until step 7, so a fallback before it opens the
+  record's first conversation, never a second (§2.5). Every later part of the line keeps its identity beside its id the same way,
+  at its open, so the next move can compare it (§2.1).
+- **Read back before anything is prompted.** `session/resume` replays nothing, so a resume the wire accepted proves only that the
+  agent found an id (`Acp.cs:3355-3357`). A carried start loads and counts the replay the door already receives and drops (`:3377`,
+  `:3431-3435`). D131 rejected load-first because the record already holds the history (`D131.md:47`); a carry is the one place
+  where the replay is the check.
+  - **Only the conversation's own replay, and none of it kept.** While the load is answered, the door drops every update of the
+    conversation's own id **and of every id beginning `<id>:replay-subagent:`**, the children of its replay (§1.7), so no child's
+    message reaches the record; the count reads the conversation's own id alone.
+  - **The unit**: the agent's own messages and thoughts, grouped by `messageId`, and its tool calls, grouped by `toolCallId`, in
+    order. On the record's side, the `Message`, `Thought` and `Tool` events of **every part of the line that names the kept id**,
+    oldest first (a part's own record holds only its own turns, since a load's replay is never kept), a subagent's card, whose id
+    is the child's, and a plan excepted. On the replay's side, the load's `agent_message_chunk`, `agent_thought_chunk` and
+    `tool_call` updates of the conversation's own id; a subagent's launch is not replayed as a call (§1.7), as the record holds its
+    card instead.
+  - **It is read back** only where the two lists are **equal**: every id of the record's in the replay, in the same order, and
+    none in the replay the record lacks. An extra is a turn the record does not hold, another client's or a version's, and falls
+    back. There is no exception for a limit's message: no reader in Daoris reads a limit from the agent's text (`LimitHeld` reads
+    coded cooling lines, `LimitHeld.cs:17-56`; `AccountLimits.Read` reads the door's failure alone, never the agent's messages,
+    `Accounts/Usage/AccountLimits.cs:63-67`), and the record already holds that message by the id it replays with (§1.7). Where a
+    real CLI gives it another, the carry falls back, the safe side, and SWITCHCTX1f records it. Otherwise `short-replay`.
+  - **The person's turns after it**, counted, never read: the replay's user messages, grouped by `messageId`, that stand after the
+    last item of the line's last turn that ended otherwise than by a limit. Where no words wait (a curve's move, a person's
+    hand-over) the number must be zero; a limit's disposition reads it (§2.4 step 5); any other number falls back before any prompt,
+    `suffix`.
+  - **What it proves, and what it does not.** It proves that the transcript the agent loaded holds exactly the agent's own messages,
+    thoughts and tool calls Daoris's record holds, in order, and nothing of the agent's after them. It does not prove the person's
+    prompts' text (the agent stores the composed prompt and the record the words, §1.7), a tool result's content or the thinking's
+    signatures, and it does not show what the agent retains in its working memory. The first-turn rule (§2.5) catches a provider's
+    refusal of the history, and SWITCHCTX1f measures the rest. *Read back* says no more than that, on the page or in the log.
+  - **An identity whose replay holds nothing that can be matched** carries nothing: its row names no anchor (`door`, §2.1), and the
+    new part says so. A line that holds no agent message with an id (a part that never answered, or one written by a version that
+    stamped none) is refused the same way, at the first judgement.
   - A compaction inside the part (the harness's own, D189 point 7) replays its summary as user text (§1.7); where the chain it
-    builds leaves out the messages before it, the count falls short and the carry falls back, which is the safe side; 1f records
+    builds leaves out the messages before it, the lists differ and the carry falls back, which is the safe side; SWITCHCTX1f records
     how often.
   This reads the agent's wire, which the door receives on every load today, and never its store.
-- **No id is named on the protocol door.** Neither a load nor a resume names one (`Acp.cs:3218-3221`): `ResumeAsync` keeps the id it
-  asked for and tells no listener (`:3255`). So no `forked` arises here; it can arise only on the pipe door's `init` line, which is
+- **No id is named on the protocol door.** Neither a load nor a resume names one (`Acp.cs:3359-3362`): `ResumeAsync` keeps the id it
+  asked for and tells no listener (`:3396`). So no `forked` arises here; it can arise only on the pipe door's `init` line, which is
   SWITCHCTX1e's (§3.3).
 - **How it was handed** is kept for every kind of part, as a machine-only field of the session record, `handed`: `own` (its own
-  conversation carried), `brief` (Daoris's brief handed), or absent (a part handed neither: a first part, a resume, or a carried
-  part whose first turn has not yet answered). It goes through every place of the chain `.claude/knowledge/session-record-fields.md`
-  names for a field set at the open (the service's record and store, the ledger's write, the host's request and response, the
-  driver's write and read, the three stand-ins, the web's type), with no field on the sync wire, which a test holds; a teammate's
-  mirror carries neither it nor any conversation id. **A briefed move writes `brief` at the open**, today's among them. **A carried
-  part opens with none and is set later**, so the field also has its own update door, as a field set later does
-  (`session-record-fields.md:40`), on the shape of `/actor`'s:
+  conversation carried and read back), `brief` (Daoris's brief handed), or absent (a part handed neither: a first part, a resume, or
+  a carried part not yet read back). It goes through every place of the chain `.claude/knowledge/session-record-fields.md` names for
+  a field set at the open (the service's record and store, the ledger's write, the host's request and response, the driver's write
+  and read, the three stand-ins, the web's type), with no field on the sync wire, which a test holds; a teammate's mirror carries
+  neither it nor any conversation id. **A briefed move writes `brief` at the open**, today's among them. **A carried part's is set
+  once, after its open**: `own` at step 7, `brief` where the open falls back (§2.5), and it never changes after. So the field also
+  has its own update door, as a field set later does (`session-record-fields.md:40`), on the shape of `/actor`'s:
   - the store's `SessionStore.KeepHandedAsync(id, handed)` and the ledger's `SessionLedger.KeepHandedAsync`, beside
-    `KeepActorAsync` (`Daoris.Service.Core/Sessions/Sessions.cs:1408`), taking only `own` or `brief`, on a record of this machine's;
+    `KeepActorAsync` (`Daoris.Service.Core/Sessions/Sessions.cs:1408`), taking only `own` or `brief`, on a record of this machine's,
+    with no sync revision, as `/actor`'s writes none (`:1407-1423`);
   - the route `POST /api/sessions/{id}/handed`, answered on loopback alone, not found off it, as `/actor` is
-    (`Daoris.Service.Http/Program.cs:1398-1409`);
+    (`Daoris.Service.Http/Program.cs:1398-1409`), and **its row in `PersonDoors.Table` as the driver's door**,
+    `new("POST", "/api/sessions/{id}/handed", DoorClass.Driver, …)` beside `/actor`'s (`Daoris.Service.Http/PersonDoors.cs:256`),
+    with `PersonDoorTableTests`' row and its class's count, so a call without the key is refused;
   - the client's `ServiceClient.KeepHandedAsync`, beside `KeepActorAsync` (`Service/ServiceClient.cs:2266`);
+  - **the push**: `handed` named in `SessionsStateSlice.Fields` (`Daoris.Desktop.Modules/Loop/SessionsStateSlice.cs:39-47`), which
+    `SessionsStateSliceTests` holds against the page's `Session` type, and the driver's write followed by a declared change of the
+    sessions on the kit's bus, the slice's wake (`:62-67`), since the door writes no revision the change stream would carry
+    (`.claude/knowledge/pushed-slices.md`);
   - their tests: `SessionStoreTests` (written, read back, null for a record from before and for a mirror), the host's (loopback
-    only, `ContinuesHostTests`), and the driver's (the body written).
-  The driver sets `own` at the carried part's first answer and `brief` where it falls back (§2.5). Its readers: the *Parts* strip's
-  *began* words, the line view (a part `own` draws no brief, §2.7), and Ask Daoris's fold, whose room records take no `from`
-  (`LimitMove.cs:7-8`), so `HelpStartAsync` also writes `.help.json`'s `Handed` as `own` beside `transcript` and `brief`
-  (`HelpConversations.cs:118`, `:124`).
+    only, `ContinuesHostTests`; a keyless call refused, `PersonDoorTableTests`), the driver's (the body written), and the slice's (the
+    value read through the pushed projection, not only the service's answer).
+  Its readers: the *Parts* strip's *began* words, the line view (a part `own` draws no brief, §2.7), and Ask Daoris's fold, whose
+  room records take no `from` (`LimitMove.cs:7-8`), so `HelpStartAsync` also writes `.help.json`'s `Handed` as `own` beside
+  `transcript` and `brief` (`HelpConversations.cs:118`, `:124`).
 - **The machine log** keeps one field for how a move handed its part: `session.moved`'s `briefed` (`Continuation.cs:585-593`),
-  false where the carry's open resumed and true where it fell back at the open. One line of its own, `conversation.carried`, says
-  what held, once, when it is known: the agent and its version, the two accounts by profile name, the files' count and bytes, the
-  replay's count of matched messages against the record's, the number of user messages after the last matched one, the model and
-  effort acknowledged after the set, the first turn's stop reason and failure kind (§2.5), and the outcome: `held` (the first turn
-  answered), or the fallback's code (`refused <why>` at the judge or the wire, `not-found`, `exists`, `unkept`, `model`,
-  `short-replay`, `first-turn <why>`; `forked` only on the pipe door, 1e's). Never a word, a path or an account's key.
+  false where the carry's open was read back and true where it fell back at the open. One line of its own, `conversation.carried`,
+  says what held, once, when it is known: the agent and its identity, the two accounts by profile name, the files' count and bytes,
+  the replay's matched items against the record's, the user messages after the last, the delivery's disposition, the model and
+  effort acknowledged after the set, the first turn's stop reason, its failure kind and whether it started a tool (§2.5), and the
+  outcome: `held` (the first turn answered, or started a tool), or the fallback's code (`refused <why>` at the judge, `not-found`,
+  `exists`, `unkept`, `model`, `short-replay`, `suffix`, `load <why>`, `first-turn <why>`; `forked` only on the pipe door,
+  SWITCHCTX1e's). Never a word, a path or an account's key.
 
 ### 2.4 The move, step by step
 
@@ -443,82 +534,102 @@ it would for any file gone since. SWITCHCTX1f records whether the agent reads th
    (`ChatHandOver.cs:145-149`), since its own turns go with it; where the carry later falls back, the brief goes without the note,
    as a forced move's does today.
 3. The old part ends, as today (`EndForHandOverAsync`), and the move reads whether its watch ended or the fifteen seconds did.
-4. The new part's start (§2.3): the selection, the second judgement, the open, the copy and the checked write of `harness.json`,
-   the spawn, the load, the model's set and judgement, and the replay's count.
-5. Where it resumed, the new part is handed only what the move would have handed after the brief, and nothing where nothing waits:
-   - **a curve move or a person's hand-over** (no words wait, §1.1): **nothing is prompted**. The resumed chat waits, as a resumed
-     chat's session already does (`ChatRunner.cs:2618-2619`), and the person's next words are its first turn, with one line of
-     Daoris's before them saying the account changed. No turn is spent on the new account that nobody asked for;
-   - **a limit's move**: the refused turns' words, then the words that waited, each once, as `LimitMove.cs:156-166` orders them;
-   - **a driven carry-on**: its instruction composed as today without the brief, the ask's channel's held messages among it
-     (`Driver.cs:2540`, `:2620`), marked handed once the record works (`:2712`), as every driven start's are.
+4. The new part's start (§2.3): the selection, the second judgement, the carry record, the open, the copy, the spawn and the load,
+   the model's set and judgement, the replay's count, the checked `harness.json`. **Nothing is prompted in this step.**
+5. **The delivery**, by the carry record's disposition. Its words are kept on the new record through its dispatcher before the
+   prompt, as every word that may make a turn happen is (`.claude/knowledge/session-words.md`), so from then on the dispatcher's
+   rules hold them:
+   - **none: a curve's move or a person's hand-over** (no words wait, §1.1). **Nothing is prompted.** The replay's user messages
+     after the last answered turn must be none (§2.3). The resumed chat waits, as a resumed chat's session already does
+     (`ChatRunner.cs:2645-2646`), and the person's next words are its first turn, with one line of Daoris's before them saying the
+     account changed. No turn is spent on the new account that nobody asked for;
+   - **a limit's** (SWITCHCTX1b). *R* is the number of turns refused by a limit since the line's last answered turn in this
+     conversation, across the line's parts that name it, each read by `LimitHeld.Of` from Daoris's coded lines, never a sentence;
+     *U* is the replay's user messages after that answered turn (§2.3). **U = R**: every refused prompt is already in the
+     transcript, so none is handed again; **U = 0**: none is, so each is handed once, in order; **any other U** falls back before
+     any prompt (`suffix`). The first prompt holds, each once and in this order: the refused words the transcript lacks, the words
+     that waited, then Daoris's word to go on, kept through the say door under a key of its own (`DaorisKeys.LimitCarried`, beside
+     `LimitReset`, `Conversations/Domain/DaorisWords.cs:169-179`): *This conversation now runs on another account, after its last
+     account's limit. Go on with the work where you stopped.* (the agent's English, as `LimitResetWord` is, `LimitMove.cs:563-566`).
+     **So *each once* holds in the agent's context**: a refused prompt is in its transcript or handed once, never both. **Consecutive
+     limited carries**: a carried part whose first turn the new account's limit refuses moves again by this rule; its refused turn
+     counts in *R* with those before it, and its own prompt is in the transcript, so nothing it was handed goes twice;
+   - **a driven carry-on's** (SWITCHCTX1b): its instruction composed as today without the brief, composed before the spawn so the
+     fallback can hand it, the ask's channel's held messages in it (`Driver.cs:2563`, `:2643`), marked handed once the record works
+     (`:2735`); where the driven part's last turn was refused by a limit, the limit's rule above with the instruction in the refused
+     words' place.
 6. The lines are written: the old part's last, the new part's first (§2.7), and `session.moved`.
 
-**Where a shell ends partway, the carry is still watched.**
+**Recovery, at every boundary.** The carry record is the authority until the carried part's first turn answers, and the come-up
+reads it before it takes up any record, as it reads D206's box (`LimitMove.cs:352`, `ChatGoOn.cs:189`):
 
-- **The ended-record move** has D206's durable box (`docs/2026-10-23-limit-resume-design.md:395-406`): it carries the reason and
-  the refused turns' bounds the brief is recomposed from (`LimitMove.cs:250`, `:293-310`) and gains the carry's outcome. A shell
-  that ends between step 4 and step 5 comes up and goes on from the box. Today the come-up hands again the box's composed message,
-  the brief in it (`LimitMove.cs:351-361`, `:300-309`); **where the box says the carry landed, it composes without the brief**, and
-  hands only the words step 5 hands. Where it did not land, the brief as today.
-- **Every other path** has no box. Once `harness.json` names the carried id, the new part is an ended record with a kept id, and the
-  next word said to it goes through the go-on. Today the go-on resumes by `session/resume`, with no read-back (`Acp.cs:3227`), and
-  its refusal ends in `CannotGoOn` or `LostAsync` (`ChatGoOn.cs:480-586`; `ChatRunner.cs:2622-2640`). **Wherever the record's
-  `.carry.json` stands, the go-on takes the carried start's way instead**: the load, the model's set and judgement, the count, and
-  the same-process fallback of §2.5, the brief recomposed from the carry's file. So a shell that ended before the load still has
-  its count made, by the go-on, before the first turn.
-- **A shell that ends before `harness.json` is written** leaves a record with no id, which goes on by the brief as a lost
-  conversation does today (`ChatGoOn.cs:487-490`). A write that fails is `unkept` at step 4 (§2.3), never a record with no id under
-  a running carried process.
+| The shell ended | The come-up |
+|---|---|
+| before the carry record was written | as today: the old part ended and no new part opened; a limit-held conversation waits by D206, a driven line by its next look |
+| at `judged`, no new record | a move not yet made: made again from the record by the same start where its delivery is pending (a limit's, a driven one); dropped where none is (a curve's move, a hand-over), the line left as a shell's end leaves it today |
+| at `opened` or `copied` | nothing was prompted, and whatever the new record's `harness.json` names is not trusted before `verified`: the start runs again from the copy, writing `harness.json` again; a name standing at the destination is this carry's own only where the record lists it and its bytes equal the source's, any other is `exists`; the temporary names are removed |
+| at `verified`, the delivery not yet kept | the record names the carried id and nothing was prompted: the delivery is kept on the new record from the carry record (nothing for a curve's move) and goes by the carried way, below, **at the come-up**, not at a later word |
+| the delivery kept, not yet attempted | it waits on the new record, and the come-up's go-on takes it by the carried way |
+| a word of the delivery attempted | the session-words rule: it is settled as uncertain at the come-up (`Conversations/GoOn/UncertainWords.cs:18`) and never sent again; the carry stays pending, so the next word goes by the carried way |
+| a turn answered under the carried id since `verified` | `held`: the carry record is removed |
+
+**The carried way.** Wherever a carry record names a record as its new part and has not ended, that record's go-on, which today
+resumes by `session/resume` with no read-back (`Acp.cs:3368`; `ChatGoOn.cs:480-586`), takes the carried start's way instead: the
+load, the model's set and judgement, the count, and the first-turn rule (§2.5). Since the record already names the carried id, a
+fallback there opens a further part (§2.5). On the ended-record move the come-up reads D206's box as today (`LimitMove.cs:366-379`)
+and composes without the brief only where the carry record says `verified`.
 
 ### 2.5 When it does not hold: the brief, said
 
-A carry that does not hold falls back to today's move, never to a wait and never to the person. **The brief is kept on the new part
-until its first turn answers**: not its text but its recipe, in the carry's own file beside `harness.json`
-(`<home>/sessions/<record>.carry.json`, under the same home entry): the old record, the move's why, the bound of the old part's
-events the brief is composed up to, and **the agent's own hand-over note where one was written** (`HandOver.cs:247-251` puts it in
-the brief, and the old record does not hold it). A brief recomposed from the recipe is **composed as of then**: it reads the old
-part's events to the bound, which no longer change, and the tree's uncommitted state as it then is (D189 point 4), so it is the
-move's brief but for what the tree did since, which is the current state the new part works in. `.carry.json` is a per-session
-file in the session's file inventory (`Sessions/History/SessionHomeFiles.cs:91-124`) under the name `hand-over`, beside
-`HandOverBox`'s (`:52-53`, `:114`), so a delete and a clear take it with the record.
+A carry that does not hold falls back to today's move, never to a wait and never to the person. **The brief is kept on the move
+until the carry is done**: not its text but its recipe, in the carry record (§2.3): the old record, the move's why, the bound of
+the old part's events the brief is composed up to, and **the agent's own hand-over note where one was written**
+(`HandOver.cs:247-251` puts it in the brief, and the old record does not hold it). A brief recomposed from the recipe is **composed
+as of then**: it reads the old part's events to the bound, which no longer change, and the tree's uncommitted state as it then is
+(D189 point 4), so it is the move's brief but for what the tree did since, which is the current state the new part works in.
 
-**At the open**, in the same start:
+**Before any prompt, at the open**, in the same start, on the same process where one was spawned:
 
 - the second judgement refuses (§2.1), or the table names no file, or the file is not there (`not-found`);
-- a copy fails, a name is refused, a destination stands that is not a byte prefix of its source, or a rename is refused
-  (`exists`, §2.2);
+- a name the row copies stands at the destination, or a create-only move is refused (`exists`, §2.2);
 - the write of the carried id does not land (`unkept`, §2.3);
-- the protocol door refuses the load: `resource_not_found` → `gone` (`Acp.cs:3245`), or any other refusal on the wire;
+- the protocol door refuses the load: `resource_not_found` → `gone` (`Acp.cs:3386`), or any other refusal on the wire (`load <why>`);
 - the set of the old part's model or effort is refused, or the session acknowledges another (`model`, §2.1);
-- the replay disagrees (`short-replay`, §2.3).
+- the replay's lists differ (`short-replay`), or its user messages after the last answered turn do not fit the delivery (`suffix`).
 
-**At the carried part's first turn**, judged by how the turn ended, in D210's four kinds (`Agents/Errors/AgentErrors.cs:5-19`) and
-its stop reason, **never by whether the agent's message came first**: a provider's refusal is said first as the agent's message,
-its `API Error`, and the turn then ends `refusal` (`Acp.cs:144-151`, APIREFUSAL1).
+The fallback opens `session/new` **with the choice today's move would have asked** (§2.1; never a refused one again), and the
+record's `harness.json` names that conversation as today's start names it, when the wire says it (`onConversation`,
+`ChatRunner.cs:2623`). **The record names one conversation, the fallback's**: it named none before step 7, the carried conversation
+was loaded and never prompted, and nothing of its replay was kept. So this needs no amendment of D137 point 8. The record is marked
+`handed: brief`, the new part's boundary line says the carry failed and why (`moved.carry-failed`, §2.7), the carry record is
+removed, `conversation.carried` says the code, and the brief recomposed from the recipe is handed, then the words today's move
+hands, as `LimitMove` and `HandOverTake` hand them today. On the driven path the fallback goes inside `AcpSession.RunAsync`, where a
+refused `ResumeAsync` throws out of the run today (`Acp.cs:817-818`), with the briefed instruction composed before the spawn
+(SWITCHCTX1b).
+
+**At the carried part's first turn**, after the prompt, judged by how the turn ended, in D210's four kinds
+(`Agents/Errors/AgentErrors.cs:5-19`) and its stop reason, **and by whether it ran anything**: whether the record holds, for the
+turn, any `Tool` event of the conversation's own session (`Acp.cs:3100-3112`), which every tool call, subagent and background task
+of the turn's begins as. Never by whether the agent's message came first: a provider's refusal is said first as the agent's
+message, its `API Error`, and the turn then ends `refusal` (`Acp.cs:144-151`, APIREFUSAL1).
 
 | How the first turn ended | What it is | What follows |
 |---|---|---|
-| stop reason `refusal` (`AcpOutcome.Refusal`), whatever the agent's message said before it | the carry's failure: the provider refused the carried history, or another account's or model's signed thinking | the fallback below, `first-turn refusal` |
-| a `Fatal` failure at the prompt (`DoorWhere.Prompt`): the context does not fit, a request that cannot succeed by repeating it | the carry's failure | the fallback below, `first-turn fatal` |
-| a `Limit` (`LimitHeld.cs:7`, `:37`) | the account's limit, not the carry's | **the limit's move** (LIMITGOON1, D206), with the kept id and the carry's file left as they are, so the next move carries the line's own conversation, never an empty fallback; no brief is handed on the limited account |
-| a `Transient` failure, tried again in the same conversation by the door (`AgentErrors.cs:14`; `Acp.cs:841-847`) until its bound runs out | not the carry's | the carry stays pending, its file kept: the turn ends as a transient's does today, and the next word goes through the go-on's carried way (§2.4) |
-| an `Access` refusal | the account's, which no brief on it mends | the carry stays pending, its file kept, and the account's access is said as today |
-| the person's stop (`cancelled`) before any answer | the person's | the carry stays pending, its file kept; nothing is handed again |
-| any other end | the carried conversation answered | `held`: the file removed, `handed: own`, `moved.carried-from` stands |
+| stop reason `refusal` (`AcpOutcome.Refusal`), or a `Fatal` failure at the prompt (`DoorWhere.Prompt`), **with no tool started in the turn** | positive evidence that the provider rejected the request before anything ran: the carried history, another account's or model's signed thinking, a context that does not fit | the carry's failure: **a further part**, below, `first-turn <why>` |
+| the same ends **after a tool started** in the turn | not the carry's: something ran in the carried conversation, and `Fatal` includes a failure Daoris cannot read (`AgentErrors.cs:17`); a brief and the same words in a new conversation could run it again | the turn's own failure, handled as any turn's is today (D210); the carry counts `held`, `handed` stays `own` |
+| a `Limit` (`LimitHeld.cs:7`, `:37`) | the account's limit, not the carry's | **the limit's move**, SWITCHCTX1b's, by §2.4's limit rule; no brief is handed on the limited account |
+| a `Transient` failure, tried again in the same conversation by the door (`AgentErrors.cs:14`; `Acp.cs:847-853`) until its bound runs out | not the carry's | the carry stays pending: the turn ends as a transient's does today, and the next turn is judged as the first, by the carried way where the process has gone (§2.4) |
+| an `Access` refusal | the account's, which no brief on it mends | the carry stays pending, and the account's access is said as today |
+| the person's stop (`cancelled`) before any answer | the person's | the carry stays pending; nothing is handed again |
+| any other end | the carried conversation answered | `held`: the carry record removed, `moved.carried-from` stands |
 
-The words were the person's next, or the limit's refused and waiting words, or the driven instruction; none was answered.
-
-Either way the fallback runs **on the same process**: it opens `session/new` **with the choice today's move would have asked**
-(§2.1; never a refused one again), replaces the record's kept id by the new conversation's before any answer under it, through the
-checked write (§2.3), and hands the brief recomposed from the carry's file, then the same words step 5 handed, as `LimitMove` and
-`HandOverTake` hand them today. **This is a new path, not today's**: today a refused resume kills the process (`ChatRunner.cs:2622-2640`),
-and in the one-shot run a refused `ResumeAsync` throws out of the run (`Acp.cs:811-812`), under the rule that a new session would be
-a new conversation under the same record (`ChatRunner.cs:2616-2617`). It holds that rule's purpose: no conversation ever answered
-under this record but the one it now names, so the record still stands for one conversation; §4 names the amendment of D137 point 8
-for it. The record is marked `handed: brief`, the new part's boundary line says the carry failed and why (`moved.carry-failed`,
-§2.7), the carry's file is removed, and `conversation.carried` says the code. A fallback is never tried again by spending a turn: the
-next move tries the carry afresh.
+**The further part.** The carried part ends as a part whose turn was refused: its record keeps the carried conversation's id, its
+events and its usage, so what the provider said and counted stays with the conversation that said it. The line goes on in a new
+part `from` it, why `retry` (*its own conversation could not be resumed*, `HandOverRecords.cs:41`, `:53`), on the same account, by
+today's move: `session/new` with today's choice, the brief composed from the line's records (the carried part's refused turn among
+them), then the same words. Its boundary is `moved.carry-failed` (§2.7), and `handed: brief`. Round 3 instead opened the new
+conversation under the carried record, which would leave the refused turn's events and usage under a record that no longer names
+the conversation that made them (§5). A fallback is never tried again by spending a turn: the next move tries the carry afresh.
 
 ### 2.6 Another agent: the brief, as today
 
@@ -530,9 +641,30 @@ agent has Daoris's brief and not its turns.
 
 ### 2.7 On the page: one conversation, either half
 
-- **A repository's chat draws its line, not its part.** The conversation pane draws every earlier part's conversation above the
-  attended part's, oldest first, read-only, as Ask Daoris's already does (`help/AskConversation.tsx:870-876`): `WorkFrame` maps
-  the entry's parts before the attended `SessionConversation` (`work/WorkFrame.tsx:2456-2457`), each earlier one `live={false}`.
+- **A repository's chat draws its line, not its part.** Above the attended part's conversation, the pane draws **the parts it
+  continues**: its ancestry by `from`, oldest first, the part it came from, that part's, and so on, each read-only, as Ask Daoris
+  already draws its earlier parts (`help/AskConversation.tsx:870-876`). `WorkFrame` maps them before the attended
+  `SessionConversation` (`work/WorkFrame.tsx:2471-2472`).
+  - **Alongside is not ancestry.** A part of the same entry running alongside (§1.4) continues none of these by `from` and is not
+    drawn into the line: it stays a press away in the *Parts* strip, and in COWORKVIEW1's view where that lands.
+  - **Read-only is not ended.** Each earlier part is drawn with its own record's liveness, never `live={false}` for being earlier,
+    since `settle` reads a part that is not live as ended, cutting its last turn and stopping its open calls (§1.4). An ancestor is
+    ended in every move this design makes, but the view does not assume it. Its controls are withheld by a mode of its own: no box,
+    no acts, no waits.
+  - **One scroll owner.** An earlier part takes a mode in which `SessionConversation` neither follows the region's tail nor opens it
+    at its own head, and tells the frame nothing of its usage, its wait, its limit's wait or its tail (§1.4), so the attended part
+    alone owns the region's scrolling and the frame's facts. Ask Daoris's earlier parts take the same mode, which they lack today
+    (`help/AskConversation.tsx:872-874`).
+  - **Where a line opens.** An ended line opens at the region's top, as an ended session does today
+    (`work/conversation/followTail.ts:49-61`): the attended record's head, which says how the line ended, with its *last words* and
+    the way to the bottom beside it, then the earlier parts drawn, oldest first, then the attended part. A live line opens at its
+    tail and follows it.
+  - **Pressing an earlier part hides the later ones.** Attending an earlier part draws that part's own ancestry above it, so the
+    parts after it are no longer drawn; the strip still names them, and pressing the newest draws the whole line again.
+  - **A bound.** At most the three earlier parts nearest the attended one are drawn. Above them one press draws up to three more
+    each time, and says how many it will draw: *Show the part before* or *Show {{count}} earlier parts*
+    (`work.parts.earlier_one`, `work.parts.earlier_other`; zh *显示前一段*, *显示更早的 {{count}} 段*). Each part drawn still pages
+    its own events as a conversation does today (`useSessionEvents`' earlier pages).
   The *Parts* strip stays; **pressing a part attends it and scrolls to it**, so every act on the page stays the part shown's
   (`PartsStrip.tsx:91-95`). The strip is also the rail of `PartsFlow` (`PartsStrip.tsx:102-103`), whose press attends and scrolls
   the same way. A driven session's line shows the same. A teammate's record shows only what it shows today (D47 §4).
@@ -541,13 +673,13 @@ agent has Daoris's brief and not its turns.
   - **the curve's figures**: where a move carries, its two lines are the carried pair below alone, never `chat.moved`'s pair beside
     them; the old part's line, `moved.carried-on`, holds the decision's window, used and curve where the why is the curve, as
     `chat.moved` holds them today, and the new part's names only where it came from;
-  - **the opening line**: `RotatedOpening.Say` writes the new part's account line at its open (`ChatRunner.cs:603-604`;
+  - **the opening line**: `RotatedOpening.Say` writes the new part's account line at its open (`ChatRunner.cs:607-608`;
     `Accounts/Rotation/AccountRotation.cs:600-610`). The record keeps it, and the line view folds it under the new part's boundary
     line, as a briefed part's brief is folded, so it never draws as a third line; a part that did not begin by a move draws it as
     today;
-  - **a carry that fails later**: `moved.carried-from` is written at the open, where the replay agreed, and a carried part whose
-    first turn then fails also gains `moved.carry-failed` (§2.5). The page draws a part's last move line alone at its boundary, so
-    `moved.carry-failed` takes the place of `moved.carried-from`; the earlier line stays in the record and in the machine log.
+  - **a carry that falls back**: at the open, the new part's first line is `moved.carry-failed` and the old part's last is today's;
+    after a refused first turn, the carried part keeps `moved.carried-from` and ends with today's `moved.on`, and the further part
+    begins with `moved.carry-failed`. No line is drawn in place of another.
   Where a part did not begin by a move (a sibling's request of the same ask, D167 point 2, a *Try again*, a resume into a new
   part), it has no move lines, and the page draws its *began* words from the strip as its boundary, one line. No separator of the
   page's own, no *new session*, no greeting drawn as a start. A carried part draws no brief, since none was handed; a briefed part's
@@ -555,9 +687,9 @@ agent has Daoris's brief and not its turns.
 - **Ask Daoris's history** folds a part handed `own` into its line as it folds `brief` (`HelpConversations.cs:233-249`).
 - **The words.** Moving and resuming are said in the session's words: a part, never a new session. **A line written before keeps
   reading**: a reworded code keeps exactly the values its lines were written with (`moved.on` and `moved.from`: `session`, `agent`,
-  `account`, `why`, `tokens` and `count`, `work/noteLines.ts:290-291`), so H and B stay on every briefed move's line (D189 point 8)
+  `account`, `why`, `tokens` and `count`, `work/noteLines.ts:300-301`), so H and B stay on every briefed move's line (D189 point 8)
   and no line needs a value it was never given; and the carried lines, whose values differ, are new codes, as the code's convention
-  has it (`noteLines.ts:230-237`). No line names a part by its number, which the strip says.
+  has it (`noteLines.ts:235-242`). No line names a part by its number, which the strip says.
 
 | Code | en | zh |
 |---|---|---|
@@ -565,110 +697,145 @@ agent has Daoris's brief and not its turns.
 | `note.moved.from` (new part, first line, a briefed move; reworded, its values as written) | *Continues the part before it, {{session}}, which ran on {{agent}} as `{{account}}`, because {{why}}: its context stood at {{tokens}} tokens, and it was handed Daoris's brief of it, {{count}} characters.* | *接续前一段 {{session}}（由 {{agent}} 以账户 `{{account}}` 运行），因为{{why}}：其上下文为 {{tokens}} 个 token，它收到了 Daoris 对它的简报，{{count}} 个字符。* |
 | `note.moved.carried-on` (new; old part, last line, a carried move not by the curve) | *Went on as a new part of this session, {{session}}, with {{agent}} as `{{account}}`, because {{why}}, in its own conversation.* | *以本会话的新一段 {{session}} 继续，由 {{agent}}（账户 `{{account}}`）在它自己的对话中运行，因为{{why}}。* |
 | `note.moved.carried-over-curve` (new; old part, last line, a carried move by the curve, `chat.moved`'s figures) | *Moved to `{{to}}` at the end of its turn, as a new part, {{session}}, in its own conversation: `{{from}}` had used {{used}} of its {{window}} limit, over its curve's {{curve}}.* | *在本轮结束时移至 `{{to}}`，以新的一段 {{session}} 在它自己的对话中继续：`{{from}}` 已用掉其 {{window}} 额度的 {{used}}，超过其曲线的 {{curve}}。* |
-| `note.moved.carried-from` (new; new part, first line, written at the open where its replay agreed) | *Continues the part before it, {{session}}, which ran as `{{account}}`, because {{why}}, in its own conversation: its earlier turns were read back.* | *接续前一段 {{session}}（原账户 `{{account}}`），因为{{why}}，在它自己的对话中继续：已读回它先前的轮次。* |
-| `note.moved.carry-failed` (new; new part, at the open or at its first turn; drawn in place of `carried-from`) | *Its own conversation could not go on as `{{account}}` ({{code}}), so it continues the part before it, {{session}}, from Daoris's brief of it, {{count}} characters.* | *它自己的对话无法在账户 `{{account}}` 上继续（{{code}}），因此凭 Daoris 对它的简报（{{count}} 个字符）接续前一段 {{session}}。* |
+| `note.moved.carried-from` (new; new part, first line, written once its replay was read back) | *Continues the part before it, {{session}}, which ran as `{{account}}`, because {{why}}, in its own conversation: its earlier turns were read back.* | *接续前一段 {{session}}（原账户 `{{account}}`），因为{{why}}，在它自己的对话中继续：已读回它先前的轮次。* |
+| `note.moved.carry-failed` (new; a new part's first line where the carry fell back, at the open or after a refused first turn; `why` from the family `carry` below) | *Its own conversation could not go on as `{{account}}` ({{why}}), so it continues the part before it, {{session}}, from Daoris's brief of it, {{count}} characters.* | *它自己的对话无法在账户 `{{account}}` 上继续（{{why}}），因此凭 Daoris 对它的简报（{{count}} 个字符）接续前一段 {{session}}。* |
 | `note.chat.taken-over` (reworded, its values as written) | *This conversation went on from {{agent}} conversation {{session}}, handed over because {{why}}; it was handed Daoris's record of it, not its own turns.* | *这段对话是从 {{agent}} 的对话 {{session}} 转交过来继续的，原因：{{why}}；交给它的是 Daoris 对其的记录，而非它自己的轮次。* |
-| `note.limit.resume-refused` (reworded) | *… so it went on as a new part with Daoris's brief.* | *……因此它带着 Daoris 的简报以新的一段继续。* |
+| `note.limit.resume-refused` (reworded, `{{why}}` kept from the family `continue`) | *Its own conversation could not be resumed ({{why}}), so it went on as a new part with Daoris's brief.* | *无法回到它的原对话（{{why}}），因此它带着 Daoris 的简报以新的一段继续。* |
 | `work.limit.briefed` (reworded) | *It goes on as a new part of its session, handed Daoris's brief.* | *它将以会话的新一段继续，并附上 Daoris 的简报。* |
 | `notifications.done.look.limit-went-on` (reworded) | *A quest's work, cut off by an account's limit, went on as a new part of its session, handed Daoris's brief* | *因账户额度用尽而中断的工作已作为会话的新一段继续，并附上 Daoris 的简报* |
 | `work.parts.began.carried` | *went on from {{after}} in its own conversation* | *接{{after}}，在它自己的对话中继续* |
+
+**The family `carry`**, the reasons `moved.carry-failed` says, each a key of its own (`note.carry.why.<code>`) in both catalogues,
+read by a family beside `handed` and `continue` in the note reader (`work/noteLines.ts:795-806`), never the raw code; a code the
+family does not know reads as none, as the other families do:
+
+| Code | en | zh |
+|---|---|---|
+| `busy` | *its earlier process had not stopped yet* | *它之前的进程尚未停止* |
+| `door` | *Daoris cannot read it back on this way of running the agent* | *以这种方式运行智能体时，Daoris 无法读回它* |
+| `version` | *Daoris has not read this version of the agent for it* | *Daoris 尚未为此读过这个版本的智能体* |
+| `unkept` | *Daoris could not keep its id* | *Daoris 无法保存它的 ID* |
+| `id` | *its id is not one Daoris carries* | *它的 ID 不是 Daoris 可携带的形式* |
+| `model` | *the account would not run it on the same model and effort* | *该账户无法以相同的模型和推理强度运行它* |
+| `not-found` | *its files were not found* | *未找到它的文件* |
+| `exists` | *the account already held a copy of it* | *该账户已存有它的一份副本* |
+| `gone` | *the agent did not find it there* | *智能体在那里没有找到它* |
+| `refused` | *the agent would not load it* | *智能体拒绝加载它* |
+| `short-replay` | *what the agent loaded did not match Daoris's record* | *智能体加载的内容与 Daoris 的记录不符* |
+| `suffix` | *it held words after its last answer that Daoris's record does not* | *它在最后一次回答之后含有 Daoris 记录里没有的内容* |
+| `first-turn` | *its provider refused its first turn there* | *服务方拒绝了它在那里的第一轮* |
 
 `chat.moved-from` and `chat.moved` keep their words for a curve move that did not carry. `chat.handed-over` keeps its words: the old
 part's line says where it went, and only the new part's says what it was given. Where a sentence names a quest or an ask, zh says
 委托 and 需求; a *Try again* is 重试 (the glossary's rows). The glossary's *part* (段) and *conversation* (对话) are the words; the
 row *part*'s *each with its own conversation* is amended to *each its own record; a part carried from another account of the same
-agent goes on in the earlier part's conversation*. `i18n:check` and `names:check -- --strict` hold them.
+agent goes on in the earlier part's conversation*. `i18n:check` and `names:check -- --strict` hold the keys; `note.test.ts` holds a
+line for every code of the family `carry` in both languages and `{{why}}` in `moved.carry-failed` and `limit.resume-refused`, so
+the parity of keys is not the only check.
 
 ## 3. What is unmeasured, and how it is measured
 
 ### 3.1 Unmeasured
 
-**Read since round 2, at no turn's cost** (§1.7): what the pinned adapter's load replays, and what else it reads in the home for
-the conversation (its own `<id>/subagents/`, nothing more). The replay's anchor and the stand-in's shape follow from that reading.
-What stays unmeasured:
+**Read at no turn's cost** (§1.7), for round 3 and again for round 4: what the pinned adapter's load replays, the ids it stamps on
+messages, thoughts and tool calls, where a child's replay goes, how a limit's message is forwarded live, and which CLI the adapter
+runs. The replay's unit and the stand-in's shape follow from that reading. What stays unmeasured:
 
-- Whether Claude Code, on the pinned claude-agent-acp, loads a conversation whose two entries (`<id>.jsonl`, `<id>/`) were copied
-  from another account's home on a real account, and whether a record inside the file names the first home (a persisted tool
-  output's path does) in a way that matters (§2.2).
-- Whether a real replay holds every message the old part's record holds, and how often a compaction inside the part shortens it.
-- Whether the API takes the earlier turns' signed thinking under another account; until 1f, a carry runs the same model and
-  effort, judged on what ran (§2.1), and a provider's refusal of the history is seen at the first turn (§2.5). The
+- Whether Claude Code, on the pinned identity, loads a conversation whose two entries (`<id>.jsonl`, `<id>/`) were copied from
+  another account's home on a real account, and whether a record inside the file names the first home (a persisted tool output's
+  path does) in a way that matters (§2.2).
+- Whether a real replay's lists equal the record's, a limit's message among them, and how often a compaction inside the part, or a
+  stopped turn's marker, makes them differ.
+- Whether the API takes the earlier turns' signed thinking under another account; until SWITCHCTX1f, a carry runs the same model
+  and effort, judged on what ran (§2.1), and a provider's refusal of the history is seen at the first turn (§2.5). The
   account-rotation design saw a conversation outlive a re-sign-in in the maker's CLI
   (`docs/2026-10-01-account-rotation-design.md:338`), in the same home, which lowers the risk without measuring it.
-- Whether a limit's refused turn's words are already in the carried transcript beside the refusal, so that handing them again puts
-  them in the agent's context twice. The replay's count of user messages after the last matched answer shows it (§2.3), and the
-  log records it.
+- **What the agent retains.** A replay that agrees shows what the transcript holds, not what the agent keeps in its working
+  memory; only a carried part's first answer, read by the person, says that, and nothing here claims it.
 - What a carried part's first request costs: the prompt cache is per account, so it writes the whole context H, where a briefed
   move writes S and B (`docs/2026-10-20-session-context-design.md:275-279`); whether it reads anything from a cache is not known.
-- Codex's file's name, its replay's anchor, and whether codex-acp's resume finds a file it did not write in that home.
-- The pipe door's `--resume` of an id that is not there (LIMITRESUME1f's question, §3.3).
+  No way on is claimed cheaper (§4, D189 point 7).
+- Codex's file's name, its replay's anchor, and whether codex-acp's load finds a file it did not write in that home.
+- The pipe door's `--resume` of an id that is not there (LIMITRESUME1f's question), and whether the CLI offers any read-back of a
+  resumed conversation without a turn (§3.3).
 
 ### 3.2 Measured on the install's own next real move, never by spending turns
 
 No turn is spent to test it, and the account-switch design's two-turn evidence row is withdrawn. The build lands with every
-fallback of §2.5, so the first real carried move on the install **is** the measurement: it either holds or falls back, at the open
-or at its first turn, with nothing lost. Where the carry does not reach a real move, today's briefed move is what runs, and nothing
-is claimed. With the first-turn rule and the read-back stated (§2.3, §2.5), the first real carried move measures the agent's
-context, not only the wire's acceptance. The `conversation.carried` line holds the outcome; the parent reads it from the machine
-log after the install's next carried move and writes it as a dated note on D165, naming the agent's version, the outcome, the
-replay's count against the record's, whether the refused turns' words were already there, the model and effort acknowledged after
-the set, the first turn's stop reason, the first turn's cache write (the turn's `cacheWrite`, as the usage history already keeps
-it, `Accounts/Usage/UsageHistory.cs:659`) and the part. Until that note, a carried part is said as read back, never claimed as
-measured, and the design's claim stays *unmeasured*. A version of the agent that changes where it files a conversation has no row
-and carries nothing (`version`); its row is then read on that version.
+fallback of §2.5, so the first real carried move on the install **is** the measurement: it either holds or falls back, before any
+prompt or at its first turn, with nothing lost. Where the carry does not reach a real move, today's briefed move is what runs, and
+nothing is claimed. The `conversation.carried` line holds the outcome; the parent reads it from the machine log after the install's
+next carried move and writes it as a dated note on D165, naming **exactly which case ran** (the move's kind, curve or limit or the
+person's, and whether its delivery was none, a limit's or a driven one), the agent's identity, the outcome, the replay's matched
+items against the record's, the user messages after the last, the model and effort acknowledged after the set, the first turn's
+stop reason and whether it started a tool, the first turn's cache write (the turn's `cacheWrite`, as the usage history already
+keeps it, `Accounts/Usage/UsageHistory.cs:659`) and the part. **Every other case stays unmeasured and is named so in the note**: a
+move back to an account holding a left copy, a compaction inside the part, a provider's refusal at the first turn, a shell ended
+partway, a limit's carry, consecutive limited carries. Until that note, a carried part is said as read back, never claimed as
+measured, and the design's claim stays *unmeasured*. An identity with no row carries nothing (`version`); its row is then read on
+that identity.
 
-### 3.3 The pipe door waits for LIMITRESUME1f
+### 3.3 The pipe door carries nothing until it can read a conversation back
 
 The pipe door puts the person's words into `--resume`'s own arguments or stdin before the harness names its conversation
-(`Adapters.cs:2219-2223`; `docs/2026-10-23-limit-resume-design.md:407-418`), so a resume that silently opened a fresh conversation
-would send them to an agent without context, and it has no load to read back. LIMITRESUME1f records on the real door what `--resume`
-of a missing id does. Where it fails closed, the pipe door may carry, an end before `init` read as the carry's failure and the brief
-taken, with the first-turn rule of §2.5; where it opens a fresh conversation, the pipe door never carries and moves by the brief.
-Until 1f lands it moves by the brief (`door`).
+(`Adapters.cs:2222-2226`; `docs/2026-10-23-limit-resume-design.md:407-418`), and it has no load whose replay Daoris receives, so
+nothing on it can play the part §2.3's read-back plays. Its file is written by the `claude` CLI it runs, so its row is keyed by
+that CLI's version, never the ACP adapter's (§2.2). The pipe door therefore carries only once all three hold: LIMITRESUME1f has
+recorded on the real door that `--resume` of a missing id fails closed; the pinned CLI is read to offer a read-back of a resumed
+conversation without a turn, equal to §2.3's (its messages and tool calls by id, before any prompt); and SWITCHCTX1a's protocol is
+built for it to share. None is known today, so until SWITCHCTX1e it moves by the brief (`door`).
 
 ## 4. What it amends, each by a dated note (proposed)
 
 Every decided rule the carry changes, each amended for a carry alone; none is said to stand where it does not.
 
 - **D125**, its contract's §3.5 point 5, its point 4 and its rejection of copying between account homes: the line's own
-  conversation, and only it, crosses from one of Daoris's account homes to another of the same agent; the credentials and everything
-  else of an account's own never do, and the person's own tool home is never a source or a destination.
+  conversation, and only it, crosses from one of Daoris's account homes to another of the same agent, never over a name that
+  stands; the credentials and everything else of an account's own never do, and the person's own tool home is never a source or a
+  destination.
 - **D131 point 4** (*one Daoris record for one harness conversation*), its rejections of *a linked record that the page folds into
   one thread* and *resuming the conversation in a new record*, its rejection of *`session/load` first*, and its point 5's carry-on
-  after a refused turn: a carried move resumes one conversation in a new record, by load, read back. **D131's answer**: its reason
-  was that every reader of records would have to learn a fold (`D131.md:37-38`, `:41-46`); D167 has since made the entry that fold
-  for every reader, the page, the review and the history; `session.moved` counts a move, not a session; and a teammate's mirror
-  carries no conversation id and no `handed`, so a teammate still sees one row per part as today. Each record still names one
-  conversation id. Point 2's *the same account* reads as the account whose home holds the conversation, which a carry makes the new
-  one. **Point 2's last sentence**, *a changed harness version is said on the resumed run's first line, never refused*
-  (`D131.md:18`), and the rejection of *refusing a resume across a harness version* (`:50-51`): a carry is refused across a version
-  (`version`, §2.1), since the table's names and the replay's anchor are bound to a version; a resume of a record on its own
-  account stays never refused. The rejection of *checking for the conversation in the agent's home before resuming* (`:48-49`): a
-  carry checks there, by the table's names alone, in the two account homes it settled.
-- **D137's rejections**, beside its point 8 below: *a new record continuing the old conversation, linked to it* (`D137.md:53`), which is
-  the carry's shape, answered as D131's is; and *reading the account's home* for a conversation (`:55`), which a carry does, by its
-  kept id and the table's names, never by `--continue`, `--last` or a name. Its rejection of *adopting a terminal conversation in
-  place* (`:56`) is kept: a carry never writes over turns another client ran (§2.2).
+  after a refused turn: a carried move resumes one conversation in a new record, by load, read back before any prompt. **D131's
+  answer**: its reason was that every reader of records would have to learn a fold (`D131.md:37-38`, `:41-46`); D167 has since made
+  the entry that fold for every reader, the page, the review and the history; `session.moved` counts a move, not a session; and a
+  teammate's mirror carries no conversation id and no `handed`, so a teammate still sees one row per part as today. Each record still
+  names one conversation id. Point 2's *the same account* reads as the account whose home holds the conversation, which a carry
+  makes the new one. **Point 2's last sentence**, *a changed harness version is said on the resumed run's first line, never refused*
+  (`D131.md:18`), and the rejection of *refusing a resume across a harness version* (`:50-51`): a carry is refused across its
+  compatibility identity, the adapter's and the CLI's versions (`version`, §2.1), since the table's names and the replay's anchor
+  are bound to it; a resume of a record on its own account stays never refused. The rejection of *checking for the conversation in
+  the agent's home before resuming* (`:48-49`): a carry checks there, by the table's names alone, in the two account homes it
+  settled.
+- **D137's rejections**, beside its point 8 below: *a new record continuing the old conversation, linked to it* (`D137.md:53`),
+  which is the carry's shape, answered as D131's is; and *reading the account's home* for a conversation (`:55`), which a carry
+  does, by its kept id and the table's names, never by `--continue`, `--last` or a name. Its rejection of *adopting a terminal
+  conversation in place* (`:56`) is kept, and held more strictly: a carry never writes over a name that stands (§2.2).
 - **D189 point 7** (*Daoris's compaction is a new part handed the brief: at a move*, `D189.md:37-38`) and its reason's *cheaper on
   every later request* (`:46-48`): a carried move compacts nothing and keeps H on every later request on the new account. The
   answer is the session-context design's §5 as amended: *no way on is claimed cheaper*
   (`docs/2026-10-20-session-context-design.md:288-289`); the agent's own conversation is tried first for continuity, its first
-  request's cost is stated (§3.1, §5) and measured (§3.2), and the person's *Go on fresh* still compacts by the brief.
+  request's cost is stated (§3.1, §5) and kept unmeasured until SWITCHCTX1f, and the person's *Go on fresh* still compacts by the
+  brief.
 - **D137 point 8** (*one record per harness conversation*): a carried conversation is named by two records, each in its own home,
-  and only the newest part's is resumed; and where a carry falls back at its open or its first turn, the same record opens a new
-  conversation on the same process, its kept id replaced before any answer under it (§2.5).
+  and only the newest part's is resumed. That is the whole amendment: **no record ever names a second conversation**, since a
+  fallback before any prompt is the record's first conversation and a fallback after a refused first turn opens a further part
+  (§2.5). Round 3's same-record replacement is withdrawn.
 - **D165** point 3 and its design §4: a move over the curve with the agent unchanged, between two of Daoris's accounts, carries the
-  conversation; the evidence row is withdrawn; the first real move measures it.
+  conversation, built first for a conversation's curve move; the evidence row is withdrawn; the first real move measures the case
+  that ran.
 - **D167 point 1** (*a part is still one harness conversation and one record*): a part is one record, and a part carried from
-  another account of the same agent goes on in the earlier part's conversation. The page draws a line's earlier parts above the
-  attended one, and every part keeps how it was handed.
-- **D189 point 1**'s *one per record* and *never read, copied or written by Daoris*, **point 5**, **point 6** and its rejections of
-  copying a store across accounts and of *going back to a left conversation with what came after*: the same agent's own files may be
-  copied whole between Daoris's account homes at a move, by name only and never parsed or written into; the carried conversation is
-  named by each part of the line that carried it; a copy left behind is never resumed as it was left, and a move back to its account
-  replaces it with the line's newest first. Across makers it stays rejected. Point 4's brief becomes the first half's fallback.
-- **D197**'s LIMITGOON1 note: the carrier is the conversation's own, where it carries; the brief otherwise.
-- **D206**'s rejection of copying the transcript, and its §3.5 briefed move to another account: carried where §2.1 holds.
+  another account of the same agent goes on in the earlier part's conversation. The page draws above the attended part the parts it
+  continues, each with its own liveness, alongside parts left to the strip, and every part keeps how it was handed.
+- **D189 point 1**'s *one per record* and *never read, copied or written by Daoris*, and **point 5** with its rejection of copying
+  a store across accounts: the same agent's own files may be copied whole between Daoris's account homes at a move, by name only,
+  never over a name that stands and never parsed or written into; the carried conversation is named by each part of the line that
+  carried it. **Point 6 and its rejection of *going back to a left conversation with what came after* stand**: a copy left behind
+  is never written over or resumed, and a move back to its account opens another new part handed the brief. Across makers nothing
+  changes. Point 4's brief becomes the first half's fallback.
+- **D197**'s LIMITGOON1 note: the carrier is the conversation's own, where it carries, with the refused turns' words handed by the
+  replay's count (§2.4); the brief otherwise.
+- **D206**'s rejection of copying the transcript, and its §3.5 briefed move to another account: carried where §2.1 holds, its box
+  keeping its delivery beside the carry record. Its own-account wake, which sends the refused words again unseen, is unchanged.
 - **The code's own statements of the rule**, each reworded by SWITCHCTX1a for the table's names: the homes' contract, *Daoris owns
   this location and nothing inside it* (`HarnessSettings.cs:878`); `LimitMove`'s remark that the conversation *cannot resume on the
   next account* (`LimitMove.cs:12-13`); `HarnessConversations`' *never read from the agent's own home … which D125 rejected*
@@ -678,8 +845,9 @@ Every decided rule the carry changes, each amended for a carry alone; none is sa
 
 **Kept**: D163 point 1 and its rejection of carrying the transcript, for another agent; D205's (e); D49 §4, D66 §3 and D197 point 3
 (no account's credentials, and never the person's own tool home or sign-in); D137 point 7 (a resume asks for its record's own
-account: a carried part's own account is the new one); D137's rejection of adopting a terminal conversation in place (§2.2); D210's
-four kinds, by which a carried part's first turn is judged (§2.5).
+account: a carried part's own account is the new one); D137's rejection of adopting a terminal conversation in place (§2.2); D189
+point 6 and its rejection of going back to a left conversation; D210's four kinds, by which a carried part's first turn is judged
+(§2.5).
 
 ## 5. Rejected
 
@@ -689,66 +857,99 @@ four kinds, by which a carried part's first turn is judged (§2.5).
   account that nobody asked for, whose first request writes the whole context H uncached; the line is the page's, and the agent
   takes it with the person's next words.
 - **Counting `resumed` from the wire's acceptance**: it proves only that an id was found; the replay is read back instead.
-- **Counting the person's turns in the replay**: the agent stores the composed prompt and the record the words (§1.7), so the two
-  have no stated match; the agent's own messages, kept with the id they replay with, are the anchor.
+- **Counting the person's turns in the replay by their words**: the agent stores the composed prompt and the record the words
+  (§1.7), so the two have no stated match; the agent's own messages, thoughts and tool calls, kept with the ids they replay with,
+  are the anchor, and the person's are counted only after it.
+- **A subsequence for the read-back** (round 3): turns another client ran would pass; the lists are equal (Codex 2.3).
+- **Recognising a limit's message in the replay by its sentence** (round 3): Daoris reads a limit from the door's failure alone,
+  never the agent's messages (`AccountLimits.cs:63-67`), and the record holds the message by its id (Codex 1.2).
+- **Keying the carry table by the adapter's version alone** (round 3): the program that writes the file is the CLI the adapter's
+  SDK runs (Codex 1.3).
 - **Judging the first turn by whether the agent's message came first**: a provider's refusal is said as the agent's message before
-  the turn ends `refusal` (§2.5); the turn's end and D210's kinds decide.
+  the turn ends `refusal` (§2.5); the turn's end, D210's kinds and whether it ran anything decide.
+- **Falling back after a first turn that started a tool** (round 3 took every `refusal` and prompt-level `Fatal`): the work ran in
+  the carried conversation, and a brief with the same words in a new one could run it again (Codex 2.2).
+- **Dropping every fallback once the prompt is sent** (one reading of Codex's smaller shape): a line whose carried history its
+  provider refuses would be refused at every later turn the same way, and would not go on; the fallback stays where the record shows
+  that nothing ran, which is the positive evidence Codex 2.2 asks for.
 - **Falling back on a limit, a transient, an access refusal or the person's stop**: a brief on a limited account is refused there
   and would leave the limit's next move an empty conversation to carry; the others are not the carry's failure, and a brief mends
   none of them.
+- **Handing a limit's refused words again where the transcript holds them, or counting the duplicate and handing it anyway**
+  (round 3): the agent's context would hold the request twice (Codex 2.1); the replay's count decides, and a count that fits neither
+  case falls back before any prompt.
 - **Judging the model by what each start asks**: a curve move asks the account's default, unknown before the spawn; what ran is
   read after the set.
 - **A re-ask on a carried start**: it would set another model on the carried conversation; the fallback opens with today's choice
   instead.
-- **Replacing a left copy because a record names its id**: the person may have run it since in their own terminal; only a byte
-  prefix of the source is replaced (§2.2).
+- **Replacing a left copy where it is a byte prefix of the source** (round 3, from the Opus reader's read of round 2): the prefix
+  shows how the two files stood when read, not that no other client writes between the read and the move, and Daoris holds no
+  exclusion against a client it neither offers nor prevents (Codex 2.4, 3.1); a carry writes only names that do not stand.
+- **Replacing a left copy because a record names its id**: the person may have run it since in their own terminal.
 - **Moving the files** rather than copying them: it takes the left conversation out of its account's home (D189 point 6) and loses
-  it where the resume fails.
+  it where the load fails.
 - **Copying the whole home, or the account's configuration**: it carries credentials and another account's own.
 - **Carrying out of, or into, the person's own tool home**: D49 §4, D66 §3, D197 point 3.
 - **Sharing one home between two accounts**, or a link from one to the other: the accounts are separate homes by design (D66 §3,
   D125) and a link would carry everything.
 - **Handing the brief as well as the carried conversation**: the agent has its own turns, and the brief repeats them at up to
   40,000 characters. A carried part's first request costs H, a briefed part's S and B (§3.1).
-- **Keeping the brief's text on the new part** until its first answer: a second store of the conversation's words; its recipe is
-  kept and the brief recomposed from the ended old part.
-- **Opening a second record for the fallback**: one move would open two parts, the first of which never answered.
+- **Keeping the brief's text** until the carry is done: a second store of the conversation's words; its recipe is kept and the brief
+  recomposed from the ended old part.
+- **Replacing the record's conversation after its first turn** (round 3's same-process fallback under the carried record): the
+  turn's messages and usage would stand under a record that no longer names the conversation that made them (Codex 3.2); a further
+  part keeps each record one conversation's.
+- **Opening a second record for a fallback at the open**: the record names no conversation yet, so the fallback is its first.
+- **Writing `harness.json` before the read-back** (round 3): a shell that ended between would leave a record naming a conversation
+  nobody read back, which a later go-on would resume unread (Codex 2.5); the carry record is the authority until `verified`.
+- **Recovering an automatic delivery only at the person's next word** (round 3, for every path but the ended move's box): a limit's
+  words or a driven instruction would wait for a word that may never come (Codex 2.5); the come-up delivers from the carry record.
+- **Folding D206's box into the carry record** (the rest of Codex's smaller shape, adopted): the box is LIMITRESUME1's built and
+  proven come-up, whose delivery the carry does not change; the carry record names it and keeps the carry's phase beside it.
 - **Writing a Claude transcript for Codex, or a Codex thread for Claude**: it parses and writes a store across makers (D189, kept).
 - **Waiting for the person when the carry fails**: the brief is complete enough for a go-on (D189 point 3), so the line goes on.
+- **Drawing every earlier part as ended, or every part of the entry above the attended one** (round 3): an entry may hold parts
+  alive alongside, and a part read as not live is drawn cut (Codex 4.1); the line view draws ancestry, each part as it stands.
 - **A separator of the page's own between parts**: the boundary lines already say it, in the session's words.
 
 ## 6. Rows, in build order, with their proofs
 
 Stand-ins are scripts the tests write under their own fixture home, as `ChatGoesOnProcessTests.Agent` does
 (`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Conversations/ChatGoesOnProcessTests.cs:748`): never a real agent, never a window,
-never a real console. **The stand-in ACP agent replays in the shape read from the pinned package (§1.7)**, never in the shape of
-the rule it tests. It keeps each conversation as `projects/<Flatten(tree)>/<id>.jsonl` under its `CLAUDE_CONFIG_DIR`, advertises
-`loadSession`, and refuses a missing one `resource_not_found`. On `session/load` it replays every message of the file in order:
-each user message as the composed prompt it was sent, several blocks where it was sent several; each of its own answers as
-`agent_message_chunk`s carrying the same `messageId` it streamed live; a tool call and its result as tool updates; a compaction's
-summary as user text; and a subagent's messages to a child session id. It reports the transcript's model as current after a load,
-and answers a prompt with the turns it holds. Its switches make it replay short, drop the ids, refuse the model or acknowledge
-another, end a first prompt `refusal` after an `API Error` message, fail it `Fatal`, `Limit`, `Transient` or `Access`, or end it
-`cancelled`. There is no switch to fork an id: the protocol door names none (§2.3).
+never a real console. **The stand-in ACP agent replays in the shape of the checked-in fixture read from the pinned package**
+(§2.2), never in the shape of the rule it tests. It keeps each conversation as `projects/<Flatten(tree)>/<id>.jsonl` under its
+`CLAUDE_CONFIG_DIR`, advertises `loadSession`, and refuses a missing one `resource_not_found`. On `session/load` it replays every
+message of the file in order: each user message as the composed prompt it was sent, several blocks where it was sent several; each
+of its own answers and thoughts as chunks carrying the same `messageId` it streamed live; each tool call by the `toolCallId` it had
+live, and its result as tool updates; a limit's message as the agent's text by the id it was forwarded with; a compaction's summary
+as user text; and a subagent's launch as an announcement on its own id and its messages to a child session
+`<id>:replay-subagent:<tool use id>`. It reports the transcript's model as current after a load, and answers a prompt with the turns
+it holds. Its switches make it replay short, replay an extra message or tool call, append a user message the record lacks, drop the
+ids, refuse the model or acknowledge another, end a first prompt `refusal` after an `API Error` message with or without a tool call
+before it, fail it `Fatal`, `Limit`, `Transient` or `Access`, or end it `cancelled`. The fixture home's hooks make a destination name
+appear between the carry's look and its move, and end the shell at each phase of the carry record. There is no switch to fork an
+id: the protocol door names none (§2.3).
 
 | Row | What | After | Proof |
 |---|---|---|---|
-| SWITCHCTX1c-i | **Split out as a row of its own** (`TASKS.md`), under D167 and D189 point 8, accepted on its own read: it reverses no decision, so it waits neither for Codex's read of the reversal nor for 1a. The line view and today's words (§2.7): a repository's chat and a driven line draw their earlier parts above the attended one; pressing a part, in the strip or on `PartsFlow`'s rail, attends it and scrolls to it; one boundary per side, the opening line folded under a move's boundary, the *began* words where a part was not a move; `chat.taken-over` says the new agent was handed Daoris's record, not its own turns; `moved.on` and `moved.from` reworded with the values their lines were written with; `limit.resume-refused`, `work.limit.briefed` and `limit-went-on` reworded, in en and zh | — | Page tests over fixture events: **a line handed to another agent shows one conversation across its parts** (its earlier part's turns above, `chat.handed-over` and the reworded `chat.taken-over` between, no *new session*); **a curve move's line the same with one line per side**, `chat.moved` above and `chat.moved-from` below, the new part's opening line folded under it and not drawn as a third; a driven line's `moved.on`/`moved.from` pair **written before the rewording** drawing whole in the new words, its `tokens` and `count` shown; a sibling's part bounded by its *began* words; a press in the strip and on `PartsFlow` attends the part and scrolls to it; `i18n:check`, `names:check -- --strict`, `note.test.ts` |
-| SWITCHCTX1a | The carry on the protocol door, wired on the curve's take (`CurveMove` → `HandOverTake` → `ChatRunner.StartAsync`): `Carries.Judge` and its codes; the table with its version, its anchor and per-agent never-list, read on the pin; the id's grammar; the copy, its byte-prefix rule and its refusals; the start's order (selection, judgement, open, copy and the checked `harness.json`, spawn, load, the model's set and judgement, the count); nothing prompted where nothing waits; the carry's file in the inventory, the first turn judged in D210's kinds, and both fallbacks on the same process with today's choice; `handed` through the record's field chain and its update door; `session.moved briefed=false` and `conversation.carried`; the go-on's carried way where `.carry.json` stands; the code's four statements of the rule reworded | — | **A stand-in's conversation moved by the curve to another account's home resumes with its earlier turns** (the replay counted by `messageId` against the record; the new part's `harness.json` holds the same id; no brief handed; nothing prompted until the next word, which the stand-in answers naming the earlier turns). The first turn: **a provider refusal said as the agent's message and ending `refusal` falls back**, the brief on the same process with the same words, `moved.carry-failed` drawn in place of `carried-from`; a `Fatal` the same; **a limit's refusal goes to the limit's move with the same id** and the carry's file kept, no brief on the limited account; **the person's stop and a transient retried** neither fall back, the file kept, the next word taking the carried way through the go-on. The model: **the old part's model asked and not offered falls back with today's choice**, never asked again; another model acknowledged, the same; no re-ask handed. The copy: **a left copy that grew elsewhere is left as it is** (`exists`, the brief); a move back to an earlier account whose copy is a byte prefix replacing it; under `<id>/`, a standing file kept and a missing one added. A write of the id that fails, the brief (`unkept`). And: a record on the person's own sign-in, either side, moves by the brief (`own-home`), nothing read in the fixture's own tool home; an old process not yet exited, the brief taken (`busy`); a load refused, the brief on the same process, no process killed; a short replay and a replay with no ids, the brief taken; an id outside the grammar, a version with no row, a row with no anchor, a record with no message id, each refused and briefed; the fixture home's `.credentials.json`, `.claude.json`, `history.jsonl`, `todos/<id>`, `file-history/<id>/`, another conversation's file and `sessions/` not in the destination; `.carry.json` taken by a delete; `handed` set by its update door on loopback alone and absent from the sync wire (tests hold both) |
-| SWITCHCTX1b | Every other move of §2.1 takes it: `LimitMove` live (its account settled in the start) and ended (its box), D206's briefed move to an account that frees first, the person's hand-over to another account of the agent (no closing note asked), a quest's carry-on why `curve` or `limit` (`Driver.ContinuesFrom`), and `HelpStartAsync` where its room is the previous part's tree. On the driven path, **the same-process fallback goes inside `AcpSession.RunAsync`**, where a refused `ResumeAsync` throws out of the run today (`Acp.cs:811-812`), and **the briefed instruction is composed before the spawn**, so that fallback can hand it. **The come-up of an ended move composes without the brief where the box says the carry landed** | 1a | The same stand-in per path: a live limit move with held words (each once, after the load, no brief); an ended limit-held record; a person's press with no closing turn asked; a driven carry-on resuming its own conversation, **its first prompt the instruction without the brief, the channel's held messages in it and marked handed once it works**; a driven carry-on whose load is refused, briefed inside the same run, its briefed instruction the one composed before the spawn; Ask Daoris carried in the same room and briefed in another (`room`); another agent on each path still briefed. A shell ended between the carry and the resume: **for the ended move, the come-up goes on from the box, without the brief where the carry landed**; for the others, the next word takes the carried way through the go-on, its load counted and its first turn watched by the carry's file |
-| SWITCHCTX1c-ii | The carried lines (§2.7): `moved.carried-on`, `moved.carried-over-curve` with `chat.moved`'s figures, `moved.carried-from`, `moved.carry-failed` drawn in its place, `work.parts.began.carried`, a part `own` drawn with no brief, Ask Daoris folding `own`, the glossary's row *part* amended | 1a | Page tests: a carried line with `moved.carried-from` and no brief, one line per side; a carried curve move with the figures on the old part's line; a failed carry with `moved.carry-failed` alone at its boundary and its brief folded; `HelpConversations` folding `own`; `i18n:check`, `names:check -- --strict` |
-| SWITCHCTX1d | Codex's row of the table, read from a Codex home that holds a session, with its never-list and its replay's anchor read from the pinned codex-acp | a Codex account's session on the install | the row's names read on the pinned codex-acp, each name holding the id classed; the anchor read from its package; a stand-in filing by date loaded after a carry; until then Codex briefed (`version`; a test holds it) |
-| SWITCHCTX1e | The pipe door carries (§3.3) | LIMITRESUME1f | the stand-in's reaction to 1f's recorded shape: an end before `init` → the brief, said; a different id named on `init` → the brief and `forked`; a first turn failing → judged as §2.5 |
-| SWITCHCTX1f | The measurement (§3.2): the install's first real carried move read from the machine log and written as D165's note | 1a, 1b, 1c-i and 1c-ii built and installed | the parent's install proof: the outcome, the agent's version, the replay's count, whether the refused turns' words were already there, **the model and effort acknowledged after the set, the first turn's stop reason**, the first turn's cache write, the part, and the window showing the line as one conversation |
+| SWITCHCTX1c-i | **A row of its own** (`TASKS.md`), under D167 and D189 point 8, **accepted 2026-10-25** (Standing): it reverses no decision. The line view and today's words (§2.7): a repository's chat and a driven line draw above the attended part the parts it continues by `from`, oldest first, each with its own liveness and read-only by a mode of its own, a part running alongside left to the strip; at most the three nearest drawn, a press for up to three more; an ended line opening at the attended record's head, a live one at its tail; only the attended part owns the region's scroll and the frame's facts, and Ask Daoris's earlier parts take the same mode; pressing an earlier part draws its own ancestry and hides the later parts; pressing a part, in the strip or on `PartsFlow`'s rail, attends it and scrolls to it; one boundary per side, the opening line folded under a move's boundary, the *began* words where a part was not a move; `chat.taken-over` says the new agent was handed Daoris's record, not its own turns; `moved.on` and `moved.from` reworded with the values their lines were written with; `limit.resume-refused` (its `{{why}}` kept), `work.limit.briefed` and `limit-went-on` reworded, in en and zh | — | Page tests over fixture events: **a line handed to another agent shows one conversation across its parts** (its earlier part's turns above, `chat.handed-over` and the reworded `chat.taken-over` between, no *new session*); **a curve move's line the same with one line per side**, `chat.moved` above and `chat.moved-from` below, the new part's opening line folded under it; **a part running alongside is not drawn above the attended part**; **an earlier part still live is drawn live**, its last turn not cut and its calls not stopped; **one scroll owner**: a long line follows the attended part's tail, no earlier part opens the region at its own head, and the frame is told one usage and one tail; Ask Daoris's earlier parts the same; **an ended line opens with the attended record's head at the region's top** and the nearest drawn earlier part beneath it, a live line at the attended part's tail; **pressing an earlier part hides the parts after it**, and pressing the newest draws them again; **a line of five earlier parts draws three**, the press says *Show 2 earlier parts* and draws the other two, en and zh; a driven line's `moved.on`/`moved.from` pair **written before the rewording** drawing whole in the new words, its `tokens` and `count` shown; a sibling's part bounded by its *began* words; a press in the strip and on `PartsFlow` attends the part and scrolls to it; `i18n:check`, `names:check -- --strict`, `note.test.ts` |
+| SWITCHCTX1a | The carry on the protocol door, Claude Code's ACP adapter alone, wired on a conversation's curve move alone (`CurveMove` → `HandOverTake` → `ChatRunner.StartAsync`): `Carries.Judge` and its codes; the table keyed by the compatibility identity, its anchor and per-agent never-list, read on the pin, with the checked-in replay fixture; the identity kept beside every kept id; the id's grammar; the carry record and its phases; the create-only copy; the start's order (selection, judgement, the carry record, open, copy, spawn, load with children filtered, the model's set and judgement, the count, the checked `harness.json`); nothing prompted; the come-up at every phase and the carried way on the go-on; the first turn judged in D210's kinds and by whether it ran anything, the further part on its failure; `handed` through the record's field chain, its update door, its `PersonDoors` row and the pushed slice; `session.moved briefed=false` and `conversation.carried`; the code's four statements of the rule reworded | — | **A stand-in's conversation moved by the curve to another account's home is loaded with its earlier turns** (its messages, thoughts and tool calls counted equal by id against the line's records; the new part's `harness.json` holds the same id and identity; no brief handed; nothing prompted until the next word, which the stand-in answers naming the earlier turns). The replay: **a subagent replayed to a child id is neither kept in the record nor counted**; a short replay, an extra message or tool call, and a replay with no ids each fall back before any prompt; **a user message after the last answer falls back `suffix` before any prompt**. The first turn: **a provider refusal said as the agent's message and ending `refusal`, with no tool started, opens a further part** `from` the carried one, why `retry`, the brief and the same words in it, the carried record keeping its events and usage; a `Fatal` the same; **the same ends after a tool call started are the turn's own**, `held`, no brief, no further part; a limit's refusal stays the limit's (its move is 1b's), no brief on the limited account; **the person's stop and a transient retried** leave the carry pending, the next word taking the carried way. The model: **the old part's model asked and not offered falls back with today's choice**, never asked again; another model acknowledged, the same; no re-ask handed. The copy: **any name standing at the destination is left as it is and nothing is written** (`exists`, the brief); **a name made between the look and the move is not overwritten** (`exists`); temporary names removed. The come-up: **a shell ended at `judged`, `opened`, `copied` and `verified`, after the next word was kept and after it was attempted, comes up as §2.4's table says**, never prompting before a read-back and never sending an attempted word again. And: a record on the person's own sign-in, either side, moves by the brief (`own-home`), nothing read in the fixture's own tool home; an old process not yet exited, the brief (`busy`); a load refused, the brief on the same process, the record naming only the fallback's conversation; an id outside the grammar, an identity with no row (a pinned `claude` among them), a row with no anchor, a line with no message id, each refused and briefed; a write of the id that fails, the brief (`unkept`); the fixture home's `.credentials.json`, `.claude.json`, `history.jsonl`, `todos/<id>`, `file-history/<id>/`, another conversation's file and `sessions/` not in the destination; the carry record taken by a delete; `handed` read through the pushed sessions slice, its door refused without the key, and absent from the sync wire (tests hold each) |
+| SWITCHCTX1b | Every other move of §2.1 by 1a's protocol: `LimitMove` live (its account settled in the start) and ended (its box beside the carry record), D206's briefed move to an account that frees first, the person's hand-over to another account of the agent (no closing note asked), a quest's carry-on why `curve` or `limit` (`Driver.ContinuesFrom`), and `HelpStartAsync` where its room is the previous part's tree. The delivery's dispositions (§2.4 step 5) with Daoris's word for a carried limit move; consecutive limited carries; the come-up delivering a pending delivery from the carry record. On the driven path, **the fallback before any prompt goes inside `AcpSession.RunAsync`**, where a refused `ResumeAsync` throws out of the run today (`Acp.cs:817-818`), and **the briefed instruction is composed before the spawn**, so that fallback can hand it | 1a | The same stand-in per path. **A live limit move whose replay holds the refused prompt**: nothing of it handed again, the waiting words then Daoris's word, each once; **one whose replay holds none**: the refused words handed once; **a count that fits neither falls back before any prompt** (`suffix`). **Two limited carries in a row before any answer**: the second hands nothing the transcript holds. An ended limit-held record, its box and the carry record. A person's press with no closing turn asked. A driven carry-on loaded, **its first prompt the instruction without the brief, the channel's held messages in it and marked handed once it works**; a driven carry-on whose load is refused, briefed inside the same run with the instruction composed before the spawn. **A shell ended at `verified` before the delivery: the come-up delivers the limit's words, or the driven instruction, from the carry record without waiting for a word**; after the delivery was attempted, settled uncertain and never sent again. Ask Daoris carried in the same room and briefed in another (`room`); another agent on each path still briefed |
+| SWITCHCTX1c-ii | The carried lines (§2.7): `moved.carried-on`, `moved.carried-over-curve` with `chat.moved`'s figures, `moved.carried-from`, `moved.carry-failed` with the family `carry` in both languages, `work.parts.began.carried`, a part `own` drawn with no brief, Ask Daoris folding `own`, the glossary's row *part* amended | 1c-i and 1a | Page tests **through the pushed `handed` value**, as the slice pushes it: a carried part not yet read back (absent), one read back (`own`) and one fallen back (`brief`); a carried line with `moved.carried-from` and no brief, one line per side; a carried curve move with the figures on the old part's line; a fallback at the open with `moved.carry-failed` at the new part's boundary, its reason worded; a first-turn fallback with the carried part's `moved.carried-from`, its refused turn, and the further part's `moved.carry-failed`; every code of the family `carry` worded in en and zh (`note.test.ts`); `HelpConversations` folding `own`; `i18n:check`, `names:check -- --strict` |
+| SWITCHCTX1d | Codex's row of the table, read from a Codex home that holds a session, with its never-list and its replay's anchor read from the pinned codex-acp | a Codex account's session on the install; 1a and 1b's protocol | the row's names read on the pinned codex-acp, each name holding the id classed; the anchor read from its package; a stand-in filing by date loaded after a carry; **a version whose replay holds no readable anchor goes by the brief before any carried prompt**; until then Codex briefed (`version`; a test holds it) |
+| SWITCHCTX1e | The pipe door carries (§3.3): its row keyed by the `claude` CLI's version, and a read-back of its own | 1a; LIMITRESUME1f; the pinned CLI read to offer a read-back without a turn | the stand-in's reaction to 1f's recorded shape and to the read-back as read: an end before `init` → the brief, said; a different id named on `init` → the brief and `forked`; a read-back that differs → the brief before any prompt; a first turn failing → judged as §2.5 |
+| SWITCHCTX1f | The measurement (§3.2): the install's first real carried move read from the machine log and written as D165's note | 1a, 1c-i and 1c-ii built and installed (1b for a limit's case) | the parent's install proof: **which case ran**, the outcome, the agent's identity, the replay's matched items, the user messages after the last, **the model and effort acknowledged after the set, the first turn's stop reason and whether it started a tool**, the first turn's cache write, the part, and the window showing the line as one conversation; every case that did not run named unmeasured |
 
 1c-i is first because it fixes what the person saw for both halves (§1.4) and reverses no decision, which is why it stands as a row
-of its own; 1a gives the agent its memory, but only once a path is wired and installed.
+of its own; 1a gives the agent its memory on the curve's move, the case the install met, and 1b brings every other move onto the
+same protocol once 1a has proved it.
 
 ## 7. What this design's gate does not cover
 
-No real agent has loaded a carried conversation; §3.1 lists what is not known, and §3.2 says how it becomes known. The page's
-change has not been seen in the window. Nothing here parses or writes inside a conversation's file; the carry reads and writes the
-table's names alone, between Daoris's account homes; and nothing here touches the person's own tool home.
+No real agent has loaded a carried conversation; §3.1 lists what is not known, and §3.2 says how it becomes known. The pinned
+package's replay was read, not run, and its line numbers are claude-agent-acp 0.84.0's. The page's change has not been seen in the
+window. Nothing here parses or writes inside a conversation's file; the carry reads and writes the table's names alone, between
+Daoris's account homes, never over a name that stands; and nothing here touches the person's own tool home.
 
 ## 8. Round 2: round 1's read answered
 
@@ -799,3 +1000,71 @@ to test it (§3.2). The package reading of finding 2 cost no turn.
 **What stays owed.** Codex's read (D191, its note of 2026-10-24). The design stays proposed until it lands and its blocking
 findings are taken; by that note, a design that reverses D189 point 1 is not accepted on one maker's read. SWITCHCTX1c-i, which
 reverses nothing, waits only for its own read.
+
+## 10. Round 4: Codex's read answered
+
+Every finding of Codex's read of round 3 (`docs/2026-10-24-switch-context-reads.md`, its section *Codex, round 3*), numbered as
+Codex numbers them, its section and item. Each is checked against the code on main at `972b17577`, the commit Codex read, and the
+package findings against the pinned adapter's own package, claude-agent-acp 0.84.0 on the SDK 0.3.284 with its CLI 2.1.284, read
+from the install's toolchain (§1.5, §1.7). *Taken* means the design now says it, and where; *disputed* means it is not taken, with
+the line that shows why. None is disputed: each holds against the code. The lines Codex cites are `972b17577`'s, as this round's
+are.
+
+| # | Finding (blocking in bold) | Checked against | Answer |
+|---|---|---|---|
+| **1.1** | **Child replay is not already filtered** | `Acp.cs:3431-3435`, `:2517-2533`; `AcpStreams.cs:95-99`, `:152-184`; package l. 5363, 5405, 5427, 5446-5459 | **Taken**: round 3's claim is withdrawn (§1.7). The carried load drops every update of the conversation's own id and of every id beginning `<id>:replay-subagent:`, so no child reaches the record, and counts the conversation's own alone (§2.3); 1a's stand-in replays a subagent to a child id and asserts it is neither kept nor counted (§6). |
+| **1.2** | **`LimitHeld` cannot recognise the replay exception** | `LimitHeld.cs:17-56`; `AccountLimits.cs:63-67`; package l. 4659-4668, 4712, 5490-5504 | **Taken**: the exception is gone, and no sentence is read anywhere. A limit's message is forwarded live as the agent's text to a client that takes no typed failures, by the same id it replays with, so the record already holds it; the lists are compared equal, and a mismatch falls back (§1.7, §2.3, §5). |
+| **1.3** | **The adapter version does not identify the transcript writer** | `HarnessSelection.cs:603-608`; `Adapters.cs:2131-2153`; package `claudeCliPath` l. 626-662, l. 6638; the SDK's `package.json`, `claudeCodeVersion` | **Taken**: the carry table is keyed by the compatibility identity, the adapter's and the CLI's versions together, kept beside every kept id (§1.5, §2.1, §2.2, §2.3); the pipe door's row is the CLI's own and unread (§2.2, §3.3). |
+| 1.4 | Package evidence is not in the checkout | `Adapters.cs:1895`; `Accounts/AgentSettings.cs:27`, `:55`; the install's toolchain | **Taken**: SWITCHCTX1a checks in a fixture of the replay's frames read from the package, each identity and line named, and the stand-in follows it (§2.2, §6); the other pair a comment names has no row (§1.5). |
+| **2.1** | **Duplicate prompts remain an admitted outcome** | `LimitHeld.cs:17-56`; limit-resume design `:360-366`; package l. 5490-5494 | **Taken**: the replay's user messages after the last answered turn decide before any prompt: none where no words wait; for a limit, U = R hands no refused word, U = 0 hands each once, anything else falls back `suffix` (§2.3, §2.4 step 5). D206's own-account wake sends refused words again because it cannot see the transcript; a carry can, so it does not (§1.6). |
+| **2.2** | **The first-turn fallback can repeat completed tool work** | `AgentErrors.cs:5-19`, `:17`; `Acp.cs:3100-3112` | **Taken**: the fallback needs positive evidence that nothing ran, `refusal` or a prompt-level `Fatal` with no `Tool` event in the turn; a turn that started any tool is the turn's own failure, handled as today, and the carry counts `held` (§2.5, §5). |
+| **2.3** | **Assistant ids do not establish complete context** | `Acp.cs:3091-3112`; package `tool-calls/renderer.js` l. 64, 84 | **Taken** both ways: the invariant is stronger (messages, thoughts and tool calls by their ids, across the line's parts naming the conversation, equal lists with no extra; nothing may stand under `<id>/` at the destination), and *read back* is narrowed to what it proves (§2.2, §2.3). |
+| **2.4** | **The copy is not protected against another writer** | session-messages design `:291-295`; `D137.md:56` | **Taken**: no replacement at all. Every `copy` name must be absent, and each lands by a move the disk refuses where the name exists (`exists`); the cost, a move back to an account holding a left copy goes by the brief, is said (§2.2, §5). |
+| **2.5** | **Recovery lacks a committed delivery state** | `HarnessConversations.cs:31-43`; `LimitMove.cs:250`, `:269`, `:352`, `:366-379`; `ChatGoOn.cs:189`; `UncertainWords.cs:18` | **Taken**: one durable carry record per move, written before the open, with its phase, the delivery and its disposition; `harness.json` names the carried id only once read back; the come-up at every boundary in a table, a pending delivery delivered from the record at the come-up and an attempted one settled uncertain by the dispatcher's rule (§2.3, §2.4). |
+| 2.6 | The account boundary is sound; name `Toolchain.Owner` | `Harnesses.cs:281`; `HarnessSettings.cs:881-882`; `D197.md:21` | **Taken**: homes reached by `ProfileHome(home, Toolchain.Owner(adapter), account)` (header, §2.1, §2.2). |
+| **3.1** | **D125 and D189's copying prohibition is not yet answered** | 1.1, 2.3 and 2.4 above; the reads record `:417-418` | **Taken** through 1.1, 2.3 and 2.4: the copy writes only absent names, and the read-back is equal, child-filtered and before any prompt. On the byte prefix Codex's reading is the code's: it shows how two files stood when read, not that nobody writes between, and the rule is withdrawn (§2.2, §5, and below). |
+| **3.2** | **D131, D137 and D167's record reversal is only partly justified** | `Acp.cs:144-151`; `D137.md:757-769` | **Taken**: no record names a second conversation. A fallback before any prompt is the record's first conversation, since `harness.json` names none until read back; a fallback after a first turn refused before anything ran opens a further part, why `retry`, so the carried part keeps the events and usage of the conversation that made them (§2.5, §4, §5). D137 point 8's amendment shrinks to the two records naming one id. |
+| 3.3 | The compaction reversal has its reason; keep the cost unmeasured | — | **Taken**: §3.1 says a replay that agrees does not show what the agent retains; the cost stays unmeasured until SWITCHCTX1f (§3.1, §4). |
+| **3.4** | **D197 and D206's limit amendments inherit the delivery semantics** | `D197.md:381-389`; `D206.md:320-327` | **Taken**: §2.4's limit disposition and recovery table, consecutive limited carries among them; new notes on D197 and D206 say *each once* holds in the agent's context, by the replay's count. |
+| **4.1** | **Earlier does not mean ended** | `conversation.ts:881-901`; `D167.md:73-82`; `AskConversation.tsx:870-876` | **Taken**: the line view draws the attended part's ancestry by `from` alone, alongside parts left to the strip; each earlier part with its own liveness, read-only by a mode of its own (§1.4, §2.7, §5). |
+| **4.2** | **`handed` misses D182's push chain** | `SessionsStateSlice.cs:39-47`, `:62-67`; `Sessions.cs:1407-1423` | **Taken**: `handed` in the slice's `Fields`, the driver's write followed by a declared change of the sessions (the door writes no revision), and tests through the pushed projection (§2.3, 1a, 1c-ii). |
+| 4.3 | The endpoint needs explicit driver authority | `PersonDoors.cs:251-256`; `PersonDoorTableTests.cs:81`, `:86` | **Taken**: the route's `DoorClass.Driver` row, its test with its class's count, and a keyless call refused (§2.3). |
+| 4.4 | The translation requirements are incomplete | `noteLines.ts:316`, `:795-806`; `note.json:213` | **Taken**: the family `carry` in both languages, read by the note reader as a family, `{{why}}` in `moved.carry-failed` and in the whole reworded `limit.resume-refused`, and `note.test.ts` holding each (§2.7). |
+| **5.1** | **SWITCHCTX1c-i** | `SessionConversation.tsx:161-200`, `:191`; `conversation.ts:881-901` | **Taken**: 4.1's fixes and one scroll owner, Ask Daoris's earlier parts with them (§2.7, §6). Codex's disagreement with the Opus reader's endorsement holds (below). |
+| **5.2** | **SWITCHCTX1a's stand-in** | — | **Taken**: §6's stand-in and 1a's proofs name each case: a child replay, an unmatched user message, an extra agent item, a failure after a tool, a destination name made between the look and the move, and a shell ended at each phase. |
+| **5.3** | **SWITCHCTX1b** | — | **Taken**: consecutive limited carries, and the come-up delivering a pending limit's words or driven instruction from the carry record, not at a later word (§2.4, §6). |
+| 5.4 | SWITCHCTX1c-ii's prerequisites | — | **Taken**: after 1c-i and 1a, tested through pushed `handed` values in each state (§6). |
+| 5.5 | SWITCHCTX1d's dependence | — | **Taken**: after 1a and 1b's protocol; no readable anchor goes by the brief before any carried prompt (§6). |
+| **5.6** | **SWITCHCTX1e** | `Adapters.cs:2222-2226` | **Taken**: the pipe door carries nothing until it has a read-back of its own equal to §2.3's and a row keyed by the CLI's version, after 1a and LIMITRESUME1f (§3.3, §6). |
+| 5.7 | SWITCHCTX1f records which case ran | — | **Taken**: the note names the case that ran and every case that did not as unmeasured (§3.2, §6). |
+| 6.1 | A smaller shape | — | **Adopted**, as below. |
+
+**Where the readers disagree, decided on the code.** Three places, each decided for Codex:
+
+- **SWITCHCTX1c-i.** The Opus read of round 2 endorsed it as the right first row without condition (the reads record, its round 2
+  §3); Codex blocks it until its lifecycle, its siblings and its scroll are fixed (4.1, 5.1). The code sides with Codex: `settle`
+  cuts a part read as not live (`conversation.ts:881-901`), D167's amendment lets an entry hold parts alive alongside
+  (`D167.md:73-82`), and each `SessionConversation` owns the region's scroll and tells the frame its facts
+  (`SessionConversation.tsx:161-200`). It stays the first row, with those fixes.
+- **The byte prefix.** The Opus read of round 2 held that a destination which is a byte prefix of its source is safe to replace (the
+  reads record `:417-418`); Codex holds that it shows an observed relationship, not exclusive ownership (2.4, 3.1). Nothing in the
+  code holds an exclusion against the person's own terminal, which the session-messages design leaves free (`:291-295`), so the
+  replacement is withdrawn and the carry writes only absent names.
+- **The anchor's limit exception.** Round 3 wrote the Opus read's anchor with an exception for the limit's sentence; Codex shows no
+  reader in Daoris reads that sentence (1.2), and the package shows the record already holds the message by its id. The exception
+  is withdrawn and the lists are equal.
+
+**The smaller shape** (Codex 6.1) is adopted, because it keeps the owner's outcome: a switch of account continues the session in its
+own conversation, and a switch of agent continues it from the brief, read as one conversation. **The corrected line view first**
+(SWITCHCTX1c-i, §2.7). **Then the carry on the curve's path alone** (SWITCHCTX1a), Claude Code's ACP adapter alone, through **one
+durable carry record** holding the phase, the source and destination, the compatibility identity, the anchor and the pending
+delivery with its disposition (§2.3). **It falls back before any prompt wherever its proof fails** (§2.5), and **after a turn
+starts running, ordinary handling holds** (§2.5's table). **The same protocol then reaches the limits and the other moves**
+(SWITCHCTX1b), and another door once it can read back (SWITCHCTX1d, SWITCHCTX1e). **Another agent continues through today's brief**
+(§2.6). Two parts are kept apart from it, each with its reason in §5: the first-turn fallback stays where the record shows nothing
+ran, since a line whose carried history its provider refuses would otherwise not go on; and D206's built box keeps its delivery
+on the ended move, the carry record naming it.
+
+**What stays owed.** Both readers' reads of round 4, Codex's and the independent Opus reader's (D191, its note of 2026-10-24). The
+design stays proposed until both land and their blocking findings are taken. SWITCHCTX1c-i, which reverses nothing, needs both
+readers' check of its round-4 text, not the carry's acceptance.

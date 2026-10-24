@@ -396,7 +396,8 @@ public sealed class WordsNotesTests
     /// only. `curve` (MIXAGENT1a-iii, D165) is a reason a record continues another by, and since SWITCH1c-i one the box takes.
     /// SESSCTX1b (D189 point 4, the session-context design §7): every continuation names its link, so `resume`, `carry-on` and
     /// `retry` are reasons a record continues another by, worded as every reason is, and no box takes them: the box's check stays on
-    /// the five a hand-over is asked for.
+    /// the five a hand-over is asked for. MODELROLE1d2 (D205 §3.5(b)): `not-offered`, a replacement of a record its agent refused at the
+    /// open, is one more such reason.
     /// </summary>
     [Fact]
     public void A_conversation_handed_over_says_where_it_went_and_why_by_code_with_facts_only()
@@ -406,7 +407,7 @@ public sealed class WordsNotesTests
             .Select(field => (string)field.GetRawConstantValue()!)
             .Order(StringComparer.Ordinal)
             .ToList();
-        Assert.Equal(["agent", "carry-on", "curve", "limit", "near", "press", "resume", "retry"], reasons);
+        Assert.Equal(["agent", "carry-on", "curve", "limit", "near", "not-offered", "press", "resume", "retry"], reasons);
         Assert.Equal(reasons, NoteCodes.Handed.All.Select(reason => reason.Code).Order(StringComparer.Ordinal));
         Assert.Equal(["agent", "curve", "limit", "near", "press"], reasons.Where(HandOverWhy.Known));
         Assert.All(reasons, why => Assert.True(HandOverWhy.Continues(why), $"`{why}` is no reason a record continues another by"));

@@ -10,7 +10,7 @@ import {
   type HelpSettled, NO_TURNS, helpModeOf, useCancelTurn, useChatTurns, useDeleteSession, useDriver, useEditQueued, useEndChat,
   useHarnesses, useHelpConversations, useHelpProposals, useHelpPublished, useHelpReadied, useHelpStartFrom, useHelpWired, usePinHelp, usePlugins,
   usePollUnlessTold, useRenameHelp, useSendMessage, useSessionEvents, useSetHelpMode, useSettleHelp, useStartHelp, useStopSession,
-  stoppedWaiting, useGoOnBrief, useAccounts, useAccountUse, useStopWaiting,
+  stoppedWaiting, useGoOnBrief, useAccounts, useAccountUse, useStopWaiting, useChatReplaced,
 } from '../bridge/shell';
 import { goOnBriefRefusal } from '../work/say';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
@@ -205,6 +205,8 @@ export function useAskConversation(
     const continued = rows.data?.conversations.find((row) => row.session !== chosen && row.parts?.includes(chosen));
     if (continued) setChosen(continued.session);
   }, [chosen, rows.data]);
+  // MODELROLE1d2 (D205 §3.5(b)): the conversation chosen, refused at its open, went on in its replacement within the same press.
+  useChatReplaced((from, to) => setChosen((was) => (was === from ? to : was)));
   const found = useHelpConversations(words, helper !== null && here !== undefined && historyOpen && searching, listIn);
   const listing = searching ? found : rows;
   // The last list answered, held while a newer one comes, so a search typed never blanks the rows (UX §4; ASKHIST1c).

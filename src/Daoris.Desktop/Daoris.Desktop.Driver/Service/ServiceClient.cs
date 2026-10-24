@@ -893,6 +893,120 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         }
     }
 
+    /// <summary>
+    /// Post a finished tree's record (KEEPSIZE1b, the keep-size design §2.2) to <c>POST /api/trees/record</c>: the manifest's facts and the
+    /// commits read from the tip. Null where the service keeps it, a second post of a kept identity included; else why it does not, in its
+    /// words, a store a newer build stamped among them; a 404, a service with no door for it, says so (<see cref="RecordRefusal.NoDoor"/>).
+    /// </summary>
+    internal async Task<RecordRefusal?> PostWorkRecordAsync(FinishedPost record, CancellationToken ct = default)
+    {
+        var tree = record.Tree;
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("workspace", record.Workspace);
+            writer.WriteString("repository", record.Repository);
+            writer.WriteString("folder", record.Folder);
+            writer.WriteString("tree", tree.Tree);
+            writer.WriteString("moved", record.Moved.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+            Optional("unit", tree.Unit);
+            writer.WriteString("branch", record.Manifest.Branch);
+            Optional("line", tree.Line);
+            writer.WriteStartObject("hold");
+            writer.WriteString("kind", tree.Hold.Kind);
+            Optional("where", tree.Hold.Where);
+            Optional("form", tree.Hold.Form);
+            writer.WriteEndObject();
+            writer.WriteString("tip", tree.Tip);
+            Optional("grewFrom", tree.GrewFrom);
+            Optional("ref", tree.Ref);
+            if (record.Commits is { } commits)
+            {
+                writer.WriteStartArray("commits");
+                foreach (var commit in commits)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("id", commit.Id);
+                    writer.WriteString("subject", commit.Subject);
+                    writer.WriteStartArray("files");
+                    foreach (var (path, added, removed) in commit.Files)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("path", path);
+                        writer.WriteNumber("added", added);
+                        writer.WriteNumber("removed", removed);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+            }
+            else
+            {
+                writer.WriteNull("commits");
+            }
+
+            Optional("commitsUnread", record.Unread);
+            writer.WriteStartObject("left");
+            writer.WriteStartArray("names");
+            foreach (var name in tree.Left.Names) writer.WriteStringValue(name);
+            writer.WriteEndArray();
+            writer.WriteNumber("count", tree.Left.Count);
+            writer.WriteBoolean("cut", tree.Left.Cut);
+            writer.WriteEndObject();
+            writer.WriteBoolean("whole", tree.Whole);
+            // Codex's read of the design, finding 6: the landing captured before the move, or why none is named.
+            if (tree.Landing is { } landing)
+            {
+                writer.WriteStartObject("landing");
+                writer.WriteString("branch", landing.Branch);
+                Optional("line", landing.Line);
+                writer.WriteString("at", landing.At.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+                Optional("pullRequest", landing.PullRequest);
+                writer.WriteEndObject();
+            }
+            else
+            {
+                writer.WriteNull("landing");
+            }
+
+            Optional("landingWhy", tree.LandingWhy);
+            writer.WriteEndObject();
+
+            void Optional(string name, string? text)
+            {
+                if (text is null) writer.WriteNull(name);
+                else writer.WriteString(name, text);
+            }
+        });
+
+        var (ok, status, payload, root) = await PostJsonAsync("/api/trees/record", body, ct).ConfigureAwait(false);
+        if (ok) return null;
+        if (status == 404) return new("the service has no door for a finished tree's record, so its folder keeps its days", NoDoor: true);
+        return new((root is { } refused ? Text(refused, "error") : null) ?? payload);
+    }
+
+    /// <summary>
+    /// History's age applied to the finished trees' records no session names (KEEPSIZE1b, <c>POST /api/trees/record/age</c>): each kept at
+    /// or before <paramref name="before"/> goes; how many. A service with no such door answers none.
+    /// </summary>
+    internal async Task<int> AgeWorkRecordsAsync(DateTimeOffset before, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("before", before.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync("/api/trees/record/age", body, ct).ConfigureAwait(false);
+        if (ok) return root is { } answered && answered.TryGetProperty("cleared", out var cleared) && cleared.TryGetInt32(out var count) ? count : 0;
+        if (status == 404) return 0;
+        throw new DriverException($"the service refused ageing the finished trees' records: {(root is { } refused ? Text(refused, "error") : null) ?? payload}");
+    }
+
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
     public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
     {
@@ -2389,6 +2503,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             Override = ActorRead<JsonElement?>(session, "override"),
             Ran = ActorRead<ActorRan>(session, "ran"),
             Limit = Limit(session),
+            NotOffered = NotOffered(session),
             // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
             Adapter = Text(session, "adapter"),
             HarnessVersion = Text(session, "harnessVersion"),

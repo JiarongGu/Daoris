@@ -481,6 +481,8 @@ export const HANDED_REASONS: Readonly<Record<string, { key: string; values: read
   resume: { key: 'note.handed.why.resume', values: [] },
   'carry-on': { key: 'note.handed.why.carry-on', values: [] },
   retry: { key: 'note.handed.why.retry', values: [] },
+  // MODELROLE1d2 (D205 §3.5(b)): the replacement of a record its agent refused at the open, before any prompt.
+  'not-offered': { key: 'note.handed.why.not-offered', values: [] },
 };
 
 /**

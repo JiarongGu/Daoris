@@ -106,6 +106,12 @@ internal sealed class ChatContext(
     /// </summary>
     public ConcurrentDictionary<string, SwitchChoice.MoveTo> CurveMoves { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Each Chat's and Ask Daoris's pending start (MODELROLE1d2, D205 §3.5(b)), by its issued id and each replacement's: the owner of an
+    /// attempt its agent refused at the open, and what a door asked by the issued id answers for.
+    /// </summary>
+    public ChatPendings Pending { get; } = new();
+
     /// <summary>Closing: no conversation starts, goes on or moves from here.</summary>
     public bool Closing => _closing;
 

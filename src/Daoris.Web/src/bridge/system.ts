@@ -109,8 +109,14 @@ export const useClearDownloads = () =>
       }),
   });
 
-/** A listed unit as a press sends it back: its kind and id, why the list named it, and whether it held files of its own. */
-const sent = (unit: SpaceUnit) => ({ kind: unit.kind, id: unit.id, why: unit.why, own: unit.own === true });
+/**
+ * A listed unit as a press sends it back: its kind and id, why the list named it, whether it held files of its own, and a set-aside
+ * folder's class and ref, which the run compares before it removes (KEEPSIZE1b).
+ */
+const sent = (unit: SpaceUnit) => ({
+  kind: unit.kind, id: unit.id, why: unit.why, own: unit.own === true,
+  ...(unit.class ? { class: unit.class, ref: unit.ref ?? null } : {}),
+});
 
 /**
  * *Free up space…* (KEEP1e, the cleanup design §3.3, D88's shape): `list` asks what each rule takes now and what could go early, and
