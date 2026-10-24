@@ -105,13 +105,13 @@ function readJson(file, empty) {
 export const emptyQueue = () => ({ schema: 1, queued: [], previews: {}, candidate: null, stop: null, handedBack: [], runner: null, recheck: null });
 
 /** `local/merge-queue.json`, or an empty queue where there is none or it does not read. */
-export function readQueue(home) {
-  const record = readJson(join(home, MERGE_QUEUE), emptyQueue);
+export function readQueue(root) {
+  const record = readJson(join(root, MERGE_QUEUE), emptyQueue);
   return { ...emptyQueue(), ...record };
 }
 
-export function writeQueue(home, queue) {
-  const file = join(home, MERGE_QUEUE);
+export function writeQueue(root, queue) {
+  const file = join(root, MERGE_QUEUE);
   mkdirSync(dirname(file), { recursive: true });
   writeAtomic(file, `${JSON.stringify(queue, null, 2)}\n`);
 }
@@ -455,14 +455,14 @@ export function scopedSet({ gates, reached, standing = new Set(), knownRed = new
 }
 
 /** A scoped run's line in `local/scope-runs.jsonl`: its base, members, tree, and the units it selected, ran, deferred and their verdicts. */
-export function appendScopeRun(home, entry) {
-  const file = join(home, SCOPE_RUNS_LOG);
+export function appendScopeRun(root, entry) {
+  const file = join(root, SCOPE_RUNS_LOG);
   mkdirSync(dirname(file), { recursive: true });
   appendFileSync(file, `${JSON.stringify(entry)}\n`);
 }
 
-export function readScopeRuns(home) {
-  const file = join(home, SCOPE_RUNS_LOG);
+export function readScopeRuns(root) {
+  const file = join(root, SCOPE_RUNS_LOG);
   if (!existsSync(file)) return [];
   return readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean).flatMap((line) => {
     try {
@@ -478,12 +478,12 @@ export function readScopeRuns(home) {
 
 export const emptyAdmission = () => ({ schema: 1, reservations: [], scopedTier: null, waiting: [] });
 
-export function readAdmission(home) {
-  return { ...emptyAdmission(), ...readJson(join(home, ADMISSION), emptyAdmission) };
+export function readAdmission(root) {
+  return { ...emptyAdmission(), ...readJson(join(root, ADMISSION), emptyAdmission) };
 }
 
-export function writeAdmission(home, record) {
-  const file = join(home, ADMISSION);
+export function writeAdmission(root, record) {
+  const file = join(root, ADMISSION);
   mkdirSync(dirname(file), { recursive: true });
   writeAtomic(file, `${JSON.stringify(record, null, 2)}\n`);
 }
@@ -601,9 +601,9 @@ export function queueLines(queue, { branchTip = () => null, now = Date.now() } =
 }
 
 function main() {
-  const home = process.cwd();
-  for (const line of queueLines(readQueue(home))) console.log(line);
-  const admission = readAdmission(home);
+  const root = process.cwd();
+  for (const line of queueLines(readQueue(root))) console.log(line);
+  const admission = readAdmission(root);
   console.log(`admission: ${admission.reservations.length} reservation${admission.reservations.length === 1 ? '' : 's'}${admission.scopedTier ? `, a scoped tier ${admission.scopedTier.state}` : ''}`);
   for (const each of admission.reservations) console.log(`  ${each.gate} (${each.runner}): ${each.needGb} GB, job ${each.job}`);
   for (const line of overdueWaits(admission)) console.log(`  overdue: ${line}`);

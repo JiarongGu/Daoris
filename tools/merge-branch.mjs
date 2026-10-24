@@ -421,8 +421,9 @@ import {
 } from 'node:fs';
 import { constants as osConstants, cpus as osCpus, freemem as osFreemem, setPriority as osSetPriority, totalmem as osTotalmem } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
-  CI_SWEEP, NIGHT_HOUR, appendReceipt, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, nextRun, nightSatisfied, noteNight,
+  CI_SWEEP, NIGHT_HOUR, appendReceipt, clearPasses, fileSighting, fingerprintOf, kindPlan, knownRedLines, knownRedStanding, nextRun, nightSatisfied, noteNight,
   noteSweeps, overdueLines, passingTests, readFindings, readReceipts, readSweep, receiptFor, sweepSatisfied, sweepState, writeFindings,
   writeSweep,
 } from './ci-background.mjs';
@@ -430,7 +431,12 @@ import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
-import { gateSignature, readTrx, signatureOf } from './test-failures.mjs';
+import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
+import {
+  MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget,
+  judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits, promotion, queueLines, readAdmission, readQueue,
+  recheckDue, recordsOnly, reformCount, resumeCandidate, scopedSet, scopedTier, writeAdmission, writeQueue,
+} from './merge-queue.mjs';
 
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
@@ -687,7 +693,10 @@ export const USAGE = [
   '       node tools/merge-branch.mjs --ci --stop',
   '       node tools/merge-branch.mjs --passed',
   '       node tools/merge-branch.mjs --prune [--plan]',
-  '       node tools/merge-branch.mjs --drop-batch',
+  '       node tools/merge-branch.mjs <branch> --preview',
+  '       node tools/merge-branch.mjs <branch> --message <file under local/> [--one-at-a-time] [--no-commit-check]',
+  '       node tools/merge-branch.mjs --queue [--recheck]',
+  '       node tools/merge-branch.mjs --drop-batch [<branch> [--batch <branch>…]]',
 ].join('\n');
 
 /** Why the tool stopped before doing its job. Exit 2 is a refusal; 1 is the branch failing a rule. */
@@ -709,6 +718,7 @@ export function parseArgs(argv) {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
+    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false,
   };
   let batch = false;
   let rerun = false;
@@ -716,8 +726,16 @@ export function parseArgs(argv) {
   let batched = 0;
   let besideNext = false;
   let ciNext = false;
+  let messageNext = false;
   const flags = [];
   for (const arg of argv) {
+    // CISCOPE1e: the word after --message is its file.
+    if (messageNext) {
+      messageNext = false;
+      if (arg.startsWith('-')) throw usageError('--message names its file: --message <file under local/>');
+      options.messageFile = arg;
+      continue;
+    }
     if (arg.startsWith('-')) flags.push(arg);
     // GATEWT1: the word right after --beside, if it is no option, is the commit it gates. CI1: so is the word after --ci.
     const besideCommit = besideNext && !arg.startsWith('-');
@@ -740,6 +758,13 @@ export function parseArgs(argv) {
       ciNext = !options.ciCommit;
     } else if (arg === '--watch') options.watch = true;
     else if (arg === '--stop') options.stop = true;
+    else if (arg === '--preview') options.preview = true;
+    else if (arg === '--message') {
+      if (options.messageFile !== null) throw usageError('--message is given once');
+      messageNext = true;
+    } else if (arg === '--queue') options.queue = true;
+    else if (arg === '--recheck') options.recheck = true;
+    else if (arg === '--queue-run') options.queueRun = true;
     else if (arg === '--beside') {
       if (options.beside) throw usageError('--beside is given once, with the commit it gates after it');
       options.beside = true;
@@ -772,6 +797,30 @@ export function parseArgs(argv) {
       if (options.branches.includes(arg)) throw usageError(`'${arg}' is named twice`);
       options.branches.push(arg);
     }
+  }
+  if (messageNext) throw usageError('--message names its file: --message <file under local/>');
+  // CISCOPE1e: the queue's verbs, each alone with what it takes.
+  if (options.recheck && !options.queue) throw usageError("--recheck is the queue's: --queue --recheck rechecks a stop on the base");
+  if (options.queueRun) {
+    if (flags.length > 1 || options.branches.length) throw usageError('--queue-run is the runner, started by the queue: it takes nothing else');
+    return options;
+  }
+  if (options.queue) {
+    if (flags.some((flag) => !['--queue', '--recheck'].includes(flag)) || options.branches.length) throw usageError('--queue takes only --recheck: it says the queue, or rechecks its stop');
+    return options;
+  }
+  if (options.preview) {
+    if (options.branches.length !== 1 || flags.length > 1) throw usageError('--preview names one branch and nothing else: <branch> --preview');
+    return options;
+  }
+  if (options.messageFile !== null) {
+    if (options.branches.length !== 1) throw usageError('--message queues one branch: <branch> --message <file>');
+    if (flags.some((flag) => !['--message', '--one-at-a-time', '--no-commit-check'].includes(flag))) throw usageError('<branch> --message <file> takes only --one-at-a-time and --no-commit-check');
+    return options;
+  }
+  if (options.dropBatch && options.branches.length) {
+    if (flags.some((flag) => !['--drop-batch', '--batch'].includes(flag))) throw usageError('--drop-batch <branch> [--batch <branch>…] takes queued branches off the queue, and nothing else');
+    return options;
   }
   if (options.watch && !options.ci) throw usageError("--watch is the CI's: --ci --watch gates main's tip as it moves");
   if (options.stop && !options.ci) throw usageError("--stop is the CI watch's: --ci --stop ends a watch running here");
@@ -4098,7 +4147,7 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null,
+  kind = null, gateVerdict = () => true,
 } = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
@@ -4126,7 +4175,8 @@ function runRecorded(root, gates, dir, {
           ? { classes: { ran: result.trx ? found.length : null, kept: gate.reach?.kept.length ?? 0, sweep: gate.reach?.kept.length ? gate.reach.sweep : started } }
           : {};
         // CISCOPE1d: every verdict carries the kind of run that gave it (`ci-background.mjs`'s `RUN_KINDS`, or `merge`, `checkout`).
-        addVerdicts(home, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch, ...(kind ? { kind } : {}), ...classes }]);
+        // CISCOPE1e: a scoped run writes a gate verdict only for a gate it ran whole, never for a git half with deferred classes.
+        if (gateVerdict(gate)) addVerdicts(home, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch, ...(kind ? { kind } : {}), ...classes }]);
         addClassVerdicts(home, gate.name, found.map((each) => ({ ...each, tree, at: started, commit })));
       }
       onResult(result);
@@ -6086,10 +6136,592 @@ async function ciStopVerb(root) {
   return 1;
 }
 
+// ---------------------------------------------------------------------------------------------------
+// CISCOPE1e: the merge queue, its candidates in the scope tree, and the scoped run (`merge-queue.mjs`; D207's design §4)
+
+/** How often a waiting invocation reads the queue, and how often the runner looks again when it waits. */
+const QUEUE_POLL_MS = Number(process.env.MERGE_BRANCH_QUEUE_POLL_MS) || 5_000;
+const QUEUE_TICK_MS = Number(process.env.MERGE_BRANCH_QUEUE_TICK_MS) || 60_000;
+const sleepMs = (ms) => new Promise((done) => { setTimeout(done, ms); });
+
+/** The queue's record changed under its lock: `change(queue)` answers `{ queue }` to write, with anything else it says. */
+function withQueue(home, change) {
+  return holdingLock(join(home, MERGE_QUEUE), () => {
+    const out = change(readQueue(home)) ?? {};
+    if (out.queue) writeQueue(home, out.queue);
+    return out;
+  });
+}
+
+const mainTipOf = (home) => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${MAIN}^{commit}`], { allowFail: true }).out.trim();
+const isAncestorIn = (home) => (a, b) => git(home, ['merge-base', '--is-ancestor', a, b], { allowFail: true }).status === 0;
+
+function requireQueueIgnored(home) {
+  requireVerdictsIgnored(home);
+  for (const path of [MERGE_QUEUE, SCOPE_TREE]) {
+    if (!isIgnored(home, path)) throw new Refusal(`${path} is not ignored in the main checkout, so the queue would change the trees its candidates gate`);
+  }
+}
+
+/**
+ * The scope tree at `commit` (§4.1, *Where*): a detached worktree of its own, made where none stands, reset and moved where it
+ * stands; its builds and dependencies stay warm between candidates. A merge left open there is aborted: the queue leaves none.
+ */
+function prepareScopeTree(home, commit) {
+  const path = join(home, SCOPE_TREE);
+  const listed = parseWorktrees(git(home, ['worktree', 'list', '--porcelain']).out).some((one) => samePath(one.path, path));
+  if (!listed) {
+    if (existsSync(path)) throw new Refusal(`${SCOPE_TREE} is a folder git does not list as a worktree: --prune removes what a removal left, or look at it`);
+    git(home, ['worktree', 'add', '--detach', path, commit]);
+    console.log(`the scope tree: made at ${commit.slice(0, 7)} (${SCOPE_TREE})`);
+  } else {
+    git(path, ['merge', '--abort'], { allowFail: true });
+    git(path, ['reset', '--quiet', '--hard']);
+    git(path, ['checkout', '--quiet', '--force', '--detach', commit]);
+  }
+  return locate(path);
+}
+
+/** One member merged in the scope tree on `onto`, as today's merge makes it, and committed with its frozen message (§4.1). */
+function mergeMember(tree, member, onto) {
+  git(tree, ['checkout', '--quiet', '--force', '--detach', onto]);
+  const merged = git(tree, ['merge', '--no-ff', '--no-commit', member.tip], { allowFail: true });
+  if (merged.status !== 0) {
+    const resolved = mergeInProgress(tree) && resolveBacklog(tree);
+    const { blocking, generated } = mergeInProgress(tree) ? conflicts(tree) : { blocking: [], generated: [] };
+    if (blocking.length || (!generated.length && !resolved)) {
+      git(tree, ['merge', '--abort'], { allowFail: true });
+      return { conflict: blocking.length ? blocking : [(merged.err || merged.out).trim().split('\n')[0]] };
+    }
+  }
+  setApartJoins(tree);
+  writeGenerated(tree);
+  const committed = spawnSync('git', ['commit', '--quiet', '--no-verify', '-F', '-'], { cwd: tree, input: messageOf(member), encoding: 'utf8', windowsHide: true });
+  if (committed.status !== 0) {
+    git(tree, ['merge', '--abort'], { allowFail: true });
+    return { conflict: [`the merge commit could not be made: ${(committed.stderr || committed.stdout).trim().split('\n')[0]}`] };
+  }
+  return { commit: git(tree, ['rev-parse', 'HEAD']).out.trim() };
+}
+
+/** Which of the scoped run's kinds a gate is (§4.2), for `scopedSet`. */
+function scopedKind(gate) {
+  if (BLOCKING.includes(gate.name)) return 'cheap';
+  if (isGitHalf(gate)) return 'git';
+  if (isProcessGate(gate)) return 'process';
+  if (isProcessLane(gate) || isStageRehearsal(gate) || /^npm run rehearse/.test(gate.run.trim())) return 'rehearsal';
+  if (['web', 'web-measured'].includes(gate.name)) return 'browser';
+  if (dotnetComponent(gate.run)) return 'fast';
+  return 'node';
+}
+
+/** The newest trx the CI left for a gate, its classes' times, which the git half's budget lays on its lanes. */
+function classTimes(home, gate) {
+  const scratch = join(home, SCRATCH);
+  if (!existsSync(scratch)) return new Map();
+  const found = readdirSync(scratch).filter((name) => /^ci-[0-9a-f]{7}$/.test(name)).map((name) => join(scratch, name, `${gate}.trx`)).filter((file) => existsSync(file))
+    .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
+  return found ? new Map(slowestClasses(readFileSync(found, 'utf8'), Infinity).map((each) => [each.name, each.ms])) : new Map();
+}
+
+/**
+ * A failed result's failures, each signed (§4.1 point 4): a test's from its trx, by name with its case, exception type and
+ * location read from `tree`; a gate that names no test by its step, a build by its set of errors.
+ */
+function failuresOf(tree, result, trxFile) {
+  const read = (path) => {
+    try {
+      return readFileSync(join(tree, path), 'utf8');
+    } catch {
+      return null;
+    }
+  };
+  const trx = trxFile && existsSync(trxFile) ? readFileSync(trxFile, 'utf8') : null;
+  const tests = trx ? readTrx(trx) : [];
+  if (tests.length) {
+    return tests.map((failure) => ({ names: 'test', gate: result.gate.name, unit: failure.unit, test: failure.test, signature: signatureOf(failure, read, tree), failure }));
+  }
+  const output = result.log && existsSync(result.log) ? readFileSync(result.log, 'utf8') : '';
+  const step = /\berror (?:CS|TS|MSB|NU)\d+/.test(output) ? 'build' : 'run';
+  return [{ names: 'gate', gate: result.gate.name, unit: result.gate.name, test: result.gate.name, signature: gateSignature(result.gate.name, step, output, tree) }];
+}
+
+/** A `dotnet test` gate with a trx of its own, so a fast half's failing tests are read by name too. */
+const withTrx = (gate, dir) => (/^dotnet test\b/.test(gate.run.trim()) && !isProcessGate(gate)
+  ? { ...gate, scopedTrx: join(dir, `${gate.name}.scoped.trx`), run: trxCommand(gate.run, join(dir, `${gate.name}.scoped.trx`)) }
+  : gate);
+
+/**
+ * One failure's selection run on a prefix in the scope tree (§4.1 point 4): the failing test's class, or the failing gate's own
+ * command, at the base plus the first `k` members; answers whether it fails with the signature, another way, or cannot run.
+ */
+function prefixRunner(tree, candidate, plan, dir) {
+  let n = 0;
+  return async (failure, k) => {
+    const commit = k === 0 ? candidate.base : candidate.members[k - 1].commit;
+    git(tree, ['checkout', '--quiet', '--force', '--detach', commit]);
+    const gate = plan.find((each) => each.name === failure.gate);
+    if (!gate) return { result: 'cannot', signature: { gate: failure.gate, step: 'run', message: 'the gate is not in this prefix\'s plan' } };
+    n += 1;
+    const narrowed = failure.names === 'test' && /^dotnet test\b/.test(gate.run.trim())
+      ? `${gate.run.trim()} --filter "FullyQualifiedName~${failure.unit ?? testClass(failure.test)}"`
+      : gate.run;
+    const trx = /^dotnet test\b/.test(gate.run.trim()) ? join(dir, `${slug(failure.gate)}.prefix-${n}.trx`) : null;
+    const probe = { ...gate, name: `${gate.name}.prefix-${n}`, run: trx ? trxCommand(narrowed, trx) : narrowed };
+    const result = await runGate(tree, probe, dir, {});
+    if (result.verdict === 'PASS' || result.verdict === 'FLAKE') return { result: 'pass' };
+    const found = failuresOf(tree, { ...result, gate }, trx);
+    const match = found.find((each) => signatureKey(each.signature) === signatureKey(failure.signature));
+    if (match) return { result: 'fail', signature: match.signature };
+    const [first] = found;
+    const blocked = first.names === 'gate' && failure.names === 'test';
+    return { result: blocked ? 'cannot' : 'fail', signature: first.signature };
+  };
+}
+
+/** The open known red a failure's signature matches, with its expiry and where it was last seen (§5.2), or null. */
+function knownFor(home, failure) {
+  const key = signatureKey(failure.signature);
+  const finding = readFindings(home).findings.find((each) => each.state === 'red' && each.test === failure.test && each.key === key);
+  return finding ? { expired: knownRedStanding(finding).expired, lastSeen: finding.lastSeen?.commit ?? null } : null;
+}
+
+/**
+ * The scoped run of the queue's candidate, judged (§4.1 points 2 and 4, §4.2): its set run in the scope tree at normal priority,
+ * its light lane below normal while the Process lane runs (D180's split, as the CI's), each gate's verdict recorded as `scoped`;
+ * on red each failure judged over the base and the prefixes. Answers what the queue does next (`candidateOutcome`), with the run.
+ */
+async function runCandidate(home, candidate) {
+  const tree = prepareScopeTree(home, candidate.tip);
+  installDependencies(tree);
+  copyPrivateFiles(home, tree, privateGateFiles(home));
+  const plan = readPlan(tree);
+  const treeId = contentTree(tree);
+  const standing = standingFor(tree, treeId);
+  const lanes = readLanes(tree)?.lanes ?? [];
+  const changed = zPaths(git(tree, ['diff', '-z', '--name-only', '--no-renames', candidate.base, candidate.tip]).out);
+  const selection = selectGates(plan, changed, { lanes, gated: true });
+  const reached = new Set(selection.gates.filter((entry) => entry.run || entry.reached).map((entry) => entry.gate.name));
+  const verdicts = readVerdicts(home).verdicts;
+  const names = plan.map((gate) => gate.name);
+  const stand = new Set(ciPlan({ ...standing, plan: names, verdicts }).kept.map((entry) => entry.name));
+  const open = readFindings(home).findings.filter((each) => each.state === 'red' && !knownRedStanding(each).expired);
+  const set = scopedSet({
+    gates: plan.map((gate) => ({ name: gate.name, kind: scopedKind(gate) })),
+    reached, standing: stand, knownRed: new Set(open.map((each) => each.gate).filter(Boolean)), recordsOnly: candidate.recordsOnly === true,
+  });
+  const dir = join(home, SCRATCH, `scope-${candidate.tip.slice(0, 7)}`);
+  mkdirSync(dir, { recursive: true });
+  clearLogs(dir);
+  const chosen = plan.filter((gate) => set.run.some((entry) => entry.name === gate.name));
+  const halves = reachedHalves({ tree, treeId, gates: chosen, standing, verdicts, home, dir });
+  const deferredClasses = [];
+  const gates = halves.gates.filter((gate) => !gate.reach?.composed).map((gate) => {
+    if (!isGitHalf(gate) || !gate.reach) return withTrx(gate, dir);
+    // §4.2 point 5: the git half's reached classes within its budget, a known-red class first, the rest deferred.
+    const census = gate.reach.whole ? (gate.reach.run ?? []) : gate.reach.run;
+    const times = classTimes(home, gate.name);
+    const red = new Set(open.filter((each) => each.gate === gate.name).map((each) => testClass(each.test)));
+    const budgetMs = (gate.scope?.budgetMinutes ?? 8) * 60_000;
+    const budget = gitBudget({ classes: census.map((each) => ({ name: each.name, ms: times.get(each.name.split('.').at(-1)), knownRed: red.has(each.name.split('.').at(-1)) })), budgetMs });
+    if (!budget.deferred.length) return gate;
+    deferredClasses.push(...budget.deferred);
+    const half = halfOf(plan.find((each) => each.name === gate.name).run);
+    const file = join(dir, `${gate.name}.scoped.${basename(half.settings)}`);
+    writeAtomic(file, reachSettings(readFileSync(join(tree, half.settings), 'utf8'), [...(gate.reach.kept ?? []).map((each) => each.name), ...budget.deferred]));
+    return { ...gate, run: withSettings(plan.find((each) => each.name === gate.name).run, file), deferredClasses: budget.deferred };
+  });
+  const sha = candidate.tip.slice(0, 7);
+  console.log(`scoped run of ${sha} (${candidate.members.map((each) => each.branch).join(', ')}): ${count(gates.length, 'gate')} to run, ${count(set.kept.length, 'verdict')} kept, ${count(set.deferred.length, 'gate')} deferred to the background run${deferredClasses.length ? `; the git half's budget defers ${deferredClasses.length} of its classes` : ''}`);
+  for (const entry of set.deferred) console.log(`  deferred: ${entry.name}, ${entry.why}`);
+  withAdmission(home, (record) => scopedTier(record, 'running', nowIso()));
+  let results;
+  try {
+    results = await runRecorded(tree, gates, dir, { keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length });
+  } finally {
+    withAdmission(home, (record) => scopedTier(record, null, nowIso()));
+  }
+  const failed = results.filter((result) => result.verdict === 'FAIL');
+  const memory = failed.filter((result) => result.cause === 'memory');
+  const run = {
+    at: nowIso(), base: candidate.base, tip: candidate.tip, tree: treeId, members: candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, commit: each.commit })),
+    reforms: candidate.reforms ?? 0, recordsOnly: candidate.recordsOnly === true,
+    ran: results.map((result) => ({ gate: result.gate.name, verdict: verdictShown(result), ms: result.ms ?? null })),
+    kept: set.kept.map((each) => each.name), deferred: [...set.deferred, ...deferredClasses.map((name) => ({ name, why: "past the git half's budget" }))],
+  };
+  // §4.1 point 4: a death of memory is the machine's. MEMGATE1 ran it again once already; a second death holds the candidate.
+  if (memory.length) {
+    const step = memoryStep([{ died: true }, { died: true }]);
+    appendScopeRun(home, { ...run, state: 'held', on: 'memory' });
+    return { action: 'hold', on: 'memory', why: `${memory.map((result) => result.gate.name).join(', ')}: ${step.note}`, gates: memory.map((result) => result.gate.name) };
+  }
+  if (!failed.length) {
+    appendScopeRun(home, { ...run, state: 'green' });
+    return { action: 'green', run };
+  }
+  const judgements = [];
+  const runOn = prefixRunner(tree, candidate, plan, dir);
+  const alone = async (failure, k) => {
+    const member = candidate.members[k - 1];
+    const formed = mergeMember(tree, member, candidate.base);
+    if (formed.conflict) return { result: 'cannot', signature: { gate: failure.gate, step: 'merge', message: formed.conflict[0] } };
+    const probe = { ...candidate, members: [{ ...member, commit: formed.commit }] };
+    return prefixRunner(tree, probe, plan, dir)(failure, 1);
+  };
+  for (const result of failed) {
+    const gate = gates.find((each) => each.name === result.gate.name);
+    for (const failure of failuresOf(tree, result, result.trx ?? gate?.scopedTrx)) {
+      const judged = await judgeFailure(failure, { members: candidate.members.length, run: runOn, alone, known: failure.names === 'test' ? knownFor(home, failure) : null, baseCommit: candidate.base });
+      judgements.push({ failure, judged });
+      console.log(`  ${failure.test}: ${judged.outcome}${judged.member ? ` at member ${judged.member} (${candidate.members[judged.member - 1].branch})` : ''}${judged.why ? `, ${judged.why}` : ''}`);
+    }
+  }
+  const outcome = candidateOutcome(judgements, candidate.members);
+  fileJudged(home, candidate, outcome);
+  appendScopeRun(home, { ...run, state: 'red', judged: judgements.map(({ failure, judged }) => ({ test: failure.test, gate: failure.gate, outcome: judged.outcome, member: judged.member ?? null, why: judged.why ?? null, runs: judged.runs.length })), outcome: outcome.action });
+  return { ...outcome, run };
+}
+
+/** The inherited failures filed as known red on the base, and the unresolved ones as flakes (§4.1 point 4, §5.2). */
+function fileJudged(home, candidate, outcome) {
+  const inherited = outcome.inherited ?? [];
+  const flakes = outcome.flakes ?? [];
+  if (!inherited.length && !flakes.length) return;
+  let findings = readFindings(home);
+  for (const failure of inherited) {
+    const message = failure.failure?.message ?? failure.signature.message ?? '';
+    const fingerprint = failure.failure ? fingerprintOf(failure.failure) : { test: failure.test, exception: '', at: null, message };
+    findings = fileSighting(findings, { gate: failure.gate, unit: failure.unit, test: failure.test, fingerprint, signature: failure.signature, message, lines: [message].filter(Boolean), commit: candidate.base, at: nowIso(), kind: 'scoped' }).record;
+  }
+  if (flakes.length) {
+    findings = { ...findings, flakes: [...(findings.flakes ?? []), ...flakes.map((failure) => ({ gate: failure.gate, test: failure.test, signature: failure.signature, at: nowIso(), candidate: candidate.tip }))].slice(-100) };
+  }
+  writeFindings(home, findings);
+}
+
+/** The admission record changed under its lock. */
+function withAdmission(home, change) {
+  try {
+    holdingLock(join(home, 'local/admission.json'), () => writeAdmission(home, change(readAdmission(home))));
+  } catch (error) {
+    console.log(`  the admission record could not be written (${error.message}); the run goes on`);
+  }
+}
+
+/** The stopping gate's selection on the base again (`--queue --recheck`, or the runner's own an hour on): whether it passes now. */
+async function recheckStop(home, stop) {
+  const tree = prepareScopeTree(home, stop.base);
+  installDependencies(tree);
+  const plan = readPlan(tree);
+  const dir = join(home, SCRATCH, `scope-recheck-${stop.base.slice(0, 7)}`);
+  mkdirSync(dir, { recursive: true });
+  const outcome = await prefixRunner(tree, { base: stop.base, members: [] }, plan, dir)(stop.failure, 0);
+  return outcome.result === 'pass' || signatureKey(outcome.signature) !== signatureKey(stop.failure.signature);
+}
+
+/**
+ * One step of the runner (§4.1, *The runner*): lift or recheck a stop, record a landed candidate by ancestry, re-form one whose base
+ * main left, promote a green one onto a clean checkout, run one, or form the next. Answers `next` (go on at once), `wait` (look
+ * again after a tick) or `idle` (nothing queued: the runner ends).
+ */
+async function queueStep(home) {
+  const queue = readQueue(home);
+  const mainTip = mainTipOf(home);
+  const at = nowIso();
+  if (queue.stop) {
+    if (queue.stop.base !== mainTip) {
+      console.log(`${at} main moved to ${mainTip.slice(0, 7)}: the stop on ${queue.stop.failure?.gate ?? 'the base'} is lifted`);
+      withQueue(home, (q) => ({ queue: { ...q, stop: null, recheck: null, candidate: q.candidate ? { ...q.candidate, state: 'running' } : null } }));
+      return 'next';
+    }
+    if (queue.recheck || recheckDue(queue.stop)) {
+      const by = queue.recheck ? '--queue --recheck' : "the runner's own recheck";
+      const passed = await recheckStop(home, queue.stop);
+      console.log(`${nowIso()} recheck (${by}) of ${queue.stop.failure?.gate ?? 'the stop'} on ${mainTip.slice(0, 7)}: ${passed ? 'it does not recur, so the stop is lifted' : 'it fails again, so the queue stays stopped'}`);
+      withQueue(home, (q) => {
+        const stop = q.stop ? noteRecheck(q.stop, { at: nowIso(), passed, by }) : null;
+        return { queue: { ...q, stop, recheck: null, candidate: !stop && q.candidate ? { ...q.candidate, state: 'running' } : q.candidate } };
+      });
+      return 'next';
+    }
+    return 'wait';
+  }
+  const candidate = queue.candidate;
+  const action = resumeCandidate(candidate, { mainTip, isAncestor: isAncestorIn(home) });
+  if (action === 'promoted') {
+    withQueue(home, (q) => ({ queue: { ...q, candidate: null, landed: [...(q.landed ?? []), ...candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, commit: each.commit, at }))].slice(-200) } }));
+    console.log(`${at} promoted ${candidate.tip.slice(0, 7)}: ${candidate.members.map((each) => each.branch).join(', ')}`);
+    return 'next';
+  }
+  if (action === 'reform') {
+    const paths = zPaths(git(home, ['diff', '-z', '--name-only', '--no-renames', candidate.base, mainTip]).out);
+    const lanes = readLanes(home)?.lanes ?? [];
+    const counted = reformCount(candidate, { recordsOnlyMove: recordsOnly(paths, (path) => ruleFor(path, REACH, lanes)) });
+    console.log(`${at} main moved to ${mainTip.slice(0, 7)} by a direct commit${counted.recordsOnly ? ', records only' : ''}: the candidate is formed again${counted.heldByDirect ? `, re-formed ${counted.reforms} times running: held by direct commits` : ''}`);
+    await formNext(home, candidate.members.map(({ commit, handedBack, ...request }) => request), mainTip, { reforms: counted.reforms, recordsOnly: counted.recordsOnly });
+    return 'next';
+  }
+  if (action === 'promote') {
+    const clean = !mergeInProgress(home) && lines(git(home, ['status', '--porcelain', '--untracked-files=no']).out).length === 0 && treeState(home).branch === MAIN;
+    const decided = promotion(candidate, { mainTip, clean });
+    if (decided.action === 'held') {
+      if (candidate.state !== 'held') console.log(`${at} ${candidate.tip.slice(0, 7)} is green; ${decided.why}`);
+      withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'checkout', why: decided.why } } } }));
+      return 'wait';
+    }
+    withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'promoting', held: null } } }));
+    const moved = git(home, ['merge', '--ff-only', '--quiet', candidate.tip], { allowFail: true });
+    if (moved.status !== 0) {
+      withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'checkout', why: `the fast-forward was refused: ${(moved.err || moved.out).trim().split('\n')[0]}` } } } }));
+      return 'wait';
+    }
+    withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'promoted' } } }));
+    return 'next';
+  }
+  if (action === 'run') {
+    withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'running', run: { pid: process.pid, at } } } }));
+    const outcome = await runCandidate(home, candidate);
+    return judged(home, candidate, outcome);
+  }
+  if (action === 'none' && queue.queued.length) {
+    // The tool's own tests hold the runner before it forms, so one candidate can take several branches queued one by one.
+    const hold = process.env.MERGE_BRANCH_QUEUE_HOLD;
+    if (hold && !existsSync(hold)) return 'wait';
+    const head = queue.queued[0];
+    const { members } = nextMembers(queue.queued, { oneAtATime: head.oneAtATime === true });
+    withQueue(home, (q) => ({ queue: { ...q, queued: q.queued.filter((each) => !members.some((member) => member.branch === each.branch && member.tip === each.tip)) } }));
+    await formNext(home, members, mainTip, {});
+    return 'next';
+  }
+  return action === 'none' ? 'idle' : 'wait';
+}
+
+/** A candidate formed from frozen requests on `base` in the scope tree, its set-aside handed back. */
+async function formNext(home, members, base, { reforms = 0, recordsOnly: onlyRecords = false }) {
+  const tree = prepareScopeTree(home, base);
+  const at = nowIso();
+  const { candidate, setAside } = await formCandidate({ base, members, merge: async (member, onto) => mergeMember(tree, member, onto), at, reforms, recordsOnly: onlyRecords });
+  for (const back of setAside) console.log(`${at} set aside: ${back.branch}, a conflict in ${back.handedBack.paths.join(', ')}; resolve it on the branch (merge ${MAIN} into it) and queue it again`);
+  withQueue(home, (q) => ({ queue: { ...q, candidate, handedBack: [...(q.handedBack ?? []), ...setAside].slice(-100) } }));
+}
+
+/** What the queue does with a run's outcome: promote next, hold, stop, hand back, split, or judge the kept members again. */
+async function judged(home, candidate, outcome) {
+  const at = nowIso();
+  if (outcome.action === 'green') {
+    withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'green' } } }));
+    return 'next';
+  }
+  if (outcome.action === 'hold') {
+    console.log(`${at} held as memory: ${outcome.why}`);
+    withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'memory', why: outcome.why } } } }));
+    // Run again once the machine's memory admits the gates that died (MEMGATE1's wait), on the next step.
+    const wait = memoryGate();
+    for (const name of outcome.gates) await wait({ name, run: '', kind: 'suite' }, { again: true });
+    return 'next';
+  }
+  if (outcome.action === 'stop') {
+    console.log(`${at} the queue stops: ${outcome.said}`);
+    withQueue(home, (q) => ({ queue: { ...q, stop: { at, base: candidate.base, why: outcome.why, said: outcome.said, failure: { gate: outcome.failure.gate, test: outcome.failure.test, unit: outcome.failure.unit ?? null, names: outcome.failure.names, signature: outcome.failure.signature }, rechecks: [] }, candidate: { ...q.candidate, state: 'stopped' } } }));
+    return 'next';
+  }
+  const back = (outcome.handedBack ?? []).map((each) => ({ ...each, handedBack: { ...each.handedBack, at } }));
+  for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
+  if (outcome.action === 'split') {
+    console.log(`${at} unresolved: ${outcome.retain.map((each) => each.branch).join(', ')} run one at a time`);
+    withQueue(home, (q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...outcome.retain.map(({ commit, ...request }) => ({ ...request, oneAtATime: true })), ...q.queued] } }));
+    return 'next';
+  }
+  withQueue(home, (q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100) } }));
+  // The retained candidate is judged again: the members kept, formed anew on the base, run on their own tree.
+  if (outcome.retain?.length) await formNext(home, outcome.retain.map(({ commit, ...request }) => request), candidate.base, {});
+  return 'next';
+}
+
+/** `--queue-run`: the detached runner. It acknowledges by writing its process id and start into the record, and ends when idle. */
+async function queueRunVerb(root) {
+  const home = verdictsHome(root);
+  requireQueueIgnored(home);
+  const taken = withQueue(home, (queue) => (queue.runner && queue.runner.pid !== process.pid && pidAlive(queue.runner.pid)
+    ? { busy: queue.runner }
+    : { queue: { ...queue, runner: { pid: process.pid, started: nowIso() } } }));
+  if (taken.busy) {
+    console.log(`${nowIso()} a runner already runs (pid ${taken.busy.pid}, since ${taken.busy.started}): this one ends`);
+    return 0;
+  }
+  console.log(`${nowIso()} the queue's runner started (pid ${process.pid})`);
+  // A merge waits on the scoped run, so it runs at normal priority (D207's amendment of D180's budget note), with build servers
+  // of its own as the background's gates have, so no gate leaves a server alive or borrows one.
+  Object.assign(process.env, BESIDE_ENVIRONMENT);
+  try {
+    for (;;) {
+      const step = await queueStep(home);
+      if (step === 'idle') break;
+      if (step === 'wait') await sleepMs(QUEUE_TICK_MS);
+    }
+  } finally {
+    withQueue(home, (queue) => ({ queue: queue.runner?.pid === process.pid ? { ...queue, runner: null } : queue }));
+    console.log(`${nowIso()} the queue's runner ended: nothing queued`);
+  }
+  return 0;
+}
+
+/** The runner started detached where none runs, its acknowledgement waited for; its absence said with the log's last lines. */
+async function ensureRunner(home, { ackMs = Number(process.env.MERGE_BRANCH_QUEUE_ACK_MS) || RUNNER_ACK_MS } = {}) {
+  const running = readQueue(home).runner;
+  if (running && pidAlive(running.pid)) return running;
+  const logFile = join(home, MERGE_QUEUE_LOG);
+  mkdirSync(dirname(logFile), { recursive: true });
+  const fd = openSync(logFile, 'a');
+  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), '--queue-run'], { cwd: home, detached: true, stdio: ['ignore', fd, fd], windowsHide: true });
+  child.unref();
+  closeSync(fd);
+  const until = Date.now() + ackMs;
+  while (Date.now() < until) {
+    const runner = readQueue(home).runner;
+    if (runner?.pid === child.pid) {
+      console.log(`the queue's runner started detached (pid ${child.pid}); its log is ${MERGE_QUEUE_LOG}`);
+      return runner;
+    }
+    await sleepMs(250);
+  }
+  const tail = existsSync(logFile) ? readFileSync(logFile, 'utf8').split('\n').filter(Boolean).slice(-8) : [];
+  console.log(`the queue's runner did not acknowledge its start within ${Math.round(ackMs / 1000)} s; the request stays queued, and the next invocation starts one. ${MERGE_QUEUE_LOG}'s last lines:`);
+  for (const line of tail) console.log(`  ${line}`);
+  return null;
+}
+
+/**
+ * `<branch> --preview` (§4.1): the merge made against main's tip with `git merge-tree`, which writes no index and no tree's
+ * files, its diff and its gates printed, committing nothing; the tip it showed is recorded, so the queue takes that tip only.
+ */
+function previewVerb(root, options) {
+  const home = verdictsHome(root);
+  requireQueueIgnored(home);
+  const [branch] = options.branches;
+  const tip = requireBranch(home, branch);
+  const base = mainTipOf(home);
+  const merged = git(home, ['merge-tree', '--write-tree', '--name-only', '--no-messages', base, tip], { allowFail: true });
+  const [tree, ...rest] = lines(merged.out);
+  const conflicted = merged.status === 1 ? rest : [];
+  if (merged.status > 1 || !tree) throw new Refusal(`git merge-tree could not merge ${branch} onto ${MAIN}:\n${merged.err || merged.out}`);
+  const union = unionRecords(home);
+  const generated = readGenerated(home);
+  const blocking = conflicted.filter((path) => !union.includes(path) && !isGenerated(path, generated) && path !== backlogPath(home));
+  console.log(`preview: ${branch} at ${tip.slice(0, 7)} merged onto ${MAIN} at ${base.slice(0, 7)}; nothing is committed, and the queue takes this tip only`);
+  console.log(git(home, ['diff', '--stat', base, tree]).out.trimEnd());
+  console.log('');
+  console.log(git(home, ['diff', base, tree]).out.trimEnd());
+  console.log('');
+  if (conflicted.length) {
+    console.log(`conflicts: ${conflicted.join(', ')}`);
+    if (blocking.length) console.log(`  ${blocking.join(', ')} the resolvers cannot merge: resolve it on the branch (merge ${MAIN} into it), then preview again`);
+    else console.log('  each is a union record, the backlog or a generated folder, which the merge resolves or writes');
+  }
+  const plan = readPlan(home);
+  const lanes = readLanes(home)?.lanes ?? [];
+  const selection = selectGates(plan, branchChanges(home, branch), { lanes, gated: true });
+  const reached = new Set(selection.gates.filter((entry) => entry.run || entry.reached).map((entry) => entry.gate.name));
+  const set = scopedSet({ gates: plan.map((gate) => ({ name: gate.name, kind: scopedKind(gate) })), reached });
+  console.log(`its scoped run, before standing verdicts: ${set.run.map((entry) => entry.name).join(', ')}`);
+  if (set.deferred.length) console.log(`  deferred to the background run: ${set.deferred.map((entry) => entry.name).join(', ')}`);
+  withQueue(home, (queue) => ({ queue: notePreview(queue, { branch, tip, base, at: nowIso() }) }));
+  console.log(`Next: node tools/merge-branch.mjs ${branch} --message <file under local/> queues ${tip.slice(0, 7)} with its message.`);
+  return 0;
+}
+
+/** `<branch> --message <file>` (§4.1, *The queue*): the frozen request queued, the runner started, its outcome waited for. */
+async function enqueueVerb(root, options) {
+  const home = verdictsHome(root);
+  requireQueueIgnored(home);
+  const [branch] = options.branches;
+  const file = resolve(root, options.messageFile);
+  const rel = relative(join(home, 'local'), file);
+  if (rel.startsWith('..') || resolve(join(home, 'local'), rel) !== file) throw new Refusal(`the message file is kept under the main checkout's local/: ${options.messageFile} is not`);
+  if (!existsSync(file)) throw new Refusal(`no message file at ${options.messageFile}`);
+  const message = readFileSync(file, 'utf8');
+  const tip = requireBranch(home, branch);
+  if (options.commitCheck) {
+    const problems = commitProblems(home, branch, branchCommits(home, branch));
+    if (problems.length) throw new Refusal(`the commit check refuses ${branch}:\n${problems.map((problem) => `  ${problem}`).join('\n')}\n  (--no-commit-check queues it anyway)`, 1);
+  }
+  const out = withQueue(home, (queue) => {
+    const queued = enqueue(queue, { branch, tip, message, at: nowIso() });
+    if (queued.refused) return queued;
+    const last = queued.queue.queued.at(-1);
+    if (options.oneAtATime) last.oneAtATime = true;
+    return { queue: queued.queue, place: queued.queue.queued.length, ahead: queue.candidate ? queue.candidate.members.length : 0 };
+  });
+  if (out.refused) throw new Refusal(out.refused);
+  console.log(`queued ${branch} at ${tip.slice(0, 7)}: place ${out.place}${out.ahead ? `, behind a candidate of ${out.ahead} in flight` : ''}. Ending this wait leaves it queued; --queue says where it stands.`);
+  await ensureRunner(home);
+  return waitOutcome(home, branch, tip);
+}
+
+/** The queued request's outcome, waited for: promoted (0), or handed back (1); a hold or a stop said as it changes. */
+async function waitOutcome(home, branch, tip) {
+  let said = null;
+  for (;;) {
+    const queue = readQueue(home);
+    const landed = (queue.landed ?? []).find((each) => each.branch === branch && each.tip === tip);
+    if (landed) {
+      console.log(`merge-branch: ${branch} is in ${MAIN} (${landed.commit.slice(0, 7)}), promoted with its candidate. The background run gates the tip.`);
+      return 0;
+    }
+    const back = (queue.handedBack ?? []).find((each) => each.branch === branch && each.tip === tip);
+    if (back) {
+      const how = back.handedBack;
+      console.log(`merge-branch: ${branch} is handed back (${how.how}${how.failure ? `: ${how.failure}` : ''}${how.paths ? `: a conflict in ${how.paths.join(', ')}` : ''}${how.with?.length ? `, with ${how.with.join(', ')}` : ''}${how.interacting?.length ? `; interacting: ${how.interacting.join(', ')}` : ''}${how.why ? `; ${how.why}` : ''}).`);
+      console.log(`  Fix it on the branch, preview it again and queue it again; ${MERGE_QUEUE_LOG} and local/scope-runs.jsonl hold its runs.`);
+      return 1;
+    }
+    const now = queue.stop ? `stopped: ${queue.stop.said}` : queue.candidate?.state === 'held' ? `held on ${queue.candidate.held?.on}: ${queue.candidate.held?.why}` : null;
+    if (now && now !== said) console.log(`  the queue is ${now}`);
+    said = now;
+    if (!queue.runner || !pidAlive(queue.runner.pid)) await ensureRunner(home);
+    await sleepMs(QUEUE_POLL_MS);
+  }
+}
+
+/** `--queue` says the queue and the admission record; `--queue --recheck` asks the runner to recheck a stop now. */
+async function queueVerb(root, options) {
+  const home = verdictsHome(root);
+  if (options.recheck) {
+    const out = withQueue(home, (queue) => (queue.stop ? { queue: { ...queue, recheck: { at: nowIso() } } } : { none: true }));
+    if (out.none) {
+      console.log('merge-branch: the queue is not stopped; nothing to recheck');
+      return 0;
+    }
+    console.log("merge-branch: the runner rechecks the stopping gate's selection on the base now; --queue says what it found");
+    await ensureRunner(home);
+    return 0;
+  }
+  const queue = readQueue(home);
+  for (const line of queueLines(queue, { branchTip: (branch) => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`], { allowFail: true }).out.trim() || null })) console.log(line);
+  console.log(queue.runner && pidAlive(queue.runner.pid) ? `runner: pid ${queue.runner.pid}, since ${queue.runner.started}` : 'runner: none runs');
+  const admission = readAdmission(home);
+  console.log(`admission (local/admission.json): ${count(admission.reservations.length, 'reservation')}${admission.scopedTier ? `, a scoped tier ${admission.scopedTier.state}` : ''}`);
+  for (const line of overdueWaits(admission)) console.log(`  overdue: ${line}`);
+  return 0;
+}
+
+/** `--drop-batch <branch>…`: queued branches taken off the queue, or a candidate ended and its members handed back. */
+function dropQueuedVerb(root, options) {
+  const home = verdictsHome(root);
+  const out = withQueue(home, (queue) => dropQueued(queue, options.branches, nowIso()));
+  console.log(out.dropped.length ? `merge-branch: taken off the queue: ${out.dropped.join(', ')}` : `merge-branch: none of ${options.branches.join(', ')} is queued`);
+  return 0;
+}
+
 export async function main(argv) {
   const options = parseArgs(argv);
   const root = locate(process.cwd());
-  if (options.dropBatch) return dropBatch(root);
+  // CISCOPE1e: the queue's verbs.
+  if (options.queueRun) return queueRunVerb(root);
+  if (options.queue) return queueVerb(root, options);
+  if (options.preview) return previewVerb(root, options);
+  if (options.messageFile !== null) return enqueueVerb(root, options);
+  if (options.dropBatch) return options.branches.length ? dropQueuedVerb(root, options) : dropBatch(root);
   if (options.prune) return pruneOnly(root, options);
   if (options.plan) return planOnly(root, options);
   if (options.passed) return passedOnly(root);
