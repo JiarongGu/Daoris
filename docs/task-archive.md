@@ -20623,3 +20623,16 @@ an end-to-end test of a live conversation's terminal press through the pipe. Det
 the terminal offer the person's way past it (`LAND_WITHOUT_LOOK`, `--without-look`), kept at the press's captured tip and landed
 there, a later commit asking again and a moved tree never landed under the skip; each proof seen failing first. Detail: D157's
 CHATFLOW1d note.
+## STEWARDROLE1c — the steward's desk, built dark (2026-10-25, D209)
+
+> **STEWARDROLE1c — the steward's desk** (modules, driver; after 1a-i, sequenced after 1b). `STEWARD_REQUEST`, an open route any caller files, bounded per caller by its agent job or long-lived ancestor and in all, listed to the holder as claims, admitting nothing, closed by an act or a reasoned decline. Proof: the design's §10 row 1c.
+
+(Row 1c of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6b5e7d93ca83`.)
+
+**Outcome** 2026-10-25, dark: `StewardOffered` stays false, so a request is refused `not-offered` and the page draws nothing of the
+desk. The modules: `STEWARD_REQUEST` and `STEWARD_DESK`, both `Open`, the desk in the judge's memory (`StewardDesk`), ten open per
+caller keyed by `DeskCaller` (the agent job, else the nearest ancestor alive a minute) and a hundred in all, closed by the steward's
+act on what it named or the holder's `desk-decline`, and `STATE`'s `stewardDesk`. The driver: `daoris-driver steward desk`, fenced
+as the callers' claims, `steward desk decline` and `steward request`; the holder's brief at r3. The web: the desk under the
+*Notifications* line, in en and zh. Proof: `StewardDeskTests`, `DriverModuleAppointmentTests`' desk routes, `StewardCommandTests`'
+desk cases and the line's and the reader's page tests, each case seen failing first. Detail and readings: D209's STEWARDROLE1c note.
