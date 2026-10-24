@@ -20581,3 +20581,35 @@ words waiting for the next look (`Driver.ModelRefused`); a `choice-not-offered` 
 strip and both heads, with the code's sentence, its account here and none on a teammate's mirror; the head chip's stories at the
 three widths in en and zh. The proof's first half runs on a pipe stand-in (`ModelRefusalTickTests`). **Remaining, as
 MODELROLE1c4:** the installed proof. Detail: D205's MODELROLE1c3 note; `docs/2026-10-24-modelrole1c-build.md`.
+
+## CHATFLOW1d — the gate refuses the press and asks the opinion (2026-10-25, D157, D155)
+
+> **CHATFLOW1d — the gate refuses the press and asks the opinion** (driver, modules, web; after c). The opinion's part keyed by the
+> run (`OpinionGates` under `chat-<first>`, `OpinionGate.JudgeAsync` with a run and no quest); `OpinionDue.Run`; the press asking at
+> `not-asked` and nothing twice; `OpinionPresses.WorkAsync` reading a chat run; and the quest-keyed sites §7 names, each keyed by the run.
+> The plan asks nothing; the person learns the opinion settled at the foot, on the review row and by a notice; the refusal's words on both
+> doors; the opinion's step's words. Amended by Codex's findings 1 and 11 and the Opus check's findings 4 and 5: one driver operation that
+> reserves the conversation (`_pressing`), captures one tip, judges every part at it, writes the due with that tip and the person's turn
+> count, and lands by the pinned path, refusing a moved candidate, on every door.
+
+(Row d of `docs/2026-10-24-chat-flow-design.md` §11, of the backlog's CHATFLOW1; quest `#e2871626913a`.)
+
+**Outcome** 2026-10-25. As named and amended: `ChatPresses.PressAsync` is the one operation `LAND_SESSION_TREE` and `trees land` call
+for a chat run; the opinion is asked at the press and keyed by the run, the look asks it at the press's tip with the conversation's
+opening and tells the person once it settles; *Ask now* captures a tip and a count; the page words the press's refusals and the run
+view's `chat-at-press` in en and zh. **Not built:** row e's send-back, so a chat's findings still go to the person; rows f to i. Detail:
+D157's CHATFLOW1d note.
+
+## CHATFLOW1d2 — the look on a chat run, and the person's way past it (2026-10-25, D157)
+
+> **CHATFLOW1d2 — the look on a chat run, and the person's way past it** (driver, modules, web; with d). The look's part `cannot-start`
+> for a chat run under a rule or version that requires one; *Accept without the look…*, its file, the page's press and
+> `trees land <id> --without-look`, a `Person` route. Amended by Codex's finding 1: the skip is kept at the press's captured tip and the
+> landing pinned to it.
+
+(Row d2 of `docs/2026-10-24-chat-flow-design.md` §11, of the backlog's CHATFLOW1; quest `#e2871626913a`.)
+
+**Outcome** 2026-10-25. A required look on a chat run reads `cannot-start` with its limit; *Accept without the look…* (`withoutLook` on
+`LAND_SESSION_TREE`, the page's press, `trees land <id> --without-look "…"`) keeps the person's words at the captured tip on
+`workflows/looks/chat-<first>.json` and lands that tip pinned, the landing record naming the skip; a later commit asks again. Detail:
+D157's CHATFLOW1d note.
