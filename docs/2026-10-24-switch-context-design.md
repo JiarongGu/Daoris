@@ -15,6 +15,13 @@ accept after named changes the steward can check without another read. **Its nam
 (§12), cited at `e1f4ecb5d` as the read cites them; main has moved since, and §12 names what moved. Codex's read of round 5 is owed,
 its credits out. Nothing here is built.
 
+**2026-10-25, Codex's read of round 5 (the reads record): 21 findings, 10 blocking, another round.** Its remaining blockers are durable
+identity, delivery disposition and execution history across recovery, which it says need coordinated protocol changes rather than
+wording. That is the one durable move record FOUNDATION1 designs (`docs/2026-10-25-foundation-brief.md`, its three proposals and
+their synthesis), into which this carry becomes a section. So by the steward's call the carry (SWITCHCTX1a onward) waits on that
+design rather than a sixth round here; it is re-cut onto the move record there, Codex's round-5 findings among its inputs.
+SWITCHCTX1c-i stays accepted and built.
+
 **SWITCHCTX1c-i was accepted on 2026-10-25, alone, by the steward under D191**: both makers' reads of round 4 found its round-4 text
 buildable, Codex's in its §4 item 2 and §5 item 1 and the Opus reader's in its §3, §4 and finding 11, whose three points §2.7 and §6
 now state (where an ended line opens, that pressing an earlier part hides the later ones, and a bound on the parts drawn). It

@@ -1509,3 +1509,96 @@ What blocks is four local gaps, each closed by one stated rule:
 - the driven further part must be the look's own carry-on (finding 4).
 
 Findings 5 to 11 are changes the steward can take in the same pass.
+
+## Codex, round 5
+
+Codex's read of round 5 with its named changes at `d867efe94`: 21 findings, 10 blocking, another round; run read-only on main from outside the install, its links made repository-relative. Its remaining blockers (durable identity, delivery disposition and execution history across recovery) are the move record FOUNDATION1 designs, so the carry waits on that design rather than a sixth round (the steward, 2026-10-25).
+
+Reviewed HEAD `9262f23d604f68313ad8ea3c467e295b363156d7`, read-only. I read neither `local/` nor anything outside this checkout. SWITCHCTX1c-i’s accepted implementation is outside this review.
+
+Below, **design** means `docs/2026-10-24-switch-context-design.md`; driver paths are relative to `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+
+**0. Round-4 findings**
+
+“Taken” assesses the proposed contract, not an implementation.
+
+| Finding | Disposition | Basis |
+|---|---|---|
+| 1.1 Dispatcher durability | Taken — **non-blocking** | Checked keep and attempt paths are explicit, `design:700-707`. |
+| 1.2 Package evidence unavailable | Deferred with a reason that holds — **non-blocking** | Checked-in evidence must precede enabling the row, `design:448-454`. |
+| 2.1 Counts do not identify prompts | Answered with a reason that holds — **non-blocking** | The matched limit-message ID anchors its preceding prompt, conditional on package evidence, `design:600-607`. |
+| 2.2 Event absence cannot prove no execution | Open — **blocking** | The new mark fixes event-write dependence, but its lifetime remains insufficient; §2.4 below. |
+| 2.3 Lost ledger open | Open — **blocking** | Repository opens gain lookup recovery; Ask Daoris and further-part boundaries remain unresolved, `design:548`, `:822`. |
+| 2.4 Durable delivery disposition | Open — **blocking** | Queue absence still means “written,” although uncertainty settlement also removes words, `design:708-710`. |
+| 2.5 Fallback recipe discarded early | Open — **blocking** | The journal remains longer, but its further-part identity and uncertainty transitions still have gaps, `design:777-780`, `:822`. |
+| 2.6 Concurrent replacement | Taken — **non-blocking** | Create-only landing remains explicit, `design:464-471`. |
+| 3.1 Copying reversal | Answered with a reason that holds — **non-blocking** | The bounded exception addresses the original reasons, `design:488-494`. |
+| 3.2 Record/conversation attribution | Answered with a reason that holds — **non-blocking** | Further parts preserve attribution, subject to recovery fixes, `design:809-822`. |
+| 3.3 Compaction and cost | Answered with a reason that holds — **non-blocking** | No cheaper-way claim, `design:1017-1022`. |
+| 3.4 D197/D206 delivery promises | Open — **blocking** | Counts are withdrawn, but recovery still does not establish their delivery guarantees, `D197.md:398-405`, `D206.md:336-347`. |
+| 4.1 Push, authority, translations | Taken — **non-blocking** | The endpoint, wake seam and bilingual family are named, `design:633-649`, `:909-936`. |
+| 4.2 Line-view contract | Taken — **non-blocking** | Accepted and built separately, `D167.md:418-435`. |
+| 4.3 D191 standing | Answered with a reason that holds — **non-blocking** | Carry remains proposed, `design:21-25`. |
+| 5.1 Line view first | Taken — **non-blocking** | Independent accepted row, `design:1218`. |
+| 5.2 Carry recovery proofs | Open — **blocking** | Tests are expanded, but omit the transitions identified below, `design:1219`. |
+| 5.3 Other moves’ word mapping | Open — **blocking** | Main delivery is clearer; fallback reconstruction and Ask Daoris recovery remain incomplete, `design:1220`. |
+| 5.4 Carried presentation dependencies | Answered with a reason that holds — **non-blocking** | Driver and web follow 1a and 1c-i, `design:1221`. |
+| 5.5 Codex evidence dependency | Deferred with a reason that holds — **non-blocking** | No enabled row before layout and anchor evidence, `design:1222`. |
+| 5.6 Pipe prerequisites | Deferred with a reason that holds — **non-blocking** | Missing-ID proof, read-back and shared protocol remain prerequisites, `design:987-990`. |
+| 5.7 Case-specific measurement | Taken — **non-blocking** | Cases remain separately unmeasured; “nothing lost” still depends on the outstanding recovery fixes, `design:966-979`. |
+
+None is shown wrong.
+
+**1. Claims about existing code and the pinned package**
+
+1. **Blocking — “what ran” is still inferred from what was requested.** `design:394-417` treats `asked + override`, current settings and matching offer lists as proof of the previous execution’s model and effort. However, `Agents/Acp/Acp.cs:2550-2555` explicitly accepts agent-initiated option changes, while `Sessions/Domain/ActorRun.cs:22-27` overlays only composer changes and `Accounts/AgentOffers.cs:13-20` stores choices, not resolved defaults: a source can have run B while the carry sets its still-recorded request A and declares sameness. Require an actual source execution reading, or narrow the claimed invariant and refuse cases it cannot establish.
+
+2. **Non-blocking — the package claims remain independently unverified here.** The installed 0.84.0/0.3.284/2.1.284 bundle is unavailable within the permitted boundary; `Agents/Adapters/Adapters.cs:1895-1896` documents another pair. `design:448-454` appropriately requires evidence for replay, CLI selection and restored-model behavior before enabling compatibility.
+
+**2. The carry**
+
+1. **Blocking — Ask Daoris’s lost-open lookup still has a crash window.** `design:548-550` finds the record through its opening line, but HEAD creates it at `Conversations/Chat/ChatRunner.cs:847-849` and writes that line separately at `:856`; the line itself is best-effort (`Accounts/Rotation/AccountRotation.cs:607-610`). A lost response or crash between these operations leaves an existing record with neither `from` nor the proposed lookup marker; give its creation a durable correlation that lands with the record.
+
+2. **Blocking — the further-part exception works only after its ID is saved.** `design:822` opens the further part before naming it in the carry record, while `design:529-531` and `:727` exempt only the further part that record names. A crash between open and naming therefore still satisfies “moved on” and can discard the recovery recipe; recover and adopt the matching `from=<carried part>, why=retry` record before applying that rule, including a lost open response.
+
+3. **Blocking — absent from `said` does not prove written.** `design:708-710` makes that inference, and `:777` uses it to remove the fallback journal, but `Conversations/GoOn/UncertainWords.cs:64-90` removes attempted words through take-back without proving a wire write. Mark-attempt → crash before write → uncertainty settlement → restart can consequently discard the brief recipe for an unbriefed conversation; persist a terminal `written` or `uncertain` disposition before removing the queue evidence.
+
+4. **Blocking — a later refusal can reopen fallback after earlier work.** `design:802-806` keeps the carry pending after Fatal, exhausted transient, access or cancellation and judges the next turn as first, whereas `:800` checks work only in that turn. A turn can edit files and fail Fatal, then a subsequent work-free refusal can trigger automatic fallback despite earlier execution; retire fallback eligibility once any work starts and preserve that decision across recovery.
+
+5. **Blocking — `FirstTurnWords` depends on lossy evidence.** `design:827-830` reconstructs consumed words by pairing receipts and User events, but `Sessions/Events/SessionEventLog.cs:84-93` tolerates failed appends, `Sessions/Domain/SessionEvents.cs:509-511` clips text, and `Agents/Acp/Acp.cs:2104-2107` removes the queued word after writing. A missing receipt or User event can lose or misassociate the fallback request; require checked, ID-bearing recovery evidence until first-turn handling finishes, and settle incomplete reconstruction explicitly as uncertain.
+
+6. **Non-blocking — replay verification and create-only copying have suitably bounded claims.** Equal agent/tool anchors, whole-load filtering and the limit-message adjacency rule address the earlier count defects (`design:584-620`); the deferred package evidence must establish that adjacency. No replacement path is specified by `design:464-471`, and `:769` and `:793-794` correctly acknowledge repeated hooks, so the fallback proves neither “nothing ran” nor complete retained memory.
+
+**3. Reversals and their dependents**
+
+1. **Non-blocking — D125 and D189’s copying exception has sufficient justification.** `design:488-494` answers home ownership, changing formats and maker boundaries; `:1062-1066` names the affected code contracts. Account credentials, the person’s home and deletion inventories retain their existing boundaries.
+
+2. **Non-blocking — D131, D137 and D167’s record-shape reversals have sufficient justification.** The entry supplies grouping, each record keeps its own events and usage, and only the newest copy resumes (`design:1000-1016`, `:1023-1032`). Their dependents need the lost-open fixes above; attribution alone does not make creation recoverable.
+
+3. **Non-blocking — D165, D163 and D189’s continuity, compaction and measurement amendments are adequately stated.** The design explicitly trades compaction for continuity, retains the cross-maker brief and preserves context-size reporting without inventing a brief size (`design:1017-1022`, `:1027-1043`, `:1052-1061`). The dated notes now name those changes.
+
+4. **Blocking — D197, D206 and D210 depend on unfinished execution and recovery rules.** Their reasons hold in principle, including one delivery owner and no strike for a safely recovered provider refusal (`D197.md:398-405`, `D206.md:336-347`, `D210.md:341-346`). Their promises must incorporate the durable dispositions and permanent loss of fallback eligibility after work identified in §2.
+
+**4. Other decided rules and the line view**
+
+1. **Blocking — the person’s stop is not represented durably.** `design:561-566` promises that a stop during load leaves the carry for the next word, but the recovery table automatically resumes pending deliveries at `opened`, `copied`, `verified` or `delivering` (`:723-724`). `Sessions/SessionProcesses.cs:279-281` supplies only an in-memory stop flag; persist the person-stopped disposition so a restart cannot automatically prompt that delivery.
+
+2. **Non-blocking — no additional D182, D191 or translation-parity conflict found.** The `handed` projection, explicit wake and driver-only door match `SessionsStateSlice.cs:39-67` and `PersonDoors.cs:256`; bilingual reason and placeholder checks are specified at `design:909-936`. SWITCHCTX1c-i remains accepted and built, outside this read; nothing here requires reopening it.
+
+**5. Rows and order**
+
+1. **Non-blocking — SWITCHCTX1c-i remains the completed first row.** Its independent standing is recorded at `D167.md:418-435`; no carry prerequisite should be added.
+
+2. **Blocking — SWITCHCTX1a still leaves recovery policy to its builder.** `design:1219` needs proofs for a further open before its ID is journaled, uncertainty settlement followed by another restart, work followed by Fatal then refusal, and failed first-turn word recording. It also needs the source execution-model contract settled before its primary proof can establish sameness.
+
+3. **Blocking — SWITCHCTX1b inherits those gaps and adds Ask Daoris’s unidentified open.** `design:1220` must test a committed help-record creation with no opening event, and a stopped pending delivery across restart. Its limit-fallback proof also needs a cutoff identifying both part and event: today `Sessions/Events/ContextBriefs.cs:67-70` applies `before` only to the single named record.
+
+4. **Non-blocking — SWITCHCTX1c-ii’s dependencies and ownership hold.** `design:1221` correctly joins driver codes and web words after 1a and the built line view. Its pushed-state proofs are concrete.
+
+5. **Non-blocking — SWITCHCTX1d is correctly evidence-gated.** `design:1222` leaves Codex disabled until its own layout and replay anchor are established. The builder has an evidence prerequisite rather than an unspecified compatibility assumption.
+
+6. **Non-blocking — SWITCHCTX1e is correctly held.** `design:1223` requires missing-ID evidence and a prompt-free read-back. If either cannot be established, the brief remains the specified result.
+
+7. **Non-blocking — SWITCHCTX1f is appropriately last for installed proof.** `design:1224` distinguishes the actual case from unmeasured cases. Remove the unconditional “nothing lost” at `design:968` until the recovery guarantees above hold.
+
+**Verdict: another round.** The remaining blockers concern durable identity, delivery disposition and execution history across recovery; they require coordinated protocol changes, not wording alone.
