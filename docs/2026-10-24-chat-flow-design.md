@@ -19,7 +19,8 @@ row c; row c may be built after named changes the steward can check). Its findin
 **What is built.** Rows a and b have landed (D157's CHATFLOW1a and CHATFLOW1b notes): the trace reads the six fields
 (`Sessions/Trace/Trace.cs:286-291`), `SessionResponse` carries `TookQuest` (`Daoris.Service.Http/ApiContracts.cs:457`), the route answers
 the code and its values (`Bridge/Routes/WorkflowRoutes.cs:243`), and the page words the codes it knows (`workflow/WorkflowRunView.tsx:303-309`).
-Row a's classifier is corrected by finding 6 (§4.1), in the change that carries this amendment. Rows c to i are not built. §1 is the
+Row a's classifier is corrected by finding 6 (§4.1), in the change that carries this amendment. Row c is built (D157's CHATFLOW1c
+note). Rows d to i are not built. §1 is the
 baseline read before rows a and b, kept as it was read. The citations in §17's table were checked at `5d19f6b3a`, and those §18 names
 were re-pinned at `bcb97c274` (§6.1's `DriverContinuations.cs:658` is now `:660`); the other sections' citations are re-pinned by the
 row that builds from them, before it does.
@@ -862,6 +863,7 @@ met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one 
   lands**, the work and the landing both, never `not-reached`; **a second candidate after a branch landing reads `accept` again, with its
   own opinion**, never the first landing's; and **a chat run that landed and whose line then takes a quest** reading the quest's run, the
   earlier landing not counted there, the chat run's three files left until the delete of the record `<first>`.
+  *Built* (D157's CHATFLOW1c note), its view rows in `WorkflowRunChatTests`, apart from `WorkflowRunTests` by the partials census.
 - [ ] **CHATFLOW1d — the gate refuses the press and asks the opinion** (driver, modules, web; after c). The opinion's part keyed by the
   run (`OpinionGates` under `chat-<first>`, `OpinionGate.JudgeAsync` with a run and no quest); `OpinionDue.Run`; the press asking at
   `not-asked` and nothing twice; `OpinionPresses.WorkAsync` reading a chat run; and the quest-keyed sites §7 names, each keyed by the run:

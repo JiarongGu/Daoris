@@ -20538,3 +20538,19 @@ set up refused) were seen failing on the old code first. D163's HELPERDEFAULT1 n
 author's, through `GitRouting.Scope` (`Platform/GitLongPaths.cs`), always; the build's read of the person's configuration, which
 started a git at every start, was dropped at the landing (FIX-LOG). `GitLongPathsProcessTests` was seen failing first (the handed status read the committed file as
 ` D`), then passed; `GitLongPathsTests` holds the shapes. Detail: FIX-LOG's TREELONG1 entry and D109's TREELONG1 note.
+## CHATFLOW1c — a chat's run, keyed and bound (2026-10-25, D157)
+
+> **CHATFLOW1c — a chat's run, keyed and bound** (driver, modules, web; after a's correction, finding 7 and the Opus check's findings 1
+> to 3). `chat-<first>` from the stored line (§4.1); the binding when the tree opens, never to a graph version (`chat-graph-later`); a
+> failed bind said once, and a press on an unbound run binding first and refused `bind-failed` only for an unwritable home, a graph choice
+> never refused and an unreadable named workflow bound with its `Problem` (§4.3); `ChainsOf`'s chat run read by the line, with the work
+> step's states; `TreeGates.ProcessAsync` reading the chat run's process; the told landing planned with the bound process (§4.4); the
+> view's checks marked not yet enforced until row h; `SessionHomeFiles` taking a chat run's three files and the leftover rule sweeping
+> them (§4.3). The conversation is told nothing of its checks.
+
+(Row c of `docs/2026-10-24-chat-flow-design.md` §11, of the backlog's CHATFLOW1; quest `#d608a5f87e0c`.)
+
+**Outcome** 2026-10-25. The row as named and amended: a chat in its own tree runs a run keyed by its line, bound when its tree opens or
+at a turn's end, its landing read for the tip its tree stands at, its opinion `chat-not-asked` before row d, a line that takes a quest
+that quest's from the take on, and its checks marked not yet enforced in en and zh. Each proof seen failing first. **Not built:** rows d
+to i; the standalone terminal's land and the opinion presses read a chat as before until rows d and i. Detail: D157's CHATFLOW1c note.

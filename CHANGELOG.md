@@ -42,6 +42,13 @@ with the version and date at release.
   The terminal names the change's request at once, before Daoris has checked it. It can read or take back the change for as long as
   the change waits, even after Daoris restarts or `run/` is cleared. If Daoris cannot keep your answer, nothing is done, and the card
   says so and still waits.
+- A chat that works in a tree of its own now runs its repository's workflow (CHATFLOW1c). Its session's *Workflow* view draws the
+  run: your turn to talk, the commits beyond the line waiting for you to accept them, and its work landed at the commit its tree
+  stands at. A hand-over goes on in the same run. Its checks are shown and marked *not yet enforced for a conversation*, and its
+  second opinion reads *not asked for a conversation's work in this build yet*, since Accept lands it with none for now. A
+  conversation whose repository chooses a named workflow says so once when its tree opens, and Accept follows that workflow's
+  landing. If the workflow could not be bound, Accept says why and lands nothing. A repository whose workflow is a graph runs none
+  for a conversation yet, as before. `daoris-driver workflow run` prints the same.
 - A session's *Workflow* view now says in your language why no workflow runs for it (CHATFLOW1a, CHATFLOW1b). Before, it showed
   the driver's English sentence, in Chinese too. A chat in your checkout says its changes are yours to commit, and that a
   conversation with a tree of its own is how work gets a workflow. A chat in a tree of its own says this build reads no workflow
