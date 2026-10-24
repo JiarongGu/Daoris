@@ -25,12 +25,14 @@ internal sealed class OneTurnReask
     /// The opening note's actor line (§4.6) when a later entry of the actor ran, its passes the walk's own: <c>Ran as Second opinion's choice
     /// 2, …</c>; nothing where entry 1 ran or nothing was passed.
     /// </summary>
-    public static void Say(SessionEvents events, string sessionId, string actor, ReviewerChoice choice)
+    public static void Say(SessionEvents events, string sessionId, string actor, ReviewerChoice choice, MachineLog? log = null)
     {
         if (choice.Effective is not { } ran) return;
-        RotatedOpening.SayActor(
-            events, sessionId, actor, ran,
-            [.. choice.Tried.Where(each => each.Entry is not null).Select(each => new BuildPass(each.Entry!, each.Held, each.Refusal))]);
+        var passed = choice.Tried.Where(each => each.Entry is not null).Select(each => new BuildPass(each.Entry!, each.Held, each.Refusal)).ToList();
+        RotatedOpening.SayActor(events, sessionId, actor, ran, passed);
+        // The machine log's line (§4.6): the choice and each passed one with its code, as every actor's start writes them.
+        log?.Write("info", "actor.chose", [("actor", actor), ("session", sessionId), ("choice", ran.From), ("agent", ran.Agent), ("model", ran.Model),
+            ("passed", passed.Select(pass => pass.Said).ToList())]);
     }
 
     /// <summary>The choice that runs now: the first, or the one a refusal at the open moved it to.</summary>
