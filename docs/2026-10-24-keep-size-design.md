@@ -408,6 +408,11 @@ its resume runs within the pass's budget. **Every other reader of `.tidied`
 passes over `.going/`**, since each enumerates its children as workspaces: the purge (`TreeSetAside.cs:396` on main), the press's list
 and the slim (`SetAsideKeeping.cs:53, 107`), the trees' list and the inventory (`SessionTrees.cs:547`) and the card's *next*
 (`SystemSpace.SetAsideNext`, `SystemSpace.cs:579`). The card's size walk counts what lies in `.going/` under `set-aside` until it is gone.
+*Amended 2026-10-25* (the check of KEEPSIZE1b's last fixes, finding 8): the rules' doors read the folder again under `.going/` before its
+delete begins, and a write since the purge's read puts it back whole, `written`; a begun delete put back, for a late write or a holding
+check that did not pass or could not run, leaves its manifest `unmarked` with that why, since part of it is gone. Two windows stay open
+and are said, not closed: a write after that read and before the delete ends is taken with the folder unless the delete stops; and a
+holder moved between the holding check and the rename is taken too, its record kept.
 
 ### 3.5 The steps, and what each stop or refusal leaves
 

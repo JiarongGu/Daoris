@@ -60,7 +60,7 @@ with the version and date at release.
   now keeps a finished tree for its days, its record kept all the same. *Free up space…* says which folders have their record kept,
   which wait for it, and which came from before this version. Before a finished tree's folder goes, Daoris checks
   again that its commits are still held, and keeps it where they are not. The *Disk space* card says how many folders wait for their
-  record, and *Free up space…* lists each folder with what holds its commits.
+  record, or for the registry to name their repository's checkout, and *Free up space…* lists each folder with what holds its commits.
 - Trees set aside before Daoris's folder layout moved are now removed at their days, like the rest (KEEPSIZE1a). Until now they
   stayed under the old place for good. The *Disk space* card counts them under *Set-aside trees* rather than *Everything else*, and
   *Free space* and `trees list` name them.
