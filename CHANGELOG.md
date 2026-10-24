@@ -9,6 +9,9 @@ with the version and date at release.
 - The window no longer stops answering while the session list works out where each session's work went (NOBLOCK1). That
   look, a repository's heavy-run slot, a conversation's first words, Ask Daoris's proposals and the tools list now show what
   the window already had at once, and fill in when the work is done. Typing is no longer held up by them.
+- Trees set aside before Daoris's folder layout moved are now removed at their days, like the rest (KEEPSIZE1a). Until now they
+  stayed under the old place for good. The *Disk space* card counts them under *Set-aside trees* rather than *Everything else*, and
+  *Free space* and `trees list` name them.
 - A session's *To the top* and *Back to bottom* are now arrows alone, so they no longer cover the messages under them. Their
   names show when you point at them, and a screen reader says them.
 - A conversation whose agent has no account left now goes on with the next choice you set for it on another agent (LIMITGOON2).

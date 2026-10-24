@@ -16,7 +16,7 @@ different frame, and this round is rewritten to it:
 It adds removal nobody presses of what cannot be made again (a finished tree's ignored scratch), a durable record and a rule other
 designs rest on (D195 points 3 and 4, and two of the cleanup design's §7 rejections). So it meets D191's foundation threshold:
 Codex reads it, and Claude Opus 5.5 in Fable's place (D191's 2026-10-23 amendment), and the steward checks each finding against the
-code and settles it. Nothing here is built.
+code and settles it. Nothing here is built but KEEPSIZE1a (D195's KEEPSIZE1a note, 2026-10-24).
 
 Read for it: the row KEEPSIZE1 and KEEPSIZE1a in `TASKS.md`; D195 and the cleanup design (`docs/2026-10-21-cleanup-design.md`: §1,
 §2, §3, §5, §7); the history clearing design (`docs/2026-10-07-history-clearing-design.md` §2); D88's AUTOTIDY1 and D102's
