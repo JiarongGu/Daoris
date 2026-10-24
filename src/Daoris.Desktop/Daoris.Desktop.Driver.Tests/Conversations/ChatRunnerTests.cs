@@ -18,6 +18,51 @@ public sealed class ChatRunnerTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
+    /// <summary>
+    /// CHATFLOW1c (the chat-flow design §4.3, §4.4): a conversation that grew its tree binds its run, <c>chat-&lt;record&gt;</c>, beside the
+    /// process it is told: under a steps version its first Daoris line names the version and who chose it, and the landing it is told is
+    /// planned with that version's process, the one its press lands by. Under Current nothing is said. It is told no checks either way,
+    /// since nothing enforces them on its tree before CHATFLOW1h.
+    /// </summary>
+    [Fact]
+    public void A_conversation_that_grew_its_tree_binds_its_run_beside_the_process_it_is_told_and_is_told_no_checks()
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("chat-steps", "A conversation's steps", "terminal", "2026-10-09T09:00:00Z",
+            System.Text.Json.Nodes.JsonNode.Parse("""
+                [{"id":"work","kind":"work","checks":"light"},
+                 {"id":"landing","kind":"landing","form":"branch","accept":"you","pattern":"chat/{session}-{slug}","plugin":"none"}]
+                """)), kept: []);
+        var config = DriverConfig.Parse("""{"workflows":{"engine":{"default":"chat-steps"}},"sessionChecks":{"engine":"light"}}""");
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Unanswered()));
+        var binds = new ChatRunBinds(_home, service, events);
+
+        var process = binds.Opened("c1a2b3c4", "engine", "aurora", config);
+
+        Assert.Equal(("chat-steps", 1), (WorkflowRunBindings.Read(_home, "chat-c1a2b3c4")!.Workflow, WorkflowRunBindings.Read(_home, "chat-c1a2b3c4")!.Version));
+        Assert.True(process.Named);
+        Assert.Equal((LandingForm.Branch, "chat/{session}-{slug}"), (process.Landing.Rule.Form, process.Landing.Rule.Pattern));
+        var note = Assert.Single(events.After("c1a2b3c4", 0).Events, each => each.Kind == SessionEventKind.Note);
+        Assert.Equal("This conversation's work follows `chat-steps` v1, the workflow `engine` chose.", note.Text);
+        Assert.Equal(NoteCodes.ChatWorkflow.Code, Assert.Single(note.Parts!).Code);
+
+        var current = binds.Opened("d1a2b3c4", "engine", "aurora", DriverConfig.Parse("""{"sessionChecks":{"engine":"light"}}"""));
+        Assert.True(WorkflowRunBindings.Read(_home, "chat-d1a2b3c4")!.IsCurrent);
+        Assert.False(current.Named);
+        Assert.DoesNotContain(events.After("d1a2b3c4", 0).Events, each => each.Kind == SessionEventKind.Note);
+
+        var told = ChatRunner.ProcessTold(CommitRules.Resolve(config, "engine", "aurora"), plan: null);
+        Assert.DoesNotContain("pipeline is light", told.Words, StringComparison.Ordinal);
+        Assert.DoesNotContain("checks", note.Text, StringComparison.Ordinal);
+    }
+
+    /// <summary>A service that answers nothing: the open's bind reads only local files.</summary>
+    private sealed class Unanswered : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            throw new HttpRequestException("the stand-in answers nothing");
+    }
+
     private AdapterSet Declared()
     {
         var folder = DaorisHome.Entry(_home, HomeEntry.Plugins,"acme.agent");
