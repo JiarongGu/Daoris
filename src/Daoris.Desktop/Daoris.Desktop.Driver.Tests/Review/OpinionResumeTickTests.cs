@@ -157,6 +157,131 @@ public sealed class OpinionResumeTickTests : IDisposable
         Assert.Empty(service.Taken);
     }
 
+    /// <summary>
+    /// 🔴 CHATFLOW1e (the chat-flow design §6.1 (b), (c)) on both doors: a chat run's live conversation, between turns, takes another agent's
+    /// findings as a turn of its own through the shell's runner, exactly as the host composed them and never as the person's words; the word
+    /// leaves its record once on the wire, and the answers are read at that turn's own end, its tip the tree's as it ended.
+    /// </summary>
+    [Theory]
+    [InlineData("acp-stub")]
+    [InlineData("claude-code")]
+    public async Task A_chat_runs_findings_reach_its_live_conversation_between_turns_and_are_read_at_that_turns_end(string door)
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
+        var heard = Path.Combine(_home, "chat-heard.txt");
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [door] = ["node", door == "acp-stub" ? ChatAgent() : ChatNative(), heard] },
+        };
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        var ledger = new ChatLedger().Register("engine", _repository);
+        var events = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        var adapters = AdapterSet.Built();
+        using var client = ledger.Client();
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        string Seen(string id) => $"heard [{string.Join(" | ", StubFile.Lines(heard))}], state {ledger.State(id)}, "
+                                  + $"record [{string.Join(" | ", events.After(id, 0).Events.Select(e => $"{e.Kind}:{e.Origin}:{e.Opinion}:{e.Text}"))}]";
+
+        var id = (await runner.StartAsync("engine", door, config)).SessionId!;
+        await Poll.Until(() => ledger.State(id) == "working", () => Seen(id));
+        Assert.True(runner.Say(id, "make the change"));
+        await Poll.Until(() => runner.TurnEnded(id) == true, () => Seen(id));
+        var tip = Head(_repository);
+        ledger.Opinion("op1", id, tip, Findings).Answer("op1", 1, "rejected", evidence: "the heading is the product's name");
+        var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(),
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            SendsBack = runner,
+        };
+        var asked = new OpinionPassAsk(OpinionRules.Landing, id, "engine", _repository, tip, tip, new OpinionRule(["codex-acp"], [OpinionRules.Landing]))
+        {
+            Run = ChatRuns.Prefix + id, Turns = 1,
+        };
+
+        var delivered = await driver.DeliverAsync("op1", asked).WaitAsync(Poll.Patience);
+
+        Assert.Equal((OpinionDeliveryStates.Handed, id), (delivered.State, delivered.Session));
+        Assert.Equal([id], ledger.HandedTo);
+        await Poll.Until(() => new OpinionDeliveries(_home).Read("op1").Answered is not null, () => Seen(id));
+        var reading = new OpinionDeliveries(_home).Read("op1").Answered!;
+        Assert.Equal((id, tip, false), (reading.Session, reading.Tip, reading.Steered));
+        Assert.Equal(OpinionViews.Rejected, Assert.Single(reading.Findings).Counts);
+        Assert.Contains((door == "acp-stub" ? "prompt: " : "message=") + Findings.Replace("\n", "\\n"), StubFile.Lines(heard));
+        Assert.Contains(events.After(id, 0).Events, e => e is { Kind: SessionEventKind.User, Origin: "target", Opinion: "op1" } && e.Text == Findings);
+        Assert.DoesNotContain(events.After(id, 0).Events, e => e is { Kind: SessionEventKind.User, Origin: "person" } && e.Text == Findings);
+        await Poll.Until(() => ledger.Said(id).Count == 0, () => Seen(id));
+
+        Assert.True(runner.Finish(id));
+        await Poll.Until(() => ledger.State(id) == "completed", () => Seen(id));
+    }
+
+    /// <summary>The protocol door's conversation stand-in: it notes each prompt's text and ends the turn; nothing else is asked of it.</summary>
+    private string ChatAgent()
+    {
+        var script = Path.Combine(_home, "chat-acp-agent.mjs");
+        File.WriteAllText(script, """
+            import { appendFileSync } from 'node:fs';
+            import { createInterface } from 'node:readline';
+            if (process.argv.includes('--version')) { console.log('acp-stub 1.0.0'); process.exit(0); }
+            const [heard] = process.argv.slice(2);
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            let conversation = null;
+            const lines = createInterface({ input: process.stdin });
+            lines.on('line', async (line) => {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: { loadSession: true, sessionCapabilities: { close: {} } } } });
+              } else if (frame.method === 'session/new') {
+                conversation = 'conv-1';
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: conversation } });
+              } else if (frame.method === 'session/prompt') {
+                const text = frame.params.prompt.filter((block) => block.type === 'text').map((block) => block.text).join(' | ');
+                appendFileSync(heard, 'prompt: ' + text.replace(/\n/g, '\\n') + '\n');
+                send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
+                  update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'heard it' } } } });
+                send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            });
+            lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });
+            """);
+        return script;
+    }
+
+    /// <summary>The native door's conversation stand-in, on <c>stream-json</c>: it notes each message, names its conversation, and ends the turn.</summary>
+    private string ChatNative()
+    {
+        var script = Path.Combine(_home, "chat-claude.mjs");
+        File.WriteAllText(script, """
+            import { appendFileSync } from 'node:fs';
+            import { createInterface } from 'node:readline';
+            const [heard, ...argv] = process.argv.slice(2);
+            if (argv.includes('--version')) { console.log('2.1.0 (Claude Code)'); process.exit(0); }
+            if (argv[0] === 'auth' && argv[1] === 'status') { console.log('{"loggedIn": true}'); process.exit(0); }
+            if (!argv.includes('-p')) process.exit(0);
+            const out = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            let named = false;
+            const lines = createInterface({ input: process.stdin });
+            lines.on('line', (line) => {
+              const frame = JSON.parse(line);
+              if (frame.type !== 'user') return;
+              const text = frame.message.content.filter((block) => block.type === 'text').map((block) => block.text).join('');
+              appendFileSync(heard, `message=${text.replace(/\n/g, '\\n')}\n`);
+              if (!named) {
+                out({ type: 'system', subtype: 'init', session_id: 'native-1', cwd: process.cwd(), tools: [], model: 'stub' });
+                named = true;
+              }
+              out({ type: 'assistant', message: { role: 'assistant', model: 'native-reported', content: [{ type: 'text', text: 'heard it' }] } });
+              out({ type: 'result', subtype: 'success', is_error: false, result: 'ok' });
+            });
+            lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });
+            """);
+        return script;
+    }
+
     private Daoris.Driver.Driver Protocol(OpinionTickStandIn service, string mode)
     {
         var adapters = AdapterSet.Built();
