@@ -47,6 +47,7 @@
   "person.checking": "正在检查是否有变化…",
   "person.unread": "Daoris 暂时无法读取它所依据的内容；它仍在等待。",
   "person.draining": "Daoris 即将重启；此请求仍在等待。",
+  "person.unrecorded": "Daoris 暂时无法记下你的回答；未执行任何操作，它仍在等待。",
   "person.changed.session": "未执行：等待期间该会话已有进展（当时{{then}}，现在{{now}}）。",
   "person.changed.turn": "未执行：等待期间该会话又运行了一轮。",
   "person.changed.setting": "未执行：等待期间它要设置的内容已被更改（{{act}}）。",

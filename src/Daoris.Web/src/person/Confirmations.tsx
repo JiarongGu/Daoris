@@ -425,6 +425,8 @@ function refusalOf(t: T, waiting: Confirmation, answer: Extract<ConfirmationAnsw
   if (answer.why === 'unread') return t('person.unread');
   // CONFIRMWAIT1a-ii (§7.2): Daoris closing or an update draining took no Confirm, and the press waits on across the restart.
   if (answer.why === 'draining') return t('person.draining');
+  // CONFIRMWAIT1 (§15.2 item 8): its record could not say the answer, so nothing was taken, and it waits on.
+  if (answer.why === 'unrecorded') return t('person.unrecorded');
   if (answer.why === 'changed' && answer.reason) {
     const values = answer.values ?? {};
     const state = STATES[answer.reason];

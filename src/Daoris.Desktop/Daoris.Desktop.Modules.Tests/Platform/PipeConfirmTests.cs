@@ -748,6 +748,64 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(0, driver.Ran);
     }
 
+    /// <summary>
+    /// CONFIRMWAIT1, Codex's finding 8 (the confirm-wait design §15.2 item 8): an ending whose record cannot be rewritten is told to nobody
+    /// and runs nothing. A Refuse and a Confirm answer <c>unrecorded</c> and the card waits on, its buttons back; a <c>WITHDRAW</c> answers
+    /// <c>unrecorded</c> and the press waits on. Once the record can be written, each ends as asked; a second pipe on the same home brings
+    /// back none that ended.
+    /// </summary>
+    [Theory]
+    [InlineData("refuse")]
+    [InlineData("confirm")]
+    [InlineData("withdraw")]
+    public async Task An_ending_whose_record_cannot_be_written_is_told_to_nobody_and_runs_nothing(string answer)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds().Session("s1a2b3c4", "completed");
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        await using var ___ = client;
+        var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+        var card = pipe.Confirmations.Now().Waiting[0];
+        var record = System.IO.Path.Combine(RecordsFolder, card.Id + ".json");
+        // A folder where its record is: it can be neither rewritten nor replaced.
+        File.Delete(record);
+        Directory.CreateDirectory(record);
+
+        async Task<string?> EndAsync()
+        {
+            if (answer == "withdraw")
+            {
+                var withdrawn = await client.AnswerAsync(await client.SendAsync(InstancePipe.Module, "WITHDRAW", new { id, key = client.KeyOf(id) }));
+                return withdrawn.GetProperty("success").GetBoolean() ? withdrawn.GetProperty("data").GetProperty("state").GetString() : Code(withdrawn);
+            }
+
+            var outcome = await pipe.Confirmations.AnswerAsync(card.Id, confirm: answer == "confirm");
+            return outcome.Outcome.ToString();
+        }
+
+        Assert.Equal(answer == "withdraw" ? InstancePipe.Unrecorded : nameof(PipeAnswered.Unrecorded), await EndAsync());
+        var still = Assert.Single(pipe.Confirmations.Now().Waiting);
+        Assert.False(still.Checking);
+        Assert.Equal("waiting", (await client.ResultAsync(id)).GetProperty("state").GetString());
+        Assert.Equal(0, driver.Ran);
+
+        // Mended, it ends as asked, and the record goes with it.
+        Directory.Delete(record);
+        Assert.Equal(answer == "withdraw" ? "withdrawn" : nameof(PipeAnswered.Answered), await EndAsync());
+        var heard = await client.AnswerAsync(id);
+        Assert.Equal(answer == "confirm" ? 1 : 0, driver.Ran);
+        if (answer != "confirm") Assert.False(heard.GetProperty("success").GetBoolean());
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        await UntilAsync(() => Records().Count == 0);
+        pipe.Dispose();
+        using var next = Pipe(Compose(log, driver).Dispatcher, log, grounds: grounds);
+        next.Restore();
+        Assert.Empty(next.Confirmations.Now().Waiting);
+    }
+
     /// <summary>A conflict over an id the journal already ended leaves that ending as it was.</summary>
     [Fact]
     public async Task A_restored_conflict_never_overwrites_an_ending_the_journal_holds()

@@ -213,6 +213,8 @@ public sealed class InstancePipe : IDisposable
     // own lock, never the pipe's, since it writes a file.
     private readonly PipeWaiting _records;
     private readonly Dictionary<string, PipeWaitingRecord> _kept = new(StringComparer.Ordinal);
+    // CONFIRMWAIT1 (§15.2 item 8): each ending's answer by its confirmation's id, as its record was rewritten with it, for its line.
+    private readonly Dictionary<string, string> _endings = new(StringComparer.Ordinal);
     private readonly Lock _recording = new();
     private int _restored;
     private readonly HashSet<Connection> _connections = [];
@@ -250,6 +252,8 @@ public sealed class InstancePipe : IDisposable
         _records = new PipeWaiting(DaorisHome.Entry(home, HomeEntry.PipeWaiting));
         Confirmations.ShownFirst = Shown;
         Confirmations.Holding = () => IsStopping;
+        // CONFIRMWAIT1 (the confirm-wait design §15.2 item 8): each ending is written to the press's record before it is told or run.
+        Confirmations.Persisting = Persisted;
         StandingConfirmation = standing ?? new StandingConfirmation(home, _log, clock: clock);
         // Every window is told a use (§5 step 4), which the line in Notifications counts; never a value, only the count and its moment.
         StandingConfirmation.Used ??= (seq, at) => _bus.Emit(StatePublisher.Module, StandingConfirmation.UsedEvent, new { Seq = seq, At = at });
@@ -459,15 +463,66 @@ public sealed class InstancePipe : IDisposable
         }
     }
 
-    /// <summary>A press's record rewritten as it ends (§7.1's order): <c>begun</c>, or <c>ended</c> with its answer.</summary>
-    private void Rewrite(string confirmation, string state, string? answer = null)
+    /// <summary>
+    /// A press's record rewritten as it ends (§7.1's order): <c>begun</c>, or <c>ended</c> with its answer. False where it could not be
+    /// written (§15.2 item 8), its record left as it was; true where the press keeps none.
+    /// </summary>
+    private bool Rewrite(string confirmation, string state, string? answer = null)
     {
         lock (_recording)
         {
-            if (!_kept.TryGetValue(confirmation, out var record)) return;
-            _kept[confirmation] = record = record with { State = state, Answer = answer };
-            _records.Write(record);
+            if (!_kept.TryGetValue(confirmation, out var record)) return true;
+            var rewritten = record with { State = state, Answer = answer };
+            if (!_records.Write(rewritten)) return false;
+            _kept[confirmation] = rewritten;
+            return true;
         }
+    }
+
+    /// <summary>
+    /// A press's ending written to its record before anyone is told it or it runs (CONFIRMWAIT1, the confirm-wait design §15.2 item 8):
+    /// <c>begun</c> for a Confirm that runs, <c>ended</c> with the answer its terminal will hear for any other, that answer kept for its
+    /// line. False where the record could not be written, and the press waits on.
+    /// </summary>
+    private bool Persisted(PipeConfirmation card, PipeEnding ending)
+    {
+        string? id;
+        bool byWithdraw;
+        lock (_gate)
+        {
+            id = _waitingFor.FirstOrDefault(each => each.Value == card.Id).Key;
+            byWithdraw = id is not null && _withdrawn.Contains(id);
+        }
+
+        if (id is null) return true;
+        if (ending.End == PipeConfirmationEnd.Confirmed && !IsStopping) return Rewrite(card.Id, PipeWaitingRecord.Begun);
+        var text = IpcJson.Serialize(Ending(new IpcRequest { Id = id, Module = card.Module, Type = card.Route }, ending, byWithdraw));
+        if (!Rewrite(card.Id, PipeWaitingRecord.Ended, text)) return false;
+        lock (_recording) _endings[card.Id] = text;
+        return true;
+    }
+
+    /// <summary>The answer a press's terminal hears for an ending that runs nothing.</summary>
+    private IpcResponse Ending(IpcRequest request, PipeEnding ending, bool byWithdraw)
+    {
+        var id = request.Id;
+        return ending switch
+        {
+            { End: PipeConfirmationEnd.Refused } => IpcResponse.CreateError(id, Refused, null,
+                "The person refused this in Daoris's window. Nothing was done."),
+            // CONFIRMWAIT1a-i (§5): confirmed, and a ground it was asked on had moved; said with its reason's code and values.
+            { End: PipeConfirmationEnd.Changed, Change: { } change } => IpcResponse.CreateError(id, Changed,
+                new Dictionary<string, string>(change.Values) { ["ground"] = change.Reason },
+                $"The person confirmed this in Daoris's window, but {change.Sentence}. Nothing was done."),
+            { End: PipeConfirmationEnd.Withdrawn } when byWithdraw => IpcResponse.CreateError(id, Withdrawn, null,
+                "This terminal took its request back before the person answered it. Nothing was done."),
+            // CONFIRMWAIT1a-ii (§7.1): a press carrying a key keeps no payload to wait on across the close.
+            { End: PipeConfirmationEnd.Lost } => IpcResponse.CreateError(id, Lost, null,
+                "Daoris closed while this waited, and it carries a key, so it does not wait across a restart; nothing was done. Send it again once Daoris is back."),
+            _ when IsStopping => RefuseStopping(request),
+            _ => IpcResponse.CreateError(id, IpcErrorCodes.OperationCancelled, null,
+                "This terminal took its request back before the person answered it. Nothing was done."),
+        };
     }
 
     /// <summary>A press's record removed once its ending is journaled, or its run begun; one that cannot be is left, and the next start removes it.</summary>
@@ -1165,32 +1220,21 @@ public sealed class InstancePipe : IDisposable
             byWithdraw = _withdrawn.Remove(id);
         }
 
+        // Its record already says it began (§15.2 item 8), written before the Confirm was taken.
         if (ending.End == PipeConfirmationEnd.Confirmed && !IsStopping)
         {
-            Rewrite(confirmation, PipeWaitingRecord.Begun);
             await RunAsync(request, id, binding, answered, begun: () => Forget(confirmation)).ConfigureAwait(false);
             return;
         }
 
-        var response = ending switch
+        // The answer its record was rewritten with as the ending was taken; one with none (a Confirm that met the close) is written now.
+        string? text;
+        lock (_recording) _endings.Remove(confirmation, out text);
+        if (text is null)
         {
-            { End: PipeConfirmationEnd.Refused } => IpcResponse.CreateError(id, Refused, null,
-                "The person refused this in Daoris's window. Nothing was done."),
-            // CONFIRMWAIT1a-i (§5): confirmed, and a ground it was asked on had moved; said with its reason's code and values.
-            { End: PipeConfirmationEnd.Changed, Change: { } change } => IpcResponse.CreateError(id, Changed,
-                new Dictionary<string, string>(change.Values) { ["ground"] = change.Reason },
-                $"The person confirmed this in Daoris's window, but {change.Sentence}. Nothing was done."),
-            { End: PipeConfirmationEnd.Withdrawn } when byWithdraw => IpcResponse.CreateError(id, Withdrawn, null,
-                "This terminal took its request back before the person answered it. Nothing was done."),
-            // CONFIRMWAIT1a-ii (§7.1): a press carrying a key keeps no payload to wait on across the close.
-            { End: PipeConfirmationEnd.Lost } => IpcResponse.CreateError(id, Lost, null,
-                "Daoris closed while this waited, and it carries a key, so it does not wait across a restart; nothing was done. Send it again once Daoris is back."),
-            _ when IsStopping => RefuseStopping(request),
-            _ => IpcResponse.CreateError(id, IpcErrorCodes.OperationCancelled, null,
-                "This terminal took its request back before the person answered it. Nothing was done."),
-        };
-        var text = IpcJson.Serialize(response);
-        Rewrite(confirmation, PipeWaitingRecord.Ended, text);
+            text = IpcJson.Serialize(Ending(request, ending, byWithdraw));
+            Rewrite(confirmation, PipeWaitingRecord.Ended, text);
+        }
         try
         {
             if (_journal!.Begin(id, binding)) _journal.End(id, binding, text);
@@ -1430,7 +1474,8 @@ public sealed class InstancePipe : IDisposable
             }
         }
 
-        if (waiting is not null && Confirmations.Withdraw(waiting) == PipeWithdrawal.Withdrawn)
+        var withdrawal = waiting is null ? PipeWithdrawal.Checking : Confirmations.Withdraw(waiting);
+        if (withdrawal == PipeWithdrawal.Withdrawn)
         {
             _log.Info("pipe.withdrawn", ("request", id));
             return IpcResponse.CreateSuccess(request.Id, new { state = "withdrawn" });
@@ -1439,6 +1484,12 @@ public sealed class InstancePipe : IDisposable
         lock (_gate)
         {
             _withdrawn.Remove(id);
+        }
+
+        // CONFIRMWAIT1 (§15.2 item 8): its record could not say it was taken back, so it was not, and it still waits.
+        if (withdrawal == PipeWithdrawal.Unrecorded)
+        {
+            return Refuse(request, Unrecorded, "Daoris could not keep that this was taken back, so it still waits for the person; send WITHDRAW again.");
         }
 
         return IpcResponse.CreateSuccess(request.Id, new { state = "running" });
