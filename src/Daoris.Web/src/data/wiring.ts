@@ -136,6 +136,8 @@ export type SpaceKind = {
   settable: boolean;
   bounds?: { min: number; max: number; whole: boolean; never: boolean } | null;
   next: { at: string; count: number; bytes: number | null } | null; nextWhy: Why;
+  /** KEEPSIZE1b: the set-aside folders no rule may take yet, awaiting their record or unread; absent from a driver before it. */
+  waiting?: { awaiting: number; unread: number } | null;
   last: { at: string; door: string; removed: { count: number; bytes: number }; kept: Record<string, number> } | null; lastWhy: Why;
 };
 
@@ -190,6 +192,8 @@ export type SystemSpace = {
 export type SpaceUnit = {
   kind: string; id: string; early: boolean; why: string | null; bytes: number | null; at: string | null;
   workspace: string | null; repository: string | null; own: boolean | null;
+  /** KEEPSIZE1b: a set-aside folder's listed class and the ref its tip is on; the press sends both back, and the run keeps one changed since. */
+  class?: string | null; ref?: string | null;
 };
 
 /** `SYSTEM_SPACE_FREE`'s list (KEEP1e): what each rule takes now, what could go early in groups, the kinds with presses of their own. */

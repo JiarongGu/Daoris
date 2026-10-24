@@ -116,6 +116,8 @@ internal sealed class HistoryStandIn : HttpMessageHandler
             };
         }
 
+        // KEEPSIZE1b: the daily clear also ages the finished trees' records; this stand-in has no such door, as a service before it.
+        if (path == "/api/trees/record/age") return new HttpResponseMessage(HttpStatusCode.NotFound);
         var body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(ct))!;
         var answers = new JsonArray();
         foreach (var named in body["units"]!.AsArray())

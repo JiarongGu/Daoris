@@ -573,8 +573,9 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByText(`${size(143.5 * 1024 ** 3)} of ${size(1024 ** 4)}`)).toBeTruthy();
     expect(scope.getByText('Set-aside trees')).toBeTruthy();
     expect(scope.getByText("a finished session's tree goes an hour after its record is kept; others after 14 days")).toBeTruthy();
+    // KEEPSIZE1b (the keep-size design §4.5): what waits for its record is said beside *next*, never silent past its days.
     expect(scope.getByText(
-      `next: 3 folders, ${size(0.6 * 1024 ** 3)} on ${dayOf('2026-10-29T09:00:00.000+00:00')} · `
+      `next: 3 folders, ${size(0.6 * 1024 ** 3)} on ${dayOf('2026-10-29T09:00:00.000+00:00')} · 2 waiting for their record · `
       + `last: ${clockOf('2026-10-16T08:10:00.000+00:00')}, 2 removed, ${size(1.1 * 1024 ** 3)}`,
     )).toBeTruthy();
     expect(scope.getByText('an unused version goes 7 days after it was found unused')).toBeTruthy();
@@ -654,6 +655,9 @@ describe('Settings → This Daoris', () => {
       // One awaits its record, which has no date (the second maker's read, finding 9).
       '1 folder before its date · 1 holds files of its own · 1 with its record kept · 1 whose record is not kept yet',
     )).toBeTruthy();
+    // And each folder with its class and its holder (Codex's read of the branch, finding 12); the names and the ref are content.
+    expect(list.getByText('games/Daoris/s-3-20261014T090000000Z: its record kept, its tip on refs/daoris/discarded/daoris/s-3')).toBeTruthy();
+    expect(list.getByText('games/Kobo/s-4-20261015T090000000Z: its record is not kept yet')).toBeTruthy();
     expect(list.getByText('kept while the browser runs')).toBeTruthy();
     expect(list.getByText('2 folders · webview2, browser/profile')).toBeTruthy();
     expect(list.getByText("With their own press: Clear history… on a workspace's page · Clean up… on its Branches.")).toBeTruthy();
@@ -686,7 +690,10 @@ describe('Settings → This Daoris', () => {
     await vi.waitFor(() => expect(freeCalls()).toHaveLength(2));
     expect(freeCalls()[1]).toEqual({
       units: [],
-      early: SPACE_PLAN.early[0]!.units.map((unit) => ({ kind: unit.kind, id: unit.id, why: unit.why, own: unit.own === true })),
+      // KEEPSIZE1b (Codex's read of the branch, finding 4): each set-aside folder's listed class and ref go back, for the run to compare.
+      early: SPACE_PLAN.early[0]!.units.map((unit) => ({
+        kind: unit.kind, id: unit.id, why: unit.why, own: unit.own === true, class: unit.class, ref: unit.ref ?? null,
+      })),
     });
   });
 

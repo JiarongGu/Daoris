@@ -493,6 +493,8 @@ public static class SystemSpace
                 : null,
             ["next"] = next,
             ["nextWhy"] = nextWhy,
+            // KEEPSIZE1b (the keep-size design §4.5): the set-aside folders no rule may take yet, by why, from their manifests alone.
+            ["waiting"] = kind.Id == "set-aside" ? SetAsideWaiting(home, policy) : null,
             ["last"] = last is null ? null : Last(last),
             ["lastWhy"] = kind.Keeps is not null && record.Problem is not null ? "unreadable" : null,
         };
@@ -569,6 +571,27 @@ public static class SystemSpace
     }
 
     /// <summary>The set-aside folders: each goes its days after its move (the purge), its bytes from the kind's last walk.</summary>
+    /// <summary>
+    /// How many set-aside folders wait with no rule's date (KEEPSIZE1b): awaiting their record, or whose manifest does not read. Read from the
+    /// manifests beside them, no walk; null where none waits.
+    /// </summary>
+    internal static JsonObject? SetAsideWaiting(string home, KeepPolicy policy)
+    {
+        int awaiting = 0, unread = 0;
+        foreach (var root in DaorisHome.Places(home, HomeEntry.Trees).Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).Where(Directory.Exists))
+        foreach (var workspace in SetAsideEligibility.Workspaces(root))
+        foreach (var repository in Directory.EnumerateDirectories(workspace))
+        foreach (var folder in Directory.EnumerateDirectories(repository))
+        {
+            if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
+            var judged = SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole);
+            if (judged.Class == SetAsideClass.Awaiting) awaiting++;
+            else if (judged.Class == SetAsideClass.Unread) unread++;
+        }
+
+        return awaiting + unread == 0 ? null : new JsonObject { ["awaiting"] = awaiting, ["unread"] = unread };
+    }
+
     internal static (JsonObject? Next, string? Why) SetAsideNext(string home, KeepPolicy policy, KindReading? reading)
     {
         var roots = DaorisHome.Places(home, HomeEntry.Trees).Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).Where(Directory.Exists).ToList();

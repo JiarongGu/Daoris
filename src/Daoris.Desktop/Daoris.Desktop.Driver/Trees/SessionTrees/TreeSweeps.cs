@@ -184,7 +184,8 @@ internal sealed class TreeSweeps(
             // design §3.1): and wherever the line's own branch does not hold the tip by ancestry, a squash's, a carried branch's, a landing
             // branch's and origin's form of the line included, on both paths: the exact tip is held by a ref that stays.
             string? kept = null;
-            if (now.HeldBy is not null || !await LineOwnHoldsAsync(root, line, judged, done).ConfigureAwait(false))
+            var lineAt = now.HeldBy is null ? await LineOwnHoldsAsync(root, line, judged, done).ConfigureAwait(false) : null;
+            if (lineAt is null)
             {
                 var (reference, why) = await ContentHolds.KeepDiscardedAsync(root, now.Branch, judged, done).ConfigureAwait(false);
                 if (reference is null)
@@ -196,23 +197,37 @@ internal sealed class TreeSweeps(
                 kept = reference;
             }
 
+            // 🔴 Codex's reads (the design's finding 1, the branch's finding 2): the exact tip's holder rests in the delete's own transaction,
+            // at the commit read, beside what the judgement rested on: the ref just written at the tip, or the line's own branch at the commit
+            // that held it. That holder moved or gone between here and the delete refuses the delete.
+            // One verify for each ref: git refuses two for one ref in a transaction, and one the judgement already rests on is verified already.
+            var holder = kept is not null ? (kept, judged) : ($"refs/heads/{line}", lineAt!);
+            if (!rests.Any(rest => rest.Ref == holder.Item1)) rests.Add(holder);
+            if (SetAsideFaults.Current?.AfterTipHeld is { } afterHeld) await afterHeld(root).ConfigureAwait(false);
+
             string? left = null;
             string? movedTo = null;
             if (now.Tree is { } tree && byItself)
             {
                 // KEEPSIZE1b (§3.3): every finished tree's manifest carries the record's inputs; one not written keeps the tree.
                 var grown = context.Grown.Of(now.Repository, now.Branch);
+                var (landing, landingWhy) = LandingOf(now, grown?.Unit);
                 var finished = new FinishedTree(
                     read, now.Workspace, tree, line, judged, grown?.From, grown?.Unit,
                     new FinishedHold(now.Hold ?? now.Kind, now.Where, now.Where is null ? null : now.Where.StartsWith("origin/", StringComparison.Ordinal) ? "origin" : "branch"),
-                    kept, FinishedLeft.Of(seen.FirstOrDefault()), KeepPolicy.Of(context.Home).SetAside.Whole);
+                    kept, FinishedLeft.Of(seen.FirstOrDefault()), KeepPolicy.Of(context.Home).SetAside.Whole)
+                {
+                    Landing = landing,
+                    LandingWhy = landingWhy,
+                };
                 // The look never deletes a tree's folder: a write that lands after its last look lands in the folder moved aside.
                 var moved = await setAside.MoveAsideAsync(root, now, done, slim, finished).ConfigureAwait(false);
                 if (!moved.Gone)
                 {
                     // AUTOTIDY2a: a content-held branch the look kept lets go of the ref it kept its commits on, as the press's
-                    // refused removal does, or each later look would keep another.
-                    await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
+                    // refused removal does, or each later look would keep another. Not where its folder could not be put back: its manifest
+                    // stays to be resumed, and names that ref (Codex's read of the design, finding 4).
+                    if (moved.To is null) await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
                     results.Add(new(now, false, moved.Sentence) { Kept = moved.Code });
                     continue;
                 }
@@ -252,7 +267,8 @@ internal sealed class TreeSweeps(
             // KEEPSIZE1b (§3.5 step 5): the manifest says the delete's outcome; a refused one is never armed.
             if (movedTo is not null) TreeSetAside.Mark(SlimManifest.PathFor(movedTo), stays is null ? SlimStates.Deleted : SlimStates.Refused, DateTimeOffset.UtcNow);
             // §3.5's resume: the delete of a branch with no tree marks the manifest of its folder moved aside before, at that branch and tip.
-            if (stays is null && now.Tree is null) setAside.MarkDeletedOf(now.Workspace, now.Repository, now.Branch, judged, DateTimeOffset.UtcNow);
+            // A registration whose folder a failed put-back left aside goes the same way (Codex's read of the design, finding 4).
+            if (stays is null && movedTo is null) setAside.MarkDeletedOf(now.Workspace, now.Repository, now.Branch, judged, DateTimeOffset.UtcNow);
             if (stays is not null)
             {
                 await ContentHolds.DropKeptAsync(root, now.Branch, kept, judged, done).ConfigureAwait(false);
@@ -474,11 +490,29 @@ internal sealed class TreeSweeps(
     /// Whether the line's own branch, <c>refs/heads/&lt;line&gt;</c>, holds <paramref name="tip"/> by ancestry (KEEPSIZE1b, §3.1): the one hold
     /// that needs no recovery ref. Any other answer, origin's copy alone included, writes one.
     /// </summary>
-    private static async Task<bool> LineOwnHoldsAsync(string root, string? line, string tip, CancellationToken ct)
+    /// <returns>The commit the line's own branch was read at, where it holds the tip; null where it does not, or git could not say.</returns>
+    private static async Task<string?> LineOwnHoldsAsync(string root, string? line, string tip, CancellationToken ct)
     {
-        if (line is null) return false;
-        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, $"refs/heads/{line}"], ct).ConfigureAwait(false);
-        return code == 0;
+        if (line is null) return null;
+        var (readCode, at, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{line}^{{commit}}"], ct).ConfigureAwait(false);
+        if (readCode != 0 || at.Trim() is not { Length: > 0 } commit) return null;
+        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", tip, commit], ct).ConfigureAwait(false);
+        return code == 0 ? commit : null;
+    }
+
+    /// <summary>
+    /// The landing that carried a finished tree's work (Codex's read of the design, finding 6), from the landings' record before the tree goes:
+    /// the one its hold names (a landing's or a squash's branch), else the one its work unit is among; none, with why, where neither is
+    /// recorded. Never a judgement's or a move's moment in place of the landing's.
+    /// </summary>
+    private (FinishedLanding? Landing, string? Why) LandingOf(SweepItem item, string? unit)
+    {
+        var entries = context.Recorded.All().Where(entry => string.Equals(entry.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).ToList();
+        var found = (item.Hold is "landing" or "squash" ? entries.FirstOrDefault(entry => entry.Branch == item.Where) : null)
+            ?? (unit is null ? null : entries.Where(entry => entry.Units.Contains(unit, StringComparer.Ordinal)).OrderByDescending(entry => entry.LandedAt).FirstOrDefault());
+        return found is null
+            ? (null, unit is null ? "no work unit names its branch, so no landing could be found for it" : "no landing is recorded for its work unit")
+            : (new FinishedLanding(found.Branch, found.Line, found.LandedAt, found.PullRequest), null);
     }
 
     /// <summary>Whether a content proof's holder is a form of the line (<see cref="LandedProofs.LineFormsAsync"/>'s names), not a branch of the person's.</summary>

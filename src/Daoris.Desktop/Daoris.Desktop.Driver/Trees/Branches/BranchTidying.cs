@@ -276,9 +276,16 @@ public sealed class BranchTidying(string home)
 
         // One budget for the pass's removals (§3.1): what the set-aside folders spent, the downloads do not spend again.
         var spent = System.Diagnostics.Stopwatch.StartNew();
-        // KEEPSIZE1b: the record pass within the pass's budget (the second maker's read, finding 6), between folders.
-        if (setAside) lines.AddRange(await RecordSetAsideAsync(trees, service, met, () => spent.Elapsed >= Budget, ct).ConfigureAwait(false));
-        if (setAside) lines.AddRange(KeepSetAside(trees, run, log, met, ct));
+        if (setAside)
+        {
+            // KEEPSIZE1b: the registry read once for the record pass and the purge's holding checks; the record pass within the pass's
+            // budget, between folders, and the purge within what it left (Codex's read of the branch, finding 11).
+            var roots = SessionTrees.RootsOf(await RegistryAsync(service, ct).ConfigureAwait(false));
+            lines.AddRange(await RecordSetAsideAsync(trees, service, roots, met, () => spent.Elapsed >= Budget, ct).ConfigureAwait(false));
+            var rest = Budget - spent.Elapsed;
+            lines.AddRange(await KeepSetAsideAsync(trees, run, log, met, roots, rest > TimeSpan.Zero ? rest : TimeSpan.Zero, ct).ConfigureAwait(false));
+        }
+
         var left = Budget - spent.Elapsed;
         lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
         if (logsDue) lines.AddRange(KeepLogs(logs, run, met));
@@ -544,6 +551,18 @@ public sealed class BranchTidying(string home)
             return lines;
         }
 
+        // KEEPSIZE1b (Codex's read of the branch, finding 8): the finished trees' records no session names age by their own `at` under the
+        // same age; a service that does not answer is tried again at the next day's clear.
+        try
+        {
+            await service.AgeWorkRecordsAsync(Clock() - policy.Days!.Value, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
+                                      || (error is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            // Said by nothing: the next day's clear asks again.
+        }
+
         var newly = 0;
         lock (_gate)
         {
@@ -584,40 +603,42 @@ public sealed class BranchTidying(string home)
     /// folder that waits is said the first look it is met, with why.
     /// </summary>
     private async Task<IReadOnlyList<string>> RecordSetAsideAsync(
-        SessionTrees trees, ServiceClient service, HashSet<string> met, Func<bool> spent, CancellationToken ct)
+        SessionTrees trees, ServiceClient service, Func<string, string, string?>? roots, HashSet<string> met, Func<bool> spent, CancellationToken ct)
     {
         var lines = new List<string>();
-        // A registry that did not read runs no step (finding 3): an outage is never read as a repository no checkout names.
-        IReadOnlyList<RepoView>? registry;
-        try
-        {
-            registry = await service.RegistryAsync(ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
-        {
-            registry = null;
-        }
-
-        var steps = await trees.RecordSetAsideAsync(SessionTrees.RootsOf(registry), service.PostWorkRecordAsync, Clock(), ct, spent: spent).ConfigureAwait(false);
+        var steps = await trees.RecordSetAsideAsync(roots, service.PostWorkRecordAsync, Clock, ct, spent: spent).ConfigureAwait(false);
         lock (_gate)
         {
+            // A record kept is no line of the look's (Codex's read of the branch, finding 7): the folder's removal at its hour says it.
             foreach (var step in steps)
             {
-                var name = Path.GetFileName(step.Folder);
-                if (step.To == SlimStates.Recorded) lines.Add(Look.Progress("tidy", $"tidy  {name}'s record is kept; its folder goes an hour from now."));
-                else if (step.Why is { } why && First(met, step.Folder, "record", why)) lines.Add(Look.Retry("tidy", $"tidy  {name} waits: {Clause(why)}."));
+                if (step.Why is { } why && First(met, step.Folder, "record", why)) lines.Add(Look.Retry("tidy", $"tidy  {Path.GetFileName(step.Folder)} waits: {Clause(why)}."));
             }
         }
 
         return lines;
     }
 
-    /// <summary>The set-aside kind's removal, holding the home's run (KEEP1a).</summary>
-    private IReadOnlyList<string> KeepSetAside(SessionTrees trees, KeepingRun run, MachineLog? log, HashSet<string> met, CancellationToken ct)
+    /// <summary>The registry's repositories; null where the service did not say, so no step needing a checkout runs (Codex's read of the design, finding 3).</summary>
+    private static async Task<IReadOnlyList<RepoView>?> RegistryAsync(ServiceClient service, CancellationToken ct)
+    {
+        try
+        {
+            return await service.RegistryAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The set-aside kind's removal, holding the home's run (KEEP1a), a recorded folder's holding check in the root <paramref name="roots"/> gives.</summary>
+    private async Task<IReadOnlyList<string>> KeepSetAsideAsync(
+        SessionTrees trees, KeepingRun run, MachineLog? log, HashSet<string> met, Func<string, string, string?>? roots, TimeSpan budget, CancellationToken ct)
     {
         var lines = new List<string>();
         var read = KeepingRecord.Read(home);
-        var done = trees.KeepSetAside(Policy(home), Clock(), Budget, ct);
+        var done = await trees.KeepSetAsideAsync(Policy(home), Clock(), budget, ct, roots).ConfigureAwait(false);
         lines.AddRange(SayPurged(done.Purged, log, met));
         lines.AddRange(SaySlimmed(done.Slims, log, met));
         var removed = done.Purged.Count(folder => folder.Purged) + done.Slims.Sum(slim => slim.Removed.Count);

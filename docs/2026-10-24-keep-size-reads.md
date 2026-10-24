@@ -667,3 +667,261 @@ recorded decision, goes beyond copies. The changes before KEEPSIZE1b builds are:
 
 Findings 3, 4 and 5 settle the counts, the parts' one sum and the set-aside part before KEEPSIZE1d. Finding 9 is the merge with main's
 built KEEPSIZE1a. Each is a sentence or a rule, not a new mechanism.
+
+## Codex, the accepted text (2026-10-24)
+
+Codex's read of the accepted design, owed since its credits ran out, verbatim. The amendment it names is the design's §12.
+
+### 1. Claims about the code
+
+Read the design, every earlier read in the named reads file, and D195’s KEEPSIZE1 notes and acceptance note. Code references below are against main at `16e0950e`. Driver paths are relative to `src/Daoris.Desktop/Daoris.Desktop.Driver/`; service paths are relative to `src/Daoris.Service/Daoris.Service.Core/`.
+
+The corrected account of squash history, carried branches, repository-feed replacement and KEEPSIZE1a holds. These claims still need correction:
+
+| Design location | Wrong claim | Code |
+|---|---|---|
+| `docs/2026-10-24-keep-size-design.md:388` | The `read` timestamp makes every later uncommitted change detectable. The walk examines surviving descendants; it does not detect a deleted top-level tracked file or examine the root directory’s own timestamp. | `Trees/SessionTrees/TreeSetAside.cs:608`, `:611`, `:617` |
+| Design `:370` | A refused worktree removal puts the folder back “as today.” Today rollback can fail, leaving the folder aside after its manifest was forgotten. | `TreeSetAside.cs:233`, `:238`, `:241` |
+| Design `:243` | *Clean up…* can take a tree holding its own scratch. Its sweep explicitly keeps that tree as dirty. | `Trees/SessionTrees/TreeSweeps.cs:314` |
+| Design `:94`, `:667` | Having a file open establishes that the rename is refused. The implementation establishes only whether `Directory.Move` fails; an open handle’s sharing permissions matter. | `TreeSetAside.cs:268`, `:271`; `Platform/MachineLog.cs:351` demonstrates a writer permitting deletion |
+| Design `:162`, `:468` | Logs have one file per day per process. The filename uses the supplied source, such as `driver`, rather than a process identity. | `Platform/MachineLog.cs:68`, `:72`, `:350` |
+| Design `:255` | A recovery ref goes thirty days after the line subsequently holds it. Retention runs from the ref’s recorded creation date, with the commit-date fallback; becoming held does not restart that clock. | `Trees/SessionTrees/RecoveryRetention.cs:25`, `:29`, `:110` |
+
+The proposed landing-record source also lacks information its table promises; finding 6 addresses that.
+
+### 2. The mechanism’s holes
+
+The owner’s decision settles disposal of a finished session’s own scratch. The remaining question is whether the mechanism reliably establishes that a folder belongs to that rule, preserves the promised record, and retains the exact commits.
+
+The earlier reads concentrated on the successful move, refused branch deletion and interrupted manifest states. The remaining holes are chiefly at their boundaries:
+
+- The new exact-tip protection is not explicitly included in the branch deletion’s existing ref transaction.
+- Timestamp inspection is treated as equivalent to checking uncommitted state.
+- An unread repository or manifest becomes a disposable legacy folder.
+- A failed rollback can erase the only recovery protocol inputs.
+- Moving into `.going/` loses the original identity and bypasses the judgement on restart.
+- The record promises landing facts absent from its captured inputs.
+- Clearing one session from a shared record leaves its indexed words unspecified.
+- A background walk can finish after a mutation while retaining measurements made before it.
+
+Recovery by `git worktree add <path> <tip>` remains conditional: some surviving ref must retain that tip. The text record cannot restore uncommitted changes or scratch. That makes the exact-tip transaction, the late-change guard and the distinction between unread and disposable load-bearing requirements.
+
+The legacy days rule and the person’s explicitly listed disposal remain deliberate exceptions. They should not become fallback permissions for failures in the new protocol.
+
+### 3. The rows
+
+| Row | Buildable alone, in this order? | Does its proof establish its claim? |
+|---|---|---|
+| **KEEPSIZE1b** | After findings 1–6 are amended. Its durable session ownership also needs finding 7 settled. | The present cases miss a disappearing tip holder, a top-level tracked deletion, unread eligibility inputs, failed rollback, restart after `.going/`, and landing-trace expiry. |
+| **KEEPSIZE1a** | Already built and available to 1b. | Its declared two-place proof establishes the normal generated-name contract. The settled treatment of manually duplicated names is explicit. |
+| **KEEPSIZE1c** | After 1b, with finding 7’s clearing rule. | Search → read → clear is insufficient when clearing only one of several linked sessions. Prove that session’s words disappear while the other session and record remain. |
+| **KEEPSIZE1d** | After finding 8; browser residue handling should accompany its browser kind. | Add a mutation during a walk, a stale different kind contributing to the whole, and an interrupted cache deletion. The arithmetic cases otherwise cover the stated allocation rule. |
+| **KEEPSIZE1e** | Yes after 1d supplies the kind, policy and removal. | The inherited stopped-walk, no-shell and start-gate cases remain necessary alongside the two shortened cases written here. |
+| **KEEPSIZE1f** | Yes after 1d. | The declared proof covers warning-only behavior and the separate trees volume. |
+| **KEEP1a2** | Remains separate. | Its evidence establishes possible savings, not disposability of arbitrary producer output. |
+
+### 4. Findings
+
+1. **Blocking — the new exact-tip hold is not bound to branch deletion.**
+
+   **Where:** design `:250–260`, `:372`; `TreeSweeps.cs:341`, `:363`, `:375`, `:415`; `ContentHolds.cs:472`.
+
+   `DeleteJudgedAsync` verifies exactly the supplied proof rests. Those currently establish the landing/content judgement, which can preserve content without preserving the session’s original history. Merely creating a tip ref first does not make that ref a verified rest. Likewise, a separate local-line ancestry check can become stale while the original landing proof remains valid.
+
+   **Smallest change:** carry the exact ancestry holder and commit into the deletion transaction: either the local line snapshot that justified omitting a recovery ref, or the recovery ref at the source tip. Preserve the existing content-proof rests too. Prove removal or movement of that new holder between protection and deletion refuses the delete.
+
+2. **Blocking — `read` does not close the uncommitted-change race.**
+
+   **Where:** design `:317–319`, `:386–391`; `TreeSetAside.cs:608–619`; `TreeSweeps.cs:308–314`.
+
+   Delete a top-level tracked file after status reads it but before the move. No surviving entry necessarily has a later timestamp; the changed root directory is not itself inspected. The folder can pass the hour’s guard despite containing an uncommitted deletion. Preserved timestamps are another limitation of this proof.
+
+   **Smallest change:** validate tracked and untracked state after the move while the worktree metadata remains usable, retaining or restoring the tree on dirty or unread results. Keep a late-change guard that also accounts for root-directory changes. Add the tracked-deletion race to 1b’s proof; a newly written file alone does not prove it.
+
+3. **Blocking — unread inputs become permission to purge an unrecorded folder.**
+
+   **Where:** design `:315`, `:323`, `:328–329`, `:342`; `SlimManifest.cs:40–63`; `ContentHolds.cs:363–366`.
+
+   An unread schema-2 manifest is classified as unmarked. An unresolved or unreadable repository also makes the folder unmarked. That class goes at its days. Thus a folder awaiting its required record can lose that protection because its inputs temporarily cannot be read.
+
+   **Smallest change:** distinguish known legacy/unmanifested folders from unread, unsupported-schema or unresolved finished folders. Preserve the latter’s protection and retry; do not permanently downgrade them. Establish branch absence only with git’s explicit missing result. Prove each failure past the folder’s days, followed by recovery and successful recording.
+
+4. **Blocking — failed rollback destroys the resume inputs.**
+
+   **Where:** design `:370–371`; `TreeSetAside.cs:233–244`.
+
+   The prescribed “as today” failure path forgets the manifest before attempting rollback. If rollback also fails, the folder remains aside without its inputs. A later look can remove its tree-less branch, but there is then no manifest to mark `deleted` or post. The folder eventually goes as unmarked.
+
+   **Smallest change:** forget the manifest only after rollback is confirmed. If the folder remains aside, retain its original path, destination and facts in a resumable failure state. Prove worktree-removal refusal followed by rollback refusal and restart, ending with a kept record.
+
+5. **Blocking — `.going/` has no complete restart protocol.**
+
+   **Where:** design `:355–360`, `:656–657`; `SlimManifest.cs:32–37`; `SetAsideKeeping.cs:113–116`; `TreeSetAside.cs:638–670`.
+
+   The design moves the folder but does not say that its adjacent manifest moves with it or how the destination preserves workspace, repository and original identity. The slim presently drops a manifest whose original folder is absent. “Deleted by the next pass” then supplies neither the holding check nor the late-write checks required of every removal. A stop immediately after rename exposes this before any partial deletion complicates recovery.
+
+   **Smallest change:** move a durable removal record with the folder, preserving its identity, threshold and authorization. Resume through the applicable eligibility checks, with explicit handling of partial deletion and subsequent writes. Prove rename → stop → late write or lost holder → restart keeps the remaining contents and says why.
+
+6. **Blocking — the manifest cannot produce the promised landing record.**
+
+   **Where:** design `:183`, `:202–203`, `:284–296`, `:380`; `Trees/LandedBranches.cs:14–16`; `TreeSweeps.cs:356`, `:376`, `:433`.
+
+   The record promises the landing branch and when it landed. The manifest contains the cleanup judgement’s hold and times, not a landing snapshot or `LandedAt`. Several judgements return the line or content holder rather than the actual landing. Composing later from this manifest alone cannot recover those facts after trace retirement.
+
+   **Smallest change:** capture the associated landing facts before removal, using the work unit/session association where established. Store an explicit absent/unknown result where no landing can be established; never substitute judgement or move time for landing time. Prove composition after the original landing trace has expired.
+
+7. **Blocking — clearing one linked session does not clear its contribution to the record’s index.**
+
+   **Where:** design `:204–213`, `:680–692`; service `Sessions/Sessions.cs:1525`, `Asks/History.cs:310–312`.
+
+   The full-text row contains conversations from every linked session. The deletion contract removes a session’s links and deletes the record only with its last session. It does not remove the deleted session’s words while another session still links the record. Those words can remain searchable after their history was cleared.
+
+   **Smallest change:** define conversation and note contributions per session. Deleting a session must remove its contribution and update the surviving record’s index in the same transaction. Settle that ownership in 1b; implement and prove the search behavior in 1c. Use two linked sessions with distinct searchable words.
+
+8. **Blocking — an end timestamp does not establish a fresh measurement.**
+
+   **Where:** design `:499–521`; `Platform/SystemSpace.cs:219–233`; `Platform/WiringSizes.cs:234–269`.
+
+   Counts are stamped when their walks finish. A walk can count a live tree, the tree can move, and the walk can finish afterward. Its stamp passes the proposed freshness test although its bytes precede the move. A subsequent set-aside walk can count the same bytes again. Also, keeping a stale kind from removing its own units does not prevent its stale total from authorizing removal of fresh downloads or caches under the whole allowance.
+
+   **Smallest change:** validate a mutation generation across each walk, invalidating a walk interrupted by a relevant change. Require trustworthy inputs for the whole’s total and reachability calculation, including kinds it cannot remove and incomplete readings. Prove a move during a walk and stale tree bytes authorizing removal of another kind.
+
+9. **Not blocking — interrupted browser clearing leaves bytes outside the browser-cache kind.**
+
+   **Where:** design `:441–442`, `:694–695`, `:711–713`; `Platform/BrowserCaches.cs:67–85`; `Platform/SystemSpace.cs:50–54`, `:87–88`; `Platform/SpaceFree.cs:485`.
+
+   Cache clearing renames a directory to a random suffixed sibling. If deletion fails, subsequent clearing and listing visit only the original allow-listed paths. The residue is counted with the surrounding profile rather than browser caches, so neither its part nor the next ordinary clear reaches it.
+
+   **Smallest change:** keep exact pending-removal identities and retry them through the same guarded remover, counting their bytes under browser caches. Add a failed-delete → next-pass proof to 1d.
+
+10. **Not blocking — the shared guards contradict the person’s disposal permission.**
+
+    **Where:** design `:317–319`, `:339`, `:591–609`; `SetAsideKeeping.cs:79–90`.
+
+    Section 3.4 says every door keeps late-written contents and internal links outside build folders. Section 5 permits a person to remove those contents when disclosed. Those are different outcomes from the purported single judgement.
+
+    **Smallest change:** make the judgement explicitly door-dependent. Path traversal and unreadability remain absolute refusals; disclosed late contents may be removed by the person’s selection. Define what observation is compared between listing and pressing so a changed folder is actually detected.
+
+11. **Not blocking — correct the remaining behavioral prose.**
+
+    **Where:** the design locations and code cited in section 1.
+
+    *Clean up…* keeps own-scratch trees; an open file must specifically prevent the rename to establish `busy`; logs are grouped by source; recovery retention dates from ref creation rather than when a holder appears.
+
+    **Smallest change:** correct those sentences and qualify the open-file proof accordingly. These corrections require no new product decision.
+
+**11 findings; 8 blocking.**
+
+**Verdict: stands after named amendments.** Findings 1–6 must amend KEEPSIZE1b before it is built; finding 7’s ownership rule belongs before 1b’s schema, with its indexing proof before 1c; finding 8 must amend 1d. The record-first direction, the owner’s scratch decision, the hour measured from `recorded`, and the allowance’s stopping rule stand. The deletion protocol needs the named amendments before its proofs can support D195’s acceptance claim.
+
+## Codex, KEEPSIZE1b's branch at `427fb6cda` (2026-10-24)
+
+Codex's read of the branch, verbatim. What it named is taken on the branch (D195's KEEPSIZE1b notes).
+
+### 1. What could delete what it must not
+
+Read branch `daoris/s-6ec2ba85` through `427fb6cda`: six commits, compared with `main`, against design §§2–3, §7 row 1b, §§10–11 and D195’s acceptance note. This was static inspection; I ran no build, test or Daoris process, made no network call and opened nothing under `local/`.
+
+The normal sequence is substantially present: judge the tree, keep its tip where needed, write the manifest before moving, remove the branch at the judged commit, then post the record outside the repository hold. A failed manifest write keeps the tree. Ref cleanup after a refused removal verifies that the branch still protects the commit. Active-session checks remain on the sweep’s path, under the repository hold.
+
+The remaining deletion risks are:
+
+| Door or condition | Read |
+|---|---|
+| **The hour** | The purge accepts a persisted holding check up to an hour old. A recovery ref can disappear, the line can rewind or the branch can reappear after that check, and the purge still removes the folder. A registry outage does not invalidate an existing stamp. Findings **1, 5**. |
+| **The branch’s removal** | The newly required recovery ref is created before removal, but is not added to the refs verified by the branch-deletion transaction. Findings **2**. |
+| **The days** | Ordinary unmarked folders retain their name-based days; `deleted` folders normally have no removal date. However, a 404 changes an awaiting-record folder permanently to `unmarked`, allowing removal without its record. Finding **3**. |
+| **The press** | It posts before removing, but drops the class supplied by the list. A folder offered as recorded can become unheld and still be removed under the earlier confirmation. Finding **4**. |
+| **Missing or wrong manifest** | Missing, unreadable and unsupported manifests fall back to the days, never the hour. A syntactically valid manifest’s identity and facts are trusted; no new proof exercises a manifest belonging to another folder. |
+| **Links** | Source and destination ancestry checks, recursive reparse-point checks and `.going` checks are present. Links inside build folders are removed as links. The documented external replacement race between checking a directory and reading it remains; these checks are not an atomic filesystem guarantee. |
+| **Long paths** | Git retains `core.longpaths=true`; filesystem removal retains the .NET implementation. The existing long-path process test is affected by the new output, however. Finding **7**. |
+| **Unresolvable repository** | A recorded folder becomes unmarked when the resolver runs and cannot resolve it. An unread registry runs no record step. The stale-stamp case remains unsafe. Finding **1**. |
+| **Strays, leftovers and older folders** | Their ordinary route remains the days or the person’s explicit early removal. They acquire no hour merely by their age. The listed leftover proof is absent. |
+| **`.going`** | Removal renames first, then deletes. A subsequent purge deletes leftovers there without another eligibility judgement, as the design specifies. The new test does not establish every claimed reader’s exclusion. |
+| **Records** | Session deletion removes links and the last linked record transactionally. Orphan records lack an independent ageing/clearing path. Finding **8**. |
+
+The `read` threshold addresses the judgement-to-move write interval in later filesystem checks. It does not make the later scan-to-rename interval atomic. I found no new unconditional path that deliberately takes a session’s live tree, but the required end-to-end refusal and interruption proofs are incomplete.
+
+### 2. What the proofs prove
+
+`KeepSizeGitTests` is marked `Process`/`Git`, but its record writer is generally a successful delegate, not the service store. `WorkRecordStoreTests` uses SQLite with synthetic commits and paths; `WorkRecordHostTests` exercises HTTP with synthetic record facts.
+
+“Fails without” below means the relevant behaviour is asserted. Where mutation evidence exists, I distinguish it from inference. None was rerun during this read.
+
+| Row 1b’s listed case | What exists | Would fail without the change? |
+|---|---|---|
+| Landed record, commits, tip, ref, scratch; hour; rename first | `KeepSizeGitTests:55` uses real Git and checks the posted facts and hour. It uses a fake post; an empty `.going` afterwards does not prove rename-before-delete. | Hour regression: yes, reported seen failing. Rename ordering: not established. |
+| Multi-commit squash; both branches removed | `:102` manually squashes and reaches the existing **content-hold** path. It reads subjects from the recovery ref. | The archive explicitly says it passed without the new ref change. It misses the recorded squash-landing path. |
+| Carried tree, both paths; origin-only line | `:361` covers origin-only on the look’s path. | Origin/look: reported seen failing. Carried/look, carried/press and origin/press: **no test**. |
+| No package folder, manifest and hour | `:180` checks the empty paths and current `whole`; `:55` supplies ordinary hour coverage. | Manifest/hour assertions cover the new behaviour collectively. |
+| Write between judgement and move | `:151` creates the file afterwards and backdates its timestamps into that interval. | Yes for the threshold comparison; it does not produce the actual interleaving. |
+| Real branch deletion refused; next look resumes | `:231` writes `refused` by hand, recreates the branch, then calls `CleanAsync`. | Tests resume machinery, not production of `refused` or the specified next-look sequence. |
+| Stop at `judged`; slim preserves manifest; press resumes | `:231` writes `judged` after a completed removal. | Manifest preservation is asserted. Actual stop, outstanding registration and press resume: **unproved**. |
+| Branch merged its line; first-parent record | `:130`, real Git. | Yes: the expected subjects exclude the line’s separate commit. |
+| Pass and press post twice; one record | Store and host tests post twice using synthetic facts. | Idempotency is asserted; pass-plus-press integration is **absent**. |
+| Record posted after sessions cleared; age and clear | Store test covers a later clear whose other sessions supply a sufficiently recent cutoff. | That selected clear is asserted. Independent ageing by the orphan’s `at`: **no test or complete path**. |
+| Newer store refused; folder remains `deleted` | Store test reopens after changing the stamp. | Reopened-store refusal is asserted. HTTP 409 and the driver preserving the folder: **unproved**. |
+| Hour measured from a late record | `:203`, real Git with a fake record writer. | Yes for move-time versus supplied record-time. Delayed acknowledgement is untested. |
+| `.going` excluded by readers and cleared; unresolved registry | `:308` checks two lists and later deletion; `:288` covers unresolved registry. | Registry behaviour is asserted. The `.going` fixture’s ordinary depth would already evade readers expecting a timestamped folder one level higher; slim exclusion is not demonstrated. |
+| Service unavailable; retry from manifest; press posts first | Modified `KeepingSlimTests` exercises the look with a 503 stand-in and subsequent retry. | Look/retry behaviour is asserted. Press ordering: **no test**. |
+| Stop after every step; manifest write refused | `:342` blocks manifest creation through the filesystem. Other interruption coverage rewrites states. | Manifest failure is meaningfully asserted. Stops after every step: **absent**. |
+| Recovery ref dropped by hand | `:264`, real Git. | Yes for the next record pass unmarking it; not for a drop after that pass. |
+| Stray and leftover avoid hour; both purge failures retained | `:324` constructs one unmarked stray directly. | Stray timing is asserted. Actual leftover and both classes’ failure retention: **absent**. |
+| Two sessions, one tree, bounded attribution; elsewhere base | SQLite tests with invented commit IDs and tree paths. | Attribution logic is asserted. Attribution through an actual moved tree’s post: **absent**. |
+| `whole` keeps days, record retained | `:180` covers `whole` set at purge time. | Yes for current policy. `whole` persisted at the move is not separately proved. |
+| History clear and single delete remove last-linked record | SQLite tests exercise the actual ledger/history classes. | Yes; the archive reports the removal cases seen failing without cleanup. No real-Git integration. |
+| Open file keeps folder whole, `busy` | `:380`, real Git, Windows-only. | Whole-folder survival is asserted. No reported mutation establishes that this catches removal of the rename-first step. |
+
+The archive reports mutation evidence for the landed/hour, origin-only, session-delete, fresh-check and `.going` link guards. It expressly reports weaker evidence for most other cases. Moving the missing cases to KEEPSIZE1b2 records the debt; it does not supply row 1b’s accepted deletion proof.
+
+### 3. Everything else that is wrong
+
+The store’s basic separation is sound: its tables are independent of the derived knowledge entries, the version stamp is never lowered, posting is transactional and idempotent, and linked records are removed with their last session. Version 1 introduces the tables; there is no older record schema migration to demonstrate yet.
+
+Three implementation details still need correction: orphan lifecycle depends on unrelated later sessions, the newer-version refusal is cached at open, and the Git log parser stores presentation-escaped filenames rather than reliably preserving names. The record pass also consumes one budget before the purge receives another full budget.
+
+English and Chinese received matching keys and placeholders, and the glossary escape is corrected. The presentation remains incomplete: early removal shows aggregate classes without the individual holders, the card omits its promised waiting-class information, and upcoming recorded folders disappear from *next* until a holding stamp exists at or after their hour.
+
+The records acknowledge several omissions, but they also overstate completion. In particular, `docs/task-archive.md:20320` still says posting happens before the press lists; the final implementation deliberately keeps that list read-only and posts during execution. D195’s later note describes that change correctly. Its statements that a press without service takes no recorded folder and that one budget bounds the pass are broader than the code.
+
+### 4. Findings
+
+1. **An old holding check authorizes a new deletion — blocks the merge.**  
+   `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SetAsideEligibility.cs:73` accepts `Held` for an hour. Check successfully, drop the recovery ref or recreate the branch, then purge a minute later: the folder remains eligible. An unread registry likewise leaves that authorization intact. **Smallest change:** obtain a holding check for each removal immediately before its rename; do not reuse a persisted stamp across passes. Add the post-check ref-drop, branch-recreation and registry-outage cases.
+
+2. **The branch-deletion transaction does not protect its new exact-tip holder — blocks the merge.**  
+   `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeSweeps.cs:189` creates the recovery ref, but `:251` passes only the earlier `rests` to deletion. A ref removed between those operations does not refuse the branch delete; a squash/content/carried proof can still succeed without preserving the original commits. **Smallest change:** include the chosen exact-tip holder, at the commit read, in that transaction’s verifies. Apply the same discipline when the separate local-line read supplies the holder.
+
+3. **A 404 abandons an awaited record and enables the days’ delete — blocks the merge.**  
+   `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/FinishedRecords.cs:104` changes `deleted` to `unmarked`. It then stops retrying even if the service is upgraded, and the folder can disappear without its record. This exception is absent from the acceptance rule and contradicts the awaiting-record row. **Smallest change:** retain `deleted`, retain the refusal reason and retry on 404.
+
+4. **The press never enforces its listed-class guard — blocks the merge.**  
+   `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SpaceFree.cs:391` sends only `Own`; `SpaceAsked` also discards the class. Consequently `SetAsideKeeping.cs:96` never receives a class from a production door. A recorded folder can become unheld during the run and still go under its earlier description. **Smallest change:** carry class and holder through the request and compare consistently before removal, returning `changed`. Keep this requirement in 1b.
+
+5. **The record’s hour starts before acknowledgement — blocks the merge.**  
+   `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/FinishedRecords.cs:116` writes the pass’s previously captured `now` after awaiting Git and the service. A slow post, or later folder in a slow pass, receives less than an hour after acknowledgement. **Smallest change:** stamp successful completion using an injected clock read after the acknowledgement; prove a delayed post leaves the full hour.
+
+6. **Required destructive-path proofs are deferred — blocks the merge.**  
+   `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/KeepSizeGitTests.cs:102` exercises the already-protected content path; `:231` manufactures interruption/refusal states. D195 `:609` defers these and the other missing cases detailed in §2. **Smallest change:** complete row 1b’s missing real-Git cases, including actual squash/carried paths, refusal, interruptions and press ordering, and record the relevant failing mutations before calling 1b finished.
+
+7. **Existing Git process assertions conflict with the new output — blocks the merge.**  
+   `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Branches/BranchTidying.cs:607` adds a record-kept line to a successful look. Unchanged process tests still require exactly one line, including `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/BranchTidyingFolderTests.cs:268` and several neighbouring cases. With the new successful stand-in record door, these assertions receive both removal and record progress. **Smallest change:** update their expected semantic output and run the affected existing Git process family. This failure is identified statically, not reproduced here.
+
+8. **An orphan record has no independent ageing or clearing route — does not block the merge.**  
+   `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs:310` derives the cutoff exclusively from selected sessions. With only orphan records remaining, no selected session supplies a cutoff or history unit, so those records cannot age out by their own `at`. **Smallest change:** make orphan records independently enumerable and clearable, using the explicit history cutoff rather than an unrelated session’s update time.
+
+9. **A live store handle ignores a subsequently newer version — does not block this first-schema merge.**  
+   `src/Daoris.Service/Daoris.Service.Core/Sessions/WorkRecords.cs:156` bases refusal on the version cached at open. Change the stamp after opening and the original handle still reads and posts, although deletion helpers reread it. Schema-specific setup also precedes the version check at `:98`. **Smallest change:** check the live stamp inside the operation’s gate/transaction and before schema-specific migration work; test the already-open handle.
+
+10. **Commit filenames are parsed as display text — does not block the merge.**  
+    `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/FinishedRecords.cs:152` requests non-NUL numstat output; `:157` trims lines and `:163` stores Git’s escaped path unchanged. Chinese names, quotes, whitespace and rename notation need not survive as actual filenames. **Smallest change:** parse NUL-delimited numstat and preserve filenames exactly, with representative real-Git cases.
+
+11. **The record pass does not share the purge’s remaining budget — does not block the merge.**  
+    `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Branches/BranchTidying.cs:280` spends the pass budget on records, then `:620` hands the purge the full `Budget` again. `ClearGoing` also runs before the purge’s budget checks. **Smallest change:** pass the remaining budget through and check it between `.going` folders.
+
+12. **The card, press details and archive overstate what is shown or scheduled — does not block the merge.**  
+    `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemSpace.cs:585` uses eligibility requiring a post-hour stamp to calculate *next*, so a newly recorded folder has no upcoming hour shown. `src/Daoris.Web/src/settings/wiring/WiringSpaceFree.tsx:105` renders class totals without individual holders; the card lacks its waiting-class information. `docs/task-archive.md:20320` retains the obsolete “before the press lists” claim. **Smallest change:** calculate the scheduled hour separately from removal authorization, show the promised class/holder facts in both languages, and amend the archive’s outcome.
+
+**12 findings; 7 block the merge.**
+
+**Another build.** Close findings 1–7, retain the acceptance note’s awaiting-record rule, and return with the missing destructive-path proofs and the affected existing Git process checks. The current branch still permits deletion on stale evidence and deliberately abandons some records before their folders go; those are changes to the accepted safety contract, beyond a steward’s documentary completion check.

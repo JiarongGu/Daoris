@@ -958,6 +958,22 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             writer.WriteBoolean("cut", tree.Left.Cut);
             writer.WriteEndObject();
             writer.WriteBoolean("whole", tree.Whole);
+            // Codex's read of the design, finding 6: the landing captured before the move, or why none is named.
+            if (tree.Landing is { } landing)
+            {
+                writer.WriteStartObject("landing");
+                writer.WriteString("branch", landing.Branch);
+                Optional("line", landing.Line);
+                writer.WriteString("at", landing.At.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+                Optional("pullRequest", landing.PullRequest);
+                writer.WriteEndObject();
+            }
+            else
+            {
+                writer.WriteNull("landing");
+            }
+
+            Optional("landingWhy", tree.LandingWhy);
             writer.WriteEndObject();
 
             void Optional(string name, string? text)
@@ -971,6 +987,24 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         if (ok) return null;
         if (status == 404) return new("the service has no door for a finished tree's record, so its folder keeps its days", NoDoor: true);
         return new((root is { } refused ? Text(refused, "error") : null) ?? payload);
+    }
+
+    /// <summary>
+    /// History's age applied to the finished trees' records no session names (KEEPSIZE1b, <c>POST /api/trees/record/age</c>): each kept at
+    /// or before <paramref name="before"/> goes; how many. A service with no such door answers none.
+    /// </summary>
+    internal async Task<int> AgeWorkRecordsAsync(DateTimeOffset before, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("before", before.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync("/api/trees/record/age", body, ct).ConfigureAwait(false);
+        if (ok) return root is { } answered && answered.TryGetProperty("cleared", out var cleared) && cleared.TryGetInt32(out var count) ? count : 0;
+        if (status == 404) return 0;
+        throw new DriverException($"the service refused ageing the finished trees' records: {(root is { } refused ? Text(refused, "error") : null) ?? payload}");
     }
 
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>

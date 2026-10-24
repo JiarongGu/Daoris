@@ -1,55 +1,24 @@
+using System.Text.Json;
 using Daoris.Driver;
 using static Daoris.Desktop.Driver.Tests.GitFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPSIZE1b over real git (D195's keep-size note; the keep-size design §2 and §3): a finished tree's record kept, and its tree let go an
-/// hour after. The look holds the exact tip, writes a schema-2 manifest for every finished tree and marks its steps; the record pass after
-/// the hold composes the record from the manifest by <c>git log --first-parent</c> and posts it; the one purge takes a recorded folder an
-/// hour after its record, renamed into <c>.going</c> first, and every other class by its days or never. The service's half (the tables, the
-/// post's identity, the delete and the clear) is <c>WorkRecordStoreTests</c>'; the service not answering is <c>KeepingSlimTests</c>'.
+/// KEEPSIZE1b over real git (D195's keep-size notes; the keep-size design §2 and §3, as amended after Codex's reads): a finished tree's record
+/// kept, and its tree let go an hour after. The look holds the exact tip and writes a schema-2 manifest; the record pass after the hold
+/// composes the record from the manifest by <c>git log --first-parent</c> and posts it; the one purge takes a recorded folder an hour after
+/// its record is acknowledged, on a holding check run right before its rename, renamed into <c>.going</c> first, and every other class by its
+/// days or never. The stops, the faults and the press are <see cref="KeepSizeStopsGitTests"/>'; the service's half is
+/// <c>WorkRecordStoreTests</c>' and <c>WorkRecordHostTests</c>'; the service not answering is <c>KeepingSlimTests</c>'.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
-public sealed class KeepSizeGitTests : BranchTidyingFixture
+public sealed class KeepSizeGitTests : KeepSizeFixture
 {
-    private readonly List<FinishedPost> _posts = [];
-    private string? _refused;
-
-    private static Task<IReadOnlySet<string>> NoneRunning(CancellationToken ct) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
-
-    /// <summary>The service's door as the record pass is handed it: kept, or refused with <see cref="_refused"/>.</summary>
-    private Task<RecordRefusal?> PostAsync(FinishedPost post, CancellationToken ct)
-    {
-        if (_refused is { } why) return Task.FromResult<RecordRefusal?>(new(why));
-        _posts.Add(post);
-        return Task.FromResult<RecordRefusal?>(null);
-    }
-
-    private static Func<string, string, string?>? Roots(string? root) => (_, repository) => repository == "engine" ? root : null;
-
-    /// <summary>The look's own tidy of <c>engine</c>: the one branch it removed, its folder moved aside.</summary>
-    private static async Task<string> SetAsideAsync(SessionTrees trees, string root)
-    {
-        var pass = await trees.TidyEmptyAsync(root, "engine", "default", NoneRunning);
-        var removed = Assert.Single(pass.Results, result => result.Removed);
-        return Assert.IsType<string>(removed.MovedTo);
-    }
-
-    private static SlimManifest Manifest(string folder) => Assert.IsType<SlimManifest>(SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest);
-
-    private async Task RecordAsync(SessionTrees trees, string? root, DateTimeOffset now) =>
-        await trees.RecordSetAsideAsync(Roots(root), PostAsync, now, CancellationToken.None);
-
-    private static SetAsideRun Purge(SessionTrees trees, DateTimeOffset now, KeepPolicy? policy = null) =>
-        trees.KeepSetAside(policy ?? KeepPolicy.Default, now, TimeSpan.FromMinutes(5), CancellationToken.None);
-
-    private static string Going(SessionTrees trees) => Path.Combine(trees.SetAsideRoot, SetAsideEligibility.Going);
-
     /// <summary>
-    /// 🔴 A landed tree's record kept with its commits, its tip and its named scratch (§2.1), its manifest schema 2 at each step; its folder
-    /// kept within the hour after its record and gone after it, by the hour's rule, through <c>.going</c>, which holds nothing after.
+    /// 🔴 A landed tree's record kept with its commits, its tip and its named scratch (§2.1); its folder kept within the hour after its record,
+    /// kept past it by a purge that cannot run a holding check, and gone after it by one that can, through <c>.going</c>, which holds nothing after.
     /// </summary>
     [Fact]
     public async Task A_landed_trees_record_is_kept_and_its_folder_goes_an_hour_after()
@@ -77,16 +46,12 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         var post = Assert.Single(_posts);
         Assert.Equal(["the work", "the second commit"], post.Commits!.Select(commit => commit.Subject));
         Assert.Equal(tip, post.Commits![^1].Id);
-        // The manifest keeps its moments to the millisecond.
         Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
-        Assert.True(Math.Abs((Manifest(aside).Recorded!.Value - now).TotalMilliseconds) < 1);
-        Assert.Empty(Purge(trees, now.AddMinutes(30)).Purged);
+        Assert.Empty(await PurgeAsync(trees, now.AddMinutes(30), root));
+        Assert.Equal(SetAsideKept.Unheld, Assert.Single(await PurgeAsync(trees, now.AddMinutes(61))).Code);
         Assert.True(Directory.Exists(aside));
 
-        // The hour's check passes and stamps the manifest, the purge's ground (the second maker's read, finding 1).
-        await RecordAsync(trees, root, now.AddMinutes(61));
-        Assert.NotNull(Manifest(aside).Held);
-        var gone = Assert.Single(Purge(trees, now.AddMinutes(61)).Purged);
+        var gone = Assert.Single(await PurgeAsync(trees, now.AddMinutes(61), root));
 
         Assert.Equal((true, SetAsideClass.Recorded, true), (gone.Purged, gone.Class, gone.Hour));
         Assert.False(Directory.Exists(aside));
@@ -95,8 +60,48 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 Codex finding 1: a multi-commit session squashed at its landing. The tip's own ref is written before the branch goes, so the
-    /// session's commits and messages read from it after both the session branch and the squash's landing branch are removed.
+    /// 🔴 Codex's read of the branch, finding 1: the hour is authorized by a holding check run right before the rename, never by an earlier
+    /// one. A record pass's check passing, then the ref dropped, the branch made again, or the registry not read before the purge: each keeps
+    /// the folder; a ref gone for certain unmarks it, and a pass whose check passes again lets it go.
+    /// </summary>
+    [Fact]
+    public async Task An_old_holding_check_never_authorizes_a_new_deletion()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var tree = await TreeWithWorkAsync(trees, root);
+        await SquashOntoLineAsync(root, tree.Branch);
+        var aside = await SetAsideAsync(trees, root);
+        var reference = Manifest(aside).Finished!.Ref!;
+        var tip = (await GitAsync(root, "rev-parse", reference)).Trim();
+        var now = DateTimeOffset.UtcNow;
+        await RecordAsync(trees, root, now);
+        await RecordAsync(trees, root, now.AddMinutes(61));
+        Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
+
+        // The branch made again after the record pass's check: the purge's own check finds it, and keeps the folder.
+        await GitAsync(root, "branch", tree.Branch, tip);
+        var stands = Assert.Single(await PurgeAsync(trees, now.AddMinutes(62), root));
+        Assert.Equal((false, SetAsideKept.Unheld), (stands.Purged, stands.Code));
+        Assert.Contains("its branch stands", stands.Kept, StringComparison.Ordinal);
+        await GitAsync(root, "branch", "-D", tree.Branch);
+        (Manifest(aside) with { State = SlimStates.Recorded, Why = null }).Write(SlimManifest.PathFor(aside));
+
+        // The registry not read: no check can run, so nothing goes by the hour.
+        Assert.Equal(SetAsideKept.Unheld, Assert.Single(await PurgeAsync(trees, now.AddMinutes(63))).Code);
+        Assert.True(Directory.Exists(aside));
+
+        // The ref dropped after the record pass's check: the purge's check finds it gone, and the folder waits its days.
+        await GitAsync(root, "update-ref", "-d", reference);
+        var dropped = Assert.Single(await PurgeAsync(trees, now.AddMinutes(64), root));
+        Assert.Equal((false, SetAsideKept.Unheld), (dropped.Purged, dropped.Code));
+        Assert.Equal(SlimStates.Unmarked, Manifest(aside).State);
+        Assert.True(Directory.Exists(aside));
+    }
+
+    /// <summary>
+    /// 🔴 Codex finding 1 of round 2: a multi-commit session squashed onto the line. The tip's own ref is written before the branch goes, so the
+    /// session's commits and messages read from it after both the session branch and the squash's branch are removed.
     /// </summary>
     [Fact]
     public async Task A_squashed_sessions_own_commits_read_from_its_tips_ref_after_both_branches_go()
@@ -106,12 +111,8 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         var tree = await TreeWithWorkAsync(trees, root);
         await CommitAsync(tree.Path, "second.txt", "more\n", "the second commit");
         var tip = (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim();
-        await GitAsync(root, "checkout", "--quiet", "-b", "feature/squashed");
-        await SquashAsync(root, tree.Branch);
-        await GitAsync(root, "checkout", "--quiet", "main");
-        await GitAsync(root, "merge", "--no-ff", "--no-edit", "feature/squashed");
+        await SquashOntoLineAsync(root, tree.Branch);
 
-        // Held by content on the line, never by its own ancestry: the look writes the tip's ref.
         var aside = await SetAsideAsync(trees, root);
         await GitAsync(root, "branch", "-D", "feature/squashed");
 
@@ -144,8 +145,29 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 Codex finding 2: the finished folder's threshold is the judgement's <c>read</c>, not the moment in its name: a file written after the
-    /// read and dated before the move keeps the folder, said <c>written</c>.
+    /// Codex's read of the branch, finding 10: a commit's files are named as git names them, read NUL-delimited: a name with spaces, an
+    /// apostrophe and characters past ASCII, which git quotes and escapes for display, survives exactly.
+    /// </summary>
+    [Fact]
+    public async Task A_commits_file_names_survive_exactly()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var tree = await trees.OpenAsync(root, "engine", "default");
+        // Windows refuses a quote in a name; spaces, an apostrophe and characters past ASCII are what git would quote for display.
+        const string Named = "笔记 with 'spaces' & more.txt";
+        await CommitAsync(tree.Path, Named, "words\n", "a named file");
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", tree.Branch);
+
+        await SetAsideAsync(trees, root);
+        await RecordAsync(trees, root, DateTimeOffset.UtcNow);
+
+        Assert.Equal([(Named, 1, 0)], Assert.Single(Assert.Single(_posts).Commits!).Files);
+    }
+
+    /// <summary>
+    /// 🔴 Codex finding 2 of round 2: the finished folder's threshold is the judgement's <c>read</c>, not the moment in its name: a file written
+    /// after the read and dated before the move keeps the folder, said <c>written</c>.
     /// </summary>
     [Fact]
     public async Task A_write_after_the_judgements_read_and_before_the_move_keeps_the_folder()
@@ -162,19 +184,19 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         var between = read.UtcDateTime + (moved - read) / 2;
         File.SetCreationTimeUtc(late, between);
         File.SetLastWriteTimeUtc(late, between);
+        Directory.SetLastWriteTimeUtc(aside, between);
         var now = DateTimeOffset.UtcNow;
         await RecordAsync(trees, root, now);
 
-        await RecordAsync(trees, root, now.AddMinutes(61));
-        var kept = Assert.Single(Purge(trees, now.AddMinutes(61)).Purged);
+        var kept = Assert.Single(await PurgeAsync(trees, now.AddMinutes(61), root));
 
         Assert.Equal((false, SetAsideKept.Written), (kept.Purged, kept.Code));
         Assert.True(Directory.Exists(aside));
     }
 
     /// <summary>
-    /// 🔴 Opus finding 7: a tree with no package folder gets its manifest all the same, and goes at its hour; under <c>whole</c> its record is
-    /// kept and its folder waits its days.
+    /// 🔴 Opus finding 7: a tree with no package folder gets its manifest all the same; under <c>whole</c> its record is kept and its folder
+    /// waits its days.
     /// </summary>
     [Fact]
     public async Task A_tree_with_no_package_folder_gets_its_manifest_and_whole_keeps_it_its_days()
@@ -188,75 +210,84 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         await RecordAsync(trees, root, now);
         var whole = KeepPolicy.Default with { SetAside = KeepPolicy.Default.SetAside with { Whole = true } };
 
-        Assert.Empty(Purge(trees, now.AddHours(2), whole).Purged);
+        Assert.Empty(await PurgeAsync(trees, now.AddHours(2), root, whole));
         Assert.True(Directory.Exists(aside));
         Assert.Single(_posts);
-        var gone = Assert.Single(Purge(trees, now.AddDays(15), whole).Purged);
+        var gone = Assert.Single(await PurgeAsync(trees, now.AddDays(15), root, whole));
         Assert.Equal((true, false), (gone.Purged, gone.Hour));
     }
 
     /// <summary>
-    /// 🔴 Round 3's finding 6: the hour is measured from <c>recorded</c>: a record kept a day late leaves its folder an hour, and a folder
-    /// awaiting its record is never purged, past its days too.
+    /// 🔴 Codex's read of the branch, finding 5: the hour starts at the moment read after the service's answer. A post answered ten minutes
+    /// after the pass began leaves the folder a whole hour from then.
     /// </summary>
     [Fact]
-    public async Task The_hour_is_measured_from_the_record_and_an_awaiting_folder_waits_past_its_days()
+    public async Task The_hour_starts_after_the_records_acknowledgement()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(_home);
         await LandedTreeAsync(trees, root);
         var aside = await SetAsideAsync(trees, root);
-        var now = DateTimeOffset.UtcNow;
-        _refused = "the service is not answering";
-        await RecordAsync(trees, root, now);
-        Assert.Equal((SlimStates.Deleted, "the service is not answering"), (Manifest(aside).State, Manifest(aside).Why));
-        Assert.Empty(Purge(trees, now.AddDays(20)).Purged);
+        var began = DateTimeOffset.UtcNow;
+        var clock = began;
 
-        _refused = null;
-        var late = now.AddDays(1);
-        await RecordAsync(trees, root, late);
+        await trees.RecordSetAsideAsync(Roots(root), (post, ct) =>
+        {
+            clock = began.AddMinutes(10);
+            return PostAsync(post, ct);
+        }, () => clock, CancellationToken.None);
 
-        Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
-        Assert.Empty(Purge(trees, late.AddMinutes(30)).Purged);
-        await RecordAsync(trees, root, late.AddMinutes(61));
-        Assert.True(Assert.Single(Purge(trees, late.AddMinutes(61)).Purged).Purged);
+        Assert.True(Math.Abs((Manifest(aside).Recorded!.Value - began.AddMinutes(10)).TotalMilliseconds) < 1);
+        Assert.Empty(await PurgeAsync(trees, began.AddMinutes(61), root));
+        Assert.True(Assert.Single(await PurgeAsync(trees, began.AddMinutes(71), root)).Purged);
     }
 
     /// <summary>
-    /// 🔴 Round 3's finding 1: a stop at <c>judged</c> with its folder present keeps its manifest through the slim, and reaches its record once
-    /// its branch is gone; a <c>refused</c> one whose branch stands is never armed, and the press's delete of the branch with no tree marks it
-    /// <c>deleted</c>, so the next pass records it.
+    /// 🔴 Codex's read of the branch, finding 3: a service with no record door (a 404) never abandons the awaited record nor lets the days take
+    /// the folder: it stays <c>deleted</c>, said, past its days; once the service has the door, the next pass keeps it.
     /// </summary>
     [Fact]
-    public async Task A_stop_at_judged_and_a_refused_delete_reach_their_record_once_the_branch_goes()
+    public async Task A_404_never_abandons_an_awaited_record()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(_home);
-        var tree = await LandedTreeAsync(trees, root);
-        var tip = (await GitAsync(root, "rev-parse", tree.Branch)).Trim();
+        await LandedTreeAsync(trees, root);
         var aside = await SetAsideAsync(trees, root);
-        var path = SlimManifest.PathFor(aside);
-        (Manifest(aside) with { State = SlimStates.Judged }).Write(path);
+        _ledger.RecordsMissing = true;
         var now = DateTimeOffset.UtcNow;
 
-        Purge(trees, now.AddHours(2));
-        Assert.Equal(SlimStates.Judged, Manifest(aside).State);
-        await RecordAsync(trees, root, now);
-        Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
+        await trees.RecordSetAsideAsync(Roots(root), _ledger.Client().PostWorkRecordAsync, () => now, CancellationToken.None);
 
-        // Refused: the branch stands again at its tip, so the resume waits, saying why, and no rule arms it.
-        (Manifest(aside) with { State = SlimStates.Refused, Recorded = null }).Write(path);
-        await GitAsync(root, "branch", tree.Branch, tip);
-        await RecordAsync(trees, root, now);
-        Assert.Equal((SlimStates.Refused, "its branch stands"), (Manifest(aside).State, Manifest(aside).Why));
-        Assert.Empty(Purge(trees, now.AddDays(1)).Purged);
-
-        await trees.CleanAsync([("engine", "default", root)], new HashSet<string>());
-        Assert.Equal("", (await GitAsync(root, "branch", "--list", tree.Branch)).Trim());
         Assert.Equal(SlimStates.Deleted, Manifest(aside).State);
-        await RecordAsync(trees, root, now);
+        Assert.Contains("no door", Manifest(aside).Why, StringComparison.Ordinal);
+        Assert.Empty(await PurgeAsync(trees, now.AddDays(20), root));
+
+        _ledger.RecordsMissing = false;
+        await trees.RecordSetAsideAsync(Roots(root), _ledger.Client().PostWorkRecordAsync, () => now.AddDays(20), CancellationToken.None);
+
         Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
-        Assert.Equal(2, _posts.Count);
+        Assert.Single(_ledger.Records);
+    }
+
+    /// <summary>
+    /// 🔴 The keep-size design §2.2, through the driver's own client: a service whose records a newer build stamped answers 409
+    /// <c>RECORDS_NEWER</c>, and the folder stays <c>deleted</c>, awaiting its record past its days, said.
+    /// </summary>
+    [Fact]
+    public async Task A_store_stamped_newer_keeps_the_folder_awaiting()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        await LandedTreeAsync(trees, root);
+        var aside = await SetAsideAsync(trees, root);
+        _ledger.RecordsNewer = true;
+        var now = DateTimeOffset.UtcNow;
+
+        await trees.RecordSetAsideAsync(Roots(root), _ledger.Client().PostWorkRecordAsync, () => now, CancellationToken.None);
+
+        Assert.Equal(SlimStates.Deleted, Manifest(aside).State);
+        Assert.Contains("newer Daoris", Manifest(aside).Why, StringComparison.Ordinal);
+        Assert.Empty(await PurgeAsync(trees, now.AddDays(20), root));
     }
 
     /// <summary>🔴 A ref dropped by hand makes a recorded folder unmarked at its hour: it waits its days, and says why.</summary>
@@ -266,10 +297,7 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(_home);
         var tree = await TreeWithWorkAsync(trees, root);
-        await GitAsync(root, "checkout", "--quiet", "-b", "feature/squashed");
-        await SquashAsync(root, tree.Branch);
-        await GitAsync(root, "checkout", "--quiet", "main");
-        await GitAsync(root, "merge", "--no-ff", "--no-edit", "feature/squashed");
+        await SquashOntoLineAsync(root, tree.Branch);
         var aside = await SetAsideAsync(trees, root);
         var now = DateTimeOffset.UtcNow;
         await RecordAsync(trees, root, now);
@@ -279,13 +307,16 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
 
         Assert.Equal(SlimStates.Unmarked, Manifest(aside).State);
         Assert.Contains("is gone, so nothing holds its tip", Manifest(aside).Why, StringComparison.Ordinal);
-        Assert.Empty(Purge(trees, now.AddMinutes(62)).Purged);
+        Assert.Empty(await PurgeAsync(trees, now.AddMinutes(62), root));
         Assert.True(Directory.Exists(aside));
     }
 
-    /// <summary>🔴 Round 3's finding 7: a repository the registry cannot resolve makes a recorded folder unmarked; it waits its days.</summary>
+    /// <summary>
+    /// 🔴 Codex's read of the design, finding 3: a repository the registry cannot resolve is unread, never certain: the recorded folder keeps its
+    /// class, past its days too, and goes once its checkout is named again and its check passes.
+    /// </summary>
     [Fact]
-    public async Task A_repository_the_registry_cannot_resolve_makes_the_folder_unmarked()
+    public async Task A_repository_the_registry_cannot_resolve_keeps_the_folder_recorded()
     {
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(_home);
@@ -295,140 +326,42 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         await RecordAsync(trees, root, now);
 
         await RecordAsync(trees, null, now.AddMinutes(61));
+        var kept = Assert.Single(await PurgeAsync(trees, now.AddDays(20), Path.Combine(_scratch, "nowhere")));
 
-        Assert.Equal(SlimStates.Unmarked, Manifest(aside).State);
-        Assert.Empty(Purge(trees, now.AddMinutes(62)).Purged);
+        Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
+        Assert.Equal((false, SetAsideKept.Unheld), (kept.Purged, kept.Code));
+        Assert.True(Assert.Single(await PurgeAsync(trees, now.AddDays(20), root)).Purged);
     }
 
     /// <summary>
-    /// 🔴 Round 3's finding 7 and Opus finding 19: a folder left in <c>.going</c> by a stop is passed over by the press's list, the slim and
-    /// the trees' list, and deleted by the next pass.
+    /// 🔴 Codex's read of the design, finding 3: a manifest that is there and does not read is never a known legacy folder: past its days it is
+    /// kept, and once it reads again the folder reaches its record and goes.
     /// </summary>
     [Fact]
-    public async Task A_folder_left_in_going_is_passed_over_and_deleted_by_the_next_pass()
+    public async Task A_manifest_that_does_not_read_keeps_the_folder_until_it_reads()
     {
-        var trees = new SessionTrees(_home);
-        var left = Path.Combine(Going(trees), "default", "engine", "s-left-20261001T090000000Z");
-        Directory.CreateDirectory(left);
-        await File.WriteAllTextAsync(Path.Combine(left, "half.txt"), "half deleted\n");
-
-        Assert.Empty(trees.ListSetAside(KeepPolicy.Default, DateTimeOffset.UtcNow));
-        Assert.DoesNotContain(await trees.ListAsync(), each => each.Path.Contains(SetAsideEligibility.Going, StringComparison.Ordinal));
-        Purge(trees, DateTimeOffset.UtcNow);
-
-        Assert.False(Directory.Exists(left));
-    }
-
-    /// <summary>🔴 Opus finding 8: a stray and a pass's leftover, no manifest, are never purged at the hour, only at their days.</summary>
-    [Fact]
-    public void A_stray_is_never_purged_at_the_hour()
-    {
-        var trees = new SessionTrees(_home);
-        var moved = DateTimeOffset.UtcNow.AddHours(-2);
-        var stray = Path.Combine(trees.SetAsideRoot, "default", "engine",
-            $"devtools-{moved.UtcDateTime.ToString("yyyyMMdd'T'HHmmssfff'Z'", System.Globalization.CultureInfo.InvariantCulture)}");
-        Directory.CreateDirectory(stray);
-        var file = Path.Combine(stray, "a.txt");
-        File.WriteAllText(file, "a stray\n");
-        File.SetCreationTimeUtc(file, moved.UtcDateTime.AddMinutes(-1));
-        File.SetLastWriteTimeUtc(file, moved.UtcDateTime.AddMinutes(-1));
-
-        Assert.Empty(Purge(trees, DateTimeOffset.UtcNow).Purged);
-        Assert.Equal(SetAsideClass.Unmarked, Assert.Single(Purge(trees, DateTimeOffset.UtcNow.AddDays(15)).Purged).Class);
-    }
-
-    /// <summary>🔴 Codex finding 6: a manifest that cannot be written keeps the tree and the branch, and the tip's ref with them goes.</summary>
-    [Fact]
-    public async Task A_manifest_not_written_keeps_the_tree_and_the_branch()
-    {
-        var root = await RepositoryAsync("engine");
-        var trees = new SessionTrees(_home);
-        var tree = await LandedTreeAsync(trees, root);
-        // Where the manifest goes is a file, so neither it nor the folder beside it can be made.
-        Directory.CreateDirectory(Path.Combine(trees.SetAsideRoot, "default"));
-        await File.WriteAllTextAsync(Path.Combine(trees.SetAsideRoot, "default", "engine"), "in the way\n");
-
-        var pass = await trees.TidyEmptyAsync(root, "engine", "default", NoneRunning);
-
-        Assert.DoesNotContain(pass.Results, result => result.Removed);
-        Assert.True(Directory.Exists(tree.Path));
-        Assert.NotEqual("", (await GitAsync(root, "branch", "--list", tree.Branch)).Trim());
-        Assert.Equal("", (await GitAsync(root, "for-each-ref", "refs/daoris/discarded/")).Trim());
-    }
-
-    /// <summary>🔴 Opus claim 6: a line held only by <c>origin</c> is no hold that stays, so the look writes the tip's ref.</summary>
-    [Fact]
-    public async Task A_line_held_only_by_origin_gets_the_tips_ref()
-    {
-        var root = await RepositoryAsync("engine");
-        var origin = Path.Combine(_scratch, "origin.git");
-        await GitAsync(_scratch, "clone", "--quiet", "--bare", root, origin);
-        await GitAsync(root, "remote", "add", "origin", origin);
-        await GitAsync(root, "fetch", "--quiet", "origin");
-        var trees = new SessionTrees(_home);
-        var tree = await TreeWithWorkAsync(trees, root);
-        await GitAsync(root, "push", "--quiet", "origin", $"{tree.Branch}:main");
-        await GitAsync(root, "fetch", "--quiet", "origin");
-
-        var aside = await SetAsideAsync(trees, root);
-
-        Assert.Equal($"refs/daoris/discarded/{tree.Branch}", Manifest(aside).Finished!.Ref);
-    }
-
-    /// <summary>🔴 Opus finding 19: a file held open in a recorded folder keeps it whole, <c>busy</c>: it is renamed before anything is deleted.</summary>
-    [Fact]
-    public async Task A_file_held_open_keeps_the_folder_whole()
-    {
-        if (!OperatingSystem.IsWindows()) return;
         var root = await RepositoryAsync("engine");
         var trees = new SessionTrees(_home);
         await LandedTreeAsync(trees, root);
         var aside = await SetAsideAsync(trees, root);
+        var path = SlimManifest.PathFor(aside);
+        var whole = await File.ReadAllTextAsync(path);
+        await File.WriteAllTextAsync(path, "{ not a manifest");
         var now = DateTimeOffset.UtcNow;
-        await RecordAsync(trees, root, now);
-        var files = Directory.GetFiles(aside, "*", SearchOption.AllDirectories).Length;
 
+        await RecordAsync(trees, root, now);
+        Assert.Empty(await PurgeAsync(trees, now.AddDays(20), root));
+        Assert.Empty(_posts);
+        Assert.Equal(SetAsideClass.Unread, Assert.Single(trees.ListSetAside(KeepPolicy.Default, now)).Class);
+
+        await File.WriteAllTextAsync(path, whole);
+        await RecordAsync(trees, root, now);
         await RecordAsync(trees, root, now.AddMinutes(61));
-        SetAside kept;
-        using (File.Open(Path.Combine(aside, "README.md"), FileMode.Open, FileAccess.Read, FileShare.None))
-        {
-            kept = Assert.Single(Purge(trees, now.AddMinutes(61)).Purged);
-        }
-
-        Assert.Equal((false, TidyKept.Busy), (kept.Purged, kept.Code));
-        Assert.Equal(files, Directory.GetFiles(aside, "*", SearchOption.AllDirectories).Length);
+        Assert.True(Assert.Single(await PurgeAsync(trees, now.AddMinutes(61), root)).Purged);
     }
 
     /// <summary>
-    /// 🔴 The second maker's read, finding 1: the hour's purge takes a recorded folder only on a holding check that passed at or after its
-    /// hour, within the last hour. Purged with no record pass since its hour, or after a pass whose registry did not read, or a day after the
-    /// last check passed, it is kept; a pass whose check passes lets the purge take it.
-    /// </summary>
-    [Fact]
-    public async Task A_recorded_folder_no_check_has_passed_since_its_hour_is_kept()
-    {
-        var root = await RepositoryAsync("engine");
-        var trees = new SessionTrees(_home);
-        await LandedTreeAsync(trees, root);
-        var aside = await SetAsideAsync(trees, root);
-        var now = DateTimeOffset.UtcNow;
-        await RecordAsync(trees, root, now);
-        // A check before the hour stamps nothing the hour reads.
-        await RecordAsync(trees, root, now.AddMinutes(30));
-
-        Assert.Empty(Purge(trees, now.AddMinutes(61)).Purged);
-        await trees.RecordSetAsideAsync(null, PostAsync, now.AddMinutes(61), CancellationToken.None);
-        Assert.Null(Manifest(aside).Held);
-        Assert.Empty(Purge(trees, now.AddMinutes(62)).Purged);
-        Assert.True(Directory.Exists(aside));
-
-        await RecordAsync(trees, root, now.AddMinutes(63));
-        Assert.Empty(Purge(trees, now.AddDays(1)).Purged);
-        Assert.True(Assert.Single(Purge(trees, now.AddMinutes(64)).Purged).Purged);
-    }
-
-    /// <summary>
-    /// 🔴 The second maker's read, finding 2: a junction at <c>.going</c>'s workspace level. The pass's clearing of <c>.going</c> deletes nothing
+    /// 🔴 The second maker's read, finding 2: a junction at <c>.going</c>'s workspace level. The purge's resume of <c>.going</c> deletes nothing
     /// through it, and the hour's removal keeps the folder, <c>linked</c>, rather than moving it into the link.
     /// </summary>
     [Fact]
@@ -445,9 +378,8 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         await JunctionAsync(Path.Combine(Going(trees), "default"), outside);
         var now = DateTimeOffset.UtcNow;
         await RecordAsync(trees, root, now);
-        await RecordAsync(trees, root, now.AddMinutes(61));
 
-        var kept = Assert.Single(Purge(trees, now.AddMinutes(61)).Purged);
+        var kept = Assert.Single(await PurgeAsync(trees, now.AddMinutes(61), root), each => each.Folder == aside);
 
         Assert.Equal((false, SetAsideKept.Linked), (kept.Purged, kept.Code));
         Assert.True(File.Exists(precious));
@@ -456,30 +388,8 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// 🔴 The second maker's read, finding 4: a service with no door for the record (an older one, a bare 404) leaves the folder unmarked, so
-    /// it keeps its days rather than awaiting a record no pass can post. Through the driver's own client over the stand-in's door.
-    /// </summary>
-    [Fact]
-    public async Task A_service_with_no_record_door_leaves_the_folder_its_days()
-    {
-        var root = await RepositoryAsync("engine");
-        var trees = new SessionTrees(_home);
-        await LandedTreeAsync(trees, root);
-        var aside = await SetAsideAsync(trees, root);
-        _ledger.RecordsMissing = true;
-        var now = DateTimeOffset.UtcNow;
-
-        await trees.RecordSetAsideAsync(Roots(root), _ledger.Client().PostWorkRecordAsync, now, CancellationToken.None);
-
-        Assert.Equal(SlimStates.Unmarked, Manifest(aside).State);
-        Assert.Contains("no door", Manifest(aside).Why, StringComparison.Ordinal);
-        Assert.Empty(Purge(trees, now.AddDays(1)).Purged);
-        Assert.Equal(SetAsideClass.Unmarked, Assert.Single(Purge(trees, now.AddDays(15)).Purged).Class);
-    }
-
-    /// <summary>
-    /// The second maker's read, finding 3: a registry that did not read runs no step, so a folder awaiting its record is not posted without its
-    /// commits, and stays awaiting for the next pass.
+    /// 🔴 Codex's read of the design, finding 3: a registry that did not read runs no step, so a folder awaiting its record is not posted without
+    /// its commits, and stays awaiting for the next pass.
     /// </summary>
     [Fact]
     public async Task A_registry_that_did_not_read_runs_no_step()
@@ -489,11 +399,108 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         await LandedTreeAsync(trees, root);
         var aside = await SetAsideAsync(trees, root);
 
-        await trees.RecordSetAsideAsync(null, PostAsync, DateTimeOffset.UtcNow, CancellationToken.None);
+        await trees.RecordSetAsideAsync(null, PostAsync, () => DateTimeOffset.UtcNow, CancellationToken.None);
 
         Assert.Empty(_posts);
         Assert.Equal(SlimStates.Deleted, Manifest(aside).State);
         await RecordAsync(trees, root, DateTimeOffset.UtcNow);
         Assert.NotNull(Assert.Single(_posts).Commits);
+    }
+
+    /// <summary>
+    /// 🔴 Codex's read of the design, finding 6: the landing that carried the tree's work is captured before the move, so the record names it
+    /// after the landings' trace is gone: its branch and when it landed, never the move's moment.
+    /// </summary>
+    [Fact]
+    public async Task The_landing_is_recorded_after_its_trace_is_gone()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = LandingTrees();
+        var (tree, landing) = await LandingAsync(trees, root, new LandingSubject("s1", "q1", "The work"));
+        var landedAt = Assert.Single(trees.Recorded.Entries(), each => each.Branch == landing).LandedAt;
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", landing);
+
+        var aside = await SetAsideAsync(trees, root);
+        File.Delete(DaorisHome.Entry(_home, HomeEntry.Landings));
+        await RecordAsync(trees, root, DateTimeOffset.UtcNow);
+
+        var landed = Assert.Single(_posts).Tree.Landing;
+        Assert.NotNull(landed);
+        // The manifest keeps its moments to the millisecond.
+        Assert.Equal(landing, landed.Branch);
+        Assert.True(Math.Abs((landed.At - landedAt).TotalMilliseconds) < 1);
+        Assert.NotEqual(TreeSetAside.MovedAt(Path.GetFileName(aside)), landed.At);
+        Assert.NotEqual(tree.Branch, landed.Branch);
+    }
+
+    /// <summary>
+    /// 🔴 Codex's read of the branch, finding 4: the press removes a set-aside folder only while its class and holder read as the list gave
+    /// them. Listed as recorded on its ref, then unmarked by a check that found the ref gone, it is kept <c>changed</c>; and the press's
+    /// request carries both, read back by the run.
+    /// </summary>
+    [Fact]
+    public async Task The_press_keeps_a_folder_whose_class_changed_since_its_list()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var tree = await TreeWithWorkAsync(trees, root);
+        await SquashOntoLineAsync(root, tree.Branch);
+        var aside = await SetAsideAsync(trees, root);
+        var now = DateTimeOffset.UtcNow;
+        await RecordAsync(trees, root, now);
+        var listed = Assert.Single(trees.ListSetAside(KeepPolicy.Default, now));
+        var reference = listed.Ref!;
+        Assert.Equal(SetAsideClass.Recorded, ListedClass.Of(listed));
+        using var payload = JsonDocument.Parse($$"""{ "early": [ { "kind": "set-aside", "id": "{{listed.Id}}", "class": "recorded", "ref": "{{reference}}" } ] }""");
+        var asked = Assert.Single(SpaceFree.Asked(payload.RootElement));
+        Assert.Equal((SetAsideClass.Recorded, reference), (asked.Class, asked.Ref));
+
+        await GitAsync(root, "update-ref", "-d", reference);
+        await RecordAsync(trees, root, now.AddMinutes(61));
+        var (bytes, kept) = trees.RemoveSetAsideEarly(aside, listedOwn: false, asked.Class, asked.Ref);
+
+        Assert.Equal((0L, SpaceKept.Changed), (bytes, kept));
+        Assert.True(Directory.Exists(aside));
+    }
+
+    /// <summary>
+    /// 🔴 Opus finding 8: a stray and a pass's leftover, no manifest, are never purged at the hour, only at their days, a checkout given or not.
+    /// </summary>
+    [Fact]
+    public async Task A_stray_and_a_leftover_are_never_purged_at_the_hour()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var moved = DateTimeOffset.UtcNow.AddHours(-2);
+        var stray = Path.Combine(trees.SetAsideRoot, "default", "engine",
+            $"devtools-{moved.UtcDateTime.ToString("yyyyMMdd'T'HHmmssfff'Z'", System.Globalization.CultureInfo.InvariantCulture)}");
+        Directory.CreateDirectory(stray);
+        var file = Path.Combine(stray, "a.txt");
+        await File.WriteAllTextAsync(file, "a stray\n");
+        File.SetCreationTimeUtc(file, moved.UtcDateTime.AddMinutes(-1));
+        File.SetLastWriteTimeUtc(file, moved.UtcDateTime.AddMinutes(-1));
+        // A pass's leftover goes aside by the same move a stray does (`MoveFolderAside`), with no judgement and no manifest: the same folder.
+        var to = Path.Combine(trees.SetAsideRoot, "default", "engine",
+            $"leftover-{moved.UtcDateTime.ToString("yyyyMMdd'T'HHmmssfff'Z'", System.Globalization.CultureInfo.InvariantCulture)}");
+        Directory.CreateDirectory(to);
+        var left = Path.Combine(to, "b.txt");
+        await File.WriteAllTextAsync(left, "a pass's leftover\n");
+        File.SetCreationTimeUtc(left, moved.UtcDateTime.AddMinutes(-1));
+        File.SetLastWriteTimeUtc(left, moved.UtcDateTime.AddMinutes(-1));
+
+        Assert.Empty(await PurgeAsync(trees, DateTimeOffset.UtcNow.AddHours(2), root));
+        var gone = await PurgeAsync(trees, DateTimeOffset.UtcNow.AddDays(15), root);
+        Assert.Equal([SetAsideClass.Unmarked, SetAsideClass.Unmarked], gone.Select(each => each.Class));
+        Assert.All(gone, each => Assert.True(each.Purged));
+        Assert.False(Directory.Exists(to));
+    }
+
+    /// <summary>A squash merge of <paramref name="branch"/> onto the line through a branch of its own, as a squashing landing leaves the line.</summary>
+    private static async Task SquashOntoLineAsync(string root, string branch)
+    {
+        await GitAsync(root, "checkout", "--quiet", "-b", "feature/squashed");
+        await SquashAsync(root, branch);
+        await GitAsync(root, "checkout", "--quiet", "main");
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", "feature/squashed");
     }
 }

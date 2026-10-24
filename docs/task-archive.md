@@ -20317,7 +20317,7 @@ text: the service keeps a finished tree's record in `work_records` and `work_rec
 stamp, a newer one refused), posted by the driver to `POST /api/trees/record`, kept once by its identity, gone with its last session
 through `SessionStore.DeleteAsync` or with a clear of history by its `at`. The driver holds the exact tip on a recovery ref wherever
 the line's own branch does not, writes a schema-2 manifest for every finished tree (one not written keeps the tree), marks its steps,
-composes and posts the record after the hold at each Keeping pass and before the press lists, and purges by class in one call (a recorded
+composes and posts the record after the hold at each Keeping pass and at the press's run before it removes, and purges by class in one call (a recorded
 folder an hour after its record, an awaiting one never, the rest at their days), renaming each folder into `.tidied/.going` first. The
 card says the new rule, and the press says each folder's class, in both languages. Proof: `KeepSizeGitTests` (14 cases over real git),
 `KeepingSlimTests`' first case retold for a service that does not answer, `WorkRecordStoreTests` and `WorkRecordHostTests`. The run:
@@ -20327,4 +20327,9 @@ service's delete cases with the record's removal taken out; the squash case pass
 ref before this row, and the other cases were written beside the code and seen failing only on their own first run. What the row left
 is KEEPSIZE1b2 in `TASKS.md`. *After the second maker's read* (2026-10-24): its findings 1 to 4 and 6 to 11 taken on the branch,
 `KeepSizeGitTests` (18 cases) and `KeepingSlimTests` passing 23 of 23 together, the hour's and the link's cases seen failing with their guards taken out;
-finding 5's proofs added to KEEPSIZE1b2. Detail: D195's KEEPSIZE1b notes.
+finding 5's proofs added to KEEPSIZE1b2. *After Codex's reads* (2026-10-24): the design amended where they named (§12); on the
+branch, a recorded folder goes only on a holding check run right before its rename, the exact tip's holder rests in the delete's
+transaction, a 404 keeps the record awaited, the press compares its listed class and ref, the hour starts after the acknowledgement, a
+failed put-back and a stop in `.going` resume, and the landing is captured; `KeepSizeGitTests` (18 cases) and `KeepSizeStopsGitTests`
+(11), each blocking finding's case seen failing with its guard taken out. Its outcome above is corrected: the press's run, not its list,
+resumes and posts first. Detail: D195's KEEPSIZE1b notes.

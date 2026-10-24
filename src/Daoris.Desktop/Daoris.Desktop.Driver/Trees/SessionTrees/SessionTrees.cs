@@ -742,9 +742,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
 
     /// <inheritdoc cref="FinishedRecords.RunAsync"/>
     internal Task<IReadOnlyList<FinishedStep>> RecordSetAsideAsync(
-        Func<string, string, string?>? rootOf, Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? post, DateTimeOffset now,
+        Func<string, string, string?>? rootOf, Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? post, Func<DateTimeOffset> clock,
         CancellationToken ct, Func<string, bool>? only = null, Func<bool>? spent = null) =>
-        new FinishedRecords(SetAsides).RunAsync(rootOf, post, now, ct, only, spent);
+        new FinishedRecords(SetAsides).RunAsync(rootOf, post, clock, ct, only, spent);
 
     /// <summary>
     /// The registry's checkouts, by workspace and repository, for the record pass's git reads outside every hold (the keep-size design §3.4):
@@ -760,11 +760,18 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
         KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct, Func<string, bool>? purge = null, Func<string, bool>? slim = null) =>
         Keeping.Run(policy, now, budget, ct, purge, slim);
 
+    /// <inheritdoc cref="SetAsideKeeping.RunAsync"/>
+    internal Task<SetAsideRun> KeepSetAsideAsync(
+        KeepPolicy policy, DateTimeOffset now, TimeSpan budget, CancellationToken ct, Func<string, string, string?>? rootOf,
+        Func<string, bool>? purge = null, Func<string, bool>? slim = null) =>
+        Keeping.RunAsync(policy, now, budget, ct, purge, slim, rootOf);
+
     /// <inheritdoc cref="SetAsideKeeping.List"/>
     internal IReadOnlyList<SetAsideListed> ListSetAside(KeepPolicy policy, DateTimeOffset now) => Keeping.List(policy, now);
 
     /// <inheritdoc cref="SetAsideKeeping.RemoveEarly"/>
-    internal (long Bytes, string? Kept) RemoveSetAsideEarly(string folder, bool listedOwn) => Keeping.RemoveEarly(folder, listedOwn);
+    internal (long Bytes, string? Kept) RemoveSetAsideEarly(string folder, bool listedOwn, string? listedClass = null, string? listedRef = null) =>
+        Keeping.RemoveEarly(folder, listedOwn, listedClass, listedRef);
 
     /// <inheritdoc cref="TreeSetAside.LastLookAsync"/>
     internal Task<(string Code, string Sentence, string? Cause)?> LastLookAsync(

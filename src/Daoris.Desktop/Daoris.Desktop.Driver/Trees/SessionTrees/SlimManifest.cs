@@ -43,12 +43,6 @@ internal sealed record SlimManifest(
     /// <summary>Why the record is not kept yet: the last post's words; null where nothing is said.</summary>
     internal string? Why { get; init; }
 
-    /// <summary>
-    /// When the holding check last passed at or after the folder's hour (the second maker's read, finding 1): the hour's purge takes a
-    /// recorded folder only on a stamp at or after its hour and no older than an hour, so no door removes one no check has passed since.
-    /// </summary>
-    internal DateTimeOffset? Held { get; init; }
-
     /// <summary>What follows the folder's name in its manifest's.</summary>
     internal const string Suffix = ".slim.json";
 
@@ -117,7 +111,14 @@ internal sealed record SlimManifest(
                         [.. names.EnumerateArray().Where(each => each.ValueKind == JsonValueKind.String).Select(each => each.GetString()!)],
                         left.TryGetProperty("count", out var count) && count.TryGetInt32(out var counted) ? counted : 0,
                         left.TryGetProperty("cut", out var cut) && cut.ValueKind == JsonValueKind.True),
-                    root.TryGetProperty("whole", out var whole) && whole.ValueKind == JsonValueKind.True);
+                    root.TryGetProperty("whole", out var whole) && whole.ValueKind == JsonValueKind.True)
+                {
+                    Landing = root.TryGetProperty("landing", out var landing) && landing.ValueKind == JsonValueKind.Object
+                        && Text(landing, "branch") is { } landed && At(landing, "at") is { } landedAt
+                        ? new FinishedLanding(landed, Text(landing, "line"), landedAt, Text(landing, "pullRequest"))
+                        : null,
+                    LandingWhy = Text(root, "landingWhy"),
+                };
             }
 
             return (new(state, judged, At(root, "moved"), repository, branch, read)
@@ -126,7 +127,6 @@ internal sealed record SlimManifest(
                 Deleted = At(root, "deleted"),
                 Recorded = At(root, "recorded"),
                 Why = Text(root, "why"),
-                Held = At(root, "held"),
             }, null);
         }
         catch (JsonException error)
@@ -176,9 +176,23 @@ internal sealed record SlimManifest(
             writer.WriteBoolean("cut", finished.Left.Cut);
             writer.WriteEndObject();
             writer.WriteBoolean("whole", finished.Whole);
+            if (finished.Landing is { } landing)
+            {
+                writer.WriteStartObject("landing");
+                writer.WriteString("branch", landing.Branch);
+                Optional(writer, "line", landing.Line);
+                writer.WriteString("at", Said(landing.At));
+                Optional(writer, "pullRequest", landing.PullRequest);
+                writer.WriteEndObject();
+            }
+            else
+            {
+                writer.WriteNull("landing");
+            }
+
+            Optional(writer, "landingWhy", finished.LandingWhy);
             WriteMoment(writer, "deleted", Deleted);
             WriteMoment(writer, "recorded", Recorded);
-            WriteMoment(writer, "held", Held);
             Optional(writer, "why", Why);
         }
 
@@ -230,7 +244,73 @@ internal sealed record SlimManifest(
 /// <param name="Whole">Whether <c>whole</c> was set at the move.</param>
 internal sealed record FinishedTree(
     DateTimeOffset Read, string Workspace, string Tree, string? Line, string Tip, string? GrewFrom, string? Unit, FinishedHold Hold, string? Ref,
-    FinishedLeft Left, bool Whole);
+    FinishedLeft Left, bool Whole)
+{
+    /// <summary>
+    /// The landing that carried its work, captured before the move from the landings' record (Codex's read of the design, finding 6), so the
+    /// record says it after that trace retires; null where none could be established, and <see cref="LandingWhy"/> says why. Never the
+    /// judgement's or the move's moment in place of the landing's.
+    /// </summary>
+    internal FinishedLanding? Landing { get; init; }
+
+    /// <summary>Why no landing is named: none recorded for its unit or branch.</summary>
+    internal string? LandingWhy { get; init; }
+}
+
+/// <summary>A landing as the record names it: the branch it made, the line, when it landed, and its pull request where one was opened.</summary>
+internal sealed record FinishedLanding(string Branch, string? Line, DateTimeOffset At, string? PullRequest);
+
+/// <summary>
+/// A removal's own record beside its folder in <c>.tidied/.going</c> (Codex's read of the design, finding 5): which door removed it, when, the
+/// threshold a later write is read against, and whether its delete began. A stop before the delete moves the folder back whole; one after
+/// it finishes only where nothing was written in it since and, for the hour's door, its holding check passes again; else what remains goes
+/// back, saying why. Its manifest moves into <c>.going</c> with it, and back with it.
+/// </summary>
+/// <param name="Door"><c>hour</c>, <c>days</c> or <c>press</c>.</param>
+internal sealed record GoingRecord(string Door, DateTimeOffset At, DateTimeOffset Threshold, bool Started)
+{
+    internal const string Suffix = ".going.json";
+
+    private const string Moment = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
+
+    internal static string PathFor(string folder) => Path.TrimEndingDirectorySeparator(folder) + Suffix;
+
+    /// <summary>The record at <paramref name="path"/>; null where there is none or it does not read.</summary>
+    internal static GoingRecord? Read(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return null;
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
+            var root = document.RootElement;
+            return root.ValueKind == JsonValueKind.Object && Text(root, "door") is { } door && At(root, "at") is { } at && At(root, "threshold") is { } threshold
+                ? new GoingRecord(door, at, threshold, root.TryGetProperty("started", out var started) && started.ValueKind == JsonValueKind.True)
+                : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return null;
+        }
+
+        static string? Text(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+        static DateTimeOffset? At(JsonElement element, string name) =>
+            Text(element, name) is { } text && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at)
+                ? at
+                : null;
+    }
+
+    internal void Write(string path) => AtomicFile.WriteText(path, JsonFile.Serialize(writer =>
+    {
+        writer.WriteStartObject();
+        writer.WriteString("door", Door);
+        writer.WriteString("at", At.UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture));
+        writer.WriteString("threshold", Threshold.UtcDateTime.ToString(Moment, CultureInfo.InvariantCulture));
+        writer.WriteBoolean("started", Started);
+        writer.WriteEndObject();
+    }));
+}
 
 /// <summary>Which hold kept the commits at the judgement (§1.1): <c>line</c>, <c>landing</c>, <c>squash</c>, <c>content</c>, <c>carried</c> or <c>empty</c>.</summary>
 internal sealed record FinishedHold(string Kind, string? Where, string? Form);

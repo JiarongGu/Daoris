@@ -95,6 +95,15 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private bool _recordsMissing;
 
+    /// <summary>The record door answers as a service whose records a newer build stamped: 409, <c>RECORDS_NEWER</c> (KEEPSIZE1b).</summary>
+    public bool RecordsNewer
+    {
+        get { lock (_gate) return _recordsNewer; }
+        set { lock (_gate) _recordsNewer = value; }
+    }
+
+    private bool _recordsNewer;
+
     /// <summary>
     /// The person brings this machine's lost take forward now (SYNCMERGE1a): its fresh take, made after every record so far, stands as
     /// <paramref name="standing"/>, and so does the claim, unless it lost again.
@@ -938,6 +947,15 @@ internal sealed class StandInLedger : HttpMessageHandler
                 case ("POST", "/api/trees/record"):
                 {
                     if (_recordsMissing) return new HttpResponseMessage(HttpStatusCode.NotFound);
+                    if (_recordsNewer)
+                    {
+                        return Answer(HttpStatusCode.Conflict, new JsonObject
+                        {
+                            ["error"] = "The records of finished trees were written by a newer Daoris (version 2; this build reads 1), so this one keeps none of them.",
+                            ["code"] = "RECORDS_NEWER",
+                        });
+                    }
+
                     if (_recordsDown) return Answer(HttpStatusCode.ServiceUnavailable, new JsonObject { ["error"] = "the stand-in's record door is down" });
                     _recordPosts++;
                     var key = $"{body!["workspace"]}/{body["repository"]}/{body["folder"]}";

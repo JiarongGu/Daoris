@@ -14,8 +14,9 @@ with the version and date at release.
   commits stay reachable on a recovery ref wherever the line itself does not hold them, a squashed landing's included. A session's
   own scratch goes with its tree. A tree whose record could not be kept yet waits for it, past its days. *Keep each folder whole*
   now keeps a finished tree for its days, its record kept all the same. *Free up space…* says which folders have their record kept,
-  which wait for it, and which came from before this version. Daoris now keeps a finished tree for its days where the
-  Daoris service it talks to is older and cannot keep its record.
+  which wait for it, and which came from before this version. Before a finished tree's folder goes, Daoris checks
+  again that its commits are still held, and keeps it where they are not. The *Disk space* card says how many folders wait for their
+  record, and *Free up space…* lists each folder with what holds its commits.
 - Trees set aside before Daoris's folder layout moved are now removed at their days, like the rest (KEEPSIZE1a). Until now they
   stayed under the old place for good. The *Disk space* card counts them under *Set-aside trees* rather than *Everything else*, and
   *Free space* and `trees list` name them.

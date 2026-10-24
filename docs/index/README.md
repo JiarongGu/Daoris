@@ -79,7 +79,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/src/settings/WiringDomain.test.tsx` | 57 | 1008 |
+| `src/Daoris.Web/src/settings/WiringDomain.test.tsx` | 58 | 1015 |
 
 ### Driver library (`driver`)
 
@@ -128,7 +128,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/TraceTests.cs` | 55 | 905 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/StagedBuildTests.cs` | 41 | 953 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/WorkspaceSetupTests.cs` | 40 | 827 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 62 | 1222 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 63 | 1240 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/AutoLandingRulesTests.cs` | 40 | 662 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/BranchTidyingTests.cs` | 41 | 770 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/LandingTests.cs` | 45 | 801 |
@@ -163,18 +163,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverChoicesCommand.cs` | 127 | 2284 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/DriverConfig.cs` | 96 | 1621 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/NoteCodes.cs` | 93 | 1415 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SpaceFree.cs` | 46 | 943 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SpaceFree.cs` | 47 | 962 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 51 | 1072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 62 | 1216 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 131 | 2135 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 43 | 748 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 178 | 3151 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 180 | 3185 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Observation.cs` | 41 | 639 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Chain.cs` | 65 | 1420 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Domain/Trace.Words.cs` | 41 | 760 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/SessionsCommand.cs` | 97 | 1815 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Work/WorkAbandoning.cs` | 43 | 765 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Branches/BranchTidying.cs` | 54 | 984 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Branches/BranchTidying.cs` | 56 | 1005 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Inventory/WorkInventory.cs` | 50 | 835 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 56 | 989 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/AutoLander.cs` | 55 | 816 |
@@ -187,9 +187,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 77 | 1324 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/ContentHolds.cs` | 43 | 659 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/LandedCleanups.cs` | 46 | 753 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 58 | 926 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 58 | 933 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeLands.cs` | 84 | 1275 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeSetAside.cs` | 47 | 842 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeSetAside.cs` | 59 | 1053 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/WorkingTree.cs` | 69 | 1323 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.cs` | 47 | 836 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 48 | 845 |
@@ -232,8 +232,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 109 | 1813 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 57 | 1016 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 163 | 2670 |
-| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 75 | 870 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 176 | 2964 |
+| `src/Daoris.Service/Daoris.Service.Http/ApiContracts.cs` | 76 | 879 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 177 | 2973 |
 | `src/Daoris.Service/Daoris.Service.Tests/Asks/HistoryDeskTests.cs` | 46 | 864 |
 | `src/Daoris.Service/Daoris.Service.Tests/Knowledge/IndexEntriesTests.cs` | 50 | 983 |
 | `src/Daoris.Service/Daoris.Service.Tests/Mcp/McpToolsTests.cs` | 51 | 870 |
@@ -243,7 +243,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 107 | 2111 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 110 | 2087 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 44 | 880 |
-| `src/Daoris.Service/README.md` | 112 | 818 |
+| `src/Daoris.Service/README.md` | 112 | 819 |
 
 ### CLI (`cli`)
 
@@ -336,8 +336,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-agent-errors-reads.md` | 84 | 875 |
 | `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
-| `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
-| `docs/2026-10-24-keep-size-reads.md` | 67 | 669 |
+| `docs/2026-10-24-keep-size-design.md` | 101 | 974 |
+| `docs/2026-10-24-keep-size-reads.md` | 99 | 927 |
 | `docs/2026-10-24-steward-role-design.md` | 123 | 1013 |
 | `docs/2026-10-24-steward-role-reads.md` | 80 | 795 |
 | `docs/2026-10-24-supervisor-design.md` | 197 | 1609 |

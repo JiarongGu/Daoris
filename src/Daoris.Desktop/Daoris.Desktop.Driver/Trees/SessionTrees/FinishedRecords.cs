@@ -16,8 +16,8 @@ internal sealed record FinishedStep(string Folder, string From, string To, strin
 
 /// <summary>
 /// Why the service did not keep a record: its words, and whether it has no door for one at all (a service older than this driver, which
-/// answers 404): then the folder is <c>unmarked</c> and keeps its days, rather than awaiting a record no pass can post (the second maker's
-/// read, finding 4).
+/// answers 404). Either way the folder stays <c>deleted</c>, awaiting its record past its days and said, and every later pass posts again
+/// (Codex's read of the branch, finding 3): an upgraded service keeps it.
 /// </summary>
 internal sealed record RecordRefusal(string Why, bool NoDoor = false);
 
@@ -29,10 +29,10 @@ internal sealed record RecordRefusal(string Why, bool NoDoor = false);
 /// <item><c>judged</c>, <c>moved</c> or <c>refused</c>: where its branch is absent and the holding check passes, <c>deleted</c>, then on;
 /// otherwise it waits its days and says why.</item>
 /// <item><c>deleted</c>: its record composed from the manifest and the tip (<c>git log --first-parent --numstat</c>) and posted; answered,
-/// <c>recorded</c>; not, it stays <c>deleted</c> and the next pass, the press or a restart posts it again. A service with no door for it
-/// makes it <c>unmarked</c>.</item>
-/// <item><c>recorded</c>, its hour come: the holding check again; passing, its moment stamped as <see cref="SlimManifest.Held"/>, which the
-/// hour's purge reads; failing, <c>unmarked</c>, waiting its days.</item>
+/// <c>recorded</c> at the moment read after the service's answer (Codex's read of the branch, finding 5); not, it stays <c>deleted</c> and the
+/// next pass, the press or a restart posts it again, a service with no door for it included.</item>
+/// <item><c>recorded</c>, its hour come: the holding check again; failing for certain, <c>unmarked</c>, waiting its days. Passing authorizes
+/// nothing: the purge runs its own check right before each rename.</item>
 /// </list>
 /// <para>🔴 A registry that could not be read is not a registry that names no checkout (the second maker's read, finding 3): with none, no
 /// step runs, so nothing is unmarked and no record is posted without its commits for an outage. A git read that failed posts nothing
@@ -45,8 +45,9 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
     /// <param name="post">Null answer: the service keeps the record; else why it does not.</param>
     /// <param name="only">The folders a press listed; null meets every one.</param>
     /// <param name="spent">Whether the pass's budget is spent or a stop asked; the rest waits for the next pass.</param>
+    /// <param name="clock">What time it is, read at each step as it ends: a record is <c>recorded</c> at the moment read after its answer.</param>
     internal async Task<IReadOnlyList<FinishedStep>> RunAsync(
-        Func<string, string, string?>? rootOf, Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? post, DateTimeOffset now,
+        Func<string, string, string?>? rootOf, Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? post, Func<DateTimeOffset> clock,
         CancellationToken ct, Func<string, bool>? only = null, Func<bool>? spent = null)
     {
         var steps = new List<FinishedStep>();
@@ -64,13 +65,14 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
             var state = manifest.State;
             if (state is SlimStates.Judged or SlimStates.Moved or SlimStates.Refused)
             {
-                if (await SetAsideEligibility.HoldingAsync(root, manifest, ct).ConfigureAwait(false) is { } waits)
+                var (held, waits) = await SetAsideEligibility.HoldingAsync(root, manifest, ct).ConfigureAwait(false);
+                if (held != Holding.Passed)
                 {
                     if (manifest.Why != waits && Save(file, manifest with { Why = waits })) steps.Add(new(folder, state, state, waits));
                     continue;
                 }
 
-                manifest = manifest with { State = SlimStates.Deleted, Deleted = now, Why = null };
+                manifest = manifest with { State = SlimStates.Deleted, Deleted = clock(), Why = null };
                 if (!Save(file, manifest)) continue;
                 steps.Add(new(folder, state, SlimStates.Deleted, null));
                 state = SlimStates.Deleted;
@@ -101,33 +103,30 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
                     refused = new(error.Message);
                 }
 
-                if (refused is { NoDoor: true })
-                {
-                    if (Save(file, manifest with { State = SlimStates.Unmarked, Why = refused.Why })) steps.Add(new(folder, state, SlimStates.Unmarked, refused.Why));
-                    continue;
-                }
-
                 if (refused is not null)
                 {
                     if (manifest.Why != refused.Why && Save(file, manifest with { Why = refused.Why })) steps.Add(new(folder, state, state, refused.Why));
                     continue;
                 }
 
-                if (Save(file, manifest with { State = SlimStates.Recorded, Recorded = now, Why = null })) steps.Add(new(folder, state, SlimStates.Recorded, null));
+                // The hour runs from the moment read after the service's answer, never from before the pass's git and the post.
+                if (Save(file, manifest with { State = SlimStates.Recorded, Recorded = clock(), Why = null })) steps.Add(new(folder, state, SlimStates.Recorded, null));
                 continue;
             }
 
             // The hour come, the holding check again right before the purge reads the class: a ref dropped by hand, a line rewound, unmarks it;
             // a check that passes stamps its moment, the only one the hour's purge takes the folder on (finding 1).
-            if (state == SlimStates.Recorded && manifest.Recorded is { } recorded && now - recorded >= KeepKinds.SetAsideSettle && !finished.Whole)
+            if (state == SlimStates.Recorded && manifest.Recorded is { } recorded && clock() - recorded >= KeepKinds.SetAsideSettle && !finished.Whole)
             {
-                if (await SetAsideEligibility.HoldingAsync(root, manifest, ct).ConfigureAwait(false) is { } failed)
+                var (held, why) = await SetAsideEligibility.HoldingAsync(root, manifest, ct).ConfigureAwait(false);
+                if (held == Holding.Failed)
                 {
-                    if (Save(file, manifest with { State = SlimStates.Unmarked, Why = failed })) steps.Add(new(folder, state, SlimStates.Unmarked, failed));
+                    if (Save(file, manifest with { State = SlimStates.Unmarked, Why = why })) steps.Add(new(folder, state, SlimStates.Unmarked, why));
                 }
-                else
+                else if (held == Holding.Unread && manifest.Why != why && Save(file, manifest with { Why = why }))
                 {
-                    Save(file, manifest with { Held = now });
+                    // Codex's read of the design, finding 3: unread is never certain; it keeps the folder recorded, said, and is asked again.
+                    steps.Add(new(folder, state, state, why));
                 }
             }
         }
@@ -148,22 +147,25 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
         if (tipCode == 1) return (null, "its tip no longer reads, so its commits are not listed", null);
         if (tipCode != 0) return (null, null, $"git could not say whether its tip reads: {TreeGit.FirstLine(tipErr)}");
         if (tree.GrewFrom is not { } grew) return (null, "the commit it grew from is not known, so its commits are not listed", null);
+        // Codex's read of the branch, finding 10: `-z` with no rename detection, so each file is `added\tremoved\tpath\0` and its path is git's
+        // own bytes, never quoted or escaped for display; the header is `\x1e<id>\x1f<subject>`, its subject ending at the first line break.
         var (code, output, err) = await WorkingTree.GitAsync(
-            root, ["log", "--first-parent", "--numstat", "--format=%x1e%H%x1f%s", $"{grew}..{tree.Tip}"], ct).ConfigureAwait(false);
+            root, ["-c", "core.quotePath=false", "log", "-z", "--no-renames", "--first-parent", "--numstat", "--format=%x1e%H%x1f%s", $"{grew}..{tree.Tip}"], ct)
+            .ConfigureAwait(false);
         if (code != 0) return (null, null, $"git could not list its commits: {TreeGit.FirstLine(err)}");
         var commits = new List<FinishedCommit>();
         foreach (var chunk in output.Split('\u001e', StringSplitOptions.RemoveEmptyEntries))
         {
-            var lines = chunk.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (lines.Length == 0 || lines[0].Split('\u001f', 2) is not [var id, var subject]) continue;
+            var header = chunk.IndexOfAny(['\n', '\0']) is var end and >= 0 ? chunk[..end] : chunk;
+            if (header.Split('\u001f', 2) is not [var id, var subject]) continue;
             var files = new List<(string, int, int)>();
-            foreach (var line in lines.Skip(1))
+            foreach (var entry in chunk[header.Length..].Split('\0'))
             {
-                if (line.Split('\t', 3) is not [var added, var removed, var path]) continue;
+                if (entry.TrimStart('\n').Split('\t', 3) is not [var added, var removed, var path] || path.Length == 0) continue;
                 files.Add((path, int.TryParse(added, out var a) ? a : -1, int.TryParse(removed, out var r) ? r : -1));
             }
 
-            commits.Add(new(id, subject, files));
+            commits.Add(new(id.Trim(), subject, files));
         }
 
         commits.Reverse();

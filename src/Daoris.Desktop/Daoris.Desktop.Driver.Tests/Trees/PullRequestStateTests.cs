@@ -280,9 +280,12 @@ public sealed class PullRequestStateTests : LandedFixture
         Assert.True(row.Removable);
         Assert.Equal(SweepKind.Unlanded, plan.Sessions.Single(item => item.Branch == unknown.Branch).Kind);
 
+        var carriedTip = (await GitAsync(root, "rev-parse", carried.Branch)).Trim();
         await trees.CleanAsync([("engine", "aurora", root)], new HashSet<string>());
 
         Assert.Equal("", (await GitAsync(root, "branch", "--list", carried.Branch)).Trim());
+        // KEEPSIZE1b (the keep-size design §3.1, Opus finding 21): the press's path keeps a carried branch's exact tip on a ref of its own.
+        Assert.Equal(carriedTip, (await GitAsync(root, "rev-parse", $"refs/daoris/discarded/{carried.Branch}")).Trim());
         Assert.NotEqual("", (await GitAsync(root, "branch", "--list", unknown.Branch)).Trim());
         var entry = trees.Recorded.Landing("s1")!;
         Assert.Equal((carried.Branch, CarriedBy.CleanUp), (Assert.Single(entry.Carried).Branch, entry.Carried[0].By));
@@ -310,12 +313,17 @@ public sealed class PullRequestStateTests : LandedFixture
         // FABRIC-END4a: the look's tidy takes what the keeper or its fallback proves, both in the lease's process alone, as the loop's.
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
+        var carriedTip = (await GitAsync(root, "rev-parse", carried.Branch)).Trim();
         var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneRunning);
 
         Assert.Equal(asked, _asked);
         var removed = Assert.Single(pass.Results, result => result.Removed);
         Assert.Equal((carried.Branch, SweepKind.Carried, landing.Branch), (removed.Item.Branch, removed.Item.Kind, removed.Item.Where));
         Assert.NotNull(removed.MovedTo);
+        // KEEPSIZE1b (the keep-size design §3.1, Opus finding 21): the look's path keeps it too, named in the folder's manifest as carried.
+        Assert.Equal(carriedTip, (await GitAsync(root, "rev-parse", $"refs/daoris/discarded/{carried.Branch}")).Trim());
+        var manifest = SlimManifest.Read(SlimManifest.PathFor(removed.MovedTo)).Manifest!;
+        Assert.Equal(("carried", $"refs/daoris/discarded/{carried.Branch}"), (manifest.Finished!.Hold.Kind, manifest.Finished.Ref));
         Assert.False(Directory.Exists(carried.Path));
         Assert.Equal("", (await GitAsync(root, "branch", "--list", carried.Branch)).Trim());
         var entry = trees.Recorded.Landing("s1")!;
