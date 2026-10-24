@@ -88,6 +88,42 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Equal(ReviewerLabels.SameAgent, Assert.Single(new OpinionGates(_home).Read("q1", "reports").Asks).Label);
     }
 
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2 point 3, §7): a due a chat run's press wrote names its run and no quest. The look reads the run's
+    /// process and gate, asks the pass at the tip the press captured, not the tree's HEAD a later turn moved, hands it the conversation's
+    /// opening and no quest, keeps it under the run's key, and holds no quest's set-up step.
+    /// </summary>
+    [Fact]
+    public async Task The_look_asks_a_chat_runs_pass_at_the_press_tip_with_its_opening_keyed_by_the_run()
+    {
+        var (host, tree, line) = await DoneAsync(required: false);
+        new OpinionDues(_home).Close("s1", OpinionRules.Landing, OpinionDueClosed.Off, DateTimeOffset.UtcNow);
+        host.Quest("q2", "Open", parent: "q1", setUpIn: "local");
+        var pressed = await HeadAsync(tree);
+        await CommitAsync(tree, "later.ts", "a later turn", "a later turn's work");
+        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
+            "c1a2b3c4", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the totals add up.\nThanks." });
+        host.Session("c1a2b3c4", "working", tree: tree, kind: "chat");
+        new OpinionDues(_home).Due(new OpinionDue("c1a2b3c4", "", "reports", "work", tree, OpinionRules.Landing, DateTimeOffset.UtcNow)
+        {
+            Run = "chat-c1a2b3c4", Tip = pressed, Turns = 1,
+        });
+        var driver = Driver(host);
+
+        var (sits, passes) = await driver.OpinionsAsync(new Snapshot([], [], []), [], CancellationToken.None);
+        await driver.Running.SettledAsync();
+
+        Assert.Equal(1, passes);
+        Assert.Empty(sits);
+        var (ask, _) = Assert.Single(_passes);
+        Assert.Equal(("c1a2b3c4", pressed, line, "Make the totals add up."), (ask.Working, ask.Tip, ask.Base, ask.Opening));
+        Assert.Empty(ask.Quests);
+        Assert.Null(ask.Words);
+        Assert.Equal(("op1", pressed), (Assert.Single(new OpinionGates(_home).Read("chat-c1a2b3c4", "reports").Asks).Opinion,
+            new OpinionGates(_home).Read("chat-c1a2b3c4", "reports").Asks[0].Tip));
+        Assert.Empty(new OpinionGates(_home).Read("q1", "reports").Asks);
+    }
+
     [Fact]
     public async Task The_presses_keep_the_persons_answer_and_ask_a_pass_among_the_rules_reviewers_for_the_next_look()
     {

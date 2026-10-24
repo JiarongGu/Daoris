@@ -32,6 +32,30 @@ public sealed class OpinionPacketTests : IDisposable
         File.WriteAllText(full, text);
     }
 
+    // ——— A chat run's work (CHATFLOW1d, the chat-flow design §7).
+
+    /// <summary>
+    /// A chat run's pass is handed its conversation's opening, the person's own first words, named as the opening and never as what was
+    /// asked, since the work may have moved past it; no quest and no ask's words, and never the conversation itself.
+    /// </summary>
+    [Fact]
+    public void A_chat_runs_packet_names_its_opening_as_the_opening_and_hands_no_conversation()
+    {
+        var packet = new OpinionPacket(OpinionRules.Landing, new OpinionCandidateRead("web-app", Base, Tip, [Tip], []))
+        {
+            Opening = "Make the report's totals add up.",
+        };
+
+        var text = OpinionInstruction.Compose(packet);
+
+        Assert.Contains("## The conversation's opening", text);
+        Assert.Contains("is quoted below as the conversation's opening, not as what was asked", text);
+        Assert.Contains("Make the report's totals add up.", text);
+        Assert.Contains("The conversation itself is not handed to you", text);
+        Assert.DoesNotContain("## What was asked", text);
+        Assert.DoesNotContain("No quest is handed with this reading", text);
+    }
+
     // ——— The candidate, as git's answers are read.
 
     [Fact]
