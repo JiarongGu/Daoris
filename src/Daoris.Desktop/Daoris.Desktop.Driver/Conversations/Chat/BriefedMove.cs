@@ -25,7 +25,9 @@ public static class GoOnBrief
 ///
 /// <para><b>A closed quest's session goes on as a conversation</b> in its own tree (the steward's choice): a closed quest opens no
 /// driven record. <b>Ask Daoris's goes on in its own room</b>, a conversation of its workspace's, its link kept in the room's history
-/// (<see cref="HelpConversations.StartedFrom"/>), since the room's record takes no <c>from</c>.</para>
+/// (<see cref="HelpConversations.StartedFrom"/>), since the room's record takes no <c>from</c>, on its own agent: the one path that places
+/// Ask Daoris's new part on another agent is <see cref="LimitMove"/>'s, a limit with no account of its agent left (LIMITGOON2, D205
+/// §3.5(e)).</para>
 ///
 /// <para><b>Only the person's words go</b>, after the brief and in the same prompt, as the person's: another agent's answer waiting
 /// beside them stays on the old record (XAGENT1e, MIXAGENT2a-iii). They leave the old record by their ids, naming the new part, once

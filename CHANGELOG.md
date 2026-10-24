@@ -7,6 +7,11 @@ with the version and date at release.
 
 - A session's *To the top* and *Back to bottom* are now arrows alone, so they no longer cover the messages under them. Their
   names show when you point at them, and a screen reader says them.
+- A conversation whose agent has no account left now goes on with the next choice you set for it on another agent (LIMITGOON2).
+  When every account of its agent is at its limit, a Chat or Ask Daoris conversation goes on with Daoris's summary of it and your
+  waiting words, and says once which agent it went on with. It never moves to an agent you did not choose for it. A conversation on
+  an agent you picked yourself, or with no other choice that can run, waits for its agent's accounts and says why. Ask Daoris's
+  conversation goes on in the same workspace.
 - Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208). A
   session that goes on with no words of yours, a helper's answer or Daoris's alone, now says whose words they are, never *your answer*.
   Nothing is offered yet and nothing you see changes: its answer can only be kept as the supervisor's, never as yours. Your own

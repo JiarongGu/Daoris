@@ -463,10 +463,15 @@ public sealed class ChatRunner : IDisposable
     /// more are walked choice by choice, each choice's accounts before the next. Null for a conversation that continues another, which
     /// runs on <paramref name="adapter"/> as before.
     /// </param>
+    /// <param name="leftBy">
+    /// The part a conversation that continues another goes on from, as its record says it ran (MAKERTRAIL2, LIMITGOON2): where it ran on
+    /// another maker and left work uncommitted in the tree, the new part is told that maker's trailer too. Null for every other start.
+    /// </param>
     public async Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
-        CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null)
+        CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null,
+        EarlierMaker? leftBy = null)
     {
         if (_context.Closing) return new(null, "Daoris is closing.");
         var key = Guid.NewGuid().ToString("N");
@@ -475,7 +480,7 @@ public sealed class ChatRunner : IDisposable
         try
         {
             if (_context.Closing) return new(null, "Daoris is closing.");
-            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order).ConfigureAwait(false);
+            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy).ConfigureAwait(false);
         }
         finally
         {
@@ -487,7 +492,7 @@ public sealed class ChatRunner : IDisposable
     private async Task<ChatStart> StartCoreAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
-        CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order)
+        CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order, EarlierMaker? leftBy)
     {
         // MODELROLE1d (D205 §4.1): an order of one is today's start on its agent, asking its model; more are walked below, once the
         // workspace whose accounts each choice walks is known.
@@ -608,7 +613,10 @@ public sealed class ChatRunner : IDisposable
         else if (from is not null)
         {
             var commits = CommitRules.Resolve(config, known.Repository, known.Workspace);
-            _toldProcess[sessionId] = new ProcessBriefing(CommitTrailers.For(resolved), commits.Rule.Mode, commits.Source);
+            // MAKERTRAIL2 (LIMITGOON2): a part on another maker than the one before it, which left work uncommitted in the tree, is told
+            // that maker's trailer too, as a driven carry-on is.
+            var left = leftBy is not null && (await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false)).Count > 0 ? leftBy : null;
+            _toldProcess[sessionId] = new ProcessBriefing(CommitTrailers.For(resolved, left), commits.Rule.Mode, commits.Source);
         }
 
         // SESSCTX1b: a conversation that continues another reads the kept folders of its line's parts, whose files its brief names.

@@ -730,6 +730,12 @@ public static class NoteCodes
     public static readonly NoteCode ChatLimitWaits = new("chat.limit-waits", ["owner", "until", "why"]) { Why = Cooling };
     public static readonly NoteCode ChatLimitStoppedWaiting = new("chat.limit-stopped-waiting", []);
 
+    // ——— Why a conversation whose agent has no account left does not go on with its actor's next choice on another agent (LIMITGOON2,
+    // D205 §3.5(e)), said before its wait: it runs on the agent the person picked, or no choice on another agent can run now, the walk's
+    // own words following in the English alone.
+    public static readonly NoteCode ChatLimitPicked = new("chat.limit-picked", ["owner"]);
+    public static readonly NoteCode ChatLimitNoOther = new("chat.limit-no-other", ["owner"]);
+
     // ——— The limit's wake (LIMITRESUME1, D206 §3.3, §3.7): its own account ready again at the margin-added `until`, it went on in its
     // own conversation; or its own conversation could not be resumed, by the refusal's code, and it went on briefed.
     public static readonly NoteCode LimitResumed = new("limit.resumed", ["until"]);

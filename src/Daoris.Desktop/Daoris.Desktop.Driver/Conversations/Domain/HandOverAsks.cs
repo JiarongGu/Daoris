@@ -42,7 +42,10 @@ public static class HandOverAskWhy
     /// <summary>The session is not on this machine's record.</summary>
     public const string AskerGone = "asker-gone";
 
-    /// <summary>The session is a helper, a reviewer, an intake or Ask Daoris's own conversation (the files may be old).</summary>
+    /// <summary>
+    /// The session is a helper, a reviewer, an intake or Ask Daoris's own conversation (the files may be old). Ask Daoris's goes on with
+    /// another agent only where its turn met a limit with no account of its agent left (LIMITGOON2, D205 §3.5(e)), never on an ask.
+    /// </summary>
     public const string AskerUnfit = "asker-unfit";
 
     /// <summary>The hand-over could not be taken for a reason none of the codes below names.</summary>
@@ -183,6 +186,7 @@ public static class HandOverAskJudge
         var own = state is not null && state.Id == ask.Id ? state : null;
         if (own is { State: HandOverAskStates.Taken or HandOverAskStates.Refused }) return HandOverAskVerdict.Done;
         if (record is null or { Teammate: true }) return HandOverAskVerdict.Refuse(HandOverAskWhy.AskerGone);
+        // Ask Daoris's own conversation is never moved by an ask; only LimitMove's (e) moves it (LIMITGOON2, D205 §3.5(e)).
         if (record.Serves is not null || record.Opinion is not null || record.Ask is { Length: > 0 } || record.HelpMode is not null)
         {
             return HandOverAskVerdict.Refuse(HandOverAskWhy.AskerUnfit);
