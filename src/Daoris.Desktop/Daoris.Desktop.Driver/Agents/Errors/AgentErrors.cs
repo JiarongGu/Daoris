@@ -141,6 +141,16 @@ public static class AgentErrors
             .. owner?.ErrorWords is { } theirs ? [(Owner, theirs)] : Array.Empty<(string, ErrorWords)>(),
         ];
 
+        // 🔴 The source before any kind (Codex's owed read of D210, finding 8): the harness's own lines are read for its credential's
+        // refusal alone (§3.3). Read after the limit, a weekly limit's sentence on stderr was a limit, and would cool an account.
+        if (failure.Where == DoorWhere.Harness)
+        {
+            return (own?.Refused ?? owner?.Refused) is { Length: > 0 } words
+                   && failure.Words?.Contains(words, StringComparison.OrdinalIgnoreCase) == true
+                ? new AgentError(AgentErrorKind.Access, failure, $"{(own?.Refused is not null ? Own : Owner)}:words:refused")
+                : new AgentError(AgentErrorKind.Fatal, failure, Unread);
+        }
+
         // 1. A limit by its sentence, whatever the code says (D125, D206 unchanged), then by its code or kind with the unstated reset.
         if (AccountLimits.Read(own?.Limits ?? owner?.Limits, failure.Words, seen, zone) is { } limit)
         {
@@ -172,9 +182,6 @@ public static class AgentErrors
         {
             return new AgentError(AgentErrorKind.Access, failure, $"{(own?.Refused is not null ? Own : Owner)}:words:refused");
         }
-
-        // The harness's own lines are read for access alone (§3.3).
-        if (failure.Where == DoorWhere.Harness) return new AgentError(AgentErrorKind.Fatal, failure, Unread);
 
         // 3. Transient by code, then by the recorded sentences.
         if (ByCode(tables, failure, AgentErrorKind.Transient) is { } byTransient)
