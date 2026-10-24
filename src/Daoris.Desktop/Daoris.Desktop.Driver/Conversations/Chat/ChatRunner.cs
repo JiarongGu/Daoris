@@ -694,7 +694,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// <param name="continued">The parts its line continues, by id (SESSCTX1b): their kept folders are read as its own.</param>
     /// <param name="answers">
     /// A chat run whose process names a second opinion (CHATFLOW1e, the chat-flow design §6): handed <c>opinion_answer</c> from its spawn, since
-    /// a live conversation's rules are fixed then, as a driven run is at its resume (<see cref="DriverContinuations.AnswersFindings"/>).
+    /// a live conversation's rules are fixed then, as a driven run is at its resume (<see cref="KnowledgeConnector.AnswersFindings"/>).
     /// </param>
     internal ChatPlace RepositoryPlace(
         DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree,
@@ -729,7 +729,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     {
         var composed = PermissionRules.Compose(file, workspace, repository);
         IReadOnlyList<string> folders = [kept, .. (continued ?? []).Where(folder => !string.Equals(folder, kept, StringComparison.OrdinalIgnoreCase))];
-        IReadOnlyList<string> job = answers ? [.. DriverContinuations.AnswersFindings.Where(rule => !composed.Allow.Contains(rule))] : [];
+        IReadOnlyList<string> job = answers ? [.. KnowledgeConnector.AnswersFindings.Where(rule => !composed.Allow.Contains(rule))] : [];
         return (composed with { Allow = [.. composed.Allow, .. folders.Select(PermissionRules.ReadRule), .. job] })
             .Joined(AcrossRules.Rules(across, [tree, .. folders]));
     }
