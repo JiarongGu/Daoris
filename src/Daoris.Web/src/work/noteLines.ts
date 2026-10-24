@@ -306,6 +306,9 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // Why a conversation whose agent has no account left does not go on with another (LIMITGOON2): the person's pick, or no other choice.
   'chat.limit-picked': { values: ['owner'] },
   'chat.limit-no-other': { values: ['owner'] },
+  // A new conversation whose agent refused its model at the open (MODELROLE1d2): the one opened in its place, or its words waiting.
+  'chat.replaced': { values: ['session', 'agent', 'model', 'account'] },
+  'chat.choice-waits': { values: [] },
   // The limit's wake (LIMITRESUME1, D206 §3.7): its own conversation went on, or could not be resumed and went on briefed.
   'limit.resumed': { values: ['until'] },
   'limit.resume-refused': { values: ['why'], why: 'continue' },
@@ -476,6 +479,8 @@ export const HANDED_REASONS: Readonly<Record<string, { key: string; values: read
   resume: { key: 'note.handed.why.resume', values: [] },
   'carry-on': { key: 'note.handed.why.carry-on', values: [] },
   retry: { key: 'note.handed.why.retry', values: [] },
+  // MODELROLE1d2: a new conversation opened in place of one its agent refused at the open.
+  'not-offered': { key: 'note.handed.why.not-offered', values: [] },
 };
 
 /**

@@ -123,6 +123,12 @@ public sealed class HelpConversations(string home)
     /// </summary>
     public const string Brief = "brief";
 
+    /// <summary>
+    /// What a conversation opened in place of one its agent refused at the open is handed (MODELROLE1d2, D205 §3.5(b)): the words said to
+    /// that one, moved to it, since nothing ran there.
+    /// </summary>
+    public const string Replaced = "replaced";
+
     /// <summary>A name's longest: a title, not a note.</summary>
     public const int NameLimit = 80;
 

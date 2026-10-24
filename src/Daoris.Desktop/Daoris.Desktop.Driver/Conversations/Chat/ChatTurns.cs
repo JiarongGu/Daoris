@@ -854,6 +854,24 @@ internal sealed class ChatTurns(
         }
     }
 
+    /// <summary>
+    /// The door never opened and its start goes on in another conversation (MODELROLE1d2, D205 §3.5(b)): every word waiting, the one
+    /// held for the door first, handed out in the order said without the queue's own ids, and nothing more taken. None was sent, so none
+    /// is taken off its record here: a kept word leaves it once the conversation that takes it has it on the wire.
+    /// </summary>
+    public IReadOnlyList<ChatMessage> Yield()
+    {
+        lock (_gate)
+        {
+            _gone = true;
+            List<ChatMessage> words = [.. (_holding is null ? [] : new[] { _holding }).Concat(_waiting).Select(Unstamped)];
+            _holding = null;
+            _waiting.Clear();
+            Publish();
+            return words;
+        }
+    }
+
     private async Task PumpAsync()
     {
         while (true)

@@ -431,7 +431,8 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         var (room, reads) = await help.HelpRoomNowAsync(id, HelpRoom.GoesOnIn(context.Home, prior.Workspace, prior.Tree), ct).ConfigureAwait(false);
         return await runner.RunAsync(
                 prior.Actor ?? "ask-daoris", id, placed.Message, resolved, selection, config, runner.HelpPlace(room, reads, prior.Workspace), onEnded, ct,
-                chosen: placed.Chosen)
+                // MODELROLE1d2 (D205 §3.5(b)): its choice refused at the open, the move's words go on in its replacement, the brief with them.
+                chosen: placed.Chosen, pending: runner.HelpPending(placed, config, help.DescribeHelp ?? (_ => Task.FromResult<HelpMachine?>(null)), onEnded))
             .ConfigureAwait(false);
     }
 

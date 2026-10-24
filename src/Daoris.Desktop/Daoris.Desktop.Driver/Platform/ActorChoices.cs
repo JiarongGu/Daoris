@@ -144,6 +144,23 @@ public static class ActorChoices
         return before is { Length: > 0 } legacy ? [new ActorEffective(legacy, null, null, "before")] : [];
     }
 
+    /// <summary>
+    /// A pick's alternatives (MODELROLE1d2, D205 §3.5(b) and (d)): the picked agent's entries in <paramref name="actor"/>'s order, each a
+    /// <c>pick</c>, its first the pick itself; the pick alone, at account default, where the order names none of that agent. What a pick's
+    /// refusal at the open tries on the same account, and nothing beyond it.
+    /// </summary>
+    /// <exception cref="ActorUnreadableException">The actor's stored entry does not read.</exception>
+    public static IReadOnlyList<ActorEffective> PickAlternatives(string actor, DriverConfig config, string agent)
+    {
+        if (config.ActorErrors.TryGetValue(actor, out var error)) throw new ActorUnreadableException(actor, error);
+        var entries = (config.Actors.TryGetValue(actor, out var set) ? set : null)?
+            .Where(choice => string.Equals(choice.Agent, agent, StringComparison.OrdinalIgnoreCase))
+            .Select(choice => new ActorEffective(agent, choice.Model, choice.Effort, "pick"))
+            .Distinct()
+            .ToList() ?? [];
+        return entries.Count > 0 ? entries : [new ActorEffective(agent, null, null, "pick")];
+    }
+
     /// <summary>The agent a start of <paramref name="actor"/> runs where nothing walks its order: its first entry's, or null where it is off.</summary>
     /// <exception cref="ActorUnreadableException">The actor's stored entry does not read.</exception>
     public static string? FirstAgent(string actor, DriverConfig config) => Effective(actor, config).FirstOrDefault()?.Agent;

@@ -40,6 +40,12 @@ public static class HandOverWhy
     /// </summary>
     public const string Retry = "retry";
 
+    /// <summary>
+    /// A new conversation's agent refused its model at the open, before any prompt, and its start went on in the walk's answer (MODELROLE1d2,
+    /// D205 §3.5(b)): the record opened in the refused one's place. A reason a record continues another by; no box takes it.
+    /// </summary>
+    public const string NotOffered = "not-offered";
+
     /// <summary>The reason as the brief's agent reads it, in Daoris's one English: after <c>because</c>.</summary>
     public static string Briefed(string why) => why switch
     {
@@ -51,6 +57,7 @@ public static class HandOverWhy
         Resume => "its own conversation was lost, so it could not go on in it",
         CarryOn => "it stopped before its work was done",
         Retry => "its own conversation could not be resumed",
+        NotOffered => "its agent did not offer the model its start asked, so nothing ran there",
         _ => why,
     };
 
@@ -65,6 +72,7 @@ public static class HandOverWhy
         Resume => "its own conversation was lost",
         CarryOn => "it stopped before its work was done",
         Retry => "its own conversation could not be resumed",
+        NotOffered => "its agent did not offer the model it asked",
         _ => why,
     };
 
@@ -75,7 +83,7 @@ public static class HandOverWhy
     public static bool Known(string? why) => why is Press or Near or Limit or Agent or Curve;
 
     /// <summary>Whether a word is one of the reasons a record continues another by (SESSCTX1b): each has its <c>note.handed.why.*</c> line.</summary>
-    public static bool Continues(string? why) => Known(why) || why is Resume or CarryOn or Retry;
+    public static bool Continues(string? why) => Known(why) || why is Resume or CarryOn or Retry or NotOffered;
 }
 
 /// <summary>Who asked for a hand-over (MIXAGENT1a-i, D163), by code.</summary>

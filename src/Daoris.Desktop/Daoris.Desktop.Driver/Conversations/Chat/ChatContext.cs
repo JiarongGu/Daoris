@@ -106,6 +106,12 @@ internal sealed class ChatContext(
     /// </summary>
     public ConcurrentDictionary<string, SwitchChoice.MoveTo> CurveMoves { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Each new conversation's pending start (MODELROLE1d2, D205 §3.5(b)), by the issued id and by each record it opened since: a word said
+    /// to any of them goes to the one it is on now, or waits with it while it moves. Kept for the process's life, a handful.
+    /// </summary>
+    public ConcurrentDictionary<string, ChatPending> Pending { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Closing: no conversation starts, goes on or moves from here.</summary>
     public bool Closing => _closing;
 

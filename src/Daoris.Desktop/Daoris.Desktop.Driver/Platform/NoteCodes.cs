@@ -592,6 +592,8 @@ public static class NoteCodes
         new(HandOverWhy.Resume, [], "note.handed.why.resume"),
         new(HandOverWhy.CarryOn, [], "note.handed.why.carry-on"),
         new(HandOverWhy.Retry, [], "note.handed.why.retry"),
+        // MODELROLE1d2: a new conversation opened in place of one its agent refused at the open.
+        new(HandOverWhy.NotOffered, [], "note.handed.why.not-offered"),
     ]);
 
     /// <summary>Why no helper answered a question (MIXAGENT2a-ii, <see cref="HelperWhy"/>): the page's <c>note.helper.why.*</c>.</summary>
@@ -751,6 +753,12 @@ public static class NoteCodes
     // own words following in the English alone.
     public static readonly NoteCode ChatLimitPicked = new("chat.limit-picked", ["owner"]);
     public static readonly NoteCode ChatLimitNoOther = new("chat.limit-no-other", ["owner"]);
+
+    // ——— A new conversation whose agent refused its model at the open (MODELROLE1d2, D205 §3.5(b)): the one opened in its place, naming
+    // the refused session and what was refused where, the account by its id as `chat.moved` names it; or, with nothing left to open, the
+    // refused one saying its words wait there, the walk's own words following in the English alone.
+    public static readonly NoteCode ChatReplaced = new("chat.replaced", ["session", "agent", "model", "account"]);
+    public static readonly NoteCode ChatChoiceWaits = new("chat.choice-waits", []);
 
     // ——— The limit's wake (LIMITRESUME1, D206 §3.3, §3.7): its own account ready again at the margin-added `until`, it went on in its
     // own conversation; or its own conversation could not be resumed, by the refusal's code, and it went on briefed.
