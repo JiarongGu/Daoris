@@ -2,8 +2,8 @@
 
 **Standing:** proposed, a note amending D195 (KEEPSIZE1), round 3. Round 1 (the same day, `d57b7f8d6`, merged at `16769207d`)
 proposed a size limit per kind beside its days and the floor as a share; its §6 holds the proofs rows KEEPSIZE1a and 1e still take.
-KEEPSIZE1a, the set-aside folders at every place of the trees entry, is built (D195's KEEPSIZE1a note, 2026-10-24); where this
-round says otherwise of 1a, the build on main stands until round 3's named changes align the text. Round 2 (`a2993a3bb`) was
+KEEPSIZE1a, the set-aside folders at every place of the trees entry, is built on main (`0f6f76b79`, D195's KEEPSIZE1a note,
+2026-10-24), and §1.4 and its row in §7 say it as built. Round 2 (`a2993a3bb`) was
 rewritten to the owner's directions, carried in the row KEEPSIZE1 in `TASKS.md`:
 
 - what is kept of finished work is its **text record**: the conversation, its notes, the landing and the commits' recovery refs,
@@ -33,7 +33,12 @@ amendment; accept after named changes: 22 findings, 4 blocking), their reads ver
 - **One set of press bounds**, judged at the press (§5).
 - **No backfill** (§7).
 
-Nothing here is built. Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, service paths under
+Round 3 (`6d3d3aec9`) was read by the Opus foundation reader alone (11 findings, none blocking: accept after named changes the
+steward checks without another read), verbatim in the reads; Codex's read stopped when its credits ran out and is owed on the text
+these changes leave. **The named changes are taken in place**, and §11 says where each went, checked against the code on main at
+`aa16658e7`.
+
+Nothing here but KEEPSIZE1a is built. Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, service paths under
 `src/Daoris.Service/Daoris.Service.Core/`. Read for it: the row KEEPSIZE1 and KEEPSIZE1a in `TASKS.md`; D195 and the cleanup design
 (`docs/2026-10-21-cleanup-design.md`: §1, §2, §3, §5, §7); the history clearing design (`docs/2026-10-07-history-clearing-design.md`
 §2); D88's AUTOTIDY1 and AUTOTIDY2a and D102's SQUASHTIDY1c notes.
@@ -158,10 +163,12 @@ locally at `KnowledgeIndex.cs:41` and on the fed path at `KnowledgeService.cs:65
 | `history` | the press, or an age the person sets (`:55-61`) | none |
 | the floor | the smaller of 10% of a volume and 20 GB (`FloorPolicy.Of`, `KeepKinds.cs:216-222`); below it the slims due, unused downloads and the browser's caches go at once (`SpaceFloor.cs:311-529`) | — |
 
-Every reader of the set-aside folders reads `TreesRoot/.tidied` alone (`TreeSetAside.cs:38`), though the trees entry has an old place
-too (`DaorisHome.cs:379`): the purge, the slim, the floor, the press's list, the look's report and the card's walk
-(`SystemSpace.cs:64-96`). A press's unit names its folder by workspace, repository and name and is resolved under one root
-(`SpaceFree.cs:291-296`). Folders set aside before a home's layout moved are reached by none of them (round 1's §1.1; KEEPSIZE1a).
+Every reader of the set-aside folders reads `.tidied` under each place of the trees entry, the new first (`TreeSetAside.SetAsideRoots`,
+`TreeSetAside.cs:46-47` on main; KEEPSIZE1a, built at `0f6f76b79`): the purge, the slim, the floor's first act, the press's list and
+its removal, the look's Keeping pass, the trees' list and the work inventory, and the card's walk. A folder still moves into the new
+place alone (`SetAsideRoot`, `:38`), and each place keeps its own `purge-failed.json`. A press's unit names its folder by workspace,
+repository and name, found at whichever place holds it, the new first (`SpaceFree.cs:296-300`). Before that build every reader read
+the new place alone, and folders set aside before a home's layout moved were reached by none of them (round 1's §1.1).
 
 ## 2. A finished tree's record
 
@@ -175,7 +182,7 @@ The record of a finished tree is **text**, and nothing of its tree but names:
 | Its notes: each session's `Note` and `NoteParts`, the quest's closing answer and its requirements' answers | the sessions' rows; `quest_log` | yes |
 | The landing: the branch it landed as, the line, when, and which hold of §1.1 kept the commits, in which form | the manifest (§3.3), from the judgement | **no** |
 | The tip, the commit it grew from and its work unit | the manifest, from the judgement and `session-branches.json` | **no** once the trace retires |
-| Its commits: each id, its subject and the files it changed, by name with the lines added and removed | `git log --numstat <grew from>..<tip>`, read from the tip while a ref holds it (§3.5 step 6) | **no** |
+| Its commits: each id, its subject and the files it changed, by name with the lines added and removed | `git log --first-parent --numstat <grew from>..<tip>`, read from the tip while a ref holds it (§3.5 step 6): a merge of the line into the branch is one commit of the tree's, with its first-parent changes, never the line's commits it brought in | **no** |
 | Which session made which commits | each session's `BaseCommit`, **only where the bases bound the range** (a chain's later session based on its predecessor's tip); otherwise the record names the tree's commits and the sessions that ran in it, never an attribution it cannot read | **no** |
 | The recovery ref, where one holds the tip | the manifest; looked up again when the record is read, since a ref may be dropped or retired (§1.1) | the ref is; nothing points from the session to it |
 | What its tree held that no commit holds | the judgement's `TreeHolds`: `Ignored`, `Written` and `TooLarge` (`ContentHolds.cs:560-622`), by name, at most `TreeScratch.ScratchWalkLimit` (5,000) names, the rest counted; a build folder's contents (`TreeScratch.BuildFolders`) are the build's output and are not named | **no** |
@@ -204,14 +211,21 @@ replaces whole and a schema bump drops, §1.3):
 - **Gone with its sessions**: `Sessions.DeleteAsync` (`Sessions.cs:1522-1528`), which both the history clear (`Asks/History.cs:303-323`)
   and the single delete (`SessionLedger.cs:1996-2003`) call inside their transaction, deletes the session's links, and a record left
   with no session in the same statement's transaction.
+- **A record with no session** (posted when no session row names the tree, because its sessions were cleared while it awaited its
+  record or because no row ever named it) is history too: it ages by its own `at` under history's age where the person set one
+  (KEEP1g), and *Clear history…* takes it with the sessions it clears, by `at` within the clear's range. Its folder goes as recorded.
+- **A newer schema is refused**, as the index's is (KSCHEMA1, `SqliteKnowledgeStore.cs:104-108` on main): an older build that finds
+  `work_records` or `work_record_sessions` stamped newer than its own reads and writes none of their rows and never migrates them back;
+  its record's post is refused, so the folder stays `deleted`, awaiting its record past its days (§3.4), and says why.
 - **Machine-local.** A shared host never receives it (AGENTS.md: shared hosts exchange permitted records and answer no machine
   paths), and it is not part of a repository's feed or the session sync. Sync of records is not in this design.
 
 **Written by** the service, on the driver's post on loopback (`POST /api/trees/record`, in the shape of KEEP1b's
 `/api/sessions/{id}/resolved`) of the manifest's facts and the commits read from the tip. The service answers once the rows and their
 text are committed. The post is made **after the branch went and outside the repository's hold** (§3.5), from the manifest alone, so
-the next pass, the press and a restart compose the same post. Until it is answered the folder is not marked and nothing takes it
-early (§3.4).
+the next pass, the press and a restart compose the same post. **The post is idempotent on `(workspace, repository, folder)`**: the
+pass and the press may both post one folder's record, and a second post of a kept identity answers as the first did and writes
+nothing. Until it is answered the folder is not marked and nothing takes it early (§3.4).
 
 **Kept as history.** The record cannot be made again. It is history (D195 point 7): cleared by the person's *Clear history…* with its
 sessions, or by the age the person sets, never by the allowance (§4). Its bytes are inside `knowledge.db`, counted once, under the
@@ -222,6 +236,12 @@ card's rest as today (`SystemSpace.cs:90-92`); the card says the records' count,
 A tree the look sets aside as finished (`GoesByItself`, §1.1), whose manifest was written (§3.3). A stray or a pass's leftover gets
 none and no manifest (§1.1), and keeps D195's days (§3.4). Ask Daoris's conversations have no tree, and their records are history as
 today.
+
+**The person's *Clean up…* and *Discard* keep no record** in this design. Their path removes the tree with `git worktree remove`
+(`TreeSweeps.cs:210-235` on main) and writes no manifest; §3.1's tip ref is written on it all the same, and the sessions' rows and
+conversations stay as history, so what goes unrecorded is the landing, the commits' list and the named scratch. The press is the person's
+word on a tree the look leaves, landed on a branch of theirs or holding its own scratch (`TreeSetAside.cs:26-29`, `TreeSweeps.cs:314`).
+A record on that path (a manifest under `.tidied` with no folder, posted after the hold as the look's is) is a later row's, not 1b's.
 
 ## 3. When a finished tree goes
 
@@ -257,7 +277,9 @@ kept longer sets `whole` (§3.4).
 
 **The move writes a manifest for every finished tree** (Opus finding 7), its slim paths possibly empty, `whole` included; the slim
 manifest becomes **schema 2**, beside the folder as today (`SlimManifest.cs:6-11`). An older build reads no manifest of another schema
-(`:13-15`) and purges the folder by its days, which keeps more of a folder awaiting its record than this build would, never less.
+(`:13-15`; `SlimManifest.cs:58`) and purges every folder by its days. That keeps a recorded folder longer than this build would (its
+days, not an hour), but a folder awaiting its record less long: this build holds it past its days (§3.4), and the older build purges it
+at them. **Running an older build loses the records still awaited** once their folders' days end; the records already kept stay.
 
 | Field | What | Written at |
 |---|---|---|
@@ -300,13 +322,23 @@ finished tree (§3.5's race) and the moment in its name for any other (`TreeSetA
 manifest's `tip` is an ancestor of the manifest's `ref`, or of `refs/heads/<line>` where `ref` is none. Where it fails (the person
 dropped the ref, the line was rewound), the folder is **unmarked** from then on: it waits its days and says why.
 
+**Git outside the hold** (round 3's finding 7): the holding check, the record's commits (§3.5 step 6) and the resume read git from the
+Keeping pass and the press, which today touch no git and no live tree (`SetAsideKeeping.cs:5-9`, `BranchTidying.cs:237-245` on main).
+They read it **read-only** (`show-ref`, `merge-base --is-ancestor`, `log`, never a write), outside every repository's hold, in the root
+the registry gives the manifest's workspace and repository. **A repository it cannot resolve or read makes the folder unmarked**: it
+waits its days and says why, as a failed holding check does.
+
+**The hour's clock** (round 3's finding 6) is the manifest's `recorded`: a finished folder goes an hour after its record is kept, so
+a record kept late still leaves the person an hour with both. The days' clock stays the moment in the folder's name, as the purge reads
+it today (`TreeSetAside.cs:400` on main).
+
 | Class | The hour's purge | The days' purge (D195, 14 by default) | The allowance (§4) | The press (§5) |
 |---|---|---|---|---|
-| recorded, the holding check passing, `whole` not set | **at its hour** | — | yes | yes |
+| recorded, the holding check passing, `whole` not set | **an hour after `recorded`** | — | yes | yes |
 | recorded, `whole` set at the move or now | no | at its days | **no** (Opus finding 17) | yes |
 | awaiting record | no | **no**: it waits for its record, said on the card | no | yes, its record posted first; where the service does not take it, listed *its record is not kept* and removed only as listed |
-| stopped between steps | no | resumed (§3.5), else at its days | no | yes, listed as what it is |
-| refused | no | at its days (the branch holds its commits) | no | yes |
+| stopped between steps | no | resumed (§3.5), else at its days | no | yes, resumed first, then listed as what it is |
+| refused | no | resumed (§3.5), else at its days (the branch holds its commits) | no | yes, resumed first |
 | unmarked | no | at its days, as built | **never** | yes, listed |
 
 **Why the days' purge stays for unmarked folders and the allowance does not** (Codex finding 4): the days are D195's standing rule,
@@ -315,12 +347,17 @@ days" (`TreeStrays.cs:41-56`). This design does not shorten that, and the allowa
 them. An awaiting-record folder is held past its days, since the record is what the owner's frame keeps of it and the folder is the
 one place its scratch's names and its unread inputs still are.
 
-**One purge call** (Opus finding 8): the hour's purge and the days' purge are one `PurgeSetAside` call, its `after` a function of the
-folder's class, so `purge-failed.json` keeps every folder's failure and the day's wait after a repeated one engages.
+**One purge call** (Opus finding 8): the hour's purge and the days' purge are one `PurgeSetAside` call, its `after` and the moment it
+measures from a function of the folder's class, so `purge-failed.json` keeps every folder's failure and the day's wait after a repeated
+one engages. Since KEEPSIZE1a each place keeps its own `purge-failed.json` (`TreeSetAside.cs:382-385` on main), so the one call is one
+pass over every place.
 
 **Renamed before it is deleted** (Opus finding 19): a folder that goes is renamed first into `.tidied/.going/`, as the press moves an
 earlier build's folders aside first (`SpaceFree.cs:127`); a refused rename keeps it whole, `busy`, and nothing is half deleted under
-the name a person opened. A folder left in `.going/` by a stop is deleted by the next pass.
+the name a person opened. A folder left in `.going/` by a stop is deleted by the next pass. **Every other reader of `.tidied`
+passes over `.going/`**, since each enumerates its children as workspaces: the purge (`TreeSetAside.cs:396` on main), the press's list
+and the slim (`SetAsideKeeping.cs:53, 107`), the trees' list and the inventory (`SessionTrees.cs:547`) and the card's *next*
+(`SystemSpace.SetAsideNext`, `SystemSpace.cs:579`). The card's size walk counts what lies in `.going/` under `set-aside` until it is gone.
 
 ### 3.5 The steps, and what each stop or refusal leaves
 
@@ -333,17 +370,18 @@ Inside the repository's hold, at the look's sweep (`AutoTidies.cs:291-297`, `Tre
 4. **Move and let git go** as today, then mark `moved`. Refused: the manifest is forgotten, the ref dropped, the folder put back, as
    today (`TreeSetAside.cs:213-234`).
 5. **Delete the branch** at the commit judged (`DeleteJudgedAsync`, `TreeSweeps.cs:239`). Succeeded: mark `deleted`, then the record's
-   inputs are complete. **Refused: mark `refused`**; the branch stands and holds the commits, so the folder is a copy of a branch that
-   stands and waits its days, never armed (Opus finding 5, Codex finding 3). A content hold's ref is dropped as today (`:242`), and
-   the tip ref of step 2 likewise.
+   inputs are complete. **Refused: mark `refused`**; the branch stands and holds the commits, and the folder is never armed (Opus
+   finding 5, Codex finding 3). A content hold's ref is dropped as today (`:242`), and the tip ref of step 2 likewise. A refusal is
+   not rare: the delete verifies the line at the commit read, so a landing between the judgement and the delete refuses it. Its
+   branch, now with no tree, is the next look's, and the resume below gives the folder its record then.
 
 After the hold, outside it (Opus finding 18):
 
-6. **Compose and post the record** from the manifest: `git log --numstat <grewFrom>..<tip>` (read from the tip, which the ref or the
-   line holds), and the post of §2.2. Answered: mark `recorded`. Not answered, or refused: it stays `deleted` and every later pass, the
+6. **Compose and post the record** from the manifest: `git log --first-parent --numstat <grewFrom>..<tip>` (read from the tip,
+   which the ref or the line holds; §2.1), and the post of §2.2. Answered: mark `recorded`. Not answered, or refused: it stays `deleted` and every later pass, the
    press, or a restart composes the same post again from the manifest (Opus finding 6). Where the tip no longer reads (the ref dropped
    by hand), the record is posted without its commits, saying so.
-7. **The hour's purge** takes a `recorded` folder past its hour by §3.4's judgement.
+7. **The hour's purge** takes a `recorded` folder an hour after its `recorded`, by §3.4's judgement.
 
 **The race the hour does not cover** (Codex finding 2): a write after the judgement's read and before the folder's name was chosen
 predates the moment in its name, so the move's moment cannot be the threshold. A finished folder's threshold is `read` (§3.4): anything
@@ -352,16 +390,24 @@ tree holding an uncommitted path (`TreeSweeps.cs:311`). The judgement's own read
 `ContentHolds.cs:562`), and the rename and `git worktree remove` of the moved path write nothing inside it. A folder so kept is said
 *written after it was judged*, waits its days, and is the press's.
 
-**Resuming a stop**, at each pass before the purge, for each finished folder not at `recorded`:
-- `judged`: the process stopped before or during the move. Unknown, as today (`SlimManifest.cs:11-13`): kept whole for its days.
-- `moved`: stopped before the delete. Where the branch is absent and the holding check passes, mark `deleted` and go on at step 6;
-  where the branch stands, the next look judges it again (its tree's folder is gone, `TreeSweeps.cs:304-305`), and its delete marks
-  this manifest `deleted` by its `branch` and `tip`; otherwise the folder waits its days.
+**Resuming a stop or a refusal: one rule** (round 3's finding 1), at each pass before the purge, and at the press before it lists,
+for each finished folder at `judged` (its folder present), `moved` or `refused`:
+- **Where the manifest's `branch` is absent and the holding check passes** (§3.4), mark `deleted` and go on at step 6.
+- **Where the branch stands**, git has let go of the tree, or will once the next look meets the folder gone from its tree's path.
+  The next look takes the branch as one with no tree: its kept fact still names it (`AutoTidies.cs:233-254` on main), `GoesByItself`
+  takes a branch with no tree (`TreeSetAside.cs:26-29`), and the last look finds no folder at the tree's path (`TreeSetAside.cs:72-78`).
+  It deletes the branch on §3.1's path, with its ref. **The delete of a branch with no tree marks a manifest of that `branch` and `tip`
+  `deleted`**, at either place of the trees entry, so the folder goes on at step 6 at the next pass. A `judged` folder whose
+  registration still stands is judged again as a registration whose folder is gone (`TreeSweeps.cs:304-305`), and goes the same way.
+- **Otherwise** (the branch stands at another tip, or the holding check fails) the folder waits its days, and says why.
 - `deleted`: step 6.
+
+A schema-2 manifest at `judged` is **not dropped by the slim**, which today drops a `judged` manifest at the next pass
+(`SetAsideKeeping.cs:120-125` on main), since its inputs are the record's; the slim leaves its folder whole, as today.
 
 ### 3.6 D195's days, and how much space this gives back
 
-- **A recorded folder**: an hour, as §3.4.
+- **A recorded folder**: an hour after its record is kept, as §3.4.
 - **Any other**: its days, **14 by default**, unchanged; an awaiting-record folder waits its record (§3.4). The allowance takes none of
   them.
 - **`whole`** changes meaning, under the same word: *keep a finished session's folder for the days, not an hour*. The record is kept
@@ -389,7 +435,9 @@ its one removal with every guard it has, and only units §3.4 makes eligible:
 
 1. **Recorded set-aside folders** (copies: a ref holds their tip and the knowledge store holds their record), past their hour, oldest by
    their move, not under `whole`. **Never a stray, a leftover, a refused or awaiting record's folder, or one from before this build**
-   (Opus finding 2): those are counted and said (§4.4), with the press as their door.
+   (Opus finding 2): those are counted and said (§4.4), with the press as their door. This is exactly what the hour's purge takes
+   earlier in the same pass, under the same guards and budget (§3.4), so the step adds no removal of its own: it stands in the order
+   so that the whole's sum (§4.3) counts them.
 2. **The browser's caches** (made again by browsing): cleared together, only while the shell's browser host says it does not run
    (`BrowserCacheClearing`, `Platform/BrowserCaches.cs:24-33`).
 3. **Unused downloads** (fetched again): oldest by the start of their unused stretch, past the hour's settle, through CACHECLEAR1's
@@ -408,6 +456,10 @@ of how cheaply they come back, and says the rest. The rejection's reason stands,
 Each kind that may be let go has a **part**, the most it may hold even while the whole is within N. The rest of N is what the kinds
 that cannot go may hold before Daoris says so.
 
+**The set-aside part is a number said, not a bound** (round 3's finding 5): what the kind holds after the hour's purge is only what no
+removal may take before its days or its record (§3.4), so its part removes nothing. It is the room N leaves for those folders: the card
+compares the kind with it, and over it the kind's row names the classes that hold it (§4.4), never a promise that the kind stays under it.
+
 | Kind | Part by default, at N = 48 | Its default at another N | The person may set |
 |---|---|---|---|
 | `set-aside` | 8 GB | `max(1, ⌊8 × N / 48⌋)` GB | 1 GB to N, in whole GB |
@@ -417,20 +469,25 @@ that cannot go may hold before Daoris says so.
 | everything else | the rest of N | — | said, never taken |
 
 **Whole GB** (Opus finding 22, Codex finding 7): N and each part are whole GB, as the floor's size is (`KeepChoices.FloorGb`,
-`KeepChoices.cs:40`); no stored value is a fraction. **The parts' sum is at most N**: a door refuses a part that would bring the parts the
-person set, with the others at their defaults for that N, above N, and refuses an N below the sum of the parts the person set, as
-`KEEP_OUT_OF_RANGE` with `context: gb`, naming the parts. **A value in the file that breaks its bounds is not read**, as KEEP1d reads
-every stored rule (`KeepChoices.cs:13`): an N above half the volume reads as the default; parts are read in the table's order, and a
-part that would bring the sum above N is not read and keeps its default.
+`KeepChoices.cs:40`); no stored value is a fraction. **The parts' sum is at most N, by one sum on every door and in the file** (round
+3's finding 4): the parts the person set plus the unset parts' defaults at the N in question. A part's door refuses a part that would
+bring that sum above N; the N door refuses an N at which that sum is above N (set-aside 40 at N = 48, then N = 41: 40 + 4 + 1 = 45 > 41,
+refused), both as `KEEP_OUT_OF_RANGE` with `context: gb`, naming the parts. **A value in the file that breaks its bounds is not read**,
+as KEEP1d reads every stored rule (`KeepChoices.cs:13`): an N above half the volume reads as the default; where the sum at the N read is
+above it, the set parts are dropped to their defaults in reverse table order until it fits. **Where half the volume is under 3 GB**,
+the three 1 GB minimums cannot fit, so no part is offered, set or read, and the allowance judges the whole alone.
 
 **The default N is 48 GB**, bounded by half the Daoris folder's volume (`FloorPolicy.HalfGb`, `KeepKinds.cs:213`); the person may set
-8 GB to half the volume (where half is under 8 GB, half is both bounds). **Why 48** (Opus finding 4): what cannot go is about 30 GB in
-the sizing case (six live trees of another workspace's .NET service at about 3.5 GB each, and the rest of what the install holds that
-cannot go, about 7 GB of §0's 9 GB once the downloads and the browser's caches are taken out), and the parts at the default are 15 GB, so
-45 GB holds both with a margin. At round 2's 32 GB the parts (14.4 GB) left 17.6 GB for what cannot go, which that case is over for good.
-Against the install's measure (§0): the downloads (1.4 GB) and the browser's caches (0.77 GB) are under their parts; the set-aside
-folders (27.9 GB) are over theirs, but every one is unmarked and none is the allowance's (§3.6), and with the hour the recorded folders
-stand at about 1 to 2 GB. There is no `off`: an allowance is the rule (the owner's direction), and the person may raise it to half the
+8 GB to half the volume (where half is under 8 GB, half is both bounds). **Why 48** (Opus finding 4; round 3's finding 5): what cannot
+go is about 30 GB in the sizing case (six live trees of another workspace's .NET service at about 3.5 GB each, and the rest of what the
+install holds that cannot go, about 7 GB of §0's 9 GB once the downloads and the browser's caches are taken out; that 7 GB holds the
+install's own 4.1 GB of live trees beside the six, which only makes 48 more generous). Beside it, the set-aside folders that are not
+recorded cannot go before their days or their record either; the 8 GB set-aside part is the room N leaves them, and how much they hold
+is unknown until 1b counts the classes, which is the measure that confirms the default or moves it. The parts the allowance can empty
+are the downloads' 5 GB and the browser's 2 GB, so 30 + 8 + 7 = 45 GB, and 48 GB holds them with a margin. At round 2's 32 GB the
+parts (14.4 GB) left 17.6 GB for what cannot go, which that case is over for good. Against the install's measure (§0): the downloads
+(1.4 GB) and the browser's caches (0.77 GB) are under their parts; the set-aside folders (27.9 GB) are over theirs, but every one is
+unmarked and none is the allowance's (§3.6), and with the hour the recorded folders stand at about 1 to 2 GB. There is no `off`: an allowance is the rule (the owner's direction), and the person may raise it to half the
 volume.
 
 ### 4.3 When it is judged, from which counts
@@ -449,11 +506,15 @@ At each Keeping pass, after the purge and the slims (the cleanup design §3.1 st
 
 **Which counts** (Codex finding 8, Opus finding 16):
 - **A count is fresh for a kind** where it was measured after the kind's last change Daoris made: a move into `.tidied` changes both
-  `trees` and `set-aside`, a purge or slim `set-aside`, a clearing its kind. A destructive step reads only fresh counts. A kind whose
-  count is not fresh takes nothing beyond its part's overage as last measured less what this pass removed, and asks a recount of that
-  kind at once (`SystemSpace.StartDue`, `SystemSpace.cs:199-205`, with the kind named), so the next pass judges it.
+  `trees` and `set-aside`, a purge or slim `set-aside`, a clearing its kind. A destructive step reads only fresh counts. **A kind
+  whose count is not fresh at the start of a pass takes nothing** by its part or by the whole until its recount lands (round 3's
+  finding 3), and asks a recount of that kind at once (`SystemSpace.StartDue`, `SystemSpace.cs:200` on main, with the kind named), so a
+  later pass judges it. The Keeping pass runs at every look and the recount is a background walk, so taking a stale overage again would
+  repeat the same removal each pass until the walk ends; subtracting every removal since the count is not open either, since
+  `keeping.json` keeps one `last` run per kind (`KeepingRecord.cs:271`). What waits is downloads and caches, so the wait costs a pass.
 - **Within a pass**, each removal subtracts the bytes it reports (the purge's `Bytes`, the press's and the clearings' bytes) from its
-  kind's count before the next step reads it, so a purge earlier in the pass prevents a further removal it made unneeded.
+  kind's count before the next step reads it, so a purge earlier in the pass prevents a further removal it made unneeded. A count
+  fresh at the pass's start stays readable through the pass less what the pass removed; at the next pass it is stale until recounted.
 - **A set-aside folder's size** is the set-aside walk's per-folder size (`SpaceFree.cs:153-156` reads `Sizes.Of(home,
   "set-aside").Folders` today; Opus finding 7), never a walk inside the repository's hold. A folder newer than the walk is unknown: it
   counts as at least nothing and is not taken by the whole's step until counted. **A size not counted is unknown, and the unknown
@@ -522,7 +583,8 @@ that does not read.
 
 *Free up space…* (KEEP1e) stays the person's door at any time, listed first and then pressed, on the card's head and as `daoris-driver
 space free`. **Its bounds are one set, judged at the press** (Opus finding 3): each unit is judged again by §3.4 right before it goes, and
-one changed since the list is kept and counted, as today.
+one changed since the list is kept and counted, as today. It runs §3.5's resume before it lists, so a folder stopped at `judged` or
+`moved`, or `refused`, whose branch is gone reaches its record before the person's word can remove it.
 
 **It may remove:**
 - what each rule takes now, the allowance's step among them (*over its part: 3 folders, 1.1 GB*);
@@ -536,7 +598,7 @@ one changed since the list is kept and counted, as today.
 - what an earlier build left, and a failed update's folder, as today.
 
 **It never removes**, and lists only as a door:
-- a live tree or anything in it (*Clean up…* and *Discard*);
+- a live tree or anything in it (*Clean up…* and *Discard*, which keep no record in this design, §2.3);
 - history, the records and the conversations (*Clear history…*);
 - a recovery ref, a branch or anything in a registered repository (D88's and D102's rules, and `work recovery drop`, stay theirs);
 - a download pinned, used or held by a running session; sign-ins, keys, settings, plugins and what they keep, the program, the
@@ -582,7 +644,17 @@ gain is one-off: the install's 27.9 GB, which the person's press frees now and w
   - a carried tree's ref written first, on the look's path and on the press's (Opus finding 21); a line held only by `origin` likewise;
   - a tree with no package folder getting its manifest and going at its hour (Opus finding 7);
   - a write after the judgement's read and before the move keeping the folder (Codex finding 2);
-  - a branch delete refused after the move: `refused`, never armed, kept its days (Opus finding 5);
+  - a branch delete refused after the move: `refused`, never armed (Opus finding 5); then the next look's delete of the branch with
+    no tree marking it `deleted`, and the next pass giving it its record (round 3's finding 1);
+  - a stop at `judged` with the folder present: its manifest kept by the slim, and the folder reaching its record once the branch goes;
+    the press resuming before it lists (round 3's finding 1);
+  - a branch that merged its line: its record's commits read by `--first-parent`, none of the line's (round 3's finding 10);
+  - the record posted twice, by the pass and the press, kept once (round 3's finding 11);
+  - a record posted after its sessions were cleared: aged by its `at` and taken by *Clear history…* (round 3's finding 11);
+  - a `work_records` stamped newer refused: no row read or written, the folder kept `deleted` and said (round 3's finding 11);
+  - the hour measured from `recorded`: a record kept a day late leaving its folder an hour (round 3's finding 6);
+  - a folder left in `.going/` passed over by the press's list, the slim and the trees' list, and deleted by the next pass; a
+    repository the registry cannot resolve making the folder unmarked (round 3's finding 7);
   - a service that does not answer: `deleted`, kept past its days, the next pass's retry recording it from the manifest alone, and the
     press posting it first (Opus finding 6);
   - a stop after each step resumed as §3.5 says; a manifest not written keeping the tree and the branch;
@@ -593,13 +665,18 @@ gain is one-off: the install's 27.9 GB, which the person's press frees now and w
   - `whole` keeping the folder its days with its record kept;
   - the history clear and the single delete taking the record with its last session (Opus finding 13);
   - a file held open keeping the folder whole, `busy` (Opus finding 19).
-- **KEEPSIZE1a — the set-aside folders at every place of the trees entry** (driver; the defect, under D195 as it stands). Every reader
-  reads `.tidied` under each of `TreeContext.TreesRoots`, so the days, the allowance and the card reach the old place, and **a press's
-  unit carries which place it is at** through listing, selection, removal, sizing and reporting (Codex finding 10; `SetAsideListed`,
-  `SetAsideKeeping.cs:254`; `SpaceFree.cs:291-296`). The install's old place was removed by hand, so it gives the owner nothing now,
-  and is needed before the allowance counts the set-aside kind (KEEPSIZE1d). Proof: round 1's §6 at `d57b7f8d6`, a home with a folder
-  at each place both purged at their days, listed and counted under `set-aside`; and two folders of the same relative name and
-  manifest, one at each place, each selected and removed alone.
+- **KEEPSIZE1a — the set-aside folders at every place of the trees entry** (driver; the defect, under D195 as it stands). **Built on
+  main** at `0f6f76b79`, merged at `485c68121` (D195's KEEPSIZE1a note). Every reader reads `.tidied` under each of
+  `TreeContext.TreesRoots`, the new place first (`TreeSetAside.SetAsideRoots`, `TreeSetAside.cs:46-47`), so the days, the press, the
+  floor and the card reach the old place, and the allowance will (KEEPSIZE1d). Each place keeps its own `purge-failed.json`. **A press's
+  id names its folder at whichever place holds it, the new first** (`SpaceFree.cs:296-300`), not a place-aware unit (Codex finding 10):
+  a folder moves into the new place alone, named with its tree and the millisecond of its move (`TreeSetAside.cs:282-284`, a stamp
+  since AUTOTIDY1, `de3168ad5`), so one relative id at both places cannot arise from Daoris's own moves. One made by hand leaves the old
+  place's folder to its days, which the purge reads at every place. **The place-aware units are not needed**, and no row carries them.
+  Proof as built: `SetAsidePlacesTests`, a folder at each place past its days both purged, one at the old place within its days kept
+  and one written into after its move kept and said `written`, both listed by the press's list and the trees' list, both counted under
+  `set-aside` and none under `trees` or `rest`, the card's *next* counting both. The install's old place was removed by hand, so it gave
+  the owner nothing; it serves any other home that moved.
 - **KEEPSIZE1c — the records searchable and readable** (service, MCP, web). §2.2's `work_records_fts`, `EntryKind.Record`, and:
   - **one ranking** (Opus finding 14): the two full-text tables' hits merged by each one's rank (reciprocal rank, the bm25 scores never
     compared); the hybrid tier's vectors cover `entries` alone, so a record ranks by its words;
@@ -617,16 +694,19 @@ gain is one-off: the install's 27.9 GB, which the person's press frees now and w
   `KeepRules`' bounds and refusal on every door, `KeepKinds.BrowserCache` with its stopped-browser clearing at the daily pass (Codex
   finding 12), the pass's steps in §4.3's order through each kind's removal and §3.4, the counts' freshness and subtraction,
   `space.over` and its row, a part's own words, the card's head and parts in both languages. Proof:
-  - each kind over its part going oldest first, eligible units only; a stray, an unmarked folder and an awaiting-record folder past their
-    first day over the part kept and said (Opus finding 2); a `whole` folder kept (Opus finding 17);
+  - each kind over its part going oldest first, eligible units only; a stray, an unmarked folder and an awaiting-record folder over the
+    part kept and said, the set-aside part removing nothing the hour's purge did not (Opus finding 2, round 3's finding 5); a `whole`
+    folder kept (Opus finding 17);
   - the whole over N going in order where every eligible unit would reach N; **what cannot go over N taking only the parts' overage**,
     said (Opus finding 4);
-  - a purge earlier in the pass preventing a further removal; a stale count taking nothing beyond its part and asking a recount; a tree
-    moved since its count not counted twice (Codex finding 8, Opus finding 16);
+  - a purge earlier in the pass preventing a further removal; a stale count taking nothing and asking a recount, and a second pass
+    before the recount lands taking nothing again (round 3's finding 3); a tree moved since its count not counted twice (Codex finding 8,
+    Opus finding 16);
   - a `never` download and a running session's kept; the browser running keeping its caches; an uncounted kind taking nothing;
-  - the arithmetic (Codex finding 7, Opus finding 22): defaults at N = 8 and on a volume whose half is under 48 GB; a part refused above
-    N; an N refused below the set parts' sum; a file whose parts' sum is above N reading the last as its default; the both-ways test
-    over the new choices;
+  - the arithmetic (Codex finding 7, Opus finding 22, round 3's finding 4): defaults at N = 8 and on a volume whose half is under 48 GB;
+    a part refused above N; the lowered N (set-aside 40, then N = 41) refused through each door, `SET_KEEP`, the terminal, *Change…*
+    and Ask Daoris's proposal, by the one sum; a file whose sum is above N dropping set parts in reverse table order until it fits;
+    a volume whose half is under 3 GB offering no part; the parts' sum at most N in every case; the both-ways test over the new choices;
   - the card's stories at wide, half and narrow in both languages, with a part over and the whole within, and *at least*.
 - **KEEPSIZE1e — the browser's caches checked at the browser's start** (shell, driver). Only the start: the check inside the host's
   start gate (`EngineBrowserHost.cs:113`), from 1d's kind and part. Proof: round 1's §6 at `d57b7f8d6`, a browser over its part
@@ -681,7 +761,8 @@ gain is one-off: the install's 27.9 GB, which the person's press frees now and w
 - **D195 point 2 and the cleanup design §2.1 and §2.2**: `keep` gains `allowance` and each part's `gb`, whole GB; `browser-cache`
   becomes a kind with a part; `whole` keeps a finished folder for its days.
 - **D195 point 6**: a finished tree's own scratch goes at its hour, by the owner's decision (§3.2).
-- **D195 point 7 and the history clearing design §2**: a finished tree's record is history, cleared with its last session.
+- **D195 point 7 and the history clearing design §2**: a finished tree's record is history, cleared with its last session; one with
+  no session ages by its own `at` and goes with *Clear history…* (§2.2).
 - **The cleanup design §3.4**: *anything that cannot be made again before its rule's time* reads with a finished tree's scratch let
   go at its hour once its record is kept.
 - **The cleanup design §7**: *Deleting a tree's folder at the move, whole* and *`bin/` in the slim, ever* are superseded for
@@ -690,6 +771,12 @@ gain is one-off: the install's 27.9 GB, which the person's press frees now and w
   ref before its branch goes, on both paths; the look's ground for taking a tree with ignored paths is the owner's decision, not the
   fourteen days.
 - **The knowledge index** (`EntryKind`): a kind `record`, from tables of its own.
+- **The Keeping pass's contract** (`SetAsideKeeping`'s *outside every repository's hold: it touches no git and no live tree*,
+  `SetAsideKeeping.cs:5-9`, and the Keeping pass's, `BranchTidying.cs:237-245`): still outside every repository's hold and touching no
+  live tree, it reads git read-only for the holding check, the record's commits and the resume (§3.4); every reader of `.tidied` passes
+  over `.going/`.
+- **KEEP1a's hold note** (Fable F1.5, D195's KEEP1a note: the repository's hold kept free of new git): one `update-ref` for the tip's
+  ref joins the hold, since it must precede the branch's delete (§3.1).
 
 ## 10. Round 3's answers to the reads of round 2
 
@@ -709,7 +796,7 @@ row.
 | 7 | **Blocking.** The allowance's bounds and division are inconsistent | holds: `KeepChoices.cs:40` whole GB; round 2's shares and bounds | **Taken**: whole GB, the parts' sum at most N on every door, defaults scaled with a 1 GB minimum, N bounded by half the volume, the file read part by part (§4.2) |
 | 8 | **Blocking.** Cached sizes can authorize excessive deletion or miss pressure | holds: `SystemSpace.cs:199-205` counts daily and after a run | **Taken**: fresh counts only for a destructive step, subtraction within the pass, a recount asked at once, per-folder sizes from the set-aside walk, the unknown keeping (§4.3) |
 | 9 | Record bytes have no physical accounting rule | holds: `SystemSpace.cs:81-82, 90-92` | **Taken**: `knowledge.db` counted once under the rest; records said by count (§2.2, §4.5) |
-| 10 | **Blocking.** The old-place extension needs place-aware identities | holds: `SpaceFree.cs:291-296` resolves under one root | **Taken** in KEEPSIZE1a's row and proof (§7) |
+| 10 | **Blocking.** The old-place extension needs place-aware identities | held at `49cd7bdbc`: `SpaceFree.cs:291-296` resolved under one root | **Answered** by KEEPSIZE1a as built on main (`0f6f76b79`): a press's id finds its folder at whichever place holds it, the new first (`SpaceFree.cs:296-300` on main); a folder moves into the new place alone, named with its millisecond moment (`TreeSetAside.cs:282-284`), so one relative id at both places cannot arise from Daoris's own moves, and the place-aware units are not needed (§7's 1a row; aligned by round 3's named changes) |
 | 11 | **Blocking.** A searchable hit has no complete-record read | holds: `KnowledgeService.cs:248`, `SqliteKnowledgeStore.cs:222` | **Taken** in KEEPSIZE1c: `knowledge_get` resolves a record, the session page shows it, older records indexed, search → read → clear proved (§7) |
 | 12 | **Blocking.** 1d depends on a browser rule assigned to 1e | holds: round 2's rows | **Taken**: the kind and its daily clearing in 1d, only the start's check in 1e (§4.6, §7) |
 | 13 | Blocked parts and policy exceptions underspecified on the card | holds | **Taken**: a part's own words, the classes waiting, `whole`, history's age and *at least* from the effective policy (§4.4, §4.5) |
@@ -752,3 +839,26 @@ row.
 | 22 | §4.6's shape | holds: `KeepChoices.cs:40` | **Taken**: whole GB; a part above a lowered N refused at the door and not read from the file, as KEEP1d reads every rule; `KeepKinds.BrowserCache` in 1d alone |
 
 **Deferred**: none to a later round. What the rows build is named in each row's proof (§7).
+
+## 11. Round 3's read: where each named change went
+
+The Opus foundation read of round 3 (`6d3d3aec9`), each finding taken as it names it, each place checked against the code on main at
+`aa16658e7`. Findings 1, 2, 6, 7, 8, 10 and 11 come before KEEPSIZE1b is built, 3, 4 and 5 before KEEPSIZE1d, and 9 at the merge with
+main.
+
+| # | Finding | Where it went | Checked on main |
+|---|---|---|---|
+| 1 | `refused` and a stopped `judged` never reach their record | §3.5, *Resuming a stop or a refusal: one rule*: where the branch is absent and the holding check passes, `deleted` and step 6; the delete of a branch with no tree marks a manifest of that `branch` and `tip` `deleted`; a schema-2 `judged` manifest not dropped by the slim; the press resumes before it lists (§5). Step 5 says the refusal's way on; the `:304-305` citation is the stopped `judged` case; §3.4's table; D195's note; 1b's proof | `AutoTidies.cs:233-254`, `TreeSetAside.cs:26-29, 72-78`, `TreeSweeps.cs:239, 304-305`, `SetAsideKeeping.cs:120-125` |
+| 2 | The person's *Clean up…* keeps no record | §2.3, *The person's Clean up… and Discard keep no record in this design*, with what still holds (the tip ref, the sessions' history) and a record on that path left to a later row; §5's list says it | `TreeSweeps.cs:210-235, 314`, `TreeSetAside.cs:26-29` |
+| 3 | A stale count can authorize the same removal each pass | §4.3, *A kind whose count is not fresh at the start of a pass takes nothing … until its recount lands*, with why subtraction since the count is not open; D195's note; 1d's proof adds the second pass | `SystemSpace.cs:200`, `KeepingRecord.cs:271` (one `last` per kind), `BranchTidying.cs:237-245` |
+| 4 | The parts' sum checked two ways; minimums over N on a tiny volume | §4.2, *one sum on every door and in the file*: set parts plus unset defaults at the N in question, the lowered-N example refused, the file dropping set parts in reverse table order, no part offered where half the volume is under 3 GB; 1d's proof through each door | `KeepChoices.cs:13, 40` |
+| 5 | The set-aside part takes nothing the hour has not | §4.2, *The set-aside part is a number said, not a bound*; §4.1 step 1 adds no removal of its own; *Why 48* counts the folders not recorded among what cannot go, 1b's class count the confirming measure, and the install's own live trees counted twice; 1d's proof | `TreeSetAside.cs:382-385, 400` (the purge, one pass over every place) |
+| 6 | The hour's clock named two ways | §3.4, *The hour's clock is the manifest's `recorded`*; the days' clock stays the name's moment; §3.4's table, step 7, §3.6, §4.5, §9 and D195's note say *an hour after its record is kept* | `TreeSetAside.cs:400` (the purge measures from the name today) |
+| 7 | The purge and the press now read git, unsaid | §3.4, *Git outside the hold*: read-only, outside every hold, from the registry's root; an unresolvable or unreadable repository unmarks the folder; *every other reader of `.tidied` passes over `.going/`*, each named; §9 adds the Keeping pass's contract and KEEP1a's hold note | `SetAsideKeeping.cs:5-9, 53, 107`, `BranchTidying.cs:237-245`, `TreeSetAside.cs:396`, `SessionTrees.cs:547`, `SystemSpace.cs:579` |
+| 8 | §3.3's downgrade sentence backwards for awaiting folders | §3.3, *Running an older build loses the records still awaited*: longer for a recorded folder, shorter for an awaiting one | `SlimManifest.cs:25, 58` (schema 1 alone read) |
+| 9 | KEEPSIZE1a built on main differently | the standing line (its sentence on the build standing removed), §1.4 and §7's 1a row restated as built at `0f6f76b79`; §10.1's Codex 10 answered by the millisecond name; the place-aware units not needed, so no row; D195's round-3 note | `TreeSetAside.cs:38, 46-47, 282-284`, `SpaceFree.cs:296-300`; the stamp since `de3168ad5` |
+| 10 | The commit range takes commits merged in from the line | §2.1's commits row and §3.5 step 6: `git log --first-parent --numstat`; 1b's proof adds a branch that merged its line | design text only (no code reads it yet) |
+| 11 | A record with no session has no clearing door; identity and a newer schema unsaid | §2.2: *the post is idempotent on `(workspace, repository, folder)`*; *a record with no session* ages by its own `at` and goes with *Clear history…*; *a newer schema is refused* as KSCHEMA1, the folder kept `deleted`; §9's point 7; 1b's proof | `Sessions.cs:1525`, `Asks/History.cs:312`, `SessionLedger.cs:2003`, `SqliteKnowledgeStore.cs:104-108` |
+
+The TASKS rows: KEEPSIZE1a, archived on 2026-10-24, stood again in `TASKS.md` after the merge of round 3; its row goes from the backlog,
+and KEEPSIZE1's *Next* names 1a as built.

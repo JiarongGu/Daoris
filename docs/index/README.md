@@ -335,7 +335,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-agent-errors-reads.md` | 84 | 875 |
 | `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
-| `docs/2026-10-24-keep-size-design.md` | 71 | 754 |
+| `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
 | `docs/2026-10-24-keep-size-reads.md` | 67 | 669 |
 | `docs/2026-10-24-steward-role-design.md` | 82 | 719 |
 | `docs/2026-10-24-steward-role-reads.md` | 80 | 795 |
