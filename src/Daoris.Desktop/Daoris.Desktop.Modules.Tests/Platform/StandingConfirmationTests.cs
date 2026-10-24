@@ -756,6 +756,55 @@ public sealed class StandingConfirmationTests : Bridge
         }
     }
 
+    /// <summary>
+    /// SUPERVISORRACE1, the race above made one order (§3.6, §5): a release's word recorded, the appointment revoked, and an admission
+    /// taking the decision's lock before the revoke's sweep does. The admission finds the generation dead and moves the released decision
+    /// to <c>stale</c> itself, with no take-back to call; the sweep then finds it already stale. Its word is still the revoke's to take
+    /// back, and the sweep takes it back once, never twice.
+    /// </summary>
+    [Fact]
+    public async Task A_word_released_before_the_revoke_and_staled_by_an_admission_is_taken_back_by_the_sweep_that_follows()
+    {
+        var standing = Appointing();
+        Appoint(standing);
+        var generation = GenerationOf(standing);
+        var decisions = new QuestionSupervisorDecisions(Home, standing);
+        var at = DateTimeOffset.Parse("2026-10-24T09:00:00Z");
+        var asked = new ParkQuestion("q-1", "r1", "Which report?", [new("Monthly", "I write it."), new("Weekly", "I write that.")], 1, null, at);
+        var park = new SupervisedPark(Engine, true, true, asked, false, false, false);
+        var answer = new SupervisorAnswer("r1", asked.Id, generation, "Monthly", [new("The ticket says monthly.", "line 2")], new("terminal", "pwsh"));
+        Assert.True((await decisions.KeepAsync(answer, park, at)).Kept);
+
+        var taken = new List<string>();
+        Task<bool> TakeBack(string _, string word, CancellationToken __)
+        {
+            taken.Add(word);
+            return Task.FromResult(true);
+        }
+
+        Task<SupervisorSaid> Say(string s, string d, string q, string c, string k, CancellationToken ct) =>
+            Task.FromResult(new SupervisorSaid("w-" + d, null));
+
+        Assert.Equal([SupervisorState.Released], await decisions.ReleaseAsync("r1", Say, at.AddMinutes(5)));
+        var ended = TurnOff(standing).Ended;
+
+        // The admission comes first: the dead generation stales the released decision, and nothing here takes its word back.
+        Assert.Equal((false, (SupervisorTicket?)null), await decisions.AdmitAsync("r1", _ => Task.FromResult(true), "go", at.AddMinutes(6)));
+        var view = Assert.Single(decisions.LiveOf("r1"));
+        Assert.Equal(SupervisorState.Stale, view.State);
+        Assert.NotNull(view.Word);
+        Assert.Empty(taken);
+
+        foreach (var generationEnded in ended) await decisions.RevokedAsync(generationEnded, TakeBack, at.AddMinutes(7));
+        Assert.Equal([view.Word!], taken);
+
+        // Taken back once: a later sweep, or the one after it, finds nothing left to take back.
+        await decisions.RevokedAsync(generation, TakeBack, at.AddMinutes(8));
+        await decisions.StaleAsync("r1", SupervisorWhy.CannotGoOn, TakeBack, at.AddMinutes(9));
+        Assert.Equal([view.Word!], taken);
+        Assert.False(decisions.Handable("r1", view.Word!));
+    }
+
     // STEWARDROLE1a-i (D209 §2.2 to §2.4, §3.4; the steward design §10 row 1a-i's StandingConfirmationTests): a holder apart from its
     // appointment, shared or its own; a role revoked alone, the holder's hash kept to its last; a holder ended by its last role or its tab;
     // the record's scope, acts and setup, a planted record dormant and Appoint again naming the build's acts with the tick off; and each

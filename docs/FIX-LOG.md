@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - A supervisor's word released before a revoke was left on a stale decision and never taken back (SUPERVISORRACE1)
+
+- **Symptom:** `StandingConfirmationTests.The_real_revoke_raced_against_a_keeping_a_release_and_an_admission_hands_nothing_under_a_dead_generation`
+  failed twice under load in the CI (2026-10-24, and on `a1cf2b8` on 2026-10-25): after the race and one more sweep a decision read
+  `Stale` with a word (`w-…`) that `TakeBack` was never called for, so `Assert.Contains(word, taken)` failed on an empty list.
+- **Root cause:** not `ReleaseAsync`, which holds the decision's lock from its `Say` through the record of the word. `AdmitAsync`,
+  running between the release and the revoke's sweep with the generation already dead, moves the released decision to `stale`
+  (`revoked`) itself and has no take-back. The sweep (`RevokedAsync`, `StaleAsync`) took back only the words of the held and
+  released decisions it staled itself, so one already stale was skipped and its word never taken back (§3.6, §5).
+- **Fix:** a decision remembers whether its word was taken back (`Live.TakenBack`, set where the service took it back), and the
+  sweeps take back the word of every stale decision not yet taken back as well as of those they stale. Every take-back goes through one
+  helper (`TakeBackWordAsync`), so a repeated sweep asks nothing twice. No lock is taken in reverse; no signature changed.
+- **Verification:** `A_word_released_before_the_revoke_and_staled_by_an_admission_is_taken_back_by_the_sweep_that_follows` makes the
+  order deterministic (keep, release, revoke's mutation step, admit, then the sweep) and failed every time before the fix (`taken`
+  empty); the race test, unchanged, 50 of 50 after it; `StandingConfirmationTests`, `DriverModuleSessionQuestionTests` and the driver's
+  supervisor classes green.
+
 ## 2026-10-25 - StandingCallerTests read every uncontained agent's event in the session, another Daoris's test run's included (TERMTRUST1a)
 
 - **Symptom:** the CI on `deb766f20` failed the modules' Process half on four `StandingCallerTests` cases, each again alone and again
