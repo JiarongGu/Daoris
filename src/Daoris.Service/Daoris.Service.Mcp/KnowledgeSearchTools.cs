@@ -323,6 +323,11 @@ public sealed class KnowledgeSearchTools(KnowledgeService service, WorkspaceScop
                                     + (lane.Steward ? " (the steward's: it keeps the records)" : ""));
                 }
             }
+            else
+            {
+                // None: said, with what would give it some, since its own sessions read this row too (SELFASK1).
+                text.AppendLine($"- **lanes:** none. {QuestExchange.NoLanesWay(entry.Repository)}");
+            }
 
             if (entry.Packs.Count > 0) text.AppendLine($"- packs: {string.Join(", ", entry.Packs)}");
             text.AppendLine($"- {entry.Entries} indexed entries");
