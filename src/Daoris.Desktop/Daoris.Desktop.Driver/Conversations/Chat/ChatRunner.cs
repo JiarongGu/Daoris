@@ -199,6 +199,12 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     internal int LimitsAsked => _waits.Asked;
 
     /// <summary>
+    /// The clock a conversation's waits between tries of a transient failure are read off (AGENTERRORS1b, D210,
+    /// <c>.claude/knowledge/held-clocks.md</c>): the machine's, and a held one in a test that passes each wait.
+    /// </summary>
+    public TimeProvider RetryClock { get; init; } = TimeProvider.System;
+
+    /// <summary>
     /// *Stop waiting* (LIMITRESUME1c, D206 §3.7, N27): an ended conversation held by its limit waits no more. Its waiting words are marked
     /// as words that cannot go on by themselves are, Daoris's limit word taken off by its id, and its conversation says so, which leaves
     /// the limits stage's wait, so nothing goes on by itself; the person's next word goes on as any word to an ended conversation does.
@@ -1655,6 +1661,27 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                     if (goOn.Sent(named: false)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 })
             {
+                // AGENTERRORS1b (D210, the agent-errors design §5.1, §7): a transient failure of one of its turns is tried again in this same
+                // conversation, on this process, with the one reader over the adapter set; handed to its session once it is open.
+                Retry = new ChatRetry(
+                    sessionId, resolved.Name, RetryClock,
+                    refused =>
+                    {
+                        var read = AgentErrors.Read(_harnesses.Adapters, resolved, DoorFailure.OfPrompt(refused), RetryClock.GetUtcNow(), _harnesses.Zone);
+                        using var log = new MachineLog(_home, "driver");
+                        log.Info("agent.error", ("session", sessionId), ("adapter", resolved.Name), ("account", selection.Profile), ("kind", read.Spelled), ("by", read.By));
+                        return read;
+                    })
+                {
+                    Tried = (episode, number, next) =>
+                    {
+                        using var log = new MachineLog(_home, "driver");
+                        log.Info(
+                            "agent.transient",
+                            ("session", sessionId), ("adapter", resolved.Name), ("account", selection.Profile), ("by", episode.First.By), ("try", number),
+                            ("next", next));
+                    },
+                },
                 // MODELROLE1d (D205 §3.2): its actor's model and effort set before its first prompt, the composer opening on them; what
                 // the agent would not take kept as asked and not carried, and what its open listed kept as its agent's reading (§9.2).
                 Asked = carrying,
@@ -3026,7 +3053,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         // The person's words said during a turn, as the record keeps them where the session took them (MSG1c, D136 §3).
         session.OnTaken(words =>
         {
-            Line($"— the conversation took what the person added: {words.Text}");
+            // Daoris's own go-on (AGENTERRORS1b), told beside the person's words a transient try carries, is Daoris's, never the person's.
+            Line(words.Daoris is not null
+                ? $"— the conversation was told: {words.Text}"
+                : $"— the conversation took what the person added: {words.Text}");
             Record(ChatMessage.Words(words));
         });
 
@@ -3135,7 +3165,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// said while a turn runs goes at once, shown waiting with its reach and taken where the agent hands the turn off to it
     /// (D136's door, a chat's now). A stop with such a word on its way says the agent may have read it.</para>
     /// </remarks>
-    private sealed class ProtocolChat : ITurnedChat
+    private sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     {
         private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<bool> _stopped;
@@ -3149,6 +3179,14 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         private readonly object _gate = new();
         private readonly HashSet<string> _onTheirWay = new(StringComparer.Ordinal);
         private readonly HashSet<string> _stoppedUnder = new(StringComparer.Ordinal);
+
+        // AGENTERRORS1b (the agent-errors design §5.1, §7): the answers of the words steered into the turn on the wire, as the session gave
+        // them, for a transient episode to settle (the turns those words opened are the episode's to await); and the turn's own cut: the
+        // person's stop ends a wait between tries, which no prompt of the session's is open to answer.
+        private readonly Queue<Task<string>> _sentAnswers = new();
+        private CancellationTokenSource _cut = new();
+        private volatile bool _stopAsked;
+        private volatile bool _unwanted;
 
         /// <param name="limited">
         /// A refused turn's failure, read for an account's limit (TOOL4d): the line its record takes, with its code
@@ -3180,8 +3218,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                 changed,
                 steer: Steer,
                 steerNow: SteerNow,
-                nextStep: () => Session is { NextStep: true });
+                nextStep: () => Session is { NextStep: true },
+                settled: SettleSteeredAsync);
         }
+
+        /// <summary>
+        /// What a transient failure of a turn is tried again with (AGENTERRORS1b, D210): handed to its session once the session is open, so a
+        /// failure at the open keeps today's end. Null keeps today's end for every failure.
+        /// </summary>
+        public ChatRetry? Retry { get; init; }
 
         public string? Posture { get; }
 
@@ -3225,7 +3270,56 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         {
             _line = line;
             _record = record;
+            if (session is not null && Retry is { } retry) session.Retries(Retried(retry), this);
             _open.TrySetResult(session);
+        }
+
+        /// <summary>
+        /// The retry its session is handed (AGENTERRORS1b, the agent-errors design §5.1, §7): the reader and the clock it was built with, the
+        /// owner's check, and what the episode says in this conversation, the one line, a quiet event each wait and try, and Daoris's go-on.
+        /// </summary>
+        private TransientRetry Retried(ChatRetry retry) => new()
+        {
+            Read = retry.Read,
+            Clock = retry.Clock,
+            // The owner's check (§5.5): the conversation wants another turn unless its session or the turn was stopped by the person.
+            Wanted = _ =>
+            {
+                if (!_stopAsked && !_stopped()) return Task.FromResult(true);
+                _unwanted = true;
+                return Task.FromResult(false);
+            },
+            // Daoris's go-on is shown once, as the conversation's own word beside the person's (the first try's alone); it is kept on no
+            // record: a conversation's process is gone with a restart, and nothing of an episode outlives it.
+            KeepGoOn = (episode, text, _) => Task.FromResult<ChatMessage?>(
+                new ChatMessage(text, []) { Daoris = new DaorisWord(DaorisKeys.TransientRetry(retry.Session, episode.Began)) }),
+            Began = (episode, next) =>
+            {
+                var noted = TransientRetry.Retrying(retry.Agent, episode.Words, next);
+                _line(noted.Note);
+                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts });
+            },
+            Tried = (episode, number, next) =>
+            {
+                retry.Tried?.Invoke(episode, number, next);
+                _record(new SessionEvent { Kind = SessionEventKind.Transient, Try = number });
+            },
+            WaitsUntil = (_, until) => _record(new SessionEvent { Kind = SessionEventKind.Transient, Next = until }),
+        };
+
+        // The words an episode holds, waits on and carries are this conversation's turns' (AGENTERRORS1b); the answers it settles are the
+        // steered words' own.
+        void IEpisodeWords.Settling() => Turns.Settling();
+
+        Task IEpisodeWords.Waiting() => Turns.Waiting();
+
+        void IEpisodeWords.Waited() => Turns.Waited();
+
+        IReadOnlyList<ChatMessage> IEpisodeWords.TakeHeld() => Turns.TakeHeld();
+
+        Task<string>? IEpisodeWords.TakeSent()
+        {
+            lock (_gate) return _sentAnswers.TryDequeue(out var answer) ? answer : null;
         }
 
         /// <summary>
@@ -3256,8 +3350,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
             if (Told(words) is { } told) _record(told);
             _line($"— the person added, which reaches the conversation at its next step: {words.Text}");
             _record(ChatMessage.Words(words) with { Reaches = "next-step", Level = words.LevelSaid });
-            lock (_gate) _onTheirWay.Add(words.Id!);
-            return AnsweredAsync(words, session.SayAsync(words, CancellationToken.None));
+            // The session's own answer, kept for a transient episode to settle (AGENTERRORS1b): the word's turn is the episode's to await.
+            var answer = session.SayAsync(words, CancellationToken.None);
+            lock (_gate)
+            {
+                _onTheirWay.Add(words.Id!);
+                _sentAnswers.Enqueue(answer);
+            }
+
+            return AnsweredAsync(words, answer);
         }
 
         /// <summary>
@@ -3309,6 +3410,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                 // A word the agent would not take costs that word, in its own words, never the conversation.
                 said = Said(WordsNotes.Refused(refused.Words, "conversation"));
             }
+            catch (AcpWordTurnFailed)
+            {
+                // AGENTERRORS1b (the design §4.2, shape 2): the word was taken, so the turn that failed is the one it opened: the turn's
+                // failure, settled where the turn's words are (`SettleSteeredAsync`), never a note of this word's.
+            }
             catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException or InvalidOperationException)
             {
                 said = Said(WordsNotes.NeverReached(error.Message));
@@ -3331,6 +3437,18 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         {
             if (await _open.Task.ConfigureAwait(false) is not { } session) return;
 
+            // AGENTERRORS1b: this turn's own cut and stop, and the answers of words steered into an earlier turn, all over.
+            CancellationToken cut;
+            lock (_gate)
+            {
+                _cut.Dispose();
+                _cut = new CancellationTokenSource();
+                cut = _cut.Token;
+                _sentAnswers.Clear();
+            }
+
+            _stopAsked = false;
+            _unwanted = false;
             try
             {
                 if (message.GoesOn is { } goOn)
@@ -3344,52 +3462,161 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                     }
 
                     // The files said with the words, a link each after their blocks (MSG1d3).
-                    await session.PromptAsync(goOn.Blocks, CancellationToken.None, () =>
+                    await PromptedAsync(session, cut, () => session.PromptAsync(goOn.Blocks, CancellationToken.None, () =>
                     {
                         sent();
                         _wentOn?.Invoke();
-                    }, goOn.Files).ConfigureAwait(false);
+                    }, goOn.Files)).ConfigureAwait(false);
                     return;
                 }
 
                 foreach (var recorded in Recorded(message)) _record(recorded);
                 // Each attached file a `resource_link` to where it is kept (CONV4c).
-                await session.PromptAsync(message.Prompt, CancellationToken.None, sent, message.Files).ConfigureAwait(false);
+                await PromptedAsync(session, cut, () => session.PromptAsync(message.Prompt, CancellationToken.None, sent, message.Files))
+                    .ConfigureAwait(false);
             }
-            catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException
-                                              or InvalidOperationException)
+            catch (Exception error)
             {
-                if (_stopped())
-                {
-                    // 🔴 The person stopped the session, which ended the agent and this turn's prompt
-                    // with it (REV3). That is not the turn failing, and a note saying so would blame
-                    // the agent for the person's act. The turn ends as a stopped turn does.
-                    _line("— the turn ended: the session was stopped");
-                    _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled" });
-                    return;
-                }
-
-                var notTaken = DoorNotes.TurnNotTaken(error.Message);
-                _line($"— {notTaken.Note}");
-                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = notTaken.Note, Parts = notTaken.Parts });
-
-                // A refusal the door carried, read for an account's limit (TOOL4d) before the turn's end is recorded, so
-                // the refused turn is counted after the turns that ended. Never the transcript's words (D125 §1.4). Its English
-                // beside the line's parts (CONVNOTE1b), as a refused sign-in's is, so the page words it in either language.
-                if (error is DriverException && _limited?.Invoke(error.Message) is { } cooling)
-                {
-                    _line($"— {cooling.Note}");
-                    _record(new SessionEvent { Kind = SessionEventKind.Note, Text = cooling.Note, Parts = cooling.Parts });
-                }
-
-                // And for the account's sign-in (SIGNIN1b), so the next start walks past an account its agent refused here.
-                ReadSignIn(error);
-
-                // 🔴 And the turn ENDS (REV3). Only a turn event closes a turn on the page, so a refused
-                // one drew *working…* under this very note until the next message — while the composer,
-                // told by the queue that nothing was taking, offered to send.
-                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
+                // Ended in the record by `Failed`: the turn's end is in it. Anything that is no failure of the door's is not ours.
+                if (!Failed(error, cut)) throw;
             }
+            finally
+            {
+                // The episode is over, whatever ended it: a word said from now goes as it did.
+                Turns.Waited();
+            }
+        }
+
+        /// <summary>
+        /// One turn's prompt (AGENTERRORS1b, D210, the agent-errors design §5.1, §7): where the conversation was handed a retry, a transient
+        /// failure is tried again on this same process, inside the turn, so the turn is one however many tries it takes: the queue is not
+        /// released, no turn ends in the record, and nothing is counted, notified or moved until the turn does. Any other failure comes
+        /// out as it came, and one past the bound as <see cref="AcpTransientExhausted"/>.
+        /// </summary>
+        private async Task PromptedAsync(AcpSession session, CancellationToken cut, Func<Task<string>> prompt)
+        {
+            if (Retry is null)
+            {
+                await prompt().ConfigureAwait(false);
+                return;
+            }
+
+            await session.RetriedAsync(prompt, cut).ConfigureAwait(false);
+            // The person's stop met the episode between tries: no prompt of the session's was open to answer it, so the turn ends here.
+            if (_unwanted)
+            {
+                _line("— the turn ended: it was stopped while it waited to try again");
+                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled" });
+            }
+        }
+
+        /// <summary>
+        /// What became of the words steered into the turn on the wire, settled before the turn is found to have ended (AGENTERRORS1b, the
+        /// design §4.2, §5.1): one whose own prompt was refused after it was taken (<see cref="AcpWordTurnFailed"/>) is the turn's prompt
+        /// failing, so a transient one is tried again here, in the turn, which lasts. Any other answer is its word's own, said by its
+        /// <see cref="AnsweredAsync"/>.
+        /// </summary>
+        private async Task SettleSteeredAsync()
+        {
+            if (Retry is null || Session is not { } session) return;
+            CancellationToken cut;
+            lock (_gate) cut = _cut.Token;
+            while (true)
+            {
+                Task<string>? answer;
+                lock (_gate) answer = _sentAnswers.TryDequeue(out var next) ? next : null;
+                if (answer is null) return;
+
+                try
+                {
+                    await answer.ConfigureAwait(false);
+                }
+                catch (AcpWordTurnFailed failed)
+                {
+                    try
+                    {
+                        await session.RecoveredAsync(failed.Refusal, cut).ConfigureAwait(false);
+                    }
+                    catch (Exception error)
+                    {
+                        // Ended in the record by `Failed`; a settling that no failure of the door's ended is the pump's, which ends the turn.
+                        if (!Failed(error, cut)) throw;
+                    }
+                    finally
+                    {
+                        Turns.Waited();
+                    }
+                }
+                catch (Exception)
+                {
+                    // Its word's own note, said by AnsweredAsync.
+                }
+            }
+        }
+
+        /// <summary>
+        /// A turn's prompt failed: the turn's end, in the record. False for an exception that is no failure of the door's, left to its
+        /// catcher. A past-the-bound episode ends it with <c>chat.transient-stopped</c> (AGENTERRORS1b); the person's stop is a stopped
+        /// turn; any other failure is a turn the door would not take, read for the account's limit and sign-in.
+        /// </summary>
+        private bool Failed(Exception error, CancellationToken cut)
+        {
+            if (error is OperationCanceledException && cut.IsCancellationRequested)
+            {
+                // The person's stop ended the wait between tries: a stopped turn, nobody's failure.
+                _line("— the turn ended: it was stopped while it waited to try again");
+                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled" });
+                return true;
+            }
+
+            if (error is not (DriverException or IOException or ObjectDisposedException or InvalidOperationException)) return false;
+
+            if (_stopped())
+            {
+                // 🔴 The person stopped the session, which ended the agent and this turn's prompt
+                // with it (REV3). That is not the turn failing, and a note saying so would blame
+                // the agent for the person's act. The turn ends as a stopped turn does.
+                _line("— the turn ended: the session was stopped");
+                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "cancelled" });
+                return true;
+            }
+
+            if (error is AcpTransientExhausted exhausted && Retry is { } retry)
+            {
+                // AGENTERRORS1b (§7): every try failed, so the turn ends `error` and the next word is a turn of this same conversation.
+                // No limit, no sign-in and no door note: the provider's outage is not the account's.
+                var stopped = Noted.Of(
+                    NoteCodes.ChatTransientStopped,
+                    $"{retry.Agent}'s provider kept failing, so this turn ends; your next words go on in this conversation:",
+                    ("agent", retry.Agent));
+                if (exhausted.Episode.Words is { Length: > 0 } words) stopped = stopped.Then(" ", Noted.Said(words, NoteBy.Program));
+                _line($"— {stopped.Note}");
+                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = stopped.Note, Parts = stopped.Parts });
+                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
+                return true;
+            }
+
+            var notTaken = DoorNotes.TurnNotTaken(error.Message);
+            _line($"— {notTaken.Note}");
+            _record(new SessionEvent { Kind = SessionEventKind.Note, Text = notTaken.Note, Parts = notTaken.Parts });
+
+            // A refusal the door carried, read for an account's limit (TOOL4d) before the turn's end is recorded, so
+            // the refused turn is counted after the turns that ended. Never the transcript's words (D125 §1.4). Its English
+            // beside the line's parts (CONVNOTE1b), as a refused sign-in's is, so the page words it in either language.
+            if (error is DriverException && _limited?.Invoke(error.Message) is { } cooling)
+            {
+                _line($"— {cooling.Note}");
+                _record(new SessionEvent { Kind = SessionEventKind.Note, Text = cooling.Note, Parts = cooling.Parts });
+            }
+
+            // And for the account's sign-in (SIGNIN1b), so the next start walks past an account its agent refused here.
+            ReadSignIn(error);
+
+            // 🔴 And the turn ENDS (REV3). Only a turn event closes a turn on the page, so a refused
+            // one drew *working…* under this very note until the next message — while the composer,
+            // told by the queue that nothing was taking, offered to send.
+            _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
+            return true;
         }
 
         private async Task CancelAsync()
@@ -3399,6 +3626,23 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
             // 🔴 A person's stop is never refused, even with a word on its way (D137 §2.1): the agent may still act on that
             // word with its answer dropped (STEER1 §3), and its record says so once the word is answered.
             lock (_gate) _stoppedUnder.UnionWith(_onTheirWay);
+            // AGENTERRORS1b: a stop met between tries has no prompt of the session's to answer it: the wait it ends is the turn's, cut here,
+            // and the owner's check refuses a try the stop met anywhere else. A try on the wire is stopped as any turn is.
+            _stopAsked = true;
+            if (session.WaitsOnTransient)
+            {
+                CancellationTokenSource cut;
+                lock (_gate) cut = _cut;
+                try
+                {
+                    await cut.CancelAsync().ConfigureAwait(false);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // The turn it meant to stop ended.
+                }
+            }
+
             try
             {
                 await session.CancelTurnAsync().ConfigureAwait(false);

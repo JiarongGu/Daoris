@@ -29,7 +29,7 @@ namespace Daoris.Driver;
 /// may still act on it, so there it stops nothing either.</para>
 /// </remarks>
 /// <param name="changed">Where it stands, each time that changes — the page shows what is waiting.</param>
-public sealed class DrivenInbox(Action<ChatQueue> changed)
+public sealed class DrivenInbox(Action<ChatQueue> changed) : IEpisodeWords
 {
     private readonly object _gate = new();
     private readonly List<ChatMessage> _held = [];

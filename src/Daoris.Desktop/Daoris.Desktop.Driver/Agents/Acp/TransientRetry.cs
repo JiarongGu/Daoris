@@ -74,6 +74,19 @@ public sealed class TransientRetry
         $"The last request failed on the provider's side ({words ?? "no words"}). Go on where you stopped, after anything said above. "
         + "Before you repeat a step whose result you did not see, check whether it already took effect.";
 
+    /// <summary>The conversation's one line (§8's <c>agent.transient-retrying</c>), the schedule's tries and minutes said as <i>up to</i>.</summary>
+    public static Noted Retrying(string agent, string? words, DateTimeOffset next)
+    {
+        var minutes = (int)TransientRetry.Delays.Sum(delay => delay.TotalMinutes);
+        var line = Noted.Of(
+            NoteCodes.AgentTransientRetrying,
+            $"{agent}'s provider failed. Daoris tries again in this conversation: up to {TransientRetry.Bound} times, after {minutes} "
+            + $"minutes of waits between them, the next at {next:yyyy-MM-dd HH:mm} UTC:",
+            ("agent", agent), ("count", TransientRetry.Bound), ("minutes", minutes),
+            ("at", next.UtcDateTime.ToString("o", System.Globalization.CultureInfo.InvariantCulture)));
+        return words is { Length: > 0 } said ? line.Then(" ", Noted.Said(said, NoteBy.Program)) : line;
+    }
+
     private readonly Lock _gate = new();
     private readonly List<ChatMessage> _uncertain = [];
 
@@ -137,6 +150,29 @@ public sealed class TransientRetry
             return true;
         }
     }
+}
+
+/// <summary>
+/// The words a transient episode holds, waits on and carries (AGENTERRORS1a, AGENTERRORS1b): a driven run's inbox
+/// (<see cref="DrivenInbox"/>) or a conversation's turns (<see cref="ChatTurns"/>). The episode is the session's own, so the one seat
+/// serves both; what differs is where the person's words wait.
+/// </summary>
+internal interface IEpisodeWords
+{
+    /// <summary>From the episode's first failure and each try's: every word is held, none goes alone, so the turns to settle are only those already written.</summary>
+    void Settling();
+
+    /// <summary>A wait begins: completes once a word that makes a turn is held, at once where one already is.</summary>
+    Task Waiting();
+
+    /// <summary>The wait is over, a try is on the wire: a word said from now goes as it did.</summary>
+    void Waited();
+
+    /// <summary>The answer of the oldest word already on the wire and not yet settled, or null where none is.</summary>
+    Task<string>? TakeSent();
+
+    /// <summary>Every held word a try carries, in the order said, each dispatched as its door dispatches one.</summary>
+    IReadOnlyList<ChatMessage> TakeHeld();
 }
 
 /// <summary>

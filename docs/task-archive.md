@@ -20785,3 +20785,26 @@ digest), `BrainstormLookTests`, `HandOverAtTurnEndTests` (a cooling Build under 
 (a first account's refusal answered once on the second). **Left, as MODELROLE1e2:** the editors for the four fenced actors, a
 conversation's hand-over opening on `handed`'s model, the partner's real-process case, and the installed proof. Detail: D205's
 MODELROLE1e note; `docs/2026-10-25-modelrole1e-build.md`.
+
+## AGENTERRORS1b — a conversation's transient failure tried again in the same conversation (2026-10-25, D210)
+
+> **AGENTERRORS1b** (the agent-errors design §11's third row; driver, web). §5.1 and §7 for conversations, Ask Daoris and a repository's
+> chat, on the protocol door: the wait, words said meanwhile, `chat.transient-stopped`. Proof: a stand-in conversation's turn failing
+> transient twice then answering is one turn (failed tries neither release the queue, `ChatTurns.TurnEnded`, nor move the curve, notify or
+> move a limit), on the same process, the person's words once; a word said during the wait goes at once and first, one prompt with the
+> go-on; a limit on a try goes to LIMITGOON1/2 once, `LimitHeld.Of` holding only the words no try carried and never the failed turn's
+> own, each original word received once at the limit's wake or move; erring every try ends the turn `error` with
+> `chat.transient-stopped`, and the next word is a turn of the same conversation; the page's line in en and zh.
+
+(Quest `#d974f1281a2d`.)
+
+**Outcome** 2026-10-25. A conversation's session is handed the same `TransientRetry` a driven run is, once it is open
+(`AcpSession.Retries`, `ChatRetry` over the runner's `RetryClock`), and the one episode inside the session reads the conversation's
+turns as the words it holds, waits on and carries (`IEpisodeWords`: `DrivenInbox` and `ChatTurns`). The turn stays one inside the queue's
+take: a failed try releases no queue, ends no turn in the record, moves no curve, notifies nobody and reads no limit; a word the person
+says during a wait is kept, shown queued, held from the next-step route and goes at once, first, in one prompt with Daoris's go-on; a
+word taken by a hand-over whose own turn then fails transient is tried again inside the turn (`ChatTurns`' settle hook). Past five tries
+the turn ends `error` with `chat.transient-stopped` (en and zh) and the next word is a turn of the same conversation; the person's stop
+ends a wait as a stopped turn. A limit on a try goes to LIMITGOON1/2 as a refused turn does, and `LimitHeld.Of` forgets every word asked
+before a quiet `transient` event. Each case seen failing first (D210's AGENTERRORS1b note). **Not built:** the pipe door and the native
+door's lifecycles (1c). Detail: D210's AGENTERRORS1b note.

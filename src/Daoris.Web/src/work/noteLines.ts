@@ -41,6 +41,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ended.transient': { values: ['count', 'minutes'] },
   // AGENTERRORS1a: said once at an episode's first failure, its tries and minutes the schedule's, said as up to.
   'agent.transient-retrying': { values: ['agent', 'count', 'minutes', 'at'] },
+  // AGENTERRORS1b (D210 §7, §8): a conversation's turn whose provider kept failing past every try ends here; the next word is a turn of the same conversation.
+  'chat.transient-stopped': { values: ['agent'] },
   // MODELROLE1c2 (D205 §3.5(c)): its agent refused the choice at the open, before any prompt; no strike, planned again.
   'ended.choice-not-offered': { values: ['agent', 'model'] },
   'ended.parked-asked': { values: [] },

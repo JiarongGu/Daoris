@@ -1072,6 +1072,19 @@ internal sealed class ChatLedger : HttpMessageHandler
                     return (HttpStatusCode.OK, """{"done":true,"message":"taken back"}""");
                 }
 
+                // COWORK1c: a word marked attempted on the record before it is written (AGENTERRORS1b's tries read the mark's own answer).
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
+                {
+                    var id = IdOf(path, "/attempt");
+                    var ids = JsonNode.Parse(body!)!["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToList();
+                    foreach (var word in Find(id)["said"]!.AsArray().Where(word => ids.Contains(word!["id"]!.GetValue<string>())))
+                    {
+                        word!["attempt"] = "2026-10-03T09:59:30Z";
+                    }
+
+                    return (HttpStatusCode.OK, """{"message":"attempted"}""");
+                }
+
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):
                 {
                     var id = IdOf(path, "/taken");

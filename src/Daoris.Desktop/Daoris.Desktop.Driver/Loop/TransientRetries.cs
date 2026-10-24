@@ -44,7 +44,7 @@ internal static class TransientRetries
             },
             Began = (episode, next) =>
             {
-                var noted = Retrying(adapter.Name, episode.Words, next);
+                var noted = TransientRetry.Retrying(adapter.Name, episode.Words, next);
                 output?.Append(sessionId, noted.Note);
                 events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = noted.Note, Parts = noted.Parts }, say: null);
             },
@@ -65,19 +65,6 @@ internal static class TransientRetries
                 if (!waiting) watch.Heard(sessionId);
             },
         };
-    }
-
-    /// <summary>The conversation's one line (§8's <c>agent.transient-retrying</c>), the schedule's tries and minutes said as <i>up to</i>.</summary>
-    internal static Noted Retrying(string agent, string? words, DateTimeOffset next)
-    {
-        var minutes = (int)TransientRetry.Delays.Sum(delay => delay.TotalMinutes);
-        var line = Noted.Of(
-            NoteCodes.AgentTransientRetrying,
-            $"{agent}'s provider failed. Daoris tries again in this conversation: up to {TransientRetry.Bound} times, after {minutes} "
-            + $"minutes of waits between them, the next at {next:yyyy-MM-dd HH:mm} UTC:",
-            ("agent", agent), ("count", TransientRetry.Bound), ("minutes", minutes),
-            ("at", next.UtcDateTime.ToString("o", System.Globalization.CultureInfo.InvariantCulture)));
-        return words is { Length: > 0 } said ? line.Then(" ", Noted.Said(said, NoteBy.Program)) : line;
     }
 
     /// <summary>

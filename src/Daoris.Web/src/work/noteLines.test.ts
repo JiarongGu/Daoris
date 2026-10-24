@@ -513,6 +513,22 @@ describe('noteLines', () => {
       ]);
     });
 
+    /** AGENTERRORS1b (D210 §7, §8): the turn a conversation's provider kept failing past every try ends with this line, then the provider's words as written. */
+    it("words a conversation's turn ended by its provider's failures, and the provider's words as written (AGENTERRORS1b)", () => {
+      const stopped = coded('chat.transient-stopped', "claude-code-acp's provider kept failing, so this turn ends; …:", { agent: 'claude-code-acp' });
+      const provider = words('Internal error: API Error: 529 Overloaded. This is a server-side issue, usually temporary.', 'program');
+      expect(noteLines(t, { parts: [stopped, provider] }, 'en')).toEqual([
+        { kind: 'said', text: "claude-code-acp's provider kept failing, so this turn ends; your next words go on in this conversation:" },
+        { kind: 'words', text: provider.words, by: 'program' },
+      ]);
+      expect(noteLines(zh, { parts: [stopped, provider] }, 'zh')).toEqual([
+        { kind: 'said', text: 'claude-code-acp 的服务方一直出错，所以这一轮就此结束；你接下来的话会在本对话中继续：' },
+        { kind: 'words', text: provider.words, by: 'program' },
+      ]);
+      // A part missing the agent its sentence names shows as recorded rather than guessed.
+      expect(noteLines(t, { parts: [coded('chat.transient-stopped', 'kept failing …')] }, 'en')[0].kind).toBe('recorded');
+    });
+
     it("words a merge the access setup's landing rule leaves waiting for Accept, with the level that set it (ACCESSWORDS1)", () => {
       const merges = (access: string) => coded('landing.merges', 'its quest was done, …', { access });
       expect(noteLines(t, { parts: [merges('machine')] }, 'en')).toEqual([

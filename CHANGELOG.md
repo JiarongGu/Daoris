@@ -21,6 +21,12 @@ with the version and date at release.
   Where Build or Chat has an order of its own, Daoris's offer to hand a session over names that order's next choice on another agent
   (*Build's next choice is 2: Codex · gpt-5*), and an agent's ask to hand over under *on* goes to the same one; nothing is handed over
   without your press under *ask* or *on*.
+- When the provider behind a chat or an Ask Daoris conversation fails for a moment, such as `API Error: 529 Overloaded`, Daoris now
+  tries again in the same conversation instead of ending the turn as an error (AGENTERRORS1b). The turn stays one turn: Daoris waits
+  1, 2, 4, 8 and 16 minutes before its tries and says so once, and the agent's work and your words are never sent twice. A word you
+  say while it waits goes at once, in one prompt with Daoris's note that the provider failed. If the provider keeps failing after
+  five tries, the turn ends saying so, and your next word is a turn of the same conversation. A limit met on a try moves the
+  conversation or waits for the account as a limit does, without sending again words a try already carried.
 - The steward's desk is built and the steward is still not offered (STEWARDROLE1c, D209). Nothing you use changes until its
   activation. Once it is, any session or terminal can ask the steward for one of its acts with
   `daoris-driver steward request <act> <target> "<why>"`, and needs no key to do so. A request grants nothing: the steward reads it
