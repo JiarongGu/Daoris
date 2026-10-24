@@ -53,25 +53,33 @@ public static class SupervisorDoor
     {
         var home = loop.Home;
         Attach(loop, pipe);
+        // SUPERVISOR1e (§5): the registry read again, so a workspace named and a repository's narrowing are judged on what it holds now.
+        await loop.RefreshWorkspacesAsync(ct).ConfigureAwait(false);
         var change = await pipe.StandingConfirmation.AppointAsync(request, open =>
             Starter is { } stand ? stand(open)
             : Panel is { } panel ? panel.OpenAsync(home, open, ct)
             : Task.FromResult(new HolderOpened(null, null, StandingConfirmation.Unstarted, null))).ConfigureAwait(false);
-        if (change.Ended.Count == 0) return change.Answer;
+        if (change.Ended.Count == 0 && change.Narrowed.Count == 0) return change.Answer;
         await SweepAsync(loop, change.Ended, ct).ConfigureAwait(false);
+        // SUPERVISOR1e (§5): a repository's own appointment replaced its workspace's there: that repository's decisions under it go stale.
+        foreach (var each in change.Narrowed)
+        {
+            await loop.Supervisor.NarrowedAsync(each.Generation, each.Repository, TakeBack(loop), DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        }
+
+        loop.Nudge();
         return change.Answer;
     }
+
+    private static SupervisorTakeBack TakeBack(DriverLoop loop) => async (session, word, token) =>
+        loop.Service is { } service && (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
 
     /// <summary>Every decision kept under <paramref name="generations"/> swept, each under its own decision's lock (§5), and the loop told.</summary>
     private static async Task SweepAsync(DriverLoop loop, IReadOnlyList<string> generations, CancellationToken ct)
     {
-        var service = loop.Service;
         foreach (var generation in generations)
         {
-            await loop.Supervisor.RevokedAsync(
-                generation,
-                async (session, word, token) => service is not null && (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done,
-                DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+            await loop.Supervisor.RevokedAsync(generation, TakeBack(loop), DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
         }
 
         // STEWARDROLE1b (§5.1a): the steward's releases the revoke cancelled are withdrawn from the driver's file, the owner's kept.
@@ -206,12 +214,12 @@ public static class SupervisorDoor
     /// </summary>
     public static async Task<KeptAnswer> AnswerAsync(DriverLoop loop, System.Text.Json.JsonElement? payload, CancellationToken ct)
     {
-        if (PipeDoor.Role is not { Repository: { } appointed, Generation: { } generation }) return Refused(SupervisorWhy.NotHolder);
+        if (PipeDoor.Role is not { Generation: { } generation } judged) return Refused(SupervisorWhy.NotHolder);
         if (SupervisorForm.Read(payload) is not { } form) return Refused(SupervisorWhy.Form);
         if (form.Generation != generation) return Refused(SupervisorWhy.AppointmentChanged);
         var service = loop.Service ?? throw DriverArguments.NotReady();
         if (await ParkAsync(loop, service, form.Id, ct).ConfigureAwait(false) is not { } park) return Refused(SupervisorWhy.NotParked);
-        if (!string.Equals(park.Repository, appointed, StringComparison.OrdinalIgnoreCase)) return Refused(SupervisorWhy.NotAppointed);
+        if (!Covers(loop, judged, park.Repository)) return Refused(SupervisorWhy.NotAppointed);
 
         var kept = await loop.Supervisor.KeepAsync(
             new SupervisorAnswer(form.Id, form.Question, form.Generation, form.Choice, form.Reasons, new SupervisorHolder(RoleHolders.Terminal, null)),
@@ -229,12 +237,12 @@ public static class SupervisorDoor
     /// </summary>
     public static async Task<KeptAnswer> DeferAsync(DriverLoop loop, System.Text.Json.JsonElement? payload, CancellationToken ct)
     {
-        if (PipeDoor.Role is not { Repository: { } appointed, Generation: { } generation }) return Refused(SupervisorWhy.NotHolder);
+        if (PipeDoor.Role is not { Generation: { } generation } judged) return Refused(SupervisorWhy.NotHolder);
         if (SupervisorDeferForm.Read(payload) is not { } form) return Refused(SupervisorWhy.Form);
         if (form.Generation != generation) return Refused(SupervisorWhy.AppointmentChanged);
         var service = loop.Service ?? throw DriverArguments.NotReady();
         if (await ParkAsync(loop, service, form.Id, ct).ConfigureAwait(false) is not { } park) return Refused(SupervisorWhy.NotParked);
-        if (!string.Equals(park.Repository, appointed, StringComparison.OrdinalIgnoreCase)) return Refused(SupervisorWhy.NotAppointed);
+        if (!Covers(loop, judged, park.Repository)) return Refused(SupervisorWhy.NotAppointed);
 
         var kept = await loop.Supervisor.LeaveAsync(
             new SupervisorDefer(form.Id, form.Question, form.Generation, form.Bound, form.Reasons, new SupervisorHolder(RoleHolders.Terminal, null)),
@@ -299,6 +307,15 @@ public static class SupervisorDoor
     }
 
     private static KeptAnswer Refused(string why) => new(false, null, null, why);
+
+    /// <summary>
+    /// Whether the appointment the judge acted under names the park's repository: its own, or (SUPERVISOR1e, §5) the workspace the
+    /// registry places it in now. Which of the two is effective there is the keeping's own check, under the decision's lock.
+    /// </summary>
+    private static bool Covers(DriverLoop loop, RoleJudgement judged, string repository) =>
+        string.Equals(judged.Repository, repository, StringComparison.OrdinalIgnoreCase)
+        || (judged.Workspace is { } workspace && loop.Pipe?.StandingConfirmation.WorkspaceOf(repository) is { } placed
+            && string.Equals(placed, workspace, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// The answer's answer (§3.1): kept with the decision and when it goes on, or refused with why, keeping nothing; with the roles the

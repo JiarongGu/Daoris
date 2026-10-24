@@ -261,6 +261,70 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// SUPERVISOR1e (§5, §6.3): the window appoints the supervisor for a workspace with its overrule window; the holder's answer for a
+    /// session of a repository in it is kept, held for that window; a window outside 1 to 60 is refused; and the repository's own
+    /// appointment, made while the decision is held, makes it stale after the judge's step, the workspace's standing for the rest.
+    /// </summary>
+    [Fact]
+    public async Task A_workspace_s_appointment_keeps_its_window_and_a_repository_s_own_made_while_its_decision_is_held_sweeps_it()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var (loop, module, dispatcher, services) = Compose();
+        using var composed = services;
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new Service([]))));
+        Asked("s1");
+        var judge = Judge();
+        judge.WorkspaceOf = repository => repository is "engine" or "tools" ? "games" : null;
+        judge.HasWorkspace = workspace => workspace == "games";
+        using var pipe = new InstancePipe(dispatcher, Bus, Home, standing: judge);
+        Assert.NotNull(pipe.Serve());
+        loop.Pipe = pipe;
+        string? key = null;
+        SupervisorDoor.Starter = open =>
+        {
+            key = open.Key;
+            return Task.FromResult(StandingConfirmationTests.Opened(open));
+        };
+        try
+        {
+            var refused = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", scope = "workspace:games", on = true, window = 0 });
+            Assert.Equal((false, StandingConfirmation.WindowWhy), (refused.GetProperty("done").GetBoolean(), refused.GetProperty("why").GetString()));
+            Assert.Null(key);
+
+            var appointed = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", scope = "workspace:games", on = true, window = 12 });
+            Assert.True(appointed.GetProperty("done").GetBoolean(), appointed.GetRawText());
+            var row = Assert.Single((await AnswerAsync(module, "STATE")).GetProperty("standingConfirmation").GetProperty("appointments").EnumerateArray());
+            Assert.Equal(("workspace:games", "games", 12), (row.GetProperty("scope").GetString(), row.GetProperty("workspace").GetString(), row.GetProperty("window").GetInt32()));
+            var generation = judge.Admit("engine").Generation!;
+            Assert.Equal(generation, Assert.Single((await AnswerAsync(module, "SUPERVISOR_WAITING")).GetProperty("waiting").EnumerateArray()).GetProperty("generation").GetString());
+
+            SupervisorReason[] reasons = [new("The ticket says monthly.", "the quest's line 2")];
+            await using (var client = await PipeClient.ConnectAsync(pipe.Name!))
+            {
+                var nonce = (await client.HelloAsync(HomeIdentity.Read(Home)!)).GetProperty("data").GetProperty("nonce").GetString()!;
+                var form = new SupervisorForm(
+                    "s1", "q-1", generation, SupervisorProof.Prove(key!, nonce, SupervisorProof.Canonical("s1", "q-1", generation, "Monthly", reasons))!,
+                    "Monthly", reasons).Payload();
+                var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "SUPERVISOR_ANSWER", form));
+                Assert.True(answer.GetProperty("data").GetProperty("kept").GetBoolean(), answer.GetRawText());
+            }
+
+            var held = Assert.Single(loop.Supervisor.LiveOf("s1"));
+            Assert.Equal((SupervisorState.Held, TimeSpan.FromMinutes(12)), (held.State, held.GoesOnAt - held.KeptAt));
+
+            var own = await AnswerAsync(module, "SET_APPOINTMENT", new { role = "supervisor", scope = "repository:engine", on = true, share = "own" });
+            Assert.True(own.GetProperty("done").GetBoolean(), own.GetRawText());
+            var swept = Assert.Single(loop.Supervisor.LiveOf("s1"));
+            Assert.Equal((SupervisorState.Stale, SupervisorWhy.AppointmentChanged), (swept.State, swept.Why));
+            Assert.Equal(generation, judge.Admit("tools").Generation);
+        }
+        finally
+        {
+            SupervisorDoor.Starter = null;
+        }
+    }
+
+    /// <summary>
     /// SUPERVISOR1b (§3.1, §4.1): a question its agent marked the owner's is not listed for the holder, and a covered terminal's answer to
     /// it is refused <c>owner-question</c>, keeping nothing; the holder's defer on it is kept <c>left</c> over the same door, its bound on
     /// the row the page reads, and the page's own door is refused it as the answer is.

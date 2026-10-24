@@ -129,6 +129,8 @@ public sealed class PersonRoutes(DriverLoop loop)
     // never answered. Answered `{ done, why?, message? }`, a refusal as data (`window-only`, `not-offered`, `unknown-role`,
     // `unknown-repository`, `scope`, `choose-terminal`, `no-holder`, `revoked-holder`, `holder-harness`, `newer`, `unwritten`,
     // `unstarted`, `no-pipe`). The judge's mutation step ends first; then each decision kept under a generation it ended goes stale.
+    // SUPERVISOR1e (D208 §5, §6.3): the supervisor's `scope` may be `workspace:<name>` (`unknown-workspace`), and `window?` its overrule
+    // window, 1 to 60 minutes (`window`); a repository's appointment then sweeps its workspace's decisions for that repository alone.
     [DriverRoute("SET_APPOINTMENT")]
     [Publishes("SET_APPOINTMENT", StateScopes.Driver | StateScopes.Sessions)]
     private async Task<object?> SetAppointmentAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -144,15 +146,18 @@ public sealed class PersonRoutes(DriverLoop loop)
             ?? (PayloadHelper.GetOptionalValue<string>(request.Payload, "repository") is { Length: > 0 } repository ? RoleScopes.Repository(repository) : null);
         if (scope is null || !RoleScopes.Known(scope))
         {
-            return new StandingChange(false, StandingConfirmation.Scope, "An appointment names its scope: `machine` or `repository:<name>`.");
+            return new StandingChange(
+                false, StandingConfirmation.Scope, "An appointment names its scope: `machine`, `repository:<name>` or `workspace:<name>`.");
         }
 
         var holder = PayloadHelper.GetOptionalValue<string>(request.Payload, "holder") ?? RoleHolders.Terminal;
         var on = PayloadHelper.GetRequiredValue<bool>(request.Payload, "on");
         var share = PayloadHelper.GetOptionalValue<string>(request.Payload, "share");
         var setup = PayloadHelper.GetOptionalValue<bool>(request.Payload, "setup");
+        // SUPERVISOR1e (§6.3): the supervisor's overrule window in minutes, 1 to 60, five where none is named.
+        var window = PayloadHelper.GetOptionalValue<int?>(request.Payload, "window");
         return _loop.Pipe is { } pipe
-            ? await SupervisorDoor.AppointAsync(_loop, pipe, new AppointRequest(role, scope, holder, on, share, setup), cancellationToken).ConfigureAwait(false)
+            ? await SupervisorDoor.AppointAsync(_loop, pipe, new AppointRequest(role, scope, holder, on, share, setup, window), cancellationToken).ConfigureAwait(false)
             : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it appoints no terminal holder.");
     }
 

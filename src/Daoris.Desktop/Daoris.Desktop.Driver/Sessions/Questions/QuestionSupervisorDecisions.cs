@@ -30,8 +30,8 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission admission, MachineLog? log = null)
 {
-    /// <summary>Row 1's overrule window (§6.3): five minutes from the keeping. SUPERVISOR1e lets the appointment set 1 to 60.</summary>
-    public static readonly TimeSpan Window = TimeSpan.FromMinutes(5);
+    /// <summary>Row 1's overrule window (§6.3): five minutes from the keeping, where the appointment set none (SUPERVISOR1e sets 1 to 60).</summary>
+    public static readonly TimeSpan Window = TimeSpan.FromMinutes(OverruleWindow.Default);
 
     public const string DecisionsSuffix = ".decisions";
     public const string PointerSuffix = ".supervisor.json";
@@ -122,18 +122,20 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             }
 
             // The generation rechecked at the keeping, under the decision's lock: a revoke between the judgement and here keeps nothing.
-            if (admission.Admit(park.Repository) is not { Why: null, Generation: { } generation } || generation != answer.Generation)
+            if (admission.Admit(park.Repository) is not { Why: null, Generation: { } generation } admitted || generation != answer.Generation)
             {
                 log?.Info("supervisor.refused", ("why", SupervisorWhy.AppointmentChanged));
                 return Task.FromResult(new SupervisorKept(false, null, null, SupervisorWhy.AppointmentChanged));
             }
 
+            // SUPERVISOR1e (§6.3): held for the window the effective appointment set, 1 to 60 minutes; row 1's five where it set none.
+            var goesOn = now + (admitted.Window ?? Window);
             var id = Guid.NewGuid().ToString("N")[..12];
             var decision = new Live
             {
                 Id = id, Session = answer.Session, Repository = park.Repository, Question = park.Filed!, Choice = answer.Choice,
-                Reasons = answer.Reasons, Holder = answer.Holder, Generation = generation, KeptAt = now, GoesOnAt = now + Window,
-                Written = DecisionJson(id, answer.Session, answer.Choice, null, answer.Reasons, answer.Holder, park.Filed!, generation, now, now + Window),
+                Reasons = answer.Reasons, Holder = answer.Holder, Generation = generation, KeptAt = now, GoesOnAt = goesOn,
+                Written = DecisionJson(id, answer.Session, answer.Choice, null, answer.Reasons, answer.Holder, park.Filed!, generation, now, goesOn),
                 StateAt = now,
             };
             Directory.CreateDirectory(FolderOf(answer.Session));
@@ -365,20 +367,24 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     /// admitted decision is a taken-in act, which a revoke does not recall.
     /// </summary>
     /// <returns>How many went stale.</returns>
-    public async Task<int> RevokedAsync(string generation, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default)
+    public Task<int> RevokedAsync(string generation, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>
+        SweepAsync(each => each.Generation == generation, SupervisorWhy.Revoked, takeBack, now, ct);
+
+    // Every held or released decision matching `under`, each session's under its own lock, made stale with `why`.
+    private async Task<int> SweepAsync(Func<Live, bool> under, string why, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct)
     {
         var swept = 0;
-        var sessions = _live.Values.Where(each => each.Generation == generation).Select(each => each.Session).Distinct(StringComparer.Ordinal).ToList();
+        var sessions = _live.Values.Where(under).Select(each => each.Session).Distinct(StringComparer.Ordinal).ToList();
         foreach (var session in sessions)
         {
             swept += await UnderAsync(session, async () =>
             {
                 var moved = 0;
-                foreach (var decision in _live.Values.Where(each => each.Session == session && each.Generation == generation).ToList())
+                foreach (var decision in _live.Values.Where(each => each.Session == session && under(each)).ToList())
                 {
                     if (decision.State is not (SupervisorState.Held or SupervisorState.Released)) continue;
                     if (decision.Word is { } word) await takeBack(session, word, ct).ConfigureAwait(false);
-                    if (Move(decision, SupervisorState.Stale, now, SupervisorWhy.Revoked) == SupervisorState.Stale) moved++;
+                    if (Move(decision, SupervisorState.Stale, now, why) == SupervisorState.Stale) moved++;
                 }
 
                 return moved;
@@ -387,6 +393,16 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
 
         return swept;
     }
+
+    /// <summary>
+    /// A repository's own appointment replacing its workspace's there (SUPERVISOR1e, §5): every held or released decision of that
+    /// repository kept under the workspace's <paramref name="generation"/> goes stale, each under its own decision's lock; the
+    /// workspace's other repositories keep theirs.
+    /// </summary>
+    public Task<int> NarrowedAsync(string generation, string repository, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>
+        SweepAsync(
+            each => each.Generation == generation && string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase),
+            SupervisorWhy.AppointmentChanged, takeBack, now, ct);
 
     /// <summary>
     /// Whether <paramref name="question"/> of <paramref name="session"/> has a decision, live or closed as the owner's (§3.1's

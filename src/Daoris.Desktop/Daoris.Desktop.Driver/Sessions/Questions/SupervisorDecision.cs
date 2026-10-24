@@ -12,10 +12,25 @@ public interface IDecisionAdmission
     DecisionAdmitted Admit(string repository);
 }
 
-/// <summary>What <see cref="IDecisionAdmission"/> answered: the effective generation, or why no holder is admitted.</summary>
-public sealed record DecisionAdmitted(string? Generation, string? Why)
+/// <summary>
+/// What <see cref="IDecisionAdmission"/> answered: the effective generation, or why no holder is admitted; and the overrule window
+/// that appointment set (SUPERVISOR1e, §6.3), null for row 1's five minutes.
+/// </summary>
+public sealed record DecisionAdmitted(string? Generation, string? Why, TimeSpan? Window = null)
 {
     public static DecisionAdmitted Refused(string why) => new(null, why);
+}
+
+/// <summary>
+/// The overrule window the owner sets at the supervisor's appointment (SUPERVISOR1e; the supervisor design §6.3): 1 to 60 minutes,
+/// never 0 (§12), five where none is named.
+/// </summary>
+public static class OverruleWindow
+{
+    public const int Least = 1, Most = 60, Default = 5;
+
+    /// <summary>Whether <paramref name="minutes"/> is a window an appointment may set.</summary>
+    public static bool Allowed(int minutes) => minutes is >= Least and <= Most;
 }
 
 /// <summary>The production admission until the door lands (1a-ii): the role is not offered, so every act is refused.</summary>

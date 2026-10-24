@@ -448,8 +448,9 @@ public sealed class StandingConfirmationTests : Bridge
         {
             var appointment = Assert.Single(document.RootElement.GetProperty("appointments").EnumerateArray());
             // STEWARDROLE1a-i (D209 §2.3): `scope`, `acts` and `setup` in place of the built `repository`; never which holder holds it.
+            // SUPERVISOR1e: the supervisor's overrule window last.
             Assert.Equal(
-                ["role", "scope", "holder", "generation", "since", "acts", "setup"],
+                ["role", "scope", "holder", "generation", "since", "acts", "setup", "window"],
                 appointment.EnumerateObject().Select(each => each.Name));
             Assert.Equal((Roles.Supervisor, RoleScopes.Repository(Engine), RoleHolders.Terminal), (
                 appointment.GetProperty("role").GetString(), appointment.GetProperty("scope").GetString(),

@@ -527,6 +527,26 @@ public sealed class DriverLoop(
 
     private QuestionSupervisorDecisions? _supervisor;
 
+    /// <summary>
+    /// Each repository's workspace as the loop's last registry read said it (SUPERVISOR1e, D208 §5), which the judge reads to find a
+    /// workspace's appointment for a repository; empty before the first read. <see cref="RefreshWorkspacesAsync"/> reads it again.
+    /// </summary>
+    public RepositoryWorkspaces Workspaces { get; private set; } = RepositoryWorkspaces.Empty;
+
+    /// <summary>The registry read again for <see cref="Workspaces"/> now (an appointment's press), kept as it was where the host cannot answer.</summary>
+    public async Task RefreshWorkspacesAsync(CancellationToken ct)
+    {
+        if (Service is not { } service) return;
+        try
+        {
+            Workspaces = RepositoryWorkspaces.Of(await service.RegistryAsync(ct).ConfigureAwait(false));
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            // The last read stands.
+        }
+    }
+
     /// <summary>The decisions' admission: the served pipe's judge where there is one, else none admitted (SUPERVISOR1a-ii).</summary>
     private sealed class PipeAdmission(DriverLoop loop) : IDecisionAdmission
     {
@@ -849,6 +869,10 @@ public sealed class DriverLoop(
             // SUPERVISOR1a-ii (D208 §5): an appointment names a repository this machine drives.
             served.StandingConfirmation.Drives = repository =>
                 DriverConfig.Load(ConfigPath).Drivable.Contains(repository, StringComparer.OrdinalIgnoreCase);
+            // SUPERVISOR1e (D208 §5): a workspace's appointment covers the repositories the registry places in it as each act is judged,
+            // read from the loop's last registry read, a repository registered later included.
+            served.StandingConfirmation.WorkspaceOf = repository => Workspaces.WorkspaceOf(repository);
+            served.StandingConfirmation.HasWorkspace = workspace => Workspaces.Names(workspace);
             // STEWARDROLE1b (D209 §5.1a): a restart forgets every steward's release, so what an earlier run left in the file is withdrawn
             // before the first look; the owner's own releases are kept whole.
             if (served.StandingConfirmation.StewardOffered) RoleStarts.Sweep(served.StandingConfirmation, ConfigPath);
@@ -1325,12 +1349,17 @@ public sealed class DriverLoop(
         return true;
     }
 
-    /// <summary>What the registry holds, or null when the host could not answer — never a change.</summary>
-    private static async Task<string?> RegisteredAsync(ServiceClient service, CancellationToken ct)
+    /// <summary>
+    /// What the registry holds, or null when the host could not answer — never a change. Each read is also remembered as each repository's
+    /// workspace (SUPERVISOR1e), which the judge reads under its lock, never waiting on the service.
+    /// </summary>
+    private async Task<string?> RegisteredAsync(ServiceClient service, CancellationToken ct)
     {
         try
         {
-            return Repositories.Signature(await service.RegistryAsync(ct).ConfigureAwait(false));
+            var registry = await service.RegistryAsync(ct).ConfigureAwait(false);
+            Workspaces = RepositoryWorkspaces.Of(registry);
+            return Repositories.Signature(registry);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
