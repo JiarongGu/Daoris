@@ -59,6 +59,26 @@ repository.
   where the conversation's was), then green with the `WorkflowRunTests`, `WorkflowPortsTests`, `WorkflowRunCommandTests`,
   `WorkflowRunSaidTwinTests` and `TraceTests` classes (288), the driver's fast half (14,411) and `DriverModuleWorkflowRunTests` (17).
 
+## 2026-10-24 - A test's stand-in listened on a port Node's fetch refuses (FLAKE1)
+
+- **Symptom:** in `npm run verify`, `tools/rehearsal-kit.test.mjs`'s *a set-up step's stub says what it showed through its
+  connector and closes done* failed with *the quest door at http://127.0.0.1:2049 did not answer take: fetch failed: bad port*;
+  it passed twice alone.
+- **Root cause:** the stand-in listened on port 0, and the system hands out any free port. The WHATWG Fetch standard refuses a
+  list of ports as bad (https://fetch.spec.whatwg.org/#port-blocking), 2049 among them, and Node's fetch follows it: the request
+  never left the process. Six test files listened this way for a fetch or a browser to reach.
+- **Fix:** `tools/listen-port.mjs`'s `listenFetchable` listens on port 0 and again while the port is on the standard's list
+  (`BAD_PORTS`, undici's own list, which Node's fetch runs), and answers the server's url; a listen that fails is the caller's
+  error. `tools/listen-port.d.mts` types it for the CLI's tests. The stand-ins of `tools/rehearsal-kit.test.mjs`,
+  `tools/ux-count.test.mjs`, `src/Daoris.Cli/tool-test/setup-kit.test.ts` and `src/Daoris.Cli/test/service/`'s
+  `brainstorm`, `exit` and `running` tests listen through it. The two .NET tests whose stand-in login listens on port 0
+  (`CodexAccountProcessTests`, `SignInPhasesTests`) reach it with .NET's `HttpClient`, which refuses no port, and are left.
+- **Verification:** `tools/listen-port.test.mjs` (4, in `verify`): every listed port is one Node's fetch refuses as a bad port,
+  and a server whose first listen is handed a blocked port (injected, so every run sees it) is listened again on one fetch
+  reaches, seen failing first against a helper that listened once (10080 kept). Then green: the rehearsal kit's, ux-count's and
+  the helper's tests (61), `setup-kit.test.ts` (33), the three service tests with `doc-duplicates` and `dogfood` (70), the CLI's
+  typecheck, `tools/test-map.mjs check` and `LoopbackListensTests` (2).
+
 ## 2026-10-24 - The queue's runner formed a candidate from the queue as it stood before its hold (FLAKE1)
 
 - **Symptom:** the tool-test `merge-queue.test.ts`, *a red candidate of two*, now and then found its first red run's members

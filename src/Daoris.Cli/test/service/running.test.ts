@@ -1,9 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer, type Server } from 'node:http';
-import { once } from 'node:events';
 import { join } from 'node:path';
-import type { AddressInfo } from 'node:net';
+import { listenFetchable } from '../../../../tools/listen-port.mjs';
 import { endpoint, RUNNING_FILE, runningService } from '../../src/service/service.ts';
 import { HOME_ID_FILE } from '../../src/platform/home.ts';
 import { makeFixture, type Fixture } from '../_fixture.ts';
@@ -51,9 +50,7 @@ const daoris = (home: string | null = HOME_ID) => host((url) => (url.endsWith('/
 async function listening(answer: (path: string, res: import('node:http').ServerResponse) => void): Promise<{ url: string; asked: string[]; server: Server }> {
   const asked: string[] = [];
   const server = createServer((req, res) => { asked.push(req.url ?? ''); answer(req.url ?? '', res); });
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  return { url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, asked, server };
+  return { url: await listenFetchable(server), asked, server };
 }
 
 test('the variable still wins, and nothing is read or asked', async () => {

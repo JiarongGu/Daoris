@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { once } from 'node:events';
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AddressInfo } from 'node:net';
+import { listenFetchable } from '../../../../tools/listen-port.mjs';
 import { makeFixture } from '../_fixture.ts';
 
 /**
@@ -43,11 +42,9 @@ for (const how of ['keep-alive', 'socket destroyed after the answer'] as const) 
       res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) });
       res.end(body, () => { if (how !== 'keep-alive') res.socket?.destroy(); });
     });
-    server.listen(0, '127.0.0.1');
-    await once(server, 'listening');
+    const url = await listenFetchable(server);
     try {
       const folder = fx.write('repo/README.md', '# repo\n') && join(fx.root, 'repo');
-      const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
       const ran = await runEntry(['import', folder, '--workspace', 'w'], { DAORIS_SERVICE_URL: url });
       assert.doesNotMatch(ran.err, /Assertion failed/);
       assert.match(ran.out, /imported 1 repository/);

@@ -19,6 +19,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { createServer as createTcpServer } from 'node:net';
 import { portIsFree } from './cdp.mjs';
+import { listenFetchable } from './listen-port.mjs';
 import {
   ACP_STUB_AGENT, ACP_TURN_END_AGENT, PORT_BAND, STUB_COMMIT, capture, checkFolderName, evidenceFolder, gitRefusal, keepEvidence,
   makeChecker, ownBuild, ownBuildRoot, ownBuilt, portHolder, portRefusal, rehearsalRun, restartBetweenRequests, stubTwoManifest,
@@ -312,8 +313,7 @@ async function standInService() {
       response.end('{}');
     });
   });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  return { url: `http://127.0.0.1:${server.address().port}`, asked, close: () => new Promise((resolve) => server.close(resolve)) };
+  return { url: await listenFetchable(server), asked, close: () => new Promise((resolve) => server.close(resolve)) };
 }
 
 /**

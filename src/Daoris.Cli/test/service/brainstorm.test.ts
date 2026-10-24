@@ -1,8 +1,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { once } from 'node:events';
-import type { AddressInfo } from 'node:net';
+import { listenFetchable } from '../../../../tools/listen-port.mjs';
 import { commandBrainstorm } from '../../src/service/brainstorm.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
@@ -93,9 +92,7 @@ async function standIn({ shared = false } = {}) {
       return answer(405);
     });
   });
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  const url = await listenFetchable(server);
   process.env.DAORIS_SERVICE_URL = url;
   return { url, asked, kept, close: () => new Promise<void>((resolve) => server.close(() => resolve())) };
 }
