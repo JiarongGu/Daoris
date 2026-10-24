@@ -57,21 +57,29 @@ public static class SupervisorDoor
             Starter is { } stand ? stand(open)
             : Panel is { } panel ? panel.OpenAsync(home, open, ct)
             : Task.FromResult(new HolderOpened(null, null, StandingConfirmation.Unstarted, null))).ConfigureAwait(false);
-        if (change.Ended.Count == 0) return change.Answer;
-        await SweepAsync(loop, change.Ended, ct).ConfigureAwait(false);
+        if (change.Ended.Count == 0 && change.Narrowed.Count == 0) return change.Answer;
+        await SweepAsync(loop, change.Ended, ct, change.Narrowed).ConfigureAwait(false);
         return change.Answer;
     }
 
-    /// <summary>Every decision kept under <paramref name="generations"/> swept, each under its own decision's lock (§5), and the loop told.</summary>
-    private static async Task SweepAsync(DriverLoop loop, IReadOnlyList<string> generations, CancellationToken ct)
+    /// <summary>
+    /// Every decision kept under <paramref name="generations"/> swept, and each <paramref name="narrowed"/> workspace's generation's for
+    /// its one repository (SUPERVISOR1e), each under its own decision's lock (§5), and the loop told.
+    /// </summary>
+    private static async Task SweepAsync(
+        DriverLoop loop, IReadOnlyList<string> generations, CancellationToken ct, IReadOnlyList<(string Generation, string Repository)>? narrowed = null)
     {
         var service = loop.Service;
+        SupervisorTakeBack takeBack = async (session, word, token) =>
+            service is not null && (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done;
         foreach (var generation in generations)
         {
-            await loop.Supervisor.RevokedAsync(
-                generation,
-                async (session, word, token) => service is not null && (await service.TakeBackAsync(session, word, ct: token).ConfigureAwait(false)).Done,
-                DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+            await loop.Supervisor.RevokedAsync(generation, takeBack, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
+        }
+
+        foreach (var (generation, repository) in narrowed ?? [])
+        {
+            await loop.Supervisor.RevokedAsync(generation, takeBack, DateTimeOffset.UtcNow, ct, repository).ConfigureAwait(false);
         }
 
         // STEWARDROLE1b (§5.1a): the steward's releases the revoke cancelled are withdrawn from the driver's file, the owner's kept.
@@ -206,12 +214,12 @@ public static class SupervisorDoor
     /// </summary>
     public static async Task<KeptAnswer> AnswerAsync(DriverLoop loop, System.Text.Json.JsonElement? payload, CancellationToken ct)
     {
-        if (PipeDoor.Role is not { Repository: { } appointed, Generation: { } generation }) return Refused(SupervisorWhy.NotHolder);
+        if (PipeDoor.Role is not { Generation: { } generation }) return Refused(SupervisorWhy.NotHolder);
         if (SupervisorForm.Read(payload) is not { } form) return Refused(SupervisorWhy.Form);
         if (form.Generation != generation) return Refused(SupervisorWhy.AppointmentChanged);
         var service = loop.Service ?? throw DriverArguments.NotReady();
         if (await ParkAsync(loop, service, form.Id, ct).ConfigureAwait(false) is not { } park) return Refused(SupervisorWhy.NotParked);
-        if (!string.Equals(park.Repository, appointed, StringComparison.OrdinalIgnoreCase)) return Refused(SupervisorWhy.NotAppointed);
+        if (Covers(loop, generation, park.Repository) is { } uncovered) return Refused(uncovered);
 
         var kept = await loop.Supervisor.KeepAsync(
             new SupervisorAnswer(form.Id, form.Question, form.Generation, form.Choice, form.Reasons, new SupervisorHolder(RoleHolders.Terminal, null)),
@@ -229,12 +237,12 @@ public static class SupervisorDoor
     /// </summary>
     public static async Task<KeptAnswer> DeferAsync(DriverLoop loop, System.Text.Json.JsonElement? payload, CancellationToken ct)
     {
-        if (PipeDoor.Role is not { Repository: { } appointed, Generation: { } generation }) return Refused(SupervisorWhy.NotHolder);
+        if (PipeDoor.Role is not { Generation: { } generation }) return Refused(SupervisorWhy.NotHolder);
         if (SupervisorDeferForm.Read(payload) is not { } form) return Refused(SupervisorWhy.Form);
         if (form.Generation != generation) return Refused(SupervisorWhy.AppointmentChanged);
         var service = loop.Service ?? throw DriverArguments.NotReady();
         if (await ParkAsync(loop, service, form.Id, ct).ConfigureAwait(false) is not { } park) return Refused(SupervisorWhy.NotParked);
-        if (!string.Equals(park.Repository, appointed, StringComparison.OrdinalIgnoreCase)) return Refused(SupervisorWhy.NotAppointed);
+        if (Covers(loop, generation, park.Repository) is { } uncovered) return Refused(uncovered);
 
         var kept = await loop.Supervisor.LeaveAsync(
             new SupervisorDefer(form.Id, form.Question, form.Generation, form.Bound, form.Reasons, new SupervisorHolder(RoleHolders.Terminal, null)),
@@ -299,6 +307,10 @@ public static class SupervisorDoor
     }
 
     private static KeptAnswer Refused(string why) => new(false, null, null, why);
+
+    // SUPERVISOR1e (§5): the act's appointment the park's repository's effective one, a workspace's included; why not, else null.
+    private static string? Covers(DriverLoop loop, string generation, string repository) =>
+        loop.Pipe?.StandingConfirmation is { } judge ? judge.Covers(generation, repository) : SupervisorWhy.NotAppointed;
 
     /// <summary>
     /// The answer's answer (§3.1): kept with the decision and when it goes on, or refused with why, keeping nothing; with the roles the
