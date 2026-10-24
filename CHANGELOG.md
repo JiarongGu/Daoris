@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session that asks its own repository for work is now told how a repository asks itself (SELFASK1). Before, the refusal said
+  only to use its backlog, so a chat ran its rows one sub-agent at a time in its own tree. Where the repository declares lanes, the
+  refusal names them and how to address one as a quest, each a session of its own. Where it declares none, it says a
+  `daoris.lanes.json` with a steward lane is what lets the repository hand its own work out, and the `registry` tool's row for that
+  repository says the same.
 - The steward's door is built and no role is offered yet (STEWARDROLE1a-i, D209). Nothing you use changes until the steward's
   activation. Once a role is offered, *Appoint…* opens a tab of Daoris's terminal panel that runs Daoris's own pinned Claude Code,
   checked against the bytes its install verified, never the `claude` on your PATH. It starts on a configuration Daoris writes, with

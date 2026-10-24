@@ -520,7 +520,6 @@ folder.
 Contracts: self-development (D115), agent-layout (D117 §7), entry-point evidence.
 DEV5 → 6 → 7, then 8/9, then 10/11. Predictions wait for LAYOUT2 measurement.
 
-- [ ] **SELFASK1 — a repository asking itself is told the lanes way** (service; seen 2026-10-24 on the Lyntai kit's own chat). A session that asks its own repository is refused with *That is the repository you are in — a quest is work for someone else. Use its own backlog.* (`QuestExchange.cs:535-540`), which never says that a repository's own lanes are how it asks itself (D115 §2.2), so a kit's chat ran its tasks one sub-agent at a time in its own tree instead of as Daoris sessions. The refusal names the repository's lanes where it declares some, and where it declares none says that a `daoris.lanes.json` with a steward lane is what lets it dispatch its own work; the registry's row says the same for a repository with no lanes. Proof: both refusals' words in the service's quest tests, and the registry's row for a repository with and without lanes.
 - [ ] **DEV5 — landing queue**. Detached tree, safe gates/quiet rerun, locked advance and commit check. §4.2–§4.8.
 - [ ] **DEV6 — concurrent lanes**. Reservation/locks, default cap three, recorded/prompt lanes. §3.2–§3.4.
 - [ ] **DEV7 — ready/verdict**. Three failures reach person; done means landed. §4.1/§4.5–§4.6/D83.
