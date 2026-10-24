@@ -1,6 +1,6 @@
-# COWORKVIEW1: the reads of rounds 1 and 2 (D191)
+# COWORKVIEW1: the reads of rounds 1 and 2, the Opus foundation reader's of both and Codex's of round 2 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it.
 
 ## Opus (foundation), round 1
 
@@ -654,3 +654,67 @@ What remains is narrower:
 
 Each is a sentence or a rule that the steward can check against the lines cited, and F4-F13 can be taken in passing. Under D191
 the design still waits on Codex's read.
+
+## Codex, round 2
+
+Codex's read of round 2 with its named changes at `972b17577`, owed since round 1 when its credits ran out: 20 findings, 11 blocking; another round. The steward ran it read-only on main from outside the install. Round 3 answers it in the design's §13.
+
+Read-only review; nothing changed. Paths below use the design’s `Driver/`, `Modules/`, `Core/`, `Mcp/` and `Web/` aliases.
+
+### 1. Wrong claims about existing code
+
+1. **Non-blocking — helpers consume the machine cap.** The design’s §6.5 says helpers run outside that cap (`docs/2026-10-24-cowork-view-design.md:870`). In fact, `Driver/Loop/DriverHelpers.cs:130` subtracts held slots before admitting one, and `Driver/Loop/Driver.cs:1006` counts helpers before planning quests; correct the rationale for rejecting a separate self-quest rule.
+
+2. **Non-blocking — no local executor does not prove another machine took the quest.** The fallback at design line 375 overlooks a take made locally outside a recorded conversation. `Driver/Quests/Domain/Planner.cs:1758` explicitly distinguishes that case; use the take’s provenance, or say “taker unknown,” rather than “taken on another machine.”
+
+3. **Non-blocking — SELFASK1 has landed in this checkout.** Design lines 309–312 still describe the old refusal and an open fix. `Core/Quests/QuestExchange.cs:542` now names lanes or their declaration, and `Mcp/KnowledgeSearchTools.cs:329` supplies the registry explanation; update the present-tense claims and row e’s dependency.
+
+### 2. The read and its updates
+
+1. **Blocking — historical waiting parts remain live after replacement.** Design line 357 tests `completed`, a taken quest and a wait code, without excluding a superseded executor. A D79 resume creates another record (`Core/Sessions/SessionLedger.cs:1613`) while the old waiting record remains completed, so both qualify while the quest stays taken; define current waiting responsibility and test “wait → answer → replacement working.”
+
+2. **Blocking — an application crash leaves children falsely working.** `Driver/Trees/Orphans.cs:81` ends the abandoned session record without appending a lineage end, while `Driver/Sessions/Domain/ChildBindings.cs:278` leaves an unclosed child active. Design lines 459–462 therefore cover a root killed while its driver survives, but not a driver crash; specify recovery from terminal part evidence without inventing a harness end.
+
+3. **Blocking — reopening a child does not reset its terminal state.** The generation join relies on the existing fold’s reopening behavior (design lines 485–486), but `ChildBindings.cs:177` resets only `Closed`; `Stopped` remains true and wins at line 278. Specify state and moment ownership per execution generation, and test a finished native ID appearing again as working.
+
+4. **Blocking — the fixed watch misses dependencies and its first change.** Design line 605 stamps lineage only for sessions whose reads are held, although X’s read includes sibling Y’s children and an ask-keyed read includes several sessions. Moreover, `Driver/Platform/HomeWatch.cs:331` deliberately accepts a newly named file’s first stamp without waking; register every dependency with the composition’s baseline and test a final append between composition and watch registration.
+
+5. **Blocking — scheduling and configuration changes have no complete wake path.** The design’s wakes at lines 599–608 omit changes to the driver’s considerations, driving choices and registry facts, although these determine waiting reasons and hints. `Modules/Loop/DriverLoop.cs:984` updates considerations and line 1027 emits `DRIVER_TICK` independently of ledger changes; test a changed cap/reason and driving configuration with no session or quest write.
+
+6. **Non-blocking — background composition alone does not prove NOBLOCK1.** `Modules/Bridge/HeldAnswers.cs:154` serializes the answer while holding the same lock acquired by an incoming ask at line 78, and the proposed answer has no member-count bound. Extend row a’s timing proof to concurrent large-answer completion and multiple held reads; also exclude composition-only `at` changes from equality, otherwise design line 545 makes unchanged answers appear changed.
+
+Shared-host leakage: **none found**. The new lineage material remains desktop-only, and `src/Daoris.Service/Daoris.Service.Http/Program.cs:358` confines static UI serving to local mode; line 2523 also requires local mode for machine-local answers.
+
+### 3. The routing half
+
+1. **Blocking — the chat’s driving precondition has no specified source.** Design line 800 requires a chat to know its repository is driven here, but line 1022 expressly leaves supplying that knowledge undesigned. `Mcp/KnowledgeSearchTools.cs:293` answers registry ownership and lanes, without the machine’s driving choice; provide desktop-owned eligibility in the chat’s context, or define a conservative rule for unknown eligibility.
+
+2. **Non-blocking — explicitly exclude sessions holding restricted roles.** “One the driver started” at design line 799 also describes helpers and reviewers, whereas `Mcp/RoleFilter.cs:61` refuses serving records quest publication and response. Scope the doctrine to eligible leads and conversations; otherwise its instructions conflict with those roles even where enforcement correctly refuses them.
+
+I found no new cross-repository edit, account-selection bypass or automatic landing door. The revised “answer, never code” rule and committing before a D79 wait match the planner and resume paths.
+
+### 4. Decided rules and UI contracts
+
+1. **Blocking — hiding unmatched hook evidence breaks truthful partial visibility.** Design line 492 suppresses all hook-only children when a door’s IDs never join; independently, `Driver/Sessions/ChildLineage.cs:137` turns an unreadable file into an empty fold. Both can erase evidence or render “Nobody else” without establishing absence, contrary to `docs/decisions/D173.md:11`; retain uncorrelated observations without counting them as distinct children, and distinguish unreadable from empty.
+
+2. **Non-blocking — loading, failure and retained-stale states need designs.** The read returns pending at design line 583, but §5 specifies only populated and empty views. `Web/bridge/state/held.ts:34` passes a first pending answer through the reader, so define its rendering and stories explicitly, following `docs/decisions/D182.md:559`; translation parity alone cannot prevent a false empty state.
+
+3. **Non-blocking — the remaining architectural boundaries hold.** The entry-part treatment follows D167, native children remain outside D203’s co-workers, and the proposed labels preserve English/Chinese placeholder parity. I agree with Opus’s grouping and resume corrections, but disagree with round-2 finding 3’s sufficient live predicate (`docs/2026-10-24-cowork-view-reads.md:527`), finding 8’s evidence suppression (line 581), and the resulting acceptance verdict (line 642).
+
+### 5. The rows and their order
+
+1. **Blocking — row a needs the lifecycle and watch contracts above.** Its current proofs at design lines 904–924 miss superseded waits, repeated finished IDs, application crashes and dependency-registration races. It remains the right first visible feature, once those cases have expected answers.
+
+2. **Blocking — row e cannot precede observable routing eligibility.** Moving its doctrine forward is reasonable, but design line 927 makes it independently buildable while its chat precondition remains unavailable. Resolve that source first; row b then follows a, with the corrected live predicate and scheduling wakes.
+
+3. **Blocking — row c promises a thread that another feature has not supplied.** Design line 960 requires opening the co-worker’s thread, but `docs/2026-10-23-coworker-design.md:671` assigns that surface to COWORKUX1b. Depend on that row and its prerequisites, or explicitly open today’s session page until the thread exists; sharing an exchange reader alone does not supply navigation.
+
+4. **Non-blocking — row d needs an ask terminal twin.** Its ask view at design line 962 has no corresponding ask form of the terminal command declared at line 899. Add an explicit ask argument or verb and its output test to satisfy D185’s terminal-twin rule (`docs/decisions/D185.md:24`).
+
+5. **Blocking — row f adds records without adding their wakes.** Its request/state files live under brainstorm and meeting directories (`Driver/Brainstorms/MeetingFiles.cs:29`), outside §4’s three watched parts. Add those dependencies and prove a meeting-state-only change updates the view; its existing caller-door prerequisites otherwise hold.
+
+### 6. A smaller shape with the same outcome
+
+1. **Non-blocking — compose existing presentations around one dependency-aware read.** Keep the existing parts and quest adapters, reuse D203’s exchange reader and thread, add the native-child tree, and reuse channel and meeting surfaces through links (`Web/work/AttendedSession.tsx:323`; `docs/2026-10-23-coworker-design.md:661`). Share source acquisition across held payloads, while keeping per-payload answers and the `calls.heard` partition; this preserves the outcome with fewer duplicated readers and UI contracts.
+
+**Verdict: another round.** Resolve current-versus-historical responsibility, child execution generations and crash recovery, dependency registration and wakes, and observable routing eligibility before acceptance.
