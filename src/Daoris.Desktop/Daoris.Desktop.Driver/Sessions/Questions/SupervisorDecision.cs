@@ -16,6 +16,13 @@ public interface IDecisionAdmission
 public sealed record DecisionAdmitted(string? Generation, string? Why)
 {
     public static DecisionAdmitted Refused(string why) => new(null, why);
+
+    /// <summary>
+    /// The overrule window the effective appointment set (SUPERVISOR1e, the supervisor design §6.3), within
+    /// <see cref="QuestionSupervisorDecisions.ShortestWindow"/> and <see cref="QuestionSupervisorDecisions.LongestWindow"/>; null keeps
+    /// <see cref="QuestionSupervisorDecisions.Window"/>.
+    /// </summary>
+    public TimeSpan? Window { get; init; }
 }
 
 /// <summary>The production admission until the door lands (1a-ii): the role is not offered, so every act is refused.</summary>

@@ -18,7 +18,7 @@ import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
   useDiscardSessionBranch, useDropRecoveries, useSetAccess, useSetCommits, useSetHandOver, useSetHelpers, useSetLanding, useSetLanguage, useSetLine, useSetOpinion,
   useSetReadAcross,
-  useSetReview, useStarts, useSyncNow,
+  useSetReview, useStarts, useSyncNow, standingOf, useSetAppointment,
   useSweep, useSweepLook, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote, useWorkflowCurrent,
   useWorkState,
 } from '../../bridge/shell';
@@ -36,6 +36,7 @@ import type { WorkspaceSection, WorkspaceTab } from '../tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
 import { WorkspaceSetup, type WorkspaceSetupProps } from '../setup/WorkspaceSetup';
+import { appointmentSaid } from '../../person/standing';
 
 /** Matched without case, as the driver matches a workspace's name. */
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -400,6 +401,9 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
+  // SUPERVISOR1e: the owner's appointment of the supervisor for every repository of the workspace, and what its last press came to.
+  const setAppointment = useSetAppointment();
+  const [appointed, setAppointed] = useState<{ started: boolean; refused: string | null } | null>(null);
   useErrorNotify(remotes.error ?? across.error ?? rules.error, notify);
   const onError = failure(notify);
 
@@ -415,6 +419,44 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
   const answered = rules.data && Array.isArray(rules.data.defaults) && Array.isArray(rules.data.scopes) ? rules.data : null;
   const scope = answered?.scopes.find((row) => row.scope === 'workspace' && row.name !== undefined && same(row.name, workspace));
   const where = t('settings.rules.where.workspace', { name: workspace });
+  const standingNow = standingOf(state?.standingConfirmation);
+
+  /**
+   * The supervisor's appointment for the workspace (SUPERVISOR1e, D208 §5), as a repository's row draws its own: *Appoint* in the ask
+   * is the owner's own press, its window set there, and the answer, which never carries a key, says how it ended in the ask itself;
+   * *Turn off* asks nothing, a refusal said under the row.
+   */
+  const supervisor: WorkspaceSetupProps['supervisor'] = standingNow && {
+    offered: standingNow.supervisorOffered,
+    appointment: standingNow.appointments.find((each) => each.role === 'supervisor' && same(each.workspace, workspace)) ?? null,
+    holders: standingNow.holders,
+    started: appointed?.started,
+    refused: appointed?.refused ?? null,
+    busy: setAppointment.isPending,
+    onAppoint: (answered, share, window) => {
+      setAppointed(null);
+      setAppointment.mutate({ role: 'supervisor', workspace, on: true, share, window }, {
+        onSuccess: (answer) => {
+          if (answer.done) {
+            setAppointed({ started: true, refused: null });
+            answered.done();
+          } else {
+            answered.refused(appointmentSaid(t, answer.why, answer.message));
+          }
+        },
+        onError: (error) => answered.refused(sentence(error)),
+      });
+    },
+    onTurnOff: () => {
+      setAppointed(null);
+      setAppointment.mutate({ role: 'supervisor', workspace, on: false }, {
+        onSuccess: (answer) => {
+          if (!answer.done) setAppointed({ started: false, refused: appointmentSaid(t, answer.why, answer.message) });
+        },
+        onError,
+      });
+    },
+  };
 
   const setup: WorkspaceSetupProps = {
     workspace,
@@ -423,6 +465,7 @@ function SetupPart({ workspace, notify, open, wiring, onOpenPlugin }: {
     busy: setLine.isPending || setLanding.isPending || setLanguage.isPending || setReview.isPending || setOpinion.isPending
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending || wire.isPending
       || unwire.isPending || retire.isPending,
+    supervisor,
     // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from
     // the levels as set, since the driver resolves only a repository's; a shell older than it answers none, and nothing is drawn.
     access: state && Array.isArray(state.workspaceAccess)

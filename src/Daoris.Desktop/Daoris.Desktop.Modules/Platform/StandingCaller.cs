@@ -176,6 +176,16 @@ public sealed class StandingCaller : IStandingCaller
         return StandingPlace.Outside;
     }
 
+    /// <summary>
+    /// The agents' job <paramref name="client"/> is in, by its name, or null where it is in none or it cannot tell (STEWARDROLE1c, D209
+    /// §6.2): the desk's per-caller key, which keys nothing of a press's judgement.
+    /// </summary>
+    public string? JobOf(PipeClientProcess? client)
+    {
+        if (!OperatingSystem.IsWindows() || client?.Handle is not { } handle || client.Gone || List() is not { } listing) return null;
+        return listing.Jobs.FirstOrDefault(job => InJob(handle, job) == true);
+    }
+
     /// <summary>Whether <paramref name="name"/> is an agents' job's name: the prefix and a process id.</summary>
     public static bool IsJobName(string name) => name.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)
         && name.Length > Prefix.Length && name.AsSpan(Prefix.Length).ToString().All(char.IsAsciiDigit);

@@ -19,25 +19,36 @@ export function SupervisorLine({ appointments, busy = false, refused = null, onT
   busy?: boolean;
   /** What *Turn off* was refused with, in words, said under the lines. */
   refused?: string | null;
-  onTurnOff: (repository: string) => void;
+  /** Turn one off, by its scope: a repository's, or a workspace's (SUPERVISOR1e). */
+  onTurnOff: (scope: { repository?: string; workspace?: string }) => void;
 }) {
   const { t } = useTranslation();
   const supervisors = appointments.filter((each) => each.role === 'supervisor');
   if (supervisors.length === 0) return null;
   return (
     <section data-supervisor-line="" aria-label={t('notifications.supervisor.label')} className="grid gap-2 rounded-control border border-line border-l-[3px] border-l-warn bg-sunken px-3 py-2">
-      {supervisors.map((each) => (
-        <div key={each.repository} className="flex flex-wrap items-center justify-between gap-2">
-          <p className="m-0 min-w-0 text-small text-ink-soft">
-            {each.dormant
-              ? t('notifications.supervisor.dormant', { repository: each.repository })
-              : each.since
-                ? t('notifications.supervisor.line', { repository: each.repository, since: moment(each.since), count: each.answers })
-                : t('notifications.supervisor.lineUndated', { repository: each.repository, count: each.answers })}
-          </p>
-          <Button disabled={busy} onClick={() => onTurnOff(each.repository)}>{t('notifications.supervisor.off')}</Button>
-        </div>
-      ))}
+      {supervisors.map((each) => {
+        // SUPERVISOR1e: a workspace's appointment is named as every repository of it, and its window is its own.
+        const where = each.repository || t('notifications.supervisor.ofWorkspace', { workspace: each.workspace });
+        const held = t('notifications.supervisor.minutes', { count: each.window });
+        return (
+          <div key={each.scope} className="flex flex-wrap items-center justify-between gap-2">
+            <p className="m-0 min-w-0 text-small text-ink-soft">
+              {each.dormant
+                ? t('notifications.supervisor.dormant', { repository: where })
+                : each.since
+                  ? t('notifications.supervisor.line', { repository: where, since: moment(each.since), held, count: each.answers })
+                  : t('notifications.supervisor.lineUndated', { repository: where, held, count: each.answers })}
+            </p>
+            <Button
+              disabled={busy}
+              onClick={() => onTurnOff(each.repository ? { repository: each.repository } : { workspace: each.workspace })}
+            >
+              {t('notifications.supervisor.off')}
+            </Button>
+          </div>
+        );
+      })}
       {refused && <Refused sentence={refused} />}
     </section>
   );

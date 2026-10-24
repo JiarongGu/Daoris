@@ -126,9 +126,11 @@ public sealed class PersonRoutes(DriverLoop loop)
     // `repository` read as that scope for one release), `holder` `terminal` where none is named, `share` a later Appoint's choice while a
     // holder lives (`own`, or a living holder's id), `setup` the steward's own tick. With `on`, a new holder's tab is started first, by
     // the window, Daoris's own pinned harness with the key in its environment, and nothing is kept where it could not start; the key is
-    // never answered. Answered `{ done, why?, message? }`, a refusal as data (`window-only`, `not-offered`, `unknown-role`,
-    // `unknown-repository`, `scope`, `choose-terminal`, `no-holder`, `revoked-holder`, `holder-harness`, `newer`, `unwritten`,
-    // `unstarted`, `no-pipe`). The judge's mutation step ends first; then each decision kept under a generation it ended goes stale.
+    // never answered. SUPERVISOR1e: `scope` may be `workspace:<name>` for the supervisor, and `window` its overrule window in minutes,
+    // 1 to 60, five where none is named. Answered `{ done, why?, message? }`, a refusal as data (`window-only`, `not-offered`,
+    // `unknown-role`, `unknown-repository`, `unknown-workspace`, `window`, `scope`, `choose-terminal`, `no-holder`, `revoked-holder`,
+    // `holder-harness`, `newer`, `unwritten`, `unstarted`, `no-pipe`). The judge's mutation step ends first; then each decision kept
+    // under a generation it ended goes stale, and a workspace's for a repository whose own appointment replaced it there.
     [DriverRoute("SET_APPOINTMENT")]
     [Publishes("SET_APPOINTMENT", StateScopes.Driver | StateScopes.Sessions)]
     private async Task<object?> SetAppointmentAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -144,15 +146,17 @@ public sealed class PersonRoutes(DriverLoop loop)
             ?? (PayloadHelper.GetOptionalValue<string>(request.Payload, "repository") is { Length: > 0 } repository ? RoleScopes.Repository(repository) : null);
         if (scope is null || !RoleScopes.Known(scope))
         {
-            return new StandingChange(false, StandingConfirmation.Scope, "An appointment names its scope: `machine` or `repository:<name>`.");
+            return new StandingChange(false, StandingConfirmation.Scope,
+                "An appointment names its scope: `machine`, `repository:<name>` or `workspace:<name>`.");
         }
 
         var holder = PayloadHelper.GetOptionalValue<string>(request.Payload, "holder") ?? RoleHolders.Terminal;
         var on = PayloadHelper.GetRequiredValue<bool>(request.Payload, "on");
         var share = PayloadHelper.GetOptionalValue<string>(request.Payload, "share");
         var setup = PayloadHelper.GetOptionalValue<bool>(request.Payload, "setup");
+        var window = PayloadHelper.GetOptionalValue<long?>(request.Payload, "window");
         return _loop.Pipe is { } pipe
-            ? await SupervisorDoor.AppointAsync(_loop, pipe, new AppointRequest(role, scope, holder, on, share, setup), cancellationToken).ConfigureAwait(false)
+            ? await SupervisorDoor.AppointAsync(_loop, pipe, new AppointRequest(role, scope, holder, on, share, setup, window), cancellationToken).ConfigureAwait(false)
             : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it appoints no terminal holder.");
     }
 

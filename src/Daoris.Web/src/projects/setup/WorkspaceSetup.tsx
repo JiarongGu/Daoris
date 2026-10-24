@@ -17,6 +17,7 @@ import { Button, FormField, FormGrid, FormRow, Icon, Inline, PathText, Prose, Se
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import type { AccessSetup } from './RepositorySetup';
 import { Inheritable, landingRowSays, landingSays, SetupSection, type UnreadLanding, UnreadLandingNote } from './SetupParts';
+import { SupervisorRow, type SupervisorSetup } from './SupervisorRow';
 import type { WorkspaceSection } from '../tabs';
 import { hostOf } from '../workspace/workspace';
 
@@ -86,6 +87,11 @@ export type WorkspaceSetupProps = {
    * pause as it resolves from the workspace, this machine or Daoris's default; absent on a shell older than it.
    */
   access?: Omit<AccessSetup, 'workspace'> | null;
+  /**
+   * The supervisor's appointment for every repository of the workspace (SUPERVISOR1e, D208 §5), a repository's own winning over it;
+   * absent where the shell says no standing confirmation.
+   */
+  supervisor?: SupervisorSetup | null;
   remote: WorkspaceRemote;
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
@@ -118,7 +124,7 @@ const plain = (text: string) => text.replace(/`/g, '');
  * A molecule: every state is reached by its props, and every press goes out.
  */
 export function WorkspaceSetup({
-  workspace, defaults, access, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin,
+  workspace, defaults, access, supervisor, remote, busy = false, open, wiring: startWiring = false, onOpenPlugin,
 }: WorkspaceSetupProps) {
   const { t } = useTranslation();
   const daoris = (value: string) => t('projects.setup.marked.daoris', { value });
@@ -161,6 +167,8 @@ export function WorkspaceSetup({
     defaults: Boolean(line?.set || landing?.set || landing?.unread || language?.set || read?.set !== undefined || review?.set || opinion?.set
       || commits?.set || helpers?.set || handOver?.set),
     access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
+    // An appointment the person made opens it, as a value they set does.
+    supervisor: Boolean(supervisor?.appointment),
     remote: Boolean(wired) || ruleCount > 0 || startWiring,
   };
 
@@ -344,6 +352,18 @@ export function WorkspaceSetup({
           onChange={accessShown.onChange}
         />
       ),
+    });
+  }
+  if (supervisor) {
+    const appointed = supervisor.appointment;
+    sections.push({
+      id: 'supervisor',
+      summary: !appointed
+        ? t(supervisor.offered ? 'projects.supervisor.off' : 'projects.supervisor.notOffered')
+        : appointed.dormant
+          ? t('projects.supervisor.dormant')
+          : t('projects.supervisor.window', { count: appointed.window }),
+      body: <SupervisorRow workspace={workspace} supervisor={supervisor} />,
     });
   }
   if (remoteParts.length > 0) {

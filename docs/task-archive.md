@@ -24,6 +24,7 @@ MAINRED1 note. The name repeats the 2026-10-20 MAINRED1 below, as the quest name
 `SESSION_OPENINGS`, `HELP_PROPOSALS`, `TOOLS_LIST`) answer from what is held and tell their work's answer as `DAORIS.ANSWERED`
 (`HeldAnswers`, `[ByEvent]`, `bridge/state/held.ts`); `DAORIS.UPDATE.STATE` already read only memory and is unchanged.
 `WindowCensusTests` holds the rule, with 88 routes owed their move. Detail: D56's NOBLOCK1 note, the fix log's entry.
+A backlog row filed for it while the quest was building stood open after it landed; it was removed on 2026-10-25.
 
 ## MAINT2 — close review findings (2026-10-10)
 
@@ -20268,7 +20269,7 @@ segment stream and the media player are new surface it does not use; the Chromiu
 Daoris's window is a WinForms form hosting a `ChromiumView`. None of KITREQ1's four requests is answered (`ChromiumEngine`,
 `ChromiumChildBrowser` and the single-instance code are unchanged since 0.22.0), so no workaround goes and KITREQ1 stays open. The
 desktop builds; the driver's, modules' and both service projects' fast halves, the web's unit tests and typecheck pass. Detail: D22's and D171's
-SHENORA024 notes.
+SHENORA024 notes. A backlog row filed for it while the quest was building stood open after it landed; it was removed on 2026-10-25.
 
 ## SUPERVISOR1a-ii — the door, built dark (2026-10-24, D208)
 
@@ -20623,3 +20624,31 @@ an end-to-end test of a live conversation's terminal press through the pipe. Det
 the terminal offer the person's way past it (`LAND_WITHOUT_LOOK`, `--without-look`), kept at the press's captured tip and landed
 there, a later commit asking again and a moved tree never landed under the skip; each proof seen failing first. Detail: D157's
 CHATFLOW1d note.
+## STEWARDROLE1c — the steward's desk, built dark (2026-10-25, D209)
+
+> **STEWARDROLE1c — the steward's desk** (modules, driver; after 1a-i, sequenced after 1b). `STEWARD_REQUEST`, an open route any caller files, bounded per caller by its agent job or long-lived ancestor and in all, listed to the holder as claims, admitting nothing, closed by an act or a reasoned decline. Proof: the design's §10 row 1c.
+
+(Row 1c of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6b5e7d93ca83`.)
+
+**Outcome** 2026-10-25, dark: `StewardOffered` stays false, so a request is refused `not-offered` and the page draws nothing of the
+desk. The modules: `STEWARD_REQUEST` and `STEWARD_DESK`, both `Open`, the desk in the judge's memory (`StewardDesk`), ten open per
+caller keyed by `DeskCaller` (the agent job, else the nearest ancestor alive a minute) and a hundred in all, closed by the steward's
+act on what it named or the holder's `desk-decline`, and `STATE`'s `stewardDesk`. The driver: `daoris-driver steward desk`, fenced
+as the callers' claims, `steward desk decline` and `steward request`; the holder's brief at r3. The web: the desk under the
+*Notifications* line, in en and zh. Proof: `StewardDeskTests`, `DriverModuleAppointmentTests`' desk routes, `StewardCommandTests`'
+desk cases and the line's and the reader's page tests, each case seen failing first. Detail and readings: D209's STEWARDROLE1c note.
+## SUPERVISOR1e — scope and window, still dark (2026-10-25, D208)
+
+> **SUPERVISOR1e — scope and window** (modules, web; after 1a-ii). A workspace's appointment, the repository's own winning; the overrule window set by the owner, 1 to 60 minutes. Proof: §11 row e.
+
+(Quest `#739e08f3c54b`.)
+
+**Outcome** 2026-10-25, in three parts on one branch, dark (`SupervisorOffered` false). The supervisor may be appointed for
+`workspace:<name>`, covering every repository the registry places there as each act is judged, a later one included; the
+repository's own appointment wins, and one made over the workspace's makes that workspace's held and released decisions for the
+repository `stale` (`appointment-changed`), the workspace's standing for its others. `SET_APPOINTMENT`'s `window`, 1 to 60 minutes,
+five where none, is written beside the appointment and handed to the decisions through the admission, which hold for it. A
+workspace's Setup gains a *Supervisor* section; both asks set the window; a repository row says the workspace's that covers it;
+*Notifications*' line names a workspace's appointment and each one's window, and turns one off by its scope; en and zh. Proof:
+`SupervisorScopeTests`, `SupervisorDecisionTests`, `SupervisorRow.test.tsx`, `WorkspaceSetup.test.tsx`, `SupervisorLine.test.tsx`,
+`person.standing.test.tsx`, each case seen failing first. Detail: D208's SUPERVISOR1e note.

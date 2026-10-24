@@ -50,12 +50,21 @@ public static class StewardActs
     /// <summary>The set-up act (§3.1 row 12), refused without the appointment's own tick.</summary>
     public const string Setup = "setup";
 
-    /// <summary>The steward's table: §3.1 rows 1 to 8.</summary>
+    /// <summary>The steward's table: §3.1 rows 1 to 8, what a desk request may ask for.</summary>
     public static IReadOnlyDictionary<string, IRoleAct> Table { get; } = StewardActRows.All.ToDictionary(each => each.Name, StringComparer.Ordinal);
 
-    /// <summary>Each role's table for <c>ROLE_ACT</c>: the steward's; the supervisor's acts are its own routes, so its table here is empty.</summary>
+    /// <summary>
+    /// The desk's own act (STEWARDROLE1c, D209 §6.2): the holder's decline of a request, beside §3.1's table and outside every
+    /// appointment's <c>acts</c>, since it changes nothing of Daoris's controls.
+    /// </summary>
+    public static IReadOnlyList<string> Desk { get; } = [DeskDecline.Named];
+
+    private static readonly IReadOnlyDictionary<string, IRoleAct> Steward =
+        new Dictionary<string, IRoleAct>(Table, StringComparer.Ordinal) { [DeskDecline.Named] = new DeskDecline() };
+
+    /// <summary>Each role's table for <c>ROLE_ACT</c>: the steward's with the desk's decline; the supervisor's acts are its own routes, so its table here is empty.</summary>
     public static IReadOnlyDictionary<string, IRoleAct> TableOf(string role) =>
-        role == Roles.Steward ? Table : new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
+        role == Roles.Steward ? Steward : new Dictionary<string, IRoleAct>(StringComparer.Ordinal);
 }
 
 /// <summary>Where an admitted act stands in the run's memory (§3.4 steps 7 and 8).</summary>

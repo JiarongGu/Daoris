@@ -228,6 +228,9 @@ public sealed class PipeCensus
             // STEWARDROLE1b (D209 §3.3): the steward's acts this run and its live appointment's generation, which its holder's verb proves
             // over; it names no key and shows nothing the window's Notifications line does not.
             "STEWARD_ACTS",
+            // STEWARDROLE1c (D209 §6.2): the steward's desk, read by its holder as claims; and a request any caller files there, which
+            // grants nothing and admits no act, bounded per caller and in all.
+            "STEWARD_DESK", "STEWARD_REQUEST",
             // The driver's own (D156 §3: sync, refresh): a look now, a sync pass with the service, the registry and the
             // accounts' use read again, the tools' locations looked at.
             "NUDGE", "SYNC_NOW", "REGISTRY_REFRESH", "ACCOUNTS_READ", "TOOLS_LOOK",
