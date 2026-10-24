@@ -296,7 +296,14 @@ public sealed class InstancePipe : IDisposable
         }
 
         int waiting = 0, lost = 0, newer = 0;
-        foreach (var file in _records.Read().OrderBy(each => each.Record?.Asked ?? DateTimeOffset.MaxValue).ThenBy(each => each.Name, StringComparer.Ordinal))
+        var files = _records.Read().OrderBy(each => each.Record?.Asked ?? DateTimeOffset.MaxValue).ThenBy(each => each.Name, StringComparer.Ordinal).ToList();
+        // CONFIRMWAIT1 (the confirm-wait design §15.2 item 7): each terminal id is reserved across the whole set before any card is told.
+        // Records of one id that are the same press collapse into the first; records that differ are each lost.
+        var byRequest = files
+            .Where(each => each.Record is { State: PipeWaitingRecord.Waiting } record && record.Confirmation == each.Name && PipeWaiting.IsName(each.Name))
+            .GroupBy(each => each.Record!.Request, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Select(each => each.Record!).ToList(), StringComparer.Ordinal);
+        foreach (var file in files)
         {
             if (!PipeWaiting.IsName(file.Name))
             {
@@ -333,7 +340,17 @@ public sealed class InstancePipe : IDisposable
                     continue;
             }
 
-            if (record.State == PipeWaitingRecord.Waiting && !record.Keyed && Rejudged(record)) waiting++;
+            var twins = byRequest.GetValueOrDefault(record.Request) ?? [];
+            if (twins.Count > 1 && twins.All(each => Same(each, twins[0])) && !ReferenceEquals(record, twins[0]))
+            {
+                // The same press kept twice: the first stands for it, and this file goes.
+                _records.Remove(record.Confirmation);
+                _log.Warn("pipe.restore", ("state", "duplicate"));
+                continue;
+            }
+
+            var alone = twins.Count <= 1 || twins.All(each => Same(each, twins[0]));
+            if (record.State == PipeWaitingRecord.Waiting && !record.Keyed && alone && Rejudged(record)) waiting++;
             else
             {
                 lost++;
@@ -374,6 +391,14 @@ public sealed class InstancePipe : IDisposable
             return false;
         }
 
+        // CONFIRMWAIT1 (§15.2 item 7): its grounds are what its row reads for its payload, by kind and subject, none missing and none
+        // added, so a baseline that lacks a ground protects nothing it omitted.
+        if (!row.Expected(payload).Select(each => $"{each.Kind}|{each.Subject}").Order(StringComparer.Ordinal)
+                .SequenceEqual(record.Grounds.Select(each => $"{each.Kind}|{each.Subject}").Order(StringComparer.Ordinal), StringComparer.Ordinal))
+        {
+            return false;
+        }
+
         lock (_gate)
         {
             if (_running.ContainsKey(id) || _journal!.Find(id) is not null) return false;
@@ -402,6 +427,11 @@ public sealed class InstancePipe : IDisposable
         _ = ConfirmThenRunAsync(request, id, record.Binding, line, shown.Ended, record.Confirmation);
         return true;
     }
+
+    /// <summary>Whether two records of one terminal id keep the same press: its binding, route, payload, key and grounds alike.</summary>
+    private static bool Same(PipeWaitingRecord one, PipeWaitingRecord other) =>
+        one.Binding == other.Binding && one.Module == other.Module && one.Route == other.Route && one.Payload == other.Payload
+        && one.Keyed == other.Keyed && one.Grounds.SequenceEqual(other.Grounds);
 
     /// <summary>
     /// <paramref name="record"/>'s ending journaled as <paramref name="answer"/> where its terminal's id reads and the journal holds no line
