@@ -177,9 +177,10 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         await File.WriteAllTextAsync(Path.Combine(written, "late.db"), "a write that came after the move\n");
         using var log = Log();
 
-        var early = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddDays(13) }
+        // KEEPSIZE1b: their records kept at the first look's Keeping pass, finished trees' folders go an hour after, not at their days.
+        var early = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddMinutes(30) }
             .LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
-        var later = new BranchTidying(_home) { Pace = TimeSpan.Zero, Clock = () => DateTimeOffset.UtcNow.AddDays(15) };
+        var later = new BranchTidying(_home) { Pace = TimeSpan.Zero, Clock = () => DateTimeOffset.UtcNow.AddHours(2) };
         var said = await later.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
         var again = await later.LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
@@ -272,7 +273,8 @@ public sealed class BranchTidyingFolderTests : BranchTidyingFixture
         Assert.DoesNotContain(Path.GetFileName(landed.Path), await GitAsync(root, "worktree", "list", "--porcelain"), StringComparison.Ordinal);
         Assert.DoesNotContain(landed.Branch, await GitAsync(root, "branch", "--list", "daoris/*"), StringComparison.Ordinal);
 
-        var later = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddDays(15) }
+        // KEEPSIZE1b: its record kept at the first look's Keeping pass, a finished tree's folder goes an hour after, not at its days.
+        var later = await new BranchTidying(_home) { Clock = () => DateTimeOffset.UtcNow.AddHours(2) }
             .LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
 
         Assert.StartsWith($"tidy  deleted the folder moved aside to {aside} on ", Assert.Single(later), StringComparison.Ordinal);

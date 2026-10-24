@@ -1518,14 +1518,25 @@ public sealed class SessionStore
     /// <summary>
     /// Remove a record whole (SESSUX1f, D126 §5.4). Blind, like every write here: whether a record may go is the ledger's
     /// judgement, made before this is asked. False when there was none.
+    /// <para>KEEPSIZE1b (the keep-size design §2.2): its links to finished trees' records go with it, and a record left with no session,
+    /// in the same transaction, as the history clear's and the single delete's callers hold it.</para>
     /// </summary>
-    public Task<bool> DeleteAsync(string id, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
+    public Task<bool> DeleteAsync(string id, CancellationToken ct = default) => _db.InTransactionAsync<bool>(async (_, inside) =>
     {
         await using var command = _db.Command();
         command.CommandText = "DELETE FROM sessions WHERE id = $id";
         command.Parameters.AddWithValue("$id", id);
-        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+        var deleted = await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false) > 0;
+        await WorkRecordStore.ForgetSessionAsync(_db, id, inside).ConfigureAwait(false);
+        return deleted;
     }, ct);
+
+    /// <summary>
+    /// The finished trees' records no session names in <paramref name="workspace"/>, kept at or before <paramref name="through"/>, gone with a
+    /// clear of history (KEEPSIZE1b, the keep-size design §2.2), inside its transaction; how many went.
+    /// </summary>
+    public Task<int> ForgetOrphanRecordsAsync(string workspace, DateTimeOffset through, CancellationToken ct = default) =>
+        _db.RunAsync(() => WorkRecordStore.ForgetOrphansAsync(_db, workspace, through, ct), ct);
 
     /// <summary>
     /// The id a record from before <see cref="Session.Said"/> gives its answer as a word (MSG1a). Never one a word is
