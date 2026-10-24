@@ -8,7 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// run reads (its quests and their sessions, the go-aheads on its ask, the review's gate, the second opinions, the landing record,
 /// the acceptance a session's record keeps, the due list and a pull request's kept answer) and says where each step stands.
 /// </summary>
-public sealed partial class WorkflowRunTests
+public sealed class WorkflowRunTests
 {
     private static readonly DateTimeOffset T = new(2026, 10, 9, 9, 0, 0, TimeSpan.Zero);
 
@@ -774,7 +774,7 @@ public sealed partial class WorkflowRunTests
     /// Which trees this home opened and which still stand, for the reader's classification of a chat (CHATFLOW1a); and for a chat run
     /// (CHATFLOW1c), the landings kept, the runs bound, the records between turns and where each tree stands.
     /// </summary>
-    private sealed class Trees(Func<string, bool>? holds = null, Func<string, bool>? stands = null) : IWorkflowRunRecords
+    internal sealed class Trees(Func<string, bool>? holds = null, Func<string, bool>? stands = null) : IWorkflowRunRecords
     {
         public List<LandedBranch> Landed { get; } = [];
 

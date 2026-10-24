@@ -9,8 +9,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// candidate, never its displayed work step; its landing is read for the tip its tree stands at, live or ended; before CHATFLOW1d its opinion
 /// is passed over (<c>chat-not-asked</c>); its checks are said not yet enforced; and a line that takes a quest is that quest's from the take on.
 /// </summary>
-public sealed partial class WorkflowRunTests
+public sealed class WorkflowRunChatTests
 {
+    private static readonly DateTimeOffset T = new(2026, 10, 9, 9, 0, 0, TimeSpan.Zero);
+    private static readonly IReadOnlyList<WorkflowPlugin> Plugins = [new("example.pull-request", [HookPoints.Land, HookPoints.State])];
+    private const string OpinionRule = """{"opinions":{"engine":{"reviewers":["codex-acp"]}}}""";
+
     private const string ChatTree = "trees/default/engine/s-c1c1c1c1";
     private const string TipA = "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111";
     private const string TipB = "bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222";
@@ -160,7 +164,7 @@ public sealed partial class WorkflowRunTests
         using var service = new ServiceClient("http://stand-in", null, new HttpClient(new ChatService(ChatRecords)));
         var sources = new WorkflowRunSources(service, Path.Combine(AppContext.BaseDirectory, "no-home-" + Guid.NewGuid().ToString("N")[..8]),
             DriverConfig.Parse("""{"opinions":{"engine":{"reviewers":["codex-acp"]}},"sessionChecks":{"engine":"light"}}"""), [], _ => "aurora");
-        var records = new Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal)) { BetweenTurns = { "c2" }, Tips = { [ChatTree] = new(TipA, 2) } };
+        var records = new WorkflowRunTests.Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal)) { BetweenTurns = { "c2" }, Tips = { [ChatTree] = new(TipA, 2) } };
 
         foreach (var asked in new[] { "c1", "c2" })
         {
@@ -207,7 +211,7 @@ public sealed partial class WorkflowRunTests
             var config = DriverConfig.Parse("""{"workflows":{"engine":{"default":"chat-steps"}},"sessionChecks":{"engine":"light"}}""");
             Assert.True(ChatRuns.Bind(config, home, "chat-c1", "engine", "aurora", [], T).Wrote);
             using var service = new ServiceClient("http://stand-in", null, new HttpClient(new ChatService(ChatRecords)));
-            var records = new Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal)) { BetweenTurns = { "c2" }, Tips = { [ChatTree] = new(TipA, 1) } };
+            var records = new WorkflowRunTests.Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal)) { BetweenTurns = { "c2" }, Tips = { [ChatTree] = new(TipA, 1) } };
 
             var run = Assert.Single((await WorkflowRunReader.ReadAsync(
                 new WorkflowRunAsk(Session: "c2"), new WorkflowRunSources(service, home, config, [], _ => "aurora"), records)).Runs);
@@ -245,7 +249,7 @@ public sealed partial class WorkflowRunTests
                 Claims = { ["q4"] = """{"claim":"held","taken":"2026-10-09T10:05:00Z"}""" },
             }));
             var sources = new WorkflowRunSources(service, home, DriverConfig.Empty, [], _ => "aurora");
-            var records = new Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal)) { Accepted = { ["c1"] = T.AddMinutes(30) } };
+            var records = new WorkflowRunTests.Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal)) { Accepted = { ["c1"] = T.AddMinutes(30) } };
 
             var run = Assert.Single((await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Session: "c1"), sources, records)).Runs);
             Assert.Equal(["q4"], run.Quests);
