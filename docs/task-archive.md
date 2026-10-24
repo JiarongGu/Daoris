@@ -5,6 +5,19 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SUPERVISORRACE1 — a supervisor's word released in a race with the appointment's revoke is left on a stale decision (2026-10-25)
+
+> **SUPERVISORRACE1** (driver, modules; D208's SUPERVISOR1a-ii; the supervisor is dark, not offered). It had no backlog row: it came
+> as a quest from the CI's two failures of `The_real_revoke_raced_against_a_keeping_a_release_and_an_admission_hands_nothing_under_a_dead_generation`
+> (2026-10-24, and on `a1cf2b8` on 2026-10-25), a decision `Stale` with a word `TakeBack` was never called for.
+
+**Outcome.** The quest's likely cause (a release landing its word on a decision the revoke had staled) was not the one: `ReleaseAsync`
+holds the decision's lock across its `Say` and the record of its word. The cause was `AdmitAsync` staling a released decision on a
+dead generation with no take-back, which the revoke's sweep then skipped as already stale. The sweeps (`RevokedAsync`, `StaleAsync`)
+now take back every stale decision's word not yet taken back, a decision remembering the take-back (`TakenBack`). The order is held
+by a deterministic test, seen failing every time first; the race test is kept as it was and passed 50 runs in a row. Detail: the
+FIX-LOG's entry of 2026-10-25 and D208's note of the same date.
+
 ## SWITCHCTX1c-i — a session's page draws its line as one conversation (2026-10-25)
 
 > **SWITCHCTX1c-i — a session's page draws its line as one conversation** (web; accepted 2026-10-25 under D191, D167's note; it reverses no decision). Today a repository's chat shows the attended part alone, so after a move the new part opens empty under the brief and reads as a new session (`work/WorkFrame.tsx:2471-2472`). The parts the attended one continues by `from` drawn above it, at most three with a press for more, each with its own liveness and read-only by a mode of its own, a part running alongside left to the strip, the attended part alone owning the scroll; an ended line opens at the attended record's head; pressing an earlier part attends it, scrolls to it and hides the later ones; one boundary line per side; the *new session* words reworded with the values their lines were written with, en and zh. Contract: `docs/2026-10-24-switch-context-design.md` §2.7 and its §6 row. Proof: its §6 page tests, `i18n:check`, `names:check -- --strict`.

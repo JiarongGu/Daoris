@@ -76,6 +76,10 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         public string? Why { get; set; }
         public string? Receipt { get; set; }
         public string? Word { get; set; }
+
+        /// <summary>Whether the word's take-back was called (SUPERVISORRACE1): a stale decision's word not yet taken back is the next sweep's.</summary>
+        public bool TakenBack { get; set; }
+
         public SupervisorTicket? Ticket { get; set; }
     }
 
@@ -337,7 +341,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
                 else if (decision.State == SupervisorState.Released && !waiting.Contains(decision.Word!)) Move(decision, SupervisorState.Superseded, now, null);
                 else if (decision.State == SupervisorState.Released && !parked)
                 {
-                    await takeBack(session, decision.Word!, ct).ConfigureAwait(false);
+                    await TakeBackWordAsync(session, decision, takeBack, ct).ConfigureAwait(false);
                     Move(decision, SupervisorState.Stale, now, SupervisorWhy.NotParked);
                 }
 
@@ -353,14 +357,17 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     public Task CannotGoOnAsync(string session, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>
         StaleAsync(session, SupervisorWhy.CannotGoOn, takeBack, now, ct);
 
-    /// <summary>A revoke's or a replacing appointment's sweep (§5): every held or released decision of the session goes stale.</summary>
+    /// <summary>
+    /// A revoke's or a replacing appointment's sweep (§5): every held or released decision of the session goes stale, and the word of
+    /// every stale one not yet taken back is taken back (SUPERVISORRACE1).
+    /// </summary>
     public Task StaleAsync(string session, string why, SupervisorTakeBack takeBack, DateTimeOffset now, CancellationToken ct = default) =>
         UnderAsync(session, async () =>
         {
             foreach (var decision in _live.Values.Where(each => each.Session == session).ToList())
             {
-                if (decision.State is not (SupervisorState.Held or SupervisorState.Released)) continue;
-                if (decision.Word is { } word) await takeBack(session, word, ct).ConfigureAwait(false);
+                if (decision.State is not (SupervisorState.Held or SupervisorState.Released) && !WordLeft(decision)) continue;
+                await TakeBackWordAsync(session, decision, takeBack, ct).ConfigureAwait(false);
                 Move(decision, SupervisorState.Stale, now, why);
             }
 
@@ -372,7 +379,9 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     /// and its lock is let go: each session with a live decision kept under <paramref name="generation"/>, in turn and under that
     /// session's own decision lock, moves its held and released decisions of that generation to <c>stale</c> (<c>revoked</c>), a
     /// released one's word taken back. A release or an admission already holding the lock finishes first and is swept after; an
-    /// admitted decision is a taken-in act, which a revoke does not recall.
+    /// admitted decision is a taken-in act, which a revoke does not recall. An admission that found the generation dead before the
+    /// sweep came staled its released decision itself and took nothing back (SUPERVISORRACE1): the sweep takes back the word of every
+    /// decision of that generation already stale and not yet taken back.
     /// </summary>
     /// <param name="repository">
     /// SUPERVISOR1e (§5): only the decisions of this repository, where a repository's own appointment replaced its workspace's for it
@@ -394,8 +403,14 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
                 var moved = 0;
                 foreach (var decision in _live.Values.Where(each => each.Session == session && Swept(each)).ToList())
                 {
-                    if (decision.State is not (SupervisorState.Held or SupervisorState.Released)) continue;
-                    if (decision.Word is { } word) await takeBack(session, word, ct).ConfigureAwait(false);
+                    if (decision.State is not (SupervisorState.Held or SupervisorState.Released))
+                    {
+                        // Already stale: its state stands, its word is the sweep's where no one took it back.
+                        if (WordLeft(decision)) await TakeBackWordAsync(session, decision, takeBack, ct).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    await TakeBackWordAsync(session, decision, takeBack, ct).ConfigureAwait(false);
                     if (Move(decision, SupervisorState.Stale, now, why) == SupervisorState.Stale) moved++;
                 }
 
@@ -423,7 +438,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
         UnderAsync(session, async () =>
         {
             if (!_live.TryGetValue(decision, out var live) || live.Session != session) return (SupervisorState?)null;
-            if (live.State == SupervisorState.Released && !await takeBack(session, live.Word!, ct).ConfigureAwait(false))
+            if (live.State == SupervisorState.Released && !await TakeBackWordAsync(session, live, takeBack, ct).ConfigureAwait(false))
             {
                 // The take-back refused: the record runs, so the word is the run's; nothing moved.
                 return live.State;
@@ -592,7 +607,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
                 if (!_live.TryGetValue(id, out var decision) || SupervisorStates.Final(decision.State)) return 0;
                 if (Read(FileOf(session, id)) == decision.Written && Read(StatesOf(session, id)) == string.Concat(decision.Lines)) return 0;
                 if (decision.State == SupervisorState.Admitted) return 0;
-                if (decision.Word is { } word) await takeBack(session, word, ct).ConfigureAwait(false);
+                await TakeBackWordAsync(session, decision, takeBack, ct).ConfigureAwait(false);
                 Move(decision, SupervisorState.Stale, now, SupervisorWhy.Tampered);
                 return 1;
             }, ct).ConfigureAwait(false);
@@ -645,6 +660,22 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     }
 
     // ——— Moves and files.
+
+    /// <summary>A stale decision whose word was never taken back: the word of a release a revoke's sweep did not reach before it staled.</summary>
+    private static bool WordLeft(Live decision) => decision.State == SupervisorState.Stale && decision.Word is not null && !decision.TakenBack;
+
+    /// <summary>
+    /// Take back <paramref name="decision"/>'s word, under its session's lock: once the service has taken it back the decision remembers
+    /// it, so a second sweep finds nothing to take back. A refusal is not remembered, so the next sweep or press asks again. True where
+    /// there is no word to take back or the service took it back.
+    /// </summary>
+    private static async Task<bool> TakeBackWordAsync(string session, Live decision, SupervisorTakeBack takeBack, CancellationToken ct)
+    {
+        if (decision.Word is not { } word || decision.TakenBack) return true;
+        var taken = await takeBack(session, word, ct).ConfigureAwait(false);
+        if (taken) decision.TakenBack = true;
+        return taken;
+    }
 
     private IReadOnlyList<string> LiveIds(string session) =>
         [.. _live.Values.Where(each => each.Session == session).OrderBy(each => each.KeptAt).Select(each => each.Id)];
