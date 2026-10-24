@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (272)
+## Files over 40 KB (273)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -334,6 +334,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-agent-errors-design.md` | 47 | 434 |
 | `docs/2026-10-24-ci-scope-design.md` | 196 | 1796 |
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
+| `docs/2026-10-24-keep-size-reads.md` | 43 | 422 |
 | `docs/2026-10-24-steward-role-design.md` | 51 | 526 |
 | `docs/2026-10-24-supervisor-design.md` | 197 | 1609 |
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
