@@ -32,30 +32,43 @@ public sealed class PersonRoutes(DriverLoop loop)
     private Task<object?> ServiceConfirmationsAsync(IpcRequest request, CancellationToken cancellationToken) =>
         Task.FromResult<object?>(_loop.ServiceConfirmations.Now());
 
-    // RPC1c: the person's Confirm or Refuse on a terminal's press, each once. One no longer waiting (answered in another window, its two
-    // minutes over, taken back by its terminal or by the close) is answered as data, `gone`, for the card to say where it was pressed
-    // (the UI/UX design's R3), or a toast where its card has gone with it; so is one answered at or past its time, which that answer
-    // ends expired (NOTIFY2a). The confirmed press runs on the pipe, in its terminal's name, and publishes what it changes as it runs.
+    // RPC1c: the person's Confirm or Refuse on a terminal's press, each once. One no longer waiting (answered in another window, taken
+    // back by its terminal or by the close), or whose Confirm is already being judged, is answered as data, `gone`, for the card to say
+    // where it was pressed (the UI/UX design's R3), or a toast where its card has gone with it. CONFIRMWAIT1a-i (the confirm-wait design
+    // §5.2): a Confirm is answered once its grounds are judged, the card kept `checking` meanwhile: `{ answered: true }` where they held
+    // and it runs; `{ answered: false, why: "changed", reason, values }` where one moved and nothing ran; `{ answered: false, why:
+    // "unread" }` where they could not be read just now and it still waits. The page waits for it as long as the press's `checkWithin`.
+    // The confirmed press runs on the pipe, in its terminal's name, and publishes what it changes as it runs.
     [DriverRoute("PERSON_CONFIRM")]
-    private Task<object?> PersonConfirmAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> PersonConfirmAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var confirm = PayloadHelper.GetRequiredValue<bool>(request.Payload, "confirm");
         // The census refuses this to a terminal before it is dispatched; a press that came in by the pipe anyway answers nothing.
         if (PipeDoor.Now == PipeDoor.Terminal)
         {
-            return Task.FromResult<object?>(new PersonConfirmRefused(false, "window-only", "Only Daoris's window answers a confirmation."));
+            return new PersonConfirmRefused(false, "window-only", "Only Daoris's window answers a confirmation.");
         }
 
-        return Task.FromResult<object?>(_loop.Pipe?.Confirmations.Answer(id, confirm) == true
-            ? new PersonConfirmed(true, confirm)
-            : new PersonConfirmRefused(false, "gone",
-                "This no longer waits: it was answered in another window, its two minutes passed, or its terminal took it back."));
+        if (_loop.Pipe is not { } pipe) return Gone();
+        var answer = await pipe.Confirmations.AnswerAsync(id, confirm, cancellationToken).ConfigureAwait(false);
+        return answer switch
+        {
+            { Outcome: PipeAnswered.Answered } => new PersonConfirmed(true, confirm),
+            { Outcome: PipeAnswered.Changed, Change: { } change } => new PersonConfirmChanged(
+                false, "changed", $"Not done: {change.Sentence}.", change.Reason, change.Values),
+            { Outcome: PipeAnswered.Unread } => new PersonConfirmRefused(
+                false, "unread", "Daoris could not read what this rests on just now; it still waits."),
+            _ => Gone(),
+        };
+
+        static PersonConfirmRefused Gone() => new(false, "gone",
+            "This no longer waits: it was answered in another window, or its terminal took it back.");
     }
 
-    // CONFIRMSEEN1: the window's word that a terminal's press is drawn in front of the person, in a window that is in front: its two
-    // minutes count from the first such word, which every window is told by `CONFIRMATIONS`. One no longer waiting is answered as data,
-    // `gone`. It runs nothing and moves no record, so it declares no change.
+    // CONFIRMSEEN1: the window's word that a terminal's press is drawn in front of the person, in a window that is in front: kept once as
+    // when it was shown, which every window is told by `CONFIRMATIONS`, and it moves no clock (CONFIRMWAIT1a-i). One no longer waiting is
+    // answered as data, `gone`. It runs nothing and moves no record, so it declares no change.
     [DriverRoute("PERSON_CONFIRM_SHOWN")]
     private Task<object?> PersonConfirmShownAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -68,7 +81,7 @@ public sealed class PersonRoutes(DriverLoop loop)
         return Task.FromResult<object?>(_loop.Pipe?.Confirmations.Show(id) == true
             ? new PersonShown(true)
             : new PersonShownRefused(false, "gone",
-                "This no longer waits: it was answered in another window, its time passed, or its terminal took it back."));
+                "This no longer waits: it was answered in another window, or its terminal took it back."));
     }
 
     // TERMTRUST1a (D201 point 5, the terminal-trust design §4.1): the person's standing confirmation, granted or revoked in the window
@@ -131,4 +144,6 @@ public sealed class PersonRoutes(DriverLoop loop)
     private sealed record PersonConfirmed(bool Answered, bool Confirmed);
 
     private sealed record PersonConfirmRefused(bool Answered, string Why, string Message);
+
+    private sealed record PersonConfirmChanged(bool Answered, string Why, string Message, string Reason, IReadOnlyDictionary<string, string> Values);
 }

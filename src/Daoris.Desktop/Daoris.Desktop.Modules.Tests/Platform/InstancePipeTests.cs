@@ -75,7 +75,7 @@ public sealed class InstancePipeTests : Bridge
     }
 
     private InstancePipe Pipe(IMessageDispatcher dispatcher, MachineLog log, PipeLimits? limits = null, PipeCensus? census = null) =>
-        new(dispatcher, Bus, Home, log, census ?? Census, version: "9.9.9-test", limits: limits);
+        new(dispatcher, Bus, Home, log, census ?? Census, version: "9.9.9-test", limits: limits) { Grounds = new StubGrounds() };
 
     private string HomeId => HomeIdentity.Read(Home)!;
 
@@ -184,7 +184,7 @@ public sealed class InstancePipeTests : Bridge
         using var log = new MachineLog(Home, "desktop");
         var (dispatcher, _, services) = Compose(log, new HeldModule("TEST.PRESS"));
         using var __ = services;
-        using var pipe = new InstancePipe(dispatcher, Bus, Home, log, PipeCensus.Daoris.With("TEST.NOWHERE", "LOOK", PipeClass.Open));
+        using var pipe = new InstancePipe(dispatcher, Bus, Home, log, PipeCensus.Daoris.With("TEST.NOWHERE", "LOOK", PipeClass.Open)) { Grounds = new StubGrounds() };
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 

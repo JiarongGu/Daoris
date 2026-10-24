@@ -215,6 +215,40 @@ public static class WorkingTree
         return code == 0 ? stdout.Trim() : null;
     }
 
+    /// <summary>
+    /// The commit <paramref name="name"/> points at in <paramref name="root"/>, by its full id; null where it names no commit there
+    /// (CONFIRMWAIT1a-i: a press's <c>branch</c> ground, read at its ask and again at its Confirm).
+    /// </summary>
+    public static async Task<string?> TipAsync(string root, string name, CancellationToken ct = default)
+    {
+        // A name git would read as an option names no commit here.
+        if (name.Length == 0 || name.StartsWith('-')) return null;
+        var (code, stdout, _) = await GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{name}^{{commit}}"], ct).ConfigureAwait(false);
+        return code == 0 && stdout.Trim() is { Length: > 0 } sha ? sha : null;
+    }
+
+    /// <summary>
+    /// The paths <paramref name="root"/> holds uncommitted, untracked files each by name, relative to it with <c>/</c>; null where git
+    /// cannot say (CONFIRMWAIT1a-i: a forced discard's ground, what it would lose).
+    /// </summary>
+    public static async Task<IReadOnlyList<string>?> UncommittedAsync(string root, CancellationToken ct = default)
+    {
+        var (code, stdout, _) = await GitAsync(
+            root, ["--no-optional-locks", "status", "--porcelain=v1", "-z", "--untracked-files=all"], ct).ConfigureAwait(false);
+        if (code != 0) return null;
+        var paths = new List<string>();
+        var entries = stdout.Split('\0', StringSplitOptions.RemoveEmptyEntries);
+        for (var at = 0; at < entries.Length; at++)
+        {
+            if (entries[at].Length < 4) continue;
+            paths.Add(entries[at][3..]);
+            // A rename or a copy names its source next, which is no path of the tree's own.
+            if (entries[at][0] is 'R' or 'C') at++;
+        }
+
+        return paths;
+    }
+
     /// <summary>What landed since — the reviewable half of the record (D46 §4).</summary>
     public static async Task<string> CommitsSinceAsync(string root, string? before, CancellationToken ct = default)
     {

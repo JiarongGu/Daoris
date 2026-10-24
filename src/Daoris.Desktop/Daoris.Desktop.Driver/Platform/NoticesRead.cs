@@ -9,8 +9,10 @@ namespace Daoris.Driver;
 /// <param name="Act">A terminal's press by its route, its module before it where the module is not the driver's (as a notice names one); the
 /// service's by its own act.</param>
 /// <param name="Session">The session a terminal's press is about, where its wording names one.</param>
+/// <param name="Expires">When the service's door refuses it by its time; null for a terminal's, which waits until the person answers
+/// (CONFIRMWAIT1a-i).</param>
 public sealed record PressWaiting(
-    string Source, string Id, string Act, string? Session, DateTimeOffset? Asked, DateTimeOffset Expires, bool Shown);
+    string Source, string Id, string Act, string? Session, DateTimeOffset? Asked, DateTimeOffset? Expires, bool Shown);
 
 /// <summary>A row of <i>What needs you</i> as the terminal says it: its group, its kind, what it is about, and its first line of words.</summary>
 /// <param name="Subject">The session, quest, ask or id it is about, the first of them it names.</param>
@@ -129,7 +131,7 @@ public static class NoticesRead
         if (look.Presses is { Count: > 0 } presses)
         {
             lines.Add($"Waiting for your confirmation ({presses.Count})");
-            foreach (var press in presses.OrderBy(press => press.Expires)) lines.Add($"  {Press(press, now)}");
+            foreach (var press in presses.OrderBy(press => press.Expires ?? DateTimeOffset.MaxValue).ThenBy(press => press.Asked)) lines.Add($"  {Press(press, now)}");
         }
 
         if (look.Needs is { Count: > 0 } needs)
@@ -171,9 +173,10 @@ public static class NoticesRead
     private static string Press(PressWaiting press, DateTimeOffset now)
     {
         var left = press.Expires - now;
-        var time = left <= TimeSpan.Zero ? "its time is up"
-            : left.TotalMinutes >= 1 ? $"{(int)left.TotalMinutes}m {left.Seconds}s left"
-            : $"{left.Seconds}s left";
+        var time = left is not { } until ? "waits until you answer"
+            : until <= TimeSpan.Zero ? "its time is up"
+            : until.TotalMinutes >= 1 ? $"{(int)until.TotalMinutes}m {until.Seconds}s left"
+            : $"{until.Seconds}s left";
         return Join(
             press.Act, press.Session is { } session ? $"session {session}" : null,
             press.Source == "service" ? "at the service's door" : "from a terminal",
@@ -223,7 +226,7 @@ public static class NoticesRead
             writer.WriteString("act", press.Act);
             Optional("session", press.Session);
             Optional("asked", press.Asked is { } asked ? Moment(asked) : null);
-            writer.WriteString("expires", Moment(press.Expires));
+            Optional("expires", press.Expires is { } expires ? Moment(expires) : null);
             writer.WriteBoolean("shown", press.Shown);
         });
         Array("needs", look.Needs, need =>

@@ -38,7 +38,7 @@ public sealed class PipeStandingTests : Bridge
     {
         var caller = new StandingConfirmationTests.Placed(StandingPlace.Outside);
         var standing = new StandingConfirmation(Home, log, caller, offered: true);
-        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing);
+        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
         Assert.NotNull(pipe.Serve());
         if (grant) Assert.True(standing.Set(StandingPresses.Built).Done);
         return (pipe, caller);
@@ -120,7 +120,7 @@ public sealed class PipeStandingTests : Bridge
         var asked = Lines(PipeConfirmations.LogEvent).Last();
         Assert.Equal("asked", asked.GetProperty("data").GetProperty("state").GetString());
         Assert.False(asked.GetProperty("data").TryGetProperty("standing", out _));
-        pipe.Confirmations.Answer(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
+        await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: false);
         Assert.False((await client.AnswerAsync(next)).GetProperty("success").GetBoolean());
     }
 
@@ -144,7 +144,7 @@ public sealed class PipeStandingTests : Bridge
 
         Assert.Single(pipe.Confirmations.Now().Waiting);
         Assert.Equal(0, driver.Ran);
-        pipe.Confirmations.Answer(pipe.Confirmations.Now().Waiting[0].Id, confirm: true);
+        await pipe.Confirmations.AnswerAsync(pipe.Confirmations.Now().Waiting[0].Id, confirm: true);
         Assert.True((await client.AnswerAsync(id)).GetProperty("success").GetBoolean());
         Assert.Equal(0, pipe.StandingConfirmation.Now().Used);
     }
@@ -252,7 +252,7 @@ public sealed class PipeStandingTests : Bridge
         {
             Drives = _ => true,
         };
-        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing);
+        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
         Assert.NotNull(pipe.Serve());
         string? handed = null;
         Assert.True(standing.Appoint(Roles.Supervisor, "engine", RoleHolders.Terminal, true, key => (handed = key) is not null).Answer.Done);

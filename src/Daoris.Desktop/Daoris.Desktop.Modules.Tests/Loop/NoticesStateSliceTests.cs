@@ -250,24 +250,33 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// §2.2: a terminal's press refused by its time is kept as a notice, every window's, its route as the page's catalogue names it;
-    /// one confirmed, refused or withdrawn keeps nothing.
+    /// §2.2, CONFIRMWAIT1a-i (the confirm-wait design §6): a terminal's press its terminal took back after a window showed it, and one the
+    /// close ended, are kept as notices, every window's, the route as the page's catalogue names it; one taken back that nobody was shown,
+    /// and one confirmed or refused, keep nothing. None ends by its time.
     /// </summary>
     [Fact]
-    public void A_press_that_ended_unanswered_is_kept()
+    public async Task A_press_taken_back_once_shown_or_ended_by_the_close_is_kept()
     {
         var notices = Notices();
-        using var confirmations = new PipeConfirmations(Bus, MachineLog.None, _clock) { Unanswered = notices.Unanswered };
-        var expired = confirmations.Ask(DriverModule.Name, "SESSION_INPUT", [], new PipeAsker("pwsh", 7))!.Value;
+        var confirmations = new PipeConfirmations(Bus, MachineLog.None, _clock) { Noticed = notices.Ended };
+        var unseen = confirmations.Ask(DriverModule.Name, "SESSION_INPUT", [], new PipeAsker("pwsh", 7))!.Value;
+        var seen = confirmations.Ask(DriverModule.Name, "SESSION_DELETE", [], new PipeAsker("pwsh", 7))!.Value;
         var refused = confirmations.Ask("DAORIS.REMOTES", "SET", [], new PipeAsker("pwsh", 7))!.Value;
-        confirmations.Answer(refused.Shown.Id, confirm: false);
+        var closed = confirmations.Ask(DriverModule.Name, "STOP_SESSION", [], new PipeAsker("pwsh", 7))!.Value;
+        await confirmations.AnswerAsync(refused.Shown.Id, confirm: false);
+        Assert.True(confirmations.Show(seen.Shown.Id));
+        _clock.Advance(TimeSpan.FromDays(1));
+        Assert.Equal(PipeWithdrawal.Withdrawn, confirmations.Withdraw(unseen.Shown.Id));
+        Assert.Equal(PipeWithdrawal.Withdrawn, confirmations.Withdraw(seen.Shown.Id));
 
-        _clock.Advance(PipeConfirmations.FindWithin);
+        confirmations.Close();
 
-        Assert.Equal(PipeConfirmationEnd.Expired, expired.Ended.Result);
-        var kept = Daoris.Driver.Notices.Read(Home, Now)!;
-        var notice = Assert.Single(kept);
-        Assert.Equal(($"expired-{expired.Shown.Id}", "expired", "SESSION_INPUT", (string?)null), (notice.Id, notice.Kind, notice.Route, notice.Workspace));
+        Assert.Equal(PipeConfirmationEnd.Closed, (await closed.Ended).End);
+        var kept = Daoris.Driver.Notices.Read(Home, _clock.GetUtcNow())!.OrderBy(each => each.Kind, StringComparer.Ordinal).ToList();
+        Assert.Equal(
+            [($"closed-{closed.Shown.Id}", "closed", "STOP_SESSION"), ($"withdrawn-{seen.Shown.Id}", "withdrawn", "SESSION_DELETE")],
+            kept.Select(each => (each.Id, each.Kind, each.Route)));
+        Assert.All(kept, each => Assert.Null(each.Workspace));
     }
 
     /// <summary>A press of another module is named as the page's catalogue names its act: the module without its <c>DAORIS.</c>.</summary>
@@ -275,7 +284,7 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     public void Another_module_s_press_is_named_as_its_catalogue_key()
     {
         var notices = Notices();
-        notices.Unanswered(new PipeConfirmation("p1", "DAORIS.REMOTES", "SET", [], new PipeAsker(null, null), Now, Now));
+        notices.Ended(new PipeConfirmation("p1", "DAORIS.REMOTES", "SET", [], new PipeAsker(null, null), Now), PipeConfirmationEnd.Closed);
         Assert.Equal("REMOTES.SET", Daoris.Driver.Notices.Read(Home, Now)!.Single().Route);
     }
 }

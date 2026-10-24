@@ -37,6 +37,9 @@ public sealed record BalloonFacts(string? Kind, string? Headline = null, string?
 
     /// <inheritdoc cref="Module"/>
     public string? Route { get; init; }
+
+    /// <summary>How many presses from a terminal a folded balloon names (<see cref="BalloonFold.FoldedKind"/>).</summary>
+    public int? Count { get; init; }
 }
 
 /// <summary>A balloon's words and icon.</summary>
@@ -89,6 +92,9 @@ public static partial class SessionBalloon
         [Prefix + "confirming.title"] = "A terminal waits for your confirmation",
         [Prefix + "confirming.body"] = "It asks to {{act}}. Open Daoris to confirm or refuse it.",
         [Prefix + "confirming.plain"] = "Open Daoris to confirm or refuse it.",
+        [Prefix + "confirmingMany.title"] = "Presses from a terminal wait",
+        [Prefix + "confirmingMany.body_one"] = "One waits for your confirmation. Open Daoris to confirm or refuse it.",
+        [Prefix + "confirmingMany.body_other"] = "{{count}} wait for your confirmation. Open Daoris to confirm or refuse them.",
         [Prefix + "holding.title"] = "{{repository}}: a session holds a tool call for you",
         [Prefix + "holding.help"] = "Ask Daoris holds a tool call for you",
         [Prefix + "holding.body"] = "Open Daoris to answer it before it is refused by itself.",
@@ -132,6 +138,13 @@ public static partial class SessionBalloon
             PipeConfirmations.AttentionKind => (Word(Prefix + "confirming.title"), Act(facts, handed) is { } act
                 ? Fill(Word(Prefix + "confirming.body"), new Dictionary<string, string>(StringComparer.Ordinal) { ["act"] = act })
                 : Word(Prefix + "confirming.plain")),
+            // CONFIRMWAIT1a-i (§8.2): the asks of one minute after its first, folded into one balloon naming how many came in it.
+            BalloonFold.FoldedKind => (Word(Prefix + "confirmingMany.title"), Fill(
+                Word(Prefix + (facts.Count == 1 ? "confirmingMany.body_one" : "confirmingMany.body_other")),
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["count"] = facts.Count?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
+                })),
             _ => (string.IsNullOrWhiteSpace(facts.Headline) ? "Daoris" : facts.Headline, Written(Prefix + "ended.body")),
         };
 
@@ -143,7 +156,7 @@ public static partial class SessionBalloon
     /// WAITING on somebody. An ending, an answer or a wait for an account is news.
     /// </summary>
     public static BalloonIcon Icon(string? kind) =>
-        kind is "Parked" or "QuestParked" or PipeConfirmations.AttentionKind or HeldCallAnnouncements.AttentionKind
+        kind is "Parked" or "QuestParked" or PipeConfirmations.AttentionKind or BalloonFold.FoldedKind or HeldCallAnnouncements.AttentionKind
             ? BalloonIcon.Warning
             : BalloonIcon.Info;
 

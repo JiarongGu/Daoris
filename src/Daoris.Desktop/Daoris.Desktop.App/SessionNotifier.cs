@@ -58,6 +58,9 @@ public sealed class SessionNotifier : IDisposable
     /// <summary>The words a main window's page handed, in its language (NOTIFY2d); null, or none told yet, says English.</summary>
     private readonly NoticeWords? _words;
 
+    /// <summary>A terminal's presses' balloons, at most one a minute across every press (CONFIRMWAIT1a-i, the confirm-wait design §8.2).</summary>
+    private readonly BalloonFold _fold;
+
     /// <param name="window">The first main window: the tray's, and what a click opens where no other is picked.</param>
     /// <param name="events">The bus the attention is told on.</param>
     /// <param name="takingBack">Asked before the first is shown, so a window put away is taken back first (MAINWINDOWS2).</param>
@@ -79,6 +82,7 @@ public sealed class SessionNotifier : IDisposable
         _picking = picking;
         _forwarding = forwarding;
         _words = words;
+        _fold = new BalloonFold(TimeProvider.System, facts => Balloon(facts, null, null));
         _icon = new NotifyIcon
         {
             // The window's own icon where it has one, so the tray matches the taskbar.
@@ -127,6 +131,15 @@ public sealed class SessionNotifier : IDisposable
             Route = Read(payload, "Route"),
         };
 
+        // A terminal's press names no session and is folded by the minute (§8.2); every other kind is shown as it comes.
+        if (facts.Kind == PipeConfirmations.AttentionKind) _fold.Offer(facts);
+        else Balloon(facts, session, quest);
+    }
+
+    /// <summary>One balloon, on the window's thread, unless a window is already in front.</summary>
+    private void Balloon(BalloonFacts facts, string? session, string? quest)
+    {
+        if (_window.IsDisposed || !_window.IsHandleCreated) return;
         _window.BeginInvoke(() =>
         {
             // Quiet while they are already looking — the page's own toast has it.
@@ -243,6 +256,7 @@ public sealed class SessionNotifier : IDisposable
     public void Dispose()
     {
         _subscription.Dispose();
+        _fold.Dispose();
         // Hide before releasing, or the shell keeps a ghost icon until somebody hovers over it.
         _icon.Visible = false;
         _icon.Dispose();

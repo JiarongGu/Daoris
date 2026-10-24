@@ -106,6 +106,114 @@ internal sealed class HeldClock : TimeProvider
     }
 }
 
+/// <summary>
+/// The loop's readers of a press's grounds as a test holds them (CONFIRMWAIT1a-i): each world fact a dictionary the test moves between
+/// the ask and the Confirm, a read of a route answered from <see cref="Reads"/> (an empty object where none is set), every read
+/// counted, and the whole of it made to throw (<see cref="Fails"/>) or held open until the test lets it (<see cref="Hold"/>).
+/// </summary>
+internal sealed class StubGrounds : IPipeGroundWorld
+{
+    private int _reads;
+
+    public Dictionary<string, (string State, DateTimeOffset Updated)> Sessions { get; } = new(StringComparer.Ordinal);
+
+    public HashSet<string> Registered { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public Dictionary<string, string> Quests { get; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, string> Asks { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Tips by <c>repository:branch</c>.</summary>
+    public Dictionary<string, string> Tips { get; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, string> Heads { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>A read's answer by its route, made from the read's payload.</summary>
+    public Dictionary<string, Func<JsonElement?, object>> Reads { get; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, string> Held { get; } = new(StringComparer.Ordinal);
+
+    public Dictionary<string, string> Prints { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Thrown by every read while set.</summary>
+    public Exception? Fails { get; set; }
+
+    /// <summary>Awaited by every read while set: a reader held open.</summary>
+    public TaskCompletionSource? Hold { get; set; }
+
+    /// <summary>How many reads were made, of every kind.</summary>
+    public int Count => Volatile.Read(ref _reads);
+
+    /// <summary>A session at <paramref name="state"/>, its record moved at <paramref name="minute"/> past nine.</summary>
+    public StubGrounds Session(string id, string state, int minute = 0)
+    {
+        Sessions[id] = (state, new DateTimeOffset(2026, 10, 20, 9, minute, 0, TimeSpan.Zero));
+        return this;
+    }
+
+    private async Task Read(CancellationToken cancellationToken)
+    {
+        Interlocked.Increment(ref _reads);
+        if (Hold is { } held) await held.Task.WaitAsync(cancellationToken);
+        if (Fails is { } failure) throw failure;
+    }
+
+    public async Task<(string State, DateTimeOffset Updated)?> SessionAsync(string id, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Sessions.TryGetValue(id, out var found) ? found : null;
+    }
+
+    public async Task<bool> RegisteredAsync(string name, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Registered.Contains(name);
+    }
+
+    public async Task<string?> QuestAsync(string id, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Quests.GetValueOrDefault(id);
+    }
+
+    public async Task<string?> AskAsync(string id, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Asks.GetValueOrDefault(id);
+    }
+
+    public async Task<string?> TipAsync(string repository, string branch, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Tips.GetValueOrDefault($"{repository}:{branch}");
+    }
+
+    public async Task<string?> SessionHeadAsync(string session, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Heads.GetValueOrDefault(session);
+    }
+
+    public async Task<JsonElement> ReadAsync(string module, string route, object? payload, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        var asked = payload is null ? (JsonElement?)null : JsonSerializer.SerializeToElement(payload, Shenora.Core.Ipc.IpcJson.Options);
+        return JsonSerializer.SerializeToElement(Reads.TryGetValue(route, out var answer) ? answer(asked) : new { }, Shenora.Core.Ipc.IpcJson.Options);
+    }
+
+    public async Task<string?> HeldAsync(string wait, JsonElement? payload, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Held.GetValueOrDefault(wait);
+    }
+
+    public async Task<string> FingerprintAsync(string what, JsonElement? payload, CancellationToken cancellationToken)
+    {
+        await Read(cancellationToken);
+        return Prints.GetValueOrDefault(what, "none");
+    }
+}
+
 /// <summary>A terminal's end of the running Daoris's pipe (RPC1a), as RPC1b's client will hold it: lines of JSON each way.</summary>
 internal sealed class PipeClient : IAsyncDisposable
 {

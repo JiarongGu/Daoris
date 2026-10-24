@@ -110,7 +110,7 @@
   "work.attention.act.refuseOnce": "拒绝",
   "work.attention.act.refuseAlways": "始终拒绝",
   "work.attention.confirmation": "终端在等你",
-  "work.attention.confirmationWhy": "只有你在通知中它的卡片上确认后它才会运行；到 {{time}} 即被拒绝。",
+  "work.attention.confirmationWhy": "只有你在通知中它的卡片上确认后它才会运行；它会一直等到你回答。",
   "work.attention.space": "空间不足",
   "work.attention.spaceTitle": "{{root}} 共 {{total}}，可用 {{free}}",
   "work.attention.spaceFloor": "低于道衍保留的下限 {{floor}}。",

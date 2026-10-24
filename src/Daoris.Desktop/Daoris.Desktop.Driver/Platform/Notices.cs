@@ -37,8 +37,17 @@ public static class Notices
     /// <summary>A session that ended without the person asking, by its end state.</summary>
     public const string Ended = "ended";
 
-    /// <summary>A terminal's press that ended unanswered, refused by its time.</summary>
+    /// <summary>
+    /// A terminal's press that ended unanswered, refused by its time: kept for a notice written before CONFIRMWAIT1a-i, whose presses wait
+    /// until the person answers.
+    /// </summary>
     public const string Expired = "expired";
+
+    /// <summary>A terminal's press its terminal took back after a window showed its card (CONFIRMWAIT1a-i, the confirm-wait design §6).</summary>
+    public const string Withdrawn = "withdrawn";
+
+    /// <summary>A terminal's press Daoris's close ended while it waited, not done (CONFIRMWAIT1a-i, until 1a-ii keeps it across the close).</summary>
+    public const string Closed = "closed";
 
     /// <summary>
     /// A conversation that answered the person's words (NOTIFY2g, the notification design §2.4): one per conversation, under

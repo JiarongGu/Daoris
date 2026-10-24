@@ -169,6 +169,47 @@ public sealed partial class SessionBalloonTests
         Assert.Equal(icon, SessionBalloon.Words(new BalloonFacts(kind, "headline") { Repository = "engine" }, null).Icon);
     }
 
+    /// <summary>
+    /// CONFIRMWAIT1a-i (the confirm-wait design §8.2, §10's two-asks row): two presses asked within a minute while no window is in front
+    /// make the first's balloon and, at the minute's end, one balloon naming the two; the next minute folds again; a quiet minute ends
+    /// the fold; every other kind passes through at once.
+    /// </summary>
+    [Fact]
+    public void A_terminal_s_presses_balloon_at_most_once_a_minute_and_a_minute_s_later_asks_are_named_in_one()
+    {
+        var clock = new HeldClock();
+        var shown = new List<BalloonFacts>();
+        using var fold = new BalloonFold(clock, shown.Add);
+        BalloonFacts Press(string route) => new(PipeConfirmations.AttentionKind) { Module = DriverModule.Name, Route = route };
+
+        fold.Offer(Press("SESSION_INPUT"));
+        clock.Advance(TimeSpan.FromSeconds(20));
+        fold.Offer(Press("SET_DRIVABLE"));
+        fold.Offer(new BalloonFacts("Parked") { Repository = "engine" });
+
+        Assert.Equal(["SESSION_INPUT", null], shown.Select(each => each.Route));
+        clock.Advance(TimeSpan.FromSeconds(40));
+        var folded = shown[^1];
+        Assert.Equal((BalloonFold.FoldedKind, 2), (folded.Kind, folded.Count));
+        var said = SessionBalloon.Words(folded, Handed("en"));
+        Assert.Equal(("Presses from a terminal wait", "2 wait for your confirmation. Open Daoris to confirm or refuse them.", BalloonIcon.Warning),
+            (said.Title, said.Body, said.Icon));
+        Assert.Equal("2 个请求在等你确认。打开 Daoris 确认或拒绝它们。", SessionBalloon.Words(folded, Handed("zh")).Body);
+
+        // The next minute folds too: one ask, named once at its end.
+        fold.Offer(Press("SET_HOLD"));
+        Assert.Equal(3, shown.Count);
+        clock.Advance(BalloonFold.Minute);
+        Assert.Equal((BalloonFold.FoldedKind, 1), (shown[^1].Kind, shown[^1].Count));
+        Assert.Equal("One waits for your confirmation. Open Daoris to confirm or refuse it.", SessionBalloon.Words(shown[^1], null).Body);
+
+        // A quiet minute ends the fold; the next ask is its own balloon at once.
+        clock.Advance(BalloonFold.Minute);
+        fold.Offer(Press("SESSION_DELETE"));
+        Assert.Equal(("Confirming", "SESSION_DELETE"), (shown[^1].Kind, shown[^1].Route));
+        Assert.Equal(5, shown.Count);
+    }
+
     private static string Placeholders(string text) =>
         string.Join(",", Placeholder().Matches(text).Select(match => match.Groups[1].Value).Distinct().Order(StringComparer.Ordinal));
 

@@ -110,7 +110,7 @@
   "work.attention.act.refuseOnce": "Refuse",
   "work.attention.act.refuseAlways": "Always refuse",
   "work.attention.confirmation": "a terminal waits",
-  "work.attention.confirmationWhy": "It runs only once you confirm it on its card in Notifications, and is refused at {{time}}.",
+  "work.attention.confirmationWhy": "It runs only once you confirm it on its card in Notifications; it waits until you answer.",
   "work.attention.space": "disk space low",
   "work.attention.spaceTitle": "{{free}} free of {{total}} on {{root}}",
   "work.attention.spaceFloor": "Below the floor of {{floor}} Daoris keeps free.",
