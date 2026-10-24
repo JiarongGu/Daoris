@@ -1,6 +1,6 @@
-# KEEPSIZE1: the reads of round 2 (D191)
+# KEEPSIZE1: the reads of rounds 2 and 3 (D191)
 
-Codex's read and the independent Opus 5.5 reader's foundation read of round 2 of `docs/2026-10-24-keep-size-design.md` and its note in D195 at `a2993a3bb`, each verbatim but for its headings set one level down; round 1 was rewritten to the owner's directions before any read. The steward ran both from outside the install, read-only, on the design's own tree. Codex asks another round (14 findings, 11 blocking); the Opus foundation reader would accept after named changes (22 findings, 4 blocking). Round 3 answers both.
+Codex's read and the independent Opus 5.5 reader's foundation read of round 2 of `docs/2026-10-24-keep-size-design.md` and its note in D195 at `a2993a3bb`, each verbatim but for its headings set one level down; round 1 was rewritten to the owner's directions before any read. The steward ran both from outside the install, read-only, on the design's own tree. Codex asks another round (14 findings, 11 blocking); the Opus foundation reader would accept after named changes (22 findings, 4 blocking). Round 3 answers both. Round 3 was read by the Opus foundation reader alone, its read following theirs (11 findings, none blocking, accept after named changes); Codex's read is owed on the text the named changes leave.
 
 ## Codex
 
@@ -420,3 +420,250 @@ is in, and no commit a ref does not hold is put at risk once the carried ref lan
 otherwise a copy, except the scratch and the strays the blocking findings name. If the steward takes finding 1(a), §3.3's
 estimate of the space given back should be restated with how many finished trees hold their own scratch: the install's next look
 can count that from the judgement it already makes.
+
+## Opus (foundation), round 3
+
+The independent Opus 5.5 reader's foundation read of round 3 at `6d3d3aec9`: 11 findings, none blocking; accept after named changes the steward can check, seven before KEEPSIZE1b is built, three before KEEPSIZE1d, and finding 9 at the merge with KEEPSIZE1a as built on main. Codex's read of round 3 stopped when its workspace ran out of credits and wrote nothing; under D191 it is owed on the text the named changes leave.
+
+## KEEPSIZE1 round 3: the foundation read (D191)
+
+**Reader:** Claude Opus 5.5, in Fable's place (D191's 2026-10-23 amendment). **Read:** `docs/2026-10-24-keep-size-design.md` whole at
+`6d3d3aec9`, D195's round-3 note, `git diff HEAD~1 HEAD` on both, round 2's reads (`docs/2026-10-24-keep-size-reads.md`), and main's
+KEEPSIZE1a commits (`0f6f76b79`, `936df1b01`, merged at `485c68121`), which landed beside this round from the same base `49cd7bdbc`.
+**Against the code** at `49cd7bdbc` (round 3 changes only documents): `TreeSetAside`, `TreeSweeps`, `AutoTidies`, `ContentHolds`,
+`SlimManifest`, `SetAsideKeeping`, `RecoveryRetention`, `KeepKinds`, `SpaceFree`, `SystemSpace`, `BranchTidying`'s Keeping pass, and the
+service's `Sessions`, `SessionLedger`, `Asks/History`, `SqliteKnowledgeStore`, `KnowledgeService`, `ServiceFactory`. Nothing was run.
+Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, service paths under `src/Daoris.Service/Daoris.Service.Core/`;
+design lines are round 3's.
+
+**What holds.** The foundation now holds where it matters most. A finished folder goes at its hour only at `recorded`, after its
+branch's delete succeeded and the service took its record, and only while a holding check finds its exact tip on its ref or on
+`refs/heads/<line>` (§3.4, §3.5). The tip ref is written wherever the line's own branch does not hold the tip, which closes the squash,
+carried, landing-branch and `origin`-only cases (§3.1; `KeepDiscardedAsync` returns the existing ref at the same commit,
+`ContentHolds.cs:297-301`, so a content hold's ref and the tip's are one). Uncommitted and untracked paths still keep the tree
+(`TreeSweeps.cs:311`). A write after the judgement began keeps the folder (the `read` threshold): the judgement's status is
+`--no-optional-locks` (`ContentHolds.cs:562-563`), a worktree's index and HEAD live under the repository's `.git/worktrees/`, the rename
+and `worktree remove` write nothing inside the folder, and the purge reads every entry's creation and write times
+(`TreeSetAside.cs:586`). Strays, leftovers and folders from before this build keep their days and are never the allowance's. The press
+is one set of bounds. The allowance's stopping rule is sound. What the hour removes beyond copies is the session's own scratch, which
+the owner decided goes (§3.2, D195 lines 491-493). What follows are gaps in the record's completeness, in two arithmetic rules and in
+wording, none of which removes anything that cannot be made again.
+
+### 1. Round 2's findings
+
+#### 1.1 The Opus foundation read
+
+| # | Round 3's answer | Verdict | Checked |
+|---|---|---|---|
+| claim 1 | the named scratch from `TreeHolds`, build folders' contents unnamed (§2.1) | **taken as named; holds** | `ContentHolds.cs:560-607`; a build folder the checkout lacks is named once as a path by `--ignored=matching` (`:578-584`), its contents never, as §2.1 says |
+| claim 2 | a manifest for every finished tree; sizes from the set-aside walk (§3.3, §4.3) | **taken; holds** | `TreeSetAside.cs:204`, `SpaceFree.cs:153-156` |
+| claim 3 | today's early group kept; the record posted from the manifest at the press (§5) | **taken; holds** | `SpaceFree.cs:163`, `SetAsideKeeping.cs:78-99` |
+| claim 4 | the record's inputs at `judged`; the pass, press and restart post from them | **taken; holds for `deleted`**, not for `refused` or a stopped `judged` | finding 1 |
+| claim 5 | the classes (§3.4) | **taken; holds** | `TreeStrays.cs:41-56`, `PassLeftovers.cs:20-25` |
+| claim 6 | `origin/<line>` its own row; the tip ref; `hold.form` | **taken; holds** | `RecoveryRetention.cs:12-14`, `TreeSweeps.cs:420` |
+| claim 7 | §1.3 corrected | **taken; holds** | `KnowledgeIndex.cs:41`, `SqliteKnowledgeStore.cs:13-21, 112-117` |
+| claim 8 | round 1 is `d57b7f8d6` | **taken; holds** | `d57b7f8d6` adds the design; `16769207d` merges it; its §6 holds rows 1a and 1e |
+| 1 (blocking) | the owner's decision (b), §3.2; D195's note; AUTOTIDY2a in §9 | **taken as named; holds** | `TreeSetAside.cs:16-21`, `TreeSweeps.cs:312-314` |
+| 2 (blocking) | the allowance takes `recorded` alone (§3.4, §4.1 step 1); 1d's proof | **taken; holds**; the set-aside part now takes nothing the hour has not | finding 5 |
+| 3 (blocking) | the early group as the person's word, each folder's class listed; "never" a listed fact (§5) | **taken; holds**; a stopped folder pressed before its resume loses its record | finding 1 |
+| 4 (blocking) | the whole's step only where every eligible unit reaches N (§4.3 step 2); 48 GB reasoned (§4.2) | **taken; the rule holds**; the reasoning leans on an 8 GB set-aside part the allowance cannot hold | finding 5 |
+| 5 | `recorded` after `deleted`; a refused delete marks `refused` | **taken; holds as a mark**; a refused folder never gets its record | finding 1 |
+| 6 | the inputs in the manifest at `judged` | **taken; holds for `deleted`** | finding 1 |
+| 7 | a manifest for every finished tree, `whole` included | **taken otherwise; holds**: a `whole` tree's record needs the inputs, and `whole` writes empty paths, so no slim, as today | §3.3 line 270 |
+| 8 | one purge call, `after` per class | **taken; holds**; with main's KEEPSIZE1a each place keeps its own `purge-failed.json`, so "one call" is one pass over both places | finding 9 |
+| 9 | `TreeHolds`, 5,000 names, the `bin/` example dropped | **taken; holds** | `TreeScratch.cs:15-22` |
+| 10 | one record per tree, keyed by its set-aside identity, every session linked | **taken; holds** | `Trace.Chain.cs:1150-1158` |
+| 11 | no backfill | **taken; holds** | `TreeSetAside.cs:215`, `SlimManifest.cs:21-22` |
+| 12 | the tip kept, the ref looked up on read, a dropped ref unmarks | **taken; holds** | `RecoveryRetention.cs:21-29` |
+| 13 | tables that migrate; `Sessions.DeleteAsync` takes the links | **taken; holds**: it is the one `DELETE FROM sessions` (`Sessions.cs:1525`), called inside `ExclusiveAsync` by both doors (`SessionLedger.cs:1996-2004`, `Asks/History.cs:303-313`); a record with no session is left over | finding 11 |
+| 14 | 1c's ranking, cap and audience | **taken in 1c; holds** | `KnowledgeService.cs:180, 186-190` |
+| 15 | `knowledge.db` once, under the rest; records by count | **taken; holds** | `SystemSpace.cs:81-82, 90-92` |
+| 16 | fresh counts, subtraction, recount | **taken in part**: a second pass before the recount lands takes the overage again | finding 3 |
+| 17 | never under `whole` | **taken; holds** | §3.4 line 304 |
+| 18 | composed and posted after the hold, from the manifest | **taken otherwise; holds**; the Keeping pass and the press now read git, which §9 does not amend | finding 7 |
+| 19 | renamed into `.tidied/.going/` first | **taken; holds**; every reader of `.tidied` (purge, slim, list, card walk) must pass `.going/` over, which §3.4 leaves unsaid | finding 7 |
+| 20 | pointers | **taken; holds** | |
+| 21 | the ref on both paths, never retired, said | **taken, widened to every tip the line's own branch does not hold; holds** | `TreeSweeps.cs:181`, `RecoveryRetention.cs:6-10` |
+| 22 | whole GB; refused at the door, not read from the file; `BrowserCache` in 1d | **taken; holds** for the GB and the row; the lowered-N check sums differently from the part's | finding 4 |
+
+#### 1.2 Codex's blocking findings
+
+| # | Round 3's answer | Verdict | Checked |
+|---|---|---|---|
+| 1 | the tip ref wherever `refs/heads/<line>` does not hold it; 1b removes both branches | **taken as named; holds** | `TreeSquashes.cs:20-27`, `TreeSweeps.cs:337-356` |
+| 2 | `read`, before the judgement's read, is a finished folder's threshold | **taken otherwise; holds** (see *What holds*): stronger than a post-move git check, since it reads every entry's creation time | `TreeSweeps.cs:308`, `TreeSetAside.cs:203, 273, 586` |
+| 3 | armed only at `recorded`; the holding check before each removal; stops resumed | **taken; holds**, but `refused` and a stopped `judged` are left without a way to their record | finding 1 |
+| 4 | one judgement for every door; awaiting-record held past its days; unmarked keep D195's days | **taken; answered with a reason that holds** (`TreeStrays.cs:41-56`) | |
+| 5 | decided by the owner; the inventory from `TreeHolds` | **decided; holds** | |
+| 6 | inputs captured before the delete; per-tree record; attribution only where bases bound it; no backfill | **taken; holds** (but see finding 10 on the range) | |
+| 7 | whole GB, sum at most N on every door, scaled defaults, file read part by part | **taken in part**: the N door and the part door check different sums; tiny volumes break the minimums | finding 4 |
+| 8 | fresh counts, subtraction within a pass, recount | **taken in part** | finding 3 |
+| 10 | taken in 1a's row (place-aware units, the same-name proof) | **open as stated**: main built 1a otherwise, with a reason round 3 can give | finding 9 |
+| 11 | `knowledge_get` resolves `record:…`; the session page; older records indexed; search → read → clear | **taken in 1c; holds** | `KnowledgeService.cs:248`, `SqliteKnowledgeStore.cs:222` |
+| 12 | the browser's kind and daily clearing in 1d, the start's check alone in 1e | **taken; holds** | |
+
+### 2. What round 3 introduced
+
+- **Wrong claims.** §3.3's downgrade sentence is backwards for awaiting-record folders (finding 8). §3.5's `moved` resume cites
+  `TreeSweeps.cs:304-305` (a registration whose folder is gone), which is the stopped `judged` case; at `moved` git has let go, and the
+  next look meets a branch with no tree (finding 1). §4.3's "a destructive step reads only fresh counts" is contradicted by its next
+  sentence (finding 3). §1.4, the standing line and row 1a describe 1a as unbuilt (finding 9). "Why 48" counts the install's own live
+  trees inside its 7 GB beside six more, which only makes 48 more generous (finding 5).
+- **New holes.** A refused delete or a stop at `judged` leaves finished work with no record, though its manifest holds every input, and
+  the next look deletes its tree-less branch (finding 1). The person's *Clean up…* keeps no record (finding 2). The record's commits
+  range takes commits merged in from the line (finding 10). A record with no session has no clearing door, and a newer `work_records`
+  schema meeting an older build is unsaid (finding 11). The purge and the press gain git outside the hold, unamended (finding 7).
+- **Rows and proofs.** 1b's *"a branch delete refused after the move: `refused`, never armed, kept its days"* proves the mark, not what
+  becomes of the record when the next look deletes the branch (finding 1). 1d's arithmetic proof passes while the parts' sum exceeds N
+  (finding 4). 1a is built on main without its round-3 proof (finding 9). 1d's *"past their first day"* is a remnant of round 2's
+  allowance rule, harmless.
+- **D195's note.** Line 502 *"a stop between steps is resumed"* where §3.5 leaves `judged` unresumed (finding 1); lines 510-513
+  *"destructive steps read only fresh counts, less what the pass removed"* (finding 3); lines 516-517 *"1a (every place, place-aware
+  units)"* (finding 9). Line 504 *"goes at its hour"* reads with §3.4 but not with §9's *"an hour after its record is kept"*
+  (finding 6).
+
+### 3. Findings
+
+1. **Not blocking. `refused` and a stopped `judged` never reach their record, and the next look deletes their branch.**
+   - **What is wrong.** At `refused` (design lines 307, 333-336) git has already let go of the tree, so the next look meets the same
+     branch at the same tip with no tree: its kept fact still names it (`AutoTidies.cs:233-254`), `GoesByItself` takes a branch with no
+     tree (`TreeSetAside.cs:26-29`), and the last look finds no folder at the tree's path (`TreeSetAside.cs:61-67`), so it is deleted
+     within minutes, on §3.1's path with its ref. The folder labelled *its branch stands* is then a copy of a branch that is gone; it
+     waits its days and goes with no record. A refusal is not rare in a busy repository: the delete verifies the line at the commit read
+     (`ContentHolds.cs:472, 519-524`), so a landing between the judgement and the delete refuses it. A stop between the rename and
+     `moved` leaves `judged` with the folder present and its worktree record standing. The next look takes that branch the same way
+     (`TreeSetAside.cs:78`, `:215-219`). Today's slim drops a `judged` manifest at the next pass (`SetAsideKeeping.cs:120-125`), its
+     inputs with it. §3.5 gives `moved` the way back (*"its delete marks this manifest `deleted` by its `branch` and `tip`"*, lines
+     355-357) but not these two. Nothing goes early; what is lost is the record the design exists to keep.
+   - **The smallest change.** One resume rule for every finished folder at `judged` (its folder present), `moved` or `refused`: where
+     the manifest's `branch` is absent and the holding check passes, mark `deleted` and go on at step 6; the delete of a branch with no
+     tree marks a manifest of that `branch` and `tip` `deleted`. A schema-2 `judged` manifest is not dropped by the slim. The press runs
+     the resume before it lists. Correct the `:304-305` citation and D195 line 502. Add to 1b's proof: a refused delete, then the next
+     look's delete, gives the record.
+
+2. **Not blocking. The person's *Clean up…* keeps no record.**
+   - **What is wrong.** §2.3 (lines 220-222) gives a record only to a tree the look sets aside. The press's path deletes the tree with
+     `git worktree remove` (`TreeSweeps.cs:210-235`), with no manifest. §3.1 (line 232) writes the tip ref on it, but no record. §4.4
+     (line 463) names *Clean up…* as a door when Daoris is over N. So finished work the person cleans up leaves no record of its landing
+     or commits, which goes against the owner's *what is kept of finished work is its text record*. The press takes the work landed on a
+     branch of the person's, which the look leaves (`TreeSetAside.cs:28`). Its own scratch keeps the tree there
+     (`TreeSweeps.cs:314`), so nothing else is lost.
+   - **The smallest change.** Either say in §2.3, and in the press's list, that *Clean up…* and *Discard* keep no record, or have the
+     press's path write the same inputs before the tree goes (a manifest under `.tidied` with no folder) and post after the hold, as the
+     look's path does.
+
+3. **Not blocking. A stale count can authorize the same removal on each pass until the recount lands.**
+   - **What is wrong.** §4.3 (lines 449-452) says *"a destructive step reads only fresh counts"*. The next sentence lets a stale kind
+     take *"its part's overage as last measured less what this pass removed"*. The Keeping pass runs at every look
+     (`BranchTidying.cs:237-283`). The recount is a background walk (`SystemSpace.cs:199-205`). So a second pass before the walk ends
+     subtracts nothing of the first pass's removal and takes the overage again, which is Codex 8's *repeated passes may reuse it*. What
+     goes is downloads and caches, which can be made again, so this costs a fetch.
+   - **The smallest change.** Subtract every removal since the kind's last count (each run's bytes are in `keeping.json`'s `last`), or
+     let a stale kind take nothing until its recount lands. Reword D195 lines 512-513 to match. Add the second pass to 1d's proof.
+
+4. **Not blocking. The parts' sum is checked two ways, and the minimums exceed N on a tiny volume.**
+   - **What is wrong.** §4.2 (lines 418-422) has two rules:
+     - a part's door checks the parts the person set plus the others' defaults at that N;
+     - the N door checks only the parts the person set.
+
+     Example: set-aside 40 at N = 48 (40 + 5 + 2 = 47). N = 41 then passes the N door (40 ≤ 41), but the defaults at 41 are
+     ⌊5·41/48⌋ = 4 and max(1, ⌊2·41/48⌋) = 1, so the sum is 45 > 41. The file rule, *"a part that would bring the sum above N is not read
+     and keeps its default"*, cannot repair a sum whose overage is the defaults'. Where half the volume is under 3 GB, the three 1 GB
+     minimum defaults exceed N. 1d's proof (*"an N refused below the set parts' sum"*, *"the last as its default"*) passes in both cases
+     while *"the parts' sum is at most N"* fails. Nothing removes by the rest of N, so nothing is lost.
+   - **The smallest change.** Use one sum on every door and in the file: the set parts plus the unset parts' defaults at the N in
+     question. The file read drops set parts in reverse table order until that sum fits. Where half the volume is under 3 GB, the parts
+     are not offered. Prove the lowered-N case through each door.
+
+5. **Not blocking. The set-aside part takes nothing the hour's purge has not.**
+   - **What is wrong.** §4.1 step 1 (lines 388-390) lets the allowance take recorded folders past their hour, not under `whole`, under
+     every guard. That is exactly what the hour's purge takes earlier in the same pass, under the same guards and budget (§3.4 line 303;
+     §4.3 line 436). So the 8 GB part (line 411) removes nothing. What the kind holds after the purge is only what the allowance may not
+     take, and the card's *"1.1 GB of 8 GB"* (line 477) reads as a bound that does not hold. "Why 48" (lines 424-431) counts that 8 GB as
+     a reserve the parts keep. The non-recorded folders are in fact part of what cannot go, and their number is unknown until 1b counts
+     the classes (line 374). The sizing case also counts the install's own 4.1 GB of live trees inside its 7 GB beside six more, which
+     only makes 48 more generous.
+   - **The smallest change.** Say that the set-aside part is only said (its overage names the classes, as §4.4 line 469 does). In "Why
+     48", count the folders that are not recorded among what cannot go, with 1b's class count as the measure that will confirm the
+     default.
+
+6. **Not blocking. The hour's clock is named two ways.**
+   - **What is wrong.** §3.4 (line 303) and step 7 (line 344) say *at its hour*. The purge measures that from the moment in the folder's
+     name (`TreeSetAside.cs:377`), so a folder recorded late goes at once. But the card (line 478), §9 (line 675) and the router's row say
+     *an hour after its record is kept*.
+   - **The smallest change.** Name one clock, either the move's as the purge reads it or `recorded`'s as the manifest writes it. Use it
+     in §3.4, §4.5, §9, the router and D195 line 504.
+
+7. **Not blocking. The purge and the press now read git, and §9 does not say so.**
+   - **What is wrong.** The holding check (lines 297-299), step 6 and the resume (lines 340-343, 353-358) all read git from the Keeping
+     pass and the press: `show-ref`, `merge-base --is-ancestor` and `git log`. Both of those are *"outside every repository's hold: it
+     touches no git and no live tree"* (`SetAsideKeeping.cs:6-9`; the Keeping pass, `BranchTidying.cs:237-238`). Each must resolve a
+     manifest's workspace and repository to a root, and the rows leave that unsaid. §3.1 (line 237) relaxes KEEP1a's hold-free-of-new-git
+     rule (Fable F1.5). The `.going/` folder lies where every reader of `.tidied` enumerates workspaces. §9 lists none of these.
+   - **The smallest change.** Say three things in §3.4:
+     - the judgement reads git read-only, outside the hold, from the registry's root;
+     - a repository it cannot resolve or read makes the folder unmarked;
+     - every reader passes over `.going/`.
+
+     Add the Keeping pass's contract and KEEP1a's hold note to §9.
+
+8. **Not blocking. §3.3's downgrade sentence is backwards for one class.**
+   - **What is wrong.** Lines 257-258 say an older build *"purges the folder by its days, which keeps more of a folder awaiting its
+     record than this build would, never less"*. But this build keeps an awaiting-record folder past its days (line 305), while an older
+     build reads no schema-2 manifest (`SlimManifest.cs:58`) and purges it at its days, its record never kept. It keeps more of a
+     recorded folder (days, not an hour) and less of an awaiting one.
+   - **The smallest change.** Say both, and that a downgrade loses the records still awaited.
+
+9. **Not blocking. KEEPSIZE1a was built on main from the same base, differently.**
+   - **What is wrong.** Main's `0f6f76b79` (merged at `485c68121`) reads every place through `SetAsideRoots`, and each place keeps its
+     own `purge-failed.json`. A press id names its folder *"at whichever place of the trees holds it, the new first"* (main's
+     `SpaceFree.cs:296`), not the place-aware unit that row 1a (lines 594-600), §10.1's Codex 10 answer (line 710) and D195 lines 516-517
+     promise, and main has no same-name proof. Round 3 stands on `49cd7bdbc`, so these are stale against main:
+     - §1.4 (lines 159-162);
+     - the standing line (line 34, *"Nothing here is built"*);
+     - §7's order (*"1b first, then 1a"*);
+     - the TASKS row.
+
+     The built resolution holds for a reason round 3 can give. A folder moves into the new place alone, named with its millisecond
+     moment (`TreeSetAside.cs:271-273`), so one relative id at both places cannot arise from Daoris's own moves.
+   - **The smallest change.** At the merge:
+     - restate §1.4 and row 1a as built at `0f6f76b79`;
+     - answer Codex 10 by that reason, or file the place-aware id as a row of its own;
+     - reconcile the TASKS rows and D195's two notes.
+
+10. **Not blocking. The record's commit range takes commits merged in from the line.**
+    - **What is wrong.** §2.1 (line 176) and step 6 (line 340) read `git log --numstat <grewFrom>..<tip>`, which is every commit the tip
+      reaches and `grewFrom` does not. A session branch that merged the line in, for example to settle a conflict, would then name other
+      sessions' commits as its tree's. The line at the judgement cannot be excluded instead, since it already holds the tip.
+    - **The smallest change.** Use `--first-parent`, so a merge from the line is one commit of the tree's, with its first-parent
+      changes. Prove it with a branch that merged its line.
+
+11. **Not blocking. A record with no session has no clearing door; the post's identity and a newer schema are unsaid.**
+    - **What is wrong.** §2.2 (lines 195-196, 202-204, 214-215) clears a record with its last session. A record posted when no session
+      row names the tree is never cleared, whether its sessions were cleared while it awaited its record or no row ever named the tree.
+      Neither *Clear history…* nor the age reaches it. The pass and the press may both post one folder's record (§3.5 lines 341-342),
+      and §2.2 does not say the post is idempotent. Nor does it say what an older build does with a newer `work_records` schema; the
+      index refuses a newer schema (KSCHEMA1, `SqliteKnowledgeStore.cs:13-21`).
+    - **The smallest change.** Say four things:
+      - the post is idempotent on `(workspace, repository, folder)`;
+      - a record with no session either ages by its own `at` under history's age or is not kept, the folder then going as recorded;
+      - the history clear takes such records;
+      - a newer schema is refused as KSCHEMA1 refuses the index's.
+
+**11 findings, 0 of them blocking.**
+
+**Verdict.** Accept after named changes; the steward can check each against the revised text and the code cited above, so no further
+read is needed. The foundation holds. Nothing goes at the hour or by the allowance unless its exact tip is held, its branch is gone and
+its record is kept. No uncommitted path, no tree a session is in, and no stray, leftover or older folder is taken before its days. The
+press is one consistent set of bounds. The allowance stops where N cannot be reached. Only the session's own scratch, by the owner's
+recorded decision, goes beyond copies. The changes before KEEPSIZE1b builds are:
+- the one resume rule for `judged`, `moved` and `refused` (finding 1);
+- a decision on the press's record, at least said in §2.3 (finding 2);
+- one clock for the hour (finding 6);
+- git outside the hold and `.going/`, said in §3.4 and §9 (finding 7);
+- the downgrade sentence (finding 8);
+- `--first-parent` (finding 10);
+- the record's identity, its orphans and a newer schema (finding 11).
+
+Findings 3, 4 and 5 settle the counts, the parts' one sum and the set-aside part before KEEPSIZE1d. Finding 9 is the merge with main's
+built KEEPSIZE1a. Each is a sentence or a rule, not a new mechanism.
