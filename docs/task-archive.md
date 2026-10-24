@@ -20236,3 +20236,16 @@ refused replacement and restart of §3.5(b), MODELROLE1d2's. Detail: D205's and 
 then patch identity), held to the line as it stands (D148). Every door that asks the proof reads it. A tree whose work is on the line
 by content leaves *To review* where its discard would go unforced. A commit truly not on the line is counted, offered and named as
 work to land (`ContentProof.Lacks`). No new record-based proof was added. Detail: D102's REVIEWLANDED1 note; FIX-LOG 2026-10-24.
+
+## SHENORA024 — take Shenora 0.24.0 (2026-10-24, D22, D171)
+
+> Build SHENORA024 (the owner's note, 2026-10-24: Shenora has a newer version): move Daoris from Shenora 0.22.0 to 0.24.0, the .NET packages in src/Daoris.Desktop/Directory.Packages.props (Shenora, Shenora.Windows, Shenora.Chromium) and the page's @shenora/react in src/Daoris.Web/package.json and its lockfile, from the published packages. (Filed and built as quest `#09937d115753`; it had no backlog row.)
+
+**Outcome** 2026-10-24: the three packages and `@shenora/react` at 0.24.0, restored from nuget.org and npm. Read 0.23.0, 0.23.1,
+0.23.2 and 0.24.0's notes and the compare from `v0.22.0`: nothing Daoris calls broke. 0.24.0's two breaks are the media routes'
+(`UseComputedRemux` behind `UseMediaConversion`, `BackgroundPlaybackTransfer`), which Daoris does not mount; the web panel, the
+segment stream and the media player are new surface it does not use; the Chromium window-icon fix is the kit shell's window, and
+Daoris's window is a WinForms form hosting a `ChromiumView`. None of KITREQ1's four requests is answered (`ChromiumEngine`,
+`ChromiumChildBrowser` and the single-instance code are unchanged since 0.22.0), so no workaround goes and KITREQ1 stays open. The
+desktop builds; the driver's, modules' and both service projects' fast halves, the web's unit tests and typecheck pass. Detail: D22's and D171's
+SHENORA024 notes.
