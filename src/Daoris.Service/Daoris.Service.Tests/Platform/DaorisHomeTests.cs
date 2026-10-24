@@ -298,6 +298,17 @@ public sealed class DaorisHomeTests
         Assert.Equal((HomeCategory.Data, "data/agent-offers.json"), (HomeEntry.AgentOffers.Category, HomeEntry.AgentOffers.New));
     }
 
+    /// <summary>
+    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, a data folder the service's table
+    /// names as its twins do, and never reads; kept in <c>data/</c>, never under <c>run/</c>.
+    /// </summary>
+    [Fact]
+    public void The_waiting_presses_are_a_data_folder()
+    {
+        Assert.Same(HomeEntry.PipeWaiting, HomeEntry.Named("pipe-waiting"));
+        Assert.Equal((HomeCategory.Data, "data/pipe-waiting"), (HomeEntry.PipeWaiting.Category, HomeEntry.PipeWaiting.New));
+    }
+
     /// <summary>HELPMODE1c2a (D183's note): Ask Daoris's configured access, a data file the service's table names as its twin does.</summary>
     [Fact]
     public void Ask_Daoris_configured_access_is_a_data_file()
