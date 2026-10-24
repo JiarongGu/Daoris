@@ -308,9 +308,10 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         // The kept look's trees are none of the room's: its part judged the tree gone, so nothing waits to review.
         Assert.Equal(0, read.Sessions.Review);
         Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":true"));
-        // FACTSPLIT1b: the part's walk says its own time and how many trees it asked, with none of the look's steps.
-        Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"treesMs\":")
-            && line.Contains("\"trees\":1") && !line.Contains("recordsMs"));
+        // FACTSPLIT1b: a part that walked a tree says its own time and how many; HELPNEWCHAT1: a gone tree is asked, holding nothing,
+        // and never walked, so this part says no walk at all.
+        Assert.DoesNotContain(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"treesMs\":")
+            && !line.Contains("recordsMs"));
 
         loop.SessionsLooked.Keep(look, DateTimeOffset.UtcNow - HelpRoomLookLog.Recent - TimeSpan.FromSeconds(1));
         await loop.Facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);
