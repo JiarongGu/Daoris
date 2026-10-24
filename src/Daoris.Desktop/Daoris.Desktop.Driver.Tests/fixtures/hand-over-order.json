@@ -9,5 +9,17 @@
     ["an adapter the roster does not hold is its own tool", "gone-agent", [["claude-code", true, null], ["codex-acp", true, "codex"]], ["claude-code", "codex-acp"]],
     ["a blank accountOf is no owner", "claude-code", [["claude-code", true, " "], ["codex-acp", true, "codex"]], ["codex-acp"]],
     ["no other tool is no order", "claude-code", [["claude-code", true, null], ["claude-code-acp", true, "claude-code"]], []]
+  ],
+  "actorAbout": "The same order once the session's actor has an order of its own (MODELROLE1e; D205 §3.5(e), round 4's Opus N1): every path takes the actor's effective order, so a hand-over goes to the actor's next entry on another agent, with that entry's model, and never to a maker outside its entries. Where the actor is as before, or has no entries, the roster's order above stands with no model. Each row: its name, the session's adapter, the roster's doors as [harness, present, accountOf], the actor's entries as [agent, model, from], and the steps in order as [harness, model, from] (`roster` where the roster's order stands). The driver's `HandOverOrder.Steps` (`HandOverOrderTests`) and the page's `nextChoices` (`handOverOrder.test.ts`) are both held to it.",
+  "actorRows": [
+    ["the actor's next entry on another agent", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"]], [["claude-code", "opus", "1"], ["codex-acp", "gpt-5", "2"]], [["codex-acp", "gpt-5", "2"]]],
+    ["the actor's order is kept, not the roster's", "claude-code", [["codex-acp", true, "codex"], ["dsh", true, null], ["claude-code", true, null]], [["dsh", null, "1"], ["codex-acp", "gpt-5", "2"]], [["dsh", null, "1"], ["codex-acp", "gpt-5", "2"]]],
+    ["the session's own tool through another door is not another agent", "claude-code-acp", [["claude-code", true, null], ["claude-code-acp", true, "claude-code"], ["codex-acp", true, "codex"]], [["claude-code", null, "1"], ["codex-acp", null, "2"]], [["codex-acp", null, "2"]]],
+    ["an entry whose door is not present is passed over", "claude-code", [["claude-code", true, null], ["codex-acp", false, "codex"], ["dsh", true, null]], [["codex-acp", null, "1"], ["dsh", null, "2"]], [["dsh", null, "2"]]],
+    ["an entry for an agent the roster does not hold is passed over", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"]], [["gone-agent", null, "1"], ["codex-acp", null, "2"]], [["codex-acp", null, "2"]]],
+    ["two entries of one other agent are two steps, each with its model", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"]], [["claude-code", null, "1"], ["codex-acp", "gpt-5", "2"], ["codex-acp", "mini", "3"]], [["codex-acp", "gpt-5", "2"], ["codex-acp", "mini", "3"]]],
+    ["the actor limits who: no maker outside its entries is ever a step", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"], ["dsh", true, null]], [["claude-code", "opus", "1"]], []],
+    ["as before leaves the roster's order, with no model", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"]], [["claude-code", null, "before"]], [["codex-acp", null, "roster"]]],
+    ["no entries leaves the roster's order", "claude-code", [["claude-code", true, null], ["codex-acp", true, "codex"], ["dsh", true, null]], [], [["codex-acp", null, "roster"], ["dsh", null, "roster"]]]
   ]
 }

@@ -87,6 +87,65 @@ public sealed class HandOverAtTurnEndTests : IDisposable
         Assert.Empty(new HandedQuests(_home).All());
     }
 
+    private DriverHandOvers HandOversOf(string? mode, params ActorChoice[] build)
+    {
+        var config = ActorChoices.With(DriverConfig.Empty with { Drivable = ["engine"], Adapter = "stub" }, "build", build);
+        if (mode is not null) config = HandOverRules.Apply(config, new HandOverEdit { Repository = "engine", Set = new HandOverSet { Mode = mode, ModeGiven = true } });
+        var adapters = AdapterSet.Built();
+        var driver = new Daoris.Driver.Driver(_ledger.Client(), config, adapters, _home, harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)))
+        {
+            // The roster's order would be codex-acp then dsh; Build's own order is dsh, then codex-acp.
+            HandOverDoors = _ => Task.FromResult<IReadOnlyList<HandOverDoor>>([new("stub", true, null), new("codex-acp", true, "codex"), new("dsh", true, null)]),
+        };
+        return new DriverHandOvers(driver.Context);
+    }
+
+    /// <summary>
+    /// 🔴 MODELROLE1e (D205 §3.5(e), round 4's Opus N1): under <c>on</c> an agent's ask takes the next entry of Build's effective order on
+    /// another agent, not the roster's next tool, and the quest's next start asks that entry's model (<c>handed</c>).
+    /// </summary>
+    [Fact]
+    public async Task Under_on_the_ask_goes_to_builds_next_entry_on_another_agent_not_the_rosters()
+    {
+        Asks();
+        var build = new ActorChoice[] { new("stub", "opus"), new("dsh", "m1"), new("codex-acp", "gpt-5") };
+
+        var to = await HandOversOf(HandOverRules.On, build).AtTurnEndAsync("s1", "q1", CancellationToken.None);
+
+        Assert.Equal("dsh", to);
+        Assert.Equal("dsh", new HandedQuests(_home).Read("q1")!.Agent);
+        var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "stub" }, "build", build);
+        Assert.Equal(new ActorEffective("dsh", "m1", null, "handed"), ActorChoices.Effective("build", config, handed: "dsh")[0]);
+    }
+
+    /// <summary>
+    /// 🔴 MODELROLE1e (D205 §4.2, Opus B8, the row's proof): a Build whose agent's accounts are all cooling hands nothing over by itself,
+    /// under <c>ask</c> and under <c>on</c> alike, since the rule governs an agent's ask and Daoris's offer is taken only on the person's press;
+    /// the press names the actor's next choice and is kept whatever the rule says.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(HandOverRules.On)]
+    public async Task A_cooling_build_hands_over_only_on_the_persons_press_under_ask_and_on_alike(string? mode)
+    {
+        AccountCooling.Cool(_home, new CoolingEntry("stub", null, T0.AddHours(3), true, "weekly", T0, "s1"), T0);
+        var build = new ActorChoice[] { new("stub", "opus"), new("dsh", "m1"), new("codex-acp", "gpt-5") };
+        var handOvers = HandOversOf(mode, build);
+
+        // No ask from the agent: the standing rule hands nothing over, however the repository's mode is set.
+        Assert.Null(await handOvers.AtTurnEndAsync("s1", "q1", CancellationToken.None));
+        Assert.Empty(new HandedQuests(_home).All());
+        Assert.Null(new HandOverBox(_home).Read("s1"));
+
+        // The person's press, at the offer's choice (Build's next entry on another agent), is kept under either rule.
+        var next = HandOverOrder.Steps("stub", [new("stub", true, null), new("codex-acp", true, "codex"), new("dsh", true, null)], ActorChoices.Effective("build", ActorChoices.With(DriverConfig.Empty with { Adapter = "stub" }, "build", build)))[0];
+        Assert.Equal(("dsh", "m1", "2"), (next.Harness, next.Model, next.From));
+        var pressed = await QuestHandOver.AskAsync(
+            _ledger.Client(), _home, _ => new HandOverAgent([], SessionWire.Acp), "s1", next.Harness, null, HandOverWhy.Limit, HandOverBy.Person, T0);
+        Assert.True(pressed.Kept, pressed.Message);
+        Assert.Equal("dsh", new HandOverBox(_home).Read("s1")!.Agent);
+    }
+
     /// <summary>🔴 A quest's session a hand-over started works its quest in its first turn: its ask then is refused, no second hand-over in a row.</summary>
     [Fact]
     public async Task A_session_a_hand_over_started_is_not_handed_over_again_at_its_first_turns_end()
