@@ -401,6 +401,97 @@ public sealed class ReviewLandingTests : IDisposable
         Assert.Equal(line, await HeadAsync(root));
     }
 
+    /// <summary>
+    /// CHATFLOW1d2 (the chat-flow design §5.3): under a rule that requires a look, a chat run's look reads <c>cannot-start</c>, and its press
+    /// is refused with the limit's words, nothing landed. <i>Accept without the look…</i>, the person's own press with their words, keeps the
+    /// skip at the tip the press captured and lands that tip; the landing record names it, its commit and the words.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_runs_press_under_a_look_is_refused_with_its_limit_and_the_persons_way_past_it_lands_at_that_tip()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: true);
+        var tree = await ChatAsync(root);
+        var tip = await HeadAsync(tree);
+        var line = await HeadAsync(root);
+
+        var held = await ChatOperationAsync(tree);
+        Assert.False(held.Landed.Landed);
+        Assert.Contains(ChatLooks.Limit, held.Landed.Message);
+        Assert.Equal(ReviewStates.CannotStart, held.Gate!.Review.State);
+        Assert.Equal(line, await HeadAsync(root));
+        Assert.Empty(new ChatLooks(_home).Skips(ChatRun));
+
+        var landed = await ChatOperationAsync(tree, new ChatLookPress("no environment shows a conversation's work", ReviewDoors.Screen));
+        Assert.True(landed.Landed.Landed, landed.Landed.Message);
+        Assert.Equal(tip, Assert.Single(new ChatLooks(_home).Skips(ChatRun)).Tip);
+        var review = new LandedBranches(_home).Landing(ChatSession)!.Review!;
+        Assert.Equal((ReviewVerdicts.Skipped, tip, "no environment shows a conversation's work"), (review.Said, review.Commit, review.Words));
+    }
+
+    /// <summary>
+    /// CHATFLOW1d2 (§5.3): the person's way past the look covers the tip it was pressed at and the commits before it; a later commit asks
+    /// the look again, and the press is refused with its limit.
+    /// </summary>
+    [Fact]
+    public async Task A_commit_after_the_persons_way_past_a_chat_runs_look_asks_it_again()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: true);
+        var tree = await ChatAsync(root);
+        new ChatLooks(_home).Skip(ChatRun, new ChatLookSkip(await HeadAsync(tree), DateTimeOffset.UtcNow, "fine as it is", ReviewDoors.Screen));
+        await CommitAsync(tree, "later.txt", "a later turn's work", "a later turn's work");
+
+        var held = await ChatOperationAsync(tree);
+        Assert.False(held.Landed.Landed);
+        Assert.Contains(ChatLooks.Limit, held.Landed.Message);
+    }
+
+    /// <summary>
+    /// CHATFLOW1d2, Codex's finding 1 (§5.3): the tip skipped is the tip landed. A commit made after the skip is judged, before the landing,
+    /// is refused as moved, never landed under the skip; the skip stays at the tip the press captured.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_tree_that_moves_after_the_skip_is_judged_is_refused_and_never_landed_under_it()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: true);
+        var tree = await ChatAsync(root);
+        var tip = await HeadAsync(tree);
+
+        var moved = await ChatOperationAsync(tree, new ChatLookPress("as it is", ReviewDoors.Terminal),
+            before: () => CommitAsync(tree, "racing.txt", "a turn's commit", "a turn's commit"));
+
+        Assert.False(moved.Landed.Landed);
+        Assert.Equal((ChatPresses.Moved, ChatPresses.Codes.Moved), (moved.Landed.Message, moved.Code));
+        Assert.Equal(tip, Assert.Single(new ChatLooks(_home).Skips(ChatRun)).Tip);
+        Assert.Null(new LandedBranches(_home).Landing(ChatSession));
+    }
+
+    private const string ChatSession = "c1a2b3c4";
+
+    private const string ChatRun = ChatRuns.Prefix + ChatSession;
+
+    /// <summary>
+    /// A chat's press as the driver's one operation makes it (CHATFLOW1d, CHATFLOW1d2): its run bound first, then
+    /// <see cref="ChatPresses.PressAsync"/> over an ended record no runner holds, its gate read by the run at the captured tip and its landing
+    /// pinned there; <paramref name="before"/> runs between the judgement and the landing.
+    /// </summary>
+    private async Task<ChatPressed> ChatOperationAsync(string tree, ChatLookPress? withoutLook = null, Func<Task>? before = null)
+    {
+        Assert.Null(ChatRuns.BindFirst(Config(), _home, ChatRun, tree, [], DateTimeOffset.UtcNow).Failed);
+        var trees = new SessionTrees(_home);
+        return await ChatPresses.PressAsync(
+            _home, new ChatPressAsk(ChatSession, tree, ChatRun, "web-app", "aurora", Live: false) { WithoutLook = withoutLook }, holder: null,
+            (tip, token) => trees.GateAsync(tree, null, _world, ChatSession, token, tip: tip, run: ChatRun),
+            async (gate, token) =>
+            {
+                if (before is not null) await before();
+                return await trees.LandAsync(tree, new LandingSubject(ChatSession, null, "The chat's work"), token, gate: gate);
+            },
+            () => 0);
+    }
+
     /// <summary>A chat's own tree, grown as a conversation grows one, with a commit of its work.</summary>
     private async Task<string> ChatAsync(string root)
     {
