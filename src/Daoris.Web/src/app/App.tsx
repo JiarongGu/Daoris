@@ -1007,6 +1007,8 @@ export function App() {
     unanswerable: (item) => openQuest(item.id),
     // A quest parked on its failed sessions (SESSUX1i) opens its page, and its session from there.
     'parked-quest': (item) => openQuest(item.id),
+    // The steward's stop (STEWARDROLE1b) opens its quest's page, as a parked quest does.
+    'steward-stopped': (item) => openQuest(item.id),
     // A go-ahead opens the ask it was asked on, where every go-ahead of it is listed (KNOWUSE1a).
     'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
     // A departure opens its quest's page, where what was required and how its done answered are quoted (DRIFT1d2).

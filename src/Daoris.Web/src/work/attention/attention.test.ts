@@ -9,7 +9,7 @@ import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from '../groups';
 import {
   ASKS_ONCE, ATTENTION_GROUP, ATTENTION_PLACE, attentionActs, attentionGroup, attentionGroups, attentionInOrder, attentionOf, attentionOffers,
-  attentionWorded, type AttentionNames, needsListed, placeCounts, placeOf, type PushedAttention, type QuietWait, staleGoAheads,
+  attentionWorded, type AttentionNames, needsListed, placeCounts, placeOf, type PushedAttention, type QuietWait, rowRun, staleGoAheads,
 } from './attention';
 import { entryDetail } from '../head/milestone';
 
@@ -417,6 +417,42 @@ describe('a quest parked on its failed sessions, worded', () => {
   });
 });
 
+/** STEWARDROLE1b (D209 §5.3): a quest the steward stopped, waiting on a Try again, the steward's or the person's. */
+describe('a quest the steward stopped, worded', () => {
+  const stopped: Consideration = {
+    quest: '7a82cc', repository: 'engine', verdict: 'Stopped', reason: 'the planner said so.', said: { code: 'steward', session: 's1' },
+  };
+  const pushed = row('steward-stopped', '7a82cc', '2026-10-25T10:06:00Z', { where: 'engine', session: 's1', sitting: stopped });
+
+  it('says the quest, its repository, the session stopped and that a Try again carries it on, and offers Try again alone', () => {
+    const item = words(pushed, { quests: [quest({ status: 'Taken' })] });
+    expect(item).toMatchObject({
+      id: '7a82cc', kind: 'steward-stopped', title: 'Expose a streaming budget on the chunk API', where: 'engine', session: 's1',
+      detail: 'The steward stopped session `s1`; Try again, by the steward or the owner, carries it on.',
+    });
+    expect(attentionActs(item)).toEqual(['retry']);
+    expect(rowRun(item)).toEqual({ session: 's1', quest: '7a82cc' });
+    // With no sitting fact, its session said by itself.
+    expect(words(row('steward-stopped', 'q2', null, { where: 'engine', session: 's2' })).detail).toBe('The steward stopped session `s2`.');
+  });
+
+  it('holds work beside a parked quest, the longest waiting first', () => {
+    expect(keyed([
+      row('steward-stopped', 'q-new', '2026-10-01T10:00:00+00:00'), row('parked-quest', 'q-old', '2026-09-30T10:00:00+00:00'),
+    ])).toEqual(['parked-quest:q-old', 'steward-stopped:q-new']);
+  });
+
+  it("says it in 中文, never as the person's stop", async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      expect(words(pushed).detail).toBe('管家停止了会话 `s1`；管家或所有者「重试」会让它继续。');
+      expect(words(row('steward-stopped', 'q2', null, { session: 's2' })).detail).toBe('管家停止了会话 `s2`。');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
 describe('a go-ahead asked on an ask, worded', () => {
   const goAhead = { kind: 'push', on: 'prod', act: 'the report’s menu entries' };
   const pushed = (over: Partial<PushedAttention> = {}) => row('go-ahead', '7c1e9a04b2d5#1', '2026-09-21T09:10:00Z', {
@@ -537,7 +573,7 @@ describe('work to review, worded', () => {
 describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
-      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', permission: 'holding', answer: 'holding',
+      parked: 'holding', 'parked-quest': 'holding', 'steward-stopped': 'holding', 'go-ahead': 'holding', permission: 'holding', answer: 'holding',
       confirmation: 'holding', trust: 'holding', quiet: 'holding', 'helper-ended': 'holding',
       'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', 'set-up': 'word', opinion: 'word', rule: 'word', helper: 'word',
@@ -857,7 +893,7 @@ describe('the place each wait is counted at', () => {
     expect(ATTENTION_PLACE).toEqual({
       parked: 'sessions', review: 'sessions', opinion: 'sessions', helper: 'sessions', 'hand-over': 'sessions',
       permission: 'sessions', answer: 'sessions', quiet: 'sessions', 'helper-ended': 'sessions',
-      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'go-ahead': 'quests',
+      proposal: 'quests', intake: 'quests', unanswerable: 'quests', 'parked-quest': 'quests', 'steward-stopped': 'quests', 'go-ahead': 'quests',
       departure: 'quests', 'set-up': 'quests', trust: 'quests',
       work: 'projects',
       rule: 'agents', 'account-wait': 'agents', 'signed-out': 'agents',
@@ -933,6 +969,7 @@ describe('what a row offers', () => {
 
   it('tries a parked quest again, accepts a departure, and answers a go-ahead, a folder and a widening', () => {
     expect(attentionActs(offered('parked-quest'))).toEqual(['retry']);
+    expect(attentionActs(offered('steward-stopped'))).toEqual(['retry']);
     expect(attentionActs(offered('departure'))).toEqual(['accept-departure']);
     expect(attentionActs(offered('go-ahead'))).toEqual(['approve', 'refuse']);
     expect(attentionActs(offered('trust', { trust: { folder: 'f', trustFile: 'g' } }))).toEqual(['trust']);

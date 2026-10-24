@@ -6,6 +6,8 @@
   "work.attention.group.ready": "待你审阅",
   "work.attention.parked": "在检查点挂起",
   "work.attention.parked-quest": "会话失败后挂起",
+  "work.attention.steward-stopped": "管家已停止",
+  "work.attention.stewardStoppedSession": "管家停止了会话 `{{session}}`。",
   "work.attention.go-ahead": "等你放行",
   "work.attention.departure": "待你采纳",
   "work.attention.review": "待审阅",

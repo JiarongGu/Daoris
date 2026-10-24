@@ -9,6 +9,7 @@ import { SupervisorRow } from './SupervisorRow';
 const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
 const live: AppointmentNow = {
   role: 'supervisor', repository: 'engine', holder: 'terminal', since: hoursAgo(2), dormant: false, answers: 3, scope: 'repository:engine', holderId: 'h1',
+  acts: [], setup: false,
 };
 
 const meta = {

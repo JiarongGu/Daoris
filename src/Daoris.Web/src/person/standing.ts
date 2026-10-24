@@ -34,7 +34,69 @@ export type StandingConfirmationNow = {
   appointments: AppointmentNow[];
   /** The holders living this run, each a terminal Daoris started, which a later *Appoint…* may add a role to (D209 §2.2). */
   holders: HolderNow[];
+  /**
+   * The acts this build offers a steward's appointment, in its order (STEWARDROLE1b, D209 §2.3): what *Appoint…* and *Appoint again*
+   * name, never an appointment's own `acts`.
+   */
+  stewardActsOffered: string[];
+  /** This run's steward acts, newest first, from Daoris's memory (D209 §5.1): what *Notifications*' line lists. */
+  stewardActs: StewardActNow[];
 };
+
+/**
+ * One act the steward made this run, as `STATE`'s `standingConfirmation.stewardActs` says it (STEWARDROLE1b; the steward design
+ * §5.1, §5.4): its id, the act, its target (a repository, or a quest and its session), when, whether it still stands (the owner has
+ * not acted on that target since, so the owner's reverse press is offered), and, for a stop, whether its quest still waits on a
+ * *Try again*.
+ */
+export type StewardActNow = {
+  id: string;
+  act: string;
+  repository: string | null;
+  quest: string | null;
+  session: string | null;
+  at: string;
+  standing: boolean;
+  waiting: boolean;
+};
+
+/** The acts a steward's line and ask have words for (the steward design §3.1 rows 1 to 8); a later build's is said by its name. */
+export const STEWARD_ACTS = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry'] as const;
+
+/** Whether the page has words for this act. */
+export const stewardActKnown = (act: string) => (STEWARD_ACTS as readonly string[]).includes(act);
+
+/** The acts that set a repository's driving, which Setup → Driving says the steward set (§5.1's last rows). */
+const SETS_DRIVING = new Set(['drive', 'undrive', 'trees', 'hold', 'resume']);
+
+/**
+ * When the steward last set this repository's driving, from this run's memory: the newest act among drive, undrive, trees, hold and
+ * resume naming it, matched without case as the driver matches a repository, that still stands; null where none does.
+ */
+export function stewardSetAt(acts: readonly StewardActNow[], repository: string): string | null {
+  const lower = repository.toLowerCase();
+  const set = acts.filter((each) => each.standing && SETS_DRIVING.has(each.act) && each.repository?.toLowerCase() === lower);
+  if (set.length === 0) return null;
+  return set.reduce((newest, each) => (Date.parse(each.at) > Date.parse(newest.at) ? each : newest)).at;
+}
+
+/** The owner's own press that reverses a steward's act (the steward design §5.4), each a press the window already sends. */
+export type StewardReverse = 'stopDriving' | 'drive' | 'treesOff' | 'resume' | 'hold' | 'retry';
+
+const REVERSES: Readonly<Record<string, StewardReverse>> = {
+  drive: 'stopDriving', undrive: 'drive', trees: 'treesOff', hold: 'resume', resume: 'hold', stop: 'retry',
+};
+
+/**
+ * The owner's reverse press for a steward's act, only while it stands and only where it names what the press carries: a repository
+ * for a setting, a quest for a stop. A finish and a Try again have none (§5.4: a finish neither accepts nor closes its quest).
+ */
+export function stewardReverse(act: StewardActNow): StewardReverse | null {
+  const press = REVERSES[act.act];
+  if (!press || !act.standing) return null;
+  if (press === 'retry') return act.quest ? press : null;
+  return act.repository ? press : null;
+}
 
 /** A living holder as the shell says it (the modules' `HolderNow`): its id, when its tab was opened, its roles. Never a key. */
 export type HolderNow = { id: string; since: string | null; roles: string[] };
@@ -80,6 +142,10 @@ export type AppointmentNow = {
   scope: string;
   /** The living holder that holds it this run; null where it is dormant. */
   holderId: string | null;
+  /** The acts it grants (STEWARDROLE1b, D209 §2.3), as the ask named them; empty for the supervisor's. Never read into an ask. */
+  acts: string[];
+  /** The owner's set-up tick at the appointment (§2.3, §3.1 row 12); never read into an ask, which shows it off. */
+  setup: boolean;
 };
 
 /** An appointment's or a dismissal's answer (`SET_APPOINTMENT`): done, or refused as data with a code the page words. Never a key. */
@@ -94,3 +160,10 @@ const APPOINT_REFUSALS = new Set([
 /** A refusal of an appointment in words, by its code, else the driver's own sentence. */
 export const appointmentSaid = (t: TFunction, why: string | null, message: string) =>
   (why && APPOINT_REFUSALS.has(why) ? t(`projects.supervisor.refused.${why}`) : message || why || '');
+
+/** The refusals whose supervisor's sentence names the supervisor, said for the steward in its own words. */
+const STEWARD_REFUSALS = new Set(['not-offered', 'unstarted']);
+
+/** A refusal of the steward's appointment in words: its own where the supervisor's names the supervisor, else the shared one. */
+export const stewardAppointmentSaid = (t: TFunction, why: string | null, message: string) =>
+  (why && STEWARD_REFUSALS.has(why) ? t(`settings.daoris.steward.refused.${why}`) : appointmentSaid(t, why, message));

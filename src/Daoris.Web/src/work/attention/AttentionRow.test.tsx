@@ -31,6 +31,12 @@ const PARKED_QUEST: Attention = {
   since: '2026-09-21T09:00:00Z', detail: '3 session(s) have failed on `#7a82cc`.',
 };
 
+/** STEWARDROLE1b (D209 §5.3): a quest the steward stopped, waiting on a Try again. */
+const STEWARD_STOPPED: Attention = {
+  id: '7a82cc', kind: 'steward-stopped', title: 'Read the media field names from config', where: 'engine', session: 's1',
+  since: '2026-09-21T09:00:00Z', detail: 'The steward stopped session `s1`; Try again, by the steward or the owner, carries it on.',
+};
+
 const GO_AHEAD: Attention = {
   id: '7c1e9a04b2d5#2', kind: 'go-ahead', ask: '7c1e9a04b2d5', number: 2, title: 'push on prod: “the menu entries”',
   where: 'ask #7c1e9a04b2d5', since: '2026-09-21T09:00:00Z', detail: 'The menu ships with the release.',
@@ -319,6 +325,29 @@ describe('settling one where it stands', () => {
     expect(screen.getByText('starts a session in engine')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(acts.retry).toHaveBeenCalledWith(PARKED_QUEST);
+  });
+
+  it('says a quest the steward stopped, its repository and session, and tries it again in one press', async () => {
+    const acts = everyAct();
+    render(<AttentionRow item={STEWARD_STOPPED} acts={acts} onOpen={vi.fn()} />);
+
+    expect(screen.getByText('Stopped by the steward')).toBeInTheDocument();
+    expect(screen.getByText('engine')).toBeInTheDocument();
+    expect(screen.getByText('s1', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button').filter((button) => button.textContent === 'Try again')).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(acts.retry).toHaveBeenCalledWith(STEWARD_STOPPED);
+  });
+
+  it('says a quest the steward stopped in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<AttentionRow item={STEWARD_STOPPED} acts={everyAct()} onOpen={vi.fn()} />);
+      expect(screen.getByText('管家已停止')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '重试' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /** A go-ahead's answer reaches every session on its ask, so each press says so first, and the yes carries their words. */

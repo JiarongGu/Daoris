@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from '../data/api';
 import { sentence } from '../locales/format';
-import { appointmentSaid } from '../person/standing';
+import { appointmentSaid, stewardSetAt } from '../person/standing';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { projectsItem, workspaceItem } from '../app/opener';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
@@ -318,7 +318,15 @@ export function useProjectsView({
       // TERMTRUST1a: a hold a terminal made under the person's standing confirmation, as this run remembers it.
       heldStanding: named(standingOf(driver.data.standingConfirmation)?.held, repository),
       supervisor: supervisorOf(repository),
+      // STEWARDROLE1b (D209 §5.1): what the steward set here, from this run's memory, where the build offers the steward.
+      stewardSet: stewardSetOf(repository),
     };
+  };
+
+  /** When the steward last set this repository's driving and it still stands, where the build offers the steward; else null. */
+  const stewardSetOf = (repository: string): string | null => {
+    const standing = standingOf(driver.data?.standingConfirmation);
+    return standing?.stewardOffered ? stewardSetAt(standing.stewardActs, repository) : null;
   };
 
   /**

@@ -27,7 +27,7 @@ vi.mock('@shenora/react', async () => {
 });
 
 import { keys } from '../data/queries';
-import { standingOf, useSetStandingConfirmation, useStandingUsed } from './person';
+import { standingOf, useSetAppointment, useSetStandingConfirmation, useStandingUsed } from './person';
 import { useStateHub } from './state/stateHub';
 
 const wrapped = () => {
@@ -50,7 +50,7 @@ describe('the standing confirmation over the bridge', () => {
     })).toEqual({
       offered: true, on: true, presses: ['stop', 'hold'], built: ['stop', 'finish', 'hold', 'resume'], since: '2026-10-23T09:30:00Z',
       unread: null, unwritten: false, used: 2, held: ['engine'], appointmentsOffered: false, appointments: [],
-      supervisorOffered: false, stewardOffered: false, holders: [],
+      supervisorOffered: false, stewardOffered: false, holders: [], stewardActsOffered: [], stewardActs: [],
     });
     // SUPERVISOR1a-ii: the owner's appointments, each read field by field; one with no role or repository left out.
     expect(standingOf({
@@ -89,6 +89,48 @@ describe('the standing confirmation over the bridge', () => {
     expect(standingOf(undefined)).toBeNull();
     expect(standingOf(null)).toBeNull();
     expect(standingOf([])).toBeNull();
+  });
+
+  // STEWARDROLE1b (D209 §2.3, §5.1, §5.3): the acts the build offers a steward's appointment, this run's steward acts newest first,
+  // and an appointment's granted acts and set-up tick, each read field by field; an older shell's missing fields read as none.
+  it("reads the steward's offered acts, this run's acts and an appointment's grant, each field by field", () => {
+    expect(standingOf({
+      stewardOffered: true,
+      stewardActsOffered: ['drive', 'undrive', 7, 'hold'],
+      stewardActs: [
+        { id: 'a2', act: 'stop', repository: null, quest: 'q1', session: 's1', at: '2026-10-25T10:02:00Z', standing: true, waiting: true },
+        { id: 'a1', act: 'drive', repository: 'engine', at: '2026-10-25T10:01:00Z', standing: 'yes' },
+        { act: 'hold', at: '2026-10-25T10:00:00Z' }, { id: 'a0', at: '2026-10-25T10:00:00Z' }, 'drive',
+      ],
+      appointments: [{ role: 'steward', scope: 'machine', since: '2026-10-25T09:00:00Z', acts: ['drive', 3, 'stop'], setup: true }],
+    })).toMatchObject({
+      stewardActsOffered: ['drive', 'undrive', 'hold'],
+      stewardActs: [
+        { id: 'a2', act: 'stop', repository: null, quest: 'q1', session: 's1', at: '2026-10-25T10:02:00Z', standing: true, waiting: true },
+        { id: 'a1', act: 'drive', repository: 'engine', quest: null, session: null, at: '2026-10-25T10:01:00Z', standing: false, waiting: false },
+      ],
+      appointments: [{ role: 'steward', scope: 'machine', acts: ['drive', 'stop'], setup: true }],
+    });
+    expect(standingOf({ appointments: [{ role: 'supervisor', repository: 'engine' }] })).toMatchObject({
+      stewardActsOffered: [], stewardActs: [], appointments: [{ acts: [], setup: false }],
+    });
+  });
+
+  it("sends the steward's appointment for the machine with its set-up tick, and the supervisor's without one", async () => {
+    invoke.mockResolvedValue({ done: true });
+    const { wrapper } = wrapped();
+    const { result } = renderHook(() => useSetAppointment(), { wrapper });
+
+    await result.current.mutateAsync({ role: 'steward', on: true, setup: false });
+    await result.current.mutateAsync({ role: 'steward', on: true, setup: true, share: 'h1' });
+    await result.current.mutateAsync({ role: 'steward', on: false });
+    await result.current.mutateAsync({ role: 'supervisor', repository: 'engine', on: true });
+    expect(invoke.mock.calls.map(([, type, request]) => [type, request])).toEqual([
+      ['SET_APPOINTMENT', { payload: { role: 'steward', scope: 'machine', holder: 'terminal', on: true, setup: false } }],
+      ['SET_APPOINTMENT', { payload: { role: 'steward', scope: 'machine', holder: 'terminal', on: true, share: 'h1', setup: true } }],
+      ['SET_APPOINTMENT', { payload: { role: 'steward', scope: 'machine', holder: 'terminal', on: false } }],
+      ['SET_APPOINTMENT', { payload: { role: 'supervisor', scope: 'repository:engine', holder: 'terminal', on: true } }],
+    ]);
   });
 
   it('sends the presses ticked, and none to turn it off, and reads a refusal by its code', async () => {

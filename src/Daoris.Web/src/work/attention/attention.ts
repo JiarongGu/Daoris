@@ -44,6 +44,8 @@ export type StaleSince = { since: string | null };
 export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = {
   parked: 'holding',
   'parked-quest': 'holding',
+  // STEWARDROLE1b (D209 §5.3): a quest the steward's stop holds for a Try again, the steward's or the person's.
+  'steward-stopped': 'holding',
   // A stale one holds nothing and waits for the person's word instead (GOAHEADSTALE1, `attentionGroup`).
   'go-ahead': 'holding',
   // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): its turn stands still until they
@@ -143,6 +145,7 @@ export const ATTENTION_PLACE: Readonly<Record<AttentionKind, AttentionPlace | nu
   intake: 'quests',
   unanswerable: 'quests',
   'parked-quest': 'quests',
+  'steward-stopped': 'quests',
   'go-ahead': 'quests',
   departure: 'quests',
   'set-up': 'quests',
@@ -238,6 +241,8 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     // The work's done waits on the person's yes; a quest parked on its failed sessions waits on their *Try again*.
     case 'departure':
     case 'parked-quest': return { quest: item.id };
+    // The steward's stop (STEWARDROLE1b): its quest, and the session it stopped.
+    case 'steward-stopped': return { session: item.session ?? null, quest: item.id };
     default: return null;
   }
 }
@@ -362,6 +367,8 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
   switch (item.kind) {
     case 'proposal': return (item.publishTo?.length ?? 0) > 0 ? plain('publish', 'choose') : plain('choose');
     case 'parked-quest': return plain('retry');
+    // STEWARDROLE1b (D209 §5.3, §5.4): the person's own *Try again*, the parked quest's press.
+    case 'steward-stopped': return plain('retry');
     // GOAHEADSTALE1: nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
     // its refusal is the one answer offered.
     case 'go-ahead': return item.stale ? plain('refuse') : plain('approve', 'refuse');
@@ -585,7 +592,7 @@ export type AttentionPushed = {
  * floor, a held git remote (GITAUTH1a) and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
-  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
+  'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'go-ahead', 'permission', 'answer', 'confirmation', 'trust',
   'quiet', 'proposal', 'departure', 'set-up', 'opinion', 'rule', 'helper', 'hand-over', 'work', 'space', 'git-held', 'unanswerable',
   'review',
 ];
@@ -745,6 +752,15 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...base,
         title: questOf(row.id)?.title ?? `#${row.id}`,
         detail: row.sitting ? sittingSentence(row.sitting) : null,
+      };
+    // STEWARDROLE1b (D209 §5.3): the steward's stop, its session said by the planner's sentence, else by itself.
+    case 'steward-stopped':
+      return {
+        ...base,
+        title: questOf(row.id)?.title ?? `#${row.id}`,
+        session: row.session ?? null,
+        detail: row.sitting ? sittingSentence(row.sitting)
+          : row.session ? i18n.t('work.attention.stewardStoppedSession', { session: row.session }) : null,
       };
     case 'unanswerable':
       return { ...base, title: quested(row.id), detail: i18n.t('work.attention.unanswerableWhy', { repository: row.where ?? '' }) };
