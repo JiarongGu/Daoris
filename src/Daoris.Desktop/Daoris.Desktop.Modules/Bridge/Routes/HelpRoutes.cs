@@ -352,8 +352,10 @@ public sealed class HelpRoutes(DriverContext context)
 
     // Ask Daoris's proposals (HELP1c, D89): what one conversation proposed that waits for the
     // person, each judged with the route's own code first. One the route would refuse is never
-    // shown: it is settled refused, and the agent hears why in the route's words.
+    // shown: it is settled refused, and the agent hears why in the route's words. Told by event (NOBLOCK1): its pending list and
+    // the service's facts held the window up to 1.3 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("HELP_PROPOSALS")]
+    [ByEvent("HELP_PROPOSALS")]
     private async Task<object?> HelpProposalsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");

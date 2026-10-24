@@ -29,6 +29,7 @@ export * from './repositories/remotes';
 export * from './agents/rules';
 export * from './sessions/sessions';
 export * from './repositories/setup';
+export * from './state/held';
 export * from './state/published';
 export * from './state/slices';
 export * from './state/stateHub';

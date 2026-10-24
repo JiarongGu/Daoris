@@ -819,7 +819,7 @@ describe('Ask Daoris, with an agent named', () => {
 
     const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
     expect(within(cards).getByText(code('daoris driver drive engine'))).toBeInTheDocument();
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PROPOSALS', { payload: { session: HELP.id } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PROPOSALS', { payload: { session: HELP.id, held: expect.any(String) } });
 
     await userEvent.click(within(cards).getByRole('button', { name: 'Apply' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'p1a2b3c4' } });

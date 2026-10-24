@@ -42,8 +42,10 @@ public sealed class ToolsRoutes(DriverContext context)
     private static string ToolConsole(string tool) => $"tools:{tool}";
 
     // Every tool, as it is run and what could run it: the way and its file, the versions downloaded and offered, the
-    // locations and the list built in. Reads files only; `ask` asks each resolved file its version, which starts it.
+    // locations and the list built in. Reads files only; `ask` asks each resolved file its version, which starts it. Told by
+    // event (NOBLOCK1): its files and the system's path held the window up to 1.4 s, so an ask is answered from what is held.
     [DriverRoute("TOOLS_LIST")]
+    [ByEvent("TOOLS_LIST")]
     private async Task<object?> ToolsListAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var home = _loop.Home;

@@ -78,8 +78,8 @@ describe('the tools domain', () => {
     await screen.findByText('Node.js', { selector: 'span' });
     expect(screen.getAllByRole('article').map((article) => article.querySelector('header span')?.textContent))
       .toEqual(['Git', 'Node.js', 'PowerShell', 'GitHub CLI', 'Azure CLI', 'Resource locations']);
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TOOLS_LIST', {});
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TOOLS_LIST', { payload: { ask: true } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TOOLS_LIST', { payload: { held: expect.any(String) } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TOOLS_LIST', { payload: { ask: true, held: expect.any(String) } });
     expect(serviceCalls()).toEqual([]);
   });
 

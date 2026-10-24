@@ -19,6 +19,7 @@ import type { SessionWhere } from '../../work/rail/SessionRow';
 import { call } from '../call';
 import { readSlice } from '../driver';
 import { mergeKeyed, readPushed, type SliceSpec, usePushedLive } from '../state/slices';
+import { askHeld } from '../state/held';
 
 // A session's life on this machine (MOD3): the person's answer to a parked one, a stop and how it is
 // said, and finding sessions by their first words and by what they said.
@@ -206,9 +207,11 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const ids = [...new Set((sessions ?? []).map((session) => session.id))].sort();
+  const queryKey = keys.openings(ids);
   const answer = useQuery({
-    queryKey: keys.openings(ids),
-    queryFn: () => call<{ openings?: Record<string, string> }>('SESSION_OPENINGS', { ids }),
+    queryKey,
+    // Told by event (NOBLOCK1): the shell answers what it holds, and the record's read comes as `ANSWERED`.
+    queryFn: () => askHeld<{ openings?: Record<string, string> }>('SESSION_OPENINGS', client, queryKey, { ids }),
     enabled: isAvailable && ids.length > 0,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -260,15 +263,18 @@ export const useSessionSpent = (ids: readonly string[] | undefined): Record<stri
  * Asked only of sessions whose record names a tree, with that tree, since the host looks at no folder but the trees its
  * home opened. Not a field of the sessions listing: the listing is the service's records, which travel (D47 §4), and a
  * landing is this machine's (`landings.json`, D102). Keyed under the sessions, so a landing, a clean-up or a tick that
- * asks the listing again asks this again too.
+ * asks the listing again asks this again too. Told by event (NOBLOCK1): the shell answers what it held, and its look's answer
+ * comes as `ANSWERED` into this query, so the rows say what they said until it does.
  */
 export const useSessionWhere = (sessions: readonly Session[] | undefined): Record<string, SessionWhere> => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
   const asked = [...new Map((sessions ?? []).filter((session) => session.tree).map((session) => [session.id, session])).values()]
     .sort((a, b) => a.id.localeCompare(b.id));
+  const queryKey = keys.sessionsWhere(asked.map((session) => session.id));
   const answer = useQuery({
-    queryKey: keys.sessionsWhere(asked.map((session) => session.id)),
-    queryFn: () => call<{ sessions?: ({ session: string } & SessionWhere)[] }>('SESSION_WHERE', {
+    queryKey,
+    queryFn: () => askHeld<{ sessions?: ({ session: string } & SessionWhere)[] }>('SESSION_WHERE', client, queryKey, {
       sessions: asked.map((session) => ({ id: session.id, tree: session.tree })),
     }),
     enabled: isAvailable && asked.length > 0,

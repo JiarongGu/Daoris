@@ -4,6 +4,7 @@ import type {
   GitSwitchShown, ToolEndShown, ToolLookShown, ToolsShown, ToolWay,
 } from '../../settings/Tools';
 import { call, toolLookBound } from '../call';
+import { askHeld, isPending } from '../state/held';
 import { ownWindowName } from '../../work/window';
 
 // The programs Daoris runs beside its agents (MOD3, TOOLS7): how each is run, a version downloaded and followed, a
@@ -42,9 +43,14 @@ export type ToolStart = {
  */
 export const useTools = ({ ask = false }: { ask?: boolean } = {}) => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const queryKey = toolsList(ask);
   return useQuery({
-    queryKey: toolsList(ask),
-    queryFn: () => call<ToolsShown>('TOOLS_LIST', ask ? { ask: true } : undefined),
+    queryKey,
+    // Told by event (NOBLOCK1): the shell answers what it holds, and its read of the files comes as `ANSWERED`.
+    // Nothing held yet reads as null, which the screen draws as loading until the event comes.
+    queryFn: () => askHeld<ToolsShown | null>('TOOLS_LIST', client, queryKey, ask ? { ask: true } : {},
+      (answer) => (isPending(answer) ? null : answer as ToolsShown)),
     enabled: isAvailable,
   });
 };

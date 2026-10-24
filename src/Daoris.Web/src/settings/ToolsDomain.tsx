@@ -49,7 +49,8 @@ export function ToolsDomain({ notify }: { notify: Notify }) {
   useToolsEnded((ended) => notify(endSaid(t, ended), ended.exitCode === 0 || ended.stopped ? 'ok' : 'error'));
 
   const state = asked.data ?? quick.data;
-  if (!state && quick.isFetching) return <DomainLoading rows={5} />;
+  // NOBLOCK1: a list the shell held none of yet is null until its event, and drawn as loading meanwhile.
+  if (!state && (quick.isFetching || quick.data === null)) return <DomainLoading rows={5} />;
   if (!state) return null;
 
   const choiceFor = (tool: ToolShown) => choices[tool.tool] ?? choiceOf(tool);

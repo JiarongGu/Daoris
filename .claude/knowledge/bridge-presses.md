@@ -73,7 +73,11 @@ each is still held:
    `HARNESSES` split, D169's HARNESSREFRESH1 note). Its `StatePublisherTests` row says so, `""` and `null` (row 3), and it
    has no entry in `DECLARED` (row 4). A read that fans out over every checkout (git per repository) says
    `[OneFlight("ROUTE")]` beside its mark, so the identical asks every window makes share the one under way (SWEEPFLIGHT1);
-   `DriverModuleOneFlightTests` names the routes that do.
+   `DriverModuleOneFlightTests` names the routes that do. A read whose answer is computed (a file, the service, git or a
+   process before it answers) says `[ByEvent("ROUTE")]` instead (NOBLOCK1, D56's note): it answers from what is held and tells
+   its work's answer as `DAORIS.ANSWERED`, its page hook asks through `askHeld` (`bridge/state/held.ts`), and its row goes in
+   `DriverModuleHeldTests.Payloads`; a read that reads only memory is named in `WindowCensusTests.Held`. That census refuses a
+   new read that is neither.
 2. **Its domain's README row** (row 5), held by the same census, `The_readme_names_each_route_in_its_domains_row`.
 3. **Its hook in that bridge file** (row 6), a `useQuery` enabled only where the shell answers it (`useShenora`'s
    `isAvailable`), its answer read defensively, an older shell's none read as empty.

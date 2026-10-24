@@ -6,6 +6,9 @@ with the version and date at release.
 ## Unreleased
 
 - The window is on the desktop kit's Shenora 0.24 (SHENORA024), from 0.22. Nothing you see changes.
+- The window no longer stops answering while the session list works out where each session's work went (NOBLOCK1). That
+  look, a repository's heavy-run slot, a conversation's first words, Ask Daoris's proposals and the tools list now show what
+  the window already had at once, and fill in when the work is done. Typing is no longer held up by them.
 - A session's *To the top* and *Back to bottom* are now arrows alone, so they no longer cover the messages under them. Their
   names show when you point at them, and a screen reader says them.
 - A conversation whose agent has no account left now goes on with the next choice you set for it on another agent (LIMITGOON2).

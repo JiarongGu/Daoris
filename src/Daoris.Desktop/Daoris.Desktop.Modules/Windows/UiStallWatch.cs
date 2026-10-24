@@ -102,7 +102,10 @@ public sealed partial class UiStallWatch : IDisposable
     public TimeSpan Every { get; init; } = TimeSpan.FromSeconds(1);
 
     /// <summary>How long a probe may wait before the thread counts as late: a press on the bar waits as long.</summary>
-    public TimeSpan Late { get; init; } = TimeSpan.FromMilliseconds(250);
+    public TimeSpan Late { get; init; } = Bound;
+
+    /// <summary>The window's bound, <see cref="Late"/>'s own: what a route told by event answers within (NOBLOCK1).</summary>
+    public static readonly TimeSpan Bound = TimeSpan.FromMilliseconds(250);
 
     /// <summary>The longest a stall goes unwritten while it lasts.</summary>
     public TimeSpan Longest { get; init; } = TimeSpan.FromMinutes(1);

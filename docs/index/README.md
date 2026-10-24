@@ -40,7 +40,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/app/App.test.tsx` | 45 | 866 |
 | `src/Daoris.Web/src/app/App.tsx` | 89 | 1551 |
 | `src/Daoris.Web/src/app/pushedState.test.tsx` | 63 | 1325 |
-| `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 50 | 962 |
+| `src/Daoris.Web/src/bridge/sessions/sessions.ts` | 50 | 968 |
 | `src/Daoris.Web/src/data/api.ts` | 55 | 903 |
 | `src/Daoris.Web/src/data/queries.ts` | 52 | 979 |
 | `src/Daoris.Web/src/design/Flow.tsx` | 45 | 890 |
@@ -72,7 +72,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/work/head/SessionHead.test.tsx` | 69 | 1311 |
 | `src/Daoris.Web/src/work/noteLines.test.ts` | 90 | 1320 |
 | `src/Daoris.Web/src/work/noteLines.ts` | 53 | 915 |
-| `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 54 | 1061 |
+| `src/Daoris.Web/src/work/rail/SessionRail.test.tsx` | 56 | 1103 |
 | `src/Daoris.Web/src/work/rail/SessionRow.test.tsx` | 41 | 763 |
 
 ### Web settings (`web-settings`)
@@ -205,10 +205,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Loop/AttentionStateSliceTests.cs` | 108 | 1910 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/InstancePipeTests.cs` | 43 | 813 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/Platform/StatePublisherTests.cs` | 43 | 827 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 43 | 664 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 79 | 1336 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 43 | 666 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 80 | 1338 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 63 | 1018 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 66 | 1058 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 67 | 1068 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 63 | 1074 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 81 | 1428 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 50 | 821 |

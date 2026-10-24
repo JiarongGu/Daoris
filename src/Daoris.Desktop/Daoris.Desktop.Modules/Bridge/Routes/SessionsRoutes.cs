@@ -598,8 +598,10 @@ public sealed class SessionsRoutes(DriverContext context)
         "Declining needs a reason: it is the part whoever reads this record can act on.";
 
     // What a person first said in each of these sessions (RAIL1): a conversation's identity, from
-    // this machine's own record — never the session record, which travels (D47 §4).
+    // this machine's own record — never the session record, which travels (D47 §4). Told by event (NOBLOCK1): each record's
+    // read held the window up to 7.5 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("SESSION_OPENINGS")]
+    [ByEvent("SESSION_OPENINGS")]
     private async Task<object?> SessionOpeningsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var ids = new List<string>();
@@ -646,11 +648,17 @@ public sealed class SessionsRoutes(DriverContext context)
     /// <para><b>Only this home's trees are looked at.</b> The page sends the tree each record names; one outside the trees
     /// this home opened is a session in a repository's own checkout, which no landing tidies, and nothing is said of
     /// it. Nothing machine-local comes back.</para>
+    ///
+    /// <para><b>Told by event</b> (NOBLOCK1, D56's note): the landings' record parsed again per session and a folder listed per
+    /// row held the window's thread up to 65.9 s, so an ask is answered from what is held and this runs on a task of its own; the
+    /// record is read once per ask.</para>
     /// </remarks>
     [DriverRoute("SESSION_WHERE")]
+    [ByEvent("SESSION_WHERE")]
     private async Task<object?> SessionWhereAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var trees = new SessionTrees(_loop.Home);
+        var landings = trees.Recorded.Entries();
         var rows = new List<object>();
         if (request.Payload is { } payload && payload.TryGetProperty("sessions", out var sessions)
             && sessions.ValueKind == JsonValueKind.Array)
@@ -668,7 +676,9 @@ public sealed class SessionsRoutes(DriverContext context)
                 var tree = at.GetString()!;
                 if (!HeldTree(trees, tree)) continue;
 
-                var landing = trees.Recorded.Landing(id);
+                cancellationToken.ThrowIfCancellationRequested();
+                // As LandedBranches.Landing reads it: the newest entry naming the session.
+                var landing = landings.LastOrDefault(entry => entry.Names(id));
                 rows.Add(new
                 {
                     Session = id,
