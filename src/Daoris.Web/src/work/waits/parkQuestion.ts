@@ -16,8 +16,20 @@ export type ParkQuestion = {
   why: string | null;
   /** By when the work needs the answer, as the agent knows it; null where it named none. Its claim: Daoris keeps no deadline. */
   by: string | null;
+  /**
+   * The agent's mark that the question is the owner's alone (SUPERVISOR1b, the supervisor design §4.1): one of `OWNER_MARKS`, or a mark
+   * a later build knows, as written; null or absent for none. The supervisor answers no marked question.
+   */
+  owner?: string | null;
   at: string;
 };
+
+/** The marks `question_ask` takes (`QuestionBox.OwnerMarks`), each with its own words on the card. */
+export const OWNER_MARKS = ['sign-in', 'access', 'spending', 'delete', 'repository-asks', 'preference'] as const;
+export type OwnerMark = (typeof OWNER_MARKS)[number];
+
+/** Whether a mark is one this build has words for; any other is said as the owner's without naming why. */
+export const knownMark = (mark: string | null | undefined): mark is OwnerMark => (OWNER_MARKS as readonly string[]).includes(mark ?? '');
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value : null);
 
@@ -56,7 +68,10 @@ export function readQuestion(answer: unknown): ParkQuestion | null {
   const recommend = typeof asked.recommend === 'number' && Number.isInteger(asked.recommend)
     && asked.recommend >= 1 && asked.recommend <= choices.length ? asked.recommend : null;
   // Its reason explains the recommendation (QUESTIONUI1a): with none recommended, there is nothing for it to explain.
-  return { id, question, choices, recommend, why: recommend === null ? null : why, by, at: typeof asked.at === 'string' ? asked.at : '' };
+  return {
+    id, question, choices, recommend, why: recommend === null ? null : why, by, owner: text(asked.owner),
+    at: typeof asked.at === 'string' ? asked.at : '',
+  };
 }
 
 /**

@@ -47,17 +47,22 @@ public sealed class PipeCensusTests
 
     /// <summary>
     /// SUPERVISOR1a-ii (D208 §3.1): the supervisor's verb sends its answer as the role's act the census classes it, and reads what waits
-    /// as an open read; the appointment is the window's alone, never a verb's.
+    /// as an open read; the appointment is the window's alone, never a verb's. Its defer (SUPERVISOR1b) is the role's second act, and the
+    /// role's acts are the only <c>Role</c> routes.
     /// </summary>
     [Fact]
     public void The_supervisors_verb_names_its_routes_as_the_census_classes_them()
     {
         var answer = Daoris.Driver.SessionsSuperviseCommand.Answer;
+        var defer = Daoris.Driver.SessionsSuperviseCommand.Defer;
         var waiting = Daoris.Driver.SessionsSuperviseCommand.Waiting;
         Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (answer.Module, PipeCensus.Daoris.Of(answer.Module, answer.Route), answer.Class));
+        Assert.Equal((DriverModule.Name, PipeClass.Role, Daoris.Driver.RouteClass.Role), (defer.Module, PipeCensus.Daoris.Of(defer.Module, defer.Route), defer.Class));
         Assert.Equal((PipeClass.Open, Daoris.Driver.RouteClass.Open), (PipeCensus.Daoris.Of(waiting.Module, waiting.Route), waiting.Class));
         Assert.Equal(PipeClass.Window, PipeCensus.Daoris.Of(DriverModule.Name, Daoris.Driver.SupervisorRoutes.Appoint));
-        Assert.Single(PipeCensus.Daoris.Routes, route => route.Class == PipeClass.Role);
+        Assert.Equal(
+            Daoris.Driver.SupervisorRoutes.Acts.Order(),
+            PipeCensus.Daoris.Routes.Where(route => route.Class == PipeClass.Role).Select(route => route.Route).Order());
     }
 
     /// <summary>

@@ -42,7 +42,11 @@ public sealed class SupervisorDecisionTests : IDisposable
         Kept.AddMinutes(-1), "It is asked for.");
 
     private static SupervisedPark Park(ParkQuestion? filed = null, bool parked = true, bool quest = true, bool owner = false,
-        bool open = false, bool unread = false) => new(Repository, parked, quest, filed ?? Question(), owner, open, unread);
+        bool open = false, bool unread = false, bool atBound = false) =>
+        new(Repository, parked, quest, filed ?? Question(), owner, open, unread, atBound);
+
+    private static SupervisorDefer Defer(string bound = "sign-in", string question = "q-1", string generation = "g-1", string source = "D191 point 3") =>
+        new(Session, question, generation, bound, [new("A sign-in is the owner's.", source)], new("terminal", "pwsh"));
 
     private static SupervisorAnswer Answer(string choice = "The monthly one", string question = "q-1", string generation = "g-1",
         string source = "D201 point 3") =>
@@ -55,8 +59,15 @@ public sealed class SupervisorDecisionTests : IDisposable
         public List<string> TakenBack { get; } = [];
         public bool LoseNext { get; set; }
 
+        /// <summary>A refusal the service's step makes from what it reads itself (a question marked the owner's since, SUPERVISOR1b).</summary>
+        public string? Refuse { get; set; }
+
+        public int Says { get; private set; }
+
         public Task<SupervisorSaid> Say(string session, string decision, string question, string choice, string key, CancellationToken ct)
         {
+            Says++;
+            if (Refuse is { } refusal) return Task.FromResult(new SupervisorSaid(null, refusal));
             if (Kept.TryGetValue(key, out var again))
             {
                 return Task.FromResult(new SupervisorSaid(again.Word, null));
@@ -463,6 +474,142 @@ public sealed class SupervisorDecisionTests : IDisposable
         Assert.False(await decisions.TryMoveAsync(Session, kept.Decision!, SupervisorState.WentOn, Kept));
         Assert.False(await decisions.TryMoveAsync(Session, kept.Decision!, SupervisorState.Admitted, Kept));
         Assert.Equal(SupervisorState.Held, decisions.LiveOf(Session).Single().State);
+    }
+
+    /// <summary>
+    /// SUPERVISOR1b (§3.1, §4.1, §4.3): a question carrying the agent's <c>owner</c> mark, a mark this build does not know included, is
+    /// refused <c>owner-question</c> at the keeping; a line at D188's bound is refused <c>supervisor-bound</c>, so a decision is never
+    /// kept only to be held behind it. Nothing kept, nothing on file.
+    /// </summary>
+    [Fact]
+    public async Task The_owners_mark_and_the_bound_are_refused_at_the_keeping()
+    {
+        var decisions = Decisions();
+
+        Assert.Equal(SupervisorWhy.OwnerQuestion, (await decisions.KeepAsync(Answer(), Park(Question() with { Owner = "sign-in" }), Kept)).Why);
+        Assert.Equal(SupervisorWhy.OwnerQuestion, (await decisions.KeepAsync(Answer(), Park(Question() with { Owner = "a-later-mark" }), Kept)).Why);
+        Assert.Equal(SupervisorWhy.SupervisorBound, (await decisions.KeepAsync(Answer(), Park(atBound: true), Kept)).Why);
+
+        Assert.Empty(decisions.LiveOf(Session));
+        Assert.False(Directory.Exists(Folder));
+        Assert.False(decisions.Decided(Session, "q-1"));
+    }
+
+    /// <summary>
+    /// SUPERVISOR1b: both are checked again at the release, under the decision's lock, so a question marked the owner's after its
+    /// decision was kept (the service's step reads the file and refuses <c>owner-question</c>), or a line that reached the bound since,
+    /// is never answered by the supervisor: the decision goes <c>stale</c> with the check that failed, no word is kept, the bound's
+    /// before the say is called at all, and the question is the owner's from then on. The look hands its bound to the release.
+    /// </summary>
+    [Fact]
+    public async Task The_owners_mark_and_the_bound_are_refused_again_at_the_release()
+    {
+        var marked = Decisions();
+        var ledger = new Ledger { Refuse = SupervisorWhy.OwnerQuestion };
+        await marked.KeepAsync(Answer(), Park(), Kept);
+        Assert.Equal([SupervisorState.Stale], await marked.ReleaseAsync(Session, ledger.Say, Kept.AddMinutes(5)));
+        Assert.Equal((SupervisorState.Stale, SupervisorWhy.OwnerQuestion), (marked.LiveOf(Session).Single().State, marked.LiveOf(Session).Single().Why));
+        Assert.Empty(ledger.Kept);
+        Assert.Equal(SupervisorWhy.Overruled, (await marked.KeepAsync(Answer(), Park(), Kept.AddMinutes(6))).Why);
+
+        var bound = Decisions();
+        var said = new Ledger();
+        await bound.KeepAsync(Answer(), Park(), Kept);
+        var asked = new List<string>();
+        SupervisorBound atBound = (session, _) =>
+        {
+            asked.Add(session);
+            return Task.FromResult(true);
+        };
+        Assert.Empty(await bound.ReleaseAsync(Session, said.Say, Kept.AddMinutes(4), bound: atBound));
+        Assert.Empty(asked);
+        Assert.Equal([SupervisorState.Stale], await bound.ReleaseAsync(Session, said.Say, Kept.AddMinutes(5), bound: atBound));
+        Assert.Equal([Session], asked);
+        Assert.Equal((SupervisorState.Stale, SupervisorWhy.SupervisorBound), (bound.LiveOf(Session).Single().State, bound.LiveOf(Session).Single().Why));
+        Assert.Equal(0, said.Says);
+
+        // The look's own path: the bound it is handed is the release's.
+        var looked = Decisions();
+        await looked.KeepAsync(Answer(), Park(), Kept);
+        var parked = new PriorSession(Session, "tree", "awaiting-person");
+        var snapshot = new Snapshot([], [], []) { LastRun = new Dictionary<string, PriorSession> { ["q1"] = parked } };
+        await SupervisorQuarantine.DecideAsync(snapshot, looked, said.Say, said.TakeBack, Kept.AddMinutes(5), CancellationToken.None, atBound);
+        Assert.Equal(SupervisorWhy.SupervisorBound, looked.LiveOf(Session).Single().Why);
+        Assert.Equal(0, said.Says);
+    }
+
+    /// <summary>
+    /// SUPERVISOR1b (§3.1 <c>SUPERVISOR_DEFER</c>, §3.6 <c>left</c>, §4.2): a defer keeps a decision of state <c>left</c> with its bound
+    /// and reasons, final at once: nothing held, nothing released, no word, the park still a wait on the owner. A retry of the same defer
+    /// answers the same decision; an answer on the question after it is <c>answered</c>; its refusals keep nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_defer_keeps_a_left_decision_that_hands_nothing()
+    {
+        var decisions = Decisions();
+        var ledger = new Ledger();
+
+        var left = await decisions.LeaveAsync(Defer(), Park(), Kept);
+
+        Assert.True(left.Kept);
+        Assert.Null(left.GoesOnAt);
+        var view = decisions.LiveOf(Session).Single();
+        Assert.Equal((SupervisorState.Left, "sign-in", "", "D191 point 3"), (view.State, view.Bound, view.Choice, view.Reasons.Single().Source));
+        Assert.True(decisions.Decided(Session, "q-1"));
+        Assert.Null(decisions.HeldUntil(Session));
+        Assert.DoesNotContain(Session, decisions.Answering());
+        Assert.False(decisions.Moving(Session));
+        Assert.Empty(await decisions.ReleaseAsync(Session, ledger.Say, Kept.AddMinutes(10)));
+        Assert.Equal(0, ledger.Says);
+        Assert.Equal(left.Decision, (await decisions.LeaveAsync(Defer(), Park(), Kept.AddMinutes(1))).Decision);
+        Assert.Equal(SupervisorWhy.Answered, (await decisions.KeepAsync(Answer(), Park(), Kept.AddMinutes(1))).Why);
+        Assert.Equal(SupervisorWhy.Answered, (await decisions.LeaveAsync(Defer("preference"), Park(), Kept.AddMinutes(1))).Why);
+        Assert.False(await decisions.TryMoveAsync(Session, left.Decision!, SupervisorState.Released, Kept));
+
+        var refused = Decisions();
+        var cases = new (SupervisorDefer Defer, SupervisedPark Park, string Why)[]
+        {
+            (Defer(source: " "), Park(), SupervisorWhy.NoSource),
+            (Defer("because"), Park(), SupervisorWhy.Form),
+            (Defer() with { Reasons = [] }, Park(), SupervisorWhy.Form),
+            (Defer(), Park(parked: false), SupervisorWhy.NotParked),
+            (Defer(), Park(quest: false), SupervisorWhy.NoQuest),
+            (Defer(question: "q-0"), Park(), SupervisorWhy.QuestionChanged),
+            (Defer(generation: "g-0"), Park(), SupervisorWhy.AppointmentChanged),
+        };
+        foreach (var (defer, park, why) in cases)
+        {
+            var kept = await refused.LeaveAsync(defer, park, Kept);
+            Assert.Equal((false, why), (kept.Kept, kept.Why));
+        }
+
+        Assert.Empty(refused.LiveOf(Session));
+
+        // Each of §4.1's ten bounds is one a defer may name.
+        Assert.Equal(
+            ["go-ahead", "sign-in", "access", "spending", "delete", "repository-asks", "preference", "unrecorded", "contradicts", "instructed"],
+            SupervisorBounds.All);
+        foreach (var each in SupervisorBounds.All) Assert.True((await Decisions().LeaveAsync(Defer(each, question: "q-1"), Park(), Kept)).Kept);
+    }
+
+    /// <summary>
+    /// A left decision's files name its bound and no choice; after a restart it is history (<c>earlier</c>) with its bound and reasons,
+    /// the sweep leaves it <c>left</c>, and the question stays decided: no answer is kept on it.
+    /// </summary>
+    [Fact]
+    public async Task A_left_decision_is_kept_as_history_and_stays_decided_after_a_restart()
+    {
+        var left = await Decisions().LeaveAsync(Defer(), Park(), Kept);
+        var written = File.ReadAllText(Path.Combine(Folder, left.Decision + ".json"));
+        Assert.Contains("\"bound\": \"sign-in\"", written);
+        Assert.DoesNotContain("\"choice\"", written);
+
+        var restarted = Decisions();
+        Assert.Empty(restarted.SweepAtStart(Kept.AddMinutes(1)));
+        var history = restarted.History(Session).Single();
+        Assert.Equal((SupervisorState.Left, "sign-in", true), (history.State, history.Bound, history.Earlier));
+        Assert.True(restarted.Decided(Session, "q-1"));
+        Assert.Equal(SupervisorWhy.Answered, (await restarted.KeepAsync(Answer(), Park(), Kept.AddMinutes(2))).Why);
     }
 
     /// <summary>The handed text's twin: the driver hands exactly the service's paragraph, which grants nothing.</summary>

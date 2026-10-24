@@ -522,6 +522,38 @@ public sealed class StandingConfirmationTests : Bridge
         Assert.False(standing.Now().On);
     }
 
+    /// <summary>A defer's payload, proved by <paramref name="key"/> over <paramref name="nonce"/> and the canonical bytes of <paramref name="route"/>.</summary>
+    private static JsonElement Defer(string key, string nonce, string generation, string bound = "sign-in", string route = SupervisorRoutes.Defer)
+    {
+        SupervisorReason[] reasons = [new("A sign-in is the owner's.", "D191 point 3")];
+        var proof = SupervisorProof.Prove(key, nonce, SupervisorProof.Canonical(route, "s1", "q-1", generation, bound, reasons))!;
+        return JsonDocument.Parse(JsonSerializer.Serialize(new SupervisorDeferForm("s1", "q-1", generation, proof, bound, reasons).Payload()))
+            .RootElement.Clone();
+    }
+
+    /// <summary>
+    /// SUPERVISOR1b (§3.1 <c>SUPERVISOR_DEFER</c>): the defer is the role's second act, judged as the answer is, its proof over its own
+    /// route's canonical bytes: a defer proved as an answer, or an answer sent to the defer's route, is never covered; a bound §4.1 does
+    /// not name is no form; a route the role names no act for is still not named.
+    /// </summary>
+    [Fact]
+    public void A_defer_is_judged_as_the_answer_is_each_proved_over_its_own_route()
+    {
+        var standing = Appointing();
+        var (_, key) = Appoint(standing);
+        var generation = GenerationOf(standing);
+        var nonce = SupervisorProof.Nonce();
+        RoleJudgement Judge(JsonElement payload, string route = SupervisorRoutes.Defer) => standing.JudgeRole(Driver, route, payload, null, nonce);
+
+        Assert.True(Judge(Defer(key!, nonce, generation)).Covered);
+        Assert.Equal(SupervisorWhy.NotHolder, Judge(Defer(key!, nonce, generation, route: SupervisorRoutes.Answer)).Why);
+        Assert.Equal(SupervisorWhy.Form, Judge(Answer(key!, nonce, generation)).Why);
+        Assert.Equal(SupervisorWhy.Form, Judge(Defer(key!, nonce, generation), SupervisorRoutes.Answer).Why);
+        Assert.Equal(SupervisorWhy.Form, Judge(Defer(key!, nonce, generation, bound: "because")).Why);
+        Assert.Equal(SupervisorWhy.NotHolder, Judge(Defer(HolderKey.Draw(), nonce, generation)).Why);
+        Assert.Equal(["SUPERVISOR_ANSWER", "SUPERVISOR_DEFER"], SupervisorRoutes.Acts);
+    }
+
     [Theory]
     [InlineData(StandingPlace.InAgentJob, StandingWhy.InAgentJob)]
     [InlineData(StandingPlace.Untold, StandingWhy.Untold)]

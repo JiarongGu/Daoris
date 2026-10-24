@@ -13,12 +13,13 @@ internal static class SupervisorQuarantine
     /// The look's moves of each decision not yet final, before the quarantine and before anything plans (§3.4, §3.6, §6.3): its files
     /// compared with memory (a difference is <c>stale</c>, tampered), then the record read (a held one with the owner's word waiting,
     /// or a released one whose word is gone, <c>superseded</c>; a released one on a record no longer parked, <c>stale</c>), then the
-    /// release of each whose <c>goesOnAt</c> came, a lost response repeated under its receipt first. Returns the snapshot with the
+    /// release of each whose <c>goesOnAt</c> came, a lost response repeated under its receipt first, D188's bound asked again by
+    /// <paramref name="bound"/> (SUPERVISOR1b) before anything is said. Returns the snapshot with the
     /// sessions a held decision holds (<see cref="Snapshot.SupervisorHeld"/>).
     /// </summary>
     public static async Task<Snapshot> DecideAsync(
         Snapshot snapshot, QuestionSupervisorDecisions decisions, SupervisorSay say, SupervisorTakeBack takeBack, DateTimeOffset now,
-        CancellationToken ct)
+        CancellationToken ct, SupervisorBound? bound = null)
     {
         var records = snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)
             .Where(record => !record.Teammate && decisions.Moving(record.Session))
@@ -30,7 +31,7 @@ internal static class SupervisorQuarantine
             var waiting = (record.Said ?? []).Select(word => word.Id).OfType<string>().ToList();
             await decisions.SettleAsync(record.Session, record.Parked, record.Waiting.Any(word => word.Persons), waiting, takeBack, now, ct)
                 .ConfigureAwait(false);
-            await decisions.ReleaseAsync(record.Session, say, now, ct).ConfigureAwait(false);
+            await decisions.ReleaseAsync(record.Session, say, now, ct, bound).ConfigureAwait(false);
         }
 
         var held = records.Where(record => decisions.HeldUntil(record.Session) is not null).Select(record => record.Session);

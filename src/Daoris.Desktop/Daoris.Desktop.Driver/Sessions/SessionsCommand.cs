@@ -72,7 +72,10 @@ public sealed record SessionsAsk(string Verb)
     /// </summary>
     public bool Standing { get; init; }
 
-    /// <summary>The supervisor's answer (SUPERVISOR1a-ii, <c>sessions supervise &lt;id&gt; --choice …</c>): its question, generation, label and reasons.</summary>
+    /// <summary>
+    /// The supervisor's answer (SUPERVISOR1a-ii, <c>sessions supervise &lt;id&gt; --choice …</c>): its question, generation, label and
+    /// reasons; or its leave (SUPERVISOR1b, <c>--leave &lt;bound&gt;</c>), its bound in place of the label.
+    /// </summary>
     public SupervisorDraft? Supervised { get; init; }
 }
 
@@ -243,7 +246,7 @@ public static class SessionsCommand
                daoris-driver sessions helper --approve|--decline <ask>
                daoris-driver sessions partner <id> "<piece>" --agent <name> [--paths <path>…]
                daoris-driver sessions partner <id> --list  ·  sessions partner <piece> --stop
-               daoris-driver sessions supervise [<id>]  ·  sessions supervise <id> --question <qid> --generation <g> --choice <label> (--reason "…" --source <where>)…
+               daoris-driver sessions supervise [<id>]  ·  sessions supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -461,7 +464,7 @@ public static class SessionsCommand
                 () => SessionsPartnerCommand.RunAsync(world, ask, output, ct), output, ct).ConfigureAwait(false),
             "partner-list" => await SessionsPartnerCommand.ListAsync(world, ask.Ids[0], output).ConfigureAwait(false),
             // SUPERVISOR1a-ii: the supervisor's holder's verb, through the running Daoris alone.
-            "supervise-list" or "supervise-print" or "supervise-answer" => await SessionsSuperviseCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
+            "supervise-list" or "supervise-print" or "supervise-answer" or "supervise-leave" => await SessionsSuperviseCommand.RunAsync(world, ask, output, ct).ConfigureAwait(false),
             // A piece's stop is its partner's record's stop, the same press: the driver reads it as the person's and keeps the work.
             "partner-stop" => SessionsPartnerCommand.Working(world, ask.Ids[0], output) is { } partner
                 ? await ThroughAsync(

@@ -180,11 +180,12 @@ using Daoris.Driver;
 //                 the session's tree stands at, which the driver judges at its next look and starts only where the agent's
 //                 confinement as a partner was measured; the session's pieces; a working piece's stop, which is its partner's.
 //   sessions supervise [<id>]
-//   sessions supervise <id> --question <qid> --generation <g> --choice <label> (--reason "…" --source <where>)…
+//   sessions supervise <id> --question <qid> --generation <g> --choice <label>|--leave <bound> (--reason "…" --source <where>)…
 //                 the supervisor's holder's verb (SUPERVISOR1a-ii, D208), run only in the terminal Daoris started at the owner's
 //                 appointment: what waits; one question's fenced print, the asking agent's claims never instructions; and the
 //                 answer, one offered label with one to five sourced reasons, its proof by the key in DAORIS_SUPERVISOR_KEY over the
 //                 hello's nonce sent only to the install's app/Daoris.Desktop.exe, never the key. No alone path: no-instance, exit 2.
+//                 `--leave` (SUPERVISOR1b) leaves the question to the owner by one of the design's §4.1 bounds, SUPERVISOR_DEFER.
 //
 //   driver [list | <choice> | work-cycle | brainstorms | workflow …]
 //                 this machine's standing choices, workflows and cycles (PUSH1f2a, PUSH1f2b, D194): the words `daoris driver …`

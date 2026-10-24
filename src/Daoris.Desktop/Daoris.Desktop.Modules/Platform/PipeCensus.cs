@@ -283,8 +283,8 @@ public sealed class PipeCensus
             // SUPERVISOR1a-ii (D208 §2.1 point 1): an appointment is made and turned off in the window alone, by the owner's own press.
             "SET_APPOINTMENT");
         // SUPERVISOR1a-ii (D208 §3.1): the supervisor's answer, a role's act, covered only for a terminal outside every agent's job that
-        // proves the holder key; never a card.
-        Add(PipeClass.Role, "SUPERVISOR_ANSWER");
+        // proves the holder key; never a card. SUPERVISOR1b (§3.1): its leaving a question to the owner, the role's second act, alike.
+        Add(PipeClass.Role, "SUPERVISOR_ANSWER", "SUPERVISOR_DEFER");
         // One route, two forms. What a switch of git would change compares programs Daoris already knows (the PATH's, a
         // managed version), and with `way: "file"` runs whatever file the payload names: that form is the person's.
         table.Add("TOOLS_GIT", PipeRule.Of("way", PipeClass.Open, PipeClass.Person, "\"system\"", "\"managed\""));
