@@ -463,6 +463,19 @@ internal sealed class ChatGoOn
         new SessionArchive(_context.Home).Unarchive([sessionId]);
         _context.Marks.Clear(sessionId);
 
+        // 🔴 MODELROLE1d2 (D205 §3.5(b)): one its agent's refusal at the open ended began no conversation, so its go-on is a fresh start of its
+        // actor, never a resume of the session its open made; a start of this process's that opened its replacement already takes its words.
+        if (record.NoteParts?.Any(part => part.Code == NoteCodes.EndedChoiceNotOffered.Code) == true)
+        {
+            if (_context.Pending.TryGetValue(sessionId, out var pending) && !string.Equals(pending.Current, sessionId, StringComparison.OrdinalIgnoreCase))
+            {
+                return new(null, $"conversation `{sessionId}` went on in conversation `{pending.Current}`, which takes its words.");
+            }
+
+            var fresh = await _move.NotOfferedAsync(record, config, onEnded, ct).ConfigureAwait(false);
+            return fresh.SessionId is { } to ? new(to, fresh.Message) : Held(sessionId, HeldWords.Program(fresh.Message));
+        }
+
         // Its conversation is the adapter's that opened it, so it goes on on that one or not at all.
         var ranOn = record.Adapter ?? config.Adapter;
         ISessionAdapter? adapter = null;

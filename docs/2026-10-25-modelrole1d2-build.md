@@ -26,7 +26,15 @@ each committed green. This record says which parts are built and which remain.
    (`chat.replaced`) and the runner tells `Replaced(from, to)`. A pick, or a start with nothing left, opens nothing: its words wait on
    the refused record, said why (`chat.choice-waits`).
 3. **A `choice-not-offered` conversation's go-on is a fresh start of its actor** (§3.5(b)'s interruption, a pick, a refused
-   continuation's brief). planned.
+   continuation's brief; built). `ChatGoOn` reads the end code before anything else is judged, the person's press and the come-up alike:
+   no conversation began there, so it is never resumed (its open did make a session, which today's go-on would have resumed at account
+   default). A record this process's pending start already replaced answers that its replacement takes the words; any other goes on
+   through `BriefedMove.NotOfferedAsync`: the actor's order walked afresh (the refusing account passed by the reading kept), a pick only
+   its agent's entries on the account it was refused on, the new record continuing the refused one by `not-offered` (Ask Daoris in its
+   workspace's room, linked in the history), the waiting words its first message, taken off the refused record by their ids. Where its
+   line, by `from` or the room's history, reaches an earlier part that ran a conversation, past every `choice-not-offered` part, Daoris's
+   brief of that part's line is composed again and handed before the words. Nothing that can run: the words wait, said in the wait's
+   sentence with each choice's reason.
 4. **The window follows the replacement** (`SESSION_REPLACED`, the page). planned.
 
 ## Checks run
@@ -41,5 +49,11 @@ waiting for what the row adds); beside it `ProtocolChatTests`, `HelpChatTests`, 
 `LimitGoesOnProcessTests`, `ChatGoesOnProcessTests`, `HandOverProcessTests`, `ChatRunnerTests`, `ChatWordsRestartProcessTests`; the fast
 classes under `Conversations`, `ActorChoices`, `Note`, `HandOver` and `Help` (`NoteCodesTests`' reason census gaining `not-offered`); the
 web's `src/locales`.
+
+Part 3: `PendingStartProcessTests`' four interrupted cases (a refused Chat's go-on after a restart starting the walk's answer with the
+words; a picked start never run elsewhere by the come-up; a refused continuation's brief, for a Chat and for Ask Daoris, carrying a fact
+only part A's history held before the words), each seen failing first with the go-on's new branch left out (each ran the refused agent
+again at account default, resuming or briefing on `account-1`); then the whole class, the Process neighbours of part 2 with
+`HelpGoOnTests`, `BriefedMove*` and `CurveMoveProcessTests`, and the fast classes of part 2.
 
 ## Readings

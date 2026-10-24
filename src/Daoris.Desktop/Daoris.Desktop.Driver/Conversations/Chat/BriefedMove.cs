@@ -165,6 +165,153 @@ internal sealed class BriefedMove(ChatContext context, ChatRunner runner, ChatHa
     }
 
     /// <summary>
+    /// 🔴 MODELROLE1d2 (D205 §3.5(b)): the go-on of a conversation its agent's refusal at the open ended <c>choice-not-offered</c>, before any
+    /// prompt, interrupted before its replacement opened (the app closed between the two records). No conversation began there, so it is a
+    /// fresh start of its actor, never a resume: the actor's order walked afresh, the refusing account passed by the reading kept, the new
+    /// record continuing the refused one by <c>not-offered</c>, and the person's waiting words its first message, leaving the refused record by
+    /// their ids once taken.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>A pick is never walked afresh</b>: it tries only its agent's entries on the account it was refused on, then waits in the
+    /// wait's sentence; no other account or agent runs in its place.</para>
+    /// <para><b>A refused continuation rebuilds its brief</b>: where its line, by <c>from</c> or the room's history, reaches an earlier part that
+    /// ran a conversation, Daoris's brief of that part's line is composed again and handed before the words, as this class's own move hands
+    /// it; the durable words keep only their text and their files.</para>
+    /// </remarks>
+    internal async Task<StartedFrom> NotOfferedAsync(PriorSession record, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
+    {
+        var sessionId = record.Session;
+        var words = record.Waiting.Where(word => word.Persons).ToList();
+        if (words.Count == 0) return Refused(StartFrom.NoWords, $"only another agent's answer waits on {sessionId}, which is never a new part's words.");
+        if (record.Tree is not { Length: > 0 } tree || !ConversationTrees.Stands(tree))
+        {
+            return Refused(HandOver.TreeGone, $"the tree {sessionId} ran in is gone, so there is nothing to go on in.");
+        }
+
+        var help = string.Equals(record.Repository, HelpRoom.Repository, StringComparison.Ordinal);
+        var actor = record.Actor ?? (help ? "ask-daoris" : "chat");
+        var agent = record.Adapter ?? config.Adapter;
+        var picked = record.Choice == "pick";
+        IReadOnlyList<ActorEffective> order;
+        try
+        {
+            order = picked ? ActorChoices.PickAlternatives(actor, config, agent) : ActorChoices.Effective(actor, config);
+        }
+        catch (ActorUnreadableException unreadable)
+        {
+            return Refused(StartFrom.NoWords, unreadable.Message);
+        }
+
+        if (order.Count == 0) return new StartedFrom(null, false, null, $"{ActorWords.Name(actor)} is off, so `{sessionId}` waits for you.");
+
+        // The last part of its line that held a conversation, past every part a refusal at the open ended: a refused continuation's.
+        var json = await context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+        var earlier = EarlierPart(json, record);
+        var brief = earlier is null
+            ? null
+            : await ContextBriefs.ComposeAsync(context.Service, context.Events, context.Home, earlier, HandOverWhy.NotOffered, conversation: true, ct: ct)
+                .ConfigureAwait(false);
+
+        var started = help
+            ? await HelpReplaceAsync(record, earlier, order, config, onEnded, ct).ConfigureAwait(false)
+            : await runner.StartAsync(
+                    record.Repository!, agent, config, onEnded, picked ? record.Profile : null, ct: ct, tree: tree,
+                    from: new ContinuedFrom(sessionId, HandOverWhy.NotOffered, HandOverBy.Daoris), order: order)
+                .ConfigureAwait(false);
+        if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
+
+        var refusedModel = record.NoteParts?.FirstOrDefault(part => part.Code == NoteCodes.EndedChoiceNotOffered.Code)?.Value("model") ?? "";
+        context.Note(to, Noted.Of(
+            NoteCodes.ChatReplaced,
+            $"Opened in place of session {sessionId}: `{agent}` did not offer `{refusedModel}` on `{record.Profile ?? "its own sign-in"}`, so nothing ran there, and the words said to it came here.",
+            ("session", sessionId), ("agent", agent), ("model", refusedModel), ("account", record.Profile ?? AgentOffers.OwnHome)));
+        var files = words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files)).ToList();
+        var text = string.Join("\n\n", words.Select(word => word.Text));
+        var ranBefore = earlier is null ? null : ServiceClient.ReadRecord(json, earlier);
+        var message = brief is null
+            ? new ChatMessage(text, files)
+            : new ChatMessage(text, files)
+            {
+                Brief = brief,
+                TakenOver = HandOverNotes.MovedFrom(
+                    earlier!, ranBefore?.Adapter ?? agent, ranBefore?.Profile, HandOverWhy.NotOffered, RotatedOpening.ContextOf(null, context.Events, earlier!),
+                    brief.Text.Length),
+            };
+        if (!await handOver.SayHandedOver(to, message).ConfigureAwait(false))
+        {
+            context.Note(to, HandOverNotes.Unsaid());
+            return new StartedFrom(to, false, null, $"conversation `{to}` opened, but your words did not reach it, so they stay on `{sessionId}`.");
+        }
+
+        var ids = words.Select(word => word.Id).OfType<string>().ToList();
+        if (await TakeAsync(sessionId, ids, to, ct).ConfigureAwait(false)) context.Marks.Clear(sessionId);
+        var went = Continuations.Went(ids, to, ContinueWhy.Of(ContinueWhy.Started));
+        context.Output?.Append(sessionId, went.Text!);
+        context.Events.Keep(sessionId, went, say: null);
+        return new StartedFrom(to, true, null, $"`{sessionId}` goes on in conversation `{to}`, its actor's walk answered afresh.");
+    }
+
+    /// <summary>
+    /// The last part before <paramref name="record"/> on its line that held a conversation (MODELROLE1d2): its <c>from</c>, or for Ask Daoris
+    /// its room history's link, followed past every part a refusal at the open ended. Null for a new conversation's first refused record.
+    /// </summary>
+    private string? EarlierPart(string json, PriorSession record)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal) { record.Session };
+        var at = Before(record);
+        while (at is not null && seen.Add(at))
+        {
+            if (ServiceClient.ReadRecord(json, at) is not { } part) return null;
+            if (part.NoteParts?.Any(each => each.Code == NoteCodes.EndedChoiceNotOffered.Code) != true) return at;
+            at = Before(part);
+        }
+
+        return null;
+
+        string? Before(PriorSession part)
+        {
+            if (part.From is { Length: > 0 } from) return from;
+            if (!string.Equals(part.Repository, HelpRoom.Repository, StringComparison.Ordinal)) return null;
+            try
+            {
+                return new HelpConversations(context.Home).Read(part.Session).From;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+            {
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// A refused Ask Daoris conversation's fresh start (MODELROLE1d2): in its workspace's room, that workspace's running one set aside, placed
+    /// on its actor's walk, linked in the room's history to the refused record.
+    /// </summary>
+    private async Task<ChatStart> HelpReplaceAsync(
+        PriorSession record, string? earlier, IReadOnlyList<ActorEffective> order, DriverConfig config, Func<string, string, Task>? onEnded,
+        CancellationToken ct)
+    {
+        if (await help.SetAsideHelpAsync(null, record.Workspace, ct).ConfigureAwait(false) is { } answering)
+        {
+            return new ChatStart(null, $"{HeldWords.AnsweringWhy(answering)}.");
+        }
+
+        var placed = await runner.PlaceHelpAsync(order[0].Agent, config, record.Workspace, ct, order: order).ConfigureAwait(false);
+        if (placed.SessionId is not { } id) return new ChatStart(null, placed.Message);
+        try
+        {
+            new HelpConversations(context.Home).StartedFrom(id, record.Session, earlier is null ? HelpConversations.Replaced : HelpConversations.Brief);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            // Its history names no earlier conversation; its opening line still says which it replaced.
+        }
+
+        return await runner.RunHelpAsync(placed, config, help.DescribeHelp ?? (_ => Task.FromResult<HelpMachine?>(null)), onEnded, ct)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Ask Daoris's new part, in the room of its workspace (ASKSCOPE1b): that workspace's running conversation set aside, as going on in an
     /// earlier one sets it aside, the new one placed and run as a press's is, and its link kept in the room's history.
     /// </summary>

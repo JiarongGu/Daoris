@@ -223,6 +223,131 @@ public sealed class PendingStartProcessTests : IDisposable
         Assert.Contains("does not offer `sonnet`", Events.After("c1", 0).Events.Last(e => e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == NoteCodes.ChatChoiceWaits.Code) == true).Text);
     }
 
+    // ——— Interrupted between the two records (§3.5(b)): the app closed after the refused record ended, before its replacement opened.
+
+    /// <summary>
+    /// A record a refusal at the open ended, as a shell before this one left it: <c>choice-not-offered</c> on <paramref name="account"/>,
+    /// the person's words waiting on it, the refusal kept as that account's reading.
+    /// </summary>
+    private void Refused(
+        ChatLedger ledger, string id, string actor, string choice, string account, string model, string tree, string repository = "engine",
+        ContinuedFrom? from = null)
+    {
+        ledger.Chat(id, "failed", "acp-stub", tree, repository: repository, profile: account, from: from)
+            .Say("w1", "Make the port configurable.");
+        ledger.Edit(id, record =>
+        {
+            record["actor"] = actor;
+            record["choice"] = choice;
+            record["workspace"] = "default";
+            record["noteParts"] = System.Text.Json.Nodes.JsonNode.Parse(
+                $$"""[{ "code": "ended.choice-not-offered", "values": { "agent": "acp-stub", "model": "{{model}}" } }]""");
+        });
+        Assert.Null(AgentOffers.Refused(_home, "acp-stub", null, account, model, DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>A part that ran a conversation and holds a fact only its own history has.</summary>
+    private void Ran(ChatLedger ledger, string id, string tree, string repository = "engine")
+    {
+        ledger.Chat(id, "failed", "acp-stub", tree, repository: repository, profile: "account-1");
+        ledger.Edit(id, record =>
+        {
+            record["actor"] = repository == HelpRoom.Repository ? "ask-daoris" : "chat";
+            record["workspace"] = "default";
+        });
+        Events.Append(id, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Where does the service listen?" });
+        Events.Append(id, new SessionEvent { Kind = SessionEventKind.Message, Text = "It listens on port 8443, set in listen.json." });
+    }
+
+    /// <summary>
+    /// 🔴 A Chat its first entry's refusal ended, the app stopped before its replacement opened: its <i>Go on</i> is a fresh start of Chat,
+    /// never a resume of the session its open made. The walk passes the refusing account by the reading kept and runs Chat's second choice,
+    /// continuing the refused record by <c>not-offered</c>, its first message the words that waited, which leave the refused record.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_chat_s_go_on_after_a_restart_starts_its_actor_s_walk_with_the_words()
+    {
+        Accounts("account-1");
+        var config = Config("chat", [new ActorChoice("acp-stub", "opus"), new ActorChoice("acp-second")], "");
+        var (runner, ledger, client, _) = Runner();
+        using var r = runner;
+        using var c = client;
+        Refused(ledger, "c1", "chat", "1", "account-1", "opus", _root);
+
+        var went = await runner.GoOnAsync("c1", config);
+
+        Assert.Equal("c2", went.SessionId);
+        await Poll.Until(() => Prompts("second").Count == 1, () => Seen(ledger, "c2"));
+        Assert.EndsWith("Make the port configurable.", Assert.Single(Prompts("second")));
+        Assert.Empty(Prompts("account-1"));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("acp-second", "c1", HandOverWhy.NotOffered), (next.Adapter, next.From, next.FromWhy));
+        await Poll.Until(() => ledger.Said("c1").Count == 0, () => Seen(ledger, "c1"));
+        Assert.Contains(("c1", "w1", "c2"), ledger.TakenBy);
+    }
+
+    /// <summary>
+    /// 🔴 A pick is never walked afresh (§3.5(b), round 4, Codex 2): a picked start interrupted after its refusal, its agent's every entry
+    /// refused on its account, another of Chat's choices free. The come-up's go-on tries only the pick's alternatives on that account, and
+    /// waits saying why: the other agent never runs in its place.
+    /// </summary>
+    [Fact]
+    public async Task A_picked_start_interrupted_after_its_refusal_is_never_run_elsewhere_by_the_come_up()
+    {
+        Accounts("account-1", "account-2");
+        var config = Config(
+            "chat", [new ActorChoice("acp-stub", "opus"), new ActorChoice("acp-stub", "sonnet"), new ActorChoice("acp-second")], "");
+        var (runner, ledger, client, _) = Runner();
+        using var r = runner;
+        using var c = client;
+        Refused(ledger, "c1", "chat", "pick", "account-1", "opus", _root);
+        Assert.Null(AgentOffers.Refused(_home, "acp-stub", null, "account-1", "sonnet", DateTimeOffset.UtcNow));
+
+        var taken = await runner.TakeUpAsync();
+
+        Assert.All(taken, start => Assert.Null(start.SessionId));
+        Assert.Equal(1, ledger.Count);
+        Assert.Empty(StubFile.Lines(Heard));
+        Assert.Equal(["w1"], ledger.Said("c1"));
+        Assert.Contains(Events.After("c1", 0).Events, e => e.Kind == SessionEventKind.Note && e.Text?.Contains("choice pick", StringComparison.Ordinal) == true);
+    }
+
+    /// <summary>
+    /// 🔴 A refused continuation rebuilds its brief (§3.5(b), round 4, Codex 3; LIMITGOON2's proof): part A ran a conversation, its
+    /// replacement B was refused before its first prompt, and the app restarted before C opened. C's first prompt carries a fact only A's
+    /// history held, then the words that waited on B: for a Chat, whose line is its <c>from</c>, and for Ask Daoris, whose line is its room's
+    /// history.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_refused_continuation_s_go_on_hands_the_brief_of_its_line_then_the_words(bool help)
+    {
+        Accounts("account-1");
+        var actor = help ? "ask-daoris" : "chat";
+        var config = Config(actor, [new ActorChoice("acp-stub", "opus"), new ActorChoice("acp-second")], "");
+        var (runner, ledger, client, _) = Runner();
+        using var r = runner;
+        using var c = client;
+        runner.DescribeHelp = _ => Task.FromResult<HelpMachine?>(Machine);
+        var room = HelpRoom.PathOf(_home, "default");
+        Directory.CreateDirectory(room);
+        var (a, b, repository, tree) = help ? ("h1", "h2", HelpRoom.Repository, room) : ("c1", "c2", "engine", _root);
+        Ran(ledger, a, tree, repository);
+        Refused(ledger, b, actor, "2", "account-1", "opus", tree, repository, help ? null : new ContinuedFrom(a, HandOverWhy.Limit, HandOverBy.Daoris));
+        if (help) new HelpConversations(_home).StartedFrom(b, a, HelpConversations.Brief);
+
+        var went = await runner.GoOnAsync(b, config);
+
+        Assert.NotNull(went.SessionId);
+        await Poll.Until(() => Prompts("second").Count == 1, () => Seen(ledger, went.SessionId!));
+        var handed = Assert.Single(Prompts("second"));
+        Assert.Contains("It listens on port 8443", handed);
+        Assert.True(handed.IndexOf("port 8443", StringComparison.Ordinal) < handed.IndexOf("Make the port configurable.", StringComparison.Ordinal));
+        if (help) Assert.Equal(b, new HelpConversations(_home).Read(went.SessionId!).From);
+        else Assert.Equal((b, HandOverWhy.NotOffered), ((await client.RecordAsync(went.SessionId!))!.From, (await client.RecordAsync(went.SessionId!))!.FromWhy));
+    }
+
     /// <summary>
     /// A stand-in ACP agent: answers its open after the wait it is given, listing three models; refuses at the set the models its argument
     /// names for the stub account it runs as, writing each set down; and writes down each prompt with that account, or the tag it was given.
