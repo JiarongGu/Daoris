@@ -55,6 +55,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var states = asks.ToDictionary(ask => ask.Id, ask => files.ReadState(ask.Id), StringComparer.Ordinal);
         var begun = 0;
         var begunFor = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        // The agents set up and signed in here, read once a look and only where an ask is judged (HELPERDEFAULT1).
+        IReadOnlyList<string>? setUp = null;
         foreach (var ask in asks)
         {
             var state = states[ask.Id];
@@ -117,9 +119,11 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                     }, ct);
                     continue;
                 }
-                var rule = record is { Repository: { } repository }
+                // HELPERDEFAULT1 (D163's 2026-10-24 note): where neither the repository nor its workspace sets a rule, Daoris's own agents,
+                // those set up and signed in on this machine as its accounts say, are asked at once; the person's rule wins wherever set.
+                var rule = (record is { Repository: { } repository }
                     ? HelperRules.Resolve(config, repository, record.Workspace).Rule
-                    : HelperRule.Default;
+                    : HelperRule.Default).Over(setUp ??= _context.Harnesses.SetUpAgents());
                 var startedFor = asks.Count(other => other.Id != ask.Id && string.Equals(other.Asker, ask.Asker, StringComparison.OrdinalIgnoreCase)
                                                      && states[other.Id] is { State: HelperStates.Started })
                                  + begunFor.GetValueOrDefault(ask.Asker);
@@ -128,8 +132,10 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 switch (verdict.Kind)
                 {
                     case HelperVerdict.RefuseKind:
-                        // The asker is told on its own session, or it has left and the refusal is news (NOTIFY2h2).
-                        events.Add(_context.Said.Say(await RefuseAsync(ask, verdict.Code!, null, files, ct).ConfigureAwait(false)));
+                        // The asker is told on its own session, or it has left and the refusal is news (NOTIFY2h2); an agent not set up
+                        // is named in it (HELPERDEFAULT1).
+                        events.Add(_context.Said.Say(await RefuseAsync(
+                            ask, verdict.Code!, verdict.Code == HelperWhy.NotSetUp ? ask.Agent : null, files, ct).ConfigureAwait(false)));
                         break;
                     case HelperVerdict.WaitKind:
                         // An agent's ask that comes to wait on the person's word is said once (MIXAGENT2c, D168): the line makes

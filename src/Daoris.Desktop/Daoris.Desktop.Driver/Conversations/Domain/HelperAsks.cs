@@ -73,6 +73,15 @@ public static class HelperWhy
     /// </summary>
     public const string Limited = "limited";
 
+    /// <summary>
+    /// Under the default rule (HELPERDEFAULT1, D163's 2026-10-24 note), the agent the asker named is not one Daoris has set up and
+    /// signed in on this machine, and only those are asked by default.
+    /// </summary>
+    public const string NotSetUp = "not-set-up";
+
+    /// <summary>Under the default rule (HELPERDEFAULT1), no agent is set up and signed in for Daoris on this machine.</summary>
+    public const string NoneSetUp = "none-set-up";
+
     // COAGENT1a (D199 point 5; the co-agent design §2.5): the asker's work in progress could not be captured whole, so no helper
     // was handed part of it.
 
@@ -115,6 +124,8 @@ public static class HelperWhy
         CannotTake => "that session cannot take the answer",
         HandUncertain => "its answer may or may not have reached the session, so it is not handed again; the helper's own conversation holds it",
         Limited => "its account hit its limit before it answered, and the session no longer waits on it",
+        NotSetUp => "it is not an agent Daoris has set up and signed in on this machine, and only those are asked by default",
+        NoneSetUp => "no agent is set up and signed in for Daoris on this machine, and only those are asked by default",
         _ => why,
     };
 }

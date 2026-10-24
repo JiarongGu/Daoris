@@ -79,13 +79,16 @@ public sealed class HelperLookTests : IDisposable
     private static readonly HelperCaptured Captured = new(
         "c0ffee123456", OpinionStandIn.Tip, At, [new CapturedFile("src/report.ts", new string('a', 64), 12)], ["old.md"], []);
 
+    /// <param name="unset">No rule for the repository at all, so its workspace's or Daoris's default stands (HELPERDEFAULT1).</param>
     private Daoris.Driver.Driver Driver(
         OpinionStandIn host, Pass? pass, HelperRule? rule = null, int cap = 3, ReviewerChoice? choice = null,
-        Func<string, CancellationToken, Task<HelperCaptureRead>>? capture = null, Func<ReviewerChoice>? choose = null) =>
+        Func<string, CancellationToken, Task<HelperCaptureRead>>? capture = null, Func<ReviewerChoice>? choose = null,
+        bool unset = false, Dictionary<string, HelperRule>? workspaces = null) =>
         new(host.Client(), DriverConfig.Empty with
         {
             Adapter = "claude-code-acp", Cap = cap,
-            Helpers = new Dictionary<string, HelperRule> { ["reports"] = rule ?? On },
+            Helpers = unset ? new Dictionary<string, HelperRule>() : new Dictionary<string, HelperRule> { ["reports"] = rule ?? On },
+            WorkspaceHelpers = workspaces ?? new Dictionary<string, HelperRule>(),
         }, AdapterSet.Built(), _home)
         {
             HelperPasses = pass is null ? (_, _, _) => throw new InvalidOperationException("no helper starts here") : pass.RunAsync,
@@ -221,6 +224,104 @@ public sealed class HelperLookTests : IDisposable
         Assert.Equal(["helper.refused"], NoteAssert.Codes(note.Parts!));
         Assert.Equal("off", note.Parts![0].Value("why"));
         Assert.DoesNotContain("trees", note.Text);
+    }
+
+    // ——— HELPERDEFAULT1 (D163's 2026-10-24 note): where nothing is set, Daoris's own agents are asked at once.
+
+    /// <summary>
+    /// An account of Daoris's for <paramref name="owner"/> in this test's own home, its folder on disk and its last reading
+    /// <paramref name="login"/> (ROSTER1): what the roster reads an agent set up and signed in by. Nothing is probed.
+    /// </summary>
+    private void Account(string owner, string account, LoginState login = LoginState.In)
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, owner, account));
+        AccountReads.Keep(_home, owner, account, login, At);
+    }
+
+    /// <summary>
+    /// No rule set for the repository or its workspace, and Codex set up and signed in for Daoris here: a session's ask for Codex
+    /// starts at once, never waiting on the person's yes, and no card is said.
+    /// </summary>
+    [Fact]
+    public async Task With_no_rule_set_an_ask_for_an_agent_Daoris_set_up_starts_at_once_without_a_card()
+    {
+        Account("codex", "acct-1");
+        Ask("a1", agent: "codex-acp");
+        var host = Host();
+        var pass = new Pass(Files) { Answer = "It is exclusive at line 42." };
+        var driver = Driver(host, pass, unset: true);
+
+        var events = await Look(driver);
+        await Until(() => host.HelperHands.Count == 1);
+
+        Assert.Equal("a1", Assert.Single(pass.Asked).Ask.Id);
+        Assert.Equal(HelperStates.Started, Assert.Single(pass.SeenAtTurn)!.State);
+        Assert.DoesNotContain(events, line => line.Contains("waits for the person's yes", StringComparison.Ordinal));
+    }
+
+    /// <summary>The person's own rule wins over the new default: a repository kept on `ask` still waits, an agent set up or not.</summary>
+    [Fact]
+    public async Task A_repository_rule_ask_still_waits_for_the_persons_yes_with_an_agent_set_up()
+    {
+        Account("codex", "acct-1");
+        Ask("a1", agent: "codex-acp");
+        var driver = Driver(Host(), pass: null, rule: new HelperRule(HelperRules.Ask, []));
+
+        var events = await Look(driver);
+
+        Assert.Equal((HelperStates.Waiting, null), (Files.ReadState("a1")!.State, Files.ReadState("a1")!.Code));
+        Assert.Equal("helper  ask `a1` from session `s1` waits for the person's yes or no in What needs you", Assert.Single(events));
+    }
+
+    /// <summary>A workspace the person keeps on `ask` stays so for a repository that sets nothing of its own.</summary>
+    [Fact]
+    public async Task A_workspace_kept_on_ask_still_waits_for_the_persons_yes()
+    {
+        Account("codex", "acct-1");
+        Ask("a1", agent: "codex-acp");
+        var host = Host();
+        host.Set("s1", "workspace", "work");
+        var driver = Driver(host, pass: null, unset: true, workspaces: new() { ["work"] = new HelperRule(HelperRules.Ask, []) });
+
+        await Look(driver);
+
+        Assert.Equal((HelperStates.Waiting, null), (Files.ReadState("a1")!.State, Files.ReadState("a1")!.Code));
+    }
+
+    /// <summary>
+    /// Under the default, an agent Daoris has not set up and signed in here is refused, and the asker reads which and why by a coded
+    /// note; nothing starts. An account signed out does not count as set up.
+    /// </summary>
+    [Fact]
+    public async Task With_no_rule_set_an_ask_for_an_agent_not_set_up_is_refused_with_its_reason()
+    {
+        Account("codex", "acct-1");
+        Account("claude-code", "account-1", LoginState.Out);
+        Ask("a1", agent: "claude-code-acp");
+        var driver = Driver(Host(), pass: null, unset: true);
+
+        var events = await Look(driver);
+
+        var state = Files.ReadState("a1")!;
+        Assert.Equal((HelperStates.Refused, "not-set-up"), (state.State, state.Code));
+        Assert.Contains("refused (not-set-up)", Assert.Single(events));
+        var note = Assert.Single(new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events, e => e.Kind == SessionEventKind.Note);
+        Assert.Equal(["helper.refused-by"], NoteAssert.Codes(note.Parts!));
+        Assert.Equal(("claude-code-acp", "not-set-up"), (note.Parts![0].Value("agent"), note.Parts![0].Value("why")));
+        Assert.Contains("not an agent Daoris has set up and signed in on this machine", note.Text);
+    }
+
+    /// <summary>Under the default with no agent set up and signed in for Daoris here, an ask naming none is refused, never a guessed agent.</summary>
+    [Fact]
+    public async Task With_no_rule_set_and_no_agent_set_up_an_ask_is_refused()
+    {
+        Account("codex", "acct-1", LoginState.Out);
+        Ask("a1");
+        var driver = Driver(Host(), pass: null, unset: true);
+
+        await Look(driver);
+
+        Assert.Equal((HelperStates.Refused, "none-set-up"), (Files.ReadState("a1")!.State, Files.ReadState("a1")!.Code));
     }
 
     [Theory]
@@ -1368,6 +1469,11 @@ public sealed class HelperLookTests : IDisposable
         Assert.Contains("codex-acp", others);
         Assert.DoesNotContain("claude-code", others);
         Assert.DoesNotContain("claude-code-acp", others);
+
+        // HELPERDEFAULT1: the default's agents are those set up here, never the asker's own family where none is named.
+        var setUp = HelperRule.Default.Over(["claude-code-acp", "codex-acp"]);
+        Assert.Equal(["codex-acp"], HelperChoice.Candidates(Ask(null), setUp, adapters, "claude-code"));
+        Assert.Equal(["claude-code-acp"], HelperChoice.Candidates(Ask("claude-code-acp"), setUp, adapters, "claude-code"));
     }
 
     // ——— COAGENT1a (D199 point 5; the co-agent design §2.5): the asker's work in progress, captured at its turn boundary.

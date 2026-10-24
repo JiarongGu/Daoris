@@ -21,11 +21,16 @@ public static class HelperChoice
             if (rule.Agents.FirstOrDefault(allowed => string.Equals(allowed, named, StringComparison.OrdinalIgnoreCase)) is { } listed) return [listed];
         }
 
+        // Another maker than the asker's (D155 point 4).
+        var mine = askerAdapter is { Length: > 0 } ? AgentFamily.Of(adapters, askerAdapter) : null;
+        bool Other(string name) => mine is null || !AgentFamily.Of(adapters, name).Same(mine);
+
+        // HELPERDEFAULT1: the default's agents are those set up and signed in here, of another maker than the asker's.
+        if (rule.SetUp) return [.. rule.Agents.Where(Other)];
         if (rule.Agents.Count > 0) return rule.Agents;
 
-        // Another maker than the asker's (D155 point 4): every agent of this machine that is not the asker's own family.
-        var mine = askerAdapter is { Length: > 0 } ? AgentFamily.Of(adapters, askerAdapter) : null;
-        return [.. adapters.Names.Where(name => mine is null || !AgentFamily.Of(adapters, name).Same(mine))];
+        // Every agent of this machine that is not the asker's own family.
+        return [.. adapters.Names.Where(Other)];
     }
 
     /// <summary>The walk over <see cref="Candidates"/>, as a reviewer's, with the asker's agent as the work's family.</summary>

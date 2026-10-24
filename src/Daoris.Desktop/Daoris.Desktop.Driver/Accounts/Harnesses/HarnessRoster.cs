@@ -1650,6 +1650,46 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         return door ?? adapters.Holder(owner);
     }
 
+    /// <summary>
+    /// The agents Daoris has set up and signed in on this machine (HELPERDEFAULT1, D163's 2026-10-24 note), in the set's order: each
+    /// adapter whose accounts' owner (AGT7) has an account of Daoris's on disk that its last reading said is signed in (ROSTER1).
+    /// Read from the accounts and their readings, never probed, so a look may ask it; the tool's own sign-in is the person's (D175),
+    /// and counts for nothing here.
+    /// </summary>
+    public IReadOnlyList<string> SetUpAgents()
+    {
+        var setUp = new List<string>();
+        foreach (var name in adapters.Names)
+        {
+            HarnessToolchain? toolchain;
+            try
+            {
+                toolchain = adapters.Resolve(name).Toolchain;
+            }
+            catch (DriverException)
+            {
+                continue;
+            }
+
+            if (toolchain is null) continue;
+            var owner = toolchain.Owner(name);
+            IReadOnlyList<string> present;
+            try
+            {
+                present = HarnessSettings.Profiles(Home, owner);
+            }
+            catch (DriverException)
+            {
+                continue;
+            }
+
+            var reads = AccountReads.Of(Home, owner);
+            if (present.Any(account => reads.Accounts.GetValueOrDefault(account)?.Login == LoginState.In)) setUp.Add(name);
+        }
+
+        return setUp;
+    }
+
     /// <summary>Whether the last reading of an owner's account said it is signed out (ROSTER1): kept under the home, never asked.</summary>
     private static bool SaidOut(AgentReads reads, string account) =>
         reads.Accounts.GetValueOrDefault(account)?.Login == LoginState.Out;

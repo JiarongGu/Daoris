@@ -1,13 +1,13 @@
 {
   "about": "The helpers rule in driver.json, `helpers` and `workspaceHelpers` (MIXAGENT2a-i, D163 point 5, the mixed agents design section 5): the table both twins hold, the CLI's helpers.ts (through driverconfig.ts) and the driver's HelperRules. `read`: a file's text, a repository and its workspace (null is none, read as the default one), and what resolves: the source (`repository`, `workspace`, or `default` for nothing set) and the rule as kept, as JSON text. `problems`: what an entry holds, as JSON text, and the first problem said, null for none. `listed`: a rule as JSON text and how the list and the room say it. `edits`: a file's text, an edit as JSON text, the two maps the file holds after it (as JSON text) or the refusal in words.",
   "read": [
-    ["nothing set is the default", "{}", "web-app", "work", "default", "{\"mode\":\"ask\",\"agents\":[]}"],
+    ["nothing set is the default", "{}", "web-app", "work", "default", "{\"mode\":\"on\",\"agents\":[]}"],
     ["a repository's rule is its own", "{\"helpers\":{\"web-app\":{\"mode\":\"on\",\"agents\":[\"codex-acp\"]}}}", "web-app", "work", "repository", "{\"mode\":\"on\",\"agents\":[\"codex-acp\"]}"],
     ["a workspace's rule reaches a repository that sets none", "{\"workspaceHelpers\":{\"work\":{\"mode\":\"off\"}}}", "notes-site", "work", "workspace", "{\"mode\":\"off\",\"agents\":[]}"],
     ["a repository's rule replaces its workspace's whole", "{\"helpers\":{\"web-app\":{\"mode\":\"ask\"}},\"workspaceHelpers\":{\"work\":{\"mode\":\"on\",\"agents\":[\"dsh\"]}}}", "web-app", "work", "repository", "{\"mode\":\"ask\",\"agents\":[]}"],
     ["a repository in no workspace is in default", "{\"workspaceHelpers\":{\"default\":{\"mode\":\"on\"}}}", "web-app", null, "workspace", "{\"mode\":\"on\",\"agents\":[]}"],
     ["names match in any case", "{\"helpers\":{\"Web-App\":{\"mode\":\"off\"}}}", "web-app", "work", "repository", "{\"mode\":\"off\",\"agents\":[]}"],
-    ["a rule with a problem is not read", "{\"helpers\":{\"web-app\":{\"mode\":\"sometimes\"}}}", "web-app", "work", "default", "{\"mode\":\"ask\",\"agents\":[]}"]
+    ["a rule with a problem is not read", "{\"helpers\":{\"web-app\":{\"mode\":\"sometimes\"}}}", "web-app", "work", "default", "{\"mode\":\"on\",\"agents\":[]}"]
   ],
   "problems": [
     ["an empty rule is ask, no agents", "{}", null],

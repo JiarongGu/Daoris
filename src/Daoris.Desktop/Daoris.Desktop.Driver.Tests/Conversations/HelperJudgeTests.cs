@@ -99,6 +99,31 @@ public sealed class HelperJudgeTests
         Assert.Equal("the person said no to it", HelperWhy.Said(HelperWhy.Declined));
     }
 
+    /// <summary>
+    /// HELPERDEFAULT1 (D163's 2026-10-24 note): the default is `on` for the agents set up and signed in here. An ask naming one goes,
+    /// as one naming none does while one is set up; one naming another is refused `not-set-up`, and with none set up `none-set-up`.
+    /// The person's own ask is theirs, as under any rule.
+    /// </summary>
+    [Fact]
+    public void The_default_asks_the_agents_set_up_here_and_refuses_another()
+    {
+        var setUp = HelperRule.Default.Over(["codex-acp"]);
+        Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(agent: "Codex-ACP"), null, Asker(), setUp, 0, true));
+        Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(), null, Asker(), setUp, 0, true));
+        Assert.Equal(HelperVerdict.Refuse(HelperWhy.NotSetUp), HelperJudge.Judge(Ask(agent: "dsh"), null, Asker(), setUp, 0, true));
+        Assert.Equal(HelperVerdict.Refuse(HelperWhy.NoneSetUp), HelperJudge.Judge(Ask(), null, Asker(), HelperRule.Default.Over([]), 0, true));
+        Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(HelperAsk.ByPerson, "dsh"), null, Asker(), setUp, 0, true));
+    }
+
+    /// <summary>A rule the person set is never read as the default: its agents stand, and an agent it does not name is walked as before.</summary>
+    [Fact]
+    public void A_rule_the_person_set_is_not_the_default()
+    {
+        var own = new HelperRule(HelperRules.On, ["codex-acp"]);
+        Assert.Same(own, own.Over(["claude-code-acp"]));
+        Assert.Equal(HelperVerdict.Go, HelperJudge.Judge(Ask(agent: "dsh"), null, Asker(), own, 0, true));
+    }
+
     /// <summary>A refused or answered ask is over: the judge says nothing more of it, so a look never restarts it.</summary>
     [Theory]
     [InlineData(HelperStates.Refused)]
