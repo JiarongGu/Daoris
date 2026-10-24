@@ -69,21 +69,24 @@ public sealed class SaidDoor(ServiceClient service, string session) : ISaidDoor
     internal static ChatMessage Dispatched(ChatMessage word, ISaidDoor? door, Action<ChatMessage> went)
     {
         if (!word.Kept || word.Id is not { } id || door is null) return word;
+        Func<Task<bool>> marking = async () =>
+        {
+            try
+            {
+                return await door.AttemptAsync([id], CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
+                                              or ObjectDisposedException or System.Text.Json.JsonException)
+            {
+                return false;
+            }
+        };
         return word with
         {
-            Attempting = async () =>
-            {
-                try
-                {
-                    await door.AttemptAsync([id], CancellationToken.None).ConfigureAwait(false);
-                }
-                catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
-                                                  or ObjectDisposedException or System.Text.Json.JsonException)
-                {
-                    // Unmarked, the word still goes: a shell cut off before its take-off may send it again, the rare cost of a record
-                    // that did not answer, against a word never sent.
-                }
-            },
+            // Unmarked, the word still goes: a shell cut off before its take-off may send it again, the rare cost of a record that did not
+            // answer, against a word never sent. Not so a transient episode's try, which reads the mark (Codex's finding 4).
+            Attempting = async () => await marking().ConfigureAwait(false),
+            Marking = marking,
             Went = () => went(word),
         };
     }

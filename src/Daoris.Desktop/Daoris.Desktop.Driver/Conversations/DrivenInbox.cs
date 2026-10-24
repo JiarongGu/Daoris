@@ -596,7 +596,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         {
             if (_closed) return false;
             // Off the record once steered (COWORK1c): held again in this process alone.
-            _held.Insert(0, message with { Kept = false, Attempting = null, Went = null });
+            _held.Insert(0, message with { Kept = false, Attempting = null, Marking = null, Went = null });
             Publish();
             return true;
         }
@@ -1095,6 +1095,15 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
             if (!_closed && Turns()) _woke.TrySetResult();
             return _woke.Task;
         }
+    }
+
+    /// <summary>
+    /// A transient episode settles its wire (Codex's owed read of D210, finding 2): from its first failure, and from each try's, every word
+    /// is held as during a wait, so none joins the turns the episode settles and the turns it must settle are only those already written.
+    /// </summary>
+    public void Settling()
+    {
+        lock (_gate) _waiting = true;
     }
 
     /// <summary>The episode's wait is over (AGENTERRORS1a): a word said from now goes as it did, at its next step where it is urgent.</summary>

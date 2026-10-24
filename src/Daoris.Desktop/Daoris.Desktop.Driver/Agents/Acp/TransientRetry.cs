@@ -148,8 +148,14 @@ public sealed class TransientEpisode(DateTimeOffset began, AgentError first)
     /// <summary>The provider's own sentence, as the first failure said it: what the line, the go-on and the end quote.</summary>
     public string? Words => First.Failure.Words;
 
-    /// <summary>The tries made so far, a failed settling turn among them.</summary>
+    /// <summary>The tries made so far, a failed settling turn among them; never past <see cref="TransientRetry.Bound"/>.</summary>
     public int Tries { get; internal set; }
+
+    /// <summary>
+    /// The turns already on the wire that failed while the wire settled after the tries were spent (Codex's owed read of D210, finding 2):
+    /// written before the episode could hold them, so each runs its own turn, and none counts a try past the bound or authorizes one.
+    /// </summary>
+    public int SettledPast { get; internal set; }
 
     /// <summary>The time actually waited between tries, read off the handed clock.</summary>
     public TimeSpan Waited { get; internal set; }

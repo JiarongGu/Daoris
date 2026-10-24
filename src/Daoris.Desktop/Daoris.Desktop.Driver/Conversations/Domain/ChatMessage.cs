@@ -59,6 +59,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     internal Func<Task>? Attempting { get; init; }
 
     /// <summary>
+    /// The same mark as <see cref="Attempting"/>, answering whether the record acknowledged it (Codex's owed read of D210, finding 4): a
+    /// transient episode's try writes a kept word only once its attempt is durable, where <see cref="Attempting"/> fails open. Null where
+    /// <see cref="Attempting"/> is. Never faults: an unanswered record is no acknowledgement.
+    /// </summary>
+    internal Func<Task<bool>>? Marking { get; init; }
+
+    /// <summary>
     /// Told once the door wrote this kept word to the wire, or settled it without the wire (a word of Daoris's dropped): its dispatcher
     /// takes it off the record by its id, after every take-off before it (COWORK1c). Null for a word kept nowhere.
     /// </summary>
