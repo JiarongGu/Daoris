@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - The queue's runner formed a candidate from the queue as it stood before its hold (FLAKE1)
+
+- **Symptom:** the tool-test `merge-queue.test.ts`, *a red candidate of two*, now and then found its first red run's members
+  `['bad']` where `['good', 'bad']` was expected: in the CI on `ffcf42926`, and alone on this machine once in seven runs.
+- **Root cause:** the records were true; the candidate was wrong. The failing run's `local/scope-runs.jsonl` held a green run of
+  `good` alone, promoted, then a red run of `bad` alone on it. `queueStep` reads the queue once at its top, and its `none` action
+  formed the next candidate from that read's `queued`. The test's hold (`MERGE_BRANCH_QUEUE_HOLD`) is looked at after the read and
+  a git call: a step that read `[good]` before `bad` was queued, then found the hold lifted, formed `good` alone from the stale
+  read, and `bad` went next on its own. Beyond the test the same read formed a request dropped (`--drop-batch`) in that moment all the
+  same, and one dropped and queued again at a new tip at its old tip, the new one left queued beside it.
+- **Fix:** the members are taken from the queue under its lock, in the same write that removes them from `queued`
+  (`tools/merge-branch.mjs`, `queueStep`'s `none` action); a queue emptied meanwhile forms nothing. The test's pick of the first
+  red run stays: it is the candidate's own run once the candidate is right, and the case still proves that `bad` never reaches
+  main, is handed back pinned at member 2, and that `good` is promoted on its own green.
+- **Verification:** the case run alone 30 times in a row, 30 green (it failed on the seventh run before the fix); the whole
+  `merge-queue.test.ts` file 57 of 57; `npm run tooltests` in `src/Daoris.Cli` 375 of 375; `test/doc-duplicates.test.ts` and
+  `test/dogfood.test.ts` 48 of 48.
+
 ## 2026-10-24 - The wiring census read the CLI tests' scratch as a source, and two test classes were split by hand
 
 - **Symptom:** the CI on `ffcf42926` failed `driver` on `SystemWiringTests.Every_variable_the_sources_name_is_on_the_list_shown_or_set_aside_with_its_reason`,

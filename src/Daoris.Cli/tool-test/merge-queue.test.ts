@@ -696,7 +696,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.equal(existsSync(join(repo.root, 'break-check')), false, 'a red member never reaches main');
       const runs = q.readScopeRuns(repo.root) as { state: string; members: { branch: string }[]; judged?: { outcome: string; member: number }[] }[];
       const red = runs.find((each) => each.state === 'red');
-      assert.deepEqual(red?.members.map((each) => each.branch), ['good', 'bad']);
+      assert.deepEqual(red?.members.map((each) => each.branch), ['good', 'bad'], `one candidate takes both, never good alone first:\n${repo.log()}`);
       assert.deepEqual(red?.judged?.map((each) => [each.outcome, each.member]), [['pinned', 2]]);
       assert.equal(runs.at(-1)?.state, 'green', 'the retained candidate is judged again, and promoted on its own green');
     } finally {
