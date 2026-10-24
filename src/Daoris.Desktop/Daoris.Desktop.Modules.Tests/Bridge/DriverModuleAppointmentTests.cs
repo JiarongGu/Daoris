@@ -266,6 +266,14 @@ public sealed class DriverModuleAppointmentTests : DriverModuleBridge
             Assert.Equal((SupervisorState.Left, "sign-in"), (decision.State, decision.Bound));
             var row = Assert.Single((await AnswerAsync(module, "SESSION_SUPERVISOR", new { id = "s1" })).GetProperty("decisions").EnumerateArray());
             Assert.Equal(("left", "sign-in"), (row.GetProperty("state").GetString(), row.GetProperty("bound").GetString()));
+
+            // The card reads it beside the question it was left on, with the agent's mark (§4.2).
+            var asked = (await AnswerAsync(module, "SESSION_QUESTION", new { id = "s1" })).GetProperty("question");
+            Assert.Equal("sign-in", asked.GetProperty("owner").GetString());
+            var leftOn = asked.GetProperty("left");
+            Assert.Equal("sign-in", leftOn.GetProperty("bound").GetString());
+            var reason = Assert.Single(leftOn.GetProperty("reasons").EnumerateArray());
+            Assert.Equal(("A sign-in is the owner's.", "D191 point 3"), (reason.GetProperty("says").GetString(), reason.GetProperty("source").GetString()));
         }
         finally
         {
