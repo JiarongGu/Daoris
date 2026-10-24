@@ -20567,3 +20567,17 @@ where its *Set up* is drawn, the workspace's Branches for a sweep or a sync (a r
 clear's workspace Details, quest or ask. `person/Confirmations.test.tsx` holds a case per route and scope and none on a press that
 rests on none; `app/opener.test.ts` each route's page; `app/notifications.test.tsx` the window's wiring; each was seen failing first.
 Detail: D156's CONFIRMWAIT1c note.
+
+## MODELROLE1c3 — what row c still owed (2026-10-25, D205; its installed proof MODELROLE1c4)
+
+> - [ ] **MODELROLE1c3 — what row c still owes** (driver, web; after MODELROLE1c2). The pipe door's measured model refusal, `model_not_found` on a turn with no output and no tool use (`docs/2026-10-23-model-effort-doors-evidence.md`), on a first start and a go-on run: kept as the account's `refused` reading in `agent-offers`, the part ended with `account.refused-model` and no strike (D205 §3.3's pipe exception, §3.5(a)). The session list's and head's quiet *Not started* word for a `choice-not-offered` record, never the failure's red, and a teammate mirror's sentence naming no account (§3.5(c), §7.1). The head chip's stories at the frame's three widths in both languages. Proof: a pipe stub refusing `opus` on a silent turn passes that account at the next start, no strike; on the install, a Build whose first choice names a model one account does not offer runs it on the other account, and with neither runs its second and says so on the head and in the note (`docs/2026-10-24-modelrole1c-build.md`).
+
+(Quest `#ec4d9e828b6e`.)
+
+**Outcome** 2026-10-25, in two parts. **Built:** the pipe door's measured `model_not_found` on a silent turn read by the frame's
+word (`ClaudeStreamJson`, `HarnessEnding.ModelRefused`); on a first start and a go-on run the account's `refused` reading kept for
+the choice's model and the part ended with `account.refused-model`, no strike, a first start's raising no *Ended* and a go-on's
+words waiting for the next look (`Driver.ModelRefused`); a `choice-not-offered` record shown *not started*, quiet, on the list, the
+strip and both heads, with the code's sentence, its account here and none on a teammate's mirror; the head chip's stories at the
+three widths in en and zh. The proof's first half runs on a pipe stand-in (`ModelRefusalTickTests`). **Remaining, as
+MODELROLE1c4:** the installed proof. Detail: D205's MODELROLE1c3 note; `docs/2026-10-24-modelrole1c-build.md`.

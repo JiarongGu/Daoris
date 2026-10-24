@@ -9,6 +9,11 @@ with the version and date at release.
   opens its session's review, a set-up its repository's page, a sweep or a bring-up-to-date its workspace's Branches, and a history
   clear the workspace, quest or ask it clears. You see what it would act on as it stands now before you confirm a change asked hours
   ago. The card keeps waiting meanwhile.
+- A Build choice whose model Claude Code refuses on one account now runs on another account on its pipe door too (MODELROLE1c3).
+  Daoris remembers the refusal for a day, and the session it ended is not counted as a failure and sends no notice. Words you said to
+  a session refused that way go on at the next look, on another account. A session that never started because its agent did not
+  offer its model now reads *not started* in the session list and on its header, never as a failure, and says which agent, model
+  and account. A teammate's copy of it names no account.
 - A session that asks its own repository for work is now told how a repository asks itself (SELFASK1). Before, the refusal said
   only to use its backlog, so a chat ran its rows one sub-agent at a time in its own tree. Where the repository declares lanes, the
   refusal names them and how to address one as a quest, each a session of its own. Where it declares none, it says a
