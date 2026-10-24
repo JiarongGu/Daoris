@@ -640,6 +640,14 @@ public sealed class SessionsRoutes(DriverContext context)
     private async Task<object?> SupervisorWaitingAsync(IpcRequest request, CancellationToken cancellationToken) =>
         new { Waiting = await SupervisorDoor.WaitingAsync(_loop, cancellationToken).ConfigureAwait(false), At = Moments.Write(DateTimeOffset.UtcNow) };
 
+    // The steward's acts this run, newest first, and its live appointment's generation (STEWARDROLE1b, D209 §3.3), what its holder's verb
+    // reads before it proves an act: from the judge's memory alone, so it answers at once. A read naming no key:
+    // `{ generation, acts: [{ id, act, repository, quest, session, at, standing, waiting }] }`, the generation null where none is live.
+    [DriverRoute("STEWARD_ACTS")]
+    private object? StewardActs(IpcRequest request) => _loop.Pipe?.StandingConfirmation is { } judge
+        ? new { Generation = judge.LiveGeneration(Roles.Steward), Acts = judge.StewardActsNow() }
+        : new { Generation = (string?)null, Acts = (IReadOnlyList<StewardActNow>)[] };
+
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";

@@ -1275,6 +1275,19 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     private sealed record StewardDone(string Id, string Act, string? Repository, string? Quest, string? Session, DateTimeOffset At);
 
+    /// <summary>
+    /// The generation of <paramref name="role"/>'s live appointment, which its holder's verb proves over (D209 §3.3), or null where none is
+    /// live (none, dormant, or a build not offering the role). The supervisor's listing names its own the same way.
+    /// </summary>
+    public string? LiveGeneration(string role)
+    {
+        lock (_gate)
+        {
+            if (!RoleOffered(role)) return null;
+            return _appointments.FirstOrDefault(each => each.Role == role && Live(each.Generation))?.Generation;
+        }
+    }
+
     /// <summary>A session's act re-keyed to the quest its session resolved to (§5.4), before its gates' step.</summary>
     public void Retarget(string id, RoleScope target)
     {

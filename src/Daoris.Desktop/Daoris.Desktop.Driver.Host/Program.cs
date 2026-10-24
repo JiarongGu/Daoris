@@ -190,6 +190,10 @@ using Daoris.Driver;
 //                 the holder's brief (STEWARDROLE1a-i, D209 §2.2): what each role this build knows does, never does and how its
 //                 verbs answer, headed by its revision, from Daoris's own text; names no key and no appointment. In a role's
 //                 terminal only its roles' verbs and the open reads run: any other verb is refused role-terminal, exit 2.
+//   steward acts | drive|undrive|hold|resume <repo> | trees <repo> on | stop|finish <session> | retry <quest>
+//                 the steward's holder's verbs (STEWARDROLE1b, D209 §3.3): the run's acts (STEWARD_ACTS, an open read), or one
+//                 act sent as ROLE_ACT with its proof by the key in DAORIS_ROLE_KEY over the hello's nonce, only to the install's
+//                 app/Daoris.Desktop.exe, recorded as the steward's. No alone path: no-instance, exit 2.
 //
 //   driver [list | <choice> | work-cycle | brainstorms | workflow …]
 //                 this machine's standing choices, workflows and cycles (PUSH1f2a, PUSH1f2b, D194): the words `daoris driver …`
@@ -642,6 +646,14 @@ try
     if (args is ["sessions", .. var sessionsArgs])
     {
         return await Daoris.Driver.Host.SessionsConsole.RunAsync(sessionsArgs, log);
+    }
+
+    // The steward's holder's verbs (STEWARDROLE1b, D209 §3.3): each act sent only to the running Daoris as ROLE_ACT, proved by the key the
+    // entry took; no alone path.
+    if (args is ["steward", .. var stewardArgs])
+    {
+        return await StewardCommand.RunAsync(
+            stewardArgs, Daoris.Driver.Host.InstanceHost.World("steward"), () => HolderKey.Taken, Console.Out);
     }
 
     // What came to the person, from a terminal (NOTIFY2i, D196, D50): the running Daoris's NOTIFICATIONS where it answers, the notices'

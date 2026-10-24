@@ -393,6 +393,25 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
         Is($$"""{"kind":"parked-quest","id":"7a82cc","since":"2026-10-01T09:21:00+00:00","workspace":"default","where":"engine","sitting":{{Parked().ToJsonString()}}}""", item);
     }
 
+    /// <summary>
+    /// STEWARDROLE1b (D209 §5.3): a quest the steward's stop holds is <i>Stopped by the steward</i>, waiting on a Try again, with its
+    /// session and its verdict; the owner's own stop of a quest is no row, since it waits on nobody but them by their own act.
+    /// </summary>
+    [Fact]
+    public void A_quest_the_steward_s_stop_holds_is_a_row_and_the_owner_s_stop_is_none()
+    {
+        var steward = Parked("""{"verdict":"Stopped","said":{"code":"steward","session":"s1"},"reason":"the steward stopped session `s1`."}""");
+        var owner = Parked("""{"quest":"q2","verdict":"Stopped","reason":"you stopped session `s2`."}""");
+
+        var item = Assert.Single(Rows(new()
+        {
+            Quests = [Quest("""{"status":"Taken"}"""), Quest("""{"id":"q2","status":"Taken"}""")], Registry = [Registration("engine")],
+            Considered = [steward, owner],
+        }));
+
+        Is($$"""{"kind":"steward-stopped","id":"7a82cc","since":"2026-10-01T09:21:00+00:00","workspace":"default","where":"engine","session":"s1","sitting":{{steward.ToJsonString()}}}""", item);
+    }
+
     [Fact]
     public void A_parked_quest_holds_work_beside_a_parked_session_and_a_folder() =>
         Assert.Equal(

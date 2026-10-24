@@ -225,6 +225,9 @@ public sealed class PipeCensus
             // SUPERVISOR1a-ii (D208 §3.1): the parked questions with no decision in appointed repositories, what the holder looks at; it
             // names no key and shows nothing the session's own page does not.
             "SUPERVISOR_WAITING",
+            // STEWARDROLE1b (D209 §3.3): the steward's acts this run and its live appointment's generation, which its holder's verb proves
+            // over; it names no key and shows nothing the window's Notifications line does not.
+            "STEWARD_ACTS",
             // The driver's own (D156 §3: sync, refresh): a look now, a sync pass with the service, the registry and the
             // accounts' use read again, the tools' locations looked at.
             "NUDGE", "SYNC_NOW", "REGISTRY_REFRESH", "ACCOUNTS_READ", "TOOLS_LOOK",

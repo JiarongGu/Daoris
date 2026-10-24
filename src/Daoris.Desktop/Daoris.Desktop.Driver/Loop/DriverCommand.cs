@@ -191,6 +191,11 @@ public static class DriverCommand
           roles brief
               the brief of a role's holder (D209): what each role does, never does and how its verbs answer, by its
               revision; names no key. In a role's terminal only its roles' verbs and the reads they need run.
+          steward acts  ·  steward drive|undrive|hold|resume <repo>  ·  steward trees <repo> on
+          steward stop|finish <session>  ·  steward retry <quest>
+              the steward's holder's verbs (D209), only in the terminal Daoris started for it: what the steward did
+              this run, or one act sent to the running Daoris with a proof by the role's key, recorded as the
+              steward's. No alone path.
           help list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
           help resume <id> "…" [--file <path>]…  ·  help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
           help delete <id> [--yes]
