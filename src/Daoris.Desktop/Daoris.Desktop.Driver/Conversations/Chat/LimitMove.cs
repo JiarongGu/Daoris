@@ -263,9 +263,12 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
                 return new StartedFrom(null, false, null, started.Message);
             }
 
-            box = box with { To = to };
+            // LIMITWORD1: read the record again at the go-on, where the new part's record takes the words said after it; a word kept
+            // here since the box was written goes on with the rest, in the box before the message is composed from it.
+            var now = await context.ReadAgainAsync(sessionId, ct).ConfigureAwait(false) ?? prior;
+            box = Carried(box with { To = to }, now);
             boxes.Write(sessionId, box);
-            var message = await ComposeAsync(sessionId, box, prior, ct).ConfigureAwait(false);
+            var message = await ComposeAsync(sessionId, box, now, ct).ConfigureAwait(false);
             var account = await ProfileOfAsync(to, ct).ConfigureAwait(false);
             if (lost is not null) context.Note(sessionId, LimitNotes.ResumeRefused(lost));
             context.Note(sessionId, HandOverNotes.MovedOn(to, agent.Name, account, moveWhy, null, message.Brief?.Text.Length ?? 0));
@@ -307,6 +310,18 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             .ToList();
         var text = string.Join("\n\n", [.. refused.Select(word => word.Text), .. waited.Select(word => word.Text)]);
         return new ChatMessage(text, files) { Brief = brief, TakenOver = opening };
+    }
+
+    /// <summary>
+    /// The box with the person's words the old record holds now that it does not name yet (LIMITWORD1), after its own in the record's
+    /// order: a word kept between the box and the go-on is in neither part otherwise. The box unchanged where there are none.
+    /// </summary>
+    private static LimitMoveBox Carried(LimitMoveBox box, PriorSession now)
+    {
+        List<string> later = [.. now.Waiting
+            .Where(word => word.Persons && word.Id is { } id && !box.Said.Contains(id, StringComparer.Ordinal))
+            .Select(word => word.Id!)];
+        return later.Count == 0 ? box : box with { Said = [.. box.Said, .. later] };
     }
 
     /// <summary>
@@ -355,6 +370,9 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
                 }
 
                 if (await context.ReadAgainAsync(session, ct).ConfigureAwait(false) is not { } prior) continue;
+                // LIMITWORD1: a shell that ended before the go-on's words were boxed leaves them on the old record; they go on too.
+                box = Carried(box, prior);
+                boxes.Write(session, box);
                 var message = await ComposeAsync(session, box, prior, ct).ConfigureAwait(false);
                 await context.Service.SayAsync(
                         to, message.Prompt + ChatFiles.PathLines(message.Files), ct: ct, from: DaorisWords.From, key: $"limit-move/{session}")

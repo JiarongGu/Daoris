@@ -20,6 +20,28 @@ repository.
   driver, 12 of them seen failing against a stub that kept ours), including a scratch repository under `_fixtures/` whose two branches each edited one of two neighbouring rows,
   merged by git through the driver, each row once. The same replay through the driver: no clean merge added a duplicate a side
   did not already carry; 25 stop as marked conflicts instead.
+## 2026-10-24 - A word kept while a limit's move was under way reached neither part (LIMITWORD1)
+
+- **Symptom:** seen on the install. A chat met its account's limit at 09:19:27 UTC; a word was kept on that record at 09:20:02; at
+  09:20:11 Daoris went on in a new part on another account, and the brief it handed carried the history but not that word, which no
+  part ever read.
+- **Root cause:** the ended-record move (`LimitMove.MoveEndedAsync`) read the old record's waiting words once, before it wrote its box,
+  and named only those in the box's `said`; `ComposeAsync` handed only the box's words, filtered from that early read. Opening the new
+  part takes seconds, and until its record exists a word for the conversation is kept on the old record (`WordsNever.ContinuedIn`
+  sends it to the new part only once that record continues the old). A word kept in that gap was in neither the box nor the new
+  part's record, so the move never carried it and the delivery never took it off.
+- **Fix:** at the go-on, once the new part's record exists, the move reads the old record again and adds every person's word the box
+  does not yet name to it, after its own in the record's order (`LimitMove.Carried`), writes the box, and composes the message from
+  that read. The come-up's replay of a box (`TakeUpBoxesAsync`) does the same, for a shell that ended between the new part's open and
+  that box write. A word kept after the go-on goes to the new part by the say door, as before; one already in the box is not added
+  again, so none is sent twice.
+- **Verification:** `LimitWaitsProcessTests.A_word_kept_between_the_moves_box_and_its_go_on_reaches_the_new_part_once` keeps a word
+  on the old record as the new part's record opens, the box already written. Before the fix it failed: the new part's prompt held the
+  refused turn and the boxed word but not the new one, and the word stayed on the old record. After the fix it passes: the word is
+  handed once, after the boxed word; the old part never hears it; it leaves the old record as taken by the new part; the box is gone.
+  `LimitWaitsProcessTests` passed with `process.runsettings` (12 of 12), and the driver's fast half passed 14,411 of 14,412. Its one failure,
+  `MachineFactsTests.A_judge_that_never_answers_holds_no_other_subject_and_is_never_judged_twice_at_once`, is outside this change, and
+  its class passed alone (13 of 13).
 
 ## 2026-10-24 - A conversation continuing a quest's worker read its line's origin, not its quest's run (CHATFLOW1a, Codex's finding 6)
 
