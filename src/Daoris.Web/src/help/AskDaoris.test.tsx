@@ -807,6 +807,80 @@ describe('Ask Daoris, with an agent named', () => {
     expect(await screen.findByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
   });
 
+  /**
+   * HELPNEWCHAT1 (the owner's report, 2026-10-24): *New conversation* finishes the one running, which winds up before it ends, and
+   * a driver at 5e36d25 answered the next start with that one, `running`, carried on. The new conversation's first words went to the
+   * conversation finished, back into its box. They wait as the new one opening until the finished one has ended, then open their own.
+   */
+  it('takes a new conversation’s first words into it, never the one New conversation finished while it winds up', async () => {
+    const words = 'a question of its own';
+    const next = { ...HELP, id: 'n3wc0000', state: 'queued', created: '2026-09-29T00:05:00Z' };
+    SESSIONS = [HELP];
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'START_HELP') {
+        const windingUp = (SESSIONS as { id: string; state: string }[]).some((each) => each.id === HELP.id && each.state === 'working');
+        if (windingUp) return { sessionId: HELP.id, message: 'Ask Daoris `h1e1p000` is carried on.', running: true };
+        SESSIONS = [{ ...HELP, state: 'completed' }, next];
+        return { sessionId: next.id, message: 'Ask Daoris `n3wc0000` is starting.', running: false, starting: true };
+      }
+      if (type === 'SESSION_QUEUE') return { session: next.id, queued: [{ text: words, files: [] }], taking: false, opening: true };
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'New conversation' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: HELP.id } }));
+    await userEvent.type(await screen.findByLabelText('Message'), words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(starts()).toBe(1));
+    expect(await screen.findByText('opening Ask Daoris…')).toBeInTheDocument();
+
+    // The finished one ends, and the list says so.
+    SESSIONS = [{ ...HELP, state: 'completed' }];
+    act(() => heard.get('STATE_CHANGED')?.({ scopes: ['sessions'] }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: next.id, text: words } }));
+    expect(invoke.mock.calls.filter(([, type, body]) => type === 'SESSION_INPUT'
+      && (body as { payload: { id: string } }).payload.id === HELP.id)).toEqual([]);
+    expect(screen.getByLabelText('Message')).toHaveValue('');
+  });
+
+  /**
+   * HELPNEWCHAT1: first words handed to a conversation whose queue has not answered yet are its own. *New conversation* sets that
+   * conversation aside, and its words with it: the new one shows no words opening, and opens ahead once the other has ended.
+   */
+  it('sets a conversation’s first words aside with it on New conversation, never left opening', async () => {
+    const words = 'how do I land a branch?';
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'START_HELP' && starts() === 1) {
+        SESSIONS = [HELP];
+        return { sessionId: HELP.id, message: 'Ask Daoris `h1e1p000` is starting.', running: false, starting: true };
+      }
+      if (type === 'START_HELP') return { sessionId: 'n3wc0000', message: 'Ask Daoris `n3wc0000` is starting.', running: false, starting: true };
+      // Its queue never answers, so the words it took are still shown opening.
+      if (type === 'SESSION_QUEUE') return new Promise(() => {});
+      if (type === 'END_CHAT') SESSIONS = [{ ...HELP, state: 'completed' }];
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    await waitFor(() => expect(starts()).toBe(1));
+    await userEvent.type(await screen.findByLabelText('Message'), words);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: HELP.id, text: words } }));
+    expect(await screen.findByText('opening Ask Daoris…')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
+
+    expect(await screen.findByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
+    expect(screen.queryByText('opening Ask Daoris…')).toBeNull();
+    await waitFor(() => expect(starts()).toBe(2));
+  });
+
   /** HELP1c: what it proposes is a card under the conversation, applied or not by the person's press. */
   it('shows what the conversation proposes, and applies or dismisses it on the person\'s press', async () => {
     SESSIONS = [HELP];
