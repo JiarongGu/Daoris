@@ -159,6 +159,17 @@ public sealed class TransientEpisode(DateTimeOffset began, AgentError first)
 /// A run that ended past its transient bound (§5.1): its provider kept failing after every try, so the record ends <c>failed</c> with
 /// <c>ended.transient</c>, no strike, and the planner holds its quest for the person.
 /// </summary>
+/// <summary>
+/// Shape 2 (AGENTERRORS1a2, the design §0, §4.2): a word the person said during a turn was taken, and its own prompt was then refused, so
+/// the turn that failed is the one the word opened. Carried from the word's send to the run's loop, which reads <see cref="Refusal"/> as
+/// any prompt site's failure; never past the run.
+/// </summary>
+public sealed class AcpWordTurnFailed(AcpRefusal refusal) : DriverException(refusal.Message)
+{
+    /// <summary>The refusal that answered the word's prompt, as the door said it.</summary>
+    public AcpRefusal Refusal { get; } = refusal;
+}
+
 public sealed class AcpTransientExhausted(TransientEpisode episode)
     : DriverException($"the ACP agent's provider kept failing after {episode.Tries} tries: {episode.Words}")
 {

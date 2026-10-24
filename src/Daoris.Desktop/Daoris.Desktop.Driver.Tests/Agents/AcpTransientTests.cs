@@ -455,6 +455,178 @@ public sealed class AcpTransientTests
         Assert.DoesNotContain("wait", told.Lines);
     }
 
+    /// <summary>
+    /// The agent of shape 2 (the design §0): it queues prompts during a turn, holds its first prompt open, and answers the second by
+    /// <paramref name="second"/>, handed the first prompt's frame; a third or later prompt answers <c>end_turn</c>.
+    /// </summary>
+    private static Agent Queued(Action<JsonElement, JsonElement, Agent> second, List<int>? prompts = null)
+    {
+        JsonElement first = default;
+        var count = 0;
+        return new Agent((frame, self) =>
+        {
+            switch (frame.TryGetProperty("method", out var m) ? m.GetString() : null)
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    var n = Interlocked.Increment(ref count);
+                    if (n == 1)
+                    {
+                        first = frame.Clone();
+                        return null;
+                    }
+
+                    if (n == 2)
+                    {
+                        second(first, frame.Clone(), self);
+                        return null;
+                    }
+
+                    return Answer(frame, "end_turn");
+                default:
+                    return frame.TryGetProperty("id", out _) && frame.TryGetProperty("method", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1a2, shape 2 taken (the design §0, §4.2): a word the person said during the turn is taken when the prompt before it
+    /// answers <c>end_turn</c>; the provider's error streams in its turn and then refuses its prompt with the 529. That is the turn's prompt
+    /// failing: tried again in the same session after a minute with the go-on, never left clean to park on the person, the word received
+    /// once and never sent again. Red before shape 2: the refusal was the word's note, and the run closed clean with two prompts.
+    /// </summary>
+    [Fact]
+    public async Task A_mid_turn_word_refused_after_it_was_taken_is_the_turn_s_prompt_failing_and_is_tried_again()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Queued((first, word, self) =>
+        {
+            // claude-agent-acp settles the running prompt at the queued word's echo, then the word's turn meets the provider's error.
+            self.Push(Answer(first, "end_turn"));
+            self.Push(Said("API Error: 529 Overloaded."));
+            self.Push(Failed(word));
+        });
+        var retry = Retry(clock, told);
+        var inbox = new DrivenInbox(_ => { });
+        var taken = new List<string>();
+        var events = new List<SessionEvent>();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => { lock (events) events.Add(e); });
+
+        var run = session.RunAsync(
+            "D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, asked: words => { lock (taken) taken.Add(words.Text); }, retry: retry);
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("use port 9090", [])));
+        await PassAsync(told, clock, run, 1);
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal([["serve the report"], ["use port 9090"], [TransientRetry.GoOnText(Overloaded)]], agent.Prompts);
+        Assert.Equal(["use port 9090"], taken);
+        Assert.Equal(1, retry.Episode!.Tries);
+        Assert.Empty(retry.Uncertain);
+        lock (events) Assert.DoesNotContain(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
+    }
+
+    /// <summary>
+    /// AGENTERRORS1a2, shape 2 untaken (§4.2): a word refused while the turn before it still runs was never taken, so its refusal is that
+    /// word's, today's note under its id, and the running turn then ends well: no episode, the turn clean. Held both ways with the case above.
+    /// </summary>
+    [Fact]
+    public async Task A_mid_turn_word_refused_before_it_was_taken_is_its_own_note_and_the_running_turn_ends_well()
+    {
+        var retry = Retry(new MovedClock(), new Told());
+        var agent = Queued((first, word, self) =>
+        {
+            self.Push(Failed(word));
+            self.Push(Said("Served."));
+            self.Push(Answer(first, "end_turn"));
+        });
+        var inbox = new DrivenInbox(_ => { });
+        var events = new List<SessionEvent>();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => { lock (events) events.Add(e); });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("use port 9090", []) { Id = "said-1" }));
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(2, agent.Prompts.Count);
+        Assert.False(retry.Opened);
+        lock (events) Assert.Contains(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
+    }
+
+    /// <summary>
+    /// AGENTERRORS1a2 (§4.2, round 2, C3): attribution is by the word's taken mark as its error came, never by a later update. An update
+    /// the agent streams after the refusal of an untaken word changes nothing: still that word's note, no episode.
+    /// </summary>
+    [Fact]
+    public async Task An_unrelated_update_after_an_untaken_word_s_refusal_changes_nothing()
+    {
+        var retry = Retry(new MovedClock(), new Told());
+        var agent = Queued((first, word, self) =>
+        {
+            self.Push(Failed(word));
+            // An update after the refusal: the running turn's, which may take a word late, but this one's prompt has already left.
+            self.Push(Said("Still serving."));
+            self.Push(Answer(first, "end_turn"));
+        });
+        var inbox = new DrivenInbox(_ => { });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await Poll.Until(() => agent.Prompts.Count == 1, () => "the first prompt never went", Poll.Patience);
+        Assert.True(inbox.Hold(new ChatMessage("use port 9090", [])));
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(("end_turn", 2, false), (outcome.StopReason, agent.Prompts.Count, retry.Opened));
+    }
+
+    /// <summary>
+    /// AGENTERRORS1a2 (§4.2): a steer the agent refuses with the 529 stays that word's note under a retry too. The steering lane answers
+    /// <c>injected</c> at once and never carries the provider's error, so its refusal is never the turn's (<c>SteeredAsync</c>).
+    /// </summary>
+    [Fact]
+    public async Task A_refused_steer_stays_its_note_under_a_retry()
+    {
+        var first = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, """{"protocolVersion":1,"_meta":{"steering":{"supported":true}},"agentCapabilities":{"_meta":{"claudeCode":{"promptQueueing":true}}}}""");
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    first.SetResult(frame.Clone());
+                    return null;
+                case "_session/steering":
+                    self.Push(Failed(frame));
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var retry = Retry(new MovedClock(), new Told());
+        var inbox = new DrivenInbox(_ => { });
+        var events = new List<SessionEvent>();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => { lock (events) events.Add(e); });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, inbox: inbox, retry: retry);
+        await first.Task.WaitAsync(Poll.Patience);
+        Assert.Equal(new SentNow("now", true, null), await inbox.HoldNowAsync(new ChatMessage("one more thing", [])));
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal(("end_turn", 1, false), (outcome.StopReason, agent.Prompts.Count, retry.Opened));
+        lock (events) Assert.Contains(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
+    }
+
     /// <summary>The person's stop or Daoris's shutdown during a wait ends the run as that stop does today: the wait is cancelled with it.</summary>
     [Fact]
     public async Task A_shutdown_during_a_wait_cancels_it_with_the_run()
