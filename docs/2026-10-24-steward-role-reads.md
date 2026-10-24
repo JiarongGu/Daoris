@@ -1,4 +1,4 @@
-# STEWARDROLE1: the reads of round 1 (D191)
+# STEWARDROLE1: the reads of rounds 1 and 2 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-24-steward-role-design.md` and D209 at `48f9b3cff`, each verbatim but for its headings set one level down. The steward ran both from outside the install, read-only, on the design's own tree. Codex asks another round; the Opus foundation reader would accept after named changes (20 findings, 7 blocking). Round 2 answers both.
 
@@ -360,3 +360,436 @@ The seven blocking findings are each a bounded text change that can be checked a
 
 If the steward keeps free words in STEWARDROLE1c rather than starting from a fixed go-on, that row deserves its own read, as D208 gave
 SUPERVISOR1f.
+
+## Codex, round 2
+
+Codex's read of round 2: another round, keeping the shared appointment, the separate working session, the steward's own records, the fixed go-on and done left to the owner.
+
+### 0. Round-1 findings checked again
+
+Read at `c5cb45753`, including the complete round-1 reads and the requested diff. **Taken** below means corrected in the proposed contract, not already implemented.
+
+References use:
+
+- **Design**: `docs/2026-10-24-steward-role-design.md`
+- **Supervisor**: `docs/2026-10-24-supervisor-design.md`
+- **Driver/**: `src/Daoris.Desktop/Daoris.Desktop.Driver/`
+- **Modules/**: `src/Daoris.Desktop/Daoris.Desktop.Modules/`
+- **Core/**: `src/Daoris.Service/Daoris.Service.Core/`
+
+| Finding | Disposition | Check against code and round 2 |
+|---|---|---|
+| C1 — deferred hand-overs can impersonate the steward | **Open** | Design:411 adds memory matching at the look, but `Driver/Loop/Driver.cs:1896` independently rereads the handed file at the start. Finding 3 below. |
+| C2 — `owner-set` protects a route rather than the decision | **Open** | Design:450 correctly changes the key to repository or quest. Deferred effects and the omitted take-back route still escape that protection. Findings 2 and 5. |
+| C3 — an admitted act can overwrite a later owner press | **Open** | Design:458 fixes synchronous settings handlers such as `Modules/Bridge/Routes/DriverRoutes.cs:44`. Its handler-only gate does not cover later hand-over execution. Finding 2. |
+| C4 — hand-over approval’s form and binding | **Open** | `{ session, ask }` fixes `SessionsRoutes.cs:400`, but carries neither the listed agent nor an immutable listing reference. Finding 4. |
+| C5 — steward words bypass the answers-alone hold | **Taken** | Design:340–367 refuses mixed queues and makes steward words neutral to both predicates and `GoOnMarks.Judged`. This addresses `AnswersAlone.cs:35` and `AnswersAloneHold.cs:31`, `:57`. |
+| C6 — role words need a complete keep-to-hand protocol | **Open** | Removing running-session delivery and the process-only fallback is correct. The explicit `not-handed` recovery still contradicts the inherited lifecycle. Finding 7. |
+| C7 — a suffix leaves personal attribution | **Open** | Design:395–400 supplies appropriate sibling codes. The terminal stop’s request-folder carrier still needs authenticated actor information at consumption. Finding 2; `SessionsCommand.cs:949`, `SessionRequestWatch.cs:349`. |
+| C8 — session words become personal ask requirements | **Taken** | Design:340, :363 excludes the running-session and added-door paths. `Core/Sessions/SessionLedger.cs:1448` remains a separate personal-history operation. |
+| C9 — setup must guard the applied plan | **Taken** | Design:260, :630 puts the check immediately before the permission save, addressing `SetupPress.ApplyAsync` rather than trusting `SetupRoutes.cs:46`’s earlier plan. |
+| C10 — Reopen cannot reverse this done | **Taken** | Design:216–219 removes steward done and retains owner acceptance. This agrees with `Core/Quests/Quests.cs:2057`, `:2066`. |
+| C11 — casing claim differs from D201 | **Answered with a reason that holds** | Design:240 preserves case-insensitive field names, duplicate rejection and exact values, matching `StandingConfirmation.cs:763`. |
+| C12 — trees settings do not relocate sessions | **Open** | The immediate-relocation claim is removed, but Design:251 now overstates continuations. They can retain the former checkout. Finding 10. |
+| C13 — index commands are generated | **Taken** | Design:40 correctly names `IndexForms.For`; `SetupPressRules.cs:36`, :48 keeps the fixed/generated distinction. |
+| C14 — finish has consequences beyond its session | **Taken** | Design:255 excludes helpers, workflow-node sessions and waiting words. That is a valid narrowing of D201’s broader finish. |
+| C15 — adding a role needs a permission transition | **Taken** | Design:174–180 permits the role verbs from the first session and refreshes the brief; the judge retains authority. This addresses `HolderTerminal.cs:27`. |
+| C16 — activation proofs weakened inherited evidence | **Open** | The holder checks return in Design:602, but the shared flag can activate the supervisor before its remaining bounds and activation proof. Finding 6. |
+| O1 — stop and finish read as the owner’s | **Open** | The sibling notes address `SessionMoves.cs:80` and `Observation.cs:374`; the deferred stop carrier remains unspecified. Finding 2. |
+| O2 — overrule does not stick | **Open** | Quest identity now survives successor sessions, but deferred execution and `SESSION_QUEUE_EDIT` remain outside the stated protection. Findings 2 and 5. |
+| O3 — done is owner acceptance | **Taken** | Steward done is removed, including its nonexistent reversal. Design:275 expressly reserves `QUEST_DONE`. |
+| O4 — running-session words become personal ask history | **Taken** | The fixed go-on never uses `KeepOnAsk` or `/added`; Design:363 expressly requires the absence proof. |
+| O5 — words lift the answers-alone hold | **Taken** | Both eligibility and counting are addressed, including mixed prompts and existing marks. Design:365; `AnswersAloneHold.cs:57`. |
+| O6 — Appoint again revives file contents | **Taken** | Design:201–205 reopens one role’s ordinary ask, ignoring stored `acts` and `setup`, with setup unticked. This extends the built per-row ask appropriately. |
+| O7 — the appointment door is already built differently | **Taken** | Design:53–76 now describes the merged door. `StandingConfirmation.cs:534`, `HolderTerminal.cs:47` and `TerminalModule.cs:238` confirm the principal facts. |
+| O8 — handed words come from the record | **Taken** | Design:356–358 requires composition from memory and rejects differing stored text, following D208’s memory-authoritative model. |
+| O9 — a live holder lacks the added role’s verbs | **Taken** | Design:174 allows both role families from the beginning; appointment membership still controls admission. |
+| O10 — revoke and holder termination | **Open** | Last-role termination and fresh reappointment are specified. Deferred approvals and the explicit tab-close path are not fully covered. Findings 2 and 11. |
+| O11 — sharing widens the supervisor’s input reach | **Taken** | Design:161–162 discloses the widening and offers a separate terminal; :514–517 preserves the limitation. This is a reasoned owner choice. |
+| O12 — plan verbs can act alone with git | **Taken** | Design:298–302 refuses every alone path in a role terminal. The implementation must use the entry’s captured marker, as finding 12 explains. |
+| O13 — forms select unnamed paths | **Open** | Proposed steward forms now name their paths. The current-code table still omits mandatory `said: true` on say and hand-over and misidentifies the say path. Finding 9. |
+| O14 — free words launder agents’ text | **Taken** | The fixed go-on removes arbitrary text; free words are deferred to STEWARDROLE1h with a separate design and read. That reason holds. |
+| O15 — working-session relay | **Taken** | The bounded desk precedes activation; the brief is supplied by Daoris and the working-session rule joins activation. Design:495–502. No interim tracked request file is needed. |
+| O16 — a steward stop waits on the owner | **Taken** | Design:436 says so and gives the steward retry of its own untouched stop. This addresses the planner’s stop hold. |
+| O17 — record marks are claims | **Open** | The live/history distinction is sound, but the direct start’s disk read remains outside the described authentication point. Finding 3. |
+| O18 — driving can reach pushing landings | **Taken** | Design:249 refuses driving where the landing pushes and :428 discloses the earlier-run choice. `SetupPressRules.cs:64` supports the identified plugin case. |
+| O19 — appointment form and flags | **Taken** | Scope compatibility and offered-act membership are explicit at Design:190–199 and :562–565. The separate activation dependency defect is finding 6. |
+| O20 — first row is too large | **Taken** | Door amendments, immediate acts, desk and activation are separate rows. Their remaining proof gaps are identified below. |
+
+### 1. Claims about the code
+
+The revised description correctly recognizes SUPERVISOR1a-ii on main: appointments share D201’s record; hashes remain in memory; the holder opens in the terminal panel; the proof uses the connection nonce; and both offerings remain dark.
+
+The remaining incorrect or unsupported code descriptions concern:
+
+- The assertion that the printed holder flags exclude hooks, plugins and instruction files: finding 8.
+- The terminal’s actual payloads and say path, and the holder-key constant’s owning type: finding 9.
+- The effect of enabling trees on existing conversations’ continuations: finding 10.
+- The assertion that shell termination always produces `TERMINAL_EXITED`: finding 11.
+
+Two implementation facts also undermine the proposed mechanism: a hand-over remains active configuration when the start rereads its file, and the driver host removes the key variable before command dispatch. Findings 3 and 12 address those.
+
+### 2. The mechanism’s holes
+
+The appointment foundation can serve the supervisor and steward, with D201’s unkeyed grant retired. Window-only appointment, dormant records after restart, independent generations, a dedicated holder and separate revocation remain coherent. Sharing a holder is now an explicit choice with an accurately stated consequence.
+
+Within the stated D156 boundary, an ordinary Daoris agent, an escaped terminal process or a hook run by the working steward receives no key. That separation is useful. It still depends on the holder actually excluding executable configuration; the current start line does not establish that exclusion.
+
+The largest remaining holes are between admission and effect. Revocation is not rechecked when an admitted act finally acquires its gate. Hand-over approvals and boxes take effect after their handlers return, outside the proposed gate and sometimes through an agent-attributed path. Authentication at the look also misses the start’s later disk read. These allow authority, attribution or the owner’s intervening decision to change before the actual effect.
+
+The owner-only exclusions are substantially improved: done and acceptance stay personal, free words leave this design, setup receives an explicit tick and application-time restriction, and the go-on cannot enter a running inbox. However, the owner’s own take-back is omitted from takeover marking, and the go-on’s failure recovery is incomplete.
+
+The new notes and quiet notification line are suitable. Their proofs must follow the actual deferred consumers, rather than stopping at the route handler or a vocabulary sweep.
+
+### 3. The rows
+
+| Row | Buildability and proof |
+|---|---|
+| **1a — door amendments** | Can land dark. Add revocation while awaiting a target gate, every terminal-close path, and an entry-level `role-terminal` case. |
+| **1b — immediate acts** | Can follow 1a, but the live stop needs its request-folder authority and attribution protocol. Existing form and note tests alone do not prove that path. |
+| **1c — desk** | Can land independently after its declared predecessor. Its admission-denial and bounded-queue proofs are appropriate. The notification presentation also reaches web code. |
+| **1d — activation** | Not safely ordered as written: its shared flag also enables supervisor appointments without an explicit dependency on the supervisor’s remaining bounds and activation proof. |
+| **1e — hand-overs** | Needs authenticated pending approvals, execution-time gating, immutable agent binding and authentication at the actual start. The proposed tests cover admission ordering but miss an already-kept operation overtaken by the owner. |
+| **1f — go-on** | Properly separated from free words and allowed after 1d without depending on 1e. Add recovery from every failure after the move to working, preserving subsequently arrived owner words. |
+| **1g — setup** | The application-time rule check and author field form a buildable slice. Its dependency on 1f is sequencing rather than an evident mechanism dependency. |
+| **1h — free words** | Correctly outside this design’s acceptance. |
+
+The first usable increment is **1a through 1d**, not 1a alone. Isolating routine settings, stops and finishes from hand-over machinery is reasonable. Nothing read establishes that this ordering removes the most cards; round 2 appropriately withdraws that claim. The activation count can inform whether the fixed go-on or setup should precede hand-overs.
+
+### 4. Findings
+
+1. **Blocking — revocation does not invalidate an act waiting for its target gate.**
+
+   **Where:** Design:317–319, :442–444, :458–463.
+
+   Admission checks the generation, releases the judge’s lock and waits for the target gate. Under that gate it rechecks only `owner-set`. Turn off can therefore finish before an admitted, still-waiting drive or stop runs. This contradicts the stated cutoff: only an act already past its gate is exempt from recall.
+
+   The built supervisor deliberately rechecks admission later; see `Driver/Sessions/Questions/QuestionSupervisorDecisions.cs:357` and `Modules/Platform/StandingConfirmation.cs:629`.
+
+   **Smallest change:** under the target gate, revalidate the holder and appointment generation immediately before committing execution. Specify its ordering with revoke without holding the judge’s lock across an await. Test revoke while an admitted act waits for the gate.
+
+2. **Blocking — the gate and revoke sweep do not cover all deferred effects or their actor.**
+
+   **Where:** Design:254, :257–258, :411–415, :442–463; rows 1b and 1e.
+
+   A hand-over handler keeps a box; the later look stops the session and releases its stop (`Driver/Conversations/HandOver/HandOverQuest.cs:101`, `Driver/Loop/DriverHandOvers.cs:102`, :133). An approved agent ask may instead wait until the turn ends, then write a hand-over as `HandOverBy.Agent` (`DriverHandOvers.cs:279–294`). It need not have an untaken box for revoke to clear.
+
+   Thus: steward approval or box first, owner stop or revoke second, deferred consumption third is not protected by a gate held only across the original handler. The resulting act can also lose steward attribution.
+
+   Live stop has another deferred carrier: `SessionsCommand.cs:949` writes a `SessionRequest`; `SessionRequestWatch.cs:349–370` later constructs the move note without the handler’s `PipeDoor.Role`.
+
+   **Smallest change:** give every pending role operation an authenticated in-memory lifecycle, including stop requests and approved hand-over asks. Preserve its actor, generation and complete operation; cancel pending operations on takeover or revoke; acquire the quest gate and recheck authority at the final consumer. Test both deferred hand-over paths and the request-folder stop, including their final notes.
+
+3. **Blocking — authenticating hand-over files at the look misses the start’s independent read.**
+
+   **Where:** Design:411–415, :614–618; `Driver/Loop/Driver.cs:1896–1897`.
+
+   The start reads `new HandedQuests(home).Read(quest.Id)` directly and selects its agent from that answer. `HandOverFiles.cs:97–99` also reads its account and note. A file replaced after the look’s validation can therefore affect the start without the stated memory comparison.
+
+   A consumed handed file is not merely history in today’s implementation: it remains the quest’s agent/account override.
+
+   **Smallest change:** make the start consume the authenticated operation from memory, including the required null account, rather than rereading authoritative fields from disk. Treat later disk differences as tampering. Add a replacement between look and start and prove no changed agent, account or note is used.
+
+4. **Blocking — hand-over approval does not bind the agent the holder saw.**
+
+   **Where:** Design:258, :616–617.
+
+   The exact form contains only `{ session, ask }`, while the condition promises comparison with “the agent the holder’s listing showed.” Neither that agent nor an immutable listing reference is carried in the authenticated form.
+
+   The existing approval obtains the agent from writable state (`Driver/Conversations/HandOver/HandOverAskWord.cs:44–50`); `Modules/Bridge/Routes/SessionsRoutes.cs:405–410` supplies no listing snapshot.
+
+   **Smallest change:** include the expected agent or an instance-issued immutable snapshot reference in the signed form. Compare it at application and deferred consumption. Test a same-id ask whose selected agent changes after listing but before admission, as well as after admission.
+
+5. **Blocking — Take back does not make the quest the owner’s.**
+
+   **Where:** Design:447, :450–454.
+
+   The design offers Take back as the owner’s reversal of a waiting go-on, but omits `SESSION_QUEUE_EDIT` from takeover marking. That is the actual take-back/reword route (`Modules/Bridge/Routes/ConversationRoutes.cs:355–380`).
+
+   After the owner withdraws the go-on, the queue can again be empty and satisfy the steward’s conditions. The steward can issue it again during the same run.
+
+   **Smallest change:** include `SESSION_QUEUE_EDIT` in the quest’s owner gate and mark. Derive the takeover census from all relevant personal mutation doors rather than the present examples alone. Test steward go-on, owner take-back, steward go-on refused `owner-set`.
+
+6. **Blocking — steward activation can prematurely activate the supervisor.**
+
+   **Where:** Design:223–225, :562–564, :602–612.
+
+   `AppointmentsOffered` controls every role, and the built judge admits supervisor appointments through it (`Modules/Platform/StandingConfirmation.cs:537`, :633, :657). Row 1d turns it on after steward 1c and containment proof.
+
+   D208 additionally requires completed SUPERVISOR1a-i, SUPERVISOR1b’s bounds and SUPERVISOR1a-iii’s supervisor activation proof. Those remain open or incomplete in D208’s notes and `TASKS.md:266`, :269. Testing the holder’s command line and steward acts does not prove the supervisor’s bounds, held answer and overrule.
+
+   **Smallest change:** either make 1d depend explicitly on those completed supervisor prerequisites and proof, or introduce an independent supervisor offering gate. Prove that activating the steward alone cannot appoint or admit an unfinished supervisor.
+
+7. **Blocking — the go-on’s `not-handed` recovery leaves the session lifecycle unresolved.**
+
+   **Where:** Design:359–362, :620–627.
+
+   “`not-handed` restoring nothing” is not a safe specialization of SUPERVISOR1a-i. Admission first moves the record to working (`Driver/Loop/DriverContinuations.cs:268–274`). A failure before spawn must restore the park, even though the steward word itself must be withdrawn.
+
+   The existing supervisor path explicitly restores the park while preserving other words (`DriverContinuations.cs:798–819`). Its service operation currently removes only supervisor words (`Core/Sessions/SessionLedger.cs:1091–1097`).
+
+   **Smallest change:** distinguish restoring the **park** from restoring the **word**. Restore the park, remove the admitted steward word, retain other and newly arrived owner words, and finalize its ticket. Extend the restore operation accordingly. Test reread, preparation and spawn failures, including an owner word arriving after admission.
+
+8. **Blocking — the holder’s printed start line does not establish the claimed configuration exclusion.**
+
+   **Where:** Design:479–480; `Modules/Platform/HolderTerminal.cs:27–29`.
+
+   The line selects **user** settings. It supplies an empty MCP configuration, but contains no mechanism establishing the absence of user hooks, plugins or instruction files. D208’s own contract makes the additional condition explicit: `--setting-sources user` **with no user hooks or plugins** (`Supervisor:306–308`). Round 2 presents that condition as something the flags already guarantee.
+
+   Automatically loaded code receives the holder’s environment before the role verb strips anything. This is different from a holder deliberately choosing to run forbidden code. The current holder test checks the printed string (`Modules.Tests/Platform/HolderTerminalTests.cs:90`), not configuration exclusion.
+
+   **Smallest change:** specify a reproducible holder configuration that excludes executable user configuration and unintended instructions, rather than assuming the ordinary user configuration is clean. Make activation prove that configuration, including a harmless configured-hook/plugin canary that does not execute.
+
+9. **Non-blocking — the current-code inventory still gives wrong payloads and a wrong symbol.**
+
+   **Where:** Design:41–42, :62, :103–104, :170.
+
+   `sessions say` and `sessions hand-over` both send `said: true`: `Driver/Sessions/SessionsCommand.cs:440–441`, :536–538, with `Body` adding it at :501. Say consequently takes `ConversationRoutes.cs:104–116`, not the screen branch at :141–146. The personal ask-history concern remains valid through the terminal’s own delivery path.
+
+   Also, the variable is `HolderKey.Variable` (`Driver/Sessions/Questions/SupervisorProof.cs:20`), not `SupervisorProof.Variable`.
+
+   **Smallest change:** correct those payloads, trace the terminal say path separately, and correct the constant’s owning type.
+
+10. **Non-blocking — trees on does not move every later continuation into an isolated tree.**
+
+    **Where:** Design:38, :251, :691.
+
+    The same-conversation continuation takes `park.Tree` directly (`Driver/Loop/DriverContinuations.cs:227`). Its tree predicate accepts an existing directory (`Driver/Conversations/ConversationTrees.cs:11`); it does not require the current isolation setting. `Driver.cs:2285–2287` can choose that continuation despite having prepared another tree.
+
+    A session originally run in the checkout can therefore continue there after trees are enabled.
+
+    **Smallest change:** distinguish fresh sessions/new parts from resuming an existing conversation in its recorded directory. Remove the universal continuation guarantee, or explicitly design and prove that relocation.
+
+11. **Non-blocking — closing a holder tab does not emit the exit event named by the lifecycle.**
+
+    **Where:** Design:69, :165–168, :572.
+
+    `TerminalModule` removes a tab before disposing it on CLOSE (`Modules/Windows/TerminalModule.cs:147–153`). `Ended` then returns without emitting `TERMINAL_EXITED` because the tab is already absent (:270–274). Listening only for that event misses the ordinary close button.
+
+    **Smallest change:** notify the judge through one internal holder-ended callback on explicit close, natural shell exit and disposal. Handle an exit during appointment startup too. Prove each path in 1a, before the installed activation look.
+
+12. **Non-blocking — `role-terminal` must use the captured entry state, not the environment after startup.**
+
+    **Where:** Design:298–301, :582–583.
+
+    The driver host’s first action is `HolderKey.Take()` (`Daoris.Desktop.Driver.Host/Program.cs:337`). It removes the variable and retains it privately (`Driver/Sessions/Questions/SupervisorProof.cs:50–57`). A later verb guard checking whether the environment variable “is set” will always miss it.
+
+    **Smallest change:** specify a captured role-terminal marker from the entry operation, independent of whether the key parses successfully. Exercise the real entry-to-dispatch path for both a personal press and an alone-path refusal.
+
+**12 findings; 8 blocking.**
+
+**Verdict: another round.** Keep the shared appointment foundation, separate working session, steward-specific records, fixed go-on and removal of steward done. The next round needs execution-time revocation, authenticated deferred operations through their final consumers, immutable hand-over binding, complete owner takeover coverage, independently safe role activation, queue-preserving go-on recovery and a reproducibly clean holder configuration. These determine who may act and whose later decision wins, so they require another read of the revised mechanism.
+
+## Opus (foundation), round 2
+
+The independent Opus 5.5 reader's foundation read of round 2: 14 findings, 5 blocking; accept after named changes.
+
+## STEWARDROLE1 (D209), round 2: the independent foundation read (D191)
+
+Read at `c5cb45753` (round 2 of the design and D209; the code is main's at `f5c515f0b`, with SUPERVISOR1a-ii's door merged). Read
+whole: the design, D209, round 1's reads and round 2's diff. Read against them: D208 and its notes (points 2, 3 and 7, the
+SUPERVISOR1a-ii note), D201 and its notes, D156 points 4, 5 and 7, D193 parts 1 and 18, the terminal-trust design's §2.1, the
+supervisor design §2.2, and the code cited below. Paths are under `src/Daoris.Desktop/` unless said; *design* is
+`docs/2026-10-24-steward-role-design.md`.
+
+### 1. Round 1's findings
+
+| Finding | Round 2 | Checked against | Outcome |
+|---|---|---|---|
+| **O1** stop and finish read as the owner's | Own codes `ended.stopped-steward`, `stopped.checkpoint-stopped-steward`, `stopped.checkpoint-finished-steward`; every reader by code; 1b's sweep proof (design §5.1, :390-406; §10 1b) | `SessionMoves.cs:78-83`, `Observation.cs:374` are the sites to fork; `Planner.cs:259` holds by state, so the sibling keeps the hold | **Taken as named; holds** |
+| **O2** `owner-set` does not keep an overrule | Keyed by repository or quest, successor sessions covered (§5.4, :450-457) | The key is right, but the mark is still a list of routes. Ask Daoris's applied proposals (`HELP_APPLY`, `HelpRoutes.cs:473`) drive, undrive, hold, resume, give or take trees, set the landing and retry (`HelpSettingProposals.cs:61`, `:80-96`, `:105`) with no mark and no gate; D201's `Forget` runs only in `SET_HOLD` (`DriverRoutes.cs:62`); several quest-scoped `Person` routes are not listed | **Taken otherwise; does not hold yet** (finding 1) |
+| **O3** row 12 is the owner's acceptance | Row 12 and the old 1e dropped; `QUEST_DONE` in §3.2's acceptance row (§2.4, :216-219; :275) | The terminal-trust design's `finish` row (*not by a press*) | **Taken as named; holds** |
+| **O4** words kept on the ask as the person's | No free words; the go-on never reaches a running record, so it never takes `KeepOnAsk` or the added door (§4.3, :352-364) | `Program.cs:1507` (say) and `:1556` (taken) keep only `Persons` words; the added door (`:1464-1467`) is reached only from a running session | **Taken as named; holds** |
+| **O5** words lift the answers-alone hold | `answers-held`, *no word waiting of any author*, the hold's predicates read words less the steward's (§4.2, :345; §4.3, :365-368) | `AnswersAlone.cs:34-35`, `AnswersAloneHold.cs:31`, `:57`: with no other word allowed at the keep, a mixed prompt cannot form, and a later word withdraws it | **Taken as named; holds** |
+| **O6** *Appoint again* revives the file | One role at a time from the window's ask, the tick always off, the file's `acts` and `setup` never read in (§2.3, :201-205) | The built reader takes a record's own fields (`StandingConfirmation.cs:367-375`); 1a changes it to `scope` and is named so | **Taken as named; holds** |
+| **O7** 1a written against a door built differently | §0.2 and §2.2 rewritten against the built door; 1a its amendment | `_hashes` by generation (`StandingConfirmation.cs:236`, `:586-587`); `:257`; `HolderTerminal.cs:27-58`; `TerminalModule.cs:238-274` (`TERMINAL_EXITED`, no judge told); `RefusalLog.cs:104`; `PipeCensus.cs:205`, `:284`, `:287`; the strip sites | **Taken as named; holds**, but §6.1 restates the start line's flags wrongly (finding 5) and 1d's flag breaks D208 point 3's order (finding 2) |
+| **C1** deferred hand-overs impersonate the steward | The admitted operation kept in memory; a steward box or handed file consumed only on an exact match (§5.1, :411-415) | `DriverHandOvers.cs:84`, `:91`, `:133` carry `askedBy` into the handed file | **Taken; holds** for the box and the handed file. Row 10's yes goes through a third file (finding 11) |
+| **C2** `owner-set` protects a route | As O2 | As O2 | **Does not hold yet** (finding 1) |
+| **C3** an admitted act writes after an owner press | A gate per target, `owner-set` checked again under it, the owner's mark set inside it (§3.4 step 7, :317-319; §5.4, :458-463) | `DriverRoutes.cs:44-75` write synchronously | **Taken; holds** for the routes that take the gate. `HELP_APPLY` takes none (finding 1), and the gate does not recheck the appointment (finding 6) |
+| **C4** the hand-over answer's form and binding | `{ session, ask }`, no `said`, a quest's own session, the ask and its agent judged at application (row 10, :258) | `SessionsRoutes.cs:400`, `:405` read `session` and default `ask`; a quest session never reaches the chat branch (`:409-426`) | **Taken; holds** |
+| **C5** a steward word bypasses the hold | As O5 | As O5 | **Taken; holds** |
+| **C6** a complete keep-to-hand protocol for role words | Free words leave D209; the fixed go-on is kept only by the service's conditional step, with nothing held in the process, then checked again and handed by ticket, or withdrawn (§4.1, §4.3) | `DrivenInbox.cs:488` is never on its path | **Taken otherwise; the lifecycle holds**. What it admits does not: the go-on does not require an outage (finding 4) |
+| **C7** a suffix leaves the person's attribution | As O1, with the hand-over's reasons in 1e | `HandOverRecords.cs:46`, `:60` | **Taken; holds** |
+| **C8** session words become the owner's requirements | As O4 | As O4 | **Taken; holds** |
+| **C9** the set-up guard on the applied plan | The check is held inside `SetupPress.ApplyAsync`, immediately before the save (row 12, 1g) | `SetupRoutes.cs:46` recomputes; `SetupPress.cs:170-171` saves `RulesOf(plan)`, and `SetupPressRules.cs:36` is the fork | **Taken; holds** |
+| **C10** *Reopen* does not reverse `done` | `done` dropped, the owner's acceptance | As O3 | **Taken; holds** |
+
+### 2. What round 2 introduced
+
+- **Wrong claims.** §3.1 row 3, *Only narrows* (:251), is false where the landing auto-accepts and a plugin pushes (finding 3). §6.1,
+  *no hooks, plugins or instruction files (`HolderTerminal.SessionLine`'s flags)* (:479-480), and §6.3, *An agent cannot make itself
+  the steward* (:511), are both false: the line loads the user's settings (finding 5). §5.4 and D209 point 6 say *whatever the route*,
+  but the design gives a list of routes (finding 1). §2.2 says the tab's printed line tells the holder session that a role was added
+  (:177-180), but nothing the panel prints reaches the model (finding 7).
+- **New holes.** The target's gate puts a wait between admission and the handler, and a revoke can fall in that wait (finding 6).
+  The go-on's conditions admit any quiet park, whatever ended its turn (finding 4). A hand-over chooses *on what* runs (finding 9).
+  `RETRY_QUEST`'s one form also forgives strikes (finding 10). Row 10's yes goes through the ask's state file (finding 11).
+  `scope: machine` takes in any process's registration (finding 12). Any caller can fill the desk (finding 13).
+- **Rows and proofs.** 1d turns on `AppointmentsOffered`, which activates the supervisor ahead of SUPERVISOR1b and 1a-iii. It
+  also leaves SUPERVISOR1a-iii with a prerequisite, D201's offering, that D209 makes permanently false (finding 2). 1f is ordered
+  before AGENTERRORS1, which it needs (finding 4). 1a's `OwnerSetTests` proves *each route §5.4 names*, which is the list and not the
+  claim (finding 1). `HolderTerminalTests` would hold a start line that does not allow the reads §6.1 relies on (finding 8).
+- **D209's body.** Point 3 says the steward stops driving only a repository whose landing does not push; row 2 does not say that.
+  The Amends list omits D208 point 3, which is where the offering prerequisite and *Appoint again*'s ask live. Point 2's *every role's
+  activation* is finding 2 (finding 14).
+
+Every other citation of round 2 held as cited, or within a line or two.
+
+### 3. Findings
+
+1. **`owner-set` is still a list of routes, and the owner's other doors act on the same things unmarked and ungated** (design
+   §5.4, :450-463; D209 point 6, :58-59; 1a's `OwnerSetTests`, :583-585). **Blocking.**
+   - `HELP_APPLY` (`Person`, `PipeCensus.cs:238`) carries out Ask Daoris's proposals as the owner's own press. It drives, undrives,
+     holds, resumes, sets trees on or off, sets the landing (`HelpSettingProposals.cs:80-96`, `:105`), retries a quest (`:61`) and sets
+     a repository up (`HelpSetupProposals`), all through the config editor and not through `SET_*`.
+   - So, after the owner applies *Stop driving X*, *Trees off* or *Hold X* from Ask Daoris, the steward may drive X again, give it
+     trees again, or resume it.
+   - D201's own *resume only its own hold* breaks the same way. `Forget` is called only by `SET_HOLD` (`DriverRoutes.cs:62`). If the
+     steward holds X and the owner then resumes and re-holds it through Ask Daoris, `_held[X]` and `HeldNow` are both true
+     (`StandingConfirmation.cs:721-727`), so the steward's resume releases the owner's hold.
+   - Quest-scoped `Person` routes outside the list leave the quest unmarked: `SESSION_GO_AHEAD`, `SUPERVISOR_OVERRULE`,
+     `SESSION_QUEUE_EDIT`, `CANCEL_TURN`, `SESSION_GO_ON_NEW`, `SESSION_GO_ON_BRIEF`, `SESSION_PERMISSION_ANSWER` and
+     `DISCARD_SESSION_TREE` (`PipeCensus.cs:216-243`). After the owner's go-on in a new session, or a discard of the tree, the steward
+     may stop the quest again or try it again.
+   - Smallest change: define the mark by the thing acted on, not by a route. Every `Person` route, and every `HELP_APPLY` plan, whose
+     payload or plan names that repository, that quest or one of its sessions sets the mark and takes the gate; `HELP_APPLY`'s hold
+     door calls `Forget`. Replace "from each route §5.4 names" in `OwnerSetTests` with a census sweep that fails on any `Person` route
+     or proposal door that names a repository, a quest or a session and does not mark it, plus a case of an applied Ask Daoris
+     *Stop driving* followed by the steward's drive, refused.
+
+2. **1d turns on every role, the supervisor included, before its bounds and activation** (design §10, :562-566 and :602-612; D209
+   point 2, :35-36; `StandingConfirmation.cs:205-209`, `:534-541`, `:653-657`; D208 point 3, `D208.md:64`; `TASKS.md:266`, `:269`).
+   **Blocking.**
+   - `AppointmentsOffered` alone gates the supervisor: `AppointAsync` checks only it and `Roles.Known`, and `JudgeRole` and `Admit`
+     check only it.
+   - 1d's candidate turns it on with `StewardOffered`. That opens the supervisor's Setup → Driving ask and `SUPERVISOR_ANSWER`
+     without SUPERVISOR1b's bounds (still open) and without SUPERVISOR1a-iii's look. D208 point 3 and the flag's own comment require
+     both first.
+   - D209 also keeps `OfferedInThisBuild` false, so SUPERVISOR1a-iii's stated prerequisite ("D201's offering") can never be met.
+   - Smallest change: add a role flag `SupervisorOffered`, alongside `StewardOffered` and false until SUPERVISOR1a-iii. It gates the
+     supervisor's ask, its `SET_APPOINTMENT` and its admission. In D209's Amends and §10, give SUPERVISOR1a-iii the containment's look
+     in place of D201's offering, after SUPERVISOR1b as now.
+
+3. **Trees on, and a stop or a finish, can publish in a repository whose landing auto-accepts and pushes** (design §3.1 rows 3, 6
+   and 7, :251, :254-255; D209 point 3 and *Why*, :37-41, :66-68; `AutoLanding.cs:203-209`; `Landing.cs:1082-1091`;
+   `SetupPressRules.cs:64-67`; `AutoLander.cs:103-104`; the terminal-trust design's `stop` row, line 134). **Blocking.**
+   - A done reaches the landing only from a tree of its own. In the checkout it is `NoTree` and lands nothing. Under a branch rule
+     that auto-accepts (set by the owner, or turned on by the access setup) with a plugin, the landing hands the branch to the plugin,
+     which pushes it and opens the pull request.
+   - So `steward trees <repo> on` in a repository the owner drives in the checkout turns every later done into an automatic push.
+     Row 3 has only row 2's conditions (*As 2*), which leave out `landing-pushes`. Row 1's own reason, *its every landing publishes*,
+     applies here word for word.
+   - Likewise, a steward's finish of a park whose quest is already `Done` moves it out of `awaiting-person`. `IsParked` is the only
+     thing that held its due landing back (`AutoLanding.cs:206`, `Attention.cs:365`), so the finish releases the push. A steward's
+     stop of such a session fixes the moment the push is made, with committed but unfinished work.
+   - Smallest change: give row 3 row 1's `landing-pushes`, judged on `LandingRules.Effective`. Refuse rows 6 and 7 with
+     `landing-pushes` where `AutoLandingRules.Concluded` would answer `due` under a pushing plugin. Drop *Only narrows* from row 3 and
+     correct D209's *Why*. Add both cases to 1b's `RoleActTests`.
+
+4. **The go-on is admitted to any quiet park, not one an outage ended** (design §4.2, :336-346; §0.1, :49-51; D209 point 5, :49-51;
+   §10 1f, :620). **Blocking.**
+   - The conditions name only formal waits: a question, a go-ahead, a word, a hold, a mark. A session that ends its turn by asking
+     the owner in prose ("which approach do you want?") meets every one of them.
+   - The steward's *go on with your quest where you left off* then lets the agent decide something it asked the owner. Only the owner
+     or the supervisor, inside D208's bounds, may answer that.
+   - Today the driver reads no outage at all (AGENTERRORS1's own row: no `529`, no *Overloaded*), so Daoris cannot hold "after an
+     outage".
+   - Smallest change: add a condition, `not-outage`. The record's last turn ended on an error kind that AGENTERRORS1 reads and its
+     policy leaves waiting; anything else is refused. Put 1f after AGENTERRORS1's kinds, and add to `RoleGoOnTests` a park ended on a
+     prose question, refused.
+
+5. **The holder's start line loads the user's own configuration, so an agent can make itself the steward** (design §6.1, :479-480;
+   §6.3, :509-511; `HolderTerminal.cs:27-29`; the supervisor design §2.2, line 307; D156 point 7, `D156.md:42-47`). **Blocking.**
+   - `--setting-sources user` loads `~/.claude/settings.json`: its hooks, its enabled plugins and their hooks, its status line and
+     helper commands. The user's own instruction file is loaded too.
+   - Each hook, plugin, status line or helper command runs as a child of the holder's harness, outside every agent job and with
+     `DAORIS_ROLE_KEY` in its environment.
+   - Any process of the account can write that file, so a hook planted once makes every steward act with no key leaving the holder.
+     D208 wrote this as a precondition, *with no user hooks or plugins*, which 1d's look checks at one moment only.
+   - Under `scope: machine`, the stakes are every repository, not one repository's answers.
+   - Smallest change, either of two:
+     - make the line switch these off itself (an inline `--settings` that turns every hook off and names no plugin, status line or
+       helper command), and have `HolderTerminalTests` hold it; or
+     - correct §6.1, name the user-level configuration in §6.3's *Not closed*, in the ask's plain sentences and in D209 point 7, and
+       have 1d's look and the brief read the user's hooks and plugins.
+
+6. **A revoke falls between an act's admission and its gate** (design §3.4 step 7, :317-319; §5.4, :442-444). Not blocking.
+   - Step 7 releases the judge's lock and then waits for the target's gate. Under it, it checks `owner-set` and nothing else.
+   - A steward act admitted while another runs on the same target (the holder can run two verbs at once) therefore runs after *Turn
+     off*. A hand-over admitted that way can write its box after the revoke's sweep has cleared the untaken ones.
+   - The design's *An act already past its gate is not recalled* implies one not yet past it is recalled; step 7 does not do it.
+   - Smallest change: under the gate, check again that the generation is live and the holder's hash present (`appointment-changed`
+     otherwise). Add the revoke between admission and gate to `OwnerSetTests`.
+
+7. **The role-added line never reaches the holder session** (design §2.2, :177-180; §12 C15 and O9; `TerminalModule.cs:248`).
+   Not blocking.
+   - What the panel prints goes to the tab's screen, over the harness's interface. It is not the model's input, so the session never
+     learns that it holds a new role.
+   - Smallest change: every `steward` and `sessions supervise` answer names the holder's current roles and the brief's revision. The
+     session reads `roles brief` again when either changes. The printed line is said to be for the owner.
+
+8. **The start line and §6.1 name different permissions** (design §2.2, :174-176; §6.1, :481-483; D209 point 7). Not blocking.
+   - §2.2 allows `sessions supervise:*` and `steward:*` beside the read tools.
+   - §6.1 and D209 add `roles brief` and the open reads `sessions`, `notices` and `history`. Each of those would prompt in the tab,
+     or, if `sessions:*` is allowed, it would cover the press verbs as well (refused `role-terminal`, but no longer narrow).
+   - Smallest change: state the line whole, each verb by its exact prefix, and have `HolderTerminalTests` hold that text.
+
+9. **A hand-over chooses *on what* runs, which §3.2 gives the owner** (design row 9, :257; §3.2's spending row, :276;
+   `ActorChoices.cs:94-114`; `HandOverQuest.cs:73-87`). Not blocking.
+   - The roster is every built or plugin adapter with a profile, and a handed agent overrides the owner's `build` actor order
+     (`SET_ACTOR`) for that quest. Leaving the account to Daoris does not leave the agent to the owner.
+   - Smallest change: `agent` must be in the repository's effective `build` order (`ActorChoices.Effective`), `not-actor` otherwise.
+     Otherwise, say in §3.2 why choosing among the owner's adapters is not *on what*.
+
+10. **`RETRY_QUEST`'s one form also forgives strikes** (design row 8, :256; `StandingChoices.cs:108-131`). Not blocking.
+    - The same `{ quest }` releases a stop where the verdict is `Stopped`, and marks the quest forgiven where it is `Exhausted`. The
+      second is the bound before the owner (D58).
+    - The steward's condition reads the last session and memory, not the verdict. A strike limit lowered after the steward's stop,
+      for example, makes its retry a forgiveness.
+    - Smallest change: admit row 8 only where `StandingChoices.Retry` would answer `Released` for the steward's own stop.
+
+11. **Row 10's yes goes through the ask's state file, which §5.1 does not authenticate** (design row 10, :258; §5.1, :411-415;
+    `SessionsRoutes.cs:390-430`). Not blocking.
+    - The approve writes `approved` into the home's ask-state file. The look later turns that into the box, as `HandOverBy.Agent`.
+    - The steward's attribution has to travel through a file that §5.1's exact-match rule does not name, and any process can write
+      that file.
+    - Smallest change: the steward's yes writes the box itself, matched against memory, or §5.1 names the state file among the
+      authenticated artifacts. Add a planted `approved` claiming the steward to 1e's `DriverHandOversTests`.
+
+12. **`scope: machine` takes in any process's registration** (design §2.3, :190-192; `Daoris.Service.Http/PersonDoors.cs:215`).
+    Not blocking.
+    - `POST /api/registry` is a `Driver` door, so it is ungated until PERSONDOOR1g, as §0.6 says of every door. The `unregistered`
+      condition proves registration, not that the owner registered it.
+    - Smallest change: say it in §6.3 and the ask, or limit the steward to repositories registered before the appointment or by the
+      owner's own press this run.
+
+13. **Any caller can fill the desk** (design §6.2, :495-500). Not blocking.
+    - `STEWARD_REQUEST` is `Open` with one bound of 100 for everyone, so an agent can make the working session's requests answer
+      `desk-full`.
+    - Smallest change: a bound per caller process, or say the denial in §6.3.
+
+14. **D209's body against the design** (D209 points 2, 3 and 6, and the Amends list, :30-36, :37-38, :58-59, :82-86). Not
+    blocking.
+    - Point 3's "drive and stop driving a registered repository whose landing does not push" disagrees with row 2.
+    - The Amends list names D208 points 2 and 7 but not point 3. Point 3 is where *Appoint again* "opens the same ask naming the scope
+      found" and the offering's prerequisites ("only after D201's offering, the bounds (1b) and the activation proof") are decided,
+      and D209 changes both.
+    - Point 6's *whatever the route* stands only after finding 1.
+    - Smallest change: make the three edits.
+
+**14 findings, 5 blocking.**
+
+**Verdict: accept after named changes the steward can check without another read.** The foundation holds in its shape. A role is
+admitted only by a key whose hash lives in memory and is proved over the hello's nonce. The holder runs no branch's code and the
+working session holds nothing. D201's four presses become the steward's acts, not a second door. `done` stays the owner's. The
+steward's acts write records of their own, and the go-on is fail-closed and kept off the ask. Round 1's seven Opus and ten Codex
+blocking points are taken, all but `owner-set`'s, which needs finding 1. Five bounded changes remain, each checkable at the lines
+cited:
+1. Mark `owner-set` by what was acted on, through every owner door, `HELP_APPLY` and its `Forget` included, with a census sweep.
+2. Give the supervisor a flag of its own, so 1d cannot activate it, and give SUPERVISOR1a-iii a prerequisite that can be met.
+3. Add `landing-pushes` to trees on, and to a stop or finish that would make a pushed landing due.
+4. Admit the go-on only after an error AGENTERRORS1 reads, and order 1f after it.
+5. Either neutralise the holder line's user-level hooks and plugins, or state that path honestly as an open limit and check it at
+   activation.
+
+Findings 6 to 14 are text or condition changes the build rows can take as they land.
