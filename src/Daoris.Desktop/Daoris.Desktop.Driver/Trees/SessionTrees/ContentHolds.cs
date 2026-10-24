@@ -206,7 +206,7 @@ internal sealed class ContentHolds(TreeContext context)
             if (logCode != 0 || string.IsNullOrWhiteSpace(trees)) continue;
 
             // REVIEWLANDED1: a landing replayed each of its commits onto the line, read as the landing reads them (patch identity first).
-            if (differs is not null && await ReplayHolds.ReadAsync(cwd, tip, formId, line, differs, ct).ConfigureAwait(false) is { } replay)
+            if (differs is not null && await ReplayHolds.ReadAsync(cwd, tip, formId, mergeBase.Trim(), line, differs, ct).ConfigureAwait(false) is { } replay)
             {
                 if (replay.Held) return ContentProof.Of(new ContentHold(form, Squash: false) { Replayed = true, OnLine = true }, formRef, formId);
                 lacks ??= replay.Lacks;

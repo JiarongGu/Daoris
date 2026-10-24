@@ -5,6 +5,17 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MAINRED1 — make main's git half green again (2026-10-24)
+
+> Build MAINRED1: make main's git half green again (the CI on 16769207d failed driver-process-git, each class failing again alone; main must be green for the owner's next republish). Two defects, neither from a build waiting to land. (Asked as a quest, never a backlog row; its full words are the quest's.)
+
+**Outcome.** (1) The date bomb: `BranchTidyingFixture.Log()` wrote on a fixed 2026-10-09 while the looks read the real clock up
+to fifteen days ahead, so from 2026-10-24 the look's log prune (KEEP1d, thirty days) took the fixture's file. It writes on the
+real clock now; `BranchTidyingFolderTests` 13 of 13. (2) REVIEWLANDED1's replay form asked the landing's whole walk of every
+tree with commits once the line moved: 1616 starts where the first read made 1409. `ReplayHolds.ReadAsync` now asks it only where
+a commit could be on the line (one patch log and the line's files): 1273. Detail: the fix log's two MAINRED1 entries, D102's
+MAINRED1 note. The name repeats the 2026-10-20 MAINRED1 below, as the quest named it.
+
 ## NOBLOCK1 — nothing the window asks for waits on work (2026-10-24)
 
 > Build NOBLOCK1 (the owner's direction, 2026-10-24; D56 and its UIFREEZE1 note): nothing the window asks for waits on work. (Asked as a quest, never a backlog row.)

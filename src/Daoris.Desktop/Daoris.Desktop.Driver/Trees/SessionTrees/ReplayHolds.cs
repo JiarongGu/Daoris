@@ -27,11 +27,27 @@ internal static class ReplayHolds
     /// not changed since a file the branch changed that reads otherwise there. Null where git could not say: this form only adds holds, so
     /// an unread reading leaves the other forms and their words as they were.
     /// </summary>
+    /// <param name="leaves">Where the branch left the line: the newest commit it shares with <paramref name="lineTip"/>.</param>
     /// <param name="line">The repository's line, for the walk by content.</param>
     /// <param name="differs">The files the branch changed since it left the line that read otherwise on <paramref name="lineTip"/>.</param>
+    /// <remarks>
+    /// MAINRED1: the landing's reading walks commit after commit by content, about fourteen git starts a tree, and a part's trees read
+    /// asks it of every tree with commits once the line moves. So, as <i>Bring up to date</i>'s look holds the same reading to its starts
+    /// (<see cref="LineHolds.JudgeBeyondAsync"/>), one log first marks each commit the line holds by patch, and the line's files since the
+    /// branch left it say whether the walk could find any (<see cref="LineHolds.MayHoldByContent"/>). Where neither can hold one, the line
+    /// holds none of its commits, which is no replay and lacks nothing a landing counts otherwise: two starts, and the reading is not asked.
+    /// </remarks>
     internal static async Task<Reading?> ReadAsync(
-        string cwd, string tip, string lineTip, string? line, IReadOnlyList<string> differs, CancellationToken ct)
+        string cwd, string tip, string lineTip, string leaves, string? line, IReadOnlyList<string> differs, CancellationToken ct)
     {
+        if (await LineHolds.ReadBeyondAsync(cwd, tip, lineTip, null, ct).ConfigureAwait(false) is not { Count: > 0 } beyond) return null;
+        if (!beyond.Any(each => each.Held)
+            && (await LandedProofs.NamesAsync(cwd, leaves, lineTip, ct).ConfigureAwait(false) is not { } brought
+                || !LineHolds.MayHoldByContent(beyond, brought)))
+        {
+            return null;
+        }
+
         if (await LineHolds.JudgeAsync(cwd, tip, lineTip, line, ct).ConfigureAwait(false) is not { } held || held.Commits.Count == 0) return null;
         if (held.Kept.Count > 0) return new(false, held.Kept);
         if (differs.Count == 0) return new(true, null);
