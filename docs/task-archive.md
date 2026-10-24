@@ -20503,3 +20503,15 @@ to address one, each lane's quest work for another session; where it declares no
 lane is what lets it dispatch its own work. The `registry` tool's row for a repository with no lanes says the same words
 (`QuestExchange.NoLanesWay`). Both refusals' words (`QuestLaneTests`) and the registry's row with and without lanes
 (`McpToolsTests`) were seen failing first, then passed. Detail: D115's SELFASK1 note.
+## HELPERDEFAULT1 — a session may ask Daoris's own agents for help by default (2026-10-24, D163)
+
+> **HELPERDEFAULT1 — a session may ask Daoris's own agents for help by default** (driver, web; seen 2026-10-24 on the install; never filed in the backlog). The helpers rule (D163; `driver.json`'s `helpers` and `workspaceHelpers`) defaulted to `ask` with no agents, so a session asking Codex for a second reading through `helper_ask` waited on the person's yes: a kit's chat asked Codex and got a card. Where neither the repository nor its workspace sets a rule, the default becomes `on` for the agents Daoris has set up and signed in on this machine, read from its accounts, never a guessed list; the person's rule for a repository or a workspace still wins, `off` still refuses and `ask` still waits. Proof: the planner's helper tests, seen failing first.
+
+(Quest `#c6c8088f82b3`.)
+
+**Outcome** 2026-10-24. `HelperRule.Default` is `on` and marked `SetUp`; the look reads `HarnessRoster.SetUpAgents` once and gives the
+default those agents (`HelperRule.Over`). An agent's ask naming another is refused `not-set-up` with the agent named; with none set up,
+`none-set-up`; naming none, it goes to the set-up agents of another maker. The Helpers row on a repository's or workspace's Setup says
+the default in English and Chinese, and the page words both reasons. `HelperLookTests`' HELPERDEFAULT1 rows (no rule set and an agent
+set up started without a card; a repository's and a workspace's `ask` still waiting; an agent not set up refused with its reason; none
+set up refused) were seen failing on the old code first. D163's HELPERDEFAULT1 note has the rule and the reason.

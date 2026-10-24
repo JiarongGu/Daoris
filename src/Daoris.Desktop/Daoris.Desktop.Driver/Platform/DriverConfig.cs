@@ -324,7 +324,8 @@ public sealed record DriverConfig(
     /// <summary>
     /// What a helper an agent asks for does in each repository (MIXAGENT2a-i, D163 point 5; the mixed agents design §5): a mode
     /// (<c>ask</c>, <c>on</c>, <c>off</c>) and the agents it may ask. A repository's rule replaces its workspace's whole
-    /// (<see cref="HelperRules.Resolve"/>); absent is the default, <c>ask</c>. Edited only through <see cref="HelperRules.Apply"/>;
+    /// (<see cref="HelperRules.Resolve"/>); absent is the default, <c>on</c> for the agents Daoris set up and signed in on this machine
+    /// (<see cref="HelperRule.Default"/>, HELPERDEFAULT1). Edited only through <see cref="HelperRules.Apply"/>;
     /// held to one table (<c>HelperRulesTests</c>).
     /// </summary>
     public IReadOnlyDictionary<string, HelperRule> Helpers { get; init; } =
