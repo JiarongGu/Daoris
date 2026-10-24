@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { askItem, doorOpening, opening, projectsItem, questsItem, workspaceItem } from './opener';
+import { askItem, doorOpening, opening, planOpening, projectsItem, questsItem, workspaceItem } from './opener';
 
 // One opener (D118 §3i): every door into a view says what it opens, and the view's chosen item takes it.
 // Pure, so what each door does is an assertion, and `App` only applies it.
@@ -186,5 +186,44 @@ describe('the opener', () => {
     expect(doorOpening({ view: 'projects', drawer: 'import', drawerWorkspace: 'work' }))
       .toEqual({ view: 'projects', drawer: 'import', drawerWorkspace: 'work' });
     expect(doorOpening({ view: 'sessions' })).toEqual({ view: 'sessions' });
+  });
+});
+
+// CONFIRMWAIT1c (the confirm-wait design §8.1, §15.3 item 13): a press's card opens the page its plan is shown on, scoped to the
+// press's own session, repository, workspace, quest or ask.
+describe("a press's plan door", () => {
+  const holding = (repository: string) => ({ game: 'studio', tools: 'forge' } as Record<string, string>)[repository] ?? null;
+
+  it("opens a land's session at its review", () => {
+    expect(planOpening({ plan: 'land', session: '3f2a91c4' }, 'forge', holding))
+      .toEqual({ opening: opening('sessions', '3f2a91c4'), review: true });
+  });
+
+  it("opens a set-up's repository at its Details, where its Set up is drawn", () => {
+    expect(planOpening({ plan: 'setup', repository: 'game' }, 'forge', holding))
+      .toEqual({ opening: opening('projects', 'game', { tab: 'details' }) });
+  });
+
+  it("opens a sweep's workspace at its Branches, or the one in view where it names none", () => {
+    expect(planOpening({ plan: 'sweep', workspace: 'studio' }, 'forge', holding))
+      .toEqual({ opening: opening('projects', workspaceItem('studio'), { workspaceTab: 'branches' }) });
+    expect(planOpening({ plan: 'sweep', workspace: null }, 'forge', holding))
+      .toEqual({ opening: opening('projects', workspaceItem('forge'), { workspaceTab: 'branches' }) });
+  });
+
+  it("opens a sync's workspace at its Branches, a repository's by the workspace holding it", () => {
+    expect(planOpening({ plan: 'sync', workspace: 'studio', repository: null }, 'forge', holding))
+      .toEqual({ opening: opening('projects', workspaceItem('studio'), { workspaceTab: 'branches' }) });
+    expect(planOpening({ plan: 'sync', workspace: null, repository: 'game' }, 'forge', holding))
+      .toEqual({ opening: opening('projects', workspaceItem('studio'), { workspaceTab: 'branches' }) });
+  });
+
+  it("opens a clear's workspace at its Details, its quest's page or its ask's", () => {
+    expect(planOpening({ plan: 'clear', scope: 'workspace', id: 'studio' }, 'forge', holding))
+      .toEqual({ opening: opening('projects', workspaceItem('studio'), { workspaceTab: 'details' }) });
+    expect(planOpening({ plan: 'clear', scope: 'quest', id: '7eb1d7ba71fe' }, 'forge', holding))
+      .toEqual({ opening: opening('quests', '7eb1d7ba71fe') });
+    expect(planOpening({ plan: 'clear', scope: 'ask', id: '77ea1a000000' }, 'forge', holding))
+      .toEqual({ opening: opening('quests', askItem('77ea1a000000')) });
   });
 });

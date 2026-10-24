@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon, type Notify } from '../design/ui';
 import { storedHere, storeHere } from '../lib/stored';
 import {
-  type Confirmation, type ConfirmationAnswer, confirmationAnchor, Confirmations, PressArea, type PressNames,
+  type Confirmation, type ConfirmationAnswer, confirmationAnchor, Confirmations, type PlanDoor, PressArea, type PressNames,
 } from '../person/Confirmations';
 import { NothingNeedsYou } from '../work/attention/AttentionList';
 import type { AskMessages, Notice } from '../bridge/notices';
@@ -55,7 +55,7 @@ function foldedHere(): Set<NotificationsGroup> {
  */
 export function NotificationsView({
   presses, needs, working, attention, onAnswer, notify, onShown, names, at = null, onVisible, notices = [], onRead, onOpenNotice, onDismiss,
-  messages = [], answered = [], messageNames, onOpenAsk, onMarkAsk, onOpenAnswer, standing,
+  messages = [], answered = [], messageNames, onOpenAsk, onMarkAsk, onOpenAnswer, standing, onOpenPlan,
 }: {
   /** The standing confirmation's line while it is on (TERMTRUST1a, `StandingLine`), at the head of the presses' group. */
   standing?: ReactNode;
@@ -70,6 +70,8 @@ export function NotificationsView({
   notify?: Notify;
   onShown?: (waiting: Confirmation) => void;
   names?: PressNames;
+  /** A press's door to its plan's own page (CONFIRMWAIT1c, the confirm-wait design §8.1). */
+  onOpenPlan?: (door: PlanDoor) => void;
   /** What a door asked to show: its group unfolded and brought into view, or a press's card. */
   at?: NotificationsAt | null;
   /** Told whether the view is drawn: a press's toast stays until the view opens (§3.3). */
@@ -144,7 +146,7 @@ export function NotificationsView({
         {standing}
         {presses.length > 0 && (
           <Group id="presses" title={t('person.label')} count={presses.length} folded={folded.has('presses')} onFold={fold} warn>
-            <Confirmations waiting={presses} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names} />
+            <Confirmations waiting={presses} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names} onOpenPlan={onOpenPlan} />
           </Group>
         )}
         {needs !== 0 && (

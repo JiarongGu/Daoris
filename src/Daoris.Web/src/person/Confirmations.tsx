@@ -86,6 +86,54 @@ export function routeKey(module: string | undefined, route: string): string {
   return named === 'DAORIS.DRIVER' ? `person.route.${route}` : `person.route.${named.replace(/^DAORIS\./, '')}.${route}`;
 }
 
+/**
+ * The page a terminal's press's plan is shown on (CONFIRMWAIT1c, the confirm-wait design §8.1, §15.3 item 13), scoped as the press is:
+ * a land's session, whose review shows it; a set-up's repository; a sweep's or a sync's workspace, or a sync's repository; a clear's
+ * workspace, quest or ask. A workspace a sweep or a sync names none of is null, the one in view.
+ */
+export type PlanDoor =
+  | { plan: 'land'; session: string }
+  | { plan: 'setup'; repository: string }
+  | { plan: 'sweep'; workspace: string | null }
+  | { plan: 'sync'; workspace: string | null; repository: string | null }
+  | { plan: 'clear'; scope: 'workspace' | 'quest' | 'ask'; id: string };
+
+/**
+ * The door to a press's plan (CONFIRMWAIT1c): the driver's routes whose grounds read a plan the person looks at on a page (a land,
+ * a set-up, a sweep, a sync, a clear; `PipeTargetRows`), scoped by the press's own fields. None for any other press, a service's, or
+ * one whose plan names nothing to open.
+ */
+export function planDoor(waiting: Confirmation): PlanDoor | null {
+  if (waiting.source !== 'pipe' || (waiting.module ?? 'DAORIS.DRIVER').toUpperCase() !== 'DAORIS.DRIVER') return null;
+  const field = (name: string) => {
+    const value = waiting.fields.find((each) => each.name === `/${name}` && each.type === 'string')?.value;
+    return value ? value : null;
+  };
+  switch (waiting.route) {
+    case 'LAND_SESSION_TREE': {
+      const session = field('id');
+      return session ? { plan: 'land', session } : null;
+    }
+    case 'SETUP_PRESS': {
+      const repository = field('repository');
+      return repository ? { plan: 'setup', repository } : null;
+    }
+    case 'SWEEP':
+      return { plan: 'sweep', workspace: field('workspace') };
+    case 'TREES_SYNC':
+      return { plan: 'sync', workspace: field('workspace'), repository: field('repository') };
+    case 'HISTORY_CLEAR': {
+      for (const scope of ['workspace', 'quest', 'ask'] as const) {
+        const id = field(scope);
+        if (id) return { plan: 'clear', scope, id };
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
+}
+
 /** A session's short id, as the card says it beside its name: a mirrored record's own part, eight characters at most. */
 export const shortId = (id: string) => (id.slice(id.lastIndexOf('/') + 1) || id).slice(0, 8);
 
@@ -122,7 +170,7 @@ export function AdoptionNotice({ onDismiss }: { onDismiss?: () => void }) {
  * itself is said under its card (the UI/UX design's R3), and by a toast only where the card has gone with its press by the time the
  * answer returns (NOTIFY2a, the notification design §3.4).
  */
-export function Confirmations({ waiting, onAnswer, notify, onShown, names }: {
+export function Confirmations({ waiting, onAnswer, notify, onShown, names, onOpenPlan }: {
   waiting: Confirmation[];
   onAnswer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer>;
   /** The window's toasts: where a refusal is said once its card has gone with its press (NOTIFY2a). Absent, it is said nowhere. */
@@ -133,13 +181,21 @@ export function Confirmations({ waiting, onAnswer, notify, onShown, names }: {
    */
   onShown?: (waiting: Confirmation) => void;
   names?: PressNames;
+  /**
+   * The door to a press's plan (CONFIRMWAIT1c, §8.1): its page opened on the plan as it stands now, so a press hours old is
+   * confirmed against the world it would act on. Absent, no card offers it.
+   */
+  onOpenPlan?: (door: PlanDoor) => void;
 }) {
   if (waiting.length === 0) return null;
   // No landmark of its own: *Notifications*' group is the region these cards are drawn in.
   return (
     <div className="grid gap-2">
       {waiting.map((each) => (
-        <Card key={`${each.source}:${each.id}`} waiting={each} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names} />
+        <Card
+          key={`${each.source}:${each.id}`} waiting={each} onAnswer={onAnswer} notify={notify} onShown={onShown} names={names}
+          onOpenPlan={onOpenPlan}
+        />
       ))}
     </div>
   );
@@ -226,12 +282,13 @@ export function useShownOnce(enabled: boolean, region: RefObject<HTMLElement | n
 /** A box of a card's region, at most eight lines high and scrolled inside (§3.4), so a press of many values or long words is bounded. */
 const BOX = 'max-h-[8lh] overflow-y-auto';
 
-function Card({ waiting, onAnswer, notify, onShown, names }: {
+function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan }: {
   waiting: Confirmation;
   onAnswer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer>;
   notify?: Notify;
   onShown?: (waiting: Confirmation) => void;
   names?: PressNames;
+  onOpenPlan?: (door: PlanDoor) => void;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
@@ -291,6 +348,7 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
   const old = waiting.asked ? now - new Date(waiting.asked).getTime() > HOUR : false;
   const checking = waiting.source === 'pipe' && waiting.checking === true;
   const restored = waiting.source === 'pipe' && waiting.restored === true;
+  const plan = onOpenPlan ? planDoor(waiting) : null;
 
   return (
     <div
@@ -374,6 +432,8 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
               <Button variant="primary" disabled={busy} onClick={() => void press(true)}>{t('person.confirm')}</Button>
             </>
           )}
+          {/* CONFIRMWAIT1c (§8.1): the plan this press rests on, as it stands now, on its own page. A door, never a press. */}
+          {plan && onOpenPlan && <Button variant="ghost" onClick={() => onOpenPlan(plan)}>{t('person.openPlan')}</Button>}
           <button
             type="button"
             aria-expanded={details}

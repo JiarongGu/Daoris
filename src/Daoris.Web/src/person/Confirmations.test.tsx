@@ -6,7 +6,8 @@ import { Drawer } from '../design/ui';
 import i18n from '../locales/i18n';
 import { watchScreen } from '../test/onScreen';
 import {
-  AdoptionNotice, type Confirmation, type ConfirmationAnswer, Confirmations, PressArea, type PressNames, regionShown, routeKey,
+  AdoptionNotice, type Confirmation, type ConfirmationAnswer, Confirmations, planDoor, type PlanDoor, PressArea, type PressNames,
+  regionShown, routeKey,
 } from './Confirmations';
 
 // The window's confirmation of a terminal's press (PERSONDOOR1f, RPC1c; D156 point 4, the person-door design §4.2), as NOTIFY2b
@@ -363,6 +364,69 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(within(say).getByRole('button', { name: '确认' })).toBeInTheDocument();
     expect(within(say).getByRole('button', { name: '拒绝' })).toBeInTheDocument();
     expect(within(say).getByRole('button', { name: '详情' })).toBeInTheDocument();
+  });
+});
+
+// CONFIRMWAIT1c (the confirm-wait design §8.1, §15.3 item 13): a terminal's press that rests on a plan is confirmed hours later from
+// its card, so the card opens that plan's own page, scoped to the press's own session, repository, workspace, quest or ask.
+describe("the door to a press's plan", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const press = (route: string, fields: Record<string, string>): Confirmation => ({
+    source: 'pipe', id: `p-${route}`, module: 'DAORIS.DRIVER', route,
+    fields: Object.entries(fields).map(([name, value]) => ({ name: `/${name}`, type: 'string', value })),
+    asker: { process: 'bash', pid: 4120 }, expires: null,
+  });
+
+  it.each<[string, Confirmation, PlanDoor]>([
+    ['a land, its session', press('LAND_SESSION_TREE', { id: '3f2a91c4', branch: 'main' }), { plan: 'land', session: '3f2a91c4' }],
+    ['a set-up, its repository', press('SETUP_PRESS', { repository: 'game' }), { plan: 'setup', repository: 'game' }],
+    ['a sweep, its workspace', press('SWEEP', { workspace: 'studio' }), { plan: 'sweep', workspace: 'studio' }],
+    ['a sweep of no workspace named', press('SWEEP', {}), { plan: 'sweep', workspace: null }],
+    ['a sync, its workspace', press('TREES_SYNC', { workspace: 'studio' }), { plan: 'sync', workspace: 'studio', repository: null }],
+    ['a sync, its repository', press('TREES_SYNC', { repository: 'game' }), { plan: 'sync', workspace: null, repository: 'game' }],
+    ['a clear, its workspace', press('HISTORY_CLEAR', { workspace: 'studio' }), { plan: 'clear', scope: 'workspace', id: 'studio' }],
+    ['a clear, its quest', press('HISTORY_CLEAR', { quest: '7eb1d7ba71fe' }), { plan: 'clear', scope: 'quest', id: '7eb1d7ba71fe' }],
+    ['a clear, its ask', press('HISTORY_CLEAR', { ask: '77ea1a000000' }), { plan: 'clear', scope: 'ask', id: '77ea1a000000' }],
+  ])('opens the plan of %s', async (_, waiting, door) => {
+    expect(planDoor(waiting)).toEqual(door);
+    const onOpenPlan = vi.fn();
+    render(<Confirmations waiting={[waiting]} onAnswer={vi.fn()} names={NAMES} onOpenPlan={onOpenPlan} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Look at it now' }));
+
+    expect(onOpenPlan).toHaveBeenCalledExactlyOnceWith(door);
+  });
+
+  it('offers no door on a press that rests on no plan, a service\'s, or one whose plan names nothing', () => {
+    const onOpenPlan = vi.fn();
+    render(
+      <Confirmations
+        waiting={[STOP, SAY, UNKNOWN, SERVICE, press('LAND_SESSION_TREE', {}), press('HISTORY_CLEAR', {})]}
+        onAnswer={vi.fn()}
+        names={NAMES}
+        onOpenPlan={onOpenPlan}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Look at it now' })).not.toBeInTheDocument();
+    expect(planDoor(SERVICE)).toBeNull();
+  });
+
+  it('offers none where the window hands it no door', () => {
+    render(<Confirmations waiting={[press('SETUP_PRESS', { repository: 'game' })]} onAnswer={vi.fn()} names={NAMES} />);
+
+    expect(screen.queryByRole('button', { name: 'Look at it now' })).not.toBeInTheDocument();
+  });
+
+  it('says it in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    const onOpenPlan = vi.fn();
+    render(<Confirmations waiting={[press('SWEEP', { workspace: 'studio' })]} onAnswer={vi.fn()} names={NAMES} onOpenPlan={onOpenPlan} />);
+
+    await userEvent.click(screen.getByRole('button', { name: '查看当前情况' }));
+
+    expect(onOpenPlan).toHaveBeenCalledExactlyOnceWith({ plan: 'sweep', workspace: 'studio' });
   });
 });
 

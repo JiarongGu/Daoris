@@ -45,6 +45,7 @@
   "person.notWaitedOn": "目前没有终端在等它；之后仍可读取它的结果。",
   "person.goneService": "此请求已不再等待：它已在另一个窗口中得到回答、两分钟已过，或其终端已将它撤回。",
   "person.checking": "正在检查是否有变化…",
+  "person.openPlan": "查看当前情况",
   "person.unread": "Daoris 暂时无法读取它所依据的内容；它仍在等待。",
   "person.draining": "Daoris 即将重启；此请求仍在等待。",
   "person.unrecorded": "Daoris 暂时无法记下你的回答；未执行任何操作，它仍在等待。",
