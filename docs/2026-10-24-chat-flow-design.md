@@ -3,9 +3,12 @@
 **Standing:** proposed, round 2, a note amending D157 (the workflow) and D155 (the second opinion) for CHATFLOW1, under D191. Round 1
 was written by Claude Opus 5.5 from the code on main at `8cc3936b0` and read at `94c9065f4` by the independent Opus foundation reader
 alone, its read verbatim in `docs/2026-10-24-chat-flow-reads.md`: 24 findings, 8 blocking, another round; Codex's read is owed, its
-credits out. Round 2 is written by Claude Opus 5.5 from the code on main at `ca046e7fe`. Since the read's `ffcf42926` only tests changed
-under `src/` (GITHUBDOCS1's and CI's), so every line the read cites stands. It answers every finding in §15, each checked against that
-code. Nothing here is built.
+credits out. Round 2 is written by Claude Opus 5.5 from the code on main at `ca046e7fe`. Since the read's `ffcf42926`, `src/` changed in
+tests (GITHUBDOCS1's and CI's), in `Platform/WiringVariables.cs` and in the CLI's `package.json`, and SUPERVISOR1b moved `Driver.cs` and
+`SessionLedger.cs` by a few lines; no claim turns on these, and the citations are re-pinned. It answers every finding in §15, each checked
+against that code. Round 2 was read at `a8573c142` by the Opus foundation reader alone (11 findings, 2 blocking): accept after named
+changes the steward checks without another read. Those changes are taken by Claude Opus 5.5 from the code on main at `507b1925d`, and
+§16 says where each went. Nothing here is built.
 
 The row CHATFLOW1 in `TASKS.md` carries the case. A chat working in a tree of its own serves no quest, so the session's *Workflow*
 view shows only the driver's English sentence, in zh too, and its work reaches the review list with none of its repository's
@@ -17,6 +20,12 @@ work* (`docs/2026-10-08-second-agent-design.md` §12.2). §2 says what changed s
 chat's run, refuses the press with its reason where a part holds, and asks the second opinion at that press. The person presses
 again once it settles. No press is kept to land later, so `AutoLander`, a deferred merge and a landing on a live tree are gone from
 the design (§5). Rows a and b are settled after findings 1, 2, 12, 13 and 21, and can go ahead (§11).
+
+**What changed after round 2's read.** The send-back is built across the service, the driver and the modules, with an atomic take
+under the turns' lock (§6), and D155's automatic recheck is kept after the answering turn, which Daoris started (§5.2, §6). A chat run's
+files go with the session delete, not the history clear (§4.3). A line whose stored origin is a quest's or an ask's reads that quest's run,
+and `tookQuest` is read across the line (§4.1, §4.2). Row d names every quest-keyed site it re-keys, the plan asks nothing, and the person
+is told when the opinion settled (§5.2, §11).
 
 **What this is not.** It is not a quest. A chat stays the person's conversation: it takes no ask, publishes nothing and closes nothing.
 Ask Daoris, an intake, a helper, a partner and a second opinion's reviewer are conversations too, and each is left as it is (§9).
@@ -35,23 +44,29 @@ service paths under `src/Daoris.Service/Daoris.Service.Core/`, page paths under 
 - **Grown at the start.** Where it isolates, `StartAsync` opens a tree (`ChatRunner.cs:557-567`): `SessionTrees.OpenAsync` names it
   `s-<8 hex>` on the branch `daoris/s-<8 hex>` (`Trees/SessionTrees/SessionTrees.cs:354-356`), made by `git worktree add --lock -b`
   under a lock naming the opening process (`:369-372`), and **lets that lock go once the tree is open** (`:404`). No session lock is
-  taken for a chat: only a driven start takes one (`Loop/Driver.cs:2442`, `Loop/DriverContinuations.cs:304`). The record opens on that
+  taken for a chat: only a driven start takes one (`Loop/Driver.cs:2447`, `Loop/DriverContinuations.cs:304`). The record opens on that
   tree with its `HEAD` as the base commit (`ChatRunner.cs:575-586`, SURF6). A tree that grew is told its process with the first message
   (`:612`, PROCESS1d-ii), which names no checks; a checkout chat is told nothing (`:608-611`).
-- **The session's record.** The service's `OpenChatAsync` creates a `Chat` with no quest (`SessionLedger.cs:646-700`, the create at
-  `:688-692`; `Sessions.cs:58-61`, `Quest` *null for a chat*). An unstated tree is recorded as the checkout's root (`SessionLedger.cs:669`).
+- **The session's record.** The service's `OpenChatAsync` creates a `Chat` with no quest (`SessionLedger.cs:652-706`, the create at
+  `:694-698`; `Sessions.cs:58-61`, `Quest` *null for a chat*). An unstated tree is recorded as the checkout's root (`SessionLedger.cs:675`).
   So *has a tree* is not *has its own*: the page's `ownTree` compares it with the registration (`work/identity.ts:159-180`), and the
   driver asks `SessionTrees.Holds` (`SessionTrees.cs:471`), which is true for any folder under the trees root, a reviewer's clone
   `o-…` included (`Review/OpinionTree.cs:18-20`; `Trees/SessionTrees/TreeContext.cs:67`).
 - **Its line.** The service stores each record's line as `entry`, `<origin>/<repository>` (SESSONE1a): a chat's origin is
   `session:<first>`, the first record its `From` links reach (`Sessions/SessionEntries.cs:71-93`; written at the open,
-  `SessionLedger.cs:692`), and the wire carries it (`Daoris.Service.Http/ApiContracts.cs:436-439`). A helper and a reviewer keep an
-  origin of their own (`SessionEntries.cs:76-77`).
+  `SessionLedger.cs:698`), and the wire carries it (`Daoris.Service.Http/ApiContracts.cs:436-439`). A helper and a reviewer keep an
+  origin of their own (`SessionEntries.cs:76-77`). A line's origin can also be a quest's or an ask's (`SessionEntries.cs:84-94`): a closed
+  quest's session gone on as a conversation in the quest's own tree (SESSCTX1c part B, `Conversations/Chat/BriefedMove.cs:26-27`) is
+  such a line. No chat's `From` link changes tree: a hand-over opens on `prior.Tree` (`ChatHandOver.cs:157`), a limit's move and a
+  briefed go-on pass `tree: tree` (`Conversations/Chat/LimitMove.cs:141-143`, `:255-257`; `BriefedMove.cs:128-134`), and *Start a
+  conversation with these words* passes no `from` (`ChatRunner.cs:326-330`).
 - **What the trace reads.** `Trace.ParseSessions` reads `Kind`, `Tree`, `BaseCommit`, `Ask` and the rest (`Sessions/Trace/Trace.cs:267-286`;
   `Sessions/Domain/TracedRecords.cs:28-80`), and none of `opinion`, `serves`, `piece`, `from` or `entry`, which the service answers this
   machine (`ApiContracts.cs:425-454`). A teammate's record is told by `/` in its id (`TracedRecords.cs:69-70`).
 - **A chat that took a quest.** The record keeps `quest` null and the quest in `took_quest` (CHATTAKE1; `Sessions/Sessions.cs:250`), which
-  joins that quest to the chat's line (`SessionEntries.cs:102-106`). `/api/sessions` does not answer it to this machine (`ApiContracts.cs`
+  joins that quest to the chat's line (`SessionEntries.cs:102-106`). The field is the taking record's alone: `MarkTookAsync` writes it by
+  that record's id (`Sessions.cs:1733-1740`), and `OpenChatAsync` takes none (`SessionLedger.cs:652-706`), so a hand-over's next record
+  carries no `took_quest` of its own. `/api/sessions` does not answer it to this machine (`ApiContracts.cs`
   has no such field), and `ServiceClient.SessionQuestAsync` reads only `quest` (`Service/ServiceClient.cs:1981-1992`).
 - **Its branch.** The record keeps no branch. It is `daoris/` plus the tree's folder name (`Trees/SessionTrees/TreeFollows.cs:19`,
   `Trees/SessionGroups.cs:291`), or the branch the agent moved its tree to (TREEFOLLOW1, `SessionGroups.cs:254`).
@@ -104,7 +119,7 @@ service paths under `src/Daoris.Service/Daoris.Service.Core/`, page paths under 
 ### 1.4 Checks a session is told
 
 `run-heavy` refuses a tree only where git's lock on it names a session whose kept checks are `light` (`Sessions/Heavy/HeavyRun.cs:180-189`,
-through `SessionLocks.HolderOf`). A driven start keeps its checks for its run and lets them go when the run ends (`Driver.cs:2543-2552`,
+through `SessionLocks.HolderOf`). A driven start keeps its checks for its run and lets them go when the run ends (`Driver.cs:2548-2557`,
 a `Disposer`), and hands the harness's deny rules in that start's settings (`HeavyTold.Hand` into `HandRules`, `DriverContinuations.cs:418-421`).
 A chat's rules are composed once, at its spawn (`ChatRunner.cs:1349-1360`). So no part of that enforcement reaches a chat today, and
 `HeavyTold.LightWords` (`Sessions/Heavy/HeavyTold.cs:72-80`) would be false said to one.
@@ -131,8 +146,8 @@ Each is `Kind = Chat` with no quest (`Sessions.cs:44-61`):
 
 | Conversation | How it is told apart | Its folder |
 |---|---|---|
-| Ask Daoris | repository `daoris:help` (`SessionLedger.cs:426`, `IsHelp` `:432`; `TracedRecords.cs:22`), opened by `OpenHelpAsync` (`:576-628`) | its workspace's room, no base commit (`:616-620`) |
-| An intake | repository `ask #<id>`, `Ask` set (`SessionLedger.cs:354-418`, `:408`); its view reads its ask's runs (§1.2) | a room |
+| Ask Daoris | repository `daoris:help` (`SessionLedger.cs:432`, `IsHelp` `:438`; `TracedRecords.cs:22`), opened by `OpenHelpAsync` (`:582-634`) | its workspace's room, no base commit (`:622-626`) |
+| An intake | repository `ask #<id>`, `Ask` set (`SessionLedger.cs:360-424`, `:414`); its view reads its ask's runs (§1.2) | a room |
 | A reviewer | `Opinion` set (`Sessions.cs:148`) | a clone of its own under the trees root, `o-<8 hex>` (`Review/OpinionTree.cs:6-25`) |
 | A helper | `Serves` set (`Sessions.cs:158`) | its lead's |
 | A partner | `Serves` and `Piece` set (`Sessions.cs:165`) | a clone of its own with no remote; its one piece is kept as a commit its lead merges (`D199.md:16-29`) |
@@ -157,8 +172,8 @@ That reason no longer describes the product:
    and its line is already stored (§1.1). What a chat lacks is a run key, which §4 derives from that line.
 4. **The person asked for it.** The row's direction is that a conversation's work in its own tree runs its repository's workflow.
 
-What stays out is unchanged. A chat in the checkout works on the person's own files, and Daoris lands nothing from it. Ask Daoris changes
-no repository's code (§9).
+What stays out is unchanged. A chat in the checkout works on the person's own files, and Daoris lands nothing from it. Ask Daoris works in its
+workspace's room, not in a repository's tree, and Daoris lands nothing from it either (§9).
 
 ## 3. The rule
 
@@ -172,8 +187,8 @@ no repository's code (§9).
    chooses with no task level and no kind: the repository's, then the workspace's, then Current. Where that choice is a graph version,
    nothing is bound and the view says so until CHATFLOW1f (§4.3). A press on a run that could not be bound tries the bind first, and
    one that still cannot be made refuses the press with its reason (§4.3).
-4. **The gate refuses the person's press with its reason, and asks the second opinion at that press.** A turn's end starts nothing.
-   Where a part holds, *Accept…* is refused as a quest's work is today; where the opinion's part holds for want of a pass, the press also
+4. **The gate refuses the person's press with its reason, and asks the second opinion at that press.** The end of a turn the person
+   started starts nothing. The one exception is D155 point 7's recheck after a turn Daoris started to answer findings (§6). Where a part holds, *Accept…* is refused as a quest's work is today; where the opinion's part holds for want of a pass, the press also
    asks one. The person presses again once it settles, and the work lands then, at that press (§5).
 5. **A send-back reaches the conversation only between turns.** It is an ordinary word carrying `by`, never into a turn in flight, at a
    next step or by *Send now*. A word the person sent first goes first, and the send-back goes to the person (§6).
@@ -191,9 +206,14 @@ no repository's code (§9).
 ### 4.1 The key
 
 - **`chat-<first>`, from the stored line.** The record's `entry` names its origin, `session:<first>` (§1.1). Where the origin is a
-  session whose record names the same tree, the key is `chat-<first>`. Otherwise it is `chat-<own id>`: a line that moved to another tree
-  (a retry or a move) starts a run there. The service's walk is guarded against cycles, not bounded by a count, and so is this one: it
-  reads one stored field and follows no link itself.
+  session whose record names the same tree, the key is `chat-<first>`, and since no chat's `From` link changes tree (§1.1), that is every
+  chat line's case. The service's walk is guarded against cycles, not bounded by a count, and so is this one: it reads one stored field and
+  follows no link itself.
+- **A line whose stored origin is a quest's or an ask's** is no chat run. A closed quest's session gone on as a conversation in the quest's
+  own tree (§1.1) reads that quest's run in its repository, under the quest's own binding and gate, and its press is gated as row i gates a
+  chat that took a quest. It never binds the repository's default over the quest's choice, nor asks a new opinion beside the quest's gate.
+  An ask's origin is an intake's line, which reads its ask's runs.
+- **`chat-<own id>`** is kept only for a record whose stored origin names no session, quest or ask, which no chat writes today.
 - **Its spelling.** A quest's id is 12 hex digits and a session's 8 (`Sessions.cs:799`). The prefix keeps the two apart by their
   spelling, and `chat-1a2b3c4d` passes `WorkflowRunBindings.IsRunId` (`WorkflowRunBindings.cs:41-42`, `[A-Za-z0-9_-]{1,64}`). A teammate's
   id holds `/` and never passes, which keeps a run machine-local, as D47 §4 has it.
@@ -211,7 +231,8 @@ no repository's code (§9).
 | none by that id | `no-session` |
 | a teammate's | `teammate` |
 | `quest` set | its quest's run, as today |
-| `tookQuest` set (CHATTAKE1) | that quest's run: a chat that took a quest is that quest's work, never a chat run |
+| a stored origin `quest:<id>` or `ask:<id>` (§4.1) | that quest's run, or its ask's runs, as a quest's session's |
+| `tookQuest` set on any record of the line in this tree (CHATTAKE1) | that quest's run: a chat that took a quest is that quest's work, never a chat run, before a hand-over and after it |
 | `ask` set (an intake) | its ask's runs, as today; `ask-no-quest` before any quest is published |
 | `daoris:help` | `ask-daoris` |
 | `opinion` set | `reviewer` |
@@ -222,7 +243,10 @@ no repository's code (§9).
 | a chat in a tree of its own | its chat run (row c); `chat-own-tree` until row c is built; `chat-graph-later` where its choice is a graph version (§4.3) |
 
 So the trace reads `opinion`, `serves`, `piece`, `from`, `entry` and `tookQuest` into `TracedSession` (row a), and the service answers
-`tookQuest` to this machine as it answers `opinion` (an additive field, `ApiContracts.cs`).
+`tookQuest` to this machine as it answers `opinion` (an additive field, `ApiContracts.cs`). Since `took_quest` is the taking record's
+alone (§1.1), the reader takes it from any record of the line whose tree is this one, so a hand-over's next record reads the taken quest's
+run as the record before it did; carrying it at the hand-over's open would rewrite the service's own record, which this needs no more than
+the line's read does.
 
 **A chat run** has no chain. Its quests are empty, its `session` is the line's newest record, and its `repository` is the tree's owner.
 `RunAsync` reads it as a quest's, **with every fact selected by the line** rather than by `mine`: the records whose key is this run's, the
@@ -260,21 +284,30 @@ CHATFLOW1f's, and FABRIC-PIPELINE1d's executor moves them.
   (`Trees/Nodes/GraphRuns.cs:59-110`), and the gate's graph part judges by it (`TreeGates.cs:64-77`). Until CHATFLOW1f says what a
   chat's `claimed`, `handed` and `quest.close` subjects are, a choice that gives a graph version binds nothing. The view answers
   `chat-graph-later`, and the gate reads as today: its process is Current's, and its look and opinion parts answer `None` until rows d and
-  d2 give a chat run its own. Current and a steps version bind.
+  d2 give a chat run its own. Current and a steps version bind. `Plan` returns a graph version's digest (`WorkflowRunBindings.cs:129-132`),
+  so the chat's bind tests the chosen version for a graph before it writes, and the press's bind-first below tests it the same way.
 - **A bind that fails** costs the conversation nothing: it goes on, and the next turn's end tries again. The bind reads only local files,
-  so a failure is a home that cannot be written or a version that cannot be read. It is said once in the conversation: *its repository's
-  workflow could not be bound, so it cannot be landed yet: `<why>`*. **A press on an unbound chat run tries the bind first**, and one that
-  still cannot be made refuses the press with that reason (`bind-failed`), since falling back to Current could skip what the repository's
-  chosen workflow asks of the person (`D157.md:362`, `:393-394`). Only the landing waits.
+  and only **a home that cannot be written** fails it. A named workflow that cannot be read does not: `Plan` keeps it as a binding with
+  its `Problem` (`WorkflowRunBindings.cs:120-132`), and the process holds the work by that problem (`WorkflowProcesses.cs:65-70`), so the
+  press is refused with the problem's words as a quest's work under it is. A failed bind is said once in the conversation: *its
+  repository's workflow could not be bound, so it cannot be landed yet: `<why>`*. **A press on an unbound chat run tries the bind first**,
+  and one that still cannot be made refuses the press with that reason (`bind-failed`), since falling back to Current could skip what the
+  repository's chosen workflow asks of the person (`D157.md:362`, `:393-394`). Only the landing waits. **A choice that is a graph version
+  is never refused `bind-failed`**: the press's bind-first binds nothing for it, and the press is gated as today (the paragraph above).
 - **Said.** Under a named workflow the conversation's first Daoris line says which and why (`WorkflowRunBinding.Why`,
   `WorkflowRunBinding.cs:50-60`), as the look says a start's. Under Current nothing is said, as a start's binding says nothing
   (`WorkflowRunStart.cs:197`).
 - **One run spans every landing of its tree.** The binding is not cleared at a landing: the run's steps after the landing (§8) read it,
   and a chat that goes on and lands again lands under the same version.
-- **Cleared with its records, by the history clear only.** A quest's binding goes with its quest (`D157.md:417-423`; `Sessions/History/HistoryHome.cs:29-31`).
-  A chat run's goes with its line's records: the clear that removes the record named by its key removes `chat-<first>.json`, its gate's
-  file and its look's file. The leftover rule (`HistoryHome.cs:158-167`) learns that a `chat-<id>` binding belongs to the record `<id>`,
-  and removes it only where no record by that id remains.
+- **Cleared with the record its key names, by the session delete.** A quest's binding goes with its quest through the history clear
+  (`D157.md:417-423`; `Sessions/History/HistoryHome.cs:29-31`). The history clear never removes a chat: its units are quests, asks and
+  failed sessions (`Sessions/Domain/HistoryPlan.cs:23-30`), and a workspace's reading only counts the conversations that served no quest
+  (`HistoryHome.cs:64-66`, `:86-87`). A chat's record goes by the session delete (`SESSION_DELETE`, `sessions delete`;
+  `Sessions/History/SessionDeletion.cs:50-86`), which refuses while its tree stands or a landing names it (`:127-141`) and removes the
+  names `SessionHomeFiles` lists (`:75`). So `SessionHomeFiles` gains a chat run's three files, `workflows/runs/chat-<id>.json`,
+  `opinions/gates/chat-<id>.json` and `workflows/looks/chat-<id>.json`, and the delete of the record `<id>` takes them; a later record of
+  the line deleted first takes none. The leftover rule (`HistoryHome.cs:103-167`), which sweeps `workflows/runs/` but neither
+  `opinions/gates/` nor a look's folder today, takes a `chat-<id>` file under each of the three folders where no record `<id>` remains.
 
 ### 4.4 What the conversation is told of its checks
 
@@ -283,6 +316,13 @@ is told nothing of them, as today (§1.4). Enforcement is CHATFLOW1h: when a cha
 its id (`SessionLocks.HoldAsync`) and lets it go at the conversation's end; keeps its checks for the conversation's life rather than per
 run; composes `HeavyTold.Hand`'s deny rules into the chat's rules at its spawn (`ChatRunner.cs:1349-1360`); and tells a hand-over's next
 record the checks as the first was told. Only then is `HeavyTold.LightWords` said to it.
+
+**The view says so too.** From row c until row h, the view marks a chat run's checks as *not yet enforced for a conversation*, so it never
+shows `light` as a limit the tree holds. Row h takes the mark off.
+
+**What the conversation is told of its landing matches the press.** `ProcessToldAsync` plans the landing it tells without a process
+(`ChatRunner.cs:2244`), while the press lands by the gate's process (`TreesRoutes.cs:561-566`). From row c the told landing is planned with
+the chat run's bound process, so a chat under a steps version is told the landing its press makes.
 
 ## 5. The person's Accept, gated
 
@@ -307,18 +347,31 @@ is where the gate reads it.
 2. **Refuses with its reason where a part holds**, in the press's existing refusal (`LandingGateWords`, `TreesRoutes.cs:600`), on both doors.
    No press is kept and nothing lands later.
 3. **Asks the opinion at that press** where the opinion's part holds as `not-asked`: an `OpinionDue` naming the chat run (§7), as the
-   person's *Ask now* writes one (`OpinionPresses.cs:118`), at the rule's `landing` occasion. The refusal says so: *a second opinion is
-   asked: `<reviewer>` reads it from the driver's next look; press Accept again once it settles.* The look starts it as every owed pass.
-4. **Asks nothing twice.** A press while a pass is `reading` or its findings are `with-session` is refused with that state's words and asks
-   nothing. Where the answering turn has committed, the next press asks the one recheck (§6), the tip it reads being the tree's then.
-5. **Lands at the press that finds every part settled**: the person's own press, in time, under the rule's form. A merge-form rule merges at
+   person's *Ask now* writes one (`OpinionPresses.cs:118`). A chat run's due is written at the `landing` occasion, never at `rule.On[0]`
+   as *Ask now* writes a quest's, since under a rule whose first occasion is `steps` it would close `past` at once (`OpinionLook.cs:80-84`);
+   *Ask now*'s due on a chat run is written at `landing` too. The refusal says so: *a second opinion is asked: `<reviewer>` reads it from
+   the driver's next look; press Accept again once it settles.* The look starts it as every owed pass.
+4. **Asks nothing twice.** A press while a pass is `reading`, its findings are `with-session`, or its recheck reads (`read-again`) is
+   refused with that state's words and asks nothing. The recheck is not the press's: D155 point 7's runs at the look after the answering
+   turn ends (§6).
+5. **Only the press asks.** The plan reads the gate and asks nothing: `LANDING` (`TreesRoutes.cs:561`), which the page's review reads, and
+   `trees land --plan` show the opinion's part as it stands and write no due. Only `LAND_SESSION_TREE`'s press writes one.
+6. **The person is told when it settled.** The refusal asks them to press again once the opinion settles, so a chat run's settling is
+   said where they look and where they do not: the conversation's foot offers *Accept…* again with the opinion's word, the review row's
+   opinion part moves, and a notice (`Platform/Notices.cs`) says the second opinion on the conversation's work has settled and names the
+   conversation.
+7. **Lands at the press that finds every part settled**: the person's own press, in time, under the rule's form. A merge-form rule merges at
    that press, as it does for a quest's work. Uncommitted work refuses the press, as D164 point 4 has it, so a landing never meets a turn
    writing in the tree: the press is offered only between turns (§1.3).
-6. **After a hand-over** the run, its gate and its due are the line's (§4.1), so the next record's press reads the same gate, and nothing
+8. **After a hand-over** the run, its gate and its due are the line's (§4.1), so the next record's press reads the same gate, and nothing
    is closed `superseded`.
-7. **A second landing of the same tree** is read as a quest's work after its first pass: by the one recheck where it is unspent, otherwise
-   `commits-since`, which the person's press over it answers (the second-agent design §8.3) or their *Ask now*, which is never capped.
-   The service's bound (`OpinionDesk.cs:395-406`) bounds only the automatic first pass, and is unchanged.
+9. **A later landing of the same tree is rarely read by another agent.** The service starts one automatic first pass per working session
+   (`OpinionDesk.cs:395-406`), and a recheck reads only commits made in answer to findings that were handed (`:417-418`). So a later
+   landing is read by an agent only where the first pass's findings were handed and the one recheck is still unspent; since the recheck
+   runs after the answering turn (§6), that is seldom. Otherwise the gate shows `commits-since`, which the person's press over it answers
+   (the second-agent design §8.3) or their *Ask now* reads, never capped. For a long conversation, only its first landing gets an automatic
+   opinion. Giving a chat run one automatic first pass per landing would change the service's bound for it; that is the owner's call, and
+   this design does not make it (§12).
 
 ### 5.3 D154's look on a chat run
 
@@ -353,21 +406,59 @@ check's one send-back (D157 point 9, FABRIC-PIPELINE1f, CHATFLOW1f's). For a cha
   was done.
 - **An ordinary word of its own, between turns.** It is not `Tell` as it stands, which is urgent and Daoris's (§1.5). It is a word at
   `Ordinary` level carrying `by`, shown as *Another agent's findings*, never as the person's or Daoris's, with `by` as D155 point 7 has it.
-  The deliverer offers it only where `TurnEnded` is true for the line's newest record (`ChatRunner.cs:1966-1972`), and it never takes
-  `NextStep` or `Steered` (`ChatQueue.cs:49-65`), so `ChatTurns.Take` cannot hand it into a turn in flight (`ChatTurns.cs:581-587`). D137's
-  door holds.
-- **The person's words go first, where they were sent first.** If words the person sent wait when the deliverer acts, theirs are the next
-  turn and the send-back goes to the person, kept with the reason `person-went-on`. The driver cannot see a draft: where the person is
-  typing when the deliverer acts, the send-back's turn starts, and their word then reaches it as any of their words reach a running turn,
-  at its end, or at its next step where they send it sooner (D136). That is accepted and said in the design, not hidden.
-- **To the line's newest record.** The findings name the record that pressed. Where a hand-over came after it, they go to the line's newest
-  record, which holds the tree (§4.1), never to the ended one.
+  It never takes `NextStep` or `Steered` (`ChatQueue.cs:49-65`), so it never enters a turn in flight. D137's door holds.
+- **The person's words go first, where they were sent first.** If words the person sent wait when the send-back is taken, theirs are the
+  next turn and the send-back goes to the person, kept with the reason `person-went-on`. The driver cannot see a draft: where the person is
+  typing when the send-back is taken, its turn starts, and their word then reaches it as any of their words reach a running turn, at its
+  end, or at its next step where they send it sooner (D136). That is accepted and said in the design, not hidden.
 - **Its answer tool.** A chat run whose process names an opinion carries `opinion_answer` in its rules from its spawn, since a live chat's
   rules are fixed then (`ChatRunner.cs:1349-1360`), as `DriverContinuations.AnswersFindings` hands it to a driven run at its resume.
-- **Its commits void nothing.** No press is kept (§5), so the answering turn's commits move the tip and nothing else. The recheck is not
-  started at that turn's end, which rule 4 forbids: it is asked at the person's next press, which reads the new tip and counts against
-  D155's one recheck (§5.2 point 4). Ancestry decides what an opinion covers (`OpinionGate.JudgeAsync`, through `ReviewGit.HoldsAsync`),
-  so a go-on that rewrites the commits (`ChatGoOn.cs:535-541`, LANDSYNC2b) leaves the earlier pass covering nothing that would land.
+
+### 6.1 How it is delivered: the service, the driver and the modules
+
+Today none of the delivery reaches a live chat. The service's hand refuses every `Active` record, a live chat's `working` included
+(`CannotTake`, `Review/OpinionDesk.cs:480-492`; `Sessions.cs:321-322`), hands only to `opinion.Working` (`:248-253`), and lets only the
+record handed to answer (`:285-294`). The deliverer reads a `working` record as answering for ever (`Running`, `Quests/Domain/Planner.cs:361`;
+`Loop/OpinionDeliverer.cs:105-114`), and reads answers only at a driven resume's end (`:252-271`, called once, from
+`DriverContinuations.cs:658`) or once the record stops running. The loop reaches the shell's chat runner only through seams the modules
+wire (`Loop/LoopContext.cs:57-71`; `Modules/Loop/DriverLoop.cs:890-895`), and the headless host wires none. And reading `TurnEnded`
+(`ChatRunner.cs:1969-1972`) outside `ChatTurns`' lock and then calling `Take` is a race: `Take` queues an ordinary word as `TurnEnd` once a
+turn pumps (`ChatTurns.cs:594-608`), so a word the person sends between the two would put the send-back behind it, which §12 rejects.
+So row e is built in three lanes, and five things are named:
+
+- **(a) The service's hand admits a chat run's live record** (service). `HandAsync` takes the record to hand to, and admits a `working`
+  chat (no quest, no ask, no opinion, no `serves`) whose line and tree are those of `opinion.Working`; it records that record as
+  `Handed.Session`, so `AnswerAsync`'s own rule, only the record handed to answers (`:285-294`), lets it answer. Every other record is
+  refused as today. The driver names the line's newest record in this tree as the target, never the record that pressed where a hand-over
+  ended it.
+- **(b) An atomic take, through a seam** (driver, modules). `LoopContext` gains `SendsBack`, wired by `DriverLoop` to the shell's runner as
+  `HandsOver` is. It reserves the conversation's turns under `ChatTurns`' lock, as `TakeHeld` takes its word (`ChatTurns.cs:552-567`): only
+  where nothing is taking, opening, held or waiting, and a turn has ended, which is `TurnEnded`'s test read inside the lock. Reserved, the
+  turns pump, so a word the person sends from then on waits for the send-back's turn as it would behind any turn. The deliverer then asks
+  the service's hand (a), and the reserved turn takes the word the hand kept on the record; where the hand is refused, the reservation is
+  let go and a word that arrived meanwhile starts at once. Where the reservation is refused, a word of the person's was first: the findings
+  go to the person as `person-went-on`, and nothing was handed. Where no runner holds the chat, or the host is headless (`SendsBack` null),
+  the findings wait as `waiting`, as a hand-over's box waits for a runner, and the next look tries again.
+- **(c) The answers are read when that turn ends.** The reservation's task completes at the send-back turn's end, as `TakeHeld`'s does, and
+  the seam's caller reads the answers then, as `OpinionsAnsweredAsync` reads a resume's.
+- **(d) `DeliverAsync` reads a chat run's record by the runner's turn state**, not by `Running`: `with-session` while the send-back's turn
+  runs, then its answers read. A chat no runner holds reads by its record as today.
+- **(e) Findings handed before a hand-over.** A hand-over ends the record they were handed to, and that record never takes another turn
+  (`WordsNever.Continued`, `BriefedMove.cs:78-83`). Where its answers are not kept, the service re-hands the same opinion, once, to the
+  line's newest record in the same tree (a), the delivery moving `Handed.Session` to it, and from then only that record answers. Where the
+  newest record cannot take them, they go to the person as today.
+
+### 6.2 The answering turn and the recheck
+
+- **Its commits void nothing.** No press is kept (§5), so the answering turn's commits move the tip and nothing else.
+- **D155's automatic recheck is kept.** At the look after the answering turn ends, `AnsweredAsync` asks the one recheck where it is due
+  (`OpinionDeliverer.cs:174-184`), as for a quest's work. This is not a step started at the end of the person's turn, which rule 4 forbids:
+  the answering turn is one Daoris started, the recheck is bounded to one, and it reads only the commits made in answer
+  (`OpinionDesk.cs:417-418`). While it reads, the gate is `read-again` (`Review/Domain/OpinionGate.cs:428-438`) and the press is refused with
+  those words; once it is given, what still stands goes to the person, and the person's next press lands or answers it. No gate state
+  waits for a press to ask a recheck, so the gate never sits in `read-again` with nothing reading.
+- **Ancestry decides what an opinion covers** (`OpinionGate.JudgeAsync`, through `ReviewGit.HoldsAsync`), so a go-on that rewrites the
+  commits (`ChatGoOn.cs:535-541`, LANDSYNC2b) leaves the earlier pass covering nothing that would land.
 - **Once.** A step sends back at most once (D157 point 9). What still stands after the recheck goes to the person.
 - **Never a new session.** A chat that has ended takes a send-back by D137 point 3, its own conversation resumed, never a new one. A chat
   that cannot resume sends it to the person, as `OpinionDeliverer` does today.
@@ -384,6 +475,14 @@ is gone.
 - **Its due.** `OpinionDue` gains `Run`, and `Quest` may be null where `Run` names a chat run. Such a due closes `landed`, `gone` or `off`,
   never `undone`. It carries no tip: the pass reads the tree's `HEAD` at the look (`OpinionGateLook.cs:353`), which between turns is the
   press's tip, and the gate at the next press judges what would land against the tip the pass read and says it.
+- **The sites still keyed by the quest**, each re-keyed by the run in row d:
+  - `OpinionPresses.PressedAsync` returns the gate unanswered for a null quest (`Review/OpinionPresses.cs:64`), and the route calls it with
+    `questId` (`TreesRoutes.cs:586`). Keyed by the run, a chat run's press answers a dispute and `commits-since` as a quest's does; until
+    row e every chat's findings reach the person as disputes (`OpinionGate.cs:423-427`), so without it only *Go on anyway…* would land them.
+  - `OpinionGateLook.JudgeAsync` reads the chain, the process (`RunOf(chain) ?? due.Quest`) and the gate by `due.Quest`
+    (`Loop/OpinionGateLook.cs:185-206`); for a due naming a run it reads the run's process and gate and no chain.
+  - `AskPassAsync` takes its words from the chain's ask (`:381`); for a chat run it takes the conversation's opening.
+  - `OpinionPresses.AskAsync` writes its due at `rule.On[0]` (`OpinionPresses.cs:118`); a chat run's is written at `landing` (§5.2 point 3).
 - **What it reads.** The packet is the second-agent design's §4, with three parts read from a chat's record:
   - the **candidate** is from the fork point with the line (`ForkPointAsync`) to the tip the pass reads, read in its own clone as every
     pass is (`Review/OpinionPackets.cs:87-128`);
@@ -415,8 +514,9 @@ is gone.
 
 ## 9. Unchanged: Ask Daoris's conversations, intakes, and chats with no tree
 
-- **Ask Daoris** reads and advises (`ChatRunner.cs:688-691`), in its workspace's room with no base commit, and changes no repository's
-  code. It runs no workflow, binds nothing and is gated by nothing new. Its *Workflow* view says why, with a code (§10).
+- **Ask Daoris** works in its workspace's room with no base commit, not in a repository's tree. D183 point 1 gives it a full-access mode
+  whose shell and file edits are its own acts, held back only by the room's words (point 5); a repository's work is asked for through a
+  quest, which runs that repository's workflow. So Ask Daoris runs no workflow, binds nothing and is gated by nothing new. Its *Workflow* view says why, with a code (§10).
 - **An intake** reads its ask's runs, as WORKFLOW1c built it (§1.2), and is untouched.
 - **A chat in the person's checkout** runs no workflow: its changes are the person's own files, the checkout is not a tree Daoris made, and
   Daoris lands nothing from it, as today. Its view says so in both languages and names how to have a run: a conversation with a tree of
@@ -442,9 +542,9 @@ there while the page says otherwise.
 | `chat-own-tree` | a chat in a tree of its own, before row c | This chat works in a tree of its own, but this build reads no workflow for a conversation's work yet. | 这个聊天在自己的工作树中工作，但这个版本还不为对话的工作读取工作流。 |
 | `chat-graph-later` | a chat in a tree of its own whose repository's workflow is a graph version, before CHATFLOW1f | This chat's repository follows the workflow `{{workflow}}`, which this build does not run for a conversation's work yet, so its work is landed as before. | 这个聊天所在仓库遵循工作流 `{{workflow}}`，这个版本还不为对话的工作运行它，所以它的工作仍按以前的方式落地。 |
 | `chat-tree-gone` | a chat whose tree is gone, never bound | This chat's tree is gone, and its work was never bound to a workflow, so there is no run to show. | 这个聊天的工作树已经不在了，它的工作也从未绑定工作流，所以没有进展可显示。 |
-| `ask-daoris` | Ask Daoris's record (`daoris:help`) | Ask Daoris advises and changes no repository's code, so no workflow runs for its conversations. | 问道衍只提供建议，不改动任何仓库的代码，所以它的对话不走工作流。 |
+| `ask-daoris` | Ask Daoris's record (`daoris:help`) | Ask Daoris works in its workspace's room, not in a repository's tree, and a repository's work is asked for through a quest, so no workflow runs for its conversations. | 问道衍在工作区的房间里工作，不在任何仓库的工作树中；仓库的工作要通过委托来请求，所以它的对话不走工作流。 |
 | `reviewer` | a reviewer's record | This session reads another's work for a second opinion and changes nothing of its own, so no workflow runs for it. | 这个会话为第二意见阅读另一个会话的工作，自己不做任何改动，所以没有工作流为它运行。 |
-| `helper` | a helper's record | This session helps another and changes nothing of its own, so no workflow runs for it: the session it helps has the run. | 这个会话协助另一个会话，自己不做任何改动，所以没有工作流为它运行：它协助的会话有进展。 |
+| `helper` | a helper's record | This session helps another and changes nothing of its own, so no workflow runs for it: the session it helps has the run. | 这个会话协助另一个会话，自己不做任何改动，所以没有工作流为它运行：进展在它协助的会话那里。 |
 | `partner` | a partner's record | This session writes one piece that the session that asked it lands, so that session's run is the run. | 这个会话写一个分项，由请它来的会话落地，所以那个会话的进展就是这项工作的进展。 |
 | `teammate` | a teammate's record | This session ran on a teammate's machine, which keeps its run. | 这个会话在队友的机器上运行，它的进展保存在那里。 |
 | `unanswered` | the service did not answer (`:53-56`) | The service did not answer, so where this work stands could not be read. Try again. | 服务没有回应，读不到这项工作的进展。请重试。 |
@@ -463,14 +563,27 @@ there while the page says otherwise.
 
 ## 11. The rows, in build order, with their proofs
 
-Each row ships both doors for its part (D50). Rows a and b are settled and can go ahead; c and the rows after it wait for Codex's read.
+Each row ships both doors for its part (D50). By round 2's read's own measure, rows a and b may go ahead with finding 4's two
+classification rows; rows c, d and d2 once findings 3, 5, 7 and 8 are taken; and row e once findings 1 and 2 are. This text takes them
+all (§16), for the steward to check against the read without another; Codex's read stays owed under D191.
+
+**What the owner's own repositories follow on the install, and row f.** On the install every run binding reads `current`: the home keeps
+no named workflow, and each of its run bindings, as of 2026-10-24, names `current` with two steps, the agent's work and a landing the
+person accepts as a branch (`quest/{slug}-{quest}` for this repository, DOGFOOD1). No graph version is chosen anywhere, so rows c to e give
+those repositories a chat run under Current, never `chat-graph-later`, and row f brings them nothing yet. Bringing row f forward was
+weighed and is not done: it waits behind FABRIC-CUTOVER1e and FABRIC-PIPELINE1d and would serve no repository the owner runs today. The
+same reading says what row d will gate there: Current names no second opinion and no look for those repositories, so until the owner's
+rules name one, a chat run's gate reads the same rules a quest's work reads and holds nothing more. The owner's *no checks, no gate* is then
+met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one for its proof).
 
 - [ ] **CHATFLOW1a — the no-run code and the record's kinds** (service, driver, modules). `/api/sessions` answers `tookQuest` to this
   machine; `TracedSession` reads `opinion`, `serves`, `piece`, `from`, `entry` and `tookQuest`; `ChainsOf` classifies in §4.2's order, a chat
   that took a quest reading its quest's run; `WorkflowRunRead.Code`, the route's `code`, §10's codes with `chat-own-tree` for every chat a
   tree of its own holds, and the terminal saying each code's English. Proof: `WorkflowRunTests`, one row per code and a row each for a
   reviewer's `o-…` clone, a helper and a partner (trees `Holds` would take), an own-tree chat reading `chat-own-tree` and never
-  `chat-checkout`, an intake still reading its ask's runs, and a chat that took a quest reading that quest's run; `TraceTests` (the six
+  `chat-checkout`, an intake still reading its ask's runs, a chat that took a quest reading that quest's run, **a closed quest's session
+  gone on as a conversation in the quest's tree reading that quest's run, never a chat run** (its stored origin `quest:<id>`, §4.1), and
+  **a CHATTAKE1 chat's hand-over, whose next record carries no `took_quest`, still reading the taken quest's run** (§4.2); `TraceTests` (the six
   fields); `DriverModuleWorkflowRunTests` (the answer's `code`, `:323-333` extended); the twin table's rows for each code's English.
 - [ ] **CHATFLOW1b — the page words it** (web; after a). The view's codes in `workflow.run.json`, en and zh, the driver's sentence for an
   unknown code, and *Try again* on `unanswered`. Proof: `WorkflowRunView.test.tsx` renders each code in en and in zh and an unknown one as
@@ -478,20 +591,31 @@ Each row ships both doors for its part (D50). Rows a and b are settled and can g
   `chat-own-tree`. Also stories per code, `npm --prefix src/Daoris.Web run i18n:check` and `names:check --strict`.
 - [ ] **CHATFLOW1c — a chat's run, keyed and bound** (driver, modules; after a). `chat-<first>` from the stored line (§4.1); the binding
   when the tree opens, never to a graph version (`chat-graph-later`); a failed bind said once, and a press on an unbound run binding first
-  and refused `bind-failed` where it cannot; `ChainsOf`'s chat run read by the line, with the work step's states; `TreeGates.ProcessAsync`
-  reading the chat run's process; the history clear and the leftover rule. The conversation is told nothing of its checks. Proof:
-  `WorkflowRunTests`: **a chat's tree with commits shows its run and its checks** (Current's `sessionChecks`, and a steps version's
-  `checks`), its opinion `not-reached` with no words of when, a hand-over's second record reading the same run, a line moved to another
-  tree starting a run of its own, and an ended chat with commits reading `land`. `WorkflowRunBindingTests` (bound under the repository's
-  default, never by a kind; a graph version bound nothing); `HistoryClearingTests` (a live chat's binding kept by the leftover rule, cleared
-  with its record); `DriverModuleWorkflowRunTests` (a chat's `{ session }` answers a run); `ChatRunnerTests` (the bind beside the process
-  told, and no checks told).
+  and refused `bind-failed` only for an unwritable home, a graph choice never refused and an unreadable named workflow bound with its
+  `Problem` (§4.3); `ChainsOf`'s chat run read by the line, with the work step's states; `TreeGates.ProcessAsync` reading the chat run's
+  process; the told landing planned with the bound process (§4.4); the view's checks marked not yet enforced until row h;
+  `SessionHomeFiles` taking a chat run's three files and the leftover rule sweeping them (§4.3). The conversation is told nothing of its
+  checks. Proof: `WorkflowRunTests`: **a chat's tree with commits shows its run and its checks** (Current's `sessionChecks`, and a steps
+  version's `checks`), marked not yet enforced, its opinion `not-reached` with no words of when, a hand-over's second record reading the
+  same run, and an ended chat with commits reading `land`. `WorkflowRunBindingTests` (bound under the repository's default, never by a
+  kind; a graph version bound nothing); `OpinionLandingTests` or `ReviewLandingTests` rows for the press's bind-first: a graph choice
+  landing as today, never `bind-failed`; an unwritable home refused `bind-failed`; an unreadable named workflow held by its problem.
+  `SessionDeletionTests` (a chat's delete taking its binding, gate file and look file); a `HistoryClearingTests` leftover-rule row (a
+  `chat-<id>` file under each of the three folders kept while the record `<id>` stands and taken once it is gone);
+  `DriverModuleWorkflowRunTests` (a chat's `{ session }` answers a run); `ChatRunnerTests` (the bind beside the process told, the told
+  landing planned with the bound process, and no checks told).
 - [ ] **CHATFLOW1d — the gate refuses the press and asks the opinion** (driver, modules, web; after c). The opinion's part keyed by the
   run (`OpinionGates` under `chat-<first>`, `OpinionGate.JudgeAsync` with a run and no quest); `OpinionDue.Run`; the press asking at
-  `not-asked` and nothing twice; `OpinionPresses.WorkAsync` reading a chat run; the refusal's words on both doors; the opinion's step's
+  `not-asked` and nothing twice; `OpinionPresses.WorkAsync` reading a chat run; and the quest-keyed sites §7 names, each keyed by the run:
+  `OpinionPresses.PressedAsync` (`:64`, called with `questId` at `TreesRoutes.cs:586`), `OpinionGateLook.JudgeAsync`'s chain, process and
+  gate (`:185-206`), `AskPassAsync`'s words from the conversation's opening (`:381`), and a chat run's dues written at `landing`, *Ask
+  now*'s included (`OpinionPresses.cs:118`). The plan (`LANDING`, `trees land --plan`) asks nothing (§5.2 point 5); the person learns the
+  opinion settled at the foot, on the review row and by a notice (§5.2 point 6); the refusal's words on both doors; the opinion's step's
   words. Proof: `OpinionLandingTests` rows: a chat's press refused and the opinion asked; pressed again while it reads, refused and nothing
   asked; settled, landed at the press; a merge-form rule merging at the press; uncommitted work refused; a hand-over's next record pressing
-  the same gate; a second landing read by the recheck or `commits-since`. `OpinionGateTests` (a chat run's gate, its file by run key),
+  the same gate; a later landing showing `commits-since` where the recheck is spent; **a chat run's press answering a dispute and
+  `commits-since`**; **the plan asking nothing**, by the route and by `trees land --plan`; *Ask now*'s due on a chat run written at
+  `landing` under a rule whose first occasion is `steps`. A `NoticesTests` row (the settled notice). `OpinionGateTests` (a chat run's gate, its file by run key),
   `OpinionPacketTests` (the opening named as the opening, no conversation), `TreesWordsTests` (the refusal's words, exit 1), and
   `WorkFrame.test.tsx` (the foot's refusal, en and zh). The new presses' reach: `HelpCoverageTests` exempts them as the person's (D110).
 - [ ] **CHATFLOW1d2 — the look on a chat run, and the person's way past it** (driver, modules, web; with d). The look's part `cannot-start`
@@ -499,12 +623,22 @@ Each row ships both doors for its part (D50). Rows a and b are settled and can g
   `trees land <id> --without-look`, a `Person` route. Proof: `ReviewLandingTests` (refused with the limit's words; the person's press
   lands at that tip; a later commit asks again; the landing record names it), `DriverModuleTreesWordsTests` (the terminal door's words and
   exit code), `PipeCensus`'s census row, `HelpCoverageTests` (exempt), and `WorkFrame.test.tsx` in en and zh.
-- [ ] **CHATFLOW1e — its send-back only between turns** (driver; after d). The findings as an `Ordinary` word with `by`, offered only where
-  `TurnEnded`, to the line's newest record; `person-went-on`; `opinion_answer` in a chat run's rules from its spawn. Proof:
-  `OpinionDeliveryTests`: **its send-back reaches the conversation only between turns**. Findings wait while a turn runs and while words are
-  queued, and are taken as a turn of their own once it ends; a word the person sent first goes first and the findings go to the person;
-  after a hand-over they reach the newest record. A `ChatTurnsTests` row shows the word never takes `NextStep`; a `ChatRunnerTests` row
-  shows the rule handed at spawn. Also an `OpinionResumeTickTests` (`Process`) case on both doors, run by the CI.
+- [ ] **CHATFLOW1e — its send-back only between turns** (service, driver, modules; after d). §6.1's five: (a) the service's hand admitting
+  a chat run's `working` record of the line, naming the line's newest record and letting it answer; (b) `LoopContext.SendsBack`, wired by
+  `DriverLoop` as `HandsOver` is, reserving the turns atomically under `ChatTurns`' lock as `TakeHeld` does, the findings an `Ordinary`
+  word with `by`, `person-went-on` where a word of the person's was first, and waiting where no runner holds the chat; (c) the answers read
+  at the send-back turn's end; (d) `DeliverAsync` reading a chat run's record by the runner's turn state; (e) findings handed before a
+  hand-over re-handed once to the newest record. D155's automatic recheck at the look after the answering turn (§6.2). `opinion_answer` in
+  a chat run's rules from its spawn. Proof: `OpinionDeliveryTests`: **its send-back reaches the conversation only between turns**.
+  Findings wait while a turn runs and while words are queued, and are taken as a turn of their own once it ends; a word the person sent
+  first goes first and the findings go to the person; **a word arriving between the check and the take** goes first and the findings go
+  to the person, never behind it; **the headless host** (`SendsBack` null) leaves them waiting; **findings handed before a hand-over**
+  re-handed to the newest record, which answers them; **the answers read at the send-back turn's end**, and the recheck started at the
+  next look, the gate `read-again` while it reads and never with nothing reading. A service row (`Daoris.Service.Tests`, beside
+  `McpOpinionToolTests`) for the hand admitting a chat run's `working` record and refusing every other active one; a `ChatTurnsTests` row
+  for the reservation (refused while a word waits or a turn pumps; a word sent after it waits behind the send-back; never `NextStep`); a
+  `DriverLoop` modules row for the seam's wiring; a `ChatRunnerTests` row for the rule handed at spawn. Also an `OpinionResumeTickTests`
+  (`Process`) case on both doors, run by the CI.
 - [ ] **CHATFLOW1f — a graph-bound chat run** (driver; after d, e, FABRIC-CUTOVER1e). The bind of a graph version; the press reaching
   `claimed` at its tip and `handed` landing at that press; its `check` nodes and their send-back. Proof: `WorkflowGraphRunTests` and
   `GraphRunLandingTests` rows for a `run:chat-<first>` unit, and `chat-graph-later` no longer answered.
@@ -517,9 +651,11 @@ Each row ships both doors for its part (D50). Rows a and b are settled and can g
   with its checks (§4.4). Proof: a `HeavyRunCommandTests` row refusing `run-heavy` on a `light` chat's tree; `ChatRunnerTests` (the rules
   and the words); a `HandOverProcessTests` row (the next record told).
 - [ ] **CHATFLOW1i — a chat that took a quest is gated by that quest** (driver, modules; after a). `LAND_SESSION_TREE` and
-  `OpinionPresses.WorkAsync` read a record's `tookQuest` where its `quest` is null, so a CHATTAKE1 chat's press is gated by its taken
-  quest's chain, as its view already reads that quest's run. Proof: `OpinionLandingTests` and `ReviewLandingTests` rows for a chat that
-  took a quest, and a chat that took none unchanged.
+  `OpinionPresses.WorkAsync` read a record's `tookQuest` where its `quest` is null, from any record of the line in this tree (§4.2), so a
+  CHATTAKE1 chat's press, and its hand-over's next record's, is gated by its taken quest's chain, as its view already reads that quest's
+  run; a line whose stored origin is a quest's (§4.1) is gated by that quest's chain the same way. Proof: `OpinionLandingTests` and
+  `ReviewLandingTests` rows for a chat that took a quest, its hand-over's next record, and a closed quest's session gone on as a
+  conversation, and a chat that took none unchanged.
 
 ## 12. Rejected
 
@@ -546,22 +682,33 @@ Each row ships both doors for its part (D50). Rows a and b are settled and can g
 - **A go-ahead on the chat's session**: the session door is built for an ask's sessions and refuses this one by design
   (`SessionGoAheads.cs:75-84`). WORKFLOW1l's run go-ahead is the home.
 - **A code for an intake**: it already reads its ask's runs.
-- **A per-landing first pass in the service**: the recheck and the person's *Ask now* already read a second landing (§5.2 point 7), and no
-  row then needs the service's bound changed.
+- **A per-landing first pass in the service, decided here**: it is the owner's call, not this design's. As built, a later landing is
+  seldom read by an agent (§5.2 point 9); giving a chat run one automatic first pass per landing would change the service's bound for it,
+  and is left to the owner as a row of its own if wanted.
+- **The recheck asked at the person's next press** (round 2): nothing asks a recheck at a press, and the gate would sit in `read-again`
+  with nothing reading (`OpinionGate.cs:428-438`), unless a gate state, a press's write and their proof were added. D155 point 7's
+  automatic recheck after the answering turn needs none of that (§6.2).
+- **Checking `TurnEnded` and then calling `Take`** (round 2): a word the person sends between the two puts the send-back behind it. The
+  take is one act under the turns' lock (§6.1).
+- **The history clear as a chat run's clear** (round 2): it never removes a chat (§4.3).
 - **A workflow for Ask Daoris or a checkout chat**: neither changes code Daoris lands (§9).
 
 ## 13. What this amends, once accepted
 
 - **D157.** The workflow design §12.2's *a conversation's work under a workflow* is lifted for a chat in its own tree. Point 11's run gains
   a second key, `chat-<first>` from the record's stored line, bound when the tree opens and read by the line with no chain; a graph version
-  is not bound until CHATFLOW1f, and the binding is cleared only by the history clear, with its records. Point 10's choice has no task level
-  or kind for it, and a press on a run that cannot be bound is refused. Point 2's gate refuses a chat's press with its reason and asks the
-  opinion at that press. Point 9's send-back reaches a chat only between turns. D157's amendment of D135 (`D157.md:106-107`): a chat run's
-  go-ahead waits for WORKFLOW1l's. The *Workflow* view's no-run answer carries a code, said in English on both doors.
+  is not bound until CHATFLOW1f, and the binding, with the run's gate and look files, goes with the session delete of the record its key
+  names, the leftover rule taking what no record holds. A line whose stored origin is a quest's reads that quest's run. Point 10's choice
+  has no task level or kind for it, and a press on a run that cannot be bound, for an unwritable home only, is refused; a graph choice is
+  never refused for it. Point 2's gate refuses a chat's press with its reason and asks the opinion at that press, and the plan asks
+  nothing. Point 9's send-back reaches a chat only between turns. D157's amendment of D135 (`D157.md:106-107`): a chat run's go-ahead waits
+  for WORKFLOW1l's. The *Workflow* view's no-run answer carries a code, said in English on both doors.
 - **D155.** The second-agent design §12.2's *opinions on a conversation's work* is lifted for a chat run's landing. Point 2's `landing`
-  occasion is asked at the person's press. Point 6's packet takes the conversation's opening, named as such, and the commits' messages as
-  the claim. Point 7's findings go to a chat once, between turns, as an ordinary word carrying `by`, and to the person where the person
-  spoke first; the recheck is asked at the person's next press. The gate's answers and the due are kept by the run's key.
+  occasion is asked at the person's press, its due written at `landing`. Point 6's packet takes the conversation's opening, named as such,
+  and the commits' messages as the claim. Point 7's findings go to a chat once, between turns, as an ordinary word carrying `by`, taken by
+  one atomic act under the conversation's turns and handed by the service to the line's newest record; to the person where the person
+  spoke first. Point 7's automatic recheck stands, at the look after the answering turn, which Daoris started. A later landing is read by
+  another agent only where that recheck is unspent. The gate's answers and the due are kept by the run's key.
 - **D154**, by reference: a look that cannot be set up for a chat run reads `cannot-start`, and its row 1 skip is re-homed as the person's
   *Accept without the look…* on the run.
 - **Standing.** D137 points 2 and 3 (the door), D136, D145 point 1, D154 point 8, D155 points 4, 6 and 8, D157 points 9 and 10, D164
@@ -569,8 +716,10 @@ Each row ships both doors for its part (D50). Rows a and b are settled and can g
 
 ## 14. What the checks do not cover
 
-Documents only, and nothing is built. Each statement in §1 was read at `ca046e7fe`. The other sections' citations name what the change
-reads or narrows, and were checked to exist there. No chat was run on the install. Whether an agent in a chat calls `opinion_answer`
+Documents only, and nothing is built. Each statement in §1 was read at `ca046e7fe` and re-pinned at `507b1925d`, where §16's citations
+were read too. The other sections' citations name what the change reads or narrows, and were checked to exist there. No chat was run on
+the install; what its run bindings name (§11) was read from the install's home, not from a run. The names `SendsBack` and the reservation
+are this design's, for row e to keep or rename. Whether an agent in a chat calls `opinion_answer`
 under the handed rule is unmeasured, as it was for a driven one (XAGENT1j). The `check` step's runtime is FABRIC-PIPELINE1d's, reached by
 a chat only through CHATFLOW1f. The zh words follow the glossary, and no translator read them. `verify` checks the router's row, the decisions' notes and the links here, and none of the words.
 
@@ -578,7 +727,8 @@ a chat only through CHATFLOW1f. The zh words follow the glossary, and no transla
 
 Every finding of the Opus foundation read of round 1 (`docs/2026-10-24-chat-flow-reads.md` §4), each checked against the code on main at
 `ca046e7fe`. *Taken* means the design now says it; *answered* means it is not taken, for the reason given; *deferred* means a later row
-carries it. The read's §1 to §3 corrections are findings below, and the rest are taken where they are named.
+carries it. The read's §1 to §3 corrections are findings below, and the rest are taken where they are named. This table is kept as
+round 2 answered; where round 2's read changed an answer (rows 6, 8, 11, 14, 15 and 17), §16 says what the text now holds.
 
 | # | Finding (blocking in bold) | Checked against | Answer |
 |---|---|---|---|
@@ -609,3 +759,25 @@ carries it. The read's §1 to §3 corrections are findings below, and the rest a
 
 **What stays owed.** Codex's read, on this text (D191, its 2026-10-23 amendment). Rows a and b are settled by the read's own measure and
 may go ahead; the rest wait until both reads' blocking findings are taken. The design stays proposed.
+
+## 16. Round 2's read: where each named change went
+
+Every finding of the Opus foundation read of round 2 (`docs/2026-10-24-chat-flow-reads.md`, round 2 §4), taken as the read names it.
+Each place was checked against the code on main at `507b1925d`.
+
+| # | Finding (blocking in bold) | Where it went |
+|---|---|---|
+| **1** | **Row e's send-back cannot be built in its lane, and §6's checks race** | §6.1: the service's hand admits a chat run's `working` record and names the line's newest record (`OpinionDesk.cs:248-253`, `:285-294`, `:480-492`); `LoopContext.SendsBack`, wired by `DriverLoop` as `HandsOver` is (`LoopContext.cs:57-71`, `DriverLoop.cs:890-895`), reserves the turns under `ChatTurns`' lock as `TakeHeld` does (`ChatTurns.cs:552-567`); the answers are read at that turn's end; `DeliverAsync` reads the turn state, not `Running` (`OpinionDeliverer.cs:105-114`); findings handed before a hand-over are re-handed once. Row e's lanes are service, driver and modules, with proof rows for each and for a word between the check and the take (§11). |
+| **2** | **The recheck "at the person's next press" has no mechanism** | §6.2: D155 point 7's automatic recheck is kept, at the look after the answering turn (`OpinionDeliverer.cs:174-184`), so `read-again` (`OpinionGate.cs:428-438`) always has a recheck reading. §3 rule 4 now governs the person's turns; the amendment is dropped from §5.2 point 4, §6, §13 and the D155 note, and §12 rejects it. |
+| 3 | The history clear is the wrong door | §4.3: a chat run's binding, gate file and look file join `SessionHomeFiles`' names, so the session delete of the record its key names takes them (`SessionDeletion.cs:50-86`, `:75`); the leftover rule takes `chat-<id>` files under the three folders where no record remains (`HistoryHome.cs:103-167`). Row c's proof is `SessionDeletionTests` and a leftover-rule row; §13 and the D157 note follow. |
+| 4 | The key's fallback misses the case it catches, and `tookQuest` is per record | §4.1: "a line that moved to another tree" is dropped (no chat's `From` changes tree, §1.1); a line whose stored origin is a quest's or an ask's reads that quest's run and is gated as row i gates (`SessionEntries.cs:84-94`, `BriefedMove.cs:26-27`). §4.2: `tookQuest` is read from any record of the line in this tree (`Sessions.cs:1733-1740`). Row a proves both, and row i gates both. |
+| 5 | Row d's quest-keyed sites and two door gaps | §7 names `PressedAsync` (`OpinionPresses.cs:64`, `TreesRoutes.cs:586`), `OpinionGateLook.JudgeAsync` (`:185-206`), `AskPassAsync`'s words (`:381`) and the dues at `landing` (`OpinionPresses.cs:118`, `OpinionLook.cs:80-84`). §5.2 points 5 and 6: the plan asks nothing (`TreesRoutes.cs:561`), and the person learns it settled at the foot, the review row and a notice. Row d lists each, with proof rows for a press answering a dispute and `commits-since` and for the plan asking nothing. |
+| 6 | A later landing is rarely read by another agent | §5.2 point 9 says it plainly (`OpinionDesk.cs:395-426`, `:417-418`), and names a per-landing first pass as the owner's call, which §12 leaves to them. |
+| 7 | What the conversation is told, and what the view shows, differ from row c | §4.4: row c plans the told landing with the bound process (`ChatRunner.cs:2244`, `TreesRoutes.cs:561-566`), and the view marks a chat run's checks not yet enforced until row h. Row c lists both with their proof. |
+| 8 | The press's bind-first must leave a graph choice as today | §4.3: a graph choice is never refused `bind-failed`; `bind-failed` means only an unwritable home; an unreadable named workflow binds with its `Problem` and holds the press by it (`WorkflowRunBindings.cs:120-132`, `WorkflowProcesses.cs:65-70`). Row c proves the three. |
+| 9 | Two codes' words | §10: `ask-daoris`'s en and zh as the read words them; §9 and §2 cite D183 points 1 and 5 for the room in place of D89's remark; `helper`'s zh ends 进展在它协助的会话那里。 |
+| 10 | The owner's own repositories' workflow is not stated | §11: on the install every run binding names `current` (work, then a landing the person accepts as a branch) and no named workflow is saved, so rows c to e give those repositories a chat run under Current, never `chat-graph-later`. Bringing row f forward is weighed and not done. |
+| 11 | Citations drifted at HEAD | The standing corrects "only tests changed"; §1 re-pins `Driver.cs` (`:2447`, `:2548-2557`) and `SessionLedger.cs` (+6 from `:354` to `:700`); the backlog row stands at `TASKS.md:384`. |
+
+**What stays owed.** Codex's read, on the final text (D191). The steward checks these changes against round 2's read without another
+read. The design and its D157 and D155 notes stay proposed.
