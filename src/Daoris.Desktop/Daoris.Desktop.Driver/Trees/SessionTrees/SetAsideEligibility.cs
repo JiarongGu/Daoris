@@ -72,10 +72,15 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
     {
         if (manifest.Finished is not { } finished) return "it has no finished tree's manifest";
         if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return "the registry names no checkout of its repository on this machine";
-        var (missing, said) = await ContentHolds.MissingAsync(root, $"refs/heads/{manifest.Branch}", ct).ConfigureAwait(false);
-        if (!missing) return said.Length == 0 ? "its branch stands" : $"git could not say whether its branch stands: {said}";
+        // Only git's own "missing", show-ref --exists exiting 2, says the branch is absent (git-ref-absence.md); 0 says it stands.
+        var (code, _, err) = await WorkingTree.GitAsync(root, ["show-ref", "--exists", $"refs/heads/{manifest.Branch}"], ct).ConfigureAwait(false);
+        if (code == 0) return "its branch stands";
+        if (code != 2) return $"git could not say whether its branch stands: {TreeGit.FirstLine(err)}";
         if ((finished.Ref ?? (finished.Line is { } line ? $"refs/heads/{line}" : null)) is not { } holder) return "nothing names what holds its tip";
-        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", finished.Tip, holder], ct).ConfigureAwait(false);
+        // A holder dropped by hand is git's own "missing", not an answer merge-base defines.
+        (code, _, _) = await WorkingTree.GitAsync(root, ["show-ref", "--exists", holder], ct).ConfigureAwait(false);
+        if (code == 2) return $"{holder} is gone, so nothing holds its tip";
+        (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", finished.Tip, holder], ct).ConfigureAwait(false);
         return code switch
         {
             0 => null,

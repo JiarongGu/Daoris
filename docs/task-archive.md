@@ -20305,3 +20305,20 @@ those few trees' git walks (the same 244-tree part took 0.6 to 18.8 s on 2026-10
 `HelpTreesReadTests.A_part_walks_only_the_trees_still_here_never_a_gone_or_set_aside_one`; the page's and the trees' failed first,
 the open's held what was already so. Detail: D89's
 HELPNEWCHAT1 note, FIX-LOG.
+
+## KEEPSIZE1b — a finished tree's record kept, and its tree let go an hour after (2026-10-24, D195)
+
+> **KEEPSIZE1b — a finished tree's record kept, and its tree let go an hour after** (driver, service, web words). §2 and §3 with the record's write and store but not yet its search: the tip's recovery ref on both paths (§3.1); the schema-2 manifest for every finished tree, a manifest not written keeping the tree (§3.3); `SetAsideEligibility` read by the hour's purge, the days' purge and the press (§3.4); one purge call with `after` per class; the rename before the delete; the steps, the `read` threshold and the resume (§3.5); `work_records`, `work_record_sessions` and their migration, the post and its retry; `Sessions.DeleteAsync` taking the record; `whole`'s meaning; the card's set-aside words and its classes. (The keep-size design §7's first row.)
+
+(Quest `#9c24a0a8c55e`.)
+
+**Outcome** 2026-10-24, on its branch, its merge waiting on a second maker's read of the branch and Codex's read of the design's accepted
+text: the service keeps a finished tree's record in `work_records` and `work_record_sessions` (`Sessions/WorkRecords.cs`, their own
+stamp, a newer one refused), posted by the driver to `POST /api/trees/record`, kept once by its identity, gone with its last session
+through `SessionStore.DeleteAsync` or with a clear of history by its `at`. The driver holds the exact tip on a recovery ref wherever
+the line's own branch does not, writes a schema-2 manifest for every finished tree (one not written keeps the tree), marks its steps,
+composes and posts the record after the hold at each Keeping pass and before the press lists, and purges by class in one call (a recorded
+folder an hour after its record, an awaiting one never, the rest at their days), renaming each folder into `.tidied/.going` first. The
+card says the new rule, and the press says each folder's class, in both languages. Proof: `KeepSizeGitTests` (14 cases over real git),
+`KeepingSlimTests`' first case retold for a service that does not answer, `WorkRecordStoreTests` and `WorkRecordHostTests`. What the row
+left is KEEPSIZE1b2 in `TASKS.md`. Detail: D195's KEEPSIZE1b note.
