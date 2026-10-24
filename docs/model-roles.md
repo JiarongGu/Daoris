@@ -5,7 +5,13 @@ each choice, what is on trial, and when an agent of another maker is asked for a
 dispatch reads it in place of fixed names; Daoris's own sessions take the same roles through MODELROLE1. Change it when a
 batch's measurements or a new model version say so, and date the change.
 
-Reviewed **2026-10-23**.
+Reviewed **2026-10-24**.
+
+**The tier rule (the owner's direction, 2026-10-24).** A lower tier takes a role wherever a measurement shows the role's result
+holds on it, as D160's split did for orientation and exact builds; a role whose result has not been measured on a lower tier keeps
+the stronger model. A harness's own background calls stay as the harness sets them: Claude Code calls Claude Haiku 4.5 for its own
+small tasks beside the session's model (seen on the install, 2026-10-24, in the records' models next to Opus 5.5), and that is the
+harness's optimization, not a role here.
 
 ## The roles
 
