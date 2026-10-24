@@ -893,13 +893,15 @@ met by rows c and d together with a rule naming an opinion (CHATFLOW1g sets one 
   `_pressing`** (kept, never dropped, starting once the press answers, landed or refused) and **a hold that outlasts its five minutes**
   (refused, `_pressing` let go); an `OpinionLandingTests` row for *Ask now*'s due on a chat run carrying its tip and count; and a row for
   the count **over a turn the person sent and finished after the press, with nothing left on `said`** (the count risen).
+  *Built* (D157's CHATFLOW1d note), with what it did not reach named there.
 - [ ] **CHATFLOW1d2 — the look on a chat run, and the person's way past it** (driver, modules, web; with d). The look's part `cannot-start`
   for a chat run under a rule or version that requires one; *Accept without the look…*, its file, the page's press and
   `trees land <id> --without-look`, a `Person` route. Proof: `ReviewLandingTests` (refused with the limit's words; the person's press
   lands at that tip; a later commit asks again; the landing record names it), `DriverModuleTreesWordsTests` (the terminal door's words and
   exit code), `PipeCensus`'s census row, `HelpCoverageTests` (exempt), and `WorkFrame.test.tsx` in en and zh. **Amended by Codex's
   finding 1, before d2** (§5.3): the skip is kept at the press's captured tip and the landing pinned to it; its proof adds a
-  `ReviewLandingTests` row where the tree moves after the skip is judged, refused and never landed under the skip.
+  `ReviewLandingTests` row where the tree moves after the skip is judged, refused and never landed under the skip. *Built* (D157's
+  CHATFLOW1d note).
 - [ ] **CHATFLOW1e — its send-back only between turns** (service, driver, modules; after d). §6.1's six (rewritten by the Opus check's
   finding 8): (a) the service's hand admitting a chat run's `working` record of the line, and an ended chat record that is the newest of
   `opinion.Working`'s line in its tree, naming the line's newest record and letting it answer; (b) `LoopContext.SendsBack`, wired by

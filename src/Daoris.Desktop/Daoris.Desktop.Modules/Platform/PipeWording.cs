@@ -132,6 +132,7 @@ public static class PipeWording
         Row("END_CHAT", W("id", PipeRole.Session));
         Row("RESOLVE_SESSION", W("id", PipeRole.Session), W("note", PipeRole.Words));
         Row("LAND_SESSION_TREE", W("id", PipeRole.Session));
+        Row("LAND_WITHOUT_LOOK", W("id", PipeRole.Session), W("words", PipeRole.Words));
         Row("DISCARD_SESSION_TREE", W("id", PipeRole.Session));
         Row("SESSION_GO_ON_NEW", W("id", PipeRole.Session));
         Row("SESSION_START_FROM", W("id", PipeRole.Session));

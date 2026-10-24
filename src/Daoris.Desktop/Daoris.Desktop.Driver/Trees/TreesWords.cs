@@ -250,6 +250,13 @@ public static class TreesWords
     public static TreesSaid BindFailed(string session, string why) =>
         new([], [$"trees: session `{session}`'s repository's workflow could not be bound, so its work cannot be landed yet: {why}."], 1);
 
+    /// <summary>
+    /// <i>Accept without the look…</i> on work that is no chat run's (CHATFLOW1d2, the chat-flow design §5.3): a quest's look is set up by its
+    /// set-up step, so this press lands nothing.
+    /// </summary>
+    public static TreesSaid NoChatLook(string session) =>
+        new([], [$"trees: session `{session}`'s work is no conversation's, so there is no look to accept it without; nothing was landed."], 1);
+
     public static TreesSaid NoTreeToLand(string session) =>
         new([], [$"trees: session `{session}` names no working tree on this machine, so there is nothing here to land."], 1);
 

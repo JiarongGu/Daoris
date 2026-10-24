@@ -339,12 +339,24 @@ public static class WorkflowRunReader
         var tree = session.Tree!;
         var tip = await reads.Records.TipAsync(tree, reads.Ct).ConfigureAwait(false);
         var ids = new HashSet<string>(line.Select(each => each.Id), StringComparer.OrdinalIgnoreCase);
+        var trees = new SessionTrees(sources.Home);
         var workflow = process.Named && tip is not null
-            ? await new SessionTrees(sources.Home).WorkflowAsync(tree, process, newest.Id, reads.Ct).ConfigureAwait(false) : null;
+            ? await trees.WorkflowAsync(tree, process, newest.Id, reads.Ct).ConfigureAwait(false) : null;
+        // CHATFLOW1d, CHATFLOW1d2 (§5.2, §5.3): the look and the second opinion read as the press reads them, keyed by the run, at the tip the
+        // tree stands at; with no tree standing, neither can be read.
+        var review = tip is null
+            ? new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository })
+            : await ReviewGate.ReadAsync(reads.World, sources.Config, tree, repository, workspace, null, reads.Ct, process, tip.Head, run, sources.Home, newest.Id)
+                .ConfigureAwait(false);
+        var opinion = tip is not null && current.Steps.Any(step => step.Kind == WorkflowKinds.Opinion)
+            ? await trees.OpinionAsync(tree, repository, workspace, null, newest.Id, reads.World, review, OpinionRules.Landing, reads.Ct, process, tip.Head, run)
+                .ConfigureAwait(false)
+            : null;
         var facts = new WorkflowRunFacts(repository, current)
         {
             Sessions = line,
-            Review = new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository }),
+            Review = review,
+            Opinion = opinion,
             Process = process,
             WorkflowGate = workflow,
             Landings = [.. reads.Landings.Where(entry => ids.Any(entry.Names))],

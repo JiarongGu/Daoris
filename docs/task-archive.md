@@ -20596,3 +20596,30 @@ under its gates, with `STEWARD_ACTS` and `STATE`'s `stewardActsOffered` and `ste
 steward* in *What needs you*, and 管家 in the glossary. Proof: `RoleActTests`, `RoleReleasesTests`, `StewardNotesTests`,
 `StewardCommandTests`, `PlannerTests`, `AttentionStateSliceTests`, `CheckoutHoldTickTests` and the page's tests in en and zh, each
 case seen failing first. Detail and readings: D209's STEWARDROLE1b note.
+
+## CHATFLOW1d — the gate refuses the press and asks the opinion (2026-10-25, D157)
+
+> **CHATFLOW1d — the gate refuses the press and asks the opinion** (driver, modules, web; after c). The opinion's part keyed by the
+> run (`OpinionGates` under `chat-<first>`, `OpinionGate.JudgeAsync` with a run and no quest); `OpinionDue.Run`; the press asking at
+> `not-asked` and nothing twice; `OpinionPresses.WorkAsync` reading a chat run; and the quest-keyed sites §7 names, each keyed by the run.
+
+(Row d of `docs/2026-10-24-chat-flow-design.md` §11, of the backlog's CHATFLOW1; quest `#6c6c9a5f225a`.)
+
+**Outcome** 2026-10-25. The row as named and amended by Codex's findings 1 and 11 and the Opus check's findings 4 and 5: a chat run's
+press is one driver operation on every door, reserving the conversation (`_pressing`), judging at one captured tip, asking the
+opinion at `landing` with the tip and the person's turn count, and landing that tip pinned; the look asks the run's pass at that tip
+with the conversation's opening and says when it settled. **Not reached:** the page's word for a queued word waiting on the press, and
+an end-to-end test of a live conversation's terminal press through the pipe. Detail: D157's CHATFLOW1d note.
+
+## CHATFLOW1d2 — the look on a chat run, and the person's way past it (2026-10-25, D157)
+
+> **CHATFLOW1d2 — the look on a chat run, and the person's way past it** (driver, modules, web; with d). The look's part `cannot-start`
+> for a chat run under a rule or version that requires one; *Accept without the look…*, its file, the page's press and
+> `trees land <id> --without-look`, a `Person` route.
+
+(Row d2 of `docs/2026-10-24-chat-flow-design.md` §11, of the backlog's CHATFLOW1; quest `#6c6c9a5f225a`.)
+
+**Outcome** 2026-10-25. The row as named and amended by Codex's finding 1: the look reads `cannot-start` with its limit, the page and
+the terminal offer the person's way past it (`LAND_WITHOUT_LOOK`, `--without-look`), kept at the press's captured tip and landed
+there, a later commit asking again and a moved tree never landed under the skip; each proof seen failing first. Detail: D157's
+CHATFLOW1d note.

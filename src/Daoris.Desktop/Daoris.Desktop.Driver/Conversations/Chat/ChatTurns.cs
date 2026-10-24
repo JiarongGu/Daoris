@@ -85,6 +85,9 @@ internal sealed class ChatTurns(
     // Waiting for its account's limit to reset (LIMITRESUME1c, D206 §3.5): a word is kept and waits, and starts no turn on a process
     // whose account would refuse it, until the wake hands them all over in one (WakeFromLimit) or a move takes them (HoldLimited).
     private bool _limited;
+    // Reserved for the person's press on a chat run's work (CHATFLOW1d, the chat-flow design §5.2 point 1, the Opus check's finding 5): a word
+    // is kept and waits, shown queued, and starts no turn, as under _limited, until the press answers, landed or refused.
+    private bool _pressing;
     private bool _gone;
     private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
@@ -508,7 +511,7 @@ internal sealed class ChatTurns(
             _waiting.Clear();
             _waiting.Add(compose(waited));
             _limited = false;
-            start = !_pumping;
+            start = !_pumping && !_pressing;
             if (start)
             {
                 _pumping = true;
@@ -538,6 +541,67 @@ internal sealed class ChatTurns(
             Publish();
             return waited;
         }
+    }
+
+    /// <summary>
+    /// Reserve the conversation for the person's press on its work (CHATFLOW1d, the chat-flow design §5.2 point 1, the Opus check's finding 5):
+    /// <see cref="PressHold.Held"/> where nothing is taking, opening, held for a take or waiting, and from then on a word is kept and waits,
+    /// starting no turn, until <see cref="Pressed"/>. Taken after any word whose keeping is in flight has been kept and reached the queue, so a
+    /// word the person sent before the press is never overtaken by it.
+    /// </summary>
+    /// <remarks>
+    /// Not <see cref="Hold"/>, under which a word is dropped: the press keeps every word the person says while it lands.
+    /// </remarks>
+    public async Task<PressHold> PressAsync(CancellationToken ct = default)
+    {
+        await _keeping.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            lock (_gate)
+            {
+                if (_finishing || _gone || _held) return PressHold.Ending;
+                if (_pressing || _pumping || _opening || _holding is not null || _waiting.Count > 0) return PressHold.Busy;
+                _pressing = true;
+                Publish();
+                return PressHold.Held;
+            }
+        }
+        finally
+        {
+            _keeping.Release();
+        }
+    }
+
+    /// <summary>Whether the person's press holds the conversation (<see cref="PressAsync"/>).</summary>
+    public bool Pressing
+    {
+        get
+        {
+            lock (_gate) return _pressing;
+        }
+    }
+
+    /// <summary>
+    /// The person's press answered, landed or refused (CHATFLOW1d): the conversation is let go, and a word that waited for it starts at once.
+    /// Nothing where it was not held.
+    /// </summary>
+    public void Pressed()
+    {
+        bool start;
+        lock (_gate)
+        {
+            if (!_pressing) return;
+            _pressing = false;
+            start = _waiting.Count > 0 && !_pumping && !_limited && !_gone && !_closeHeld;
+            if (start)
+            {
+                _pumping = true;
+                _drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+        }
+
+        if (start) _ = PumpAsync();
+        lock (_gate) Publish();
     }
 
     /// <summary>A waiting word without the queue's own id, which no record knows: its record's id stays. Called under the lock.</summary>
@@ -592,8 +656,9 @@ internal sealed class ChatTurns(
             }
 
             _waiting.Add(Stamped(message));
-            // LIMITRESUME1c: waiting for the limit, a word waits with the rest and starts nothing.
-            start = !_pumping && !_limited;
+            // LIMITRESUME1c: waiting for the limit, a word waits with the rest and starts nothing; so does one said while the person's
+            // press holds the conversation (CHATFLOW1d), until it answers.
+            start = !_pumping && !_limited && !_pressing;
             if (start)
             {
                 _pumping = true;
@@ -1023,7 +1088,7 @@ internal sealed class ChatTurns(
         if (late is not null) _ = SendStopAsync(late);
     }
 
-    private ChatQueue Now() => new(_pumping, Snapshot(), _lastEnded, _opening);
+    private ChatQueue Now() => new(_pumping, Snapshot(), _lastEnded, _opening, _pressing);
 
     // The words a conversation goes on with are left out (MSG1c): its record shows them waiting already, at its foot. So is Daoris's
     // own word (ASKQUESTS1): the queue is the person's, which the composer draws with its edits.
@@ -1039,7 +1104,7 @@ internal sealed class ChatTurns(
     {
         var now = Now();
         if (now.Taking == _published.Taking && now.Queued.SequenceEqual(_published.Queued)
-            && now.LastTurnEnded == _published.LastTurnEnded && now.Opening == _published.Opening) return;
+            && now.LastTurnEnded == _published.LastTurnEnded && now.Opening == _published.Opening && now.Pressing == _published.Pressing) return;
         _published = now;
         try
         {

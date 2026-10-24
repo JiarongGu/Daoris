@@ -5,6 +5,7 @@ namespace Daoris.Driver;
 /// done in a tree of its own under a rule whose occasions read it. The look asks the pass, delivers it, and closes the entry once
 /// the work landed, its tree went, or the rule no longer asks.
 /// </summary>
+/// <param name="Quest">The quest the work served; empty for a chat run's (<see cref="Run"/>), which serves none.</param>
 /// <param name="Occasion"><c>landing</c>, or <c>steps</c> where only the chain's next step waits for it.</param>
 /// <param name="Tree">The tree its record names, under this home's trees (D51): machine-local, like the file that keeps it.</param>
 public sealed record OpinionDue(
@@ -14,6 +15,27 @@ public sealed record OpinionDue(
     public DateTimeOffset? Closed { get; init; }
 
     public string? Why { get; init; }
+
+    /// <summary>
+    /// The chat run it is owed on (CHATFLOW1d, the chat-flow design §7), <c>chat-&lt;first&gt;</c>, in place of a quest: asked at the person's
+    /// press, at <c>landing</c> only, and closed <c>landed</c>, <c>gone</c> or <c>off</c>, never <c>undone</c>. Null for a quest's.
+    /// </summary>
+    public string? Run { get; init; }
+
+    /// <summary>
+    /// The tip the press captured (CHATFLOW1d, §5.2 point 1, §7): the candidate the pass reads, never the tree's <c>HEAD</c> at the look.
+    /// Null for a quest's, whose pass reads the tree as it stands.
+    /// </summary>
+    public string? Tip { get; init; }
+
+    /// <summary>
+    /// The person's turn count at the press (CHATFLOW1d, §5.2 point 3, §6.1 (b)): their own words in the line's conversation, so a
+    /// send-back compares it and gives the findings to the person where it rose. Null for a quest's.
+    /// </summary>
+    public int? Turns { get; init; }
+
+    /// <summary>Whether it is owed on a chat run rather than a quest's chain.</summary>
+    public bool OnRun => ChatRuns.IsChatRun(Run);
 }
 
 /// <summary>Why the look closed an opinion owed (<see cref="OpinionDue"/>), each a code the file keeps.</summary>

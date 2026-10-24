@@ -225,11 +225,11 @@ export const GRAPH_RUN_UNJUDGED = run([
 
 /**
  * A chat's run (CHATFLOW1c, the chat-flow design §4.2, §4.4): its conversation between turns with two commits beyond the line, waiting for the
- * person's Accept; its second opinion passed over before CHATFLOW1d; and its checks, `light`, not yet enforced for a conversation.
+ * person's Accept; its second opinion, which that Accept asks (CHATFLOW1d); and its checks, `light`, not yet enforced for a conversation.
  */
 export const CHAT_RUN = run([
   at(WORK(), 'waiting-on-you', 'land', { session: 'c2', agent: 'claude-code', at: AT, count: 2 }),
-  at(OPINION, 'skipped', 'chat-not-asked', { session: 'c2' }),
+  at(OPINION, 'waiting-on-you', 'chat-at-accept', { session: 'c2', agent: 'codex-acp' }),
   at(MERGE_YOU_ACCEPT, 'waiting-on-you', 'accept', { session: 'c2', at: AT }),
 ], { ask: null, quests: [], session: 'c2', chat: { run: 'chat-c1', checks: 'light', enforced: false } });
 

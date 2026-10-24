@@ -113,6 +113,36 @@ public sealed class TreesWordsTests : IAsyncLifetime
     public Task A_landing_refused_is_its_sentence_and_exit_1() =>
         AssertSameAsync(TreesWords.Land(new TreeLanding(false, "Nothing was landed: its tree holds uncommitted work."), []));
 
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2): a chat run's press refused, a turn running, another window holding it, the work moved while it
+    /// was judged, or its opinion asked at that press, is its sentence and exit 1, the same on the connected terminal as alone.
+    /// </summary>
+    [Theory]
+    [InlineData(ChatPresses.Busy)]
+    [InlineData(ChatPresses.Elsewhere)]
+    [InlineData(ChatPresses.Moved)]
+    [InlineData("A second opinion is asked: `codex-acp` reads it from the driver's next look; press Accept again once it settles.")]
+    public async Task A_chat_runs_press_refused_is_its_sentence_and_exit_1(string why)
+    {
+        var said = TreesWords.Land(new TreeLanding(false, why) { Refusal = AutoLandingCode.Refused }, []);
+        Assert.Equal(1, said.Code);
+        Assert.Equal([$"trees: {why}"], said.Out);
+        await AssertSameAsync(said);
+    }
+
+    /// <summary>
+    /// CHATFLOW1d2 (§5.3): <c>trees land &lt;id&gt; --without-look</c> on work that is no conversation's has no look to accept it without:
+    /// its sentence and exit 1, nothing landed, on both doors.
+    /// </summary>
+    [Fact]
+    public async Task Without_the_look_on_work_that_is_no_conversations_is_refused_exit_1()
+    {
+        var said = TreesWords.NoChatLook("s1a2b3c4");
+        Assert.Equal(1, said.Code);
+        Assert.Equal(["trees: session `s1a2b3c4`'s work is no conversation's, so there is no look to accept it without; nothing was landed."], said.Error);
+        await AssertSameAsync(said);
+    }
+
     // trees clean --yes: SWEEP.
     private static SweepResult Swept(string kind, bool removed, string message, int commits = 0, string? where = "main") =>
         new(new SweepItem("engine", "aurora", "daoris/s-x", "tree", kind, commits, where, "detail"), removed, message);

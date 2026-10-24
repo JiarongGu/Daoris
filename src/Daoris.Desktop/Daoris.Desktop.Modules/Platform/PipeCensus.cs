@@ -236,7 +236,7 @@ public sealed class PipeCensus
             "GIT_TRY_AGAIN");
         Add(PipeClass.Person,
             // The yes, and what answers for the person's verdict: a landing, a hand-off, an opinion overridden or taken on.
-            "LAND_SESSION_TREE", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
+            "LAND_SESSION_TREE", "LAND_WITHOUT_LOOK", "LAND_ENTRY", "LAND_ASK", "HANDOFF", "OPINION_ANYWAY", "OPINION_MYSELF",
             // Deletes, clears and closes: a discard, a sweep, an archive, a delete, a stop, an end, an abandon.
             "DISCARD_SESSION_TREE", "DISCARD_SESSION_BRANCH", "RECOVERY_DROP", "SWEEP", "HISTORY_CLEAR", "SYSTEM_DOWNLOADS_CLEAR", "SESSION_ARCHIVE", "SESSION_DELETE",
             "STOP_SESSION", "STOP_OPINION", "STOP_TASK", "CANCEL_TURN", "END_CHAT", "WORK_ABANDON", "WORK_PAUSE", "WORK_RESUME",

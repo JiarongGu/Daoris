@@ -148,6 +148,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             {
                 Quests = ask.Quests,
                 Words = ask.Words,
+                Opening = ask.Opening,
                 Rules = rules,
                 Diff = diff,
                 Verify = ask.Rule.Verify,

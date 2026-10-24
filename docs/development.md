@@ -220,6 +220,10 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
   clone without the driver configured merges the file as text (see *Prepare the workspace*); a branch cut from such a
   merge can still carry a row twice, so run `node --test test/doc-duplicates.test.ts` in `src/Daoris.Cli` before committing
   a merge, and drop the older row.
+- **A quest whose start failed on an account goes on by itself.** When a session fails at its start because its account refused it
+  (an expired sign-in, a limit), Daoris carries its quest on once an account is ready; publishing the quest again makes a second
+  session doing the same work. On 2026-10-24 three quests were published again after such failures and each ran twice; only one of
+  each was landed. Read the quest's sessions before publishing anything again.
 - **A landing is done when Daoris says so.** After committing a session's landing, `daoris-driver trees land <session>
   --plan` must answer that its branch holds nothing `main` does not. Where it lists commits, `main` lacks them: a session
   told to rebase after its landing may have made new ones, and they are work to land, not a stale row. Work on `main` as a

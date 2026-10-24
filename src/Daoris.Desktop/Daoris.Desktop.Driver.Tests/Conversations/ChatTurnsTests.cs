@@ -46,6 +46,125 @@ public sealed class ChatTurnsTests
         Assert.False(took);
         turns.Gone();
     }
+
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2 point 1, the Opus check's finding 5): the person's press reserves the conversation as its own state,
+    /// <c>_pressing</c>, never <c>Hold()</c>, under which a word is dropped. A press while a turn runs, or while a word waits, is refused; a word
+    /// whose keeping is in flight when the press arrives is kept first, and the press then finds it waiting. A word sent under the press is
+    /// kept, shown queued and waiting for the press, and starts no turn until the press answers, then at once.
+    /// </summary>
+    [Fact]
+    public async Task A_word_sent_under_the_persons_press_is_kept_and_starts_once_the_press_answers()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        var record = new Daoris.Driver.Tests.StandInSaid();
+        turns.Take(new ChatMessage("make the change", []));
+        await Poll.Until(() => door.Took.Count == 1, () => "the first turn never reached the door");
+        Assert.Equal(PressHold.Busy, await turns.PressAsync());
+
+        door.EndTurn(0);
+        await Poll.Until(() => !turns.Running, () => "the first turn never ended");
+        Assert.Equal(PressHold.Held, await turns.PressAsync());
+        Assert.True(turns.State.Pressing);
+        Assert.Equal(PressHold.Busy, await turns.PressAsync());
+
+        var kept = await turns.KeepAsync(record, new ChatMessage("one more thing", []), default);
+        Assert.Equal(("w1", TurnReach.TurnEnd), (kept!.Word, kept.Reach));
+        Assert.Equal(["w1"], turns.State.Queued.Select(message => message.Id));
+        Assert.Single(door.Took);
+        Assert.False(turns.Running);
+
+        turns.Pressed();
+        await Poll.Until(() => door.Took.Count == 2, () => "the word kept under the press never started once it answered");
+        Assert.Equal("one more thing", door.Took[1]);
+        Assert.False(turns.State.Pressing);
+        door.EndTurn(1);
+        await Poll.Until(() => !turns.Running);
+
+        // A word whose keeping is in flight when the press arrives is kept first, so the press finds it and never overtakes it.
+        var keeping = new TaskCompletionSource();
+        record.Answering = _ => keeping.Task;
+        var inFlight = turns.KeepAsync(record, new ChatMessage("before the press", []), default);
+        await Poll.Until(() => record.Said.Count > 0 && record.Said[^1].Text == "before the press");
+        var pressing = turns.PressAsync();
+        Assert.False(pressing.IsCompleted);
+        keeping.SetResult();
+        await inFlight;
+        Assert.Equal(PressHold.Busy, await pressing);
+        turns.Gone();
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (§5.2 point 1): the press holds the conversation through the landing hold, and a hold that outlasts its bound refuses the press
+    /// and lets the conversation go, so a word that waited for it starts at once. Whatever the press came to, nothing stays reserved.
+    /// </summary>
+    [Fact]
+    public async Task A_press_whose_landing_hold_outlasts_its_bound_is_refused_and_lets_the_conversation_go()
+    {
+        var door = new Door { TakesWordsMidTurn = false };
+        var turns = door.Turns();
+        var holder = new Holding(turns);
+        const string Tip = "aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111";
+        var held = false;
+
+        var pressed = await ChatPresses.PressAsync(
+            Path.Combine(AppContext.BaseDirectory, "no-home"), new ChatPressAsk("c1", "tree", "chat-c1", "engine", "aurora", Live: true), holder,
+            (tip, _) => Task.FromResult(LandingGate.Open("engine")),
+            (gate, _) =>
+            {
+                held = turns.Pressing && gate.Tip == Tip;
+                turns.Take(new ChatMessage("while it lands", []));
+                return Task.FromResult(new TreeLanding(false, TreeLands.StillLanding));
+            },
+            () => 0, head: _ => Task.FromResult<string?>(Tip));
+
+        Assert.True(held, "the landing ran with the conversation reserved and pinned to the captured tip");
+        Assert.False(pressed.Landed.Landed);
+        Assert.Equal(TreeLands.StillLanding, pressed.Landed.Message);
+        Assert.False(turns.Pressing);
+        await Poll.Until(() => door.Took.Count == 1, () => "the word that waited for the press never started once it was refused");
+        turns.Gone();
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §6.1 (b), the Opus check's finding 4): the person's turn count is their own words in the line's
+    /// conversation history, each kept word once, plus those waiting. A turn they sent and finished after the press leaves nothing waiting,
+    /// and the count still rose; Daoris's words, another agent's, and a word shown twice by its id count nothing more.
+    /// </summary>
+    [Fact]
+    public void The_persons_turn_count_rises_over_a_turn_sent_and_finished_after_the_press()
+    {
+        var directory = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "chat-turns", Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var events = new SessionEvents(directory);
+            events.Append("c1a2b3c4", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "make the change", Id = "w1" });
+            events.Append("c1a2b3c4", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "make the change", Id = "w1" });
+            events.Append("c1a2b3c4", new SessionEvent { Kind = SessionEventKind.User, Origin = "daoris", Text = "a second opinion's findings" });
+            var atPress = ChatPresses.TurnsOf(events, ["c1a2b3c4"]);
+            Assert.Equal(1, atPress);
+
+            // After the press: a hand-over's next record, where the person said one more thing and its turn ended.
+            events.Append("d2b3c4e5", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "one more thing", Id = "w2" });
+            Assert.Equal(2, ChatPresses.TurnsOf(events, ["c1a2b3c4", "d2b3c4e5"]));
+            Assert.Equal(3, ChatPresses.TurnsOf(events, ["c1a2b3c4", "d2b3c4e5"], waiting: 1));
+        }
+        finally
+        {
+            GitSeed.Discard(directory);
+        }
+    }
+
+    /// <summary>The conversation's turns as the press's operation reserves them, standing in for the runner that holds it.</summary>
+    private sealed class Holding(ChatTurns turns) : IChatPressing
+    {
+        public Task<PressHold> HoldAsync(string sessionId, CancellationToken ct = default) => turns.PressAsync(ct);
+
+        public void Release(string sessionId) => turns.Pressed();
+    }
+
     /// <summary>A door whose turns end when the test says, and which records what reached it.</summary>
     private sealed class Door
     {

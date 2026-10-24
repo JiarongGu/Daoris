@@ -22,6 +22,9 @@ public sealed record OpinionPassAsk(
     /// <summary>The person's words on the ask the work was asked by; null for work no ask asked.</summary>
     public AskWords? Words { get; init; }
 
+    /// <summary>A chat run's conversation's opening (CHATFLOW1d, the chat-flow design §7); null for a quest's work.</summary>
+    public string? Opening { get; init; }
+
     /// <summary>
     /// For the one recheck (XAGENT1e, design §6.5), the first pass whose findings it reads again and the working session's
     /// answers as the driver read them; null for a first pass. Its base is that pass's tip, and its tip the working tree's.

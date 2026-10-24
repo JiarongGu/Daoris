@@ -98,6 +98,20 @@ public static class OpinionLook
     }
 
     /// <summary>
+    /// Why an opinion owed on a chat run is closed now (CHATFLOW1d, the chat-flow design §7), or null where it is still owed: <c>off</c> where
+    /// its run's process no longer reads at its occasion, <c>gone</c> with its tree, and <c>landed</c> once a landing of its line was recorded
+    /// since it was owed or its tree holds nothing the line does not. Never <c>undone</c>: a chat run serves no quest whose done it waits on.
+    /// </summary>
+    public static async Task<string?> RunClosesAsync(OpinionDue due, LandedBranches landed, WorkflowProcess process, CancellationToken ct)
+    {
+        var reads = process.Problem is not null || process.Unread is not null || OpinionGate.Reads(process.Opinion, process.OpinionCannot, due.Occasion);
+        if (!reads) return OpinionDueClosed.Off;
+        if (TreeFolders.TreeGone(due.Tree)) return OpinionDueClosed.Gone;
+        if (landed.Landing(due.Session) is { } landing && MadeSince(landing, due)) return OpinionDueClosed.Landed;
+        return await TreeFollows.UnlandedInTreeAsync(due.Tree, "HEAD", ct).ConfigureAwait(false) == 0 ? OpinionDueClosed.Landed : null;
+    }
+
+    /// <summary>
     /// The sessions whose automatic landing made its branch and holds its push back (FABRIC-CLOSE1h15): each open entry whose last try is
     /// <c>push-held</c>, read once for a look's opinions. A due list that does not read is none.
     /// </summary>

@@ -336,6 +336,7 @@ internal static class TreesConsole
                 // LANDNAME1a: the name the person enters replaces the rule's. A --branch with no name is the usage, not the rule's name.
                 var entered = Option(args, "--branch");
                 if (args.Contains("--branch") && entered is null) return Usage("`--branch` takes a branch name.");
+                if (args.Contains("--without-look") && args.Contains("--plan")) return Usage("`--without-look` is a press, and takes no `--plan`.");
                 // RPCOPEN1: the plan is the running Daoris's where one answers (LANDING), in the alone path's words.
                 if (args.Contains("--plan") && await InstanceDoor.TryReadAsync(
                         OpenRoutes.Landing, new { id = session, branch = entered, said = true },
@@ -385,9 +386,30 @@ internal static class TreesConsole
                 // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
                 var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log));
 
+                // CHATFLOW1d (the chat-flow design §5.2 point 1, Codex's finding 11): a chat in a tree of its own is gated by its chat run, and
+                // its press is the driver's one press operation, as the window's is; its plan reads that gate and writes nothing (point 5).
+                var recordsJson = await service.SessionRecordsJsonAsync().ConfigureAwait(false);
+                var chatRun = questId is null ? ChatRuns.ChatOf(session, recordsJson, landing.Holds) : null;
+                // CHATFLOW1d2 (§5.3): the person's way past the look is a chat run's alone, a press with their words, never a plan.
+                var withoutLook = args.Contains("--without-look");
+                if (withoutLook && chatRun is null)
+                {
+                    var noLook = TreesWords.NoChatLook(session);
+                    noLook.Print(Console.Out, Console.Error);
+                    return noLook.Code;
+                }
+
+                if (chatRun is not null && !args.Contains("--plan"))
+                {
+                    return await ChatLandCommand.RunAsync(
+                        new ChatLandWorld(service, home, landing, InstanceHost.World(home, "trees"), Console.Out, Console.Error) { Log = log },
+                        session, tree, chatRun, recordsJson, entered,
+                        withoutLook ? new ChatLookPress(Option(args, "--without-look"), ReviewDoors.Terminal) : null).ConfigureAwait(false);
+                }
+
                 // The landing gate (XAGENT1f, REVIEWENV1c): the second opinion, then the review, read once for the plan, and handed to
                 // the landing, which refuses the first that holds.
-                var gate = await landing.GateAsync(tree, questId, new ServiceReviewWorld(service), session).ConfigureAwait(false);
+                var gate = await landing.GateAsync(tree, questId, new ServiceReviewWorld(service), session, run: chatRun).ConfigureAwait(false);
                 // Named for the chain's first quest (WSR5), as the review's press names it, and a part of an entry with others for its
                 // entry's first part, on the entry's one branch (ACCEPTALL1f, D167's 2026-10-15 amendment point 2): the driver's one call.
                 // FABRIC-CLOSE1h3: its quests read once, as the route reads them.
@@ -576,7 +598,7 @@ internal static class TreesConsole
     {
         if (problem is not null) Console.Error.WriteLine($"trees: {problem}");
         Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path|session|branch> [--repository <name>] [--force]");
-        Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>]");
+        Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan] [--branch <name>] [--without-look \"…\"]");
         Console.Error.WriteLine("                           | land --entry <id> | --ask <id> [--leave-out <session>]... [--plan]");
         Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
         Console.Error.WriteLine("                           | state [--entries]");
@@ -597,6 +619,9 @@ internal static class TreesConsole
         Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100). A session");
         Console.Error.WriteLine("  that already landed, while its branch stands or once its tree is gone, is said");
         Console.Error.WriteLine("  as its review says it, and lands nothing again (D113).");
+        Console.Error.WriteLine("  A conversation's work is gated by its chat run: its press asks the second opinion its rule names and");
+        Console.Error.WriteLine("  lands once every part settles; --without-look \"<words>\" accepts it past a look no conversation can");
+        Console.Error.WriteLine("  have, at the commit it stands at (CHATFLOW1d, CHATFLOW1d2).");
         Console.Error.WriteLine("  land --entry or --ask is the one Accept of a line of work or an ask, as Sessions' list has it: every part");
         Console.Error.WriteLine("  lands in the order it ran, each by its own gate and the rule; --leave-out names a part a later one");
         Console.Error.WriteLine("  redid, which --plan says (D167's 2026-10-15 amendment). An ask lands each repository's line of work.");

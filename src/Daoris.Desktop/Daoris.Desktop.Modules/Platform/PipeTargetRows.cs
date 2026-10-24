@@ -145,6 +145,8 @@ internal static class PipeTargetRows
         Row("OPINION_ANYWAY", new SessionGround("id"), OpinionGate());
         Row("OPINION_MYSELF", new SessionGround("id"), OpinionGate());
         Row("ASK_OPINION", new SessionGround("id"), BranchGround.HeadOf("id"));
+        // CHATFLOW1d2: Accept without the look… on a chat run, bound to the tree's head its press captures and lands.
+        Row("LAND_WITHOUT_LOOK", new SessionGround("id"), BranchGround.HeadOf("id"));
         Row("STOP_OPINION", LoopGround.Wait("opinion", "opinion"));
         // The tree it removes, by `id` or by `path`: its head and index, and with `force` its uncommitted bytes (§15.1 item 2).
         Row("DISCARD_SESSION_TREE", new SessionGround("id"), BranchGround.HeadOf("id"), LoopGround.Plan("tree", Page, "id", "path", "force"));

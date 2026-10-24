@@ -522,10 +522,25 @@ export const useLandSessionTree = () =>
       return call<TreeAct & {
         branch?: string; plugin?: PluginLanding; withheld?: string | null;
         leftOut?: LeftOutCommit[] | null;
+        /** CHATFLOW1d: what refused a chat run's press (`busy`, `elsewhere`, `moved`, `asked`), worded by the page; absent otherwise. */
+        press?: string | null;
         conflict?: LandingConflict | null;
       }>(
         'LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pluginBound });
     },
+  });
+
+/**
+ * *Accept without the look…* on a chat run's work (CHATFLOW1d2, the chat-flow design §5.3): the person's way past a look no set-up step
+ * can show, with their words, kept at the commit the press captures and landed there by the same press as *Accept…*. Keyed by its own
+ * route, and read under way as a landing.
+ */
+export const useLandWithoutLook = () =>
+  useMutation({
+    mutationKey: ['LAND_WITHOUT_LOOK'],
+    mutationFn: ({ id, words }: { id: string; words?: string | null }) =>
+      call<TreeAct & { branch?: string; plugin?: PluginLanding; withheld?: string | null; press?: string | null }>(
+        'LAND_WITHOUT_LOOK', { id, ...(words?.trim() ? { words: words.trim() } : {}) }, { timeoutMs: pluginBound }),
   });
 
 /**

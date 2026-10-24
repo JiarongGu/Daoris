@@ -668,6 +668,9 @@ public sealed partial class HelpCoverageTests
             "a go-ahead a parked session asked is answered on the session's own page (KNOWUSE1a2, D135 §2)")),
         ("work", "useLandSessionTree", null, Own("sessions",
             "landing a session's work is the person's verdict on it (D154 point 8), pressed at its review")),
+        // CHATFLOW1d2 (the chat-flow design §5.3, D110): the person's way past a look no conversation can have, never an agent's.
+        ("work", "useLandWithoutLook", null, Own("sessions",
+            "accepting a conversation's work without the look is the person's own press past it (D154 point 8, D110), at its review")),
         // ACCEPTALL1 (D167's 2026-10-15 amendment): a line of work's one Accept, and an ask's, each part's landing the person's verdict.
         ("work", "useLandEntry", null, Own("sessions",
             "landing a line of work's parts is the person's verdict on them (D154 point 8), pressed under its Parts strip")),

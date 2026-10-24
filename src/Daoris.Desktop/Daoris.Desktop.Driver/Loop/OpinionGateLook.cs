@@ -137,7 +137,7 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
                     var quests = await world.QuestsAsync(token).ConfigureAwait(false);
                     return await JudgeAsync(due, new OpinionDues(Home), world, quests, OpinionLook.PushHeld(Home), keep: true, beside: true, token)
                         .ConfigureAwait(false);
-                }, $"#{due.Quest}", beside: true).ConfigureAwait(false);
+                }, due.Run ?? $"#{due.Quest}", beside: true).ConfigureAwait(false);
                 _context.Runs.Facts.Judged($"opinion/{subject}");
                 if (_context.Runs.Facts.KeepOpinion(subject, fact ?? Settled)) _context.Runs.FactsMoved();
                 return [];
@@ -158,7 +158,9 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// since which chain each is in is what the judgment reads. A wait of one judgment, never a start before the opinion.
     /// </summary>
     internal static IEnumerable<(string Quest, OpinionSit Why)> NotJudged(OpinionDue due, Snapshot snapshot) =>
-        due.Occasion == OpinionRules.Landing
+        // CHATFLOW1d: a chat run's opinion holds no quest; its gate is the person's press alone.
+        due.OnRun ? []
+        : due.Occasion == OpinionRules.Landing
             ? snapshot.Quests.Where(each => each.SetUpIn is not null && each.Status == "Open" && Same(each.To, due.Repository))
                 .Select(step => (step.Id, new OpinionSit(
                     $"set-up step `#{step.Id}` waits for a second opinion on the work it shows, which is not judged yet.",
@@ -182,33 +184,41 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         bool beside, CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;
-        var chain = ReviewGate.ChainOf(quests, due.Quest);
+        // CHATFLOW1d (the chat-flow design §7): a due naming a chat run reads the run's process and gate, keyed by the run, and no chain.
+        var run = due.OnRun ? due.Run : null;
+        var chain = run is null ? ReviewGate.ChainOf(quests, due.Quest) : [];
         var quest = chain.FirstOrDefault(each => Same(each.Id, due.Quest));
         // WORKFLOW1f: the run's process, read once for this due and handed to each part below, so a named workflow's opinion
         // step decides whether it is owed, who reads it and what holds.
         var process = WorkflowProcesses.Read(Home, Config, due.Repository, due.Workspace,
-            WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
-        if (await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process, pushHeld).ConfigureAwait(false) is { } closed)
+            run ?? WorkflowRunBindings.RunOf(chain, due.Repository) ?? due.Quest);
+        var closes = run is null
+            ? await OpinionLook.ClosesAsync(due, quest, chain, Config, _context.Trees.Recorded, ct, process, pushHeld).ConfigureAwait(false)
+            : await OpinionLook.RunClosesAsync(due, _context.Trees.Recorded, process, ct).ConfigureAwait(false);
+        if (closes is { } closed)
         {
             dues.Close(due.Session, due.Occasion, closed, now);
             return null;
         }
 
-        var key = TreeGates.OpinionChain(chain, due.Quest);
+        var key = run ?? TreeGates.OpinionChain(chain, due.Quest);
         var claim = $"{key}/{due.Repository}/{due.Occasion}";
         var inFlight = beside && _context.Runs.OpinionHeld(claim);
         // The landing's gate reads D154's review beside it, as every landing door does (XAGENT1g3): a review that answered what
         // the opinion showed settles it. It moves no ask below, which read states the review never changes.
         var review = keep && due.Occasion == OpinionRules.Landing
-            ? await ReviewGate.ReadAsync(world, Config, Path.GetFullPath(due.Tree), due.Repository, due.Workspace, due.Quest, ct, process)
+            ? await ReviewGate.ReadAsync(world, Config, Path.GetFullPath(due.Tree), due.Repository, due.Workspace, run is null ? due.Quest : null, ct,
+                    process, run: run, home: Home, session: due.Session)
                 .ConfigureAwait(false)
             : null;
-        var gate = await _context.Trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, due.Quest, due.Session, world, review, due.Occasion, ct, process)
+        var gate = await _context.Trees.OpinionAsync(due.Tree, due.Repository, due.Workspace, run is null ? due.Quest : null, due.Session, world, review,
+                due.Occasion, ct, process, run: run)
             .ConfigureAwait(false);
+        // A chat's work never lands by itself (the chat-flow design §8): its kept gate says so to the attention band.
         var kept = review is null
             ? null
             : new OpinionJudged(due.Session, due.Quest, due.Repository, due.Workspace, due.At,
-                (process.Landing ?? LandingRules.Choose(Config, due.Repository, due.Workspace)).Rule.AutoAccept, gate);
+                run is null && (process.Landing ?? LandingRules.Choose(Config, due.Repository, due.Workspace)).Rule.AutoAccept, gate);
 
         // The person's asks first (§8.5): Ask now, Try again, Ask again, Ask the same agent, fresh. Not capped (§8.3).
         OpinionAct? act = null;
@@ -258,9 +268,20 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         }
 
         var occasion = request?.Occasion ?? act.Occasion;
-        OpinionBeside(act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, act.Process, token), ct);
+        OpinionBeside(act.Claim, token => AskPassAsync(act.Due, act.Key, act.Chain, occasion, request, act.Process, token), ct, SettledNews(act.Due));
         return true;
     }
+
+    /// <summary>
+    /// A chat run's pass, once it came to an end, is news (CHATFLOW1d, the chat-flow design §5.2 point 6): the person was asked to press Accept
+    /// again once it settles, so a notice naming the conversation says it did. One held to try again is no settling; a quest's pass is none.
+    /// </summary>
+    private static Func<string, LookClassed?>? SettledNews(OpinionDue due) => due.OnRun
+        ? line => line.StartsWith("held ", StringComparison.Ordinal)
+            ? null
+            : LookClassed.Noticed("opinion", new LookNews(LookSaid.OpinionSettled, $"{due.Run}-{due.At.ToUnixTimeMilliseconds()}",
+                Session: due.Session, Workspace: due.Workspace))
+        : null;
 
     /// <summary>The kept gates oldest first, one per session, as the attention band's route reads them (XAGENT1g3).</summary>
     private static void Order(List<OpinionJudged> judged)
@@ -304,13 +325,14 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
     /// A pass or a delivery beside the look (XAGENT1f), as a start runs: told opened at once, so the look never waits on it, its
     /// line joining a later look's report, and the chain's claim let go however it ended.
     /// </summary>
-    private void OpinionBeside(string claim, Func<CancellationToken, Task<string>> work, CancellationToken ct) =>
+    private void OpinionBeside(string claim, Func<CancellationToken, Task<string>> work, CancellationToken ct, Func<string, LookClassed?>? classed = null) =>
         _ = _context.Runs.StartAsync(async opened =>
         {
             opened();
             try
             {
-                return new StartRun(await work(ct).ConfigureAwait(false), Opened: true);
+                var line = await work(ct).ConfigureAwait(false);
+                return new StartRun(line, Opened: true) { Look = classed?.Invoke(line) };
             }
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or IOException
                                               or UnauthorizedAccessException
@@ -350,7 +372,9 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             return $"opinion  no second opinion on {named}: no rule here names a reviewer for `{due.Repository}`.";
         }
 
-        var tip = await ReviewGit.HeadAsync(due.Tree, ct).ConfigureAwait(false);
+        // CHATFLOW1d (the chat-flow design §7): a chat run's pass reads the tip the person's press captured, never the tree's HEAD at the look,
+        // which a turn finished since may have moved.
+        var tip = due is { OnRun: true, Tip: { } pressed } ? pressed : await ReviewGit.HeadAsync(due.Tree, ct).ConfigureAwait(false);
         var root = await TreeGates.CheckoutOfTreeAsync(due.Tree, ct).ConfigureAwait(false);
         if (tip is null || root is null) return $"held  second opinion on {named}: git could not read its tree, and the next look tries again.";
 
@@ -378,7 +402,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         {
             Workspace = due.Workspace,
             Quests = part,
-            Words = await AskWords.ReadAsync(Service, chain.FirstOrDefault()?.From, ct).ConfigureAwait(false),
+            Words = due.OnRun ? null : await AskWords.ReadAsync(Service, chain.FirstOrDefault()?.From, ct).ConfigureAwait(false),
+            Opening = due.OnRun ? ChatRuns.OpeningOf(_context.Events, due.Run!) : null,
             Opened = (opinion, _) =>
             {
                 gates.Asked(key, due.Repository, new OpinionAskKept(at, occasion, due.Session, tip)

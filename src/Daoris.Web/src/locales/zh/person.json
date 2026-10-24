@@ -75,6 +75,7 @@
   "person.route.SESSION_HELPER_DECLINE": "拒绝某个智能体请求协助者的请求",
   "person.route.SESSION_PARTNER_ASK": "请另一个智能体为一个会话做一个分项",
   "person.route.LAND_SESSION_TREE": "采纳一个会话的工作并将其落地",
+  "person.route.LAND_WITHOUT_LOOK": "不经审阅采纳一段对话的工作并将其落地",
   "person.route.DISCARD_SESSION_TREE": "丢弃一个会话的工作树",
   "person.route.SWEEP": "清理会话分支",
   "person.route.TREES_SYNC": "将仓库的分支更新到最新",

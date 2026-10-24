@@ -79,7 +79,19 @@ internal static class OpinionGateFiles
         {
             writer.WriteStartObject();
             writer.WriteString("session", entry.Session);
-            writer.WriteString("quest", entry.Quest);
+            // CHATFLOW1d: a chat run's due names its run and no quest, so a build before it, which reads a due only by its quest, passes
+            // it over rather than close it `undone`.
+            if (entry.OnRun)
+            {
+                writer.WriteString("run", entry.Run);
+                if (entry.Tip is not null) writer.WriteString("tip", entry.Tip);
+                if (entry.Turns is { } turns) writer.WriteNumber("turns", turns);
+            }
+            else
+            {
+                writer.WriteString("quest", entry.Quest);
+            }
+
             writer.WriteString("repository", entry.Repository);
             writer.WriteString("workspace", entry.Workspace);
             writer.WriteString("tree", entry.Tree);
@@ -94,17 +106,24 @@ internal static class OpinionGateFiles
         writer.WriteEndObject();
     }
 
-    private static OpinionDue? DueOf(JsonElement element) =>
-        element.ValueKind == JsonValueKind.Object
-        && Json.Text(element, "session") is { } session && Json.Text(element, "quest") is { } quest
-        && Json.Text(element, "repository") is { } repository && Json.Text(element, "tree") is { } tree
-        && Json.Text(element, "occasion") is { } occasion && Kept.Moment(element, "at") is { } at
+    private static OpinionDue? DueOf(JsonElement element)
+    {
+        if (element.ValueKind != JsonValueKind.Object) return null;
+        var run = Json.Text(element, "run") is { } named && ChatRuns.IsChatRun(named) ? named : null;
+        return Json.Text(element, "session") is { } session && (run is not null ? "" : Json.Text(element, "quest")) is { } quest
+               && Json.Text(element, "repository") is { } repository && Json.Text(element, "tree") is { } tree
+               && Json.Text(element, "occasion") is { } occasion && Kept.Moment(element, "at") is { } at
             ? new OpinionDue(session, quest, repository, Json.Text(element, "workspace") ?? RemoteTarget.DefaultWorkspace, tree, occasion, at)
             {
                 Closed = Kept.Moment(element, "closed"),
                 Why = Json.Text(element, "why"),
+                Run = run,
+                Tip = run is null ? null : Json.Text(element, "tip"),
+                Turns = run is not null && element.TryGetProperty("turns", out var turns) && turns.ValueKind == JsonValueKind.Number
+                        && turns.TryGetInt32(out var count) ? count : null,
             }
             : null;
+    }
 
     private static void ComposeGates(Utf8JsonWriter writer, string chain, IReadOnlyDictionary<string, OpinionGateKept> all)
     {

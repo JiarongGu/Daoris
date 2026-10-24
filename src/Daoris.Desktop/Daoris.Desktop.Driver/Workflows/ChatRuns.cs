@@ -91,6 +91,31 @@ public static class ChatRuns
     }
 
     /// <summary>
+    /// A chat run's conversation's opening (CHATFLOW1d, the chat-flow design §7): the person's own first words to the line's first record, which
+    /// the run is keyed by and which D164's ACCEPTFOOT2 note takes as a conversation's identity; null where none was kept.
+    /// </summary>
+    public static string? OpeningOf(SessionEvents events, string run) =>
+        RecordOf(run) is { } first && events.Openings([first]).TryGetValue(first, out var opening) && opening.Length > 0 ? opening : null;
+
+    /// <summary>The states a record ends in, as the run's reader reads them: any other is a live conversation some runner holds.</summary>
+    private static readonly HashSet<string> Endings = new(StringComparer.Ordinal) { "completed", "declined", "failed", "stopped", "stood-down" };
+
+    /// <summary>Whether a record is a live conversation (CHATFLOW1d): not ended, so its press reserves it against another turn.</summary>
+    public static bool Live(TracedSession session) => !Endings.Contains(session.State);
+
+    /// <summary>
+    /// The press's view of a chat run's record (CHATFLOW1d): the ids of its line in its tree, oldest first, whose words the person's turn count
+    /// reads, and whether the record is live; its own id alone, and live, where the records do not hold it.
+    /// </summary>
+    public static (IReadOnlyList<string> Line, bool Live) PressOf(string session, string recordsJson)
+    {
+        var sessions = Trace.ParseSessions(recordsJson);
+        return sessions.FirstOrDefault(each => Same(each.Id, session)) is { } record
+            ? ([.. LineOf(record, sessions).Select(each => each.Id)], Live(record))
+            : ([session], true);
+    }
+
+    /// <summary>
     /// The graph version a chat's choice would bind (§4.3), which this build binds nothing to: the workflow's id where the workflow design
     /// §4.1's rows, with no task and no kind, choose a named workflow whose newest version is a graph; null otherwise.
     /// </summary>

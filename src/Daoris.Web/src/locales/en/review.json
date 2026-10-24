@@ -59,6 +59,14 @@
   "review.ask.skip": "Skip the review of this work: it lands without being shown to you. Your words, if you give any, are kept with it.",
   "review.ask.skipWords": "why, if you want to say",
   "review.ask.skipMeanIt": "Skip the review",
+  "review.state.cannot-start": "cannot start",
+  "review.says.cannot-start": "This work waits for a review that cannot start.",
+  "review.says.cannot-start-chat": "A conversation publishes no set-up step, so no review can be set up for its work. Accept it without the look, with your words if you give any, and it lands at the commit it stands at.",
+  "review.act.withoutLook": "Accept without the look…",
+  "review.ask.withoutLookTitle": "Accept without the look",
+  "review.ask.withoutLook": "Accept this conversation's work without a review: it lands at the commit it stands at now, and a later commit asks again. Your words, if you give any, are kept on its landing record.",
+  "review.ask.withoutLookWords": "why, if you want to say",
+  "review.ask.withoutLookMeanIt": "Accept without the look",
   "review.said.notYet": "Your words went to session {{session}} as its next turn.",
   "review.said.notYetUnheard": "Your words are kept, and no session here heard them: say them to session {{session}} from Daoris's window, or `daoris-driver sessions say {{session}} \"…\"`."
 }

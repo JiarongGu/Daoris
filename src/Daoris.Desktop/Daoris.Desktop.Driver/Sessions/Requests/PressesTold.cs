@@ -38,6 +38,12 @@ public sealed partial class PressesTold(string home)
     /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
     public const string Land = "LAND_SESSION_TREE";
 
+    /// <summary>
+    /// <c>trees land &lt;session&gt; --without-look "…"</c> (CHATFLOW1d2): a chat run's <i>Accept without the look…</i>, the person's way past a look
+    /// no set-up step can show, kept at the tip its press captures and landed there.
+    /// </summary>
+    public const string LandWithoutLook = "LAND_WITHOUT_LOOK";
+
     /// <summary><c>trees remove &lt;path&gt;</c>: a tree by its path.</summary>
     public const string DiscardTree = "DISCARD_SESSION_TREE";
 
@@ -63,7 +69,7 @@ public sealed partial class PressesTold(string home)
     public const string RecoveryDrop = "RECOVERY_DROP";
 
     /// <summary>Every route a terminal tells: the modules hold each to a route that declares what it changes.</summary>
-    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, Sweep, TreesSync, HandOff, LandEntry, LandAsk, RecoveryDrop];
+    public static readonly IReadOnlyList<string> Routes = [Land, DiscardTree, DiscardBranch, Sweep, TreesSync, HandOff, LandEntry, LandAsk, RecoveryDrop, LandWithoutLook];
 
     /// <summary>A note's ending, beside the requests' <c>.json</c>, so neither reads the other.</summary>
     public const string Suffix = ".told";

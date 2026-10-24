@@ -6,11 +6,11 @@ import type { Quest, QuestSetUp, QuestVerdict, SetUpRef } from '../../data/api';
  * A newer driver may name another, which the page reads as holding and words as unread.
  */
 export type ReviewState =
-  | 'none' | 'skipped' | 'reviewed' | 'not-shown' | 'being-set-up' | 'shown' | 'not-yet' | 'not-held' | 'unread';
+  | 'none' | 'skipped' | 'reviewed' | 'not-shown' | 'being-set-up' | 'shown' | 'not-yet' | 'not-held' | 'cannot-start' | 'unread';
 
 /** The states the page words; any other the driver names is said as unread, with the driver's sentence beneath. */
 const KNOWN: ReadonlySet<string> = new Set<ReviewState>([
-  'none', 'skipped', 'reviewed', 'not-shown', 'being-set-up', 'shown', 'not-yet', 'not-held', 'unread',
+  'none', 'skipped', 'reviewed', 'not-shown', 'being-set-up', 'shown', 'not-yet', 'not-held', 'cannot-start', 'unread',
 ]);
 
 /** The states that let the work land (`ReviewGateState.LetsGo`). */
@@ -33,6 +33,8 @@ export type ReviewWaits = {
   quest?: string | null;
   /** The driver's sentence, in English: the terminal's line, which the page passes through only where it words none. */
   says?: string | null;
+  /** The chat run whose look this is (CHATFLOW1d2), which no set-up step can show; absent for a quest's work. */
+  chatRun?: string | null;
 };
 
 /**
@@ -45,6 +47,8 @@ export const REVIEW_TONE: Readonly<Record<ReviewState, 'open' | 'taken' | 'done'
   shown: 'open',
   'not-yet': 'taken',
   'not-held': 'open',
+  // A look that cannot start waits on the person: a chat run's, past which only their own press goes (CHATFLOW1d2).
+  'cannot-start': 'open',
   unread: 'neutral',
   reviewed: 'done',
   skipped: 'neutral',
@@ -96,7 +100,7 @@ export const waitsForLook = (quest: Quest): boolean =>
   Boolean(quest.setUpIn) && stepState(quest) === 'shown' && setUpRef(newestSetUp(quest)) !== null;
 
 /** A press the gate offers (design §3.2–§3.3, §3.6), named as the page draws it. */
-export type ReviewPress = 'reviewed' | 'notYet' | 'showAgain' | 'skip' | 'setUp';
+export type ReviewPress = 'reviewed' | 'notYet' | 'showAgain' | 'skip' | 'setUp' | 'withoutLook';
 
 /**
  * What each state offers, in the order it shows them (design §3.2's table): no set-up step, *Set it up* and *Skip…*; shown and
@@ -112,6 +116,8 @@ export function reviewPresses(state: ReviewState, { local = false }: { local?: b
     case 'being-set-up':
     case 'not-yet':
     case 'not-held': return ['skip'];
+    // CHATFLOW1d2 (the chat-flow design §5.3): no look can be set up for a conversation's work, so its way past is the person's own.
+    case 'cannot-start': return ['withoutLook'];
     default: return [];
   }
 }

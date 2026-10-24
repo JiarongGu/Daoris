@@ -75,6 +75,7 @@
   "notifications.done.look.limit-waits": "A quest's work, cut off by an account's limit, waits for an account to be ready again and goes on by itself then",
   "notifications.done.look.limit-went-on": "A quest's work, cut off by an account's limit, went on in a new session, handed Daoris's brief",
   "notifications.done.look.limit-resumed": "A quest's work, cut off by an account's limit, resumed in its own conversation once its account was ready again",
+  "notifications.done.look.opinion-settled": "The second opinion on a chat's work settled: press Accept again to land it",
   "notifications.nothingUnread": "Nothing unread.",
   "notifications.markRead": "Mark read",
   "notifications.group.messages": "Messages",

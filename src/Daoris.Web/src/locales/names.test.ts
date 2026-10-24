@@ -410,6 +410,8 @@ describe('the real glossary and catalogues', () => {
     const left = check(glossary, en, zh).filter(({ rule }) => rule === 'budget').map(({ key, language }) => `${key}:${language}`).sort();
     expect(left).toEqual([
       'help.setup:en', 'help.setup:zh',
+      // CHATFLOW1d: the chat-flow design's own words for the press past the look (§5), a menu row that wraps rather than clipping.
+      'review.act.withoutLook:en',
       'scope.every:en', 'scope.every:zh',
       'signin.titleNew:en', 'signin.titleNew:zh',
       // MIXAGENT1b-i: the owner's own name for the act, a menu row that wraps in the ⋯ rather than clipping.

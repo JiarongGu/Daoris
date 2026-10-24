@@ -114,10 +114,11 @@ public static class WorkflowRunDetails
     public const string Landed = "landed";
 
     /// <summary>
-    /// A chat run's opinion before CHATFLOW1d (the chat-flow design §4.2, the Opus check's finding 2): no second opinion is asked for a
-    /// conversation's work in this build yet, so its press lands it with none, and the step is passed over.
+    /// A chat run's opinion before its press (CHATFLOW1d, the chat-flow design §4.2, §5.2): nothing has asked it, and the person's
+    /// <i>Accept…</i> asks it, so it waits on that press; the step names the reviewer the press asks. It replaces CHATFLOW1c's
+    /// <c>chat-not-asked</c>, which said a conversation's press landed its work with none.
     /// </summary>
-    public const string ChatNotAsked = "chat-not-asked";
+    public const string ChatAtAccept = "chat-at-accept";
 
     // The look (the review's states, ReviewStates, where they stand at a step).
     public const string NotShown = "not-shown";
@@ -409,7 +410,7 @@ public static class WorkflowRuns
         var landing = chat is null
             ? Landing(Cell(facts, WorkflowKinds.Landing), workDone, workSessions, facts)
             : ChatLanding(Cell(facts, WorkflowKinds.Landing), workDone, facts, landed);
-        var opinion = chat is null ? Opinion(facts, workDone, landing) : ChatOpinion(facts, workDone, landed);
+        var opinion = chat is null ? Opinion(facts, workDone, landing) : ChatOpinion(facts, workDone, landing, landed);
         if (opinion is not null) steps.Add(opinion);
 
         var look = Look(facts, workDone, landing);
@@ -424,9 +425,10 @@ public static class WorkflowRuns
         if (look is not null) steps.Add(look);
 
         // Nothing lands past a gate that holds it (D155 §7, D154 point 7): the landing is not reached until the opinion and the
-        // look are settled.
+        // look are settled. A chat run's opinion that its press asks (CHATFLOW1d) is the landing's own press, which stays offered.
         if (landing.State != WorkflowRunStates.Done
-            && ((opinion is not null && !WorkflowRunStates.Settled(opinion.State)) || (look is not null && !WorkflowRunStates.Settled(look.State))))
+            && ((opinion is not null && !WorkflowRunStates.Settled(opinion.State) && opinion.Detail != WorkflowRunDetails.ChatAtAccept)
+                || (look is not null && !WorkflowRunStates.Settled(look.State))))
         {
             landing = new WorkflowRunStep(landing.Step, WorkflowRunStates.NotReached, "");
         }
@@ -502,10 +504,12 @@ public static class WorkflowRuns
 
     /// <summary>
     /// A chat run's candidate (the chat-flow design §4.2): commits beyond the line, between turns or ended; or a landing kept for the tip the
-    /// tree stands at, which it stays while that reads done. An opinion a press asked on a tip of the line is CHATFLOW1d's.
+    /// tree stands at, which it stays while that reads done; or an opinion a press asked on a tip of the line (CHATFLOW1d), asked or read,
+    /// so it stays visible while an answering turn runs.
     /// </summary>
     private static bool Candidate(WorkflowRunFacts facts, ChatRunFacts chat, ChatLanded? landed) =>
-        landed is not null || (chat.Beyond > 0 && facts.Sessions.LastOrDefault() is { } newest && (!Live(newest) || chat.Between));
+        landed is not null || (chat.Beyond > 0 && facts.Sessions.LastOrDefault() is { } newest && (!Live(newest) || chat.Between))
+        || (chat.Beyond > 0 && facts.Opinion is { } gate && (gate.Asked || gate.Opinion is not null));
 
     /// <summary>
     /// A chat run's work (the chat-flow design §4.2): done once a landing is kept for the tip its tree stands at, read first; an agent at it
@@ -544,10 +548,11 @@ public static class WorkflowRuns
     }
 
     /// <summary>
-    /// A chat run's second opinion before CHATFLOW1d (the chat-flow design §4.2, the Opus check's finding 2): passed over once the work is a
-    /// candidate, as its press passes it, and after a landing too unless that tip's landing kept one; never an earlier tip's.
+    /// A chat run's second opinion (CHATFLOW1d, the chat-flow design §4.2, §5.2): the one a landing of the tip the tree stands at kept, never an
+    /// earlier tip's; else, once the work is a candidate, its gate as a quest's reads, but the opinion no press has asked waits on the person's
+    /// <i>Accept…</i>, which asks it (<c>chat-at-accept</c>), naming the reviewer it asks.
     /// </summary>
-    private static WorkflowRunStep? ChatOpinion(WorkflowRunFacts facts, bool candidate, ChatLanded? landed)
+    private static WorkflowRunStep? ChatOpinion(WorkflowRunFacts facts, bool candidate, WorkflowRunStep landing, ChatLanded? landed)
     {
         if (facts.Current.Steps.FirstOrDefault(step => step.Kind == WorkflowKinds.Opinion) is not { } cell) return null;
         if (landed?.Opinion is { } kept)
@@ -558,9 +563,17 @@ public static class WorkflowRuns
             };
         }
 
-        return candidate
-            ? new WorkflowRunStep(cell, WorkflowRunStates.Skipped, WorkflowRunDetails.ChatNotAsked) { Session = facts.Sessions.LastOrDefault()?.Id }
-            : new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
+        if (landed is not null) return new WorkflowRunStep(cell, WorkflowRunStates.Done, WorkflowRunDetails.Landed);
+        if (!candidate) return new WorkflowRunStep(cell, WorkflowRunStates.NotReached, "");
+        if (facts.Opinion is { State: OpinionGateStates.NotAsked, Asked: false } waits)
+        {
+            return new WorkflowRunStep(cell, WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.ChatAtAccept)
+            {
+                Session = facts.Sessions.LastOrDefault()?.Id, Agent = waits.Rule?.Rule.Reviewers.FirstOrDefault(),
+            };
+        }
+
+        return Opinion(facts, candidate, landing);
     }
 
     /// <summary>Whether two commits are one: equal, or one an abbreviation of the other of git's own floor or more.</summary>

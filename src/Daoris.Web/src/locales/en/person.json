@@ -75,6 +75,7 @@
   "person.route.SESSION_HELPER_DECLINE": "say no to an agent's ask for a helper",
   "person.route.SESSION_PARTNER_ASK": "ask another agent to work on a piece for a session",
   "person.route.LAND_SESSION_TREE": "accept a session's work and land it",
+  "person.route.LAND_WITHOUT_LOOK": "accept a conversation's work without the look and land it",
   "person.route.DISCARD_SESSION_TREE": "discard a session's tree",
   "person.route.SWEEP": "clean up session branches",
   "person.route.TREES_SYNC": "bring the repositories' branches up to date",
