@@ -92,3 +92,13 @@ test('the slug rule matches GitHub on code spans, punctuation, emphasis, CJK and
   assert.equal(headingSlug(`![logo](${RAW}/x.svg) Daoris`), 'daoris');
   assert.deepEqual([...anchorsOf('# A\n\n## A\n\n```\n# not\n```\nB\n---\n')], ['a', 'a-1', 'b']);
 });
+
+test('the README\'s logo and the package\'s icon draw the page\'s seal, as the file says (a twin)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const at = (rel) => new URL(`../${rel}`, import.meta.url);
+  const drawing = (rel) => readFileSync(at(rel), 'utf8').replace(/<!--[\s\S]*?-->/g, '').match(/<rect[\s\S]*<\/mask>/)?.[0].replace(/\s+/g, ' ');
+  const seal = drawing('src/Daoris.Web/public/icon.svg');
+  assert.ok(seal, 'the page\'s icon no longer has the seal\'s shape: read it again');
+  for (const rel of ['docs/assets/daoris-logo.svg', 'docs/assets/daoris-icon.svg']) assert.equal(drawing(rel), seal, rel);
+  assert.match(readFileSync(at('docs/assets/daoris-logo.svg'), 'utf8'), /width="36" height="36"/);
+});

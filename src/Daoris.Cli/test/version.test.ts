@@ -129,8 +129,9 @@ const dispatcherCommands = (): string[] => {
   return names;
 };
 
-test('the README command table lists exactly the commands the dispatcher has', () => {
-  const documented = [...read('README.md').matchAll(/^\| `([a-z]+)[ `]/gm)].map((m) => m[1]!).sort();
+// The table moved from the README, now the landing page, to the guide it links (GITHUBDOCS1, D211).
+test('the guide\'s command table lists exactly the commands the dispatcher has', () => {
+  const documented = [...read('docs/guide/README.md').matchAll(/^\| `([a-z]+)[ `]/gm)].map((m) => m[1]!).sort();
   assert.deepEqual(documented, dispatcherCommands());
 });
 

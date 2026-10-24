@@ -72,6 +72,12 @@ def main() -> None:
     frames[-1].save(out, format="ICO", sizes=[(s, s) for s in SIZES], append_images=frames[:-1])
     print(f"make-icon: {out} — {len(SIZES)} sizes, {out.stat().st_size} bytes")
 
+    # The package's icon (GITHUBDOCS1, D211): the 256 frame as a PNG, for a registry, a release page or
+    # a social card. The README's logo is the SVG beside it, which stays sharp at any density.
+    png = out.parents[3] / "docs" / "assets" / "daoris-icon.png"
+    frames[-1].save(png, format="PNG", optimize=True)
+    print(f"make-icon: {png} — 256 px, {png.stat().st_size} bytes")
+
 
 if __name__ == "__main__":
     main()
