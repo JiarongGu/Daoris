@@ -208,6 +208,239 @@ public sealed class OpinionLandingTests : IDisposable
         Assert.True(QuestResults.Submitted(_world.Quests["q1"]), "the landing writes no Done");
     }
 
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2 points 1 to 4 and 7): a chat run's press finds its opinion not asked, asks it at the landing
+    /// occasion with the tip it captured and the person's turn count, and is refused saying so; pressed again before the look starts it,
+    /// refused and nothing asked; while it is read, refused; once it settled, landed at the press, the record keeping who read it.
+    /// </summary>
+    [Fact]
+    public async Task A_chats_press_asks_its_opinion_once_and_lands_at_the_press_once_it_settled()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: false);
+        var tree = await ChatTreeAsync(root);
+        var tip = await HeadAsync(tree);
+
+        var asked = await ChatPressAsync(tree, turns: 2);
+        Assert.False(asked.Landed.Landed);
+        Assert.Equal((ChatPresses.Codes.Asked, AutoLandingCode.Opinion), (asked.Code, asked.Landed.Refusal));
+        Assert.Equal("A second opinion is asked: `codex-acp` reads it from the driver's next look; press Accept again once it settles.", asked.Landed.Message);
+        var due = Assert.Single(new OpinionDues(_home).Open());
+        Assert.Equal((ChatRun, tip, (int?)2, OpinionRules.Landing, ""), (due.Run, due.Tip, due.Turns, due.Occasion, due.Quest));
+
+        var again = await ChatPressAsync(tree);
+        Assert.Equal(ChatPresses.Codes.Asked, again.Code);
+        Assert.Single(new OpinionDues(_home).Open());
+
+        ReadChat("o1", tip, reading: true);
+        var reading = await ChatPressAsync(tree);
+        Assert.False(reading.Landed.Landed);
+        Assert.StartsWith("Waits for a second opinion: being read by Codex (OpenAI)", reading.Landed.Message);
+        Assert.Single(new OpinionDues(_home).Open());
+
+        ReadChat("o1", tip);
+        var landed = await ChatPressAsync(tree);
+        Assert.True(landed.Landed.Landed, landed.Landed.Message);
+        Assert.True(await BranchAsync(root, landed.Landed.Branch!));
+        var record = new LandedBranches(_home).Landing(ChatSession)!.Opinion!;
+        Assert.Equal((OpinionGateStates.Settled, "o1", tip), (record.Said, record.Opinion, record.Tip));
+    }
+
+    /// <summary>CHATFLOW1d (§5.2 point 7): under a merge-form rule, the press that finds the opinion settled merges the captured tip into the line.</summary>
+    [Fact]
+    public async Task A_merge_form_rule_merges_a_chats_work_at_the_press_that_finds_its_opinion_settled()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(landing: null, required: false);
+        var tree = await ChatTreeAsync(root);
+        var tip = await HeadAsync(tree);
+        ReadChat("o1", tip);
+
+        var landed = await ChatPressAsync(tree);
+        Assert.True(landed.Landed.Landed, landed.Landed.Message);
+        Assert.Contains(tip, await GitAsync(root, "log", "--format=%H", "-n", "5"));
+    }
+
+    /// <summary>CHATFLOW1d (§5.2 point 7, D164 point 4): uncommitted work refuses the press, settled opinion or not, and nothing lands.</summary>
+    [Fact]
+    public async Task Uncommitted_work_refuses_a_chats_press()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: false);
+        var tree = await ChatTreeAsync(root);
+        ReadChat("o1", await HeadAsync(tree));
+        await File.WriteAllTextAsync(Path.Combine(tree, "half.txt"), "not committed\n");
+
+        var refused = await ChatPressAsync(tree);
+        Assert.False(refused.Landed.Landed);
+        Assert.Null(new LandedBranches(_home).Landing(ChatSession));
+    }
+
+    /// <summary>
+    /// CHATFLOW1d, Codex's finding 1 (§5.2 point 1): a commit made between the gate's judgement and the landing is refused as moved, never
+    /// landed under the judgement of the earlier tip, the press saying so on its door.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_candidate_moved_after_its_judgement_is_refused_and_never_landed()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: false);
+        var tree = await ChatTreeAsync(root);
+        ReadChat("o1", await HeadAsync(tree));
+
+        var moved = await ChatPressAsync(tree, before: () => CommitAsync(tree, "racing.txt", "a turn's commit", "a turn's commit"));
+        Assert.False(moved.Landed.Landed);
+        Assert.Equal((ChatPresses.Moved, ChatPresses.Codes.Moved), (moved.Landed.Message, moved.Code));
+        Assert.Null(new LandedBranches(_home).Landing(ChatSession));
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (§5.2 point 1): a press while a turn runs is refused and asks nothing; a live conversation no runner here holds is another
+    /// window's, refused there; and either way the conversation is let go, nothing reserved.
+    /// </summary>
+    [Fact]
+    public async Task A_chats_press_while_a_turn_runs_or_held_elsewhere_is_refused_and_asks_nothing()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: false);
+        var tree = await ChatTreeAsync(root);
+
+        var holder = new Holder(PressHold.Busy);
+        var busy = await ChatPressAsync(tree, holder: holder, live: true);
+        Assert.Equal((ChatPresses.Busy, ChatPresses.Codes.Busy), (busy.Landed.Message, busy.Code));
+        Assert.Equal(0, holder.Released);
+
+        var elsewhere = await ChatPressAsync(tree, live: true);
+        Assert.Equal((ChatPresses.Elsewhere, ChatPresses.Codes.Elsewhere), (elsewhere.Landed.Message, elsewhere.Code));
+        Assert.Empty(new OpinionDues(_home).Open());
+
+        var held = new Holder(PressHold.Held);
+        var asked = await ChatPressAsync(tree, holder: held, live: true);
+        Assert.Equal(ChatPresses.Codes.Asked, asked.Code);
+        Assert.Equal(1, held.Released);
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (§5.2 point 8): after a hand-over the run, its gate and its due are the line's, so the next record's press reads the same
+    /// gate: the opinion settled on the first record's press lands the second's.
+    /// </summary>
+    [Fact]
+    public async Task A_hand_overs_next_record_presses_the_same_chat_run_gate()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: false);
+        var tree = await ChatTreeAsync(root);
+        Assert.Equal(ChatPresses.Codes.Asked, (await ChatPressAsync(tree)).Code);
+        ReadChat("o1", await HeadAsync(tree));
+
+        var landed = await ChatPressAsync(tree, session: "c2d3e4f5");
+        Assert.True(landed.Landed.Landed, landed.Landed.Message);
+        Assert.Equal(OpinionGateStates.Settled, new LandedBranches(_home).Landing("c2d3e4f5")!.Opinion!.Said);
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (§5.2 point 9, §7): a commit after the settled opinion shows <c>commits-since</c>, and the person's press over it, kept by
+    /// the run where a quest's is kept by its chain, lets that tip land; the recheck is not the press's to ask.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_runs_press_answers_commits_since_by_the_run()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: false);
+        var tree = await ChatTreeAsync(root);
+        ReadChat("o1", await HeadAsync(tree));
+        await CommitAsync(tree, "later.txt", "a later turn", "a later turn");
+
+        var held = await ChatPressAsync(tree);
+        Assert.False(held.Landed.Landed);
+        Assert.StartsWith("1 commit since was not read by another agent", held.Landed.Message);
+        Assert.Empty(new OpinionDues(_home).Open());
+
+        new OpinionGates(_home).Said(ChatRun, "web-app", new OpinionPersonWord(OpinionPersonSaid.Press, await HeadAsync(tree), DateTimeOffset.UtcNow)
+        {
+            Door = ReviewDoors.Screen,
+        });
+        var landed = await ChatPressAsync(tree);
+        Assert.True(landed.Landed.Landed, landed.Landed.Message);
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (§5.2 point 5): the plan asks nothing. Reading a chat run's gate and its landing's plan, as <c>LANDING</c> and
+    /// <c>trees land --plan</c> read them, shows the opinion not asked and writes no due.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_runs_plan_reads_its_gate_and_asks_nothing()
+    {
+        var root = await RepositoryAsync("web-app");
+        Configure(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"), required: false);
+        var tree = await ChatTreeAsync(root);
+        var trees = new SessionTrees(_home);
+
+        var gate = await trees.GateAsync(tree, null, _world, ChatSession, run: ChatRun);
+        await trees.PlanAsync(tree, new LandingSubject(ChatSession, null, "The chat's work"), process: gate.Process);
+
+        Assert.Equal((OpinionGateStates.NotAsked, false, ChatRun), (gate.Opinion.State, gate.Opinion.Asked, gate.Opinion.Run));
+        Assert.Empty(new OpinionDues(_home).Open());
+        Assert.False(File.Exists(Path.Combine(_home, "opinions", "gates", ChatRun + ".json")));
+    }
+
+    private const string ChatSession = "c1a2b3c4";
+
+    private const string ChatRun = ChatRuns.Prefix + ChatSession;
+
+    /// <summary>The runner a press reserves the conversation in, standing in: it answers as told, and counts each let-go.</summary>
+    private sealed class Holder(PressHold answer) : IChatPressing
+    {
+        public int Released { get; private set; }
+
+        public Task<PressHold> HoldAsync(string sessionId, CancellationToken ct = default) => Task.FromResult(answer);
+
+        public void Release(string sessionId) => Released++;
+    }
+
+    /// <summary>A chat's own tree, grown as a conversation grows one, with a commit of its work.</summary>
+    private async Task<string> ChatTreeAsync(string root)
+    {
+        var opened = await new SessionTrees(_home).OpenAsync(root, "web-app", "aurora");
+        await CommitAsync(opened.Path, "chat.txt", "the chat's work", "the chat's work");
+        return opened.Path;
+    }
+
+    /// <summary>
+    /// A chat's press as the driver's one operation makes it (CHATFLOW1d): its run bound first, then <see cref="ChatPresses.PressAsync"/>, its
+    /// gate read by the run at the captured tip and its landing pinned there; <paramref name="before"/> runs between the judgement and the landing.
+    /// </summary>
+    private async Task<ChatPressed> ChatPressAsync(
+        string tree, int turns = 0, Func<Task>? before = null, IChatPressing? holder = null, bool live = false, string session = ChatSession)
+    {
+        Assert.Null(ChatRuns.BindFirst(Config(), _home, ChatRun, tree, [], DateTimeOffset.UtcNow).Failed);
+        var trees = new SessionTrees(_home);
+        return await ChatPresses.PressAsync(
+            _home, new ChatPressAsk(session, tree, ChatRun, "web-app", "aurora", live), holder,
+            (tip, token) => trees.GateAsync(tree, null, _world, session, token, tip: tip, run: ChatRun),
+            async (gate, token) =>
+            {
+                if (before is not null) await before();
+                return await trees.LandAsync(tree, new LandingSubject(session, null, "The chat's work"), token, gate: gate);
+            },
+            () => turns);
+    }
+
+    /// <summary>A first pass by Codex on a chat run's work at <paramref name="tip"/>, kept at the run's gate as the look keeps it.</summary>
+    private void ReadChat(string id, string tip, bool reading = false)
+    {
+        _world.Opinions[id] = new OpinionView(id, "landing", "first", ChatSession, "r-" + id, "web-app", tip, tip, "codex-acp", ReviewerLabels.AnotherMaker,
+            reading ? "reading" : "given")
+        {
+            Product = "Codex", Maker = "OpenAI", Minutes = 20, Findings = reading ? null : [], Read = "the whole change",
+        };
+        var gates = new OpinionGates(_home);
+        if (!gates.Read(ChatRun, "web-app").Asks.Any(ask => ask.Opinion == id))
+        {
+            gates.Asked(ChatRun, "web-app", new OpinionAskKept(DateTimeOffset.UtcNow, "landing", ChatSession, tip) { Opinion = id, Reviewer = "codex-acp" });
+        }
+    }
+
     // ——— the world and the fixtures
 
     /// <summary>The service's quests and records, and the local host's opinions, standing in.</summary>
