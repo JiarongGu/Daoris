@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - A conversation continuing a quest's worker read its line's origin, not its quest's run (CHATFLOW1a, Codex's finding 6)
+
+- **Symptom:** found by Codex's read of the accepted chat-flow design, not seen on the install. A quest an ask sent, its worker gone on
+  as a conversation, read every run of the ask in its *Workflow* view; a quest whose entry inherited its publisher's session origin from
+  another tree, its worker gone on, read `chat-own-tree`; and a conversation that did read its quest's run was none of that run's work
+  records, so its tree, landings and acceptances were left out (the worker's were shown).
+- **Root cause:** row a classified a record by its stored origin, which groups work by line and does not name the work: the service
+  gives an ask-sent quest's worker the ask's origin and a published quest its publisher's (`Sessions/SessionEntries.cs:97`, `:108-112`).
+  The run's records were then selected by `session.Quest` alone, which a conversation keeps null.
+- **Fix:** `WorkflowRunReader.WorkOf` resolves the quest whose workflow governs a record (its own; else the nearest record its `From`
+  links reach that names or took one; else a quest its line took in its tree; else a stored quest origin), `ChainsOf` reads it before an
+  origin, and `RunAsync` selects its work records by it (`Workflows/WorkflowRun.Read.cs`). The doors' use of it is CHATFLOW1i's.
+- **Verification:** two `WorkflowRunTests` cases, seen failing first (the ask's two chains where one was expected; the worker's id
+  where the conversation's was), then green with the `WorkflowRunTests`, `WorkflowPortsTests`, `WorkflowRunCommandTests`,
+  `WorkflowRunSaidTwinTests` and `TraceTests` classes (288), the driver's fast half (14,411) and `DriverModuleWorkflowRunTests` (17).
+
 ## 2026-10-24 - The queue's runner formed a candidate from the queue as it stood before its hold (FLAKE1)
 
 - **Symptom:** the tool-test `merge-queue.test.ts`, *a red candidate of two*, now and then found its first red run's members
