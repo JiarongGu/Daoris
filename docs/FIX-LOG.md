@@ -179,6 +179,20 @@ repository.
   resumes the same conversation. `AcpTransientTests` (the episode on a moved clock), `AgentErrorsTests` (the tables both ways),
   `SessionWatchTests` (the wait never quiet, seen red without its hook) and the page's rendered conversation.
 
+## 2026-10-25 - STEWARDROLE1a-i reached main with two zh sentences the glossary refuses
+
+- **Symptom:** the next landing's `npm run verify` failed `src/locales/names.test.ts`, *say in sentences only what the audit found to be
+  another thing's word*, on `projects.supervisor.refused.holder-harness:zh` and `projects.supervisor.refused.scope:zh`, both added by
+  STEWARDROLE1a-i, which was already on main.
+- **Root cause:** the two sentences used words the glossary lists to avoid: 渠道 (the *channel*'s, whose word is 频道) for the maker's
+  release channel, and 这台机器 where *this machine* is 本机. STEWARDROLE1a-i's own `verify` had failed twice at its landing, on this test
+  and on a rehearsal-kit stub handed a port `fetch` refuses; the steward read the first failure, re-ran it green as a flake, and
+  committed without reading the second.
+- **Fix:** 用其厂商自己的方式安装 (the agents page's own wording for a maker's install) and 本机; the Web README's i18n row says what the
+  test refuses. The steward reads every failing line of a `verify` before calling any of it a flake.
+- **Verification:** the locale tests 104 of 104, `i18n:check` agreeing on 6,943 keys, `npm run verify` passed, in CONFIRMWAIT1a-ii's
+  landing (`888d3bdcb`).
+
 ## 2026-10-24 - The wiring census read the CLI tests' scratch as a source, and two test classes were split by hand
 
 - **Symptom:** the CI on `ffcf42926` failed `driver` on `SystemWiringTests.Every_variable_the_sources_name_is_on_the_list_shown_or_set_aside_with_its_reason`,
