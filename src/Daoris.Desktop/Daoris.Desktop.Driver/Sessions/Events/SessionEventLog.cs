@@ -177,6 +177,17 @@ public sealed class SessionEvents(string directory)
         return asked?.Origin == "person" ? asked.Text : null;
     }
 
+    /// <summary>
+    /// How many of the person's own words a session took (CHATFLOW1d, the chat-flow design §6.1 (b)): each word of theirs its turns
+    /// asked, never one shown waiting, Daoris's, another agent's findings or a brief. It only rises, so a turn the person sent and
+    /// finished after a press still counts once it has left the record's waiting words. None for no record, or an id that is not one.
+    /// </summary>
+    public int PersonSaid(string sessionId) =>
+        SessionEventText.IsId(sessionId)
+            ? Lines(Path.Combine(directory, $"{sessionId}.events.jsonl"))
+                .Count(e => Asked(e) && e.Origin == "person" && e.From is null && e.Opinion is null && e.Helper is null)
+            : 0;
+
     /// <summary>A session's ask: words it took, never words shown waiting, nor the brief a new part was handed (SESSCTX1b).</summary>
     private static bool Asked(SessionEvent e) => e.Kind == SessionEventKind.User && e.Reaches is null && e.Continues is null;
 

@@ -48,8 +48,11 @@ internal sealed class TreeGates(TreeContext context)
         var config = context.Config();
         process ??= await ProcessAsync(config, repository, workspace, quest, world, ct, run).ConfigureAwait(false);
         var workflow = await WorkflowAsync(full, process, session, ct, tip).ConfigureAwait(false);
-        var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process, tip).ConfigureAwait(false);
-        var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct, process, tip)
+        // CHATFLOW1d2: a chat run's look reads its own file, the person's way past it, by the run's key.
+        var chat = quest is null && ChatRuns.IsChatRun(run) ? run : null;
+        var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process, tip,
+            chat is null ? null : new ChatLooks(context.Home).For(chat, session)).ConfigureAwait(false);
+        var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct, process, tip, chat)
             .ConfigureAwait(false);
         var gate = new LandingGate(opinion, review) { Workflow = workflow };
         return await GraphAsync(gate, full, repository, process, tip, ct).ConfigureAwait(false);
@@ -137,30 +140,36 @@ internal sealed class TreeGates(TreeContext context)
     /// declared reviewers. Null reads the rule live, as before.
     /// </param>
     /// <param name="at">The commit to judge at, the branch's where a push is judged (FABRIC-CLOSE1h16); null reads the tree's <c>HEAD</c>.</param>
+    /// <param name="run">
+    /// The chat run the work is where it serves no quest (CHATFLOW1d, the chat-flow design §7): its gate is kept by the run's key, with no
+    /// chain, no later step and no quest's hold. Null reads nothing for a conversation, as before.
+    /// </param>
     internal async Task<OpinionGateState> OpinionAsync(
         string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
-        string occasion, CancellationToken ct = default, WorkflowProcess? process = null, string? at = null)
+        string occasion, CancellationToken ct = default, WorkflowProcess? process = null, string? at = null, string? run = null)
     {
         var rule = process is null ? OpinionRules.Resolve(context.Config(), repository, workspace) : process.Opinion;
         var cannot = process?.OpinionCannot;
-        var facts = new OpinionGateFacts(repository, rule) { Session = session, Occasion = occasion, Review = review, Cannot = cannot };
-        if (quest is null || !OpinionGate.Reads(rule, cannot, occasion))
+        var chat = quest is null && ChatRuns.IsChatRun(run) ? run : null;
+        var facts = new OpinionGateFacts(repository, rule) { Session = session, Occasion = occasion, Review = review, Cannot = cannot, Run = chat };
+        if ((quest is null && chat is null) || !OpinionGate.Reads(rule, cannot, occasion))
         {
             return new OpinionGateState(OpinionGateStates.None, repository) { Rule = rule, Session = session };
         }
 
         try
         {
-            var chain = ReviewGate.ChainOf(await world.QuestsAsync(ct).ConfigureAwait(false), quest);
-            var id = quest.TrimStart('#');
-            var served = chain.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase))
-                         ?? new QuestView(id, "", repository, "", "", "Done");
-            var kept = new OpinionGates(context.Home).Read(OpinionChain(chain, id), repository);
+            IReadOnlyList<QuestView> chain = quest is null ? [] : ReviewGate.ChainOf(await world.QuestsAsync(ct).ConfigureAwait(false), quest);
+            var id = quest?.TrimStart('#');
+            var served = id is null
+                ? null
+                : chain.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.OrdinalIgnoreCase)) ?? new QuestView(id, "", repository, "", "", "Done");
+            var kept = new OpinionGates(context.Home).Read(chat ?? OpinionChain(chain, id!), repository);
             var tip = at ?? await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false);
             facts = facts with
             {
                 Quest = served,
-                Later = occasion == OpinionRules.Landing ? OpinionGate.LaterStep(chain, id, repository) : null,
+                Later = occasion == OpinionRules.Landing && id is not null ? OpinionGate.LaterStep(chain, id, repository) : null,
                 Tip = tip,
                 Asks = [.. kept.Asks.Where(ask => occasion == OpinionRules.Landing ? ask.Occasion != OpinionRules.Steps : ask.Working == session)],
                 Person = kept.Person,

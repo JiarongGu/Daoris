@@ -148,8 +148,14 @@ public sealed record OpinionGateFacts(string Repository, ResolvedOpinion? Rule)
     /// <summary>The working session the door lands, which the terminal's doors name.</summary>
     public string? Session { get; init; }
 
-    /// <summary>The quest the work served; null for a conversation's, which lands nothing by the driver's gate (§12.2).</summary>
+    /// <summary>The quest the work served; null for a conversation's, which lands nothing by the driver's gate unless it runs a chat run.</summary>
     public QuestView? Quest { get; init; }
+
+    /// <summary>
+    /// The chat run the work is, <c>chat-&lt;first&gt;</c>, where it serves no quest (CHATFLOW1d, the chat-flow design §5.2, §7): its gate is
+    /// read as a quest's, keyed by the run, with no chain and no quest's hold. Null for a quest's work, and a conversation with no run.
+    /// </summary>
+    public string? Run { get; init; }
 
     /// <summary>A later step of the chain in this repository still to run, by its quest's id; null where none is.</summary>
     public string? Later { get; init; }
@@ -199,6 +205,9 @@ public sealed record OpinionGateState(string State, string Repository)
 
     /// <summary>The working session the door lands, which the terminal's doors name.</summary>
     public string? Session { get; init; }
+
+    /// <summary>The chat run the work is (CHATFLOW1d), whose opinion the person's Accept asks; null for a quest's.</summary>
+    public string? Run { get; init; }
 
     /// <summary>The commit that would land; null where it was not read.</summary>
     public string? Tip { get; init; }
@@ -336,13 +345,14 @@ public static class OpinionGate
     {
         OpinionGateState Of(string state) => new(state, facts.Repository)
         {
-            Rule = facts.Rule, Session = facts.Session, Tip = facts.Tip, Later = facts.Later,
+            Rule = facts.Rule, Session = facts.Session, Tip = facts.Tip, Later = facts.Later, Run = facts.Quest is null ? facts.Run : null,
             Held = facts.Quest is { Held: true } quest && quest.Hold != EvidenceCodes.Unreviewed,
             Passes = facts.Asks.Count(ask => ask.Opinion is not null),
         };
 
-        // A conversation's work lands nothing by the driver's gate (§12.2), and a level that names no occasion here asks nothing.
-        if (facts.Quest is null || !Reads(facts.Rule, facts.Cannot, facts.Occasion)) return Of(OpinionGateStates.None);
+        // A conversation's work with no chat run lands nothing by the driver's gate (§12.2), and a level that names no occasion here asks
+        // nothing. A chat run's is read as a quest's, keyed by its run (CHATFLOW1d).
+        if ((facts.Quest is null && !ChatRuns.IsChatRun(facts.Run)) || !Reads(facts.Rule, facts.Cannot, facts.Occasion)) return Of(OpinionGateStates.None);
 
         // The person's own answer, while what would land is the commit they answered at or one before it (§8.5).
         foreach (var word in facts.Person.OrderByDescending(word => word.At))
@@ -490,7 +500,10 @@ public static class OpinionGate
                 + "lets it go on without one.",
             OpinionGateStates.NotAsked => gate.Held
                 ? "Waits for a second opinion: it is asked once the hold on its quest is lifted, since that comes first."
-                : $"Waits for a second opinion: it is asked at the driver's next look. {Verb(gate, "ask")} asks it now.",
+                // CHATFLOW1d (the chat-flow design §5.2 point 3): a chat run's is asked by the person's Accept, never by a look.
+                : gate.Run is not null
+                    ? $"Waits for a second opinion: one from {Reviewer(gate)} is asked when you press Accept."
+                    : $"Waits for a second opinion: it is asked at the driver's next look. {Verb(gate, "ask")} asks it now.",
             OpinionGateStates.Reading =>
                 $"Waits for a second opinion: being read by {who}, {LabelSaid(gate.Opinion!.Label)}"
                 + (gate.Opinion.Minutes is { } minutes ? string.Create(CultureInfo.InvariantCulture, $", for at most {minutes} minutes") : "")
@@ -525,6 +538,17 @@ public static class OpinionGate
             _ => $"Whether this work waits for a second opinion could not be read: {gate.Problem}. Nothing lands until it can be.",
         };
     }
+
+    /// <summary>Who a chat run's Accept asks first (CHATFLOW1d): the rule's first reviewer, named, or <i>another agent</i> where it names none.</summary>
+    public static string Reviewer(OpinionGateState gate) =>
+        gate.Rule?.Rule.Reviewers is { Count: > 0 } reviewers ? $"`{reviewers[0]}`" : "another agent";
+
+    /// <summary>
+    /// What a chat run's press says where it asked the opinion (CHATFLOW1d, the chat-flow design §5.2 point 3): the press is refused, the
+    /// pass starts at the driver's next look, and the person presses again once it settles.
+    /// </summary>
+    public static string Asked(OpinionGateState gate) =>
+        $"A second opinion is asked: {Reviewer(gate)} reads it from the driver's next look; press Accept again once it settles.";
 
     /// <summary>What the person's answer answered: the disputes, or the commits nobody read, as the gate stood beneath it.</summary>
     private static string Answering(OpinionGateState gate) => gate.Answered switch

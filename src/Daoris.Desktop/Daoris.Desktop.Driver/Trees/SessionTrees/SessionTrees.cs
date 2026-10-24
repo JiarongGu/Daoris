@@ -247,6 +247,9 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
     public string TreesRoot => _context.TreesRoot;
 
+    /// <summary>The home these trees are this machine's under, where a chat run's press keeps its due and its look (CHATFLOW1d).</summary>
+    public string Home => _context.Home;
+
     /// <inheritdoc cref="TreeContext.OneLook"/>
     internal IDisposable OneLook() => _context.OneLook();
 
@@ -840,11 +843,11 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     /// <inheritdoc cref="TreeGates.OpinionAsync"/>
     public Task<OpinionGateState> OpinionAsync(
         string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
-        string occasion, CancellationToken ct = default, WorkflowProcess? process = null) =>
-        Gates.OpinionAsync(tree, repository, workspace, quest, session, world, review, occasion, ct, process);
+        string occasion, CancellationToken ct = default, WorkflowProcess? process = null, string? run = null) =>
+        Gates.OpinionAsync(tree, repository, workspace, quest, session, world, review, occasion, ct, process, run: run);
 
     /// <inheritdoc cref="TreeGates.ForkPointAsync"/>
-    public Task<string?> ForkPointAsync(string tree, CancellationToken ct = default) => Gates.ForkPointAsync(tree, ct);
+    public Task<string?> ForkPointAsync(string tree, CancellationToken ct = default, string? at = null) => Gates.ForkPointAsync(tree, ct, at ?? "HEAD");
 
     /// <inheritdoc cref="OnlyHereProof.OnlyHereAsync"/>
     public Task<TreeOnlyHere> OnlyHereAsync(string tree, string branch, string? baseCommit, string? root, CancellationToken ct = default) =>

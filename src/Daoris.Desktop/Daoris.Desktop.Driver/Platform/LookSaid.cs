@@ -172,11 +172,17 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
     /// </summary>
     public const string LimitResumed = "limit-resumed";
 
+    /// <summary>
+    /// The second opinion a chat run's Accept asked has settled (CHATFLOW1d, the chat-flow design §5.2 point 6): the person presses Accept
+    /// again, and is told where they do not look. Its own news, once per opinion.
+    /// </summary>
+    public const string OpinionSettled = "opinion-settled";
+
     /// <summary>Every news code, which the page's words cover in both languages.</summary>
     public static readonly IReadOnlyList<string> NewsCodes =
         [HandOverRefused, HandOverElsewhere, HandOverDropped, HandOverAskRefused, HandOverFailed, HandedBack, LostClaim, LostToReopen,
          MeetingCut, BrainstormCut, Swept, MeetingFailed, BrainstormFailed, HelperAskerGone, ReopenUnrecorded, ReopenTreeGone,
-         PluginUnsound, LimitWaits, LimitWentOn, LimitResumed];
+         PluginUnsound, LimitWaits, LimitWentOn, LimitResumed, OpinionSettled];
 
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
 

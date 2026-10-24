@@ -62,8 +62,9 @@ public static class OpinionLook
         OpinionDue due, QuestView? quest, IReadOnlyList<QuestView> chain, DriverConfig config, LandedBranches landed, CancellationToken ct,
         WorkflowProcess? process = null, IReadOnlyCollection<string>? pushHeld = null)
     {
-        // FABRIC-CLOSE1h (§E5): in a closure graph its submission is the done it waits on.
-        if (!QuestResults.Judged(quest)) return OpinionDueClosed.Undone;
+        // FABRIC-CLOSE1h (§E5): in a closure graph its submission is the done it waits on. CHATFLOW1d: a chat run's has no quest, and closes
+        // `landed`, `gone` or `off`, never `undone`.
+        if (due.Run is null && !QuestResults.Judged(quest)) return OpinionDueClosed.Undone;
         var reads = process is null
             ? OpinionRules.Resolve(config, due.Repository, due.Workspace) is { Rule: { IsNone: false } rule } && rule.On.Contains(due.Occasion)
             : process.Problem is not null || process.Unread is not null || OpinionGate.Reads(process.Opinion, process.OpinionCannot, due.Occasion);

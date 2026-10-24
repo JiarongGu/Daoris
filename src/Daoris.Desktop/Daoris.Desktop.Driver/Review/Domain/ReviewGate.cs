@@ -122,6 +122,15 @@ public sealed record ReviewDecision(string Level, string? Environment)
     public QuestReviewVerdictView? Skip { get; init; }
 
     public string? SkippedOn { get; init; }
+
+    /// <summary>
+    /// The chat run the work is (CHATFLOW1d2, the chat-flow design §5.3), whose look no set-up step can show: a look its process requires
+    /// reads <see cref="ReviewStates.CannotStart"/>, and the person's way past it is <i>Accept without the look…</i>. Null for a quest's.
+    /// </summary>
+    public string? Run { get; init; }
+
+    /// <summary>The record a chat run's press names, which the terminal's door says.</summary>
+    public string? Session { get; init; }
 }
 
 /// <summary>
@@ -161,6 +170,9 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
     /// <summary>Why it could not be read, for <see cref="ReviewStates.Unread"/>.</summary>
     public string? Problem { get; init; }
 
+    /// <summary>The person's <i>Accept without the look…</i> that let a chat run's work go (CHATFLOW1d2); null everywhere else.</summary>
+    public ChatLookSkip? ChatSkip { get; init; }
+
     /// <summary>Whether the work may land: nothing waits, the person skipped it, or they reviewed what lands.</summary>
     public bool LetsGo => State is ReviewStates.None or ReviewStates.Skipped or ReviewStates.Reviewed;
 
@@ -175,6 +187,13 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
             Commit = SetUp?.Commit,
             At = Verdict?.At,
             Words = Verdict?.Words,
+        },
+        // CHATFLOW1d2: the person's way past a chat run's look, with their words and the tip they pressed at.
+        ReviewStates.Skipped when ChatSkip is { } chat => new LandingReview(ReviewVerdicts.Skipped, null, null)
+        {
+            Commit = chat.Tip,
+            At = chat.At,
+            Words = chat.Words,
         },
         ReviewStates.Skipped => new LandingReview(ReviewVerdicts.Skipped, null, Decision.SkippedOn)
         {
@@ -379,6 +398,15 @@ public static class ReviewGate
         var step = decision.SetUpStep?.Id;
         var skipOn = step is not null && gate.State != ReviewStates.NotHeld ? step : decision.Work ?? step;
         var skip = skipOn is null ? "" : $" `daoris-driver quest review {skipOn} skip \"…\"` lets it land without one.";
+        // CHATFLOW1d2 (the chat-flow design §5.3): a chat run's look cannot be set up, and the person's way past it is theirs.
+        if (decision.Run is not null && gate.State is ReviewStates.CannotStart or ReviewStates.Skipped)
+        {
+            return gate.State == ReviewStates.Skipped
+                ? $"You accepted this conversation's work without the look at `{Short(gate.ChatSkip!.Tip)}`: \"{gate.ChatSkip.Words}\"."
+                : $"Waits for your review, and it cannot start: {ChatLookCannot} "
+                  + $"`daoris-driver trees land {decision.Session ?? "<session>"} --without-look \"…\"` accepts it without the look.";
+        }
+
         return gate.State switch
         {
             ReviewStates.None => decision.Level == ReviewLevels.Nothing
@@ -413,6 +441,9 @@ public static class ReviewGate
             _ => $"Whether this work waits for your review could not be read: {gate.Problem}. Nothing lands until it can be.",
         };
     }
+
+    /// <summary>The limit a chat run's look reads (CHATFLOW1d2, the chat-flow design §5.3): no set-up step can show a conversation's work.</summary>
+    public const string ChatLookCannot = "a conversation publishes no set-up step, so no look can be set up for its work.";
 
     /// <summary>Why a level that spoke asks for no review, in the words of its row.</summary>
     private static string NoReview(ReviewDecision decision) => decision.Level switch
@@ -450,12 +481,18 @@ public static class ReviewGate
     /// The commit to judge the work at (FABRIC-CLOSE1h16): a landing's push passes the one its branch was made at, so a commit made on the
     /// tree after it holds nothing back. Null reads the tree's <c>HEAD</c>, as before.
     /// </param>
+    /// <param name="chat">
+    /// A chat run's look where the work serves no quest (CHATFLOW1d2, the chat-flow design §5.3): rows 5 and 6, or its version's look, decide
+    /// whether one is required; one that is reads <see cref="ReviewStates.CannotStart"/>, and the person's skip kept at a tip that holds
+    /// what would land lets it go. Null for a conversation with no run, which has nothing to wait for.
+    /// </param>
     public static async Task<ReviewGateState> ReadAsync(
         IReviewWorld world, DriverConfig config, string tree, string repository, string workspace, string? quest, CancellationToken ct = default,
-        WorkflowProcess? process = null, string? at = null)
+        WorkflowProcess? process = null, string? at = null, ChatLookFor? chat = null)
     {
         var rule = process is null ? ReviewRules.Resolve(config, repository, workspace) : process.Review;
         var look = process?.Look;
+        if (quest is null && chat is not null) return await ChatAsync(chat, tree, repository, rule, look, process?.Name, at, ct).ConfigureAwait(false);
         if (quest is null) return new(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository });
 
         ReviewDecision decision;
@@ -479,5 +516,31 @@ public static class ReviewGate
         // Git is asked only where a review is asked: a landing no review touches costs no process.
         var tip = decision.Reviews ? at ?? await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false) : null;
         return await JudgeAsync(decision, tip, commit => ReviewGit.HoldsAsync(tree, tip!, commit, ct)).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A chat run's look (CHATFLOW1d2, the chat-flow design §5.3): with no chain and no ask, rows 5 and 6 or the version's look decide. One
+    /// required reads <see cref="ReviewStates.CannotStart"/> with its limit, until the person's <i>Accept without the look…</i> kept at a tip
+    /// that is the commit that would land, or holds it, lets it go; a later commit asks it again.
+    /// </summary>
+    private static async Task<ReviewGateState> ChatAsync(
+        ChatLookFor chat, string tree, string repository, ResolvedReview? rule, WorkflowLook? look, string? workflow, string? at, CancellationToken ct)
+    {
+        var decision = Decide([], repository, null, rule, look, workflow) with { Run = chat.Run, Session = chat.Session };
+        if (!decision.Reviews) return new(ReviewStates.None, decision);
+        decision = decision with { Cannot = ChatLookCannot };
+        var tip = at ?? await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false);
+        if (tip is not null)
+        {
+            foreach (var skip in chat.Skips.OrderByDescending(each => each.At))
+            {
+                if (await ReviewGit.HoldsAsync(tree, tip, skip.Tip, ct).ConfigureAwait(false) == true)
+                {
+                    return new(ReviewStates.Skipped, decision) { Tip = tip, ChatSkip = skip };
+                }
+            }
+        }
+
+        return new(ReviewStates.CannotStart, decision) { Tip = tip };
     }
 }

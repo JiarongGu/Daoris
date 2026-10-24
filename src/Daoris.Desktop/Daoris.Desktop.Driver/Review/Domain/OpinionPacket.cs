@@ -43,6 +43,9 @@ public sealed record OpinionPacket(string Occasion, OpinionCandidateRead Candida
     /// <summary>The person's words on the ask the work was asked by (DRIFT1b); null for work no ask asked.</summary>
     public AskWords? Words { get; init; }
 
+    /// <summary>A chat run's conversation's opening, named as its opening (CHATFLOW1d, the chat-flow design §7); null for a quest's work.</summary>
+    public string? Opening { get; init; }
+
     /// <summary>The repository's own rules and records, named by path.</summary>
     public OpinionRulesRead Rules { get; init; } = OpinionRulesRead.None;
 

@@ -79,7 +79,11 @@ internal static class OpinionGateFiles
         {
             writer.WriteStartObject();
             writer.WriteString("session", entry.Session);
-            writer.WriteString("quest", entry.Quest);
+            if (entry.Quest is not null) writer.WriteString("quest", entry.Quest);
+            // CHATFLOW1d: a chat run's due names its run, the tip its press captured and the person's turn count then.
+            if (entry.Run is not null) writer.WriteString("run", entry.Run);
+            if (entry.Tip is not null) writer.WriteString("tip", entry.Tip);
+            if (entry.Turns is { } turns) writer.WriteNumber("turns", turns);
             writer.WriteString("repository", entry.Repository);
             writer.WriteString("workspace", entry.Workspace);
             writer.WriteString("tree", entry.Tree);
@@ -96,13 +100,17 @@ internal static class OpinionGateFiles
 
     private static OpinionDue? DueOf(JsonElement element) =>
         element.ValueKind == JsonValueKind.Object
-        && Json.Text(element, "session") is { } session && Json.Text(element, "quest") is { } quest
+        && Json.Text(element, "session") is { } session
+        && (Json.Text(element, "quest") is not null || ChatRuns.IsChatRun(Json.Text(element, "run")))
         && Json.Text(element, "repository") is { } repository && Json.Text(element, "tree") is { } tree
         && Json.Text(element, "occasion") is { } occasion && Kept.Moment(element, "at") is { } at
-            ? new OpinionDue(session, quest, repository, Json.Text(element, "workspace") ?? RemoteTarget.DefaultWorkspace, tree, occasion, at)
+            ? new OpinionDue(session, Json.Text(element, "quest"), repository, Json.Text(element, "workspace") ?? RemoteTarget.DefaultWorkspace, tree, occasion, at)
             {
                 Closed = Kept.Moment(element, "closed"),
                 Why = Json.Text(element, "why"),
+                Run = ChatRuns.IsChatRun(Json.Text(element, "run")) ? Json.Text(element, "run") : null,
+                Tip = Json.Text(element, "tip"),
+                Turns = element.TryGetProperty("turns", out var turns) && turns.ValueKind == JsonValueKind.Number && turns.TryGetInt32(out var count) ? count : null,
             }
             : null;
 
