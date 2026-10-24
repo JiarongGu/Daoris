@@ -74,8 +74,17 @@ public sealed record ResumeChoice(HarnessSelection Selection, NextHold Own)
     /// </summary>
     public bool Limited { get; init; }
 
-    /// <summary>The words wait for the record's own account's reset: it cools, nobody chose a new session, and no limit ended it.</summary>
-    public bool Waits => Own == NextHold.Cooling && !NewSession && !Limited;
+    /// <summary>
+    /// The record's own account cools and another account of the line's choices is ready (LIMITSWITCH1, D137's note of 2026-10-25, point 7
+    /// amended): its words go on now in a briefed part there, as a limited record's do, though no limit ended it.
+    /// </summary>
+    public bool Switched { get; init; }
+
+    /// <summary>
+    /// The words wait: the record's own account cools, nobody chose a new session, no limit ended it, and no account of the line's
+    /// choices is ready (LIMITSWITCH1), so they wait for the earliest reset of any of them, which <see cref="Selection"/> carries.
+    /// </summary>
+    public bool Waits => Own == NextHold.Cooling && !NewSession && !Limited && !Switched;
 
     /// <summary>
     /// The own account's reading does not offer the record's asked model (D205 §3.5(a), MODELROLE1c2): it cannot carry the words, which

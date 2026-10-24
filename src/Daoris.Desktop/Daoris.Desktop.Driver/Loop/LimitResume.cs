@@ -62,9 +62,10 @@ internal static class LimitResume
     /// moment one is ready again, the cool-off's <c>until</c> with its margin (§3.2), and whose account, by the person's name in the
     /// English and by its id in the values. At the first look past it, step 1 or step 2 takes the line.
     /// </summary>
-    public static Noted Waits(CoolingEntry earliest, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
+    /// <param name="lead">What leads the English, part of its text: a record's words waiting lead with <see cref="ResumeWords.NotYet"/> (LIMITSWITCH1).</param>
+    public static Noted Waits(CoolingEntry earliest, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null, string lead = "")
     {
-        var said = $"Every account it may run on is at its limit: it goes on by itself once {CoolingWords.Who(earliest, names)} is ready again "
+        var said = $"{lead}Every account it may run on is at its limit: it goes on by itself once {CoolingWords.Who(earliest, names)} is ready again "
                    + $"at {CoolingWords.When(earliest.Until, zone)}.";
         (string Name, object? Value)[] facts = [("owner", earliest.Agent), ("until", NoteCodes.Moment(earliest.Until))];
         return earliest.Account is { } account

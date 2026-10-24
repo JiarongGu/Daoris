@@ -1981,11 +1981,12 @@ public sealed class Driver(
             {
                 // A resume asks for its record's own account (MSG1g, D137 §2.2): its conversation lives in that account's
                 // configuration home (D131 §1), so the walk that chooses a start's account never chooses a resume's. A limited record's
-                // words go where its line goes, never waiting on its cooling account while another could take them (step 2).
+                // words go where its line goes, never waiting on its cooling account while another could take them (step 2). So do an
+                // ended record's of a line the driver carries on (LIMITSWITCH1, D137's note of 2026-10-25): an open or taken quest's.
                 resume = await Context.Harnesses
                     .ResumeAsync(
                         agent, config, start.Workspace, words.Profile, StartKind.Driven, Context.NewSessions.Covers(words), ct: ct,
-                        limited: limitedWords, model: words.Asked?.NamedModel)
+                        limited: limitedWords, model: words.Asked?.NamedModel, switches: quest.Status is "Open" or "Taken")
                     .ConfigureAwait(false);
                 selection = resume.Selection;
                 limitResume = limitedWords && resume.Own == NextHold.Ready && selection.Allowed;

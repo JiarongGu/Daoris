@@ -402,8 +402,8 @@ public sealed class ResumeAccountTests : IDisposable
         foreach (var name in names) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "fake", name));
     }
 
-    private void Cool(string account) =>
-        AccountCooling.Cool(_home, new CoolingEntry("fake", account, Seen.AddHours(2), true, "session", Seen.AddMinutes(-5), "s1"), Seen);
+    private void Cool(string account, int hours = 2) =>
+        AccountCooling.Cool(_home, new CoolingEntry("fake", account, Seen.AddHours(hours), true, "session", Seen.AddMinutes(-5), "s1"), Seen);
 
     /// <summary>
     /// 🔴 The owner's goal (D130) chooses a start's account; a resume asks for its record's own. The walk would take
@@ -431,9 +431,105 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// Cooling, the resume is held, not moved: the hold carries the account's cool-off, so the look says the wait once and a
-    /// screen shows the quest waiting for an account (TOOL4g's shape), and its sentence names the reset. Nothing is counted as
-    /// a start chosen.
+    /// LIMITSWITCH1 (D137's note of 2026-10-25, amending point 7): its own account cooling with another of the line's accounts ready,
+    /// the words go on now there, as a limited record's do, in a new part: the walk's pick carries them, the reason says the account
+    /// held them, and nothing waits for the own account's reset.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_whose_account_cools_while_another_is_ready_goes_on_there_now()
+    {
+        Accounts("account-1", "account-2");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
+        Cool("account-1");
+
+        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, switches: true);
+
+        Assert.Equal((NextHold.Cooling, false, true), (resume.Own, resume.Waits, resume.Switched));
+        Assert.Equal((true, "account-2"), (resume.Selection.Allowed, resume.Selection.Profile));
+        Assert.Equal(ContinueWhy.Account, resume.Elsewhere!.Code);
+        Assert.Null(resume.Waiting);
+    }
+
+    /// <summary>
+    /// LIMITSWITCH1: with none of the line's accounts ready the words wait, until the earliest reset of any of them as D206 point 2
+    /// computes it, never the own account's alone: here account-2's, before account-1's, and the hold says whose.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_with_no_account_ready_waits_for_the_earliest_reset_of_any_account()
+    {
+        Accounts("account-1", "account-2");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
+        Cool("account-1", hours: 30);
+        Cool("account-2", hours: 4);
+
+        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, switches: true);
+
+        Assert.Equal((NextHold.Cooling, true, false, false), (resume.Own, resume.Waits, resume.Switched, resume.Selection.Allowed));
+        Assert.Equal(("account-2", Seen.AddHours(4)), (resume.Selection.Cooling!.Account, resume.Selection.Cooling.Until));
+        Assert.Null(resume.Elsewhere);
+        Assert.Contains("`account-2`", resume.Selection.Refusal);
+        Assert.Contains(CoolingWords.When(Seen.AddHours(4), TimeZoneInfo.Utc), resume.Selection.Refusal);
+        Assert.DoesNotContain(CoolingWords.When(Seen.AddHours(30), TimeZoneInfo.Utc), resume.Selection.Refusal);
+        // The conversation says the same wait by code, the earliest account's, with the door out left to its site.
+        Assert.Equal(("held.limit-waits", "account-2"), (resume.Waiting!.Parts[^1].Code, resume.Waiting.Parts[^1].Value("account")));
+        Assert.StartsWith(ResumeWords.NotYet, resume.Waiting.Note);
+    }
+
+    /// <summary>
+    /// LIMITSWITCH1: a conversation is still no driven line (D137 §2.2, the chat's own go-on): it walks nothing, and its words wait for
+    /// the account it ran on while another is ready, as before.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_whose_account_cools_still_waits_for_it_with_another_ready()
+    {
+        Accounts("account-1", "account-2");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
+        Cool("account-1");
+
+        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Conversation, walks: false);
+
+        Assert.Equal((NextHold.Cooling, true, false), (resume.Own, resume.Waits, resume.Switched));
+        Assert.Equal("account-1", resume.Selection.Cooling!.Account);
+    }
+
+    /// <summary>
+    /// LIMITSWITCH1's bound: a driven record whose line cannot carry its words to a new part by itself (a closed quest's session) keeps
+    /// the wait for its own account while another is ready, as before.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_of_a_line_that_cannot_switch_still_waits_for_its_own_account()
+    {
+        Accounts("account-1", "account-2");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
+        Cool("account-1");
+
+        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven);
+
+        Assert.Equal((NextHold.Cooling, true, false), (resume.Own, resume.Waits, resume.Switched));
+        Assert.Equal("account-1", resume.Selection.Cooling!.Account);
+    }
+
+    /// <summary>
+    /// A record a limit ended behaves as before (LIMITRESUME1b): its words go where the line goes, never waiting, and the switch is not
+    /// what carried them, so the planner's reading of a limited line is the one it always was.
+    /// </summary>
+    [Fact]
+    public async Task A_limited_record_goes_on_elsewhere_as_before()
+    {
+        Accounts("account-1", "account-2");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
+        Cool("account-1");
+
+        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, limited: true, switches: true);
+
+        Assert.Equal((NextHold.Cooling, false, true, false), (resume.Own, resume.Waits, resume.Limited, resume.Switched));
+        Assert.Equal("account-2", resume.Selection.Profile);
+    }
+
+    /// <summary>
+    /// Cooling with nothing else ready, the resume is held, not moved: the hold carries the account's cool-off, so the look says the
+    /// wait once and a screen shows the quest waiting for an account (TOOL4g's shape), and its sentence names the reset. Nothing is
+    /// counted as a start chosen. Where the own account is the earliest to reset, the hold keeps saying its conversation is there.
     /// </summary>
     [Fact]
     public async Task A_resume_whose_account_is_cooling_is_held_with_its_reset()
@@ -441,6 +537,7 @@ public sealed class ResumeAccountTests : IDisposable
         Accounts("account-1", "account-2");
         new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
         Cool("account-1");
+        Cool("account-2", hours: 9);
         var roster = Roster();
 
         var resume = await roster.ResumeAsync("fake", Config, null, "account-1", StartKind.Driven);
