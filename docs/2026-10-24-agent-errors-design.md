@@ -1,6 +1,6 @@
 # Every agent's errors read into one set of kinds at the agent interface, and one policy acting on each kind (AGENTERRORS1, 2026-10-24)
 
-**Status: proposed (D210), round 3, with its read's named changes.** Written by Claude Opus from the code at `64059110a`, for
+**Status: accepted (D210) 2026-10-24 by the steward under D191 (D210's acceptance note; Codex's read of this text owed), round 3, with its read's named changes.** Written by Claude Opus from the code at `64059110a`, for
 Codex's read and an independent Opus reader's foundation read under D191 (its amendment of 2026-10-23: the design changes what every
 adapter answers at the agent interface, and the decided rules TURNFAIL1, D206 and D205 rest on).
 
