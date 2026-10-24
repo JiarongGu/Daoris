@@ -20731,6 +20731,20 @@ was seen failing first (a posted path with other separators named no session; th
 reading it). No defect was found, so no fix-log entry: the one fragility the first case shows (the service compares a tree by text, not
 separators) is said in D195's KEEPSIZE1b2 note and left. Detail: D195's KEEPSIZE1b2 note.
 
+## KEEPSIZE1b3 — KEEPSIZE1b2's reference from the driver's tests to the service's host (2026-10-25, D195)
+
+> **KEEPSIZE1b3 — KEEPSIZE1b2's ProjectReference from the driver's tests to the service's HTTP host breaks the merge tool's build rule**
+> (driver tests, tools). It has no backlog row: the CI's tool test found it after KEEPSIZE1b2 was on main. Remove the reference and have
+> `RealServiceHost` build its own copy of the host on first use, under the test project's own `obj`, and start it from there.
+
+(Quest `#270ba0912480`.)
+
+**Outcome** 2026-10-25: the reference is gone and the code map loses its edge. `RealServiceHost` builds the host once per run with
+`dotnet build` of its project and `--artifacts-path` at the test project's `obj/service-host` (no shell, no window, no build server, ten
+minutes at most; a failure throws with the build's last lines, held by `RealServiceHostBuildTests`), and starts it from that copy; a second
+run builds incrementally. `KeepSizeServiceProcessTests` is unchanged and passes on two runs. Fix-log entry: 2026-10-25, KEEPSIZE1b3.
+Detail: D195's KEEPSIZE1b3 note.
+
 ## MODELROLE1d2 — what row d still owed (2026-10-25, D205; its installed proof MODELROLE1d3)
 
 > - [ ] **MODELROLE1d2 — what row d still owes** (driver, modules, web; after MODELROLE1d). §3.5(b)'s pending conversation start: `ChatPending`, keyed by the issued id, owning a Chat's or Ask Daoris's attempt from placement until dispatched or exhausted, a refusal at the open re-asked within the same press, the refused record ended `choice-not-offered` and its replacement opened (Ask Daoris in its workspace's room), the queued words moved to it under the queue's lock, `chat.replaced { from, to }` and the window following; a `choice-not-offered` chat's go-on a fresh start of its actor; a pick never walked afresh; a refused continuation's brief recomposed through `BriefedMove`'s seam. The curve move judging each candidate's reading for the record's model. Today a conversation whose model its account refuses at the open runs at account default, said as *not carried* (`docs/2026-10-24-modelrole1d-build.md`). Proof: design §13's §3.5(b) tests (Ask Daoris refused after `START_HELP` returned, words reaching the replacement once; a pick's recovery; a refused continuation's brief); on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart.

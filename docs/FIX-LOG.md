@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - The driver's tests referenced the service's HTTP host, which the merge tool's build rule refuses (KEEPSIZE1b3)
+
+- **Symptom:** the CI's tool test `every project a .NET project references is in its own component` (`merge-branch.test.ts`) failed on
+  main after KEEPSIZE1b2: `Daoris.Desktop.Driver.Tests.csproj` references `Daoris.Service.Http.csproj`.
+- **Root cause:** KEEPSIZE1b2 built the host for `RealServiceHost` by a `ProjectReference` (`ReferenceOutputAssembly="false"`) from the
+  driver's tests, and read the dll from the service tree's `bin`. The merge tool runs gates of two components beside each other
+  (`laneSchedule`'s build rule), so the desktop gate and the service gate would build one project at once and fight over its `obj`.
+  KEEPSIZE1b2 ran its two cases, not the tool's test, so nothing showed it.
+- **Fix:** the reference is gone. `RealServiceHost.HostDllAsync` builds its own copy on first use, once per run, with `dotnet build` of
+  the host's project and `--artifacts-path` under the test project's own `obj/service-host` (the same folder every run, so the second
+  run builds incrementally; every project of that build keeps its `bin` and `obj` there), and starts the host from that copy. The build
+  has no shell and no window, reads no input, leaves no build server (`--disable-build-servers`), is held to ten minutes, and its
+  failure throws with the build's last lines.
+- **Verification:** `KeepSizeServiceProcessTests` 2 of 2 on two runs with `process.runsettings`, the host started from
+  `obj/service-host` with no `bin` in the service tree; an incremental build of the host measured 1.7 s and left the dll untouched;
+  `RealServiceHostBuildTests` holds the failing build's message (a project that is not there, `MSB1009`); the tool test passes.
+
 ## 2026-10-25 - A supervisor's word released before a revoke was left on a stale decision and never taken back (SUPERVISORRACE1)
 
 - **Symptom:** `StandingConfirmationTests.The_real_revoke_raced_against_a_keeping_a_release_and_an_admission_hands_nothing_under_a_dead_generation`
