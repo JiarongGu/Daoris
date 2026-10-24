@@ -84,6 +84,8 @@ public sealed class PersonDoorTableTests
         // KEEP1b: the downloaded versions a start of the record was handed, which the driver that spawns it knows.
         ("POST", "/api/sessions/{id}/resolved", Driver),
         ("POST", "/api/sessions/{id}/actor", Driver),
+        // KEEPSIZE1b: a finished tree's record, posted by the driver that moved it aside.
+        ("POST", "/api/trees/record", Driver),
         ("POST", "/api/sessions/{id}/restore", Driver),
         // COWORK1d: an entry's acknowledgment of a channel message, the driver's as it hands one to a part.
         ("POST", "/api/asks/{id}/channel/ack", Driver),
@@ -174,10 +176,10 @@ public sealed class PersonDoorTableTests
         // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2), and the downloaded
         // versions a start of a record was handed, the driver's (KEEP1b), and what waits for confirmation held until it moves, a read
         // (NOTIFY2j), and a machine's retirement at a workspace's remote, the person's (FABRIC-CLOSE1i2), and a park the driver could
-        // not hand put back, the driver's (SUPERVISOR1a-i).
+        // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record, the driver's (KEEPSIZE1b).
         Assert.Equal(29, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
-        Assert.Equal(28, Routes.Count(route => route.Class == Driver));
+        Assert.Equal(29, Routes.Count(route => route.Class == Driver));
         Assert.Equal(33, Routes.Count(route => route.Class == Person));
         // And a shared host's two channel doors, a feed and a page (SESSONE2d), and its retirement of a machine (FABRIC-CLOSE1i2).
         Assert.Equal(10, Routes.Count(route => route.Class == Shared));

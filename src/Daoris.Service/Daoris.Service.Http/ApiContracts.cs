@@ -622,6 +622,24 @@ public sealed record HelpModeRequest(string? Mode);
 public sealed record AccessKeepRequest(Dictionary<string, string>? Access);
 // KEEP1b (D195 point 6): the downloaded versions a start of the record was handed, `agent|tool/<name>/<version>`, as its driver read them.
 public sealed record ResolvedKeepRequest(List<string>? Resolved);
+// KEEPSIZE1b (the keep-size design §2.2): a finished tree's record, the manifest's facts and the commits read from its tip, oldest first;
+// `commits` null with `commitsUnread` where the tip no longer read. Machine-local: no wire carries it.
+public sealed record WorkRecordPostRequest(
+    string? Workspace, string? Repository, string? Folder, string? Tree, DateTimeOffset? Moved, string? Unit, string? Branch, string? Line,
+    WorkRecordHold? Hold, string? Tip, string? GrewFrom, string? Ref, List<WorkRecordCommit>? Commits, string? CommitsUnread,
+    WorkRecordLeft? Left, bool Whole = false)
+{
+    /// <summary>The post, where every part the record is keyed or read by is here; null otherwise.</summary>
+    public WorkRecordPost? ToPost() =>
+        Blank(Workspace) || Blank(Repository) || Blank(Folder) || Blank(Tree) || Moved is not { } moved || Blank(Branch) || Hold is null
+        || Blank(Hold.Kind) || Blank(Tip) || Left is null || Left.Names is null
+            ? null
+            : new(Workspace!, Repository!, Folder!, Tree!, moved, Unit, Branch!, Line, Hold, Tip!, GrewFrom, Ref, Commits, CommitsUnread, Left, Whole);
+
+    private static bool Blank(string? text) => string.IsNullOrWhiteSpace(text);
+}
+// The record as kept: whether this post kept it (false for a second post of a kept identity, which wrote nothing), when, and its sessions.
+public sealed record WorkRecordResponse(bool Kept, DateTimeOffset At, IReadOnlyList<WorkRecordSession> Sessions);
 // `Interrupted` (D104): a move to `stopped` that was not the person's. `Limit` (TOOL4c): a move to `failed`
 // that an account's limit made. Silence is the old reading of both. `NoteParts` (LANG1a): the note's lines by code, beside
 // it; a note sent without them clears the record's, and an older driver sends none. `Expected` (TERMTRUST1a, D201 point 2): the

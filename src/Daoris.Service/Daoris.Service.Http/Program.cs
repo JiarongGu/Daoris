@@ -1432,6 +1432,30 @@ if (mode == ServiceMode.Local)
                 await ToSessionAsync(s, kept, MachineLocal(http)), $"Session `{id}` keeps the versions its start was handed."));
     });
 
+    // A finished tree's record (KEEPSIZE1b, the keep-size design §2.2): the driver posts the manifest's facts and the commits read from the tip,
+    // after the branch went and outside the repository's hold. Idempotent on (workspace, repository, folder): a second post of a kept identity
+    // answers as the first did and writes nothing. Machine-local: a shared host and a caller off this machine are answered nothing. A store a
+    // newer build stamped is a 409, RECORDS_NEWER, so the driver keeps the folder awaiting its record and says why.
+    app.MapPost("/api/trees/record", async (ComposedService s, HttpContext http, WorkRecordPostRequest body, CancellationToken ct) =>
+    {
+        if (!MachineLocal(http)) return Results.NotFound();
+        if (body.ToPost() is not { } post)
+        {
+            return Results.BadRequest(new ErrorResponse(
+                "workspace, repository, folder, tree, moved, branch, hold, tip and left are required — the manifest's facts of a finished tree"));
+        }
+
+        try
+        {
+            var (record, kept) = await s.Records.PostAsync(post, DateTimeOffset.UtcNow, ct);
+            return Results.Ok(new WorkRecordResponse(kept, record.At, record.Sessions));
+        }
+        catch (NewerWorkRecordsException newer)
+        {
+            return Results.Conflict(new ErrorResponse(newer.Message, "RECORDS_NEWER"));
+        }
+    });
+
     // Deleting a conversation that served no quest (SESSUX1f, D126 §5.4): the ledger judges the record's half and removes
     // it, and the driver, which judged the machine's half first, removes what this machine kept of it after this yes. LOCAL
     // mode only, as D95's deletes are: a person deletes on their own machine, and a session record does not travel as a
