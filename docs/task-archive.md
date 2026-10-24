@@ -20704,6 +20704,20 @@ goes; the sweep's empty rests kept, said; the landing found by its branch; an un
 doors read again under `.going`; and a slim's stamped end read as its millisecond's end, which that read again exposed.
 `KeepSizeStopsGitTests` and `KeepSizeGitTests` gained the blocking cases, each seen failing with its guard taken out. Detail: D195's
 KEEPSIZE1b notes.
+## KEEPSIZE1b2 — what KEEPSIZE1b left of its row (2026-10-25, D195)
+
+> **KEEPSIZE1b2 — what KEEPSIZE1b left of its row** (driver, service; D195's KEEPSIZE1b notes). After Codex's reads the branch built every destructive path's proof, the press's class guard and the card's waiting words; what is left reads no destructive path: a chain's two sessions attributed through a real move's posted tree path (`WorkRecordStoreTests` proves the attribution at the store with tree paths it writes itself), and a `whole` set in `driver.json` at the move kept after it is unset (proved today through the policy at the purge). Proof: a Process case for each through the driver's client and the service, seen failing first.
+
+(Quest `#37afc59672f9`.)
+
+**Outcome** 2026-10-25: both proofs are in `KeepSizeServiceProcessTests`, over the service's own host started in a process of its own
+(`RealServiceHost`, built before the driver's tests and never referenced; the code map gains the edge), the driver's `ServiceClient` posting
+the record after the look's real move of a real tree. A chain's two conversations are attributed their own commits through the tree path
+the move posted; a `whole` set at the move is kept its days after `driver.json` unsets it, the purge taking nothing by the hour. Each
+was seen failing first (a posted path with other separators named no session; the sweep not writing `whole`; the eligibility not
+reading it). No defect was found, so no fix-log entry: the one fragility the first case shows (the service compares a tree by text, not
+separators) is said in D195's KEEPSIZE1b2 note and left. Detail: D195's KEEPSIZE1b2 note.
+
 ## MODELROLE1d2 — what row d still owed (2026-10-25, D205; its installed proof MODELROLE1d3)
 
 > - [ ] **MODELROLE1d2 — what row d still owes** (driver, modules, web; after MODELROLE1d). §3.5(b)'s pending conversation start: `ChatPending`, keyed by the issued id, owning a Chat's or Ask Daoris's attempt from placement until dispatched or exhausted, a refusal at the open re-asked within the same press, the refused record ended `choice-not-offered` and its replacement opened (Ask Daoris in its workspace's room), the queued words moved to it under the queue's lock, `chat.replaced { from, to }` and the window following; a `choice-not-offered` chat's go-on a fresh start of its actor; a pick never walked afresh; a refused continuation's brief recomposed through `BriefedMove`'s seam. The curve move judging each candidate's reading for the record's model. Today a conversation whose model its account refuses at the open runs at account default, said as *not carried* (`docs/2026-10-24-modelrole1d-build.md`). Proof: design §13's §3.5(b) tests (Ask Daoris refused after `START_HELP` returned, words reaching the replacement once; a pick's recovery; a refused continuation's brief); on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart.
