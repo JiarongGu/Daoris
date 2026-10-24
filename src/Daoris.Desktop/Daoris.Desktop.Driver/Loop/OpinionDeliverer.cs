@@ -210,11 +210,18 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         // Judged against every agent the line ran on, as the first pass was (LIMITRESUME1j, the limit-resume design §3.6).
         var records = OpinionWriters.ById(await Service.RecordsAsync(ct).ConfigureAwait(false));
         var wrote = OpinionWriters.Agents(records, first.Working, asked.Quests.Select(quest => quest.Id));
-        var choice = await ReviewerChoice.ChooseAsync(
-                _context.Harnesses, asked.Rule with { Reviewers = [first.Adapter] }, wrote, _context.Config, asked.Workspace, ct)
-            .ConfigureAwait(false);
+        // D205 §4.2: a recheck is a continuation, so it takes the first pass's record's asked choice, not the actor as it stands now; with
+        // the record's asked unread (an older record) it reads the actor's entries for the agent as the first pass did.
+        IReadOnlyList<ActorEffective>? order = records.GetValueOrDefault(first.Session) is { Asked: { } was } record
+            ? [new ActorEffective(first.Adapter, was.NamedModel, was.Effort is { Carried: true, Value: { } effort } ? effort : null, record.Choice ?? "rule-default")]
+            : null;
+        Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
+            ReviewerChoice.ChooseAsync(
+                _context.Harnesses, asked.Rule with { Reviewers = [first.Adapter] }, wrote, _context.Config, asked.Workspace, ct, passed: passed, order: order);
+        var choice = await Walk(null).ConfigureAwait(false);
         var ask = asked with
         {
+            Reask = Walk,
             Occasion = first.Occasion,
             Working = first.Working,
             Base = first.Tip,

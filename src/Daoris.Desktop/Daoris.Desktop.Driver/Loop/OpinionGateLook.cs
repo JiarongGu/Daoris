@@ -394,8 +394,11 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             { Reviewer: { } one } => [one],
             _ => rule.Reviewers,
         };
-        var choice = await ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct)
-            .ConfigureAwait(false);
+        // D205 §4.4 and §3.5(f): the rule decides who, the opinion actor each agent's model; a refusal at the open is asked again here.
+        Task<ReviewerChoice> Walk(IReadOnlyList<ReviewerPassed>? passed) =>
+            ReviewerChoice.ChooseAsync(_context.Harnesses, rule with { Reviewers = reviewers }, wrote, Config, due.Workspace, ct, passed: passed);
+        var choice = await Walk(null).ConfigureAwait(false);
+        var reading = choice;
 
         var watch = Stopwatch.StartNew();
         var ask = new OpinionPassAsk(occasion, due.Session, due.Repository, root, start ?? tip, tip, rule)
@@ -404,13 +407,15 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
             Quests = part,
             Words = due.OnRun ? null : await AskWords.ReadAsync(Service, chain.FirstOrDefault()?.From, ct).ConfigureAwait(false),
             Opening = due.OnRun ? ChatRuns.OpeningOf(_context.Events, due.Run!) : null,
+            Reask = Walk,
+            Replaced = next => reading = next,
             Opened = (opinion, _) =>
             {
                 gates.Asked(key, due.Repository, new OpinionAskKept(at, occasion, due.Session, tip)
                 {
-                    Opinion = opinion, By = by, Reviewer = choice.Reviewer, Label = choice.Label,
+                    Opinion = opinion, By = by, Reviewer = reading.Reviewer, Label = reading.Label,
                 });
-                Service.LandingSaid(OpinionLines.Asked(opinion, due.Session, occasion, choice.Label, choice.Reviewer, OpinionViews.FirstPass));
+                Service.LandingSaid(OpinionLines.Asked(opinion, due.Session, occasion, reading.Label, reading.Reviewer, OpinionViews.FirstPass));
             },
         };
         var run = await (_context.Passes ?? _opinions.PassAsync)(ask, choice, ct).ConfigureAwait(false);
@@ -418,8 +423,8 @@ internal sealed class OpinionGateLook(LoopContext context, DriverOpinions opinio
         if (run.Opinion is null)
         {
             // No reviewer could read it, or its pass did not open (§3.3, §8.4): said, never downgraded silently.
-            var code = run.Code ?? choice.Code ?? ReviewerUnavailable.Refused;
-            gates.Asked(key, due.Repository, new OpinionAskKept(at, occasion, due.Session, tip) { Code = code, Until = choice.Cooling?.Until, By = by });
+            var code = run.Code ?? reading.Code ?? ReviewerUnavailable.Refused;
+            gates.Asked(key, due.Repository, new OpinionAskKept(at, occasion, due.Session, tip) { Code = code, Until = reading.Cooling?.Until, By = by });
             Service.LandingSaid(OpinionLines.Unavailable(due.Session, occasion, code));
             return $"opinion  {run.Line}";
         }

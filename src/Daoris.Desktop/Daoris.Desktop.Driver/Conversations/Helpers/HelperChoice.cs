@@ -33,11 +33,40 @@ public static class HelperChoice
         return [.. adapters.Names.Where(Other)];
     }
 
-    /// <summary>The walk over <see cref="Candidates"/>, as a reviewer's, with the asker's agent as the work's family.</summary>
+    /// <summary>
+    /// The entries the walk is asked over (D205 §4.0, §4.4, MODELROLE1e): who the rule or the ask names, each taking the actor's entries
+    /// for it, else account default (<c>rule-default</c>); with no such list and the actor <i>set</i>, the actor's entries replace every
+    /// agent of another maker, the asker's own family among them if the person listed it. Another maker than the asker's still comes first
+    /// (the walk's passes); the actor never widens who may be asked where the person's list or the ask names the agents.
+    /// </summary>
+    /// <exception cref="ActorUnreadableException">The helper actor's stored entry does not read.</exception>
+    public static IReadOnlyList<ActorEffective> Order(HelperAsk ask, HelperRule rule, AdapterSet adapters, string? askerAdapter, DriverConfig config)
+    {
+        var fence = Candidates(ask, rule, adapters, askerAdapter);
+        var named = ask.Agent is { Length: > 0 } && fence.Count == 1;
+        var persons = !rule.SetUp && rule.Agents.Count > 0;
+        return !named && !persons && config.Actors.ContainsKey("helper")
+            ? ActorChoices.Effective("helper", config)
+            : fence.Count == 0 ? [] : ActorChoices.Effective("helper", config, fence: fence);
+    }
+
+    /// <summary>The walk over <see cref="Order"/>, as a reviewer's, with the asker's agent as the work's family.</summary>
+    /// <param name="passed">The (entry, account) this ask's call already passed at an open's refusal (D205 §3.5(f)).</param>
     public static Task<ReviewerChoice> ChooseAsync(
         HarnessRoster roster, HelperAsk ask, HelperRule rule, string? askerAdapter, DriverConfig config, string? workspace,
-        CancellationToken ct = default) =>
-        ReviewerChoice.ChooseAsync(
-            roster, OpinionRule.None with { Reviewers = Candidates(ask, rule, roster.Adapters, askerAdapter) },
-            askerAdapter is { Length: > 0 } adapter ? [adapter] : [], config, workspace, ct);
+        CancellationToken ct = default, IReadOnlyList<ReviewerPassed>? passed = null)
+    {
+        IReadOnlyList<ActorEffective> order;
+        try
+        {
+            order = Order(ask, rule, roster.Adapters, askerAdapter, config);
+        }
+        catch (ActorUnreadableException error)
+        {
+            return Task.FromResult(new ReviewerChoice(null, null, ReviewerUnavailable.Refused, $"No second opinion: {error.Message}"));
+        }
+
+        return ReviewerChoice.ChooseAsync(
+            roster, OpinionRule.None, askerAdapter is { Length: > 0 } adapter ? [adapter] : [], config, workspace, ct, "helper", passed, order);
+    }
 }

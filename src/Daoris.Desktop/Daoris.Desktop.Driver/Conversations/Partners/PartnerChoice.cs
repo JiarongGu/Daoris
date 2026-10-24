@@ -14,9 +14,13 @@ namespace Daoris.Driver;
 public static class PartnerChoice
 {
     /// <param name="measured">The measurements a test hands in for its stand-ins, or null for a production start's, which reads the code's table.</param>
+    /// <param name="passed">
+    /// The (entry, account) this piece's call already passed at an open's refusal (D205 §3.5(f)): the named agent's other accounts are
+    /// walked, then its other entries, and never another agent.
+    /// </param>
     public static async Task<ReviewerChoice> ChooseAsync(
         HarnessRoster roster, PartnerAsk ask, string? leadAdapter, DriverConfig config, string? workspace,
-        IReadOnlyList<PartnerMeasurement>? measured = null, CancellationToken ct = default)
+        IReadOnlyList<PartnerMeasurement>? measured = null, CancellationToken ct = default, IReadOnlyList<ReviewerPassed>? passed = null)
     {
         // The person's ask names its agent; a lead's ask under the rule is COAGENT1d's. Nothing is substituted for a name.
         if (ask.Agent is not { Length: > 0 } named)
@@ -24,8 +28,10 @@ public static class PartnerChoice
             return new ReviewerChoice(null, null, PartnerWhy.NotListed, "a piece names the agent that writes it, and this one names none.");
         }
 
+        // D205 §4.4: named by the ask, so the actor supplies only the model and effort of the agent named, as its entries for it in order.
         var walked = await ReviewerChoice.ChooseAsync(
-            roster, OpinionRule.None with { Reviewers = [named] }, leadAdapter is { Length: > 0 } adapter ? [adapter] : [], config, workspace, ct)
+                roster, OpinionRule.None with { Reviewers = [named] }, leadAdapter is { Length: > 0 } adapter ? [adapter] : [], config, workspace, ct,
+                "partner", passed)
             .ConfigureAwait(false);
         return walked.Chosen ? Admit(walked, measured ?? PartnerMeasurements.Rows, production: measured is null) : walked;
     }

@@ -20,6 +20,16 @@ public sealed record HelperPassAsk(HelperAsk Ask, string Repository, string Root
     /// then, which <c>helper_answer</c> finds its ask by.
     /// </summary>
     public Action<string>? Opened { get; init; }
+
+    /// <summary>
+    /// The owner's own walk, asked again with what was passed left out (D205 §3.5(f), MODELROLE1e): a refusal of the entry's model at the
+    /// open is handled in this call, the refused record ended <c>choice-not-offered</c> and the walk's answer opened, <see cref="Opened"/>
+    /// called again with the replacement. Null asks nothing again.
+    /// </summary>
+    public Func<IReadOnlyList<ReviewerPassed>, Task<ReviewerChoice>>? Reask { get; init; }
+
+    /// <summary>Told the choice that replaced a refused open, before the replacement's record opens: its agent is the one the state names.</summary>
+    public Action<ReviewerChoice>? Replaced { get; init; }
 }
 
 /// <summary>What a helper's pass came to: the helper's session if one opened, and how its turn ended.</summary>
@@ -38,6 +48,9 @@ public sealed record HelperPassRun(string? Session, string Line)
 
     /// <summary>An account's limit ended its turn (LIMITRESUME1h, D206 design §3.8): its record's <c>limited</c> flag.</summary>
     public bool Limit { get; init; }
+
+    /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c> (D205 §3.5(f)).</summary>
+    public bool NotOffered { get; init; }
 }
 
 /// <summary>The helper pass's own words and bounds (MIXAGENT2a-ii), each said once for every door.</summary>
