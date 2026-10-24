@@ -146,6 +146,14 @@ public sealed class AgentErrorsTests
         Assert.Equal(AgentErrorKind.Access, AgentErrors.Read(Built, Built.Resolve("claude-code-acp"), refused, Seen, TimeZoneInfo.Utc).Kind);
     }
 
+    /// <summary>The protocol stub's refused credential reads as access at the open, as a tick's stand-in says it (Codex's finding 6).</summary>
+    [Fact]
+    public void The_stub_s_refused_credential_reads_as_access_at_the_open()
+    {
+        var open = new DoorFailure("protocol", -32603, null, null, "Internal error: API Error: 401 API key is invalid.", DoorWhere.Open);
+        Assert.Equal(AgentErrorKind.Access, AgentErrors.Read(Built, Built.Resolve("acp-stub"), open, Seen, TimeZoneInfo.Utc).Kind);
+    }
+
     /// <summary>
     /// 🔴 Codex's owed read of D210, finding 8: the source is read before any kind. A harness-only line that matches a weekly limit's
     /// sentence, or names a limit's code, is no limit, so it neither cools an account nor is tried again; only its credential's refusal
