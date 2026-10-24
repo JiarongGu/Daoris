@@ -122,6 +122,29 @@ describe('Done and failed', () => {
     await i18n.changeLanguage('en');
   });
 
+  // CONFIRMWAIT1a-ii (the confirm-wait design §7.2, §8.3): presses a restart could not bring back, by their count; one carrying a key a
+  // close ended, by its act; and presses a newer Daoris kept.
+  it.each([
+    ['en', { count: 1 }, 'A press from a terminal could not be restored after Daoris restarted, and was not done'],
+    ['en', { count: 3 }, '3 presses from a terminal could not be restored after Daoris restarted, and were not done'],
+    ['en', { count: 1, route: 'REMOTES.SET' }, "A terminal's press to wire a workspace to a remote carried a key, so it did not wait across Daoris's restart, and was not done"],
+    ['zh', { count: 1 }, 'Daoris 重启后无法恢复一个终端的请求，它未被执行'],
+    ['zh', { count: 3 }, 'Daoris 重启后无法恢复 3 个终端的请求，它们未被执行'],
+  ])("says the presses a restart lost (%s, %j)", async (language, fields, words) => {
+    await i18n.changeLanguage(language);
+    expect(noticeWords({ id: 'lost-p1', kind: 'lost', at: '2026-10-22T08:58:00.000Z', read: false, ...fields }, i18n.t)).toBe(words);
+    await i18n.changeLanguage('en');
+  });
+
+  it.each([
+    ['en', "A terminal's press from a newer Daoris waits for it"],
+    ['zh', '一个来自较新版本 Daoris 的终端请求在等待该版本'],
+  ])('says presses a newer Daoris kept wait for it (%s)', async (language, words) => {
+    await i18n.changeLanguage(language);
+    expect(noticeWords({ id: 'newer-r1', kind: 'newer', at: '2026-10-22T08:58:00.000Z', read: false }, i18n.t)).toBe(words);
+    await i18n.changeLanguage('en');
+  });
+
   it('says it in Chinese', async () => {
     await i18n.changeLanguage('zh');
     layout.row = { top: 500, height: 60 };

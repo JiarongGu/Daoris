@@ -22,6 +22,15 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     const act = notice.route ? t(`person.route.${notice.route}`, { defaultValue: '' }) : '';
     return act ? t(`notifications.done.${notice.kind}`, { act }) : t('notifications.done.other');
   }
+  if (notice.kind === 'lost') {
+    // CONFIRMWAIT1a-ii (§7.2, §8.3): one carrying a key a close ended, by its act; else the presses a restart could not bring back, one
+    // by its own key, since Chinese has no plural `_one` to pick it.
+    const act = notice.route ? t(`person.route.${notice.route}`, { defaultValue: '' }) : '';
+    if (act) return t('notifications.done.lostKeyed', { act });
+    const count = notice.count ?? 1;
+    return count > 1 ? t('notifications.done.lost', { count }) : t('notifications.done.lost_one');
+  }
+  if (notice.kind === 'newer') return t('notifications.done.newer');
   if (notice.kind === 'look') {
     // A look's news by its code (NOTIFY2h): never the driver's English line. A code a later build says reads as something ended.
     return notice.code ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other') }) : t('notifications.done.other');
@@ -82,7 +91,8 @@ function NoticeRow({ notice, onRead, onOpen, onDismiss, now }: {
   const row = useRef<HTMLLIElement>(null);
   const noButtons = useRef<HTMLElement>(null);
   useShownOnce(!notice.read, row, noButtons, () => onRead([notice.id]));
-  const failed = notice.kind === 'expired' || notice.kind === 'closed' || notice.kind === 'look' || notice.state === 'failed';
+  const failed = notice.kind === 'expired' || notice.kind === 'closed' || notice.kind === 'lost' || notice.kind === 'look'
+    || notice.state === 'failed';
   const opens = onOpen && notice.session ? () => {
     if (!notice.read) onRead([notice.id]);
     onOpen(notice);

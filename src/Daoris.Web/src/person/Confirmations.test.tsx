@@ -267,6 +267,50 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
   });
 
+  // CONFIRMWAIT1a-ii (the confirm-wait design §7.2, §8.1, §8.3): a press restored after a restart names its asker as its record's, in the
+  // three forms the asker has; one carrying a key says it does not wait across a restart; a Confirm during an update's drain is refused on
+  // its card, and it still waits.
+  it.each([
+    ['en', { process: 'bash', pid: 4120 }, 'The record says it was sent by bash, process 4120, before Daoris restarted.'],
+    ['en', { process: null, pid: 77 }, 'The record says it was sent by process 77 before Daoris restarted.'],
+    ['en', null, 'The record does not say what sent it before Daoris restarted.'],
+    ['zh', { process: 'bash', pid: 4120 }, '记录显示它在 Daoris 重启前由 bash（进程 4120）发出。'],
+    ['zh', { process: null, pid: 77 }, '记录显示它在 Daoris 重启前由进程 77 发出。'],
+    ['zh', null, '记录未说明 Daoris 重启前是什么发出了它。'],
+  ])('names a restored press\'s asker as its record\'s (%s, %j)', async (language, asker, words) => {
+    await i18n.changeLanguage(language);
+    draw([{ ...STOP, restored: true, asker, waitedOn: false }]);
+
+    expect(screen.getByRole('group')).toHaveTextContent(words);
+    expect(screen.getByRole('group')).not.toHaveTextContent(language === 'en' ? 'Sent by' : '由 bash 发出');
+  });
+
+  it.each([
+    ['en', 'This carries a key, so it does not wait across a restart of Daoris.'],
+    ['zh', '它带有密钥，因此不会在 Daoris 重启后继续等待。'],
+  ])('says a press carrying a key does not wait across a restart (%s)', async (language, words) => {
+    await i18n.changeLanguage(language);
+    draw([{ ...STOP, keyed: true }, { ...STOP, id: 'plain' }]);
+
+    const [keyed, plain] = screen.getAllByRole('group');
+    expect(keyed).toHaveTextContent(words);
+    expect(plain).not.toHaveTextContent(words);
+  });
+
+  it.each([
+    ['en', 'Confirm', 'Daoris is about to restart; this still waits.'],
+    ['zh', '确认', 'Daoris 即将重启；此请求仍在等待。'],
+  ])('says a Confirm during an update\'s drain was refused and the press still waits (%s)', async (language, confirm, words) => {
+    await i18n.changeLanguage(language);
+    const answer = vi.fn(async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'draining', message: 'Daoris is about to restart; this still waits.' }));
+    draw([STOP], answer);
+
+    await userEvent.click(screen.getByRole('button', { name: confirm }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(words);
+    expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
+  });
+
   it('says all of it in Chinese', async () => {
     await i18n.changeLanguage('zh');
     draw([SAY, UNKNOWN]);
