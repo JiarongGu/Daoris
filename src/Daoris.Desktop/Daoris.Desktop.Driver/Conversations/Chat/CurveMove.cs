@@ -93,6 +93,9 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
 
         // Its last move by the curve is when its record was made, where it continues another by the curve (§2's hold).
         var lastMove = prior.FromWhy == HandOverWhy.Curve ? prior.Created : null;
+        // MODELROLE1d2 (D205 §3.5(a)): never to an account that does not offer its model, the composer's where one is kept, else its asked.
+        var model = ActorOverride.Read(prior.Override)?.Model ?? prior.Asked?.NamedModel;
+        (string, string?, string)? offering = model is null ? null : (agent, prior.HarnessVersion, model);
         var choice = Decide(othersRead: false);
         if (choice is SwitchChoice.ReadOthers { Accounts: var stale })
         {
@@ -122,7 +125,7 @@ internal sealed class CurveMove(ChatContext context, ChatHandOver handOver)
         {
             var now = _context.Harnesses.Clock();
             return SwitchDecision.Decide(
-                scope.Use, account, SaidOf(owner, account, now), _context.Harnesses.SwitchCandidates(owner, scope.List), now, lastMove,
+                scope.Use, account, SaidOf(owner, account, now), _context.Harnesses.SwitchCandidates(owner, scope.List, offering), now, lastMove,
                 othersRead);
         }
     }

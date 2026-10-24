@@ -204,6 +204,32 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Empty(Asked());
     }
 
+    /// <summary>
+    /// 🔴 MODELROLE1d2 (D205 §3.5(a)): the curve move never takes an account that does not offer the conversation's model. account-3 has
+    /// the most room, but its reading refused the model the record asked, so the move goes to account-2; where the composer's change
+    /// names another model, that model is the one judged, and account-3 is moved to.
+    /// </summary>
+    [Theory]
+    [InlineData(null, "account-2")]
+    [InlineData("sonnet", "account-3")]
+    public async Task A_candidate_whose_reading_refused_the_conversation_s_model_is_not_moved_to(string? overriding, string expected)
+    {
+        Said("account-1", 0.75);
+        Said("account-2", 0.55);
+        Said("account-3", 0.30);
+        Assert.Null(AgentOffers.Refused(_home, "talk", "1.0.0", "account-3", "opus", _now.AddMinutes(-5)));
+        var ledger = Ledger();
+        ledger.Edit("c0nv0001", record =>
+        {
+            record["asked"] = System.Text.Json.Nodes.JsonNode.Parse(
+                """{ "agent": "talk", "model": { "source": "entry", "value": "opus", "carried": true }, "effort": { "source": "account-default", "value": null, "carried": false } }""");
+            if (overriding is not null) record["override"] = new System.Text.Json.Nodes.JsonObject { ["model"] = overriding };
+        });
+        using var runner = Runner(ledger, Roster());
+
+        Assert.Equal(expected, Assert.IsType<SwitchChoice.MoveTo>(await JudgeAsync(runner)).Account);
+    }
+
     /// <summary>`switch: off` moves nothing however far over (the switch design §2), and reads nothing.</summary>
     [Fact]
     public async Task Switch_off_moves_nothing()

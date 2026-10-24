@@ -2152,15 +2152,22 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// not refused, not read signed out, and on this machine. Reads files, asks nothing.
     /// </summary>
     /// <param name="owner">Whose accounts: the accounts' owner (AGT7).</param>
-    public IReadOnlyList<SwitchCandidate> SwitchCandidates(string owner, IReadOnlyList<string> list)
+    /// <param name="offering">
+    /// The conversation's agent, the version its record opened on and the model it asks (MODELROLE1d2, D205 §3.5(a)): a candidate whose
+    /// offer reading lacks or refused that model is not ready (<see cref="AgentOffers.Judge"/>). Null judges no reading.
+    /// </param>
+    public IReadOnlyList<SwitchCandidate> SwitchCandidates(
+        string owner, IReadOnlyList<string> list, (string Agent, string? Version, string Model)? offering = null)
     {
         var now = Clock();
         IReadOnlyList<string> present;
         AgentReads reads;
+        IReadOnlyList<OfferReading> offers;
         try
         {
             present = HarnessSettings.Profiles(Home, owner);
             reads = AccountReads.Of(Home, owner);
+            offers = offering is null ? [] : AgentOffers.Read(Home);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
@@ -2171,7 +2178,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         return [.. list.Select(account => new SwitchCandidate(
             account,
             SaidOf(owner, account, now),
-            Ready: present.Contains(account, StringComparer.OrdinalIgnoreCase) && Before(owner, account, now).IsReady && !SaidOut(reads, account)))];
+            Ready: present.Contains(account, StringComparer.OrdinalIgnoreCase) && Before(owner, account, now).IsReady && !SaidOut(reads, account)
+                   && (offering is not { } asked || AgentOffers.Judge(offers, asked.Agent, asked.Version, account, asked.Model, now) is null)))];
     }
 
     /// <summary>What an account last said of its windows, or null where nothing was or the file does not read.</summary>
