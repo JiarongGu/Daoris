@@ -11,7 +11,10 @@ Reviewed **2026-10-24**.
 holds on it, as D160's split did for orientation and exact builds; a role whose result has not been measured on a lower tier keeps
 the stronger model. A harness's own background calls stay as the harness sets them: Claude Code calls Claude Haiku 4.5 for its own
 small tasks beside the session's model (seen on the install, 2026-10-24, in the records' models next to Opus 5.5), and that is the
-harness's optimization, not a role here.
+harness's optimization, not a role here. Should a floor ever be wanted, Claude Code's documentation (read 2026-10-24) names
+`ANTHROPIC_DEFAULT_HAIKU_MODEL` as the background calls' model, a managed `availableModels` list as the allow-list for every model a
+session may select (whether it binds those background calls is not said), and `CLAUDE_CODE_SUBAGENT_MODEL` for subagents; the 4.5
+seen where its alias now means Haiku 5.5 points at the protocol adapter's own bundled harness.
 
 ## The roles
 
