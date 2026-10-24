@@ -441,6 +441,48 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 LIMITWORD1: a word kept on the old record after the move's box was written and before the new part opened is in neither the
+    /// box nor the new part's record, so the move reads the record again at its go-on: the new part is handed it once, after the word
+    /// the box named, and the old part never; it leaves the old record as taken by the new part.
+    /// </summary>
+    [Fact]
+    public async Task A_word_kept_between_the_moves_box_and_its_go_on_reaches_the_new_part_once()
+    {
+        var events = Events;
+        var ledger = HeldEnded(events, ("w1", "Make it fast."));
+        AccountCooling.End(_home, "stub", "account-2", _now);
+        Cooling("account-1", _now.AddDays(1));
+        var kept = 0;
+        ledger.BeforeRequest = (request, _) =>
+        {
+            // The new part's record opening is the go-on: the word lands on the old record just before it, the box already written.
+            if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/api/sessions/chat" && Interlocked.Exchange(ref kept, 1) == 0)
+            {
+                Assert.NotNull(new LimitBoxes(_home).Read("c1"));
+                ledger.For("c1").Say("w2", "And add a test.");
+            }
+
+            return Task.CompletedTask;
+        };
+        var config = Config();
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        using var runner = Runner(client, adapters, Roster(adapters), events);
+
+        var woke = Assert.Single(await runner.WakeLimitsAsync(config));
+        Assert.Equal("c2", woke.SessionId);
+        await Poll.Until(() => Prompts.Count > 0 && ledger.Said("c1").Count == 0, () => Seen(ledger, events, "c2"));
+        var handed = Assert.Single(Prompts);
+        Assert.StartsWith("prompt[account-2]", handed, StringComparison.Ordinal);
+        Assert.Equal((1, 1, 1), (Count(handed, "Make the port configurable."), Count(handed, "Make it fast."), Count(handed, "And add a test.")));
+        Assert.True(handed.IndexOf("Make it fast.", StringComparison.Ordinal) < handed.IndexOf("And add a test.", StringComparison.Ordinal));
+        Assert.Contains(ledger.TakenBy, taken => taken.Session == "c1" && taken.Ids.Contains("w2", StringComparison.Ordinal) && taken.By == "c2");
+        Assert.False(File.Exists(new LimitBoxes(_home).PathOf("c1")));
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        Assert.Single(Prompts);
+    }
+
+    /// <summary>
     /// 🔴 Codex 8: a shell that ended as the move's words were delivered, its new part having taken its turn. The come-up ends the box: the
     /// old record's waiting word leaves it once, as taken by the new part, and nothing is delivered again.
     /// </summary>
