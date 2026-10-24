@@ -1,26 +1,39 @@
-# A terminal's request waits until the person answers: no two minutes, no ten, a row in Notifications until it is confirmed, refused or withdrawn, kept across a restart (proposed, round 1, 2026-10-24)
+# A terminal's press waits until the person answers: no two minutes, no ten, a row in Notifications until it is confirmed, refused or withdrawn, kept across a restart (proposed, round 2, 2026-10-24)
 
-**Standing:** proposed, round 1, a note amending D156 (CONFIRMWAIT1), under D191: two reads follow before anything is built.
-Written by Claude Opus 5.5 from the code on main at `aa16658e7`. Nothing here is built.
+**Standing:** proposed, round 2, a note amending D156 (CONFIRMWAIT1), under D191. Round 1 was written by Claude Opus 5.5 from the
+code on main at `aa16658e7` and read at `c44121e2a` by the independent Opus foundation reader alone, its read verbatim in
+`docs/2026-10-24-confirm-wait-reads.md`: 25 findings, 7 blocking, another round; Codex's read is owed, its credits out. Round 2 is
+written by Claude Opus 5.5 from the code on main at `ffcf42926`, where nothing round 1 or the read cites has changed (the one commit
+touching the desktop since `6accf4a01` is HOOKMERGE1's, in the merge's tree code). It answers every finding in §13, each checked
+against that code. Nothing here is built.
 
 The row CONFIRMWAIT1 in `TASKS.md` carries the case: a press from a terminal that needs the window's Confirm (a setup, a repository
 driven, a session's words) ends two minutes after its card shows, or ten if no window shows it, and *Nothing was done*. On 2026-10-24
 several were missed that way and each had to be sent again (a setup, one repository's drive twice, a session's go-on). The row's
-direction: a request waits as a row in *Notifications* until the person confirms or refuses it, or its asker withdraws it; the press
-is made when confirmed and its asker told then; a press whose grounds changed while it waited is refused at the Confirm with its
-reason.
+direction: a press waits as a row in *Notifications* until the person confirms or refuses it, or its asker withdraws it; it is made
+when confirmed and its asker told then; a press whose grounds changed while it waited is refused at the Confirm with its reason.
 
 D156's CONFIRMSEEN1 note (2026-10-21) rejected exactly this: *a wait with no bound was rejected because the terminal's verb would
 hold its line indefinitely* (`docs/decisions/D156.md:249-250`). This design reverses that rejection, and §3 says why its reason no
 longer binds.
 
-**What this is not.** TERMTRUST1 (D201, accepted) and STEWARDROLE1 (D209, proposed) aim for development's routine presses to need no
-card at all: a press the standing confirmation or the steward's appointment covers is admitted before any card is asked
-(`InstancePipe.cs:621-631`), and this design does not touch that path. What remains on the card is the person's own requests and
-whatever no grant covers; this is their path, not a substitute for those designs. A press either design admits never waits here.
+**What this is not.** TERMTRUST1 (D201, accepted) admits a press the person's standing confirmation covers before any card is asked
+(`InstancePipe.cs:621-631`), and that path is the standing confirmation's alone. In this build it admits nothing: the grant is not
+offered (`StandingConfirmation.OfferedInThisBuild = false`, `StandingConfirmation.cs:193`) and the caller's look answers `untold` until
+D201's part (i) lands (`:160-162`). STEWARDROLE1 (D209, proposed) gives the steward's acts a route of their own of class `Role`, judged
+and refused where uncovered as `SUPERVISOR_ANSWER` is (`InstancePipe.cs:559-571`) and never asked; D209 point 2 makes D201's four
+presses the steward's. So **until STEWARDROLE1d lands, every development press from a terminal is a card**, and under this design none
+of them ends by a clock. This design does not touch either admission; a press either admits never waits here. A waiting press marks
+no `owner-set` (D209's mark is made when a confirmed card is dispatched, the steward design §5.4), so a steward's act during the wait
+is not refused by it, and shows at the Confirm as a ground that changed (§5).
 
-Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, module paths under `src/Daoris.Desktop/Daoris.Desktop.Modules/`,
-page paths under `src/Daoris.Web/src/`.
+A path without a root is under `src/Daoris.Desktop/Daoris.Desktop.Modules/`; `Driver/` is `src/Daoris.Desktop/Daoris.Desktop.Driver/`,
+`Host/` is `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/`, and page paths are under `src/Daoris.Web/src/`.
+
+**Words.** The English chrome keeps *a terminal's press*, as `notifications.done.expired` says it today (`locales/en/notifications.json:39`):
+the glossary's `request` row says *request* is not a name on the window (`locales/glossary.json:488`). The terminal's own sentences say
+*request {id}*, as every verb's do today (`InstanceDoor.cs:273-274`). In this design *a press* is one asked over the pipe for the
+person's Confirm, and *its id* is the id the terminal sent it under.
 
 ## 1. Today, read from the code
 
@@ -28,96 +41,113 @@ page paths under `src/Daoris.Web/src/`.
 
 - **`PipeConfirmations`** (`Platform/PipeConfirmations.cs`) holds every waiting press in memory, never in the store
   (`:55-58`). Its constructor takes `within`, two minutes by default (`:123`), and `find`, never less than `within` (`:125-126`).
-- **`FindWithin`** is ten minutes (`:133`): a press asked waits that long to be shown (`Ask`, `:166-174`, its expiry
-  `asked + _find` and its timer made under the same lock).
+- **`FindWithin`** is ten minutes (`:133`): a press asked waits that long to be shown (`Ask`, `:159-185`, its expiry `asked + _find`
+  and its timer made under the same lock). Each confirmation has an id of its own, a GUID the instance mints (`:168`), beside the id
+  the terminal sent.
 - **The shown timer**: the window's first word that the card is in front of the person moves the expiry to `now + _within` and
   resets the timer (`Show`, `:191-228`, the change at `:212-213`). An answer or a word at or past its time ends it `Expired`, the
   clock read first (`End`, `:320-339`; NOTIFY2a). The timer's firing is `Expire` (`:314`).
 - **The pipe's limits** repeat both: `PipeLimits.Waiting` five and `PipeLimits.Confirm` two minutes (`Platform/InstancePipe.cs:42-46`),
-  handed to `PipeConfirmations` at `:199`.
-- **The service's own door** has its own two minutes (`src/Daoris.Service/Daoris.Service.Http/PersonConfirmations.cs:127`, `Lasts`,
-  and `:130`, `Kept`). It grants a secret to send one HTTP request once; no verb of this machine asks it (only the desktop's reads,
-  `Driver/Service/ConfirmationDoors.cs:11-15`). It is out of this design's scope (§9).
+  handed to `PipeConfirmations` at `:199`. The pipe takes eight connections (`PipeLimits.Connections`, `:19`).
+- **The service's own door** has its own two minutes and its own five (`src/Daoris.Service/Daoris.Service.Http/PersonConfirmations.cs:124`,
+  `Most`; `:127`, `Lasts`; `:130`, `Kept`). It grants a secret to send one HTTP request once; no verb of this machine asks it (only the
+  desktop's reads, `Driver/Service/ConfirmationDoors.cs:11-15`). It is D156 point 4's door, and out of this design's scope (§11). The
+  window's card draws both doors' presses (`person/Confirmations.tsx:25`, `source: 'pipe' | 'service'`).
 
 ### 1.2 The terminal's wait and its exit codes
 
 - `InstanceWorld.Wait` is thirty minutes (`Driver/Platform/InstanceDoor.cs:62`). `PressAsync` (`:234`) keeps the press's id and key
   before sending it (`SentPresses`, `:253`), sends it with that wait, and on `CONFIRMING` writes *waiting for you to confirm this in
-  Daoris's window…* (`Told`, `:490-502`).
+  Daoris's window…* (`Told`, `:487-502`), naming no id. `Told` reads only notifications whose `id` is the verb's own (`:495`).
 - An answer lost, the connection's or the wait's, is asked for by `RESULT` on a new connection, never sent again (`:262-279`):
-  `answered` is said; `unknown` says *Daoris does not know how it ended … it stopped while this was under way* and `running` says
-  *still working on it*, both exit 2 (`:271-276`).
+  `answered` is said; `unknown` says *Daoris does not know how it ended … it stopped while this was under way* and every other case,
+  `running` or no pipe to ask, says *Daoris was still working on it*, both exit 2 (`:271-276`).
 - A refusal is `message (code)` on the error stream; `refused` and `expired` are exit 1, every other refusal exit 2 (`:286-288`).
 - `daoris-driver result <id>` (`ResultAsync`, `:413-465`) reads a kept press's answer by its key; a refused answer there is exit 2
-  (`RefusedAsync`, `:468-472`), not the 1 `PressAsync` gives the same refusal.
-- `SentPresses.Kept` is 24 hours from when it was sent (`Driver/Platform/SentPresses.cs:21`, read at `:52`).
+  (`RefusedAsync`, `:468-472`), not the 1 `PressAsync` gives the same refusal. Its usage line is the host's
+  (`Driver/Loop/DriverCommand.cs:78`), held by `DriverCommandTests.The_usage_names_every_verb_the_host_answers` (`DriverCommandTests.cs:101`).
+- `SentPresses.Kept` is 24 hours from when it was sent (`Driver/Platform/SentPresses.cs:21`), read by `Find`'s age (`:52`) and
+  `Prune`'s file time (`:74`). Only an id of letters, digits and `-` is kept (`:63`).
+- **Ctrl+C withdraws nothing.** When the token is cancelled, `InstanceClient.RequestAsync` returns null and sends nothing
+  (`Driver/Platform/InstanceClient.cs:134-176`); no client writes the kit's `CANCEL`. Each family's Ctrl+C sentence says so: *A change
+  already sent to Daoris's window may still be confirmed there* (`Host/AgentsConsole.cs:22-27`; `DriverChoicesConsole.cs`,
+  `PluginConsole.cs`, `ToolsConsole.cs` alike). RPC1h built only the instance's half.
 - Today no press can still wait when the thirty minutes end: ten minutes to be found plus two once shown is twelve.
 
 ### 1.3 The journal: an id sent again says how it ended, and nothing runs twice
 
 - `PipeJournal` (`Modules/Platform/PipeJournal.cs:22-36`) writes a line when a press begins and one when it ends, with its answer,
-  one file per UTC day under `<home>/pipe/`, kept 24 hours (`PipeLimits.Kept`, `InstancePipe.cs:31`). Read once at the start, an id
-  whose last line says it began is `Interrupted` (`PipeJournal.cs:28-30`).
+  one file per UTC day under `<home>/pipe/`, kept 24 hours (`PipeLimits.Kept`, `InstancePipe.cs:31`; `Find`, `PipeJournal.cs:74`;
+  the read at the start, `:189`). Read once at the start, an id whose last line says it began is `Interrupted` (`:28-30`).
 - In `Accept`, an id running is joined by the key that sent it; an id the journal holds answers its kept answer, or *Daoris stopped
-  while this was under way … it was not run again*; another binding is refused `id-taken` (`InstancePipe.cs:590-611`).
+  while this was under way … it was not run again*; another binding is refused `id-taken` (`InstancePipe.cs:590-611`). The id is
+  taken as sent, any text of 1 to 128 characters (`:551`).
 - **A waiting press is not in the journal.** It is in `_running` and `_waitingFor` alone (`:604-609`, `:652-655`); its line is
-  written only once it ends (`ConfirmThenRunAsync`, `:686-726`, the journal at `:712-719`) or begins to run (`RunAsync`, `:763-799`).
-- `CANCEL` from the terminal that sent it, by its key, withdraws a waiting press (`CancelAsync`, `:809-847`, the withdrawal at
-  `:838-843`); `RESULT` answers `running` for a waiting one, then its ending (`Result`, `:850-870`).
+  written only once it ends (`ConfirmThenRunAsync`, `:686-726`, the journal at `:710-718`, a failed write swallowed) or begins to run
+  (`RunAsync`, `:763-799`). While it waits, `RESULT` answers `running` from `_running` (`:859-862`).
+- The kit's `CANCEL` from the terminal that sent it, by its key, withdraws a waiting press (`CancelAsync`, `:809-847`, the withdrawal
+  at `:838-843`); **for a press already confirmed and running, the same `CANCEL` goes to the dispatcher, which aborts it** (`:845-846`).
 
 ### 1.4 Five waiting, and confirmations-full
 
 `Ask` returns null where `Bound` already wait (`PipeConfirmations.cs:165`), and the pipe refuses the sixth `confirmations-full`:
 *Five acts already wait for the person's confirmation, so this one was not asked. Nothing was kept.* (`InstancePipe.cs:637-651`).
-Only what waits counts, so one answered frees its place. The five was D156 point 4's bound against a session filling the person's
-attention (`D156.md:31-32`, `:80-81`).
+Only what waits counts, so one answered frees its place. The five came with RPC1c (`D156.md:189-190`), the pipe's copy of the service
+door's five.
 
 ### 1.5 Shown, the census, the balloon and What needs you
 
 - `PERSON_CONFIRM_SHOWN` is the window's route (`Bridge/Routes/PersonRoutes.cs:56-72`) and `Window` in the pipe's census
-  (`Platform/PipeCensus.cs:278-279`): a terminal saying it would start its own two minutes. `PERSON_CONFIRMATIONS` and
+  (`Platform/PipeCensus.cs:278-279`, its comment *a terminal saying it would start its two minutes*). `PERSON_CONFIRMATIONS` and
   `PERSON_CONFIRM` are the window's too (`:273`).
 - `PERSON_CONFIRM` answers a press no longer waiting as data, `gone`, *answered in another window, its two minutes passed, or its
   terminal took it back* (`PersonRoutes.cs:35-54`; `locales/en/person.json:38`).
-- On ask, `Attend` raises `SESSION_ATTENTION` of kind `Confirming` (`PipeConfirmations.cs:372-381`), which `SessionBalloon` shows
-  while no window is in front (`Windows/SessionBalloon.cs:132-134`; `notifications.system.confirming.*`).
+- On ask, `Attend` raises `SESSION_ATTENTION` of kind `Confirming` (`PipeConfirmations.cs:181-182`, `:372-381`), which `SessionBalloon`
+  shows while no window is in front (`Windows/SessionBalloon.cs:132-134`; `notifications.system.confirming.*`). Every ask raises one.
 - Each waiting press is a `confirmation` row of *What needs you*, judged in .NET with no workspace (`Loop/NeedsAPerson.cs:464-481`),
   its fields `module`, `route`, `asker`, `expires`, `shownAt` (`Loop/AttentionStateSlice.cs:116`), worded *a terminal waits* and *It
-  runs only once you confirm it on its card in Notifications, and is refused at {{time}}* (`locales/en/work.attention.json:112-113`).
-- The card says *refused by itself in {{time}}* and *It waits until {{time}}, then is refused* (`locales/en/person.json:28`, `:33`;
-  zh `{{time}}后自动拒绝`, `它会等到 {{time}}，之后即被拒绝。`).
+  runs only once you confirm it on its card in Notifications, and is refused at {{time}}* (`locales/en/work.attention.json:112-113`),
+  drawn by `work/attention/attention.ts:520-522` and `:906`. The twin test of the slice and the page compares a row's own fields and an
+  account's (`AttentionStateSliceTests.cs:1648-1656`), not `confirmation`'s.
+- The card says *refused by itself in {{time}}* and *It waits until {{time}}, then is refused* (`person.json:28`, `:33`), drawn from
+  `expires` (`person/Confirmations.tsx:44`, `:272`, `:332`) for both doors.
 - A press that ends `Expired` becomes a notice in *Done and failed* (`Unanswered`, `PipeConfirmations.cs:142`, `:355`; wired at
-  `Loop/DriverLoop.cs:842`; kept by `Loop/NoticesStateSlice.cs:199-203`), worded *A terminal's press to {{act}} went unanswered, and ran
+  `Loop/DriverLoop.cs:842`; kept by `Loop/NoticesStateSlice.cs:198-203`), worded *A terminal's press to {{act}} went unanswered, and ran
   out of time* (`locales/en/notifications.json:39`).
 
 ### 1.6 What a restart does to a press still waiting
 
 - **A close**: `BeginStopping` refuses every new press and withdraws every waiting one (`InstancePipe.cs:275-279`, called from
-  `DriverLoop.cs:1353`). `ConfirmThenRunAsync` answers it `stopping`, *Daoris is closing; run this again once it is back*, and
-  journals that ending (`:707-719`). A terminal still connected hears it; one that left reads it by `result`. **The person is told
-  nothing**: `Unanswered` fires only for `Expired` (`PipeConfirmations.cs:355`), so the row and the card vanish with no notice.
+  `DriverLoop.cs:1353`, and from `Dispose`, `InstancePipe.cs:339`). `ConfirmThenRunAsync` answers it `stopping`, *Daoris is closing;
+  run this again once it is back*, and journals that ending (`:706-718`). A terminal still connected hears it; one that left reads it by
+  `result`. **The person is told nothing**: `Unanswered` fires only for `Expired` (`PipeConfirmations.cs:355`), so the row and the card
+  vanish with no notice.
 - **An update's drain** (`IsStopping`, `:225`) leaves a waiting press waiting, but a Confirm during the drain ends it refused
-  `stopping` and runs nothing (`:695`, `:707`).
-- **A crash** writes nothing: the press was never journaled, so after the start `RESULT` answers `unknown` and the verb says *it
-  stopped while this was under way* (`InstanceDoor.cs:273`), which is wrong — it never began. The person is told nothing.
+  `stopping` and runs nothing (`:695`, `:706`).
+- **A crash** writes nothing: the press was never journaled. A verb still on its line hears the connection drop, finds no pipe to ask
+  `RESULT` of, and says *Daoris was still working on it* (`InstanceDoor.cs:274`); a later `result <id>` finds `unknown` and says *it
+  stopped while this was under way* (`:461-462`), which is wrong — it never began. The person is told nothing.
+- **A pipe not served** (not Windows, the home unreadable, the name held: `Serve`, `InstancePipe.cs:237-255`) takes no press at all.
 
 So today a press waiting at a close is told ended to its asker and silently lost to the person, and one waiting at a crash is
 silently lost to both.
 
 ## 2. The rule
 
-**A request waits until it ends, and it ends one of five ways, each said to its asker and kept in its record:**
+**A press waits until it ends, and it ends one of six ways, each said to its asker and kept in its record:**
 
-| End | By | What runs | The asker hears (code) | The person sees |
+| End | By | What runs | The asker hears (code, exit) | The person sees |
 |---|---|---|---|---|
 | Confirmed | the person's Confirm, its grounds holding (§5) | the press, once | its answer, as today | the card goes; what the press changed |
-| Refused | the person's Refuse | nothing | `refused` | the card goes |
-| Changed | the person's Confirm, a ground no longer holding (§5) | nothing | `changed`, with the reason | the reason, under the card's place, and a toast |
-| Withdrawn | its asker (§6) | nothing | the kit's cancel, as today | the row goes; a notice in *Done and failed* |
-| Unreadable | a restart that could not read it back (§7) | nothing | `lost`, where its id read | a notice in *Done and failed* |
+| Refused | the person's Refuse | nothing | `refused`, 1 | the card goes |
+| Changed | the person's Confirm, a ground no longer holding (§5) | nothing | `changed` with its reason, 1 | the reason, where the card was, and a toast |
+| Withdrawn | its asker (§6) | nothing | `withdrawn`, 1 | the row goes; a notice where a window showed it (§8.3) |
+| Lost | a restart that could not take it back (§7) | nothing | `lost`, 1, where its id read | a notice in *Done and failed* |
+| Interrupted | a stop while it ran, once confirmed (§7) | what ran before the stop | `interrupted`, as today's journal says | as any press under way at a stop |
 
-There is no time end. `Expired` is no longer made by the pipe; the code stays a word of the wire, as `confirm-in-window` stayed
-(`InstancePipe.cs:110-113`), for a terminal talking to an instance from before.
+There is no time end for a pipe's press. `Expired` is no longer made by the pipe; the code stays a word of the wire, as
+`confirm-in-window` stayed (`InstancePipe.cs:110-113`), for a terminal talking to an instance from before. The service door's
+presses keep their two minutes (§11).
 
 The task row's *declines* is the card's **Refuse** (拒绝), the word the card already uses (`person.json:36`), so the chrome keeps
 one word for it.
@@ -126,257 +156,512 @@ one word for it.
 
 CONFIRMSEEN1 rejected a wait with no bound because *the terminal's verb would hold its line indefinitely*. That held while the press
 existed only as the verb's open request: the instance kept it in memory beside the connection (§1.3), the verb learned its end only
-on that line or by `RESULT` within the line's day, and a verb that gave up had no way back to it. Three changes take that away:
+on that line or by `RESULT` within the line's day, and a verb that gave up had no way back to it. Three changes take that away, and
+each holds only with the others:
 
-1. **The request outlives the terminal's wait.** It is a record of its own, written when it is asked (§7.1), a row of *What needs you*
+1. **The press outlives the terminal's wait.** It is a record of its own, written when it is asked (§7.1), a row of *What needs you*
    and a card in *Notifications* (§8), whether or not any terminal is still connected. The connection is how an asker hears, never
-   what keeps the request.
-2. **The verb returns with the request's id while the press stays asked.** At the end of its own wait, or at once with `--no-wait`,
-   the verb says the request waits, names its id and how to read or withdraw it, and exits (§4). Nothing holds its line.
-3. **The asker reads how it ended from the request's record.** `RESULT` answers `waiting` while it waits and its ending after
-   (§4.2), from the record the instance keeps as long as it waits and a day after it ends. A terminal still waiting on its line hears
-   the ending there, as today.
+   what keeps the press.
+2. **The asker learns the id at once.** The `CONFIRMING` line names the id and the two verbs that read and withdraw it the moment the
+   press is asked (§4.1), before any wait, since an agent's harness ends a tool call long before thirty minutes. The verb then waits
+   at most thirty minutes (`--wait`, §4.1) and returns with the press still asked. Nothing holds its line for longer than today.
+3. **The asker reads how it ended from the press's record.** `RESULT` answers `waiting` while it waits and its ending after (§4.2),
+   from the record the instance keeps as long as it waits and a day after it ends. A terminal still waiting on its line hears the
+   ending there, as today.
 
-The two minutes once shown stay rejected as a bound for the reason the row gives: they ended requests the person had not refused.
+The two minutes once shown stay rejected as a bound for the reason the row gives: they ended presses the person had not refused.
 What CONFIRMSEEN1 meant to keep — a card in front of the person never answered by default — is kept by the card's default being no
-(§8.1) and by the bound on how many wait (§9), not by a clock.
+(§8.1), by the grounds (§5), and by the bound on how many wait (§9), not by a clock.
+
+What the clock also did, and nothing did on purpose, was drop a press whose asker no longer wanted it. That is the asker's withdrawal
+(§6), and the card says whether any terminal still waits on it (§8.1), so the person can refuse one whose asker has gone.
 
 ## 4. The asker's side
 
 ### 4.1 The verb
 
-- `PressAsync` keeps its thirty-minute wait as the default, and gains `--wait <minutes>` (0 to 1440) on every verb that presses a
-  person's route, and `--no-wait`, which is `--wait 0`: the verb returns once the instance says `CONFIRMING`.
-- **At the end of its wait, a press still waiting is not lost and not an error.** The verb writes, on the error stream:
-  *still waiting for your confirmation in Daoris's window (request {id}); `daoris-driver result {id}` says how it ended, and
-  `daoris-driver withdraw {id}` takes it back (waiting)*, and exits **1**: nothing was done yet, and a caller that reads non-zero as
-  *not done* is right. Today's `running` path for this case (exit 2, *still working on it*) is for a press under way, not one waiting.
-- The verb tells the two apart from the `CONFIRMING` it heard, and, where its line was lost before it heard one, from `RESULT`'s
-  `waiting`.
-- **Ctrl+C still withdraws** a waiting press it sent (`CANCEL`, §1.3): the person's interrupt of their own verb is their word that it
-  is not wanted. The wait's end does not withdraw.
+- **The id at once.** On `CONFIRMING` the verb writes, on the error stream and flushed: *waiting for you to confirm this in Daoris's
+  window (request {id}); `daoris-driver result {id}` says how it ended, and `daoris-driver withdraw {id}` takes it back…* — the
+  standing confirmation's *why*, where it is said, kept beside it (`InstanceDoor.cs:497-500`). The `CONFIRMING` payload loses
+  `expires` and gains nothing: the verb names its own id, which it already holds.
+- **`--wait <minutes>`**, 0 to 30, parsed once where the world is made (`InstanceHost.World`), so every verb that presses has it;
+  `--no-wait` is `--wait 0`: the verb returns once the instance says `CONFIRMING`. The default stays thirty. A wait longer than the
+  default is not offered: a verb on its line holds one of the pipe's eight connections (§9), and `result {id}` reads it later.
+- **At the end of its wait, a press still waiting is not lost and not an error.** The verb writes *still waiting for your confirmation
+  in Daoris's window (request {id}); `daoris-driver result {id}` says how it ended, and `daoris-driver withdraw {id}` takes it back
+  (waiting)*, and exits **1**: nothing was done yet, and a caller that reads non-zero as *not done* is right. Today's `running` path
+  (exit 2, *still working on it*) stays for a press under way, not one waiting.
+- The verb tells the two apart by the `CONFIRMING` it heard, and, where its line was lost before it heard one, by `RESULT`'s `waiting`.
+- **At a close**, the instance ends each line waiting on a press with the error code `waiting`, `why: "close"`, *Daoris is closing;
+  this still waits for your confirmation (request {id})* (§7.2). The new verb says it as its own wait's end, exit 1; an old verb reads
+  an unknown code as a refusal, exit 2, and its sentence still says the press waits.
+- **Ctrl+C still withdraws nothing**, as today (§1.2): the person's interrupt ends the verb, and the press stays asked. The four Ctrl+C
+  sentences gain *`daoris-driver withdraw <id>` takes it back* beside *`result <id>` asks how it ended*. Withdrawing on Ctrl+C was
+  rejected (§11): an agent's harness that kills its tool call sends the same signal, and would take back what the person may still want.
 
 ### 4.2 The record it reads
 
-- `RESULT { id, key }` gains the state `waiting`, with `asked` and, once shown, `shownAt`; then `answered` with its ending as today.
-- `daoris-driver result <id>` says `waiting` as the verb's own end does, exit 1, and says the request's ending: the answer's words where
+- `RESULT { id, key }` gains the state `waiting`, with `asked`, `waitedOn` (§8.1) and, once shown, `shownAt`; then `answered` with its
+  ending as today. While the Confirm's grounds are judged and once it runs, it answers `running`, as today.
+- `daoris-driver result <id>` says `waiting` as the verb's own end does, exit 1, and says the press's ending: the answer's words where
   confirmed and run; `refused`, `changed` (with its reason), `withdrawn` and `lost` exit **1**, aligned with `PressAsync`
-  (`InstanceDoor.cs:288`), where today it says each refusal exit 2 (`:468-472`).
-- `SentPresses` keeps a press whose last read state was `waiting` past its 24 hours, until a read finds it ended or the instance
-  answers that it does not know it; then the 24 hours run from that read. A press is kept under the terminal's home as today
-  (`SentPresses.cs:25`).
+  (`InstanceDoor.cs:288`), where today every refusal there exits 2 (`:468-472`). Other refusals stay exit 2.
+- `unknown` says what is so: *Daoris has no ending for request {id}: it keeps an ending a day, and a press it never began is not in it*,
+  not *it stopped while this was under way* (`InstanceDoor.cs:461-462`).
+- `SentPresses` keeps a press whose last read state was `waiting` past its 24 hours, at most thirty days from when it was sent, until a
+  read finds it ended or the instance answers `unknown`; then the 24 hours run from that read. Both `Find`'s age (`SentPresses.cs:52`)
+  and `Prune`'s file time (`:74`) read the same rule: the record gains `waitingAt`, rewritten by each read that answers `waiting`. A
+  press is kept under the terminal's home as today (`SentPresses.cs:23`).
 
 ### 4.3 Withdrawing one
 
-`daoris-driver withdraw <id>` sends the kit's `CANCEL { requestId }` with the kept key on a new connection, which `CancelAsync`
-already takes for a waiting press of that key (`InstancePipe.cs:838-843`): the request ends `Withdrawn`, its card and row go, and
-it answers `withdrawn`. One already ended answers `cancelled: false, state: ended` (`:827-830`), said as *it had already ended:*
-and its ending. A key that did not send it is refused `id-taken` as today. Only the key's holder withdraws; the person refuses on
-the card. A new CLI verb, so `cli-usage.test.ts`'s refusals fixture is the census its row runs.
+`daoris-driver withdraw <id>` sends a new pipe route, **`DAORIS.PIPE` `WITHDRAW { id, key }`**, beside `RESULT` (`InstancePipe.cs:525-531`),
+with the kept key on a new connection. It ends **only a press still waiting**, under `PipeConfirmations`' lock, where a Confirm is taken
+from what waits too, so the first of the two wins:
+
+- waiting, and the key the one that sent it: it ends `Withdrawn`, its card and row go, and it answers `withdrawn`;
+- confirmed meanwhile (its grounds being judged, or running): answers `running`, and **nothing is cancelled**: the person's Confirm is
+  not undone by an asker's later word;
+- ended: answers `ended` and the ending, said as *it had already ended:* and its ending;
+- another key's, or an id the pipe does not know: refused `id-taken`, as `CancelAsync` refuses today.
+
+The kit's `CANCEL` stays what it is (`InstancePipe.cs:536-538`, `:809-847`), for a terminal from before; no client of this machine
+sends it. The verb's usage line joins `result <id>` in `DriverCommand.Usage` (`DriverCommand.cs:78`), held by
+`DriverCommandTests.The_usage_names_every_verb_the_host_answers` (`DriverCommandTests.cs:101`). It is a top-level verb, apart from
+`plugins withdraw <id> <server>` (`:313`), which withdraws a plugin's grant.
 
 ## 5. A press whose grounds changed while it waited
 
-A request asked at 09:00 and confirmed at 15:00 may name a world that moved. The route's own handler still judges what it always
-did; what it cannot know is what the person was shown and what the asker saw when it asked. So **each person route names its
-grounds**, read at the ask and read again at the Confirm, and a Confirm whose grounds no longer hold ends the request `Changed`,
-runs nothing and says why.
+A press asked at 09:00 and confirmed at 15:00 may name a world that moved. The route's own handler still judges what it always did;
+what it cannot know is what the person was shown and what the asker saw when it asked. So **every person route names its grounds**,
+read at the ask and read again at the Confirm, and a Confirm whose grounds no longer hold ends the press `Changed`, runs nothing and
+says why.
 
 ### 5.1 The grounds
 
 | Ground | Read at the ask, by the payload's named field | Holds at the Confirm when | The reason said (en) |
 |---|---|---|---|
-| `session` | the session's state and its latest run's id | the session exists and both are the same | *the session moved on while this waited: it was {then}, it is {now}* |
-| `setting` | the setting's value | the value is the same, and not already what the press sets | *{setting} is already set as this asks* / *{setting} changed while this waited* |
+| `session` | the session's record: its `State` and its `Updated` (`Driver/Trees/SessionGroups.cs:14`, `:35-36`) | the session exists, and both are the same | *the session moved on while this waited: it was {then}, it is {now}*, or, the state the same, *the session ran another turn while this waited* |
+| `setting` | the setting's value as the config holds it | the value is the same | *{setting} changed while this waited* |
 | `repository` | that the repository is registered here | it still is | *the repository {repository} is no longer registered on this machine* |
-| `quest` | the quest's state | the same (a try again's quest still parked or held) | *the quest no longer waits to be tried again* |
-| `ask` | the ask's state | the same (a landing's ask still open) | *the ask was closed while this waited* |
+| `quest` | the quest's state | the same | *the quest moved on while this waited: it was {then}, it is {now}* |
+| `ask` | the ask's state | the same | *the ask was closed while this waited* |
+| `plan` | the fingerprint of the read the table names (the paired plan route's answer for the same payload, or a named read), taken over the set it acts on — its items' ids, tips and states — never over a time in the answer | the read gives the same fingerprint | *what this would act on changed while this waited; look at it again and ask again* |
+| `branch` | the tip of the branch the press lands, hands off or discards | the tip is the same | *the branch {branch} gained or lost commits while this waited* |
+| `wait` | that the held wait the press answers is open: its id as the payload names it | it is still open, under the same id | *what this answers no longer waits: it was answered or ended* |
 | `timeless` | nothing | always | — |
 
-A route names one or more grounds, or is `timeless` with its reason (a sweep, bringing branches up to date, marking news read: each
-acts on what is there when it runs, and the person's Confirm is their word on that). **The grounds are a table beside the census**
-(`PipeGrounds`, next to `PipeCensus`), and a test holds that every route `PipeCensus` makes `Person` (`PipeCensus.cs:212-266`) names
-grounds or `timeless`, as `PipeCensusTests` holds the census; a route added without them fails it.
+**`timeless` is only for a press that deletes nothing, moves no line or branch, and starts no work**: marking news read, a read mark on an
+ask's channel, a conversation's name or pin. Every press that deletes, moves refs, lands, sweeps, frees space or abandons work names `plan`, `branch` or
+both, and none is timeless.
 
-What a ground compares is recorded on the request as codes and values the instance read (a state, a run's id, a setting's value),
-never the asker's words. The *already set* case refuses rather than runs as a no-op because it is evidence the person's world
-changed under the request, and the reason tells them so.
+**`already`.** A `setting` press whose value is already what it sets is answered at the ask, with no card: *{setting} is already set
+as this asks; nothing was asked*, code `already`, exit 0, since the world is as asked. At the Confirm the same case is `changed`
+(someone set it while this waited), since the person's world moved under the press.
+
+**What `session` sees.** No session record carries a run's id or a turn's count (`Driver/Trees/SessionGroups.cs:14-144`); `Updated` is
+set by the service on every move of the state and on an answer's note (`src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs:890`,
+`:1562`). So the ground sees a session that moved, or moved and came back (*ran another turn*), and does not see a turn that moved no
+state; where a press answers a question, `SESSION_INPUT`'s `question` names it and the `wait` ground and the handler's own
+`question-changed` (`ConversationRoutes.cs:124-129`) see that.
+
+What a ground compares is recorded on the press as codes and values the instance read (a state, a time, a fingerprint, a tip), never
+the asker's words. `{setting}`, `{then}` and `{now}` are worded by the catalogue (`settings.*` names, `sessionState.*`, `questState.*`),
+never by a code (§8.3).
+
+**The table, route by route.** One row per route the census makes `Person`, payload forms included (`PipeCensus.cs:122-124`, `:212-266`,
+`:290-294`); the field named is the payload's.
+
+Handlers are the modules' `Bridge/Routes/*Routes.cs`, each by its `[DriverRoute]`; *re-judges* says what the handler already refuses at
+its run, which the ground does not replace.
+
+| Route (handler) | Field named | Grounds | Why, and what the handler re-judges |
+|---|---|---|---|
+| `LAND_SESSION_TREE` (`TreesRoutes.cs:491`) | `id`, `branch` | `session`, `branch`, `plan` (`LANDING`) | Lands commits; a branch that gained some during the wait would land them. Re-judges its gate token and quest result (`:584-590`). |
+| `LAND_ENTRY` (`EntriesRoutes.cs:35`) | `entry` | `plan` (`ENTRY_LANDING`: each branch and its tip) | Lands an entry's branches. |
+| `LAND_ASK` (`EntriesRoutes.cs:68`) | `ask` | `ask`, `plan` (`ASK_LANDING`: each branch and its tip) | Lands an ask's branches; the ask still open is not enough. |
+| `HANDOFF` (`TreesRoutes.cs:959`) | `id`, or `repository` and `branch` | `session` (where `id`), `repository`, `branch`, `plan` (`HANDOFF_PLAN`) | Hands a branch to a plugin that may push. Re-judges the newest landed record (`:1068`). |
+| `OPINION_ANYWAY`, `OPINION_MYSELF` (`TreesRoutes.cs:762-763`) | `id` | `session`, `wait` (the opinion gate, `OPINION_GATE`) | Answers a held gate. |
+| `ASK_OPINION` (`TreesRoutes.cs:761`) | `id` | `session`, `branch` | Starts a review on an account, of the work as it was asked on. |
+| `STOP_OPINION` (`TreesRoutes.cs:764`) | `opinion` | `wait` (that opinion running) | Stops a review. |
+| `DISCARD_SESSION_TREE` (`TreesRoutes.cs:434`) | `id` or `path` | `session` (where `id`), `branch` (the tree's head) | Deletes a tree. Re-judges its unforced proof. |
+| `DISCARD_SESSION_BRANCH` (`LinesRoutes.cs:339`) | `repository`, `branch` or `named` | `repository`, `branch` | Deletes a branch. Re-judges D88's unforced proof. |
+| `RECOVERY_DROP` (`LinesRoutes.cs:379`) | `repository`, `refs[]` with their commits | `repository`, `branch` (each ref's commit, as the payload names it) | Deletes refs. Re-judges each, a moved ref skipped. |
+| `SWEEP` (`LinesRoutes.cs:263`) | `workspace`, `only[]` | `plan` (`SWEEP_PLAN`: the branches and their tips) | Deletes branches and trees. |
+| `TREES_SYNC` (`LinesRoutes.cs:441`) | `repository`, `workspace`, `all`, `also[]`, `only[]` | `plan` (`TREES_SYNC_PLAN` for the same scope: each line's and branch's tip) | Fast-forwards lines, replays and deletes branches, every repository's at once (`PipeCensus.cs:263-266`). |
+| `HISTORY_CLEAR` (`HistoryRoutes.cs:58`) | `workspace`, `quest`, `ask`, `units[]` | `plan` (`HISTORY_PLAN`: the units) | Deletes history. Re-judges each unit. |
+| `SYSTEM_DOWNLOADS_CLEAR` (`SystemRoutes.cs:152`) | `versions[]` | `plan` (`SYSTEM_DOWNLOADS`: the versions) | Deletes downloads. |
+| `SYSTEM_SPACE_FREE`, not `plan: true` (`SystemRoutes.cs:81`) | `units` | `plan` (its own `plan: true` form: the units) | Deletes what it names. |
+| `WORK_ABANDON` (`WorkRoutes.cs:128`) | `ask` or `quest`, `pieces[]` | `ask` or `quest`, `plan` (`WORK_PLAN`'s `abandon.pieces`) | Abandons work. Re-judges each piece. |
+| `WORK_PAUSE`, `WORK_RESUME` (`WorkRoutes.cs:217`, `:241`) | `ask` or `quest` | `ask` or `quest` | Stops or restarts work. |
+| `WORK_HELD` (`LinesRoutes.cs:690`) | `unit`, `node`, `attempt` | `wait` (the held attempt) | Answers a held attempt. |
+| `WORKFLOW_NODE` (`WorkflowRoutes.cs:254`) | `run`, `node` | `wait` (the node held in that run) | Skips or stops a run's node. |
+| `SESSION_ARCHIVE` (`SessionsRoutes.cs:799`) | `ids[]` | `session` (each) | Archives records. |
+| `SESSION_DELETE` (`SessionsRoutes.cs:864`) | `id` | `session` | Deletes a record. Re-judges its seven refusals. |
+| `STOP_SESSION`, `CANCEL_TURN`, `END_CHAT` (`SessionsRoutes.cs:21`; `ConversationRoutes.cs:324`, `:305`) | `id` | `session` | Stops or ends what runs. |
+| `STOP_TASK` (`ConsoleRoutes.cs:61`) | `id`, `key` | `session`, `wait` (that task running) | Stops a task. |
+| `RESOLVE_SESSION` (`SessionsRoutes.cs:73`) | `id` | `session` | Finishes or declines a park. |
+| `SESSION_QUIET_CARRY_ON`, `SESSION_QUIET_LEAVE` (`SessionsRoutes.cs:469`, `:452`) | `id` | `session` | The person's word on a quiet session. |
+| `SESSION_GO_ON_NEW`, `SESSION_START_FROM`, `SESSION_GO_ON_BRIEF`, `SESSION_HAND_OVER`, `SESSION_STOP_WAITING` (`SessionsRoutes.cs:118`; `ConversationRoutes.cs:160`, `:186`, `:223`, `:204`) | `id` | `session` | Starts or carries on work on an account. |
+| `SESSION_HELPER_ASK`, `SESSION_PARTNER_ASK` (`SessionsRoutes.cs:139`, `:223`) | `id` | `session` | Starts a helper or a piece on an account. |
+| `SESSION_INPUT` (`ConversationRoutes.cs:93`) | `id`, and `question` where named | `session`; `wait` (the question) where `question` is named | Words as the person's. Re-judges a stale question, `question-changed` (`:124-129`). |
+| `SESSION_QUEUE_EDIT` (`ConversationRoutes.cs:355`) | `session`, `id` (the word) | `wait` (the word still queued) | Rewords or takes back a word. |
+| `SET_SESSION_OPTION` (`ConversationRoutes.cs:423`) | `id`, `option` | `session`, `setting` | A session's option. |
+| `SESSION_GO_AHEAD` (`ConversationRoutes.cs:280`) | `id`, `ask`, `number` | `wait` (that go-ahead open) | Answers a go-ahead. |
+| `SESSION_HELPER_APPROVE`, `SESSION_HELPER_DECLINE` (`SessionsRoutes.cs:308`, `:330`) | `ask`, `session` | `wait` (the helper's ask) | Answers a helper's ask. |
+| `SESSION_PERMISSION_ANSWER` (`SessionsRoutes.cs:507`) | `session`, `request` | `wait` (the permission held) | Answers a held permission. |
+| `SESSION_HAND_OVER_APPROVE`, `SESSION_HAND_OVER_DECLINE` (`SessionsRoutes.cs:396`, `:435`) | `session`, `ask` (absent: the current one, recorded at the ask) | `wait` (the hand-over ask) | Answers a hand-over ask. |
+| `SESSION_ANSWER_ALONE` (`SessionsRoutes.cs:528`) | `session` | `wait` (the answer held) | Lets a held answer go on. |
+| `SUPERVISOR_OVERRULE` (`SessionsRoutes.cs:578`) | `id`, `decision` | `wait` (that decision live) | Overrules a decision. |
+| `RETRY_QUEST` (`DriverRoutes.cs:413`) | `quest` | `quest` | Tries a parked or held quest again. |
+| `HELP_APPLY`, `HELP_DISMISS` (`HelpRoutes.cs:494`, `:568`) | `id`, `revision` | `wait` (the proposal open, at its revision) | Applies or dismisses a proposal. Re-judges its revision. |
+| `RULE_PROPOSAL` (`RulesRoutes.cs:60`) | `id` | `wait` (the proposal open) | Answers a rule proposal. |
+| `TRUST_FOLDER` (`DriverRoutes.cs:361`) | `folder` | `wait` (the trust hold) | Re-judges the hold from the last tick. |
+| `CHANNEL_POST`, `CHANNEL_FORWARD` (`AsksRoutes.cs:44`, `:85`) | `ask`; `repository` for a forward | `ask`; `repository` for a forward | Words on an ask's channel. |
+| `START_CHAT` (`ConversationRoutes.cs:38`) | `repository` | `repository` | Starts a conversation on an account. |
+| `START_HELP`, `HELP_START_FROM` (`HelpRoutes.cs:46`, `:1285`) | `workspace`; `id` | `repository` (the workspace registered here); `session` (the conversation) | Starts Ask Daoris on an account. |
+| `SETUP_PRESS` (`SetupRoutes.cs:34`) | `repository` | `repository`, `plan` (`SETUP_PLAN`: the rule and ask it publishes) | Publishes a set-up. Reads its plan again at the press (`:31-47`), which the ground compares with the one asked on. |
+| `SET_DRIVABLE`, `SET_TREES`, `SET_HOLD`, `SET_STANDING`, `SET_SESSION_CHECKS`, `SET_HEAVY_GATES` (`DriverRoutes.cs:44`, `:69`, `:54`, `:82`, `:117`, `:99`) | `repository` | `repository`, `setting` | A repository's standing choice. |
+| `SET_ACCESS`, `SET_COMMITS`, `SET_HAND_OVER`, `SET_HELPERS`, `SET_LANDING`, `SET_LANGUAGE`, `SET_LINE`, `SET_OPINION`, `SET_REVIEW` (`LinesRoutes.cs`), `SET_READ_ACROSS`, `SET_WRITE_ACROSS` (`AcrossRoutes.cs:50`, `:73`), `WORKFLOW_LANDED` (`WorkflowRoutes.cs:129`) | `repository` or `workspace` | `repository` (the repository or workspace registered here), `setting` | A standing choice at its scope. |
+| `SET_ACTOR`, `SET_AGENT_SETTINGS`, `SET_CAP`, `SET_COOLOFF`, `SET_HELP_MODE`, `SET_HELP_GRANT`, `SET_NOTIFY`, `SET_STRIKES`, `SET_KEEP` (`DriverRoutes.cs`, `AgentsRoutes.cs:513`), `RULE_ACTION` (`RulesRoutes.cs:27`), `ACCOUNT_USE` (`AccountsRoutes.cs:395`), `TOOLS_LOCATION`, `TOOLS_USE` (`ToolsRoutes.cs:208`, `:126`) | the setting the payload names | `setting` | A machine's standing choice. |
+| `HARNESS_ACTION`, `HARNESSES_REFRESH` (`AgentsRoutes.cs:345`, `:33`) | `harness` or `agent`, `profile` | `plan` (`HARNESSES`' row for it) | Installs, updates, signs in, or lets a refused account through. |
+| `PLUGIN_ACTION` (`PluginsRoutes.cs:299`) | `id` | `plan` (`PLUGINS`' row for it) | Sets or removes a plugin's grant. |
+| `PLUGIN_ADD`, `PLUGIN_NEW`, `PLUGIN_TRY` (`PluginsRoutes.cs:190`, `:373`, `:391`) | `folder` or `id` | `plan` (`PLUGIN_READ` of the folder, or `PLUGINS`' row) | Installs, writes or runs code in the driver. |
+| `PLUGIN_INSTALL` (`PluginsRoutes.cs:286`) | `offer` | `plan` (`PLUGINS`' offer) | Installs a plugin. |
+| `PLUGIN_UPDATE`, `apply: true` (`PluginsRoutes.cs:258`) | `id` | `plan` (its own preview without `apply`) | Replaces a plugin. |
+| `TOOLS_DELETE`, `TOOLS_DOWNLOAD` (`ToolsRoutes.cs:179`, `:161`) | `tool`, `version` | `plan` (`TOOLS_LIST`'s row) | Deletes or downloads a program. |
+| `TOOLS_STOP` (`ToolsRoutes.cs:168`) | `tool` | `wait` (the tool's run) | Stops a download or install. |
+| `TOOLS_GIT`, `way: "file"` (`ToolsRoutes.cs:231`) | `file` | `plan` (the named file's SHA-256) | Runs the file it names. |
+| `DAORIS.REGISTRY` `WRITE_DECLARATION` (`Platform/RegistryModule.cs:44`) | `path` | `plan` (the registry's read of that path: the declaration on disk) | Writes `daoris.json` into a repository. |
+| `DAORIS.REMOTES` `SET`, `REMOVE` (`Platform/RemotesModule.cs:46`, `:73`) | `workspace` | `setting` (the remote as `STATE` holds it) | Wires or unwires the machine. |
+| `CHANNEL_MARK` (`AsksRoutes.cs:67`) | `ask`, `through` | `timeless` | A read mark, which never moves back. |
+| `NOTICES_READ` (`NoticesRoutes.cs:28`) | `ids[]` | `timeless` | Marks news read. |
+| `NOTICE_DISMISS` (`NoticesRoutes.cs:37`) | `id`, or `all` and `workspace` | `plan` (`NOTIFICATIONS`' notices for its ids or workspace) | Its `all` form would dismiss news that came during the wait. |
+| `HELP_RENAME`, `HELP_PIN` (`HelpRoutes.cs:1241`, `:1261`) | `id` | `timeless` | A conversation's name or pin. |
+
+**One table, not two.** The fields that name a session, a repository, a quest or an ask are D209's `PipeCensus.Targets` (the steward
+design §5.4), declared over the same routes. The grounds are that table's second column, not a table of their own: whichever of
+STEWARDROLE1a and CONFIRMWAIT1a-i lands first makes `PipeCensus.Targets` with both columns, and the other fills its own. Until
+STEWARDROLE1a lands, `Targets` holds the grounds' fields alone.
+
+**The census.** A test holds that every route `PipeCensus.Routes` lists as `Person`, in every form its rule gives, and every route a
+route-by-route module leaves to the `Person` default (`PipeCensus.cs:137`), names grounds or `timeless` with its reason; that a
+`timeless` route is none the census comment or the table calls a delete, a close or a move; and that each named field is one the
+route's handler reads. **A `Person` press with no row is refused at the ask, `ungrounded`**, never treated as timeless: *Daoris does
+not know what this press rests on, so it cannot wait for the person; nothing was asked*. A route added later is grounded in the change
+that adds it (`.claude/knowledge/bridge-presses.md`).
 
 ### 5.2 Where and when it is judged
 
-- In `PipeConfirmations.Answer` on Confirm, under its lock, before the request is taken from what waits: the grounds are read through
-  the reader the loop hands it (as `RunsHere` and `HeldNow` are handed to the standing confirmation, `DriverLoop.cs:844-849`). A ground
-  that does not hold ends it `Changed` with its reason; `PERSON_CONFIRM` answers `{ answered: false, why: "changed", reason }` and
-  the card's place says it (§8.1).
+- **At the ask**, in `Accept`, after the shape check (`InstancePipe.cs:573-580`) and before `Confirmations.Ask` (`:637`), outside every
+  lock: the readers read the named grounds, and `already` and `ungrounded` answer here. The readers are the loop's, handed to the pipe
+  as `RunsHere` and `HeldNow` are handed to the standing confirmation (`DriverLoop.cs:844-849`): the session and quest states from the
+  loop's memory, the config from `DriverConfig.Load`, a branch's tip by one `git rev-parse`, a plan by its route's own handler called
+  in process. A state read is bounded by five seconds and a plan by sixty, since a plan may read git across repositories; at the ask
+  the verb is told nothing until the read ends, and at the Confirm the card says *checking that nothing changed…* meanwhile. A read
+  that fails or times out refuses the ask `unread-grounds`, nothing asked, and at the Confirm ends the press `Changed` with
+  *Daoris could not read what this rests on*, since a press whose grounds cannot be read is not known to hold.
+- **At the Confirm**, `PipeConfirmations.Answer` takes the press from what waits under its lock and releases it; the pipe then reads
+  the grounds again outside every lock (the standing confirmation's rule, `StandingConfirmation.cs:171-175`), and ends the press
+  `Changed` with its reason or runs it. `PERSON_CONFIRM` answers once that judgement is made: `{ answered: true }`, or
+  `{ answered: false, why: "changed", reason }`, the card's place saying it (§8.1).
 - The grounds are not a lock: between the read and the route's run the world can move again, and the route's own judgement and the
   store's transactions stay the guard, as today. They catch what moved during the wait, which is hours where the race is milliseconds.
-- A refusal is the person's to see, not a blocking check on the card's drawing: grounds are not judged to hide or grey a card,
-  since a read on every telling of the list would run on every change of every window.
+- A change made before the ask is not a change: the ask's reading is the baseline, so a press asked after its session moved is judged
+  against the session as it was at the ask.
+- Grounds are not judged to hide or grey a card, since a read on every telling of the list would run on every change of every window.
 
 ## 6. The asker withdraws one
 
-§4.3 is the asker's door; it is the only one besides the person's answer. Each withdrawal is said to the person as a notice in *Done
-and failed* (`notifications.done.withdrawn`, §8.3), since a row that vanishes from *What needs you* with nothing said reads as lost.
-The instance's close no longer withdraws (§7.2).
+§4.3 is the asker's door; it is the only one besides the person's answer. A withdrawal of a press some window showed (its `shownAt`
+set) is said to the person as a notice in *Done and failed* (`notifications.done.withdrawn`, §8.3), since a card they saw that vanishes
+with nothing said reads as lost; one nobody showed goes with its row and no notice, so an asker that loops ask-then-withdraw floods
+nothing (§9). The instance's close no longer withdraws (§7.2).
 
 ## 7. A restart
 
-### 7.1 The request's record
+### 7.1 The press's record
 
-- **Written when asked**, before `CONFIRMING` is told: `<home>/pipe/waiting/<id>.json`, the `pipe` entry of the home's table
-  (`DaorisHome.Entry(_home, HomeEntry.Pipe)`, as the journal's folder is asked, `InstancePipe.cs:260-261`), written atomically as
-  BOM-less UTF-8. It holds the request's id, its binding (route, payload fingerprint, key fingerprint, as `PipeBinding`), the
-  payload as sent, its card's fields and named values, the asker as the system named it, `asked`, `shownAt`, its grounds as read,
-  and a version. A request whose record cannot be written is refused `unrecorded` and nothing is asked, as a press whose journal
-  line cannot be written is today (`:770-774`).
-- **Removed when it ends**, after its ending's line is in the journal. A Confirm writes the journal's *begin* line before the record
-  is removed, so the order is: begin, remove, run, end.
-- Holding the payload on disk adds no reach: the session records and the notices already keep the person's words under the home, and
-  D156 point 7 says what a process of the account reaches there (`D156.md:42-48`). A record a process wrote itself grants nothing it
-  could not ask over the pipe: its card shows what it would do and the default is no. What it could forge is the asker's name, so a
-  record read back after a restart shows the asker as *asked before Daoris restarted*, never a process name (§8.1).
+- **Written when asked**, before `CONFIRMING` is told: `<home>/pipe/waiting/<confirmation id>.json`, named by **the confirmation's own
+  id**, the GUID the instance mints (`PipeConfirmations.cs:168`), never by the terminal's id, which the instance takes as any text of 1
+  to 128 characters (`InstancePipe.cs:551`) and which therefore never reaches a path. The folder is the `pipe` entry of the home's
+  table (`DaorisHome.Entry(_home, HomeEntry.Pipe)`, as the journal's is asked, `InstancePipe.cs:260-261`), written atomically as
+  BOM-less UTF-8.
+- **What it holds**: a version; the confirmation's id; the terminal's id; the binding (route, payload fingerprint, key fingerprint, as
+  `PipeBinding`); the module, route and payload as sent; the grounds as read at the ask; the asker as the system named it; `asked`,
+  `shownAt`; and its state (`waiting`, `begun`, or `ended` with its ending's answer). **It holds no card fields and no named values**:
+  those are made again from the payload (§7.2), so a record cannot show one thing and run another.
+- A press whose record cannot be written is refused `unrecorded` and nothing is asked, as a press whose journal line cannot be written
+  is today (`:770-774`).
+- **The order of an ending**, so the record alone says what happened: on a Confirm whose grounds hold, the record is rewritten `begun`,
+  then the journal's *begin* line, then the record removed, then the run, then the journal's *end*. On every other ending the record is
+  rewritten `ended` with its answer, then the journal's line, then the record removed — removed **even where the journal's line failed**
+  (today's swallowed failure, `InstancePipe.cs:712-718`), since the record already said it ended. A record that cannot be removed is
+  left `ended`, and the next start removes it (§7.2).
+- **What reaches the disk**: the payload of every waiting press, and of a refused or withdrawn one until its record is removed. That
+  adds no reach: the session records and the notices already keep the person's words under the home, and D156 point 7 says what a
+  process of the account reaches there (`D156.md:42-48`). A record a process wrote itself grants nothing it could not ask over the
+  pipe, once the restore judges it as `Accept` judges a press (§7.2), and its card's default is no.
 
 ### 7.2 What a restart does
 
-- **A close no longer withdraws.** `BeginStopping` refuses new presses as today, ends the connections' waits with `stopping` as their
-  answer *on the line* (*Daoris is closing; this still waits for your confirmation, request {id}*), and leaves the requests waiting
-  in their records. The pipe's `WithdrawAll` on close goes; `Dispose` stops the timers it no longer has.
-- **At the start**, before the pipe is served (`InstancePipe.Serve`, after the journal is read): each record in `waiting/` is read.
-  One whose id the journal holds (begun or answered) is removed and not asked again: it was confirmed before the stop, and the journal
-  says how it ended, so nothing runs twice. Every other is waiting again, its row and card back, and the balloon says once
-  *{count} requests from a terminal still wait for you* while no window is in front.
-- **One that does not read** (cut, or written by a newer Daoris) is moved aside into `waiting/unread/` and never asked; where its id
-  reads, the journal gets its ending `lost` so `RESULT` says so; the person gets one notice, *a terminal's request could not be read
-  back after Daoris restarted, and was not done*. Never silently lost.
-- **An update's drain** leaves requests waiting as above; a Confirm during the drain is refused on the card with *Daoris is about to
-  restart; this still waits*, and the request stays waiting, rather than ending `stopping` (`InstancePipe.cs:695`).
+- **A close no longer withdraws.** `BeginStopping` refuses new presses as today, ends each connection's wait with `waiting`,
+  `why: "close"` (§4.1), and leaves the presses waiting in their records. `PipeConfirmations.WithdrawAll` on close goes, and
+  `Dispose` stops the timers it no longer has.
+- **The restore** runs in the loop, before `Serve` (`DriverLoop.cs:852`), once the journal is read; the journal is made there rather
+  than inside `Serve` (`InstancePipe.cs:261`). Each file in `waiting/` is taken in `asked` order:
+  1. a name that is not a confirmation id (32 hexadecimal characters) is removed and logged, nothing asked;
+  2. a record of a **newer version** is left in place, not asked, and logged, as the standing confirmation leaves a record it cannot
+     read (`StandingConfirmation.cs:146-150`); the person gets one notice, *a terminal's press from a newer Daoris waits for it*;
+  3. state `begun`: never asked again; where the journal holds no line for its id, its ending `interrupted` is journaled, so `RESULT`
+     says it stopped while under way, which is now so; the record is removed;
+  4. state `ended`: its ending is journaled where the journal lacks it; the record is removed;
+  5. state `waiting`: **judged again as `Accept` judges a press**, from the module, route and payload alone: the census classes it
+     (`PipeCensus.Of(module, route, payload)`) and only `Person` passes; the payload's fingerprint equals the binding's, and the route
+     equals the binding's; the shape is checked again (`PipeConfirmations.FieldsOf`) and the card's fields and named values are made by
+     `FieldsOf` and `PipeWording.Named`, never read from the record; the route has a grounds row; the terminal's id is no id the
+     journal already holds; and the bound (§9) is not passed. One that passes waits again, its row and card back, its grounds those
+     the record holds (a forged ground that equals the world at the Confirm is the same as a press asked fresh; one that does not is
+     `changed`). One that fails, or does not read, ends `Lost`: journaled where its terminal's id reads, the record removed, nothing
+     asked;
+  6. the person gets one notice for all the presses lost at that start, *{count} terminal's presses could not be taken back after
+     Daoris restarted, and were not done*, and, while no window is in front, one balloon for those waiting again,
+     *{count} presses from a terminal still wait for you*.
+- **A pipe not served** after the restore (`Serve` answering null): the presses waiting again stay cards, which the window answers as
+  any; a Confirm runs them through the same dispatcher. Their terminals cannot read `RESULT` or `WITHDRAW` until a Daoris serves the
+  pipe, and the card says *no terminal waits on it* (§8.1). Where another instance already serves this home's pipe (`Serve`'s *held*),
+  the restore does not run, since that instance has its own records and two instances would show one press twice; the log says so.
+- **An update's drain** leaves presses waiting; a Confirm during the drain is refused on the card with *Daoris is about to restart;
+  this still waits*, and the press stays waiting, rather than ending `stopping` (`InstancePipe.cs:695`).
 - **A crash** loses nothing written: the record was written at the ask.
 
 ### 7.3 How long the records keep
 
-A waiting request's record keeps until it ends. Its ending keeps in the journal 24 hours, as every press's does
-(`PipeJournal.cs:225-228`). A request that waits a week is a week's row in *What needs you*, which the bound (§9) keeps from growing.
+A waiting press's record keeps until it ends. Its ending keeps in the journal 24 hours, as every press's does
+(`PipeJournal.cs:74`, `:189`). A press that waits a week is a week's row in *What needs you*, which the bound (§9) keeps from growing.
 
 ## 8. What the person sees
 
 ### 8.1 The card (`person/Confirmations.tsx`, drawn in *Notifications*, NOTIFY2b)
 
-- *asked {{ago}}* stays and grows in weight once a request has waited over an hour, so a stale-looking card reads its age first.
-- *refused by itself in {{time}}* (`person.left`) and *It waits until {{time}}, then is refused* (`person.until`) go; one line,
-  `person.waits`, says it waits until they answer.
-- The shown word stays (`PERSON_CONFIRM_SHOWN`, the census's `Window` row unchanged): it moves no clock, it records `shownAt` once and
-  logs `shown`, and it ends the bell's unshown warning hue as NOTIFY2b has it.
-- A request read back after a restart names its asker as *asked before Daoris restarted*.
+- *asked {{ago}}* stays and grows in weight once a press has waited over an hour, so a stale-looking card reads its age first.
+- **For `source: 'pipe'`**, one line, `person.waits`, says it waits until they answer, and *refused by itself in {{time}}* and *It waits
+  until {{time}}, then is refused* are not drawn. **For `source: 'service'`** (`Confirmations.tsx:241`) both lines stay, from that
+  door's own `expires`, since its two minutes stand (§11).
+- `person.gone` for a pipe's press says *answered in another window, or its terminal took it back*; a service press's gone keeps *its
+  two minutes passed* (`person.goneService`).
+- **Whether a terminal still waits on it.** Each pipe's confirmation carries `waitedOn`, true while a connection waits on its line for
+  it, re-told when that line ends (its wait over, the terminal gone, a close). The card says *a terminal waits on this* or *no terminal
+  waits on this now; it can read how it ended later*, and the row's group follows it (§8.2).
+- The shown word stays (`PERSON_CONFIRM_SHOWN`, the census's `Window` row unchanged; its census comment reads *a terminal saying it
+  would mark it seen*): it moves no clock, records `shownAt` once, logs `shown`, and ends the bell's unshown warning hue as NOTIFY2b
+  has it.
+- A press waiting again after a restart names its asker as *the record says it was sent by {{process}}, process {{pid}}, before Daoris
+  restarted*: the name is the record's, which a process of the account could have written (D156 point 7), so it is said as the
+  record's, never as the system's.
 - A `changed` answer is said where the card was, with its reason, and toasted where the card has gone.
-- `person.gone` loses *its two minutes passed*.
 
 ### 8.2 What needs you and the balloon
 
-- The row stays a `confirmation` row, no workspace. Its field `expires` goes and `restored` joins, both in `AttentionStateSlice`'s
-  fields (`:116`) and the page's `PushedAttention`, which the slice's test classes against each other.
-- Its group: *Holding work* only while a terminal is still connected waiting on it; otherwise the group of a request the person owes
-  an answer to, with no work holding. Its why loses *is refused at {{time}}*.
-- The balloon on ask is unchanged (`Attend`); the restart's one balloon is new (§7.2). No reminder repeats: the bell's count and
-  the taskbar's lit button already stay while a request waits unshown (NOTIFY2b).
+- The row stays a `confirmation` row, no workspace. Its field `expires` is sent `null` for a pipe's press and kept for nothing else;
+  `restored` and `waitedOn` join, in `AttentionStateSlice`'s fields (`:116`) and the page's `PushedAttention`; the twin test
+  (`AttentionStateSliceTests.cs:1648-1656`) is extended to `confirmation`'s fields, so one side's change fails it.
+- Its group: *Holding work* while `waitedOn`; otherwise the group of a wait the person owes an answer to, with no work holding. Its why
+  loses *is refused at {{time}}*.
+- **Balloons coalesce.** The balloon on ask (`Attend`) is raised at most once a minute across every press, the later asks of that
+  minute folded into one, *{{count}} presses from a terminal wait for you*; the restart's one balloon is §7.2's. No reminder repeats:
+  the bell's count and the taskbar's lit button already stay while a press waits unshown (NOTIFY2b).
 
 ### 8.3 The words, en and zh
 
-Glossary words: 委托 for quest, 需求 for ask, 重试 for try again, 终端 for terminal, 通知 for Notifications, 仓库 for repository.
-请求 is free for a terminal's request: the glossary avoids it only as the word for *ask* (`locales/glossary.json`, the `ask` row).
+Glossary words: 委托 for quest, 需求 for ask, 终端 for terminal, 通知 for Notifications, 仓库 for repository. The English names the thing
+*a terminal's press*, never *request* (`glossary.json:488`); the Chinese keeps 请求, as `notifications.done.expired` and
+`notifications.system.confirming.body` say it today (`locales/zh/notifications.json:32`, `:39`). Counts carry `_one` and `_other`, as
+`agents.json:8-9` does.
 
 | Key | en | zh |
 |---|---|---|
 | `person.waits` | It waits until you answer. | 它会一直等到你回答。 |
-| `person.restored` | Asked before Daoris restarted; Daoris can no longer name what sent it. | 在 Daoris 重启前发出；Daoris 已无法说出是什么发出的。 |
+| `person.waitedOn` | A terminal waits on this. | 有终端正在等它。 |
+| `person.notWaitedOn` | No terminal waits on this now; it can read how it ended later. | 目前没有终端在等它；之后仍可读取它的结果。 |
+| `person.restored` | The record says it was sent by {{process}}, process {{pid}}, before Daoris restarted. | 记录显示它在 Daoris 重启前由 {{process}}（进程 {{pid}}）发出。 |
 | `person.gone` | This no longer waits: it was answered in another window, or its terminal took it back. | 此请求已不再等待：它已在另一个窗口中得到回答，或其终端已将它撤回。 |
+| `person.goneService` | This no longer waits: it was answered in another window, its two minutes passed, or its terminal took it back. | (today's `person.gone`, unchanged) |
 | `person.changed.session` | Not done: the session moved on while this waited (it was {{then}}, it is {{now}}). | 未执行：等待期间该会话已有进展（当时{{then}}，现在{{now}}）。 |
-| `person.changed.already` | Not done: {{setting}} is already set as this asks. | 未执行：{{setting}} 已是此请求要设的值。 |
+| `person.changed.turn` | Not done: the session ran another turn while this waited. | 未执行：等待期间该会话又运行了一轮。 |
 | `person.changed.setting` | Not done: {{setting}} changed while this waited. | 未执行：等待期间 {{setting}} 已被更改。 |
 | `person.changed.repository` | Not done: the repository {{repository}} is no longer registered on this machine. | 未执行：仓库 {{repository}} 已不再登记在本机。 |
-| `person.changed.quest` | Not done: the quest no longer waits to be tried again. | 未执行：该委托已不再等待重试。 |
+| `person.changed.quest` | Not done: the quest moved on while this waited (it was {{then}}, it is {{now}}). | 未执行：等待期间该委托已有进展（当时{{then}}，现在{{now}}）。 |
 | `person.changed.ask` | Not done: the ask was closed while this waited. | 未执行：等待期间该需求已关闭。 |
+| `person.changed.plan` | Not done: what this would act on changed while this waited. Look at it again and ask again. | 未执行：等待期间它要处理的内容已变化。请重新查看后再发起。 |
+| `person.changed.branch` | Not done: the branch {{branch}} gained or lost commits while this waited. | 未执行：等待期间分支 {{branch}} 的提交已有增减。 |
+| `person.changed.wait` | Not done: what this answers no longer waits. | 未执行：它所回答的事项已不再等待。 |
 | `person.draining` | Daoris is about to restart; this still waits. | Daoris 即将重启；此请求仍在等待。 |
 | `work.attention.confirmationWhy` | It runs only once you confirm it on its card in Notifications; it waits until you answer. | 只有你在通知中它的卡片上确认后它才会运行；它会一直等到你回答。 |
-| `notifications.done.withdrawn` | A terminal took back its request to {{act}} | 一个终端撤回了请求：{{act}} |
-| `notifications.done.lost` | A terminal's request could not be read back after Daoris restarted, and was not done | Daoris 重启后无法读回一个终端的请求，它未被执行 |
-| `notifications.system.restored.title` | Requests from a terminal still wait | 终端的请求仍在等待 |
-| `notifications.system.restored.body` | {{count}} still wait for your confirmation. Open Daoris to confirm or refuse them. | {{count}} 个请求仍在等你确认。打开 Daoris 确认或拒绝它们。 |
+| `notifications.done.withdrawn` | A terminal took back its press to {{act}} | 一个终端撤回了请求：{{act}} |
+| `notifications.done.lost_one` / `_other` | A terminal's press could not be taken back after Daoris restarted, and was not done / {{count}} terminal's presses could not be taken back after Daoris restarted, and were not done | Daoris 重启后无法恢复一个终端的请求，它未被执行 / Daoris 重启后无法恢复 {{count}} 个终端的请求，它们未被执行 |
+| `notifications.done.newer` | A terminal's press from a newer Daoris waits for it | 一个来自较新版本 Daoris 的终端请求在等待该版本 |
+| `notifications.system.waiting.title` | Presses from a terminal wait | 终端的请求在等待 |
+| `notifications.system.waiting.body_one` / `_other` | One waits for your confirmation. Open Daoris to confirm or refuse it. / {{count}} wait for your confirmation. Open Daoris to confirm or refuse them. | 有一个请求在等你确认。打开 Daoris 确认或拒绝它。 / {{count}} 个请求在等你确认。打开 Daoris 确认或拒绝它们。 |
 
 `notifications.done.expired` stays for a notice kept before this build. Each new key is in both catalogues
 (`.claude/knowledge/translation-parity.md`). The terminal's sentences are the verb's own English, as every verb's are.
 
-## 9. The bound, once requests no longer expire
+## 9. The bound, once presses no longer expire
 
-The five bounded a flood a clock also drained; without the clock it is the only drain besides the person. Three changes:
+The five bounded a flood a clock also drained; without the clock it is the only drain besides the person and the asker.
 
-1. **One press, one request.** A press asked while a request with the same route and payload fingerprint waits joins it rather than
-   making a second card: the second asker is told `CONFIRMING` naming the waiting request's id, keeps its own key and id, and hears
-   the same ending. The 2026-10-24 case (one repository's drive sent twice) is one card. The journal binds each asker's id to its own
-   key, so `RESULT` answers each.
-2. **The bound is ten** cards waiting at once across every terminal, counted as today (only what waits), and a press that joins one
-   counts nothing. Five was set when a card lasted at most twelve minutes; the day of the incident held four distinct requests in a
-   few hours, and a person away for a day should come back to a list, not a refusal. Ten is two screens' worth of the card list, the
-   most a person can read in one sitting without the list becoming the work.
-3. **`confirmations-full` names the way out.** Its sentence says *Ten requests already wait for the person's confirmation, the oldest
-   asked {{ago}}; this one was not asked. Nothing was kept.* The asker can withdraw its own; the person refuses on the cards.
+1. **Each press its own card.** No press joins another (§11): with the id said at once (§4.1) and no clock, an asker has no reason to
+   send one again, and the 2026-10-24 case (one repository's drive sent twice) was a resend after the first had expired.
+2. **The bound is ten** cards waiting at once across every terminal, counted as today (only what waits). Five was set when a card
+   lasted at most twelve minutes; a person away for a day should come back to a list, not a refusal. Ten is two screens' worth of the
+   card list. It is not a bound on connections: those stay eight (`PipeLimits.Connections`), and a waiting card holds none once its
+   verb has returned, which `--wait`'s thirty minutes ensure (§4.1). `PipeLimits.Waiting` says both beside each other.
+3. **`confirmations-full` names the way out**: *Ten presses already wait for the person's confirmation, the oldest asked {{ago}}; this
+   one was not asked. Nothing was kept.* The asker can withdraw its own; the person refuses on the cards.
+4. **Floods.** An asker that loops ask-then-withdraw raises one balloon a minute at most (§8.2) and no notice for a card nobody showed
+   (§6).
+5. **The ten are shared** by agents' jobs and the person's own terminal. A bound per D201 caller class (`StandingPlace.InAgentJob` and
+   `Outside`, `StandingCaller.cs:15-18`), so agents cannot fill the person's ten, is the later answer once D201 part (i) makes that look
+   tell; until it does, the look answers `untold` for every caller (§ *What this is not*), and a per-class bound would count them all as
+   one.
 
 ## 10. The rows, with their proofs
 
-Order keeps main working: the instance first, with the verb's old reading still sound; the verb second; the window last.
+Order keeps main working, and no row leaves the window drawing a time a press no longer has: the window's half of each change lands
+in the same row as the instance's.
 
-- **CONFIRMWAIT1a — the instance** (modules). No time end; the record written at ask and read back at the start; the close stops
-  withdrawing; `RESULT`'s `waiting`; the grounds table and its census; `Changed`; joining; the bound of ten; the withdrawn and lost
-  notices; the row's fields. Held by `PipeConfirmationsTests`, `PipeConfirmTests`, `PipeCensusTests` (the grounds census beside it),
-  `AttentionStateSliceTests`, `NoticesStateSliceTests`, `DriverModulePersonTests`; the home's new folder by `home-census.test.ts`.
-- **CONFIRMWAIT1b — the verb** (driver). `--wait`, `--no-wait`, the `waiting` end and its exit 1; `result`'s `waiting` and its exit
-  codes aligned; `withdraw <id>`; `SentPresses` keeping a waiting press. Held by the driver's `InstanceDoor` tests and
-  `cli-usage.test.ts`.
-- **CONFIRMWAIT1c — the window** (web). The card's lines, `changed` said in place and toasted, the restored asker, the row's why and
-  group, the restart's balloon, the words in en and zh. Held by `person/Confirmations`, `bridge/person`, `work/attention` and
-  `app/notifications` tests, en and zh, and `SessionBalloonTests`.
+- **CONFIRMWAIT1a-i — no time end** (modules, web). The pipe's presses lose their clock; `expires` is sent `null` for them and the
+  card, the row and its why draw `person.waits` and the new why for `source: 'pipe'`, keeping the service door's lines; the grounds
+  (the table in `PipeCensus.Targets`, the census test, `already`, `ungrounded`, `changed` read outside the lock); `RESULT`'s
+  `waiting` and `waitedOn`; `WITHDRAW`; the bound of ten; the coalesced balloon; the withdrawn notice; a press still ends at a close
+  (`stopping`, as today) and is now said to the person as a notice. Held by `PipeConfirmationsTests`, `PipeConfirmTests`,
+  `PipeCensusTests` (the grounds census beside it), `AttentionStateSliceTests` (the twin test extended), `NoticesStateSliceTests`,
+  `DriverModulePersonTests`, `SessionBalloonTests`, and the page's `person/Confirmations`, `work/attention` and `bridge/person` tests,
+  en and zh.
+- **CONFIRMWAIT1b — the verb** (driver, host). The id at `CONFIRMING`; `--wait` and `--no-wait` parsed in `InstanceHost.World`; the
+  `waiting` end and its exit 1; `result`'s `waiting`, its exit codes aligned and its `unknown` sentence; `withdraw <id>`; `SentPresses`
+  keeping a waiting press, at most thirty days; the four Ctrl+C sentences. Held by the driver's `InstanceDoorTests`, `SentPressesTests`,
+  `DriverCommandTests.The_usage_names_every_verb_the_host_answers`, and each family's usage test and golden its usage text changes
+  (`DriverCommand`, `AgentsCommand`, `ToolsCommand`, `DriverChoicesCommand`, the plugin commands, and the `daoris` forwards'
+  `cli-usage.test.ts` where a forward's line names `--wait`). It can land before or after 1a-i: an instance from before never answers
+  `waiting`.
+- **CONFIRMWAIT1a-ii — the records and the restart** (modules, web). The record written at the ask and named by the confirmation's id;
+  the ending's order; the close's `waiting` answer and no withdrawal; the restore before `Serve` and its re-judgement; the newer record
+  left; the lost and newer notices; `restored` and the record's asker on the card; the restart's balloon; the drain's refusal on the card.
+  Held by `PipeConfirmationsTests`, `PipeConfirmTests`, `InstancePipeTests`, `NoticesStateSliceTests`, `home-census.test.ts` for the
+  home's new folder, and the page's `person/Confirmations` and `app/notifications` tests, en and zh.
 
-The rows the task names, each with its proof:
+The rows the task names, and what the read found unproved, each with its proof:
 
 | Row | Proof |
 |---|---|
-| A card left unanswered for an hour, then confirmed, makes its press and tells its asker | The services' clock moved an hour past the ask (and past a `shown`): the request still waits; Confirm runs the route once; a verb still on its line (`--wait 120`) hears the route's answer; a verb that returned at `--no-wait` reads it by `result`, exit 0. `PipeConfirmationsTests` and the end-to-end case in `DriverModuleSessionsTests` through the real pipe. |
+| A card left unanswered for an hour, then confirmed, makes its press and tells its asker | The services' clock moved an hour past the ask (and past a `shown`): the press still waits; Confirm runs the route once; a verb still on its line (`--wait 30`, the clock moved inside it) hears the route's answer; a verb that returned at `--no-wait` reads it by `result`, exit 0. `PipeConfirmationsTests` and the end-to-end case in `DriverModuleSessionsTests` through the real pipe. |
 | A refused one does nothing and says so | Refuse: no dispatch (the dispatcher's stub counts zero), the terminal's line says *The person refused this in Daoris's window. Nothing was done. (refused)*, exit 1; `result` says the same, exit 1; the journal holds `refused`. |
-| A stale one is refused with its reason | One case per ground: a `SESSION_INPUT` whose session's run changed; a `SET_DRIVABLE` already set; a `SET_TREES` whose repository was removed from the registry; a `RETRY_QUEST` whose quest was tried again elsewhere. Each: no dispatch, `PERSON_CONFIRM` answers `changed` with the reason's code and values, the terminal hears `changed` with its sentence, exit 1; the card's line in en and zh. |
-| One waiting across a restart | A request asked on one `InstancePipe` over a home, the pipe closed (`BeginStopping`, then dispose) and a second made on the same home: the request is listed again with `restored`, Confirm runs it once, and `RESULT` from a new connection with the first key answers it. A record whose id the journal already began is not asked again. A cut record is moved aside, the journal says `lost`, a notice says so. A crash is the same test with no `BeginStopping`. |
+| A stale one is refused with its reason | One case per ground: `SESSION_INPUT` whose session ran another turn, and one whose session ended; `SET_DRIVABLE` changed by another press; `SET_TREES` whose repository was removed from the registry; `RETRY_QUEST` whose quest was tried again elsewhere; `LAND_ASK` whose ask was closed; `SWEEP` whose plan changed; `LAND_SESSION_TREE` whose branch gained a commit; `SESSION_GO_AHEAD` whose go-ahead was answered elsewhere. Each: no dispatch, `PERSON_CONFIRM` answers `changed` with the reason's code and values, the terminal hears `changed`, exit 1; the card's line in en and zh. |
+| A change made before the ask holds | A session moved on, then `SESSION_INPUT` asked, then confirmed with nothing moved since: it runs. |
+| Already set, and ungrounded | `SET_DRIVABLE` for a repository already drivable answers `already` at the ask, exit 0, no card; a census `With` a new `Person` route and no grounds row refuses its ask `ungrounded`. |
+| The id at once | A press asked: the verb's error stream holds *request {id}*, `result {id}` and `withdraw {id}` before any answer; `--no-wait` returns at that line, exit 1, the press still waiting. |
+| Withdraw, and its race with a Confirm | `withdraw <id>` on a waiting press: it ends `Withdrawn`, no dispatch, the card goes, a notice only where it was shown. Confirm then withdraw: `withdraw` answers `running`, the dispatcher sees no cancel, the press's answer is the route's. Withdraw then Confirm: `PERSON_CONFIRM` answers `gone`. Another key's withdraw: `id-taken`. |
+| The record's file name | A press whose terminal id is `..\..\data\standing-confirmation`: its record is `waiting/<32 hex>.json`, nothing is written or deleted outside `waiting/`, and the press asks and ends as any. |
+| One waiting across a restart | A press asked on one `InstancePipe` over a home, the pipe closed (`BeginStopping`, then dispose): the line answers `waiting`, `why: close`; a second pipe on the same home lists it again with `restored`, Confirm runs it once, and `RESULT` from a new connection with the first key answers it. |
+| A crash | A press asked on a first pipe that is **never disposed** and a second made over the same home: the record is restored as above. |
+| The restore's judgement | One record each: a route the census makes `Open`, then one it makes `Window`; a payload whose fingerprint differs from its binding; a payload of 257 values; a route with no grounds row; eleven waiting records. Each fails as named and ends `Lost`, one notice for all; none is asked; the card's fields of a passing one equal `FieldsOf`'s for its payload, whatever the record holds beside. A record `begun` is not asked and its id answers `interrupted`; one `ended` whose journal line was never written answers its ending. A newer record is left in place, not asked. |
+| A journal line that fails | A refused press whose journal write throws: the record is removed, and a restart does not ask it again. |
 
-**What the gates will not cover.** No installed window will have shown a request across a real restart or an hour's wait: the
+**What the gates will not cover.** No installed window will have shown a press across a real restart or an hour's wait: the
 installed proof is the parent's. The grounds are read through the loop's readers, not raced against a store's transaction.
 
 ## 11. Rejected
 
-- **A longer clock** (an hour, a day): the row's case is a person who was away, and any clock is a time at which a request they never
+- **A longer clock** (an hour, a day): the row's case is a person who was away, and any clock is a time at which a press they never
   refused ends as if refused.
 - **The verb holding its line until the answer**, the rejection CONFIRMSEEN1 made, rightly: an agent's terminal or a script cannot
-  hold a process for a day.
-- **Ending every waiting request at a close, said as a notice**, the simpler of the two the row allows: restarts are routine (an
-  update drains and restarts, D139), and each would cost the person every request again, the loss the row was written for.
-- **A record sealed with a key**, so a forged one is refused: D156 rejected every home-held key (`D156.md:66-68`), and the record
-  grants nothing a pipe ask does not.
-- **Grounds judged on the route's own handler only**: a handler judges what is true now, and cannot know what the request rested on
+  hold a process for a day, and a held line keeps one of eight connections. Hence `--wait`'s thirty minutes at most.
+- **Ending every waiting press at a close, said as a notice**, the simpler of the two the row allows: restarts are routine (an update
+  drains and restarts, D139), and each would cost the person every press again, the loss the row was written for. It is 1a-i's interim
+  only, until 1a-ii lands.
+- **Joining the same press asked twice into one card** (round 1's §9.1). Each joined asker's withdrawal ended the shared card for every
+  asker (`InstancePipe.cs:825`, `:840`); a `CONFIRMING` naming the first asker's id is dropped by the second verb (`InstanceDoor.cs:495`);
+  a later press would join grounds read before its own ask; and the joined askers were unbounded while the record held one binding.
+  Mending each costs a set of askers in every record and every judgement, for a resend that the id said at once removes.
+- **Withdrawing on Ctrl+C**: the signal is the same whether the person pressed it or an agent's harness killed its tool call, and the
+  harness's kill would take back what the person may still want; the four consoles already say the opposite (§1.2).
+- **The kit's `CANCEL` as the withdrawal**: it reaches a confirmed, running press and aborts it (`InstancePipe.cs:845-846`), undoing part
+  of the person's Confirm.
+- **Naming the record by the terminal's id**, or by its hash: the confirmation's own id is already minted and never the asker's.
+- **A record sealed with a key**, so a forged one is refused: D156 rejected every home-held key (`D156.md:66-68`). The restore's
+  re-judgement (§7.2) makes a forged record no more than a press asked over the pipe.
+- **Card fields kept in the record**: a record could then show one thing and run another (PERSONDOOR1b's *the card shows only what
+  binds*).
+- **Grounds judged on the route's own handler only**: a handler judges what is true now, and cannot know what the press rested on
   when it was asked.
-- **Running an *already set* press as a no-op**: it would report success for a world the person did not see when they confirmed.
+- **`timeless` for a sweep, bringing branches up to date, freeing space, clearing history or abandoning work**: each acts on a set its
+  plan route reads, and hours later that set is not the one anyone saw.
+- **Running an *already set* press as a no-op at the Confirm**: it would report success for a world that moved while the person was
+  away. At the ask it is answered `already`, with no card, since nothing moved.
 - **A per-terminal bound**: the asker is named by a process id, which is not an identity (`D156.md:67-68`) and does not survive a
-  restart.
-- **Keeping requests in the store**: the pipe's requests are the machine's and never leave it (D46); the home's `pipe` entry is
-  where the journal already is.
+  restart. A bound per D201 caller class is the later answer (§9).
+- **Restoring in an instance that does not serve the home's pipe because another does**: two instances would show one press twice.
+- **Keeping presses in the store**: the pipe's presses are the machine's and never leave it (D46); the home's `pipe` entry is where the
+  journal already is.
 - **The service door's two minutes** changed in the same design: its grant is a secret a client sends once, and no verb of this
-  machine asks it; a wait there would need a client that holds the grant across a restart. Left as D196 point 4 has it.
+  machine asks it; a wait there would need a client that holds the grant across a restart. D156 point 4 and D196 point 4's service
+  sentence stand.
 
 ## 12. What this amends, once accepted
 
-- **D156 point 4**: *within two minutes* reads *once the person confirms it, however long it waited, its grounds still holding*.
-  *Five may wait* reads *ten*.
-- **D156's PERSONDOOR1b note**: unchanged; it is the service's door.
-- **D156's RPC1c note**: a waiting press is kept in its record and survives the close; `expired` and `stopping` are no longer how a
-  waiting press ends.
-- **D156's CONFIRMSEEN1 note**: the two minutes from shown and the ten to be found go; the rejection of a wait with no bound is
-  reversed (§3); the row, the balloon and the shown word stay.
-- **D196's NOTIFY2a amendment of it**: the clock read first stays for nothing on the pipe, since nothing on the pipe has a time;
-  NOTIFY2f's unanswered notice is no longer made by the pipe.
+- **D156 point 4** stands as written: it is the service door's (`POST /api/confirmations` … *within two minutes. Five may wait.*,
+  `D156.md:28-33`; `PersonConfirmations.cs:124`, `:127`). It gains one sentence: *A terminal's press over the pipe waits for the
+  person's Confirm however long it takes, its grounds still holding (the RPC1c and CONFIRMSEEN1 notes, as CONFIRMWAIT1 amends them).*
+- **D156's RPC1c note** (`D156.md:180-200`): *its two minutes over* and *the close (`BeginStopping` withdraws what waits)* go from how a
+  press ends; it ends confirmed, refused, changed, withdrawn by `WITHDRAW`, lost, or interrupted, and survives the close in its record.
+  *Five wait at once* reads *ten*; *the two minutes count from the ask* goes.
+- **D156's CONFIRMSEEN1 note** (`D156.md:237-260`): the two minutes from shown and the ten to be found go; the rejection of a wait with
+  no bound is reversed (§3); the row, the balloon and the shown word stay, the balloon coalesced (§8.2).
+- **D196 point 4** (`D196.md:36-38`): *its two minutes start then and stay two; its ten minutes to be found stay; an answer or a word
+  that it is shown at or past its time ends it as expired, the clock read first, nothing runs, and the refusal is toasted since the card
+  has gone* reads, for a terminal's press, *it waits until the person answers, and its card says whether a terminal still waits on it*.
+  Its service sentence (*its two minutes from its ask stand*, `:41-42`) stands. D196 gains a dated note saying so at acceptance; D156's
+  NOTIFY1 note names it.
 - **RPC1j** (`result <id>`): `waiting` is a state, and its refusals exit 1.
-- **These stand**: D201 and D209's admissions before any card; D52 (no approval surface for agents: the card's default is no);
-  `confirm-in-window` and `expired` as words of the wire.
+- **These stand**: D201's admission before any card and D209's `Role` route; D52 (no approval surface for agents: the card's default is
+  no); the kit's `CANCEL`, `confirm-in-window` and `expired` as words of the wire.
+
+## 13. Round 2: the read's findings and their answers
+
+Every finding of the Opus foundation read of round 1 (`docs/2026-10-24-confirm-wait-reads.md` §4), each checked against the code on
+main at `ffcf42926`. *Taken* means the design now says it; *answered* means it is not taken, for the reason given; *deferred* means
+a later row carries it. The read's §1 corrections (a to j) are findings 8, 12, 13, 14, 22 and 25 below, and the rest are taken where
+they are named.
+
+| # | Finding (blocking in bold) | Checked against | Answer |
+|---|---|---|---|
+| **1** | **The record is named by the asker's own id** | `InstancePipe.cs:551` takes any id of 1 to 128 characters; `SentPresses.cs:63` vets only the verb's own; `PipeConfirmations.cs:168` mints a GUID | **Taken** as named: the file is the confirmation's own id; the terminal's id is kept inside and never reaches a path; the restore removes any name that is not 32 hexadecimal characters (§7.1, §7.2 step 1). Proved by the record's file name row (§10). |
+| **2** | **The restore trusts the record** | `PipeCensus.cs:131-138`, `:280-284`; `InstancePipe.cs:573-580` (`FieldsOf`), `:582-585` (the binding); `PipeConfirmations.cs:168-170` (`PipeWording.Named`) | **Taken** as named: the record holds no card fields; the restore re-classes by the census (`Person` only), compares route and payload fingerprint with the binding, checks the shape, remakes the fields and named values, requires a grounds row, applies the bound, and ends what fails `Lost` with one notice (§7.1, §7.2 step 5). Proved by the restore's judgement row (§10). |
+| **3** | **No per-route grounds table; set-ups, lands, sweeps and answers unjudged** | `PipeCensus.cs:122-124`, `:137`, `:212-266`, `:290-294`; the plan routes at `:193-200`; `SetupRoutes.cs:31-47` | **Taken**: the route-by-route table is in §5.1, every `Person` route and form and the `Person` default covered; `plan`, `branch` and `wait` grounds added; `timeless` only for what deletes, moves and starts nothing, and none of `SWEEP`, `TREES_SYNC`, `HISTORY_CLEAR`, `SYSTEM_SPACE_FREE`, `WORK_ABANDON`, a set-up or a land is; a route with no row refused `ungrounded` at the ask; the census test runs over `PipeCensus.Routes` with its forms and the default. |
+| **4** | **The id is said only when the verb's wait ends** | `InstanceDoor.cs:487-502` (`Told`, no id said) | **Taken**: the `CONFIRMING` line names the id, `result {id}` and `withdraw {id}` at once, before any wait (§4.1). Proved by the id-at-once row. |
+| **5** | **Joining breaks four ways** | `InstancePipe.cs:825`, `:840` (one `_waitingFor` per id, one withdrawal ends the card); `InstanceDoor.cs:495` (the filter); round 1 §7.1 (one binding) | **Taken, the first way**: joining is dropped (§9.1, §11). Every press its own card, bound and withdrawn alone; the id said at once removes the resend joining answered. |
+| **6** | **`withdraw <id>` cancels a press already confirmed** | `InstancePipe.cs:838-846` | **Taken**: `withdraw` sends the pipe's own `WITHDRAW { id, key }`, which ends only what waits, under the lock a Confirm takes; one confirmed answers `running` and nothing is cancelled (§4.3). The kit's `CANCEL` is unchanged and sent by no client of this machine. Proved by the race row. |
+| **7** | **§12 and the D156 note amend the wrong text** | `D156.md:28-33` (point 4, the service door's); `PersonConfirmations.cs:124`, `:127`; `D196.md:36-38` | **Taken**: point 4 keeps its text and gains one sentence for the pipe; the amendment is aimed at the RPC1c and CONFIRMSEEN1 notes and D196 point 4's two and ten minutes, D196 to gain a dated note at acceptance (§12). The D156 note is corrected to match. |
+| 8 | Ctrl+C does not withdraw today | `InstanceClient.cs:134-176` returns null and sends nothing; `AgentsConsole.cs:22-27` and the three others | **Taken**, the first way: Ctrl+C stays as it is; the four sentences gain `withdraw <id>` (§4.1). §1.2 says what is so; withdrawing on Ctrl+C is rejected (§11). |
+| 9 | Grounds read under `PipeConfirmations`' lock; the ask's read has no place | `StandingConfirmation.cs:171-175`; `InstancePipe.cs:574-637` | **Taken**: read at the ask in `Accept` before `Ask`, outside every lock; at the Confirm taken from what waits under the lock, read outside it, then `Changed` or run; readers bounded at five seconds, a failed read `unread-grounds` (§5.2). |
+| 10 | The `session` ground compares a field no record has | `Driver/Trees/SessionGroups.cs:14-144`: `State` and `Updated`, no run id; `Updated` moves with the state (`Sessions.cs:890`, `:1562`) | **Taken**: the ground compares `State` and `Updated`; *ran another turn* is its own reason; `{then}`/`{now}` are worded by `sessionState.*` (§5.1, §8.3). §5.1 says what it does not see: a turn that moved no state, which a named question's `wait` ground covers. |
+| 11 | A press asked for a value already set makes a card that can only be refused | round 1 §5.1 | **Taken**: judged at the ask, answered `already` with no card, exit 0 (§5.1). At the Confirm the same case is `changed`. |
+| 12 | The card's time lines and `gone` also serve the service door | `Confirmations.tsx:24-50`, `:241`, `:331-333`; `PersonConfirmations.cs:127` | **Taken**: `person.waits` for `source: 'pipe'` alone; `person.left`, `person.until` and the two minutes' `gone` (`person.goneService`) kept for `source: 'service'` (§8.1). |
+| 13 | Row 1a breaks the window until 1c; no test sees it | `Confirmations.tsx:44`, `:272`, `:332`; `attention.ts:521`, `:906`; `AttentionStateSliceTests.cs:1648-1656` | **Taken**: `expires` is sent `null` for a pipe's press in the same row that ends the clock, and that row's web lane draws it; the twin test extends to `confirmation`'s fields (§8.2, §10). |
+| 14 | The verb's proof and `--wait` placed wrongly | `DriverCommand.cs:78`; `DriverCommandTests.cs:101`; `cli-usage.test.ts:9-16` is the TypeScript CLI's | **Taken**: `withdraw <id>` in `DriverCommand.Usage`, held by `DriverCommandTests`; `--wait` parsed once in `InstanceHost.World`; each family's usage text and golden named in 1b (§4.3, §10). |
+| 15 | The bound is ten, but eight connections, and `--wait` to a day | `InstancePipe.cs:19`, `:262`, `:1029-1033` | **Taken**: `--wait` capped at thirty minutes, the default today; the bound of ten stated beside `Connections`, which waiting cards do not hold once their verbs return (§4.1, §9.2). |
+| 16 | The restart's ordering leaves holes | `PipeJournal.cs:74`, `:189` (24 hours); `InstancePipe.cs:712-718` (a failed write swallowed); `:237-255` (`Serve` may not serve) | **Taken** for the first two: the record carries `begun` and `ended` itself, and is removed even where the journal line failed (§7.1). **Taken in part** for the third: the restore runs in the loop before `Serve`, so cards come back where the pipe is not served; where another instance already serves the home's pipe it does not, since two instances would show one press twice (§7.2, §11). |
+| 17 | Unread records handled badly | `StandingConfirmation.cs:146-150`; `RemotesModule.cs:51` (`SET` carries a key) | **Taken**: a newer record left in place, not asked, one notice; a cut record ended `Lost` and removed, no `unread/` folder; §7.1 says which payloads reach the disk and for how long. |
+| 18 | Withdrawals and asks flood the person | `PipeConfirmations.cs:181-182` (a balloon per ask) | **Taken**: a withdrawal is a notice only where some window showed the card; the ask's balloon coalesces to one a minute (§6, §8.2, §9.4). |
+| 19 | An old card does not say whether anyone waits on it, or who sent it after a restart | round 1 §8.1-§8.2; `PipeConfirmations.cs:11` (`PipeAsker`) | **Taken**: `waitedOn`, re-told when a line ends, drives the card's line and the row's group; a restored card says the record's asker as the record's (§8.1, §8.2). |
+| 20 | The words conflict with the glossary and miss forms | `glossary.json:488`; `agents.json:8-9`; `notifications.json:39` | **Taken**: English keeps *a terminal's press*; the zh keeps 请求 as today's catalogue does; counts carry `_one`/`_other`; `{setting}`, `{then}`, `{now}` worded by the catalogue (§8.3). |
+| 21 | `SentPresses`' longer keep incomplete; a late `result` says something false | `SentPresses.cs:52`, `:74`; `InstanceDoor.cs:461-462` | **Taken**: thirty days at most, `Find` and `Prune` reading one rule through `waitingAt`; `unknown` says Daoris keeps an ending a day (§4.2). |
+| 22 | The account of D201, D208 and D209 is off | `InstancePipe.cs:559-571`, `:621-631`; `StandingConfirmation.cs:160-162`, `:193`; the steward design §5.4 | **Taken**: *What this is not* corrected; until STEWARDROLE1d every press is a card; a waiting press marks no `owner-set`; the grounds are `PipeCensus.Targets`' second column, one table (§5.1). **Deferred**: a bound per D201 caller class, until D201 part (i) makes the look tell (§9.5). |
+| 23 | The proofs leave claims unproved; the crash is not a crash | `InstancePipe.cs:339` (`Dispose` calls `BeginStopping`) | **Taken**: one case each for withdraw and its race, the `ask`, `plan`, `branch`, `wait` and `setting`-changed grounds, a change before the ask, `already`, `ungrounded`, the file name, the restore's judgement and bound, a failed journal line; the crash is a second pipe over a home whose first was never disposed (§10). Joining is dropped, so it has no case. |
+| 24 | The first row is too large | round 1 §10 | **Taken**: 1a-i (no time end, the grounds whole, `waiting`, `WITHDRAW`, the card's and row's lines, a close still ending presses with a notice) then 1a-ii (the records and the restart); the verb, 1b, between them or beside them (§10). The grounds land whole in 1a-i rather than with today's clock kept for unclassified routes, since the table is one change and a clock kept for some routes would be a second rule to retire. |
+| 25 | Smaller misstatements; the close's line names no code | `InstancePipe.cs:859-862` (`RESULT` reads `_running`); `InstanceDoor.cs:274`, `:461-462` | **Taken**: §1.3 says a waiting press is in `_running` alone and `RESULT` reads it there; §1.6 quotes the crash's sentences as they are; the close answers `waiting`, `why: close`, which an old verb reads as a refusal, exit 2 (§4.1, §7.2). |
+
+**What stays owed.** Codex's read, on this text (D191, its 2026-10-23 amendment). The design stays proposed until both reads' blocking
+findings are taken.
