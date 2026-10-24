@@ -100,6 +100,12 @@ public static class ReviewerHeld
     /// <summary>The accounts it may use are not signed in (ROSTER1).</summary>
     public const string SignedOut = "signed-out";
 
+    /// <summary>
+    /// Every account that may run it was passed for the model its actor's entry names, by the agent's own refusal (D205 §4.1, MODELROLE1e):
+    /// the next alternative of the agent is tried, else the next agent.
+    /// </summary>
+    public const string NotOffered = "not-offered";
+
     /// <summary>Refused for anything else, its provider's refusal among them (AGT3b).</summary>
     public const string Refused = "refused";
 }
@@ -113,7 +119,16 @@ public sealed record ReviewerTried(string Reviewer, string Label, string Held, s
 {
     /// <summary>The cool-off that holds it, when that is why.</summary>
     public CoolingEntry? Cooling { get; init; }
+
+    /// <summary>The actor's entry for the agent that was tried, with its model (D205 §4.4, MODELROLE1e); null where a caller named none.</summary>
+    public ActorEffective? Entry { get; init; }
 }
+
+/// <summary>
+/// One (entry, account) a one-turn owner already passed in its own call (D205 §3.5(f), MODELROLE1e): the account refused the entry's model at
+/// the open, so the walk asks for it again with that account left out. Never a cool-off, never stored, gone when the owner's call ends.
+/// </summary>
+public sealed record ReviewerPassed(ActorEffective Entry, string? Account);
 
 /// <summary>
 /// The reviewer chosen for a second opinion (XAGENT1b, D155 point 4, the second-agent design §3), or why none could be: the walk
@@ -146,6 +161,12 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     /// <summary>The reviewer's family: its product and maker, as every opinion carries them (§3.4); null when none can.</summary>
     public AgentFamily? Family { get; init; }
 
+    /// <summary>
+    /// The actor's entry that read, its model and effort and what the record keeps as its choice (D205 §4.0, §4.4, MODELROLE1e): one entry of
+    /// the actor for the agent the rule or the ask names, else <c>rule-default</c> at account default. Null only for a choice a caller built by hand.
+    /// </summary>
+    public ActorEffective? Effective { get; init; }
+
     /// <summary>The families that wrote the work, each once, in the order first named (§3.4).</summary>
     public IReadOnlyList<AgentFamily> Working { get; init; } = [];
 
@@ -159,7 +180,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     public CoolingEntry? Cooling { get; init; }
 
     /// <summary>A listed reviewer: its family, how it stands to the work's, and whether this machine has an agent of its name.</summary>
-    internal sealed record Entry(AgentFamily Family, string Label, bool Known)
+    internal sealed record Entry(AgentFamily Family, string Label, bool Known, ActorEffective Effective)
     {
         /// <summary>
         /// Whether it may be another maker's agent: one that declares another maker, or a name nothing on this machine declares,
@@ -183,15 +204,39 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     /// Choose the reviewer of work the <paramref name="working"/> agents wrote, from <paramref name="rule"/>'s reviewers, for a
     /// repository in <paramref name="workspace"/>.
     /// </summary>
+    /// <remarks>
+    /// <b>The actor says with which model</b> (D205 §4.0, §4.4, MODELROLE1e): the rule's reviewers decide who and the passes keep the order, and
+    /// each named agent expands, in place, into the <paramref name="actor"/>'s entries for it, in their order, else one entry at account default
+    /// (<c>rule-default</c>). A model never makes a reviewer independent: an entry is labelled by its agent's family alone.
+    /// </remarks>
     /// <param name="roster">The machine's agents, the build's and its plugins', and the account walk.</param>
     /// <param name="working">The adapters of the sessions whose work is read: their families are the work's.</param>
+    /// <param name="actor">The actor whose entries give each agent its model: <c>opinion</c>, <c>helper</c> or <c>partner</c>.</param>
+    /// <param name="passed">The (entry, account) this owner's call already passed at an open's refusal, asked again without them.</param>
+    /// <param name="order">
+    /// The entries to walk where the caller has them already (a helper with no rule list takes its actor's entries, §4.4); else the rule's
+    /// reviewers expanded by <paramref name="actor"/>.
+    /// </param>
+    /// <returns>The choice; an actor whose stored entry does not read (§6.4) chooses nothing, saying so, and is read again at the next ask.</returns>
     public static async Task<ReviewerChoice> ChooseAsync(
         HarnessRoster roster, OpinionRule rule, IReadOnlyCollection<string> working, DriverConfig config, string? workspace,
-        CancellationToken ct = default) =>
-        await WalkAsync(roster.Adapters, rule, working, entry => TryAsync(roster, entry, config, workspace, ct)).ConfigureAwait(false);
+        CancellationToken ct = default, string actor = "opinion", IReadOnlyList<ReviewerPassed>? passed = null,
+        IReadOnlyList<ActorEffective>? order = null)
+    {
+        try
+        {
+            order ??= rule.Reviewers.Count == 0 ? [] : ActorChoices.Effective(actor, config, fence: rule.Reviewers);
+        }
+        catch (ActorUnreadableException error)
+        {
+            return new ReviewerChoice(null, null, ReviewerUnavailable.Refused, $"No second opinion: {error.Message}");
+        }
+
+        return await WalkAsync(roster.Adapters, order, working, entry => TryAsync(roster, entry, config, workspace, passed, ct)).ConfigureAwait(false);
+    }
 
     /// <summary>
-    /// The walk over the reviewer of work the <paramref name="working"/> agents wrote, from <paramref name="rule"/>'s reviewers, in
+    /// The walk over the reviewer of work the <paramref name="working"/> agents wrote, from the <paramref name="order"/>'s entries, in
     /// its passes' order (§3.2, §3.3): each entry asked of <paramref name="tryEntry"/>, the account walk, until one may run.
     /// </summary>
     /// <remarks>
@@ -199,10 +244,11 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
     /// over the machine's agents.
     /// </remarks>
     /// <param name="adapters">The machine's agents, the build's and its plugins'.</param>
+    /// <param name="order">The effective entries of the rule's reviewers, each agent's alternatives together and in order (<see cref="ActorChoices.Effective"/>).</param>
     /// <param name="working">The adapters of the sessions whose work is read: their families are the work's.</param>
     /// <param name="tryEntry">One reviewer asked of the account walk: its selection where it may run, else what held it.</param>
     internal static async Task<ReviewerChoice> WalkAsync(
-        AdapterSet adapters, OpinionRule rule, IReadOnlyCollection<string> working,
+        AdapterSet adapters, IReadOnlyList<ActorEffective> order, IReadOnlyCollection<string> working,
         Func<Entry, Task<(HarnessSelection? Selection, ReviewerTried? Held)>> tryEntry)
     {
         var families = new List<AgentFamily>();
@@ -212,19 +258,25 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
             if (!families.Any(known => known.Same(family))) families.Add(family);
         }
 
-        var entries = rule.Reviewers
-            .Select(name => AgentFamily.Of(adapters, name))
-            .Select(family => new Entry(family, LabelOf(family, families), adapters.Names.Contains(family.Agent, StringComparer.OrdinalIgnoreCase)))
+        var entries = order
+            .Select(each => (Family: AgentFamily.Of(adapters, each.Agent), Each: each))
+            .Select(each => new Entry(
+                each.Family, LabelOf(each.Family, families), adapters.Names.Contains(each.Family.Agent, StringComparer.OrdinalIgnoreCase), each.Each))
             .ToList();
 
         var tried = new List<ReviewerTried>();
+        // An agent held as a whole (not installed, cooling, signed out, its pin) holds each of its entries alike: a cool-off is its account's
+        // (§4.1), so its later entries are not asked. A model refused is an entry's alone, and the next entry of the agent is.
+        var heldAgents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var pass in Passes)
         {
             foreach (var entry in entries.Where(pass))
             {
+                if (heldAgents.Contains(entry.Family.Agent)) continue;
                 var (selection, held) = await tryEntry(entry).ConfigureAwait(false);
                 if (selection is not null) return Chose(entry, selection, entries, tried, families);
-                tried.Add(held!);
+                tried.Add(held! with { Entry = entry.Effective });
+                if (held!.Held != ReviewerHeld.NotOffered) heldAgents.Add(entry.Family.Agent);
             }
         }
 
@@ -247,13 +299,16 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         IReadOnlyList<AgentFamily> working)
     {
         var (family, label) = (entry.Family, entry.Label);
-        var reads = $"`{family.Agent}` reads it: {family.Said()}";
+        // The label names the model (D205 §4.4): the same agent on a stronger model is *fresh: opus*, never independent.
+        var model = entry.Effective.Model;
+        var reads = $"`{family.Agent}` reads it{(model is null ? "" : $" on `{model}`")}: {family.Said()}";
         var code = label == ReviewerLabels.AnotherMaker ? null : Why(entries, tried);
         var sentence = label switch
         {
             ReviewerLabels.AnotherMaker => $"{reads}, another maker's agent than the one that did the work{Work(working)}.",
             ReviewerLabels.MakerNotDeclared => $"{reads}, whose reading is not counted as another maker's.",
-            _ => $"{reads}, the same agent as the one that did the work, in a fresh conversation: not an independent reading.",
+            _ => $"{reads}, the same agent as the one that did the work, {(model is null ? "in a fresh conversation" : $"fresh: {model}, in a fresh conversation")}: "
+                 + "not an independent reading.",
         };
         if (code is not null) sentence += $" No other maker's agent could read it: {Lead(code)}.{Passed(tried)}";
 
@@ -261,6 +316,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         {
             Selection = selection,
             Family = family,
+            Effective = entry.Effective,
             Working = working,
             Tried = tried,
             Cooling = code is null ? null : FirstReset(tried),
@@ -295,7 +351,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
 
     /// <summary>Each reviewer passed, with the walk's own sentence: <c> `name`: sentence.</c></summary>
     private static string Passed(IReadOnlyList<ReviewerTried> tried) =>
-        string.Concat(tried.Select(each => $" `{each.Reviewer}`: {(each.Refusal.TrimEnd().EndsWith('.') ? each.Refusal.TrimEnd() : each.Refusal.TrimEnd() + ".")}"));
+        string.Concat(tried.Select(each => $" `{each.Reviewer}`{(each.Entry?.Model is { } model ? $" on `{model}`" : "")}: {(each.Refusal.TrimEnd().EndsWith('.') ? each.Refusal.TrimEnd() : each.Refusal.TrimEnd() + ".")}"));
 
     /// <summary>The work's families, after a comma; nothing where no family of the work is known.</summary>
     private static string Work(IReadOnlyList<AgentFamily> working)
@@ -310,7 +366,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
 
     /// <summary>One reviewer asked of the account walk: its selection where it may run, else what held it.</summary>
     private static async Task<(HarnessSelection? Selection, ReviewerTried? Held)> TryAsync(
-        HarnessRoster roster, Entry entry, DriverConfig config, string? workspace, CancellationToken ct)
+        HarnessRoster roster, Entry entry, DriverConfig config, string? workspace, IReadOnlyList<ReviewerPassed>? passed, CancellationToken ct)
     {
         var (name, label) = (entry.Family.Agent, entry.Label);
         // Named, never guessed (D23): a name this machine has no agent of is said, and nothing is asked.
@@ -321,10 +377,23 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
                 $"`{name}` is no agent on this machine: neither this build nor an installed plugin declares it."));
         }
 
+        // An entry passed whole, on the agent's own sign-in (no account of Daoris's to leave out), is not asked again (§3.5(f)).
+        if (passed?.Any(each => each.Entry == entry.Effective && each.Account is not { Length: > 0 }) == true)
+        {
+            return (null, new ReviewerTried(
+                name, label, ReviewerHeld.NotOffered,
+                $"`{name}` did not offer `{entry.Effective.Model}` on its own sign-in."));
+        }
+
         HarnessSelection selection;
         try
         {
-            selection = await roster.SelectAsync(name, config, workspace, chosen: null, StartKind.Driven, ct).ConfigureAwait(false);
+            // D205 §4.1: each account is judged by its reading for the entry's model, and an account this owner's call already passed for
+            // the entry at an open's refusal is left out.
+            var left = passed?.Where(each => each.Entry == entry.Effective && each.Account is { Length: > 0 }).Select(each => each.Account!).ToList();
+            selection = await roster.SelectAsync(
+                name, config, workspace, chosen: null, StartKind.Driven, ct, entry.Effective.Model, left is { Count: > 0 } ? left : null)
+                .ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
         {
@@ -339,6 +408,7 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
         {
             { Absent: AgentAbsence.NotInstalled } => ReviewerHeld.NotInstalled,
             { Absent: AgentAbsence.PinNotInstalled } => ReviewerHeld.PinNotInstalled,
+            { NotOffered: not null } => ReviewerHeld.NotOffered,
             { Cooling: not null } => ReviewerHeld.Cooling,
             { NotReady: AccountReadiness.SignedOut } or { SignedOut: not null } => ReviewerHeld.SignedOut,
             _ => ReviewerHeld.Refused,

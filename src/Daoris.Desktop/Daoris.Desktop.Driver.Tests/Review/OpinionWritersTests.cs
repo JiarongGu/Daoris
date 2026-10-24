@@ -73,7 +73,8 @@ public sealed class OpinionWritersTests
         var asked = new List<(string Reviewer, string Label)>();
 
         var choice = await ReviewerChoice.WalkAsync(
-            AdapterSet.Built(), new OpinionRule([.. reviewers.Split(',')], [OpinionRules.Landing]), OpinionWriters.Agents(records, "s1", ["q1"]),
+            AdapterSet.Built(), ActorChoices.Effective("opinion", DriverConfig.Empty, fence: reviewers.Split(',')),
+            OpinionWriters.Agents(records, "s1", ["q1"]),
             entry =>
             {
                 asked.Add((entry.Family.Agent, entry.Label));

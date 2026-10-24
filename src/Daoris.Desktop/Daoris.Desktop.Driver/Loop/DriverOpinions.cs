@@ -70,7 +70,34 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
         string? left;
         try
         {
-            run = await ReadInCopyAsync(ask, choice, adapter, selection, reviewer, label, candidate, copy, named, ct).ConfigureAwait(false);
+            var reask = ask.Reask is { } walk ? new OneTurnReask(choice, walk) : null;
+            run = await ReadInCopyAsync(ask, choice, adapter, selection, reviewer, label, candidate, copy, named, reask, ct).ConfigureAwait(false);
+            // D205 §3.5(f): its agent refused the entry's model at the open, so the record has ended `choice-not-offered` and this call
+            // asks its walk again, the refused (entry, account) passed, before it publishes an ordinary outcome: the replacement's record
+            // opens in the same copy, which nothing read; with none left, the walk's own "no reviewer could run", its pass reasons said.
+            while (run is { NotOffered: true } && reask is not null && !ct.IsCancellationRequested)
+            {
+                var next = await reask.NextAsync().ConfigureAwait(false);
+                if (next is not { Chosen: true, Selection: { Allowed: true } nextSelection, Reviewer: { } nextReviewer, Label: { } nextLabel })
+                {
+                    run = OpinionPassRun.Unavailable(next);
+                    break;
+                }
+
+                try
+                {
+                    adapter = _context.Adapters.Resolve(nextReviewer);
+                }
+                catch (DriverException error)
+                {
+                    run = Held(error.Message);
+                    break;
+                }
+
+                ask.Replaced?.Invoke(next);
+                run = await ReadInCopyAsync(ask, next, adapter, nextSelection, nextReviewer, nextLabel, candidate, copy, named, reask, ct)
+                    .ConfigureAwait(false);
+            }
         }
         finally
         {
@@ -84,7 +111,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
     /// <summary>The pass from its record's open to its record's end, in its copy.</summary>
     private async Task<OpinionPassRun> ReadInCopyAsync(
         OpinionPassAsk ask, ReviewerChoice choice, ISessionAdapter adapter, HarnessSelection selection, string reviewer, string label,
-        OpinionCandidateRead candidate, OpinionTreeOpened copy, string named, CancellationToken ct)
+        OpinionCandidateRead candidate, OpinionTreeOpened copy, string named, OneTurnReask? reask, CancellationToken ct)
     {
         var service = _context.Service;
         var home = _context.Home;
@@ -134,6 +161,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
         // An opinion on another account of the order says so, as a quest's start does (TOOL4f, D125 §3.2).
         RotatedOpening.Say(service, _context.Events, sessionId, reviewer, selection, carried: null);
+        OneTurnReask.Say(_context.Events, sessionId, "opinion", choice);
         var bound = OpinionPass.Bound(ask.Rule, _context.Config);
 
         try
@@ -161,6 +189,9 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 Opinion = opinion,
                 Session = sessionId,
                 Prompt = OpinionInstruction.Compose(packet),
+                // MODELROLE1e (D205 §3.2, §4.4): the entry's model and effort, carried on either door, and the choice its record keeps.
+                Asked = choice.Effective?.Asked,
+                Choice = choice.Effective?.From,
             };
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection);
             await _driver.KeepHandedAsync(sessionId, info, ct).ConfigureAwait(false);
@@ -202,12 +233,25 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 said: _driver.Said(adapter, selection, sessionId),
                 minutes: bound,
                 noConnector: OpinionPass.NoConnector,
+                // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in this
+                // call: a later entry of the same agent on the same account is set on this session, anything else ends the record below.
+                offers: new OpenOffers(selection.Version, selection.Profile, reask is null ? null : _ => reask.SameAccountAsync()),
                 conclude: async (exitCode, used, turnFailed, ended) =>
                 {
                     if (used is not null)
                     {
                         _context.Usage?.Record(new UsageEntry(
                             sessionId, ask.Repository, adapter.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+                    }
+
+                    // Refused at the open, before any prompt: the record ends `choice-not-offered`, its one count given back once its
+                    // process has stopped, and the pass asks its walk again (above) before it publishes an outcome.
+                    if (!_context.Processes.WasStopRequested(sessionId) && ended.NotOffered is { } notOffered)
+                    {
+                        var refusedEnd = Observation.ChoiceNotOffered(adapter.Name, notOffered);
+                        await service.AdvanceAsync(sessionId, refusedEnd.State, note: refusedEnd.Note, ct: ct, parts: refusedEnd.Parts).ConfigureAwait(false);
+                        _context.Harnesses.Release(selection.Number, sessionId);
+                        return Ended(refusedEnd.State, refusedEnd.Note) with { NotOffered = true };
                     }
 
                     var byPerson = _context.Processes.WasStopRequested(sessionId);
