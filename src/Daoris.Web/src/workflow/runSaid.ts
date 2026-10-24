@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { type GraphRun, knownState, type RunStep, standsAt, type WorkflowRun } from './run';
+import { type GraphRun, knownState, type RunStep, standsAt, type WorkflowRun, type WorkflowRunAnswer } from './run';
 
 // What a run says in the reader's language (WORKFLOW1c, the workflow design §5.2's *Said*, §7): each step's state and the row
 // of its table, composed from the step's typed fields, so it cannot drift from what the driver read. A name from a record (an
@@ -166,6 +166,24 @@ export function graphSaid(t: TFunction, graph: GraphRun): string[] {
   }
   said.push(t('workflow.run.graph.branches'));
   return said;
+}
+
+/** The codes of a read that names no run (CHATFLOW1a, `WorkflowNoRun`) this page words; another is the driver's sentence. */
+export const NO_RUN_CODES: readonly string[] = [
+  'no-session', 'no-quest', 'ask-no-quest', 'chat-checkout', 'chat-own-tree', 'chat-graph-later', 'chat-tree-gone', 'ask-daoris', 'reviewer',
+  'helper', 'partner', 'teammate', 'unanswered',
+];
+
+/**
+ * Why no run is read, in the reader's language (CHATFLOW1b, the chat-flow design §10): a code this page knows in its catalogue's words,
+ * whose en is the driver's English word for word (the twin table's `none` rows); a code it does not know in the driver's sentence, as
+ * a node's refusal is (D182); and a read with no code in the driver's sentence, else the page's own *nothing runs here yet*.
+ */
+export function noRunSaid(t: TFunction, answer: WorkflowRunAnswer): string {
+  if (answer.code && NO_RUN_CODES.includes(answer.code)) {
+    return t(`workflow.run.noRun.${answer.code}`, { id: answer.id ?? '', workflow: answer.workflow ?? '' });
+  }
+  return answer.problem ?? t('workflow.run.none');
 }
 
 /** Why a step Current does not draw is in this run (design §4.6): a look the work's own choice added. */

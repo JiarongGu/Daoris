@@ -1389,6 +1389,8 @@ export function WorkFrame({
               answer={Array.isArray(workflowRun.data?.runs) ? workflowRun.data : null}
               reading={workflowRun.isPending}
               refusal={workflowRun.error ? sentence(workflowRun.error) : null}
+              // A service that did not answer is read again at once, before the view's next tick (CHATFLOW1b).
+              onRetry={() => { void workflowRun.refetch(); }}
               // The step the followed session is its own: a set-up step's session shows the work for the look.
               here={ownStep}
               doors={{

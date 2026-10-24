@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session's *Workflow* view now says in your language why no workflow runs for it (CHATFLOW1a, CHATFLOW1b). Before, it showed
+  the driver's English sentence, in Chinese too. A chat in your checkout says its changes are yours to commit, and that a
+  conversation with a tree of its own is how work gets a workflow. A chat in a tree of its own says this build reads no workflow
+  for a conversation's work yet. Ask Daoris, a reviewer, a helper, a partner and a teammate's session each say why they run none.
+  Where the service did not answer, *Try again* reads again. A chat that took a quest shows that quest's run, after a hand-over too.
+  `daoris-driver workflow run` prints the same sentences in English.
 - A terminal's change that waits for your Confirm in Daoris's window now names its request at once (CONFIRMWAIT1b). The line says
   the request's id, that `daoris-driver result <id>` says how it ended, and that `daoris-driver withdraw <id>` takes it back.
   `--wait <minutes>`, 0 to 30, says how long a verb waits for your answer, and `--no-wait` returns once it is asked. Ctrl+C still

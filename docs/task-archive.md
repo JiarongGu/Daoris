@@ -20383,3 +20383,14 @@ proofs D210's AGENTERRORS1a note lists. Detail: D210's AGENTERRORS1a note; the f
 route and the terminal, held by the twin table; a chat in a tree of its own reads `chat-own-tree`, never `chat-checkout`; a chat that
 took a quest, its hand-over and a quest's line gone on as a conversation read that quest's run. Each case seen failing first. **Not
 built:** the page's words (row b) and every later row. Detail: D157's CHATFLOW1a note.
+## CHATFLOW1b — the page words it (2026-10-24, D157)
+
+> **CHATFLOW1b — the page words it** (web; after a). The view's codes in `workflow.run.json`, en and zh, the driver's sentence for an
+> unknown code, and *Try again* on `unanswered`.
+
+(Row b of `docs/2026-10-24-chat-flow-design.md` §11, of the backlog's CHATFLOW1; quest `#27041d63d20d`.)
+
+**Outcome** 2026-10-24. The row as named: the *Workflow* view says each of the thirteen codes in en and zh, its en the driver's
+English word for word; a chat with no tree of its own says so in both languages, and an own-tree chat reads `chat-own-tree`; an
+unknown code shows the driver's sentence; `unanswered` offers *Try again* (重试), which reads again. A story per code. Each case seen
+failing first. **Not built:** rows c to i. Detail: D157's CHATFLOW1b note.
