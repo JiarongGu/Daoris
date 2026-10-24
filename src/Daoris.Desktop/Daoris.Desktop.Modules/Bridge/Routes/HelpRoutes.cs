@@ -73,11 +73,26 @@ public sealed class HelpRoutes(DriverContext context)
             var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
             var spelled = HeldWorkspace(snapshot, circle);
             var held = _loop.Processes.Running;
-            if (snapshot.Active.FirstOrDefault(session =>
-                    session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)
-                    && string.Equals(session.Workspace, circle, StringComparison.OrdinalIgnoreCase)) is { } running)
+            var runningHere = snapshot.Active.Where(session =>
+                session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)
+                && string.Equals(session.Workspace, circle, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (runningHere.FirstOrDefault(session => !chat.Finishing(session.Id)) is { } running)
             {
                 return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true, Workspace = circle };
+            }
+
+            // HELPNEWCHAT1: one the person finished is winding up, and the person's words are a new conversation's. It is waited for
+            // a moment, since the ledger holds one running in a workspace; past that it is answered as still finishing, which the page
+            // waits out before it asks again, never handing it the new conversation's words.
+            foreach (var ending in runningHere)
+            {
+                if (!await chat.WoundUpAsync(ending.Id, FinishingBound, cancellationToken).ConfigureAwait(false))
+                {
+                    return new
+                    {
+                        SessionId = ending.Id, Message = $"Ask Daoris `{ending.Id}` is finishing.", Running = true, Finishing = true, Workspace = circle,
+                    };
+                }
             }
 
             // Ask Daoris's order walked (MODELROLE1d, D205 §4.1), each entry judged by its access under the mode standing now.
@@ -95,6 +110,12 @@ public sealed class HelpRoutes(DriverContext context)
             placing.Release();
         }
     }
+
+    /// <summary>
+    /// How long a start waits for a conversation the person finished to end before it opens the next (HELPNEWCHAT1): its agent's
+    /// last turn and its close, well inside the 30 s the page waits on a press (SENDLOST1).
+    /// </summary>
+    internal static readonly TimeSpan FinishingBound = TimeSpan.FromSeconds(5);
 
     /// <summary>The workspace a start's press names (ASKSCOPE1a), trimmed; null where it names none, which is <c>default</c>'s.</summary>
     private static string? WorkspaceAsked(IpcRequest request) =>

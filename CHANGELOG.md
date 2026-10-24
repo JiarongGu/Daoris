@@ -12,6 +12,10 @@ with the version and date at release.
 - Trees set aside before Daoris's folder layout moved are now removed at their days, like the rest (KEEPSIZE1a). Until now they
   stayed under the old place for good. The *Disk space* card counts them under *Set-aside trees* rather than *Everything else*, and
   *Free space* and `trees list` name them.
+- Ask Daoris: the first words you send after *New chat* now go to the new conversation (HELPNEWCHAT1). Before, they could go back into
+  the conversation you had just finished, and pressing *New chat* again could stay on *opening Ask Daoris…*. While the finished
+  conversation winds up, your words wait as the new one opening, then open it. The machine's look at its sessions also no longer
+  counts or reads trees that were tidied away.
 - A session's *To the top* and *Back to bottom* are now arrows alone, so they no longer cover the messages under them. Their
   names show when you point at them, and a screen reader says them.
 - A conversation whose agent has no account left now goes on with the next choice you set for it on another agent (LIMITGOON2).

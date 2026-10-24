@@ -242,6 +242,33 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// HELPNEWCHAT1 (the owner's report, 2026-10-24): on the install the room's session look and its trees took 7 to 15 s against
+    /// their 500 ms bound. A new conversation never waits on either: with both never answering, or both failing, the press answers
+    /// at once and the conversation starts, on the room as the machine's facts hold it.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_new_conversation_opens_with_the_room_s_look_slow_or_failing(bool failing)
+    {
+        var (loop, module, _) = await UpAsync();
+        var never = new TaskCompletionSource<object?>();
+        Task<object?> Look(string _, CancellationToken __) => failing ? Task.FromException<object?>(new DriverException("the look failed")) : never.Task;
+        loop.Facts.Topic(HelpFacts.Sessions, HelpFacts.WholeRules with { Bound = Timeout.InfiniteTimeSpan }, Look);
+        loop.Facts.Topic(HelpFacts.Trees, HelpFacts.TreesRules with { Bound = Timeout.InfiniteTimeSpan }, Look);
+        using (ProcessStarts.Within(_ => null)) loop.Facts.Start();
+
+        var answer = await AnswerAsync(module, "START_HELP").WaitAsync(Poll.Patience);
+
+        Assert.Equal("h1", answer.GetProperty("sessionId").GetString());
+        Assert.True(answer.GetProperty("starting").GetBoolean());
+        // Its agent reached: the stand-in spawns nothing, which the conversation says, rather than wait on the look.
+        await UntilAsync(() => Raised.Any(m => m.Type == "SESSION_ENDED"));
+        Assert.True(File.Exists(Path.Combine(HelpRoom.PathOf(loop.Home), "AGENTS.md")));
+        Assert.False(never.Task.IsCompleted);
+    }
+
+    /// <summary>
     /// The room's sessions are the facts' judgement of them (PARALLEL1a), which reads the look this shell took a moment ago, the
     /// Sessions list's, rather than read the service again, and says so in its log line; where the one kept is older than the span
     /// it takes a fresh one, and keeps that in turn. Since FACTSPLIT1b what is kept is the look without its trees, which each
@@ -281,9 +308,10 @@ public sealed class DriverModuleHelpStartTests : DriverModuleBridge
         // The kept look's trees are none of the room's: its part judged the tree gone, so nothing waits to review.
         Assert.Equal(0, read.Sessions.Review);
         Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"kept\":true"));
-        // FACTSPLIT1b: the part's walk says its own time and how many trees it asked, with none of the look's steps.
-        Assert.Contains(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"treesMs\":")
-            && line.Contains("\"trees\":1") && !line.Contains("recordsMs"));
+        // FACTSPLIT1b: a part that walked a tree says its own time and how many; HELPNEWCHAT1: a gone tree is asked, holding nothing,
+        // and never walked, so this part says no walk at all.
+        Assert.DoesNotContain(LogLines(Home), line => line.Contains("\"event\":\"help.room.look\"") && line.Contains("\"treesMs\":")
+            && !line.Contains("recordsMs"));
 
         loop.SessionsLooked.Keep(look, DateTimeOffset.UtcNow - HelpRoomLookLog.Recent - TimeSpan.FromSeconds(1));
         await loop.Facts.JudgedAsync(HelpFacts.Sessions, HelpFacts.Whole, CancellationToken.None).WaitAsync(Poll.Patience);

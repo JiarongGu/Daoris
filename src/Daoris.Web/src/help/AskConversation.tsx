@@ -404,6 +404,19 @@ export function useAskConversation(
   const aheadIn = useRef<string | null>(null);
   // First words waiting on that answer: the box holds its fire, as it does while a send opens one.
   const [joining, setJoining] = useState(false);
+  // HELPNEWCHAT1: the conversations *New conversation* finished here, which wind up before they end; and a start the driver
+  // answered with one of them still running, asked again once the list says it ended. Its first words are never that one's.
+  const finished = useRef(new Set<string>());
+  const afterEnd = useRef<{ id: string; begin: () => void } | null>(null);
+  useEffect(() => {
+    const waiting = afterEnd.current;
+    if (!waiting) return;
+    const row = helpSessions.find((session) => session.id === waiting.id);
+    if (row && SESSION_ACTIVE.has(row.state)) return;
+    afterEnd.current = null;
+    waiting.begin();
+    // Only the list's next read says it ended; the rest is read from this render.
+  }, [sessions.dataUpdatedAt]);
 
   // First words handed to the conversation that takes them: seen from now on, in both hosts, however late an opening's
   // answer arrives, and shown as the conversation now, whichever the person had chosen (ASKHIST1).
@@ -503,6 +516,11 @@ export function useAskConversation(
         if (!answer.sessionId) {
           setFirstWords(null);
           giveBack(text, files, answer.message);
+        } else if (answer.running && (answer.finishing || finished.current.has(answer.sessionId))) {
+          // HELPNEWCHAT1: the one finished here, still winding up, is no new conversation. The words wait as this one opening
+          // until it has ended, then open their own.
+          afterEnd.current = { id: answer.sessionId, begin };
+          void sessions.refetch();
         } else {
           handTo(answer.sessionId);
         }
@@ -608,6 +626,8 @@ export function useAskConversation(
     if (shown) {
       // Set aside the newest too, so clearing an older conversation opens a blank panel.
       setCleared(newest?.id ?? shown.id);
+      // HELPNEWCHAT1: first words handed to it are its own, set aside with it; left, the new one read as opening and never opened.
+      if (firstWords?.session === shown.id) setFirstWords(null);
       // The next opens ahead too (HELP5), once the one finished here has gone.
       setRound((was) => was + 1);
     }
@@ -628,8 +648,10 @@ export function useAskConversation(
       // The host owns the ending. Keep its conversation and draft until it accepts the request.
       end.mutate(shown.id, {
         onSuccess: (answer) => {
-          if (answer.ended) clear();
-          else setRefusal(t('help.notFinished'));
+          if (answer.ended) {
+            finished.current.add(shown.id);
+            clear();
+          } else setRefusal(t('help.notFinished'));
         },
         onError: (error) => setRefusal(sentence(error)),
       });

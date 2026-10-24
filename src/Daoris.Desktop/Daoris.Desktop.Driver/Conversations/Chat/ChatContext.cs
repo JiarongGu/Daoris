@@ -85,6 +85,12 @@ internal sealed class ChatContext(
     /// </summary>
     public ConcurrentDictionary<string, bool> HelpEnding { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// The conversations the person finished (<see cref="ChatRunner.Finish"/>), which wind up before their run ends (HELPNEWCHAT1): a
+    /// start never carries one on. The entry goes with its run.
+    /// </summary>
+    public ConcurrentDictionary<string, byte> Finishing { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>What a conversation started from an earlier one is handed with the person's first words: that one's transcript as a file.</summary>
     public ConcurrentDictionary<string, ChatRunner.Handing> Handing { get; } = new(StringComparer.OrdinalIgnoreCase);
 

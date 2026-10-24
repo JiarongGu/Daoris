@@ -26,10 +26,13 @@ import { askHeld } from './state/held';
  * The press names the workspace its conversation is in (ASKSCOPE1d, D158's ASKSCOPE1 note, point 1): the caller reads the
  * window's at the press and hands it here, so a window that changes workspace while the start is under way moves nothing. None
  * is today's start, `default`'s, which the panel sends only where the machine holds no other workspace to choose.
+ *
+ * `finishing` (HELPNEWCHAT1): the one running is one the person finished, still winding up past the driver's wait; it is no
+ * conversation to carry on, and a start asks again once it has ended.
  */
 export const useStartHelp = () =>
   useMutation({
-    mutationFn: (workspace?: string) => call<{ sessionId: string | null; message: string; running?: boolean; starting?: boolean }>(
+    mutationFn: (workspace?: string) => call<{ sessionId: string | null; message: string; running?: boolean; starting?: boolean; finishing?: boolean }>(
       'START_HELP', workspace ? { workspace } : undefined),
   });
 

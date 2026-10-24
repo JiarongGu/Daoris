@@ -372,11 +372,16 @@ public static class HelpFacts
     /// <c>git status</c> otherwise (<see cref="TreeReadMemo"/>); <see cref="TreesAtOnce"/> trees at once. 145 kept trees took 45-110 s
     /// one after another, past the part's bound.
     /// </remarks>
+    /// <remarks>
+    /// HELPNEWCHAT1: only a tree whose folder is still here, and not one moved aside under the trees home's <c>.tidied</c>, is walked
+    /// or counted (<see cref="TreeFolders.Walkable"/>); the rest are asked, holding nothing, so no door walks them either. On the
+    /// install the part asked 245 trees of which 7 were there, and its line said 245.
+    /// </remarks>
     public static async Task<HelpTrees> ReadTreesAsync(string home, HelpTreesPart part, CancellationToken ct, LookTimes? times = null)
     {
         var trees = new SessionTrees(home);
         var pass = TreeReadMemo.Of(home).Begin(trees);
-        return await ReadTreesAsync(part, trees.Holds, pass.WorkAsync, ct, times, TreesAtOnce).ConfigureAwait(false);
+        return await ReadTreesAsync(part, trees.Holds, pass.WorkAsync, ct, times, TreesAtOnce, TreeFolders.Walkable).ConfigureAwait(false);
     }
 
     /// <summary>How many of a part's trees are read at once (TREELOOK1): each start still passes the background's places (PARALLEL1d).</summary>
@@ -388,16 +393,20 @@ public static class HelpFacts
     /// the part's sessions would put to review or offer to land, judged once, with the trees it asked (PUSH1c1).
     /// </summary>
     /// <param name="atOnce">How many trees are judged at once; one after another unless a caller says more.</param>
+    /// <param name="walkable">
+    /// Which of the asked trees are judged and counted (HELPNEWCHAT1): every one unless a caller says; the rest are asked, holding nothing.
+    /// </param>
     public static async Task<HelpTrees> ReadTreesAsync(
         HelpTreesPart part, Func<string, bool> held, Func<string, CancellationToken, Task<TreeWork?>> judge, CancellationToken ct,
-        LookTimes? times = null, int atOnce = 1)
+        LookTimes? times = null, int atOnce = 1, Func<string, bool>? walkable = null)
     {
         // The part's own trees alone: a look kept with every tree judged carries none of them in.
         var look = part.Look with { Trees = HelpTrees.None.Trees };
         times ??= new LookTimes();
         var asked = SessionGroups.TreesToJudge(look, held, part.Sessions);
-        times.Trees = asked.Count;
-        var judged = await times.TimeAsync("trees", () => SessionGroups.JudgeAsync(look, held, judge, part.Sessions, ct, atOnce)).ConfigureAwait(false);
+        var walked = walkable is null ? held : tree => held(tree) && walkable(tree);
+        times.Trees = walkable is null ? asked.Count : asked.Count(walkable);
+        var judged = await times.TimeAsync("trees", () => SessionGroups.JudgeAsync(look, walked, judge, part.Sessions, ct, atOnce)).ConfigureAwait(false);
         return new HelpTrees(judged.Trees) { Asked = asked.Select(SessionGroups.Normal).ToHashSet(StringComparer.OrdinalIgnoreCase) };
     }
 
