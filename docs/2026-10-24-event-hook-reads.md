@@ -1,4 +1,4 @@
-# EVENTHOOK1: the reads of rounds 1 and 2 (D191)
+# EVENTHOOK1: the reads (D191): the Opus foundation reader's of rounds 1 and 2, and Codex's of round 2
 
 The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-event-hook-design.md` and its D173, D119 and D120 notes at `71e08c3c0`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed; under D191's note of 2026-10-24 this design, which sends Daoris's events outside it, is not accepted on one maker's read. The Opus foundation reader asks another round (16 findings, 7 blocking). Round 2 answers it.
 
@@ -520,3 +520,67 @@ names kept out of the posted words, with §6.1 saying plainly what step 3 does n
 must neither hold the home's lease nor stop the swap: class it in `VerbLeases`, run it from outside `app/` or end it at an update, and
 prove both in 1c (finding 2). Findings 3-12 are corrections the steward can make line by line. Of them, 3, 4 and 5 decide whether the
 steward actually stops polling, and 11's `--once` adapter is the shortest way to give the owner that.
+
+## Codex, round 2
+
+Codex's read of round 2 with its named changes at `972b17577`: 21 findings, 16 blocking; another round. The steward ran it read-only on main from outside the install, and its links are made repository-relative.
+
+Read-only review; nothing changed and no probes run. References use the design’s `Driver/`, `Host/`, `Modules/` and `Mcp/` prefixes defined at `docs/2026-10-24-event-hook-design.md:36`.
+
+### 1. Wrong claims about existing code
+
+1. **Blocking — the steward’s terminal cannot start the proposed verb.** `Host/Program.cs:368` runs the role-terminal gate before dispatch, and `Driver/Sessions/Questions/SupervisorProof.cs:97–105` allows neither `events relay` nor `--where`. Dropping the captured key inside the relay comes too late; EVENTHOOK1c must explicitly allow these exact read-only operations while preserving the terminal’s role restriction.
+
+2. **Non-blocking — two descriptions overstate their sources.** The proposed closed-quest request retrieves the whole closed-inclusive list, not “those quests alone” (`Driver/Service/ServiceClient.cs:157`; `Daoris.Service.Core/Quests/Quests.cs:3987`); filtering would happen afterward. Also, a landing runs beside the look (`Driver/Loop/Driver.cs:1428–1438`), so the design’s `work.landed` “before the watch” statement at design:361 is not a guaranteed ordering.
+
+### 2. What leaves Daoris, and what can act
+
+1. **Blocking — names already leave before the relay removes them.** Design:378–405 includes repository/workspace names and quest `to`/`from`, permits arbitrary non-control characters, and sends frames unchanged to subscribers (design:475); a private name, path, credential or person’s words stored as a name therefore reaches subscriber code. Subscriber-selected filters are no authorization boundary (design:455–471): define who may subscribe to which scope, and enforce the outbound projection before handing it to that subscriber.
+
+2. **Blocking — the same-user threat claim remains too strong.** Design:568–573 says validation protects against every same-user agent, although design:513 places the executable copy in the same writable home and acknowledges agents can rewrite files. Minted hex shapes constrain presentation; they authenticate neither an event nor its referenced record, so narrow the promise to untrusted frames reaching an intact, trusted relay and require independent authorization for every resulting action.
+
+3. **Blocking — filesystem custody is unspecified.** Design:455 and :513–516 prescribe writes and recursive copy cleanup without addressing redirected directories, atomic copy publication, concurrent `--where` calls or partial deletion of an active build. Require containment against junction/symlink redirection and explicit build-use coordination; an executable being held open does not establish that every dependency and directory survives cleanup.
+
+4. **Non-blocking — §8 correctly adds no direct answer-to-action path.** The existing plugin wire ignores plugin-originated requests (`Driver/Plugins/Hooks.cs:532–534`), and the proposed relay opens no mutation door (design:524–525). The receiving agent can subsequently act through its existing permissions, so a wake must never count as confirmation, approval or evidence that the advertised fact is true.
+
+### 3. Delivery
+
+1. **Blocking — the default workspace filter cannot handle its own events.** `quest.parked` deliberately lacks a workspace (design:379, :392), yet the relay defaults to one workspace (design:550–551); `quest.published`, `quest.closed` and `person.answered` also lack it. `QuestPark` really has no workspace (`Driver/Trees/SessionGroups.cs:563–569`), so specify a source-side scope for every kind and fail closed when it is unknown.
+
+2. **Blocking — restart recovery still depends on another event arriving.** The watch suppresses its first look (`Driver/Quests/Domain/Attention.cs:224`), batches disappear if the relay dies, and refused inbox batches are discarded (design:563). Specify an independently deliverable reconciliation marker on startup/reconnection and after terminal loss, including when no session was running; for `--once --since`, a hello watermark greater than the last delivered watermark must trigger reconciliation even when it is exactly the next sequence.
+
+3. **Blocking — filtered sequences are indistinguishable from loss.** The sequence is global (design:416), filtering happens afterward (:470), and the relay treats skipped sequences as missed events (:558), so ordinary filtering repeatedly triggers broad rereads. Define separate source progress and subscriber delivery progress, suppression of repeated/older frames, and concurrent enqueue ordering; test two subscribers with different filters and a reconnect while events are in flight.
+
+4. **Blocking — discovery and resource bounds are incomplete.** Reading the folder and *then* watching it leaves an unwatched interval (design:459), while watcher failure, initial connection failure and repeated slow reconnects lack a complete recovery rule. Establish the watch before scanning, reconcile on watcher uncertainty, bound reconnect attempts, and cap subscriber count, handshake time, batch bytes and batch entries—the 64-entry transport queue does not bound the relay’s 30-second accumulation.
+
+### 4. Decided rules
+
+1. **Blocking — participant visibility has no corresponding subscription rule.** D173:11–19 requires explicit visibility and participant-scoped permissions, but its EVENTHOOK1 amendment at D173:5409–5417 asserts safe export without defining subscriber grants. D182:18–23 explicitly preserves invalidations for plugins, so using wakes here is compatible with D182; that exemption does not resolve disclosure across scopes.
+
+2. **Non-blocking — logging and home-layout work is missing from the rows.** D119:250 adds `event.unsent`, but the machine-log catalogue at `docs/2026-09-30-machine-log-design.md:128–135` and `Driver/Plugins/Domain/PluginEvents.cs:42–78` do not yet describe the new event and stop reason. Assign their catalogue/check updates explicitly, and use the existing home entry resolver (`Driver/Platform/DaorisHome.cs:119`, :400) rather than prescribing a second physical `bin/` layout.
+
+### 5. EVENTHOOK1a–f and their order
+
+1. **Blocking — 1a’s decision rule contradicts the dependency graph.** Design:646–649 permits progress when the inbox or channel works but M5 fails, while 1c requires M5 and 1e requires 1c (design:678, :680). Define adapter-specific prerequisites so a successful channel or inbox measurement has a buildable path without a successful background-command wake.
+
+2. **Blocking — 1b lacks a complete frame contract.** Design:397–405 does not classify `adapter`, `to` and `from`, and requires an ending’s `adapter` although its source is nullable (`Driver/Sessions/Domain/SessionEnded.cs:16`). Settle every field’s type, scope, optionality and rejection behavior, then add concurrent-producer, listener-attachment and missing-final-event proofs to design:677.
+
+3. **Blocking — 1c needs a complete host-entry and copied-build contract.** Besides the role gate, an ordinary dispatch passes `MachineLog.Open`, which prunes files (`Host/Program.cs:445`; `Driver/Platform/MachineLog.cs:80–85`), contradicting the claimed subscriber-file-only write surface. Route it explicitly before that machinery, specify how the copied executable retains its home/install identity—automatic discovery requires ancestry under `app/` (`Driver/Platform/DaorisHome.cs:62–80`)—and prove copying, cleanup and swapping concurrently.
+
+4. **Blocking — 1d still misses legitimate closures.** A closed quest can remain in the “open” list because the query includes `held = 1` (`Daoris.Service.Core/Quests/Quests.cs:3990`), so watching only departures misses its transition to `Done`. A publication and closure between looks are also invisible, while a reopened quest can look newly published; define these as snapshot observations or derive the named lifecycle events from recorded transitions.
+
+5. **Blocking for 1e — delivery does not establish usable reconciliation.** The workspace launcher deliberately substitutes its own home (`tools/knowledge-server.mjs:134–143`), so its connector tools cannot automatically reread the install whose channel supplied the wake. Specify the install-scoped read door and notification handoff during build replacement; the existing launcher drops output from a non-serving server (`tools/knowledge-server.mjs:322–327`).
+
+6. **Non-blocking — 1f has the correct ownership boundary.** A quest after 1c respects D120:24–31 and the proposed amendment at D120:148–156. Include the accepted protocol version and contract fixtures in that request so the packaged implementation remains compatible with the example.
+
+### 6. Smaller shape with the same outcome
+
+1. **Non-blocking — ship only the measured `--once` path initially.** Keep one observation point, the four steward kinds, explicit scope, the plugin and a minimal read-only waiter that prints fixed lines plus a reconciliation watermark. Defer inbox posting, channels and the additional kinds; this stops the steward’s polling while removing token custody and substantially reducing lifetime, batching and compatibility work (design:578–588).
+
+### Comparison with the earlier reads
+
+1. **Blocking disagreement — the driver frame was not already safe.** The round-1 read at `docs/2026-10-24-event-hook-reads.md:50` and round-2 read at :332 call it bounded and path-free, but current design:402 allows path-shaped names and forwards them to subscriber code. Removing names only from the final model-facing sentence closes a different boundary.
+
+2. **Blocking disagreement — delivery corrections need another design read.** The round-2 conclusion at reads:515–522 treats the remaining recovery changes as line-by-line fixes, and :389 calls every hop bounded. Filtering, final-loss recovery, workspace-less kinds and unbounded accumulation require protocol choices and adversarial lifecycle proofs, not merely wording corrections.
+
+**Verdict: another round.**
