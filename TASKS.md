@@ -433,7 +433,7 @@ knowledge review (D129). WSSETUP14b–e precede owner f/13; WSSETUP7 needs LAYOU
 - [ ] **DOC7 — reading measurements**. session.read/session.skill by role and whole/partial. D127 §6.1.
 - [ ] **WSSETUP7 — workspace setup UI/proposal** (all doors; after LAYOUT8). Workspace page and bilingual coverage. D124 §4.4–§4.5.
 - [ ] **WSSETUP14b — knowledge stays put**. Declare documents.knowledge; index reads, sync never writes. Pilot §1.2–§1.3; twins.
-- [ ] **WSSETUP14d — setup stays green** (after b; absorbs SETUP2). Before/after checks, preserved knowledge, moved readers and hand-index inventory. Pilot/D129; family proof.
+- [ ] **WSSETUP14d — setup stays green** (after b; absorbs SETUP2). Before/after checks, preserved knowledge, moved readers and hand-index inventory. Pilot/D129; family proof. Seen 2026-10-24 on both kits' set-ups: each moved the records under `.agents/` and left the repository's own check scripts reading `.claude/`, so its verify fails until a request to that repository changes them; each session listed them, the scripts being outside what a set-up may change.
 - [ ] **WSSETUP14e — finish setup branch** (after d). Exact follow-up merge rule. Pilot §4.2; composer/rehearsal tests.
 - [ ] **WSSETUP14f — complete pilot** (owner; after republish). Two repositories, green checks, knowledge declaration, 32768-byte root and restored budget. Pilot §4.
 - [ ] **KNOW3a — 169-document bench**. Opaque-name scale, whole index reads and skill truncation. Bench §5/§6.1; repeatable evidence.
