@@ -184,4 +184,39 @@ describe('handOverOffer', () => {
     expect(offer(undefined as unknown as AccountsAnswer)).toBeNull();
     expect(offer({} as AccountsAnswer)).toBeNull();
   });
+
+  // MODELROLE1e (D205 §3.5(e), §4.2): a cooling Build's offer names the actor's next choice on another agent, the actor's order and not the
+  // roster's, with the model it asks, and no maker outside the actor's entries is offered.
+  describe('names the session’s actor’s next choice (MODELROLE1e)', () => {
+    const cut = claude({ accounts: [{ name: 'personal', cooling }, { name: 'work' }] });
+    const gemini = agent('gemini', { scopes: [scope({ next: next('g1') })] });
+    const build = (...choices: [agent: string, model: string | null, from: string][]) =>
+      ({ id: 'build', state: 'set' as const, choices: choices.map(([name, model, from]) => ({ agent: name, model, from })) });
+
+    it('takes the actor’s next entry on another agent, with its model and number, before the roster’s first other tool', () => {
+      const actor = build(['claude-code', 'opus', '1'], ['gemini', 'flash', '2'], ['codex', null, '3']);
+
+      expect(offer(answer(cut, codex(), gemini), { actor })).toEqual(
+        { why: 'limit', until, agent: 'gemini', account: 'g1', choice: { n: '2', model: 'flash' } });
+    });
+
+    it('goes on to a later entry when the earlier one has no account with room', () => {
+      const actor = build(['claude-code', 'opus', '1'], ['gemini', 'flash', '2'], ['codex', null, '3']);
+      const none = agent('gemini', { scopes: [scope({ next: next(null, 'waits') })] });
+
+      expect(offer(answer(cut, codex(), none), { actor })).toEqual(
+        { why: 'limit', until, agent: 'codex', account: 'team', choice: { n: '3', model: null } });
+    });
+
+    it('offers no maker outside the actor’s entries, however ready it is', () => {
+      expect(offer(answer(cut, codex(), gemini), { actor: build(['claude-code', 'opus', '1']) })).toBeNull();
+    });
+
+    it('keeps the roster’s order where the actor is as before, and names no choice', () => {
+      const before = { id: 'build', state: 'before' as const, choices: [{ agent: 'claude-code', from: 'before' }] };
+
+      expect(offer(answer(cut, codex(), gemini), { actor: before })).toEqual({ why: 'limit', until, agent: 'codex', account: 'team' });
+      expect(offer(answer(cut, codex(), gemini), { actor: before })).not.toHaveProperty('choice');
+    });
+  });
 });
