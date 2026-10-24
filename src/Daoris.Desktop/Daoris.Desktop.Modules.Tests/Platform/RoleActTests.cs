@@ -565,7 +565,7 @@ public sealed class RoleActTests : IDisposable
 
     private async Task<Served> ServedAsync(World world)
     {
-        world.Path = System.IO.Path.Combine(_home, "driver.json");
+        world.Path = DaorisHome.Entry(_home, HomeEntry.DriverConfig);
         var scopes = new OwnerSetTests.Scopes();
         var module = new ActModule(scopes, world);
         var services = new ServiceCollection();

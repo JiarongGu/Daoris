@@ -1,11 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ReactElement } from 'react';
+import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import type { AppointmentNow } from '../../person/standing';
+import { InTheme } from '../../plugins/storyIcons';
 import { WiringSteward } from './WiringSteward';
 
 // The steward's row under This Daoris → *Roles* (STEWARDROLE1b, D209; the steward design §5.3): its states, and the ask *Appoint…* and
 // *Appoint again…* open, at the main area's widths. The key is never drawn: the row holds none.
 
+const inTheme = (theme: 'light' | 'dark') => [(Story: () => ReactElement) => <InTheme theme={theme}><Story /></InTheme>];
 const OFFERED = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry'];
 const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
 const live: AppointmentNow = {
@@ -54,3 +58,12 @@ export const Dormant: Story = {
     steward: { appointment: { ...live, dormant: true, holderId: null }, offered: OFFERED, acts: 0, holders: [], onAppoint: () => {}, onTurnOff: () => {} },
   },
 };
+
+/** The ask open, in dark. */
+export const AskingDark: Story = { args: { open: true }, decorators: [storyWidths.narrow, ...inTheme('dark')] };
+
+/** Appointed, in dark. */
+export const AppointedDark: Story = { ...Appointed, decorators: inTheme('dark') };
+
+/** The ask open in 中文. */
+export const AskingChinese: Story = { args: { open: true }, decorators: [storyWidths.narrow, chinese] };
