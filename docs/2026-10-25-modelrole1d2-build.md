@@ -64,6 +64,11 @@ Part 4: the web's new `WorkFrame.replaced.test.tsx` and the Ask Daoris scope sui
 typecheck, `i18n:check`, `names-check.mjs --strict`, `check:web-rules`; modules `SessionWords*`, `DriverModuleConversation*`,
 `DriverModuleHelp*`.
 
+Before finishing: the driver's fast half (14,472 passed; one `BrainstormBoundsTests` case, a pass read `unavailable` under the whole
+run's load in code this branch never touched, passed three runs of its class alone), the modules' (2,571 passed); the census checks
+(`read-shares`, `live-logins`, `partials`, `optional-locks`, `SystemWiringTests`, `LoopbackListensTests`, the CLI's `home-census` and
+`one-word`); the CLI's `doc-duplicates` and `dogfood`; `npm run verify`.
+
 ## Remaining
 
 - **MODELROLE1d3**: a pipe chat's measured refusal on its silent first turn (§3.5(b)'s last sentence), re-asked within its start. The pipe
