@@ -20427,3 +20427,15 @@ summary's words, en and zh. The grounds census and the fingerprint pairs sit in 
 Where the code answers less than §5.1 names (short commits, no tips) the projections take what it answers, said in the note for Codex's
 read. **Not built:** 1a-ii's records and restart; the card's door to a plan's page, which no row names. Detail: D156's CONFIRMWAIT1a-i
 note.
+## CONFIRMWAIT1a-ii — the records and the restart: a terminal's press still waits after Daoris restarts (2026-10-24, D156)
+
+> **CONFIRMWAIT1a-ii — the records and the restart** (modules, web), directly after 1a-i. The record written at the ask in `data/pipe-waiting/` and named by the confirmation's id, no keyed payload in it; the ending's order; the close's `waiting` answer completing each waiting line and leaving `_running`, so the drain is not spent, and no withdrawal; a keyed press ended `Lost` at a close; the restore before `Serve` on the lease, and its re-judgement; the newer record left; the lost and newer notices; `restored` and the record's asker on the card; the restart's balloon; the drain's refusal on the card. Held by `PipeConfirmationsTests`, `PipeConfirmTests`, `InstancePipeTests`, `NoticesStateSliceTests`, the home twins' census (`home-census.test.ts`, and the driver's and the service's `DaorisHome` tests) for `pipe-waiting`, and the page's `person/Confirmations` and `app/notifications` tests, en and zh.
+
+(Row 1a-ii of `docs/2026-10-24-confirm-wait-design.md` §10, of the backlog's CONFIRMWAIT1; quest `#92fef84b16f6`.)
+
+**Outcome** 2026-10-24. The row as named: `PipeWaiting`'s record at the ask (`unrecorded` where it cannot be written; no payload or
+grounds for `DAORIS.REMOTES` `SET`), §7.1's ending order, the close answering `waiting` and draining at once, a keyed press `lost` at a
+close, the restore before `Serve` with its re-judgement, the `lost` and `newer` notices, the restart's one balloon, and the card's
+restored asker, `person.keyed` and `person.draining`, en and zh; the verb reads the close's `waiting` as its own wait's end. The
+notices' words are held in `notifications/DoneAndFailed`'s test. **Not built:** the card's door to a plan's page (`person.openPlan`),
+which no row names. Detail: D156's CONFIRMWAIT1a-ii note.
