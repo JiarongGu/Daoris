@@ -67,7 +67,7 @@ import { ancestryOf } from './conversation/line';
 import { useAwayFromTop } from './conversation/followTail';
 import type { Level, RunningCall, Usage } from './conversation/conversation';
 import { useNow } from './useNow';
-import { useHeavySlot } from '../bridge/driver';
+import { useActors, useHeavySlot } from '../bridge/driver';
 import { heavyPartOf } from './heavySlot';
 import { heavyLine, heavyRow } from './HeavySlotLine';
 import { askName, isHelper, isIntake, isOpinion, linkedSessions, ownTree, sessionOrigin, sessionTitle } from './identity';
@@ -90,7 +90,7 @@ import { HandOverAsk, type HandOverRoster } from './start/HandOverAsk';
 import { AskHelper } from './start/AskHelper';
 import { partnersOf } from './pieces/pieceRows';
 import type { PieceSection } from './pieces/Pieces';
-import { handOverOffer, otherToolDoors } from './start/handOverOffer';
+import { handOverOffer, nextChoices } from './start/handOverOffer';
 import { HandOverOfferLine } from './start/HandOverOfferLine';
 import { DeleteAsk, SessionPageHead, StopAsk } from './head/SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
@@ -1465,6 +1465,8 @@ export function WorkFrame({
   useEffect(() => { if (intent) onIntentTaken?.(); }, [intent, onIntentTaken]);
 
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
+  // Each actor's order (MODELROLE1e): the hand-over's offer and its ask draw from the session's actor's, empty in a browser.
+  const actors = useActors();
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));
   // What a person calls an account (ACCTNAME1, D152 §4.2): the roster's one namer, so the head's facts, its Details, its
   // chain and its trace say the name the agent's page leads its row with.
@@ -2029,6 +2031,9 @@ export function WorkFrame({
   // Daoris's offer to hand over (MIXAGENT1b-ii, D163 point 3): on a conversation this page offers the press on, when its own
   // account is cut or near its limit by its scope's near (never the agent's pace warning alone, USAGEREAD3b) and another agent
   // has an account the walk would take. No driver read.
+  // MODELROLE1e (D205 §3.5(e)): its order is the session's actor's, Build's for a driven line and Chat's for a conversation, where that
+  // actor has an order of its own; the roster's order stands where it is as before.
+  const attendedActor = attended ? (actors.data ?? []).find((row) => row.id === (attended.kind === 'chat' ? 'chat' : 'build')) : undefined;
   const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id) && !waitLines
     ? handOverOffer({
       session: attended,
@@ -2036,6 +2041,7 @@ export function WorkFrame({
       doors: roster,
       answer: accounts.data,
       now: new Date(),
+      actor: attendedActor,
     })
     : null;
   const offerTo = offer ? roster.find((row) => row.harness === offer.agent) : null;
@@ -2138,7 +2144,7 @@ export function WorkFrame({
         <HandOverAsk
           key={attended.id}
           from={attended.adapter}
-          first={otherToolDoors(attended, roster).map((door) => door.harness)}
+          first={[...new Set(nextChoices(attended, roster, attendedActor).map((step) => step.door.harness))]}
           working={SESSION_ACTIVE.has(attended.state)}
           roster={agentRoster}
           initial={handOverChosen?.choice}
@@ -2175,6 +2181,7 @@ export function WorkFrame({
           // Keyed by the session: a refusal or a kept answer said in one is never another's.
           key={attended.id}
           offer={offer}
+          actorName={attendedActor ? t(`work.actor.name.${attendedActor.id}`) : undefined}
           agentName={offerTo?.product || offer.agent}
           accountName={offer.account ? nameOf(offerTo ? toolOf(offerTo) : offer.agent, offer.account) : null}
           busy={actions.handingOver}

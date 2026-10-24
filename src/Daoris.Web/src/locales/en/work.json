@@ -85,6 +85,7 @@
   "work.handOver.offer.near": "This conversation’s account is near its limit.",
   "work.handOver.offer.limit": "This conversation’s account is cut until {{time}}.",
   "work.handOver.offer.limitNoTime": "This conversation’s account is cut.",
+  "work.handOver.offer.choice": "{{actor}}’s next choice is {{n}}: {{entry}}.",
   "work.handOver.offer.goOn": "Go on with {{agent}} ({{account}})",
   "work.handOver.offer.goOnOwn": "Go on with {{agent}}",
   "work.handOver.offer.choose": "Choose…",

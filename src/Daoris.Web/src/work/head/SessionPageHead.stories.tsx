@@ -397,9 +397,12 @@ const OFFER_HEAD = {
   session: A_CONVERSATION, title: 'Cap the hydration per frame', shown: 'completed' as const,
   acts: ['handOver', 'openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'] as const,
 };
-const offerLine = (offer: Parameters<typeof HandOverOfferLine>[0]['offer'], agentName = 'Codex', accountName: string | null = 'team') => (
+const offerLine = (
+  offer: Parameters<typeof HandOverOfferLine>[0]['offer'], agentName = 'Codex', accountName: string | null = 'team', actorName?: string,
+) => (
   <HandOverOfferLine
-    offer={offer} agentName={agentName} accountName={accountName} onGoOn={() => {}} onChoose={() => {}} onDismiss={() => {}}
+    offer={offer} actorName={actorName} agentName={agentName} accountName={accountName}
+    onGoOn={() => {}} onChoose={() => {}} onDismiss={() => {}}
   />
 );
 const NEAR: Parameters<typeof HandOverOfferLine>[0]['offer'] = { why: 'near', until: null, agent: 'codex', account: 'team' };
@@ -435,6 +438,21 @@ export const HandOverOfferNearChinese: Story = {
 /** Cut, in 中文. */
 export const HandOverOfferCutChinese: Story = {
   args: { ...HandOverOfferCut.args, title: '限制每帧的水合工作量' },
+  decorators: [sessionWidths.half, chinese],
+};
+
+// MODELROLE1e (D205 §3.5(e)): a cooling Build's offer names the actor's next choice on another agent and the model it asks.
+const CUT_CHOICE: Parameters<typeof HandOverOfferLine>[0]['offer'] = { ...CUT, agent: 'codex-acp', choice: { n: '2', model: 'gpt-5' } };
+
+/** The account is cut and Build has an order: the offer names *Build's next choice is 2: Codex · gpt-5*. */
+export const HandOverOfferChoice: Story = {
+  args: { ...HandOverOfferNear.args, asking: offerLine(CUT_CHOICE, 'Codex', 'team', 'Build') },
+  decorators: [sessionWidths.half],
+};
+
+/** The same, in 中文. */
+export const HandOverOfferChoiceChinese: Story = {
+  args: { ...HandOverOfferNear.args, title: '限制每帧的水合工作量', asking: offerLine(CUT_CHOICE, 'Codex', 'team', '开发') },
   decorators: [sessionWidths.half, chinese],
 };
 

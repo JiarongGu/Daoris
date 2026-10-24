@@ -17,8 +17,10 @@ import type { HandOverTold } from '../sessionActs';
  * judges for every session, PUSH1d4; the frame already holds the roster and the accounts for the one it attends). A refusal is said
  * in the line and keeps it; a kept answer, for a conversation that is talking, says where it goes on.
  */
-export function HandOverOfferLine({ offer, agentName, accountName, busy = false, onGoOn, onChoose, onDismiss }: {
+export function HandOverOfferLine({ offer, actorName, agentName, accountName, busy = false, onGoOn, onChoose, onDismiss }: {
   offer: HandOverOffer;
+  /** What a person calls the session's actor, named where the offer is that actor's next choice (MODELROLE1e). */
+  actorName?: string;
   /** What a person calls the agent it names. */
   agentName: string;
   /** What a person calls the account it names; null where the agent's own sign-in. */
@@ -36,6 +38,12 @@ export function HandOverOfferLine({ offer, agentName, accountName, busy = false,
   const why = offer.why === 'limit' && offer.until
     ? t('work.handOver.offer.limit', { time: moment(offer.until) })
     : t(offer.why === 'limit' ? 'work.handOver.offer.limitNoTime' : 'work.handOver.offer.near');
+  // MODELROLE1e (D205 §3.5(e)): where the actor has an order, the offer names the choice it is, with the model that choice asks.
+  const choice = offer.choice && actorName
+    ? t('work.handOver.offer.choice', {
+      actor: actorName, n: offer.choice.n, entry: `${agentName} · ${offer.choice.model ?? t('work.actor.accountDefault')}`,
+    })
+    : null;
 
   return (
     <div
@@ -44,6 +52,7 @@ export function HandOverOfferLine({ offer, agentName, accountName, busy = false,
       className="mt-2.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-l-[3px] border-st-open pl-2.5 text-small text-ink-soft"
     >
       <p className="m-0 min-w-0 wrap-anywhere">{kept ?? why}</p>
+      {!kept && choice && <p className="m-0 min-w-0 wrap-anywhere">{choice}</p>}
       {!kept && (
         <>
           <Button

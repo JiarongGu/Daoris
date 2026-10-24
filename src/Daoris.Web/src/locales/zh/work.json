@@ -72,6 +72,7 @@
   "work.handOver.offer.near": "这段对话的账户快到上限了。",
   "work.handOver.offer.limit": "这段对话的账户已达上限，{{time}}前不可用。",
   "work.handOver.offer.limitNoTime": "这段对话的账户已达上限。",
+  "work.handOver.offer.choice": "{{actor}}的下一个选择是第 {{n}} 个：{{entry}}。",
   "work.handOver.offer.goOn": "用 {{agent}}（{{account}}）继续",
   "work.handOver.offer.goOnOwn": "用 {{agent}} 继续",
   "work.handOver.offer.choose": "选择…",
