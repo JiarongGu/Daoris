@@ -194,6 +194,10 @@ using Daoris.Driver;
 //                 the steward's holder's verbs (STEWARDROLE1b, D209 §3.3): the run's acts (STEWARD_ACTS, an open read), or one
 //                 act sent as ROLE_ACT with its proof by the key in DAORIS_ROLE_KEY over the hello's nonce, only to the install's
 //                 app/Daoris.Desktop.exe, recorded as the steward's. No alone path: no-instance, exit 2.
+//   steward desk | desk decline <request> "<reason>" | request <act> <target> "<why>"
+//                 the steward's desk (STEWARDROLE1c, D209 §6.2): its requests fenced as their callers' claims (STEWARD_DESK, an
+//                 open read); the holder's decline of one, sent as an act is; and a request filed from any terminal with no key
+//                 (STEWARD_REQUEST, open), ten open per caller and a hundred in all, granting nothing.
 //
 //   driver [list | <choice> | work-cycle | brainstorms | workflow …]
 //                 this machine's standing choices, workflows and cycles (PUSH1f2a, PUSH1f2b, D194): the words `daoris driver …`
