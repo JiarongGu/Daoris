@@ -499,7 +499,8 @@ internal sealed class TreeSetAside(TreeContext context)
             if (kept is null)
             {
                 (bytes, kept) = Remove(folder);
-                if (kept is { Code: SetAsideKept.Unread } unread) failed.Add((folder, unread.Sentence, last.Why == unread.Sentence ? now : null));
+                // A refused rename (`busy`) or a failed delete is kept where the inventory reads it, waiting a day after the same failure twice.
+                if (kept is { } refused) failed.Add((folder, refused.Sentence, last.Why == refused.Sentence ? now : null));
             }
 
             results.Add(new SetAside(folder, moved, kept is null, kept?.Sentence, kept?.Code) { Bytes = bytes, Class = judged.Class, Hour = judged.Hour });
@@ -526,7 +527,7 @@ internal sealed class TreeSetAside(TreeContext context)
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return (0, (TidyKept.Busy, $"something on this machine is using it, so it could not be moved to be removed ({error.Message.Trim()})"));
+            return (0, (TidyKept.Busy, $"it could not be read or deleted: something on this machine is using it, so it was kept whole ({error.Message.Trim()})"));
         }
 
         TryDelete(SlimManifest.PathFor(folder));
