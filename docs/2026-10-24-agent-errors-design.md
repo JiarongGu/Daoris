@@ -1,8 +1,18 @@
 # Every agent's errors read into one set of kinds at the agent interface, and one policy acting on each kind (AGENTERRORS1, 2026-10-24)
 
-**Status: proposed (D210), round 3.** Written by Claude Opus from the code at `64059110a`, for Codex's read and an independent Opus
-reader's foundation read under D191 (its amendment of 2026-10-23: the design changes what every adapter answers at the agent
-interface, and the decided rules TURNFAIL1, D206 and D205 rest on).
+**Status: proposed (D210), round 3, with its read's named changes.** Written by Claude Opus from the code at `64059110a`, for
+Codex's read and an independent Opus reader's foundation read under D191 (its amendment of 2026-10-23: the design changes what every
+adapter answers at the agent interface, and the decided rules TURNFAIL1, D206 and D205 rest on).
+
+**Round 3's named changes** (2026-10-24) take the Opus foundation reader's read of round 3, read at `3086e44f1` and kept verbatim in
+`docs/2026-10-24-agent-errors-reads.md`: 11 findings, 1 blocking, *accept after named changes* the steward checks without another
+read. Codex's read of round 3 stopped when its credits ran out and is owed on this text. Each finding is taken as the read names it,
+checked against the code on main at `ffcf42926`, where no file the read cites changed since its `8cc3936b0`. Each section a finding
+changes marks it *(round 3's read, R3-On)*, `R3-O1` being the read's finding 1, and §16's table says where each went. The blocking
+one first: an answered settling turn, or a turn the harness woke, ends the wait and never the episode, so Daoris's go-on follows
+(R3-O1, §5.1). Written in before row 1a: the uncertain word is D188's COWORK1c `lost` note (R3-O2); a hand-over from an Open quest's
+held record carries it on in its tree (R3-O3); Daoris's go-on leaves the record once on the wire (R3-O5). *Try again*'s keyed
+release moves to row 1a2 beside its press (R3-O11).
 
 **Round 3** (2026-10-24) answers round 2's two reads, read at `f23020f80` and kept verbatim in
 `docs/2026-10-24-agent-errors-reads.md`. Codex asked another round (11 findings, 8 blocking), keeping the four-kind interface, the
@@ -148,7 +158,7 @@ account and choice, inside the run: five tries, with 1, 2, 4, 8 and 16 minutes o
 one prompt of the person's words never written to the wire and then Daoris's go-on word; a word once on the wire is never sent again,
 whatever the run's end. It is never a strike, a park, a cool-off or a walk. Past the bound the record ends `failed` under
 `ended.transient`, which no strike counts, and **the planner holds its quest**, Open or Taken. A new word of the person's (MSG1b's
-go-on) releases it, and so does *Try again* (D206's step-1 resume), released for that end alone, so the same conversation goes on.
+go-on) releases it, and so does *Try again* (D206's step-1 resume, row 1a2's), released for that end alone, so the same conversation goes on.
 No other word releases it, and nothing loops without the person. A limit is D206's, unchanged, and a limit's code with no sentence
 read is a limit with D125's unstated reset. An access error marks the account as today and goes to the person; the line walks to
 another account where one is ready. A fatal error fails with its reason, a strike, as today. Every kind of run takes the same retry inside its run, within its own minutes, and differs only past the bound.
@@ -336,7 +346,12 @@ The rest of §3.1's codes enter each table as its row records them.
   on the wire (`_prompts` empty, as `Answered` reads it, `Acp.cs:1660-1674`). On `claude-code-acp` a word queued behind the failed
   turn is already in the SDK's input queue (`promptQueueing`, `acp-agent.js:1257`), and the adapter rejects only the active turn, so
   *later turns proceed* (`:2750-2778`). Settling therefore runs each queued word's own turn, the **settling turns**:
-  - a settling turn that answers ends the episode with no try, since the agent went on;
+  - *(round 3's read, R3-O1; round 3's first clause corrected)* a settling turn that answers **ends the wait, not the episode**. It
+    is the queued word's own turn, so its answer shows only that the agent answered that word, never that it went on with the turn
+    the provider failed. Ended there, the run loop would find nothing more (`Acp.cs:841`) and close clean, and the conclusion would
+    park a taken quest on the person (`Observation.cs:173-174`) or fail an open one `ended.untouched`, a strike (`:205-206`). So the
+    owner's check (§5.5) is asked, and where another turn is still wanted Daoris's go-on goes at once, with no wait, and counts as a
+    try;
   - a settling turn that fails transient is that failure and counts as a try;
   - one that fails with another kind leaves the episode for that kind (below).
 - **What a word's disposition is** *(round 3, R2-C1, R2-O8; round 2's two dispositions corrected)*. `Taken` is Daoris's own
@@ -345,17 +360,23 @@ The rest of §3.1's codes enter each table as its row records them.
   failed. So each of the person's words is in one of **three** dispositions:
   - **held**: never written to the wire, the inbox's words (said during a wait, below), and the words a resume would have prompted and did
     not, at an open that failed (§5.6);
-  - **taken**: on the wire, and the turn handed to it (`Answered`, `:1667-1671`, or `TakeLate`). Shape 2's word is taken, and so are
-    a resume's or a start's blocks (`resume.Prompted`, `DriverContinuations.cs:696-700`) and a try's words once on the wire;
+  - **taken**: on the wire, and its turn showed it taken: an update of that turn came (`TakeLate`), or its prompt answered. Shape
+    2's word is taken (the adapter streamed the error's message in its turn before the prompt's error, event 2300), and so are a resume's or a start's blocks
+    (`resume.Prompted`, `DriverContinuations.cs:696-700`) and a try's words, each once its turn shows it;
   - **unacknowledged**: on the wire, its prompt answered with an error before any update of its turn. It may or may not be in the
-    agent's conversation.
+    agent's conversation. *(Round 3's read, R3-O2.)* This is read from the turn, never from Daoris's `Taken` mark alone: a head word
+    whose mark the order of answers set (`:1667`) and a try's blocks that met the error before any update are just as uncertain.
 
   The episode reads each word's disposition by its prompt's request id **before** `Answered` removes the prompt (`:1662`), and keeps
   it with the episode. **Only held words are ever sent by a try.** A taken or unacknowledged word is never sent again, on a try or
   after the episode. An adapter may later declare proven nonacceptance, with a recorded frame held both ways (an error that says
   the word was not appended), and only then would its unacknowledged words count as held. No adapter declares it today, and none is
-  assumed. Where an episode leaves any unacknowledged word, the conversation says so once, `agent.transient-unacknowledged` (§8), so
-  the person knows a word may not have been read and can say it again; Daoris never does.
+  assumed. *(Round 3's read, R3-O2: round 3's own note withdrawn.)* An unacknowledged word is D188's COWORK1c **uncertain** word,
+  and it is said as COWORK1c says one: each word of the person's left unacknowledged gets the `lost` note under its id
+  (`SessionEventCodes.Lost`, `Sessions/Domain/SessionEvents.cs:70-75`: *the agent may have read it, and its answer was not kept*),
+  as `UncertainWords.SettleOneAsync` keeps it (`Conversations/GoOn/UncertainWords.cs:84-90`), and the page offers *Say it again*
+  under it as under any uncertain word of the person's (D188's COWORK1c note). Daoris never sends it again. No new note code is
+  made.
 
   What the agent did before the failure (its files, its commits, its tools' effects) stays in its tree and its conversation, and the
   go-on word says to go on from there: nothing is replayed.
@@ -371,15 +392,24 @@ The rest of §3.1's codes enter each table as its row records them.
   (the adapter would end the person's turn at the go-on's echo). The person's word ends the wait at once (above).
 - **Each try is one prompt** of blocks *(round 2, O1; round 3, R2-C1)*: first **the person's held words**, verbatim and in the order
   said; then **Daoris's go-on word** (`retry.go-on`): *The last request failed on the provider's side ({{words}}). Go on where you
-  stopped.* The go-on is kept through the say door under `DaorisKeys.TransientRetry(session, episode)`, as D206's `limit.reset` is
-  kept under `DaorisKeys.LimitReset`, once per episode, before the first try. The episode is named by when its first failure was
-  read. *(Round 2, O10; round 3, R2-C10.)* Its `user` event is the first try's alone; a later try carries the same text as a block
-  that is neither kept nor shown again (row 1a).
+  stopped, after anything said above.* *(Round 3's read, R3-O8.)* Its last clause keeps a held word that redirected the agent ahead
+  of the old path. The go-on is kept through the say door under `DaorisKeys.TransientRetry(session, episode)`, as D206's
+  `limit.reset` is kept under `DaorisKeys.LimitReset`, once per episode, before the first try. The episode is named by when its
+  first failure was read. *(Round 2, O10; round 3, R2-C10.)* Its `user` event is the first try's alone; a later try carries the same
+  text as a block that is neither kept nor shown again (row 1a).
+  *(Round 3's read, R3-O5.)* **The go-on leaves the record once it is on the wire**, as D188 point 6 has any word leave `said`
+  (`docs/decisions/D188.md:52`): it goes through the run's one dispatcher like any kept word (`SaidDoor.Dispatched`,
+  `Conversations/SaidDoor.cs:69`), marked attempted before the wire and taken off by its id once its first try is written. It never
+  waits on `said` through the episode. The conclusion's take-off stays as the fallback at **both** conclusions, a first run's and a
+  continuation's (below).
 - **Through the wake gate** *(round 2, O4)*. A session whose turn failed while its background work runs is woken by its harness when
   that work ends (BGWAIT2/3, `Acp.cs:924-949`), and a prompt sent into that woken turn is never answered (BGWAIT1's 48-minute hang,
-  `:936-939`). So each try goes through `_wake` as `AfterEndedAsync` does (`:1037-1055`): after the wait, a woken turn that answers
-  ends the episode as a try that answered, and Daoris prompts only where none woke within `AcpWake.Quiet`. A stream that ended is the
-  harness's end (§3.1), not a try.
+  `:936-939`). So each try goes through `_wake` as `AfterEndedAsync` does (`:1037-1055`), and Daoris prompts only where none woke
+  within `AcpWake.Quiet`. *(Round 3's read, R3-O1.)* A woken turn's end during an episode **ends the wait, not the episode**: the
+  door cannot say whether a woken turn answered or met the outage, since `AfterEndedAsync` records every woken end as `end_turn`
+  (`:1039-1046`, `WokenStop`). So, as after an answered settling turn, the owner's check is asked and, where another turn is still
+  wanted, Daoris's go-on goes at once, after the woken turn has ended, and counts as a try. A stream that ended is the harness's end
+  (§3.1), not a try.
 - **The owner's check** *(round 2, C8)*. Before each try the run asks its owner whether another turn is still wanted (§5.5). Where
   not, no try is sent: the episode ends and the run closes as at a turn's end, and the conclusion reads its outcome as it does today.
   *(Round 3, R2-O6.)* A check that cannot be read answers yes, as `QuestMovedAsync`'s unread look does: a try costs a turn, and an
@@ -411,25 +441,34 @@ The rest of §3.1's codes enter each table as its row records them.
   line) or LIMITGOON1/2 (a conversation) (§6.1); access for §5.3's; fatal for §5.4's. *(Round 3, R2-C2.)* Each takes the episode's
   dispositions with it (above): what D206 resumes at the reset or moves briefed, and what TURNFAIL1 retries, is only what was held.
 - **Past the bound** *(round 2, O2, C5; round 3, R2-C10)*. The run ends. Its record is `failed` with `ended.transient`: *Its provider
-  kept failing after {{count}} tries, with {{minutes}} minutes of waits between them ({{words}}). It waits for you: your words, or
-  Try again, go on in the same conversation.* `{{count}}` and `{{minutes}}` are the tries made and the minutes actually waited, never
-  the schedule's five and 31: a word of the person's sends a try early, and the waits between are then shorter. A pass whose minutes
-  end inside an episode says that in its own words (§7), never this sentence.
+  kept failing after {{count}} tries, with {{minutes}} minutes of waits between them ({{words}}). It waits for your words, which go
+  on in the same conversation.* *(Round 3's read, R3-O11.)* Row 1a2 widens its last sentence to *It waits for you: your words, or Try
+  again, go on in the same conversation*, with the press that offers *Try again*: each row's sentence says only what its page offers.
+  `{{count}}` and `{{minutes}}` are the tries made and the minutes actually waited, never the schedule's five and 31: a word of the
+  person's sends a try early, and the waits between are then shorter. A pass whose minutes end inside an episode says that in its
+  own words (§7), never this sentence.
   - **What waits on the record.** Every taken or unacknowledged word comes off at the conclusion (above), so after a prompt failure
-    nothing of the person's waits from the run. Daoris's go-on word comes off by id, as `limit.reset` does at every conclusion
-    (`DriverContinuations.cs:702-707`), so it never reaches a new part. Round 1's `GoOnMarks.Transient` stays withdrawn for this
+    nothing of the person's waits from the run. *(Round 3's read, R3-O5; round 3's citation corrected.)* Daoris's go-on left the
+    record when its first try was written (above). Where that take-off did not land, the conclusion takes it off by its id as the
+    fallback, at **both** conclusions: a continuation's, beside its take-off of the resume's own Daoris words
+    (`DriverContinuations.cs:702-707`, which reach only `LimitResume.WordIds(resume.Words)`, never a word kept mid-run), and a first
+    run's, which takes no Daoris word off today (its only take-off is the refused step 1's, `Driver.cs:2304`). So no go-on waits on
+    a record the run then parked, and none reaches a new part. Round 1's `GoOnMarks.Transient` stays withdrawn for this
     case: a mark stops the planner's `GoOn` alone (`Planner.cs:1494-1506`), never a carry-on (`:1373-1387`, `:2005-2006`) or an open
     quest's fresh start (`:1355-1366`), and `GoOnMarks.Judged` needs a word waiting (`Conversations/GoOn/GoOnMarks.cs:131-134`), which
     shape 1 never has. Words the person says after the last try failed wait on the record as today (`inbox.Close()`,
-    `Driver.cs:4325`); they are a new word of the person's, and release the hold below.
+    `Driver.cs:4325`); *(round 3's read, R3-O9)* one said after the record ended is a new word of the person's and releases the hold
+    below, and one said in the last try's moments, before the end, waits with the others and goes with that next word.
   - **Nothing prompted: the open's end** *(round 3, R2-O2)*. Where the run ends `ended.transient` without its words ever going on
     the wire (an open that failed past its bound, §5.6, row 1a2), the resume's blocks are held words, and today's conclusion would
     leave them, and Daoris's go-on, on `said` (`DriverContinuations.cs:699-707`, `:717`). `WordsOn` would then take the record up
     ahead of the hold at every look, with no strike to end it. So at such an end:
     - **Daoris's go-on comes off by id**, whatever `words` reads;
-    - **the person's carried words are marked for the person**, `GoOnMarks.TransientHeld` (`transient-held`), a mark `Waits` honours
-      through `GoOnMarks.Judged` (`Planner.cs:1503-1505`, `GoOnMarks.cs:131-134`). Their next word, said after the mark, is not
-      judged by it and releases them with it, and *Try again* sends them too. A mark is right here, since words exist.
+    - *(round 3's read, R3-O9: round 3's `transient-held` mark withdrawn)* **the person's carried words wait for a word of theirs
+      said after the record ended**, by the hold's word rule (below), which reads each word's `At` against the record's `Updated`
+      and so needs **no write** beside the conclusion. A mark written there would fail open on a failed write: the word rule
+      would read the unmarked words as a new word of the person's and retry the open round the hold, with no strike. The carried
+      words were said before the end, so they never release it; the person's next word does, and takes them with it.
 
     **Until row 1a2 lands, a failure at the open makes no `DoorFailure`** (§4.2) and keeps today's end, a strike and the briefed
     fallback, so row 1a never meets this case.
@@ -442,20 +481,27 @@ The rest of §3.1's codes enter each table as its row records them.
     - a Taken quest's `CarriedOnFrom` (`:1373-1387`).
 
     It passes a record the person released (below), and a hand-over made from the held record, as `StopHolding` passes one
-    (`HandedFrom`, `:1455-1456`, `:1465`; `DriverHandOvers.cs`), so *Go on now with…* (§6.2) stays the person's way out. Its verdict
+    (`HandedFrom`, `:1455-1456`, `:1465`; `DriverHandOvers.cs`), so *Go on now with…* (§6.2) stays the person's way out. *(Round 3's
+    read, R3-O3.)* Passing the hold is not enough for an Open quest: after it the planner would reach `Consider`'s fresh start in a
+    new tree (`:1355-1366`), with no brief. So the hand-over's record is carried on in its tree, as D206's step 0 carries a limited
+    one (below, `TransientReleasedFrom`). Its verdict
     is `StartVerdict.TransientHeld`, with the record as its `HeldBy` as a stop's verdict names its stop; it is said `held.transient`
     and takes no slot.
   - **The hold's word rule** *(round 3, R2-C4, R2-O2)*. `WordsOn` comes first, and its `Waits` (`Planner.cs:1503-1505`) passes any
     word waiting on the record: Daoris's, a helper's answer handed as the next turn (`DriverHelpers.cs:776-810`), a second opinion's
     findings, another session's message. So, for a record `TransientHolding` would hold and no release passes, `Waits` also needs a
-    waiting word that is **the person's** (`SaidWordView.Persons`, `Planner.cs:675`: no `By`, no `Helper`, no `From`) and is not
-    judged by a mark. Without one, `WordsOn` answers nothing for it and the hold holds. With one, `GoOn` takes every waiting word, the
-    person's first and the others with them, so a helper's answer or a Daoris word said meanwhile travels once with the person's
-    release and starts nothing on its own.
+    waiting word that is **the person's** (`SaidWordView.Persons`, `Planner.cs:675`: no `By`, no `Helper`, no `From`), is not
+    judged by a mark, and *(round 3's read, R3-O9)* was **said after the record ended**: its `At` later than the record's `Updated`,
+    both read from the look's snapshot. Without one, `WordsOn` answers nothing for it and the hold holds. With one, `GoOn` takes every
+    waiting word, the person's first and the others with them, so a helper's answer, a Daoris word or a word of the person's said
+    before the end travels once with the person's release and starts nothing on its own.
   - **Released by the person, for that end alone** *(round 3, R2-O1, R2-C3)*:
     - **their word**: `WordsOn`'s `GoOn` (MSG1b, `ContinueAsync`) resumes the record's own conversation with their words, as any
-      word to an ended record does, and Daoris's go-on is kept after their words, as D206 orders the person's first and Daoris's last;
-    - ***Try again***: the press writes a **transient release**, `DriverConfig.TransientReleased`, quest → the record's session and
+      word to an ended record does. *(Round 3's read, R3-O8.)* It sends **their words alone**, as MSG1b does for any ended record:
+      the person's word is itself the go-on, and a go-on after it could countermand a word that redirected the agent. No go-on of
+      Daoris's is kept for this release;
+    - ***Try again*** *(round 3's read, R3-O11: row 1a2's, beside its press)*: the press writes a **transient release**,
+      `DriverConfig.TransientReleased`, quest → the record's session and
       **the end it releases**, which is the record's `Updated` as the press read it (`PriorSession.Updated`, `Planner.cs:333-336`:
       for an ended record, when it ended). It is not the stop's `Released` (`DriverConfig.cs:94-123`). That one is keyed by session
       alone, and its own rationale is that a later stop has a different session, which a resume of the same record never has. The
@@ -463,19 +509,25 @@ The rest of §3.1's codes enter each table as its row records them.
       continues the same record (`Driver.cs:2267-2272`, `DriverContinuations.cs:226`, `:272-274`), which moves it to `working` and
       later to its next end, so its `Updated` moves past the release. If that run fails past its bound again, its new
       `ended.transient` is held again, with no second write, across a driver restart (the release is on disk), and with nothing to
-      consume. A release whose `Updated` is unsaid passes nothing: the check fails closed. A word kept on the record between the
-      press and the start moves `Updated` too, and is also closed: the record stays held, and the person's word releases it as above.
-      The person's word needs no release written, since it is a new word each time.
+      consume. A release whose `Updated` is unsaid passes nothing: the check fails closed. *(Round 3's read, R3-O4; round 3's
+      sentence corrected.)* A word kept meanwhile leaves `Updated` as it is, so the release still passes, and the start goes on with
+      that word under the person's release, by MSG1b's `GoOn` rather than step 1; only the record's own end moves it. `KeepSaidAsync` writes `updated` only for a keep that carries a note, which only
+      an answer's line does (`src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs:1554-1566`), and `TakeSaidAsync` writes
+      none (`:1590-1596`). That outcome is benign: the word is one the record was waiting with. The person's word needs no release
+      written, since it is a new word each time.
 
     The next look plans the line's carry-on:
     - **An Open quest** *(round 3, R2-O3, R2-C5)*: `RetriedFrom` answers only with commits (`Planner.cs:1391-1397`) and `LimitedFrom`
       only with the `limit` flag (`:1400-1405`), so a commitless Open quest would fall to `Consider`'s fresh start. A sibling,
-      `TransientReleasedFrom(quest)`, answers the released `ended.transient` record **ahead of `RetriedFrom`'s commit rule**, and the
-      quest is planned `CarryOn(quest, last)` whatever its tree holds.
+      `TransientReleasedFrom(quest)`, answers the `ended.transient` record **ahead of `RetriedFrom`'s commit rule**, and the quest is
+      planned `CarryOn(quest, last)` whatever its tree holds. *(Round 3's read, R3-O3, R3-O11.)* It answers two records: in row 1a,
+      the held record a hand-over was made from (`HandedFrom`, `Planner.cs:1455-1456`), so *Go on now with…* is step 0 as D206's
+      is and goes on in the quest's tree; and from row 1a2, the record *Try again* released. The person's word needs neither: an
+      Open quest's waiting words are `WordsOn`'s, ahead of the Open path (`:1325-1329`), and resume the record itself.
     - **A Taken quest**: `CarriedOnFrom` already answers it (`CarriesOn` is true for `failed`, `:2005-2006`).
-    - **An awaiting Taken quest**: *Try again* is its release too, and its next start is D79's resume of that record.
+    - **An awaiting Taken quest**: *Try again* is its release too (row 1a2), and its next start is D79's resume of that record.
 
-    The start takes **D206's step-1 resume**. `LimitResume.Line` (`LimitResume.cs:26-32`) also answers a released `ended.transient`
+    *Try again*'s start (row 1a2) takes **D206's step-1 resume**. `LimitResume.Line` (`LimitResume.cs:26-32`) also answers a released `ended.transient`
     record, Daoris's go-on is kept just before `ContinueAsync` under `DaorisKeys.TransientRelease(session, ended)`, keyed by the same
     end, since `TransientRetry(session, episode)` names no episode across runs. A refused resume takes the word off and goes
     briefed, as D206's does. The act: `StandingChoices.Retry` (`StandingChoices.cs:108-131`) refuses anything not `Exhausted`,
@@ -485,8 +537,10 @@ The rest of §3.1's codes enter each table as its row records them.
     (`DriverContinuations.cs:58`), since the native door's `--resume` of a missing conversation is not recorded to fail closed.
     Row 1a's `ended.transient` is the protocol door's alone. For the native door, row 1c first measures `--resume` of a captured
     id that is gone, on the real door. Where it fails closed, 1c widens the guard for this release and proves both the resume of
-    the existing id and the fallback when the id is gone. Where it does not, **the native release is not offered as the same
-    conversation**: it goes briefed, and the native door's `ended.transient` says so in its last clause (§8).
+    the existing id and the fallback when the id is gone. Where it does not, **the native *Try again* is not offered as the same
+    conversation**: it goes briefed, and the native door's `ended.transient` says so in its last clause (§8). *(Round 3's read,
+    R3-O7.)* That is *Try again*'s release alone. The person's word goes by MSG1b's `ResumesOwn` (`DriverContinuations.cs:40-45`),
+    which has no such guard and resumes the same native conversation today, so the native clause splits the two releases.
   - **The release is the person's**, so a resume that meets the account, the conversation or the choice gone is the person's
     authorized carry-on, by D206's step-1 fallback, and D205's walk inside it is the start's, not an escape from the bound. A
     released run that fails past its own bound ends `ended.transient` at a new `Updated` and is held again: an outage never cycles
@@ -556,9 +610,10 @@ resume to ANSWER1a's and D206's briefed fallback. Past the bound the start ends 
 §5.1 says: never briefed onto a provider that is down.
 
 *(Round 3, Codex's row note on 1a2.)* The try repeats the **raw** operation on the wire. It never calls `OpenAsync` or `ResumeAsync`
-again, since their handshake runs once per session (`Acp.cs:1159`). *(Round 3, R2-O2.)* Past the bound nothing was prompted, so
-§5.1's *nothing prompted* end applies: Daoris's go-on comes off by id, and the person's carried words are marked `transient-held`
-for the person. Row 1a2 builds this, and until it does a failure at the open keeps today's end.
+again, since their handshake runs once per session (`Acp.cs:1159`). *(Round 3, R2-O2; round 3's read, R3-O9.)* Past the bound
+nothing was prompted, so §5.1's *nothing prompted* end applies: Daoris's go-on comes off by id, and the person's carried words,
+said before the end, wait for a word of theirs said after it, by the word rule's time, with no mark written. Row 1a2 builds this,
+and until it does a failure at the open keeps today's end.
 
 ## 6. With D206's limit resume and D205's walk
 
@@ -580,8 +635,11 @@ for the person. Row 1a2 builds this, and until it does a failure at the open kee
   it until its wake. Its wake's turn is a turn like any other. A limit read on a conversation's try goes to LIMITGOON1/2 once.
   *(Round 3, R2-C2.)* `LimitHeld.Of` collects the person's words since the last turn that ended otherwise
   (`Conversations/Domain/LimitHeld.cs:17-45`), and row 1b's episode ends no turn between tries. So each try's quiet `agent.transient`
-  event names the ids of the words that went on the wire with it, and `LimitHeld.Of` leaves out words such an event names: a limit
-  after a transient episode holds only the words still owed.
+  event names the ids of the words that went on the wire with it, and `LimitHeld.Of` leaves out words such an event names.
+  *(Round 3's read, R3-O6.)* That alone is not enough: `LimitHeld.Of` collects every person's `User` event since the last turn that
+  ended otherwise (`LimitHeld.cs:27-30`), the failed turn's own ask among them, and no try's event names it. So **the episode's first
+  `agent.transient` event also names the ids of the failed turn's own words**, and a limit after a transient episode holds only the
+  words still owed.
 - **Past the bound**, the hold (§5.1) is released only by the person, and the release's resume is D206's step 1 (§5.1).
 
 ### 6.2 D205
@@ -623,7 +681,7 @@ says where its minutes ran out (`{{count}}` tries, *before its minutes ran out*)
 
 | Kind of run | During the retry | Past the bound, or its minutes inside an episode |
 |---|---|---|
-| **A driven session** | Its record stays `running`; the conversation says `agent.transient-retrying` once; the head says *Trying again at {{time}}* during a wait | `failed`, `ended.transient`, no strike, every word that went on the wire off as taken, Daoris's go-on off, the quest held for the person until a new word of theirs or *Try again* for that end (§5.1); *Ended* raised once (`AttentionWatch`, `Quests/Domain/Attention.cs:248-254`, worded by its code); *Try again* and *Go on now with…* on its header |
+| **A driven session** | Its record stays `running`; the conversation says `agent.transient-retrying` once; the head says *Trying again at {{time}}* during a wait | `failed`, `ended.transient`, no strike, every word that went on the wire off as taken, Daoris's go-on off, the quest held for the person until a new word of theirs or *Try again* for that end (§5.1); *Ended* raised once (`AttentionWatch`, `Quests/Domain/Attention.cs:248-254`, worded by its code); *Go on now with…* on its header, and *Try again* from row 1a2 |
 | **Ask Daoris and a repository's chat** | The turn does not end `error`: the runner waits and tries again on the same process. Words said meanwhile are kept on `said` and shown queued; they go as the next try at once (§5.1). *(Round 2, C13.)* The line is `agent.transient-retrying`, one code for both | The turn ends `error` with `chat.transient-stopped`: *{{agent}}'s provider kept failing ({{words}}): your next words go on in this conversation.* The conversation stays; the person's next word is a turn as today. No record state changes, as a chat's failed turn changes none today |
 | **A helper** | Its pass waits and tries again inside its run, within its minutes | Settled `refused` with a reason of its own, `HelperWhy.Transient`, said `helper.transient` on the asker (*Helper {{agent}} could not answer: its provider kept failing ({{words}})*), not `no answer` and not *timed out*. A lead waiting on it goes back to the person as a refused helper's lead does (`BackToPersonAsync`, `DriverHelpers.cs:363-386`), now with the reason |
 | **A second opinion** | Its pass waits and tries again inside its run, within its minutes | The pass is `failed` with why `transient` (`Opinions` gains it beside `limited`); the gate is `Unavailable` with code `transient` and no `Until`, so the look does not re-ask it (`OpinionGateLook.cs:220-221` re-asks only a cooling gate) and the person's *Try again* does |
@@ -649,11 +707,16 @@ says where its minutes ran out (`{{count}}` tries, *before its minutes ran out*)
   state is nothing they know (`.claude/knowledge/compatible-builds.md`). An older build reading this machine's ledger counts an
   `ended.transient` record as a strike and carries it on, which is today's behaviour.
 - **The strikes** pass `ended.transient` by its code (`ReadStrikes`, as `update.closed`).
-- **The hold** reads `ended.transient` by its code (`TransientHolding`, §5.1). *(Round 3, R2-O1, R2-C3.)* Its release is its own,
+- **The hold** reads `ended.transient` by its code (`TransientHolding`, §5.1). *(Round 3, R2-O1, R2-C3; row 1a2's, round 3's read,
+  R3-O11.)* *Try again*'s release is its own,
   `DriverConfig.TransientReleased`, quest → session and the end it releases (the record's `Updated`), written only when set, apart
   from the stop's `Released` (`DriverConfig.cs:94-123`), which keeps its meaning. `WithoutQuest` (`:129-139`) drops it with the
   stop's when the quest closes. An older build does not read it, so it carries the record on as today (above).
-- **The mark** `GoOnMarks.TransientHeld` (`transient-held`), *(round 3, R2-O2)*, only at an end where nothing was prompted (§5.1).
+- **No mark.** *(Round 3's read, R3-O9.)* Round 3's `GoOnMarks.TransientHeld` (`transient-held`) is withdrawn: at an end where
+  nothing was prompted, the word rule's time (a word of the person's said after the record ended) holds the carried words with no
+  write (§5.1).
+- **No new uncertain note.** *(Round 3's read, R3-O2.)* An unacknowledged word is said by COWORK1c's `lost` note under its id
+  (§5.1); round 3's `agent.transient-unacknowledged` is withdrawn.
 - **Note codes** (kebab case, as `NoteCodesTests` holds; en and zh in the note catalogue, `src/Daoris.Web/src/work/noteLines.ts`).
   *(Round 2, O12.)* The zh says 重试, the glossary's *try again* (`src/Daoris.Web/src/locales/glossary.json:652`), never 再试, which it
   lists to avoid. *(Round 3, R2-O10.)* The product's name in running zh text is *Daoris*, as the glossary's `Daoris` entry keeps 道衍
@@ -664,14 +727,13 @@ says where its minutes ran out (`{{count}}` tries, *before its minutes ran out*)
   | Code | Where | English | 中文 |
   |---|---|---|---|
   | `agent.transient-retrying` | the conversation, once per episode, a driven session's and a chat's | *{{agent}}'s provider failed ({{words}}). Daoris tries again in this conversation: up to {{count}} times, after {{minutes}} minutes of waits between them, the next at {{time}}.* | *{{agent}} 的服务方出错（{{words}}）。Daoris 会在本对话中重试：最多 {{count}} 次，各次之间共等待 {{minutes}} 分钟，下一次在 {{time}}。* |
-  | `agent.transient-unacknowledged` | the conversation, once per episode, where a word of the person's met the error before the agent showed it read it (§5.1, round 3) | *{{count}} of your words met the provider's error before {{agent}} showed it had read them. Daoris did not send them again: say them again if they are needed.* | *你有 {{count}} 条话在 {{agent}} 表明读到之前就遇到了服务方的错误。Daoris 没有再次发送：如有需要，请再说一次。* |
-  | `ended.transient` | the record's note | *Its provider kept failing after {{count}} tries, with {{minutes}} minutes of waits between them ({{words}}). It waits for you: your words, or Try again, go on in the same conversation.* *(Round 3, R2-C7.)* On the native door until row 1c records that its resume fails closed, the last clause reads *go on in a new part, briefed from this one.* | *它的服务方在 {{count}} 次重试后仍然出错，各次之间共等待 {{minutes}} 分钟（{{words}}）。它在等你：你的话或"重试"会在同一对话中继续。* The native door's clause: *会在一个从这里简述而来的新部分中继续。* |
-  | `held.transient` | the planner's sentence for a held quest | *Its last session's provider kept failing: it waits for your words or Try again.* | *它上一个会话的服务方一直出错：它在等你的话或"重试"。* |
+  | `ended.transient` | the record's note | Row 1a: *Its provider kept failing after {{count}} tries, with {{minutes}} minutes of waits between them ({{words}}). It waits for your words, which go on in the same conversation.* From row 1a2 (round 3's read, R3-O11), its last sentence: *It waits for you: your words, or Try again, go on in the same conversation.* *(Round 3, R2-C7; round 3's read, R3-O7.)* On the native door until row 1c records that its resume fails closed, the last sentence reads *It waits for you: your words go on in the same conversation; Try again goes on in a new part, briefed from this one.* | Row 1a: *它的服务方在 {{count}} 次重试后仍然出错，各次之间共等待 {{minutes}} 分钟（{{words}}）。它在等你的话，你的话会在同一对话中继续。* From row 1a2: *它在等你：你的话或"重试"会在同一对话中继续。* The native door's: *它在等你：你的话会在同一对话中继续；"重试"会在一个从这里简述而来的新部分中继续。* |
+  | `held.transient` | the planner's sentence for a held quest | Row 1a: *Its last session's provider kept failing: it waits for your words.* From row 1a2: *Its last session's provider kept failing: it waits for your words or Try again.* | Row 1a: *它上一个会话的服务方一直出错：它在等你的话。* From row 1a2: *它上一个会话的服务方一直出错：它在等你的话或"重试"。* |
   | `chat.transient-stopped` | a conversation's line | *{{agent}}'s provider kept failing ({{words}}): your next words go on in this conversation.* | *{{agent}} 的服务方一直出错（{{words}}）：你接下来的话会在本对话中继续。* |
   | `helper.transient` | the asker's record | *Helper {{agent}} could not answer: its provider kept failing ({{words}}).* | *助手 {{agent}} 没能回答：它的服务方一直出错（{{words}}）。* |
   | `intake.transient` | the intake's record | *the agent's provider kept failing while it worked on ask `#{{ask}}` ({{words}}).* | *智能体处理请求 `#{{ask}}` 时，它的服务方一直出错（{{words}}）。* |
   | `partner.transient` | the lead's record | *Partner {{agent}} stopped: its provider kept failing ({{words}}). Its work is kept.* | *搭档 {{agent}} 停下了：它的服务方一直出错（{{words}}）。它的工作已保留。* |
-  | `retry.go-on` | Daoris's word to the agent | *The last request failed on the provider's side ({{words}}). Go on where you stopped.* | the agent's word, English only, as `limit.reset` is |
+  | `retry.go-on` | Daoris's word to the agent, on a try and on *Try again*'s release, never on the person's word (round 3's read, R3-O8) | *The last request failed on the provider's side ({{words}}). Go on where you stopped, after anything said above.* | the agent's word, English only, as `limit.reset` is |
 
   `{{words}}` is the door's own sentence, said as a program's (`NoteBy.Program`), never translated: authored content stays as written.
   The glossary's *try again* / 重试 widens its `means` to a record past its retries (row 1a2), beside D206's *Try now*, which is an
@@ -691,6 +753,12 @@ says where its minutes ran out (`{{count}}` tries, *before its minutes ran out*)
 - **D137's TURNFAIL1 note**: a transient failure is retried in its run and never takes the look's retry; a word once on the wire is
   never sent again, and after an episode TURNFAIL1 and D206 are handed only the words still held; past its bound the planner holds
   the line for the person, and only a word of the person's releases it.
+- **D188's COWORK1c note** *(round 3's read, R3-O2)*: its rule is *only a restart makes a word uncertain*, and uncertain words leave
+  by the take-back door under the `lost` note (`docs/decisions/D188.md:267-270`). A transient episode adds a second cause within
+  one shell: a word of the person's whose prompt met the provider's error before any update of its turn, a head word and a try's
+  blocks included, is uncertain. It is said by the same `lost` note under its id, offered as *Say it again*, and never sent again,
+  so within one shell a word kept after a **transient** failed turn does not go again as TURNFAIL1's does. No new note is made.
+  D188 point 6's *a word leaves `said` by id once it is on the wire* holds for Daoris's go-on too (R3-O5).
 - **D125 point 1** and **D206 point 1** (§3.1's pipe door): the limit is read in `AgentErrors.Read`, first, from every door's
   failure, the pipe door's included; the table and the reset are unchanged; a limit's code with no sentence read is a limit with the
   unstated reset.
@@ -746,6 +814,12 @@ says where its minutes ran out (`{{count}}` tries, *before its minutes ran out*)
   the install's 529 would read fatal (§4.1).
 - **A temporary rate limit read transient by its sentence, in this delivery** *(round 3, R2-C9)*: §3.2 reads a 429 or `rate_limit`
   as a limit before any transient sentence, and no such sentence is recorded (§3.1).
+- **An answered settling turn or a woken end ending the episode** *(round 3's read, R3-O1)*: neither shows that the agent went on
+  with the failed turn, and the run would then park or strike (§5.1).
+- **A note of its own for an unacknowledged word** *(round 3's read, R3-O2)*: it is COWORK1c's uncertain word, said by the `lost`
+  note (§5.1, §9).
+- **A mark for words an open never sent** *(round 3's read, R3-O9)*: a failed write beside the conclusion fails it open; the word
+  rule's time needs no write (§5.1).
 
 ## 11. Rows, in build order, with their proofs
 
@@ -766,12 +840,21 @@ failure for a driven session with its hold; 1a2 carries shape 2, the open and th
 
 A failure at the open keeps today's end until 1a2 (R2-O2).
 
+*(Round 3's read.)* Its named changes move these:
+- *Try again*'s keyed release (`TransientReleased`, `TransientReleasedFrom` for a released record, `Retry`'s case, `LimitResume.Line`
+  and `DaorisKeys.TransientRelease`) and their proofs go to 1a2 beside its press (R3-O11). 1a's release is then the person's word
+  and the hand-over, both loop-free, and every sentence of 1a's names only those.
+- 1a carries the settling and woken ends that send the go-on (R3-O1), the `lost` note in place of a new one (R3-O2), the hand-over
+  carried on in an Open quest's tree (R3-O3) and the go-on through the dispatcher (R3-O5).
+- 1a2's open end needs no mark (R3-O9), 1b's limit leaves out the failed turn's own words (R3-O6), and 1c's native note splits the
+  two releases (R3-O7).
+
 | Row | What | After | Proof |
 |---|---|---|---|
-| **AGENTERRORS1a** | The kinds and the reader at the interface (`DoorFailure`, `AgentError`, `AgentErrors.Read` taking the adapter set, `ErrorWords` read own then owner with `AuthRequiredCode` never inherited, §4.4's first entries on `claude-code` and `claude-code-acp`); the protocol door's prompt failure (`Where: prompt`) for a **driven session**, the `TransientRetry` handed at `Driver.cs:2683` and `DriverContinuations.cs:431` alone; §5.1's episode inside `AcpSession.RunAsync` (the seat, the settled wire and its settling turns, the three dispositions read before `Answered` removes a prompt and handed to every conclusion, words held during the wait, one prompt a try of held words, the wake gate, the driven check `TransientRetry.Wanted`, an unread check a yes, `WaitsOnTransient`, the wait's end stamped heard); the limit's code with the unstated reset (§3.1); `ended.transient` with the actual tries and waits, `ReadStrikes`, every word on the wire off at every conclusion, Daoris's go-on off at every conclusion; the planner's hold (`TransientHolding`, `StartVerdict.TransientHeld`, `held.transient`) after `WordsOn` and `StopHolding` and before every other path, passing a hand-over from its record, its word rule (a person's unmarked word), `TransientReleased` keyed to the end, `TransientReleasedFrom` for an Open quest, `StandingChoices.Retry`'s case; the minimum suppression (`toTurns`' drop and the re-sent go-on off the record); `agent.transient-retrying`, `agent.transient-unacknowledged`, `ended.transient`, `held.transient` and `retry.go-on` in en and zh. Access and fatal keep today's ends; a failure at the open keeps today's end | — | The reader's table both ways (`AgentErrorsTests`, a fast class), `-32000` read only where declared: an authentication refusal and an unrelated failure with the same code on the stub. A stand-in ACP agent answering its prompt `-32603` *Internal error: API Error: 529 Overloaded. …* with `data.errorKind: "overloaded"` (source-derived) twice, then working: retried in the **same** conversation (one record, the same session id, no `moved.on`), it goes on and ends as its work does, with one `agent.transient-retrying` line, no strike and no `cooling.json` entry, red first against today's `ended.turn-failed-taken`. A stand-in that records the person's words and makes a visible effect, then fails: the stand-in receives each word **once** (one `user` event, one receipt), and neither the instruction nor the effect is replayed. A word said during a wait goes at once, in one prompt with the go-on after it. A woken turn during a wait ends the episode, and no prompt is sent into it. The quest done before a try: no try. The watch during a wait: no episode, no quiet end. The same agent erring every try: past the bound `failed`, `ended.transient`, no word waiting, the go-on off, no strike, no cool-off, no park; then **the next looks** (a tick each, with and without commits in the tree) start nothing for an Open and for a Taken quest, until the person's word, or the `retry` release, resumes the **same conversation id** by D206's step 1. A limit on a try: cooled once, D206 from there. A weekly limit's sentence under `errorKind: "rate_limit"`: limited, never retried; `rate_limit` with no sentence: limited an hour. Shutdown during a wait ends as today's shutdown. *(Round 3.)* **The tables compose**: `claude-code-acp`, with its own `-32000` declaration, still reads its owner's `overloaded`, 529 sentence and `rate_limit` through the real adapter set; a plugin with `accountOf: claude-code` reads them too but never the `-32000` declaration. **Nonacceptance**: a stand-in that appends a queued word to its conversation and then answers its prompt with the error, with no update first: the word is never sent again, and `agent.transient-unacknowledged` is said once. A settling turn that answers ends the episode with no try; one that fails transient counts as a try. **Dispositions across kinds**: transient → limit → the account's reset resumes its own conversation; transient → limit → a briefed move; transient → fatal → TURNFAIL1's next look. Each asserts one receipt of each original instruction. **The release**: exhausted → *Try again* once → the resumed run exhausted again → several looks, then a driver restart and more looks: nothing starts. An **Open quest with no commits** released resumes its original conversation id, with no fresh tree and no replay of its target. **The word rule**: a helper's answer and a Daoris word kept on the exhausted record start nothing at the next looks, then travel once with the person's word. A hand-over from the held record passes the hold. **The driven check**: an Open quest that failed before its take is tried; a quest submitted just before a try is not; an unreadable quest is tried. A run that is not a driven session's (an intake's stand-in) keeps today's end. **The watch**: a silent try after the 16-minute wait under a held clock opens no quiet end until its own quiet has passed from its prompt. **The rendered conversation** (`toTurns` over the record): the provider's error shown once, the go-on once, and one `agent.transient-retrying` line, through three failed tries. **The words**: `ended.transient` names the tries made and the minutes waited after an early try sent by the person's word. `NoteCodesTests`, `i18n:check`, `names:check --strict` |
-| **AGENTERRORS1a2** | Shape 2 (§4.2: a mid-turn word's prompt refused after it was taken is the turn's prompt failing); the open (§5.6), by the raw operation, never `OpenAsync`/`ResumeAsync` again (`Acp.cs:1159`), its *nothing prompted* end (Daoris's go-on off, the person's words marked `transient-held`); the page: the head's *Trying again at {{time}}* from `agent.transient`, *Try again* offered on an `ended.transient` record (`acts.ts`) in en and zh, the glossary's *try again* widened | 1a | Shape 2 both ways round: a mid-turn word refused with the 529 after the prompt before it answered (taken: retried, never `awaiting-person`, the word received once), and one refused before it was taken while the running turn then ends well (the word's note, the turn clean). A refused steer (`_session/steering`) stays its note. An unrelated update after the refusal changes nothing. The open: a transient `session/new` and `session/resume` failure repeated, then the original prompt sent once, before and after a session id exists; D205's model refusal unchanged. *(Round 3, R2-O2.)* A resume whose open fails past the bound: the go-on off, the person's words marked, then the next looks start nothing, until a new word of theirs goes on with the marked ones. The head through several waits, a try that works, a stop and the bound, in en and zh (`limitWait`'s and the head's tests, a story) |
-| **AGENTERRORS1b** | §5.1 and §7 for **conversations**, Ask Daoris and a repository's chat, on the protocol door: the wait, words said meanwhile, `chat.transient-stopped` | 1a | A stand-in conversation's turn failing transient twice then answering: one turn (failed tries neither release the queue, `ChatTurns.TurnEnded`, nor move the curve, notify or move a limit), the same process, the person's words once; a word said during the wait goes at once and first, one prompt with the go-on; a limit on a try goes to LIMITGOON1/2 once, and `LimitHeld.Of` holds only the words no try carried (round 3, R2-C2), each original word received once at the limit's wake or move; erring every try ends the turn `error` with `chat.transient-stopped`, and the next word is a turn of the same conversation (`ChatGoesOnProcessTests` or a class of its own); the page's line in en and zh |
-| **AGENTERRORS1c** | The **pipe door**: `ClaudeStreamJson.Result` reads `api_error_status` and the harness's `error` field into a `DoorFailure`, the conclusion's `turnFailed` on this door (D206 row 1f's gap: limits and sign-ins read here too), D205's model refusal read first; the **driven native run**'s retry by `--resume` with `--model` and effort; *(round 3, R2-C7)* first, a real-door measurement of `--resume` of a captured id that is gone, and on its answer either the step-1 guard (`DriverContinuations.cs:58`) widened for the transient release or the native release briefed and said so (§5.1, §8); and, after 1b, the **live native conversation**'s retry on its process and `NativeChat`'s reading of a failed result | 1a; 1b for `NativeChat` alone | The measured 404 frame (`ClaudeStreamJsonTests.cs:191-212`) and the failed 429 result, whose fixture this row adds from `model-effort-doors-evidence.md:186-204` (round 3, R2-C11); the missing-conversation measurement, recorded; after exhaustion and the release, the existing id resumed, and a gone id taking the named fallback, neither replaying an accepted instruction; a 5xx frame recorded on the real door, or replayed from the SDK's declaration marked source-derived. A stand-in native agent erring twice then working is resumed with `--resume` and the same `--model` in the same record and goes on; one that keeps erring ends `ended.transient` and is held; its limit sentence cools its account; `model_not_found` on a silent turn stays D205's (`NativeResumeTests`, a native tick class). A missing id, and an end before `init`: no try, today's end. A live native chat retries on its own process, never spawning `--resume` beside it |
+| **AGENTERRORS1a** | The kinds and the reader at the interface (`DoorFailure`, `AgentError`, `AgentErrors.Read` taking the adapter set, `ErrorWords` read own then owner with `AuthRequiredCode` never inherited, §4.4's first entries on `claude-code` and `claude-code-acp`); the protocol door's prompt failure (`Where: prompt`) for a **driven session**, the `TransientRetry` handed at `Driver.cs:2683` and `DriverContinuations.cs:431` alone; §5.1's episode inside `AcpSession.RunAsync` (the seat, the settled wire and its settling turns, an answered settling turn or a woken end sending the go-on at once as a try, the three dispositions read before `Answered` removes a prompt and handed to every conclusion, an unacknowledged word said by COWORK1c's `lost` note, words held during the wait, one prompt a try of held words, the wake gate, the driven check `TransientRetry.Wanted`, an unread check a yes, `WaitsOnTransient`, the wait's end stamped heard); the limit's code with the unstated reset (§3.1); `ended.transient` with the actual tries and waits, `ReadStrikes`, every word on the wire off at every conclusion, Daoris's go-on through the run's dispatcher, off once on the wire, with the take-off at both conclusions, a first run's and a continuation's, as the fallback; the planner's hold (`TransientHolding`, `StartVerdict.TransientHeld`, `held.transient`) after `WordsOn` and `StopHolding` and before every other path, passing a hand-over from its record and carrying an Open quest's on in its tree (`TransientReleasedFrom` for the hand-over's record, step 0), its word rule (a person's unmarked word said after the record ended), the person's word sending their words alone; the minimum suppression (`toTurns`' drop and the re-sent go-on off the record); `agent.transient-retrying`, `ended.transient` and `held.transient` in 1a's words, and `retry.go-on`, in en and zh. Access and fatal keep today's ends; a failure at the open keeps today's end; *Try again*'s keyed release is 1a2's | — | The reader's table both ways (`AgentErrorsTests`, a fast class), `-32000` read only where declared: an authentication refusal and an unrelated failure with the same code on the stub. A stand-in ACP agent answering its prompt `-32603` *Internal error: API Error: 529 Overloaded. …* with `data.errorKind: "overloaded"` (source-derived) twice, then working: retried in the **same** conversation (one record, the same session id, no `moved.on`), it goes on and ends as its work does, with one `agent.transient-retrying` line, no strike and no `cooling.json` entry, red first against today's `ended.turn-failed-taken`. A stand-in that records the person's words and makes a visible effect, then fails: the stand-in receives each word **once** (one `user` event, one receipt), and neither the instruction nor the effect is replayed. A word said during a wait goes at once, in one prompt with the go-on after it. A woken turn during a wait ends the wait, not the episode: no prompt is sent into it, and the go-on follows once after it ends. The quest done before a try: no try. The watch during a wait: no episode, no quiet end. The same agent erring every try: past the bound `failed`, `ended.transient`, no word waiting, the go-on off, no strike, no cool-off, no park; then **the next looks** (a tick each, with and without commits in the tree) start nothing for an Open and for a Taken quest, until the person's word resumes the **same conversation id** by MSG1b's go-on, with their words alone and no go-on after them. A limit on a try: cooled once, D206 from there. A weekly limit's sentence under `errorKind: "rate_limit"`: limited, never retried; `rate_limit` with no sentence: limited an hour. Shutdown during a wait ends as today's shutdown. *(Round 3.)* **The tables compose**: `claude-code-acp`, with its own `-32000` declaration, still reads its owner's `overloaded`, 529 sentence and `rate_limit` through the real adapter set; a plugin with `accountOf: claude-code` reads them too but never the `-32000` declaration. **Nonacceptance**: a stand-in that appends a queued word to its conversation and then answers its prompt with the error, with no update first: the word is never sent again, and the `lost` note is said once under its id; so is a head word whose `Taken` mark the order of answers set, its prompt meeting the error before any update. *(Round 3's read.)* **A settling turn**: a queued word's settling turn answers `end_turn` on a taken quest, the go-on follows once, and the run ends as its work does, never `awaiting-person`; on an Open quest, never `ended.untouched`. One that fails transient counts as a try. **The go-on off**: a try answers and the run then parks, and the next look starts nothing, on a first run and on a continuation. **Dispositions across kinds**: transient → limit → the account's reset resumes its own conversation; transient → limit → a briefed move; transient → fatal → TURNFAIL1's next look. Each asserts one receipt of each original instruction. **The release**: exhausted → the person's word → the resumed run exhausted again → several looks, then a driver restart and more looks: nothing starts. **The word rule**: a helper's answer, a Daoris word and a word of the person's said before the end, kept on the exhausted record, start nothing at the next looks, then travel once with the person's word said after it. **The hand-over**: from the held record of an **Open quest with no commits**, it passes the hold and goes on in the quest's tree, never a fresh start. **The driven check**: an Open quest that failed before its take is tried; a quest submitted just before a try is not; an unreadable quest is tried. A run that is not a driven session's (an intake's stand-in) keeps today's end. **The watch**: a silent try after the 16-minute wait under a held clock opens no quiet end until its own quiet has passed from its prompt. **The rendered conversation** (`toTurns` over the record): the provider's error shown once, the go-on once, and one `agent.transient-retrying` line, through three failed tries. **The words**: `ended.transient` names the tries made and the minutes waited after an early try sent by the person's word. `NoteCodesTests`, `i18n:check`, `names:check --strict` |
+| **AGENTERRORS1a2** | Shape 2 (§4.2: a mid-turn word's prompt refused after it was taken is the turn's prompt failing); the open (§5.6), by the raw operation, never `OpenAsync`/`ResumeAsync` again (`Acp.cs:1159`), its *nothing prompted* end (Daoris's go-on off, the person's words held by the word rule's time, no mark); *(round 3's read, R3-O11)* *Try again*'s keyed release beside its press (`DriverConfig.TransientReleased` keyed to the end, `TransientReleasedFrom` widened to a released record, `StandingChoices.Retry`'s case, `LimitResume.Line` and `DaorisKeys.TransientRelease` for its step-1 start), and `ended.transient` and `held.transient` widened to name it; the page: the head's *Trying again at {{time}}* from `agent.transient`, *Try again* offered on an `ended.transient` record (`acts.ts`) in en and zh, the glossary's *try again* widened | 1a | Shape 2 both ways round: a mid-turn word refused with the 529 after the prompt before it answered (taken: retried, never `awaiting-person`, the word received once), and one refused before it was taken while the running turn then ends well (the word's note, the turn clean). A refused steer (`_session/steering`) stays its note. An unrelated update after the refusal changes nothing. The open: a transient `session/new` and `session/resume` failure repeated, then the original prompt sent once, before and after a session id exists; D205's model refusal unchanged. *(Round 3, R2-O2; round 3's read, R3-O9.)* A resume whose open fails past the bound: the go-on off, no mark written, then the next looks start nothing, until a new word of theirs, said after the end, goes on with the carried ones; the same with the conclusion's every side write failing. *(Moved from 1a, R3-O11.)* **The release**: exhausted → *Try again* once → the resumed run exhausted again → several looks, then a driver restart and more looks: nothing starts. An **Open quest with no commits** released resumes its original conversation id, with no fresh tree and no replay of its target. *Try again* offered and pressed on the page, in en and zh. The head through several waits, a try that works, a stop and the bound, in en and zh (`limitWait`'s and the head's tests, a story) |
+| **AGENTERRORS1b** | §5.1 and §7 for **conversations**, Ask Daoris and a repository's chat, on the protocol door: the wait, words said meanwhile, `chat.transient-stopped` | 1a | A stand-in conversation's turn failing transient twice then answering: one turn (failed tries neither release the queue, `ChatTurns.TurnEnded`, nor move the curve, notify or move a limit), the same process, the person's words once; a word said during the wait goes at once and first, one prompt with the go-on; a limit on a try goes to LIMITGOON1/2 once, and `LimitHeld.Of` holds only the words no try carried (round 3, R2-C2) and never the failed turn's own (round 3's read, R3-O6), each original word received once at the limit's wake or move; erring every try ends the turn `error` with `chat.transient-stopped`, and the next word is a turn of the same conversation (`ChatGoesOnProcessTests` or a class of its own); the page's line in en and zh |
+| **AGENTERRORS1c** | The **pipe door**: `ClaudeStreamJson.Result` reads `api_error_status` and the harness's `error` field into a `DoorFailure`, the conclusion's `turnFailed` on this door (D206 row 1f's gap: limits and sign-ins read here too), D205's model refusal read first; the **driven native run**'s retry by `--resume` with `--model` and effort; *(round 3, R2-C7)* first, a real-door measurement of `--resume` of a captured id that is gone, and on its answer either the step-1 guard (`DriverContinuations.cs:58`) widened for the transient release or the native *Try again* briefed and said so, the note's clause splitting it from the person's word, which goes on in the same conversation by `ResumesOwn` (§5.1, §8; round 3's read, R3-O7); and, after 1b, the **live native conversation**'s retry on its process and `NativeChat`'s reading of a failed result | 1a; 1b for `NativeChat` alone | The measured 404 frame (`ClaudeStreamJsonTests.cs:191-212`) and the failed 429 result, whose fixture this row adds from `model-effort-doors-evidence.md:186-204` (round 3, R2-C11); the missing-conversation measurement, recorded; after exhaustion and the release, the existing id resumed, and a gone id taking the named fallback, neither replaying an accepted instruction; a 5xx frame recorded on the real door, or replayed from the SDK's declaration marked source-derived. A stand-in native agent erring twice then working is resumed with `--resume` and the same `--model` in the same record and goes on; one that keeps erring ends `ended.transient` and is held; its limit sentence cools its account; `model_not_found` on a silent turn stays D205's (`NativeResumeTests`, a native tick class). A missing id, and an end before `init`: no try, today's end. A live native chat retries on its own process, never spawning `--resume` beside it |
 | **AGENTERRORS1d** | §7's **other kinds of run** past the bound and at their minutes: helper (`HelperWhy.Transient`), opinion (`transient` why and gate), intake (one unbind, then bound), partner, brainstorm; each owner's check (§5.5); the one-turn native pass's episode-local id | 1a; 1c wherever it promises the native door | Each kind's stand-in erring every try ends as §7 says, its minutes ending inside an episode with the transient reason, never *timed out*; erring twice then working goes on in its run; a helper's answer stored, an intake's quests published and an opinion recorded just before the provider failed: no try, today's end; *(round 3, R2-C8)* an ask closed without new quests, and an ask published by somebody else, each just before the failure: no try, the original stand-down (`HelperLookTests`, `OpinionLookTests`, `IntakeTests`, the partners' and brainstorms' classes) |
 | **AGENTERRORS1e** | **Access** on every door (§5.3): `-32000` where declared, `AccountRefused` through the reader so `claude-code-acp` reads its owner's `Refused`, the SDK's access kinds, Codex's `unauthorized` tied to its holder's accounts, the harness's lines kept as a source | 1a; 1c for the pipe door | A stand-in of each door refusing with its access error: the account marked, no strike, no retry, the next start walks past it, and with none ready the start is held in today's sentence (`SignInRefusalsTests`, `AccountRotationTickTests`). A stderr-only credential refusal still marks the account, and so does one said on stdout outside the protocol (round 3, R2-C11); an ordinary stderr failure does not; an agent message quoting the credential's sentence does not |
 | **AGENTERRORS1f** | **`codex-acp`'s** codes (§3.1, §4.3): record its frames on the real door (a usage limit, a dropped stream with `willRetry`, a terminal overload, the typed `sessionFailure` marker once declared), then read `codexErrorInfo` and `category` | 1a | The recorded frames, held both ways; a stand-in `codex-acp` erring twice then working retried in the same conversation. By the typed marker: a direct terminal failure, retries that recovered, a successful empty ending, a cancel, retries exhausted, and its access and request categories, each read as its kind. *(Round 3, Codex's row note.)* 1a's disposition and release proofs again on this door |
@@ -795,10 +878,14 @@ The first row gives the most: it is the install's door, its measured shape 1 and
 - *(Round 3, R2-C7, R2-O3's note.)* D206's step 1 is the protocol door's (`DriverContinuations.cs:58`). Until row 1c measures the
   native door's `--resume` of a missing conversation, a native `ended.transient` release goes briefed, and its note says so.
 - *(Round 3, R2-C1.)* Whether an adapter appended a word whose prompt answered an error is not known on any door. Daoris never
-  sends such a word again and tells the person once. If the agent never read it, it is lost to the agent until the person says it
+  sends such a word again and says it under COWORK1c's `lost` note (round 3's read, R3-O2). If the agent never read it, it is lost to the agent until the person says it
   again, which is the cost of never repeating an instruction.
 - *(Round 3, the Opus read's note on R2.)* A request-bound 5xx read transient loses today's self-healing briefed carry-on. It now
-  needs the person after the bound, whose way out is *Try again* or *Go on now with…*, and the hold passes a hand-over (§5.1).
+  needs the person after the bound, whose way out is their word or *Go on now with…*, and from row 1a2 *Try again*; the hold passes a
+  hand-over (§5.1).
+- *(Round 3's read, R3-O10.)* Every 429 or `rate_limit` is now a limit (§3.2). A provider's per-minute rate limit therefore cools its
+  account for D125's hour (`AccountLimits.DefaultCoolOff`) and the line moves or waits, where today the same failure is a strike and
+  a briefed carry-on a minute later. That holds until a later row records a temporary reading (§3.1).
 - How long real outages last is not measured. The bound's 31 minutes of waits is a reading of the two records (each overload passed
   within the half hour: the person's go-on at 01:02 worked, and `63d56294` ran at 00:31) and of the harness's own retries before it.
 - The prompt cache: a try after the 8- or 16-minute wait likely re-reads the whole context (219,284 tokens in shape 1), unmeasured.
@@ -813,6 +900,10 @@ Round 2 was read at `f23020f80` by Codex (*another round*: 11 findings, 8 blocki
 conservative limit reading and the ACP driven-session first delivery) and by the independent Opus reader as a foundation (*accept
 after named changes*: 11 findings, 2 blocking, and 3, 5 and 6 to write in before row 1a is built), kept verbatim in the same file.
 §15 answers every finding.
+
+Round 3 was read at `3086e44f1` by the independent Opus reader alone as a foundation (*accept after named changes* the steward
+checks without another read: 11 findings, 1 blocking, and 2, 3 and 5 to write in before row 1a is built), kept verbatim in the same
+file. Codex's read of round 3 is owed, its credits having run out. §16 says where each finding went.
 
 ## 14. Round 2: round 1's reads answered
 
@@ -891,3 +982,23 @@ takes both. Both reads' tables of round 1's findings are answered by the rows th
 | Codex §3's row notes | Taken: 1a carries the disposition contract, the release lifecycle, the minimum suppression, a second exhaustion and a machine word while held; 1a2 repeats the raw operation, never `OpenAsync`/`ResumeAsync` again (`Acp.cs:1159`); 1b's `LimitHeld`; 1c's missing-conversation measurement and native release proof; 1d's intake closure and foreign publication; 1e both stderr and outside-protocol stdout; 1f 1a's disposition and release proofs again; 1g the stand-in's owner | §5.6, §11 |
 | Opus §2's wrong claims and new holes; *rows whose proof cannot pass* | Taken: each is one of R2-O1 to R2-O9, answered above; D210's body corrected with them | as those rows; D210 |
 | Codex §0 and Opus §1, round 1's findings still open (C3, C4, C5, C7, C8, C14, O2, O3, O14, O16; C4's *different reason*, C8's Open quest, Codex §2's composition) | Taken by the round-3 rows they point to: R2-C1 and R2-O8 (C3, C4, O3), R2-O1, R2-O2, R2-O3, R2-C4 and R2-C5 (C5, O2, Codex §2), R2-C7 (C7), R2-C8 and R2-O6 (C8), R2-C10 and R2-O9 (C14, O16), R2-C11 (O14) | as those rows |
+
+## 16. Round 3's read: where each finding went
+
+Each finding of the Opus foundation read of round 3 (`R3-O1` is its finding 1), taken as the read names it and checked against the
+code on main at `ffcf42926`, whose cited files are the read's `8cc3936b0`'s. Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`
+unless they say otherwise.
+
+| Finding | Where it went, and the sentence | Checked |
+|---|---|---|
+| **R3-O1**, blocking: an answered settling turn or a woken turn ends the episode with no go-on | §5.1, *The wire settles first* and *Through the wake gate*: *a settling turn that answers ends the wait, not the episode*, and likewise *a woken turn's end during an episode*; the owner's check is asked, and *where another turn is still wanted Daoris's go-on goes at once, with no wait, and counts as a try*. D210 point 3's settling clause; row 1a's proof: *a queued word's settling turn answers `end_turn` on a taken quest, the go-on follows once, and the run ends as its work does, never `awaiting-person`*, and the woken turn the same; §10 | `Acp.cs:841` (`NextOrClose` finds nothing and the loop breaks); `Acp.cs:1039-1046` (every woken end emitted as `WokenStop`); `Observation.cs:173-174` (a clean exit with the quest taken parks, `awaiting-person`); `:205-206` (an open quest's clean exit is `ended.untouched`) |
+| **R3-O2**: *unacknowledged* reinvents COWORK1c's uncertain word | §5.1, *What a word's disposition is*: *an unacknowledged word is D188's COWORK1c uncertain word*, said by the `lost` note under its id, read from the turn and never from the `Taken` mark alone, so a head word and a try's blocks are included; `agent.transient-unacknowledged` withdrawn (§8); D188's COWORK1c note added to §9 and to D210's amendments; §10; row 1a's proof | `SessionEvents.cs:70-75` (`Lost`); `Conversations/GoOn/UncertainWords.cs:84-90` (`SettleOneAsync` keeps the note under the unseen words' ids); `docs/decisions/D188.md:267-270` (*only a restart makes a word uncertain*) |
+| **R3-O3**: the hold passes an Open quest's hand-over into a fresh start | §5.1, *The planner holds the quest* and *The next look plans the line's carry-on*: `TransientReleasedFrom` *answers the held record a hand-over was made from (`HandedFrom`)*, planned `CarryOn`, *so Go on now with… is step 0 as D206's is*; row 1a's proof uses a commitless Open quest | `Quests/Domain/Planner.cs:1355-1366` (`Consider`'s fresh start), `:1400-1405` (`LimitedFrom`), `:1455-1456` (`HandedFrom`) |
+| **R3-O4**: a word kept between the press and the start does not move `Updated` | §5.1, *Try again*: *a word kept meanwhile leaves `Updated` as it is, so the release still passes, and the start goes on with that word …; only the record's own end moves it* | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs:1554-1566` (`updated` written only with a note), `:1590-1596` (`TakeSaidAsync` writes none) |
+| **R3-O5**: Daoris's go-on waits on `said` for the episode, and no first run takes it off | §5.1, *Each try is one prompt*: *the go-on leaves the record once it is on the wire … through the run's one dispatcher (`SaidDoor.Dispatched`)*; *What waits on the record*: the conclusion's take-off *as the fallback, at both conclusions*, a first run's included; §9's D188 note; row 1a's proof: *a try answers and the run then parks, and the next look starts nothing* | `docs/decisions/D188.md:52`; `Conversations/SaidDoor.cs:69`; `Loop/DriverContinuations.cs:702-707` (only `LimitResume.WordIds(resume.Words)`); `Loop/Driver.cs:2304` (the first run's only take-off, the refused step 1's); `Conversations/DrivenInbox.cs:908-913` |
+| **R3-O6**: a conversation's limit after an episode re-sends the failed turn's own words | §6.1, *Conversations*: *the episode's first `agent.transient` event also names the ids of the failed turn's own words*; row 1b's proof | `Conversations/Domain/LimitHeld.cs:27-30` (every person's `User` event collected) |
+| **R3-O7**: the native release note conflates the two releases | §5.1, *Step 1 is the protocol door's*: *That is Try again's release alone*; §8's `ended.transient` native clause: *your words go on in the same conversation; Try again goes on in a new part, briefed from this one*; §12; row 1c; D210 point 7 | `Loop/DriverContinuations.cs:40-45` (`ResumesOwn`, no wire guard), `:54-62` (`LimitResumes`, ACP alone) |
+| **R3-O8**: the go-on, placed last, can countermand the person's words | §5.1, *their word*: *It sends their words alone, as MSG1b does for any ended record*; *Each try is one prompt* and §8's `retry.go-on`: *Go on where you stopped, after anything said above* | `Planner.cs:1325-1329` (`WordsOn`'s `GoOn` takes the record's waiting words) |
+| **R3-O9**: 1a2's `transient-held` mark fails open on a failed write | §5.1, *Nothing prompted* and *The hold's word rule*: the person's word is one *said after the record ended: its `At` later than the record's `Updated`, both read from the look's snapshot*, and no mark is written; §5.6; §8 (*No mark*); §10; row 1a2's proof with the side writes failing | `Planner.cs:1503-1505` (`Waits`), `:675` (`Persons`); `SaidWordView` carries `At` (`Conversations/Chat/LimitWaits.cs:231`); `Conversations/GoOn/GoOnMarks.cs:131-134` |
+| **R3-O10**: the cost of reading every 429 as a limit is unstated | §12: *a provider's per-minute rate limit therefore cools its account for D125's hour … where today the same failure is a strike and a briefed carry-on a minute later* | `AccountLimits.DefaultCoolOff` (`Accounts/Usage/AccountLimits.cs:79`) |
+| **R3-O11**: row 1a carries *Try again*'s release without its press | **Moved to 1a2** (§11's note, rows 1a and 1a2; §5.1, §8): `TransientReleased`, `TransientReleasedFrom` for a released record, `Retry`'s case and their proofs go beside the press; 1a's `ended.transient` and `held.transient` say *It waits for your words*. Why this way and not the offer into 1a: the person's word and the hand-over already release a held record loop-free, the word by `WordsOn`'s `GoOn` (`Planner.cs:1325-1329`) and the hand-over by `HandedFrom`, so 1a strands nothing and stays the fastest safe delivery; the release and its press are one feature with one proof, and in 1a the release would be reachable only from the CLI and the bridge, an act the page does not offer | `src/Daoris.Web/src/work/acts.ts:157` (`retry` offered only to a parked or a stopped record); `Platform/DriverChoicesCommand.cs:1150`; `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs:424` |
