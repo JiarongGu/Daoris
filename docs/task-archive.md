@@ -20286,3 +20286,22 @@ the floor's first act, the look's Keeping pass, the trees' list and the work inv
 moves into the new place alone; one at the old place with no manifest is purged at its days and never slimmed. The card's `trees`
 kind reads both places too, so neither falls under `rest`. Proof: `SetAsidePlacesTests`, seen failing first. Detail: D195's KEEPSIZE1a
 note; FIX-LOG 2026-10-24.
+## HELPNEWCHAT1 — a new Ask Daoris chat opens at once and takes its own first words (2026-10-24, D89)
+
+> - [ ] **HELPNEWCHAT1 — a new Ask Daoris chat opens at once and takes its own first words** (driver, modules, web; the owner's report, 2026-10-24). On the install at `5e36d25`, words sent in a new Ask Daoris chat went back to the earlier conversation's box, and pressing *New chat* again stayed on *正在打开问道衍…*. The machine log beside it: `help.room.look` read about 242 trees each time, 7 to 15 seconds against its 500 ms bound (`treesMs=15139 trees=242`), the set-aside trees under `work/trees/.tidied` among them; a new chat waiting on that look would hang. Find the cause in the code and the log, fix the send's target and the open's wait, and keep the room's look off the set-aside trees and within its bound. Proof: a new chat's first words land in the new conversation, in a page test and the driver's; *New chat* opens with the room's look slow or failing; the look's trees exclude the set-aside ones, with its time bounded.
+
+(Quest `#b0574dcdaa6c`.)
+
+**Outcome** 2026-10-24: the words went back because a start made while the finished conversation wound up was handed it as
+running, carried on; and *New chat* stayed on *opening* because the first words handed to the one it finished stayed shown over the
+blank panel, which then opened nothing. The runner marks a conversation the person finished until its run ends; `START_HELP` never
+carries one on, waits up to 5 s for it to end, then places the new one, and past that answers it `finishing`, which the page waits
+out before it asks again; *New chat* sets the finished one's first words aside with it. The open never waited on the look (HELPSTART1,
+PARALLEL1a), now held by a test with the sessions' look and trees never answering or failing. The trees' read walks and counts only a
+tree whose folder is here and not under `.tidied`: on the install that part asked 245 trees, 7 there. The look's remaining time is
+those few trees' git walks (the same 244-tree part took 0.6 to 18.8 s on 2026-10-24, while parts of 35 mostly gone trees took 0 to
+4 ms), left as TREELOOK2. Held by `AskDaoris.test.tsx`'s two HELPNEWCHAT1 cases, `HelpFinishingTests`,
+`DriverModuleHelpStartTests.A_new_conversation_opens_with_the_room_s_look_slow_or_failing` and
+`HelpTreesReadTests.A_part_walks_only_the_trees_still_here_never_a_gone_or_set_aside_one`; the page's and the trees' failed first,
+the open's held what was already so. Detail: D89's
+HELPNEWCHAT1 note, FIX-LOG.

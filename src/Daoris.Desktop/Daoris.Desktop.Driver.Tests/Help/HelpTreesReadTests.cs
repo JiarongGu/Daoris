@@ -141,6 +141,44 @@ public sealed class HelpTreesReadTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 HELPNEWCHAT1 (the owner's report, 2026-10-24): the install's part asked 245 trees, 7 of them there, the rest gone or moved
+    /// aside under <c>.tidied</c>, and its line said 245 at 7 to 15 s. A gone tree or one set aside is asked, holding nothing, and never
+    /// walked: the line counts the tree that is there, the set-aside one starts no git, and the rest cost no more than the bound.
+    /// </summary>
+    [Fact]
+    public async Task A_part_walks_only_the_trees_still_here_never_a_gone_or_set_aside_one()
+    {
+        var root = await RepositoryAsync("engine");
+        var sessionTrees = new SessionTrees(_home);
+        var here = (await sessionTrees.OpenAsync(root, "engine", "default")).Path;
+        await CommitAsync(here, "work.txt", "work");
+        // A folder the look's tidy moved aside: a tree's files and its `.git` link, which names a tree git let go of.
+        var aside = Path.Combine(sessionTrees.SetAsideRoot, "default", "engine", "s-a51de000-20261023T230519801Z");
+        Directory.CreateDirectory(aside);
+        await File.WriteAllTextAsync(Path.Combine(aside, ".git"), $"gitdir: {Path.Combine(root, ".git", "worktrees", "s-a51de000")}\n");
+        await File.WriteAllTextAsync(Path.Combine(aside, "README.md"), "# engine\n");
+        var gone = Enumerable.Range(0, 243).Select(i => Path.Combine(sessionTrees.TreesRoot, "default", "engine", $"s-90{i:d6}")).ToList();
+        var part = Part([.. gone, aside, here]);
+        // The tree that is here, read once and again: what a read of it alone starts once its read is kept (TREELOOK1).
+        await HelpFacts.ReadTreesAsync(_home, Part([here]), CancellationToken.None);
+        var walkedHere = (await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, Part([here]), ct))).Starts;
+        var times = new LookTimes();
+
+        var (read, ms, starts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, part, ct, times));
+
+        Assert.Equal(245, read.Asked.Count);
+        Assert.Equal(1, times.Trees);
+        Assert.Equal([N(here)], read.Trees.Keys);
+        Assert.Equal(walkedHere, starts);
+        // The gone and set-aside ones alone, with nothing to walk: within the room look's bound (HelpRoomLookLog.SlowMs, 500 ms).
+        var (none, noneMs, noneStarts) = await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, Part([.. gone, aside]), ct));
+        _output.WriteLine($"245 trees, one here: {ms} ms ({starts} git starts); the 244 gone or set aside alone: {noneMs} ms");
+        Assert.Empty(none.Trees);
+        Assert.Equal(0, noneStarts);
+        Assert.True(noneMs < 500, $"the gone and set-aside trees took {noneMs} ms");
+    }
+
+    /// <summary>
     /// READSHARE1: the home's stamp reads the landings while the move that landed them still holds them, so a tree nothing moved in
     /// is still asked its status alone; a stamp that could not read them is a stamp of its own, and walked every tree again.
     /// </summary>

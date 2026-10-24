@@ -23,4 +23,18 @@ public static class TreeFolders
             return true;
         }
     }
+
+    /// <summary>
+    /// Whether a path lies in a folder the look's own tidy moved aside, under the trees home's <c>.tidied</c> (AUTOTIDY1): kept a while
+    /// for a late write, never a tree a session works in. Read from the path alone, as a session tree's name never starts with a dot.
+    /// </summary>
+    public static bool SetAside(string? tree) =>
+        !string.IsNullOrWhiteSpace(tree)
+        && tree.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries).Contains(TreeSetAside.SetAsideFolder, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether a session's tree is worth a git walk (HELPNEWCHAT1): its folder still here, and not one moved aside. A gone or set-aside
+    /// tree holds nothing to review or land, whatever its record names.
+    /// </summary>
+    public static bool Walkable(string? tree) => !SetAside(tree) && !TreeGone(tree);
 }

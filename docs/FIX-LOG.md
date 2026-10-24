@@ -70,6 +70,26 @@ repository.
   told by event; a press overtaking a work; a failed work told and refused), `WindowCensusTests` (every route declaring no change
   held, told by event or owed, the owed only falling), the route suites through the test bridge (553 of 553 in the filtered run),
   `held.test.ts` and `SessionRail.test.tsx`'s event case.
+## 2026-10-24 - A new Ask Daoris chat's first words went to the one New chat finished, and its open hung (HELPNEWCHAT1)
+
+- **Symptom:** the owner's report on the install at `5e36d25`: words sent in a new Ask Daoris chat went back into the earlier
+  conversation's box, and pressing *New chat* again stayed on *正在打开问道衍…*. The machine log beside it: the trees step of
+  `help.room.look` asked about 245 trees at 7 to 15 s against its 500 ms bound.
+- **Root cause:** three. (1) `START_HELP` carried on any Ask Daoris conversation whose process still ran in the workspace
+  (`HelpRoutes.StartHelpAsync`), and *New chat* finishes the running one, which winds up before its process ends: the start was answered
+  with it, `running`, and the page handed it the new chat's first words and showed it again. (2) First words handed to a conversation
+  stayed in the panel's `firstWords` until its queue answered; *New chat* cleared the panel and left them, so the blank panel read as
+  opening and, `firstWords` set, the next conversation never opened ahead. (3) The trees part asked every ended session's tree its records
+  name, 238 of the install's 245 gone or moved aside, and its line counted them all. The open itself never waited on the look
+  (HELPSTART1, PARALLEL1a); the seconds are the few live trees' git walks (TREELOOK2).
+- **Fix:** `ChatRunner.Finish` marks the conversation until its run ends (`Finishing`); `START_HELP` passes a marked one over, waits up
+  to 5 s for it (`WoundUpAsync`), then places the new one, and past that answers it `finishing`. The page waits out a start answered
+  with one it finished or one said finishing, asking again once the list says it ended, and *New chat* sets the finished one's first
+  words aside (`help/AskConversation.tsx`). The trees part walks and counts only a tree whose folder is here and not under `.tidied`
+  (`TreeFolders.Walkable`), still listing the rest as asked so no door walks them.
+- **Verify:** `AskDaoris.test.tsx`'s two HELPNEWCHAT1 cases (failed first, 77 of 77 now, `src/help` 366 of 366);
+  `HelpFinishingTests` 3 of 3; `DriverModuleHelpStartTests` 10 of 10, with the open under a look never answering and failing;
+  `HelpTreesReadTests.A_part_walks_only_the_trees_still_here_never_a_gone_or_set_aside_one` (failed first, counting 245).
 
 ## 2026-10-24 - The supervisor's decisions lived only as long as the look that kept them (SUPERVISOR1a-i)
 
