@@ -1,7 +1,7 @@
 # Keeping as a chat app does: a finished session kept as its text record, its tree let go, and Daoris within an allowance the person sets (proposed, round 2, 2026-10-24)
 
 **Standing:** proposed, a note amending D195 (KEEPSIZE1), round 2. Round 1 (the same day, at `47c9b78a9`) proposed a size limit per
-kind beside its days and the floor as a share. The owner's directions since, carried in the row KEEPSIZE1 in `TASKS.md`, set a
+kind beside its days and the floor as a share. KEEPSIZE1a, the set-aside folders at every place of the trees entry, is built (D195's KEEPSIZE1a note, 2026-10-24). The owner's directions since, carried in the row KEEPSIZE1 in `TASKS.md`, set a
 different frame, and this round is rewritten to it:
 
 - what is kept of finished work is its **text record**: the conversation, its notes, the landing and the commits' recovery refs,

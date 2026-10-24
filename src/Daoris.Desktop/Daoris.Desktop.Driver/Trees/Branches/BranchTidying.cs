@@ -247,7 +247,7 @@ public sealed class BranchTidying(string home)
     {
         var lines = new List<string>();
         lines.AddRange(await KeepFloorAsync(service, log, met, ct).ConfigureAwait(false));
-        var setAside = Directory.Exists(trees.SetAsideRoot);
+        var setAside = trees.SetAsideRoots.Any(Directory.Exists);
         var logs = Policy(home).Logs;
         bool logsDue;
         lock (_gate) logsDue = _logsDaily is not { } pruned || Clock() - pruned >= DownloadsPace || _logsDays != logs.Days;

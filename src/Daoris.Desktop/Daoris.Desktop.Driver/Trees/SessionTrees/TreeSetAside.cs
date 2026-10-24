@@ -38,6 +38,17 @@ internal sealed class TreeSetAside(TreeContext context)
     internal string SetAsideRoot => Path.Combine(context.TreesRoot, SetAsideFolder);
 
     /// <summary>
+    /// Every place the set-aside folders lie (KEEPSIZE1a, the keep-size design §1.1): <c>.tidied</c> under each place of the trees
+    /// entry (<see cref="TreeContext.TreesRoots"/>), the new first. A folder moves into <see cref="SetAsideRoot"/> alone; the folders set
+    /// aside before the home's layout moved stay at the old place, where the purge, the slim, the press, the floor, the look and the card
+    /// read them too.
+    /// </summary>
+    internal IReadOnlyList<string> SetAsideRoots =>
+        [.. context.TreesRoots.Select(root => Path.Combine(root, SetAsideFolder)).Append(SetAsideRoot).Distinct(PathComparer)];
+
+    private static StringComparer PathComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
+    /// <summary>
     /// The look's last guards (AUTOTIDY1), asked after the press's judgement and its judgement again, right before anything
     /// moves: each keeps the branch for the press, saying why. Null where none keeps it.
     /// </summary>
@@ -367,10 +378,22 @@ internal sealed class TreeSetAside(TreeContext context)
     {
         stopped = false;
         var results = new List<SetAside>();
-        if (!Directory.Exists(SetAsideRoot)) return results;
-        var before = FailedEntries();
+        // KEEPSIZE1a: every place of the trees entry, each with its own record of what it could not delete.
+        foreach (var root in SetAsideRoots)
+        {
+            if (Directory.Exists(root)) PurgeAt(root, now, after, spent, ref stopped, only, results);
+        }
+
+        return results;
+    }
+
+    /// <summary>The purge of the folders under one place's <c>.tidied</c> (<paramref name="root"/>), into <paramref name="results"/>.</summary>
+    private void PurgeAt(
+        string root, DateTimeOffset now, TimeSpan after, Func<bool> spent, ref bool stopped, Func<string, bool>? only, List<SetAside> results)
+    {
+        var before = FailedEntries(root);
         var failed = new List<(string Folder, string Why, DateTimeOffset? Tried)>();
-        foreach (var workspace in Directory.EnumerateDirectories(SetAsideRoot))
+        foreach (var workspace in Directory.EnumerateDirectories(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
@@ -419,8 +442,7 @@ internal sealed class TreeSetAside(TreeContext context)
             results.Add(new SetAside(folder, moved, kept is null, kept?.Sentence, kept?.Code) { Bytes = bytes });
         }
 
-        KeepFailed(failed);
-        return results;
+        KeepFailed(root, failed);
     }
 
     /// <summary>
@@ -428,19 +450,23 @@ internal sealed class TreeSetAside(TreeContext context)
     /// read found nothing late (a file held open against it) shows in no read the inventory can repeat, so it is kept here, and the
     /// inventory reads it (<see cref="Failed"/>). Each pass writes what it met, so a folder a later pass deletes leaves it.
     /// </summary>
-    internal string FailedPath => Path.Combine(SetAsideRoot, "purge-failed.json");
+    internal string FailedPath => FailedPathOf(SetAsideRoot);
+
+    /// <summary><see cref="FailedPath"/> of one place's <c>.tidied</c> (KEEPSIZE1a): each place keeps its own, naming its folders from it.</summary>
+    private static string FailedPathOf(string root) => Path.Combine(root, "purge-failed.json");
 
     /// <summary>
     /// The folders this pass could not delete, kept where the inventory reads them; written only where they changed, gone where none. A
     /// folder that failed the same way twice carries <c>tried</c>, when (KEEP1a: it waits a day from there), a field added after the rest.
     /// </summary>
-    private void KeepFailed(IReadOnlyList<(string Folder, string Why, DateTimeOffset? Tried)> failed)
+    private static void KeepFailed(string root, IReadOnlyList<(string Folder, string Why, DateTimeOffset? Tried)> failed)
     {
+        var path = FailedPathOf(root);
         try
         {
             if (failed.Count == 0)
             {
-                if (File.Exists(FailedPath)) File.Delete(FailedPath);
+                if (File.Exists(path)) File.Delete(path);
                 return;
             }
 
@@ -451,7 +477,7 @@ internal sealed class TreeSetAside(TreeContext context)
                 foreach (var (folder, why, tried) in failed.OrderBy(each => each.Folder, StringComparer.Ordinal))
                 {
                     writer.WriteStartObject();
-                    writer.WriteString("folder", Path.GetRelativePath(SetAsideRoot, folder).Replace('\\', '/'));
+                    writer.WriteString("folder", Path.GetRelativePath(root, folder).Replace('\\', '/'));
                     writer.WriteString("why", why);
                     if (tried is { } at) writer.WriteString("tried", at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture));
                     writer.WriteEndObject();
@@ -460,8 +486,8 @@ internal sealed class TreeSetAside(TreeContext context)
                 writer.WriteEndArray();
                 writer.WriteEndObject();
             });
-            if (File.Exists(FailedPath) && AtomicFile.ReadText(FailedPath) == text) return;
-            AtomicFile.WriteText(FailedPath, text);
+            if (File.Exists(path) && AtomicFile.ReadText(path) == text) return;
+            AtomicFile.WriteText(path, text);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -474,16 +500,21 @@ internal sealed class TreeSetAside(TreeContext context)
     /// nothing is kept or it does not read.
     /// </summary>
     internal IReadOnlyDictionary<string, string> Failed() =>
-        FailedEntries().ToDictionary(each => each.Key, each => each.Value.Why!, StringComparer.OrdinalIgnoreCase);
+        SetAsideRoots.SelectMany(FailedEntries)
+            .ToDictionary(each => each.Key, each => each.Value.Why!, StringComparer.OrdinalIgnoreCase);
 
-    /// <summary><see cref="Failed"/>'s folders, each with when it last failed as before, where it did (KEEP1a's day's wait).</summary>
-    private Dictionary<string, (string? Why, DateTimeOffset? Tried)> FailedEntries()
+    /// <summary>
+    /// <see cref="Failed"/>'s folders under one place's <c>.tidied</c>, each with when it last failed as before, where it did (KEEP1a's
+    /// day's wait).
+    /// </summary>
+    private static Dictionary<string, (string? Why, DateTimeOffset? Tried)> FailedEntries(string root)
     {
         var found = new Dictionary<string, (string? Why, DateTimeOffset? Tried)>(StringComparer.OrdinalIgnoreCase);
+        var path = FailedPathOf(root);
         try
         {
-            if (!File.Exists(FailedPath)) return found;
-            using var document = System.Text.Json.JsonDocument.Parse(AtomicFile.ReadText(FailedPath));
+            if (!File.Exists(path)) return found;
+            using var document = System.Text.Json.JsonDocument.Parse(AtomicFile.ReadText(path));
             if (!document.RootElement.TryGetProperty("folders", out var folders) || folders.ValueKind != System.Text.Json.JsonValueKind.Array) return found;
             foreach (var each in folders.EnumerateArray())
             {
@@ -495,7 +526,7 @@ internal sealed class TreeSetAside(TreeContext context)
                                 && DateTimeOffset.TryParse(at.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var when)
                         ? when
                         : (DateTimeOffset?)null;
-                    found[Path.GetFullPath(Path.Combine(SetAsideRoot, named))] = (said, tried);
+                    found[Path.GetFullPath(Path.Combine(root, named))] = (said, tried);
                 }
             }
         }

@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - The set-aside folders at the trees entry's old place were never purged or counted (KEEPSIZE1a)
+
+- **Symptom:** on the install, KEEPSIZE1's measurement found 164 set-aside folders (76.7 GB) under `data/trees/.tidied`, the oldest
+  set aside on 10-15, past no purge. `trees list` named the 77 folders at the new place and none at the old; the *Disk space* card
+  counted the old ones under *Everything else*, where 3.5 million files stopped its walk short. The steward removed them by hand.
+- **Root cause:** D172's layout gave the trees entry two places, and TREEPLACE1 taught the trees' readers both
+  (`TreeContext.TreesRoots`). The set-aside folders kept one root, `TreeSetAside.SetAsideRoot`, `.tidied` under `TreesRoot`, which
+  `DaorisHome.Entry` answers with the new place once it holds anything. So the purge, the slim, the press, the floor, the look's
+  pass, the trees' list and the card all read the new place's `.tidied` alone, and the folders set aside before the move were out of
+  every rule's reach.
+- **Fix:** `TreeSetAside.SetAsideRoots`, `.tidied` under each of `TreesRoots`, the new first, read by every one of those readers. A
+  folder still moves into the new place alone. Each place keeps its own `purge-failed.json`. The card's `trees` kind reads both
+  places too, passing over each `.tidied`.
+- **Verify:** `SetAsidePlacesTests` 4 of 4, all four seen failing on the old readers; the covering fast classes by filter
+  (`SetAsideSlimTests`, `SystemSpaceTests`, `SpaceFreeTests`, `SpaceFloorTests`, `KeepRulesTests`, `WorkInventoryTests`,
+  `CleanupLeftoversTests`, `ReadShareTreeTests`, `PassLeftoversTests`, `BranchTidyingTests`: 239 of 239); the covering `Process`
+  classes with `git.process.runsettings` (`KeepingSlimTests`, `BranchTidyingFolderTests`, `TreeLinkRemovalTests`,
+  `PassLeftoversProcessTests`): 26 of 28. The two that failed are `BranchTidyingFolderTests`' purge cases. Each also met the
+  machine log's daily prune line, and both fail the same way on the commit before this fix, so this fix did not cause them. Detail:
+  D195's KEEPSIZE1a note.
+
 ## 2026-10-24 - A session its landing replayed stayed to review, and its tree needed --force (REVIEWLANDED1)
 
 - **Symptom:** on the install a session whose landing replayed its commits onto a line that had moved, and merged them, kept its row

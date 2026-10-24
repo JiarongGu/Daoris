@@ -63,14 +63,15 @@ public static class SpaceKinds
     /// </summary>
     public static SpacePlaces Places(string home, string id)
     {
-        var trees = DaorisHome.Entry(home, HomeEntry.Trees);
-        var setAside = Path.Combine(trees, TreeSetAside.SetAsideFolder);
+        // KEEPSIZE1a: the trees at every place of their entry, and the folders set aside under each, the old place's included.
+        var trees = DaorisHome.Places(home, HomeEntry.Trees);
+        var setAside = trees.Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).ToList();
         var engine = DaorisHome.Entry(home, HomeEntry.BrowserEngine);
         var caches = BrowserCaches.Select(path => Path.Combine([engine, .. path.Split('/')])).ToList();
         switch (id)
         {
             case "set-aside":
-                return new([setAside], [], [HomeEntry.Trees.Name]);
+                return new(setAside, [], [HomeEntry.Trees.Name]);
             case "downloads":
                 return new([DaorisHome.Entry(home, HomeEntry.Toolchain), DaorisHome.Entry(home, HomeEntry.ToolVersions)], [],
                     [HomeEntry.Toolchain.Name, HomeEntry.ToolVersions.Name]);
@@ -81,7 +82,7 @@ public static class SpaceKinds
             case "history":
                 return new([.. Of(home, HomeEntry.Sessions), .. Of(home, HomeEntry.Workflows)], [], [HomeEntry.Sessions.Name, HomeEntry.Workflows.Name]);
             case "trees":
-                return new([trees], [setAside], [HomeEntry.Trees.Name]);
+                return new(trees, setAside, [HomeEntry.Trees.Name]);
             case "sign-ins":
                 HomeEntry[] signIns = [HomeEntry.AgentHomes, HomeEntry.BrowserEngine, HomeEntry.BrowserEdge, HomeEntry.EdgeCookies, HomeEntry.Window, HomeEntry.Keys, HomeEntry.Remotes];
                 return new([.. signIns.SelectMany(entry => Of(home, entry))], caches, [.. signIns.Select(entry => entry.Name)]);
@@ -570,9 +571,11 @@ public static class SystemSpace
     /// <summary>The set-aside folders: each goes its days after its move (the purge), its bytes from the kind's last walk.</summary>
     internal static (JsonObject? Next, string? Why) SetAsideNext(string home, KeepPolicy policy, KindReading? reading)
     {
-        var root = Path.Combine(DaorisHome.Entry(home, HomeEntry.Trees), TreeSetAside.SetAsideFolder);
-        if (!Directory.Exists(root)) return (null, null);
+        var roots = DaorisHome.Places(home, HomeEntry.Trees).Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).Where(Directory.Exists).ToList();
+        if (roots.Count == 0) return (null, null);
         var goes = new List<(DateTimeOffset At, string Folder)>();
+        // KEEPSIZE1a: every place of the trees entry, the folders set aside before the home's layout moved included.
+        foreach (var root in roots)
         foreach (var workspace in Directory.EnumerateDirectories(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))

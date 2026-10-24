@@ -436,7 +436,7 @@ public static class SpaceFloor
     private static FloorAct Slims(FloorWorld world, KeepPolicy policy, DateTimeOffset now, KeepingRun run, Func<bool> spent, CancellationToken ct)
     {
         var trees = new SessionTrees(world.Home);
-        if (!Directory.Exists(trees.SetAsideRoot) || policy.SetAside.Whole) return new FloorAct(KeepKinds.SetAside.Id, 0, 0, new Dictionary<string, int>());
+        if (!trees.SetAsideRoots.Any(Directory.Exists) || policy.SetAside.Whole) return new FloorAct(KeepKinds.SetAside.Id, 0, 0, new Dictionary<string, int>());
         var done = trees.KeepSetAside(policy, now, world.Budget, ct, purge: _ => false);
         var removed = done.Slims.Sum(slim => slim.Removed.Count);
         var bytes = done.Slims.Sum(slim => slim.Bytes);
