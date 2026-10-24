@@ -1,8 +1,22 @@
 # Every agent's errors read into one set of kinds at the agent interface, and one policy acting on each kind (AGENTERRORS1, 2026-10-24)
 
-**Status: accepted (D210) 2026-10-24 by the steward under D191 (D210's acceptance note; Codex's read of this text owed), round 3, with its read's named changes.** Written by Claude Opus from the code at `64059110a`, for
+**Status: accepted (D210) 2026-10-24 by the steward under D191, round 3, with its read's named changes; reopened the same day by
+Codex's owed read of the accepted text on eight points, and amended (§17). D210 stands again on the amended text (its amendment
+note of 2026-10-24).** Written by Claude Opus from the code at `64059110a`, for
 Codex's read and an independent Opus reader's foundation read under D191 (its amendment of 2026-10-23: the design changes what every
 adapter answers at the agent interface, and the decided rules TURNFAIL1, D206 and D205 rest on).
+
+**Codex's owed read's amendments** (2026-10-24) take Codex's read of the accepted text, read at `7cda79f01` after rows 1a and 1a2
+were built and before either reached an installed build, kept verbatim in `docs/2026-10-24-agent-errors-reads.md` (the section
+*Codex, the accepted text*): 11 findings, 8 blocking, *reopen*, keeping the four-kind interface, the conservative limits, the
+adapter-local authentication declaration and the note-based exhaustion hold, all of which this text keeps unchanged. Each section a
+finding changes marks it *(Codex's owed read, C4-n)*, `C4-1` being the read's finding 1, and §17's table says where each went, in the
+design and in the code where the built rows carried it. In short: a hand-over answer is no recovery (C4-1); settling holds new
+dispatch and never counts past the bound (C4-2); a written prompt whose transport is lost is uncertain (C4-3); a try writes a kept
+word only once its attempt is acknowledged (C4-4); the driven check reads the run's intent against its start (C4-5); an open's limit
+or access keeps its account's policy through the resume's wrapper (C4-6); the wake is read again at a try's admission (C4-7); the
+harness's lines are branched on before any kind (C4-8); the guarantee is said as what Daoris enforces (C4-9); the suppression is the
+failed attempts' alone (C4-10); and the summaries agree with the body (C4-11). Row 1a and 1a2's code carries 1 to 8 and 10.
 
 **Round 3's named changes** (2026-10-24) take the Opus foundation reader's read of round 3, read at `3086e44f1` and kept verbatim in
 `docs/2026-10-24-agent-errors-reads.md`: 11 findings, 1 blocking, *accept after named changes* the steward checks without another
@@ -89,6 +103,9 @@ the one it opened. Round 1's citation of `:4150-4153` named the steering lane's 
 
 ## 1. Today, by the code
 
+*(Codex's owed read, C4-11.)* "Today" in this section is the tree before rows 1a and 1a2, read at `64059110a`: the snapshot the design
+was written from. Rows 1a and 1a2 now stand on main, with their code as D210's notes and §17 describe it.
+
 ### 1.1 What each door hands Daoris when the provider fails
 
 | Door | Adapter | The harness's own retries | What reaches Daoris at the end | Daoris reads |
@@ -152,7 +169,9 @@ door's `model_not_found`/404 and `rate_limit`/429 frames (MODELROLE1a, above).
 Every door hands its failure to one reader at the agent interface as a **door failure**: the fields its wire carries (a JSON-RPC code
 and `data`, a `result`'s status and the harness's error field, Codex's error info) and the words, never the agent's own message. **One
 reader** (`AgentErrors.Read`) answers it as one of four **kinds**, `transient`, `limit`, `access` or `fatal`, from the adapter's own
-table of codes and recorded sentences, its owner's where it has none. A limit is read first, then access, then transient; anything
+table of codes and recorded sentences and then its owner's, own first, the `-32000` declaration the adapter's own and never inherited
+(§4.1; *Codex's owed read, C4-11*). The failure's source is read before any kind: the harness's own lines are read for a credential's
+refusal alone (§3.3). A limit is read first, then access, then transient; anything
 unread is fatal, as today. **One policy** acts on the kind. A transient error is tried again in the same conversation, on the same
 account and choice, inside the run: five tries, with 1, 2, 4, 8 and 16 minutes of waits before them (31 minutes of waits), each try
 one prompt of the person's words never written to the wire and then Daoris's go-on word; a word once on the wire is never sent again,
@@ -216,6 +235,11 @@ read are the `result`'s, as today.
 `Toolchain.Refused` in them only behind that failure gate (`Observation.cs:457-462`, `Driver.cs:3238-3255`). They are the harness's
 stderr **and its stdout lines outside its protocol** (*round 3, R2-C11*: `HarnessCapture.cs:159` hands an outside line to
 `Observation.Said`, `Observation.cs:618`), never the agent's message, and they are read for access alone, never for transient.
+*(Codex's owed read, C4-8.)* The source is read **before** any kind, not after the limit: the reader branches on `Where: harness`
+first and reads such a line only for the adapter's `Refused` words, own then owner. Read after the limit, a harness line matching a
+weekly limit's sentence, or naming `rate_limit`, read as a limit and would cool its account (`AgentErrors.cs`, before this
+amendment, read the limit at `:145` and the origin at `:177`). `AgentErrorsTests` holds the counterexample: a weekly limit's sentence,
+and a limit's or a transient's code, on a harness line read fatal, so they neither cool nor retry.
 
 This rule leaves one door with nothing to read. `codex-acp` says a terminal non-limit error only as agent text, under `end_turn`
 (§1.1). Such a turn stays read as it is today until row 1f measures the typed marker that marks it (§4.3).
@@ -354,6 +378,15 @@ The rest of §3.1's codes enter each table as its row records them.
     try;
   - a settling turn that fails transient is that failure and counts as a try;
   - one that fails with another kind leaves the episode for that kind (below).
+
+  *(Codex's owed read, C4-2.)* **Settling has a closed admission and finishes.** Dispatch is held the moment the episode opens, and
+  again the moment a try fails (`DrivenInbox.Settling`): no word of anyone's goes alone from then, so the turns settling must await are
+  only those already written, a finite set. A word said meanwhile is held and goes in the next try's one prompt (below). The turns
+  already written consume the tries left: each that fails transient takes one while any are left, and once all five are spent the
+  rest still settle, since they are on the wire, but count none (`TransientEpisode.SettledPast`, said in the run's log), and
+  the run ends past its bound with no try after them; an answered one after the bound sends no go-on either. Round 3 held words only
+  during a wait, which began after settling, so a word said while the wire settled went alone, a turn settling then had to admit,
+  and every failure was counted before the bound was read (six written words: six tries).
 - **What a word's disposition is** *(round 3, R2-C1, R2-O8; round 2's two dispositions corrected)*. `Taken` is Daoris's own
   bookkeeping (`Acp.cs:429`), set by the order of answers (`:1667`) or by an update after an error (`TakeLate`, `:1697`, `:1944`).
   A `false` mark is no negative acknowledgement, since a JSON-RPC error does not say whether the server appended the word before it
@@ -378,8 +411,21 @@ The rest of §3.1's codes enter each table as its row records them.
   under it as under any uncertain word of the person's (D188's COWORK1c note). Daoris never sends it again. No new note code is
   made.
 
-  What the agent did before the failure (its files, its commits, its tools' effects) stays in its tree and its conversation, and the
-  go-on word says to go on from there: nothing is replayed.
+  *(Codex's owed read, C4-3.)* **Uncertain is any written prompt with no trustworthy terminal answer**, not only one an error
+  answered. A transport lost behind a written word (the stream ends, or the process goes, before its prompt answered) faults its
+  request with no answer for `Answered` to read, so it was left untaken, handed back as `Unreached`, and kept on the record by
+  `WordsLeft` to go again: the instruction resurrected. After an episode has opened, a prompt whose write returned (`OpenPrompt.Written`)
+  and that neither answered nor was taken is uncertain: said by the `lost` note under its id, given to the episode's uncertain words,
+  never `Unreached`. A prompt whose write never returned was never on the wire and stays unreached. A run in which no episode opened
+  keeps TURNFAIL1's reading, which keeps such a word to go again.
+
+  *(Codex's owed read, C4-9; round 3's sentence corrected.)* What the agent did before the failure (its files, its commits, its
+  tools' effects) stays in its tree and its conversation, and the go-on word says to go on from there. What Daoris enforces is that
+  it **never replays the original prompt or an accepted word**: neither goes to the wire again. It does not and cannot make a tool's
+  effect happen once: an effect whose result the failure cut off may or may not have landed, and the agent decides whether to repeat
+  it. So the go-on asks it to check first (*Before you repeat a step whose result you did not see, check whether it already took
+  effect*, §8). A stronger once-only claim would need an effect-specific receipt or idempotency contract with its own proof, which
+  no row here builds; a stand-in that avoids repeating an effect proves that script's behaviour, not this.
 - **The dispositions outlive the episode** *(round 3, R2-C2)*. The episode hands the conclusion the disposition of every word the
   run carried, whatever kind ends it: a try that answers, a limit, access, fatal, past the bound, the person's stop or a shutdown.
   At that conclusion every taken or unacknowledged word comes off the record by its id, as taken words do today
@@ -392,11 +438,21 @@ The rest of §3.1's codes enter each table as its row records them.
   (the adapter would end the person's turn at the go-on's echo). The person's word ends the wait at once (above).
 - **Each try is one prompt** of blocks *(round 2, O1; round 3, R2-C1)*: first **the person's held words**, verbatim and in the order
   said; then **Daoris's go-on word** (`retry.go-on`): *The last request failed on the provider's side ({{words}}). Go on where you
-  stopped, after anything said above.* *(Round 3's read, R3-O8.)* Its last clause keeps a held word that redirected the agent ahead
-  of the old path. The go-on is kept through the say door under `DaorisKeys.TransientRetry(session, episode)`, as D206's
+  stopped, after anything said above. Before you repeat a step whose result you did not see, check whether it already took effect.*
+  *(Round 3's read, R3-O8.)* Its *after anything said above* keeps a held word that redirected the agent ahead of the old path;
+  *(Codex's owed read, C4-9)* its last sentence is the guarantee's other half (above). The go-on is kept through the say door under `DaorisKeys.TransientRetry(session, episode)`, as D206's
   `limit.reset` is kept under `DaorisKeys.LimitReset`, once per episode, before the first try. The episode is named by when its
   first failure was read. *(Round 2, O10; round 3, R2-C10.)* Its `user` event is the first try's alone; a later try carries the same
   text as a block that is neither kept nor shown again (row 1a).
+  *(Codex's owed read, C4-4.)* **A try writes a kept word only once its record acknowledged the word's attempt.** The dispatcher's
+  mark fails open by design for every other sender (COWORK1c: an unanswered record costs, rarely, a word sent twice after a restart,
+  against a word never sent), and that contradicts *a word once on the wire is never sent again*: a word written unmarked, whose
+  take-off then failed and whose shell then went, reads at the next come-up as never written (`UncertainWords` settles only words
+  with an attempt) and goes again. So a try reads the mark's own answer (`ChatMessage.Marking`, `SaidDoor.Dispatched`): a word of the
+  person's that the record would not mark is **not written** by the try. It waits on its record, unmarked and truly unwritten, for the
+  next run, which sends it once; the run's log says so. Daoris's go-on unmarked is settled without the wire (its kept copy taken off
+  by id, the conclusion's take-off by key as the fallback) and goes as the try's plain block, as every later try's does. The words
+  already on the wire before the episode were dispatched under COWORK1c's own rule; this one is the episode's.
   *(Round 3's read, R3-O5.)* **The go-on leaves the record once it is on the wire**, as D188 point 6 has any word leave `said`
   (`docs/decisions/D188.md:52`): it goes through the run's one dispatcher like any kept word (`SaidDoor.Dispatched`,
   `Conversations/SaidDoor.cs:69`), marked attempted before the wire and taken off by its id once its first try is written. It never
@@ -410,6 +466,12 @@ The rest of §3.1's codes enter each table as its row records them.
   (`:1039-1046`, `WokenStop`). So, as after an answered settling turn, the owner's check is asked and, where another turn is still
   wanted, Daoris's go-on goes at once, after the woken turn has ended, and counts as a try. A stream that ended is the harness's end
   (§3.1), not a try.
+  *(Codex's owed read, C4-7.)* **The gate is applied at the try's admission, after the owner's check.** Row 1a read `_wake.Running`
+  once and then awaited the owner's check, so a wake that began during that await was never read before the prompt went into it,
+  BGWAIT1's unanswered prompt. The admission (`AcpSession.AdmitAsync`) waits out a running woken turn, then, where an ended piece of
+  work is still owed its wake (`AcpWake.Unseen`), the same quiet `AfterEndedAsync` waits for; then it asks the owner; then it reads the
+  wake again, and where one began meanwhile it waits that turn out and asks the owner again. Between the last read and the write the
+  wire's own moment remains, as it does for `AfterEndedAsync`'s go-on after its quiet.
 - **The owner's check** *(round 2, C8)*. Before each try the run asks its owner whether another turn is still wanted (§5.5). Where
   not, no try is sent: the episode ends and the run closes as at a turn's end, and the conclusion reads its outcome as it does today.
   *(Round 3, R2-O6.)* A check that cannot be read answers yes, as `QuestMovedAsync`'s unread look does: a try costs a turn, and an
@@ -424,6 +486,12 @@ The rest of §3.1's codes enter each table as its row records them.
   on the first delivery. Row 1a's proof asserts the **rendered** conversation (`toTurns` over the record's events): the provider's
   error once, the go-on once, and one `agent.transient-retrying` line, not only the count of notes. The head's *Trying again at* is
   row 1a2's. The machine log says each try (`agent.transient`: session, adapter, account, `By`, try, next).
+  *(Codex's owed read, C4-10.)* The drop is the **failed attempts'** alone: a message block a failed attempt streamed is one followed,
+  past its own chunks and the meters, by the episode's line, a try's or a wait's quiet event, or the driver's note at its end, never by
+  an answer, and none before the episode's first failure; a try's quiet event parts the blocks on either side. Only the provider's
+  error such a block ends on is removed. Round 3's drop removed every substring matching the quoted error from every message of the
+  conversation, so an authored quotation before or after the episode lost its words or vanished. `conversation.test` holds a
+  quotation before the episode, one alone, and one merged into a later answer, each verbatim.
 - **What the waiting run is** *(round 2, O1, O7, C6)*. The run waits on Daoris's own timer, never on its agent. The door exposes
   `WaitsOnTransient` beside `WaitsOnOwnWork` (`Sessions/Watch/SessionWatch.cs:13-16`), wired where that one is (`Driver.cs:4223`), and
   the watch reads it as it reads a call held for the person's permission (`SessionWatch.cs:333-338`): a wait that is not the agent's,
@@ -433,7 +501,14 @@ The rest of §3.1's codes enter each table as its row records them.
   prompt is neither kept nor shown, so when `WaitsOnTransient` falls after the 16-minute wait the session would already read 16
   minutes unheard. A headless `--quiet-end` shorter than that would end the run and carry it on at the try's first moment
   (`:342-348`), which is shape 1's loss. So **the wait's end stamps the session heard**, and a try's quiet counts from its prompt.
-- **What ends an episode early.** A try that answers ends it; the count starts again at the next failure. The person's stop or pause
+- **What ends an episode early.** A try that answers ends it; the count starts again at the next failure. *(Codex's owed read,
+  C4-1.)* **A hand-over is not an answer.** On `claude-agent-acp` a try can answer `end_turn` only because a word queued behind it
+  (an urgent word of the person's, a helper's answer) took its turn over at its echo, and that word's own turn may then meet the
+  outage. Read as recovery, each such failure opened a fresh episode, and repeated hand-overs, which helper words make with no new
+  act of the person's, kept the run from ever reaching the exhaustion hold. So the episode and its count are kept through every
+  hand-over: the turns a try handed over settle inside the episode, and the try counts as answered only once they have settled with no
+  transient failure. One that fails transient is the try's failure, not a try of its own, so the schedule's waits go on; where the last
+  of them answered, the go-on follows at once, as after an answered settling turn. The person's stop or pause
   ends it as theirs, with no failure said. *(Round 2, C6.)* Daoris's shutdown or an update's close cancels the wait with the run,
   which ends as that stop does today (D104's interrupted stop, D206 §3.9's update word); the episode's count is not kept across the
   restart, so a line carried on afterwards starts a fresh count. A try that fails with another kind leaves the episode for that
@@ -589,7 +664,7 @@ it is asked before each try:
 
 | Kind of run | No try where |
 |---|---|
-| A driven session | *(Round 3, R2-O6.)* Its own predicate, `TransientRetry.Wanted`: its quest is done, submitted, awaiting another repository, stood down, closed or deleted, read from the quest as the ledger answers it now (`FindQuestAsync`). **An Open quest goes on**, and so does one Taken by this session. Round 2 cited DONEEND1's `QuestMovedAsync`, which reads `Observation.Parks` (`Driver.cs:3445-3460`, `Observation.cs:216-219`): that needs a quest `Taken` by this session, so it answers *no* for an Open quest, and a first run that failed before its take (a likely moment for an overload) would get no try |
+| A driven session | *(Round 3, R2-O6.)* Its own predicate, `TransientRetry.Wanted`: its quest is done, submitted, awaiting another repository, stood down, closed or deleted, read from the quest as the ledger answers it now (`FindQuestAsync`). **An Open quest goes on**, and so does one Taken by this session. Round 2 cited DONEEND1's `QuestMovedAsync`, which reads `Observation.Parks` (`Driver.cs:3445-3460`, `Observation.cs:216-219`): that needs a quest `Taken` by this session, so it answers *no* for an Open quest, and a first run that failed before its take (a likely moment for an overload) would get no try. *(Codex's owed read, C4-5.)* **Read against the run's intent, not the quest's history**: the check is handed the quest as the look planned the run (its status and the question it named, the conclusion's own `startedOn` and `awaitsBefore`). `Awaits` stays set once its question is answered (`Service.Core/Quests/Quests.cs:98-100`), so *awaiting another repository* is only a question **this run** asked, one other than the one named at its start, as the conclusion's `Asks` reads it (`Observation.cs:292-293`): a D79 resume is tried again. A quest **already closed when the person's word began** (MSG1b's go-on of a closed quest's session) is that word's run, which no close can since have completed: it is tried while the quest exists. A quest **Taken as the run started** is the run's to carry on, a D79 resume's new session included, which holds no take of its own (the conclusion's `Parks` reads `resumed` so); one taken since the start is this session's only where it took it. A quest Open or Taken at the start that closed, was submitted, or asked a new question since is a new authoritative end, and gets no try |
 | A conversation | never: a person's turn has no outcome of its own to outrank it |
 | A helper | its answer is stored (`files.ReadAnswer`, `DriverHelpers.cs:652`) |
 | A second opinion | its opinion is recorded |
@@ -614,6 +689,17 @@ again, since their handshake runs once per session (`Acp.cs:1159`). *(Round 3, R
 nothing was prompted, so §5.1's *nothing prompted* end applies: Daoris's go-on comes off by id, and the person's carried words,
 said before the end, wait for a word of theirs said after it, by the word rule's time, with no mark written. Row 1a2 builds this,
 and until it does a failure at the open keeps today's end.
+
+*(Codex's owed read, C4-6.)* **A fallback keeps the kind's policy.** An open's failure read as a limit or an access failure, after a
+transient one or alone, leaves the open's phase as it came, and `ResumeAsync` wraps it as `AcpResumeRefused` (`ContinueWhy.Refused`),
+whose refused-resume path restores the record and chooses the briefed fallback before any account is read (`DriverContinuations.cs`,
+the refused branch). The typed reading survives the wrapper as the retry's last reading (`TransientRetry.Last`, `Where: open`), and
+the continuation's conclusion applies its account's policy first, as a failed run's conclusion applies it: a limit cools its account,
+by its sentence or by its code with D125's unstated hour; an access failure marks its account as the reader read it, refused by a
+credential's refusal (the adapter's `Refused` words or its owner's, which `AccountRefused` alone never reads, §1.2) and signed out by
+a sign-in's words or an access code (`OpeningAccount`, `Driver.RefuseAccount`). Then the refused resume goes as before, every
+unprompted word held, so the fallback's walk passes the account. The stub's own sign-in runs in its own home whatever its reading
+(OWNSPACE1a), so on a tick its fallback still starts; a named account's walk passes it.
 
 ## 6. With D206's limit resume and D205's walk
 
@@ -640,7 +726,8 @@ and until it does a failure at the open keeps today's end.
   ended otherwise (`LimitHeld.cs:27-30`), the failed turn's own ask among them, and no try's event names it. So **the episode's first
   `agent.transient` event also names the ids of the failed turn's own words**, and a limit after a transient episode holds only the
   words still owed.
-- **Past the bound**, the hold (§5.1) is released only by the person, and the release's resume is D206's step 1 (§5.1).
+- **Past the bound**, the hold (§5.1) is released only by the person: their word resumes the record by MSG1b's `GoOn`, with their
+  words alone, and *Try again*'s resume is D206's step 1 (§5.1). *(Codex's owed read, C4-11: round 3 gave every release to step 1.)*
 
 ### 6.2 D205
 
@@ -733,7 +820,7 @@ says where its minutes ran out (`{{count}}` tries, *before its minutes ran out*)
   | `helper.transient` | the asker's record | *Helper {{agent}} could not answer: its provider kept failing ({{words}}).* | *助手 {{agent}} 没能回答：它的服务方一直出错（{{words}}）。* |
   | `intake.transient` | the intake's record | *the agent's provider kept failing while it worked on ask `#{{ask}}` ({{words}}).* | *智能体处理请求 `#{{ask}}` 时，它的服务方一直出错（{{words}}）。* |
   | `partner.transient` | the lead's record | *Partner {{agent}} stopped: its provider kept failing ({{words}}). Its work is kept.* | *搭档 {{agent}} 停下了：它的服务方一直出错（{{words}}）。它的工作已保留。* |
-  | `retry.go-on` | Daoris's word to the agent, on a try and on *Try again*'s release, never on the person's word (round 3's read, R3-O8) | *The last request failed on the provider's side ({{words}}). Go on where you stopped, after anything said above.* | the agent's word, English only, as `limit.reset` is |
+  | `retry.go-on` | Daoris's word to the agent, on a try and on *Try again*'s release, never on the person's word (round 3's read, R3-O8) | *The last request failed on the provider's side ({{words}}). Go on where you stopped, after anything said above. Before you repeat a step whose result you did not see, check whether it already took effect.* (its last sentence Codex's owed read's, C4-9) | the agent's word, English only, as `limit.reset` is |
 
   `{{words}}` is the door's own sentence, said as a program's (`NoteBy.Program`), never translated: authored content stays as written.
   The glossary's *try again* / 重试 widens its `means` to a record past its retries (row 1a2), beside D206's *Try now*, which is an
@@ -849,6 +936,23 @@ A failure at the open keeps today's end until 1a2 (R2-O2).
 - 1a2's open end needs no mark (R3-O9), 1b's limit leaves out the failed turn's own words (R3-O6), and 1c's native note splits the
   two releases (R3-O7).
 
+*(Codex's owed read.)* Rows 1a and 1a2 were built before it, and its findings are taken into their code as corrections, each with a
+test seen failing first (§17), before any build carrying them is staged; the rows after them wait for that. They add these proofs:
+- **1a**: a try handed to a queued word that fails, again and again, reaches one exhaustion after five tries (C4-1); six words
+  already on the wire settle within the bound, five counted, one past it, no go-on (C4-2); a word said while the wire settles is held
+  for the next try (C4-2); a word written before the stream is lost is said `lost` and never `Unreached` (C4-3); a kept word whose
+  attempt its record would not mark is never written by a try, and waits on its record unmarked (C4-4); a D79 resume after its
+  answered question, and the person's word to a closed quest's session, each tried again through a transient failure (C4-5, tick); a
+  turn woken while the owner's check is awaited holds the try until it ends (C4-7); a harness line never reads a limit (C4-8); the
+  rendered conversation keeps a quotation before, after and inside the episode verbatim (C4-10).
+- **1a2**: transient → a limit by its code alone, and transient → the stub's refused credential, at `session/resume` and at
+  `session/load`: the account cooled or signed out before the refused resume's fallback (C4-6, tick).
+- **1b** covers both of `ProtocolChat.TurnAsync`'s prompt paths (`ChatRunner.cs:2840`, `:2880`) and C4-1's hand-over sequence there;
+  **1e** distinguishes an opening access failure from a prompt's and rejects a limit or a transient read from a harness line (C4-8,
+  C4-6); **1f**'s disposition and release proofs include the transport loss and the hand-over (C4-1, C4-3); **1c**'s and **1f**'s full
+  release proofs need 1a2; **1d**'s intake proof of *one unbind, then the bound* runs over consecutive ticks and a restart, since one
+  exhausted pass cannot prove a policy of two bounds (Codex's row notes).
+
 | Row | What | After | Proof |
 |---|---|---|---|
 | **AGENTERRORS1a** | The kinds and the reader at the interface (`DoorFailure`, `AgentError`, `AgentErrors.Read` taking the adapter set, `ErrorWords` read own then owner with `AuthRequiredCode` never inherited, §4.4's first entries on `claude-code` and `claude-code-acp`); the protocol door's prompt failure (`Where: prompt`) for a **driven session**, the `TransientRetry` handed at `Driver.cs:2683` and `DriverContinuations.cs:431` alone; §5.1's episode inside `AcpSession.RunAsync` (the seat, the settled wire and its settling turns, an answered settling turn or a woken end sending the go-on at once as a try, the three dispositions read before `Answered` removes a prompt and handed to every conclusion, an unacknowledged word said by COWORK1c's `lost` note, words held during the wait, one prompt a try of held words, the wake gate, the driven check `TransientRetry.Wanted`, an unread check a yes, `WaitsOnTransient`, the wait's end stamped heard); the limit's code with the unstated reset (§3.1); `ended.transient` with the actual tries and waits, `ReadStrikes`, every word on the wire off at every conclusion, Daoris's go-on through the run's dispatcher, off once on the wire, with the take-off at both conclusions, a first run's and a continuation's, as the fallback; the planner's hold (`TransientHolding`, `StartVerdict.TransientHeld`, `held.transient`) after `WordsOn` and `StopHolding` and before every other path, passing a hand-over from its record and carrying an Open quest's on in its tree (`TransientReleasedFrom` for the hand-over's record, step 0), its word rule (a person's unmarked word said after the record ended), the person's word sending their words alone; the minimum suppression (`toTurns`' drop and the re-sent go-on off the record); `agent.transient-retrying`, `ended.transient` and `held.transient` in 1a's words, and `retry.go-on`, in en and zh. Access and fatal keep today's ends; a failure at the open keeps today's end; *Try again*'s keyed release is 1a2's | — | The reader's table both ways (`AgentErrorsTests`, a fast class), `-32000` read only where declared: an authentication refusal and an unrelated failure with the same code on the stub. A stand-in ACP agent answering its prompt `-32603` *Internal error: API Error: 529 Overloaded. …* with `data.errorKind: "overloaded"` (source-derived) twice, then working: retried in the **same** conversation (one record, the same session id, no `moved.on`), it goes on and ends as its work does, with one `agent.transient-retrying` line, no strike and no `cooling.json` entry, red first against today's `ended.turn-failed-taken`. A stand-in that records the person's words and makes a visible effect, then fails: the stand-in receives each word **once** (one `user` event, one receipt), and neither the instruction nor the effect is replayed. A word said during a wait goes at once, in one prompt with the go-on after it. A woken turn during a wait ends the wait, not the episode: no prompt is sent into it, and the go-on follows once after it ends. The quest done before a try: no try. The watch during a wait: no episode, no quiet end. The same agent erring every try: past the bound `failed`, `ended.transient`, no word waiting, the go-on off, no strike, no cool-off, no park; then **the next looks** (a tick each, with and without commits in the tree) start nothing for an Open and for a Taken quest, until the person's word resumes the **same conversation id** by MSG1b's go-on, with their words alone and no go-on after them. A limit on a try: cooled once, D206 from there. A weekly limit's sentence under `errorKind: "rate_limit"`: limited, never retried; `rate_limit` with no sentence: limited an hour. Shutdown during a wait ends as today's shutdown. *(Round 3.)* **The tables compose**: `claude-code-acp`, with its own `-32000` declaration, still reads its owner's `overloaded`, 529 sentence and `rate_limit` through the real adapter set; a plugin with `accountOf: claude-code` reads them too but never the `-32000` declaration. **Nonacceptance**: a stand-in that appends a queued word to its conversation and then answers its prompt with the error, with no update first: the word is never sent again, and the `lost` note is said once under its id; so is a head word whose `Taken` mark the order of answers set, its prompt meeting the error before any update. *(Round 3's read.)* **A settling turn**: a queued word's settling turn answers `end_turn` on a taken quest, the go-on follows once, and the run ends as its work does, never `awaiting-person`; on an Open quest, never `ended.untouched`. One that fails transient counts as a try. **The go-on off**: a try answers and the run then parks, and the next look starts nothing, on a first run and on a continuation. **Dispositions across kinds**: transient → limit → the account's reset resumes its own conversation; transient → limit → a briefed move; transient → fatal → TURNFAIL1's next look. Each asserts one receipt of each original instruction. **The release**: exhausted → the person's word → the resumed run exhausted again → several looks, then a driver restart and more looks: nothing starts. **The word rule**: a helper's answer, a Daoris word and a word of the person's said before the end, kept on the exhausted record, start nothing at the next looks, then travel once with the person's word said after it. **The hand-over**: from the held record of an **Open quest with no commits**, it passes the hold and goes on in the quest's tree, never a fresh start. **The driven check**: an Open quest that failed before its take is tried; a quest submitted just before a try is not; an unreadable quest is tried. A run that is not a driven session's (an intake's stand-in) keeps today's end. **The watch**: a silent try after the 16-minute wait under a held clock opens no quiet end until its own quiet has passed from its prompt. **The rendered conversation** (`toTurns` over the record): the provider's error shown once, the go-on once, and one `agent.transient-retrying` line, through three failed tries. **The words**: `ended.transient` names the tries made and the minutes waited after an early try sent by the person's word. `NoteCodesTests`, `i18n:check`, `names:check --strict` |
@@ -876,7 +980,9 @@ The first row gives the most: it is the install's door, its measured shape 1 and
 - A dsh harness, and a plugin with no owner, read nothing by code; their errors stay fatal until they declare a table. *(Round 3,
   R2-O9.)* A plugin that declares `accountOf` reads its owner's provider entries, never its owner's `-32000` declaration.
 - *(Round 3, R2-C7, R2-O3's note.)* D206's step 1 is the protocol door's (`DriverContinuations.cs:58`). Until row 1c measures the
-  native door's `--resume` of a missing conversation, a native `ended.transient` release goes briefed, and its note says so.
+  native door's `--resume` of a missing conversation, a native `ended.transient` record's *Try again* goes briefed, and its note says
+  so; the person's word resumes the same native conversation by `ResumesOwn` (§5.1). *(Codex's owed read, C4-11: round 3 said this
+  of every release.)*
 - *(Round 3, R2-C1.)* Whether an adapter appended a word whose prompt answered an error is not known on any door. Daoris never
   sends such a word again and says it under COWORK1c's `lost` note (round 3's read, R3-O2). If the agent never read it, it is lost to the agent until the person says it
   again, which is the cost of never repeating an instruction.
@@ -889,6 +995,13 @@ The first row gives the most: it is the install's door, its measured shape 1 and
 - How long real outages last is not measured. The bound's 31 minutes of waits is a reading of the two records (each overload passed
   within the half hour: the person's go-on at 01:02 worked, and `63d56294` ran at 00:31) and of the harness's own retries before it.
 - The prompt cache: a try after the 8- or 16-minute wait likely re-reads the whole context (219,284 tokens in shape 1), unmeasured.
+- *(Codex's owed read.)* What its corrections leave: between the wake gate's last read and the try's write the wire's own moment
+  remains (C4-7); a go-on whose mark and take-off both failed, its shell then gone, leaves Daoris's go-on on the record, which the
+  hold's word rule never reads as a release and which goes once with the person's next word (C4-4); an access failure at the open read by
+  a code alone or by a sign-in's words is proved by no tick, only the refused credential's is (C4-6); a hand-over's untaken word refused transient is read as the
+  try's failure rather than its own note (C4-1); no effect is made once-only (C4-9). The transport-loss proof is the session's
+  (`Unreached` empty, the `lost` note once); the look after it and a restart are not run on a tick, since nothing hands an uncertain
+  word to `WordsLeft` (C4-3).
 
 ## 13. The reads
 
@@ -904,6 +1017,9 @@ after named changes*: 11 findings, 2 blocking, and 3, 5 and 6 to write in before
 Round 3 was read at `3086e44f1` by the independent Opus reader alone as a foundation (*accept after named changes* the steward
 checks without another read: 11 findings, 1 blocking, and 2, 3 and 5 to write in before row 1a is built), kept verbatim in the same
 file. Codex's read of round 3 is owed, its credits having run out. §16 says where each finding went.
+
+Codex's owed read of the accepted text came at `7cda79f01`, after rows 1a and 1a2 were built (*reopen*: 11 findings, 8 blocking),
+kept verbatim in the same file under *Codex, the accepted text*. §17 says where each finding went.
 
 ## 14. Round 2: round 1's reads answered
 
@@ -1002,3 +1118,26 @@ unless they say otherwise.
 | **R3-O9**: 1a2's `transient-held` mark fails open on a failed write | §5.1, *Nothing prompted* and *The hold's word rule*: the person's word is one *said after the record ended: its `At` later than the record's `Updated`, both read from the look's snapshot*, and no mark is written; §5.6; §8 (*No mark*); §10; row 1a2's proof with the side writes failing | `Planner.cs:1503-1505` (`Waits`), `:675` (`Persons`); `SaidWordView` carries `At` (`Conversations/Chat/LimitWaits.cs:231`); `Conversations/GoOn/GoOnMarks.cs:131-134` |
 | **R3-O10**: the cost of reading every 429 as a limit is unstated | §12: *a provider's per-minute rate limit therefore cools its account for D125's hour … where today the same failure is a strike and a briefed carry-on a minute later* | `AccountLimits.DefaultCoolOff` (`Accounts/Usage/AccountLimits.cs:79`) |
 | **R3-O11**: row 1a carries *Try again*'s release without its press | **Moved to 1a2** (§11's note, rows 1a and 1a2; §5.1, §8): `TransientReleased`, `TransientReleasedFrom` for a released record, `Retry`'s case and their proofs go beside the press; 1a's `ended.transient` and `held.transient` say *It waits for your words*. Why this way and not the offer into 1a: the person's word and the hand-over already release a held record loop-free, the word by `WordsOn`'s `GoOn` (`Planner.cs:1325-1329`) and the hand-over by `HandedFrom`, so 1a strands nothing and stays the fastest safe delivery; the release and its press are one feature with one proof, and in 1a the release would be reachable only from the CLI and the bridge, an act the page does not offer | `src/Daoris.Web/src/work/acts.ts:157` (`retry` offered only to a parked or a stopped record); `Platform/DriverChoicesCommand.cs:1150`; `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs:424` |
+
+## 17. Codex's owed read of the accepted text: where each finding went
+
+Each finding of Codex's read of the accepted text (`C4-1` is its finding 1), taken as the read names it or narrower, checked against
+the code on main at `fcd09552d`, whose source is the read's `7cda79f01`'s. Rows 1a and 1a2 stood on main and in no installed build,
+so each finding the built code carried is corrected there, with a test seen failing first against the committed code, and a FIX-LOG
+entry per defect. Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they say otherwise; tests are under its tests
+project.
+
+| Finding | In the design | In the code, and its proof (red first) |
+|---|---|---|
+| **C4-1**, blocking: a hand-over answer resets the retry budget | §5.1, *What ends an episode early*: *a hand-over is not an answer*; the turns a try handed over settle inside the episode, one failing transient is the try's failure; §11's 1a and 1b notes | `AcpSession.EpisodeAsync` settles the handed turns after a try answers (`SettleAsync`), keeping the episode and its count. `AcpTransientTests.A_try_handed_to_a_queued_word_that_fails_keeps_the_episode_to_one_exhaustion`: five hand-overs, one exhaustion, one line; red as a run that never ended |
+| **C4-2**, blocking: settling exceeds the bound or keeps admitting turns | §5.1, *The wire settles first*: a closed admission from the first failure and each try's; the written turns take the tries left and count none past them (`SettledPast`), no try after them | `DrivenInbox.Settling`, called at the episode's open and before each settling; `TransientEpisode.SettledPast`. `More_than_five_words_already_on_the_wire_settle_within_the_bound_and_authorize_no_try_past_it` (red as six tries) and `A_word_said_while_the_wire_settles_is_held_for_the_next_try` (red as a fourth prompt) |
+| **C4-3**, blocking: transport loss resurrects a written instruction | §5.1, *What a word's disposition is*: uncertain is any written prompt with no trustworthy terminal answer, after an episode opened; never `Unreached` | `OpenPrompt.Written`, set as a prompt's write returns (`OnWire`); `Untaken` says such a word `lost` and leaves it out of `Unreached`, so `WordsLeft` never keeps it. `A_word_written_before_the_stream_is_lost_is_uncertain_and_never_unreached`; red as the word in `Unreached` |
+| **C4-4**, blocking: the dispatcher's failure policy against durable no-retransmission | §5.1, *Each try is one prompt*: a try writes a kept word only once its attempt is acknowledged; an unmarked word of the person's waits on its record, the go-on settled without the wire | `ChatMessage.Marking` from `SaidDoor.Dispatched`; `AcpSession.TryAsync` reads it (`MarkedAsync`). `A_kept_word_whose_attempt_the_record_did_not_mark_is_never_written_by_a_try` (the record refusing both the mark and the take-off, `StandInSaid.RefusingAttempts`, `RefusingTakeOff`); red as the word written |
+| **C4-5**, blocking: the owner predicate reads historical quest state | §5.5's driven row: read against the run's start, `startedOn` and `awaitsBefore`; a new question only, as `Asks` reads it; a quest closed before the person's word began is tried | `TransientRetries.WantedAsync(…, startedOn, awaitsBefore, …)`, handed `quest.Status` and `quest.Awaits` at both seats (`Driver.cs`, `DriverContinuations.cs`). `TransientRetryTickTests.A_resume_after_its_answered_question_is_tried_again_through_a_transient_failure` and `The_person_s_word_to_a_closed_quest_s_session_is_tried_again_through_a_transient_failure`; each red as no try |
+| **C4-6**, blocking: an opening fallback discards limit and access policy | §5.6: the typed reading survives the wrapper as `TransientRetry.Last`; the account's policy is applied before the refused resume's fallback | `DriverContinuations.OpeningAccount`, from `ConcludeResumedAsync`'s refused branch. `A_limit_at_the_open_after_a_transient_failure_cools_its_account` and `An_access_refusal_at_the_open_after_a_transient_failure_marks_its_account`, each at `session/resume` and `session/load`; red as nothing cooled or marked |
+| **C4-7**, blocking: the wake check's late-wake gap | §5.1, *Through the wake gate*: applied at the try's admission, after the owner's check, read again after it, with `AfterEndedAsync`'s quiet where a wake is owed | `AcpSession.AdmitAsync`. `AcpTransientTests.A_turn_woken_during_the_owner_s_check_holds_the_try_until_it_ends`; red as the try sent into the woken turn |
+| **C4-8**, blocking before 1e: an access-only source classifies a limit | §3.3: the source branched on before any kind; §2's paragraph | `AgentErrors.Read` reads `Where: harness` first, for `Refused` alone. `AgentErrorsTests.A_harness_line_never_reads_a_limit_by_its_sentence_or_its_code`; red as `Limit` |
+| **C4-9**: the effect proof claims more than the mechanism guarantees | §5.1: the enforceable guarantee (no replay of the original prompt or an accepted word), the go-on asking the agent to check an uncertain effect, a stronger claim needing its own contract; §8's `retry.go-on`; §12 | `TransientRetry.GoOnText`'s last sentence. Not a defect of the code: its words, held by the classes that quote them |
+| **C4-10**: duplicate suppression edits unrelated authored messages | §5.1, *Said once*: the failed attempts' blocks alone, and only the error each ends on | `src/Daoris.Web/src/work/conversation/conversation.ts` (`failedAttempts`, a try's quiet event parting blocks). `conversation.test`'s *removes only the failed attempts' provider error*; red as both quotations cut. The existing three-tries record gained the quiet events a 1a2 record carries |
+| **C4-11**: operative summaries keep superseded contracts | §1's *today* labelled the pre-1a snapshot; §2's *own or owner* corrected to own then owner with `AuthRequiredCode` never inherited; §6.1's release split, the person's word by MSG1b's `GoOn` and *Try again* by step 1; §12's native release split. The round tables (§14 to §16) are kept as history | — |
+| Codex §3's row notes | §11's note under *Codex's owed read*: 1b's two prompt paths and the hand-over; 1c's and 1f's dependence on 1a2; 1d's two-bound intake proof over consecutive ticks and a restart stays its row's; 1e's opening against prompt access and harness lines; 1f's transport-loss and hand-over cases | — |
