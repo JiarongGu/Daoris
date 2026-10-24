@@ -20456,3 +20456,15 @@ The root `npm ci` configures it in the clone's own git config (`prepare` runs `-
 the workspace*) says what a clone that skipped it runs once. Held by `tools/merge-rows.test.mjs`, run by `verify`, with its scratch
 repository's merge under `_fixtures/`. Only the router is declared: no other record was named. Detail: the fix log's ROUTERMERGE1
 entry.
+
+## LIMITWORD1 — a word said while a limit's move is under way reaches the new part (2026-10-24, D189)
+
+> **LIMITWORD1 — a word said while a limit's move is under way reaches the new part** (driver; seen 2026-10-24 on the install). A kit's chat met its account's limit at 09:19:27 UTC; the steward's word (`b917ad83`) was kept on that record at 09:20:02; at 09:20:11 Daoris went on in a new part on another account, and the brief it handed carried the history but not that word, which no part ever read. `LimitMove.ComposeAsync` (`Conversations/Chat/LimitMove.cs`) hands only the waiting words its box names (`box.Said`), and the box is fixed before the move completes, so a word kept between the box and the go-on is in neither part. LIMITGOON1 promises the next account is handed the brief and the held words. Read the words waiting on the old record at the go-on itself, or carry any word kept after the box to the new part as its next word, said as carried; never drop one. Proof: a stand-in conversation's limit move with a word kept between its box and its go-on, that word reaching the new part once, in order, and never the old.
+
+(Quest `#c31408173161`.)
+
+**Outcome** 2026-10-24. The move reads the old record's waiting words again at the go-on, once the new part's record exists. Every
+person's word its box does not yet name joins the box, after its own, before the message is composed (`LimitMove.Carried`), and the
+come-up's replay of a box does the same. A word kept after the go-on goes to the new part by the say door, as before. The stand-in
+case was seen failing first, then passed: the word is handed once, in order, never to the old part. Detail: FIX-LOG's LIMITWORD1 entry
+and D189's LIMITWORD1 note.
