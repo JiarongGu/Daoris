@@ -92,6 +92,70 @@ public sealed class WorkflowRunBindingTests : IDisposable
         Assert.Equal(WorkflowSelection.VerificationElsewhere("web-verify"), binding.Problem);
     }
 
+    /// <summary>
+    /// CHATFLOW1c (the chat-flow design §4.3): a chat run binds with no ask and no task, so the repository's default chooses, never a
+    /// workspace's kind; its line says the workflow and who chose it, once, and a run bound already is read back and said no more.
+    /// </summary>
+    [Fact]
+    public void A_chat_run_binds_under_the_repository_s_default_never_by_a_kind()
+    {
+        Save("docs-to-pr", Steps("you"));
+        var config = Config("""
+            {"workflows":{"web-app":{"default":"docs-to-pr"}},
+             "workspaceWorkflows":{"work":{"kinds":{"docs":{"label":"Documentation","paths":["docs/**"],"workflow":"release-train"}}}}}
+            """);
+
+        var bound = ChatRuns.Bind(config, _home, "chat-c1a2b3c4", "web-app", "work", [], At);
+
+        Assert.True(bound.Wrote);
+        Assert.Equal(("docs-to-pr", 1, WorkflowLevels.Repository, (string?)null), (bound.Binding!.Workflow, bound.Binding.Version, bound.Binding.Level, bound.Binding.Kind));
+        Assert.Equal(bound.Binding, WorkflowRunBindings.Read(_home, "chat-c1a2b3c4"));
+        Assert.Equal("This conversation's work follows `docs-to-pr` v1, the workflow `web-app` chose.", ChatRuns.Line(bound.Binding)!.Note);
+        Assert.Equal(NoteCodes.ChatWorkflow.Code, ChatRuns.Line(bound.Binding)!.Parts.Single().Code);
+
+        var again = ChatRuns.Bind(config, _home, "chat-c1a2b3c4", "web-app", "work", [], At.AddHours(1));
+        Assert.False(again.Wrote);
+        Assert.Equal(bound.Binding, again.Binding);
+
+        // Only a workspace's kind names a workflow: a chat has no kind, so Current binds, and says nothing.
+        var current = ChatRuns.Bind(Config("""{"workspaceWorkflows":{"work":{"kinds":{"docs":{"label":"Documentation","paths":["docs/**"],"workflow":"docs-to-pr"}}}}}"""),
+            _home, "chat-d1a2b3c4", "web-app", "work", [], At);
+        Assert.True(current.Binding!.IsCurrent);
+        Assert.Null(ChatRuns.Line(current.Binding));
+    }
+
+    /// <summary>
+    /// CHATFLOW1c (§4.3, §4.5): a choice that is a graph version binds nothing before CHATFLOW1f, and says which; a named workflow that cannot
+    /// be read is bound with its problem, which holds the press by it; a home that cannot keep the binding fails the bind, saying why.
+    /// </summary>
+    [Fact]
+    public void A_chat_run_binds_no_graph_version_keeps_an_unreadable_workflow_s_problem_and_fails_only_on_a_home_it_cannot_write()
+    {
+        WorkflowStore.Add(_home, new WorkflowVersionAdded("web-graph", "A graph", "terminal", "2026-10-21T09:00:00Z", null, JsonNode.Parse(
+            """{"schemaVersion":2,"entries":["claimed"],"end":"handed","nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed"},"""
+            + """{"id":"handed","kind":"handed","version":1,"reach":"observed"}],"wires":[{"id":"c>h","kind":"after","from":"claimed","to":"handed"}]}""")), kept: []);
+        var graph = Config("""{"workflows":{"web-app":{"default":"web-graph"}}}""");
+
+        var graphed = ChatRuns.Bind(graph, _home, "chat-c1a2b3c4", "web-app", null, [], At);
+        Assert.Equal(((WorkflowRunBinding?)null, "web-graph", (string?)null), (graphed.Binding, graphed.Graph, graphed.Failed));
+        Assert.Equal("web-graph", ChatRuns.GraphChosen(graph, _home, "web-app", null));
+        Assert.False(WorkflowRunBindings.Bound(_home, "chat-c1a2b3c4"));
+
+        var unread = ChatRuns.Bind(Config("""{"workflows":{"web-app":{"default":"release-train"}}}"""), _home, "chat-c1a2b3c4", "web-app", null, [], At);
+        Assert.True(unread.Wrote);
+        Assert.Equal("no workflow `release-train` is saved here.", unread.Binding!.Problem);
+        Assert.Equal(NoteCodes.ChatWorkflowUnread.Code, ChatRuns.Line(unread.Binding)!.Parts.Single().Code);
+
+        // The runs' folder is a file: the home cannot keep a binding there.
+        var runs = WorkflowRunBindings.FolderOf(_home);
+        Directory.Delete(runs, recursive: true);
+        File.WriteAllText(runs, "not a folder");
+        var failed = ChatRuns.Bind(Config("{}"), _home, "chat-d1a2b3c4", "web-app", null, [], At);
+        Assert.Null(failed.Binding);
+        Assert.NotNull(failed.Failed);
+        Assert.Equal(NoteCodes.ChatWorkflowFailed.Code, ChatRuns.FailedLine(failed.Failed!).Parts.Single().Code);
+    }
+
     [Fact]
     public void A_workflow_chosen_and_not_saved_here_is_kept_with_why_never_swapped_for_another()
     {
