@@ -849,6 +849,9 @@ public sealed class DriverLoop(
             // SUPERVISOR1a-ii (D208 §5): an appointment names a repository this machine drives.
             served.StandingConfirmation.Drives = repository =>
                 DriverConfig.Load(ConfigPath).Drivable.Contains(repository, StringComparer.OrdinalIgnoreCase);
+            // STEWARDROLE1b (D209 §5.1a): a restart forgets every steward's release, so what an earlier run left in the file is withdrawn
+            // before the first look; the owner's own releases are kept whole.
+            if (served.StandingConfirmation.StewardOffered) RoleStarts.Sweep(served.StandingConfirmation, ConfigPath);
             // CONFIRMWAIT1a-ii (the confirm-wait design §7.2): the presses that waited when Daoris last stopped come back here, before the pipe
             // is served, on this home's lease, which makes this loop their records' one writer; whatever Serve then answers, their cards are
             // back. What could not come back, and what a newer Daoris kept, is said once in Done and failed.
@@ -884,6 +887,9 @@ public sealed class DriverLoop(
             Log = log,
             // SUPERVISOR1a-i: the one memory of the supervisor's decisions, read by every look.
             Supervisor = Supervisor,
+            // STEWARDROLE1b (D209 §3.1a, §5.1a): the steward's acts as each look's starts read them, from the judge the pipe holds, only
+            // where this build offers the steward.
+            Roles = () => Pipe?.StandingConfirmation is { StewardOffered: true } judge ? new RoleStarts(judge, ConfigPath) : null,
             // STARTFAST1b: the first look's line-following and tidy wait for the first screen's data, so the page's git-backed pulls
             // and harness probes are not queued behind them for the background's places.
             FirstScreen = FirstScreenAsync,

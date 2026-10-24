@@ -454,12 +454,17 @@ public sealed class SessionProcesses(string? markers = null)
     /// </remarks>
     public bool AliveOnThisMachine(string sessionId)
     {
-        lock (_gate)
-        {
-            if (_running.ContainsKey(sessionId)) return true;
-        }
-
+        if (RunsHere(sessionId)) return true;
         return MarkerOf(sessionId) is { } marker && File.Exists(marker) && MarkerAlive(marker);
+    }
+
+    /// <summary>
+    /// Whether this registry runs the session's process: one its own stop reaches (STEWARDROLE1b, D209 §3.1 row 6). A process another
+    /// Daoris process of this machine runs is alive on this machine and not here.
+    /// </summary>
+    public bool RunsHere(string sessionId)
+    {
+        lock (_gate) return _running.ContainsKey(sessionId);
     }
 
     /// <summary>

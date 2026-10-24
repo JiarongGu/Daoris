@@ -628,7 +628,7 @@ public sealed class SessionsRoutes(DriverContext context)
     [DriverRoute("ROLE_ACT")]
     [Publishes("ROLE_ACT", StateScopes.Sessions | StateScopes.Driver)]
     private async Task<object?> RoleActAsync(IpcRequest request, CancellationToken cancellationToken) =>
-        await SupervisorDoor.ActAsync(_loop.Pipe, request.Payload, cancellationToken, _context.OwnerScopesOf()).ConfigureAwait(false);
+        await SupervisorDoor.ActAsync(_loop.Pipe, request.Payload, cancellationToken, _context.OwnerScopesOf(), _context.StewardWorldOf()).ConfigureAwait(false);
 
     // What waits for the supervisor's holder (SUPERVISOR1a-ii, D208 §3.2): the parked sessions here with a recorded question and no
     // decision on it, in a repository a live appointment names, each with its generation. Told by event (NOBLOCK1): it reads the

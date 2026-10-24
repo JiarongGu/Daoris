@@ -193,6 +193,13 @@ public sealed class DriverWatch(
 
     private QuestionSupervisorDecisions? _supervisor;
 
+    /// <summary>
+    /// The run's memory of a role's acts as each look's starts read it (STEWARDROLE1b, D209 §3.1a, §5.1a), asked at every look since the
+    /// window's pipe and its judge come after the loop; null or answering null where none holds it, so no start is a role's and no role's
+    /// release is honoured.
+    /// </summary>
+    public Func<IRoleStarts?>? Roles { get; init; }
+
     /// <summary>What watches the home's record files (<see cref="HomeWatch"/>): the machine's watchers unless a test hands its fake.</summary>
     internal IChangeSource? Source { get; init; }
 
@@ -642,6 +649,7 @@ public sealed class DriverWatch(
                     ConfigPath = configPath,
                 };
             driver.Context.Supervisor = Supervisor;
+            driver.Context.Roles = Roles?.Invoke();
             try
             {
                 var report = await driver.TickAsync(token, failed: said =>

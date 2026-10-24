@@ -1014,8 +1014,9 @@ public sealed class StandingConfirmationTests : Bridge
         standing.TableOf = role => new Dictionary<string, IRoleAct>(StringComparer.Ordinal) { [RoleKit.Probe.Named] = probe, ["later"] = probe };
         n = Nonce();
         Assert.Equal(RoleWhy.NotGranted, Judge(RoleKit.Act(key!, n, generation, act: "later"), n).Why);
-        Assert.Empty(StewardActs.Offered);
-        Assert.Empty(StewardActs.Table);
+        // STEWARDROLE1b: the build offers §3.1 rows 1 to 8, each in the table; none of rows 9 to 12 yet.
+        Assert.Equal(["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry"], StewardActs.Offered);
+        Assert.Equal(StewardActs.Offered.Order(StringComparer.Ordinal), StewardActs.Table.Keys.Order(StringComparer.Ordinal));
     }
 
     private static string ReadShared(string path)

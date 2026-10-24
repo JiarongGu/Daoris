@@ -94,7 +94,22 @@ public sealed record StandingJudgement(bool Covered, string? Why, string? Press,
 public sealed record StandingNow(
     bool Offered, bool On, IReadOnlyList<string> Presses, IReadOnlyList<string> Built, DateTimeOffset? Since, string? Unread,
     bool Unwritten, int Used, IReadOnlyList<string> Held, bool AppointmentsOffered = false, IReadOnlyList<AppointmentNow>? Appointments = null,
-    bool SupervisorOffered = false, bool StewardOffered = false, IReadOnlyList<HolderNow>? Holders = null);
+    bool SupervisorOffered = false, bool StewardOffered = false, IReadOnlyList<HolderNow>? Holders = null)
+{
+    /// <summary>The acts this build offers a steward's appointment, in order (STEWARDROLE1b, <see cref="StewardActs.Offered"/>), which its ask names.</summary>
+    public IReadOnlyList<string> StewardActsOffered { get; init; } = [];
+
+    /// <summary>The steward's acts this run, newest first (STEWARDROLE1b, D209 §5.3), from memory alone: the line's entries.</summary>
+    public IReadOnlyList<StewardActNow> StewardActs { get; init; } = [];
+}
+
+/// <summary>
+/// One of the steward's acts this run as the window's line reads it (STEWARDROLE1b, D209 §5.1, §5.3): its id, the act, what it acted on,
+/// when; <paramref name="Standing"/> while the owner has not acted on its target since, so its reverse press is offered; and, for a stop,
+/// <paramref name="Waiting"/> while its quest waits on a Try again, which <i>What needs you</i> shows as <i>Stopped by the steward</i>.
+/// </summary>
+public sealed record StewardActNow(
+    string Id, string Act, string? Repository, string? Quest, string? Session, DateTimeOffset At, bool Standing, bool Waiting);
 
 /// <summary>A grant's or a revoke's answer: done, or refused as data with a code the page words.</summary>
 public sealed record StandingChange(bool Done, string? Why, string? Message);
@@ -166,7 +181,14 @@ public sealed record Appointment(
 /// <param name="HolderId">The living holder that holds it this run; null where it is dormant.</param>
 public sealed record AppointmentNow(
     string Role, string? Repository, string Holder, DateTimeOffset Since, bool Dormant, int Answers, string Scope = RoleScopes.Machine,
-    string? HolderId = null);
+    string? HolderId = null)
+{
+    /// <summary>The acts its ask named (STEWARDROLE1b, D209 §2.3).</summary>
+    public IReadOnlyList<string> Acts { get; init; } = [];
+
+    /// <summary>The owner's own set-up tick (D209 §2.3).</summary>
+    public bool Setup { get; init; }
+}
 
 /// <summary>A living holder as the window reads it (D209 §2.2): its id, when its tab was opened, its roles. Never its key, its hash nor its process.</summary>
 public sealed record HolderNow(string Id, DateTimeOffset Since, IReadOnlyList<string> Roles);
@@ -549,6 +571,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>What the window's row reads now.</summary>
     public StandingNow Now()
     {
+        var stewardActs = StewardActsNow();
         lock (_gate)
         {
             return new StandingNow(
@@ -556,9 +579,16 @@ public sealed class StandingConfirmation : IDecisionAdmission
                 [.. _held.Keys.Order(StringComparer.OrdinalIgnoreCase)], AppointsOffered,
                 [.. _appointments.Select(each => new AppointmentNow(
                     each.Role, each.Repository, each.Holder, each.Since, !_holderOf.ContainsKey(each.Generation),
-                    _answers.GetValueOrDefault(each.Generation), each.Scope, _holderOf.GetValueOrDefault(each.Generation)))],
+                    _answers.GetValueOrDefault(each.Generation), each.Scope, _holderOf.GetValueOrDefault(each.Generation))
+                {
+                    Acts = each.Acts, Setup = each.Setup,
+                })],
                 SupervisorOffered, StewardOffered,
-                [.. _holders.Values.OrderBy(each => each.Since).Select(each => new HolderNow(each.Id, each.Since, RolesOf(each.Id)))]);
+                [.. _holders.Values.OrderBy(each => each.Since).Select(each => new HolderNow(each.Id, each.Since, RolesOf(each.Id)))])
+            {
+                StewardActsOffered = StewardOffered ? OffersActs(Roles.Steward) : [],
+                StewardActs = stewardActs,
+            };
         }
     }
 
@@ -1237,6 +1267,135 @@ public sealed class StandingConfirmation : IDecisionAdmission
     {
         lock (_gate) return _acts.Of(id);
     }
+
+    // ——— The steward's own record of this run (STEWARDROLE1b, D209 §5.1, §5.3): what each act did, for the window's line and for the
+    // conditions that read the steward's own acts (resume's and Try again's `not-own`, §3.1a's drive). Memory alone: a restart forgets it.
+
+    private readonly List<StewardDone> _stewardDone = [];
+
+    private sealed record StewardDone(string Id, string Act, string? Repository, string? Quest, string? Session, DateTimeOffset At);
+
+    /// <summary>A session's act re-keyed to the quest its session resolved to (§5.4), before its gates' step.</summary>
+    public void Retarget(string id, RoleScope target)
+    {
+        lock (_gate) _acts.Retarget(id, target);
+    }
+
+    /// <summary>A steward's act that ran, recorded as the steward's with the moment it ran (§5.1): the line's entry and its conditions' memory.</summary>
+    public void StewardDid(string id, string act, string? repository = null, string? quest = null, string? session = null)
+    {
+        lock (_gate) _stewardDone.Add(new StewardDone(id, act, repository, quest, session, _clock.GetUtcNow()));
+        _log.Info("role.act", ("role", Roles.Steward), ("act", act), ("outcome", "done"));
+    }
+
+    /// <summary>
+    /// Whether the steward's own hold of <paramref name="repository"/> this run still stands (§3.1 row 5's <c>not-own</c>, D201's rule with
+    /// its memory moved to the role): its last hold or resume there a hold, and nothing of the owner's on it since.
+    /// </summary>
+    public bool StewardHolds(string repository)
+    {
+        lock (_gate) return Latest(repository, StewardActNames.Hold, StewardActNames.Resume)?.Act == StewardActNames.Hold
+                             && !OwnerHolds(new RoleScope(OwnerKinds.Repository, repository));
+    }
+
+    /// <summary>Whether the steward drove <paramref name="repository"/> this run and nothing of the owner's touched it since (§3.1a).</summary>
+    public bool StewardDrove(string repository)
+    {
+        lock (_gate) return Latest(repository, StewardActNames.Drive, StewardActNames.Undrive)?.Act == StewardActNames.Drive
+                             && !OwnerHolds(new RoleScope(OwnerKinds.Repository, repository));
+    }
+
+    /// <summary>
+    /// The session of the steward's own stop of <paramref name="quest"/> this run that nothing has touched since (§3.1 row 8's
+    /// <c>not-own</c>): its last stop or Try again there a stop, and nothing of the owner's on it since; else null.
+    /// </summary>
+    public string? StewardStopOf(string quest)
+    {
+        lock (_gate)
+        {
+            var last = _stewardDone.LastOrDefault(each => each.Quest is { } named && string.Equals(named, quest, StringComparison.OrdinalIgnoreCase)
+                                                          && each.Act is StewardActNames.Stop or StewardActNames.Retry);
+            return last is { Act: StewardActNames.Stop } && !OwnerHolds(new RoleScope(OwnerKinds.Quest, quest)) ? last.Session : null;
+        }
+    }
+
+    /// <summary>
+    /// Whether a steward's act caused a start of <paramref name="quest"/> in <paramref name="repository"/> (§3.1a): the repository driven by
+    /// the steward this run and not the owner's since, or a live pending operation of the steward's on the quest.
+    /// </summary>
+    public bool StewardCaused(string repository, string quest)
+    {
+        lock (_gate)
+        {
+            if (OwnerHolds(new RoleScope(OwnerKinds.Quest, quest))) return false;
+            return _acts.Pending(quest, Live)
+                   || (Latest(repository, StewardActNames.Drive, StewardActNames.Undrive)?.Act == StewardActNames.Drive
+                       && !OwnerHolds(new RoleScope(OwnerKinds.Repository, repository)));
+        }
+    }
+
+    /// <summary>Whether this run's memory holds the steward's release <paramref name="act"/> of <paramref name="quest"/> at <c>released</c>, live (§5.1a).</summary>
+    public bool StewardReleased(string quest, string act)
+    {
+        lock (_gate)
+        {
+            return _acts.Of(act) is { Stage: StewardStages.Released } operation
+                   && string.Equals(operation.Target, quest, StringComparison.OrdinalIgnoreCase) && Live(operation.Generation)
+                   && !OwnerHolds(new RoleScope(OwnerKinds.Quest, quest));
+        }
+    }
+
+    /// <summary>The start's take of the steward's release (§5.1a): moved past <c>released</c> in one step, or null where it was cancelled.</summary>
+    public RoleOperation? TakeRelease(string quest, string act)
+    {
+        RoleOperation? taken;
+        lock (_gate)
+        {
+            taken = _acts.Of(act) is { } operation && string.Equals(operation.Target, quest, StringComparison.OrdinalIgnoreCase)
+                    && !OwnerHolds(new RoleScope(OwnerKinds.Quest, quest))
+                ? _acts.Take(act, StewardStages.Released, Live)
+                : null;
+        }
+
+        _log.Info(taken is null ? "role.cancelled" : "role.act", ("role", Roles.Steward), ("act", StewardActNames.Retry),
+            ("outcome", taken is null ? "withdrawn" : "started"));
+        return taken;
+    }
+
+    /// <summary>A start a steward's act caused held for the owner (§3.1a, <c>held.checkout</c>): every pending operation on the quest ended.</summary>
+    public void HeldForOwner(string quest)
+    {
+        int cancelled;
+        lock (_gate) cancelled = _acts.CancelTarget(OwnerKinds.Quest, quest);
+        _log.Info("role.cancelled", ("role", Roles.Steward), ("count", Count(cancelled)), ("why", "held.checkout"));
+    }
+
+    /// <summary>The steward's acts this run, newest first, as the window's line reads them (§5.3): each standing while the owner has not acted on its target since.</summary>
+    public IReadOnlyList<StewardActNow> StewardActsNow()
+    {
+        lock (_gate)
+        {
+            var acts = new List<StewardActNow>();
+            for (var at = _stewardDone.Count - 1; at >= 0; at--)
+            {
+                var done = _stewardDone[at];
+                var target = done.Quest is { } quest ? new RoleScope(OwnerKinds.Quest, quest) : new RoleScope(OwnerKinds.Repository, done.Repository ?? "");
+                var standing = !OwnerHolds(target);
+                // A stop waits on a Try again while no later Try again of the steward's on its quest followed it and it still stands (§5.3).
+                var waiting = done.Act == StewardActNames.Stop && standing
+                              && !_stewardDone.Skip(at + 1).Any(later => later.Act == StewardActNames.Retry
+                                                                         && string.Equals(later.Quest, done.Quest, StringComparison.OrdinalIgnoreCase));
+                acts.Add(new StewardActNow(done.Id, done.Act, done.Repository, done.Quest, done.Session, done.At, standing, waiting));
+            }
+
+            return acts;
+        }
+    }
+
+    // Under the lock: the steward's last act of the two named on a repository.
+    private StewardDone? Latest(string repository, string one, string other) =>
+        _stewardDone.LastOrDefault(each => each.Repository is { } named && string.Equals(named, repository, StringComparison.OrdinalIgnoreCase)
+                                           && (each.Act == one || each.Act == other));
 
     /// <summary>
     /// Any change of a repository's hold but a covered one (the window's press, a confirmed press): the run forgets it held it, so a
