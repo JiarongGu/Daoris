@@ -129,7 +129,7 @@ public static class HolderTerminal
         try
         {
             var settings = Path.Combine(config, "settings.json");
-            if (!File.Exists(settings) || !File.ReadAllBytes(settings).AsSpan().SequenceEqual(Encoding.UTF8.GetBytes(Settings))) return "settings.json";
+            if (!File.Exists(settings) || !AtomicFile.ReadBytes(settings).AsSpan().SequenceEqual(Encoding.UTF8.GetBytes(Settings))) return "settings.json";
             return Absent.FirstOrDefault(name => File.Exists(Path.Combine(config, name)) || Directory.Exists(Path.Combine(config, name)));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

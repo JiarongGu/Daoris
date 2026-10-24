@@ -20427,3 +20427,20 @@ summary's words, en and zh. The grounds census and the fingerprint pairs sit in 
 Where the code answers less than §5.1 names (short commits, no tips) the projections take what it answers, said in the note for Codex's
 read. **Not built:** 1a-ii's records and restart; the card's door to a plan's page, which no row names. Detail: D156's CONFIRMWAIT1a-i
 note.
+## STEWARDROLE1a-i — the holder and the role's door, built dark (2026-10-24, D209)
+
+> **STEWARDROLE1a-i — the holder and the role's door** (modules, driver, web; after D209's acceptance; lands dark). Daoris starting its pinned `claude-code` itself as the holder's tab process (absolute path and hash, an argument vector, a composed environment, `holder-harness` with no pin; any shell the system's Windows PowerShell), the holder's owned configuration files and the walk by image and argument vector (`holder-config`); against SUPERVISOR1a-ii as built: a holder apart from its appointment, shared or its own; a holder's end by its last role or its tab's exit; `DAORIS_ROLE_KEY`; one role revoked alone, the hash kept to the holder's last; `work/rooms/roles/holders/<id>/`, never moved while the holder lives; every role's verb and the fixed initial prompt in the argument vector, and `roles brief`; `SET_APPOINTMENT`'s `scope`, `acts`, `setup`; *Appoint again* per role, the tick off; `SupervisorOffered` and `StewardOffered`, both false, decoupled from D201's offering; `ROLE_ACT` with admitted acts and pending operations by their stages, each consumer taking its own once, the execution cutoff and hand-over bindings, all a revoke cancels; the configuration walk on every `Role` route, `SUPERVISOR_DEFER` included; `role-terminal` by the entry's marker on every press verb and alone path. Proof: the design's §10 row 1a-i, `HolderHarnessTests` among it.
+
+(Row 1a-i of `docs/2026-10-24-steward-role-design.md` §10, of the backlog's STEWARDROLE1; quest `#6d1a1c38b300`.)
+
+**Outcome** 2026-10-24, in three parts on one branch, dark (`SupervisorOffered` and `StewardOffered` both false). The driver: the
+variable `DAORIS_ROLE_KEY` at every entry and start, `HolderKey.RoleTerminal` recorded at the entry, a role's terminal refusing
+every verb but its roles' and the open reads at the entry and every press and alone path `role-terminal`, `roles brief` and the
+roles held named in the supervisor's answers, and the hash a maker's channel install verified kept beside the binary
+(`verified.json`). The modules: holders apart from appointments, shared by a later *Appoint…*'s choice or their own, a role revoked
+alone, a holder ended by its last role or its tab's `HolderEnded` on every path; Daoris's pinned `claude-code` started as the tab's
+process by path and verified hash, its argument vector and a composed environment, in `work/rooms/roles/holders/<id>/` on an owned
+configuration directory; `scope`, `acts` and `setup`; the two role flags; `ROLE_ACT` with an empty steward table; the run's memory
+of admitted acts, pending operations by their stages and bindings; the configuration walk on every `Role` route. The web: the
+appointment by scope and the choice of terminal. Each case seen failing first. Detail, and what 1a-ii to 1g still owe: D209's
+STEWARDROLE1a-i note.

@@ -33,7 +33,7 @@ public static class VerifiedBinary
         try
         {
             if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || Json.Text(root, "file") is not { } file || Json.Text(root, "sha256") is not { Length: 64 } sha256)
             {
@@ -54,7 +54,7 @@ public static class VerifiedBinary
     {
         try
         {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
             return Convert.ToHexStringLower(SHA256.HashData(stream));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

@@ -188,6 +188,9 @@ public static class DriverCommand
               to that session naming the commit to merge.
           sessions partner <id> --list  ·  sessions partner <piece> --stop
               a session's pieces and where each stands; a working piece's stop, which keeps its work.
+          roles brief
+              the brief of a role's holder (D209): what each role does, never does and how its verbs answer, by its
+              revision; names no key. In a role's terminal only its roles' verbs and the reads they need run.
           help list [--search "…"] [--json] [--offset <n>] [--limit <n>] [--workspace <name> | --all]
           help resume <id> "…" [--file <path>]…  ·  help rename <id> "…" | --clear  ·  help pin <id>  ·  help unpin <id>
           help delete <id> [--yes]
