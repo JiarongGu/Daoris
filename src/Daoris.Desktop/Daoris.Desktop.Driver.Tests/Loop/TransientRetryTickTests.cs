@@ -287,6 +287,56 @@ public sealed class TransientRetryTickTests : IDisposable
         Assert.DoesNotContain(target, blocks);
     }
 
+    /// <summary>
+    /// 🔴 AGENTERRORS1a2, the open's <b>nothing prompted</b> end (the design §5.1, §5.6; round 3, R2-O2; round 3's read, R3-O9): the person's
+    /// word resumes the held record, and its <c>session/resume</c> meets the 529 past the bound, so none of their words went. The record
+    /// ends <c>ended.transient</c> again, no word of Daoris's waits and no mark is written, and the next looks start nothing, since the
+    /// carried word was said before this end; a new word of theirs, said after it, goes on with the carried one, alone.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_whose_open_fails_past_the_bound_holds_its_carried_words_until_a_new_word_of_theirs()
+    {
+        await using var service = SaidStandIn.Start(_repository);
+        var clock = new MovedClock();
+        var driver = Protocol(service, "open-fails", clock);
+
+        var tick = driver.RunOnceAsync();
+        await PassAsync(clock, tick, 1, 2, 4, 8, 16);
+        await tick.WaitAsync(Poll.Patience);
+        Assert.True(service.State("s1") == "failed", Seen(service));
+
+        await service.SayAsync("s1", "Go on where the overload stopped you.");
+        var resuming = driver.RunOnceAsync();
+        await PassAsync(clock, resuming, 1, 2, 4, 8, 16);
+        await resuming.WaitAsync(Poll.Patience);
+
+        var seen = Seen(service);
+        Assert.True(service.State("s1") == "failed", seen);
+        Assert.Contains("kept failing after 5 tries", service.Note("s1"));
+        Assert.Equal(6, Heard().Count(line => line["method"]!.GetValue<string>() == "session/resume"));
+        Assert.Equal(6, Prompts().Length);
+        // Only the person's carried word waits, unmarked: nothing of Daoris's.
+        Assert.Single(service.Said("s1"));
+
+        for (var look = 0; look < 3; look++)
+        {
+            var report = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+            Assert.True(service.SessionCount == 1, Seen(service, string.Join(" | ", report.Events)));
+            Assert.Equal(6, Heard().Count(line => line["method"]!.GetValue<string>() == "session/resume"));
+        }
+
+        await service.SayAsync("s1", "The provider is back; go on.");
+        var resumed = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var after = Seen(service, string.Join(" | ", resumed.Events));
+        Assert.True(service.SessionCount == 1, after);
+        var last = Prompts()[^1];
+        Assert.True(last["resumed"]!.GetValue<bool>(), after);
+        Assert.Equal(
+            ["Go on where the overload stopped you.", "The provider is back; go on."],
+            last["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
+    }
+
     private static async Task<string> SessionsJsonAsync(SaidStandIn service)
     {
         using var http = new HttpClient();
@@ -297,14 +347,15 @@ public sealed class TransientRetryTickTests : IDisposable
     /// The protocol door's stand-in: it names its conversation <c>conv-&lt;session&gt;</c>. <c>twice</c> takes its quest and fails its
     /// first two prompts with the 529, streaming the error as its agent's words first as the adapter does, then closes the quest done;
     /// <c>always</c> fails every prompt; <c>always-open</c> too, never taking its quest. A resumed prompt is logged and closes the quest,
-    /// but under <c>relentless</c>, which takes its quest and fails every prompt, a resumed one included.
+    /// but under <c>relentless</c>, which takes its quest and fails every prompt, a resumed one included. <c>open-fails</c> is
+    /// <c>always</c> whose first six resumes meet the 529 at the open, before any prompt, and whose seventh works.
     /// </summary>
     private string Agent()
     {
         var script = Path.Combine(_home, "acp-agent.mjs");
         File.WriteAllText(script, """
             import { createInterface } from 'node:readline';
-            import { appendFileSync } from 'node:fs';
+            import { appendFileSync, readFileSync } from 'node:fs';
             const [log, mode] = process.argv.slice(2);
             const url = process.env.DAORIS_SERVICE_URL;
             const session = process.env.DAORIS_SESSION_ID;
@@ -330,6 +381,11 @@ public sealed class TransientRetryTickTests : IDisposable
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: conversation } });
               } else if (frame.method === 'session/resume' || frame.method === 'session/load') {
                 heard({ method: frame.method, conversation: frame.params?.sessionId });
+                // open-fails: the first six resumes heard meet the 529 at the open, before any prompt (source-derived).
+                if (mode === 'open-fails' && readFileSync(log, 'utf8').split(/\r?\n/).filter((l) => l.includes('"session/resume"')).length <= 6) {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: ' + overloaded, data: { errorKind: 'overloaded' } } });
+                  return;
+                }
                 conversation = frame.params.sessionId;
                 resumed = true;
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });

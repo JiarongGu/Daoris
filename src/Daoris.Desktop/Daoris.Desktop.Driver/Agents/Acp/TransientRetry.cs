@@ -151,6 +151,13 @@ public sealed class TransientEpisode(DateTimeOffset began, AgentError first)
     /// <summary>Whether the run ended past the bound (<c>ended.transient</c>).</summary>
     public bool Exhausted { get; internal set; }
 
+    /// <summary>
+    /// Whether it opened at the open (AGENTERRORS1a2, §5.6): the opening operation was refused, so nothing was prompted. Past the bound, its
+    /// end is <i>nothing prompted</i>: Daoris's go-on comes off by its id, and the person's carried words wait for a word of theirs said
+    /// after the end, by the hold's word rule's time, with no mark written.
+    /// </summary>
+    public bool AtOpen { get; internal set; }
+
     /// <summary>The go-on as its dispatcher kept it, once its first try was written; null before, and where it was kept nowhere.</summary>
     public string? GoOnId { get; internal set; }
 }

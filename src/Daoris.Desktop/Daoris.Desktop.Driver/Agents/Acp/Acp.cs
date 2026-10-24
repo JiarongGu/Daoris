@@ -1125,7 +1125,7 @@ public sealed class AcpSession(
     }
 
     /// <summary>A prompt's failure read by the handed reader; one the reader could not read is fatal, as today (§3.2).</summary>
-    private AgentError ReadFailure(AcpRefusal refused)
+    private AgentError ReadFailure(AcpRefusal refused, string where = DoorWhere.Prompt)
     {
         AgentError read;
         try
@@ -1138,8 +1138,61 @@ public sealed class AcpSession(
             read = new AgentError(AgentErrorKind.Fatal, DoorFailure.OfPrompt(refused), AgentErrors.Unread);
         }
 
+        if (read.Failure.Where != where) read = read with { Failure = read.Failure with { Where = where } };
         _retry!.Kept(read);
         return read;
+    }
+
+    /// <summary>
+    /// The open's own phase (AGENTERRORS1a2, D210, the agent-errors design §5.6): the raw opening operation (<c>session/new</c>,
+    /// <c>session/resume</c> or <c>session/load</c>), and, where the run was handed a retry and the agent refused it with a failure read
+    /// transient, the SAME operation again on the episode's schedule. Never <see cref="OpenAsync"/> or <see cref="ResumeAsync"/> again:
+    /// their handshake runs once per session. Read after D205's choice refusal, which comes later in the open, and the <c>Gone</c> and
+    /// <c>Elsewhere</c> codes, which pass through as they came; anything else not transient is thrown as today.
+    /// </summary>
+    /// <remarks>
+    /// Nothing was asked of the agent yet, so a try sends no go-on: once the operation answers, the run's own first prompt goes once, as
+    /// it would have. Words said meanwhile wait in the inbox, which is not attached until the open is done.
+    /// </remarks>
+    /// <exception cref="AcpTransientExhausted">Every try failed: the run ends past its bound with nothing prompted.</exception>
+    private async Task<JsonElement> OpeningAsync(Func<Task<JsonElement>> open, CancellationToken ct)
+    {
+        TransientEpisode? episode = null;
+        while (true)
+        {
+            try
+            {
+                return await open().ConfigureAwait(false);
+            }
+            catch (AcpRefusal refused) when (_retry is not null && refused.Code != ResourceNotFound
+                                             && !string.Equals(refused.Reason, ActiveWriter, StringComparison.Ordinal))
+            {
+                var read = ReadFailure(refused, DoorWhere.Open);
+                if (read.Kind != AgentErrorKind.Transient) throw;
+                var retry = _retry!;
+                if (episode is null)
+                {
+                    episode = retry.Open(read);
+                    episode.AtOpen = true;
+                    var first = episode;
+                    Said(() => retry.Began?.Invoke(first, retry.Clock.GetUtcNow() + TransientRetry.Delays[0]));
+                }
+
+                if (episode.Tries >= TransientRetry.Bound)
+                {
+                    episode.Exhausted = true;
+                    throw new AcpTransientExhausted(episode);
+                }
+
+                await WaitAsync(episode, ct, opening: true).ConfigureAwait(false);
+                // The owner's check (§5.5): no try where no more turn is wanted; nothing was prompted, so the open fails as today.
+                if (!await retry.WantedAsync(ct).ConfigureAwait(false)) throw;
+                episode.Tries++;
+                var next = episode.Tries < TransientRetry.Bound ? retry.Clock.GetUtcNow() + TransientRetry.Delays[episode.Tries] : (DateTimeOffset?)null;
+                var trying = episode;
+                Said(() => retry.Tried?.Invoke(trying, trying.Tries, next));
+            }
+        }
     }
 
     /// <summary>
@@ -1273,18 +1326,19 @@ public sealed class AcpSession(
     /// makes a turn, or by a turn its harness woke. Every word is held while it runs. Its end stamps the session heard, through the retry.
     /// </summary>
     /// <exception cref="DriverException">The agent's stream ended while it waited.</exception>
-    private async Task WaitAsync(TransientEpisode episode, CancellationToken ct)
+    private async Task WaitAsync(TransientEpisode episode, CancellationToken ct, bool opening = false)
     {
         var retry = _retry!;
         var started = retry.Clock.GetUtcNow();
         using var cut = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        var word = _inbox?.Waiting() ?? Task.Delay(Timeout.Infinite, cut.Token);
+        // At the open (§5.6) no session is there to wake and no word flows yet: only the schedule ends the wait.
+        var word = opening ? Task.Delay(Timeout.Infinite, cut.Token) : _inbox?.Waiting() ?? Task.Delay(Timeout.Infinite, cut.Token);
         Volatile.Write(ref _waitsOnTransient, true);
         Said(() => retry.Waits?.Invoke(true));
         try
         {
             var timer = Task.Delay(TransientRetry.Delays[Math.Min(episode.Tries, TransientRetry.Bound - 1)], retry.Clock, cut.Token);
-            var woke = _wake.WokeAsync(cut.Token);
+            var woke = opening ? Task.Delay(Timeout.Infinite, cut.Token) : _wake.WokeAsync(cut.Token);
             await Task.WhenAny(timer, word, woke, Ended).ConfigureAwait(false);
             ct.ThrowIfCancellationRequested();
             if (Ended.IsCompleted && !timer.IsCompleted && !word.IsCompleted && !woke.IsCompleted)
@@ -1426,11 +1480,14 @@ public sealed class AcpSession(
 
         // The rules composed for this session ride here when the adapter takes them (PERM1) —
         // and a session given none sends exactly what it sent before they existed.
-        var created = await RequestAsync(
-            "session/new",
-            meta is null
-                ? new { cwd, mcpServers = offered }
-                : (object)new { cwd, mcpServers = offered, _meta = meta },
+        // AGENTERRORS1a2 (§5.6): a transient refusal of the raw operation is tried again on the schedule, never the handshake.
+        var created = await OpeningAsync(
+            () => RequestAsync(
+                "session/new",
+                meta is null
+                    ? new { cwd, mcpServers = offered }
+                    : (object)new { cwd, mcpServers = offered, _meta = meta },
+                ct),
             ct).ConfigureAwait(false);
         // Read without trusting the shape (REV3): an id of the wrong kind threw past every catch that
         // names this client's own failures, and a conversation waited for a session that never came.
@@ -3177,7 +3234,8 @@ public sealed class AcpSession(
         _replaying = method == "session/load" ? conversation : null;
         try
         {
-            resumed = await RequestAsync(method, parameters, ct).ConfigureAwait(false);
+            // AGENTERRORS1a2 (§5.6): a transient refusal is tried again here, the raw operation alone; past the bound it ends exhausted.
+            resumed = await OpeningAsync(() => RequestAsync(method, parameters, ct), ct).ConfigureAwait(false);
         }
         catch (AcpRefusal refused)
         {

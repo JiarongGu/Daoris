@@ -627,6 +627,117 @@ public sealed class AcpTransientTests
         lock (events) Assert.Contains(events, e => e.Parts?.Any(part => part.Code == NoteCodes.WordsRefused.Code) == true);
     }
 
+    /// <summary>
+    /// The agent of the open (§5.6): it refuses its opening operation, <paramref name="method"/>, by <paramref name="open"/> (the n-th
+    /// attempt counted from one, null to answer it), and answers every prompt <c>end_turn</c>.
+    /// </summary>
+    private static Agent Opening(string method, Func<int, JsonElement, string?> open)
+    {
+        var count = 0;
+        return new Agent((frame, self) =>
+        {
+            var name = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            if (name == method && open(Interlocked.Increment(ref count), frame) is { } refused) return refused;
+            return name switch
+            {
+                "initialize" => Ok(frame, """{"protocolVersion":1,"agentCapabilities":{"loadSession":true,"sessionCapabilities":{"resume":{}}}}"""),
+                "session/new" => Ok(frame, """{"sessionId":"s-1"}"""),
+                "session/resume" => Ok(frame, "{}"),
+                "session/prompt" => Answer(frame, "end_turn"),
+                _ => frame.TryGetProperty("id", out _) && frame.TryGetProperty("method", out _) ? Ok(frame, "{}") : null,
+            };
+        });
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1a2, the open (§5.6): <c>session/new</c> refused with the 529 twice, then answered. The SAME raw operation is repeated
+    /// on the schedule, never the handshake, and then the run's own first prompt goes once, with no go-on, since nothing was asked. Red
+    /// before the open's phase: the refusal ended the run.
+    /// </summary>
+    [Fact]
+    public async Task A_transient_session_new_failure_repeats_the_raw_open_then_sends_the_original_prompt_once()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Opening("session/new", (n, frame) => n <= 2 ? Failed(frame) : null);
+        var retry = Retry(clock, told);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "serve the report", CancellationToken.None, retry: retry);
+        await PassAsync(told, clock, run, 1, 2);
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/new", "session/new", "session/new", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal([["serve the report"]], agent.Prompts);
+        Assert.Equal((2, true, false, DoorWhere.Open), (retry.Episode!.Tries, retry.Episode.AtOpen, retry.Episode.Exhausted, retry.Last!.Failure.Where));
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1a2, the open after a session id exists (§5.6): <c>session/resume</c> of the record's conversation refused with the 529
+    /// twice, then answered; the resume's words then go once, in their one prompt, with no go-on.
+    /// </summary>
+    [Fact]
+    public async Task A_transient_session_resume_failure_repeats_the_raw_resume_then_sends_the_resume_s_words_once()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Opening("session/resume", (n, frame) => n <= 2 ? Failed(frame) : null);
+        var retry = Retry(clock, told);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync(
+            "D:/fam/Game", "unused", CancellationToken.None, resume: "conv-1", blocks: ["go on with port 9090"], retry: retry);
+        await PassAsync(told, clock, run, 1, 2);
+        var outcome = await run.WaitAsync(Poll.Patience);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(["initialize", "session/resume", "session/resume", "session/resume", "session/prompt", "session/close"], agent.Methods);
+        Assert.Equal([["go on with port 9090"]], agent.Prompts);
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1a2: an open refused transient every try ends past the bound after five tries and 31 minutes of waits, with NOTHING
+    /// prompted (§5.1's nothing prompted end).
+    /// </summary>
+    [Fact]
+    public async Task An_open_refused_every_try_ends_past_the_bound_with_nothing_prompted()
+    {
+        var clock = new MovedClock();
+        var told = new Told();
+        var agent = Opening("session/resume", (_, frame) => Failed(frame));
+        var retry = Retry(clock, told);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        var run = session.RunAsync("D:/fam/Game", "unused", CancellationToken.None, resume: "conv-1", blocks: ["go on"], retry: retry);
+        await PassAsync(told, clock, run, 1, 2, 4, 8, 16);
+        var exhausted = await Assert.ThrowsAsync<AcpTransientExhausted>(() => run.WaitAsync(Poll.Patience));
+
+        Assert.Equal((5, TimeSpan.FromMinutes(31), true, true), (exhausted.Episode.Tries, exhausted.Episode.Waited, exhausted.Episode.Exhausted, exhausted.Episode.AtOpen));
+        Assert.Empty(agent.Prompts);
+        Assert.Equal(6, agent.Methods.Count(method => method == "session/resume"));
+    }
+
+    /// <summary>
+    /// AGENTERRORS1a2 (§5.6): the codes read before the open's transient reading pass through at once: a conversation the agent no longer
+    /// has (<c>resource_not_found</c>) is today's refused resume, with no wait, whatever its words.
+    /// </summary>
+    [Fact]
+    public async Task A_resume_refused_resource_not_found_is_today_s_refusal_with_no_wait()
+    {
+        var agent = Opening("session/resume", (_, frame) => JsonSerializer.Serialize(new
+        {
+            jsonrpc = "2.0", id = frame.GetProperty("id").GetInt32(),
+            error = new { code = -32002, message = Overloaded, data = new { errorKind = "overloaded" } },
+        }));
+        var retry = Retry(new MovedClock(), new Told());
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        await Assert.ThrowsAsync<AcpResumeRefused>(
+            () => session.RunAsync("D:/fam/Game", "unused", CancellationToken.None, resume: "conv-1", blocks: ["go on"], retry: retry));
+        Assert.False(retry.Opened);
+    }
+
     /// <summary>The person's stop or Daoris's shutdown during a wait ends the run as that stop does today: the wait is cancelled with it.</summary>
     [Fact]
     public async Task A_shutdown_during_a_wait_cancels_it_with_the_run()
