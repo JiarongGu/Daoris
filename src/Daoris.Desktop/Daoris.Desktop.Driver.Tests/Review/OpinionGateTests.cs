@@ -96,6 +96,60 @@ public sealed class OpinionGateTests
         Assert.True(gate.LetsGo);
     }
 
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2, §7): a chat run's work waits for an opinion where its rule names one at the landing, keyed by
+    /// the run in place of a quest. Nothing asks it until the person's press, which the words say; once the press asked it, they say the
+    /// look starts it and the person presses again. The rest of its states are a quest's.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_runs_work_waits_for_the_opinion_its_press_asks()
+    {
+        var chat = Facts(Rule()) with { Quest = null, Run = "chat-1a2b3c4d" };
+
+        var waits = await JudgeAsync(chat);
+        var asked = await JudgeAsync(chat with { Asked = true });
+        var reading = await JudgeAsync(chat with { Asks = [AskOf("o1")] }, new World { Opinions = { ["o1"] = Opinion(state: "reading") } });
+
+        Assert.Equal((OpinionGateStates.NotAsked, false, "chat-1a2b3c4d"), (waits.State, waits.LetsGo, waits.Run));
+        Assert.Equal("Waits for a second opinion: one from `codex-acp` is asked when you press Accept.", waits.Says);
+        Assert.Equal(
+            "Waits for a second opinion: it is asked, and `codex-acp` reads it from the driver's next look; press Accept again once it settles.",
+            asked.Says);
+        Assert.Equal(
+            "A second opinion is asked: `codex-acp` reads it from the driver's next look; press Accept again once it settles.",
+            OpinionGate.AskedAtPress(waits));
+        Assert.Equal((OpinionGateStates.Reading, false), (reading.State, reading.LetsGo));
+        Assert.Equal(OpinionGateStates.None, (await JudgeAsync(chat with { Run = null })).State);
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (§7): a chat run's gate is kept under its run's key, the file the session delete takes with the record it names; and its
+    /// due keeps the run, the press's tip and the person's turn count, naming no quest, so a build before it passes it over.
+    /// </summary>
+    [Fact]
+    public void A_chat_runs_gate_is_kept_by_its_run_key_and_its_due_names_its_run_tip_and_count()
+    {
+        var home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "opinion-gate", Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var gates = new OpinionGates(home);
+            gates.Asked("chat-1a2b3c4d", "web-app", AskOf("o1"));
+            Assert.Equal(Path.Combine(ChatRuns.GatesFolder(home), "chat-1a2b3c4d.json"), gates.PathOf("chat-1a2b3c4d"));
+            Assert.Contains(gates.PathOf("chat-1a2b3c4d")!, ChatRuns.Files(home, "chat-1a2b3c4d"));
+            Assert.Equal("o1", Assert.Single(gates.Read("chat-1a2b3c4d", "web-app").Asks).Opinion);
+
+            var dues = new OpinionDues(home);
+            dues.Due(new OpinionDue("s2", "", "web-app", "aurora", "tree", OpinionRules.Landing, Asked) { Run = "chat-1a2b3c4d", Tip = Read, Turns = 3 });
+            var due = Assert.Single(dues.Open());
+            Assert.Equal(("chat-1a2b3c4d", Read, (int?)3, "", true), (due.Run, due.Tip, due.Turns, due.Quest, due.OnRun));
+            Assert.DoesNotContain("\"quest\"", File.ReadAllText(dues.FilePath), StringComparison.Ordinal);
+        }
+        finally
+        {
+            GitSeed.Discard(home);
+        }
+    }
+
     // ——— before any pass
 
     [Fact]

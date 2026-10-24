@@ -840,8 +840,8 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
     /// <inheritdoc cref="TreeGates.OpinionAsync"/>
     public Task<OpinionGateState> OpinionAsync(
         string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
-        string occasion, CancellationToken ct = default, WorkflowProcess? process = null) =>
-        Gates.OpinionAsync(tree, repository, workspace, quest, session, world, review, occasion, ct, process);
+        string occasion, CancellationToken ct = default, WorkflowProcess? process = null, string? at = null, string? run = null) =>
+        Gates.OpinionAsync(tree, repository, workspace, quest, session, world, review, occasion, ct, process, at, run);
 
     /// <inheritdoc cref="TreeGates.ForkPointAsync"/>
     public Task<string?> ForkPointAsync(string tree, CancellationToken ct = default) => Gates.ForkPointAsync(tree, ct);

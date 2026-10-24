@@ -48,8 +48,9 @@ internal sealed class TreeGates(TreeContext context)
         var config = context.Config();
         process ??= await ProcessAsync(config, repository, workspace, quest, world, ct, run).ConfigureAwait(false);
         var workflow = await WorkflowAsync(full, process, session, ct, tip).ConfigureAwait(false);
-        var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process, tip).ConfigureAwait(false);
-        var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct, process, tip)
+        var review = await ReviewGate.ReadAsync(world, config, full, repository, workspace, quest, ct, process, tip, run, context.Home, session)
+            .ConfigureAwait(false);
+        var opinion = await OpinionAsync(full, repository, workspace, quest, session, world, review, OpinionRules.Landing, ct, process, tip, run)
             .ConfigureAwait(false);
         var gate = new LandingGate(opinion, review) { Workflow = workflow };
         return await GraphAsync(gate, full, repository, process, tip, ct).ConfigureAwait(false);
@@ -137,17 +138,24 @@ internal sealed class TreeGates(TreeContext context)
     /// declared reviewers. Null reads the rule live, as before.
     /// </param>
     /// <param name="at">The commit to judge at, the branch's where a push is judged (FABRIC-CLOSE1h16); null reads the tree's <c>HEAD</c>.</param>
+    /// <param name="run">
+    /// The chat run whose work this is where it serves no quest (CHATFLOW1d, the chat-flow design §7): its gate is kept under the run's key
+    /// in place of a chain's, and a pass a press asked and the look has not started reads as asked. Null for a quest's work, or none.
+    /// </param>
     internal async Task<OpinionGateState> OpinionAsync(
         string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
-        string occasion, CancellationToken ct = default, WorkflowProcess? process = null, string? at = null)
+        string occasion, CancellationToken ct = default, WorkflowProcess? process = null, string? at = null, string? run = null)
     {
         var rule = process is null ? OpinionRules.Resolve(context.Config(), repository, workspace) : process.Opinion;
         var cannot = process?.OpinionCannot;
         var facts = new OpinionGateFacts(repository, rule) { Session = session, Occasion = occasion, Review = review, Cannot = cannot };
-        if (quest is null || !OpinionGate.Reads(rule, cannot, occasion))
+        var chatRun = quest is null && ChatRuns.IsChatRun(run) ? run : null;
+        if ((quest is null && chatRun is null) || !OpinionGate.Reads(rule, cannot, occasion))
         {
-            return new OpinionGateState(OpinionGateStates.None, repository) { Rule = rule, Session = session };
+            return new OpinionGateState(OpinionGateStates.None, repository) { Rule = rule, Session = session, Run = chatRun };
         }
+
+        if (chatRun is not null) return await ChatOpinionAsync(tree, repository, chatRun, facts, world, ct, at).ConfigureAwait(false);
 
         try
         {
@@ -183,6 +191,47 @@ internal sealed class TreeGates(TreeContext context)
             return new OpinionGateState(OpinionGateStates.Unread, repository)
             {
                 Rule = rule, Session = session, Problem = error.Message.TrimEnd().TrimEnd('.'),
+            };
+        }
+    }
+
+    /// <summary>
+    /// A chat run's opinion gate (CHATFLOW1d, the chat-flow design §5.2, §7): what is kept under the run's key, <c>chat-&lt;first&gt;</c>, at the
+    /// commit that would land, with no chain and no later step; and whether a press asked a pass the look has not started yet, a due open
+    /// on the run with no ask kept since it was owed, nor a request the look has still to take.
+    /// </summary>
+    private async Task<OpinionGateState> ChatOpinionAsync(
+        string tree, string repository, string run, OpinionGateFacts facts, IOpinionWorld world, CancellationToken ct, string? at)
+    {
+        try
+        {
+            var kept = new OpinionGates(context.Home).Read(run, repository);
+            var due = new OpinionDues(context.Home).Open().LastOrDefault(each => string.Equals(each.Run, run, StringComparison.OrdinalIgnoreCase));
+            var tip = at ?? await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false);
+            facts = facts with
+            {
+                Run = run,
+                Tip = tip,
+                Asks = [.. kept.Asks.Where(ask => ask.Occasion != OpinionRules.Steps)],
+                Person = kept.Person,
+                Asked = kept.Requests.Count > 0 || (due is not null && !kept.Asks.Any(ask => ask.At >= due.At)),
+            };
+
+            return await OpinionGate.JudgeAsync(facts, new OpinionReads(
+                each => world.OpinionAsync(each, ct),
+                new OpinionDeliveries(context.Home).Read,
+                commit => tip is null ? Task.FromResult<bool?>(null) : ReviewGit.HoldsAsync(tree, tip, commit, ct),
+                from => SinceAsync(tree, from, ct, at))
+            {
+                Ready = reviewer => AccountCooling.OfSession(context.Home, reviewer)?.Until ?? DateTimeOffset.UtcNow,
+            }).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return new OpinionGateState(OpinionGateStates.Unread, repository)
+            {
+                Rule = facts.Rule, Session = facts.Session, Run = run, Problem = error.Message.TrimEnd().TrimEnd('.'),
             };
         }
     }

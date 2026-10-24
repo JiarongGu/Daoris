@@ -19,7 +19,7 @@ const DETAILS: Record<string, readonly string[]> = {
   // The second opinion's gate's own states (XAGENT1f, `OpinionGateStates`), and a landing that let it go.
   opinion: [
     'none', 'waits-chain', 'not-asked', 'reading', 'read-again', 'with-session', 'disputed', 'commits-since', 'unavailable', 'settled',
-    'anyway', 'myself', 'answered', 'landed', 'unread', 'cannot-start', 'chat-not-asked',
+    'anyway', 'myself', 'answered', 'landed', 'unread', 'cannot-start', 'chat-at-accept',
   ],
   look: ['not-shown', 'being-set-up', 'shown', 'not-yet', 'not-held', 'reviewed', 'skip', 'off', 'unread'],
   landing: ['accept', 'automatic', 'branch', 'merge', 'already', 'nothing', 'refused', 'gone', 'elsewhere'],
@@ -79,6 +79,8 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
       return t(step.state === 'waiting-on-you' ? at : 'workflow.run.said.opinion.unavailableOptional', { why });
     }
     case 'opinion.settled': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.settledAnyone');
+    // CHATFLOW1d: a chat run's opinion, asked by the person's Accept and naming the reviewer it asks.
+    case 'opinion.chat-at-accept': return step.agent ? t(at, { agent: step.agent }) : t(`${at}Anyone`);
     case 'opinion.answered': return t(step.code === 'reviewed' ? 'workflow.run.said.opinion.answeredReviewed' : at);
     case 'opinion.waits-chain': return t(at, { quest: step.quest ?? '' });
     // WORKFLOW1f: a named workflow's opinion step naming reviewers its repository does not declare.

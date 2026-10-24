@@ -6,8 +6,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <summary>
 /// CHATFLOW1c (the chat-flow design §4.1–§4.4, amended by Codex's read, finding 7, and by the Opus check of that amendment, findings 1 to 3):
 /// a chat in a tree of its own runs its repository's workflow, keyed by its line, <c>chat-&lt;first&gt;</c>. Its later steps follow its
-/// candidate, never its displayed work step; its landing is read for the tip its tree stands at, live or ended; before CHATFLOW1d its opinion
-/// is passed over (<c>chat-not-asked</c>); its checks are said not yet enforced; and a line that takes a quest is that quest's from the take on.
+/// candidate, never its displayed work step; its landing is read for the tip its tree stands at, live or ended; its opinion waits on the
+/// person's Accept, which asks it (<c>chat-at-accept</c>, CHATFLOW1d), and then reads its gate as a quest's does; its checks are said not yet
+/// enforced; and a line that takes a quest is that quest's from the take on.
 /// </summary>
 public sealed class WorkflowRunChatTests
 {
@@ -26,16 +27,24 @@ public sealed class WorkflowRunChatTests
         Created = T.AddMinutes(later * 10), Updated = T.AddMinutes(later * 10 + 5),
     };
 
-    /// <summary>A chat run derived from its line's records, its tree and its landings, under the rules <paramref name="config"/> sets.</summary>
+    /// <summary>
+    /// A chat run derived from its line's records, its tree and its landings, under the rules <paramref name="config"/> sets; its opinion's
+    /// gate <paramref name="opinion"/>, else one no press has asked yet (CHATFLOW1d).
+    /// </summary>
     private static WorkflowRun ChatRunOf(
         string config, ChatRunFacts chat, IReadOnlyList<TracedSession> line, IReadOnlyList<LandedBranch>? landings = null,
-        Dictionary<string, DateTimeOffset>? accepted = null)
+        Dictionary<string, DateTimeOffset>? accepted = null, OpinionGateState? opinion = null)
     {
-        var current = WorkflowCurrent.Derive(DriverConfig.Parse(config), "engine", "aurora", Plugins);
+        var parsed = DriverConfig.Parse(config);
+        var current = WorkflowCurrent.Derive(parsed, "engine", "aurora", Plugins);
         return WorkflowRuns.Derive(new WorkflowRunFacts("engine", current)
         {
             Sessions = line,
             Review = new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = "engine" }),
+            Opinion = opinion ?? new OpinionGateState(OpinionGateStates.NotAsked, "engine")
+            {
+                Rule = OpinionRules.Resolve(parsed, "engine", "aurora"), Run = chat.Run, Session = line[^1].Id,
+            },
             Landings = landings ?? [],
             Accepted = accepted ?? new Dictionary<string, DateTimeOffset>(StringComparer.OrdinalIgnoreCase),
             Chat = chat,
@@ -70,7 +79,7 @@ public sealed class WorkflowRunChatTests
         Assert.Equal(2, StepOf(ended, WorkflowKinds.Work).Count);
         Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Accept, "c1"),
             (StepOf(ended, WorkflowKinds.Landing).State, StepOf(ended, WorkflowKinds.Landing).Detail, StepOf(ended, WorkflowKinds.Landing).Session));
-        Assert.Equal((WorkflowRunStates.Skipped, WorkflowRunDetails.ChatNotAsked), Where(ended, WorkflowKinds.Opinion));
+        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.ChatAtAccept), Where(ended, WorkflowKinds.Opinion));
 
         // Ended with nothing beyond the line and nothing landed: the conversation stopped.
         var stopped = ChatRunOf(OpinionRule, new ChatRunFacts("chat-c1") { Tip = TipA, Beyond = 0 }, [ChatOn("c1", "completed")]);
@@ -81,7 +90,40 @@ public sealed class WorkflowRunChatTests
             [new LandedBranch("engine", "aurora", "chat/the-change", "main", TipA, "c1", null, "The change", T.AddMinutes(30))]);
         Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Landed), Where(landed, WorkflowKinds.Work));
         Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Branch), Where(landed, WorkflowKinds.Landing));
-        Assert.Equal((WorkflowRunStates.Skipped, WorkflowRunDetails.ChatNotAsked), Where(landed, WorkflowKinds.Opinion));
+        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Landed), Where(landed, WorkflowKinds.Opinion));
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (Codex's finding 7, the rows c left to d): the view during review and during the answer's delivery. Once the press asked the
+    /// opinion it reads as asked, then being read, the landing not reached past it; while the findings are with the conversation and its
+    /// answering turn runs, the work reads the agent's and the opinion stays in view, never not reached; a dispute waits on the person.
+    /// </summary>
+    [Fact]
+    public void A_chat_run_s_opinion_stays_in_view_once_its_press_asked_it_while_the_answering_turn_runs()
+    {
+        var rule = OpinionRules.Resolve(DriverConfig.Parse(OpinionRule), "engine", "aurora");
+        OpinionGateState Gate(string state, bool asked = false) =>
+            new(state, "engine") { Rule = rule, Run = "chat-c1", Session = "c1", Asked = asked };
+        var reader = new OpinionView("o1", "landing", "first", "c1", "r1", "engine", TipA, TipA, "codex-acp", ReviewerLabels.AnotherMaker, "reading");
+
+        var asked = ChatRunOf(OpinionRule, new ChatRunFacts("chat-c1") { Tip = TipA, Beyond = 2, Between = true }, [ChatOn("c1")],
+            opinion: Gate(OpinionGateStates.NotAsked, asked: true));
+        Assert.Equal((WorkflowRunStates.Working, OpinionGateStates.NotAsked), Where(asked, WorkflowKinds.Opinion));
+        Assert.Equal(WorkflowRunStates.NotReached, StepOf(asked, WorkflowKinds.Landing).State);
+
+        var reading = ChatRunOf(OpinionRule, new ChatRunFacts("chat-c1") { Tip = TipA, Beyond = 2, Between = true }, [ChatOn("c1")],
+            opinion: Gate(OpinionGateStates.Reading) with { Opinion = reader });
+        Assert.Equal((WorkflowRunStates.Working, OpinionGateStates.Reading), Where(reading, WorkflowKinds.Opinion));
+
+        // The answering turn runs: the work is the agent's again, and the opinion it answers stays in view.
+        var answering = ChatRunOf(OpinionRule, new ChatRunFacts("chat-c1") { Tip = TipA, Beyond = 2 }, [ChatOn("c1")],
+            opinion: Gate(OpinionGateStates.WithSession) with { Opinion = reader with { State = "given", Findings = [] } });
+        Assert.Equal((WorkflowRunStates.Working, WorkflowRunDetails.Agent), Where(answering, WorkflowKinds.Work));
+        Assert.Equal((WorkflowRunStates.WaitingOnAgent, OpinionGateStates.WithSession), Where(answering, WorkflowKinds.Opinion));
+
+        var disputed = ChatRunOf(OpinionRule, new ChatRunFacts("chat-c1") { Tip = TipA, Beyond = 2, Between = true }, [ChatOn("c1")],
+            opinion: Gate(OpinionGateStates.Disputed) with { Opinion = reader with { State = "given", Findings = [] }, Disputes = new([1], []) });
+        Assert.Equal((WorkflowRunStates.WaitingOnYou, OpinionGateStates.Disputed), Where(disputed, WorkflowKinds.Opinion));
     }
 
     /// <summary>
@@ -96,7 +138,7 @@ public sealed class WorkflowRunChatTests
         Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Land), Where(run, WorkflowKinds.Work));
         Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Accept), Where(run, WorkflowKinds.Landing));
         Assert.Equal("c1", StepOf(run, WorkflowKinds.Landing).Session);
-        Assert.Equal((WorkflowRunStates.Skipped, WorkflowRunDetails.ChatNotAsked), Where(run, WorkflowKinds.Opinion));
+        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.ChatAtAccept), Where(run, WorkflowKinds.Opinion));
         // It stands at its work, which waits on the person's Accept, the landing beside it.
         Assert.Equal(WorkflowKinds.Work, run.Steps.Single(step => step.Step.Id == run.At).Step.Kind);
     }
@@ -140,7 +182,7 @@ public sealed class WorkflowRunChatTests
         Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Land), Where(second, WorkflowKinds.Work));
         Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Accept, "c2"),
             (StepOf(second, WorkflowKinds.Landing).State, StepOf(second, WorkflowKinds.Landing).Detail, StepOf(second, WorkflowKinds.Landing).Session));
-        Assert.Equal((WorkflowRunStates.Skipped, WorkflowRunDetails.ChatNotAsked), Where(second, WorkflowKinds.Opinion));
+        Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.ChatAtAccept), Where(second, WorkflowKinds.Opinion));
 
         var atFirst = ChatRunOf(OpinionRule, new ChatRunFacts("chat-c1") { Tip = TipA, Beyond = 1, Between = true }, line, [first]);
         Assert.Equal((WorkflowRunStates.Done, OpinionGateStates.Settled, TipA),
@@ -150,7 +192,7 @@ public sealed class WorkflowRunChatTests
         var landedAgain = ChatRunOf(OpinionRule, new ChatRunFacts("chat-c1") { Tip = TipB, Beyond = 3, Between = true }, line, [advanced]);
         Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Branch, "c2"),
             (StepOf(landedAgain, WorkflowKinds.Landing).State, StepOf(landedAgain, WorkflowKinds.Landing).Detail, StepOf(landedAgain, WorkflowKinds.Landing).Session));
-        Assert.Equal((WorkflowRunStates.Skipped, WorkflowRunDetails.ChatNotAsked), Where(landedAgain, WorkflowKinds.Opinion));
+        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Landed), Where(landedAgain, WorkflowKinds.Opinion));
     }
 
     /// <summary>
@@ -177,7 +219,7 @@ public sealed class WorkflowRunChatTests
             Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Land), Where(run, WorkflowKinds.Work));
             Assert.Equal((WorkflowRunStates.WaitingOnYou, WorkflowRunDetails.Accept, "c2"),
                 (StepOf(run, WorkflowKinds.Landing).State, StepOf(run, WorkflowKinds.Landing).Detail, StepOf(run, WorkflowKinds.Landing).Session));
-            Assert.Equal("No second opinion is asked for a conversation's work in this build yet.", WorkflowRunWords.Said(StepOf(run, WorkflowKinds.Opinion)));
+            Assert.Equal("A second opinion from `codex-acp` is asked when you press Accept.", WorkflowRunWords.Said(StepOf(run, WorkflowKinds.Opinion)));
 
             var said = WorkflowRunWords.Say(read.Runs, asked);
             Assert.Contains("engine · Current workflow", said);

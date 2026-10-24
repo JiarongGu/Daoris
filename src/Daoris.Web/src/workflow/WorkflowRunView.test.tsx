@@ -397,20 +397,20 @@ describe("the session's Workflow view", () => {
   });
 
   // CHATFLOW1c (the chat-flow design §4.2, §4.4): a chat's run, its checks marked not yet enforced for a conversation, never shown as a limit
-  // its tree holds, and its second opinion passed over before CHATFLOW1d, in both languages.
+  // its tree holds, and its second opinion, which the person's Accept asks (CHATFLOW1d), in both languages.
   describe("a chat's run", () => {
-    it('marks its checks not yet enforced and says its opinion is not asked, in both languages', async () => {
+    it('marks its checks not yet enforced and says its Accept asks its opinion, in both languages', async () => {
       const { rerender } = render(<WorkflowRunView answer={answerOf(CHAT_RUN)} here="work" />);
       expect(screen.getByText(/are not yet enforced for a conversation, so its tree is not held to them/)).toBeInTheDocument();
       expect(screen.getByText(code('light'))).toBeInTheDocument();
-      expect(row('opinion')).toHaveTextContent("No second opinion is asked for a conversation's work in this build yet.");
+      expect(row('opinion')).toHaveTextContent('A second opinion from codex-acp is asked when you press Accept.');
       expect(row('work')).toHaveTextContent('2 commits beyond the line wait for you to accept them.');
       expect(screen.getByText(/waits for you to accept it/)).toBeInTheDocument();
 
       await i18n.changeLanguage('zh');
       rerender(<Tooltip.Provider><WorkflowRunView answer={answerOf(CHAT_RUN)} here="work" /></Tooltip.Provider>);
       expect(screen.getByText(/还没有对对话强制执行，所以它的工作树不受其约束/)).toBeInTheDocument();
-      expect(row('opinion')).toHaveTextContent('这个版本还不为对话的工作征询第二意见。');
+      expect(row('opinion')).toHaveTextContent('你按下采纳时，会征询 codex-acp 的第二意见。');
       expect(row('work')).toHaveTextContent('超出主线的 2 个提交等你采纳。');
     });
 
