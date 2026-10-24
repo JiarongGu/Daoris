@@ -207,9 +207,11 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
   const { isAvailable } = useShenora();
   const client = useQueryClient();
   const ids = [...new Set((sessions ?? []).map((session) => session.id))].sort();
+  const queryKey = keys.openings(ids);
   const answer = useQuery({
-    queryKey: keys.openings(ids),
-    queryFn: () => call<{ openings?: Record<string, string> }>('SESSION_OPENINGS', { ids }),
+    queryKey,
+    // Told by event (NOBLOCK1): the shell answers what it holds, and the record's read comes as `ANSWERED`.
+    queryFn: () => askHeld<{ openings?: Record<string, string> }>('SESSION_OPENINGS', client, queryKey, { ids }),
     enabled: isAvailable && ids.length > 0,
     staleTime: 60_000,
     refetchOnWindowFocus: false,

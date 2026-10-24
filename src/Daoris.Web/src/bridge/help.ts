@@ -9,6 +9,7 @@ import { call, pressBound } from './call';
 import { syncLookBound } from './repositories/lines';
 import { logEvent } from './log';
 import { usePollUnlessTold } from './state/published';
+import { askHeld } from './state/held';
 
 // Ask Daoris (MOD3): its conversation, the one readied ahead, and what it proposes (D89).
 
@@ -100,12 +101,15 @@ export const HELP_PROPOSALS = ['help-proposals'] as const;
 export const useHelpProposals = (session: string | null, live: boolean) => {
   const { isAvailable } = useShenora();
   const every = usePollUnlessTold(4000);
+  const client = useQueryClient();
+  const queryKey = [...HELP_PROPOSALS, session];
   return useQuery({
-    queryKey: [...HELP_PROPOSALS, session],
-    queryFn: async () => {
-      const answer = await call<{ proposals?: unknown }>('HELP_PROPOSALS', { session: session! });
-      return Array.isArray(answer?.proposals) ? answer.proposals as HelpProposal[] : [];
-    },
+    queryKey,
+    // Told by event (NOBLOCK1): the shell answers what it holds, and its judgement of each proposal comes as `ANSWERED`.
+    queryFn: () => askHeld('HELP_PROPOSALS', client, queryKey, { session: session! }, (answer) => {
+      const proposals = (answer as { proposals?: unknown } | null)?.proposals;
+      return Array.isArray(proposals) ? proposals as HelpProposal[] : [];
+    }),
     enabled: isAvailable && session !== null,
     refetchInterval: live ? every : false,
   });

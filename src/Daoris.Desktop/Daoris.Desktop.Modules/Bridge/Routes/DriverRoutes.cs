@@ -160,9 +160,11 @@ public sealed class DriverRoutes(DriverContext context)
     /// exit } }</c> and each waiter <c>{ session?, since }</c>, the longest waiting first; a run with no <c>session</c> is one from a
     /// terminal. Read from the records the runs keep beside the slot (<see cref="HeavySlot.Look"/>), each only where its process still
     /// runs, never from a run's output; the slot keyed by the checkout the registry holds, as <c>HEAVY_MARKS</c> picks it, and
-    /// <c>refusal</c> where there is none here or git's files do not say its repository. A read: it declares nothing.
+    /// <c>refusal</c> where there is none here or git's files do not say its repository. A read: it declares nothing. Told by event
+    /// (NOBLOCK1): it held the window up to 2.9 s, so an ask is answered from what is held and this runs on a task of its own.
     /// </summary>
     [DriverRoute("HEAVY_SLOT")]
+    [ByEvent("HEAVY_SLOT")]
     private async Task<object?> HeavySlotAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var repository = (Optional(request, "repository") ?? "").Trim();

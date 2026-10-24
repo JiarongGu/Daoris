@@ -20,6 +20,7 @@ import type { ReviewShown } from '../work/gates/ReviewChip';
 import { type HeavySlot, readHeavySlot } from '../work/heavySlot';
 import { call, refusedNotReady } from './call';
 import { notPushed, pushedOf, readPushed, type SliceSpec, usePushedLive } from './state/slices';
+import { askHeld } from './state/held';
 
 // The driver's standing state and its dials (MOD3): what this machine drives and holds, what it says
 // when a session parks, how many failures park a quest, which agent answers an ask, and a look now.
@@ -592,9 +593,10 @@ export const useHeavyMarks = (repository: string, { enabled = true }: { enabled?
 export const heavySlotAgainIn = (slot: HeavySlot | null | undefined): number =>
   slot && (slot.holder || slot.waiters.length > 0) ? 5_000 : 30_000;
 
-const heavySlotQuery = (repository: string, enabled: boolean) => ({
+const heavySlotQuery = (client: QueryClient, repository: string, enabled: boolean) => ({
   queryKey: keys.heavySlot(repository),
-  queryFn: async () => readHeavySlot(await call<unknown>('HEAVY_SLOT', { repository })),
+  // Told by event (NOBLOCK1): the shell answers what it holds, and its look at the slot's records comes as `ANSWERED`.
+  queryFn: () => askHeld('HEAVY_SLOT', client, keys.heavySlot(repository), { repository }, readHeavySlot),
   enabled: enabled && repository !== '',
   // A shell older than the route answers none, which reads as no heavy run, asked again at the free slot's pace.
   retry: false,
@@ -607,13 +609,15 @@ const heavySlotQuery = (repository: string, enabled: boolean) => ({
  */
 export const useHeavySlot = (repository: string, { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
-  return useQuery(heavySlotQuery(repository, isAvailable && enabled));
+  const client = useQueryClient();
+  return useQuery(heavySlotQuery(client, repository, isAvailable && enabled));
 };
 
 /** The slots of several repositories at once, by name, for the rail and a session's head: none where a slot is not read yet. */
 export const useHeavySlots = (repositories: readonly string[]): ReadonlyMap<string, HeavySlot | null> => {
   const { isAvailable } = useShenora();
   const named = [...new Set(repositories.filter((name) => name !== ''))].sort();
-  const answers = useQueries({ queries: named.map((repository) => heavySlotQuery(repository, isAvailable)) });
+  const client = useQueryClient();
+  const answers = useQueries({ queries: named.map((repository) => heavySlotQuery(client, repository, isAvailable)) });
   return new Map(named.map((repository, at) => [repository, answers[at]?.data ?? null]));
 };

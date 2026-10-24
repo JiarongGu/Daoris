@@ -598,8 +598,10 @@ public sealed class SessionsRoutes(DriverContext context)
         "Declining needs a reason: it is the part whoever reads this record can act on.";
 
     // What a person first said in each of these sessions (RAIL1): a conversation's identity, from
-    // this machine's own record — never the session record, which travels (D47 §4).
+    // this machine's own record — never the session record, which travels (D47 §4). Told by event (NOBLOCK1): each record's
+    // read held the window up to 7.5 s, so an ask is answered from what is held and this runs on a task of its own.
     [DriverRoute("SESSION_OPENINGS")]
+    [ByEvent("SESSION_OPENINGS")]
     private async Task<object?> SessionOpeningsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var ids = new List<string>();

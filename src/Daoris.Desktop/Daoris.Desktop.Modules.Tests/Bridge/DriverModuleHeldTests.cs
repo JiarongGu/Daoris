@@ -20,6 +20,10 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
     private static readonly Dictionary<string, object> Payloads = new(StringComparer.Ordinal)
     {
         ["SESSION_WHERE"] = new { sessions = Array.Empty<object>() },
+        ["SESSION_OPENINGS"] = new { ids = new[] { "a1b2c3d4" } },
+        ["HEAVY_SLOT"] = new { repository = "engine" },
+        ["HELP_PROPOSALS"] = new { session = "a1b2c3d4" },
+        ["TOOLS_LIST"] = new { },
     };
 
     public static TheoryData<string> HeldRoutes() => [.. DriverModule.ByEventRoutes.Order(StringComparer.Ordinal)];
@@ -52,6 +56,15 @@ public sealed class DriverModuleHeldTests : DriverModuleBridge
         await UntilAsync(() => !told.IsEmpty);
         var answered = Assert.Single(told);
         Assert.Equal("q1", answered.GetProperty("held").GetString());
+        if (answered.TryGetProperty("failed", out _))
+        {
+            // A work the bare home refuses (one that needs the service): told failed, and the next ask is that refusal, at once.
+            clock.Restart();
+            Assert.False((await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None)).Success);
+            Assert.True(clock.Elapsed < UiStallWatch.Bound, $"{route} refused after {clock.Elapsed.TotalMilliseconds} ms");
+            return;
+        }
+
         var held = await module.HandleMessageAsync(Request(route, payload, "q1"), CancellationToken.None);
         Assert.Equal(answered.GetProperty("answer").GetRawText(), JsonSerializer.Serialize(held.Data, Wire));
 

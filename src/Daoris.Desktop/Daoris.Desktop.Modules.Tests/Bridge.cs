@@ -103,8 +103,8 @@ public abstract class Bridge : IDisposable
     /// </remarks>
     /// <remarks>
     /// A read told by event (NOBLOCK1) answers what was held, or <see cref="HeldAnswers.Pending"/>, while the work the ask began
-    /// runs: the ask waits for that work, as the page waits for its event, and asks again, so a test reads what the work answered
-    /// now, never what an earlier ask held. What the held and pending answers do is <c>DriverModuleHeldTests</c>'.
+    /// runs: the ask waits for that work, as the page waits for its event, and asks again until a work begun after its first ask
+    /// has answered, so a test reads what the work answers now, never what an earlier ask held. What the held and pending answers do is <c>DriverModuleHeldTests</c>'.
     /// </remarks>
     protected static async Task<IpcResponse> AskAsync(IIpcModule module, string type, object? payload = null)
     {
@@ -119,7 +119,9 @@ public abstract class Bridge : IDisposable
         };
         var response = await module.HandleMessageAsync(request, CancellationToken.None);
         if (module is not DriverModule driver || !DriverModule.ByEventRoutes.Contains(type)) return response;
-        for (var again = 0; again == 0 || (response.Success && HeldAnswers.IsPending(response.Data) && again < 3); again++)
+        // Twice at least: the first ask may have joined a work begun before it (before the test's last write), and the ask after
+        // that work begins one of its own.
+        for (var again = 0; again < 2 || (response.Success && HeldAnswers.IsPending(response.Data) && again < 4); again++)
         {
             try
             {

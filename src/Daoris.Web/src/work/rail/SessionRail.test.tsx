@@ -190,7 +190,7 @@ describe('the session rail', () => {
       expect(await screen.findByText('Cap the hydration per frame')).toBeInTheDocument();
       expect(screen.getByText('Read README.md and tell me its first heading')).toBeInTheDocument();
       expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_OPENINGS', {
-        payload: { ids: ['b2c3d4e5', 'c3d4e5f6', 'd4e5f6a7', 's1a2b3c4'] },
+        payload: { ids: ['b2c3d4e5', 'c3d4e5f6', 'd4e5f6a7', 's1a2b3c4'], held: expect.any(String) },
       });
     });
 

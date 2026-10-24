@@ -46,6 +46,19 @@ describe('a read told by event (NOBLOCK1)', () => {
     expect(client.getQueryData(['sessions', 'where', 'b2'])).toEqual({ sessions: [] });
   });
 
+  it('reads an event’s answer as the query’s own ask reads it, so the query keeps one shape', async () => {
+    const client = new QueryClient();
+    const slot = ['heavy-slot', 'engine'] as const;
+    invoke.mockResolvedValue({ pending: true });
+    const read = (answer: unknown) => ((answer as { repository?: string }).repository ? { held: true } : null);
+
+    await client.fetchQuery({ queryKey: slot, queryFn: () => askHeld('HEAVY_SLOT', client, slot, { repository: 'engine' }, read) });
+    expect(client.getQueryData(slot)).toBeNull();
+
+    answered(client, { held: hashKey(slot), answer: { repository: 'engine', waiters: [] } });
+    expect(client.getQueryData(slot)).toEqual({ held: true });
+  });
+
   it('asks the query again when its work failed, so the shell’s refusal is read', async () => {
     const client = new QueryClient();
     const queryFn = vi.fn(async () => ({ sessions: [] }));
