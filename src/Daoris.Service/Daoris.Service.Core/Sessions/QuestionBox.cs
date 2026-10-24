@@ -44,7 +44,7 @@ public sealed class QuestionBox(string? home)
     /// The marks an agent sets on a question it knows is the owner's alone (SUPERVISOR1b, D208; the supervisor design §4.1): a sign-in,
     /// widening access, spending, deleting, a repository document that asks the owner, and the owner's own taste. A marked question is
     /// never answered by the supervisor; the mark only narrows, so an unmarked question is still judged by its holder. The driver's
-    /// <c>QuestionFiles</c> holds the same list.
+    /// <c>SupervisorBounds.All</c> and the page's <c>OWNER_MARKS</c> name the same six; both readers take any mark as one.
     /// </summary>
     public static readonly IReadOnlyList<string> OwnerMarks = ["sign-in", "access", "spending", "delete", "repository-asks", "preference"];
 
