@@ -60,14 +60,19 @@ public sealed class BrainstormLookTests : IDisposable
                     File.Exists(proposals) ? File.ReadAllText(proposals) : null));
             }
 
-            if (Answers.TryGetValue(turn.Turn, out var answer))
+            var outcome = Outcomes.TryGetValue(turn.Turn, out var own) ? own(turn) : null;
+            if (outcome is { Ran: false }) return Task.FromResult(outcome);
+            if (outcome is null && Answers.TryGetValue(turn.Turn, out var answer))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(turn.Answer)!);
                 File.WriteAllText(turn.Answer, answer);
             }
 
-            return Task.FromResult(new BrainstormTurnRun(true, "work", null, $"completed  brainstorm turn {turn.Turn}"));
+            return Task.FromResult(outcome ?? new BrainstormTurnRun(true, "work", null, $"completed  brainstorm turn {turn.Turn}"));
         }
+
+        /// <summary>A turn's own outcome where a test gives one (a voice that cannot run, a refusal at the open), by turn id.</summary>
+        public Dictionary<string, Func<BrainstormTurn, BrainstormTurnRun?>> Outcomes { get; } = [];
     }
 
     private static string Give(params (string Idea, string Reversible, string Risk)[] proposals) =>
@@ -389,5 +394,99 @@ public sealed class BrainstormLookTests : IDisposable
         Assert.Equal("0123456789abcdef0123456789abcdef01234567", first.Revision);
         Assert.Equal((12_000, 13_000), (packet.Sources[1].Kept, packet.Sources[1].Of));
         Assert.DoesNotContain("checkouts", Encoding.UTF8.GetString(Files.PacketBytes(id)!), StringComparison.Ordinal);
+    }
+
+    private static DriverConfig Voices(params ActorChoice[] entries) =>
+        ActorChoices.With(DriverConfig.Empty with { Adapter = "stub", Cap = 3 }, "brainstorm", entries);
+
+    private async Task<(string Id, Turns Turns)> SentAsync(DriverConfig config, IReadOnlyList<string> agents, string[]? members = null, Action<Turns>? arrange = null)
+    {
+        var id = Files.WriteRequest("How should the daily report stop dropping its last day?", null, agents, At);
+        var (driver, _, turns) = Start(config: config);
+        await LookAsync(driver);
+        Files.WriteSent(id, Files.ReadState(id)!.Packet!, At);
+        turns.Answers["g1"] = Give(("Make the window inclusive of its last day", "yes", "low"));
+        turns.Answers["g2"] = Give(("Include the last day in the window", "yes", "low"));
+        turns.Answers["s1"] = Synthesize(("An inclusive window", 1, members ?? ["P1", "P2"]));
+        arrange?.Invoke(turns);
+        await LookAsync(driver);
+        return (id, turns);
+    }
+
+    /// <summary>
+    /// 🔴 MODELROLE1e (D205 §4.4): with nothing named, the Brainstorm actor's entries are the voices, one each, each asking its own model
+    /// and effort; its pass record keeps the choice and what was asked; and the synthesis takes its generator's asked choice, not the
+    /// actor as it stands.
+    /// </summary>
+    [Fact]
+    public async Task With_nothing_named_each_entry_of_the_actor_is_a_voice_asking_its_model()
+    {
+        var (id, turns) = await SentAsync(Voices(new("stub", "opus", "high"), new("acp-stub", "sonnet")), []);
+
+        Assert.Equal(["g1", "g2", "s1"], turns.Seen.Select(seen => seen.Turn.Turn));
+        Assert.Equal(
+            [new ActorEffective("stub", "opus", "high", "1"), new ActorEffective("acp-stub", "sonnet", null, "2"), new ActorEffective("stub", "opus", "high", "1")],
+            turns.Seen.Select(seen => seen.Turn.Entry));
+        var first = JsonNode.Parse(File.ReadAllText(Files.PathOf(id, "passes", "g1.json")))!;
+        Assert.Equal("1", first["choice"]!.GetValue<string>());
+        Assert.Equal("opus", first["asked"]!["model"]!["value"]!.GetValue<string>());
+        var synthesis = JsonNode.Parse(File.ReadAllText(Files.PathOf(id, "passes", "s1.json")))!;
+        Assert.Equal("1", synthesis["choice"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// 🔴 MODELROLE1e (D205 §4.4, the row's proof): a voice that cannot run is dropped and never replaced, by another entry or by another
+    /// agent: its pass is unavailable with its code, the other voice answers, and no third pass takes its place.
+    /// </summary>
+    [Fact]
+    public async Task A_voice_that_cannot_run_is_dropped_and_nothing_takes_its_place()
+    {
+        var (id, turns) = await SentAsync(
+            Voices(new("stub", "opus"), new("acp-stub", "sonnet")), [],
+            members: ["P1"],
+            arrange: seen => seen.Outcomes["g1"] = _ => new BrainstormTurnRun(false, null, AgentOffers.NotOffered, "held  brainstorm turn g1: no account offers opus"));
+
+        var dropped = JsonNode.Parse(File.ReadAllText(Files.PathOf(id, "passes", "g1.json")))!;
+        Assert.Equal(("unavailable", AgentOffers.NotOffered), (dropped["state"]!.GetValue<string>(), dropped["codes"]![0]!.GetValue<string>()));
+        Assert.Equal(["g1", "g2", "s1"], Directory.EnumerateFiles(Files.PathOf(id, "passes"), "*.json").Select(Path.GetFileNameWithoutExtension).Order());
+        Assert.Equal(["acp-stub"], turns.Seen.Where(seen => seen.Turn.Turn == "s1").Select(seen => seen.Turn.Agent));
+        var rows = JsonNode.Parse(File.ReadAllText(Files.PathOf(id, "document.json")))!["rows"]!.AsArray();
+        Assert.Equal(["g2"], rows.SelectMany(row => row!["members"]!.AsArray().Select(member => member!["pass"]!.GetValue<string>())));
+    }
+
+    /// <summary>
+    /// 🔴 MODELROLE1e (D205 §4.4): its agent's refusal of the voice's model at the open is the voice's one bounded restart on the agent's
+    /// next account, the refusing account passed for it, the same entry asked again; never a second voice.
+    /// </summary>
+    [Fact]
+    public async Task A_refusal_of_the_voice_s_model_at_the_open_is_its_one_restart_on_the_next_account()
+    {
+        var (id, turns) = await SentAsync(
+            Voices(new("stub", "opus"), new("acp-stub", "sonnet")), [],
+            arrange: seen =>
+            {
+                seen.Outcomes["g1"] = _ => new BrainstormTurnRun(true, "account-1", AgentOffers.NotOffered, "not-offered  brainstorm turn g1");
+                seen.Answers["g1r"] = seen.Answers["g1"];
+            });
+
+        Assert.Equal(["g1", "g1r", "g2", "s1"], turns.Seen.Select(seen => seen.Turn.Turn).Order());
+        var again = turns.Seen.Single(seen => seen.Turn.Turn == "g1r").Turn;
+        Assert.Equal(new ActorEffective("stub", "opus", null, "1"), again.Entry);
+        Assert.Equal(["account-1"], again.Passed!);
+        Assert.Equal("answered", JsonNode.Parse(File.ReadAllText(Files.PathOf(id, "passes", "g1.json")))!["state"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// 🔴 MODELROLE1e (D205 §4.4): the agents a request names decide who runs, each taking the actor's entry for it, else account default
+    /// (<c>rule-default</c>); the actor never adds a voice the request did not name.
+    /// </summary>
+    [Fact]
+    public async Task The_agents_a_request_names_decide_who_and_the_actor_gives_each_its_model()
+    {
+        var (_, turns) = await SentAsync(Voices(new("stub", "opus"), new("acp-stub", "sonnet")), ["acp-stub", "dsh"]);
+
+        Assert.Equal(
+            [new ActorEffective("acp-stub", "sonnet", null, "2"), new ActorEffective("dsh", null, null, "rule-default")],
+            turns.Seen.Where(seen => seen.Turn.Turn.StartsWith('g')).Select(seen => seen.Turn.Entry));
     }
 }
