@@ -243,7 +243,8 @@ export function opinionSays(t: ReturnType<typeof useTranslation>['t'], gate: Gat
   const minutes = detail?.first?.minutes;
   switch (state) {
     case 'waits-chain': return [t('opinion.says.waits-chain', { later: gate.later ?? '' })];
-    case 'not-asked': return [t('opinion.says.not-asked')];
+    // CHATFLOW1d: a chat run's opinion is asked by the person's Accept, never by a look.
+    case 'not-asked': return [gate.run ? t('opinion.says.not-askedAtPress') : t('opinion.says.not-asked')];
     case 'reading': return [typeof minutes === 'number'
       ? t('opinion.says.readingMinutes', { who, label, minutes })
       : t('opinion.says.reading', { who, label })];

@@ -47,6 +47,8 @@ export type OpinionGate = {
   /** The token *Accept…* sends back to answer what it showed (§8.2–§8.3); absent where no press answers the state. */
   answers?: string | null;
   says?: string | null;
+  /** A chat run's gate (CHATFLOW1d), by its key: its `not-asked` is asked by the person's *Accept…*. Absent for a quest's work. */
+  run?: string | null;
 };
 
 /** The working session's answer to one finding as the host keeps it (§6.4): its own claim. */
@@ -143,6 +145,13 @@ export const opinionHolds = (landing: { opinion?: OpinionGate | null } | null | 
  */
 export const acceptAnswers = (gate: OpinionGate | null | undefined): boolean =>
   Boolean(gate?.holds && gate.answers && (gate.state === 'disputed' || gate.state === 'commits-since'));
+
+/**
+ * Whether *Accept…* is the press that asks the gate's opinion (CHATFLOW1d, the chat-flow design §5.2): a chat run's, not asked yet. The
+ * press is refused saying the opinion is asked, and the person presses again once it settles.
+ */
+export const acceptAsks = (gate: OpinionGate | null | undefined): boolean =>
+  Boolean(gate?.holds && gate.run && gate.state === 'not-asked');
 
 /** A press at the gate (design §8.5), named as the page draws it. */
 export type OpinionPress = 'askNow' | 'stop' | 'tryAgain' | 'sameAgent' | 'askAgain' | 'myself' | 'anyway' | 'sendBack';

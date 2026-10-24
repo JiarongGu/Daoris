@@ -20,6 +20,7 @@
   "opinion.label.maker-not-declared": "an agent whose maker is not declared, whose reading is not counted as another maker's",
   "opinion.says.waits-chain": "It is asked once this chain's last step here is done: quest #{{later}} still works here, so one opinion reads the chain's whole work.",
   "opinion.says.not-asked": "It is asked at the driver's next look, once nothing before it holds the work.",
+  "opinion.says.not-askedAtPress": "It is asked when you press Accept, which waits for it to settle.",
   "opinion.says.reading": "Being read by {{who}}, {{label}}.",
   "opinion.says.readingMinutes": "Being read by {{who}}, {{label}}, for at most {{minutes}} minutes.",
   "opinion.says.with-session": "The working session is answering {{count}} finding by {{who}}.",

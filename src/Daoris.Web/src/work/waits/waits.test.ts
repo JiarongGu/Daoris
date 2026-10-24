@@ -220,6 +220,15 @@ describe('how the work stands for its landing', () => {
     expect(landingStands({ lands: LANDS, landing: { ...PLAN, opinion: { ...GATES.disputed, answers: 't0k' } } }))
       .toMatchObject({ acceptable: true, answers: 't0k' });
   });
+
+  // CHATFLOW1d (the chat-flow design §5.2): a chat run's Accept is the press that asks its opinion, so it stands beside an opinion not
+  // asked yet; a quest's, which the look asks, does not, and a chat run's opinion being read holds it as any does.
+  it('offers a chat run’s Accept beside its opinion not asked yet, which that press asks', () => {
+    const notAsked = { state: 'not-asked', holds: true, says: 'Waits for a second opinion: one from `codex-acp` is asked when you press Accept.' };
+    expect(landingStands({ lands: LANDS, landing: { ...PLAN, opinion: { ...notAsked, run: 'chat-c0ffee11' } } })).toMatchObject({ acceptable: true });
+    expect(landingStands({ lands: LANDS, landing: { ...PLAN, opinion: notAsked } })).toMatchObject({ acceptable: false });
+    expect(landingStands({ lands: LANDS, landing: { ...PLAN, opinion: { ...GATES.reading, run: 'chat-c0ffee11' } } })).toMatchObject({ acceptable: false });
+  });
 });
 
 // ACCEPTFOOT1 (D164's note): an open conversation's record stays `working` between turns, so the driver's look offers its tree

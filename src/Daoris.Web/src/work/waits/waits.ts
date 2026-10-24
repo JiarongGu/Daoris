@@ -10,7 +10,7 @@ import { type HelperAskRow, waitsOnWord } from './HelperAsks';
 import { type HandOverAskRow, waitsOnHandOverWord } from './HandOverAgentAsk';
 import { isIntake } from '../identity';
 import type { LandingPlan } from '../review/Lands';
-import { acceptAnswers, opinionAsked, opinionHolds, opinionState, opinionTone } from '../gates/opinion';
+import { acceptAnswers, acceptAsks, opinionAsked, opinionHolds, opinionState, opinionTone } from '../gates/opinion';
 import { heldFor, type PermissionWait } from './PermissionAsks';
 import { answerFor, type AnswerWait } from './AnswerAlone';
 import { REVIEW_TONE, reviewHolds, reviewState } from '../gates/review';
@@ -62,7 +62,8 @@ export function landingStands({ lands, landing, behind }: {
   const answers = opinionWaits && acceptAnswers(opinionWaits) ? opinionWaits.answers ?? null : null;
   // Nothing beyond the line, committed or not, is nothing to land (REVIEWBASE5): the review's own condition, REVIEWBASE4.
   const nothingBeyond = behind?.ahead === 0 && !(typeof lands.uncommitted === 'number' && lands.uncommitted > 0);
-  const acceptable = !workflow && !review && !nothingBeyond && (!opinionWaits || answers !== null);
+  // CHATFLOW1d: a chat run's Accept is the press that asks its opinion, so it stands while the opinion is not asked yet.
+  const acceptable = !workflow && !review && !nothingBeyond && (!opinionWaits || answers !== null || acceptAsks(opinionWaits));
   // LANDSYNC1 (D87's 2026-10-15 amendment point 5): replaying the work onto the line conflicts, so in *Accept…*'s place, the
   // words its session is asked to rebase with; *Accept…* comes back once the tree changes and the plan reads it again.
   const conflict = acceptable ? landing?.conflict ?? null : null;

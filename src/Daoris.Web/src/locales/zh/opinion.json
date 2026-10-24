@@ -20,6 +20,7 @@
   "opinion.label.maker-not-declared": "一个未声明厂商的智能体，它的阅读不算作另一家厂商的",
   "opinion.says.waits-chain": "它在这个委托链在这里的最后一步完成后才征询：委托 #{{later}} 还在这里工作，所以一份意见阅读委托链在这里的全部工作。",
   "opinion.says.not-asked": "驱动会在下一轮征询它，只要没有更早的事项挡住这项工作。",
+  "opinion.says.not-askedAtPress": "你按采纳时会征询它，采纳等它了结后再落地。",
   "opinion.says.reading": "{{who}} 正在阅读，{{label}}。",
   "opinion.says.readingMinutes": "{{who}} 正在阅读，{{label}}，最多 {{minutes}} 分钟。",
   "opinion.says.with-session": "做这项工作的会话正在回应 {{who}} 的 {{count}} 条发现。",

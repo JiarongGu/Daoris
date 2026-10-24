@@ -809,6 +809,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
             Person = gate.Person?.Said,
             Answers = gate.PressAnswers ? gate.Token : null,
             Says = gate.Says,
+            // CHATFLOW1d: a chat run's gate, whose `not-asked` the person's Accept asks, so the page offers that press beside it.
+            gate.Run,
         };
 
     // The second opinion's presses (XAGENT1f, the second-agent design §8.5, §9): the screen's half of `daoris-driver opinion`,
