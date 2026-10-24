@@ -352,8 +352,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
 | `docs/2026-10-24-confirm-wait-design.md` | 123 | 1035 |
 | `docs/2026-10-24-confirm-wait-reads.md` | 77 | 812 |
-| `docs/2026-10-24-cowork-view-design.md` | 111 | 1097 |
-| `docs/2026-10-24-cowork-view-reads.md` | 54 | 656 |
+| `docs/2026-10-24-cowork-view-design.md` | 221 | 1944 |
+| `docs/2026-10-24-cowork-view-reads.md` | 117 | 1155 |
 | `docs/2026-10-24-event-hook-design.md` | 163 | 1215 |
 | `docs/2026-10-24-event-hook-reads.md` | 110 | 1037 |
 | `docs/2026-10-24-keep-size-design.md` | 102 | 979 |
@@ -365,5 +365,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-switch-context-design.md` | 136 | 1070 |
 | `docs/2026-10-24-switch-context-reads.md` | 106 | 1048 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `docs/README.md` | 48 | 261 |
+| `docs/README.md` | 47 | 261 |
 | `src/Daoris.Desktop/README.md` | 176 | 815 |
