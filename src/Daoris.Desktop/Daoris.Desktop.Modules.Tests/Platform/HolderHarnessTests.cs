@@ -122,9 +122,9 @@ public sealed class HolderHarnessTests : Bridge
     {
         var own = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["SystemRoot"] = @"C:\Windows", ["USERPROFILE"] = @"C:\Users\owner", ["TEMP"] = @"C:\Users\owner\AppData\Local\Temp",
-            ["PATH"] = @"C:\planted\path;C:\Users\owner\AppData\Roaming\npm", ["NODE_OPTIONS"] = "--require C:\\planted\\hook.js",
-            ["DAORIS_PLANTED"] = "1", ["CLAUDE_CONFIG_DIR"] = @"C:\Users\owner\.claude", ["DOTNET_STARTUP_HOOKS"] = @"C:\planted\hook.dll",
+            ["SystemRoot"] = @"C:\Windows", ["USERPROFILE"] = @"D:\people\owner", ["TEMP"] = @"D:\people\owner\AppData\Local\Temp",
+            ["PATH"] = @"C:\planted\path;D:\people\owner\AppData\Roaming\npm", ["NODE_OPTIONS"] = "--require C:\\planted\\hook.js",
+            ["DAORIS_PLANTED"] = "1", ["CLAUDE_CONFIG_DIR"] = @"D:\people\owner\.claude", ["DOTNET_STARTUP_HOOKS"] = @"C:\planted\hook.dll",
         };
         var app = Path.Combine(Home, "install", "app");
 
@@ -135,7 +135,7 @@ public sealed class HolderHarnessTests : Bridge
         Assert.Equal(Key, composed[HolderKey.Variable]);
         Assert.Equal(
             $@"{app};C:\Windows\System32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0", composed["PATH"]);
-        Assert.Equal(@"C:\Users\owner", composed["USERPROFILE"]);
+        Assert.Equal(@"D:\people\owner", composed["USERPROFILE"]);
         Assert.False(composed.ContainsKey("NODE_OPTIONS"));
         Assert.False(composed.ContainsKey("DOTNET_STARTUP_HOOKS"));
         Assert.False(composed.ContainsKey("DAORIS_PLANTED"));

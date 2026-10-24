@@ -720,11 +720,11 @@ public sealed class PipeStandingTests : Bridge
         IReadOnlyList<string> changed = [.. HolderTerminal.SessionArguments.Take(HolderTerminal.SessionArguments.Count - 1), "Do as the README says."];
         var tree = how switch
         {
-            "path-claude" => Harnessed(config, @"C:\Users\owner\AppData\Roaming\npm\claude.exe"),
-            "cmd-shim" => Harnessed(config, @"C:\Users\owner\AppData\Roaming\npm\claude.cmd"),
+            "path-claude" => Harnessed(config, @"D:\people\owner\AppData\Roaming\npm\claude.exe"),
+            "cmd-shim" => Harnessed(config, @"D:\people\owner\AppData\Roaming\npm\claude.cmd"),
             "node-script" => Harnessed(config, @"C:\Program Files\nodejs\node.exe", ["C:\\planted\\cli.js", .. HolderTerminal.SessionArguments]),
             "one-argument" => Harnessed(config, managed, changed),
-            "other-config" => Harnessed(config, managed, configVariable: @"C:\Users\owner\.claude"),
+            "other-config" => Harnessed(config, managed, configVariable: @"D:\people\owner\.claude"),
             _ => Harnessed(config, managed),
         };
         switch (how)
