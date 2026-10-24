@@ -92,8 +92,8 @@ public static class WorkflowRunReader
     /// <summary>
     /// The chains whose runs are asked for, each whole across its repositories, or the sentence that says why there are none with its
     /// code (<see cref="WorkflowNoRun"/>) and the id its words name. A session is classified in the chat-flow design §4.2's order
-    /// (CHATFLOW1a): its quest's run; a line whose stored origin is a quest's or an ask's, that quest's or that ask's; a chat that took a
-    /// quest, on any record of its line in its tree, that quest's; an intake, its ask's; and each kind that runs nothing, by its code.
+    /// (CHATFLOW1a, corrected by Codex's finding 6): its quest's run; the concrete work its line continues (<see cref="WorkOf"/>), that
+    /// quest's; an intake, its ask's; a line of an ask whose quest no record names, the ask's; and each kind that runs nothing, by its code.
     /// </summary>
     internal static (IReadOnlyList<IReadOnlyList<QuestView>> Chains, string? Problem, string? Only, string? Code, string? Id) ChainsOf(
         WorkflowRunAsk asked, IReadOnlyList<QuestView> quests, IReadOnlyList<TracedSession> sessions, IWorkflowRunRecords trees)
@@ -107,12 +107,13 @@ public static class WorkflowRunReader
             if (session is null) return None(WorkflowNoRun.NoSession, sessionId.Trim());
             if (session.Teammate) return None(WorkflowNoRun.Teammate);
             if (session.Quest is { } quest) return ChainsOf(new WorkflowRunAsk(Quest: quest), quests, sessions, trees);
-            // A closed quest's session gone on as a conversation in the quest's own tree keeps the quest's line (§4.1), and an ask's
-            // origin is an intake's line: each reads that quest's run, or the ask's runs, never a chat's.
-            if (OriginNamed(session, "quest") is { } origin) return ChainsOf(new WorkflowRunAsk(Quest: origin), quests, sessions, trees);
-            if (OriginNamed(session, "ask") is { } asking) return ChainsOf(new WorkflowRunAsk(Ask: asking), quests, sessions, trees);
-            if (TookQuest(session, sessions) is { } took) return ChainsOf(new WorkflowRunAsk(Quest: took), quests, sessions, trees);
+            // The concrete work the line continues comes before its origin (§4.1, Codex's finding 6): a quest's worker gone on as a
+            // conversation, a chat that took a quest and a line whose stored origin is a quest's each read that quest's run, never a
+            // chat's, and never every run of the ask whose origin the line inherited. Only an intake, or a line of an ask whose quest no
+            // record here names, reads the ask's runs.
+            if (WorkOf(session, sessions) is { } work) return ChainsOf(new WorkflowRunAsk(Quest: work), quests, sessions, trees);
             if (session.Ask is { } ask) return ChainsOf(new WorkflowRunAsk(Ask: ask), quests, sessions, trees);
+            if (OriginNamed(session, "ask") is { } asking) return ChainsOf(new WorkflowRunAsk(Ask: asking), quests, sessions, trees);
             if (Same(session.Repository, HelpRoom.Repository)) return None(WorkflowNoRun.AskDaoris);
             if (session.Opinion is not null) return None(WorkflowNoRun.Reviewer);
             if (session.Piece is not null) return None(WorkflowNoRun.Partner);
@@ -154,6 +155,26 @@ public static class WorkflowRunReader
         return ([], "a run is read for a `session`, a `quest` or an `ask` — name one of them.", null, null, null);
     }
 
+    /// <summary>
+    /// The quest whose workflow governs a record's work (the chat-flow design §4.1, Codex's finding 6), or null: its own quest; else the
+    /// nearest record its <c>From</c> links reach that names a quest or took one, so a worker gone on as a conversation stays that quest's
+    /// work whatever origin its line inherited (an ask's, or a publisher's in another tree); else a quest a chat of its line in its tree
+    /// took (CHATTAKE1); else a stored origin <c>quest:&lt;id&gt;</c>. An intake, a reviewer, a helper and a teammate's record continue
+    /// no work here, so they read none. The walk follows the records read, guarded against a cycle.
+    /// </summary>
+    internal static string? WorkOf(TracedSession session, IReadOnlyList<TracedSession> sessions)
+    {
+        if (session.Quest is { } own) return own;
+        if (session.Teammate || session.Ask is not null || session.Opinion is not null || session.Serves is not null) return null;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (var at = session; at is not null && seen.Add(at.Id); at = at.From is { } from ? sessions.FirstOrDefault(each => Same(each.Id, from)) : null)
+        {
+            if ((at.Quest ?? at.TookQuest) is { } work) return work;
+        }
+
+        return TookQuest(session, sessions) ?? OriginNamed(session, "quest");
+    }
+
     /// <summary>The id a session's stored origin names, where that origin is of <paramref name="kind"/> (<c>quest</c> or <c>ask</c>).</summary>
     private static string? OriginNamed(TracedSession session, string kind) =>
         session.Origin is { } origin && origin.StartsWith(kind + ":", StringComparison.Ordinal) && origin[(kind.Length + 1)..] is { Length: > 0 } id
@@ -184,7 +205,13 @@ public static class WorkflowRunReader
         var sources = reads.Sources;
         var part = chain.Where(quest => Same(quest.To, repository)).ToList();
         var ids = new HashSet<string>(part.Select(quest => quest.Id), StringComparer.OrdinalIgnoreCase);
-        var mine = sessions.Where(session => session.Quest is { } quest && ids.Contains(quest)).ToList();
+        // The work's records are every record whose concrete work is a quest of this part (Codex's finding 6): its quests' own sessions,
+        // and the conversations that continue them or took one, each read here as that quest's though its own record keeps no quest.
+        var mine = sessions
+            .Select(session => session.Quest is { } quest ? (ids.Contains(quest) ? session : null)
+                : WorkOf(session, sessions) is { } work && ids.Contains(work) ? session with { Quest = work } : null)
+            .OfType<TracedSession>()
+            .ToList();
         var workspace = RemoteTarget.Workspace(sources.WorkspaceOf(repository));
         var current = WorkflowCurrent.Derive(sources.Config, repository, sources.WorkspaceOf(repository), sources.Plugins);
         var process = WorkflowProcesses.Read(sources.Home, sources.Config, repository, sources.WorkspaceOf(repository),

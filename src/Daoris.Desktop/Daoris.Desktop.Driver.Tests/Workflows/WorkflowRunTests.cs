@@ -631,6 +631,86 @@ public sealed class WorkflowRunTests
         Assert.Equal("game", WorkflowRunReader.ChainsOf(new(Session: "c5"), quests, sessions, trees).Only);
     }
 
+    /// <summary>
+    /// CHATFLOW1a corrected by Codex's read of the accepted text (the chat-flow design §4.1, finding 6): a record's run is the concrete
+    /// work its line continues, never its origin read alone. A quest an ask sent, its worker gone on as a conversation, reads that quest's
+    /// run and not every run of the ask; a quest that inherits its publisher's origin from another tree is its worker's continuation's
+    /// work, never an own-tree chat; and a genuine intake keeps its ask-wide view.
+    /// </summary>
+    [Fact]
+    public void A_continued_conversation_reads_the_concrete_work_its_line_continues_never_its_origin_alone()
+    {
+        QuestView To(string id, string from = "ask #a1") => new(id, from, "engine", id, "", "Done");
+        IReadOnlyList<QuestView> quests = [To("q1"), To("q6"), To("q7", "daoris") with { PublishedBy = "pub" }];
+        TracedSession Chat(string id, string tree, string entry, string from) =>
+            new(id, "engine", "working") { Kind = "chat", Tree = tree, Entry = entry, From = from, Created = T.AddMinutes(5) };
+        IReadOnlyList<TracedSession> sessions =
+        [
+            new("i1", "ask #a1", "completed") { Ask = "a1", Entry = "ask:a1/intake" },
+            new("pub", "engine", "working") { Kind = "chat", Tree = "trees/default/engine/s-pub00000", Entry = "session:pub/engine" },
+            Session("w1", "q1", "completed") with { Tree = "trees/default/engine/s-w1000000", Entry = "ask:a1/engine" },
+            Session("w7", "q7", "completed") with { Tree = "trees/default/engine/s-w7000000", Entry = "session:pub/engine" },
+            Chat("g1", "trees/default/engine/s-w1000000", "ask:a1/engine", "w1"),
+            Chat("g7", "trees/default/engine/s-w7000000", "session:pub/engine", "w7"),
+        ];
+        var trees = new Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal));
+        string[][] Chains(string session) =>
+            [.. WorkflowRunReader.ChainsOf(new(Session: session), quests, sessions, trees).Chains.Select(chain => chain.Select(quest => quest.Id).ToArray())];
+
+        Assert.Equal([["q1"]], Chains("g1"));
+        Assert.Equal([["q7"]], Chains("g7"));
+        Assert.Equal([["q1"], ["q6"]], Chains("i1"));
+        Assert.Equal(WorkflowNoRun.ChatOwnTree, WorkflowRunReader.ChainsOf(new(Session: "pub"), quests, sessions, trees).Code);
+        Assert.Equal(["q1", "q7", null, null], new[] { "g1", "g7", "pub", "i1" }.Select(id => WorkflowRunReader.WorkOf(sessions.First(each => each.Id == id), sessions)));
+    }
+
+    /// <summary>
+    /// Finding 6's run facts: a conversation that continues a quest's worker is one of that quest's work records, so the run reads its
+    /// worker, its tree and its landing from it as from the worker, though its own record keeps <c>quest</c> null.
+    /// </summary>
+    [Fact]
+    public async Task A_continued_conversation_contributes_its_worker_tree_and_landing_to_its_quests_run()
+    {
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new ContinuedService()));
+        var sources = new WorkflowRunSources(service, Path.Combine(AppContext.BaseDirectory, "no-home-" + Guid.NewGuid().ToString("N")[..8]),
+            DriverConfig.Empty, [], _ => "aurora");
+        var asked = new List<string>();
+        var records = new Trees(stands: tree => { asked.Add(tree); return true; }) { Accepted = { ["g1"] = T.AddMinutes(30) } };
+
+        var run = Assert.Single((await WorkflowRunReader.ReadAsync(new WorkflowRunAsk(Session: "g1"), sources, records)).Runs);
+
+        Assert.Equal(["q1"], run.Quests);
+        Assert.Equal("g1", run.Session);
+        Assert.Contains("trees/default/engine/s-w1000000", asked);
+        var landing = run.Steps.Single(step => step.Step.Kind == WorkflowKinds.Landing);
+        Assert.Equal((WorkflowRunStates.Done, WorkflowRunDetails.Merge, "g1"), (landing.State, landing.Detail, landing.Session));
+        Assert.False(Directory.Exists(sources.Home));
+    }
+
+    /// <summary>The service a continued conversation's run reads: a quest an ask sent, done; its worker; and the conversation going on from it.</summary>
+    private sealed class ContinuedService : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var body = request.RequestUri!.PathAndQuery switch
+            {
+                "/api/quests?includeClosed=true" =>
+                    """[{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"}]""",
+                "/api/sessions?includeClosed=true" => """
+                    [{"id":"w1","repository":"engine","state":"completed","quest":"q1","adapter":"claude-code","tree":"trees/default/engine/s-w1000000",
+                      "entry":"ask:a1/engine","created":"2026-10-09T09:00:00Z","updated":"2026-10-09T09:20:00Z","evidence":"commits landed:\nabc1234 the change"},
+                     {"id":"g1","repository":"engine","state":"completed","kind":"chat","from":"w1","adapter":"claude-code","tree":"trees/default/engine/s-w1000000",
+                      "entry":"ask:a1/engine","created":"2026-10-09T09:40:00Z","updated":"2026-10-09T09:50:00Z","evidence":"commits landed:\ndef5678 the follow-up"}]
+                    """,
+                _ => "[]",
+            };
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
+
     /// <summary>Which trees this home opened and which still stand, for the reader's classification of a chat (CHATFLOW1a).</summary>
     private sealed class Trees(Func<string, bool>? holds = null, Func<string, bool>? stands = null) : IWorkflowRunRecords
     {
@@ -638,7 +718,9 @@ public sealed class WorkflowRunTests
 
         public IReadOnlyList<AutoLanding> AutoLandings() => [];
 
-        public IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions) => new Dictionary<string, DateTimeOffset>();
+        public Dictionary<string, DateTimeOffset> Accepted { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions) => Accepted;
 
         public bool Stands(string tree) => stands?.Invoke(tree) ?? true;
 
