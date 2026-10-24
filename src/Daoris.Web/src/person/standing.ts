@@ -41,6 +41,25 @@ export type StandingConfirmationNow = {
   stewardActsOffered: string[];
   /** This run's steward acts, newest first, from Daoris's memory (D209 §5.1): what *Notifications*' line lists. */
   stewardActs: StewardActNow[];
+  /** The steward's desk this run, newest first, from Daoris's memory (STEWARDROLE1c, D209 §6.2): what the line shows under its acts. */
+  stewardDesk: DeskRequestNow[];
+};
+
+/**
+ * One request at the steward's desk, as `STATE`'s `standingConfirmation.stewardDesk` says it (STEWARDROLE1c; the steward design §6.2):
+ * the act any caller asked the steward to make, on what, and why, all three the caller's own words, which grant nothing; when it was
+ * filed; whether it still waits, was answered by the steward's act, or was declined by the steward with a reason. Never the caller.
+ */
+export type DeskRequestNow = {
+  id: string;
+  act: string;
+  target: string;
+  why: string;
+  filed: string;
+  state: 'open' | 'answered' | 'declined';
+  closed: string | null;
+  answeredBy: string | null;
+  reason: string | null;
 };
 
 /**

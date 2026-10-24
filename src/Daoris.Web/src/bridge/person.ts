@@ -4,7 +4,7 @@ import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
 import type {
-  AppointmentAnswer, AppointmentNow, HolderNow, StandingAnswer, StandingConfirmationNow, StandingUnread, StewardActNow,
+  AppointmentAnswer, AppointmentNow, DeskRequestNow, HolderNow, StandingAnswer, StandingConfirmationNow, StandingUnread, StewardActNow,
 } from '../person/standing';
 import { call, confirmBound, refusedNoRoute } from './call';
 import { notPushed } from './state/slices';
@@ -252,10 +252,34 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     // STEWARDROLE1b (D209 §2.3, §5.1): an older shell's missing fields read as none.
     stewardActsOffered: strings(shaped.stewardActsOffered),
     stewardActs: stewardActsOf(shaped.stewardActs),
+    // STEWARDROLE1c (D209 §6.2): an older shell's missing desk reads as empty.
+    stewardDesk: stewardDeskOf(shaped.stewardDesk),
   };
 }
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value.length > 0 ? value : null);
+
+const DESK_STATES: readonly DeskRequestNow['state'][] = ['open', 'answered', 'declined'];
+
+/**
+ * The steward's desk (STEWARDROLE1c, D209 §6.2), in the order sent, each read field by field; one with no id, act, target, why or time,
+ * or with a state this page does not know, is left out.
+ */
+function stewardDeskOf(raw: unknown): DeskRequestNow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((each): DeskRequestNow[] => {
+    if (typeof each !== 'object' || each === null) return [];
+    const shaped = each as Record<string, unknown>;
+    const id = text(shaped.id);
+    const act = text(shaped.act);
+    const target = text(shaped.target);
+    const why = text(shaped.why);
+    const filed = text(shaped.filed);
+    const state = DESK_STATES.find((known) => known === shaped.state);
+    if (id === null || act === null || target === null || why === null || filed === null || state === undefined) return [];
+    return [{ id, act, target, why, filed, state, closed: text(shaped.closed), answeredBy: text(shaped.answeredBy), reason: text(shaped.reason) }];
+  });
+}
 
 /** This run's steward acts (STEWARDROLE1b, D209 §5.1), in the order sent, each read field by field; one with no id, act or time is left out. */
 function stewardActsOf(raw: unknown): StewardActNow[] {

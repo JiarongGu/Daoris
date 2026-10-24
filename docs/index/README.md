@@ -87,7 +87,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 69 | 1059 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs` | 70 | 1063 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/TreesConsole.cs` | 43 | 653 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Accounts/AccountRotationGoalTests.cs` | 41 | 793 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Accounts/AccountRotationWalkTests.cs` | 42 | 633 |
@@ -217,13 +217,13 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/DriverRoutes.cs` | 43 | 666 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/HelpRoutes.cs` | 82 | 1372 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/LinesRoutes.cs` | 63 | 1018 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 72 | 1126 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs` | 74 | 1157 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Bridge/Routes/TreesRoutes.cs` | 69 | 1150 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/DriverLoop.cs` | 83 | 1452 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/NeedsAPerson.cs` | 51 | 834 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionWords.cs` | 54 | 1100 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 96 | 1927 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs` | 83 | 1567 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/InstancePipe.cs` | 96 | 1928 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/Platform/StandingConfirmation.cs` | 85 | 1597 |
 
 ### Service (`service`)
 
@@ -363,4 +363,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-switch-context-reads.md` | 56 | 627 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 47 | 260 |
-| `src/Daoris.Desktop/README.md` | 174 | 815 |
+| `src/Daoris.Desktop/README.md` | 175 | 815 |

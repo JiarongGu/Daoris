@@ -127,5 +127,22 @@
   "notifications.steward.reverse.treesOff": "Trees off",
   "notifications.steward.reverse.resume": "Resume",
   "notifications.steward.reverse.hold": "Hold",
-  "notifications.steward.reverse.retry": "Try again"
+  "notifications.steward.reverse.retry": "Try again",
+  "notifications.steward.desk.line": "The steward's desk · {{count}} waiting",
+  "notifications.steward.desk.show": "Show the steward's desk",
+  "notifications.steward.desk.hide": "Hide the steward's desk",
+  "notifications.steward.desk.list": "The steward's desk",
+  "notifications.steward.desk.claims": "Words of whoever filed it, which grant nothing",
+  "notifications.steward.desk.reason": "The steward's reason: {{reason}}",
+  "notifications.steward.desk.state.open": "Waiting for the steward",
+  "notifications.steward.desk.state.answered": "Done by the steward",
+  "notifications.steward.desk.state.declined": "Declined by the steward",
+  "notifications.steward.desk.act.drive": "Drive",
+  "notifications.steward.desk.act.undrive": "Stop driving",
+  "notifications.steward.desk.act.trees": "Give trees",
+  "notifications.steward.desk.act.hold": "Hold",
+  "notifications.steward.desk.act.resume": "Resume",
+  "notifications.steward.desk.act.stop": "Stop",
+  "notifications.steward.desk.act.finish": "Finish",
+  "notifications.steward.desk.act.retry": "Try again"
 }
