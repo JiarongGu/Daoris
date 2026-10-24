@@ -122,6 +122,39 @@ public sealed class OpinionLookTests : IDisposable
         Assert.Equal(("op1", pressed), (Assert.Single(new OpinionGates(_home).Read("chat-c1a2b3c4", "reports").Asks).Opinion,
             new OpinionGates(_home).Read("chat-c1a2b3c4", "reports").Asks[0].Tip));
         Assert.Empty(new OpinionGates(_home).Read("q1", "reports").Asks);
+
+        // §5.2 point 6: its pass ended, so the person, asked to press Accept again once it settles, is told so by a notice naming the
+        // conversation, as the look reports what ended beside it.
+        foreach (var ended in driver.Running.Drain()) driver.Lines.Ran(ended.Look, byPerson: false, ended.Line);
+        var notice = Assert.Single(Notices.Read(_home, DateTimeOffset.UtcNow)!, each => each.Code == LookSaid.OpinionSettled);
+        Assert.Equal((Notices.Look, "c1a2b3c4", "work"), (notice.Kind, notice.Session, notice.Workspace));
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2 point 3, §7, the Opus check's finding 5): <i>Ask now</i> on a chat run reads its work instead of
+    /// refusing it, and writes its due at <c>landing</c>, never at the rule's first occasion <c>steps</c>, which would close it past at once;
+    /// carrying the tree's HEAD and the person's turn count read at its press. The request is kept under the run's key.
+    /// </summary>
+    [Fact]
+    public async Task Ask_now_on_a_chat_run_writes_its_due_at_landing_with_the_press_tip_and_turn_count()
+    {
+        // A rule keeps its occasions landing first, so one whose first is `steps` names `steps` alone.
+        var (host, tree, _) = await DoneAsync(required: false, on: [OpinionRules.Steps]);
+        foreach (var occasion in new[] { OpinionRules.Steps })
+        {
+            new OpinionDues(_home).Close("s1", occasion, OpinionDueClosed.Off, DateTimeOffset.UtcNow);
+        }
+
+        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).Append(
+            "c1a2b3c4", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Make the totals add up.", Id = "w1" });
+        host.Session("c1a2b3c4", "completed", tree: tree, kind: "chat").Set("c1a2b3c4", "quest", null);
+
+        var asked = await new OpinionPresses(_home, host.Client()).AskAsync("c1a2b3c4", null, sameAgent: false, words: null, "asked");
+
+        Assert.True(asked.Done, asked.Message);
+        var due = Assert.Single(new OpinionDues(_home).Open(), each => each.OnRun);
+        Assert.Equal(("chat-c1a2b3c4", OpinionRules.Landing, await HeadAsync(tree), (int?)1), (due.Run, due.Occasion, due.Tip, due.Turns));
+        Assert.Equal("c1a2b3c4", Assert.Single(new OpinionGates(_home).Read("chat-c1a2b3c4", "reports").Requests).Session);
     }
 
     [Fact]
