@@ -76,6 +76,8 @@ const DOOR_OF: Partial<Record<SessionActId, keyof SessionDoors>> = { pauseQuest:
  */
 const KEPT_NAMES = new Set([
   'conversation', 'transcript', 'files', 'harness', 'marker', 'mark', 'choice', 'hand-over', 'spawn', 'help', 'held', 'landing', 'archived',
+  // CHATFLOW1c: a chat run's binding, gate file and look file, which go with the record its key names.
+  'run',
 ]);
 
 const keptSaid = (t: Translate, name: string) =>

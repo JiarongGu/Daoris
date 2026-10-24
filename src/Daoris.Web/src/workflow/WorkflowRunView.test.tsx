@@ -7,7 +7,7 @@ import i18n from '../locales/i18n';
 import { code } from '../test/code';
 import type { RunStep, WorkflowRun } from './run';
 import {
-  answerOf, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
+  answerOf, CHAT_RUN, FAILED, GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_GO_AHEAD, GRAPH_RUN_GO_AHEAD_KEPT, GRAPH_RUN_UNJUDGED, HELD_FOR_OPINION, IN_REVIEW, LANDED, MERGED, OPINION_DISPUTED,
   OPINION_SETTLED, PULL_REQUEST_OPEN, SEVERAL, WAITING_ON_YOU, WORKING,
 } from './runFixtures';
 import { WorkflowLine } from './WorkflowLine';
@@ -393,6 +393,34 @@ describe("the session's Workflow view", () => {
 
       rerender(<Tooltip.Provider><WorkflowRunView answer={{ runs: [], problem: DRIVER, code: 'chat-checkout' }} onRetry={onRetry} /></Tooltip.Provider>);
       expect(screen.queryByRole('button')).toBeNull();
+    });
+  });
+
+  // CHATFLOW1c (the chat-flow design §4.2, §4.4): a chat's run, its checks marked not yet enforced for a conversation, never shown as a limit
+  // its tree holds, and its second opinion passed over before CHATFLOW1d, in both languages.
+  describe("a chat's run", () => {
+    it('marks its checks not yet enforced and says its opinion is not asked, in both languages', async () => {
+      const { rerender } = render(<WorkflowRunView answer={answerOf(CHAT_RUN)} here="work" />);
+      expect(screen.getByText(/are not yet enforced for a conversation, so its tree is not held to them/)).toBeInTheDocument();
+      expect(screen.getByText(code('light'))).toBeInTheDocument();
+      expect(row('opinion')).toHaveTextContent("No second opinion is asked for a conversation's work in this build yet.");
+      expect(row('work')).toHaveTextContent('2 commits beyond the line wait for you to accept them.');
+      expect(screen.getByText(/waits for you to accept it/)).toBeInTheDocument();
+
+      await i18n.changeLanguage('zh');
+      rerender(<Tooltip.Provider><WorkflowRunView answer={answerOf(CHAT_RUN)} here="work" /></Tooltip.Provider>);
+      expect(screen.getByText(/还没有对对话强制执行，所以它的工作树不受其约束/)).toBeInTheDocument();
+      expect(row('opinion')).toHaveTextContent('这个版本还不为对话的工作征询第二意见。');
+      expect(row('work')).toHaveTextContent('超出主线的 2 个提交等你采纳。');
+    });
+
+    it("draws no mark where its checks are enforced, where its repository sets none, and on a quest's run", () => {
+      const { rerender } = render(<WorkflowRunView answer={answerOf({ ...CHAT_RUN, chat: { run: 'chat-c1', checks: 'light', enforced: true } })} />);
+      expect(screen.queryByText(/not yet enforced/)).toBeNull();
+      rerender(<Tooltip.Provider><WorkflowRunView answer={answerOf({ ...CHAT_RUN, chat: { run: 'chat-c1', checks: null, enforced: false } })} /></Tooltip.Provider>);
+      expect(screen.queryByText(/not yet enforced/)).toBeNull();
+      rerender(<Tooltip.Provider><WorkflowRunView answer={answerOf(WORKING)} /></Tooltip.Provider>);
+      expect(screen.queryByText(/not yet enforced/)).toBeNull();
     });
   });
 

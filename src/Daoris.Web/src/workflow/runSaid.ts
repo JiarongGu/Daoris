@@ -14,12 +14,12 @@ const DETAILS: Record<string, readonly string[]> = {
   // started step waits on their go-on (FABRIC-CLOSE1c7).
   work: [
     'queued', 'agent', 'answered', 'park', 'go-ahead', 'held', 'awaits', 'unclosed', 'failed', 'stopped', 'declined', 'finished', 'submitted',
-    'reopened', 'go-on',
+    'reopened', 'go-on', 'talk', 'land', 'landed',
   ],
   // The second opinion's gate's own states (XAGENT1f, `OpinionGateStates`), and a landing that let it go.
   opinion: [
     'none', 'waits-chain', 'not-asked', 'reading', 'read-again', 'with-session', 'disputed', 'commits-since', 'unavailable', 'settled',
-    'anyway', 'myself', 'answered', 'landed', 'unread', 'cannot-start',
+    'anyway', 'myself', 'answered', 'landed', 'unread', 'cannot-start', 'chat-not-asked',
   ],
   look: ['not-shown', 'being-set-up', 'shown', 'not-yet', 'not-held', 'reviewed', 'skip', 'off', 'unread'],
   landing: ['accept', 'automatic', 'branch', 'merge', 'already', 'nothing', 'refused', 'gone', 'elsewhere'],
@@ -65,7 +65,9 @@ export function runSaid(t: TFunction, step: RunStep): string | null {
     case 'work.reopened':
     case 'work.go-on': return t(at, { quest: step.quest ?? '' });
     case 'work.finished':
-    case 'work.submitted': return t(at, { count: step.count ?? 0 });
+    case 'work.submitted':
+    // CHATFLOW1c: a chat run's commits beyond the line, which wait for the person's Accept.
+    case 'work.land': return t(at, { count: step.count ?? 0 });
     case 'opinion.reading': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.readingAnyone');
     case 'opinion.read-again': return step.agent ? t(at, { agent: step.agent }) : t('workflow.run.said.opinion.readingAnyone');
     case 'opinion.with-session':
@@ -186,6 +188,16 @@ export function noRunSaid(t: TFunction, answer: WorkflowRunAnswer): string {
   return answer.problem ?? t('workflow.run.none');
 }
 
+/**
+ * What a chat run says of its checks (CHATFLOW1c, the chat-flow design §4.4): the run's checks, not yet enforced for a conversation, so
+ * never a limit its tree holds; null for a quest's run, a chat run whose repository sets none, and one whose checks are enforced. The
+ * driver's `WorkflowRunWords.ChatChecks`, word for word in en.
+ */
+export function chatChecksSaid(t: TFunction, run: WorkflowRun): string | null {
+  if (!run.chat?.checks || run.chat.enforced) return null;
+  return t('workflow.run.chatChecks', { checks: run.chat.checks });
+}
+
 /** Why a step Current does not draw is in this run (design §4.6): a look the work's own choice added. */
 export function addedSaid(t: TFunction, step: RunStep): string | null {
   if (!step.added) return null;
@@ -214,7 +226,8 @@ export function runShort(t: TFunction, run: WorkflowRun): string {
   if (at.node) return stateSaid(t, at.state);
 
   const kind = at.step.kind;
-  if (kind === 'work' && at.state === 'waiting-on-you' && ['park', 'go-ahead', 'held', 'unclosed', 'go-on'].includes(at.detail)) {
+  // CHATFLOW1c: a chat run's conversation, the person's turn to talk or its work waiting for their Accept.
+  if (kind === 'work' && at.state === 'waiting-on-you' && ['park', 'go-ahead', 'held', 'unclosed', 'go-on', 'talk', 'land'].includes(at.detail)) {
     return t(`workflow.run.short.work.${at.detail}`);
   }
 

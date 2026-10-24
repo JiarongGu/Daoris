@@ -140,6 +140,11 @@ export interface WorkflowRun {
   steps: RunStep[];
   /** A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e); none for a steps run, and from a shell before it. */
   graph?: GraphRun | null;
+  /**
+   * A chat run (CHATFLOW1c, the chat-flow design §4.1, §4.4): its key, `chat-<first>`, its checks where its repository sets them, and whether
+   * they are enforced for a conversation, which they are not before CHATFLOW1h. None for a quest's run, and from a shell before it.
+   */
+  chat?: { run: string; checks?: string | null; enforced: boolean } | null;
 }
 
 /**
