@@ -321,15 +321,17 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A conversation serves no quest: no run, and its code with the code's English says why, which is an answer and not a refusal
-    /// (CHATFLOW1a, the chat-flow design §10): a chat in the checkout reads `chat-checkout`, one in a tree this home opened
-    /// `chat-own-tree` and never `chat-checkout`, and a session not recorded `no-session` with its id for the page's words.
+    /// A conversation serves no quest. In the checkout it has no run, and its code with the code's English says why, which is an answer and
+    /// not a refusal (CHATFLOW1a, the chat-flow design §10); a session not recorded reads `no-session` with its id for the page's words. One in
+    /// a tree this home opened answers its chat run (CHATFLOW1c, §4.2): keyed by its line, never `chat-checkout`, its checks named and not
+    /// yet enforced (§4.4).
     /// </summary>
     [Fact]
-    public async Task A_chat_has_no_run_and_says_so_by_its_code()
+    public async Task A_chat_in_the_checkout_says_so_by_its_code_and_one_in_its_own_tree_answers_its_run()
     {
         var own = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Trees), "aurora", "engine", "s-c2c2c2c2");
         Directory.CreateDirectory(own);
+        DriverConfig.Parse("""{"sessionChecks":{"engine":"light"}}""").Save(DaorisHome.Entry(Home, HomeEntry.DriverConfig));
         var (module, _) = await UpAsync(chatTree: own);
 
         async Task<(string? Code, string? Id, string? Problem)> NoRunAsync(string session)
@@ -341,8 +343,17 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         }
 
         Assert.Equal((WorkflowNoRun.ChatCheckout, (string?)null, WorkflowNoRun.Said(WorkflowNoRun.ChatCheckout)), await NoRunAsync("c1"));
-        Assert.Equal((WorkflowNoRun.ChatOwnTree, (string?)null, WorkflowNoRun.Said(WorkflowNoRun.ChatOwnTree)), await NoRunAsync("c2"));
         Assert.Equal((WorkflowNoRun.NoSession, "s9", "No session `s9` is recorded here."), await NoRunAsync("s9"));
+
+        var chat = await AnswerAsync(module, "WORKFLOW_RUN", new { session = "c2" });
+        Assert.Equal(JsonValueKind.Null, chat.GetProperty("code").ValueKind);
+        var run = Assert.Single(chat.GetProperty("runs").EnumerateArray());
+        Assert.Equal(("c2", 0), (run.GetProperty("session").GetString(), run.GetProperty("quests").GetArrayLength()));
+        var mark = run.GetProperty("chat");
+        Assert.Equal(("chat-c2", "light", false),
+            (mark.GetProperty("run").GetString(), mark.GetProperty("checks").GetString(), mark.GetProperty("enforced").GetBoolean()));
+        var work = run.GetProperty("steps").EnumerateArray().Single(step => step.GetProperty("step").GetProperty("kind").GetString() == "work");
+        Assert.Equal(("working", "agent"), (work.GetProperty("state").GetString(), work.GetProperty("detail").GetString()));
     }
 
     /// <summary>Run <c>q1</c> bound to v1 of a workflow whose graph holds a go-ahead before its landing, its claim reached and its go-ahead under way.</summary>
