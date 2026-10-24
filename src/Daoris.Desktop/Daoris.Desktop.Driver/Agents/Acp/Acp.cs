@@ -446,6 +446,12 @@ public sealed class AcpSession(
 
         /// <summary>Whether it is the run's first prompt (AGENTERRORS1a): a resume's blocks, or a start's target.</summary>
         public bool Opening { get; init; }
+
+        /// <summary>
+        /// Whether its write returned (Codex's owed read of D210, finding 3): on the wire, so after an episode opened a prompt whose stream
+        /// is lost before any terminal answer is uncertain, never unreached. Set under <c>_promptsGate</c>.
+        /// </summary>
+        public bool Written { get; set; }
     }
 
     private int _promptCount;
@@ -1230,6 +1236,15 @@ public sealed class AcpSession(
     /// prompted into it, and the go-on goes once it has ended.</para>
     ///
     /// <para><b>Only held words are ever sent by a try.</b> A word on the wire is never sent again, on a try or after the episode.</para>
+    ///
+    /// <para>🔴 <b>Settling is bounded</b> (Codex's owed read of D210, finding 2): dispatch is held from the episode's first failure and
+    /// from each try's (<see cref="DrivenInbox.Settling"/>), so the turns it settles are only those already written. Each that fails
+    /// transient takes one of the tries left; once they are spent the rest still settle, since they are written, and count none
+    /// (<see cref="TransientEpisode.SettledPast"/>), and the run ends past its bound with no try after them.</para>
+    ///
+    /// <para>🔴 <b>A hand-over is no recovery</b> (finding 1): a try the adapter answered at a queued word's echo handed its turn to that
+    /// word. The episode and its count are kept through every hand-over, and the try counts as answered only once the turns handed over
+    /// have settled with no transient failure; one that fails is the try's failure.</para>
     /// </remarks>
     /// <exception cref="AcpRefusal">A try failed with another kind: the episode is left for that kind's policy, once.</exception>
     /// <exception cref="AcpTransientExhausted">Every try failed: the run ends past its bound.</exception>
@@ -1238,35 +1253,16 @@ public sealed class AcpSession(
         var retry = _retry!;
         var clock = retry.Clock;
         var episode = retry.Open(first);
+        _inbox?.Settling();
         SayUncertain();
         Said(() => retry.Began?.Invoke(episode, clock.GetUtcNow() + TransientRetry.Delays[0]));
         var atOnce = false;
 
         while (true)
         {
-            // The wire settles first: each word sent behind the failed turn runs its own turn (§5.1's settling turns).
-            while (_inbox?.TakeSent() is { } settling)
-            {
-                try
-                {
-                    await settling.ConfigureAwait(false);
-                    atOnce = true;
-                }
-                catch (Exception thrown) when (thrown is AcpRefusal or AcpWordTurnFailed)
-                {
-                    var refused = thrown as AcpRefusal ?? ((AcpWordTurnFailed)thrown).Refusal;
-                    var read = ReadFailure(refused);
-                    SayUncertain();
-                    if (read.Kind != AgentErrorKind.Transient)
-                    {
-                        if (thrown is AcpRefusal) throw;
-                        throw refused;
-                    }
-
-                    episode.Tries++;
-                    atOnce = false;
-                }
-            }
+            // The wire settles first: each word sent behind the failed turn runs its own turn (§5.1's settling turns), and no word joins it.
+            _inbox?.Settling();
+            if (await SettleAsync(Spent).ConfigureAwait(false) is { } settled) atOnce = settled;
 
             if (episode.Tries >= TransientRetry.Bound)
             {
@@ -1277,16 +1273,9 @@ public sealed class AcpSession(
             if (!atOnce) await WaitAsync(episode, ct).ConfigureAwait(false);
             atOnce = false;
 
-            // A turn its harness woke ends the wait, never the episode: nothing goes into it, and the go-on follows once it has ended.
-            if (_wake.Running)
-            {
-                await _wake.IdleAsync(Prompted, ct).ConfigureAwait(false);
-                CloseCut();
-                Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnModelsOf(default, null) });
-            }
-
-            // The owner's check (§5.5): no try where no more turn is wanted; the run closes as at a turn's end.
-            if (!await retry.WantedAsync(ct).ConfigureAwait(false))
+            // The owner's check (§5.5) and the wake gate at the try's admission: no try where no more turn is wanted, and none into a turn
+            // its harness woke; the run closes as at a turn's end.
+            if (!await AdmitAsync(retry, ct).ConfigureAwait(false))
             {
                 _inbox?.Waited();
                 return WokenStop;
@@ -1295,16 +1284,118 @@ public sealed class AcpSession(
             episode.Tries++;
             var next = episode.Tries < TransientRetry.Bound ? clock.GetUtcNow() + TransientRetry.Delays[episode.Tries] : (DateTimeOffset?)null;
             Said(() => retry.Tried?.Invoke(episode, episode.Tries, next));
+            string answered;
             try
             {
-                return await TryAsync(episode, ct).ConfigureAwait(false);
+                answered = await TryAsync(episode, ct).ConfigureAwait(false);
             }
             catch (AcpRefusal refused)
             {
                 var read = ReadFailure(refused);
                 SayUncertain();
                 if (read.Kind != AgentErrorKind.Transient) throw;
+                continue;
             }
+
+            // 🔴 Finding 1: the turns the try handed over settle inside the episode, the try already counted; one failing transient is
+            // the try's failure, and the go-on follows at once where the last of them answered.
+            var failed = false;
+            if (await SettleAsync(() => failed = true, stop => answered = stop).ConfigureAwait(false) is { } handed && failed)
+            {
+                atOnce = handed;
+                continue;
+            }
+
+            return answered;
+        }
+
+        // A settling turn's failure takes one of the tries left, and once they are spent counts none (finding 2).
+        void Spent()
+        {
+            if (episode.Tries < TransientRetry.Bound)
+            {
+                episode.Tries++;
+                return;
+            }
+
+            episode.SettledPast++;
+            onLine("[a turn already on the wire failed after every try was spent: it counts none, and no try follows it]");
+        }
+    }
+
+    /// <summary>
+    /// The turns already on the wire, each awaited in the order sent (§5.1's settling turns): <paramref name="failed"/> told for each that
+    /// fails transient, <paramref name="answered"/> for each that answers. Answers whether the last of them answered, or null where none
+    /// was on the wire.
+    /// </summary>
+    /// <exception cref="AcpRefusal">One failed with another kind: the episode is left for that kind's policy, once.</exception>
+    private async Task<bool?> SettleAsync(Action failed, Action<string>? answered = null)
+    {
+        bool? last = null;
+        while (_inbox?.TakeSent() is { } settling)
+        {
+            try
+            {
+                var stop = await settling.ConfigureAwait(false);
+                answered?.Invoke(stop);
+                last = true;
+            }
+            catch (Exception thrown) when (thrown is AcpRefusal or AcpWordTurnFailed)
+            {
+                var refused = thrown as AcpRefusal ?? ((AcpWordTurnFailed)thrown).Refusal;
+                var read = ReadFailure(refused);
+                SayUncertain();
+                if (read.Kind != AgentErrorKind.Transient)
+                {
+                    if (thrown is AcpRefusal) throw;
+                    throw refused;
+                }
+
+                failed();
+                last = false;
+            }
+        }
+
+        return last;
+    }
+
+    /// <summary>
+    /// A try's admission (§5.1, §5.5): a turn its harness woke ends the wait, never the episode, and nothing goes into it; where work's end
+    /// is owed a wake, the quiet <see cref="AfterEndedAsync"/> waits for; then the owner's check. Answers false where no more turn is wanted.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Read again after the check</b> (Codex's owed read of D210, finding 7): the check is awaited, and a wake that began meanwhile
+    /// was never read before the prompt went into it, BGWAIT1's unanswered prompt. The wake is read again once the check answers, and
+    /// the check asked again after any woken turn has ended.
+    /// </remarks>
+    /// <exception cref="DriverException">The agent's stream ended while the gate waited.</exception>
+    private async Task<bool> AdmitAsync(TransientRetry retry, CancellationToken ct)
+    {
+        var quieted = false;
+        while (true)
+        {
+            if (_wake.Running)
+            {
+                await _wake.IdleAsync(Prompted, ct).ConfigureAwait(false);
+                CloseCut();
+                Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnModelsOf(default, null) });
+            }
+            else if (!quieted && _wake.Unseen.Count > 0)
+            {
+                quieted = true;
+                switch (await _wake.AfterAsync(Prompted, _wakeQuiet, Ended, ct).ConfigureAwait(false))
+                {
+                    case true:
+                        CloseCut();
+                        Emit(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = WokenStop, Models = TurnModelsOf(default, null) });
+                        break;
+                    case null:
+                        throw StreamEnded("the ACP agent's stream ended while the run waited to try again after its provider failed.");
+                }
+            }
+
+            if (!await retry.WantedAsync(ct).ConfigureAwait(false)) return false;
+            if (!_wake.Running) return true;
         }
     }
 
@@ -1380,10 +1471,27 @@ public sealed class AcpSession(
         }
 
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
-        List<ChatMessage> words = [.. held, .. goOn is null ? [] : new[] { goOn }];
-        List<string> texts = [.. held.Select(word => word.Prompt), text];
-        var prompt = Blocks(texts, [.. held.SelectMany(word => word.Files)]);
-        foreach (var each in words) await Attempted(each).ConfigureAwait(false);
+
+        // 🔴 A kept word goes to the wire only once its record acknowledged its attempt (Codex's owed read of D210, finding 4): the
+        // dispatcher's mark fails open, and a word written unmarked whose take-off then failed would read as never sent at a restart. One
+        // of the person's that the record would not mark is not written: it waits on its record for the next run, which sends it once. The
+        // go-on unmarked is settled without the wire, its kept copy off the record, and goes as the try's plain block.
+        List<ChatMessage> going = [];
+        foreach (var word in held)
+        {
+            if (await MarkedAsync(word).ConfigureAwait(false)) going.Add(word);
+            else onLine($"[the record did not mark `{word.Id}` attempted, so no try sends it: it waits on its record for the next run]");
+        }
+
+        if (goOn is not null && !await MarkedAsync(goOn).ConfigureAwait(false))
+        {
+            goOn.Went?.Invoke();
+            goOn = null;
+        }
+
+        List<ChatMessage> words = [.. going, .. goOn is null ? [] : new[] { goOn }];
+        List<string> texts = [.. going.Select(word => word.Prompt), text];
+        var prompt = Blocks(texts, [.. going.SelectMany(word => word.Files)]);
 
         var open = new OpenPrompt(words.FirstOrDefault(), [.. words.Skip(1)]);
         lock (_promptsGate)
@@ -1397,13 +1505,14 @@ public sealed class AcpSession(
         {
             var result = await RequestAsync(
                     "session/prompt", new { sessionId = _sessionId, prompt }, ct,
-                    () =>
+                    OnWire(open, () =>
                     {
-                        // On the wire: a word said from now goes as it did, and the go-on leaves the record by its id (R3-O5).
+                        // On the wire: a word said from now goes as it did, and the go-on leaves the record by its id (R3-O5). Where the try
+                        // fails, the episode holds them again before it settles (finding 2).
                         _inbox?.Waited();
                         foreach (var each in wrote) each();
                         if (goOn?.Id is { } id) episode.GoOnId = id;
-                    },
+                    }),
                     answered: frame => Answered(open, frame))
                 .ConfigureAwait(false);
             return result.TryGetProperty("stopReason", out var reason) ? reason.GetString() ?? "unknown" : "unknown";
@@ -1413,10 +1522,17 @@ public sealed class AcpSession(
             await CancelTurnAsync().ConfigureAwait(false);
             throw;
         }
-        finally
-        {
-            _inbox?.Waited();
-        }
+    }
+
+    /// <summary>
+    /// A try's word marked attempted on its record before the wire (finding 4): a kept word's mark as its record answered it, and every
+    /// other word, kept nowhere, marked as any is, after the attempts asked before it.
+    /// </summary>
+    private async Task<bool> MarkedAsync(ChatMessage word)
+    {
+        if (word.Marking is { } marking) return await marking().ConfigureAwait(false);
+        await Attempted(word).ConfigureAwait(false);
+        return true;
     }
 
     /// <summary>
@@ -1453,14 +1569,32 @@ public sealed class AcpSession(
     public IReadOnlyList<ChatMessage> Unreached { get; private set; } = [];
 
     /// <summary>How many of the person's words are on the wire and not yet taken, forgotten as they are counted and kept as <see cref="Unreached"/>.</summary>
+    /// <remarks>
+    /// 🔴 <b>After an episode opened, a written prompt with no answer is uncertain, never unreached</b> (Codex's owed read of D210, finding
+    /// 3): a transport lost behind a written word faults its request with no answer to read its disposition from, and kept as unreached
+    /// the driver would keep it to go again (<see cref="WordsLeft"/>). It is said by the <c>lost</c> note and never sent again. A run with
+    /// no episode keeps TURNFAIL1's reading.
+    /// </remarks>
     private int Untaken()
     {
+        List<ChatMessage> uncertain;
         lock (_promptsGate)
         {
-            Unreached = [.. _prompts.Where(open => open.Words is not null && !open.Taken).Select(open => open.Words!)];
+            var left = _prompts.Where(open => open.Words is not null && !open.Taken).ToList();
+            var written = _retry?.Opened == true ? left.Where(open => open.Written).ToList() : [];
+            Unreached = [.. left.Except(written).Select(open => open.Words!)];
+            uncertain = [.. written.SelectMany(open => open.All).Where(word => word.Daoris is null)];
             _prompts.Clear();
-            return Unreached.Count;
         }
+
+        if (uncertain.Count > 0)
+        {
+            _retry!.Unacknowledged(uncertain);
+            List<string> ids = [.. uncertain.Select(word => word.Id).OfType<string>()];
+            if (ids.Count > 0) Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = ChatTurns.LostLine, Words = ids, Code = SessionEventCodes.Lost });
+        }
+
+        return Unreached.Count;
     }
 
     /// <summary>End what the session runs beside itself, saying so. Idempotent, and never throws.</summary>
@@ -1879,7 +2013,7 @@ public sealed class AcpSession(
             result = await RequestAsync(
                 "session/prompt",
                 new { sessionId = _sessionId, prompt },
-                ct, Wrote(sent, words), answered: frame => Answered(open, frame)).ConfigureAwait(false);
+                ct, OnWire(open, Wrote(sent, words)), answered: frame => Answered(open, frame)).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -1920,6 +2054,13 @@ public sealed class AcpSession(
             await attempting().ConfigureAwait(false);
         }
     }
+
+    /// <summary>A prompt's write returned: marked on the wire (Codex's finding 3), then what the write's return tells.</summary>
+    private Action OnWire(OpenPrompt open, Action? wrote) => () =>
+    {
+        lock (_promptsGate) open.Written = true;
+        wrote?.Invoke();
+    };
 
     /// <summary>
     /// What the write's return tells (COWORK1c, the design §7): the caller's own, then, for words under an id, their receipt
