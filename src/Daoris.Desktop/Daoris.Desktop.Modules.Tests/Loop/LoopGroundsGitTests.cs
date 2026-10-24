@@ -74,7 +74,7 @@ public sealed class LoopGroundsGitTests : DriverModuleBridge
 
     private async Task<string> InitAsync()
     {
-        var root = Path.Combine(Home, "work", "trees", "t1");
+        var root = DaorisHome.Entry(Home, HomeEntry.Trees, "games", "Lyntai", "t1");
         Directory.CreateDirectory(root);
         await GitAsync(root, "init", "--quiet", "-b", "main");
         await CommitAsync(root, "README.md", "Fixture\n");

@@ -152,6 +152,9 @@ export const HOME_ENTRIES = [
   row('git-known-hosts', 'profiles', 'profiles/git/known_hosts', 'profiles/git/known_hosts'),
   row('git-config', 'profiles', 'profiles/git/global.gitconfig', 'profiles/git/global.gitconfig'),
   row('window', 'profiles', 'profiles/window', '', 'chromium', 'config'),
+  // CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as a press's card lives; named
+  // here, never read by the CLI.
+  row('pipe-sent', 'profiles', 'profiles/pipe-sent', 'profiles/pipe-sent'),
   row('trees', 'work', 'work/trees/*/*/*', 'trees/*/*/*'),
   row('help-room', 'work', 'work/rooms/help', 'help', 'CLAUDE.md'),
   row('help-rooms', 'work', 'work/rooms/help-*', 'help-*', 'CLAUDE.md'),

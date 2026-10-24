@@ -224,7 +224,28 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
         if (state == "waiting") Assert.Contains(InstanceDoor.StillWaiting("trees", id), _error.ToString());
         else Assert.Contains($"Daoris was still working on it (request {id})", _error.ToString());
-        Assert.Equal(state == "waiting", new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2)) is not null);
+        // CONFIRMWAIT1 (§15.2 item 6): nothing found it ended, so its key is kept past the day either way.
+        Assert.NotNull(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2)));
+    }
+
+    /// <summary>
+    /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the verb marks its record waiting as soon as the instance says the id, before
+    /// any <c>RESULT</c>, so a verb whose harness is killed after the id, or whose <c>RESULT</c> does not read, leaves the key kept.
+    /// </summary>
+    [Fact]
+    public async Task The_record_is_marked_waiting_as_the_id_is_said()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var standIn = Serve();
+        standIn.Confirming = true;
+        standIn.Press = StandInPress.Hold;
+        standIn.Result = "id-taken";
+        using var running = RunningAddress.Write(_home, "http://localhost:5177", _pipe);
+
+        await PressAsync(World(wait: TimeSpan.Zero), Open with { Class = RouteClass.Person });
+
+        var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
+        Assert.NotNull(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2))?.WaitingAt);
     }
 
     /// <summary>

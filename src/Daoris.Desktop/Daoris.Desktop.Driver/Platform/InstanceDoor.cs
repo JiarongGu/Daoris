@@ -306,6 +306,12 @@ public static class InstanceDoor
             }
         }
 
+        // CONFIRMWAIT1 (§15.2 item 6): its answer is its end, so its key keeps a day from now; a close's `waiting` is no end, marked below.
+        if (world.Home is { } sent && (Succeeded(answer.Value) || Refusal(answer.Value).Code != Waiting))
+        {
+            new SentPresses(sent).Ended(id, DateTimeOffset.UtcNow);
+        }
+
         if (Succeeded(answer.Value))
         {
             return words(answer.Value.TryGetProperty("data", out var data) ? data : default);
@@ -731,6 +737,9 @@ public static class InstanceDoor
                     $"{world.Verb}: waiting for you to confirm this in Daoris's window (request {id}{why}); `daoris-driver result {id}` says "
                     + $"how it ended, and `daoris-driver withdraw {id}` takes it back…");
                 world.Error.Flush();
+                // CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): its record is marked waiting as the id is said, before any RESULT, so a
+                // verb killed now leaves its key kept as long as the card may live.
+                if (world.Home is { } home) new SentPresses(home).Waiting(id, DateTimeOffset.UtcNow);
                 confirming = true;
                 continue;
             }
