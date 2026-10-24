@@ -20480,3 +20480,14 @@ close, the restore before `Serve` with its re-judgement, the `lost` and `newer` 
 restored asker, `person.keyed` and `person.draining`, en and zh; the verb reads the close's `waiting` as its own wait's end. The
 notices' words are held in `notifications/DoneAndFailed`'s test. **Not built:** the card's door to a plan's page (`person.openPlan`),
 which no row names. Detail: D156's CONFIRMWAIT1a-ii note.
+
+**Amended on the same branch, 2026-10-24.** Codex's read of the accepted design (16 findings, 9 blocking, *reopen*) was taken before
+the row closed. The design's §15 and D156's amendment note have the decisions, and D156's CONFIRMWAIT1 amendment build note has the
+code:
+- the grounds bind full tips, a tree's head and index, a pause, a registration's rows and an attachment's bytes;
+- the restore holds each record whole and alone, and no ending is told or run before its record says it;
+- the grounding phase is a reservation the terminal hears at once, ended by `WITHDRAW` or a close;
+- the asker's key lives in `profiles/pipe-sent` as long as its card;
+- `RESULT` answers `interrupted`, and the census reads the handler itself.
+
+The FIX-LOG has entries for 1a-i's five defects. The plan's door is the new row CONFIRMWAIT1c.
