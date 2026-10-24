@@ -209,6 +209,14 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
   });
 
   /**
+   * MODELROLE1d2 (D205 §3.5(b)): a conversation whose agent refused its choice at the open went on in its replacement within the same
+   * press. A window showing the refused one follows it, as it would follow the person's own press; one showing anything else keeps it.
+   */
+  useShenoraEvent<{ from?: string; to?: string }>('DAORIS', 'CHAT_REPLACED', (replaced) => {
+    if (replaced?.from && replaced.to && replaced.from === attended) onAttend?.(replaced.to);
+  });
+
+  /**
    * The person clicked an OS notification, so the window comes forward on that session. The shell names the main window it brought
    * forward, the one whose workspace holds the session (NOTIFY2c), and only that window's page attends it, so a window on another
    * workspace keeps what it shows; a shell that names none is every main window's, as before.

@@ -271,6 +271,17 @@ export function useSessionOptions(session: string | null): SessionOption[] {
 }
 
 /**
+ * MODELROLE1d2 (D205 §3.5(b)): a conversation whose agent refused its choice at the open went on in its replacement within the same
+ * press, as the shell tells it (`CHAT_REPLACED`): `onReplaced` hears the refused record and the one that took its words. Desktop-only.
+ */
+export function useChatReplaced(onReplaced: (from: string, to: string) => void): void {
+  useShenoraEvent('DAORIS', 'CHAT_REPLACED', (payload) => {
+    const told = payload as { from?: unknown; to?: unknown } | undefined;
+    if (typeof told?.from === 'string' && typeof told.to === 'string') onReplaced(told.from, told.to);
+  });
+}
+
+/**
  * Change one of a conversation's options (AGT6b, D98): `session/set_config_option` on its session, through
  * the driver, which refuses the mode and anything the agent never offered. The answer is the options after
  * the change, which is what the composer shows from then on.

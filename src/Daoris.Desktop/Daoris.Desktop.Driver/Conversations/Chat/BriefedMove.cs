@@ -128,7 +128,7 @@ internal sealed class BriefedMove(ChatContext context, ChatRunner runner, ChatHa
             .ConfigureAwait(false);
         var help = WordsNever.IsHelp(listed);
         var started = help
-            ? await HelpStartAsync(record, agent, config, onEnded, ct).ConfigureAwait(false)
+            ? await HelpStartAsync(record, agent.Name, config, onEnded, ct).ConfigureAwait(false)
             : await runner.StartAsync(
                     record.Repository!, agent.Name, config, onEnded, record.Profile, ct: ct, tree: tree,
                     from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by))
@@ -165,22 +165,115 @@ internal sealed class BriefedMove(ChatContext context, ChatRunner runner, ChatHa
     }
 
     /// <summary>
+    /// The go-on of a conversation its agent refused at the open (MODELROLE1d2, D205 §3.5(b)), after an interruption between its two records:
+    /// no conversation began there, so it is a fresh start of its actor, never a resume, its record the new part's <c>from</c> (Ask Daoris's
+    /// room history) and its waiting words the first message. A pick is never walked afresh: only the picked agent's entries on the picked
+    /// account are tried (§3.5(d)), the refused one passed by the reading kept. A refused continuation, whose line holds an earlier part
+    /// that held a conversation, is handed Daoris's brief of that line first, recomposed here (<see cref="ContextBriefs"/>), since its
+    /// words carried none; a refused new conversation goes on with its words alone. Within a go-on that already holds the session.
+    /// </summary>
+    internal async Task<StartedFrom> NotOfferedAsync(
+        PriorSession record, string json, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
+    {
+        var sessionId = record.Session;
+        var words = record.Waiting.Where(word => word.Persons).ToList();
+        if (words.Count == 0) return Refused(StartFrom.NoWords, $"only another agent's answer waits on {sessionId}, which is never a new part's words.");
+
+        var isHelp = string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase);
+        var actor = isHelp ? "ask-daoris" : "chat";
+        if (!isHelp && (record.Tree is not { Length: > 0 } || !ConversationTrees.Stands(record.Tree)))
+        {
+            return Refused(HandOver.TreeGone, $"the tree {sessionId} ran in is gone, so there is nothing to go on in.");
+        }
+
+        IReadOnlyList<ActorEffective> order;
+        string? pinned = null;
+        try
+        {
+            if (record.Choice == "pick" && record.Adapter is { Length: > 0 } picked)
+            {
+                order = ChatPending.Recovering(
+                    actor, [new ActorEffective(picked, record.Asked?.NamedModel, record.Asked?.Effort.Value, "pick")], config);
+                pinned = record.Profile;
+            }
+            else
+            {
+                order = ActorChoices.Effective(actor, config);
+            }
+        }
+        catch (ActorUnreadableException unread)
+        {
+            return Refused(StartFrom.NoWords, unread.Message);
+        }
+
+        if (order.Count == 0) return new StartedFrom(null, false, null, $"{(isHelp ? "Ask Daoris" : "Chat")} is off, so `{sessionId}`'s words wait.");
+
+        // A refused continuation: its line holds an earlier part that held a conversation, the refused parts skipped as `LastRun` skips them.
+        var records = ServiceClient.ReadRecords(json);
+        var continues = false;
+        for (var at = record.From; at is { Length: > 0 } && records.TryGetValue(at, out var earlier); at = earlier.From)
+        {
+            if (earlier.NotOffered) continue;
+            continues = true;
+            break;
+        }
+
+        var brief = continues
+            ? await ContextBriefs.ComposeAsync(
+                    context.Service, context.Events, context.Home, sessionId, HandOverWhy.NotOffered, conversation: true, ct: ct)
+                .ConfigureAwait(false)
+            : null;
+        var started = isHelp
+            ? await HelpStartAsync(record, order[0].Agent, config, onEnded, ct, order, HelpConversations.NotOffered).ConfigureAwait(false)
+            : await runner.StartAsync(
+                    record.Repository!, order[0].Agent, config, onEnded, pinned, ct: ct, tree: record.Tree,
+                    from: new ContinuedFrom(sessionId, HandOverWhy.NotOffered, HandOverBy.Daoris), order: order)
+                .ConfigureAwait(false);
+        if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
+
+        var files = words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files)).ToList();
+        var text = string.Join("\n\n", words.Select(word => word.Text));
+        var message = brief is null
+            ? new ChatMessage(text, files)
+            : new ChatMessage(text, files)
+            {
+                Brief = brief,
+                TakenOver = HandOverNotes.MovedFrom(sessionId, record.Adapter ?? order[0].Agent, record.Profile, HandOverWhy.NotOffered, null, brief.Text.Length),
+            };
+        if (!await handOver.SayHandedOver(to, message).ConfigureAwait(false))
+        {
+            context.Note(to, HandOverNotes.Unsaid());
+            return new StartedFrom(to, false, null, $"conversation `{to}` opened, but your words did not reach it, so they stay on `{sessionId}`.");
+        }
+
+        var ids = words.Select(word => word.Id).OfType<string>().ToList();
+        if (await TakeAsync(sessionId, ids, to, ct).ConfigureAwait(false)) context.Marks.Clear(sessionId);
+        var went = Continuations.Went(ids, to, ContinueWhy.Of(ContinueWhy.Started));
+        context.Output?.Append(sessionId, went.Text!);
+        context.Events.Keep(sessionId, went, say: null);
+        return new StartedFrom(to, true, null, $"`{sessionId}` goes on in conversation `{to}`, a fresh start of its actor, with your words.");
+    }
+
+    /// <summary>
     /// Ask Daoris's new part, in the room of its workspace (ASKSCOPE1b): that workspace's running conversation set aside, as going on in an
     /// earlier one sets it aside, the new one placed and run as a press's is, and its link kept in the room's history.
     /// </summary>
+    /// <param name="order">Ask Daoris's order its placement walks (MODELROLE1d2's fresh start); null places it on <paramref name="agent"/>.</param>
+    /// <param name="handed">What its history says it was handed: <see cref="HelpConversations.Brief"/> or <see cref="HelpConversations.NotOffered"/>.</param>
     private async Task<ChatStart> HelpStartAsync(
-        PriorSession record, ISessionAdapter agent, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
+        PriorSession record, string agent, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct,
+        IReadOnlyList<ActorEffective>? order = null, string handed = HelpConversations.Brief)
     {
         if (await help.SetAsideHelpAsync(null, record.Workspace, ct).ConfigureAwait(false) is { } answering)
         {
             return new ChatStart(null, $"{HeldWords.AnsweringWhy(answering)}.");
         }
 
-        var placed = await runner.PlaceHelpAsync(agent.Name, config, record.Workspace, ct).ConfigureAwait(false);
+        var placed = await runner.PlaceHelpAsync(agent, config, record.Workspace, ct, order: order).ConfigureAwait(false);
         if (placed.SessionId is not { } id) return new ChatStart(null, placed.Message);
         try
         {
-            new HelpConversations(context.Home).StartedFrom(id, record.Session, HelpConversations.Brief);
+            new HelpConversations(context.Home).StartedFrom(id, record.Session, handed);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {
