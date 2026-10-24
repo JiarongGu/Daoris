@@ -342,9 +342,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-confirm-wait-design.md` | 107 | 871 |
 | `docs/2026-10-24-confirm-wait-reads.md` | 59 | 685 |
 | `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
-| `docs/2026-10-24-keep-size-reads.md` | 67 | 669 |
+| `docs/2026-10-24-keep-size-reads.md` | 121 | 1074 |
 | `docs/2026-10-24-steward-role-design.md` | 151 | 1196 |
-| `docs/2026-10-24-steward-role-reads.md` | 110 | 1066 |
+| `docs/2026-10-24-steward-role-reads.md` | 127 | 1237 |
 | `docs/2026-10-24-supervisor-design.md` | 197 | 1609 |
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |

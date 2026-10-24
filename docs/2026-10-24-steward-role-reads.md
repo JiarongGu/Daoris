@@ -1064,3 +1064,174 @@ as the role's, and done as the owner's. Four bounded changes remain, each checka
 
 Findings 5 to 14 are text or condition changes the rows can take as they land, and Codex's read of the final text is owed when its
 credits return.
+
+## Codex, the accepted text (owed)
+
+Codex's read of the final text and D209 at `16e0950e2`, owed since round 3 when its credits ran out: 14 findings, 7 blocking; stands after named amendments, findings 1 to 7 before the rows they touch.
+
+### 1. Claims about the code
+
+Read whole: the named reads file, including every earlier read verbatim; the design; and D209. Code references below are against `main` at `16e0950e240e4e3bc9c74358f1ae438ad3fe4756`.
+
+Abbreviations:
+
+- **Design**: `docs/2026-10-24-steward-role-design.md`
+- **Driver/**: `src/Daoris.Desktop/Daoris.Desktop.Driver/`
+- **Modules/**: `src/Daoris.Desktop/Daoris.Desktop.Modules/`
+
+The remaining incorrect code claims are:
+
+- **Trees on does not guarantee isolation for every new part.** Design:336 distinguishes existing-conversation continuations but still promises that every new part gets its own tree. `Driver/Loop/Driver.cs:2106`–`:2109` accepts an existing recorded directory as `resumedIn`, including the checkout; `:2166` opens another tree only without that directory. This also defeats the stronger checkout exclusion promised at Design:624 and D209:54. Finding 2.
+- **The provider-error inventory is now historical.** Design:55 and D209:35 say the driver reads no provider error. Main now reads them in `Driver/Loop/TransientRetries.cs:25`, concludes exhausted episodes in `Driver/Loop/Driver.cs:2794`, and supports transient *Try again* in `Driver/Platform/StandingChoices.cs:121`. D210 is accepted, rather than proposed (`docs/decisions/D210.md:3`). Finding 13.
+- **SUPERVISOR1b is no longer open.** Design:95’s inventory predates its implementation. Main has `SUPERVISOR_DEFER` in `Modules/Platform/PipeCensus.cs:298` and its handler at `Modules/Bridge/Routes/SessionsRoutes.cs:620`; D208 records the completed row at `docs/decisions/D208.md:273`. Finding 13.
+- **Finish does not guarantee an open or taken quest.** Design:340 and :649 permit finishing a session of an already-`Done` quest while saying its quest remains open for acceptance. Finish advances the session, without reopening its quest (`Driver/Sessions/Requests/SessionMoves.cs:62`). Finding 14.
+
+The revised accounts of personal move notes, terminal payloads, the request-folder stop, the hand-over’s independent start-time read, and the existing appointment flag agree with main.
+
+### 2. The mechanism’s holes
+
+The earlier findings are substantially answered: steward-specific notes replace personal attribution; free words and acceptance leave the role; activation flags are separate; owner takeover follows the quest across successor sessions; and deferred effects now require memory-backed operations.
+
+The largest remaining authority hole is **composition between permitted acts**. Hand-over is itself a release of both a personal stop and a transient hold. Restricting `retry` and `go-on` therefore does not preserve those bounds while unrestricted steward hand-over remains available.
+
+The authentication boundary also still depends on **what the writable carrier calls itself**. The proposed start consults memory “where the file names the steward.” Removing that name can select the ordinary path instead. Memory must select the authority path for an outstanding operation.
+
+Finally, the pending-operation protocol is not yet a complete execution protocol. Several successive consumers each require an unconsumed operation and each consume it. The go-on additionally separates its memory check from consumption with an asynchronous record check, leaving another revocation interval. Repository-dependent conditions are protected by quest gates while the owner changes those dependencies under repository gates.
+
+The declared same-account compromise and service-door ordering limits remain real limits. The findings below concern guarantees the design still makes within its proposed mechanism.
+
+### 3. The rows
+
+| Row | Can it land alone, in order, and does its proof prove the claim? |
+|---|---|
+| **1a-i** | Can land dark after the decision’s acceptance. First amend the operation lifecycle, shared-hash lifetime, holder folders and bootstrap. The tests need successive-consumer and shared-role revoke cases. |
+| **1a-ii** | Can follow 1a-i. Its target resolution needs workspace expansion and ordering across repository-dependent quest acts. The stated sweep currently contradicts its legitimate `none` cases. |
+| **1b** | Can follow both foundations. The checkout exclusion must concern actual start directories. Its proof also needs the already-promised deferred lifecycle of *Try again*, including cancellation and restart. |
+| **1c** | Can land independently after 1a-i. The revised caller-bound proof addresses the earlier verb-process defect. |
+| **1d** | Correctly follows the desk and containment evidence. Add proof that the appointed harness receives its initial brief and handles a desk request without the owner supplying management instructions. Keep the installed canaries and supervisor-off checks. |
+| **1e** | Needs the owner-only hold restrictions, authentication independent of carrier labels, and staged consumption. Its existing tests miss actor-marker removal and revoke after the look but before the start. |
+| **1f** | Its mechanism dependency now exists on main. It still needs the final revocation check and storage an older reader cannot interpret as the owner’s release. Design:505’s requirement that D210 carry or answer the amendment remains outstanding: D210:65 still says only the person releases it. |
+| **1g** | The applied-plan restriction and ask attribution form a buildable slice after 1d. Its listed publish and quotation proofs address the stated claim. |
+| **1h** | Correctly remains outside this design. |
+
+The first usable slice remains 1a-i through 1d, after their amendments.
+
+### 4. Findings
+
+1. **Blocking — hand-over bypasses the owner-only release bounds.**
+
+   **Where:** Design:341–344, :458–462; `Driver/Quests/Domain/Planner.cs:1481`–`:1500`, :1514–`:1522`; `Driver/Conversations/HandOver/HandOverQuest.cs:172`–`:175`.
+
+   The planner expressly treats a hand-over from the held record as releasing its transient hold and its personal stop. Row 9 does not prohibit either case. The steward can exhaust its one go-on, meet another transient hold, and hand over instead. It can also hand over a session the owner stopped before this run, despite row 8 reserving retry of that stop to the owner. Hand-over can choose a new agent and briefed conversation where the go-on forbids both.
+
+   **Smallest change:** before **1e**, refuse steward hand-over and approval wherever their effect would release an owner-only hold. At minimum, transient-held records must use row 11 exclusively, and personal stops not authenticated as this run’s untouched steward stop must remain held. Test both bypasses at admission and consumption.
+
+2. **Blocking — `OpensOwnTree` does not establish the promised checkout exclusion.**
+
+   **Where:** Design:334, :336, :624, :940–941; D209:54–55; `Driver/Loop/Driver.cs:2106`–`:2109`, :2166, :2196; `Driver/Loop/DriverContinuations.cs:227`.
+
+   A repository can have trees enabled while an earlier session records its checkout as its directory. A later continuation uses that directory directly; a new part can also retain it through `resumedIn`. Driving the repository can therefore restart eligible earlier work in the owner’s checkout despite passing `no-tree`. Rows 8, 9 and 11 likewise lack an actual-directory restriction.
+
+   **Smallest change:** before **1b**, require the promised isolation at the actual starts caused or released by steward acts. Hold checkout-based resumptions for the owner rather than relocating them implicitly. Correct row 3’s new-part claim. Test an earlier checkout session with trees subsequently enabled, both as a continuation and as a new part.
+
+3. **Blocking — changing the carrier’s actor can bypass memory authentication.**
+
+   **Where:** Design:579–585, :597–598; `Driver/Conversations/HandOver/HandOverFiles.cs:88`–`:99`; `Driver/Loop/DriverHandOvers.cs:91`–`:92`, :133; `Driver/Loop/Driver.cs:1907`.
+
+   The proposed start takes memory-backed fields “where the file names the steward.” A modified handed file can instead name `person`, with an ordinary known reason, and take the existing disk-authoritative path. The same problem applies to an approved-state marker changed to the ordinary form. The listed tampering tests retain the steward marker.
+
+   **Smallest change:** before **1e**, select authentication from the in-memory operation indexed by target and stage, independently of the carrier’s claimed actor. Missing or changed actor, operation id, or fields must invalidate that operation’s carrier. Test marker removal and replacement with ordinary actor values between each pair of consumers.
+
+4. **Blocking — successive consumers cannot each consume the same pending operation once.**
+
+   **Where:** Design:569–575, :583–595, :602–606, :976–990.
+
+   A parked approval passes through `GoAsync`, the box consumer and the start. Each consumer is told to require “pending, not consumed” and then mark the operation consumed. The first successful consumer therefore makes the next fail. Conversely, retaining a consumed hand-over for later starts leaves its cancellation and appointment-lifetime rules unspecified: revoke cancels pending operations, while the consumed override remains held.
+
+   **Smallest change:** before **1a-i**, define explicit stages and one-time transitions, with a separate live hand-over binding where subsequent starts need one. Revoke must invalidate every not-yet-executed stage and prevent later starts using that binding. Before **1e**, prove the complete successful chain, revoke between every stage, and revoke after the first start but before a later start.
+
+5. **Blocking — the go-on has a revocation interval after its memory check.**
+
+   **Where:** Design:474–478, :486–489, :1001–1007.
+
+   The start checks the pending operation under the judge’s lock, releases that lock, performs its record check, and **then** marks the operation consumed. Revoke can cancel the operation while the record check awaits. The quest gate does not exclude revoke, whose mutation uses the judge’s lock.
+
+   **Smallest change:** before **1f**, make the final transition to execution recheck that the operation remains pending and its generation live after the asynchronous checks. Define that transition as the execution cutoff. Test revoke while the record check is suspended; nothing may start afterward.
+
+6. **Blocking — the target gates do not cover the dependencies of the act.**
+
+   **Where:** Design:652–667, :691–697; `Modules/Bridge/Routes/LinesRoutes.cs:188`–`:201`; `Driver/Trees/Landing/AutoLanding.cs:203`–`:207`.
+
+   A stop or finish takes a quest gate, but its permission depends on the repository’s effective landing rule. The owner changes that rule under a repository target. The owner can enable a pushing rule after the steward’s last check but before its stop ends a parked `Done` session, making the steward’s effect release publication.
+
+   Workspace-scoped owner settings are another missing dependency: `SET_LANDING` accepts a workspace without a repository, while workspace expansion is specified only for `HELP_APPLY`.
+
+   **Smallest change:** before **1a-ii**, define target resolution for affected scopes and dependencies, including workspace settings. Serialize repository-dependent quest effects with the relevant repository changes in a fixed gate order, and recheck under those gates. Test the landing-change race and direct workspace-scoped changes.
+
+7. **Blocking — an older build reads a steward’s transient release as the owner’s.**
+
+   **Where:** Design:469–481, :497–500, :604–607; `Driver/Platform/DriverConfig.cs:1158`–`:1173`, :139–`:143`.
+
+   Main’s transient-release reader accepts `{ session, ended }` and ignores additional author and act-id fields. A pending release written into that existing map can therefore survive restart into an older build, which releases the quest without an appointment or operation. An older config rewrite also need not preserve the new attribution. The new reader’s restart sweep cannot protect a build that never executes it.
+
+   **Smallest change:** before **1b** introduces role releases, keep them in a distinct role-only shape/key that existing readers cannot consume as personal releases. Apply that separation to stop and transient releases. Prove it using the older reader and writer, alongside an ordinary owner release that must remain usable.
+
+8. **Non-blocking — the first slice’s retry proof omits its deferred authority.**
+
+   **Where:** Design:572, :604–607, :935–949; `Driver/Platform/StandingChoices.cs:118`–`:119`.
+
+   Row 8 is explicitly a pending operation consumed at the planner’s start, but 1b’s proof tests release and planner behavior without testing owner takeover, revoke or restart between release and start. Those cases cannot wait for 1f: retry ships in the first slice.
+
+   **Smallest change:** add those three cases, authored storage and final-consumer attribution to **1b**’s proof.
+
+9. **Non-blocking — the census sweep rejects an exemption it must accept.**
+
+   **Where:** Design:658–660, :688–690, :925–930; `Modules/Bridge/Routes/SessionsRoutes.cs:1013`–`:1016`.
+
+   `SESSION_OPEN_FOLDER` is expressly `none`, but its handler requires `id`. The sweep is also expressly required to reject `none` whenever a handler requires `id`. Both assertions cannot pass.
+
+   **Smallest change:** in **1a-ii**, distinguish “names a target” from “mutates a role-relevant target.” Cross-check reviewed exemptions against their effects; retain a test that a mutation cannot acquire an exemption merely by declaring one.
+
+10. **Non-blocking — the revoke text drops a shared holder’s hash too early.**
+
+    **Where:** Design:212–214, :221–223, :411–413; `Modules/Platform/StandingConfirmation.cs:586`, :597.
+
+    Hashes become holder-owned, but the general revoke step still says it drops the hash when revoking an appointment. That also disables the holder’s other live role, contrary to ending the holder only with its last role.
+
+    **Smallest change:** in **1a-i**, revoke the appointment and its operations independently; drop the holder hash only when its last appointment ends. Test revoking either role while the other continues.
+
+11. **Non-blocking — holder folders are named by role despite allowing multiple holders.**
+
+    **Where:** Design:215–235; `Modules/Platform/HolderTerminal.cs:45`–`:52`.
+
+    Two supervisor holders for different repositories receive the same role folder, which the next start recursively empties. Adding a role to a live holder also supposedly changes its folder from a single-role folder to `roles/holder/`, without a restart or relocation protocol.
+
+    **Smallest change:** in **1a-i**, give each holder an immutable folder keyed by holder id. Adding a role changes its title and brief, without moving or clearing a live holder’s directory. Test two holders of the same role and adding a role to a running holder.
+
+12. **Non-blocking — the holder has no specified initial model input.**
+
+    **Where:** Design:236–259, :730–755, :967–973; `Modules/Windows/TerminalModule.cs:248`.
+
+    Instruction files are excluded, the complete argument vector contains no initial prompt, and the tab’s printed text is correctly described as the owner’s screen rather than model input. `roles brief` supplies instructions only after the session already knows to call it.
+
+    **Smallest change:** in **1a-i**, supply a fixed initial prompt telling the holder to read its brief and desk. In **1d**, prove an appointed holder handles a filed request without the owner typing that instruction.
+
+13. **Non-blocking — the baseline inventory and inherited role coverage need rebasing.**
+
+    **Where:** Design:55–59, :87–95, :743–744, :992–997; D209:35; `Driver/Loop/TransientRetries.cs:25`; `Modules/Platform/PipeCensus.cs:298`; `Modules/Bridge/Routes/SessionsRoutes.cs:620`.
+
+    Provider-error handling, transient retry and SUPERVISOR1b have landed. Beyond stale prose, the proposed configuration check names only `ROLE_ACT` and `SUPERVISOR_ANSWER`, omitting the now-built `SUPERVISOR_DEFER`.
+
+    **Smallest change:** preserve the historical observations as dated evidence, update the current inventory, and apply the holder check to every role route through a census-held guard. Extend **1a-i**’s proof to `SUPERVISOR_DEFER`.
+
+14. **Non-blocking — finish’s rationale promises a quest state its conditions do not require.**
+
+    **Where:** Design:340, :649; `Driver/Sessions/Requests/SessionMoves.cs:62`; `Driver/Trees/Landing/AutoLanding.cs:207`.
+
+    Finish explicitly permits some sessions whose quests are already `Done`; advancing their session does not make those quests open or taken again.
+
+    **Smallest change:** in **1b**’s wording, say finish neither accepts nor closes the quest; an open or taken quest remains so, and an already-done quest remains done.
+
+**14 findings; 7 blocking.**
+
+**Verdict: stands after named amendments.** Keep the appointment foundation, separate working session, independent activation flags, steward-specific records and owner-only acceptance. Findings 1–7 become amendments before their named rows are built; findings 8–14 are bounded corrections to those rows and their proofs. The remaining work is to make the stated authority survive composition, carrier tampering, successive consumers, revocation, dependency changes and older readers.
