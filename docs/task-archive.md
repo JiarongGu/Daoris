@@ -24,6 +24,7 @@ MAINRED1 note. The name repeats the 2026-10-20 MAINRED1 below, as the quest name
 `SESSION_OPENINGS`, `HELP_PROPOSALS`, `TOOLS_LIST`) answer from what is held and tell their work's answer as `DAORIS.ANSWERED`
 (`HeldAnswers`, `[ByEvent]`, `bridge/state/held.ts`); `DAORIS.UPDATE.STATE` already read only memory and is unchanged.
 `WindowCensusTests` holds the rule, with 88 routes owed their move. Detail: D56's NOBLOCK1 note, the fix log's entry.
+A backlog row filed for it while the quest was building stood open after it landed; it was removed on 2026-10-25.
 
 ## MAINT2 — close review findings (2026-10-10)
 
@@ -20268,7 +20269,7 @@ segment stream and the media player are new surface it does not use; the Chromiu
 Daoris's window is a WinForms form hosting a `ChromiumView`. None of KITREQ1's four requests is answered (`ChromiumEngine`,
 `ChromiumChildBrowser` and the single-instance code are unchanged since 0.22.0), so no workaround goes and KITREQ1 stays open. The
 desktop builds; the driver's, modules' and both service projects' fast halves, the web's unit tests and typecheck pass. Detail: D22's and D171's
-SHENORA024 notes.
+SHENORA024 notes. A backlog row filed for it while the quest was building stood open after it landed; it was removed on 2026-10-25.
 
 ## SUPERVISOR1a-ii — the door, built dark (2026-10-24, D208)
 
