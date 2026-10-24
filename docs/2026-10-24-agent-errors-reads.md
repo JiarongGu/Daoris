@@ -1113,3 +1113,151 @@ go-on, so that a transient error parks the line or strikes it. Its change is a b
 one line of row 1a's proof. The steward can check it against `Acp.cs:841`, `:1039-1046` and `Observation.cs:173-174` and
 `:205-206` without another read. Findings 2, 3 and 5 should be written in before row 1a is built, since 1a's proof asserts or
 misses each. The rest can be taken in their rows.
+
+## Codex, the accepted text (owed)
+
+Codex's read of the accepted design and D210 at `16e0950e2`, owed since round 3 when its credits ran out, read after rows 1a and 1a2 were built: 11 findings, 8 blocking; reopen, keeping the four-kind interface, conservative limits, adapter-local authentication and the note-based hold.
+
+### 1. Claims about the code
+
+Read whole: the named reads file, including every earlier read verbatim; the settled design; and D210, including its acceptance and implementation notes. Code citations below refer to `main` at `7cda79f01`. Driver paths are relative to `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+
+The four-kind boundary, conservative code-only limits, adapter-local `AuthRequiredCode`, and exhaustion hold remain sound. The original “today” diagnosis describes the preimplementation tree; rows 1a and 1a2 now exist on `main`.
+
+These operative claims do not hold:
+
+| Claim | What the code establishes |
+|---|---|
+| A try answering ends the episode and permits a fresh count (design:436). | An answer can be the adapter’s handoff to another queued prompt, rather than recovery. `Agents/Acp/Acp.cs:1300` returns immediately; `:1403` permits further mid-turn words. **F1.** |
+| Settling turns belong to the five-try bound (design:328, :355). | The settling loop can accept more work and increments past five before checking the bound: `Acp.cs:1248`, `:1266`, `:1271`; `Conversations/DrivenInbox.cs:534`, `:1076`. **F2.** |
+| Dispositions cover every exit, including shutdown, and only unwritten words remain owed (design:383–388). | An unanswered on-wire prompt can still become `Unreached`, then be kept for retransmission: `Acp.cs:1460`, `:3185`; `Loop/Driver.cs:4370`; `Conversations/GoOn/WordsLeft.cs:40`. **F3.** |
+| Using the dispatcher makes the no-retransmission rule durable (design:400–404). | Its attempt marker deliberately fails open: `Conversations/SaidDoor.cs:78–84`. Restart settlement recognizes only persisted attempts: `Conversations/GoOn/UncertainWords.cs:64`. **F4.** |
+| The driven owner predicate identifies whether this run still needs a turn (design:592; D210:198). | It rejects every nonempty `Awaits`, including answered questions, and every closed quest, including an explicitly requested continuation: `Loop/TransientRetries.cs:89–94`. **F5.** |
+| Opening failures retain the common kind’s policy (design:552–560, :605–609). | A resume refusal becomes `AcpResumeRefused`, then returns before account handling: `Acp.cs:3242–3248`; `Driver.cs:4346`; `Loop/DriverContinuations.cs:633–650`. **F6.** |
+| Each try uses the existing wake gate (design:405–411; D210:192–193). | The retry tests `Running` once and waits for an existing wake; it does not use the quiet gate used by `AfterEndedAsync`: `Acp.cs:1281–1300`, versus `:1068`. **F7.** |
+| Harness lines are read for access alone (design:215–218, :277). | `AgentErrors.Read` reads their limit sentence before checking their origin: `Agents/Errors/AgentErrors.cs:145`, `:177`. **F8.** |
+| Preserving the conversation proves that no effect is replayed (design:381–382; row 1a’s proof). | The mechanism sends another instruction. It neither deduplicates tool effects nor establishes the outcome of an effect whose result was lost: `Acp.cs:1399`; tool tracking at `:1823` supplies no such guarantee. **F9.** |
+| Suppression is scoped to the episode’s repeated provider messages (design:421–424; D210:223–224). | The implementation removes matching substrings from every message in every turn, including authored quotations outside the episode: `src/Daoris.Web/src/work/conversation/conversation.ts:722–736`. **F10.** |
+
+Several operative summaries also contradict the amended body: design:155 retains “owner where it has none”; :643 assigns every release to step 1; :879 again conflates native word and button releases. **F11.**
+
+### 2. The mechanism’s holes
+
+The earlier reads corrected what happens **after exhaustion**, but the bound can still be bypassed **before exhaustion**. The acceptance amendment correctly rejects an answered settling turn as proof of recovery. The same reasoning must apply when a retry’s answer merely hands its turn to a queued word. Otherwise the queued failure opens a fresh episode, and repeated handoffs prevent the exhaustion hold from ever being reached.
+
+“Settle the wire first” also needs a closed admission boundary. Currently settling can grow its own queue. The counter is checked after draining it, so the design has neither a strict five-try accounting rule for already-written prompts nor a guarantee that settling finishes.
+
+The word contract remains incomplete at two boundaries the earlier reads did not resolve: a prompt whose transport disappears before any terminal response, and a dispatcher whose durable attempt write fails. Both can turn an already-written instruction back into an apparently owed instruction. Keeping dispositions in the episode does not close either path by itself.
+
+The owner check must judge the purpose of the current run. `Awaits` is a historical relationship as well as a live wait; a closed quest can still have a person-authorized turn. Treating either as completed intent recreates the silent clean ending this design exists to remove.
+
+Finally, classification must survive opening fallbacks, and source eligibility must precede classification. A correctly classified limit discarded by the resume wrapper has no policy; a limit inferred from an access-only source is the wrong reading even if the sentence matches perfectly.
+
+### 3. The rows
+
+| Row | Alone, in its stated order? Does its proof prove the claim? |
+|---|---|
+| **1a** | The scope remains useful, but its foundation needs F1–F5 and F7. Existing linear failure proofs do not exercise handoff resets, continuing admission during settling, unanswered transport loss, or failed durable dispatch. D210:226–231 explicitly records additional tick proofs still owed. |
+| **1a2** | Buildable after corrected 1a. Its opening proof covers transient→success and exhaustion, but needs transient→limit/access at `session/resume` and `session/load` for F6. D210:277–281 acknowledges remaining proof debt. |
+| **1b** | The conversation seat is distinct and buildable. It must cover both `ProtocolChat.TurnAsync` and its additional-prompt path (`ChatRunner.cs:2840`, `:2880`), including F1’s handoff sequence. The proposed limit-word exclusions are appropriate, but require durable event-based proof across restart. |
+| **1c** | The separation of live native conversations, exited driven processes and episode-local pass ids holds. Its post-exhaustion *Try again* proof also depends on **1a2**, beyond the dependencies named in its row. Missing-conversation measurement remains a prerequisite, not something a scripted fixture proves. |
+| **1d** | Buildable after corrected shared policy, and after 1c wherever native coverage is promised. Deadline and authoritative-outcome proofs are appropriate. The intake’s “unbind once, then hold” additionally needs consecutive ticks and a restart; one exhausted pass cannot prove that two-bound policy. |
+| **1e** | Buildable after the relevant door capture, with F6 and F8 included. Its proof must distinguish **opening** access failures from prompt failures, and reject limit/transient readings from harness-only lines. |
+| **1f** | Measurement before mapping remains correct. Its repeated disposition and release proofs must include the new transport-loss and handoff cases, not only terminal responses with a typed marker. Its claimed full release proof also requires 1a2. |
+| **1g** | Appropriate as installed integration evidence after all required rows, including 1a2. The owner declaration fixes the earlier stand-in problem. Neither that stand-in nor a later outage establishes general effect idempotence. |
+
+The code and D210 honestly identify missing proofs. Nevertheless, “built” cannot serve as evidence that row 1a’s complete proof passed: D210:226 expressly owed those checks **before 1a2**, while :240 records 1a2 built and :280 says the earlier proofs remain owed.
+
+### 4. Findings
+
+1. **Blocking — a handoff answer resets the retry budget without recovery.**
+
+   **Where:** design:436; `Agents/Acp/Acp.cs:1300`, `:1403`, `:1409`; `Loop/DriverHelpers.cs:306–309`.
+
+   A retry may answer `end_turn` when an urgent queued word takes over. That word can then fail transient and open a new episode. Helper words can cause this without a new person action. The answered-settling amendment does not cover this equivalent handoff.
+
+   **Smallest change:** retain the episode and its count through prompt handoffs; establish recovery only after the handed-off work settles without another transient failure. Add a stand-in that repeatedly hands a retry to a queued word and then fails that word; it must reach one exhaustion hold.
+
+2. **Blocking — settling can exceed the bound or keep admitting turns indefinitely.**
+
+   **Where:** design:345–356; `Acp.cs:1248–1271`; `Conversations/DrivenInbox.cs:534`, `:1076`, `:1089`.
+
+   Admission is not held when the episode opens. New urgent words can enter the settling queue, and all its failures are counted before the bound is checked. Six already-written failures also produce more than the promised five counted tries.
+
+   **Smallest change:** hold new dispatch immediately on entering settlement. Define separately how preexisting on-wire turns consume the remaining allowance and are reported; settling them must authorize no additional retry beyond the bound. Prove both more-than-five prequeued prompts and arrivals during settlement.
+
+3. **Blocking — transport loss resurrects an already-written instruction.**
+
+   **Where:** design:366–388; `Acp.cs:1456–1462`, `:3185–3191`; `Driver.cs:4370`; `Conversations/GoOn/WordsLeft.cs:40`.
+
+   After an episode opens, a queued prompt can lose its stream before answering or emitting an update. `Fail` bypasses the response-based disposition reader. `Untaken` then labels the on-wire word `Unreached`, and `WordsLeft` keeps it to go again.
+
+   **Smallest change:** broaden uncertainty to include any written prompt lacking a trustworthy terminal disposition. Exclude those words from `Unreached`/`WordsLeft` and settle them under `lost`. Prove transient failure→queued word written→stream closes, followed by subsequent looks and restart: one receipt only.
+
+4. **Blocking — the dispatcher’s failure policy contradicts durable no-retransmission.**
+
+   **Where:** design:400–404; `Conversations/SaidDoor.cs:78–84`; `Conversations/GoOn/UncertainWords.cs:64–65`.
+
+   A refused or failed attempt write does not prevent sending. If take-off also fails and the process disappears, the surviving word has no durable attempt marker. Restart settlement therefore cannot distinguish it from an unwritten word.
+
+   **Smallest change:** require a positively acknowledged durable attempt before sending a kept word under this policy, or durably retain equivalent uncertainty. Do not silently proceed when that prerequisite fails. Prove failed attempt persistence, successful wire delivery, failed take-off and restart.
+
+5. **Blocking — the owner predicate mistakes historical quest state for completed run intent.**
+
+   **Where:** design:592; `Loop/TransientRetries.cs:89–94`; `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs:98–100`; `Sessions/Domain/Observation.cs:319–355`.
+
+   `Awaits` remains set after its question is answered, so D79 continuations are denied recovery. A person’s explicit continuation of a closed quest is also denied because its quest is already closed. The episode returns a clean stop; the former can park and the latter can appear successfully concluded without answering the person.
+
+   **Smallest change:** hand the retry the current run’s intent and start baseline. Read whether the named question remains unresolved; distinguish a new authoritative completion from a quest already closed when an explicit word began. Prove both continuations through transient failure and recovery.
+
+6. **Blocking — an opening fallback discards limit and access policy.**
+
+   **Where:** design:605–609; `Acp.cs:3240–3248`; `Driver.cs:4346`; `Loop/DriverContinuations.cs:633–650`, `:714`.
+
+   A raw resume error may be classified correctly, but wrapping it as `AcpResumeRefused` takes the early restoration/fallback path before account handling. A limit need not cool its account; an access refusal need not mark it unusable.
+
+   **Smallest change:** preserve the typed opening failure through the wrapper and apply its account policy before selecting the authorized fallback. Keep all unprompted words held. Add transient→code-only limit and transient→access proofs at both resume and load.
+
+7. **Blocking — the implemented wake check leaves a deterministic late-wake gap.**
+
+   **Where:** design:405–411; `Acp.cs:1281–1300`, `:1068`; `Agents/Acp/AcpWake.cs:150–189`.
+
+   The retry checks `Running`, then awaits its owner. A wake beginning during that await is not checked again before prompting. This can send into the autonomous turn whose unanswered prompt BGWAIT1 already documents.
+
+   **Smallest change:** apply the actual wake/quiet gate at prompt admission, accounting for awaited owner work before sending. Add a controlled owner check held while a wake starts: no prompt enters that turn, and the continuation follows its end.
+
+8. **Blocking before 1e — an access-only source can classify a limit.**
+
+   **Where:** design:215–218, :277; `Agents/Errors/AgentErrors.cs:145–154`, `:177`; `Daoris.Desktop.Driver.Tests/Agents/AgentErrorsTests.cs:140–146`.
+
+   The harness-origin guard runs after limit classification. A harness-only line matching a weekly-limit sentence therefore returns `Limit`, contrary to the source contract. The existing test checks overload and credential words, not this counterexample.
+
+   **Smallest change:** branch on the permitted source before invoking limit or transient readers. Keep harness-only input within its declared credential-refusal reading. Add a matching limit sentence on that origin and prove it neither cools nor retries.
+
+9. **Not blocking — the effect proof claims more than the mechanism guarantees.**
+
+   **Where:** design:381–382, :854; `Acp.cs:1399`, `:1823`.
+
+   Receiving the original instruction once does not prove an agent will not repeat an effect after an uncertain result. A scripted agent that deliberately avoids repetition proves that script’s behavior.
+
+   **Smallest change:** state the enforceable guarantee: Daoris does not replay the original prompt or accepted words. Require the continuation instruction to inspect uncertain effects before repeating them. Any stronger exactly-once claim needs an effect-specific receipt or idempotency contract and proof.
+
+10. **Not blocking — duplicate suppression edits unrelated authored messages.**
+
+    **Where:** design:421–424; D210:223–224; `src/Daoris.Web/src/work/conversation/conversation.ts:722–736`.
+
+    The suppression pass traverses the entire conversation and deletes matching substrings. An earlier explanation or later answer quoting the recorded overload can lose its quotation, or disappear entirely.
+
+    **Smallest change:** identify the failed-attempt message ranges and suppress only their provider-error material. Add quotations before and after an episode, including a quotation merged into a larger message; retain them verbatim.
+
+11. **Not blocking — operative summaries retain superseded contracts.**
+
+    **Where:** design:155, :643, :879; compare :246–255, :499–543. The corresponding code distinctions are `Loop/DriverContinuations.cs:40`, `:54` and `Agents/Errors/AgentErrors.cs:138–142`.
+
+    These sentences respectively restore own-or-owner lookup, send word releases through step 1, and conflate native releases after the body explicitly corrected each.
+
+    **Smallest change:** align these operative summaries with the settled body and label §1’s “today” as its preimplementation snapshot. Preserve the historical round-answer tables as historical evidence.
+
+**Findings: 11. Blocking: 8.**
+
+**Verdict: reopen.** Keep the four-kind interface, conservative limits, adapter-local authentication declaration and note-based exhaustion hold. Amend the episode’s success boundary, settling admission, transport and persistence dispositions, run-owner predicate, opening-kind propagation and wake admission before extending their consumers; apply the source guard before 1e. The earlier amendments close the original examples, but the counterexamples above still permit budget resets, repeated instructions, lost requested turns and incorrect account handling.
