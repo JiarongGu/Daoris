@@ -26,10 +26,8 @@
     <!-- Built first and never referenced (COAGENT1b): the partner's launcher compiles driver files in by link, and
          `PieceLauncherProcessTests` starts the built program in a piece's job. -->
     <ProjectReference Include="..\Daoris.Desktop.PieceStart\Daoris.Desktop.PieceStart.csproj" ReferenceOutputAssembly="false" />
-    <!-- Built first and never referenced (KEEPSIZE1b2): `RealServiceHost` starts the service's own HTTP host in a process of its own, so a
-         driver test reaches the real record door through the driver's client. Built, not referenced: the driver reaches the service
-         through its doors alone (D46 section 7), and the tests hold it to that. -->
-    <ProjectReference Include="..\..\Daoris.Service\Daoris.Service.Http\Daoris.Service.Http.csproj" ReferenceOutputAssembly="false" />
+    <!-- The service's HTTP host is not referenced (KEEPSIZE1b3): the merge tool runs gates of two components beside each other, and two
+         builds of one project fight over its obj folder. `RealServiceHost` builds its own copy on first use, under this project's obj. -->
   </ItemGroup>
 
 </Project>

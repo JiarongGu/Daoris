@@ -149,11 +149,6 @@
       "kind": "project"
     },
     {
-      "from": "Daoris.Desktop.Driver.Tests",
-      "to": "Daoris.Service.Http",
-      "kind": "project"
-    },
-    {
       "from": "Daoris.Desktop.Modules",
       "to": "Daoris.Desktop.Driver",
       "kind": "project"
