@@ -89,6 +89,18 @@ export const useHelpReadied = () => {
       readied: was.readied === id ? null : was.readied,
       spoken: was.spoken.includes(id) ? was.spoken : [...was.spoken, id],
     })),
+    /**
+     * Its agent refused its model at the open, and `to` opened in its place (MODELROLE1d2): the replacement is what was opened ahead, or
+     * spoken in, where `from` was, in the same workspace; anything else is left as it was.
+     */
+    replaced: (from: string, to: string) => change((was) => ({
+      ...was,
+      readied: was.readied === from ? to : was.readied,
+      spoken: was.spoken.includes(from) && !was.spoken.includes(to) ? [...was.spoken, to] : was.spoken,
+      ...(was.workspaces?.[from] === undefined ? {} : {
+        workspaces: Object.fromEntries(Object.entries(was.workspaces).map(([id, workspace]) => [id === from ? to : id, workspace])),
+      }),
+    })),
   };
 };
 

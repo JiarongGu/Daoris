@@ -402,7 +402,10 @@ public sealed class SessionWords : IDisposable
             return new(true, null, null);
         }
 
-        var running = _loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase);
+        // MODELROLE1d2 (D205 §3.5(b)): a new conversation its agent refused at the open went on in a replacement, which every door asked
+        // by the issued id answers for; between the two, its start holds the words itself.
+        if (_loop.Chat is { } replacing) id = replacing.CurrentOf(id);
+        var running = _loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) || _loop.Chat?.Replacing(id) == true;
         var refuses = _loop.Processes.RefusesInput(id);
         if (running && refuses is null && _loop.Chat is { } chat)
         {

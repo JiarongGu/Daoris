@@ -27,9 +27,10 @@ import type { HelpProposal } from '../help/ProposalCard';
 import { keys } from '../data/queries';
 import { useSetHelpMode } from './driver';
 import {
-  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, publishedAnswer, settleBound, useHelpPublished, useHelpWired, useSettleHelp, wiredAnswer,
-  type HelpSettled,
+  HELP_PROPOSALS, HELP_PUBLISHED, helpModeOf, publishedAnswer, settleBound, useHelpPublished, useHelpReadied, useHelpWired, useSettleHelp,
+  wiredAnswer, type HelpSettled,
 } from './help';
+import { replacedOf, useSessionReplaced } from './sessions/conversation';
 import { useStateHub } from './state/stateHub';
 
 /**
@@ -312,5 +313,46 @@ describe('what a conversation published', () => {
     renderHook(() => useHelpPublished(null), { wrapper: wrapped().wrapper });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * MODELROLE1d2 (D205 §3.5(b)): a new conversation its agent refused at the open went on in another, and the driver says so as
+ * `SESSION_REPLACED`. A window follows it: Ask Daoris's opened-ahead and spoken conversations move to the replacement, and anything
+ * that is not a replacement is no reason to move.
+ */
+describe('a conversation replaced at its open', () => {
+  it('reads the driver’s event defensively', () => {
+    expect(replacedOf({ from: 'h1', to: 'h2' })).toEqual({ from: 'h1', to: 'h2' });
+    expect(replacedOf({ from: 'h1' })).toBeNull();
+    expect(replacedOf({ from: 'h1', to: 'h1' })).toBeNull();
+    expect(replacedOf(null)).toBeNull();
+  });
+
+  it('tells the window the refused session and its replacement', () => {
+    const follow = vi.fn();
+    renderHook(() => useSessionReplaced(follow));
+    heard.get('SESSION_REPLACED')?.({ from: 'c1', to: 'c2' });
+    heard.get('SESSION_REPLACED')?.({ to: 'c3' });
+    expect(follow.mock.calls).toEqual([['c1', 'c2']]);
+  });
+
+  it('moves what Ask Daoris opened ahead or was spoken in to the replacement, in the same workspace', async () => {
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useHelpReadied(), { wrapper });
+    // Its first read settled, so a change made after it is not read over.
+    await waitFor(() => expect(client.getQueryState(keys.helpReadied)?.status).toBe('success'));
+    act(() => result.current.ready('h1', 'engine'));
+    await waitFor(() => expect(result.current.readiedIn('engine')).toBe('h1'));
+
+    act(() => result.current.replaced('h1', 'h2'));
+    await waitFor(() => expect(result.current.readiedIn('engine')).toBe('h2'));
+    expect(result.current.unspoken).toEqual(['h2']);
+
+    act(() => result.current.spoke('h2'));
+    act(() => result.current.replaced('h2', 'h3'));
+    await waitFor(() => expect(result.current.unspoken).toEqual([]));
+    expect(client.getQueryData<{ spoken: string[] }>(keys.helpReadied)?.spoken).toEqual(['h2', 'h3']);
   });
 });

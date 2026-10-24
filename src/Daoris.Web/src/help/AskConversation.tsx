@@ -10,7 +10,7 @@ import {
   type HelpSettled, NO_TURNS, helpModeOf, useCancelTurn, useChatTurns, useDeleteSession, useDriver, useEditQueued, useEndChat,
   useHarnesses, useHelpConversations, useHelpProposals, useHelpPublished, useHelpReadied, useHelpStartFrom, useHelpWired, usePinHelp, usePlugins,
   usePollUnlessTold, useRenameHelp, useSendMessage, useSessionEvents, useSetHelpMode, useSettleHelp, useStartHelp, useStopSession,
-  stoppedWaiting, useGoOnBrief, useAccounts, useAccountUse, useStopWaiting,
+  stoppedWaiting, useGoOnBrief, useAccounts, useAccountUse, useStopWaiting, useSessionReplaced,
 } from '../bridge/shell';
 import { goOnBriefRefusal } from '../work/say';
 import { useHeldHarnessRun } from '../agents/harnessRuns';
@@ -312,6 +312,13 @@ export function useAskConversation(
   useEffect(() => {
     if (handedOver) setFirstWords(null);
   }, [handedOver]);
+  // MODELROLE1d2 (D205 §3.5(b)): its agent refused its model at the open, and another opened in its place in the same workspace's room,
+  // taking the words said to it: the panel follows it, as the conversation chosen, opened ahead or given its first words.
+  useSessionReplaced((from, to) => {
+    help.replaced(from, to);
+    setChosen((was) => (was === from ? to : was));
+    setFirstWords((was) => (was?.session === from ? { ...was, session: to } : was));
+  });
   const waiting = firstWords && !handedOver ? firstWords.words : null;
   // Words on their way to a conversation (SENDLOST1): shown the moment they are sent, until it holds them.
   const [sent, setSent] = useState<Sent[]>([]);

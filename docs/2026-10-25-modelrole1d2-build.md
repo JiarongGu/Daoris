@@ -35,7 +35,10 @@ each committed green. This record says which parts are built and which remain.
    line, by `from` or the room's history, reaches an earlier part that ran a conversation, past every `choice-not-offered` part, Daoris's
    brief of that part's line is composed again and handed before the words. Nothing that can run: the words wait, said in the wait's
    sentence with each choice's reason.
-4. **The window follows the replacement** (`SESSION_REPLACED`, the page). planned.
+4. **The window follows the replacement** (built). The loop tells the runner's `Replaced` as the event `SESSION_REPLACED` {from, to},
+   and the words door (`SessionWords.SayAsync`) answers the issued id for the record its start is on now, or holds the words while it
+   moves. On the page, `useSessionReplaced` reads the event defensively (`replacedOf`): the Work frame showing the refused conversation
+   attends to its replacement, and Ask Daoris moves what it chose, opened ahead or gave its first words to (`useHelpReadied().replaced`).
 
 ## Checks run
 
@@ -55,5 +58,10 @@ words; a picked start never run elsewhere by the come-up; a refused continuation
 only part A's history held before the words), each seen failing first with the go-on's new branch left out (each ran the refused agent
 again at account default, resuming or briefing on `account-1`); then the whole class, the Process neighbours of part 2 with
 `HelpGoOnTests`, `BriefedMove*` and `CurveMoveProcessTests`, and the fast classes of part 2.
+
+Part 4: the web's new `WorkFrame.replaced.test.tsx` and the Ask Daoris scope suite's new case, each seen failing with its follow left out;
+`bridge/help.test.ts`' event reading and the opened-ahead move; `src/locales`, `src/bridge`, `AskDaoris*`, the Work frame's suites; the
+typecheck, `i18n:check`, `names-check.mjs --strict`, `check:web-rules`; modules `SessionWords*`, `DriverModuleConversation*`,
+`DriverModuleHelp*`.
 
 ## Readings

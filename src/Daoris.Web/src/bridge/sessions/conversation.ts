@@ -227,6 +227,27 @@ export function useChatTurns(ids: readonly string[]): Record<string, SessionTurn
   return turns;
 }
 
+/**
+ * A new conversation its agent refused at the open went on in another (MODELROLE1d2, D205 §3.5(b)): the driver's `SESSION_REPLACED`,
+ * read defensively, as the refused session and the one opened in its place; null for anything that is not one.
+ */
+export const replacedOf = (payload: unknown): { from: string; to: string } | null => {
+  const told = payload as { from?: unknown; to?: unknown } | null | undefined;
+  return typeof told?.from === 'string' && typeof told.to === 'string' && told.from !== told.to ? { from: told.from, to: told.to } : null;
+};
+
+/**
+ * Follow a conversation to the one that replaced it (MODELROLE1d2): `follow` is told each `SESSION_REPLACED`, so a window showing the
+ * refused session shows its replacement, as it follows a new part. A desktop shell tells it; a window with no bus is told nothing, and
+ * the refused session's own line names where its words went.
+ */
+export function useSessionReplaced(follow: (from: string, to: string) => void) {
+  useShenoraEvent('DAORIS', 'SESSION_REPLACED', (payload) => {
+    const replaced = replacedOf(payload);
+    if (replaced) follow(replaced.from, replaced.to);
+  });
+}
+
 /** A conversation's options as the driver told them, read defensively: anything that is not one is left out. */
 const optionsOf = (answer: unknown): SessionOption[] => {
   const list = (answer as { options?: unknown } | null | undefined)?.options;

@@ -15,7 +15,7 @@ import {
   useDiscardSessionTree, useDriver, useOpinionGate, useWorkflowRun, useRules, useSessionEvents, stoppedWaiting, useUnderWay,
   useEntryLanding, useLandEntry, useSessionHelpers, useSessionPartners, useUnderWaySubject, useSessionProcess, useWorkState, usePushedCalls, withCall,
   useAnswerPermission, usePermissionWaits, useSessionHandOverAsk, useApproveHandOver, useDeclineHandOver, type HandOverWord,
-  useAnswerWaits, useAnswerAlone, useRunNodeWord, useSessionQuestion, useStopWaiting,
+  useAnswerWaits, useAnswerAlone, useRunNodeWord, useSessionQuestion, useStopWaiting, useSessionReplaced,
 } from '../bridge/shell';
 import { handOverRefused, type HandOverAskWait } from './waits/HandOverAgentAsk';
 import { permissionSaid, type PermissionWaits } from './waits/PermissionAsks';
@@ -632,6 +632,10 @@ export function WorkFrame({
     onSelect(id);
     setRefusal(null);
   };
+  // MODELROLE1d2 (D205 §3.5(b)): a new conversation its agent refused at the open went on in another, which the window follows.
+  useSessionReplaced((from, to) => {
+    if (selected === from) attend(to);
+  });
   // How the attended session came to be (TRACE1b): read only while its section is open, for the session it was opened
   // on, since the read takes every session record and quest. Attending another opens it folded.
   const [tracing, setTracing] = useState<string | null>(null);

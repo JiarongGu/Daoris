@@ -179,6 +179,36 @@ describe('Ask Daoris follows the window’s workspace (ASKSCOPE1d)', () => {
     expect(await screen.findByRole('button', { name: 'Switch to games and continue' })).toBeInTheDocument();
   });
 
+  /**
+   * MODELROLE1d2 (D205 §3.5(b)): the conversation its first words opened had its model refused at the open, and the driver opened another
+   * in its place, in the same workspace's room. The panel follows it, so the words said next go to the replacement, never to the refused one.
+   */
+  it('follows a conversation its agent refused at the open to the one opened in its place', async () => {
+    const words = 'and the engine’s line?';
+    let open: (answer: Start) => void = () => {};
+    bridge(() => (sent('START_HELP').length === 1
+      ? { sessionId: null, message: 'not yet' }
+      : new Promise<Start>((resolve) => { open = resolve; })));
+    show('games');
+
+    await waitFor(() => expect(sent('START_HELP')).toHaveLength(1));
+    await say(words);
+    await waitFor(() => expect(sent('START_HELP')).toHaveLength(2));
+    await userEvent.click(screen.getByRole('button', { name: 'to work' }));
+    SESSIONS = [help('r3fused0', 'games')];
+    await act(async () => { open({ sessionId: 'r3fused0', message: 'opened' }); });
+    await waitFor(() => expect(sent('SESSION_INPUT')).toContainEqual({ id: 'r3fused0', text: words }));
+
+    SESSIONS = [help('r3fused0', 'games', 'failed'), { ...help('n3wgame1', 'games'), created: '2026-10-19T09:02:00Z' }];
+    act(() => heard.get('SESSION_REPLACED')?.({ from: 'r3fused0', to: 'n3wgame1' }));
+    act(() => heard.get('STATE_CHANGED')?.({ scopes: ['sessions'] }));
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Switch to games and continue' }));
+    await say('and the tests?');
+    await waitFor(() => expect(sent('SESSION_INPUT')).toContainEqual({ id: 'n3wgame1', text: 'and the tests?' }));
+    expect(sent('SESSION_INPUT')).not.toContainEqual({ id: 'r3fused0', text: 'and the tests?' });
+  });
+
   it('asks which workspace before a start on every workspace, and starts none by itself', async () => {
     const words = 'which agent runs intake?';
     bridge(() => ({ sessionId: 'n3wwork0', message: 'opened' }));

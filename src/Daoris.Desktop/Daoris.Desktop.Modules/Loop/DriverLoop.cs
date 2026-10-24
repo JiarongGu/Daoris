@@ -767,6 +767,9 @@ public sealed class DriverLoop(
             _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", ConversationRoutes.OptionsAnswer(session, options));
         // HELPWIREDLIVE1b (D183 point 4): told once the start receipt is written, so an open What it has reads a resume's new one.
         chat.WiredKept += WiredKeptTold(eventBus);
+        // MODELROLE1d2 (D205 §3.5(b)): a new conversation its agent refused at the open went on in a replacement, which a window on the
+        // refused one follows, as it follows a new part. Machine-local, like the queue.
+        chat.Replaced += (from, to) => _ = eventBus.EmitAsync("DAORIS", "SESSION_REPLACED", new { From = from, To = to });
         await ComeUpAsync(service, chat).ConfigureAwait(false);
 
         // PARALLEL1a (D181 point 2): the machine's facts judged from here, on their own tasks, the service answering; every loop on the
