@@ -85,6 +85,9 @@ internal sealed class ChatTurns(
     // Waiting for its account's limit to reset (LIMITRESUME1c, D206 §3.5): a word is kept and waits, and starts no turn on a process
     // whose account would refuse it, until the wake hands them all over in one (WakeFromLimit) or a move takes them (HoldLimited).
     private bool _limited;
+    // Its open refused before any prompt, its words moved to the replacement opening for it (MODELROLE1d2, D205 §3.5(b)): every word
+    // said to it since joins them, never this queue.
+    private Func<ChatMessage, bool>? _onward;
     private bool _gone;
     private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
@@ -163,6 +166,8 @@ internal sealed class ChatTurns(
         {
             lock (_gate)
             {
+                // MODELROLE1d2: moved to the replacement opening in its place, the word joins the words moved there, kept nowhere here.
+                if (_onward is { } onward) return onward(message) ? new TurnKept(TurnReach.TurnEnd, null) : null;
                 if (_finishing || _gone || _held) return null;
             }
 
@@ -540,6 +545,25 @@ internal sealed class ChatTurns(
         }
     }
 
+    /// <summary>
+    /// Its open was refused before any prompt and a replacement opens in its place (MODELROLE1d2, D205 §3.5(b)): every word it holds, the
+    /// one waiting on the open first and then the rest in the order said, is handed out, and from now on a word said to it is handed to
+    /// <paramref name="onward"/> instead, under this same lock, so each reaches the replacement once. Nothing is sent here again.
+    /// </summary>
+    /// <param name="onward">Takes a word said meanwhile: false where it no longer takes words, and the word is not taken.</param>
+    public IReadOnlyList<ChatMessage> MoveOut(Func<ChatMessage, bool> onward)
+    {
+        lock (_gate)
+        {
+            List<ChatMessage> moved = [.. (_holding is null ? [] : new[] { _holding }).Concat(_waiting).Select(Unstamped)];
+            _holding = null;
+            _waiting.Clear();
+            _onward = onward;
+            Publish();
+            return moved;
+        }
+    }
+
     /// <summary>A waiting word without the queue's own id, which no record knows: its record's id stays. Called under the lock.</summary>
     private ChatMessage Unstamped(ChatMessage message) =>
         message.Id is { } stamped && _stamped.Remove(stamped) ? message with { Id = null } : message;
@@ -576,6 +600,8 @@ internal sealed class ChatTurns(
         bool start;
         lock (_gate)
         {
+            // MODELROLE1d2: moved to the replacement opening in its place, the word joins the words moved there.
+            if (_onward is { } onward) return onward(message) ? TurnReach.TurnEnd : null;
             if (_finishing || _gone || _held) return null;
 
             // At its next step (D137 §2.1): only into a turn already on the wire, never one the person stopped, and never
