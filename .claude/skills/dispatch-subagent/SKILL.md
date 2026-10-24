@@ -136,6 +136,17 @@ once three batches hold the targets (MODELROLE1).
    a brief that asks for what the guard exists to stop invites exactly that, so the brief never asks, and says that a
    command the guard refuses is never routed through a script.
 6. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
+   - **Through the queue, in this order: records commit, preview, queue** (CISCOPE1e, D207). Make the records commit **on the
+     branch** first (the row moved to the archive, `TASKS.md`, the changelog, a FIX-LOG entry); then `<branch> --preview`
+     prints the merge's diff against main's tip and its scoped run, committing nothing, and records the tip you read; then
+     write the merge commit's message (`Merge <ROW>: <what>`, a body, the `Co-Authored-By:` line) to a file under `local/`
+     and run `<branch> --message <file>`. The queue refuses a tip that differs from its last preview, so a records commit
+     made after the preview is previewed again. A detached runner merges up to eight queued branches as one candidate in
+     `local/scope-tree`, one merge commit each, runs the scoped set there, and fast-forwards main only onto a clean checkout;
+     the invocation waits and says *in main* or *handed back* with why. `--queue` says where everything stands; a failing
+     gate that names no test on main's own tip stops the queue until a direct commit fixes it or `--queue --recheck` finds it
+     gone. Records you can only write after the merge landed are a direct commit on main. The bullets below are the merge
+     in place, which still works and is no longer the way a branch lands.
    - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
    - `<branch>` merges with `--no-ff --no-commit`, writes `docs/index/` from the merged tree (ORIENT1), then runs
      **the blocking checks only** (GATESLIM1): the universal gates (with the sensitive scan), the code map and the

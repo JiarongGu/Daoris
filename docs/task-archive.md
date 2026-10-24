@@ -20178,6 +20178,22 @@ the test's first sighting. `--passed` also needs a finished counted run's receip
 overdue sweep and no aged whole pass. The gate store keeps verdicts per gate. Each stage is recorded in its own history.
 Tool-tests: `ci-background.test.ts`, and the merge tool's and publisher's. The stage built from the gate tree alone and the
 attempt-level records are CISCOPE1d2 in the backlog. Detail: D207's CISCOPE1d note.
+
+## CISCOPE1e — the scoped run, the merge queue and the admission between the runners (2026-10-24, D207)
+
+> **CISCOPE1e** (D207's row 5; `docs/2026-10-24-ci-scope-design.md` §8 row 5, with §4 and §5.1): the scoped run, the merge
+> queue in `local/scope-tree`, and one admission record for both runners.
+
+(Quest `#5850eb1a0b04`.)
+
+**Outcome** 2026-10-24, in part: a branch lands through the queue (`tools/merge-queue.mjs`, the merge tool's `--preview`,
+`--message`, `--queue [--recheck]` and its detached `--queue-run`). A records commit on the branch comes first, then the preview,
+then the queued tip and message. Candidates of up to eight form in `local/scope-tree` and run the scoped set. Main
+fast-forwards onto a clean checkout. A red candidate is judged by signature over its base and every prefix. A failing gate on
+the base stops the queue. `local/admission.json` holds the one admission policy. Tool-tests: `merge-queue.test.ts`, with
+four end-to-end scenarios run by the detached runner. The job objects, the background run's side of admission, the light
+gates' priority split, suites by file and the timed proof are CISCOPE1e2 in the backlog. Detail: D207's CISCOPE1e note.
+
 ## MODELROLE1d — Intake, Ask Daoris and Chat run their choices (2026-10-24, D205; in parts, its rest MODELROLE1d2)
 
 > | **MODELROLE1d — Intake, Ask Daoris and Chat run their choices** | Starts 5, 10-13 take their actor; the two cards fold into rows; `driver intake\|helper` write a one-choice list through `SET_ACTOR`, `SET_INTAKE` and `SET_HELPER` leave the census; `setting_propose`'s `intake`, `helper` and `adapter` doors write one-choice lists through `Judge` until row h retires them; `no-posture` from `HelpAccess.For`; the pick overrides; the composer's `override` kept, reconciled and re-applied; §3.5(b)'s re-ask within the press and its go-on after an interruption; the curve move judging each candidate's reading. **Round 4:** §3.5(b)'s pending start (`ChatPending`) owning the attempt across replacements, the queued words moved; a pick never walked afresh; a refused continuation's brief recomposed; §3.5(f)'s Intake re-ask and `EndRefusedIntakeAsync`; Chat's and Ask Daoris's editors' sentence. §3.5(e) lands as LIMITGOON2, after LIMITGOON1 and row c, Ask Daoris's exception and its remarks at the five places with it | *Absent means off* kept; `no-posture`, restricted Ask Daoris as before; the composer opening on the actor's model; the override cases of §13; `HelpRoomDoorsTests`; on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart |

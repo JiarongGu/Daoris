@@ -281,7 +281,11 @@ export const fingerprintKey = (fingerprint) => JSON.stringify([fingerprint.test,
 /** The known-red record, `{ schema, findings: [...] }`. */
 export function readFindings(root) {
   const parsed = readJson(join(root, CI_FINDINGS), () => ({}));
-  return { schema: 1, findings: Array.isArray(parsed.findings) ? parsed.findings.filter((each) => typeof each?.test === 'string' && each.signature) : [] };
+  return {
+    schema: 1,
+    findings: Array.isArray(parsed.findings) ? parsed.findings.filter((each) => typeof each?.test === 'string' && each.signature) : [],
+    ...(Array.isArray(parsed.flakes) ? { flakes: parsed.flakes } : {}),
+  };
 }
 
 export function writeFindings(root, record) {
@@ -289,6 +293,8 @@ export function writeFindings(root, record) {
     schema: 1,
     _why: 'Written by tools/merge-branch.mjs --ci (CISCOPE1d): each failure the background run found on main, keyed by test and fingerprint, matched by signature; cleared by a pass on a descendant of where it was last seen. The parent files each and fixes it forward.',
     findings: record.findings,
+    // CISCOPE1e: a failure a candidate could not place, filed as a flake for its unit's row.
+    ...(Array.isArray(record.flakes) && record.flakes.length ? { flakes: record.flakes } : {}),
   }, null, 2)}\n`);
 }
 

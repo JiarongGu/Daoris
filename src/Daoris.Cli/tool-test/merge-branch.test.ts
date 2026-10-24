@@ -37,6 +37,8 @@ interface Options {
   beside: boolean; besideCommit: string | null;
   /** CI1: the CI runner on this commit (main's tip when null), its watch, and the stop asked of the watch. */
   ci: boolean; ciCommit: string | null; watch: boolean; stop: boolean;
+  /** CISCOPE1e: the queue's verbs: a preview, a request queued with its message file, the queue said or rechecked, the runner. */
+  preview?: boolean; messageFile?: string | null; queue?: boolean; recheck?: boolean; queueRun?: boolean;
   /** CIFAST1: the stage's path, which runs the rehearsals a plain run owes. */
   ciStage: boolean;
   /** CISCOPE1d: the nightly run by hand, every gate whole. */
@@ -357,7 +359,20 @@ test('the arguments name one branch, or several after --batch, and the flags', (
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
     full: false, gated: false, rerun: [], passed: false, stale: false, oneAtATime: false, beside: false, besideCommit: null,
     ci: false, ciCommit: null, watch: false, stop: false, ciStage: false, ciNight: false,
+    preview: false, messageFile: null, queue: false, recheck: false, queueRun: false,
   });
+  // CISCOPE1e: the queue's verbs, each alone with what it takes.
+  assert.equal(tool.parseArgs(['a', '--preview']).preview, true);
+  assert.equal(tool.parseArgs(['a', '--message', 'local/a.msg']).messageFile, 'local/a.msg');
+  assert.equal(tool.parseArgs(['a', '--message', 'local/a.msg', '--one-at-a-time']).oneAtATime, true);
+  assert.equal(tool.parseArgs(['--queue', '--recheck']).recheck, true);
+  assert.equal(tool.parseArgs(['--queue-run']).queueRun, true);
+  assert.deepEqual(tool.parseArgs(['--drop-batch', 'a']).branches, ['a']);
+  assert.throws(() => tool.parseArgs(['a', '--message']), /--message names its file/);
+  assert.throws(() => tool.parseArgs(['a', '--message', 'm', '--full']), /takes only --one-at-a-time and --no-commit-check/);
+  assert.throws(() => tool.parseArgs(['a', '--preview', '--gated']), /--preview names one branch and nothing else/);
+  assert.throws(() => tool.parseArgs(['--recheck']), /--queue --recheck/);
+  assert.throws(() => tool.parseArgs(['--queue', 'a']), /--queue takes only --recheck/);
   assert.equal(tool.parseArgs(['a', '--gated']).gated, true);
   assert.equal(tool.parseArgs(['--continue', '--gated']).gated, true);
   assert.throws(() => tool.parseArgs(['--rerun', 'web', '--gated']), /--rerun takes gate names/);

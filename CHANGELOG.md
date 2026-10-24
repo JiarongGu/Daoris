@@ -16,6 +16,12 @@ with the version and date at release.
   line (REVIEWLANDED1). That includes a landing on a branch you merged and deleted. Its tree is tidied without `--force`, and its
   commits stay at a recovery ref. A session that made new commits after its landing shows only those as work to land, and
   `trees remove` names them.
+- For contributors: a branch now lands through a merge queue (CISCOPE1e). Commit the records on the branch, then run
+  `node tools/merge-branch.mjs <branch> --preview` to read the merge, then `<branch> --message <file>` to queue the tip you
+  read. A runner in the background merges up to eight queued branches in a worktree of its own. It runs only the checks and
+  suites they reach, and moves `main` forward only when they pass and the checkout is clean. A branch that breaks something is
+  found by the failure itself, run after each branch in turn, and handed back with why. A check that fails on `main` itself
+  stops the queue until a commit fixes it or `--queue --recheck` finds it gone. `--queue` shows where everything stands.
 - Groundwork for the supervisor, a role you will appoint to answer a session's question on your behalf (SUPERVISOR1a-i, D208). A
   session that goes on with no words of yours, a helper's answer or Daoris's alone, now says whose words they are, never *your answer*.
   Nothing is offered yet and nothing you see changes: its answer can only be kept as the supervisor's, never as yours. Your own

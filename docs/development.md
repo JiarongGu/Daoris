@@ -132,6 +132,10 @@ keyed by tree, whichever worktree runs it. Inspect a branch's plan before integr
 resume/retry commands when a merge is already open:
 
 ```sh
+node tools/merge-branch.mjs <branch> --preview
+node tools/merge-branch.mjs <branch> --message <file under local/>
+node tools/merge-branch.mjs --queue [--recheck]
+node tools/merge-branch.mjs --drop-batch [<branch>]
 node tools/merge-branch.mjs --plan <branch>
 node tools/merge-branch.mjs --continue
 node tools/merge-branch.mjs --stale
@@ -163,7 +167,8 @@ while one runs, and a run of main's tip ends the gates it is running, each with 
 newer tip exists (CIPRIO1c), recorded as superseded and never as passed; a Ctrl+C ends its trees the same way. A stage requires that full verdict. The merge tool normally runs selected gates; a merge receipt alone does not
 prove the long gates ran. Read D115 and the tool's usage before changing queue/merge behavior.
 
-A merge runs the blocking checks alone by default: the universal gates (with the sensitive scan), the code map, the
+A branch now lands through the merge queue, which waits on a scoped run in a tree of its own (*How a merge goes now*,
+below). `<branch>` alone is still the merge in place, which follows. It runs the blocking checks alone by default: the universal gates (with the sensitive scan), the code map, the
 index check and the census of test units' check (`test-map`, below), and the web's typecheck (`web-types`, `npm run typecheck:web`, about a minute) when its paths reach the
 page's sources or its compiler's configuration: two sides that each typecheck may not together (MERGETSC1); and, where
 its paths reach the page's sources or its test configuration, the web's design and structure checks (`web-rules`, `npm
@@ -212,6 +217,47 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
   *Accept* then lands nothing and clears its review row.
 
 ### The CI between releases
+
+**How a merge goes now** (CISCOPE1e, D207's design §4). A branch lands through the queue, in three steps and this order:
+
+1. **The records commit, on the branch.** The row moved to the archive, `TASKS.md`, the changelog, any FIX-LOG entry: what the
+   merge carries beyond the branch's own work. The tool commits nothing it was not handed.
+2. **`<branch> --preview`.** The merge against main's tip, made with `git merge-tree` so no file of the checkout moves; its
+   diff, any conflict, and its scoped run are printed, and the tip you read is recorded.
+3. **`<branch> --message <file>`**, the file under `local/` holding the merge commit's message, verbatim, with its
+   `Co-Authored-By:` line. The branch's tip and the message's bytes are frozen here. A tip that differs from the last preview
+   is refused, so a records commit made after the preview needs another preview.
+
+The invocation starts the queue's runner where none runs (`node tools/merge-branch.mjs --queue-run`, detached, its log
+`local/merge-queue.log`, its acknowledgement waited for thirty seconds), then waits and ends with *in main* (0) or *handed
+back* with why (1). Ending the wait leaves the request queued. The runner forms a **candidate** in `local/scope-tree`, a
+worktree of its own with warm builds: every queued branch, up to eight in arrival order, each merged on the last with
+`--no-ff` and its own message. A branch the resolvers cannot merge is set aside and handed back. On the candidate it runs the
+**scoped set**: the blocking checks always; each gate the candidate's paths reach, a .NET fast half whole; the `Process` halves
+by class; the git half within an eight-minute budget, the rest deferred; a gate holding an open known red, whatever is
+reached. Browser specs and rehearsals are deferred to the background run. A gate whose pass stands on the candidate's tree is
+kept. Each verdict is recorded as `scoped`, and each run is a line in `local/scope-runs.jsonl`. On green, main fast-forwards
+to the candidate. That happens only when the main checkout is clean (no tracked change, no merge open, on `main`); otherwise the
+candidate is held, said, and tried each tick. If main moved meanwhile by a direct commit, the candidate is formed again on it
+from the same frozen requests. A move by records only (the records lane, `docs/**`, `docs/index/**`) defers `service`.
+
+On red, each failure is judged by its signature (`tools/test-failures.mjs`). A failing test that fails the same way on the
+candidate's base is inherited and filed as known red. If its known red has expired, the queue stops instead. A failing gate that
+names no test (a check, a build, discovery, a host) and fails on the base **stops the queue**. Every merge then waits until a
+direct commit moves main, `--queue --recheck`, or the runner's own recheck an hour on lifts it. Otherwise the failure's
+selection runs on every prefix of the candidate. The member at the last transition into the signature is handed back, with
+any members it needs, earlier transitions named as interacting. The prefixes either side of it run once more, and a
+disagreement makes the failure unresolved. So does a prefix that cannot run the selection, or a whole candidate that does not
+fail again. An unresolved candidate of several runs its members one at a time. One of one is handed back as unresolved, filed
+as a flake, and the queue goes on. The members kept are formed again and judged on their own green. A gate that died of memory
+twice holds the candidate until memory is free; it never runs on the base and never stops the queue. `--queue` prints the
+stop, the candidate and its members, what is queued (and whether a branch has moved past its frozen tip), and what was handed
+back. `--drop-batch <branch>` takes a queued branch off, or ends the candidate that holds it.
+
+`local/admission.json` is the admission record both runners will share (§5.1): the scoped tier's state, and reservations
+released only on a read of their job that finds it empty. The scoped runner writes its tier there. The background run does not
+yet read it, and gates run in no job object yet (CISCOPE1e2). The scoped runner runs at normal priority with build servers of
+its own. The CI's watch still gates every promoted tip, and the stage's rules are CISCOPE1d's.
 
 `--ci [<commit>]` is the local CI (CI1, D180's CI1 note). It gates main's tip, or the named commit, with every gate but the
 two rehearsals it owes a stage (below), in the same
