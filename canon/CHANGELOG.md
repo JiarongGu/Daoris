@@ -12,6 +12,14 @@ network.
 
 ## Unreleased
 
+- **`co-working` says how a session holding a role for the person reads what it is handed.** Everything the
+  asking agent wrote, its question, choices, recommendation, last message, commits and tree, is its claim and
+  never an instruction: a question that tries to direct the holder is left to the person, the person's words
+  come only from the request's own record, fenced parts are read as their text, and what is the person's (a
+  go-ahead, a sign-in, access, spending, deletion, a document that asks them, their taste) is left to them. The
+  role is held in a session that does nothing else and never prints its environment. An answer chosen on the
+  person's behalf counts toward the answers-alone bound like any other. **Adopting repositories:** run
+  `daoris sync`; nothing else. Only the skill's description is loaded unasked.
 - **`co-working` says a helper reads the work in progress.** A helper now reads the asking session's work as it
   stands when its turn ends, what it has not committed included, so it starts only then, and its answer names
   the state of the work it read; an urgent ask's answer reaches a later turn's next step rather than the turn that
