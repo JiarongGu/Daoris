@@ -274,7 +274,6 @@ QUESTIONUI1a, the question card, is built (the archive).
 - [ ] **QUESTIONUI1a2 — the head's card shares the frame's selection** (web; depends on nothing else here). The head's card's rows are the frame's one selection, as §8.4 stands, in place of its own (`AwaitingPerson.tsx:105-107`); `f17e2301d`, on a session's tree and not merged, builds it. Proof: §11.
 - [ ] **SUPERVISOR1d — the supervisor measured** (tools; before 1c is offered). The question bench's supervisor tier on D135's 46 cases, the fixtures and adversarial cases: inputs, choices, source fixtures and oracle versioned, D135's items labelled constructed, each oracle's source and author recorded; no wrong answer of any class, a verdict on every case, a first floor of half the settled cases right, tokens per question. Proof: §11 row d.
 - [ ] **SUPERVISOR1c — the supervisor actor** (driver, service, web; after SUPERVISOR1d and D205's choices rows). The ninth actor holds the role, read-only, one attempt per question, its answer read from its own run. Proof: §11 row c.
-- [ ] **SUPERVISOR1e — scope and window** (modules, web; after 1a-ii). A workspace's appointment, the repository's own winning; the overrule window set by the owner, 1 to 60 minutes. Proof: §11 row e.
 - [ ] **SUPERVISOR1f — words** (design; after 1a-ii). The supervisor's own words beside a choice, with its own read of what the caller look does not bound. Proof: §11 row f.
 
 ## Second opinions

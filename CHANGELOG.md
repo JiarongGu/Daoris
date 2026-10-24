@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- The supervisor, still not offered, can now be appointed for a whole workspace, and you set how long its answers wait for your
+  overrule (SUPERVISOR1e, D208). A workspace's Setup has a *Supervisor* row under *Sessions' access*: an appointment there answers
+  in every repository of the workspace, one you add later included, and a repository's own appointment wins over it. The ask sets
+  the overrule window, 1 to 60 minutes, five unless you change it, and the row and *Notifications* say the window each appointment
+  set.
 - A terminal's change that waits for your Confirm and rests on a plan now has *Look at it now* on its card (CONFIRMWAIT1c): a land
   opens its session's review, a set-up its repository's page, a sweep or a bring-up-to-date its workspace's Branches, and a history
   clear the workspace, quest or ask it clears. You see what it would act on as it stands now before you confirm a change asked hours
