@@ -572,7 +572,7 @@ describe('Settings → This Daoris', () => {
     const scope = within(card);
     expect(scope.getByText(`${size(143.5 * 1024 ** 3)} of ${size(1024 ** 4)}`)).toBeTruthy();
     expect(scope.getByText('Set-aside trees')).toBeTruthy();
-    expect(scope.getByText('kept 14 days; its package folders go an hour after the move')).toBeTruthy();
+    expect(scope.getByText("a finished session's tree goes an hour after its record is kept; others after 14 days")).toBeTruthy();
     expect(scope.getByText(
       `next: 3 folders, ${size(0.6 * 1024 ** 3)} on ${dayOf('2026-10-29T09:00:00.000+00:00')} · `
       + `last: ${clockOf('2026-10-16T08:10:00.000+00:00')}, 2 removed, ${size(1.1 * 1024 ** 3)}`,
@@ -649,7 +649,10 @@ describe('Settings → This Daoris', () => {
     // The log's days by the person's rule (KEEP1d), so the line names no number of days.
     expect(list.getByText(`1 file past its days, ${size(4 * 1024 ** 2)}`)).toBeTruthy();
     expect(list.getByText('What could go early, by your word')).toBeTruthy();
-    expect(list.getByText('2 folders before their date · 1 holds files of its own')).toBeTruthy();
+    // KEEPSIZE1b (the keep-size design §5): each set-aside folder's class, said with what the list can say of it.
+    expect(list.getByText(
+      '2 folders before their date · 1 holds files of its own · 1 with its record kept · 1 from before this version, or no finished tree: what holds its commits is not known',
+    )).toBeTruthy();
     expect(list.getByText('kept while the browser runs')).toBeTruthy();
     expect(list.getByText('2 folders · webview2, browser/profile')).toBeTruthy();
     expect(list.getByText("With their own press: Clear history… on a workspace's page · Clean up… on its Branches.")).toBeTruthy();
@@ -791,7 +794,7 @@ describe('Settings → This Daoris', () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE, SPACE_SET));
     open();
     const card = within(await screen.findByRole('region', { name: 'Disk space' }));
-    expect(card.getByText('kept 30 days; each folder kept whole')).toBeTruthy();
+    expect(card.getByText('finished trees kept 30 days, each with its record kept')).toBeTruthy();
     expect(card.getByText('kept until you remove it')).toBeTruthy();
     expect(card.getByText('kept 14 days')).toBeTruthy();
 
@@ -913,7 +916,7 @@ describe('Settings → This Daoris', () => {
       .toBeTruthy();
     expect(card.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
     const aside = row(card, 'Set-aside trees');
-    expect(aside.getByText('kept 14 days; its package folders go an hour after the move; sooner when space is low')).toBeTruthy();
+    expect(aside.getByText("a finished session's tree goes an hour after its record is kept; others after 14 days; sooner when space is low")).toBeTruthy();
     expect(aside.getByText(`on D:\\: ${size(300 * GIB)} of ${size(2048 * GIB)} · keep at least ${size(20 * GIB)}`).className).toContain('text-ink-soft');
   });
 
@@ -985,7 +988,7 @@ describe('Settings → This Daoris', () => {
 
     const card = within(await screen.findByRole('region', { name: '磁盘空间' }));
     expect(card.getByText('另行存放的工作树')).toBeTruthy();
-    expect(card.getByText('保留 14 天；其依赖包文件夹在移走一小时后移除')).toBeTruthy();
+    expect(card.getByText('已完成会话的工作树在其工作记录保存一小时后移除；其余在 14 天后移除')).toBeTruthy();
     expect(card.getByText('保留到你清除为止')).toBeTruthy();
     expect(card.getByText(`共 ${size(1024 ** 4)}，可用 ${size(143.5 * 1024 ** 3)}`)).toBeTruthy();
   });

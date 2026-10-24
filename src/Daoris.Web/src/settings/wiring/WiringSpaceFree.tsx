@@ -98,6 +98,11 @@ function EarlyGroup({ group, busy, onRemove }: { group: SpacePlan['early'][numbe
   // An earlier build's folders are named by their paths, which are content and stay as written.
   if (group.group === 'left-over') details.push(group.units.map((unit) => unit.id).join(', '));
   if (group.own > 0) details.push(t('settings.daoris.space.freeing.early.own', { count: group.own }));
+  // KEEPSIZE1b: each class the list can say of the set-aside folders, so the person weighs what goes before pressing.
+  for (const each of ['recorded', 'awaiting', 'stands', 'unmarked'] as const) {
+    const count = group.classes?.[each] ?? 0;
+    if (count > 0) details.push(t(`settings.daoris.space.freeing.early.class.${each}`, { count }));
+  }
   return (
     <li className="grid gap-1">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small">

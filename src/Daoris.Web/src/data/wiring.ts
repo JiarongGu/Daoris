@@ -197,7 +197,11 @@ export type SpacePlan = {
   schema: number;
   at: string;
   now: SpaceUnit[];
-  early: { group: string; count: number; bytes: number | null; own: number; units: SpaceUnit[] }[];
+  early: {
+    group: string; count: number; bytes: number | null; own: number; units: SpaceUnit[];
+    /** KEEPSIZE1b: the set-aside folders by class; absent from a driver before it, and on every other group. */
+    classes?: SetAsideClasses | null;
+  }[];
   doors: string[];
   unread: Record<string, string>;
 };
@@ -213,3 +217,9 @@ export type ActorEntry = { agent: string; model?: string | null; effort?: string
 
 /** One actor as `ACTORS` answers it (MODELROLE1c, D205 §9.4): set, as before, off, or an entry in driver.json that does not read. */
 export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null };
+
+/**
+ * The set-aside folders of the press's early group by class (KEEPSIZE1b, the keep-size design §5): recorded, its tip held by a ref or the
+ * line; awaiting its record; its branch standing (stopped or refused); and unmarked, from before this build or a stray.
+ */
+export type SetAsideClasses = { recorded: number; awaiting: number; stands: number; unmarked: number };
