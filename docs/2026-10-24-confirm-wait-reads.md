@@ -688,6 +688,8 @@ Codex's read stays owed under D191.
 
 Codex's read of the accepted design and D156's note at `16e0950e2`, owed since round 1 when its credits ran out, read after rows 1b and 1a-i were built: 16 findings, 9 blocking; reopen, keeping the unbounded wait, the separate cards and the withdrawal rule.
 
+The design's §15 and D156's amendment note of 2026-10-24 say where each finding went.
+
 ### 1. Claims about the code
 
 Read against `main` at `16e0950e2`, including both earlier reads verbatim and D156’s proposal, acceptance and built notes. The design’s §1 describes its earlier baseline; CONFIRMWAIT1b and 1a-i have since landed. Persistence remains unbuilt.
