@@ -562,7 +562,7 @@ internal sealed class TreeSetAside(TreeContext context)
             long bytes = 0;
             if (kept is null)
             {
-                (bytes, kept) = Remove(folder, judged.Hour ? GoingDoors.Hour : GoingDoors.Days, judged.Threshold, now);
+                (bytes, kept) = Remove(folder, judged.Hour ? GoingDoors.Hour : GoingDoors.Days, judged.Threshold, now, top: judged.Manifest?.Finished is not null);
                 // A refused rename (`busy`) or a failed delete is kept where the inventory reads it, waiting a day after the same failure twice.
                 if (kept is { } refused && refused.Code != SetAsideKept.Linked) failed.Add((folder, refused.Sentence, last.Why == refused.Sentence ? now : null));
             }
@@ -609,7 +609,9 @@ internal sealed class TreeSetAside(TreeContext context)
     /// resumed by <see cref="ResumeGoingAsync"/> with the folder's identity whole.</para>
     /// </summary>
     /// <param name="door">Which door removes it: <see cref="GoingDoors"/>.</param>
-    internal (long Bytes, (string Code, string Sentence)? Kept) Remove(string folder, string door, DateTimeOffset threshold, DateTimeOffset now)
+    /// <param name="top">A finished tree's folder, whose own top is read too (<see cref="Kept"/>).</param>
+    internal (long Bytes, (string Code, string Sentence)? Kept) Remove(
+        string folder, string door, DateTimeOffset threshold, DateTimeOffset now, bool top = false)
     {
         var repository = Path.GetDirectoryName(folder)!;
         var workspace = Path.GetDirectoryName(repository)!;
@@ -642,6 +644,16 @@ internal sealed class TreeSetAside(TreeContext context)
         if (SetAsideFaults.Current?.StopAfterRename == true) throw new SetAsideStop();
         try
         {
+            // The last fixes' check, finding 8: the rules' doors read the folder again under `.going`, where nothing writes by its old name, so a
+            // write between the purge's read and the rename puts it back whole; the press removes what its list disclosed and was chosen.
+            if (door != GoingDoors.Press
+                && WrittenSince(going, threshold, SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest, top) is { } late)
+            {
+                Directory.Move(going, folder);
+                TryDelete(record);
+                return (0, late);
+            }
+
             new GoingRecord(door, now, threshold, Started: true).Write(record);
             var bytes = DeleteNeverFollowing(going);
             TryDelete(SlimManifest.PathFor(folder));
@@ -660,9 +672,9 @@ internal sealed class TreeSetAside(TreeContext context)
     /// <summary>
     /// What a stop left under one place's <c>.tidied/.going</c> (Codex's read of the design, finding 5), each folder within the budget: one whose
     /// delete never began, or whose record does not read, goes back to its place whole; one whose delete began finishes only where no file
-    /// in it was written since its removal began and, for the hour's door, its holding check passes now; else what remains goes back, and the
-    /// result says why. 🔴 A folder reached through a link on the way, <c>.going</c> or any level below it included, is never touched (the
-    /// second maker's read, finding 2).
+    /// in it was written since its removal began and, for the hour's door, its holding check passes now; else what remains goes back, the
+    /// result says why, and a finished folder's manifest ends <c>unmarked</c> with that why (the last fixes' check, finding 8). 🔴 A folder
+    /// reached through a link on the way, <c>.going</c> or any level below it included, is never touched (the second maker's read, finding 2).
     /// </summary>
     private async Task ResumeGoingAsync(
         string root, Func<string, string, string?>? rootOf, Func<bool> spent, PurgeState state, List<SetAside> results, CancellationToken ct)
@@ -695,10 +707,20 @@ internal sealed class TreeSetAside(TreeContext context)
             var moved = MovedAt(name) ?? DateTimeOffset.MinValue;
             var path = GoingRecord.PathFor(folder);
             var record = GoingRecord.Read(path);
-            string? back = record is null ? "its removal's record does not read, so it was put back"
-                : !record.Started ? "its removal stopped before its delete began, so it was put back whole"
-                : FileWrittenSince(folder, record.At) is { } late ? $"something in it was written after its removal began ({late}), so what remains was put back"
-                : null;
+            string? back;
+            try
+            {
+                // The last fixes' check, finding 9: a folder whose remains cannot be read is put back, never a purge that throws.
+                back = record is null ? "its removal's record does not read, so it was put back"
+                    : !record.Started ? "its removal stopped before its delete began, so it was put back whole"
+                    : FileWrittenSince(folder, record.At) is { } late ? $"something in it was written after its removal began ({late}), so what remains was put back"
+                    : null;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                back = $"what remains of it could not be read ({error.Message.Trim()}), so it was put back";
+            }
+
             if (back is null && record!.Door == GoingDoors.Hour)
             {
                 var manifest = SlimManifest.Read(SlimManifest.PathFor(place)).Manifest;
@@ -714,6 +736,9 @@ internal sealed class TreeSetAside(TreeContext context)
                     if (Directory.Exists(place)) throw new IOException($"{place} is there again");
                     Directory.Move(folder, place);
                     TryDelete(path);
+                    // The last fixes' check, finding 8: a finished folder whose delete began is no longer what was recorded, so whatever put it back,
+                    // a late write or a check that did not pass or could not run, it ends unmarked, saying why, and waits its days.
+                    if (record is { Started: true }) Unmark(place, back);
                     results.Add(new SetAside(place, moved, false, back, SetAsideKept.Returned));
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -763,6 +788,21 @@ internal sealed class TreeSetAside(TreeContext context)
         }
 
         return null;
+    }
+
+    /// <summary>A finished folder's manifest marked <c>unmarked</c>, saying <paramref name="why"/>; one that does not read, or is no finished tree's, is left as it is.</summary>
+    private static void Unmark(string folder, string why)
+    {
+        var path = SlimManifest.PathFor(folder);
+        if (SlimManifest.Read(path).Manifest is not { Finished: not null } manifest) return;
+        try
+        {
+            (manifest with { State = SlimStates.Unmarked, Why = why }).Write(path);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Read again at the next pass: its late write, or its holding check, keeps it the same way.
+        }
     }
 
     /// <summary>
@@ -993,6 +1033,7 @@ internal sealed class TreeSetAside(TreeContext context)
                 if (entry.Attributes.HasFlag(FileAttributes.ReadOnly)) entry.Attributes &= ~FileAttributes.ReadOnly;
                 bytes += ((FileInfo)entry).Length;
                 entry.Delete();
+                if (SetAsideFaults.Current?.StopInDelete == true) throw new SetAsideStop();
             }
         }
 

@@ -36,7 +36,8 @@ internal sealed record RecordRefusal(string Why, bool NoDoor = false);
 /// </list>
 /// <para>🔴 A registry that could not be read is not a registry that names no checkout (the second maker's read, finding 3): with none, no
 /// step runs, so nothing is unmarked and no record is posted without its commits for an outage. A git read that failed posts nothing
-/// either; only a tip git says is missing, or a range not known, is posted without its commits.</para>
+/// either, nor does a repository the registry does not name (the last fixes' check, finding 2); only a tip git says is missing, or a range
+/// not known, is posted without its commits.</para>
 /// <para>Within the pass's budget (finding 6): between folders, never inside one's steps.</para>
 /// </summary>
 internal sealed class FinishedRecords(TreeSetAside setAside)
@@ -81,8 +82,10 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
             if (state == SlimStates.Deleted)
             {
                 if (post is null) continue;
+                // 🔴 The last fixes' check, finding 2: a repository the registry does not name is read as a git read that failed, never as one
+                // with no commits, since the post is idempotent and a record kept without them stays so; it waits, said, past its days.
                 var (commits, unread, failedRead) = root is null
-                    ? (null, "the registry names no checkout of its repository on this machine", null)
+                    ? (null, null, SetAsideEligibility.NoCheckout)
                     : await CommitsAsync(root, finished, ct).ConfigureAwait(false);
                 if (failedRead is not null)
                 {

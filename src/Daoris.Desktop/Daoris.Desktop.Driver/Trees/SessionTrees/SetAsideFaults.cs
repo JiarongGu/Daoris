@@ -3,7 +3,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// The moments a test's flow interleaves with the set-aside's destructive steps (KEEPSIZE1b, Codex's reads of the design and the branch):
 /// a holder moved between the tip's ref and the branch's delete, a tracked file deleted between the judgement and the move, git refusing
-/// to let go of a tree and the folder's put-back refused, and a stop right after the move or right after a removal's rename. Null in
+/// to let go of a tree and the folder's put-back refused, and a stop right after the move, right after a removal's rename, or inside its
+/// delete. Null in
 /// production, as <see cref="ChildProcess"/>'s seams are; set for one flow alone (<see cref="Within"/>).
 /// </summary>
 internal static class SetAsideFaults
@@ -47,6 +48,12 @@ internal sealed class SetAsideFault
 
     /// <summary>The process stops right after a removal's rename into <c>.going</c>, before its delete.</summary>
     public bool StopAfterRename { get; init; }
+
+    /// <summary>
+    /// The process stops inside a removal's delete, right after its first file is deleted: its record in <c>.going</c> says the delete began,
+    /// and what remains lies there for the resume.
+    /// </summary>
+    public bool StopInDelete { get; init; }
 }
 
 /// <summary>A stop a test's flow makes (<see cref="SetAsideFault"/>): the process ends here, as a crash would.</summary>

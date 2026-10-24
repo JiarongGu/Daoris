@@ -44,6 +44,13 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
     /// <summary>The holding check's words where the branch stands: the one the press lists a stopped or refused folder by as standing.</summary>
     internal const string BranchStands = "its branch stands";
 
+    /// <summary>
+    /// Why a folder waits where the registry read and names no checkout of its repository: a recorded one's check cannot run, an awaiting one's
+    /// commits cannot be read, so neither goes nor is posted, and the card counts it with this reason, never as next (the last fixes' check,
+    /// findings 2 and 7).
+    /// </summary>
+    internal const string NoCheckout = "the registry names no checkout of its repository on this machine";
+
     /// <summary>The folder a removal renames its folder into first (§3.4), under <c>.tidied</c>: every other reader passes over it.</summary>
     internal const string Going = ".going";
 
@@ -87,7 +94,7 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
     internal static async Task<(Holding Result, string? Why)> HoldingAsync(string? root, SlimManifest manifest, CancellationToken ct)
     {
         if (manifest.Finished is not { } finished) return (Holding.Failed, "it has no finished tree's manifest");
-        if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return (Holding.Unread, "the registry names no checkout of its repository on this machine");
+        if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return (Holding.Unread, NoCheckout);
         // Only git's own "missing", show-ref --exists exiting 2, says the branch is absent (git-ref-absence.md); 0 says it stands.
         var (code, _, err) = await WorkingTree.GitAsync(root, ["show-ref", "--exists", $"refs/heads/{manifest.Branch}"], ct).ConfigureAwait(false);
         if (code == 0) return (Holding.Failed, BranchStands);

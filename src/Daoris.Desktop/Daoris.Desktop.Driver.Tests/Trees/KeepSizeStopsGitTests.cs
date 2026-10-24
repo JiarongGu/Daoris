@@ -198,6 +198,109 @@ public sealed class KeepSizeStopsGitTests : KeepSizeFixture
     }
 
     /// <summary>
+    /// 🔴 The last fixes' check, finding 1: a stop inside the hour's delete, its first file gone and its record saying the delete began. A file
+    /// written into what remains puts it back at the next purge, said, the rest of it intact, and its manifest ends <c>unmarked</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_inside_the_hours_delete_puts_back_what_remains_where_a_file_was_written()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        await LandedTreeAsync(trees, root);
+        var aside = await SetAsideAsync(trees, root);
+        // Recorded an hour ago by the clock, so the removal begins now and a file written after it is a write.
+        await RecordAsync(trees, root, DateTimeOffset.UtcNow.AddMinutes(-61));
+        var files = Files(aside);
+
+        using (SetAsideFaults.Within(new SetAsideFault { StopInDelete = true }))
+        {
+            await Assert.ThrowsAsync<SetAsideStop>(() => PurgeAsync(trees, DateTimeOffset.UtcNow, root));
+        }
+
+        var going = GoingOf(trees, aside);
+        var remains = Files(going);
+        Assert.Equal(files.Count - 1, remains.Count);
+        Assert.Subset(files.ToHashSet(), remains.ToHashSet());
+        await File.WriteAllTextAsync(Path.Combine(going, "late.txt"), "written while its delete stood stopped\n");
+
+        var back = Assert.Single(await PurgeAsync(trees, DateTimeOffset.UtcNow, root));
+
+        Assert.Equal((aside, false, SetAsideKept.Returned), (back.Folder, back.Purged, back.Code));
+        Assert.Contains("written after its removal began (late.txt)", back.Kept, StringComparison.Ordinal);
+        Assert.Equal(remains.Append("late.txt").Order(StringComparer.Ordinal), Files(aside));
+        Assert.Equal(SlimStates.Unmarked, Manifest(aside).State);
+        Assert.False(Directory.Exists(going));
+        Assert.False(File.Exists(GoingRecord.PathFor(going)));
+    }
+
+    /// <summary>
+    /// 🔴 The last fixes' check, finding 1: a stop inside the hour's delete, then the tip's ref dropped. The next purge's holding check fails, so
+    /// what remains goes back, said, and its manifest is <c>unmarked</c>: it waits its days.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_inside_the_hours_delete_puts_back_what_remains_where_its_ref_was_dropped()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var tree = await TreeWithWorkAsync(trees, root);
+        await GitAsync(root, "checkout", "--quiet", "-b", "feature/squashed");
+        await SquashAsync(root, tree.Branch);
+        await GitAsync(root, "checkout", "--quiet", "main");
+        await GitAsync(root, "merge", "--no-ff", "--no-edit", "feature/squashed");
+        var aside = await SetAsideAsync(trees, root);
+        var reference = Manifest(aside).Finished!.Ref!;
+        await RecordAsync(trees, root, DateTimeOffset.UtcNow.AddMinutes(-61));
+        var files = Files(aside);
+
+        using (SetAsideFaults.Within(new SetAsideFault { StopInDelete = true }))
+        {
+            await Assert.ThrowsAsync<SetAsideStop>(() => PurgeAsync(trees, DateTimeOffset.UtcNow, root));
+        }
+
+        await GitAsync(root, "update-ref", "-d", reference);
+        var back = Assert.Single(await PurgeAsync(trees, DateTimeOffset.UtcNow, root));
+
+        Assert.Equal((aside, false, SetAsideKept.Returned), (back.Folder, back.Purged, back.Code));
+        Assert.Contains("is gone, so nothing holds its tip", back.Kept, StringComparison.Ordinal);
+        Assert.Contains("what remains was put back", back.Kept, StringComparison.Ordinal);
+        Assert.Equal(files.Count - 1, Files(aside).Count);
+        Assert.Equal(SlimStates.Unmarked, Manifest(aside).State);
+        Assert.False(Directory.Exists(GoingOf(trees, aside)));
+    }
+
+    /// <summary>
+    /// 🔴 The last fixes' check, finding 1: a stop inside the days' delete with nothing written since. The next purge finishes it with no
+    /// holding check, a registry or none, and its manifest and its removal's record go with it.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_inside_the_days_delete_finishes_where_nothing_was_written()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        await LandedTreeAsync(trees, root);
+        var aside = await SetAsideAsync(trees, root);
+        (Manifest(aside) with { State = SlimStates.Unmarked }).Write(SlimManifest.PathFor(aside));
+        var due = DateTimeOffset.UtcNow.AddDays(15);
+
+        using (SetAsideFaults.Within(new SetAsideFault { StopInDelete = true }))
+        {
+            await Assert.ThrowsAsync<SetAsideStop>(() => PurgeAsync(trees, due));
+        }
+
+        var going = GoingOf(trees, aside);
+        Assert.True(Directory.Exists(going));
+        Assert.True(File.Exists(SlimManifest.PathFor(aside)));
+
+        var gone = Assert.Single(await PurgeAsync(trees, due));
+
+        Assert.Equal((aside, true, false), (gone.Folder, gone.Purged, gone.Hour));
+        Assert.False(Directory.Exists(going));
+        Assert.False(Directory.Exists(aside));
+        Assert.False(File.Exists(SlimManifest.PathFor(aside)));
+        Assert.False(File.Exists(GoingRecord.PathFor(going)));
+    }
+
+    /// <summary>
     /// 🔴 Round 3's finding 1: a stop at <c>judged</c> with its folder present keeps its manifest through the slim and reaches its record once
     /// its branch is gone.
     /// </summary>

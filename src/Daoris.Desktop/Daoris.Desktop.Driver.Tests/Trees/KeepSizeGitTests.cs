@@ -408,6 +408,35 @@ public sealed class KeepSizeGitTests : KeepSizeFixture
     }
 
     /// <summary>
+    /// 🔴 The last fixes' check, finding 2: a registry that reads and names no checkout of the repository is a git read that failed, never one
+    /// with no commits: nothing is posted, the folder stays awaiting, said, past its days; once the registry names it, its record is posted with
+    /// its commits.
+    /// </summary>
+    [Fact]
+    public async Task A_repository_the_registry_does_not_name_posts_nothing_until_it_does()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        await LandedTreeAsync(trees, root);
+        var aside = await SetAsideAsync(trees, root);
+        var now = DateTimeOffset.UtcNow;
+
+        await RecordAsync(trees, null, now);
+
+        Assert.Empty(_posts);
+        Assert.Equal((SlimStates.Deleted, SetAsideEligibility.NoCheckout), (Manifest(aside).State, Manifest(aside).Why));
+        Assert.Empty(await PurgeAsync(trees, now.AddDays(20), root));
+        Assert.True(Directory.Exists(aside));
+
+        await RecordAsync(trees, root, now.AddDays(20));
+
+        var post = Assert.Single(_posts);
+        Assert.Null(post.Unread);
+        Assert.NotEmpty(Assert.IsAssignableFrom<IReadOnlyList<FinishedCommit>>(post.Commits));
+        Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
+    }
+
+    /// <summary>
     /// 🔴 Codex's read of the design, finding 6: the landing that carried the tree's work is captured before the move, so the record names it
     /// after the landings' trace is gone: its branch and when it landed, never the move's moment.
     /// </summary>

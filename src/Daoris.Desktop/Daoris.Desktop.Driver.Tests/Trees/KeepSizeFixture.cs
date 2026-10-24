@@ -44,4 +44,11 @@ public abstract class KeepSizeFixture : BranchTidyingFixture
         (await trees.KeepSetAsideAsync(policy ?? KeepPolicy.Default, now, TimeSpan.FromMinutes(5), CancellationToken.None, root is null ? null : Roots(root))).Purged;
 
     protected static string Going(SessionTrees trees) => Path.Combine(trees.SetAsideRoot, SetAsideEligibility.Going);
+
+    /// <summary>Where a removal holds <paramref name="aside"/> under <c>.going</c>: its workspace, repository and name kept.</summary>
+    protected static string GoingOf(SessionTrees trees, string aside) => Path.Combine(Going(trees), Path.GetRelativePath(trees.SetAsideRoot, aside));
+
+    /// <summary>Every file under <paramref name="folder"/>, by its path from it, in order.</summary>
+    protected static List<string> Files(string folder) =>
+        [.. Directory.GetFiles(folder, "*", SearchOption.AllDirectories).Select(file => Path.GetRelativePath(folder, file).Replace('\\', '/')).Order(StringComparer.Ordinal)];
 }
