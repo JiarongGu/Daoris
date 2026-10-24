@@ -1343,6 +1343,12 @@ public sealed class InstancePipe : IDisposable
                 { } seen when seen.Binding.Key != holder => RefuseTaken(request),
                 { State: PipeJournal.Seen.Answered, Answer: { } answer } =>
                     IpcResponse.CreateSuccess(request.Id, new { state = "answered", answer = JsonDocument.Parse(answer).RootElement.Clone() }),
+                // CONFIRMWAIT1 (the confirm-wait design §15.3 item 10): begun and never ended, it stopped while under way, as WITHDRAW says.
+                { State: PipeJournal.Seen.Interrupted } => IpcResponse.CreateSuccess(request.Id, new
+                {
+                    state = "answered",
+                    answer = JsonSerializer.SerializeToElement(InterruptedAnswer(id), IpcJson.Options),
+                }),
                 _ => IpcResponse.CreateSuccess(request.Id, new { state = "unknown" }),
             };
         }
@@ -1385,8 +1391,7 @@ public sealed class InstancePipe : IDisposable
                     state = "ended",
                     answer = seen.State == PipeJournal.Seen.Answered && seen.Answer is { } answer
                         ? JsonDocument.Parse(answer).RootElement.Clone()
-                        : JsonSerializer.SerializeToElement(IpcResponse.CreateError(id, Interrupted, null,
-                            "Daoris stopped while this request was under way, so whether it was done is not known; it was not run again."), IpcJson.Options),
+                        : JsonSerializer.SerializeToElement(InterruptedAnswer(id), IpcJson.Options),
                 });
             }
             else
@@ -1408,6 +1413,10 @@ public sealed class InstancePipe : IDisposable
 
         return IpcResponse.CreateSuccess(request.Id, new { state = "running" });
     }
+
+    /// <summary>The answer of a press begun by an instance that stopped before it ended: whether it was done is not known.</summary>
+    private static IpcResponse InterruptedAnswer(string id) => IpcResponse.CreateError(id, Interrupted, null,
+        "Daoris stopped while this request was under way, so whether it was done is not known; it was not run again.");
 
     private static string? Field(IpcRequest request, string name) =>
         request.Payload is { ValueKind: JsonValueKind.Object } payload && payload.TryGetProperty(name, out var named)
