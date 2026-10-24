@@ -46,6 +46,57 @@ public sealed class ChatTurnsTests
         Assert.False(took);
         turns.Gone();
     }
+
+    /// <summary>
+    /// CHATFLOW1d (the chat-flow design §5.2 point 1): a word sent while the person's Accept holds the turns is kept and waits, shown
+    /// queued, and starts no turn; once the press answers, landed or refused, it starts at once as the next turn, never dropped.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_word_sent_under_the_press_waits_and_starts_once_the_press_answers(bool now)
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        Assert.True(await turns.PressAsync());
+
+        if (now) Assert.False((await turns.TakeNowAsync(new ChatMessage("while it lands", [])))!.Now);
+        else Assert.Equal(TurnReach.TurnEnd, turns.Take(new ChatMessage("while it lands", [])));
+        await Task.Delay(50);
+        Assert.Empty(door.Took);
+        Assert.Equal(["while it lands"], turns.State.Queued.Select(word => word.Text));
+
+        turns.Pressed();
+        await Poll.Until(() => door.Took.Count == 1);
+        Assert.Equal(["while it lands"], door.Took);
+        Assert.False(turns.Pressing);
+        door.EndTurn(0);
+        turns.Gone();
+    }
+
+    /// <summary>
+    /// CHATFLOW1d (§5.2 point 1): the press reserves nothing while a turn runs or a word waits, and nothing twice; let go, it reserves again.
+    /// </summary>
+    [Fact]
+    public async Task The_press_reserves_nothing_while_a_turn_runs_and_nothing_twice()
+    {
+        var door = new Door();
+        var turns = door.Turns();
+        turns.Say(new ChatMessage("first", []));
+        await Poll.Until(() => door.Took.Count == 1);
+        Assert.False(await turns.PressAsync());
+        Assert.False(turns.Pressing);
+
+        door.EndTurn(0);
+        await Poll.Until(() => !turns.Running);
+        Assert.True(await turns.PressAsync());
+        Assert.False(await turns.PressAsync());
+        turns.Pressed();
+        Assert.True(await turns.PressAsync());
+        turns.Pressed();
+        turns.Gone();
+    }
+
     /// <summary>A door whose turns end when the test says, and which records what reached it.</summary>
     private sealed class Door
     {

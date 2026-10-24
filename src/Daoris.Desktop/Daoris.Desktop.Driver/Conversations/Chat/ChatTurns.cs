@@ -85,6 +85,9 @@ internal sealed class ChatTurns(
     // Waiting for its account's limit to reset (LIMITRESUME1c, D206 §3.5): a word is kept and waits, and starts no turn on a process
     // whose account would refuse it, until the wake hands them all over in one (WakeFromLimit) or a move takes them (HoldLimited).
     private bool _limited;
+    // Reserved for the person's Accept on a chat run (CHATFLOW1d, the chat-flow design §5.2 point 1): a word is kept and waits, shown
+    // queued, but starts no turn, from the press's capture through its landing hold, until the press answers (Pressed).
+    private bool _pressing;
     private bool _gone;
     private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
@@ -483,6 +486,62 @@ internal sealed class ChatTurns(
         }
     }
 
+    /// <summary>
+    /// Reserve the turns for the person's Accept (CHATFLOW1d, the chat-flow design §5.2 point 1): the dispatcher's keep first, so a word
+    /// whose keeping is in flight finishes being kept and is taken before anything is tested; then, under the turns' own lock, true where
+    /// nothing is taking, opening, held or waiting, and from then on a word is kept and waits, starting no turn, until
+    /// <see cref="Pressed"/>. False where a turn runs or a word waits, or the conversation is finishing, held, gone or reserved already.
+    /// </summary>
+    public async Task<bool> PressAsync(CancellationToken ct = default)
+    {
+        await _keeping.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            lock (_gate)
+            {
+                if (_pumping || _opening || _holding is not null || _waiting.Count > 0 || _finishing || _gone || _held || _pressing) return false;
+                _pressing = true;
+                return true;
+            }
+        }
+        finally
+        {
+            _keeping.Release();
+        }
+    }
+
+    /// <summary>Whether the turns are reserved for the person's Accept (<see cref="PressAsync"/>).</summary>
+    public bool Pressing
+    {
+        get
+        {
+            lock (_gate) return _pressing;
+        }
+    }
+
+    /// <summary>
+    /// The press answered, landed or refused (CHATFLOW1d): the reservation let go, and a word that waited under it starts at once, as the
+    /// next turn. Nothing where nothing was reserved.
+    /// </summary>
+    public void Pressed()
+    {
+        bool start;
+        lock (_gate)
+        {
+            if (!_pressing) return;
+            _pressing = false;
+            start = _waiting.Count > 0 && !_pumping && !_limited && !_gone && !_finishing && !_held;
+            if (start)
+            {
+                _pumping = true;
+                _drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+        }
+
+        if (start) _ = PumpAsync();
+        lock (_gate) Publish();
+    }
+
     /// <summary>Whether its words wait for its account's limit to reset (<see cref="WaitForLimit"/>).</summary>
     public bool Limited
     {
@@ -508,7 +567,7 @@ internal sealed class ChatTurns(
             _waiting.Clear();
             _waiting.Add(compose(waited));
             _limited = false;
-            start = !_pumping;
+            start = !_pumping && !_pressing;
             if (start)
             {
                 _pumping = true;
@@ -592,8 +651,8 @@ internal sealed class ChatTurns(
             }
 
             _waiting.Add(Stamped(message));
-            // LIMITRESUME1c: waiting for the limit, a word waits with the rest and starts nothing.
-            start = !_pumping && !_limited;
+            // LIMITRESUME1c: waiting for the limit, a word waits with the rest and starts nothing; CHATFLOW1d: so under the person's press.
+            start = !_pumping && !_limited && !_pressing;
             if (start)
             {
                 _pumping = true;
