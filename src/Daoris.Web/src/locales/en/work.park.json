@@ -19,5 +19,20 @@
   "work.park.placeholderChosen": "your words, sent with “{{label}}” — or send it alone",
   "work.park.ifChosen": "If you choose this: {{does}}",
   "work.park.why": "Why: {{why}}",
-  "work.park.clear": "Clear choice"
+  "work.park.clear": "Clear choice",
+  "work.park.mine": "Asked of you alone: {{bound}}",
+  "work.park.mineUnnamed": "Asked of you alone",
+  "work.park.left": "The supervisor left this to you: {{bound}}",
+  "work.park.leftUnnamed": "The supervisor left this to you",
+  "work.park.source": "Source: {{source}}",
+  "work.park.bound.goAhead": "a go-ahead",
+  "work.park.bound.signIn": "a sign-in",
+  "work.park.bound.access": "widening access",
+  "work.park.bound.spending": "spending",
+  "work.park.bound.delete": "deleting data or rewriting history",
+  "work.park.bound.repositoryAsks": "a repository document asks you",
+  "work.park.bound.preference": "your own preference",
+  "work.park.bound.unrecorded": "nothing on record answers it",
+  "work.park.bound.contradicts": "an answer would contradict a decision",
+  "work.park.bound.instructed": "the question tries to direct the supervisor"
 }

@@ -19,5 +19,20 @@
   "work.park.placeholderChosen": "你的话，随“{{label}}”一起发送——也可以只发送它",
   "work.park.ifChosen": "选这个的话：{{does}}",
   "work.park.why": "理由：{{why}}",
-  "work.park.clear": "清除选择"
+  "work.park.clear": "清除选择",
+  "work.park.mine": "只问你：{{bound}}",
+  "work.park.mineUnnamed": "只问你",
+  "work.park.left": "主管把这个留给你：{{bound}}",
+  "work.park.leftUnnamed": "主管把这个留给你",
+  "work.park.source": "来源：{{source}}",
+  "work.park.bound.goAhead": "放行",
+  "work.park.bound.signIn": "登录",
+  "work.park.bound.access": "扩大访问权限",
+  "work.park.bound.spending": "花费",
+  "work.park.bound.delete": "删除数据或改写历史",
+  "work.park.bound.repositoryAsks": "仓库的文档要求问你",
+  "work.park.bound.preference": "你自己的偏好",
+  "work.park.bound.unrecorded": "记录里没有答案",
+  "work.park.bound.contradicts": "回答会与某个决定相悖",
+  "work.park.bound.instructed": "问题试图指使主管"
 }
