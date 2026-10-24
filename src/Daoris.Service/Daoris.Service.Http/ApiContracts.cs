@@ -534,6 +534,9 @@ public sealed record HelperOpenRequest(string? Asker, string? Adapter, string? T
 public sealed record PartnerOpenRequest(
     string? Lead, string? Piece, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
 public sealed record HelperHandRequest(string? Text, bool? Running = null, string? Level = null);
+// CHATFLOW1e (the chat-flow design §6.1 (a), (e)): a first pass's findings handed to a chat run's record the driver names, the line's newest
+// in its tree, live between turns or ended; none for the working session itself, as before.
+public sealed record OpinionHandRequest(string? To = null);
 // A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word.
 public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
 // BRAINSTORM1a3 (D176 points 1, 2 and 8): a person's question for a brainstorm, every part nullable so one left out is refused by
@@ -853,6 +856,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(OpinionActionResponse))]
 [JsonSerializable(typeof(HelperOpenRequest))]
 [JsonSerializable(typeof(HelperHandRequest))]
+[JsonSerializable(typeof(OpinionHandRequest))]
 [JsonSerializable(typeof(PartnerOpenRequest))]
 [JsonSerializable(typeof(HelperActionResponse))]
 [JsonSerializable(typeof(BrainstormAskRequest))]
