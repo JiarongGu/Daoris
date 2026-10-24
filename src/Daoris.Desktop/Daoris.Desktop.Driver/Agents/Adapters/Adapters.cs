@@ -1729,6 +1729,10 @@ public sealed class StubAdapter : ISessionAdapter
         Windows: ClaudeWindows.Words,
         // And its words for a start refused for its sign-in (ROSTER1b), mirrored so a tick can gate one with no account.
         SignIn: ClaudeSignIn.Words,
+        // And its provider's codes for an error's kind (AGENTERRORS1a), mirrored so a stand-in can gate a retry with no model: the kind
+        // words and statuses alone, so a stand-in's failure that names no code (TURNFAIL1's) keeps today's end. No -32000 declaration:
+        // the protocol stub answers every failed turn with it.
+        ErrorWords: ClaudeErrors.Codes,
         // Its own home is nobody's, so a start that names no account still runs there (OWNSPACE1a): the rehearsal's no-account
         // starts keep running as they did.
         RunsInOwnHome: true);
@@ -1932,7 +1936,10 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
         TrustFile: ClaudeTrust.FileName,
         // Its prompt response's `usage` is each turn's own, not a running sum: measured on claude-code-acp 0.79.0, two turns
         // (stream-json evidence, CONV5; USAGECAP1a2).
-        TurnReport: UsageHistory.PerTurn);
+        TurnReport: UsageHistory.PerTurn,
+        // Its own server's word that -32000 means authentication required (AGENTERRORS1a, the agent-errors design §4.4), read from
+        // this entry alone; the provider's kind words and transient sentences are its owner's, read after it.
+        ErrorWords: ClaudeAcpErrors.Words);
 
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : Toolchain!.Binary;
@@ -2407,7 +2414,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         Usage: ClaudeUsage.Question,
         // Its `result.usage` is each turn's own total, summed over the turn's calls: measured on 2.1.282 (stream-json evidence,
         // CONV5; USAGECAP1a2).
-        TurnReport: UsageHistory.PerTurn);
+        TurnReport: UsageHistory.PerTurn,
+        // Its provider's error words (AGENTERRORS1a, the agent-errors design §4.4): the SDK's kind words, the statuses and the
+        // recorded transient sentences, which its ACP door reads after its own entry.
+        ErrorWords: ClaudeErrors.Words);
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a

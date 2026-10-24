@@ -48,6 +48,7 @@
     "AcpTurnFailureTickTests.cs": "Loop",
     "AcrossTests.cs": "Agents",
     "AdapterTests.cs": "Agents",
+    "AgentErrorsTests.cs": "Agents",
     "AgentSettingsTests.cs": "Accounts",
     "AnswerContinuesPlanTests.cs": "Quests",
     "AnswerContinuesTickTests.cs": "Loop",
