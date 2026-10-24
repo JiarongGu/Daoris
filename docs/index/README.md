@@ -344,7 +344,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-cowork-view-design.md` | 49 | 573 |
 | `docs/2026-10-24-keep-size-design.md` | 86 | 864 |
 | `docs/2026-10-24-keep-size-reads.md` | 121 | 1074 |
-| `docs/2026-10-24-steward-role-design.md` | 151 | 1196 |
+| `docs/2026-10-24-steward-role-design.md` | 178 | 1386 |
 | `docs/2026-10-24-steward-role-reads.md` | 127 | 1237 |
 | `docs/2026-10-24-supervisor-design.md` | 197 | 1609 |
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
