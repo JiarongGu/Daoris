@@ -3,7 +3,7 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
-import type { AppointmentAnswer, AppointmentNow, StandingAnswer, StandingConfirmationNow, StandingUnread } from '../person/standing';
+import type { AppointmentAnswer, AppointmentNow, HolderNow, StandingAnswer, StandingConfirmationNow, StandingUnread } from '../person/standing';
 import { call, confirmBound, refusedNoRoute } from './call';
 import { notPushed } from './state/slices';
 
@@ -238,39 +238,68 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     used: typeof shaped.used === 'number' && Number.isFinite(shaped.used) ? shaped.used : 0,
     held: strings(shaped.held),
     appointmentsOffered: shaped.appointmentsOffered === true,
+    supervisorOffered: shaped.supervisorOffered === true,
+    stewardOffered: shaped.stewardOffered === true,
     appointments: appointmentsOf(shaped.appointments),
+    holders: holdersOf(shaped.holders),
   };
 }
 
-/** The owner's appointments (SUPERVISOR1a-ii), each read field by field; one with no role or repository is left out. */
+/**
+ * The owner's appointments (SUPERVISOR1a-ii; STEWARDROLE1a-i's scope), each read field by field; one with no role, or with neither a
+ * scope nor a repository, is left out.
+ */
 function appointmentsOf(raw: unknown): AppointmentNow[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((each): AppointmentNow[] => {
     if (typeof each !== 'object' || each === null) return [];
     const shaped = each as Record<string, unknown>;
-    if (typeof shaped.role !== 'string' || typeof shaped.repository !== 'string') return [];
+    const repository = typeof shaped.repository === 'string' ? shaped.repository : '';
+    const scope = typeof shaped.scope === 'string' && shaped.scope.length > 0 ? shaped.scope
+      : repository ? `repository:${repository}` : null;
+    if (typeof shaped.role !== 'string' || scope === null) return [];
     return [{
       role: shaped.role,
-      repository: shaped.repository,
+      repository,
       holder: typeof shaped.holder === 'string' ? shaped.holder : 'terminal',
       since: typeof shaped.since === 'string' && shaped.since.length > 0 ? shaped.since : null,
       dormant: shaped.dormant === true,
       answers: typeof shaped.answers === 'number' && Number.isFinite(shaped.answers) ? shaped.answers : 0,
+      scope,
+      holderId: typeof shaped.holderId === 'string' && shaped.holderId.length > 0 ? shaped.holderId : null,
+    }];
+  });
+}
+
+/** The living holders (STEWARDROLE1a-i, D209 §2.2), each read field by field; one with no id is left out. */
+function holdersOf(raw: unknown): HolderNow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((each): HolderNow[] => {
+    if (typeof each !== 'object' || each === null) return [];
+    const shaped = each as Record<string, unknown>;
+    if (typeof shaped.id !== 'string' || shaped.id.length === 0) return [];
+    return [{
+      id: shaped.id,
+      since: typeof shaped.since === 'string' && shaped.since.length > 0 ? shaped.since : null,
+      roles: strings(shaped.roles),
     }];
   });
 }
 
 /**
- * The owner's appointment of a role, or its turning off (SUPERVISOR1a-ii, D208 §2.3, §5): `on` true appoints, which makes the window
- * start the holder's terminal with the key in its environment; false turns it off at once. Sent from the window alone (the census
- * refuses it to a terminal). The answer is read field by field, so a refusal keeps its code; it never carries a key. The route
- * declares `sessions` and `driver`, so the state hub reads both again (D169 point 6).
+ * The owner's appointment of a role, or its turning off (SUPERVISOR1a-ii, D208 §2.3, §5; STEWARDROLE1a-i, D209 §2.2, §2.3): `on`
+ * true appoints, which makes the window start a holder's tab, Daoris's own pinned harness with the key in its environment, or add the
+ * role to a living holder; false turns that one appointment off at once. The scope is `repository:<name>` for a repository's role and
+ * `machine` for the steward's; `share` is a later *Appoint…*'s choice while a holder lives, `own` or that holder's id. Sent from the
+ * window alone (the census refuses it to a terminal). The answer is read field by field, so a refusal keeps its code; it never
+ * carries a key. The route declares `sessions` and `driver`, so the state hub reads both again (D169 point 6).
  */
 export function useSetAppointment() {
   return useMutation({
-    mutationFn: async ({ role, repository, on }: { role: string; repository: string; on: boolean }): Promise<AppointmentAnswer> => {
+    mutationFn: async ({ role, repository, on, share }: { role: string; repository?: string; on: boolean; share?: string }): Promise<AppointmentAnswer> => {
+      const scope = repository ? `repository:${repository}` : 'machine';
       const answer = await call<{ done?: boolean; why?: string | null; message?: string | null }>(
-        'SET_APPOINTMENT', { role, repository, holder: 'terminal', on });
+        'SET_APPOINTMENT', { role, scope, holder: 'terminal', on, ...(share ? { share } : {}) });
       return { done: answer?.done === true, why: answer?.why ?? null, message: answer?.message ?? '' };
     },
   });

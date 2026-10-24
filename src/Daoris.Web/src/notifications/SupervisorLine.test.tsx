@@ -12,7 +12,9 @@ import type { AppointmentNow } from '../person/standing';
 import { SupervisorLine } from './SupervisorLine';
 
 const SINCE = '2026-10-24T14:02:00Z';
-const LIVE: AppointmentNow = { role: 'supervisor', repository: 'engine', holder: 'terminal', since: SINCE, dormant: false, answers: 2 };
+const LIVE: AppointmentNow = {
+  role: 'supervisor', repository: 'engine', holder: 'terminal', since: SINCE, dormant: false, answers: 2, scope: 'repository:engine', holderId: 'h1',
+};
 
 describe("Notifications' supervisor line", () => {
   afterEach(async () => {

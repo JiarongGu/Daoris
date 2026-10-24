@@ -27,7 +27,7 @@ import { StandingLine } from './StandingLine';
 const SINCE = '2026-10-23T09:30:00Z';
 const ON: StandingConfirmationNow = {
   offered: true, on: true, presses: ['stop', 'finish'], built: ['stop', 'finish', 'hold', 'resume'], since: SINCE, unread: null,
-  unwritten: false, used: 3, held: [], appointmentsOffered: false, appointments: [],
+  unwritten: false, used: 3, held: [], appointmentsOffered: false, appointments: [], supervisorOffered: false, stewardOffered: false, holders: [],
 };
 const OFF: StandingConfirmationNow = { ...ON, on: false, presses: [], since: null, used: 0 };
 

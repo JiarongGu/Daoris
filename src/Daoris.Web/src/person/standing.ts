@@ -24,11 +24,20 @@ export type StandingConfirmationNow = {
   unwritten: boolean;
   used: number;
   held: string[];
-  /** Whether this build offers the owner's appointments (SUPERVISOR1a-ii): false until the activation's proof, and never without the grant's. */
+  /** Whether this build offers any role (STEWARDROLE1a-i, D209 §2.4): derived from the two role flags below, gating nothing by itself. */
   appointmentsOffered: boolean;
+  /** Whether this build offers the supervisor, by its own flag: false until SUPERVISOR1a-iii, whatever D201's grant is. */
+  supervisorOffered: boolean;
+  /** Whether this build offers the steward, by its own flag: false until STEWARDROLE1d. */
+  stewardOffered: boolean;
   /** The owner's appointments the record holds, dormant where found as Daoris started. */
   appointments: AppointmentNow[];
+  /** The holders living this run, each a terminal Daoris started, which a later *Appoint…* may add a role to (D209 §2.2). */
+  holders: HolderNow[];
 };
+
+/** A living holder as the shell says it (the modules' `HolderNow`): its id, when its tab was opened, its roles. Never a key. */
+export type HolderNow = { id: string; since: string | null; roles: string[] };
 
 /** A grant's or a revoke's answer (`SET_STANDING_CONFIRMATION`): done, or refused as data with a code the page words. */
 export type StandingAnswer = { done: boolean; why: string | null; message: string };
@@ -61,11 +70,16 @@ export const standingSaid = (t: TFunction, why: string | null, message: string) 
  */
 export type AppointmentNow = {
   role: string;
+  /** The repository its scope names; empty for the steward's `machine`. */
   repository: string;
   holder: string;
   since: string | null;
   dormant: boolean;
   answers: number;
+  /** Its scope (STEWARDROLE1a-i, D209 §2.3): `machine`, or `repository:<name>`. */
+  scope: string;
+  /** The living holder that holds it this run; null where it is dormant. */
+  holderId: string | null;
 };
 
 /** An appointment's or a dismissal's answer (`SET_APPOINTMENT`): done, or refused as data with a code the page words. Never a key. */
@@ -74,6 +88,7 @@ export type AppointmentAnswer = { done: boolean; why: string | null; message: st
 /** The codes an appointment is refused by (the modules' `PersonRoutes`, `StandingConfirmation`), each said in the catalogue's words. */
 const APPOINT_REFUSALS = new Set([
   'window-only', 'not-offered', 'unknown-role', 'unknown-repository', 'newer', 'unwritten', 'unstarted', 'no-pipe',
+  'scope', 'choose-terminal', 'no-holder', 'revoked-holder', 'holder-harness',
 ]);
 
 /** A refusal of an appointment in words, by its code, else the driver's own sentence. */

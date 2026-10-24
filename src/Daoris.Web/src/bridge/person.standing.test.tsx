@@ -50,6 +50,7 @@ describe('the standing confirmation over the bridge', () => {
     })).toEqual({
       offered: true, on: true, presses: ['stop', 'hold'], built: ['stop', 'finish', 'hold', 'resume'], since: '2026-10-23T09:30:00Z',
       unread: null, unwritten: false, used: 2, held: ['engine'], appointmentsOffered: false, appointments: [],
+      supervisorOffered: false, stewardOffered: false, holders: [],
     });
     // SUPERVISOR1a-ii: the owner's appointments, each read field by field; one with no role or repository left out.
     expect(standingOf({
@@ -60,7 +61,22 @@ describe('the standing confirmation over the bridge', () => {
       ],
     })).toMatchObject({
       appointmentsOffered: true,
-      appointments: [{ role: 'supervisor', repository: 'engine', holder: 'terminal', since: '2026-10-24T14:02:00Z', dormant: true, answers: 0 }],
+      appointments: [{
+        role: 'supervisor', repository: 'engine', holder: 'terminal', since: '2026-10-24T14:02:00Z', dormant: true, answers: 0,
+        scope: 'repository:engine', holderId: null,
+      }],
+    });
+    // STEWARDROLE1a-i (D209 §2.2 to §2.4): each role's own flag, the living holders, and an appointment's scope, the steward's
+    // `machine` naming no repository.
+    expect(standingOf({
+      supervisorOffered: false, stewardOffered: true,
+      holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }, { roles: ['steward'] }],
+      appointments: [{ role: 'steward', scope: 'machine', holder: 'terminal', since: '2026-10-24T14:02:00Z', dormant: false, answers: 2, holderId: 'h1' }],
+    })).toMatchObject({
+      supervisorOffered: false,
+      stewardOffered: true,
+      holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }],
+      appointments: [{ role: 'steward', repository: '', scope: 'machine', holderId: 'h1', answers: 2 }],
     });
     // The bridge leaves its nulls out: no since, no unread.
     expect(standingOf({ offered: false, on: false, presses: [], built: ['stop'], unwritten: true, used: 0, held: [] }))
