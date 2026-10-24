@@ -228,6 +228,7 @@ These retain their original dates, versions and measurement limits.
 | `2026-10-24-modelrole1b-build.md` | MODELROLE1b's build checkpoints, readings, focused verification and installed-window expectations | D205 row b |
 | `2026-10-24-modelrole1c-build.md` | MODELROLE1c's parts, which are built and which remain, the focused verification and the readings | D205 row c |
 | `2026-10-24-modelrole1d-build.md` | MODELROLE1d's parts, which are built and which remain, the focused verification and the readings | D205 row d |
+| `2026-10-25-modelrole1e-build.md` | MODELROLE1e's parts, how each was proved, what it leaves and the readings | D205 row e |
 
 ## Records and generated indexes
 

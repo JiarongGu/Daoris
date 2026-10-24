@@ -273,7 +273,8 @@ public sealed class BrainstormProcessTests : IDisposable
         var pass = JsonNode.Parse(File.ReadAllText(files.PathOf(id, "passes", "g2.json")))!;
         Assert.Equal(("answered", 1), (pass["state"]!.GetValue<string>(), pass["turns"]!.GetValue<int>()));
         Assert.Equal("brainstorm", pass["actor"]!.GetValue<string>());
-        Assert.Equal("before", pass["choice"]!.GetValue<string>());
+        // MODELROLE1e (D205 §4.0): an agent the request names that the actor has no entry for runs at account default as `rule-default`.
+        Assert.Equal("rule-default", pass["choice"]!.GetValue<string>());
         Assert.Equal("acp-stub", pass["asked"]!["agent"]!.GetValue<string>());
         Assert.Equal("brainstorm-reported", pass["ran"]!["models"]![0]!.GetValue<string>());
         Assert.Contains("brainstorm-reported", files.DocumentText(id)!, StringComparison.Ordinal);
