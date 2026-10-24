@@ -60,7 +60,8 @@ public sealed class HelpTreesReadTests : IDisposable
         Assert.Equal(Expected(trees), Said(moved));
         Assert.Equal(Kept, againStarts);
         // The trees with commits are walked again (about nineteen starts each, the content proof's); the rest are asked their
-        // status, after one ask of the line's move: 930 where the first read made 1409, on 2026-10-22.
+        // status, after one ask of the line's move: 930 where the first read made 1409, on 2026-10-22. REVIEWLANDED1's replay form asked
+        // the landing's walk of each tree with commits, 1616; held to two starts where no commit can be on the line, 1273 (MAINRED1).
         Assert.True(movedStarts < firstStarts, $"{movedStarts} git starts where the first read made {firstStarts}");
     }
 

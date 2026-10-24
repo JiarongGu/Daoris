@@ -5,6 +5,38 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-24 - The trees read made more git starts when the line moved on than at its first read (MAINRED1)
+
+- **Symptom:** the CI on `16769207d` failed `driver-process-git`: `HelpTreesReadTests`' 145-tree proof made 1616 git starts once the
+  line moved on, where the first read made 1409. The test's rule is that the moved-on read makes fewer. It failed the same way alone.
+- **Root cause:** REVIEWLANDED1's fourth form of the content proof (`ReplayHolds.ReadAsync`) asks the landing's own per-commit reading
+  (`LineHolds.JudgeAsync`) of every tree with commits once the line has a commit since the branch left it. That reading walks the
+  branch commit after commit by content (`BranchJudging.CutByContentAsync`, a content proof each), about fourteen starts a tree. The
+  fixture's 49 trees with commits each paid that, though none of their commits is on the line.
+- **Fix:** the form first reads, in one log, which commits the line holds by patch (`LineHolds.ReadBeyondAsync`), and the line's
+  files since the branch left it (`LineHolds.MayHoldByContent`, the gate *Bring up to date*'s look already uses). Where no commit is
+  held by patch and the walk could find none, the line holds none of the branch's commits: no replay, and nothing lacked that a
+  landing counts otherwise. That costs two starts, and the walk is not asked.
+- **Verify:** `HelpTreesReadTests` 4 of 4, the moved-on read 1273 starts where the first made 1409 (1616 before the fix, on the
+  same machine); `ReviewLandedTests` and `ContentHoldWordsTests` by filter with `git.process.runsettings`, and the covering content
+  proof classes. Detail: D102's MAINRED1 note.
+
+## 2026-10-24 - Three tidy tests met a machine log file the calendar had aged (MAINRED1)
+
+- **Symptom:** the CI on `16769207d` failed `driver-process-git`: in `BranchTidyingFolderTests`,
+  `A_tree_whose_paths_pass_260_characters_is_moved_aside_and_purged` and
+  `The_purge_deletes_a_folder_left_untouched_and_keeps_one_written_after_its_move` each got a second tidy line, `tidy  removed 1
+  file(s) of the machine log older than 30 days`. KEEPSIZE1a's run saw the same two failures. The quest also named
+  `A_tree_reached_through_a_link_under_the_trees_home_stays`; it passed here alone and in the class, both before and after the fix.
+- **Root cause:** a date bomb. `BranchTidyingFixture.Log()` wrote the home's machine log on a fixed clock, 2026-10-09, while the
+  looks read the real clock, the purge's fifteen days ahead. The look's daily log prune (KEEP1d, `BranchTidying.KeepLogs`) keeps
+  thirty days, so from 2026-10-24 a look fifteen days ahead found the fixture's own file past its days, removed it and said so.
+- **Fix:** the fixture's log writes on the real clock, so its file is today's and no look in these tests (at most fifteen days
+  ahead) finds it past thirty days. Nothing the tests assert about the folders changed. `BranchTidyingTests` keeps its fixed
+  clock: it never runs a look, only `Said`, so no prune reads its file.
+- **Verify:** `BranchTidyingFolderTests` 13 of 13 with `git.process.runsettings`, where the two failed before the fix; the other
+  fixture classes by filter.
+
 ## 2026-10-24 - The set-aside folders at the trees entry's old place were never purged or counted (KEEPSIZE1a)
 
 - **Symptom:** on the install, KEEPSIZE1's measurement found 164 set-aside folders (76.7 GB) under `data/trees/.tidied`, the oldest
