@@ -40,7 +40,7 @@ public sealed partial class HolderKeyStripTests
             var first = body[..(body.IndexOf(';') + 1)].Trim();
             Assert.True(
                 first is "HolderKey.Strip();" or "HolderKey.Take();" or "Daoris.Driver.HolderKey.Strip();"
-                    or "Environment.SetEnvironmentVariable(\"DAORIS_SUPERVISOR_KEY\", null);",
+                    or "Environment.SetEnvironmentVariable(\"DAORIS_ROLE_KEY\", null);",
                 $"{entry}'s first statement is `{first}`, not the key's removal");
         }
 

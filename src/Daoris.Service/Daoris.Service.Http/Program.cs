@@ -54,7 +54,7 @@ using Daoris.Knowledge.Http;
 // answered only to loopback callers — the local driver — so a remote deployment never serves anyone's
 // disk layout to the network.
 // SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
-Environment.SetEnvironmentVariable("DAORIS_SUPERVISOR_KEY", null);
+Environment.SetEnvironmentVariable("DAORIS_ROLE_KEY", null);
 
 if (OperatingSystem.IsWindows())
 {

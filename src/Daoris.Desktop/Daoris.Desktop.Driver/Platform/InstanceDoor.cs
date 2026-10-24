@@ -79,6 +79,12 @@ public sealed class InstanceWorld
     /// false refuses it (<see cref="InstanceDoor.NotInstall"/>). Null checks nothing, as every verb but the supervisor's answer.
     /// </summary>
     public Func<int?, bool>? ServedBy { get; init; }
+
+    /// <summary>
+    /// Whether this verb runs in a role's terminal (STEWARDROLE1a-i, D209 §3.3): the entry's marker, <see cref="HolderKey.RoleTerminal"/>,
+    /// unless a test names its own. Such a verb sends no person's press and acts nothing alone (<see cref="RoleTerminal"/>).
+    /// </summary>
+    public Func<bool> RoleTerminal { get; init; } = () => HolderKey.RoleTerminal;
 }
 
 /// <summary>
@@ -244,6 +250,8 @@ public static class InstanceDoor
         InstanceRoute route, object? payload, Func<Task<int>> alone, Func<JsonElement, int> words, InstanceWorld world,
         CancellationToken ct = default)
     {
+        // STEWARDROLE1a-i (D209 §3.3): a role's terminal never presses as the owner nor acts alone, refused before it connects.
+        if (world.RoleTerminal()) return await RoleRefusedAsync(world).ConfigureAwait(false);
         if (route.Class == RouteClass.Window) return await alone().ConfigureAwait(false);
 
         var look = await FindAsync(world, ct).ConfigureAwait(false);
@@ -472,9 +480,11 @@ public static class InstanceDoor
     public static async Task<int?> TryReadAsync(
         InstanceRoute route, object? payload, Func<JsonElement, int?> words, InstanceWorld world, CancellationToken ct = default)
     {
-        if (route.Class != RouteClass.Open) return null;
+        // STEWARDROLE1a-i (D209 §3.3): in a role's terminal the read is the instance's or nothing; its alone path is refused, exit 2.
+        var role = world.RoleTerminal();
+        if (route.Class != RouteClass.Open) return role ? await RoleRefusedAsync(world).ConfigureAwait(false) : null;
         var look = await FindAsync(world, ct).ConfigureAwait(false);
-        if (look.Found != InstanceFound.Answers) return null;
+        if (look.Found != InstanceFound.Answers) return role ? await RoleRefusedAsync(world).ConfigureAwait(false) : null;
 
         JsonElement? answer;
         await using (var client = look.Client!)
@@ -483,7 +493,15 @@ public static class InstanceDoor
                 told: null, world.Within, ct).ConfigureAwait(false);
         }
 
-        return answer is { } said && Succeeded(said) ? words(said.TryGetProperty("data", out var data) ? data : default) : null;
+        var exit = answer is { } said && Succeeded(said) ? words(said.TryGetProperty("data", out var data) ? data : default) : null;
+        return exit is null && role ? await RoleRefusedAsync(world).ConfigureAwait(false) : exit;
+    }
+
+    /// <summary>A role's terminal's verb refused (STEWARDROLE1a-i, D209 §3.3), before it connects or instead of acting alone: exit 2.</summary>
+    public static async Task<int> RoleRefusedAsync(InstanceWorld world)
+    {
+        await world.Error.WriteLineAsync(RoleTerminal.Refusal(world.Verb)).ConfigureAwait(false);
+        return 2;
     }
 
     /// <summary>

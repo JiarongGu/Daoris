@@ -1004,7 +1004,7 @@ public sealed class SessionsCommandTests : IDisposable
     /// The service's doors the verb crosses, standing in: the records, the quests, the registry, the state door, and a
     /// session's delete and its judgement, by each record's <c>deletable</c>.
     /// </summary>
-    private sealed class Ledger(IEnumerable<JsonObject> records, IEnumerable<JsonObject> quests) : HttpMessageHandler
+    internal sealed class Ledger(IEnumerable<JsonObject> records, IEnumerable<JsonObject> quests) : HttpMessageHandler
     {
         private readonly object _gate = new();
         private readonly List<JsonObject> _records = [.. records];

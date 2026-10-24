@@ -16,13 +16,17 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class HolderKey
 {
-    /// <summary>The variable the holder's terminal carries the key in, and the only place the verb reads it from.</summary>
-    public const string Variable = "DAORIS_SUPERVISOR_KEY";
+    /// <summary>
+    /// The variable the holder's terminal carries the key in, and the only place the verb reads it from: <c>DAORIS_ROLE_KEY</c> since
+    /// STEWARDROLE1a-i (D209 §2.2), since a shared holder's key is no one role's. No install held the old name.
+    /// </summary>
+    public const string Variable = "DAORIS_ROLE_KEY";
 
     /// <summary>The key's length in bytes, and so its hex text's in characters twice that.</summary>
     public const int Bytes = 32;
 
     private static string? _taken;
+    private static bool _roleTerminal;
 
     /// <summary>A new key, in hex: drawn at each appointment and never reused.</summary>
     public static string Draw() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(Bytes));
@@ -50,11 +54,70 @@ public static class HolderKey
     public static void Take()
     {
         _taken = Environment.GetEnvironmentVariable(Variable);
+        // STEWARDROLE1a-i (D209 §2.2): present at the entry, whatever its value and whether or not it is a key.
+        _roleTerminal = _taken is not null;
         Strip();
     }
 
     /// <summary>What <see cref="Take"/> read, or null where the variable was not set.</summary>
     public static string? Taken => _taken;
+
+    /// <summary>
+    /// The entry's marker (STEWARDROLE1a-i, D209 §2.2, §3.3): that the variable was present when <see cref="Take"/> ran, whatever its
+    /// value, so this process started in a role's terminal. Every guard reads this, never the environment after the entry, which
+    /// <see cref="Take"/> has already emptied.
+    /// </summary>
+    public static bool RoleTerminal => _roleTerminal;
+
+    /// <summary>A test's own entry undone, so the marker does not outlive the case that took it.</summary>
+    internal static void Forget()
+    {
+        _taken = null;
+        _roleTerminal = false;
+    }
+}
+
+/// <summary>
+/// A role's terminal never acts as the owner nor alone (STEWARDROLE1a-i, D209 §3.3): in a process whose entry found
+/// <see cref="HolderKey.Variable"/> present, every verb that would send a person's press refuses <see cref="Code"/> before it connects,
+/// and every verb that would act from its own process refuses it instead, exit 2.
+/// </summary>
+public static class RoleTerminal
+{
+    /// <summary>The refusal's code.</summary>
+    public const string Code = "role-terminal";
+
+    /// <summary>What the refusal says.</summary>
+    public const string Sentence = "this terminal holds a role: act as the role, or press from another terminal";
+
+    /// <summary>
+    /// The verbs a role's terminal runs at all (§2.2's start line, each by its exact prefix): the roles' verbs and the open reads the
+    /// holder needs. Any other verb is refused at the entry; these refuse their own alone paths (<see cref="InstanceDoor"/>).
+    /// </summary>
+    public static bool Runs(IReadOnlyList<string> args) => args switch
+    {
+        ["roles", "brief"] => true,
+        ["sessions", "supervise", ..] => true,
+        ["steward", ..] => true,
+        ["sessions", "--json", ..] => true,
+        ["notices", ..] => true,
+        ["history", ..] => true,
+        _ => false,
+    };
+
+    /// <summary>The refusal as a verb says it, naming its code.</summary>
+    public static string Refusal(string verb) => $"{verb}: {Sentence} ({Code})";
+
+    /// <summary>
+    /// The host's entry, after <see cref="HolderKey.Take"/>: in a role's terminal, a verb it does not run is refused here, said on
+    /// <paramref name="error"/>, exit 2; null lets the verb run.
+    /// </summary>
+    public static int? AtEntry(IReadOnlyList<string> args, TextWriter error)
+    {
+        if (!HolderKey.RoleTerminal || Runs(args)) return null;
+        error.WriteLine(Refusal("daoris-driver"));
+        return 2;
+    }
 }
 
 /// <summary>The supervisor's routes (SUPERVISOR1a-ii; the supervisor design §3.1, §2.3), as the bridge's driver module names them.</summary>

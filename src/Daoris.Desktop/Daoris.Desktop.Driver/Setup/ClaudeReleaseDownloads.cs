@@ -127,6 +127,9 @@ public static class ClaudeReleaseDownloads
                 + "deleted, and nothing was installed.");
         }
         write($"the binary's SHA-256 matches the signed manifest: {saved.Sha256}");
+        // STEWARDROLE1a-i (D209 §6.1): the hash that verified, kept beside the install it moves with, so a start that hands the binary a
+        // role's key checks it is still these bytes.
+        VerifiedBinary.Write(Path.Combine(staging, "package"), $"bin/{binary}", saved.Sha256);
 
         if (!OperatingSystem.IsWindows() && !platform.StartsWith("win32", StringComparison.Ordinal))
         {

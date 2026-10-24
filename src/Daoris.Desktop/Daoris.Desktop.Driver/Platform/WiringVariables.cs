@@ -100,7 +100,7 @@ public static class WiringVariables
     {
         ["DAORIS_TARGET"] = "handed to a session by the driver: its target",
         // SUPERVISOR1a-ii (D208 §2.2): a secret, so never shown, its value or whether it is set: every Daoris process removes it at its entry.
-        ["DAORIS_SUPERVISOR_KEY"] = "the supervisor's holder key, handed only to the holder's tab of the terminal panel at the owner's appointment; a secret never shown, removed from every Daoris process at its entry and from every start",
+        ["DAORIS_ROLE_KEY"] = "a role's holder key (STEWARDROLE1a-i: shared by every role its holder holds), handed only to the holder's tab of the terminal panel at the owner's appointment; a secret never shown, removed from every Daoris process at its entry and from every start",
         ["DAORIS_BRAINSTORM_ID"] = "handed to a brainstorm's pass by the driver: the brainstorm it serves",
         ["DAORIS_BRAINSTORM_TURN"] = "handed to a brainstorm's pass by the driver: its turn",
         ["DAORIS_BRAINSTORM_ANSWER"] = "handed to a brainstorm's pass by the driver: the file its result tool writes",
