@@ -289,6 +289,8 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'awaiting-helper': 'neutral',
   // Ended by an account's limit, its line going on by itself (LIMITRESUME1a): quiet, never the failure's red.
   'limited': 'neutral',
+  // Ended before anything ran, its agent refusing the choice (MODELROLE1c3, D205 §3.5(c)): quiet, never the failure's red.
+  'not-started': 'neutral',
 };
 
 /**
@@ -300,12 +302,15 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
  * goes on from at the driver's next look (ANSWER1c, D131); **going-on**, a record going on with the person's
  * words, its run opening (MSG1f, D137 §3.2); and **awaiting-helper**, a session that ended its turn on its own helper's
  * ask and goes on with its answer (HELPERWAIT1); and **limited**, a `failed` record whose failure an account's limit made, its
- * `limit` flag (LIMITRESUME1a, D206 point 1). None is a record state: no new session state (D126 §2).
+ * `limit` flag (LIMITRESUME1a, D206 point 1); and **not-started**, a `failed` record its agent's refusal of the choice ended before
+ * anything ran, its note's code `ended.choice-not-offered` (MODELROLE1c3, D205 §3.5(c)). None is a record state: no new session
+ * state (D126 §2).
  *
  * The record says `working` for a chat's whole life, since its process is; whether a turn is in flight
  * is the driver's to say.
  */
-export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on' | 'awaiting-helper' | 'limited';
+export type ShownState =
+  | SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on' | 'awaiting-helper' | 'limited' | 'not-started';
 
 /**
  * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's derived
@@ -318,15 +323,22 @@ export function shownKey(shown: ShownState): string {
   if (shown === 'going-on') return 'work.shown.goingOn';
   if (shown === 'awaiting-helper') return 'work.shown.awaitingHelper';
   if (shown === 'limited') return 'work.limit.word';
+  if (shown === 'not-started') return 'work.notStarted.word';
   return `sessionState.${shown}`;
 }
 
+/** The end code a record its agent's refusal of the choice ended before anything ran carries (D205 §3.5(c), MODELROLE1c3). */
+export const CHOICE_NOT_OFFERED = 'ended.choice-not-offered';
+
 /**
  * A record's state with the one word its `limit` flag makes (LIMITRESUME1a, D206 point 1): a `failed` record an account's limit
- * ended is **limited**; every other is its own state. For a surface that shows the record's state and no other reading of it.
+ * ended is **limited**; a `failed` one ended `choice-not-offered` is **not-started** (MODELROLE1c3); every other is its own state. For a
+ * surface that shows the record's state and no other reading of it.
  */
-export function limitedOr(session: { state: SessionState; limit?: boolean }): ShownState {
-  return session.state === 'failed' && session.limit ? 'limited' : session.state;
+export function limitedOr(session: { state: SessionState; limit?: boolean; noteParts?: readonly { code?: string | null }[] | null }): ShownState {
+  if (session.state !== 'failed') return session.state;
+  if (session.limit) return 'limited';
+  return session.noteParts?.some((part) => part.code === CHOICE_NOT_OFFERED) ? 'not-started' : 'failed';
 }
 
 /**
@@ -353,9 +365,14 @@ export function answeredPark(session: { state: SessionState; answer?: string | n
  * A `failed` record an account's limit ended is **limited** (LIMITRESUME1a, D206 point 1): no failure, and quiet.
  */
 export function shownState(
-  session: { kind?: 'driven' | 'chat'; state: SessionState; answer?: string | null; limit?: boolean }, taking: boolean | undefined,
+  session: {
+    kind?: 'driven' | 'chat'; state: SessionState; answer?: string | null; limit?: boolean;
+    noteParts?: readonly { code?: string | null }[] | null;
+  },
+  taking: boolean | undefined,
 ): ShownState {
-  if (limitedOr(session) === 'limited') return 'limited';
+  const ended = limitedOr(session);
+  if (ended === 'limited' || ended === 'not-started') return ended;
   if (answeredPark(session)) return 'answered';
   if (session.state !== 'awaiting-person' && SESSION_ACTIVE.has(session.state) && session.answer) return 'going-on';
   return session.kind === 'chat' && session.state === 'working' && taking === false ? 'idle' : session.state;
@@ -399,6 +416,8 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'awaiting-helper': 'idle',
   // Ended by an account's limit (LIMITRESUME1a): an ended record, as failed is.
   'limited': 'ended',
+  // Ended choice-not-offered (MODELROLE1c3): an ended record, as failed is.
+  'not-started': 'ended',
 };
 
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */

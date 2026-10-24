@@ -299,7 +299,7 @@
       "budget": { "en": 16, "zh": 5 },
       "case": "lower",
       "keys": [
-        "work.limit.word", "work.actor.chip.*",
+        "work.limit.word", "work.notStarted.word", "work.actor.chip.*",
         "settings.daoris.pill.*", "help.grants.state.*", "help.grants.pending", "agents.read.at", "agents.read.never", "help.history.current", "help.history.saving", "help.history.full", "agents.state.*",
         "agents.now.sessions", "projects.tidied.why.*", "projects.tidied.cause.*", "projects.git.branch.kind.*",
         "asks.goAhead.state.*", "asks.goAhead.stale.pill", "asks.record.paused", "asks.state.*", "chain.ask", "chain.attempt", "chain.current", "chain.thisSession",

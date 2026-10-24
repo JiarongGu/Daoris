@@ -559,6 +559,32 @@ describe('the attended session\'s head', () => {
     expect(screen.queryByText('reached working')).not.toBeInTheDocument();
   });
 
+  /**
+   * MODELROLE1c3 (D205 §3.5(c), §7.1): a record ended `choice-not-offered` is said by its code's sentence, quiet, never the failure's red:
+   * here naming the account it was refused on, the record's own; on a teammate's mirror, which carries no account, naming none. In zh too.
+   */
+  it('says a record ended choice-not-offered was not started, quietly, naming the account only here', async () => {
+    const noteParts = [{ code: 'ended.choice-not-offered', values: { agent: 'claude-code-acp', model: 'opus' } }];
+    const note = 'Not started: `claude-code-acp` did not offer `opus` on its account, so nothing ran; the next look chooses again by its actor\'s order.';
+    const here = session({ state: 'failed', note, noteParts, profile: 'account-1' });
+    const { container, unmount } = render(<SessionHead session={here} />);
+    expect(screen.getByText('Not started: claude-code-acp did not offer opus on account-1.')).toBeInTheDocument();
+    expect(container.innerHTML).not.toMatch(/danger/);
+    unmount();
+
+    const mirror = render(<SessionHead session={session({ id: 'jo/s9f8e7d6', state: 'failed', note, noteParts, profile: null })} />);
+    expect(screen.getByText('Not started: the agent did not offer the model.')).toBeInTheDocument();
+    mirror.unmount();
+
+    await i18n.changeLanguage('zh');
+    try {
+      render(<SessionHead session={here} />);
+      expect(screen.getByText('未启动：claude-code-acp 在 account-1 上不提供 opus。')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /** SESS2 H4: what its tree left, with the move that acts on it when the work is the person's to take. */
   it('says what its tree left, and offers the review when no branch of the person\'s holds the work', async () => {
     const onReview = vi.fn();

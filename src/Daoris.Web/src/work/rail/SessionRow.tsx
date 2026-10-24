@@ -13,6 +13,7 @@ import { movedAt } from './rail';
 import { useNow } from '../useNow';
 import type { HeavyPart } from '../heavySlot';
 import { heavyLine } from '../HeavySlotLine';
+import { notStartedLine } from '../actors';
 
 /**
  * One session in the rail — the working surface's smallest unit of attention (design §3).
@@ -201,6 +202,8 @@ export function SessionRow({
     parts && parts > 1 ? t('work.rail.parts', { count: parts }) : null,
     placed ? t(placed.line, placed.values) : null,
     limitWait ?? null,
+    // MODELROLE1c3 (D205 §3.5(c)): a record ended before anything ran says why in place of a failure, its account only here.
+    shown === 'not-started' ? notStartedLine(t, session) : null,
     calling ? callLine(t, calling) : null,
     heavyPart ? heavyLine(t, heavyPart, (id) => heavyBehind || id) : null,
     quiet ? t('work.rail.quiet', { time: elapsed(quiet) }) : null,

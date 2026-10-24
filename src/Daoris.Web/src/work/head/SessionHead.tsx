@@ -36,7 +36,7 @@ import { movedAt } from '../rail/rail';
 import { RunningIntake } from './RunningIntake';
 import { leftFor, type Seek, SOUGHT, useSought } from '../waits/WaitAnchor';
 import { rulesAsked } from '../waits/waits';
-import { actorRows } from '../actors';
+import { actorRows, notStartedLine } from '../actors';
 
 // The work's line is its own molecule, which the foot's strip draws too (WAITFOOT1b, D168); its shapes are read from here too.
 export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/Lands';
@@ -476,7 +476,11 @@ export function SessionHead({
           one ended, Daoris's lines in the reader's language and the agent's words as written (LANG1b).
           Not while it runs, when the conversation below is the answer; not parked, where the card above
           already carries it. */}
-      {!running && noted && <Said note={session.note} parts={session.noteParts} />}
+      {/* MODELROLE1c3 (D205 §3.5(c), §7.1): a record its agent's refusal of the choice ended before anything ran says so by its code's
+          sentence, quiet, in place of the failure's note: the account it was refused on here, none on a teammate's mirror. */}
+      {shown === 'not-started'
+        ? <p className="m-0 text-body leading-relaxed text-ink-soft">{notStartedLine(t, session)}</p>
+        : !running && noted && <Said note={session.note} parts={session.noteParts} />}
 
       {/* What it left, and the move that acts on it (SESS2 H4): work no branch of the person's holds is
           theirs to review, in the waiting hue; landed work is a quiet fact. */}

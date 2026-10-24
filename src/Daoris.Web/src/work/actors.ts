@@ -2,6 +2,8 @@ import type { TFunction } from 'i18next';
 import type { ActorValue, Session } from '../data/api';
 import type { DetailRow } from './head/DetailsFold';
 import { stamp } from '../locales/format';
+import { CHOICE_NOT_OFFERED } from '../design/ui';
+import { sessionOrigin } from './identity';
 
 /** The agent's reported names, in first-use order. An absence never borrows the asked model. */
 export function ranLine(t: TFunction, session?: Pick<Session, 'ran'> | null): string {
@@ -26,6 +28,23 @@ export function choiceChip(t: TFunction, session: Pick<Session, 'choice'>): stri
   const choice = session.choice;
   if (choice === 'pick') return t('work.actor.chip.pick');
   return choice && /^[2-4]$/.test(choice) ? t('work.actor.chip.choice', { n: Number(choice) }) : null;
+}
+
+/**
+ * What a record ended `choice-not-offered` says in place of a failure (D205 §3.5(c), §7.1; MODELROLE1c3): here, the agent, the model and
+ * the account it was refused on, the record's own; on a teammate's mirror, which carries no account (D47 §4), the code's sentence naming
+ * none. Null for every other record.
+ */
+export function notStartedLine(t: TFunction, session: Pick<Session, 'id' | 'state' | 'noteParts' | 'profile'>): string | null {
+  if (session.state !== 'failed') return null;
+  const part = session.noteParts?.find((each) => each.code === CHOICE_NOT_OFFERED);
+  if (!part || part.words !== undefined) return null;
+  const values = part.values ?? {};
+  const agent = typeof values.agent === 'string' ? values.agent : null;
+  const model = typeof values.model === 'string' ? values.model : null;
+  return !sessionOrigin(session) && session.profile && agent && model
+    ? t('work.notStarted.here', { agent, model, account: session.profile })
+    : t('work.notStarted.mirror');
 }
 
 /** Details compares no aliases: asked, acknowledged and ran are separate facts (D205). */
