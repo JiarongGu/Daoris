@@ -350,8 +350,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-ci-scope-reads.md` | 195 | 1757 |
 | `docs/2026-10-24-confirm-wait-design.md` | 123 | 1035 |
 | `docs/2026-10-24-confirm-wait-reads.md` | 77 | 812 |
-| `docs/2026-10-24-cowork-view-design.md` | 198 | 1798 |
-| `docs/2026-10-24-cowork-view-reads.md` | 97 | 990 |
+| `docs/2026-10-24-cowork-view-design.md` | 221 | 1944 |
+| `docs/2026-10-24-cowork-view-reads.md` | 117 | 1155 |
 | `docs/2026-10-24-event-hook-design.md` | 89 | 775 |
 | `docs/2026-10-24-event-hook-reads.md` | 47 | 522 |
 | `docs/2026-10-24-keep-size-design.md` | 102 | 979 |
