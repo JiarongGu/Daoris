@@ -9,7 +9,14 @@ namespace Daoris.Driver;
 /// <param name="Room">Its room, under the home's work.</param>
 /// <param name="Answer">The file its result tool writes its answer to, outside the room.</param>
 /// <param name="Minutes">How long it may take.</param>
-public sealed record BrainstormTurn(string Id, string Turn, string Agent, string Room, string Instruction, string Answer, int Minutes);
+/// <param name="Entry">
+/// The voice's entry of the Brainstorm actor, frozen with its plan (D205 §4.4, MODELROLE1e): the model and effort its turn asks and the
+/// choice its record keeps; null for a turn of a meeting, which asks account default as it always did.
+/// </param>
+/// <param name="Passed">The accounts of its agent this voice already passed for its model: the one bounded restart leaves them out.</param>
+public sealed record BrainstormTurn(
+    string Id, string Turn, string Agent, string Room, string Instruction, string Answer, int Minutes,
+    ActorEffective? Entry = null, IReadOnlyCollection<string>? Passed = null);
 
 /// <summary>How a turn went: whether it ran, the account it ran as (this machine only), why it did not run, and the look's line.</summary>
 /// <param name="Code">Why it did not run, or how it failed: a fixed code; null for a turn that ran and ended.</param>
