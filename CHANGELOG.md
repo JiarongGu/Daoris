@@ -12,6 +12,11 @@ with the version and date at release.
   `withdraw <id>` says that this Daoris cannot take one back yet. Then the new `withdraw <id>` takes back a request that still
   waits, never one you already confirmed. A request still waiting when the verb stops ends the verb with exit 1, and `result <id>`
   keeps it for up to thirty days.
+- When a driven session's provider fails for a moment, such as `API Error: 529 Overloaded`, Daoris now tries again in the same
+  conversation, after 1, 2, 4, 8 and 16 minutes, and says so once (AGENTERRORS1a). Before, the run failed, counted against the
+  quest, and went on in a new session that lost its conversation. A word you say while it waits goes at once. If the provider keeps
+  failing after five tries, the session waits for your words, which go on in the same conversation; it counts no failure against the
+  quest and cools no account. This covers sessions on the protocol door; conversations and other doors follow.
 - When a repository's own git hook refuses the merge commit as you accept a session's work, Daoris now says so (HOOKMERGE1). It
   says that the hook refused it and nothing conflicted, and quotes what the hook printed. Before, it said only that git would not
   merge. Daoris still runs the repository's hooks and never skips them. Change what the hook refuses, or merge the branch yourself.

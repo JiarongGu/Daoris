@@ -22,6 +22,28 @@ repository.
 - **Verification:** the case run alone 30 times in a row, 30 green (it failed on the seventh run before the fix); the whole
   `merge-queue.test.ts` file 57 of 57; `npm run tooltests` in `src/Daoris.Cli` 375 of 375; `test/doc-duplicates.test.ts` and
   `test/dogfood.test.ts` 48 of 48.
+## 2026-10-24 - A provider's 529 struck and carried on a driven session, or parked it on the person (AGENTERRORS1a)
+
+- **Symptom:** two driven sessions on `claude-code-acp` met `API Error: 529 Overloaded` on the morning of 2026-10-24 (the
+  agent-errors design §0). In the first, the prompt's JSON-RPC error ended the record `failed`, `ended.turn-failed-taken`, a strike,
+  and the next look carried it on briefed in a new session, leaving its 219,284-token conversation behind. In the second, a word the
+  person added mid-turn was refused with the error, the turn read as clean, and the run parked on the person, who went on by hand 33
+  minutes later in the same conversation.
+- **Root cause:** nothing in the driver read a failure's kind. The wire carried `data.errorKind: "overloaded"`, which
+  `AcpRefusal.ErrorKind` kept and the conclusion dropped (`Loop/Driver.cs`, the capture's catch took `error.Message` alone); no
+  table named a 529, an overload or a 5xx, so the only end a provider's outage could reach was a failed run's, a strike and a
+  briefed carry-on, or, refused on a mid-turn word, no end at all.
+- **Fix:** D210's row 1a. One reader at the agent interface (`AgentErrors.Read`, `Agents/Errors/AgentErrors.cs`) reads a door's
+  failure as limit, access, transient or fatal from the adapter's `ErrorWords` and its owner's; a driven session's protocol door is
+  handed a `TransientRetry` (`Agents/Acp/TransientRetry.cs`, `Loop/TransientRetries.cs`), and a transient failure is tried again
+  inside `AcpSession.RunAsync` on the same session after 1, 2, 4, 8 and 16 minutes, never a word on the wire twice; past the bound
+  the record ends `ended.transient`, no strike and no cool-off, and the planner holds its quest for the person's word. The second
+  shape, a mid-turn word's refusal, is row 1a2's, and until it lands that end is unchanged.
+- **Verification:** `TransientRetryTickTests` on real ticks with the driver's retry clock held: shape 1's stand-in failing twice then
+  working goes on in one record and one conversation, seen red with the retry un-handed (the tick ended at once, today's end); one
+  that keeps failing ends `ended.transient` after five tries and 31 minutes, its quest held across looks until the person's word
+  resumes the same conversation. `AcpTransientTests` (the episode on a moved clock), `AgentErrorsTests` (the tables both ways),
+  `SessionWatchTests` (the wait never quiet, seen red without its hook) and the page's rendered conversation.
 
 ## 2026-10-24 - The wiring census read the CLI tests' scratch as a source, and two test classes were split by hand
 
