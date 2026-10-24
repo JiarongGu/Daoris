@@ -1,6 +1,6 @@
-# SWITCHCTX1: the reads of rounds 1 and 2 (D191)
+# SWITCHCTX1: the reads of rounds 1 to 3 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-switch-context-design.md` and its notes at `ff2461081`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed; under D191's note of 2026-10-24 this design, which reverses D189 point 1 on an agent's own transcript, is not accepted on one maker's read. The Opus foundation reader asks another round (12 findings, 4 blocking). Round 2 answers it.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-switch-context-design.md` and its notes at `ff2461081`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed; under D191's note of 2026-10-24 this design, which reverses D189 point 1 on an agent's own transcript, is not accepted on one maker's read. The Opus foundation reader asks another round (12 findings, 4 blocking). Round 2 answers it. The Opus read of round 2 follows, which round 3 takes in the design's §9, and Codex's read of round 3, which round 4 answers in the design's §10.
 
 ## Opus (foundation), round 1
 
@@ -625,3 +625,75 @@ Each change is stated against the code lines that show it, and so are findings 4
 pass. Finding 2's reading of the pinned package may show that the replay cannot be matched; the change already says what then
 holds: no carry on that version, said. 1c-i should be split out now, since it reverses nothing and need not wait for the second
 maker.
+
+## Codex, round 3
+
+Codex's read of round 3 at `972b17577`: 26 findings, 17 blocking; another round. It ran read-only on main from outside the install, its links made repository-relative.
+
+Read-only review completed; nothing changed. I formed my findings before reading the earlier reviews. The adapter bundles cited in §1.7 are absent from the permitted checkout, so their internals remain independently unverified.
+
+#### 1. Claims about existing code and packages
+
+1. **Blocking — child replay is not already filtered.** `docs/2026-10-24-switch-context-design.md:250` says the existing filter passes over subagent replay, but `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/Acp.cs:3432` matches only the parent session ID. Parent announcements can be suppressed while child messages reach `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp/AcpStreams.cs:98`, find no registered child, and fall through into the parent record.
+
+2. **Blocking — `LimitHeld` cannot recognize the replay exception specified.** `docs/2026-10-24-switch-context-design.md:396` permits an extra assistant message containing “the limit’s own sentence, which `LimitHeld` already reads.” `src/Daoris.Desktop/Daoris.Desktop.Driver/Conversations/Domain/LimitHeld.cs:37` instead recognizes coded cooling notes followed by an `error` turn; it contains no sentence matcher.
+
+3. **Blocking — the adapter version does not identify the transcript writer.** The table keys Claude’s file layout to claude-agent-acp 0.84.0, including “both doors” (`docs/2026-10-24-switch-context-design.md:317`), but `src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/HarnessSelection.cs:604` explicitly selects the underlying Claude executable independently. Bind file-layout compatibility to the actual CLI version as well; the pipe door needs its own versioned row.
+
+4. **Non-blocking — package evidence remains unavailable here.** §1.7’s `getSessionMessages`, model restoration and message-ID claims cite an installed bundle, not checkout artifacts (`docs/2026-10-24-switch-context-design.md:233`); repository comments also reference another bundle/SDK pair (`src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs:1895`). Preserve exact package identities and source-derived replay fixtures in the checkout before treating the proposed stand-in as independent evidence.
+
+#### 2. The carry
+
+1. **Blocking — duplicate prompts remain an admitted outcome.** `docs/2026-10-24-switch-context-design.md:399` counts user messages after the anchor but explicitly leaves delivery unchanged, then `docs/2026-10-24-switch-context-design.md:452` sends the refused words again. Counting and logging duplication does not prevent it; unmatched suffixes need a defined safe disposition before prompting.
+
+2. **Blocking — first-turn fallback can repeat completed tool work.** `docs/2026-10-24-switch-context-design.md:502` treats every `refusal` or prompt-level `Fatal` as carry failure and resends the original words, although `Fatal` includes an unknown failure (`src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Errors/AgentErrors.cs:17`). A turn can execute tools before a later model request fails; require positive evidence of rejection before execution, and retain ordinary uncertainty handling otherwise.
+
+3. **Blocking — assistant IDs do not establish complete context.** The acceptance rule ignores user messages, thoughts and tool updates (`docs/2026-10-24-switch-context-design.md:390`), while existing files beneath `<id>/` are retained without comparing their contents (`docs/2026-10-24-switch-context-design.md:334`). Matching assistant IDs can therefore coexist with missing or conflicting tool state; specify the stronger invariant or narrow “read back” to what was actually verified.
+
+4. **Blocking — the copy is not protected against another writer.** A byte-prefix observation followed by rename does not reserve the destination; another terminal may append between them, and existing sidecars can independently differ (`docs/2026-10-24-switch-context-design.md:328`). D137 rejects two clients writing one conversation (`docs/decisions/D137.md:56`); require enforceable exclusion or refuse replacement, rather than promising other-client turns are never overwritten.
+
+5. **Blocking — recovery lacks a committed delivery state.** The carried ID and carry file are separate writes (`docs/2026-10-24-switch-context-design.md:376`), and non-box paths recover only when another word arrives (`docs/2026-10-24-switch-context-design.md:464`). Specify recovery for every write boundary and preserve the pending first instruction/refused words with their delivery disposition; otherwise a crash can bypass verification or strand an automatically requested turn.
+
+6. **Non-blocking — the intended account boundary is sound.** Both-account eligibility and normal start selection exclude the person’s own sign-in (`docs/2026-10-24-switch-context-design.md:267`); D197 intentionally permits every Daoris account in every workspace (`docs/decisions/D197.md:21`). Clarify that home resolution uses `Toolchain.Owner(adapter)`, since ACP account ownership differs from its adapter name (`src/Daoris.Desktop/Daoris.Desktop.Driver/Accounts/Harnesses/Harnesses.cs:281`).
+
+#### 3. The reversals
+
+1. **Blocking — D125 and D189’s copying prohibition is not yet sufficiently answered.** The narrow allow-list and account exclusions are reasonable, but the replacement safety argument depends on the incomplete replay and concurrency proofs above (`docs/decisions/D125.md:1424`, `docs/decisions/D189.md:271`). I disagree with the earlier reader’s claim that byte-prefix equality establishes safe replacement (`docs/2026-10-24-switch-context-reads.md:417`): it establishes an observed relationship, not exclusive ownership.
+
+2. **Blocking — D131, D137 and D167’s record reversal is only partly justified.** D167’s entry supports grouping records, so the linked-record shape has a sufficient reason; however, replacing the conversation after a turn that already emitted messages or tools contradicts the claimed “only one conversation answered” justification (`docs/2026-10-24-switch-context-design.md:517`, `docs/decisions/D137.md:762`). State how those events and usage remain attributable, or restrict same-record replacement to a verified pre-execution failure.
+
+3. **Non-blocking — D165 and D189’s compaction reversal has a sufficient product reason.** Preserving exact context serves continuity, and the design acknowledges retaining H rather than claiming savings (`docs/2026-10-24-switch-context-design.md:652`). Keep the cost claim unmeasured until the real move’s evidence lands; successful replay alone does not establish retained working memory.
+
+4. **Blocking — D197 and D206’s limit amendments inherit unresolved delivery semantics.** Their notes promise refused and waiting words “each once” and recovery without the brief (`docs/decisions/D197.md:382`, `docs/decisions/D206.md:323`). Those promises need the suffix and crash rules above, including consecutive limited carries before any successful answer.
+
+#### 4. Other decided rules
+
+1. **Blocking — earlier does not mean ended.** The proposed `live={false}` for every earlier part (`docs/2026-10-24-switch-context-design.md:533`) conflicts with D167’s explicit allowance for multiple live parts (`docs/decisions/D167.md:76`); `src/Daoris.Web/src/work/conversation/conversation.ts:894` then marks unfinished turns cut and tools stopped. Separate read-only controls from actual lifecycle, and distinguish continuation ancestry from alongside sibling work.
+
+2. **Blocking — `handed` misses D182’s push chain.** The field chain and update endpoint omit `src/Daoris.Desktop/Daoris.Desktop.Modules/Loop/SessionsStateSlice.cs:39`, whose allow-list controls what windows receive. Add the field, its update publication/wake and a test through the pushed projection; service read-back tests alone cannot prove the page changes.
+
+3. **Non-blocking — the new endpoint needs explicit driver authority.** `/handed` is specified as loopback-only (`docs/2026-10-24-switch-context-design.md:422`), but `/actor` also has a `DoorClass.Driver` entry (`src/Daoris.Service/Daoris.Service.Http/PersonDoors.cs:256`). Name that census entry and its keyless-refusal test; an unclassified write defaults to the person’s door, not the driver’s.
+
+4. **Non-blocking — translation requirements are incomplete.** `moved.carry-failed` interpolates raw `{{code}}` (`docs/2026-10-24-switch-context-design.md:569`), whereas `src/Daoris.Web/src/work/noteLines.ts:795` translates known reason families explicitly. Define that family in both languages and retain `{{why}}` in the complete reworded `limit.resume-refused` entry (`src/Daoris.Web/src/work/noteLines.ts:316`); key parity alone is insufficient.
+
+#### 5. Rows and order
+
+1. **Blocking — SWITCHCTX1c-i.** Keep it independent, but fix lifecycle and sibling handling before accepting it (`docs/2026-10-24-switch-context-design.md:736`). Also give the combined view one scroll owner: each existing `SessionConversation` invokes its own shared-region scrolling (`src/Daoris.Web/src/work/conversation/SessionConversation.tsx:191`); I disagree with the earlier review’s unconditional endorsement of this row.
+
+2. **Blocking — SWITCHCTX1a.** Its stand-in must cover child replay, unmatched user/tool suffixes, post-tool failure, concurrent destination mutation and crashes between persistence steps (`docs/2026-10-24-switch-context-design.md:737`). These require settled contracts before a builder can choose correct assertions.
+
+3. **Blocking — SWITCHCTX1b.** Require consecutive limited carries and restart recovery of an unsent live/driven first instruction, not merely recovery upon a later word (`docs/2026-10-24-switch-context-design.md:738`). It correctly follows 1a once 1a supplies one delivery/recovery protocol.
+
+4. **Non-blocking — SWITCHCTX1c-ii.** Declare 1c-i as a prerequisite alongside 1a: this row modifies boundaries and folds belonging to that combined renderer (`docs/2026-10-24-switch-context-design.md:739`). Test pending, successful and failed carry states through real pushed `handed` values.
+
+5. **Non-blocking — SWITCHCTX1d.** The Codex evidence prerequisite is appropriate, but also declare dependence on the corrected common carry machinery (`docs/2026-10-24-switch-context-design.md:740`). No readable anchor must continue to mean brief fallback without attempting a carried prompt.
+
+6. **Blocking — SWITCHCTX1e.** Missing-ID failure is necessary but insufficient: the pipe has no replay verification, and its CLI version cannot use the ACP-version row (`docs/2026-10-24-switch-context-design.md:620`). Specify its equivalent context proof, actual version row and dependence on 1a before enabling it.
+
+7. **Non-blocking — SWITCHCTX1f.** Measuring the next genuine move respects the stated constraint, but one successful move cannot settle return-copy, compaction, refusal and restart cases (`docs/2026-10-24-switch-context-design.md:742`). Record exactly which case ran and keep every other case explicitly unmeasured.
+
+#### 6. A smaller shape
+
+1. **Non-blocking — retain the two halves, reduce the carry protocol.** First ship the corrected line view; then support Claude ACP on the curve path using one durable carry record containing phase, source/destination, compatibility identity, anchor and pending delivery disposition (`docs/2026-10-24-switch-context-design.md:368`). Fall back before prompting whenever proof fails, preserve ordinary uncertainty handling after execution starts, and extend that same protocol to limits and other doors; another agent continues through today’s brief.
+
+**Verdict: another round.**
