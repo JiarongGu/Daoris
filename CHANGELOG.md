@@ -11,6 +11,13 @@ with the version and date at release.
   for a conversation's work yet. Ask Daoris, a reviewer, a helper, a partner and a teammate's session each say why they run none.
   Where the service did not answer, *Try again* reads again. A chat that took a quest shows that quest's run, after a hand-over too.
   `daoris-driver workflow run` prints the same sentences in English.
+- A terminal's change that waits for your Confirm in Daoris's window no longer ends by itself (CONFIRMWAIT1a-i). Its card says it
+  waits until you answer and whether a terminal still waits on it; there is no two minutes, and no ten. When you confirm it, Daoris
+  first checks that what it rests on has not moved while it waited (the session, the setting, the branch, the plan it would act on);
+  if something moved, nothing is done and the card says why. If Daoris cannot check just now, it keeps waiting and you can confirm
+  again. Ten may wait at once, and the terminal that sent one can take it back with `daoris-driver withdraw <id>`. A change taken
+  back after you saw its card, and one still waiting when Daoris closes, appear in *Done and failed*. Until the next change lands,
+  closing Daoris still ends what waits.
 - A terminal's change that waits for your Confirm in Daoris's window now names its request at once (CONFIRMWAIT1b). The line says
   the request's id, that `daoris-driver result <id>` says how it ended, and that `daoris-driver withdraw <id>` takes it back.
   `--wait <minutes>`, 0 to 30, says how long a verb waits for your answer, and `--no-wait` returns once it is asked. Ctrl+C still

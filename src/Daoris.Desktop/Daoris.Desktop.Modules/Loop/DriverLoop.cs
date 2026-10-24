@@ -836,10 +836,12 @@ public sealed class DriverLoop(
 
         // The terminal's pipe (RPC1a, the terminal RPC design §6.3): served once this loop holds the home, the one writer, and only
         // then named in the address, so a terminal that reads it finds it served. A name already held serves none, said in the log.
-        // NOTIFY2f: a press that ends unanswered is kept in Done and failed.
+        // NOTIFY2f, CONFIRMWAIT1a-i: a press taken back after it was shown, or ended by the close, is kept in Done and failed.
         if (Pipe is { } served)
         {
-            served.Confirmations.Unanswered = Notices.Unanswered;
+            served.Confirmations.Noticed = Notices.Ended;
+            // CONFIRMWAIT1a-i (the confirm-wait design §5.2): a person's press's grounds are read by this loop's readers.
+            served.Grounds = new LoopGrounds(this, served);
             // TERMTRUST1a (D201 point 2): a finish runs here where this machine's registry says so, and a resume is of a hold the file holds now.
             served.StandingConfirmation.RunsHere = Processes.AliveOnThisMachine;
             served.StandingConfirmation.HeldNow = repository =>

@@ -4,16 +4,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A terminal's press answered or shown past its time runs nothing (NOTIFY2a, D196 point 4, the notification design §3.4): the bound
-/// the card states is the bound kept, whenever the timer fires. An answer, or a window's word that the card is shown, at or past the
-/// press's time ends it expired, the clock read first; and the press's own event names it by its id and its balloon names no route
-/// (§3.3).
+/// A terminal's press waits until the person answers (CONFIRMWAIT1a-i, D156's CONFIRMWAIT1 notes, the confirm-wait design §2, §5.2, §6,
+/// §9): no clock ends it, shown or not, however long; a Confirm is judged against its grounds while its card stays, checking; a read that
+/// fails then leaves it waiting; its asker takes back only what still waits; ten wait at once; and the press's own event names it by its
+/// id and its balloon names no route (NOTIFY2a's §3.3).
 /// </summary>
 /// <remarks>
-/// The confirmations alone, on a <see cref="HeldClock"/> whose timers are held late (<see cref="HeldClock.Pass"/>), as a loaded pool
-/// runs them (<c>held-clocks.md</c>): before NOTIFY2a only the timer's firing read the clock, so a Confirm taken while a late timer
-/// had not fired ran past the two minutes, and a word that the card was shown past its ten gave it two more. The pipe's end of the
-/// same, with the terminal's answer and nothing run, is <c>PipeConfirmTests</c>'.
+/// The confirmations alone, on a <see cref="HeldClock"/> the test moves (<c>held-clocks.md</c>): before CONFIRMWAIT1a-i a press asked was
+/// ended expired ten minutes after its ask unshown, or two after its showing. The pipe's end of the same, with the terminal's answer and
+/// nothing run, is <c>PipeConfirmTests</c>'.
 /// </remarks>
 public sealed class PipeConfirmationsTests : Bridge
 {
@@ -23,86 +22,200 @@ public sealed class PipeConfirmationsTests : Bridge
 
     private static readonly PipeAsker Asker = new("daoris-driver", 4242);
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task An_answer_at_or_past_its_two_minutes_ends_it_expired_though_its_timer_is_late(bool confirm)
+    [Fact]
+    public async Task A_press_shown_or_not_still_waits_a_day_later_and_the_person_s_answer_is_taken()
     {
         using var log = new MachineLog(Home, "desktop");
         var clock = new HeldClock();
         using var confirmations = new PipeConfirmations(Bus, log, clock);
-        var late = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
-        var inTime = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
-        Assert.True(confirmations.Show(late.Shown.Id));
-        clock.Pass(TimeSpan.FromSeconds(1));
-        Assert.True(confirmations.Show(inTime.Shown.Id));
+        var unshown = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
+        var shown = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
+        Assert.True(confirmations.Show(shown.Shown.Id));
 
-        // Two minutes from the first card's showing, its timer held late: it still waits, and the person answers it.
-        clock.Pass(TimeSpan.FromMinutes(2) - TimeSpan.FromSeconds(1));
+        // A day passes, every timer the clock made fired: nothing ended either.
+        clock.Advance(TimeSpan.FromDays(1));
+
         Assert.Equal(2, confirmations.Now().Waiting.Count);
-
-        Assert.False(confirmations.Answer(late.Shown.Id, confirm));
-        Assert.Equal(PipeConfirmationEnd.Expired, await late.Ended);
-        // The second, a second inside its own two minutes, is the person's answer as given.
-        Assert.True(confirmations.Answer(inTime.Shown.Id, confirm));
-        Assert.Equal(confirm ? PipeConfirmationEnd.Confirmed : PipeConfirmationEnd.Refused, await inTime.Ended);
-        Assert.Empty(confirmations.Now().Waiting);
-        Assert.Equal(["asked", "asked", "shown", "shown", "expired", confirm ? "confirmed" : "refused"], States());
+        Assert.All(confirmations.Now().Waiting, each => Assert.Null(each.Expires));
+        Assert.Equal(new PipeAnswer(PipeAnswered.Answered), await confirmations.AnswerAsync(unshown.Shown.Id, confirm: true));
+        Assert.Equal(PipeConfirmationEnd.Confirmed, (await unshown.Ended).End);
+        Assert.Equal(new PipeAnswer(PipeAnswered.Answered), await confirmations.AnswerAsync(shown.Shown.Id, confirm: false));
+        Assert.Equal(PipeConfirmationEnd.Refused, (await shown.Ended).End);
+        Assert.Equal(["asked", "asked", "shown", "confirmed", "refused"], States());
     }
 
     [Fact]
-    public async Task A_word_that_its_card_is_shown_past_its_ten_minutes_ends_it_expired_and_gives_it_no_more_time()
+    public void A_window_s_word_that_its_card_is_shown_is_kept_once_and_moves_nothing()
     {
         using var log = new MachineLog(Home, "desktop");
         var clock = new HeldClock();
         using var confirmations = new PipeConfirmations(Bus, log, clock);
         var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
+        clock.Advance(TimeSpan.FromHours(3));
 
-        clock.Pass(PipeConfirmations.FindWithin);
-        Assert.Single(confirmations.Now().Waiting);
+        Assert.True(confirmations.Show(asked.Shown.Id));
+        clock.Advance(TimeSpan.FromHours(3));
+        Assert.True(confirmations.Show(asked.Shown.Id));
 
-        Assert.False(confirmations.Show(asked.Shown.Id));
-        Assert.Equal(PipeConfirmationEnd.Expired, await asked.Ended);
-        Assert.Empty(confirmations.Now().Waiting);
-        Assert.False(confirmations.Answer(asked.Shown.Id, confirm: true));
-        Assert.Equal(["asked", "expired"], States());
+        var now = Assert.Single(confirmations.Now().Waiting);
+        Assert.Equal(asked.Shown.Asked + TimeSpan.FromHours(3), now.ShownAt);
+        Assert.Null(now.Expires);
+        Assert.Equal(["asked", "shown"], States());
     }
 
     [Fact]
-    public async Task A_word_for_a_card_shown_before_past_its_two_minutes_ends_it_expired()
+    public async Task A_Confirm_keeps_the_card_checking_until_its_grounds_are_judged_and_its_asker_takes_back_nothing_meanwhile()
     {
         using var log = new MachineLog(Home, "desktop");
-        var clock = new HeldClock();
-        using var confirmations = new PipeConfirmations(Bus, log, clock);
-        var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
-        Assert.True(confirmations.Show(asked.Shown.Id));
-        clock.Pass(TimeSpan.FromMinutes(1));
-        // Within its two minutes, a second window's word moves nothing.
-        Assert.True(confirmations.Show(asked.Shown.Id));
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        var judging = new TaskCompletionSource<PipeJudgement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker, judge: _ => judging.Task, checkWithin: TimeSpan.FromSeconds(30))!.Value;
+        Assert.Equal(30_000, asked.Shown.CheckWithin);
 
-        clock.Pass(TimeSpan.FromMinutes(1));
+        var answer = confirmations.AnswerAsync(asked.Shown.Id, confirm: true);
 
-        Assert.False(confirmations.Show(asked.Shown.Id));
-        Assert.Equal(PipeConfirmationEnd.Expired, await asked.Ended);
+        var checking = Assert.Single(confirmations.Now().Waiting);
+        Assert.True(checking.Checking);
+        Assert.Equal(PipeWithdrawal.Checking, confirmations.Withdraw(asked.Shown.Id));
+        Assert.Equal(new PipeAnswer(PipeAnswered.Gone), await confirmations.AnswerAsync(asked.Shown.Id, confirm: false));
+        Assert.False(answer.IsCompleted);
+
+        judging.SetResult(PipeJudgement.Holding);
+
+        Assert.Equal(new PipeAnswer(PipeAnswered.Answered), await answer);
+        Assert.Equal(PipeConfirmationEnd.Confirmed, (await asked.Ended).End);
         Assert.Empty(confirmations.Now().Waiting);
-        Assert.Equal(["asked", "shown", "expired"], States());
+        Assert.Equal(["asked", "checking", "confirmed"], States());
     }
 
     [Fact]
-    public async Task A_late_timer_that_fires_after_its_press_ended_ends_nothing_again()
+    public async Task A_Confirm_whose_ground_moved_ends_it_changed_with_its_reason()
     {
         using var log = new MachineLog(Home, "desktop");
-        var clock = new HeldClock();
-        using var confirmations = new PipeConfirmations(Bus, log, clock);
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        var moved = new PipeGroundChange("session", new Dictionary<string, string> { ["then"] = "awaiting-person", ["now"] = "completed" });
+        var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker, judge: _ => Task.FromResult(new PipeJudgement(PipeJudged.Changed, moved)))!.Value;
+
+        var answer = await confirmations.AnswerAsync(asked.Shown.Id, confirm: true);
+
+        Assert.Equal(PipeAnswered.Changed, answer.Outcome);
+        Assert.Same(moved, answer.Change);
+        var ending = await asked.Ended;
+        Assert.Equal(PipeConfirmationEnd.Changed, ending.End);
+        Assert.Same(moved, ending.Change);
+        Assert.Empty(confirmations.Now().Waiting);
+        Assert.Equal(["asked", "checking", "changed"], States());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_Confirm_whose_grounds_cannot_be_read_leaves_it_waiting_with_its_buttons_back(bool throws)
+    {
+        using var log = new MachineLog(Home, "desktop");
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        var mended = false;
+        var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker, judge: _ => mended
+            ? Task.FromResult(PipeJudgement.Holding)
+            : throws ? throw new IOException("the service is reconnecting") : Task.FromResult(new PipeJudgement(PipeJudged.Unread)))!.Value;
+
+        Assert.Equal(new PipeAnswer(PipeAnswered.Unread), await confirmations.AnswerAsync(asked.Shown.Id, confirm: true));
+
+        var still = Assert.Single(confirmations.Now().Waiting);
+        Assert.False(still.Checking);
+        Assert.False(asked.Ended.IsCompleted);
+
+        // A second Confirm with the reader mended runs it.
+        mended = true;
+        Assert.Equal(new PipeAnswer(PipeAnswered.Answered), await confirmations.AnswerAsync(asked.Shown.Id, confirm: true));
+        Assert.Equal(PipeConfirmationEnd.Confirmed, (await asked.Ended).End);
+        Assert.Equal(["asked", "checking", "unread", "checking", "confirmed"], States());
+    }
+
+    [Fact]
+    public async Task A_withdrawal_ends_only_what_waits_and_a_notice_is_kept_only_where_a_window_showed_it()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        var noticed = new List<(string Id, PipeConfirmationEnd End)>();
+        confirmations.Noticed = (press, end) => noticed.Add((press.Id, end));
+        var unseen = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
+        var seen = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
+        Assert.True(confirmations.Show(seen.Shown.Id));
+
+        Assert.Equal(PipeWithdrawal.Withdrawn, confirmations.Withdraw(unseen.Shown.Id));
+        Assert.Equal(PipeWithdrawal.Withdrawn, confirmations.Withdraw(seen.Shown.Id));
+        Assert.Equal(PipeWithdrawal.Gone, confirmations.Withdraw(seen.Shown.Id));
+
+        Assert.Equal(PipeConfirmationEnd.Withdrawn, (await unseen.Ended).End);
+        Assert.Equal(PipeConfirmationEnd.Withdrawn, (await seen.Ended).End);
+        Assert.Equal([(seen.Shown.Id, PipeConfirmationEnd.Withdrawn)], noticed);
+        Assert.Equal(new PipeAnswer(PipeAnswered.Gone), await confirmations.AnswerAsync(seen.Shown.Id, confirm: true));
+    }
+
+    [Fact]
+    public async Task The_close_ends_every_one_that_waits_and_each_is_noticed()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        var noticed = new List<PipeConfirmationEnd>();
+        confirmations.Noticed = (_, end) => noticed.Add(end);
+        var one = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
+        var two = confirmations.Ask(DriverModule.Name, "SESSION_DELETE", Values, Asker)!.Value;
+
+        confirmations.Close();
+
+        Assert.Equal(PipeConfirmationEnd.Closed, (await one.Ended).End);
+        Assert.Equal(PipeConfirmationEnd.Closed, (await two.Ended).End);
+        Assert.Equal([PipeConfirmationEnd.Closed, PipeConfirmationEnd.Closed], noticed);
+        Assert.Empty(confirmations.Now().Waiting);
+    }
+
+    [Fact]
+    public void Ten_wait_at_once_a_place_held_for_a_read_counts_and_one_let_go_frees_it()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
+        Assert.Equal(10, confirmations.Bound);
+        for (var each = 0; each < 9; each++) Assert.NotNull(confirmations.Ask(DriverModule.Name, Land, Values, Asker));
+        var place = confirmations.Hold();
+        Assert.NotNull(place);
+
+        Assert.Null(confirmations.Hold());
+        Assert.Null(confirmations.Ask(DriverModule.Name, Land, Values, Asker));
+        // Told to no window while its grounds are read.
+        Assert.Equal(9, confirmations.Now().Waiting.Count);
+
+        confirmations.Let(place);
+        confirmations.Let(place);
+        Assert.NotNull(confirmations.Hold());
+        Assert.Null(confirmations.Hold());
+    }
+
+    [Fact]
+    public void The_pipe_takes_more_connections_than_presses_may_wait()
+    {
+        var limits = new PipeLimits();
+
+        Assert.Equal(10, limits.Waiting);
+        Assert.Equal(16, limits.Connections);
+        Assert.True(limits.Connections > limits.Waiting);
+    }
+
+    [Fact]
+    public void Whether_a_terminal_waits_on_it_is_told_to_every_window_as_it_changes()
+    {
+        using var log = new MachineLog(Home, "desktop");
+        using var confirmations = new PipeConfirmations(Bus, log, new HeldClock());
         var asked = confirmations.Ask(DriverModule.Name, Land, Values, Asker)!.Value;
-        Assert.True(confirmations.Show(asked.Shown.Id));
-        clock.Pass(TimeSpan.FromMinutes(3));
-        Assert.False(confirmations.Answer(asked.Shown.Id, confirm: true));
+        Assert.True(asked.Shown.WaitedOn);
+        var told = Raised.Count(each => each.Type == PipeConfirmations.Event);
 
-        clock.Advance(TimeSpan.FromSeconds(1));
+        Assert.True(confirmations.WaitedOn(asked.Shown.Id, false));
+        Assert.True(confirmations.WaitedOn(asked.Shown.Id, false));
 
-        Assert.Equal(PipeConfirmationEnd.Expired, await asked.Ended);
-        Assert.Equal(["asked", "shown", "expired"], States());
+        Assert.False(Assert.Single(confirmations.Now().Waiting).WaitedOn);
+        Assert.Equal(told + 1, Raised.Count(each => each.Type == PipeConfirmations.Event));
     }
 
     [Fact]
@@ -141,7 +254,7 @@ public sealed class PipeConfirmationsTests : Bridge
         {
             var route = each.Route ?? "WRITE";
             var asked = confirmations.Ask(each.Module, route, [new PipeConfirmationField("/id", "string", "s9f8e7d6")], Asker)!.Value;
-            Assert.True(confirmations.Withdraw(asked.Shown.Id));
+            Assert.Equal(PipeWithdrawal.Withdrawn, confirmations.Withdraw(asked.Shown.Id));
         }
 
         var balloons = Raised.Where(each => each.Type == PipeConfirmations.AttentionType).Select(each => each.Payload!).ToList();
@@ -171,7 +284,7 @@ public sealed class PipeConfirmationsTests : Bridge
         foreach (var each in person)
         {
             var asked = confirmations.Ask(each.Module, each.Route ?? "WRITE", [new PipeConfirmationField("/id", "string", "s9f8e7d6")], Asker)!.Value;
-            Assert.True(confirmations.Withdraw(asked.Shown.Id));
+            Assert.Equal(PipeWithdrawal.Withdrawn, confirmations.Withdraw(asked.Shown.Id));
         }
 
         var balloons = Raised.Where(each => each.Type == PipeConfirmations.AttentionType).Select(each => each.Payload!).ToList();

@@ -16,9 +16,11 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     const state = notice.state ? t(`sessionState.${notice.state}`, { defaultValue: '' }) : '';
     return t('notifications.done.ended', { repository: notice.repository ?? '', state: state || t('notifications.done.other') });
   }
-  if (notice.kind === 'expired') {
+  if (notice.kind === 'expired' || notice.kind === 'withdrawn' || notice.kind === 'closed') {
+    // A terminal's press: one an older build ended by its time, one its terminal took back once shown, or one Daoris's close ended
+    // (CONFIRMWAIT1a-i, the confirm-wait design §6, §8.3).
     const act = notice.route ? t(`person.route.${notice.route}`, { defaultValue: '' }) : '';
-    return act ? t('notifications.done.expired', { act }) : t('notifications.done.other');
+    return act ? t(`notifications.done.${notice.kind}`, { act }) : t('notifications.done.other');
   }
   if (notice.kind === 'look') {
     // A look's news by its code (NOTIFY2h): never the driver's English line. A code a later build says reads as something ended.
@@ -80,7 +82,7 @@ function NoticeRow({ notice, onRead, onOpen, onDismiss, now }: {
   const row = useRef<HTMLLIElement>(null);
   const noButtons = useRef<HTMLElement>(null);
   useShownOnce(!notice.read, row, noButtons, () => onRead([notice.id]));
-  const failed = notice.kind === 'expired' || notice.kind === 'look' || notice.state === 'failed';
+  const failed = notice.kind === 'expired' || notice.kind === 'closed' || notice.kind === 'look' || notice.state === 'failed';
   const opens = onOpen && notice.session ? () => {
     if (!notice.read) onRead([notice.id]);
     onOpen(notice);

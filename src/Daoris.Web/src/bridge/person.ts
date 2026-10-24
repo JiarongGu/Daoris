@@ -4,7 +4,7 @@ import { api, holdPersonKey, type ServiceConfirmation } from '../data/api';
 import { keys } from '../data/queries';
 import type { Confirmation, ConfirmationAnswer, ConfirmationField, ConfirmationNamed } from '../person/Confirmations';
 import type { AppointmentAnswer, AppointmentNow, StandingAnswer, StandingConfirmationNow, StandingUnread } from '../person/standing';
-import { call, refusedNoRoute } from './call';
+import { call, confirmBound, refusedNoRoute } from './call';
 import { notPushed } from './state/slices';
 
 // The person's door in the window (PERSONDOOR1f, RPC1c; D156 points 2 and 4, the person-door design §2.2 and §4.2): the person
@@ -15,7 +15,15 @@ import { notPushed } from './state/slices';
 /** A press a terminal sent over the pipe, waiting for the window, as `PERSON_CONFIRMATIONS` answers it and `CONFIRMATIONS` tells it. */
 export type PipeConfirmation = {
   id: string; module: string; route: string; fields: ConfirmationField[];
-  asker?: { process?: string | null; pid?: number | null } | null; asked: string; expires: string;
+  asker?: { process?: string | null; pid?: number | null } | null; asked: string;
+  /** None (CONFIRMWAIT1a-i): a terminal's press waits until the person answers; a shell before it told its time. */
+  expires?: string | null;
+  /** Whether a terminal still waits on its line for it (the confirm-wait design §8.1); absent from a shell before it. */
+  waitedOn?: boolean | null;
+  /** That its Confirm is being judged against what it rests on (§5.2): its buttons are replaced meanwhile. */
+  checking?: boolean | null;
+  /** The longest that judgement may take, in milliseconds, which the Confirm waits for (§5.2). */
+  checkWithin?: number | null;
   /** When a window first said its card was in front of the person (CONFIRMSEEN1); absent until then, and from a shell before it. */
   shownAt?: string | null;
   /** The values its sentence names by role (NOTIFY2b, the modules' `PipeWording`), beside `fields`; absent from a shell before them. */
@@ -49,7 +57,9 @@ function keep(client: QueryClient, told: unknown) {
 const fromPipe = (waiting: PipeConfirmation): Confirmation => ({
   source: 'pipe', id: waiting.id, module: waiting.module, route: waiting.route, fields: waiting.fields ?? [],
   named: Array.isArray(waiting.named) ? waiting.named : [], asker: waiting.asker ?? null, asked: waiting.asked ?? null,
-  expires: waiting.expires, shown: waiting.shownAt != null,
+  expires: waiting.expires ?? null, shown: waiting.shownAt != null,
+  waitedOn: typeof waiting.waitedOn === 'boolean' ? waiting.waitedOn : null, checking: waiting.checking === true,
+  checkWithin: typeof waiting.checkWithin === 'number' ? waiting.checkWithin : null,
 });
 
 /**
@@ -154,18 +164,25 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
 /**
  * The person's Confirm or Refuse (RPC1c, PERSONDOOR1f): a terminal's press by its confirmation's id over the bridge, the service's
  * at its own door with the key. One no longer waiting is answered, never thrown, for the card to say where it was pressed (the
- * UI/UX design's R3): the bridge's code (`gone`), or the host's own sentence.
+ * UI/UX design's R3): the bridge's code (`gone`), or the host's own sentence. A terminal's Confirm is answered once its grounds are
+ * judged (CONFIRMWAIT1a-i, the confirm-wait design §5.2), so it waits as long as the press says that may take: `changed` with the
+ * ground's reason and its values, or `unread` where they could not be read just now.
  */
 export function useAnswerConfirmation() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async ({ waiting, confirm }: { waiting: Confirmation; confirm: boolean }): Promise<ConfirmationAnswer> => {
       if (waiting.source === 'pipe') {
-        const answer = await call<{ answered?: boolean; why?: string | null; message?: string | null }>(
-          'PERSON_CONFIRM', { id: waiting.id, confirm });
-        return answer?.answered === true
-          ? { answered: true }
-          : { answered: false, why: answer?.why ?? null, message: answer?.message ?? '' };
+        const bound = confirmBound(waiting.checkWithin);
+        const answer = await call<{
+          answered?: boolean; why?: string | null; message?: string | null; reason?: string | null; values?: Record<string, unknown> | null;
+        }>('PERSON_CONFIRM', { id: waiting.id, confirm }, bound ? { timeoutMs: bound } : undefined);
+        if (answer?.answered === true) return { answered: true };
+        const values = Object.fromEntries(Object.entries(answer?.values ?? {}).filter((each): each is [string, string] => typeof each[1] === 'string'));
+        return {
+          answered: false, why: answer?.why ?? null, message: answer?.message ?? '',
+          ...(typeof answer?.reason === 'string' ? { reason: answer.reason, values } : {}),
+        };
       }
 
       try {
@@ -182,8 +199,8 @@ export function useAnswerConfirmation() {
 }
 
 /**
- * The window's word that a terminal's press is in front of the person (CONFIRMSEEN1): its two minutes count from the first such
- * word of any window, which the shell tells every window by `CONFIRMATIONS`. A service's confirmation has none: its door counts its
+ * The window's word that a terminal's press is in front of the person (CONFIRMSEEN1): kept once by the shell, which tells every window
+ * by `CONFIRMATIONS`; it moves no clock (CONFIRMWAIT1a-i). A service's confirmation has none: its door counts its
  * own. Answered, never thrown: one no longer waiting is `gone`, which says nothing here, since the telling takes its card away.
  */
 export function useConfirmationShown() {

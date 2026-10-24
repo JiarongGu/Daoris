@@ -1114,7 +1114,7 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
     /// the terminal as the system names it, since it was asked, never a value it carries; and it is gone once it no longer waits.
     /// </summary>
     [Fact]
-    public void A_terminal_s_press_waiting_for_the_window_is_a_row_by_its_route_and_terminal_never_its_values()
+    public async Task A_terminal_s_press_waiting_for_the_window_is_a_row_by_its_route_and_terminal_never_its_values()
     {
         var clock = new HeldClock();
         using var log = new MachineLog(Home, "desktop");
@@ -1127,18 +1127,18 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
         Is($$$"""
              {"kind":"confirmation","id":"{{{asked.Shown.Id}}}","since":"{{{Moments.Write(at)}}}","confirmation":{"module":"DAORIS.DRIVER",
-              "route":"SESSION_ARCHIVE","asker":{"process":"daoris-driver","pid":4242},"expires":"{{{Moments.Write(at.AddMinutes(10))}}}","shownAt":null}}
+              "route":"SESSION_ARCHIVE","asker":{"process":"daoris-driver","pid":4242},"expires":null,"shownAt":null}}
              """, Assert.Single(rows));
         Assert.DoesNotContain("s1a2b3c4", JsonSerializer.Serialize(AttentionStateSlice.Judge(new() { Confirmations = Waits(confirmations) })!
             .Select(each => each.Data), IpcJson.Options));
 
-        // Shown, its two minutes are said; answered, it is no row.
+        // Shown, it says so and still has no time (CONFIRMWAIT1a-i); answered, it is no row.
         clock.Advance(TimeSpan.FromMinutes(1));
         Assert.True(confirmations.Show(asked.Shown.Id));
         var shown = Assert.Single(Rows(new() { Confirmations = Waits(confirmations) }))["confirmation"]!;
         Assert.Equal(Moments.Write(at.AddMinutes(1)), shown["shownAt"]!.GetValue<string>());
-        Assert.Equal(Moments.Write(at.AddMinutes(3)), shown["expires"]!.GetValue<string>());
-        Assert.True(confirmations.Answer(asked.Shown.Id, confirm: false));
+        Assert.Null(shown["expires"]);
+        Assert.Equal(PipeAnswered.Answered, (await confirmations.AnswerAsync(asked.Shown.Id, confirm: false)).Outcome);
         Assert.Empty(Rows(new() { Confirmations = Waits(confirmations) }));
         Assert.Empty(AttentionStateSlice.ConfirmationWaits(null));
     }
@@ -1653,6 +1653,8 @@ public sealed class AttentionStateSliceTests : DriverModuleBridge
 
         Assert.Equal(AttentionStateSlice.Fields["row"].Order(StringComparer.Ordinal), TypeFields(attention, "PushedAttention").Order(StringComparer.Ordinal));
         Assert.Equal(AttentionStateSlice.Fields["account"].Order(StringComparer.Ordinal), TypeFields(accounts, "AccountRowFacts").Order(StringComparer.Ordinal));
+        // CONFIRMWAIT1a-i (the confirm-wait design §8.2): a terminal's press's fields, so its `expires`, null now, stays one field both sides.
+        Assert.Equal(AttentionStateSlice.Fields["confirmation"].Order(StringComparer.Ordinal), TypeFields(attention, "PushedConfirmation").Order(StringComparer.Ordinal));
     }
 
     /// <summary>A remote held since it could not authenticate, as <see cref="AttentionStateSlice.GitWaits"/> reads one (GITAUTH1a).</summary>

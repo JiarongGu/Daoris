@@ -8,7 +8,7 @@ import { useAnsweredRead, useMessageAnnouncements, usePressAnnouncements } from 
 // once in the focused main window on the press's own event by its id (a service's on its told list's first sight), and staying until
 // the view opens or the press ends; never in a window not focused, and never while the view is open.
 
-const PIPE: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], expires: '2026-10-21T09:10:00Z' };
+const PIPE: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], expires: null };
 const SERVICE: Confirmation = { source: 'service', id: 'h1', route: 'POST /x', act: 'a verdict', fields: [], expires: '2026-10-21T09:04:00Z' };
 
 describe('announcing a press', () => {
@@ -66,6 +66,18 @@ describe('announcing a press', () => {
     act(() => { expect(result.current.close(result.current.toasts[0]!.id)).toBe(true); });
     expect(result.current.toasts).toHaveLength(0);
     expect(result.current.close(12345)).toBe(false);
+  });
+
+  // CONFIRMWAIT1a-i (the confirm-wait design §8.2, §10's two-asks row): two presses within a minute are two toasts in the focused main
+  // window, one per press, each by its id; only the balloon behind the window folds them (the modules' `BalloonFold`).
+  it('says two presses asked within a minute as two toasts, one per press, each by its id', () => {
+    const { result } = announce({ presses: [PIPE, { ...PIPE, id: 'c2', route: 'SET_DRIVABLE' }], viewOpen: false });
+
+    act(() => { result.current.heard('c1'); });
+    act(() => { result.current.heard('c2'); });
+    act(() => { result.current.heard('c2'); });
+
+    expect(result.current.toasts.map((toast) => toast.text)).toEqual(['asks: c1', 'asks: c2']);
   });
 
   // NOTIFY2j: the shell tells every window one list at once, so the window focused as it is told says it, and no other.

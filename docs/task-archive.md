@@ -20413,3 +20413,17 @@ prompt once; an open past the bound holds the carried words until a new word of 
 while a wait runs, from a quiet `transient` record event. Each case seen failing first. **Not proved:** the open past the bound with
 every side write failing, and the server half of `HoldsQuest` for the transient verdict (D210's AGENTERRORS1a2 note). Detail: D210's
 AGENTERRORS1a2 note.
+## CONFIRMWAIT1a-i — no time end: a terminal's press waits until the person answers, judged at the Confirm (2026-10-24, D156)
+
+> **CONFIRMWAIT1a-i — no time end** (modules, web), after 1b. The pipe's presses lose their clock; `expires` is sent `null` for them and the card and the row's why draw `person.waits` and the new why for `source: 'pipe'`, keeping the service door's lines; the grounds (the table in `PipeCensus.Targets` with `ask`, each `plan` row's projection and bound, each ground's reader, the census test, `already`, `ungrounded`, the read in the press's task after the standing judgement and the bound, `changed` judged with the card kept `checking`, a failed read at the Confirm leaving it waiting, `PERSON_CONFIRM`'s bound); `RESULT`'s `waiting` and `waitedOn`; `WITHDRAW`; the bound of ten and the connections at sixteen; the balloon coalesced in `SessionBalloon`, one `Confirming` event per press kept; the withdrawn notice; and **a press still ends at a close** (`stopping`, as today), now said to the person as a notice. Held by `PipeConfirmationsTests`, `PipeConfirmTests`, `PipeCensusTests` (the grounds census and the per-plan-route cases beside it), `AttentionStateSliceTests` (the twin test extended), `NoticesStateSliceTests`, `DriverModulePersonTests`, `SessionBalloonTests`, and the page's `person/Confirmations`, `notifications/announce` and `bridge/person` tests, en and zh. Its gain is partial: on an install that is republished while the person is away, every close still ends what waits, so 1a-ii follows it directly.
+
+(Row 1a-i of `docs/2026-10-24-confirm-wait-design.md` §10, of the backlog's CONFIRMWAIT1; quest `#cf5ecf9eeef2`.)
+
+**Outcome** 2026-10-24. The row as named: no clock on a pipe press, `expires` null on every surface; one grounds row per person route
+(`PipeTargets`, `PipeGrounds`, read by the loop's `LoopGrounds`), `ungrounded`, `already`, `unread-grounds`, `changed` with its reason
+while the card stays `checking`, a failed read leaving it waiting; `RESULT` `waiting`, `WITHDRAW`, ten waiting and sixteen connections;
+the withdrawn and closed notices; the balloon folded by the minute in `BalloonFold`; the card's, the attention row's and Overview's
+summary's words, en and zh. The grounds census and the fingerprint pairs sit in `PipeGroundsCensusTests` beside `PipeCensusTests`.
+Where the code answers less than §5.1 names (short commits, no tips) the projections take what it answers, said in the note for Codex's
+read. **Not built:** 1a-ii's records and restart; the card's door to a plan's page, which no row names. Detail: D156's CONFIRMWAIT1a-i
+note.

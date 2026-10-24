@@ -47,18 +47,20 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
         Assert.Equal("boolean", shown[0].GetProperty("fields")[1].GetProperty("type").GetString());
         Assert.Equal("daoris-driver", shown[0].GetProperty("asker").GetProperty("process").GetString());
         Assert.Equal(4242, shown[0].GetProperty("asker").GetProperty("pid").GetInt32());
-        Assert.True(shown[0].TryGetProperty("expires", out _));
+        // CONFIRMWAIT1a-i: a terminal's press has no time, and its card says whether a terminal waits on it.
+        Assert.True(!shown[0].TryGetProperty("expires", out var expires) || expires.ValueKind == System.Text.Json.JsonValueKind.Null);
+        Assert.True(shown[0].GetProperty("waitedOn").GetBoolean());
 
         // The person's answers: each once, and the terminal's press hears how it ended.
         var confirmed = await AnswerAsync(module, "PERSON_CONFIRM", new { id = archive.Shown.Id, confirm = true });
         Assert.True(confirmed.GetProperty("answered").GetBoolean());
         Assert.True(confirmed.GetProperty("confirmed").GetBoolean());
-        Assert.Equal(PipeConfirmationEnd.Confirmed, await archive.Ended);
+        Assert.Equal(PipeConfirmationEnd.Confirmed, (await archive.Ended).End);
         var refused = await AnswerAsync(module, "PERSON_CONFIRM", new { id = delete.Shown.Id, confirm = false });
         Assert.False(refused.GetProperty("confirmed").GetBoolean());
-        Assert.Equal(PipeConfirmationEnd.Refused, await delete.Ended);
+        Assert.Equal(PipeConfirmationEnd.Refused, (await delete.Ended).End);
 
-        // One no longer waiting is said as data, by its code, for the card to word: answered elsewhere, expired or taken back.
+        // One no longer waiting is said as data, by its code, for the card to word: answered elsewhere or taken back.
         var again = await AnswerAsync(module, "PERSON_CONFIRM", new { id = archive.Shown.Id, confirm = true });
         Assert.False(again.GetProperty("answered").GetBoolean());
         Assert.Equal("gone", again.GetProperty("why").GetString());
@@ -92,11 +94,11 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONFIRMSEEN1: the window says a card is in front of the person, and its two minutes count from then, once; one no longer waiting
-    /// is said as data, by its code.
+    /// CONFIRMSEEN1: the window says a card is in front of the person, kept once; it moves no clock (CONFIRMWAIT1a-i). One no longer
+    /// waiting is said as data, by its code.
     /// </summary>
     [Fact]
-    public async Task The_window_says_a_card_is_shown_and_its_two_minutes_count_from_then()
+    public async Task The_window_says_a_card_is_shown_once_and_it_moves_no_clock()
     {
         var (module, pipe, services) = Composed();
         using var composed = services;
@@ -111,11 +113,11 @@ public sealed class DriverModulePersonTests : DriverModuleBridge
         Assert.True(shown.GetProperty("shown").GetBoolean());
         var waiting = (await AnswerAsync(module, "PERSON_CONFIRMATIONS")).GetProperty("waiting")[0];
         var at = waiting.GetProperty("shownAt").GetDateTimeOffset();
-        Assert.Equal(at + TimeSpan.FromMinutes(2), waiting.GetProperty("expires").GetDateTimeOffset());
+        Assert.True(!waiting.TryGetProperty("expires", out var expires) || expires.ValueKind == System.Text.Json.JsonValueKind.Null);
         Assert.True((await AnswerAsync(module, "PERSON_CONFIRM_SHOWN", new { id = archive.Shown.Id })).GetProperty("shown").GetBoolean());
         Assert.Equal(at, (await AnswerAsync(module, "PERSON_CONFIRMATIONS")).GetProperty("waiting")[0].GetProperty("shownAt").GetDateTimeOffset());
 
-        Assert.True(pipe.Confirmations.Answer(archive.Shown.Id, confirm: false));
+        Assert.Equal(PipeAnswered.Answered, (await pipe.Confirmations.AnswerAsync(archive.Shown.Id, confirm: false)).Outcome);
         var gone = await AnswerAsync(module, "PERSON_CONFIRM_SHOWN", new { id = archive.Shown.Id });
         Assert.False(gone.GetProperty("shown").GetBoolean());
         Assert.Equal("gone", gone.GetProperty("why").GetString());

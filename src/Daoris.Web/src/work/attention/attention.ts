@@ -1,5 +1,5 @@
 import i18n from '../../locales/i18n';
-import { clockOf, elapsed, size } from '../../locales/format';
+import { elapsed, size } from '../../locales/format';
 import type { Ask, GoAhead, Quest, SetUpRef, Session } from '../../data/api';
 import type { RuleProposal } from '../../settings/repository/AgentRules';
 import { proposalAuthor, proposalChange } from '../../settings/repository/proposals';
@@ -513,14 +513,8 @@ export type PushedAttention = {
   /** When a signed-out account was read (UXFIX3). */
   read?: string | null;
   account?: PushedAccountFacts;
-  /**
-   * A press a terminal sent that waits for the window's Confirm (CONFIRMSEEN1): its route, the terminal as the system names it, when
-   * it is refused, and when a window first showed it. Never a value it carries, which its card alone shows.
-   */
-  confirmation?: {
-    module: string; route: string; asker?: { process?: string | null; pid?: number | null } | null; expires: string;
-    shownAt?: string | null;
-  };
+  /** A press a terminal sent that waits for the window's Confirm (CONFIRMSEEN1): {@link PushedConfirmation}. */
+  confirmation?: PushedConfirmation;
   /**
    * A volume still below its free-space floor once the floor's acts ran (KEEP1f): where it is mounted, its free space, size and floor in
    * bytes as read when it was said, what the floor freed in this stretch, and what *Free up space…* could free (null where none was read).
@@ -536,6 +530,19 @@ export type PushedAttention = {
  * Why a git remote is held (the git auth design §5.1): refused, its push refused, its host key unknown, its host key changed, or
  * (GITAUTH1b) its repository's own ssh command, which Daoris's ssh door cannot stand in front of on this install.
  */
+/**
+ * A press a terminal sent that waits for the window's Confirm (CONFIRMSEEN1): its route, the terminal as the system names it, and when a
+ * window first showed it. Never a value it carries, which its card alone shows. `expires` is null for it (CONFIRMWAIT1a-i: it waits until
+ * the person answers), a field kept so the slice and this type stay twins.
+ */
+export type PushedConfirmation = {
+  module: string;
+  route: string;
+  asker?: { process?: string | null; pid?: number | null } | null;
+  expires?: string | null;
+  shownAt?: string | null;
+};
+
 export type GitHeldClass = 'refused' | 'write-refused' | 'host-unknown' | 'host-changed' | 'own-input';
 
 /**
@@ -892,7 +899,8 @@ function agentNamed(harness: string, tools: readonly Tool[] = []): string {
 
 /**
  * A terminal's press waiting for the window (CONFIRMSEEN1), in its card's own words: what it asks, by its route's act where the page
- * has one; what sent it; and that it runs only on the card's Confirm, until when. Never a value it carries.
+ * has one; what sent it; and that it runs only on the card's Confirm, and waits until the person answers (CONFIRMWAIT1a-i). Never a value
+ * it carries.
  */
 function confirmationWorded(waiting: NonNullable<PushedAttention['confirmation']>): Pick<Attention, 'title' | 'detail'> {
   const act = `person.route.${waiting.route}`;
@@ -903,7 +911,7 @@ function confirmationWorded(waiting: NonNullable<PushedAttention['confirmation']
       asker?.process && asker.pid != null
         ? i18n.t('person.asker.process', { process: asker.process, pid: asker.pid })
         : asker?.pid != null ? i18n.t('person.asker.pid', { pid: asker.pid }) : i18n.t('person.asker.unknown'),
-      i18n.t('work.attention.confirmationWhy', { time: clockOf(waiting.expires) }),
+      i18n.t('work.attention.confirmationWhy'),
     ].join(' '),
   };
 }

@@ -38,19 +38,30 @@ export type Confirmation = {
   /** When it was asked. */
   asked?: string | null;
   /**
-   * When it is refused: for a terminal's press, the end of its wait to be found until a window shows it, and of its two minutes from
-   * then (CONFIRMSEEN1).
+   * When it is refused: the service door's two minutes from its ask. None for a terminal's press, which waits until the person answers
+   * (CONFIRMWAIT1a-i, the confirm-wait design §8.1).
    */
-  expires: string;
+  expires: string | null;
   /**
-   * Whether it was shown: a terminal's press by any window's word, which starts its two minutes; the service's by this window's own
-   * judgement, since its door hears none (NOTIFY2b).
+   * Whether it was shown: a terminal's press by any window's word, which moves no clock; the service's by this window's own judgement,
+   * since its door hears none (NOTIFY2b).
    */
   shown?: boolean;
+  /** Whether a terminal still waits on its line for a terminal's press (§8.1); null where the shell does not say. */
+  waitedOn?: boolean | null;
+  /** That its Confirm is being judged against what it rests on (§5.2): its buttons are replaced by a line saying so. */
+  checking?: boolean;
+  /** The longest that judgement may take, in milliseconds, which the Confirm waits for (§5.2). */
+  checkWithin?: number | null;
 };
 
-/** How the person's answer went: answered, or no longer waiting, by the bridge's code (`gone`) or the host's own sentence. */
-export type ConfirmationAnswer = { answered: true } | { answered: false; why: string | null; message: string };
+/**
+ * How the person's answer went: answered, or not, by the bridge's code (`gone`, `changed` with the ground's `reason` and its values,
+ * `unread`) or the host's own sentence.
+ */
+export type ConfirmationAnswer =
+  | { answered: true }
+  | { answered: false; why: string | null; message: string; reason?: string; values?: Record<string, string> };
 
 /** A session a press names, as the page names it (NOTIFY2b, §3.2); its workspace only where its repository's name is in two. */
 export type PressSession = { title: string; repository: string; workspace?: string | null };
@@ -102,9 +113,10 @@ export function AdoptionNotice({ onDismiss }: { onDismiss?: () => void }) {
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell. **Its default is no** (design §4.2): nothing is
- * focused or pressed for the person, *Refuse* comes first, and a card nobody answers is refused when its time ends. A refusal of
- * the answer itself is said under its card (the UI/UX design's R3), and by a toast only where the card has gone with its press by
- * the time the answer returns, as a Confirm past its time finds it (NOTIFY2a, the notification design §3.4).
+ * focused or pressed for the person, and *Refuse* comes first. A terminal's press waits until the person answers (CONFIRMWAIT1a-i),
+ * its card saying whether a terminal still waits on it; the service's is refused when its two minutes end. A refusal of the answer
+ * itself is said under its card (the UI/UX design's R3), and by a toast only where the card has gone with its press by the time the
+ * answer returns (NOTIFY2a, the notification design §3.4).
  */
 export function Confirmations({ waiting, onAnswer, notify, onShown, names }: {
   waiting: Confirmation[];
@@ -113,7 +125,7 @@ export function Confirmations({ waiting, onAnswer, notify, onShown, names }: {
   notify?: Notify;
   /**
    * Said once of each press not yet shown, when its decision region is in view in a window in front of the person (NOTIFY2b, §3.4):
-   * a terminal's two minutes count from then. Absent, nothing is said.
+   * kept by the shell, which moves no clock by it. Absent, nothing is said.
    */
   onShown?: (waiting: Confirmation) => void;
   names?: PressNames;
@@ -227,8 +239,9 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
   useEffect(() => {
     latest.current = { waiting, onShown, notify };
   });
-  // NOTIFY2a: whether the card is still drawn when its answer returns. A Confirm past its time ends the press, and the pipe tells
-  // every window before it answers, so the card has gone by then and its refusal is a toast (R3 where the place has gone).
+  // NOTIFY2a: whether the card is still drawn when its answer returns. A press answered in another window, or one whose Confirm found a
+  // ground moved (CONFIRMWAIT1a-i), has gone by then where another window's view closed, and its refusal is a toast (R3 where the place
+  // has gone).
   const drawn = useRef(true);
   useEffect(() => {
     drawn.current = true;
@@ -237,9 +250,10 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
   useShownOnce(waiting.shown !== true && onShown !== undefined, region, buttons,
     () => latest.current.onShown?.(latest.current.waiting));
 
-  // Its time left once shown, stepping each second (R2); a service's from its ask, since its door counts its two minutes from then.
-  const counting = waiting.source === 'service' || waiting.shown === true;
-  const now = useNow(counting ? 1000 : null);
+  // A service's time left, stepping each second (R2), from its ask, since its door counts its two minutes from then. A terminal's has
+  // none (CONFIRMWAIT1a-i): its age is said instead, which grows in weight once it has waited over an hour.
+  const counting = waiting.source === 'service' && waiting.expires !== null;
+  const now = useNow(counting ? 1000 : 60_000);
 
   // Said under the card while it is drawn, or toasted once it has gone with its press.
   const say = (text: string) => {
@@ -252,7 +266,7 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
     setSaid(null);
     try {
       const answer = await onAnswer(waiting, confirm);
-      if (!answer.answered) say(answer.why === 'gone' || !answer.message ? t('person.gone') : answer.message);
+      if (!answer.answered) say(refusalOf(t, waiting, answer));
     } catch (error) {
       say(sentence(error));
     } finally {
@@ -269,7 +283,9 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
   const others = named.filter((each) => !['words', 'files', 'level', 'form'].includes(each.role)
     && !(head.sessionSaid && each.role === 'session'));
   const asker = waiting.asker;
-  const left = Math.max(0, new Date(waiting.expires).getTime() - now);
+  const left = waiting.expires ? Math.max(0, new Date(waiting.expires).getTime() - now) : 0;
+  const old = waiting.asked ? now - new Date(waiting.asked).getTime() > HOUR : false;
+  const checking = waiting.source === 'pipe' && waiting.checking === true;
 
   return (
     <div
@@ -326,15 +342,31 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
             : asker?.pid != null
               ? t('person.asker.pid', { pid: asker.pid })
               : t('person.asker.unknown')}
-          {waiting.asked ? <> · {t('person.asked', { ago: ago(waiting.asked) })}</> : null}
+          {waiting.asked
+            ? <> · <span className={old ? 'font-semibold text-ink' : undefined}>{t('person.asked', { ago: ago(waiting.asked) })}</span></>
+            : null}
         </p>
-        <p className="m-0 text-small text-warn">
-          {counting ? t('person.left', { time: span(left) }) : t('person.until', { time: clockOf(waiting.expires) })}
-        </p>
+        {waiting.source === 'pipe' ? (
+          <p className="m-0 text-small text-warn">
+            {t('person.waits')}
+            {waiting.waitedOn != null ? <> {t(waiting.waitedOn ? 'person.waitedOn' : 'person.notWaitedOn')}</> : null}
+          </p>
+        ) : (
+          <p className="m-0 text-small text-warn">
+            {counting ? t('person.left', { time: span(left) }) : waiting.expires ? t('person.until', { time: clockOf(waiting.expires) }) : null}
+          </p>
+        )}
         <p className="m-0 text-small">{t('person.cannotTell')}</p>
         <div ref={buttons} data-press-buttons="" className="flex flex-wrap items-center gap-2">
-          <Button disabled={busy} onClick={() => void press(false)}>{t('person.refuse')}</Button>
-          <Button variant="primary" disabled={busy} onClick={() => void press(true)}>{t('person.confirm')}</Button>
+          {checking ? (
+            // CONFIRMWAIT1a-i (§5.2): while its Confirm is judged, its buttons are replaced by what is under way.
+            <p role="status" className="m-0 text-small text-ink-soft">{t('person.checking')}</p>
+          ) : (
+            <>
+              <Button disabled={busy} onClick={() => void press(false)}>{t('person.refuse')}</Button>
+              <Button variant="primary" disabled={busy} onClick={() => void press(true)}>{t('person.confirm')}</Button>
+            </>
+          )}
           <button
             type="button"
             aria-expanded={details}
@@ -368,6 +400,33 @@ function Card({ waiting, onAnswer, notify, onShown, names }: {
 }
 
 type T = (key: string, values?: Record<string, unknown>) => string;
+
+const HOUR = 3_600_000;
+
+/** The grounds whose `then` and `now` are a state the catalogue words: a session's by `sessionState.*`, a quest's by `status.*` (§8.3). */
+const STATES: Record<string, string> = { session: 'sessionState', quest: 'status' };
+
+/**
+ * Why an answer was not taken, in the card's words: one no longer waiting by its source's own sentence; a ground that moved by its
+ * reason (CONFIRMWAIT1a-i, the confirm-wait design §5.1, §8.3), each value a code the catalogue words, never the code itself; one whose
+ * grounds could not be read just now; else the host's own sentence.
+ */
+function refusalOf(t: T, waiting: Confirmation, answer: Extract<ConfirmationAnswer, { answered: false }>): string {
+  if (answer.why === 'gone' || (!answer.message && !answer.reason && answer.why !== 'unread')) {
+    return t(waiting.source === 'pipe' ? 'person.gone' : 'person.goneService');
+  }
+  if (answer.why === 'unread') return t('person.unread');
+  if (answer.why === 'changed' && answer.reason) {
+    const values = answer.values ?? {};
+    const state = STATES[answer.reason];
+    const word = (code: string | undefined) => (code && state ? t(`${state}.${code}`, { defaultValue: code }) : code ?? '');
+    const act = t(routeKey(waiting.module, waiting.route), { defaultValue: waiting.route });
+    const key = `person.changed.${answer.reason}`;
+    const said = t(key, { then: word(values.then), now: word(values.now), repository: values.repository ?? '', branch: values.branch ?? '', act });
+    return said === key ? answer.message : said;
+  }
+  return answer.message;
+}
 
 /**
  * The card's sentence (§3.2): composed from Daoris's words for the route's act and the request's own values, never from a sentence

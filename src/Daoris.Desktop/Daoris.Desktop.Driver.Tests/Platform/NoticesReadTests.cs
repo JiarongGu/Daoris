@@ -93,6 +93,33 @@ public sealed class NoticesReadTests
             (notice["id"]!.GetValue<string>(), notice["kind"]!.GetValue<string>(), notice["read"]!.GetValue<bool>(), notice["code"]!.GetValue<string>()));
     }
 
+    /// <summary>
+    /// CONFIRMWAIT1a-i: a terminal's press has no time, so its line says it waits until the person answers, and its JSON names no
+    /// <c>expires</c>; the service door's keeps its time left. A terminal's is listed after every timed one.
+    /// </summary>
+    [Fact]
+    public void A_terminal_s_press_waits_until_the_person_answers_and_the_service_s_keeps_its_time()
+    {
+        var now = new DateTimeOffset(2026, 10, 24, 9, 0, 0, TimeSpan.Zero);
+        var look = new NoticesLook(
+            [
+                new PressWaiting("terminal", "p1", "SET_DRIVABLE", null, now.AddHours(-3), null, true),
+                new PressWaiting("service", "h1", "an ask", null, now, now.AddSeconds(90), false),
+            ],
+            [], [], []);
+
+        var said = NoticesRead.Said(look, json: false, now);
+        var json = NoticesRead.Said(look, json: true, now);
+
+        Assert.Contains("  an ask · at the service's door · 1m 30s left", said.Out);
+        Assert.Contains("  SET_DRIVABLE · from a terminal · shown · waits until you answer", said.Out);
+        Assert.True(said.Out.ToList().IndexOf("  an ask · at the service's door · 1m 30s left")
+            < said.Out.ToList().IndexOf("  SET_DRIVABLE · from a terminal · shown · waits until you answer"));
+        var presses = JsonNode.Parse(json.Out[0])!["presses"]!.AsArray();
+        Assert.Null(presses.Single(each => each!["id"]!.GetValue<string>() == "p1")!["expires"]);
+        Assert.NotNull(presses.Single(each => each!["id"]!.GetValue<string>() == "h1")!["expires"]);
+    }
+
     [Fact]
     public async Task Alone_with_no_record_it_says_so()
     {

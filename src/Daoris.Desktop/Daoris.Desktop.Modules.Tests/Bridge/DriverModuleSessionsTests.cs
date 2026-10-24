@@ -482,7 +482,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         services.AddSingleton<IIpcModule>(module);
         services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
         using var provider = services.BuildServiceProvider();
-        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log);
+        // CONFIRMWAIT1a-i: the grounds read from the loop's readers' stand-in, the world unmoved between the ask and the Confirm.
+        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log) { Grounds = new StubGrounds() };
         loop.Pipe = pipe;
         var name = pipe.Serve()!;
         var output = new StringWriter();
@@ -538,7 +539,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         services.AddSingleton<IIpcModule>(module);
         services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
         using var provider = services.BuildServiceProvider();
-        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log);
+        // CONFIRMWAIT1a-i: the grounds read from the loop's readers' stand-in, the world unmoved between the ask and the Confirm.
+        using var pipe = new InstancePipe(provider.GetRequiredService<IMessageDispatcher>(), Bus, Home, log) { Grounds = new StubGrounds() };
         loop.Pipe = pipe;
         var name = pipe.Serve()!;
         var output = new StringWriter();

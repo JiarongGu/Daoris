@@ -96,12 +96,19 @@ public sealed class PipeCensus
     private readonly FrozenDictionary<string, PipeClass> _whole;
     private readonly FrozenDictionary<string, FrozenDictionary<string, PipeRule>> _byRoute;
 
-    private PipeCensus(IDictionary<string, PipeClass> whole, IDictionary<string, IDictionary<string, PipeRule>> byRoute)
+    private PipeCensus(IDictionary<string, PipeClass> whole, IDictionary<string, IDictionary<string, PipeRule>> byRoute, PipeTargets targets)
     {
         _whole = whole.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
         _byRoute = byRoute.ToFrozenDictionary(
             each => each.Key, each => each.Value.ToFrozenDictionary(StringComparer.Ordinal), StringComparer.OrdinalIgnoreCase);
+        Targets = targets;
     }
+
+    /// <summary>
+    /// What each person's press rests on (CONFIRMWAIT1a-i, the confirm-wait design §5.1): the grounds of every route this census makes
+    /// <see cref="PipeClass.Person"/>, in every form. D209's targets are the same table's other column, which STEWARDROLE1a fills.
+    /// </summary>
+    public PipeTargets Targets { get; }
 
     /// <summary>The desktop's census.</summary>
     public static PipeCensus Daoris { get; } = new(
@@ -122,7 +129,8 @@ public sealed class PipeCensus
             ["DAORIS.REGISTRY"] = Classed(("PICK_FOLDER", PipeClass.Window), ("WRITE_DECLARATION", PipeClass.Person)),
             // The machine's wiring: a read is open, a wiring and an unwiring are the person's (D48 §5, D156 §3's re-wiring).
             ["DAORIS.REMOTES"] = Classed(("STATE", PipeClass.Open), ("SET", PipeClass.Person), ("REMOVE", PipeClass.Person)),
-        });
+        },
+        PipeTargets.Daoris);
 
     /// <summary>
     /// How the pipe treats <paramref name="module"/>'s <paramref name="route"/> sent with <paramref name="payload"/>: null where the
@@ -164,7 +172,10 @@ public sealed class PipeCensus
             : [];
     }
 
-    /// <summary>This census with <paramref name="module"/>'s <paramref name="route"/> classed <paramref name="class"/> beside the rest: a test's.</summary>
+    /// <summary>
+    /// This census with <paramref name="module"/>'s <paramref name="route"/> classed <paramref name="class"/> beside the rest: a test's. Its
+    /// targets are this census's, so a person's route added here has no grounds row.
+    /// </summary>
     public PipeCensus With(string module, string route, PipeClass @class)
     {
         var byRoute = _byRoute.ToDictionary(
@@ -172,7 +183,7 @@ public sealed class PipeCensus
             StringComparer.OrdinalIgnoreCase);
         if (!byRoute.TryGetValue(module, out var routes)) byRoute[module] = routes = new Dictionary<string, PipeRule>(StringComparer.Ordinal);
         routes[route] = Whole(@class);
-        return new PipeCensus(new Dictionary<string, PipeClass>(_whole, StringComparer.OrdinalIgnoreCase), byRoute);
+        return new PipeCensus(new Dictionary<string, PipeClass>(_whole, StringComparer.OrdinalIgnoreCase), byRoute, Targets);
     }
 
     /// <summary>A route of one class whatever its payload: a rule naming no value.</summary>

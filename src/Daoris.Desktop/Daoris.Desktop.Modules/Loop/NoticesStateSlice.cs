@@ -195,11 +195,22 @@ public sealed class NoticesStateSlice
         }
     }
 
-    /// <summary>A press that ended unanswered, kept as a notice (§2.2): every window's, said as it arrives.</summary>
-    public void Unanswered(PipeConfirmation press)
+    /// <summary>
+    /// A terminal's press whose end the person is told of, kept as a notice (§2.2; CONFIRMWAIT1a-i, the confirm-wait design §6): one its
+    /// terminal took back after a window showed it (<see cref="Notices.Withdrawn"/>), and one the close ended (<see cref="Notices.Closed"/>).
+    /// Every window's, said as it arrives. No press ends by its time any more; <see cref="Notices.Expired"/> stays for a notice kept before.
+    /// </summary>
+    public void Ended(PipeConfirmation press, PipeConfirmationEnd end)
     {
+        var kind = end switch
+        {
+            PipeConfirmationEnd.Withdrawn => Notices.Withdrawn,
+            PipeConfirmationEnd.Closed => Notices.Closed,
+            _ => null,
+        };
+        if (kind is null) return;
         var route = press.Module == DriverModule.Name ? press.Route : $"{press.Module.Replace("DAORIS.", "", StringComparison.Ordinal)}.{press.Route}";
-        Record(new Notice($"expired-{press.Id}", Notices.Expired, _clock.GetUtcNow(), Route: route), said: false);
+        Record(new Notice($"{kind}-{press.Id}", kind, _clock.GetUtcNow(), Route: route), said: false);
     }
 
     /// <summary>

@@ -25,7 +25,11 @@ const ROWS: PushedAttention[] = [
 ];
 const KNOWN: AttentionRead = { state: 'known', rows: ROWS, working: 2, running: 2, resyncing: false };
 const PRESS: Confirmation = {
-  source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true, expires: new Date(NOW.getTime() + 100_000).toISOString(),
+  source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true, expires: null,
+};
+// A press at the service's door, which keeps its two minutes (CONFIRMWAIT1a-i leaves it as it was).
+const SERVICE: Confirmation = {
+  source: 'service', id: 'h1', route: 'POST /x', act: 'a verdict', fields: [], expires: new Date(NOW.getTime() + 100_000).toISOString(),
 };
 
 describe("Overview's summary of what needs you", () => {
@@ -38,13 +42,21 @@ describe("Overview's summary of what needs you", () => {
     await i18n.changeLanguage('en');
   });
 
+  // CONFIRMWAIT1a-i: only the service door's presses end by a time, so only they give the line one; a terminal's never does.
+  it("says the service's nearest time where one waits, and no time for a terminal's press", () => {
+    render(<NeedsSummary attention={{ ...KNOWN, rows: [] }} presses={[PRESS, SERVICE]} onNotifications={() => {}} />);
+
+    const summary = screen.getByRole('region', { name: 'What needs you' });
+    expect(within(summary).getAllByRole('button')[0]).toHaveTextContent('Waiting for your confirmation2refused by itself in 1m 40s');
+  });
+
   it('says a line per group with its count and its oldest wait, and lists no row', () => {
     render(<NeedsSummary attention={KNOWN} presses={[PRESS]} onNotifications={() => {}} />);
 
     const summary = screen.getByRole('region', { name: 'What needs you' });
     const lines = within(summary).getAllByRole('button');
     expect(lines.map((line) => line.textContent)).toEqual([
-      'Waiting for your confirmation1refused by itself in 1m 40s',
+      'Waiting for your confirmation1It waits until you answer.',
       'Holding work2the oldest 2h 10m',
       'Waiting for your word1the oldest 1d 0h',
       'Ready for you1',
@@ -61,7 +73,7 @@ describe("Overview's summary of what needs you", () => {
 
     const lines = within(screen.getByRole('region', { name: 'What needs you' })).getAllByRole('button');
     expect(lines.map((line) => line.textContent)).toEqual([
-      'Waiting for your confirmation1refused by itself in 1m 40s',
+      'Waiting for your confirmation1It waits until you answer.',
       'Holding work2the oldest 2h 10m',
       'Waiting for your word2the oldest 3d 0h',
       'Ready for you1',
@@ -158,7 +170,7 @@ describe("Overview's summary of what needs you", () => {
 
     const summary = screen.getByRole('region', { name: '等你处理' });
     expect(within(summary).getAllByRole('button').map((line) => line.textContent)).toEqual([
-      '等待你确认11 分 40 秒后自动拒绝',
+      '等待你确认1它会一直等到你回答。',
       '阻塞工作2最早的已等 2 小时 10 分',
       '等你发话1最早的已等 1 天 0 小时',
       '待你审阅1',

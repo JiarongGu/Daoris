@@ -63,10 +63,12 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
   const rows = needsListed(attention.rows);
   const lines: Line[] = [];
   if (presses.length > 0) {
-    const first = Math.min(...presses.map((each) => new Date(each.expires).getTime()));
+    // Only the service door's presses end by a time; a terminal's waits until the person answers (CONFIRMWAIT1a-i), so a summary of
+    // terminals' presses alone says that, and never a time they no longer have.
+    const timed = presses.flatMap((each) => (each.expires ? [new Date(each.expires).getTime()] : []));
     lines.push({
       id: 'presses', label: t('person.label'), count: presses.length, opens: 'presses',
-      detail: t('person.left', { time: span(Math.max(0, first - now)) }),
+      detail: timed.length > 0 ? t('person.left', { time: span(Math.max(0, Math.min(...timed) - now)) }) : t('person.waits'),
     });
   }
   for (const group of GROUP_ORDER) {
