@@ -13,7 +13,10 @@ Paths below are relative to this file. Historical documents have their own [arch
 
 | Document | Purpose and standing |
 |---|---|
-| `../README.md` | Product and doctrine commands; consumer entry point |
+| `../README.md` | Landing page on GitHub and npm (D211): pitch, quickstart, packages, status, agent rules; ships in the CLI package, so every link absolute |
+| `guide/README.md` | The reference behind the README: commands, manifest, layers, seams; GitHub's About and social-preview text |
+| `../llms.txt`, `../context7.json` | For coding agents (D211): adopter docs indexed; README's agent rules, held equal by `tools/doc-links.mjs` |
+| `assets/` | Package icon (PNG from `tools/make-icon.py`), its SVG, and the README's 36 px logo; the seal's twins |
 | `../AGENTS.md` | Shared brief and generated doctrine |
 | `../CLAUDE.md` | Generated import of AGENTS; no separate guide |
 | `development.md` | Contributor setup, checks, integration and documentation maintenance |

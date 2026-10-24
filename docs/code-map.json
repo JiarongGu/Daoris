@@ -4,7 +4,7 @@
     {
       "id": "daoris",
       "path": "src/Daoris.Cli",
-      "summary": "Cross-repo engineering doctrine: materialize canonical agent rules and knowledge into a repo, and keep them from drifting."
+      "summary": "Engineering doctrine for coding agents, kept the same in every repository: write a shared canon of rules, knowledge and skills into AGENTS.md and .claude/, and fail an offline check when a copy drifts."
     },
     {
       "id": "Daoris.Desktop.App",

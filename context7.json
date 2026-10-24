@@ -1,0 +1,42 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "Daoris",
+  "description": "Engineering doctrine for coding agents, kept the same in every repository: a CLI (npm: daoris) that writes a shared canon of rules, knowledge and skills into AGENTS.md and .claude/, records it in daoris.lock and fails an offline check on drift, and a desktop that drives agent sessions per repository.",
+  "folders": [
+    "docs/guide",
+    "canon/core",
+    "canon/packs",
+    "examples",
+    "src/Daoris.Desktop",
+    "src/Daoris.Service",
+    "src/Daoris.Devkit"
+  ],
+  "excludeFolders": [
+    "examples/engine/.claude",
+    "examples/game/.claude",
+    "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests",
+    "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests",
+    "src/Daoris.Service/Daoris.Service.Tests",
+    "src/Daoris.Service/Daoris.Service.Http.Tests",
+    "src/Daoris.Devkit/Daoris.Devkit.Tests"
+  ],
+  "excludeFiles": [
+    "CHANGELOG.md",
+    "TASKS.md",
+    "ROADMAP.md",
+    "FIX-LOG.md",
+    "task-archive.md",
+    "CLAUDE.md"
+  ],
+  "rules": [
+    "Never edit a synced copy: a file under `.claude/` with a provenance header, or the `daoris:rules` region of `AGENTS.md`. `daoris check` reports the edit as drift; promote an improvement with `daoris upstream <file>`.",
+    "Write the repository's own text outside the `daoris:rules` region of `AGENTS.md`, which `sync` rewrites whole. `CLAUDE.md` loads it through its `@AGENTS.md` import.",
+    "`daoris check` compares the disk with `daoris.lock`, never with the newest canon, and needs no network. A pack added to `daoris.json` fails it until `daoris sync` runs.",
+    "After `daoris sync`, commit `daoris.json`, `daoris.lock`, `AGENTS.md`, `CLAUDE.md` and `.claude/` together: the lock is what `check` judges, and the diff is what a reviewer reads.",
+    "Never hand-edit `.claude/INDEX.md`: `sync` regenerates it from the files, and `check` fails while it is behind.",
+    "Put the repository's own knowledge and skills under `.claude/knowledge/` and `.claude/skills/` at names the canon does not use; `sync` never touches them and indexes them as `(local)`.",
+    "Never pass `sync --force` to get past a refusal: it overwrites a file you edited, one written before adopting, or one you improved that the canon retires. Read the files it names.",
+    "Pin the package (`npx daoris@<version>`): the canon ships inside it, so the pin is the doctrine's version, and the manifest's `source` records it.",
+    "A change another repository owns is a quest to it, never an edit from here. Fill in `domain` in `daoris.json` first: `daoris connect` refuses a repository without one."
+  ]
+}

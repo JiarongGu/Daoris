@@ -1310,7 +1310,8 @@ export const REACH = Object.freeze([
     why: "the example family the rehearsals and the end-to-end suite run on, the offers the install lays out, which the driver's PluginOffer test reads as they stand (D103, MOD9b), and the performed example the PluginKit Process tests run (FABRIC-PERFORM1e)",
   },
   { paths: ['examples/**'], gates: ['service', 'rehearse-family', 'web'], why: 'the example family the family rehearsal and the end-to-end suite run on' },
-  { paths: ['README.md', 'LICENSE'], gates: ['service', 'rehearse'], why: 'staged into the package the release rehearsal packs' },
+  { paths: ['README.md', 'LICENSE'], gates: ['service', 'rehearse', 'cli'], why: 'staged into the package the release rehearsal packs, and read by tools/doc-links.mjs, which verify runs' },
+  { paths: ['llms.txt', 'context7.json'], gates: ['cli'], why: "tools/doc-links.mjs, which verify runs, holds their agent rules equal to the README's" },
   {
     paths: ['docs/index/**'],
     gates: [],

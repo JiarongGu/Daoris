@@ -10,6 +10,9 @@
  * and no readme, and D11's "the canon ships inside the package" would have
  * silently stopped being true.
  *
+ * The changelog is the fourth (GITHUBDOCS1, D211): npm has no release-notes field, so the package
+ * carries the release-facing log itself, beside the README npm shows as its page.
+ *
  * The root copies are the source of truth; these are gitignored and rebuilt at
  * pack time. Nothing edits them, and `upstream` writes to the root canon through
  * the same resolution the CLI uses.
@@ -32,7 +35,7 @@ import { copyTree } from './fsx.mjs';
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const pkgRoot = join(repoRoot, 'src', 'Daoris.Cli');
 
-const STAGED = ['canon', 'LICENSE', 'README.md'];
+const STAGED = ['canon', 'LICENSE', 'README.md', 'CHANGELOG.md'];
 
 if (process.argv.includes('--clean')) {
   for (const name of [...STAGED, 'dist']) {
@@ -44,9 +47,9 @@ if (process.argv.includes('--clean')) {
 
 rmSync(join(pkgRoot, 'canon'), { recursive: true, force: true });
 copyTree(join(repoRoot, 'canon'), join(pkgRoot, 'canon'));
-for (const file of ['LICENSE', 'README.md']) {
+for (const file of ['LICENSE', 'README.md', 'CHANGELOG.md']) {
   copyFileSync(join(repoRoot, file), join(pkgRoot, file));
 }
 // stderr, not stdout: this runs as `prepack`, and `npm pack --json` emits the
 // file manifest on stdout — anything else written there is parsed as JSON.
-console.error('stage-package: staged canon/, LICENSE and README.md into src/Daoris.Cli');
+console.error('stage-package: staged canon/, LICENSE, README.md and CHANGELOG.md into src/Daoris.Cli');

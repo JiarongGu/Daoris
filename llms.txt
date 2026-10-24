@@ -1,0 +1,46 @@
+# Daoris
+
+> Daoris (道衍) is engineering doctrine for coding agents, kept the same in every repository, and a desktop that runs the agents (npm: `daoris`, a CLI for Node 22 or later with no runtime dependency). The CLI writes one shared canon of rules, knowledge and skills into a repository, the rules into a generated region of `AGENTS.md` and the knowledge and skills into `.claude/`, records each copy in `daoris.lock`, and fails `daoris check`, offline, when a copy drifts. The desktop drives agent sessions one repository at a time and carries quests, the way one repository asks another for work.
+
+A repository adopts with `npx daoris@<version> init`, then `sync`, then `check`, and commits `daoris.json`, `daoris.lock`, `AGENTS.md`, `CLAUDE.md` and `.claude/`. The canon ships inside the package, so the pinned version is the doctrine's version. Packs add stack-specific doctrine; the repository's own knowledge and skills sit beside the canon's, indexed as local. The devkit (`daoris-devkit`) is a native binary of the gates every repository needs, and the knowledge service indexes what the repositories of a workspace have learned.
+
+Rules for working in a repository that adopted Daoris:
+
+<!-- agent-rules:begin — a copy of README.md's block; tools/doc-links.mjs holds the three equal (D211) -->
+- Never edit a synced copy: a file under `.claude/` with a provenance header, or the `daoris:rules` region of `AGENTS.md`. `daoris check` reports the edit as drift; promote an improvement with `daoris upstream <file>`.
+- Write the repository's own text outside the `daoris:rules` region of `AGENTS.md`, which `sync` rewrites whole. `CLAUDE.md` loads it through its `@AGENTS.md` import.
+- `daoris check` compares the disk with `daoris.lock`, never with the newest canon, and needs no network. A pack added to `daoris.json` fails it until `daoris sync` runs.
+- After `daoris sync`, commit `daoris.json`, `daoris.lock`, `AGENTS.md`, `CLAUDE.md` and `.claude/` together: the lock is what `check` judges, and the diff is what a reviewer reads.
+- Never hand-edit `.claude/INDEX.md`: `sync` regenerates it from the files, and `check` fails while it is behind.
+- Put the repository's own knowledge and skills under `.claude/knowledge/` and `.claude/skills/` at names the canon does not use; `sync` never touches them and indexes them as `(local)`.
+- Never pass `sync --force` to get past a refusal: it overwrites a file you edited, one written before adopting, or one you improved that the canon retires. Read the files it names.
+- Pin the package (`npx daoris@<version>`): the canon ships inside it, so the pin is the doctrine's version, and the manifest's `source` records it.
+- A change another repository owns is a quest to it, never an edit from here. Fill in `domain` in `daoris.json` first: `daoris connect` refuses a repository without one.
+<!-- agent-rules:end -->
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/JiarongGu/Daoris/main/README.md): what Daoris is, a quickstart, the packages and the status
+- [The guide](https://raw.githubusercontent.com/JiarongGu/Daoris/main/docs/guide/README.md): every command, the manifest, the three layers of doctrine, the seams for packs, gates, harnesses and plugins, and the service, platform and desktop beyond the CLI
+- [The desktop](https://raw.githubusercontent.com/JiarongGu/Daoris/main/src/Daoris.Desktop/README.md): installing the desktop, the driver and its adapters, what the window asks of the machine
+- [The knowledge service](https://raw.githubusercontent.com/JiarongGu/Daoris/main/src/Daoris.Service/README.md): the registry, quests between repositories, running the service and its shared mode
+- [The devkit](https://raw.githubusercontent.com/JiarongGu/Daoris/main/src/Daoris.Devkit/README.md): the universal gates, declaring a repository's own gates in `daoris.gates.json`, and getting the binary
+
+## Doctrine
+
+- [The core rules](https://github.com/JiarongGu/Daoris/tree/main/canon/core/rules): what every adopting repository's agents always load
+- [The core knowledge](https://github.com/JiarongGu/Daoris/tree/main/canon/core/knowledge): documents read on demand, each saying when it applies
+- [The core skills](https://github.com/JiarongGu/Daoris/tree/main/canon/core/skills): procedures invoked by name, such as `doc-loader` and `post-feature`
+- [The packs](https://github.com/JiarongGu/Daoris/tree/main/canon/packs): stack-specific doctrine a manifest names in `packs`
+
+## Examples
+
+- [The example family](https://raw.githubusercontent.com/JiarongGu/Daoris/main/examples/README.md): an engine and a game adopting, registering and exchanging a quest
+- [The engine's manifest](https://raw.githubusercontent.com/JiarongGu/Daoris/main/examples/engine/daoris.json): a manifest with its `domain`, what the repository is, owns and accepts
+- [The engine's AGENTS.md](https://raw.githubusercontent.com/JiarongGu/Daoris/main/examples/engine/AGENTS.md): the repository's own brief beside the generated rules region
+- [The plugin examples](https://github.com/JiarongGu/Daoris/tree/main/examples/plugins): a plugin's folder and `plugin.json`, for a browser, a landing on GitHub or Azure DevOps, and a performed step
+
+## Optional
+
+- [Changelog](https://raw.githubusercontent.com/JiarongGu/Daoris/main/CHANGELOG.md): what a user of each release sees changed
+- [The canon's changelog](https://raw.githubusercontent.com/JiarongGu/Daoris/main/canon/CHANGELOG.md): what changed in the doctrine between versions

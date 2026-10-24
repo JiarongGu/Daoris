@@ -406,7 +406,8 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Daoris ${{ steps.version.outputs.version }}
-          body: 'See CHANGELOG.md.'
+          # The changelog is the release notes (GITHUBDOCS1, D211), linked at the tag so the link reads what shipped.
+          body: 'What changed: https://github.com/JiarongGu/Daoris/blob/${{ steps.version.outputs.tag }}/CHANGELOG.md'
           draft: ${{ inputs.draft }}
           # The binaries AND their .sha256 files. A digest published only in the release notes is one
           # nobody can script against; published as a file beside the artefact, it can be recorded into

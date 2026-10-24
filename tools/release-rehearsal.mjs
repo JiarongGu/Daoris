@@ -79,6 +79,7 @@ const shipped = new Set(
   )[0].files.map((f) => f.path),
 );
 check('the README ships', shipped.has('README.md'));
+check('the changelog ships, as the package\'s release notes', shipped.has('CHANGELOG.md'));
 check(
   `a LICENSE ships alongside the "${pkg.license}" declaration in package.json`,
   shipped.has('LICENSE'),

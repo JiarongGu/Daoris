@@ -559,13 +559,13 @@ public sealed class SystemWiringTests : IDisposable
     }
 
     /// <summary>
-    /// The search reads code, never a test's scratch: the CLI's tests write the rehearsal's stub agent under <c>src/Daoris.Cli/_fixtures/</c>
-    /// while CI's driver gate runs beside them, and the census once read it as a source (2026-10-24).
+    /// The search reads code, never a test's scratch: the CLI package's tests write the rehearsal's stub agent under their
+    /// <c>_fixtures/</c> while CI's driver gate runs beside them, and the census once read it as a source (2026-10-24).
     /// </summary>
     [Theory]
-    [InlineData("Daoris.Cli/src/cli/main.ts", true)]
-    [InlineData("Daoris.Cli/_fixtures/deployment-rehearsal-acp-stub/acp-agent.mjs", false)]
-    [InlineData("Daoris.Cli/fixtures/stub.mjs", false)]
+    [InlineData("Daoris.Web/src/app/main.ts", true)]
+    [InlineData("Daoris.Web/_fixtures/deployment-rehearsal-acp-stub/acp-agent.mjs", false)]
+    [InlineData("Daoris.Web/fixtures/stub.mjs", false)]
     public void The_search_reads_code_and_never_a_tests_scratch(string relative, bool searched) =>
         Assert.Equal(searched, WiringVariables.Searched(relative));
 

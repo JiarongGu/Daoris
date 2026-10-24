@@ -1,7 +1,32 @@
 {
   "name": "daoris",
   "version": "0.0.1",
-  "description": "Cross-repo engineering doctrine: materialize canonical agent rules and knowledge into a repo, and keep them from drifting.",
+  "description": "Engineering doctrine for coding agents, kept the same in every repository: write a shared canon of rules, knowledge and skills into AGENTS.md and .claude/, and fail an offline check when a copy drifts.",
+  "keywords": [
+    "ai-agents",
+    "coding-agents",
+    "agents-md",
+    "claude-code",
+    "codex",
+    "llm",
+    "doctrine",
+    "engineering-standards",
+    "agent-rules",
+    "skills",
+    "knowledge-base",
+    "drift",
+    "cli",
+    "monorepo"
+  ],
+  "homepage": "https://github.com/JiarongGu/Daoris#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JiarongGu/Daoris.git",
+    "directory": "src/Daoris.Cli"
+  },
+  "bugs": {
+    "url": "https://github.com/JiarongGu/Daoris/issues"
+  },
   "type": "module",
   "bin": {
     "daoris": "bin/daoris.mjs"
@@ -12,7 +37,8 @@
   "files": [
     "bin",
     "dist",
-    "canon"
+    "canon",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "test": "node --test \"test/**/*.ts\"",
