@@ -339,6 +339,9 @@ public static class TreesRoutes
     /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
     public static InstanceRoute Land { get; } = new(DriverModule, PressesTold.Land, RouteClass.Person);
 
+    /// <summary><c>trees land &lt;session&gt; --without-look "…"</c> (CHATFLOW1d2): a chat run's <i>Accept without the look…</i>, the person's press.</summary>
+    public static InstanceRoute LandWithoutLook { get; } = new(DriverModule, PressesTold.LandWithoutLook, RouteClass.Person);
+
     /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept.</summary>
     public static InstanceRoute LandEntry { get; } = new(DriverModule, PressesTold.LandEntry, RouteClass.Person);
 
@@ -364,6 +367,7 @@ public static class TreesRoutes
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
     [
         ("trees land <session>", Land),
+        ("trees land <session> --without-look \"…\"", LandWithoutLook),
         ("trees land --entry <id>", LandEntry),
         ("trees land --ask <id>", LandAsk),
         ("trees remove <path>", DiscardTree),

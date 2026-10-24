@@ -38,11 +38,31 @@ public enum QueueEdit
 /// to end. The page says so; told only <paramref name="Taking"/>, a conversation's first words read as
 /// waiting behind a turn when nothing had answered yet.
 /// </param>
+/// <param name="Pressing">
+/// The person's press on a chat run's work holds the conversation (CHATFLOW1d, the chat-flow design §5.2 point 1): what is queued waits for
+/// that press to answer, landed or refused, not for a turn. The page says so.
+/// </param>
 public sealed record ChatQueue(
-    bool Taking, IReadOnlyList<ChatMessage> Queued, DateTimeOffset? LastTurnEnded = null, bool Opening = false)
+    bool Taking, IReadOnlyList<ChatMessage> Queued, DateTimeOffset? LastTurnEnded = null, bool Opening = false, bool Pressing = false)
 {
     /// <summary>Nothing running and nothing waiting — a conversation between turns, or none at all.</summary>
     public static readonly ChatQueue Idle = new(false, []);
+}
+
+/// <summary>What reserving a conversation for the person's press came to (CHATFLOW1d, <c>ChatTurns.PressAsync</c>).</summary>
+public enum PressHold
+{
+    /// <summary>Reserved: no turn starts until the press answers.</summary>
+    Held,
+
+    /// <summary>A turn is taking, opening or waiting, or another press holds it: the person presses again once it ends.</summary>
+    Busy,
+
+    /// <summary>The conversation is finishing, held for a hand-over's take, or gone.</summary>
+    Ending,
+
+    /// <summary>No runner in this process holds the conversation.</summary>
+    NotHere,
 }
 
 /// <summary>What became of a word said to a conversation (MSG1c, D137 §2.1), in the reach the record and the page speak of.</summary>

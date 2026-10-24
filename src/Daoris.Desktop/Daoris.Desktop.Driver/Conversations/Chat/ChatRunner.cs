@@ -58,7 +58,7 @@ internal sealed record ConversationWalk(
 /// <para><b>An ended chat goes on</b> (MSG1c, D137 §2.2): the person's words kept on its record are taken up here at
 /// once, its record reopening and its own conversation resumed with them (<see cref="ChatGoOn"/>).</para>
 /// </remarks>
-public sealed class ChatRunner : IDisposable
+public sealed class ChatRunner : IDisposable, IChatPressing
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _opening = new();
 
@@ -1984,6 +1984,16 @@ public sealed class ChatRunner : IDisposable
         _context.Turned.TryGetValue(sessionId, out var chat)
             ? chat.Turns.State is { Taking: false, Opening: false, Queued.Count: 0, LastTurnEnded: not null }
             : null;
+
+    /// <inheritdoc cref="IChatPressing.HoldAsync"/>
+    public Task<PressHold> HoldAsync(string sessionId, CancellationToken ct = default) =>
+        _context.Turned.TryGetValue(sessionId, out var chat) ? chat.Turns.PressAsync(ct) : Task.FromResult(PressHold.NotHere);
+
+    /// <inheritdoc cref="IChatPressing.Release"/>
+    public void Release(string sessionId)
+    {
+        if (_context.Turned.TryGetValue(sessionId, out var chat)) chat.Turns.Pressed();
+    }
 
     /// <summary>
     /// Take back or reword one word a conversation holds for its turn (QUEUEEDIT1a); <see cref="QueueEdit.Taken"/> where a turn

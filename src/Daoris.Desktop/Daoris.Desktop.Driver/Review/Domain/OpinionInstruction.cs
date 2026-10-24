@@ -84,6 +84,18 @@ public static class OpinionInstruction
 
     private static void Asked(StringBuilder text, OpinionPacket packet)
     {
+        // CHATFLOW1d (the chat-flow design §7): a chat run's work was asked by no quest. Its opening is named as the opening, never as what
+        // was asked, since by a later landing it may no longer describe the work; the conversation itself is never handed (D155 point 6).
+        if (packet.Opening is { } opening)
+        {
+            text.Append("\n## The conversation's opening\n\nNo quest asked this work: it was done in a conversation with the person. ")
+                .Append("Its opening, the person's own first words, is quoted below as the conversation's opening, not as what was asked: ")
+                .Append("the work may have moved past it since. The conversation itself is not handed to you; judge the work by itself, ")
+                .Append("by its commits' messages and by the repository's own rules.\n\n")
+                .Append(Quoted(opening, ""));
+            return;
+        }
+
         text.Append("\n## What was asked\n");
         if (packet.Quests.Count == 0)
         {

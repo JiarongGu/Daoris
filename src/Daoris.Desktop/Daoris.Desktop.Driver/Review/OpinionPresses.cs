@@ -25,10 +25,16 @@ public sealed class OpinionPresses(string home, ServiceClient service)
 {
     private readonly SessionTrees _trees = new(home);
 
-    /// <summary>What a session's work is, for the gate: its tree, its quest, the chain's key and repository, and its run (WORKFLOW1f).</summary>
-    private sealed record Work(string Session, string Tree, string Quest, string Chain, string Repository, string Workspace, IOpinionWorld World)
+    /// <summary>
+    /// What a session's work is, for the gate: its tree, its quest, the chain's key and repository, and its run (WORKFLOW1f). A chat run's
+    /// (CHATFLOW1d) has no quest, and its run's key, <c>chat-&lt;first&gt;</c>, is the gate's key in place of a chain's.
+    /// </summary>
+    private sealed record Work(string Session, string Tree, string? Quest, string Chain, string Repository, string Workspace, IOpinionWorld World)
     {
         public string? Run { get; init; }
+
+        /// <summary>The chat run whose work this is (CHATFLOW1d), where it serves no quest; null for a quest's.</summary>
+        public string? ChatRun { get; init; }
     }
 
     /// <summary>The whole landing gate for a session's work, as every door reads it.</summary>
@@ -36,9 +42,13 @@ public sealed class OpinionPresses(string home, ServiceClient service)
     {
         var (work, refused) = await WorkAsync(session, ct).ConfigureAwait(false);
         if (work is null) return new(false, refused!);
-        var gate = await _trees.GateAsync(work.Tree, work.Quest, work.World, session, ct).ConfigureAwait(false);
+        var gate = await GateOfAsync(work, ct).ConfigureAwait(false);
         return new(true, gate.Opinion.Says) { Gate = gate };
     }
+
+    /// <summary>The whole gate for the work, keyed by its chat run where it has one, so every press here reads what the landing reads.</summary>
+    private Task<LandingGate> GateOfAsync(Work work, CancellationToken ct) =>
+        _trees.GateAsync(work.Tree, work.Quest, work.World, work.Session, ct, run: work.ChatRun);
 
     /// <summary>
     /// <i>Go on anyway…</i> (§8.5): what is unsettled stays so, the person's answer is kept with their words at the commit that
@@ -59,16 +69,23 @@ public sealed class OpinionPresses(string home, ServiceClient service)
     /// drew it (<see cref="LandingGate.Answers"/>), so a press over a page drawn before the gate moved answers nothing.
     /// </summary>
     /// <returns>The gate after the answer, or the gate as read where nothing was answered.</returns>
-    public async Task<LandingGate> PressedAsync(string session, LandingGate gate, string? token, string? tree, string? quest, CancellationToken ct = default)
+    /// <param name="run">
+    /// The chat run whose press this is (CHATFLOW1d, the chat-flow design §7), keyed by the run where no quest is, so its press answers a
+    /// dispute and commits nobody read as a quest's does; null for a quest's.
+    /// </param>
+    /// <param name="door">The door the press was made at: the screen's, or the terminal's.</param>
+    public async Task<LandingGate> PressedAsync(
+        string session, LandingGate gate, string? token, string? tree, string? quest, CancellationToken ct = default, string? run = null,
+        string door = ReviewDoors.Screen)
     {
-        if (!gate.Answers(token) || tree is null || quest is null || gate.Opinion.Tip is not { } tip) return gate;
+        if (!gate.Answers(token) || tree is null || (quest is null && !ChatRuns.IsChatRun(run)) || gate.Opinion.Tip is not { } tip) return gate;
         var (work, _) = await WorkAsync(session, ct).ConfigureAwait(false);
         if (work is null) return gate;
         new OpinionGates(home).Said(work.Chain, work.Repository, new OpinionPersonWord(OpinionPersonSaid.Press, tip, DateTimeOffset.UtcNow)
         {
-            Door = ReviewDoors.Screen,
+            Door = door,
         });
-        return await _trees.GateAsync(tree, quest, work.World, session, ct).ConfigureAwait(false);
+        return await _trees.GateAsync(tree, quest, work.World, session, ct, tip: gate.Tip, run: work.ChatRun).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -111,18 +128,30 @@ public sealed class OpinionPresses(string home, ServiceClient service)
                 + "a press chooses among what the rule declares, never beyond it.");
         }
 
-        // The look starts what is owed: one owed here at the rule's first occasion, if none was, so the request is read.
+        // The look starts what is owed: one owed here at the rule's first occasion, if none was, so the request is read. A chat run's is owed
+        // at the landing (CHATFLOW1d, the chat-flow design §5.2 point 3), never at a first occasion of `steps`, which would close it past at
+        // once; it carries the tip and the person's turn count read at this press, captured with the conversation reserved where a runner
+        // here holds it, so its findings are delivered by the press's rule.
         var dues = new OpinionDues(home);
-        if (!dues.Open().Any(due => string.Equals(due.Session, session, StringComparison.OrdinalIgnoreCase)))
+        if (work.ChatRun is { } chatRun)
         {
-            dues.Due(new OpinionDue(session, work.Quest, work.Repository, work.Workspace, work.Tree, rule.On[0], DateTimeOffset.UtcNow));
+            var captured = await CaptureAsync(work, ct).ConfigureAwait(false);
+            if (captured.Refused is { } why) return new(false, why);
+            dues.Due(new OpinionDue(session, "", work.Repository, work.Workspace, work.Tree, OpinionRules.Landing, DateTimeOffset.UtcNow)
+            {
+                Run = chatRun, Tip = captured.Tip, Turns = captured.Turns,
+            });
+        }
+        else if (!dues.Open().Any(due => string.Equals(due.Session, session, StringComparison.OrdinalIgnoreCase)))
+        {
+            dues.Due(new OpinionDue(session, work.Quest!, work.Repository, work.Workspace, work.Tree, rule.On[0], DateTimeOffset.UtcNow));
         }
 
         new OpinionGates(home).Requested(work.Chain, work.Repository, new OpinionRequest(DateTimeOffset.UtcNow, session, occasion)
         {
             Reviewer = reviewer?.Trim(), SameAgent = sameAgent, Words = Words(words),
         });
-        var gate = await _trees.GateAsync(work.Tree, work.Quest, work.World, session, ct).ConfigureAwait(false);
+        var gate = await GateOfAsync(work, ct).ConfigureAwait(false);
         var who = sameAgent ? "the same agent, in a fresh conversation," : reviewer is not null ? $"`{reviewer.Trim()}`" : "the rule's first reviewer that can";
         return new(true, $"A second opinion on session {session}'s work is asked: {who} reads it from the driver's next look.") { Gate = gate };
     }
@@ -146,7 +175,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         var (work, refused) = await WorkAsync(session, ct).ConfigureAwait(false);
         if (work is null) return new(false, refused!);
 
-        var before = await _trees.GateAsync(work.Tree, work.Quest, work.World, session, ct).ConfigureAwait(false);
+        var before = await GateOfAsync(work, ct).ConfigureAwait(false);
         if (before.Opinion.LetsGo)
         {
             return new(false, $"nothing waits for a second opinion on session {session}'s work: {before.Opinion.Says}") { Gate = before };
@@ -154,8 +183,37 @@ public sealed class OpinionPresses(string home, ServiceClient service)
 
         if (before.Opinion.Tip is not { } tip) return new(false, "git could not read the commit that would land, so nothing was kept.") { Gate = before };
         new OpinionGates(home).Said(work.Chain, work.Repository, new OpinionPersonWord(said, tip, DateTimeOffset.UtcNow) { Words = Words(words), Door = door });
-        var after = await _trees.GateAsync(work.Tree, work.Quest, work.World, session, ct).ConfigureAwait(false);
+        var after = await GateOfAsync(work, ct).ConfigureAwait(false);
         return new(true, after.Opinion.Says) { Gate = after };
+    }
+
+    /// <summary>
+    /// The runner that may hold a chat in this process (CHATFLOW1d): <i>Ask now</i> on a chat run reserves it for the capture alone, as the
+    /// person's Accept reserves it, so the tip and the turn count are read with no turn starting between them. Null where none does.
+    /// </summary>
+    public IChatPressing? Holder { get; init; }
+
+    /// <summary>
+    /// The tip and the person's turn count a chat run's <i>Ask now</i> captures (CHATFLOW1d, the chat-flow design §5.2 point 3, the Opus check's
+    /// finding 5), read as the press reads them, the conversation reserved for the capture alone where a runner here holds it; or why not.
+    /// </summary>
+    private async Task<(string? Tip, int Turns, string? Refused)> CaptureAsync(Work work, CancellationToken ct)
+    {
+        var hold = Holder is null ? PressHold.NotHere : await Holder.HoldAsync(work.Session, ct).ConfigureAwait(false);
+        if (hold is PressHold.Busy or PressHold.Ending) return (null, 0, ChatPresses.Busy);
+        try
+        {
+            var records = Trace.ParseSessions(await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false));
+            var line = records.FirstOrDefault(each => string.Equals(each.Id, work.Session, StringComparison.OrdinalIgnoreCase)) is { } record
+                ? ChatRuns.LineOf(record, records).Select(each => each.Id)
+                : [work.Session];
+            var turns = ChatPresses.TurnsOf(new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions)), line);
+            return (await ReviewGit.HeadAsync(work.Tree, ct).ConfigureAwait(false), turns, null);
+        }
+        finally
+        {
+            if (hold == PressHold.Held) Holder!.Release(work.Session);
+        }
     }
 
     /// <summary>A session's work as the gate reads it, or why there is none here to answer for.</summary>
@@ -169,6 +227,16 @@ public sealed class OpinionPresses(string home, ServiceClient service)
 
         if (await service.SessionQuestAsync(session, ct).ConfigureAwait(false) is not { } quest)
         {
+            // CHATFLOW1d (the chat-flow design §7): a chat in a tree of its own is its chat run's work, its gate keyed by the run.
+            if (ChatRuns.ChatOf(session, await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false), _trees.Holds) is { } chatRun)
+            {
+                var (chatWorkspace, chatRepository) = _trees.Owner(tree);
+                return (new Work(session, tree, null, chatRun, chatRepository, chatWorkspace, new ServiceReviewWorld(service))
+                {
+                    Run = chatRun, ChatRun = chatRun,
+                }, null);
+            }
+
             return (null, $"session `{session}` serves no quest: a conversation's work lands nothing by the driver's gate, so no second opinion holds it.");
         }
 
