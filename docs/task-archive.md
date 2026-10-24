@@ -20495,4 +20495,10 @@ branch, a recorded folder goes only on a holding check run right before its rena
 transaction, a 404 keeps the record awaited, the press compares its listed class and ref, the hour starts after the acknowledgement, a
 failed put-back and a stop in `.going` resume, and the landing is captured; `KeepSizeGitTests` (18 cases) and `KeepSizeStopsGitTests`
 (11), each blocking finding's case seen failing with its guard taken out. Its outcome above is corrected: the press's run, not its list,
-resumes and posts first. Detail: D195's KEEPSIZE1b notes.
+resumes and posts first. *After the check of its last fixes* (2026-10-25, 9 findings, 2 blocking): a stop inside a begun delete
+(`SetAsideFault.StopInDelete`) resumed over real git through both doors; a repository the registry does not name posts nothing, its why
+kept and the folder `deleted`, until it is named; the press's class compared before its own record pass and its holder checked before it
+goes; the sweep's empty rests kept, said; the landing found by its branch; an unnamed repository's folder counted as waiting; the rules'
+doors read again under `.going`; and a slim's stamped end read as its millisecond's end, which that read again exposed.
+`KeepSizeStopsGitTests` and `KeepSizeGitTests` gained the blocking cases, each seen failing with its guard taken out. Detail: D195's
+KEEPSIZE1b notes.
