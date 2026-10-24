@@ -309,6 +309,29 @@ public sealed class SessionWatchTests : IDisposable
         Assert.Equal([SessionWatch.Marked, SessionWatch.Brought], again.Select(step => step.Step));
     }
 
+    /// <summary>
+    /// AGENTERRORS1a (D210 §5.1, amending D200): a run waiting between a transient episode's tries waits on Daoris's own timer, so the
+    /// watch opens no episode and a headless <c>--quiet-end</c> ends nothing through the 16-minute wait; once the wait is over and the
+    /// try's prompt is out, its quiet counts from the heard stamp the wait's end made, never from the last line before the wait.
+    /// </summary>
+    [Fact]
+    public void A_run_waiting_to_try_again_after_its_provider_failed_is_never_quiet_and_its_try_counts_from_the_wait_s_end()
+    {
+        _watch.EndAfter = TimeSpan.FromMinutes(20);
+        using var run = Quest();
+        var waiting = true;
+        _watch.Transient("s1", () => waiting);
+
+        Assert.Empty(Run(TimeSpan.FromMinutes(31)));
+        Assert.False(run.Ending.IsCancellationRequested);
+
+        // The wait ends and stamps it heard; its try is a running turn, quiet from then on its own bound.
+        waiting = false;
+        _watch.Heard("s1");
+        Assert.DoesNotContain(Run(TimeSpan.FromMinutes(19)), step => step.Step == SessionWatch.Ended);
+        Assert.Contains(Run(TimeSpan.FromMinutes(2)), step => step.Step == SessionWatch.Ended);
+    }
+
     // ——— Case 12's watcher: --quiet-end, and nothing ended without it.
 
     [Fact]
