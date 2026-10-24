@@ -622,7 +622,11 @@ caller presents it as `Daoris-Person`. Reads answer anyone; an agent's doors (`r
 and judge it as an agent's; the driver's own and the person's alone refuse one 403 with `driver-only` or `person-only`,
 and a key from another start with `stale`, each with a sentence and one `person.refused` line in the machine log. A
 terminal on a machine with a window holds no key, so its client asks the window instead (`/api/confirmations` above) and
-sends the request again with the grant the person confirmed. A host handed no key gates nothing, as before.
+sends the request again with the grant the person confirmed. A host handed no key gates nothing, as before. Each of the
+person's doors also declares what its effect leaves on a quest's records (`Door.Marks`, STEWARDROLE1a-ii, D209 §5.4): a session's
+move, a word to one of its sessions, a hand-over or a status moved after publication, with the evidence the desktop reads it by
+(`move:accepted`, `note:quest.person-done`, `session-note:ledger.answered`, …), or none with why; a publication and an ask's
+own added words never mark. The desktop's steward is refused a quest the person wrote on this way since Daoris started.
 
 **A shared deployment takes knowledge from a named commit on the canonical line** (D48 §6). Each feed
 carries `{ commit, committedAt, branch }` stamped from git by the machine that holds the checkout; the

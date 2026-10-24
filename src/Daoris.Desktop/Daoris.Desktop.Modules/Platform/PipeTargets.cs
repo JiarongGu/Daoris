@@ -10,7 +10,8 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <remarks>
 /// <para><b>One table, not two</b> (§5.1): D209's targets (a repository, a quest or a session a steward's act names) are this table's
-/// other column, which STEWARDROLE1a fills; this column is the grounds, and adds <c>ask</c>, which the steward's marks may ignore.</para>
+/// other column, <see cref="Mark"/>, which STEWARDROLE1a-ii fills for every person's and window's route (<see cref="OwnerTargetRows"/>);
+/// this column is the grounds.</para>
 /// <para><b>Timeless only for a press that deletes nothing, moves no line or branch and starts no work</b>: a read mark, news marked
 /// read, a conversation's name or pin. <c>PipeCensusTests</c> holds every person route to a row, each named field to its handler, and
 /// each timeless row to what the census comment calls it.</para>
@@ -19,11 +20,16 @@ namespace Daoris.Desktop;
 public sealed class PipeTargets
 {
     private readonly FrozenDictionary<string, PipeGroundRow> _rows;
+    private readonly FrozenDictionary<string, OwnerTarget> _marks;
 
-    private PipeTargets(IDictionary<string, PipeGroundRow> rows) => _rows = rows.ToFrozenDictionary(StringComparer.Ordinal);
+    private PipeTargets(IDictionary<string, PipeGroundRow> rows, IDictionary<string, OwnerTarget> marks)
+    {
+        _rows = rows.ToFrozenDictionary(StringComparer.Ordinal);
+        _marks = marks.ToFrozenDictionary(StringComparer.Ordinal);
+    }
 
     /// <summary>The desktop's table.</summary>
-    public static PipeTargets Daoris { get; } = new(PipeTargetRows.All());
+    public static PipeTargets Daoris { get; } = new(PipeTargetRows.All(), OwnerTargetRows.All());
 
     /// <summary>The row of <paramref name="module"/>'s <paramref name="route"/>, or null where it has none.</summary>
     public PipeGroundRow? Row(string module, string route, JsonElement? payload = null) =>
@@ -37,6 +43,18 @@ public sealed class PipeTargets
     /// design §15.3 item 12).
     /// </summary>
     public static IReadOnlyDictionary<string, string> NotAlready => PipeTargetRows.NotAlready;
+
+    /// <summary>
+    /// D209's column (STEWARDROLE1a-ii, §5.4): what <paramref name="module"/>'s <paramref name="route"/> marks <c>owner-set</c>, by the
+    /// route's row or, for a module classed whole, the module's; null where it has none.
+    /// </summary>
+    public OwnerTarget? Mark(string module, string? route) =>
+        route is not null && _marks.TryGetValue(Key(module, route), out var row) ? row
+        : _marks.TryGetValue(module.ToUpperInvariant(), out var whole) ? whole
+        : null;
+
+    /// <summary>Every owner's mark by its module and route (a module classed whole by its name), as the census sweep reads them.</summary>
+    public IReadOnlyDictionary<string, OwnerTarget> Marks => _marks;
 
     /// <summary>A row's key: the route alone for the driver's, <c>MODULE.ROUTE</c> for another module's.</summary>
     public static string Key(string module, string route) =>

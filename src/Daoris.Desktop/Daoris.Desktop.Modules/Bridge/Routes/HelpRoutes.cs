@@ -531,6 +531,11 @@ public sealed class HelpRoutes(DriverContext context)
             }
         }
 
+        // STEWARDROLE1a-ii (D209 §5.4): an Apply marks by the plan it applies, not its route: the target its door declares, its gates
+        // taken and marked the owner's before the edit, the edit inside them.
+        await using var owned = await OwnerMarks.EnterAsync(
+            _loop.Pipe?.StandingConfirmation, _context.OwnerScopesOf(), plan.Refusal is null ? Owned(HelpProposals.Owned(proposal)) : [],
+            PipeDoor.Standing, cancellationToken).ConfigureAwait(false);
         var applied = await HelpProposals.ApplyAsync(
             _loop.Home, proposal, plan, Doors(_context, service), Say, cancellationToken).ConfigureAwait(false);
         // An accept publishes the step a departure held and lets a quest waiting on it go on (DRIFT1d2), as a delete or an ask moves the work;
@@ -539,6 +544,14 @@ public sealed class HelpRoutes(DriverContext context)
 
         return ApplyAnswer(proposal, applied);
     }
+
+    /// <summary>What an Apply's plan acts on (<see cref="HelpProposals.Owned"/>), as the owner's mark names it.</summary>
+    public static IReadOnlyList<OwnerNamed> Owned(HelpOwned owned) =>
+    [
+        .. owned.Repositories.Select(each => new OwnerNamed(OwnerKinds.Repository, each)),
+        .. owned.Workspaces.Select(each => new OwnerNamed(OwnerKinds.Workspace, each)),
+        .. owned.Quests.Select(each => new OwnerNamed(OwnerKinds.Quest, each)),
+    ];
 
     /// <summary>
     /// What an Apply answers the page (HELP1c, HELP6), the page's <c>HelpSettled</c>: the driver's sentence, whether it was

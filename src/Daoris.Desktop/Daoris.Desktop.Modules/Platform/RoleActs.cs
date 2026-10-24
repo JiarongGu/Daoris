@@ -15,8 +15,17 @@ public interface IRoleAct
     /// <summary>Whether <paramref name="form"/> is exactly the act's form (field names compared as D201's <c>IsForm</c> compares them, values exact).</summary>
     bool IsForm(JsonElement form);
 
-    /// <summary>The thing the act acts on, as its exact form names it (a repository, a quest or a session), which its record and its gate are keyed by.</summary>
+    /// <summary>The thing the act acts on, as its exact form names it (a repository or a quest), which its record and its gate are keyed by.</summary>
     string Target(JsonElement form);
+
+    /// <summary>What <see cref="Target"/> names (<see cref="OwnerKinds.Repository"/> or <see cref="OwnerKinds.Quest"/>; a session's act names its quest).</summary>
+    string TargetKind => OwnerKinds.Repository;
+
+    /// <summary>
+    /// The act's conditions that read a dependency (<c>landing-pushes</c>, <c>no-tree</c>), judged again under the gates of its target and
+    /// its dependencies before its handler runs (STEWARDROLE1a-ii, D209 §3.4 step 8): null where they hold, else the refusal's code.
+    /// </summary>
+    Task<string?> UnderGatesAsync(RoleActRun run, CancellationToken ct) => Task.FromResult<string?>(null);
 
     /// <summary>The act's handler, run under <see cref="PipeDoor.Role"/>; its answer is the route's.</summary>
     Task<object?> RunAsync(RoleActRun run, CancellationToken ct);
@@ -72,6 +81,9 @@ public sealed record RoleOperation(
     string Id, string Role, string Generation, string Holder, string Actor, string Target, string Kind, IReadOnlyList<string> Stages,
     int At, bool Binds, string State, object? Operation)
 {
+    /// <summary>What <see cref="Target"/> names, as its act's (<see cref="IRoleAct.TargetKind"/>).</summary>
+    public string TargetKind { get; init; } = OwnerKinds.Repository;
+
     /// <summary>The stage its next consumer takes, or null where none is left.</summary>
     public string? Stage => State == RoleOperationStates.Pending && At < Stages.Count ? Stages[At] : null;
 }
@@ -84,21 +96,40 @@ public sealed record RoleOperation(
 /// </summary>
 internal sealed class RoleActsMemory
 {
-    private sealed record Admitted(string Id, string Role, string Act, string Generation, string Holder, string Target)
+    private sealed record Admitted(string Id, string Role, string Act, string Generation, string Holder, string Target, string Kind)
     {
         public string State { get; set; } = RoleActStates.Admitted;
+
+        /// <summary>That the owner's mark cancelled it (§5.4), so its refusal is <c>owner-set</c>.</summary>
+        public bool ByOwner { get; set; }
     }
 
     private readonly Dictionary<string, Admitted> _acts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, RoleOperation> _operations = new(StringComparer.Ordinal);
 
     /// <summary>Step 7: the act registered as <c>admitted</c>, its id drawn here, never the verb's.</summary>
-    public string Admit(string role, string act, string generation, string holder, string target)
+    public string Admit(string role, string act, string generation, string holder, string target, string kind = OwnerKinds.Repository)
     {
         var id = "a" + Guid.NewGuid().ToString("N")[..15];
-        _acts[id] = new Admitted(id, role, act, generation, holder, target);
+        _acts[id] = new Admitted(id, role, act, generation, holder, target, kind);
         return id;
     }
+
+    /// <summary>The act's target, or null where no act has the id.</summary>
+    public RoleScope? TargetOf(string id) => _acts.TryGetValue(id, out var act) ? new RoleScope(act.Kind, act.Target) : null;
+
+    /// <summary>An admitted act refused at its gates' step by the owner's mark: cancelled, never run.</summary>
+    public void Refuse(string id)
+    {
+        if (_acts.TryGetValue(id, out var act) && act.State == RoleActStates.Admitted)
+        {
+            act.State = RoleActStates.Cancelled;
+            act.ByOwner = true;
+        }
+    }
+
+    /// <summary>Whether the owner's mark cancelled the act.</summary>
+    public bool CancelledByOwner(string id) => _acts.TryGetValue(id, out var act) && act.ByOwner;
 
     /// <summary>The act's state, or null where no act has the id.</summary>
     public string? StateOf(string id) => _acts.TryGetValue(id, out var act) ? act.State : null;
@@ -120,9 +151,12 @@ internal sealed class RoleActsMemory
         return true;
     }
 
+    /// <summary>The handler returned; an act refused before its gates' step never ran, and is cancelled.</summary>
     public void Done(string id)
     {
-        if (_acts.TryGetValue(id, out var act) && act.State == RoleActStates.Running) act.State = RoleActStates.Done;
+        if (!_acts.TryGetValue(id, out var act)) return;
+        if (act.State == RoleActStates.Running) act.State = RoleActStates.Done;
+        else if (act.State == RoleActStates.Admitted) act.State = RoleActStates.Cancelled;
     }
 
     /// <summary>
@@ -133,7 +167,10 @@ internal sealed class RoleActsMemory
     {
         if (!_acts.TryGetValue(id, out var act) || stages.Count == 0) return null;
         var state = live(act.Generation) ? RoleOperationStates.Pending : RoleOperationStates.Cancelled;
-        var pending = new RoleOperation(id, act.Role, act.Generation, act.Holder, actor, act.Target, kind, stages, 0, binds, state, operation);
+        var pending = new RoleOperation(id, act.Role, act.Generation, act.Holder, actor, act.Target, kind, stages, 0, binds, state, operation)
+        {
+            TargetKind = act.Kind,
+        };
         _operations[id] = pending;
         return pending;
     }
@@ -196,20 +233,29 @@ internal sealed class RoleActsMemory
         return cancelled;
     }
 
-    /// <summary>The owner's act on a target (§5.4, STEWARDROLE1a-ii's mark): every admitted act, pending stage and binding on it cancelled.</summary>
-    public int CancelTarget(string target)
+    /// <summary>
+    /// The owner's act on a target (§5.4, STEWARDROLE1a-ii's mark): every admitted act, pending stage and binding on it cancelled, each act
+    /// remembered as the owner's so it is refused <c>owner-set</c>. Answers what it cancelled, for the log.
+    /// </summary>
+    public int CancelTarget(string kind, string target) =>
+        Cancel(kind, each => string.Equals(each, target, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Every act and operation on a target of <paramref name="kind"/> cancelled: an owner's target that could not be resolved.</summary>
+    public int CancelKind(string kind) => Cancel(kind, _ => true);
+
+    private int Cancel(string kind, Func<string, bool> target)
     {
         var cancelled = 0;
-        foreach (var act in _acts.Values.Where(each => each.State == RoleActStates.Admitted
-                                                       && string.Equals(each.Target, target, StringComparison.OrdinalIgnoreCase)))
+        foreach (var act in _acts.Values.Where(each => each.State == RoleActStates.Admitted && each.Kind == kind && target(each.Target)))
         {
             act.State = RoleActStates.Cancelled;
+            act.ByOwner = true;
             cancelled++;
         }
 
         foreach (var operation in _operations.Values.ToList())
         {
-            if (!string.Equals(operation.Target, target, StringComparison.OrdinalIgnoreCase)) continue;
+            if (operation.TargetKind != kind || !target(operation.Target)) continue;
             if (operation.State is not (RoleOperationStates.Pending or RoleOperationStates.Bound)) continue;
             _operations[operation.Id] = operation with { State = RoleOperationStates.Cancelled };
             cancelled++;

@@ -66,6 +66,18 @@ public sealed class DriverContext(IEventBus events, DriverLoop loop, OpenFolder?
     public ISetupWorld SetupWorldOf(ServiceClient service) => SetupWorlds?.Invoke(service) ?? new SetupWorld(service, Loop.Home);
 
     /// <summary>
+    /// The owner's mark's and a role's act's reads (STEWARDROLE1a-ii, D209 §5.4): a session's quest, an ask's quests, a quest's repository,
+    /// a workspace's repositories and a quest's records, from the service the loop holds; a test names a stand-in. Set by
+    /// <see cref="DriverModule"/>'s initializer, as <see cref="Offers"/> is.
+    /// </summary>
+    public IOwnerScopes? OwnerScopes { get; set; }
+
+    /// <summary>The reads the owner's mark makes: the ones named, else the loop's service.</summary>
+    public IOwnerScopes OwnerScopesOf() => OwnerScopes ?? (_ownerScopes ??= new ServiceOwnerScopes(() => Loop.Service));
+
+    private IOwnerScopes? _ownerScopes;
+
+    /// <summary>
     /// What This Daoris's read is handed (WIRING1b), changed: null is the window's own; a test hands the account's and the
     /// machine's variables of its own and sizes of its own, so it reads nothing of the machine it runs on. Set by
     /// <see cref="DriverModule"/>'s initializer, as <see cref="SetupWorlds"/> is.
