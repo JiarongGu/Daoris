@@ -10,6 +10,17 @@ with the version and date at release.
   names what sent it as the record says. One that cannot be brought back is said once in *Done and failed*, with how many. A
   change that carries a key, such as wiring a workspace to a remote, says on its card that it does not wait across a restart.
   Confirming while Daoris is about to restart does nothing, and the card says the change still waits.
+- A terminal's change that waits for your Confirm is checked more closely before it runs (CONFIRMWAIT1, Codex's read of the
+  design). Confirming refuses it with its reason if any of these moved while it waited:
+  - the commits it would land, sweep, hand off or bring up to date, even when there are as many as before;
+  - the tree it would discard, even when named by its folder;
+  - the pause it would release;
+  - where its repository's name points;
+  - the bytes of the files a terminal attached.
+
+  The terminal names the change's request at once, before Daoris has checked it. It can read or take back the change for as long as
+  the change waits, even after Daoris restarts or `run/` is cleared. If Daoris cannot keep your answer, nothing is done, and the card
+  says so and still waits.
 - A session's *Workflow* view now says in your language why no workflow runs for it (CHATFLOW1a, CHATFLOW1b). Before, it showed
   the driver's English sentence, in Chinese too. A chat in your checkout says its changes are yours to commit, and that a
   conversation with a tree of its own is how work gets a workflow. A chat in a tree of its own says this build reads no workflow
