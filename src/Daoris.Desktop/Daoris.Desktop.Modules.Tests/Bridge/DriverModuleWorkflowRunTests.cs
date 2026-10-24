@@ -320,16 +320,29 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal(("waiting-on-you", "accept"), (landing.GetProperty("state").GetString(), landing.GetProperty("detail").GetString()));
     }
 
-    /// <summary>A conversation serves no quest: no run, and the driver's sentence says why, which is an answer and not a refusal.</summary>
+    /// <summary>
+    /// A conversation serves no quest: no run, and its code with the code's English says why, which is an answer and not a refusal
+    /// (CHATFLOW1a, the chat-flow design §10): a chat in the checkout reads `chat-checkout`, one in a tree this home opened
+    /// `chat-own-tree` and never `chat-checkout`, and a session not recorded `no-session` with its id for the page's words.
+    /// </summary>
     [Fact]
-    public async Task A_chat_has_no_run_and_says_so()
+    public async Task A_chat_has_no_run_and_says_so_by_its_code()
     {
-        var (module, _) = await UpAsync();
+        var own = Path.Combine(DaorisHome.Entry(Home, HomeEntry.Trees), "aurora", "engine", "s-c2c2c2c2");
+        Directory.CreateDirectory(own);
+        var (module, _) = await UpAsync(chatTree: own);
 
-        var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { session = "c1" });
+        async Task<(string? Code, string? Id, string? Problem)> NoRunAsync(string session)
+        {
+            var answer = await AnswerAsync(module, "WORKFLOW_RUN", new { session });
+            Assert.Empty(answer.GetProperty("runs").EnumerateArray());
+            string? Text(string name) => answer.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+            return (Text("code"), Text("id"), Text("problem"));
+        }
 
-        Assert.Empty(answer.GetProperty("runs").EnumerateArray());
-        Assert.Equal("session `c1` serves no quest, so no workflow runs for it.", answer.GetProperty("problem").GetString());
+        Assert.Equal((WorkflowNoRun.ChatCheckout, (string?)null, WorkflowNoRun.Said(WorkflowNoRun.ChatCheckout)), await NoRunAsync("c1"));
+        Assert.Equal((WorkflowNoRun.ChatOwnTree, (string?)null, WorkflowNoRun.Said(WorkflowNoRun.ChatOwnTree)), await NoRunAsync("c2"));
+        Assert.Equal((WorkflowNoRun.NoSession, "s9", "No session `s9` is recorded here."), await NoRunAsync("s9"));
     }
 
     /// <summary>Run <c>q1</c> bound to v1 of a workflow whose graph holds a go-ahead before its landing, its claim reached and its go-ahead under way.</summary>
@@ -445,19 +458,19 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     }
 
     /// <summary>The module over a loop come up on the stand-in service below.</summary>
-    private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync(string? tree = null, bool askUnread = false)
+    private async Task<(DriverModule Module, DriverLoop Loop)> UpAsync(string? tree = null, bool askUnread = false, string? chatTree = null)
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(tree, askUnread))));
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService(tree, askUnread, chatTree))));
         return (module, loop);
     }
 
     /// <summary>
     /// A stand-in service: `engine` in the `aurora` workspace, ask `a1`'s one quest done there by session `s1`, and a chat. Every
-    /// other door answers an empty list.
+    /// other door answers an empty list. With <paramref name="chatTree"/>, a second chat, `c2`, works in that tree.
     /// </summary>
-    private sealed class StandInService(string? tree = null, bool askUnread = false) : HttpMessageHandler
+    private sealed class StandInService(string? tree = null, bool askUnread = false, string? chatTree = null) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
@@ -474,6 +487,12 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
                 "/api/asks/a1" => """{"id":"a1","workspace":"aurora","sentence":"Fix it","state":"Open","tier":"none","quests":["q1"]}""",
                 _ => "[]",
             };
+            if (chatTree is not null && request.RequestUri!.PathAndQuery == "/api/sessions?includeClosed=true")
+            {
+                body = body.TrimEnd().TrimEnd(']')
+                    + "," + JsonSerializer.Serialize(new { id = "c2", repository = "engine", state = "working", kind = "chat", tree = chatTree }) + "]";
+            }
+
             if (tree is not null && request.RequestUri!.PathAndQuery == "/api/sessions?includeClosed=true")
                 body = JsonSerializer.Serialize(new[] { new { id = "s1", repository = "engine", state = "completed", quest = "q1", tree } });
             if (request.RequestUri!.PathAndQuery == "/api/quests/q1")

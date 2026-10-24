@@ -43,6 +43,9 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
     /// <summary>Whether a session's tree still stands on this machine.</summary>
     public bool Stands(string tree) => Directory.Exists(tree);
 
+    /// <summary>Whether a tree is one this home opened, standing or not.</summary>
+    public bool Holds(string tree) => new SessionTrees(home).Holds(tree);
+
     /// <summary>A run's node record, read as the runtime reads it and never written: this read holds no lease, so it edits nothing.</summary>
     public NodeRecord? Record(string unit) => new NodeRecordFiles(home, () => false).Read(unit);
 

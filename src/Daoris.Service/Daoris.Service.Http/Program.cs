@@ -2828,6 +2828,8 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Resolved: loopback ? s.Resolved : null,
     // The piece a partner's record writes (COAGENT1b): this machine's, like the opinion, so answered to it only.
     Piece: loopback ? s.Piece : null,
+    // The quest a chat took (CHATTAKE1), which its line's run reads (CHATFLOW1a): this machine's, like the opinion, so answered to it only.
+    TookQuest: loopback ? s.TookQuest : null,
     Actor: loopback ? s.Actor : null, Choice: loopback ? s.Choice : null,
     Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null);
 

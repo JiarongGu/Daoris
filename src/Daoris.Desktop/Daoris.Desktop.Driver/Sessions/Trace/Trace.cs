@@ -283,6 +283,12 @@ public static class Trace
                 Took = Flag(session, "took"),
                 Interrupted = Flag(session, "interrupted"),
                 Limit = Flag(session, "limit"),
+                Opinion = Filled(session, "opinion"),
+                Serves = Filled(session, "serves"),
+                Piece = Filled(session, "piece"),
+                From = Filled(session, "from"),
+                Entry = Filled(session, "entry"),
+                TookQuest = Filled(session, "tookQuest"),
             });
         }
 

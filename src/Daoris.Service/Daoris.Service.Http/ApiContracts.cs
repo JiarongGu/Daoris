@@ -452,6 +452,9 @@ public sealed record SessionResponse(
     // COAGENT1b (D199 point 1): the piece a partner's record writes, beside `serves` naming its lead; absent for every other record.
     // This machine's own, like the opinion: answered to it only.
     string? Piece = null,
+    // CHATFLOW1a (the chat-flow design §4.2): the quest a chat took through its own connector (CHATTAKE1), its `quest` staying null;
+    // absent for every other record. This machine's own, like the opinion: answered to it only.
+    string? TookQuest = null,
     // D205: this machine's actor provenance. Never on the feed or answered off loopback.
     string? Actor = null, string? Choice = null, JsonElement? Asked = null, JsonElement? Override = null, JsonElement? Ran = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the

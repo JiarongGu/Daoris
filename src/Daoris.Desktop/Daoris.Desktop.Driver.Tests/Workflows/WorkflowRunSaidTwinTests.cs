@@ -74,6 +74,22 @@ public sealed class WorkflowRunSaidTwinTests
         }
     }
 
+    /// <summary>
+    /// CHATFLOW1a (the chat-flow design §10): each code a read that names no run answers is said in the table's <c>none</c> words, which
+    /// the page's en catalogue says too, and every code the driver answers has its row.
+    /// </summary>
+    [Fact]
+    public void Each_no_run_code_is_said_in_the_tables_words()
+    {
+        var none = Table().GetProperty("none").EnumerateArray().ToList();
+        foreach (var row in none)
+        {
+            Assert.Equal(Text(row, "said"), WorkflowNoRun.Said(Text(row, "code")!, Text(row, "id"), Text(row, "workflow")));
+        }
+
+        Assert.Equal(WorkflowNoRun.All, none.Select(row => Text(row, "code")));
+    }
+
     [Fact]
     public void Each_state_and_each_look_added_is_worded_as_the_table_has_it()
     {

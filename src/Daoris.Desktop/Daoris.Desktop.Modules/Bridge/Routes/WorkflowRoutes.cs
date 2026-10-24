@@ -217,8 +217,9 @@ public sealed class WorkflowRoutes(DriverContext context)
     // Where a piece of work stands in its workflow (WORKFLOW1c; D157 point 11, design §5.1–§5.2, §7): the runs
     // `WorkflowRunReader` reads from this machine's records for `{session}`, `{quest}` or `{ask}`, exactly one, each step
     // Current's cell beside where it stands. The records are the service's and this machine's, so it waits for the driver.
-    // What names nothing that runs (a chat, a quest not here) is answered as no run with the driver's sentence. Read-only,
-    // and a run is never kept as a copy.
+    // What names nothing that runs (a chat, a quest not here) is answered as no run with its code, the id and the workflow its
+    // words name, and the driver's English sentence (CHATFLOW1a, the chat-flow design §10): the page words a code it knows in the
+    // reader's language and shows the sentence for one it does not. Read-only, and a run is never kept as a copy.
     [DriverRoute("WORKFLOW_RUN")]
     private async Task<object?> WorkflowRunAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -239,7 +240,7 @@ public sealed class WorkflowRoutes(DriverContext context)
         var read = await WorkflowRunReader
             .ReadAsync(asked, new WorkflowRunSources(service, _loop.Home, config, plugins, WorkspaceOf), cancellationToken)
             .ConfigureAwait(false);
-        return new { Runs = read.Runs.Select(RunAnswer).ToArray(), read.Problem };
+        return new { Runs = read.Runs.Select(RunAnswer).ToArray(), read.Problem, read.Code, read.Id, read.Workflow };
     }
 
     // The person's skip or stop of a run's node (FABRIC-CUTOVER1f; D190 points 3 and 6, the cutover design §3, §5.2): the page's half of

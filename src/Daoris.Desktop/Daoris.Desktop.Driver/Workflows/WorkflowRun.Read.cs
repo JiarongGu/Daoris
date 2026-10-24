@@ -21,6 +21,21 @@ public sealed record WorkflowRunRead(IReadOnlyList<WorkflowRun> Runs, string? Pr
     /// that names no run (WORKFLOW1c2: the terminal's exit 2, not 1).
     /// </summary>
     public bool Unanswered { get; init; }
+
+    /// <summary>
+    /// Why no run is read, as a code the page words in en and zh (<see cref="WorkflowNoRun"/>, CHATFLOW1a), where <see cref="Problem"/>
+    /// is its English sentence; null for a problem that has none.
+    /// </summary>
+    public string? Code { get; init; }
+
+    /// <summary>The record's id or the workflow's id the code's words name, beside <see cref="Code"/>; null where they name none.</summary>
+    public string? Id { get; init; }
+
+    /// <summary>The workflow's id <see cref="WorkflowNoRun.ChatGraphLater"/>'s words name; null otherwise.</summary>
+    public string? Workflow { get; init; }
+
+    /// <summary>What the service's failure said, beside <see cref="WorkflowNoRun.Unanswered"/>'s sentence, for the terminal.</summary>
+    public string? Why { get; init; }
 }
 
 /// <summary>
@@ -50,14 +65,14 @@ public static class WorkflowRunReader
         }
         catch (Exception error) when (Unanswered(error, ct))
         {
-            return new WorkflowRunRead([], $"the service did not answer, so no run could be read: {error.Message.TrimEnd().TrimEnd('.')}.")
+            return new WorkflowRunRead([], WorkflowNoRun.Said(WorkflowNoRun.Unanswered))
             {
-                Unanswered = true,
+                Unanswered = true, Code = WorkflowNoRun.Unanswered, Why = error.Message.TrimEnd().TrimEnd('.'),
             };
         }
 
-        var (chains, problem, only) = ChainsOf(asked, quests, sessions);
-        if (problem is not null) return new WorkflowRunRead([], problem);
+        var (chains, problem, only, code, id) = ChainsOf(asked, quests, sessions, records);
+        if (problem is not null) return new WorkflowRunRead([], problem) { Code = code, Id = id };
 
         var reads = new Reads(sources, quests, records, ct);
         var runs = new List<WorkflowRun>();
@@ -74,28 +89,48 @@ public static class WorkflowRunReader
         return new WorkflowRunRead(runs);
     }
 
-    /// <summary>The chains whose runs are asked for, each whole across its repositories, or the sentence that says why there are none.</summary>
-    internal static (IReadOnlyList<IReadOnlyList<QuestView>> Chains, string? Problem, string? Only) ChainsOf(
-        WorkflowRunAsk asked, IReadOnlyList<QuestView> quests, IReadOnlyList<TracedSession> sessions)
+    /// <summary>
+    /// The chains whose runs are asked for, each whole across its repositories, or the sentence that says why there are none with its
+    /// code (<see cref="WorkflowNoRun"/>) and the id its words name. A session is classified in the chat-flow design §4.2's order
+    /// (CHATFLOW1a): its quest's run; a line whose stored origin is a quest's or an ask's, that quest's or that ask's; a chat that took a
+    /// quest, on any record of its line in its tree, that quest's; an intake, its ask's; and each kind that runs nothing, by its code.
+    /// </summary>
+    internal static (IReadOnlyList<IReadOnlyList<QuestView>> Chains, string? Problem, string? Only, string? Code, string? Id) ChainsOf(
+        WorkflowRunAsk asked, IReadOnlyList<QuestView> quests, IReadOnlyList<TracedSession> sessions, IWorkflowRunRecords trees)
     {
+        static (IReadOnlyList<IReadOnlyList<QuestView>>, string?, string?, string?, string?) None(string code, string? id = null) =>
+            ([], WorkflowNoRun.Said(code, id), null, code, id);
+
         if (asked.Session is { } sessionId)
         {
             var session = sessions.FirstOrDefault(each => Same(each.Id, sessionId.Trim()));
-            if (session is null) return ([], $"no session `{sessionId.Trim()}` is recorded here.", null);
-            if (session.Quest is { } quest) return ChainsOf(new WorkflowRunAsk(Quest: quest), quests, sessions);
-            if (session.Ask is { } ask) return ChainsOf(new WorkflowRunAsk(Ask: ask), quests, sessions);
-            return ([], $"session `{session.Id}` serves no quest, so no workflow runs for it.", null);
+            if (session is null) return None(WorkflowNoRun.NoSession, sessionId.Trim());
+            if (session.Teammate) return None(WorkflowNoRun.Teammate);
+            if (session.Quest is { } quest) return ChainsOf(new WorkflowRunAsk(Quest: quest), quests, sessions, trees);
+            // A closed quest's session gone on as a conversation in the quest's own tree keeps the quest's line (§4.1), and an ask's
+            // origin is an intake's line: each reads that quest's run, or the ask's runs, never a chat's.
+            if (OriginNamed(session, "quest") is { } origin) return ChainsOf(new WorkflowRunAsk(Quest: origin), quests, sessions, trees);
+            if (OriginNamed(session, "ask") is { } asking) return ChainsOf(new WorkflowRunAsk(Ask: asking), quests, sessions, trees);
+            if (TookQuest(session, sessions) is { } took) return ChainsOf(new WorkflowRunAsk(Quest: took), quests, sessions, trees);
+            if (session.Ask is { } ask) return ChainsOf(new WorkflowRunAsk(Ask: ask), quests, sessions, trees);
+            if (Same(session.Repository, HelpRoom.Repository)) return None(WorkflowNoRun.AskDaoris);
+            if (session.Opinion is not null) return None(WorkflowNoRun.Reviewer);
+            if (session.Piece is not null) return None(WorkflowNoRun.Partner);
+            if (session.Serves is not null) return None(WorkflowNoRun.Helper);
+            if (session.Tree is { Length: > 0 } tree && !trees.Stands(tree)) return None(WorkflowNoRun.ChatTreeGone);
+            if (session.Tree is not { Length: > 0 } own || !trees.Holds(own)) return None(WorkflowNoRun.ChatCheckout);
+            return None(WorkflowNoRun.ChatOwnTree);
         }
 
         if (asked.Quest is { } questId)
         {
             var id = questId.Trim().TrimStart('#');
             var quest = quests.FirstOrDefault(each => Same(each.Id, id));
-            if (quest is null) return ([], $"no quest `#{id}` is here.", null);
+            if (quest is null) return None(WorkflowNoRun.NoQuest, id);
             var chain = ReviewGate.ChainOf(quests, quest.Id);
             // A quest's run is its own repository's, over the whole chain: a step or source in another repository seals, submits and
             // reopens it as a same-repository one does (FABRIC-WORKFLOW2e), and the chain's other repositories are their own runs.
-            return ([chain], null, quest.To);
+            return ([chain], null, quest.To, null, null);
         }
 
         if (asked.Ask is { } askId)
@@ -113,11 +148,34 @@ public static class WorkflowRunReader
                 chains.Add(chain);
             }
 
-            return (chains, null, null);
+            return chains.Count == 0 ? None(WorkflowNoRun.AskNoQuest, askId.Trim().TrimStart('#')) : (chains, null, null, null, null);
         }
 
-        return ([], "a run is read for a `session`, a `quest` or an `ask` — name one of them.", null);
+        return ([], "a run is read for a `session`, a `quest` or an `ask` — name one of them.", null, null, null);
     }
+
+    /// <summary>The id a session's stored origin names, where that origin is of <paramref name="kind"/> (<c>quest</c> or <c>ask</c>).</summary>
+    private static string? OriginNamed(TracedSession session, string kind) =>
+        session.Origin is { } origin && origin.StartsWith(kind + ":", StringComparison.Ordinal) && origin[(kind.Length + 1)..] is { Length: > 0 } id
+            ? id : null;
+
+    /// <summary>
+    /// The quest a chat took (CHATTAKE1), read from any record of its line in its tree, the newest first: <c>took_quest</c> is the taking
+    /// record's alone, so a hand-over's next record reads the taken quest's run as the record before it did (the chat-flow design §4.2).
+    /// </summary>
+    private static string? TookQuest(TracedSession session, IReadOnlyList<TracedSession> sessions)
+    {
+        if (session.TookQuest is { } own) return own;
+        if (session.Entry is not { Length: > 0 } entry || session.Tree is not { Length: > 0 } tree) return null;
+        return sessions
+            .Where(each => each.TookQuest is not null && !each.Teammate && Same(each.Entry, entry) && SameTree(each.Tree, tree))
+            .OrderByDescending(each => each.Created ?? DateTimeOffset.MinValue)
+            .Select(each => each.TookQuest)
+            .FirstOrDefault();
+    }
+
+    private static bool SameTree(string? left, string right) =>
+        left is { Length: > 0 } && string.Equals(Path.TrimEndingDirectorySeparator(left), Path.TrimEndingDirectorySeparator(right), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>One run: the chain's work in <paramref name="repository"/>, from every store that keeps a part of it.</summary>
     private static async Task<WorkflowRun> RunAsync(

@@ -20370,3 +20370,16 @@ the person's word, said after the end, goes on in the same conversation. One rea
 prompt failure into limit, access, transient or fatal from the adapter's `ErrorWords` and its owner's. Proved on real ticks with a
 held clock, each case seen failing first. **Not built:** shape 2, the open, the page's head and *Try again* (1a2); the follow-up
 proofs D210's AGENTERRORS1a note lists. Detail: D210's AGENTERRORS1a note; the fix log's entry for the 529 park.
+## CHATFLOW1a — the no-run code and the record's kinds (2026-10-24, D157)
+
+> **CHATFLOW1a — the no-run code and the record's kinds** (service, driver, modules). `/api/sessions` answers `tookQuest` to this
+> machine; `TracedSession` reads `opinion`, `serves`, `piece`, `from`, `entry` and `tookQuest`; `ChainsOf` classifies in §4.2's order, a
+> chat that took a quest reading its quest's run; `WorkflowRunRead.Code`, the route's `code`, §10's codes with `chat-own-tree` for every
+> chat a tree of its own holds, and the terminal saying each code's English.
+
+(Row a of `docs/2026-10-24-chat-flow-design.md` §11, of the backlog's CHATFLOW1; quest `#27041d63d20d`.)
+
+**Outcome** 2026-10-24. The row as named: a session that names no run is answered by one of thirteen codes with its English, on the
+route and the terminal, held by the twin table; a chat in a tree of its own reads `chat-own-tree`, never `chat-checkout`; a chat that
+took a quest, its hand-over and a quest's line gone on as a conversation read that quest's run. Each case seen failing first. **Not
+built:** the page's words (row b) and every later row. Detail: D157's CHATFLOW1a note.

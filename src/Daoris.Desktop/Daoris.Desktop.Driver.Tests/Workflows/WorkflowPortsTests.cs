@@ -434,6 +434,8 @@ public sealed class WorkflowPortsTests
             return false;
         }
 
+        public bool Holds(string tree) => false;
+
         /// <summary>The node records by unit; a unit bound to null is a file that does not read, and one not here is a record not written yet.</summary>
         public Dictionary<string, NodeRecord?> Records { get; } = new(StringComparer.Ordinal);
 

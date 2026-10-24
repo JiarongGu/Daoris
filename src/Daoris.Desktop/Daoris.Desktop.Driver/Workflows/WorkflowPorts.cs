@@ -74,6 +74,12 @@ public interface IWorkflowRunRecords
     bool Stands(string tree);
 
     /// <summary>
+    /// Whether <paramref name="tree"/> is one this home opened (<see cref="SessionTrees.Holds"/>), standing or not: a chat's own tree, where
+    /// a chat whose tree it is not works in the person's checkout (CHATFLOW1a).
+    /// </summary>
+    bool Holds(string tree);
+
+    /// <summary>
     /// A run's node record, <c>run:&lt;run&gt;</c>, read and never written (FABRIC-CUTOVER1e): an empty one where Daoris has not judged the run
     /// yet, null where its file does not read.
     /// </summary>

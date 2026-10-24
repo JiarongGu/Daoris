@@ -40,4 +40,22 @@ public sealed class EntryHostTests(LocalHost host) : IClassFixture<LocalHost>
         var session = opened.Json.GetProperty("session");
         Assert.Equal($"session:{session.GetProperty("id").GetString()}/Keeper", Entry(session));
     }
+
+    /// <summary>
+    /// 🔴 CHATFLOW1a (the chat-flow design §4.2): the quest a chat took (CHATTAKE1) is answered as <c>tookQuest</c> to this machine, as
+    /// <c>opinion</c> is, and to nobody off it; a chat that took none answers none.
+    /// </summary>
+    [Fact]
+    public async Task The_quest_a_chat_took_is_answered_to_this_machine_only()
+    {
+        var took = (await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf("keeper-took-chat") }))
+            .Json.GetProperty("session").GetProperty("id").GetString()!;
+        var none = (await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf("keeper-took-none") }))
+            .Json.GetProperty("session").GetProperty("id").GetString()!;
+        Assert.True(await host.Composed.Sessions.MarkTookAsync(took, "a1b2c3d4e5f6"));
+
+        Assert.Equal("a1b2c3d4e5f6", (await ListedAsync(took))!.Value.GetProperty("tookQuest").GetString());
+        Assert.False((await ListedAsync(took, DaorisHost.OffMachine))!.Value.TryGetProperty("tookQuest", out _));
+        Assert.False((await ListedAsync(none))!.Value.TryGetProperty("tookQuest", out _));
+    }
 }

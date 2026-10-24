@@ -1,5 +1,5 @@
 {
-  "about": "One table of the English a run says (WORKFLOW1c5, D157, .claude/knowledge/twins.md). The driver's WorkflowRunWords.cs says it in a terminal, the page's workflow/runSaid.ts and the workflow.run.* catalogue say it on the page; WorkflowRunSaidTwinTests.cs and workflow/runSaid.test.ts each read every row. A row is a step's kind, state (working where omitted), detail and the facts its words use; said is the sentence, null where the state's word says it all. A row with a node is a graph run's node (FABRIC-CUTOVER1e): its own kind, its detail its record's state, on the subject it observes; graph is what a graph run says above its nodes, line for line. A name from a record is in backticks. The terminal's own words (the head line, the marks, this session, the presses under a step) and the step titles, which the page words by Current's own step, stay out.",
+  "about": "One table of the English a run says (WORKFLOW1c5, D157, .claude/knowledge/twins.md). The driver's WorkflowRunWords.cs says it in a terminal, the page's workflow/runSaid.ts and the workflow.run.* catalogue say it on the page; WorkflowRunSaidTwinTests.cs and workflow/runSaid.test.ts each read every row. A row is a step's kind, state (working where omitted), detail and the facts its words use; said is the sentence, null where the state's word says it all. A row with a node is a graph run's node (FABRIC-CUTOVER1e): its own kind, its detail its record's state, on the subject it observes; graph is what a graph run says above its nodes, line for line. A name from a record is in backticks. A none row is a code a read that names no run answers (CHATFLOW1a, the chat-flow design §10): its code, the record's id or the workflow's id its words name, and its sentence, which the terminal says and the page's workflow.run.noRun.* says in en. The terminal's own words (the head line, the marks, this session, the presses under a step) and the step titles, which the page words by Current's own step, stay out.",
   "states": {
     "not-reached": "not reached",
     "working": "working",
@@ -147,6 +147,21 @@
     { "kind": "landing", "state": "not-reached", "detail": "", "said": null },
     { "kind": "landing", "state": "cannot-start", "detail": "refused", "words": "its tree is locked", "said": "Cannot start: its tree is locked" },
     { "kind": "landing", "state": "cannot-start", "detail": "refused", "code": "exists", "said": "Cannot land automatically: the branch it would make already stands." }
+  ],
+  "none": [
+    { "code": "no-session", "id": "s1a2b3c4", "said": "No session `s1a2b3c4` is recorded here." },
+    { "code": "no-quest", "id": "q9", "said": "No quest `#q9` is here." },
+    { "code": "ask-no-quest", "id": "a1", "said": "Nothing runs here yet: ask `#a1` has published no quest." },
+    { "code": "chat-checkout", "said": "This chat works in your checkout, not in a tree of its own, so its work runs no workflow: what it changes is yours to commit. To give work a workflow, start a conversation with a tree of its own." },
+    { "code": "chat-own-tree", "said": "This chat works in a tree of its own, but this build reads no workflow for a conversation's work yet." },
+    { "code": "chat-graph-later", "workflow": "reviewed", "said": "This chat's repository follows the workflow `reviewed`, which this build does not run for a conversation's work yet, so its work is landed as before." },
+    { "code": "chat-tree-gone", "said": "This chat's tree is gone, and its work was never bound to a workflow, so there is no run to show." },
+    { "code": "ask-daoris", "said": "Ask Daoris works in its workspace's room, not in a repository's tree, and a repository's work is asked for through a quest, so no workflow runs for its conversations." },
+    { "code": "reviewer", "said": "This session reads another's work for a second opinion and changes nothing of its own, so no workflow runs for it." },
+    { "code": "helper", "said": "This session helps another and changes nothing of its own, so no workflow runs for it: the session it helps has the run." },
+    { "code": "partner", "said": "This session writes one piece that the session that asked it lands, so that session's run is the run." },
+    { "code": "teammate", "said": "This session ran on a teammate's machine, which keeps its run." },
+    { "code": "unanswered", "said": "The service did not answer, so where this work stands could not be read. Try again." }
   ],
   "graph": [
     { "quest": "q2", "branch": "daoris/q2-work", "said": [

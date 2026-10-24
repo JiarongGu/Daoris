@@ -535,23 +535,118 @@ public sealed class WorkflowRunTests
             new("c1", "engine", "working") { Kind = "chat" },
         ];
         string[][] Ids(IReadOnlyList<IReadOnlyList<QuestView>> chains) => [.. chains.Select(chain => chain.Select(quest => quest.Id).ToArray())];
+        var trees = new Trees();
 
-        Assert.Equal([["q1", "q2", "q3"]], Ids(WorkflowRunReader.ChainsOf(new(Quest: "#q2"), quests, sessions).Chains));
-        Assert.Equal([["q1", "q2", "q3"]], Ids(WorkflowRunReader.ChainsOf(new(Quest: "q3"), quests, sessions).Chains));
-        Assert.Equal([["q1", "q2", "q3"]], Ids(WorkflowRunReader.ChainsOf(new(Session: "s1"), quests, sessions).Chains));
+        Assert.Equal([["q1", "q2", "q3"]], Ids(WorkflowRunReader.ChainsOf(new(Quest: "#q2"), quests, sessions, trees).Chains));
+        Assert.Equal([["q1", "q2", "q3"]], Ids(WorkflowRunReader.ChainsOf(new(Quest: "q3"), quests, sessions, trees).Chains));
+        Assert.Equal([["q1", "q2", "q3"]], Ids(WorkflowRunReader.ChainsOf(new(Session: "s1"), quests, sessions, trees).Chains));
         Assert.Equal(["engine", "game", "engine", null, null], new[]
         {
-            WorkflowRunReader.ChainsOf(new(Quest: "#q2"), quests, sessions).Only, WorkflowRunReader.ChainsOf(new(Quest: "q3"), quests, sessions).Only,
-            WorkflowRunReader.ChainsOf(new(Session: "s1"), quests, sessions).Only, WorkflowRunReader.ChainsOf(new(Session: "i1"), quests, sessions).Only,
-            WorkflowRunReader.ChainsOf(new(Ask: "a1"), quests, sessions).Only,
+            WorkflowRunReader.ChainsOf(new(Quest: "#q2"), quests, sessions, trees).Only, WorkflowRunReader.ChainsOf(new(Quest: "q3"), quests, sessions, trees).Only,
+            WorkflowRunReader.ChainsOf(new(Session: "s1"), quests, sessions, trees).Only, WorkflowRunReader.ChainsOf(new(Session: "i1"), quests, sessions, trees).Only,
+            WorkflowRunReader.ChainsOf(new(Ask: "a1"), quests, sessions, trees).Only,
         });
-        Assert.Equal([["q1", "q2", "q3"], ["q4"]], Ids(WorkflowRunReader.ChainsOf(new(Session: "i1"), quests, sessions).Chains));
-        Assert.Equal([["q1", "q2", "q3"], ["q4"]], Ids(WorkflowRunReader.ChainsOf(new(Ask: "a1"), quests, sessions).Chains));
+        Assert.Equal([["q1", "q2", "q3"], ["q4"]], Ids(WorkflowRunReader.ChainsOf(new(Session: "i1"), quests, sessions, trees).Chains));
+        Assert.Equal([["q1", "q2", "q3"], ["q4"]], Ids(WorkflowRunReader.ChainsOf(new(Ask: "a1"), quests, sessions, trees).Chains));
 
-        Assert.Equal("session `c1` serves no quest, so no workflow runs for it.", WorkflowRunReader.ChainsOf(new(Session: "c1"), quests, sessions).Problem);
-        Assert.Equal("no quest `#q9` is here.", WorkflowRunReader.ChainsOf(new(Quest: "q9"), quests, sessions).Problem);
-        Assert.Equal("no session `s9` is recorded here.", WorkflowRunReader.ChainsOf(new(Session: "s9"), quests, sessions).Problem);
-        Assert.Contains("name one of them", WorkflowRunReader.ChainsOf(new(), quests, sessions).Problem);
+        Assert.Equal(WorkflowNoRun.Said(WorkflowNoRun.ChatCheckout), WorkflowRunReader.ChainsOf(new(Session: "c1"), quests, sessions, trees).Problem);
+        Assert.Equal("No quest `#q9` is here.", WorkflowRunReader.ChainsOf(new(Quest: "q9"), quests, sessions, trees).Problem);
+        Assert.Equal("No session `s9` is recorded here.", WorkflowRunReader.ChainsOf(new(Session: "s9"), quests, sessions, trees).Problem);
+        Assert.Contains("name one of them", WorkflowRunReader.ChainsOf(new(), quests, sessions, trees).Problem);
+        Assert.Null(WorkflowRunReader.ChainsOf(new(), quests, sessions, trees).Code);
+    }
+
+    /// <summary>
+    /// CHATFLOW1a (the chat-flow design §4.2, §10): a session that names no run is answered by a code, in §4.2's order, its English the
+    /// code's sentence. A reviewer's <c>o-…</c> clone, a helper's and a partner's records stand in trees this home opened, and read as what
+    /// they are, never as a chat; a chat in a tree of its own reads <c>chat-own-tree</c> and never <c>chat-checkout</c>. An intake still
+    /// reads its ask's runs, and <c>ask-no-quest</c> before any; a chat that took a quest reads that quest's run, and so does its
+    /// hand-over's next record, which carries no <c>took_quest</c> of its own; a closed quest's session gone on as a conversation in the
+    /// quest's tree (its stored origin <c>quest:&lt;id&gt;</c>) reads that quest's run, never a chat run.
+    /// </summary>
+    [Fact]
+    public void A_session_that_names_no_run_is_answered_by_its_code_in_the_designs_order()
+    {
+        QuestView To(string id, string to, string? parent = null, string from = "ask #a1") => new(id, from, to, id, "", "Open") { Parent = parent };
+        IReadOnlyList<QuestView> quests = [To("q1", "engine"), To("q2", "engine", "q1"), To("q4", "game", from: "person"), To("q5", "engine", from: "person")];
+        TracedSession Chat(string id, string? tree, string? entry = null) =>
+            new(id, "engine", "working") { Kind = "chat", Tree = tree, Entry = entry ?? $"session:{id}/engine", Created = T };
+        IReadOnlyList<TracedSession> sessions =
+        [
+            new("i1", "ask #a1", "completed") { Ask = "a1", Entry = "ask:a1/intake" },
+            new("i2", "ask #a2", "completed") { Ask = "a2", Entry = "ask:a2/intake" },
+            new("h1", "daoris:help", "working") { Kind = "chat", Entry = "session:h1/daoris:help" },
+            Chat("r1", "trees/default/engine/o-1a2b3c4d") with { Opinion = "op1" },
+            Chat("hp1", "trees/default/engine/s-c2c2c2c2") with { Serves = "c2" },
+            Chat("p1", "trees/default/engine/p-p1a2b3c4") with { Serves = "c2", Piece = "p1a2b3c4" },
+            new("a@one/c9", "engine", "completed") { Kind = "chat", Tree = "trees/default/engine/s-c9c9c9c9" },
+            Chat("c1", "work/engine"),
+            Chat("c2", "trees/default/engine/s-c2c2c2c2"),
+            Chat("c3", "trees/default/engine/s-c3c3c3c3"),
+            Chat("c4", "trees/default/engine/s-c4c4c4c4") with { TookQuest = "q4" },
+            Chat("c5", "trees/default/engine/s-c4c4c4c4", "session:c4/engine") with { From = "c4", Created = T.AddMinutes(5) },
+            Chat("g1", "trees/default/engine/q-q5", "quest:q5/engine") with { From = "s5" },
+            Chat("g2", "trees/default/engine/q-q1", "ask:a1/engine") with { From = "s1" },
+        ];
+        var trees = new Trees(holds: tree => tree.StartsWith("trees/", StringComparison.Ordinal), stands: tree => !tree.Contains("s-c3", StringComparison.Ordinal));
+        string[][] Ids(IReadOnlyList<IReadOnlyList<QuestView>> chains) => [.. chains.Select(chain => chain.Select(quest => quest.Id).ToArray())];
+        (string? Code, string? Problem, string[][] Chains) Read(WorkflowRunAsk asked)
+        {
+            var read = WorkflowRunReader.ChainsOf(asked, quests, sessions, trees);
+            return (read.Code, read.Problem, Ids(read.Chains));
+        }
+
+        void NoRun(string session, string code, string? id = null)
+        {
+            var (read, problem, chains) = Read(new(Session: session));
+            Assert.Equal((code, WorkflowNoRun.Said(code, id)), (read, problem));
+            Assert.Empty(chains);
+        }
+
+        NoRun("s9", WorkflowNoRun.NoSession, "s9");
+        NoRun("a@one/c9", WorkflowNoRun.Teammate);
+        NoRun("i2", WorkflowNoRun.AskNoQuest, "a2");
+        NoRun("h1", WorkflowNoRun.AskDaoris);
+        NoRun("r1", WorkflowNoRun.Reviewer);
+        NoRun("p1", WorkflowNoRun.Partner);
+        NoRun("hp1", WorkflowNoRun.Helper);
+        NoRun("c3", WorkflowNoRun.ChatTreeGone);
+        NoRun("c1", WorkflowNoRun.ChatCheckout);
+        NoRun("c2", WorkflowNoRun.ChatOwnTree);
+        Assert.Equal(((string?)WorkflowNoRun.NoQuest, (string?)"No quest `#q9` is here."), (Read(new(Quest: "q9")).Code, Read(new(Quest: "q9")).Problem));
+        Assert.Equal(((string?)WorkflowNoRun.AskNoQuest, (string?)WorkflowNoRun.Said(WorkflowNoRun.AskNoQuest, "a2")), (Read(new(Ask: "a2")).Code, Read(new(Ask: "a2")).Problem));
+
+        void Runs(string session, params string[][] chains)
+        {
+            var (code, problem, read) = Read(new(Session: session));
+            Assert.Equal(((string?)null, (string?)null), (code, problem));
+            Assert.Equal(chains, read);
+        }
+
+        Runs("i1", ["q1", "q2"]);
+        Runs("c4", ["q4"]);
+        Runs("c5", ["q4"]);
+        Runs("g1", ["q5"]);
+        Runs("g2", ["q1", "q2"]);
+        Assert.Equal("game", WorkflowRunReader.ChainsOf(new(Session: "c5"), quests, sessions, trees).Only);
+    }
+
+    /// <summary>Which trees this home opened and which still stand, for the reader's classification of a chat (CHATFLOW1a).</summary>
+    private sealed class Trees(Func<string, bool>? holds = null, Func<string, bool>? stands = null) : IWorkflowRunRecords
+    {
+        public IReadOnlyList<LandedBranch> Landings() => [];
+
+        public IReadOnlyList<AutoLanding> AutoLandings() => [];
+
+        public IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions) => new Dictionary<string, DateTimeOffset>();
+
+        public bool Stands(string tree) => stands?.Invoke(tree) ?? true;
+
+        public bool Holds(string tree) => holds?.Invoke(tree) ?? false;
+
+        public NodeRecord? Record(string unit) => null;
+
+        public IReadOnlyList<GrownBranch> Branches() => [];
     }
 
     /// <summary>
@@ -720,7 +815,7 @@ public sealed class WorkflowRunTests
 
         WorkflowRun Read(WorkflowRunAsk asked, bool reopened)
         {
-            var (chains, _, only) = WorkflowRunReader.ChainsOf(asked, [Here(reopened), There(reopened)], sessions);
+            var (chains, _, only, _, _) =WorkflowRunReader.ChainsOf(asked, [Here(reopened), There(reopened)], sessions, new Trees());
             var chain = chains.Single();
             Assert.Equal("engine", only);
             return WorkflowRuns.Derive(new WorkflowRunFacts("engine", current)
