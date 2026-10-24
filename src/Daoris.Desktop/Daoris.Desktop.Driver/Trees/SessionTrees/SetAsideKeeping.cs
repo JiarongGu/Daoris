@@ -57,7 +57,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
         {
             if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
             // KEEPSIZE1b (§3.4, §5): its class, and its threshold for a write, from its manifest.
-            var judged = SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole);
+            var judged = SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole, now);
             var kept = setAside.Kept(folder, judged.Threshold);
             var past = judged.Due is { } due && now >= due;
             var slim = !past && !policy.SetAside.Whole && kept is null && SlimDueOf(folder, now);
@@ -66,6 +66,7 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
                 Class = judged.Class,
                 Ref = judged.Manifest?.Finished?.Ref,
                 Why = judged.Manifest?.Why,
+                Finished = judged.Manifest?.Finished is not null,
             });
         }
 
@@ -97,8 +98,9 @@ internal sealed class SetAsideKeeping(TreeContext context, TreeSetAside setAside
         if (kept is { Code: SetAsideKept.Unread }) return (0, SetAsideKept.Unread);
         if (kept is not null && !listedOwn) return (0, SpaceKept.Changed);
         // Renamed into `.going` first, then deleted (§3.4): a refused rename keeps it whole.
-        var (bytes, refused) = TreeSetAside.Remove(folder);
-        return refused is null ? (bytes, null) : (0, refused.Value.Code == TidyKept.Busy ? SpaceKept.InUse : SpaceKept.Failed);
+        var (bytes, refused) = setAside.Remove(folder);
+        return refused is null ? (bytes, null)
+            : (0, refused.Value.Code switch { TidyKept.Busy => SpaceKept.InUse, SetAsideKept.Linked => SetAsideKept.Linked, _ => SpaceKept.Failed });
     }
 
     /// <summary>The slims due: each manifest at <c>moved</c> an hour after its move; true where the budget or a stop ended the pass.</summary>
@@ -276,6 +278,9 @@ internal sealed record SetAsideListed(
 
     /// <summary>Why it waits, as its manifest says: the last post's or check's words.</summary>
     public string? Why { get; init; }
+
+    /// <summary>It has a finished tree's manifest (schema 2), whatever its class.</summary>
+    public bool Finished { get; init; }
 
     /// <summary>It holds files of its own: something written in it after its move, or a link in it.</summary>
     public bool Own => Kept is SetAsideKept.Written or SetAsideKept.Linked;

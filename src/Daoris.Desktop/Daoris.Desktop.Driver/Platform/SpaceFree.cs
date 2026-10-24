@@ -113,7 +113,7 @@ public sealed record SpaceFreeWorld(string Home)
     public Func<CancellationToken, Task<IReadOnlyList<RepoView>>>? Registry { get; init; }
 
     /// <summary>The service's door for a finished tree's record (KEEPSIZE1b): null where it keeps it, else why not.</summary>
-    internal Func<FinishedPost, CancellationToken, Task<string?>>? PostRecord { get; init; }
+    internal Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? PostRecord { get; init; }
 
     /// <summary>This world with the service's registry and record door (KEEPSIZE1b), for the window's press.</summary>
     public SpaceFreeWorld WithService(ServiceClient service) => this with { Registry = service.RegistryAsync, PostRecord = service.PostWorkRecordAsync };
@@ -157,27 +157,23 @@ public static class SpaceFree
     private static int LogDays(KeepPolicy policy) => (int)policy.Logs.Days.TotalDays;
 
     /// <summary>
-    /// The list, after the finished trees' steps (KEEPSIZE1b, the keep-size design §5): each stopped or refused folder resumed and each record
-    /// due posted first, from its manifest, so a folder whose branch went reaches its record before the person's word can remove it.
+    /// The finished trees' record pass at the press's run (KEEPSIZE1b, the keep-size design §5), before it removes: each stopped or refused
+    /// folder resumed and each record due posted first, from its manifest, so a folder whose branch went reaches its record before the
+    /// person's word can remove it, and a recorded folder's hour is checked. The list never runs it: it reads the classes as they stand, and
+    /// changes nothing (the second maker's read, finding 7). Nothing where it has no service, or its registry did not read: then no recorded
+    /// folder's hour is due (finding 1).
     /// </summary>
-    public static async Task<SpacePlan> PlanAsync(SpaceFreeWorld world, CancellationToken ct = default)
-    {
-        await RecordAsync(world, null, ct).ConfigureAwait(false);
-        return Plan(world, ct);
-    }
-
-    /// <summary>The finished trees' record pass at the press (KEEPSIZE1b); nothing where it has no service.</summary>
     private static async Task RecordAsync(SpaceFreeWorld world, Func<string, bool>? only, CancellationToken ct)
     {
         if (world.Registry is not { } registry) return;
-        IReadOnlyList<RepoView> rows;
+        IReadOnlyList<RepoView>? rows;
         try
         {
             rows = await registry(ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
-            rows = [];
+            rows = null;
         }
 
         try
@@ -209,7 +205,7 @@ public static class SpaceFree
                 var unit = new SpaceUnit("set-aside", folder.Id, Early: false, bytes)
                 {
                     At = folder.Goes, Workspace = folder.Workspace, Repository = folder.Repository, Own = folder.Own,
-                    Class = folder.Class, Ref = folder.Ref,
+                    Class = ListedClass.Of(folder), Ref = folder.Ref,
                 };
                 if (folder.Past && folder.Kept is null) units.Add(unit with { Why = "past" });
                 if (folder.Slim) units.Add(unit with { Why = "slim", Bytes = null });
@@ -620,16 +616,21 @@ public static class SpaceFree
         }
     }
 
-    /// <summary>The list as the route and <c>--json</c> answer it, field for field: every field added, never renamed.</summary>
-    /// <summary>How many of a group's set-aside folders are of each class (KEEPSIZE1b), stopped and refused joined: their branch stands.</summary>
+    /// <summary>
+    /// How many of a group's set-aside folders are of each listed class (KEEPSIZE1b, <see cref="SpaceUnit.Class"/>): what the list can say of
+    /// each and nothing more (the second maker's read, finding 9).
+    /// </summary>
     private static JsonObject Classes(IReadOnlyList<SpaceUnit> units) => new()
     {
         ["recorded"] = units.Count(unit => unit.Class == SetAsideClass.Recorded),
         ["awaiting"] = units.Count(unit => unit.Class == SetAsideClass.Awaiting),
-        ["stands"] = units.Count(unit => unit.Class is SetAsideClass.Stopped or SetAsideClass.Refused),
+        ["stands"] = units.Count(unit => unit.Class == ListedClass.Stands),
+        ["stopped"] = units.Count(unit => unit.Class is SetAsideClass.Stopped or SetAsideClass.Refused),
+        ["unheld"] = units.Count(unit => unit.Class == ListedClass.Unheld),
         ["unmarked"] = units.Count(unit => unit.Class is null or SetAsideClass.Unmarked),
     };
 
+    /// <summary>The list as the route and <c>--json</c> answer it, field for field: every field added, never renamed.</summary>
     public static JsonObject Json(SpacePlan plan)
     {
         var now = new JsonArray();
@@ -702,6 +703,27 @@ public static class SpaceFree
         if (asked.Count == 0) throw new ArgumentException("a press names `units` or `early` to remove.");
         return asked;
     }
+}
+
+/// <summary>
+/// The class a set-aside folder is listed by (KEEPSIZE1b, the keep-size design §5): its <see cref="SetAsideClass"/>, but a stopped or refused
+/// folder whose check said its branch stands is <see cref="Stands"/>, and a finished folder unmarked by a failed check is <see cref="Unheld"/>
+/// (the second maker's read, finding 9).
+/// </summary>
+internal static class ListedClass
+{
+    /// <summary>Stopped or refused, and the last check said its branch stands.</summary>
+    public const string Stands = "stands";
+
+    /// <summary>A finished tree's folder whose holding check failed: what holds its commits could not be confirmed.</summary>
+    public const string Unheld = "unheld";
+
+    internal static string Of(SetAsideListed folder) => folder.Class switch
+    {
+        SetAsideClass.Stopped or SetAsideClass.Refused when folder.Why == SetAsideEligibility.BranchStands => Stands,
+        SetAsideClass.Unmarked when folder.Finished => Unheld,
+        var other => other,
+    };
 }
 
 /// <summary>What a run's kind removed and kept, as it goes.</summary>

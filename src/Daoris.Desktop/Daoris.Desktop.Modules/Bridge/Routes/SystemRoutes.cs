@@ -87,9 +87,9 @@ public sealed class SystemRoutes(DriverContext context)
         var world = SpaceFreeWorldOf();
         if (plan)
         {
-            return Task.Run(async () =>
+            return Task.Run(() =>
             {
-                using var answer = JsonDocument.Parse(SpaceFree.Json(await SpaceFree.PlanAsync(world, cancellationToken)).ToJsonString());
+                using var answer = JsonDocument.Parse(SpaceFree.Json(SpaceFree.Plan(world, cancellationToken)).ToJsonString());
                 return (object?)answer.RootElement.Clone();
             }, cancellationToken);
         }
@@ -115,7 +115,7 @@ public sealed class SystemRoutes(DriverContext context)
     {
         var loop = _context.Loop;
         var world = new SpaceFreeWorld(loop.Home) { Judge = Judge, Caches = loop.BrowserCaches, Log = loop.Log };
-        // KEEPSIZE1b (the keep-size design §5): the press resumes the finished trees' steps and posts a record due before it lists.
+        // KEEPSIZE1b (the keep-size design §5): the press's run resumes the finished trees' steps and posts a record due before it removes.
         if (loop.Service is { } service)
         {
             world = world.WithService(service);

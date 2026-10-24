@@ -15,32 +15,48 @@ internal sealed record FinishedCommit(string Id, string Subject, IReadOnlyList<(
 internal sealed record FinishedStep(string Folder, string From, string To, string? Why);
 
 /// <summary>
+/// Why the service did not keep a record: its words, and whether it has no door for one at all (a service older than this driver, which
+/// answers 404): then the folder is <c>unmarked</c> and keeps its days, rather than awaiting a record no pass can post (the second maker's
+/// read, finding 4).
+/// </summary>
+internal sealed record RecordRefusal(string Why, bool NoDoor = false);
+
+/// <summary>
 /// The steps after the hold (KEEPSIZE1b, the keep-size design §3.5 steps 6 and 7, and its resume): at each Keeping pass before the purge,
-/// and at the press before it lists. Outside every repository's hold, reading git read-only (§3.4's <i>Git outside the hold</i>) in the root
-/// the registry gives. For each schema-2 manifest beside its folder:
+/// and at the press's run before it removes. Outside every repository's hold, reading git read-only (§3.4's <i>Git outside the hold</i>) in
+/// the root the registry gives. For each schema-2 manifest beside its folder:
 /// <list type="bullet">
 /// <item><c>judged</c>, <c>moved</c> or <c>refused</c>: where its branch is absent and the holding check passes, <c>deleted</c>, then on;
 /// otherwise it waits its days and says why.</item>
 /// <item><c>deleted</c>: its record composed from the manifest and the tip (<c>git log --first-parent --numstat</c>) and posted; answered,
-/// <c>recorded</c>; not, it stays <c>deleted</c> and the next pass, the press or a restart posts it again.</item>
-/// <item><c>recorded</c>, its hour come: the holding check again; failing, <c>unmarked</c>, waiting its days.</item>
+/// <c>recorded</c>; not, it stays <c>deleted</c> and the next pass, the press or a restart posts it again. A service with no door for it
+/// makes it <c>unmarked</c>.</item>
+/// <item><c>recorded</c>, its hour come: the holding check again; passing, its moment stamped as <see cref="SlimManifest.Held"/>, which the
+/// hour's purge reads; failing, <c>unmarked</c>, waiting its days.</item>
 /// </list>
+/// <para>🔴 A registry that could not be read is not a registry that names no checkout (the second maker's read, finding 3): with none, no
+/// step runs, so nothing is unmarked and no record is posted without its commits for an outage. A git read that failed posts nothing
+/// either; only a tip git says is missing, or a range not known, is posted without its commits.</para>
+/// <para>Within the pass's budget (finding 6): between folders, never inside one's steps.</para>
 /// </summary>
 internal sealed class FinishedRecords(TreeSetAside setAside)
 {
-    /// <summary>One pass. <paramref name="rootOf"/> is the registry's checkout of a workspace's repository; <paramref name="post"/> the service's door, null where none answers.</summary>
+    /// <summary>One pass. <paramref name="rootOf"/> is the registry's checkout of a workspace's repository, null where the registry did not read; <paramref name="post"/> the service's door, null where none answers.</summary>
     /// <param name="post">Null answer: the service keeps the record; else why it does not.</param>
     /// <param name="only">The folders a press listed; null meets every one.</param>
+    /// <param name="spent">Whether the pass's budget is spent or a stop asked; the rest waits for the next pass.</param>
     internal async Task<IReadOnlyList<FinishedStep>> RunAsync(
-        Func<string, string, string?> rootOf, Func<FinishedPost, CancellationToken, Task<string?>>? post, DateTimeOffset now, CancellationToken ct,
-        Func<string, bool>? only = null)
+        Func<string, string, string?>? rootOf, Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? post, DateTimeOffset now,
+        CancellationToken ct, Func<string, bool>? only = null, Func<bool>? spent = null)
     {
         var steps = new List<FinishedStep>();
+        if (rootOf is null) return steps;
         foreach (var place in setAside.SetAsideRoots.Where(Directory.Exists))
         foreach (var workspace in SetAsideEligibility.Workspaces(place))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var file in Directory.EnumerateFiles(repository, "*" + SlimManifest.Suffix).ToList())
         {
+            if (spent?.Invoke() == true || ct.IsCancellationRequested) return steps;
             var folder = SlimManifest.FolderOf(file)!;
             if (only is not null && !only(folder)) continue;
             if (!Directory.Exists(folder) || SlimManifest.Read(file).Manifest is not { Finished: { } finished } manifest) continue;
@@ -63,11 +79,18 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
             if (state == SlimStates.Deleted)
             {
                 if (post is null) continue;
-                var (commits, unread) = root is null
-                    ? (null, "the registry names no checkout of its repository on this machine")
+                var (commits, unread, failedRead) = root is null
+                    ? (null, "the registry names no checkout of its repository on this machine", null)
                     : await CommitsAsync(root, finished, ct).ConfigureAwait(false);
+                if (failedRead is not null)
+                {
+                    // A git read that failed is no "no commits": the record waits, whole, for the next pass.
+                    if (manifest.Why != failedRead && Save(file, manifest with { Why = failedRead })) steps.Add(new(folder, state, state, failedRead));
+                    continue;
+                }
+
                 var moved = TreeSetAside.MovedAt(Path.GetFileName(folder)) ?? manifest.Moved ?? manifest.Judged;
-                string? refused;
+                RecordRefusal? refused;
                 try
                 {
                     refused = await post(new FinishedPost(
@@ -75,12 +98,18 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
                 }
                 catch (Exception error) when (error is DriverException or HttpRequestException or IOException or TaskCanceledException)
                 {
-                    refused = error.Message;
+                    refused = new(error.Message);
+                }
+
+                if (refused is { NoDoor: true })
+                {
+                    if (Save(file, manifest with { State = SlimStates.Unmarked, Why = refused.Why })) steps.Add(new(folder, state, SlimStates.Unmarked, refused.Why));
+                    continue;
                 }
 
                 if (refused is not null)
                 {
-                    if (manifest.Why != refused && Save(file, manifest with { Why = refused })) steps.Add(new(folder, state, state, refused));
+                    if (manifest.Why != refused.Why && Save(file, manifest with { Why = refused.Why })) steps.Add(new(folder, state, state, refused.Why));
                     continue;
                 }
 
@@ -88,11 +117,18 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
                 continue;
             }
 
-            // The hour come, the holding check again right before the purge reads the class: a ref dropped by hand, a line rewound, unmarks it.
-            if (state == SlimStates.Recorded && manifest.Recorded is { } recorded && now - recorded >= KeepKinds.SetAsideSettle && !finished.Whole
-                && await SetAsideEligibility.HoldingAsync(root, manifest, ct).ConfigureAwait(false) is { } failed)
+            // The hour come, the holding check again right before the purge reads the class: a ref dropped by hand, a line rewound, unmarks it;
+            // a check that passes stamps its moment, the only one the hour's purge takes the folder on (finding 1).
+            if (state == SlimStates.Recorded && manifest.Recorded is { } recorded && now - recorded >= KeepKinds.SetAsideSettle && !finished.Whole)
             {
-                if (Save(file, manifest with { State = SlimStates.Unmarked, Why = failed })) steps.Add(new(folder, state, SlimStates.Unmarked, failed));
+                if (await SetAsideEligibility.HoldingAsync(root, manifest, ct).ConfigureAwait(false) is { } failed)
+                {
+                    if (Save(file, manifest with { State = SlimStates.Unmarked, Why = failed })) steps.Add(new(folder, state, SlimStates.Unmarked, failed));
+                }
+                else
+                {
+                    Save(file, manifest with { Held = now });
+                }
             }
         }
 
@@ -101,16 +137,20 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
 
     /// <summary>
     /// The tree's commits (§2.1): <c>git log --first-parent --numstat &lt;grewFrom&gt;..&lt;tip&gt;</c> from the tip, oldest first, a merge of the line
-    /// one commit of the tree's with its first-parent changes. Null with why where the tip no longer reads or the range is not known.
+    /// one commit of the tree's with its first-parent changes. Null with why where git says the tip is missing or the range is not known; a
+    /// read git could not make is <c>Failed</c>, and nothing is posted on it.
     /// </summary>
-    internal static async Task<(IReadOnlyList<FinishedCommit>? Commits, string? Unread)> CommitsAsync(string root, FinishedTree tree, CancellationToken ct)
+    internal static async Task<(IReadOnlyList<FinishedCommit>? Commits, string? Unread, string? Failed)> CommitsAsync(
+        string root, FinishedTree tree, CancellationToken ct)
     {
-        var (tipCode, _, _) = await WorkingTree.GitAsync(root, ["cat-file", "-e", $"{tree.Tip}^{{commit}}"], ct).ConfigureAwait(false);
-        if (tipCode != 0) return (null, "its tip no longer reads, so its commits are not listed");
-        if (tree.GrewFrom is not { } grew) return (null, "the commit it grew from is not known, so its commits are not listed");
+        // `cat-file -e <full id>`: 1 is git's word that the object is missing; any other failure is no answer (git-ref-absence.md).
+        var (tipCode, _, tipErr) = await WorkingTree.GitAsync(root, ["cat-file", "-e", tree.Tip], ct).ConfigureAwait(false);
+        if (tipCode == 1) return (null, "its tip no longer reads, so its commits are not listed", null);
+        if (tipCode != 0) return (null, null, $"git could not say whether its tip reads: {TreeGit.FirstLine(tipErr)}");
+        if (tree.GrewFrom is not { } grew) return (null, "the commit it grew from is not known, so its commits are not listed", null);
         var (code, output, err) = await WorkingTree.GitAsync(
             root, ["log", "--first-parent", "--numstat", "--format=%x1e%H%x1f%s", $"{grew}..{tree.Tip}"], ct).ConfigureAwait(false);
-        if (code != 0) return (null, $"git could not list its commits: {TreeGit.FirstLine(err)}");
+        if (code != 0) return (null, null, $"git could not list its commits: {TreeGit.FirstLine(err)}");
         var commits = new List<FinishedCommit>();
         foreach (var chunk in output.Split('\u001e', StringSplitOptions.RemoveEmptyEntries))
         {
@@ -127,7 +167,7 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
         }
 
         commits.Reverse();
-        return (commits, null);
+        return (commits, null, null);
     }
 
     private static bool Save(string file, SlimManifest manifest)

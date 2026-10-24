@@ -742,15 +742,15 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
 
     /// <inheritdoc cref="FinishedRecords.RunAsync"/>
     internal Task<IReadOnlyList<FinishedStep>> RecordSetAsideAsync(
-        Func<string, string, string?> rootOf, Func<FinishedPost, CancellationToken, Task<string?>>? post, DateTimeOffset now, CancellationToken ct,
-        Func<string, bool>? only = null) =>
-        new FinishedRecords(SetAsides).RunAsync(rootOf, post, now, ct, only);
+        Func<string, string, string?>? rootOf, Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? post, DateTimeOffset now,
+        CancellationToken ct, Func<string, bool>? only = null, Func<bool>? spent = null) =>
+        new FinishedRecords(SetAsides).RunAsync(rootOf, post, now, ct, only, spent);
 
     /// <summary>
     /// The registry's checkouts, by workspace and repository, for the record pass's git reads outside every hold (the keep-size design §3.4):
-    /// a repository it does not name is unresolved, and its folder waits its days.
+    /// a repository it does not name is unresolved, and its folder waits its days. Null where the registry did not read: then no step runs.
     /// </summary>
-    internal static Func<string, string, string?> RootsOf(IReadOnlyList<RepoView> registry) =>
+    internal static Func<string, string, string?>? RootsOf(IReadOnlyList<RepoView>? registry) => registry is null ? null :
         (workspace, repository) => registry.FirstOrDefault(row =>
             string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase)
             && string.Equals(RemoteTarget.Workspace(row.Workspace), workspace, StringComparison.OrdinalIgnoreCase))?.Root;

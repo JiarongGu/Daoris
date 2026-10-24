@@ -86,6 +86,15 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private bool _recordsDown;
 
+    /// <summary>The stand-in has no record door, as a service older than the driver (the second maker's read, finding 4): a bare 404.</summary>
+    public bool RecordsMissing
+    {
+        get { lock (_gate) return _recordsMissing; }
+        set { lock (_gate) _recordsMissing = value; }
+    }
+
+    private bool _recordsMissing;
+
     /// <summary>
     /// The person brings this machine's lost take forward now (SYNCMERGE1a): its fresh take, made after every record so far, stands as
     /// <paramref name="standing"/>, and so does the claim, unless it lost again.
@@ -928,6 +937,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                 // A finished tree's record (KEEPSIZE1b): kept once by its identity, as the service keeps it.
                 case ("POST", "/api/trees/record"):
                 {
+                    if (_recordsMissing) return new HttpResponseMessage(HttpStatusCode.NotFound);
                     if (_recordsDown) return Answer(HttpStatusCode.ServiceUnavailable, new JsonObject { ["error"] = "the stand-in's record door is down" });
                     _recordPosts++;
                     var key = $"{body!["workspace"]}/{body["repository"]}/{body["folder"]}";

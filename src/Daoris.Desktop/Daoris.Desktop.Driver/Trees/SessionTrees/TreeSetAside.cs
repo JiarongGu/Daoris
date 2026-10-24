@@ -17,8 +17,9 @@ internal sealed class TreeSetAside(TreeContext context)
     /// (<see cref="SweepItem.Removable"/>: empty, landed by ancestry or by content, carried), with every guard read. With no tree
     /// it goes; with a tree, only one of this home's on a branch that moved since it grew (<see cref="SweepItem.Worked"/>). A tree
     /// whose branch never moved is a conversation's place, which words to its session go on in (D137): removed, they could not,
-    /// so it stays the press's, whatever its kind. A tree holding only ignored paths goes, since the look moves its folder aside
-    /// for fourteen days rather than deleting it; uncommitted and untracked paths keep it, as the judgement's <c>dirty</c>.
+    /// so it stays the press's, whatever its kind. A tree holding only ignored paths goes: by the owner's decision a finished session's
+    /// own scratch goes with its tree, named in its record (KEEPSIZE1b, the keep-size design §3.2); uncommitted and untracked paths keep
+    /// it, as the judgement's <c>dirty</c>.
     /// A landed branch goes only once its work is on the line (<see cref="SweepItem.OnLine"/>): landed on another branch of the
     /// person's alone, its pull request may still be open and its session asked to change it in its own tree, so the look waits
     /// for the merge D88 began from, and the press may take it before by the person's choice.
@@ -113,7 +114,7 @@ internal sealed class TreeSetAside(TreeContext context)
         }
 
         // OVERVIEWNOISE1a: a repository under an ignored path (a test's scratch under `_fixtures/`) is ignored content like any
-        // other, and goes aside with the folder for fourteen days; only one git would not ignore keeps the tree.
+        // other, and goes with the folder as the tree's own scratch does (KEEPSIZE1b, §3.2); only one git would not ignore keeps the tree.
         foreach (var path in nested)
         {
             var (ignoredCode, _, ignoredErr) = await WorkingTree.GitAsync(tree, ["check-ignore", "--quiet", "--", path + "/"], ct).ConfigureAwait(false);
@@ -197,9 +198,9 @@ internal sealed class TreeSetAside(TreeContext context)
     /// <para>KEEP1a (Codex 2.4): handed the package folders the last look confirmed, it chooses the folder's name first and writes its
     /// manifest beside where it will go, <c>judged</c>, before the move, then <c>moved</c> once git let go of the tree; a move refused or a
     /// folder put back takes the manifest with it, so only a tree git no longer knows is ever slimmed (<see cref="SlimManifest"/>).</para>
-    /// </remarks>
     /// <para>KEEPSIZE1b (the keep-size design §3.3): handed a finished tree's facts, it writes the schema-2 manifest whatever the slim found,
     /// and a manifest it cannot write keeps the tree: nothing moves, and the caller drops the tip's ref.</para>
+    /// </remarks>
     internal Task<(bool Gone, string? To, string? Code, string Sentence)> MoveAsideAsync(
         string root, SweepItem item, CancellationToken ct, IReadOnlyList<string>? slim = null, FinishedTree? finished = null) =>
         MoveAsideAsync(root, item.Tree!, item.Workspace, item.Repository, ct, slim, item.Branch, finished);
@@ -469,7 +470,7 @@ internal sealed class TreeSetAside(TreeContext context)
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
             if (MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
-            var judged = SetAsideEligibility.Of(folder, moved, after, whole);
+            var judged = SetAsideEligibility.Of(folder, moved, after, whole, now);
             if (judged.Due is not { } due || now < due) continue;
             var last = before.GetValueOrDefault(Path.GetFullPath(folder));
             if (only is not null && !only(folder))
@@ -483,7 +484,7 @@ internal sealed class TreeSetAside(TreeContext context)
             {
                 // Failed the same way twice: kept as the last pass said, and tried again the next day.
                 failed.Add((folder, last.Why!, tried));
-                results.Add(new SetAside(folder, moved, false, last.Why, SetAsideKept.Unread));
+                results.Add(new SetAside(folder, moved, false, last.Why, SetAsideKept.Unread) { Class = judged.Class, Hour = judged.Hour });
                 continue;
             }
 
@@ -513,16 +514,21 @@ internal sealed class TreeSetAside(TreeContext context)
     /// A set-aside folder removed (KEEPSIZE1b, the keep-size design §3.4): renamed first into <c>.tidied/.going/</c> beside it, so nothing is
     /// half deleted under the name a person opened, then deleted never following a link, and its manifest with it. A refused rename keeps it
     /// whole, <c>busy</c>; a delete that fails there leaves it for the next pass, which deletes what lies in <c>.going</c> first.
+    /// <para>🔴 Where it would go is reached through no link (the second maker's read, finding 2): a link on the way into <c>.going</c>, asked
+    /// before the folders are made and again after, keeps the folder where it is, <c>linked</c>, as <see cref="MoveFolderAside"/> keeps a move.</para>
     /// </summary>
-    internal static (long Bytes, (string Code, string Sentence)? Kept) Remove(string folder)
+    internal (long Bytes, (string Code, string Sentence)? Kept) Remove(string folder)
     {
         var repository = Path.GetDirectoryName(folder)!;
         var workspace = Path.GetDirectoryName(repository)!;
         var root = Path.GetDirectoryName(workspace)!;
         var going = Path.Combine(root, SetAsideEligibility.Going, Path.GetFileName(workspace), Path.GetFileName(repository), Path.GetFileName(folder));
+        var into = Path.GetDirectoryName(going)!;
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(going)!);
+            if (context.Worktrees.LinkBelowTreesRoot(into) is { } before) return (0, Linked(before));
+            Directory.CreateDirectory(into);
+            if (context.Worktrees.LinkBelowTreesRoot(into) is { } after) return (0, Linked(after));
             Directory.Move(folder, going);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -539,10 +545,17 @@ internal sealed class TreeSetAside(TreeContext context)
         {
             return (0, (SetAsideKept.Unread, $"it could not be read or deleted ({error.Message.Trim()})"));
         }
+
+        static (string, string) Linked(string link) =>
+            (SetAsideKept.Linked, $"the folder it would be moved into to be removed is reached through a link, at {link}, so it is kept");
     }
 
-    /// <summary>What a stop left under one place's <c>.tidied/.going</c>, deleted; what will not go stays for the next pass.</summary>
-    internal static void ClearGoing(string root)
+    /// <summary>
+    /// What a stop left under one place's <c>.tidied/.going</c>, deleted; what will not go stays for the next pass. 🔴 A folder reached through
+    /// a link on the way, <c>.going</c> or any level below it included, is never deleted (the second maker's read, finding 2): it is somewhere
+    /// else, whatever its path says.
+    /// </summary>
+    internal void ClearGoing(string root)
     {
         var going = Path.Combine(root, SetAsideEligibility.Going);
         if (!Directory.Exists(going)) return;
@@ -552,6 +565,7 @@ internal sealed class TreeSetAside(TreeContext context)
             foreach (var repository in Directory.EnumerateDirectories(workspace))
             foreach (var folder in Directory.EnumerateDirectories(repository).ToList())
             {
+                if (context.Worktrees.LinkBelowTreesRoot(folder) is not null) continue;
                 try
                 {
                     DeleteNeverFollowing(folder);

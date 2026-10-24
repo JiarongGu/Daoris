@@ -317,7 +317,7 @@ export const SPACE_PLAN: SpacePlan = {
   ],
   early: [
     {
-      group: 'set-aside', count: 2, bytes: 1.5 * GB, own: 1, classes: { recorded: 1, awaiting: 0, stands: 0, unmarked: 1 },
+      group: 'set-aside', count: 2, bytes: 1.5 * GB, own: 1, classes: { recorded: 1, awaiting: 1, stands: 0, unmarked: 0 },
       units: [
         { kind: 'set-aside', id: 'games/Daoris/s-3-20261014T090000000Z', early: true, why: 'early', bytes: 0.5 * GB, at: '2026-10-28T09:00:00.000+00:00', workspace: 'games', repository: 'Daoris', own: true },
         { kind: 'set-aside', id: 'games/Kobo/s-4-20261015T090000000Z', early: true, why: 'early', bytes: 1.0 * GB, at: '2026-10-29T09:00:00.000+00:00', workspace: 'games', repository: 'Kobo', own: false },

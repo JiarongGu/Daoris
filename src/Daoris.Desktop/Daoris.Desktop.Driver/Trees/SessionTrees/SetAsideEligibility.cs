@@ -32,6 +32,9 @@ public static class SetAsideClass
 /// <param name="Hour">It goes by the hour's rule, not its days.</param>
 internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshold, DateTimeOffset? Due, bool Hour, SlimManifest? Manifest)
 {
+    /// <summary>The holding check's words where the branch stands: the one the press lists a stopped or refused folder by as standing.</summary>
+    internal const string BranchStands = "its branch stands";
+
     /// <summary>The folder a removal renames its folder into first (§3.4), under <c>.tidied</c>: every other reader passes over it.</summary>
     internal const string Going = ".going";
 
@@ -42,8 +45,11 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
     /// <summary>
     /// <paramref name="folder"/>, moved aside at <paramref name="moved"/>, judged from its manifest under the policy's days and
     /// <c>whole</c>. A <c>recorded</c> folder under <c>whole</c>, set at the move or now, keeps its days.
+    /// <para>🔴 A recorded folder's hour is due only where the holding check passed at or after it (<see cref="SlimManifest.Held"/>), and, read
+    /// at <paramref name="now"/>, within the last hour (the second maker's read, finding 1): a purge whose record pass did not run, or ran
+    /// before the hour, or a press with no service to resolve the repository, takes none. Where it is not, the folder waits, its class kept.</para>
     /// </summary>
-    internal static SetAsideEligibility Of(string folder, DateTimeOffset moved, TimeSpan days, bool whole)
+    internal static SetAsideEligibility Of(string folder, DateTimeOffset moved, TimeSpan days, bool whole, DateTimeOffset? now = null)
     {
         var manifest = SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest;
         if (manifest?.Finished is not { } finished)
@@ -54,7 +60,7 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
         return manifest.State switch
         {
             SlimStates.Recorded when manifest.Recorded is { } recorded && !whole && !finished.Whole =>
-                new(SetAsideClass.Recorded, finished.Read, recorded + KeepKinds.SetAsideSettle, true, manifest),
+                new(SetAsideClass.Recorded, finished.Read, HeldSince(manifest, recorded + KeepKinds.SetAsideSettle, now), true, manifest),
             SlimStates.Recorded => new(SetAsideClass.Recorded, finished.Read, moved + days, false, manifest),
             SlimStates.Deleted => new(SetAsideClass.Awaiting, finished.Read, null, false, manifest),
             SlimStates.Judged or SlimStates.Moved => new(SetAsideClass.Stopped, finished.Read, moved + days, false, manifest),
@@ -62,6 +68,10 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
             _ => new(SetAsideClass.Unmarked, finished.Read, moved + days, false, manifest),
         };
     }
+
+    /// <summary>The hour, where a holding check passed at or after it and, read at <paramref name="now"/>, within the last hour; else null.</summary>
+    private static DateTimeOffset? HeldSince(SlimManifest manifest, DateTimeOffset hour, DateTimeOffset? now) =>
+        manifest.Held is { } held && held >= hour && (now is not { } at || at - held <= KeepKinds.SetAsideSettle) ? hour : null;
 
     /// <summary>
     /// The holding check (§3.4), read-only and outside every hold, in the repository's root the registry gives: the branch is absent by git's
@@ -74,7 +84,7 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
         if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return "the registry names no checkout of its repository on this machine";
         // Only git's own "missing", show-ref --exists exiting 2, says the branch is absent (git-ref-absence.md); 0 says it stands.
         var (code, _, err) = await WorkingTree.GitAsync(root, ["show-ref", "--exists", $"refs/heads/{manifest.Branch}"], ct).ConfigureAwait(false);
-        if (code == 0) return "its branch stands";
+        if (code == 0) return BranchStands;
         if (code != 2) return $"git could not say whether its branch stands: {TreeGit.FirstLine(err)}";
         if ((finished.Ref ?? (finished.Line is { } line ? $"refs/heads/{line}" : null)) is not { } holder) return "nothing names what holds its tip";
         // A holder dropped by hand is git's own "missing", not an answer merge-base defines.

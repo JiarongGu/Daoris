@@ -220,6 +220,7 @@ export type ActorRow = { id: string; state: 'set' | 'before' | 'off' | 'unreadab
 
 /**
  * The set-aside folders of the press's early group by class (KEEPSIZE1b, the keep-size design §5): recorded, its tip held by a ref or the
- * line; awaiting its record; its branch standing (stopped or refused); and unmarked, from before this build or a stray.
+ * line; awaiting its record; its branch standing; stopped between its steps; what holds its commits not confirmed (`unheld`); and
+ * unmarked, from before this build or not a finished tree. `stopped` and `unheld` are absent from a driver before them.
  */
-export type SetAsideClasses = { recorded: number; awaiting: number; stands: number; unmarked: number };
+export type SetAsideClasses = { recorded: number; awaiting: number; stands: number; stopped?: number; unheld?: number; unmarked: number };

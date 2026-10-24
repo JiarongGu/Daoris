@@ -896,9 +896,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>
     /// Post a finished tree's record (KEEPSIZE1b, the keep-size design §2.2) to <c>POST /api/trees/record</c>: the manifest's facts and the
     /// commits read from the tip. Null where the service keeps it, a second post of a kept identity included; else why it does not, in its
-    /// words, a store a newer build stamped among them.
+    /// words, a store a newer build stamped among them; a 404, a service with no door for it, says so (<see cref="RecordRefusal.NoDoor"/>).
     /// </summary>
-    internal async Task<string?> PostWorkRecordAsync(FinishedPost record, CancellationToken ct = default)
+    internal async Task<RecordRefusal?> PostWorkRecordAsync(FinishedPost record, CancellationToken ct = default)
     {
         var tree = record.Tree;
         var body = WriteJson(writer =>
@@ -969,7 +969,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
         var (ok, status, payload, root) = await PostJsonAsync("/api/trees/record", body, ct).ConfigureAwait(false);
         if (ok) return null;
-        return (root is { } refused ? Text(refused, "error") : null) ?? (status == 404 ? "the service has no door for a finished tree's record yet" : payload);
+        if (status == 404) return new("the service has no door for a finished tree's record, so its folder keeps its days", NoDoor: true);
+        return new((root is { } refused ? Text(refused, "error") : null) ?? payload);
     }
 
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>

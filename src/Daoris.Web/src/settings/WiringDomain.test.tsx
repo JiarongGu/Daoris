@@ -651,7 +651,8 @@ describe('Settings → This Daoris', () => {
     expect(list.getByText('What could go early, by your word')).toBeTruthy();
     // KEEPSIZE1b (the keep-size design §5): each set-aside folder's class, said with what the list can say of it.
     expect(list.getByText(
-      '2 folders before their date · 1 holds files of its own · 1 with its record kept · 1 from before this version, or no finished tree: what holds its commits is not known',
+      // One awaits its record, which has no date (the second maker's read, finding 9).
+      '1 folder before its date · 1 holds files of its own · 1 with its record kept · 1 whose record is not kept yet',
     )).toBeTruthy();
     expect(list.getByText('kept while the browser runs')).toBeTruthy();
     expect(list.getByText('2 folders · webview2, browser/profile')).toBeTruthy();

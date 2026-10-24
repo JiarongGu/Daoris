@@ -20,14 +20,14 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
     private static Task<IReadOnlySet<string>> NoneRunning(CancellationToken ct) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
 
     /// <summary>The service's door as the record pass is handed it: kept, or refused with <see cref="_refused"/>.</summary>
-    private Task<string?> PostAsync(FinishedPost post, CancellationToken ct)
+    private Task<RecordRefusal?> PostAsync(FinishedPost post, CancellationToken ct)
     {
-        if (_refused is { } why) return Task.FromResult<string?>(why);
+        if (_refused is { } why) return Task.FromResult<RecordRefusal?>(new(why));
         _posts.Add(post);
-        return Task.FromResult<string?>(null);
+        return Task.FromResult<RecordRefusal?>(null);
     }
 
-    private static Func<string, string, string?> Roots(string? root) => (_, repository) => repository == "engine" ? root : null;
+    private static Func<string, string, string?>? Roots(string? root) => (_, repository) => repository == "engine" ? root : null;
 
     /// <summary>The look's own tidy of <c>engine</c>: the one branch it removed, its folder moved aside.</summary>
     private static async Task<string> SetAsideAsync(SessionTrees trees, string root)
@@ -83,6 +83,9 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         Assert.Empty(Purge(trees, now.AddMinutes(30)).Purged);
         Assert.True(Directory.Exists(aside));
 
+        // The hour's check passes and stamps the manifest, the purge's ground (the second maker's read, finding 1).
+        await RecordAsync(trees, root, now.AddMinutes(61));
+        Assert.NotNull(Manifest(aside).Held);
         var gone = Assert.Single(Purge(trees, now.AddMinutes(61)).Purged);
 
         Assert.Equal((true, SetAsideClass.Recorded, true), (gone.Purged, gone.Class, gone.Hour));
@@ -162,6 +165,7 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         var now = DateTimeOffset.UtcNow;
         await RecordAsync(trees, root, now);
 
+        await RecordAsync(trees, root, now.AddMinutes(61));
         var kept = Assert.Single(Purge(trees, now.AddMinutes(61)).Purged);
 
         Assert.Equal((false, SetAsideKept.Written), (kept.Purged, kept.Code));
@@ -214,6 +218,7 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
 
         Assert.Equal(SlimStates.Recorded, Manifest(aside).State);
         Assert.Empty(Purge(trees, late.AddMinutes(30)).Purged);
+        await RecordAsync(trees, root, late.AddMinutes(61));
         Assert.True(Assert.Single(Purge(trees, late.AddMinutes(61)).Purged).Purged);
     }
 
@@ -383,6 +388,7 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
         await RecordAsync(trees, root, now);
         var files = Directory.GetFiles(aside, "*", SearchOption.AllDirectories).Length;
 
+        await RecordAsync(trees, root, now.AddMinutes(61));
         SetAside kept;
         using (File.Open(Path.Combine(aside, "README.md"), FileMode.Open, FileAccess.Read, FileShare.None))
         {
@@ -391,5 +397,103 @@ public sealed class KeepSizeGitTests : BranchTidyingFixture
 
         Assert.Equal((false, TidyKept.Busy), (kept.Purged, kept.Code));
         Assert.Equal(files, Directory.GetFiles(aside, "*", SearchOption.AllDirectories).Length);
+    }
+
+    /// <summary>
+    /// 🔴 The second maker's read, finding 1: the hour's purge takes a recorded folder only on a holding check that passed at or after its
+    /// hour, within the last hour. Purged with no record pass since its hour, or after a pass whose registry did not read, or a day after the
+    /// last check passed, it is kept; a pass whose check passes lets the purge take it.
+    /// </summary>
+    [Fact]
+    public async Task A_recorded_folder_no_check_has_passed_since_its_hour_is_kept()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        await LandedTreeAsync(trees, root);
+        var aside = await SetAsideAsync(trees, root);
+        var now = DateTimeOffset.UtcNow;
+        await RecordAsync(trees, root, now);
+        // A check before the hour stamps nothing the hour reads.
+        await RecordAsync(trees, root, now.AddMinutes(30));
+
+        Assert.Empty(Purge(trees, now.AddMinutes(61)).Purged);
+        await trees.RecordSetAsideAsync(null, PostAsync, now.AddMinutes(61), CancellationToken.None);
+        Assert.Null(Manifest(aside).Held);
+        Assert.Empty(Purge(trees, now.AddMinutes(62)).Purged);
+        Assert.True(Directory.Exists(aside));
+
+        await RecordAsync(trees, root, now.AddMinutes(63));
+        Assert.Empty(Purge(trees, now.AddDays(1)).Purged);
+        Assert.True(Assert.Single(Purge(trees, now.AddMinutes(64)).Purged).Purged);
+    }
+
+    /// <summary>
+    /// 🔴 The second maker's read, finding 2: a junction at <c>.going</c>'s workspace level. The pass's clearing of <c>.going</c> deletes nothing
+    /// through it, and the hour's removal keeps the folder, <c>linked</c>, rather than moving it into the link.
+    /// </summary>
+    [Fact]
+    public async Task A_link_under_going_is_never_followed()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        await LandedTreeAsync(trees, root);
+        var aside = await SetAsideAsync(trees, root);
+        var outside = Path.Combine(_scratch, "outside");
+        var precious = Path.Combine(outside, "engine", "s-x-20261001T090000000Z", "precious.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(precious)!);
+        await File.WriteAllTextAsync(precious, "not Daoris's\n");
+        await JunctionAsync(Path.Combine(Going(trees), "default"), outside);
+        var now = DateTimeOffset.UtcNow;
+        await RecordAsync(trees, root, now);
+        await RecordAsync(trees, root, now.AddMinutes(61));
+
+        var kept = Assert.Single(Purge(trees, now.AddMinutes(61)).Purged);
+
+        Assert.Equal((false, SetAsideKept.Linked), (kept.Purged, kept.Code));
+        Assert.True(File.Exists(precious));
+        Assert.True(Directory.Exists(aside));
+        Assert.False(Directory.Exists(Path.Combine(outside, "engine", Path.GetFileName(aside))));
+    }
+
+    /// <summary>
+    /// 🔴 The second maker's read, finding 4: a service with no door for the record (an older one, a bare 404) leaves the folder unmarked, so
+    /// it keeps its days rather than awaiting a record no pass can post. Through the driver's own client over the stand-in's door.
+    /// </summary>
+    [Fact]
+    public async Task A_service_with_no_record_door_leaves_the_folder_its_days()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        await LandedTreeAsync(trees, root);
+        var aside = await SetAsideAsync(trees, root);
+        _ledger.RecordsMissing = true;
+        var now = DateTimeOffset.UtcNow;
+
+        await trees.RecordSetAsideAsync(Roots(root), _ledger.Client().PostWorkRecordAsync, now, CancellationToken.None);
+
+        Assert.Equal(SlimStates.Unmarked, Manifest(aside).State);
+        Assert.Contains("no door", Manifest(aside).Why, StringComparison.Ordinal);
+        Assert.Empty(Purge(trees, now.AddDays(1)).Purged);
+        Assert.Equal(SetAsideClass.Unmarked, Assert.Single(Purge(trees, now.AddDays(15)).Purged).Class);
+    }
+
+    /// <summary>
+    /// The second maker's read, finding 3: a registry that did not read runs no step, so a folder awaiting its record is not posted without its
+    /// commits, and stays awaiting for the next pass.
+    /// </summary>
+    [Fact]
+    public async Task A_registry_that_did_not_read_runs_no_step()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        await LandedTreeAsync(trees, root);
+        var aside = await SetAsideAsync(trees, root);
+
+        await trees.RecordSetAsideAsync(null, PostAsync, DateTimeOffset.UtcNow, CancellationToken.None);
+
+        Assert.Empty(_posts);
+        Assert.Equal(SlimStates.Deleted, Manifest(aside).State);
+        await RecordAsync(trees, root, DateTimeOffset.UtcNow);
+        Assert.NotNull(Assert.Single(_posts).Commits);
     }
 }

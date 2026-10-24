@@ -43,6 +43,12 @@ internal sealed record SlimManifest(
     /// <summary>Why the record is not kept yet: the last post's words; null where nothing is said.</summary>
     internal string? Why { get; init; }
 
+    /// <summary>
+    /// When the holding check last passed at or after the folder's hour (the second maker's read, finding 1): the hour's purge takes a
+    /// recorded folder only on a stamp at or after its hour and no older than an hour, so no door removes one no check has passed since.
+    /// </summary>
+    internal DateTimeOffset? Held { get; init; }
+
     /// <summary>What follows the folder's name in its manifest's.</summary>
     internal const string Suffix = ".slim.json";
 
@@ -120,6 +126,7 @@ internal sealed record SlimManifest(
                 Deleted = At(root, "deleted"),
                 Recorded = At(root, "recorded"),
                 Why = Text(root, "why"),
+                Held = At(root, "held"),
             }, null);
         }
         catch (JsonException error)
@@ -171,6 +178,7 @@ internal sealed record SlimManifest(
             writer.WriteBoolean("whole", finished.Whole);
             WriteMoment(writer, "deleted", Deleted);
             WriteMoment(writer, "recorded", Recorded);
+            WriteMoment(writer, "held", Held);
             Optional(writer, "why", Why);
         }
 
