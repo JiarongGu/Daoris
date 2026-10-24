@@ -455,6 +455,25 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
+   * MODELROLE1d2 (D205 §3.5(b)): a conversation refused at its open went on in its replacement within the same press, and the window
+   * showing the refused one follows it; a window showing another conversation, or none, keeps what it shows.
+   */
+  it('follows a conversation into its replacement only where it shows the refused one', () => {
+    const onAttend = vi.fn();
+    show(<ShellSignals notify={() => {}} onAttend={onAttend} attended="c1a2b3c4" />);
+
+    eventHandlers.get('DAORIS.CHAT_REPLACED')!({ from: 'c9a8b7c6', to: 'c5d6e7f8' });
+    expect(onAttend).not.toHaveBeenCalled();
+
+    eventHandlers.get('DAORIS.CHAT_REPLACED')!({ from: 'c1a2b3c4', to: 'c5d6e7f8' });
+    expect(onAttend).toHaveBeenCalledWith('c5d6e7f8');
+
+    // Nothing named is nothing to follow.
+    eventHandlers.get('DAORIS.CHAT_REPLACED')!({ from: 'c1a2b3c4' });
+    expect(onAttend).toHaveBeenCalledTimes(1);
+  });
+
+  /**
    * NOTIFY2c: the shell brings forward the main window whose workspace holds what the notification was about, and names it; only that
    * window's page attends the session, so a window on another workspace keeps what it shows. The first main window is `main`.
    */

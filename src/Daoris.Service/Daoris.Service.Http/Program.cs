@@ -1700,10 +1700,11 @@ if (mode == ServiceMode.Local)
             : Results.NotFound(new ErrorResponse($"There is no second opinion `{id.Trim()}` on this machine."));
     });
 
-    // A first pass's findings, to its working session as another agent's words (design §6.3): once, at a turn's end.
-    app.MapPost("/api/opinions/{id}/hand", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
+    // A first pass's findings, to its working session as another agent's words (design §6.3): once, at a turn's end. A chat run's go to
+    // the record of its line the driver names, `to`, between turns (CHATFLOW1e).
+    app.MapPost("/api/opinions/{id}/hand", async (ComposedService s, HttpContext http, string id, OpinionHandRequest? body, CancellationToken ct) =>
         MachineLocal(http)
-            ? await OpinionReply(await s.Opinions.HandAsync(id, DateTimeOffset.UtcNow, ct), s, http, ct)
+            ? await OpinionReply(await s.Opinions.HandAsync(id, DateTimeOffset.UtcNow, ct, body?.To), s, http, ct)
             : OffMachineOpinion());
 
     // A helper's record, and its answer's return (MIXAGENT2a-ii, D163 point 2): the driver's helper session opens the record

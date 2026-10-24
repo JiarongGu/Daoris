@@ -123,6 +123,12 @@ public sealed class HelpConversations(string home)
     /// </summary>
     public const string Brief = "brief";
 
+    /// <summary>
+    /// What a replacement is handed (MODELROLE1d2, D205 §3.5(b)): the words that waited on an earlier one whose agent refused its model at
+    /// the open, before any prompt, moved to this one opened on the walk's next answer.
+    /// </summary>
+    public const string NotOffered = "not-offered";
+
     /// <summary>A name's longest: a title, not a note.</summary>
     public const int NameLimit = 80;
 

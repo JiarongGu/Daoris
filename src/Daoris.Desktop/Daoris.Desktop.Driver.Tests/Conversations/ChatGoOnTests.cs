@@ -759,6 +759,54 @@ internal sealed class ChatLedger : HttpMessageHandler
         return new Words(this, id);
     }
 
+    private readonly Dictionary<string, JsonObject> _opinions = new(StringComparer.Ordinal);
+
+    /// <summary>The record each opinion's hand named (CHATFLOW1e), in order: null where it named none.</summary>
+    public List<string?> HandedTo { get; } = [];
+
+    /// <summary>
+    /// A first pass on <paramref name="working"/>'s work, given, with one <c>must</c> finding (CHATFLOW1e): read back as the local host answers
+    /// it, and handed by its door to the record the driver names, as an ordinary word whose <c>by</c> names it, in <paramref name="words"/>.
+    /// </summary>
+    public ChatLedger Opinion(string id, string working, string tip, string words)
+    {
+        lock (_gate)
+        {
+            _opinions[id] = new JsonObject
+            {
+                ["id"] = id, ["occasion"] = "landing", ["pass"] = "first", ["working"] = working, ["session"] = "r-" + id,
+                ["candidate"] = new JsonObject { ["repository"] = "engine", ["base"] = tip, ["tip"] = tip, ["commits"] = new JsonArray(tip) },
+                ["reviewer"] = new JsonObject { ["adapter"] = "codex-acp", ["label"] = "another-maker", ["product"] = "Codex", ["maker"] = "OpenAI" },
+                ["families"] = new JsonArray("claude-code"), ["posture"] = "copy-alone", ["minutes"] = 20, ["tier"] = "agent",
+                ["asked"] = "2026-10-03T09:00:00Z", ["due"] = "2026-10-03T09:20:00Z", ["state"] = "given",
+                ["given"] = new JsonObject
+                {
+                    ["findings"] = new JsonArray(new JsonObject
+                    {
+                        ["number"] = 1, ["weight"] = "must", ["where"] = "README.md:1", ["claim"] = "The heading says nothing else.",
+                        ["consequence"] = "Nobody knows what it is.", ["reproduce"] = "Read it.", ["sure"] = "sure",
+                    }),
+                    ["read"] = "README.md", ["rechecked"] = new JsonArray(), ["at"] = "2026-10-03T09:10:00Z",
+                },
+                ["handed"] = null, ["answers"] = new JsonArray(), ["words"] = words,
+            };
+        }
+
+        return this;
+    }
+
+    /// <summary>The working session's answer to one finding, as its connector's <c>opinion_answer</c> keeps it.</summary>
+    public void Answer(string opinion, int finding, string said, string? evidence = null)
+    {
+        lock (_gate)
+        {
+            _opinions[opinion]["answers"]!.AsArray().Add(new JsonObject
+            {
+                ["finding"] = finding, ["said"] = said, ["evidence"] = evidence, ["at"] = "2026-10-03T09:30:00Z",
+            });
+        }
+    }
+
     /// <summary>Change a record's stored fields as the ledger would have left them (SAIDBACK1g).</summary>
     public void Edit(string id, Action<JsonObject> change)
     {
@@ -1035,6 +1083,34 @@ internal sealed class ChatLedger : HttpMessageHandler
                     Taken.Add((id, string.Join(',', ids)));
                     TakenBy.Add((id, string.Join(',', ids), asked["by"]?.GetValue<string>()));
                     return (HttpStatusCode.OK, """{"message":"taken"}""");
+                }
+
+                // CHATFLOW1e: an opinion read back, and its findings handed to the record the driver names, as an ordinary word with `by`.
+                case ("GET", _) when path.StartsWith("/api/opinions/", StringComparison.Ordinal):
+                {
+                    var id = path["/api/opinions/".Length..];
+                    return _opinions.TryGetValue(id, out var opinion)
+                        ? (HttpStatusCode.OK, opinion.ToJsonString())
+                        : (HttpStatusCode.NotFound, $$"""{"error":"There is no second opinion `{{id}}` on this machine."}""");
+                }
+
+                case ("POST", _) when path.StartsWith("/api/opinions/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
+                {
+                    var opinion = _opinions[path["/api/opinions/".Length..^"/hand".Length]];
+                    var to = string.IsNullOrWhiteSpace(body) ? null : JsonNode.Parse(body)?["to"]?.GetValue<string>();
+                    HandedTo.Add(to);
+                    if (opinion["handed"] is not null || to is null) return (HttpStatusCode.Conflict, """{"error":"they go once, to a record named."}""");
+                    var word = new JsonObject
+                    {
+                        ["id"] = $"op-w{++_kept}", ["text"] = opinion["words"]!.GetValue<string>(), ["at"] = "2026-10-03T09:15:00Z",
+                        ["files"] = new JsonArray(), ["reopens"] = true, ["by"] = opinion["id"]!.GetValue<string>(), ["level"] = "ordinary",
+                    };
+                    Find(to)["said"]!.AsArray().Add(word);
+                    opinion["handed"] = new JsonObject { ["session"] = to, ["word"] = word["id"]!.GetValue<string>(), ["at"] = "2026-10-03T09:15:00Z" };
+                    return (HttpStatusCode.OK, new JsonObject
+                    {
+                        ["opinion"] = opinion.DeepClone(), ["message"] = "Handed.", ["said"] = word.DeepClone(),
+                    }.ToJsonString());
                 }
 
                 default:

@@ -1,4 +1,4 @@
-# EVENTHOOK1: the reads of rounds 1 and 2 (D191)
+# EVENTHOOK1: the reads (D191): the Opus foundation reader's of rounds 1 to 4, and Codex's of rounds 2 and 3 (its read of round 4 owed)
 
 The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-event-hook-design.md` and its D173, D119 and D120 notes at `71e08c3c0`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed; under D191's note of 2026-10-24 this design, which sends Daoris's events outside it, is not accepted on one maker's read. The Opus foundation reader asks another round (16 findings, 7 blocking). Round 2 answers it.
 
@@ -520,3 +520,518 @@ names kept out of the posted words, with §6.1 saying plainly what step 3 does n
 must neither hold the home's lease nor stop the swap: class it in `VerbLeases`, run it from outside `app/` or end it at an update, and
 prove both in 1c (finding 2). Findings 3-12 are corrections the steward can make line by line. Of them, 3, 4 and 5 decide whether the
 steward actually stops polling, and 11's `--once` adapter is the shortest way to give the owner that.
+
+## Codex, round 2
+
+Codex's read of round 2 with its named changes at `972b17577`: 21 findings, 16 blocking; another round. The steward ran it read-only on main from outside the install, and its links are made repository-relative.
+
+Read-only review; nothing changed and no probes run. References use the design’s `Driver/`, `Host/`, `Modules/` and `Mcp/` prefixes defined at `docs/2026-10-24-event-hook-design.md:36`.
+
+### 1. Wrong claims about existing code
+
+1. **Blocking — the steward’s terminal cannot start the proposed verb.** `Host/Program.cs:368` runs the role-terminal gate before dispatch, and `Driver/Sessions/Questions/SupervisorProof.cs:97–105` allows neither `events relay` nor `--where`. Dropping the captured key inside the relay comes too late; EVENTHOOK1c must explicitly allow these exact read-only operations while preserving the terminal’s role restriction.
+
+2. **Non-blocking — two descriptions overstate their sources.** The proposed closed-quest request retrieves the whole closed-inclusive list, not “those quests alone” (`Driver/Service/ServiceClient.cs:157`; `Daoris.Service.Core/Quests/Quests.cs:3987`); filtering would happen afterward. Also, a landing runs beside the look (`Driver/Loop/Driver.cs:1428–1438`), so the design’s `work.landed` “before the watch” statement at design:361 is not a guaranteed ordering.
+
+### 2. What leaves Daoris, and what can act
+
+1. **Blocking — names already leave before the relay removes them.** Design:378–405 includes repository/workspace names and quest `to`/`from`, permits arbitrary non-control characters, and sends frames unchanged to subscribers (design:475); a private name, path, credential or person’s words stored as a name therefore reaches subscriber code. Subscriber-selected filters are no authorization boundary (design:455–471): define who may subscribe to which scope, and enforce the outbound projection before handing it to that subscriber.
+
+2. **Blocking — the same-user threat claim remains too strong.** Design:568–573 says validation protects against every same-user agent, although design:513 places the executable copy in the same writable home and acknowledges agents can rewrite files. Minted hex shapes constrain presentation; they authenticate neither an event nor its referenced record, so narrow the promise to untrusted frames reaching an intact, trusted relay and require independent authorization for every resulting action.
+
+3. **Blocking — filesystem custody is unspecified.** Design:455 and :513–516 prescribe writes and recursive copy cleanup without addressing redirected directories, atomic copy publication, concurrent `--where` calls or partial deletion of an active build. Require containment against junction/symlink redirection and explicit build-use coordination; an executable being held open does not establish that every dependency and directory survives cleanup.
+
+4. **Non-blocking — §8 correctly adds no direct answer-to-action path.** The existing plugin wire ignores plugin-originated requests (`Driver/Plugins/Hooks.cs:532–534`), and the proposed relay opens no mutation door (design:524–525). The receiving agent can subsequently act through its existing permissions, so a wake must never count as confirmation, approval or evidence that the advertised fact is true.
+
+### 3. Delivery
+
+1. **Blocking — the default workspace filter cannot handle its own events.** `quest.parked` deliberately lacks a workspace (design:379, :392), yet the relay defaults to one workspace (design:550–551); `quest.published`, `quest.closed` and `person.answered` also lack it. `QuestPark` really has no workspace (`Driver/Trees/SessionGroups.cs:563–569`), so specify a source-side scope for every kind and fail closed when it is unknown.
+
+2. **Blocking — restart recovery still depends on another event arriving.** The watch suppresses its first look (`Driver/Quests/Domain/Attention.cs:224`), batches disappear if the relay dies, and refused inbox batches are discarded (design:563). Specify an independently deliverable reconciliation marker on startup/reconnection and after terminal loss, including when no session was running; for `--once --since`, a hello watermark greater than the last delivered watermark must trigger reconciliation even when it is exactly the next sequence.
+
+3. **Blocking — filtered sequences are indistinguishable from loss.** The sequence is global (design:416), filtering happens afterward (:470), and the relay treats skipped sequences as missed events (:558), so ordinary filtering repeatedly triggers broad rereads. Define separate source progress and subscriber delivery progress, suppression of repeated/older frames, and concurrent enqueue ordering; test two subscribers with different filters and a reconnect while events are in flight.
+
+4. **Blocking — discovery and resource bounds are incomplete.** Reading the folder and *then* watching it leaves an unwatched interval (design:459), while watcher failure, initial connection failure and repeated slow reconnects lack a complete recovery rule. Establish the watch before scanning, reconcile on watcher uncertainty, bound reconnect attempts, and cap subscriber count, handshake time, batch bytes and batch entries—the 64-entry transport queue does not bound the relay’s 30-second accumulation.
+
+### 4. Decided rules
+
+1. **Blocking — participant visibility has no corresponding subscription rule.** D173:11–19 requires explicit visibility and participant-scoped permissions, but its EVENTHOOK1 amendment at D173:5409–5417 asserts safe export without defining subscriber grants. D182:18–23 explicitly preserves invalidations for plugins, so using wakes here is compatible with D182; that exemption does not resolve disclosure across scopes.
+
+2. **Non-blocking — logging and home-layout work is missing from the rows.** D119:250 adds `event.unsent`, but the machine-log catalogue at `docs/2026-09-30-machine-log-design.md:128–135` and `Driver/Plugins/Domain/PluginEvents.cs:42–78` do not yet describe the new event and stop reason. Assign their catalogue/check updates explicitly, and use the existing home entry resolver (`Driver/Platform/DaorisHome.cs:119`, :400) rather than prescribing a second physical `bin/` layout.
+
+### 5. EVENTHOOK1a–f and their order
+
+1. **Blocking — 1a’s decision rule contradicts the dependency graph.** Design:646–649 permits progress when the inbox or channel works but M5 fails, while 1c requires M5 and 1e requires 1c (design:678, :680). Define adapter-specific prerequisites so a successful channel or inbox measurement has a buildable path without a successful background-command wake.
+
+2. **Blocking — 1b lacks a complete frame contract.** Design:397–405 does not classify `adapter`, `to` and `from`, and requires an ending’s `adapter` although its source is nullable (`Driver/Sessions/Domain/SessionEnded.cs:16`). Settle every field’s type, scope, optionality and rejection behavior, then add concurrent-producer, listener-attachment and missing-final-event proofs to design:677.
+
+3. **Blocking — 1c needs a complete host-entry and copied-build contract.** Besides the role gate, an ordinary dispatch passes `MachineLog.Open`, which prunes files (`Host/Program.cs:445`; `Driver/Platform/MachineLog.cs:80–85`), contradicting the claimed subscriber-file-only write surface. Route it explicitly before that machinery, specify how the copied executable retains its home/install identity—automatic discovery requires ancestry under `app/` (`Driver/Platform/DaorisHome.cs:62–80`)—and prove copying, cleanup and swapping concurrently.
+
+4. **Blocking — 1d still misses legitimate closures.** A closed quest can remain in the “open” list because the query includes `held = 1` (`Daoris.Service.Core/Quests/Quests.cs:3990`), so watching only departures misses its transition to `Done`. A publication and closure between looks are also invisible, while a reopened quest can look newly published; define these as snapshot observations or derive the named lifecycle events from recorded transitions.
+
+5. **Blocking for 1e — delivery does not establish usable reconciliation.** The workspace launcher deliberately substitutes its own home (`tools/knowledge-server.mjs:134–143`), so its connector tools cannot automatically reread the install whose channel supplied the wake. Specify the install-scoped read door and notification handoff during build replacement; the existing launcher drops output from a non-serving server (`tools/knowledge-server.mjs:322–327`).
+
+6. **Non-blocking — 1f has the correct ownership boundary.** A quest after 1c respects D120:24–31 and the proposed amendment at D120:148–156. Include the accepted protocol version and contract fixtures in that request so the packaged implementation remains compatible with the example.
+
+### 6. Smaller shape with the same outcome
+
+1. **Non-blocking — ship only the measured `--once` path initially.** Keep one observation point, the four steward kinds, explicit scope, the plugin and a minimal read-only waiter that prints fixed lines plus a reconciliation watermark. Defer inbox posting, channels and the additional kinds; this stops the steward’s polling while removing token custody and substantially reducing lifetime, batching and compatibility work (design:578–588).
+
+### Comparison with the earlier reads
+
+1. **Blocking disagreement — the driver frame was not already safe.** The round-1 read at `docs/2026-10-24-event-hook-reads.md:50` and round-2 read at :332 call it bounded and path-free, but current design:402 allows path-shaped names and forwards them to subscriber code. Removing names only from the final model-facing sentence closes a different boundary.
+
+2. **Blocking disagreement — delivery corrections need another design read.** The round-2 conclusion at reads:515–522 treats the remaining recovery changes as line-by-line fixes, and :389 calls every hop bounded. Filtering, final-loss recovery, workspace-less kinds and unbounded accumulation require protocol choices and adversarial lifecycle proofs, not merely wording corrections.
+
+**Verdict: another round.**
+
+## Opus (foundation), round 3
+
+The independent Opus 5.5 reader's foundation read of round 3 at `c685459f4`: 12 findings, 4 blocking; accept after named changes.
+
+### 0. Codex's round-2 findings, checked against the code
+
+Read at `c685459f4`. Between `972b17577` and `c685459f4` only documents and `TASKS.md` changed, so the code is what Codex read. Design lines are `docs/2026-10-24-event-hook-design.md`, and the path prefixes are the design's.
+
+| # | Codex's finding | Round 3's answer | Checked against | Standing |
+|---|---|---|---|---|
+| **C1.1** | **The role's terminal cannot start the verb** | `RoleTerminal.Runs` gains `events relay`, `--where` and `--once` alike | The gate is `SupervisorProof.cs:97-106`, at `Host/Program.cs:368`. The holder's harness also has its own allowlist: `Modules/Platform/HolderTerminal.cs:42-49` (D209 §2.2, "stated whole"). `HolderTerminalTests.cs:88-95` and the walk at `HolderWalk.cs:65` hold that list. D209.md:77-78 says "every alone path refuses `role-terminal`". | **Open** (→ 1). Only Daoris's half of the gate is opened. `--where` is an alone path, and D209 is not amended. |
+| C1.2 | Two descriptions overstate their sources | §1.7b and §4.2 corrected | `ServiceClient.cs:157`; `Quests.cs:3990`; `Driver.cs:1424-1438` | **Taken**, and it holds |
+| **C2.1** | **Names leave before the relay removes them** | No name in any frame. The projection is made in `HookFrames.Event`. | `Workspaces.cs:26-28`; design §4.3 | **Taken**, and it holds for frames. The plugin's first line is another matter (→ 2). |
+| **C2.2** | **The same-user claim is too strong** | The promise is narrowed to "an intact relay" | design :672-679, :755-760 | **Taken in part**. It still says a false wake is the worst a process can do. A same-user process can also silence the relay, and the first line and stderr carry unchecked words (→ 2, 3, 4). |
+| **C2.3** | **Filesystem custody is unspecified** | A staged copy moved in with no overwrite, an `in-use` file, no reparse point followed, `--where` under the lease | `DaorisHome.cs:119-127`, `:400`; `VerbLeases.cs:97`; `Host/Program.cs:388-412` | **Taken**, and it holds. It rests on Windows semantics that 1c proves. |
+| C2.4 | No path from an answer to an action | A wake is never a confirmation | `Hooks.cs:532-534` | **Taken**, and it holds |
+| **C3.1** | **The workspace filter cannot handle its own events** | No filter. One scope, the home. | `SessionGroups.cs:563-570`; `Attention.cs:256` | **Taken**, by another way, and it holds |
+| **C3.2** | **Restart recovery waits on another event** | The plugin's first line settles a loss at once | `Attention.cs:224` | **Taken** where a plugin connects. **Open** where none ever does (→ 4). |
+| **C3.3** | **Filtered sequences look like loss** | The plugin passes everything and the relay filters. `Tell` mints under one lock. | design §4.4, §5.2, step 5 | **Taken** within one relay. Across relays, `--since` loses the filtered watermark (→ 7). |
+| **C3.4** | **Discovery and resource bounds are incomplete** | The watch is set before the read, a failed watch is set again, 8 subscribers, a 5 s first line, 4 KB, 50/52 lines | design §5.2, §5.3, steps 2, 4, 5 | **Taken**, and it holds |
+| **C4.1** | **No subscription rule for participant visibility** | One scope, granted by the person's switch, at ADR-B's opaque level | D173:11-19; `PipeCensus.cs:237`, `:286` (`PLUGIN_ACTION` and `PLUGIN_ADD` are `Person`); `VerbLeases.cs:92` | **Taken**. The "grant" is the person's only while Daoris runs (→ 11). |
+| C4.2 | Logging and home-layout work is missing | `event.unsent` and `late` added to the catalogue; `DaorisHome.Entry` used | `machine-log-design.md:128-135`; `PluginEvents.cs:71` (`late` exists) | **Taken**, and it holds |
+| **C5.1** | **1a's decision rule contradicts the graph** | Each adapter has its own prerequisites | design :729-737 | **Taken**, and it holds. §6.3 is still caught behind M5 (→ 9). |
+| **C5.2** | **1b lacks a frame contract** | §4.3's table and three concurrency proofs | `SessionEnded.cs:14-16`; `Attention.cs:45-58`, `:253-257` | **Taken**, and it holds |
+| **C5.3** | **1c needs a host-entry and copied-build contract** | Routed before the machine log; `--home`; copy, removal and swap proved together | `Host/Program.cs:386`, `:396-445`; `MachineLog.cs:80-85`; `DaorisHome.cs:62-103` | **Taken**, and it holds, apart from the role's terminal (→ 1) and the process reader's lane (→ 8) |
+| **C5.4** | **1d misses legitimate closures** | The quest kinds wait for a round that reads recorded operations | `Quests.cs:3990` (`held = 1`) | **Deferred**, with a reason that holds |
+| **C5.5** | **1e has no usable reconciliation** | Carried as 1e's requirement | `tools/knowledge-server.mjs:134-143`, `:322-327` | **Deferred**, with a reason that holds |
+| C5.6 | 1f's boundary is right; include versions and fixtures | `protocolVersion`, `WorkEventGrammar.Version` and fixtures in the request | D120's note | **Taken**, and it holds |
+| C6.1 | Ship only the measured `--once` path first | Adopted, except a waiter that writes nothing and dropping §6.3 | PIPEOWNER1 (`FIX-LOG.md:1810-1828`); §1.5's leak | **Taken**. Both exceptions are answered with reasons that hold. |
+| **C7.1** | **The driver's frame was not already safe** | Decided for Codex | `Workspaces.cs:26-28` | **Taken**, and it holds |
+| **C7.2** | **The delivery corrections need another read** | Decided for Codex | — | **Taken**. This is that read. |
+
+### 1. Claims about the code
+
+Most of §1 holds at its lines:
+
+- **Hooks:** the hook points, the hook set's `wanted` rule (`Hooks.cs:705-710`), `_holdsHome` (`:640`), `Tell`, `ChangedAsync` and `Listening` (`:1096-1206`), and the reader's one notification (`:524-534`).
+- **Plugin process and verb entry:** `HookProcess.StartInfo` and its start through `AgentStarts` (`HookProcess.cs:68-146`). `GitWiring.Removed` and `SessionTokens` (`GitWiring.cs:40-47`). `HolderKey.Take` and `RoleTerminal` (`SupervisorProof.cs:54-120`). The host's order of gate, adoption, lease, early routes and log (`Host/Program.cs:353-445`). `VerbLeases` (`:56-98`) and `DaorisHome.InstallOf`, `Adopt` and `Entry` (`:62-127`).
+- **Where the kinds come from:** the attention watch (`Attention.cs:210-261`) and both of its callers (`DriverLoop.cs:927`, `Host/Program.cs:999`). The park conclusions (`Driver.cs:2884-2889`, `DriverIntakes.cs:412-416`, `DriverContinuations.cs:830-836`). `AutoLander.Tried` (`AutoLander.cs:648-672`) and `LandDueAsync` (`Driver.cs:1405-1438`).
+- **Launcher and pipes:** the launcher's swap (`Launcher/Program.cs:67-108`, `:168-169`; `StagedBuild.cs:519-539`) and `InstancePipe.Security` (`InstancePipe.cs:744-762`).
+- **Minted ids:** session, quest and ask (`Sessions.cs:799`, `Quests.cs:704`, `Asks.cs:403-408`).
+
+These claims are wrong:
+
+- **"A role's terminal may start it" (:606-608) reads as if `RoleTerminal.Runs` were the only gate.** The holder runs Daoris's pinned harness with a fixed `--allowedTools` list (`HolderTerminal.cs:42-49`). No rule there matches a relay started by its copy's absolute path. `--where` is an alone path, which D209.md:77-78 refuses (→ 1).
+- **"The most a process can do through the pipe is make the relay say a false wake" (:678-679), and "no loss waits on a later event to be said" (:669-670).**
+  - A silent first client holds the relay's one connection (:628-630).
+  - A refused plugin leaves the relay waiting (:629-630).
+  - A plugin marked unsound stays down "until the person tries again" (`WorkBounds.cs:24-25`).
+  - In each case the relay waits forever and nothing is said (→ 4).
+- **"The relay prints only fixed words over ids" (:676-677, §8).**
+  - The gap and update lines print the plugin's first-line `run` and `seq` (:602, :650-654). No step checks them (:634, :643).
+  - Refusals, dropped frames and repeats go to stderr, with no rule on what they say (:610, :629, :641, :644-645, :656) (→ 2, 3).
+- **"The home's `bin` entry is … `bin` in an install's `data/`" (:221-222).** For an install's home the new place is the install's `cache/bin`. `data/bin` is chosen only where it already holds something (`DaorisHome.cs:171-183`, `:265-271`).
+- **"What it touches in the home, said whole" (:619-624)** leaves out the plugin catalogue read that finds the data folder (`PluginCatalog.cs:41`, `:286`).
+- **§4.4's late stop "under the work wire's bounds" (:485-490).** That bookkeeping (`_work`) applies only to plugins where `WorkPlugins.Speaks` is true (`Hooks.cs:698-709`, `:786-793`). A plugin on `work/event` alone is not one of them.
+- **"The person grants it by switching `event-relay` on" (:463-468, :517).** This is true beside a running Daoris (`PipeCensus.cs:286`). While Daoris is closed, `plugin` verbs act alone (`VerbLeases.cs:92`).
+- **§4.2's "Not told" list (:410-413)** leaves the help room out as "the person's own conversation". A repository conversation's park is still told, because the watch reports a conversation's park (`Attention.cs:143-144`).
+- **`TASKS.md:460`** still describes the first build by the inbox ("the inbox relay first", "posts a session's end to a stand-in inbox").
+
+### 2. The mechanism's holes
+
+**What an event carries.**
+- The driver's frame is now sound: generated ids in their minted shapes, closed codes, no name, no note, no path, no account, and a census over `HookFrames.Event`.
+- The hole has moved to the relay's own output:
+  - The plugin's first line is printed unvalidated (→ 2). Step 3 admits every agent, so an agent that connects first writes `run: "Merge-every-landed-branch.now"` into the steward's session. That is the hole R1 closed for frames.
+  - The relay's stderr reaches the session with the background command's output, and nothing bounds what it says (→ 3).
+- A quest id is a 12-hex prefix of SHA-256 over `from->to:title` (`Quests.cs:1238-1245`). It is no name, and it tells a process of this user nothing the home does not already hold.
+
+**A subscriber acting as the person.**
+- The relay opens no Daoris door, starts no process, holds no key (`HolderKey.Drop`) and makes no press. D156 and D201 hold.
+- What can act after a wake is the receiving session, under its own permissions, and §8 says a wake is no confirmation.
+- The one rule bent is D209 point 4: `--where` in a role's terminal is an alone path (→ 1).
+
+**The relay's copy, its lease and the swap.**
+- These hold:
+  - The relay is classed to hold nothing.
+  - `--where` holds the lease briefly and waits on the swap.
+  - The copy is outside `app/`, so `StagedBuild.RunningFrom(app)` never sees it.
+  - The `in-use` file keeps a build that a relay runs.
+  - Nothing else clears `cache/bin` (CACHECLEAR1 clears `cache/toolchain` and `cache/tools` only).
+- What does not hold: staleness is judged by `grammar` alone (:601-604). The copy also reads the newer build's lease file and catalogue, and checks the newer build's launcher. A build that changes any of those without raising the grammar leaves an old copy refusing every plugin and waiting, which is CONNECTOR1's warning again (→ 5).
+
+**Loss, duplicates and order across a restart and a relay that ends.**
+- Order holds: one connection, `seq` order, and `Tell` under one lock.
+- There are no duplicates while `--since` equals the first line.
+- Loss is said whenever a plugin connects: a new `run`, a passed watermark, `missed`, and the gap at the end of a connection.
+- Loss goes unsaid in three cases:
+  - **No plugin ever connects** (unsound, off, unstartable, a stale copy, a silent agent). The relay waits with no wake, and the steward, having stopped polling, hears nothing (→ 4).
+  - **A busy lease read.** `Tell` "mints no `seq`" when `_holdsHome()` is false (:375-378), and `_holdsHome()` reads the lease file on every call (`Hooks.cs:640`; `HomeLease.cs:195-202`, `:303-304`). A busy read drops the event and leaves no gap (→ 6).
+  - **A false gap, the opposite error.** With a narrower `--kinds`, `--since` taken from the last printed line misses a later filtered frame, so the next relay reports a loss that is not one (→ 7).
+
+**A slow or gone subscriber, or a slow plugin.**
+- Nothing holds the loop: a per-plugin queue and teller, 256 waiting, and the plugin answering at once.
+- Each subscriber has 64 waiting and a 5 s mark, and is closed with its gap said.
+- A late plugin is stopped after three late answers in a row. Its back-off needs the work wire's bookkeeping extended to it (→ 11).
+
+**Measured before depending.**
+- 1b and 1c wait on M5 (the wake), M9 and M10 (elevation and ancestry), which is right.
+- Not measured, though the design depends on it:
+  - stderr reaching the session (→ 3);
+  - an end by a kill, or with nothing printed, which step 6 relies on to wake (:669-670);
+  - a wait that crosses the session's compaction or `/clear`;
+  - the session that would actually subscribe through a role's terminal: the managed pinned build, `--setting-sources user`, `disableAllHooks` and its allowlist (→ 1, 12).
+
+### 3. The rows
+
+- **EVENTHOOK1a** can be built alone, and its record proves what it measures. M5 must be run in the session that will subscribe, and must add the cases in §2 (→ 1, 3, 12).
+- **EVENTHOOK1b** can be built alone after 1a, and its ten proofs prove its claims.
+  - Its list should name extending the late back-off to a plugin that does not speak the work wire (→ 11).
+  - Its list should mint `seq` regardless of the lease read (→ 6).
+  - §6.3, the strip of the messaging variables, should not wait on M5 (→ 9).
+- **EVENTHOOK1c** can be built after 1b. Its proofs need:
+  - a word-shaped first line, and both output streams checked (→ 2, 3);
+  - the relay's silent cases ended and said (→ 4);
+  - a build-keyed stale copy (→ 5).
+
+  As written, its Process-lane class cannot pass step 3 honestly. "With the install's image" refuses a test host that holds the lease, the same shape as R12 (→ 8). Its lanes need `SystemProcesses` (`HolderWalk.cs:96-126`) moved beside `InstancePipe.Security`.
+- **EVENTHOOK1d–1f** are later rounds or a quest. They stand.
+- **Together:** for the owner's own session outside Daoris, 1a–1c let the steward stop polling once M5 answers yes, findings 2–4 are taken, and the plugin is on the install. No row puts the plugin on the install: `event-relay` is not an offer (`tools/desktop-publish.mjs:227`). No row proves the stop on the installed app: 1c is stand-ins only (→ 10). For a steward in a role's terminal they do not, without a D209 amendment (→ 1).
+
+### 4. Findings
+
+1. **C1.1 is half-closed, and the design never says which session subscribes.**
+   - Today the steward is the owner's own session outside Daoris (the reads record, :3). The steward role is dark (`StandingConfirmation.cs:97`).
+   - For a role holder, `HolderTerminal.SessionArguments` (`HolderTerminal.cs:42-49`) has no rule that matches the relay's copy path, so every re-arm asks the owner.
+   - `--where` is an alone path, which D209.md:77-78 refuses, and D209 is not amended (:606-608; `TASKS.md:463`).
+
+   **Blocking.** *Smallest change:* name the first build's subscriber as the owner's own session outside Daoris. Take `events relay` back out of `RoleTerminal.Runs`. Leave the role holder for a later round with a D209 note: a fixed allowlist element for a fixed command name, and the copy laid out by the instance rather than `--where`.
+2. **The plugin's first line reaches stdout unvalidated.** Its `run` and `seq` are printed in the gap and update lines (:538-540, :601-602, :650-654). Step 3 checks only `plugin` and `run ≠ "sample"` (:634), and step 4 checks only frames (:643). **Blocking.** *Smallest change:* check the first line against the grammar (`run` `^[0-9a-f]{12}$`, `seq` an integer from 0, `grammar` an integer, no other field) and refuse it otherwise. 1c sends `Merge-every-landed-branch.now` as the first line's `run`, and sees it refused and nothing printed.
+3. **stderr is part of the wake, and its words are unbound.** A background command's output carries both streams. Yet refusals, dropped frames and repeats are "said on stderr" with no rule on their words (:610, :629, :641, :644-645, :656). **Blocking.** *Smallest change:* every stderr line comes from a closed list of fixed sentences, never a value read from the pipe or a file. 1c's word-shaped cases check both streams. M5 records whether stderr reaches the session.
+4. **A relay can wait forever with nothing said.**
+   - The plugin is unsound until the person tries again (`WorkBounds.cs:24-25`), switched off, or unstartable.
+   - A stale copy refuses the new build's plugin and waits (:629-630).
+   - An agent takes the one connection and stays silent (:628-630).
+
+   The claims at :669-670 and :678-679 say otherwise, and the steward has stopped polling. **Blocking.** *Smallest change:* correct both sentences. Then say these cases, either:
+   - by a marker the live plugin holds open, deleted on close, which the relay watches: it ends with a fixed line when the marker goes or is absent at its start; or
+   - by a `--within <minutes>` bound, ending with `Daoris: nothing heard; read the sessions again [<run> #<seq>]`.
+
+   1c proves a relay with no plugin, and one held by a silent client.
+5. **Staleness is keyed on `grammar` alone** (:601-604), but the copy reads the newer build's lease, catalogue and launcher. Not blocking. *Smallest change:* `initialize` and the first line carry the driver's `<build>`. A relay of another build prints its update line and ends.
+6. **A busy lease read drops an event with no gap** (:375-378; `Hooks.cs:640`; `HomeLease.cs:195-202`, `:303-304`). Not blocking. *Smallest change:* mint the `seq` whatever the lease says, and tell only where it is held. Take the holding from the look's reconcile, not a file read per event.
+7. **A narrower `--kinds` makes a false gap across relays.** `--since` is the last printed line (:648), not the relay's final watermark. Not blocking. *Smallest change:* the batch's last line names the watermark at the relay's end, and 1c's two-relay proof runs across a restart.
+8. **Step 3 and 1c's Process-lane proof.**
+   - "With the install's image" (:633-634) refuses a test host that holds the lease.
+   - "A direct child of the launcher" refuses a `node` that resolves to a version manager's shim (`HookProcess.cs:74-83`, `:111-112`).
+   - The parent, start and image reader exists only in the modules (`HolderWalk.cs:96-126`).
+
+   Not blocking. *Smallest change:* the class runs the built host's `drive --once` from a laid-out install as the holder. Check that the client is in the launcher's own job (`PieceLauncher.OwnJobOf`) rather than its direct child. Move `SystemProcesses` in 1c's lanes.
+9. **§6.3 waits on M5**, though §10 calls it "a fix of its own … a leak today" (:828-829; :731-733). Not blocking. *Smallest change:* its own row, not gated.
+10. **No row installs the plugin or proves the stop on the install** (`tools/desktop-publish.mjs:227`; §9's 1c is stand-ins only). Not blocking. *Smallest change:*
+    - 1c names *Install from a folder*, a `Person` route (`PipeCensus.cs:286`), as how the owner adds it.
+    - Add the parent's installed proof: a real park wakes the steward's real session, recorded in the measurements record.
+11. **Claims and records to correct.** Not blocking.
+    - The grant is the person's only while Daoris runs (`VerbLeases.cs:92`). Rest C4.1 on the frame holding nothing the home's files do not.
+    - The `bin` entry's place in an install (`DaorisHome.cs:171-183`).
+    - The catalogue read missing from "said whole" (:619-624) and from 1c's list.
+    - The late back-off needs `WorkPlugins`-style bookkeeping for `work/event` (`Hooks.cs:698-709`). Name it in 1b.
+    - A repository conversation's park is told while the help room's is not (`Attention.cs:143-144`). Say which is meant.
+    - `TASKS.md:460` still names the inbox as the first adapter and its proof.
+12. **M5 leaves out what step 6 rests on.** An end by a kill or with nothing printed, and a wait across compaction or `/clear` (:669-670, :722). Not blocking. *Smallest change:* add both to M5's row.
+
+12 findings, 4 blocking (1-4).
+
+**Verdict: accept after named changes the steward can check without another read.** Round 3 takes Codex's read well. The frame now carries no name. Filtering has moved to the relay, so a gap means a loss. The first line settles a restart at once. The copy's custody is specified. The smaller first build ends the poll without the inbox's token. Each of the four blocking findings has a narrow change that can be checked line by line:
+- name the owner's own outside session as the subscriber, and withdraw the role-terminal widening, which needs a D209 amendment (1);
+- validate the plugin's first line by the grammar (2);
+- bind stderr to fixed sentences (3);
+- correct the two "nothing goes unsaid" claims and give the relay a way to say a plugin that never connects (4).
+
+If the steward instead wants the D209 role holder as the first subscriber, that is a change to D209's stated-whole start line and its walk, and it needs another round.
+
+## Codex, round 3
+
+Codex's read of round 3 at `c685459f4`: 12 findings, 7 blocking; another round. The steward ran it read-only on main from outside the install, and its links are made repository-relative.
+
+Read-only review at `c685459f4`; nothing changed, no probes run, and `local/` was not read. The code under `src/`, `tools/` and `examples/plugins/` is unchanged from `972b17577`.
+
+References below use **Design** for `docs/2026-10-24-event-hook-design.md`, and its `Driver/`, `Host/` and `Modules/` prefixes defined at lines 49–51.
+
+### 0. Round-2 findings
+
+Severity is the original finding’s severity; status judges round 3.
+
+| Finding | Severity | Status and reason |
+|---|---|---|
+| C1.1 — role-terminal gate | **blocking** | **Taken.** Exact-prefix admission and role-terminal proofs are assigned to 1c; Design:606, :768. |
+| C1.2 — closed-list and landing claims | **non-blocking** | **Taken.** Whole-list filtering and concurrent landing order are described correctly; Design:224, :414. |
+| C2.1 — names leave the driver | **blocking** | **Taken.** Names leave the frame altogether, before plugin delivery; Design:454. |
+| C2.2 — same-user threat promise | **blocking** | **Answered with a reason that holds.** The promise now assumes intact relay files and authenticates no event; Design:672. First-line validation remains a separate hole below. |
+| C2.3 — filesystem custody | **blocking** | **Taken.** Staging, usage handles, reparse checks and removal rules are specified; Design:585. |
+| C2.4 — wake versus confirmation | **non-blocking** | **Taken.** Independent reads and authorization are explicit; Design:747. |
+| C3.1 — workspace-less events | **blocking** | **Answered with a reason that holds.** One explicitly granted home scope replaces the workspace filter; Design:407, :463. |
+| C3.2 — final-loss recovery | **blocking** | **Open.** Hello-watermark recovery fixes reconnection, but a final rejected source event can remain silent; Design:446, :650. |
+| C3.3 — filtering and ordering | **blocking** | **Taken.** Filtering moves to the relay; source enqueueing is serialized and repeats are suppressed; Design:476, :655. |
+| C3.4 — discovery and bounds | **blocking** | **Open.** Bounds improve, but failed admission can strand a relay and watcher reconciliation is missing; Design:527, :548. |
+| C4.1 — subscription visibility | **blocking** | **Answered with a reason that holds.** The person grants opaque events for the whole home; subsequent reads retain their own permissions; Design:463. |
+| C4.2 — logging and layout work | **non-blocking** | **Taken.** Catalogue updates and the existing home resolver are assigned; Design:588, :767. |
+| C5.1 — measurement dependencies | **blocking** | **Taken.** Adapter-specific prerequisites replace the contradictory graph; Design:729. |
+| C5.2 — event-frame contract | **blocking** | **Taken.** Optionality, rejection and concurrency proofs are specified; Design:431, :767. |
+| C5.3 — host entry and copied build | **blocking** | **Open.** Entry routing and home discovery are settled; the copied bundle’s identity remains incomplete; Design:589. |
+| C5.4 — quest lifecycle source | **blocking** | **Deferred with a reason that holds.** Recorded operations replace snapshots in a later design round; Design:397, :769. |
+| C5.5 — channel reconciliation | **blocking** | **Deferred with a reason that holds.** Install-scoped reads and swap handoff are explicit prerequisites; Design:690. |
+| C5.6 — package ownership and fixtures | **non-blocking** | **Taken.** The request carries versions and contract fixtures; Design:771; D120:158. |
+| C6.1 — smaller first build | **non-blocking** | **Taken.** Only 1a–1c ship first; the remaining writes have stated purposes; Design:774, :825. |
+| C7.1 — disagreement over frame safety | **blocking** | **Taken.** The unsafe names were removed; Design:916. |
+| C7.2 — another independent read | **blocking** | **Taken.** Both readers must read round 3 before acceptance; Design:917. |
+
+### 1. Wrong claims about existing code
+
+1. **Non-blocking — the holder key has another reader.** Design:200–201 says only `sessions supervise` reads the captured key, but `Host/Program.cs:656` also supplies `HolderKey.Taken` to `StewardCommand`. Correct that inventory; clearing the captured key before the relay waits remains the right proposed change.
+
+2. **Non-blocking — the installed `bin` location is conditional.** Design:221–223 describes an install’s location as `data/bin`, but `Driver/Platform/DaorisHome.cs:171` resolves an installed home to its install root, and :265 chooses between new and legacy locations. `HomeEntry.Bin` at :400 therefore permits the install’s `cache/bin`; the proposed use of `Entry` is correct, but the explanation is not.
+
+### 2. What leaves Daoris, and what a subscriber can do
+
+1. **Blocking — the first line bypasses the stated validation contract.** Design:539 defines `{plugin, run, seq, grammar}`, while :643 validates event frames against a grammar whose closed fields exclude `plugin` and `grammar` (:431). Yet :602 and :650 interpolate the first line’s `run` and `seq` into model-facing output: an admitted agent can supply authored strings there without the design explicitly rejecting them. Define a bounded hello schema, validate it before either output path, and require fixed diagnostics without echoed input.
+
+2. **Blocking — one assembly hash does not identify the copied build.** Design:589 keys the copy by version and one assembly’s hash, and checks the bundle only when that directory is absent. The host has a separate driver-library dependency (`Daoris.Desktop.Driver.Host.csproj:14`), so changing an un-hashed companion DLL can reuse an older copied bundle even after `--where`. Identify the complete copied bundle and prove that changing only a dependency selects the new copy.
+
+3. **Non-blocking — the remaining authority boundary is substantially clearer.** Design:454–468 removes names, paths and authored words from event frames and explicitly grants home-wide opaque visibility; the existing plugin handshake still receives home/data paths (`Driver/Plugins/Hooks.cs:149`), so “path-free” applies to the exported event, not all plugin traffic. Design:606–618 explicitly handles the role terminal, captured key and log-free entry; :747–759 grants no action or confirmation from a wake. Running the waiter outside `app/` addresses the launcher’s actual swap condition (`Daoris.Desktop.Launcher/Program.cs:72`), subject to the bundle-identity correction above.
+
+### 3. Delivery
+
+1. **Blocking — a final unexportable event still disappears silently.** Design:446–448 mints a sequence for a required field that fails validation but reports the omission only in the *next* event’s `missed`. If the connected plugin has heard sequence 10 and rejected sequence 11 is the last event, neither its hello watermark nor the waiting relay advances; :670’s “no loss waits on a later event” does not hold. Specify an independent progress/loss signal and prove this case without another event, disconnect or restart.
+
+2. **Blocking — a subscriber can wait forever before obtaining a connection.** Design:527 leaves a failed connection until its file changes, :548 does the same to a ninth subscriber, and :629 leaves a relay waiting after a refused connection; its file is otherwise written only once (:521). Freeing a slot or recovering from a transient failure therefore need not wake or admit that relay. Define reconsideration on capacity changes and an observable failure path; test both without rewriting the subscriber file.
+
+3. **Non-blocking — recovery after a successful connection is otherwise coherent.** A changed run or hello watermark triggers reconciliation without another work event (Design:650), which correctly handles the attention watch’s startup baseline (`Driver/Quests/Domain/Attention.cs:224`). Filtering advances source progress, duplicates are suppressed, and the source lock orders emission rather than historical occurrence (Design:476, :655). An absent outside session receives no replay; its next successful subscription requests a fresh read, which is consistent with wakes rather than durable messages.
+
+### 4. Places it breaks a decided rule
+
+1. **Blocking — subscriber discovery trusts a watcher without reconciliation.** D173:196–198 requires a slow reconciliation behind a watcher, and the accepted events contract repeats that requirement (`docs/2026-10-16-fabric-events-design.md:52`); Design:525–534 instead rescans only after callbacks or reported errors and explicitly rejects a clock. A missed creation callback without an error can leave a subscriber undiscovered indefinitely, and the desktop’s own plugin watcher excludes `.data` (`Driver/Platform/HomeWatch.cs:131–149`). Add a bounded internal reconciliation and prove recovery with a callback deliberately suppressed; this does not require the steward to poll sessions.
+
+### 5. Rows 1a, 1b and 1c
+
+1. **Non-blocking — 1a has a usable gate.** Design:731–741 now tells its builder which measurements permit progress and what a failed measurement blocks. Extend M5’s explicit cases to termination before stdout, since Design:669 relies on that termination waking the session too; the Process-lane stand-ins cannot establish Claude Code’s behavior.
+
+2. **Blocking — 1b still needs the final-rejection rule.** Its event sources, nullable fields, lease check and concurrent enqueue order are sufficiently assigned at Design:767. Its builder remains stuck choosing how to signal the final minted-but-unsent sequence identified in §3.1; add that behavior and its no-later-event proof to this row.
+
+3. **Blocking — 1c needs the remaining protocol choices before implementation.** Design:768 does not settle hello validation, failed/pending admission, silent watcher loss or complete bundle identity; its current proofs omit those cases. The **1a → 1b → 1c order holds**, but together they justify stopping the steward’s poll only after those failure paths produce recovery or an explicit wake.
+
+**Verdict: another round.**
+
+## Opus (foundation), round 4
+
+The independent Opus 5.5 reader's foundation read of round 4 at `5c93bf118`: 10 findings, 2 blocking; accept after named changes. Codex's read of round 4 is owed, its credits out.
+
+### 0. Both reads of round 3
+
+I read at `5c93bf118`, round 4's commit, which sits on main's `b4f096cc0`. "design:N" means line N of `docs/2026-10-24-event-hook-design.md`. F*n* refers to a finding in §4 below.
+
+**The Opus foundation reader (O1-O12)**
+
+| # | Finding | Round 4's answer | Checked against | Standing |
+|---|---|---|---|---|
+| **O1** | **C1.1 is half-closed, and no subscriber is named** | The subscriber is the owner's own session outside Daoris. `events relay` stays out of `RoleTerminal.Runs`. The role holder goes to a later round with a D209 note. | `SupervisorProof.cs:97-106` (`Runs` names no `events`), `Host/Program.cs:372`; `HolderTerminal.cs:42-48`; `D209.md:77-78`; `StandingConfirmation.cs:336` | **Taken**, holds |
+| **O2** | **The first line reaches stdout unvalidated** | A closed schema is checked before any of the line is used. A line that fails is refused and nothing of it is printed. `--since` is checked the same way. | design:725-728, :680-685, :742-749 | **Taken**, holds |
+| **O3** | **stderr is part of the wake, and its words are unbound** | Every line the relay writes comes from `RelaySaid`, held by a census | design:689-693 | **Taken** for the relay. `--where` runs in the same session and its lines are unbound (→ F7). |
+| **O4** | **A relay can wait forever with nothing said** | A 15-minute bound while Daoris runs, and the second-client rule | design:715-717, :767-775 | **Taken in shape.** The second-client rule needs a second listening pipe instance, which the design never names (→ F4). In the elevation split of F1, the bound becomes the normal end of every relay (→ F1, F5). |
+| O5 | Staleness is keyed on `grammar` alone | `build` is the hash of the whole bundle, carried in the handshake and the first line | design:656-660, :680-685 | Taken, holds |
+| O6 | A busy lease read drops an event with no gap | `seq` is minted whatever the lease says, and the reconcile's one read per look decides whether to tell | `Hooks.cs:640`, `:696`, `:705-709`; `HomeLease.cs:194-202`, `:362-377` | Taken. The account is incomplete: the same false read makes the plugin unwanted and stops it (→ F6). |
+| O7 | A narrower `--kinds` makes a false gap across relays | Each batch ends with the relay's own watermark | design:757-759 | Taken, holds |
+| O8 | Step 3 and 1c's Process-lane proof | The client must be in the lease holder's agents' job | `AgentJobs.cs:77`; `ProcessJob.cs:125-155`; `HomeLease.cs:31-34`; `HookProcess.cs:111-112` (a shim runs as `cmd.exe` inside the job) | Taken for shims and a test's host. Opening the job fails across elevations, which the cited terminal-trust lines already say (→ F1). As written, the class's plugin is not in the host's job (→ F9). |
+| O9 | §6.3 waits on M5 | Row 1g, waiting on no measurement | design:827-828, :900 | Taken, holds |
+| O10 | No row installs the plugin or proves the stop on the install | *Install from a folder*, and row 1h | `PipeCensus.cs:240`, `:289`; `PluginsRoutes.cs:186-190`; `tools/desktop-publish.mjs:227` | Taken, holds |
+| O11 | Claims and records to correct | Each one corrected | `VerbLeases.cs:92`; `DaorisHome.cs:170-183`, `:265-275`; `PluginCatalog.cs:41`, `:286`; `Hooks.cs:692-711`, `:786-791`; `TASKS.md:456-464` | Taken, except the new conversation rule, which drops the parks of the driver's own chats (→ F2) |
+| O12 | M5 leaves out what step 6 rests on | M5 adds stderr, a silent end, a kill, compaction and `/clear` | design:844 | Taken, holds |
+
+**Codex (by its numbers)**
+
+| # | Finding | Round 4's answer | Checked against | Standing |
+|---|---|---|---|---|
+| K1.1 | The holder key has another reader | §1.7a names `steward` | `Host/Program.cs:659-660` | Taken, holds. The host's own comment at `:355-356` still says only `sessions supervise` reads it; that is the code's error, not the design's. |
+| K1.2 | The installed `bin` location is conditional | §1.7b | `DaorisHome.cs:170-183`, `:265-275`, `:400` | Taken, holds |
+| **K2.1** | **The first line bypasses validation** | The schema, and `RelaySaid` | design:689-693, :725-728 | **Taken**, holds for the relay (→ F7) |
+| **K2.2** | **One assembly's hash does not identify the copy** | Hash of the whole bundle | `Daoris.Desktop.Driver.Host.csproj:14`; `tools/desktop-publish.mjs:376` (a framework-dependent folder) | **Taken**, holds |
+| K2.3 | The handshake still carries paths | Said: "path-free" applies to the frame and the relay's output | `Hooks.cs:147-150` | Taken, holds |
+| **K3.1** | **A final unexportable event disappears silently** | It is told as `events.missed` in its place | design:492-497; 1b proof 9 | **Taken**, holds |
+| **K3.2** | **A subscriber can wait forever for a connection** | The plugin reconciles when a connection ends and every 5 minutes; the relay has its bound | design:591-598, :613-614, :767-775 | **Taken**, holds once F4's listening instance is named |
+| K3.3 | Recovery after a connection is coherent | Agreed | `Attention.cs:224` | Agreed |
+| **K4.1** | **The watcher has no reconciliation behind it** | A five-minute reconciliation of the plugin's own folder | `D173.md:195-197`; fabric events design:52 | **Taken**, holds |
+| K5.1 | M5 should cover an end before stdout | Added | design:844 | Taken, holds |
+| **K5.2** | **1b needs the final-rejection rule** | `events.missed`, with proof 9 | design:895 | **Taken**, holds |
+| **K5.3** | **1c needs its remaining protocol choices** | Each one settled, each with a proof | design:896 | **Taken.** It holds once F4 is named, except in the elevation split (F1), where every real plugin is refused. |
+
+### 1. Claims about the code
+
+These claims hold at the lines given:
+- the hook set's `wanted` rule, `_holdsHome`, the reconcile's read, `Tell`/`Listening`, `late` and `plugin.called`;
+- `HolderKey.Take`, `RoleTerminal`, and the holder's allowlist;
+- the host's order: gate (`:372`), adoption (`:390`), lease (`:400-416`), early routes (`:420-445`), log (`:449`), `steward` (`:660`), the headless loop (`:956`, `:961-976`, `:1003`);
+- `VerbLeases`, `DaorisHome.InstallOf`/`Adopt`/`Entry`/`FolderOf`/`Choose` and the `Bin` entry;
+- the attention watch (`:45-58`, `:210-261`) and both of its callers (`DriverLoop.cs:823`, `:935`);
+- `AutoLander.Tried` and `LandDueAsync`;
+- `AgentJobs.NameOf` and `AgentsPrefix`; `LeaseHolder.IsInstance` (and `Headless` is an instance, so `drive --once` holds as one);
+- `InstancePipe.Security`; the person routes; the catalogue's data folder; `WorkBounds`; `AdapterSet.Built().Names`; the steward flag; `OFFERED_PLUGINS`; `stagedManifest`.
+
+These claims are wrong:
+
+- **§1.7 (design:205-206) cites `terminal-trust-design.md:253-255` for "the reverse works", but those lines say the opposite of what step 3 needs.** They are about named jobs: "A Daoris that is not elevated cannot open an elevated one's named job (the elevated token's default DACL) … The reverse works." The agents' job is made with no descriptor (`ProcessJob.cs:82-87`, `CreateJobObject(IntPtr.Zero, name)`). The modules' judge records the same fact (`StandingCaller.cs:121`). Round 4's step 3 (design:718-724) opens exactly that job from a relay that may not be elevated (→ F1).
+- **§4.2 (design:455-458) treats a session whose record's kind is `chat` as "a conversation".** But `chat` is also "the kind the driver's own intakes, helpers and reviewers keep" (`Planner.cs:848-849`). The rule that tells the driver's own sessions from the person's is `ActiveSessions.HoldsSlot` (`Planner.cs:866-879`). An intake's park is one of §1.3's three parks (`DriverIntakes.cs:414-416`). §4.3's `ask` row (design:486) and 1b's proof 2 ("an intake's park names `ask`") contradict the rule (→ F2).
+- **§4.1 (design:415-420): a busy lease read is handled by more than "the next one told shows the gap".** `HeldHere` answers false on a busy read (`HomeLease.cs:194-202`, `Read` at `:362-377`). A plugin at `work/event` is wanted only where the reconcile's read says held, so that look stops it (`Hooks.cs:705-709`, `:725-749`). The relay's connection ends, which is what actually says the loss (→ F6).
+- **Step 3 (design:721-722) cites `ProcessJob.OpenHolding` as the open "for query alone".** `OpenHolding` opens for query and terminate (`ProcessJob.cs:146-155`). The query-alone open is `ProcessJob.NamedHolds` (`:125-137`).
+- **1c's Process-lane class (design:896) "starts the example through `HookProcess` into that host's agents' job".** `HookProcess` starts through `AgentStarts`, which joins the calling process's jobs (`AgentStarts.cs:33`, `AgentJobs.Current`). That is the test's job, not the host's (→ F9).
+- **Records:**
+  - The list of files that moved between the reads and `b4f096cc0` is incomplete. §15 (design:1073-1075) omits `StandingConfirmation.cs`, whose steward flag moved from `:293` to `:336`. §1's header (design:76-77) also omits `InstancePipe.cs` and `PipeCensus.cs`.
+  - `TASKS.md:460` (design:348) is now `:456`; `:460` is EVENTHOOK1d.
+  - `TASKS.md:384` (design:442) is now `:380`.
+
+### 2. The mechanism's holes
+
+**What an event carries.**
+- The frame is sound. It holds:
+  - ids in their minted shapes: session 8 hex, quest 12 or 6, ask 6, run 12;
+  - closed codes, counts and a UTC time;
+  - no name, note, account or path.
+- A required field that fails sends an `events.missed` frame instead.
+- The relay prints only `RelaySaid` sentences, over checked ids.
+- The one gap is `--where`. It runs in the same session's Bash, and it says a junction or a removed entry "once" with no rule on the words, so an agent-made entry name can reach the steward's model (F7).
+- The machine path `--where` prints goes to the owner's own session. It is never in a record, and the measurements record excludes it.
+
+**A subscriber acting as the person.** D156 and D201 hold:
+- The relay drops what `HolderKey.Take` took and removes the other keys and both messaging variables unread.
+- It opens no Daoris door, starts nothing and presses nothing.
+- The plugin is contained, and its wire answers no request (`Hooks.cs:532-534`).
+- The steward session presses only what it could press before. D201's grant is not offered in this build (`StandingConfirmation.cs:314`).
+- A wake is never a confirmation (§8).
+
+**The relay's copy, its lease and the swap.** These hold:
+- The relay holds no lease. A relay started while Daoris is closed leaves the lease to the desktop.
+- The copy lives under the home's `bin` entry (`cache/bin` in an install), outside `app/`, so `StagedBuild.RunningFrom(app)` never sees it.
+- `--where` waits on the swap under the lease.
+- The `in-use` file keeps a build that a relay is running.
+- The whole-bundle hash makes a stale copy end at the first line.
+
+What does not hold:
+- A build folder whose removal stopped partway keeps its name, and `--where` reuses that name as a whole copy (F8).
+- If the steward runs `--where` from `app/` at the swap's moment, the launcher replaces nothing ("something still ran from app/", `Launcher/Program.cs:72`, `:86`). The steward's procedure must therefore run `--where` only after the update line (F5).
+
+**Loss, duplicates and order across a restart and a relay that ends.**
+- Order holds: one lock, one queue per plugin, `seq` order, one connection.
+- There are no duplicates: repeats are dropped, and `--since` comes from each batch's last line.
+- Loss is said in these cases:
+  - a new `run`;
+  - the first line passing the watermark (including the gap between two relays);
+  - `missed` above 0, a `seq` gap, or `events.missed`;
+  - the connection's end;
+  - the bound;
+  - a kill, which ends the background command.
+- A busy lease read is said only because it stops the plugin. §4.4's wording ("any other way it stops, is counted the same", design:544) would count that stop as an exit Daoris did not ask for: three in an hour mark the plugin unsound until the person tries again (F6).
+- A plugin that stays connected but stops passing frames on is unsaid. The design excludes that on purpose (design:971-972), and the `seq` design covers every failure short of it.
+
+**A slow or gone subscriber holding the loop.** None:
+- `Tell` returns at once.
+- Each plugin has its own teller and 256 waiting.
+- The plugin answers before any write.
+- Each subscriber has 64 waiting and a 5-second slow mark.
+- A plugin late three times is replaced, with backoff.
+
+**The elevation split (F1).** The pipe rule handles elevation (M9). Step 3 does not: in the layout PIPEOWNER1 records (Daoris elevated, the session not), the relay cannot open the holder's job. Every real plugin is then refused, every relay ends with the no-events line every 15 minutes, and the poll never ends.
+
+**The bound as a wake loop (F5).** While the plugin is off, unsound (until the person tries again, `WorkBounds.cs:24-25`) or refused, the bound wakes the steward every 15 minutes indefinitely. That is twice the rate of today's half-hour re-arm, and the line does not say why.
+
+**Measured before depending.** M5, M9 and M10 gate 1b and 1c, and M10 now includes the job. Three gaps remain:
+- The answer M10 will give in the recorded layout is already stated in the design's own citation, so the fallback should be chosen now (F1).
+- Nothing measures whether the re-arm, a Bash command whose path changes with every build, runs without a permission prompt in the owner's session. If it prompts, the steward cannot re-arm unattended (F3).
+- M9 and M10's probes need `InstancePipe.Security`, `OpenJobObject` and `IsProcessInJob`. The Node fixtures §7 names (design:832-833) cannot call these (F10).
+
+### 3. The rows
+
+- **EVENTHOOK1a** can be built alone, first. Its record proves what it measures. It should:
+  - record the expected job answer (F1);
+  - add the re-arm's prompt to M5 (F3);
+  - name a .NET or PowerShell probe for M9 and M10 (F10).
+- **EVENTHOOK1b** can be built alone after 1a's rule. Its twelve proofs prove the point, with two exceptions:
+  - Proof 2 contradicts §4.2's conversation rule. Built by the rule, intakes', helpers' and reviewers' parks go untold (F2).
+  - Nothing proves what a busy reconcile read does to the plugin (F6).
+  - Its web lane should also name the gloss's words in `locales/en/plugin.json`, `locales/zh/plugin.json` and the glossary (F10).
+- **EVENTHOOK1c** can be built after 1a's M5, M9 and M10, and after 1b. Its proofs are thorough, but it needs:
+  - step 3's behaviour when the job will not open (F1);
+  - a listening instance kept for the second-client rule (F4);
+  - `--where`'s lines held to fixed sentences (F7);
+  - removal that cannot leave a reusable half-build (F8);
+  - a Process-lane class whose plugin the host's own reconcile starts (F9).
+- **EVENTHOOK1g** can be built alone at any time, and its proof proves the strip.
+- **EVENTHOOK1h** proves the stop on the real install. It is where F1 and F3 would surface if this round leaves them open.
+- **Together:** 1a-1c, 1g and 1h let the steward stop polling, provided:
+  - F1 and F2 are taken;
+  - M5 shows the re-arm runs unprompted (F3);
+  - the steward has a written procedure for each line (F5).
+
+  Without F1, the poll does not end when Daoris and the session run at different elevations.
+
+### 4. Findings
+
+1. **Step 3's job check fails in the layout the records name. Blocking.**
+   - **What is wrong:** design:205-206 cites `terminal-trust-design.md:253-255` for "the reverse works". Those lines say a Daoris that is not elevated cannot open an elevated one's named job. The agents' job is made with the token's default DACL (`ProcessJob.cs:82-87`), and `StandingCaller.cs:121` records the same. Step 3 (design:718-724) now rests on that open. With an elevated install and a session that is not elevated, every real plugin is refused, every relay ends with the no-events line, and the steward cannot stop polling. M10 would find this, and §7 would send steps 2-3 to another round after 1a.
+   - **Smallest change:** state it in §1.7, §1.7b and step 3, and choose now. Either:
+     - (a) where the holder's job or the client will not open, step 3 treats the client as untold, says one fixed stderr line, and takes it, since nothing rests on step 3 (design:733-734); or
+     - (b) `ProcessJob.CreateNamed` gives the agents' job a descriptor that also grants the user's SID `JOB_OBJECT_QUERY`, with a note on terminal-trust §3.4, whose judge this also unblinds.
+
+     M10 then confirms the choice rather than deciding it.
+2. **The conversation rule drops the parks of the driver's own chats. Blocking.**
+   - **What is wrong:** design:455-458 leaves out any session whose kind is `chat`. That kind is also what intakes, helpers and reviewers keep (`Planner.cs:848-849`). This contradicts design:486 and 1b's proof 2, and it hides the intake park §1.3 lists (`DriverIntakes.cs:414-416`).
+   - **Smallest change:**
+     - Define "a conversation the person holds" as `!ActiveSessions.HoldsSlot(session)` (`Planner.cs:866-879`). That treats help-room records as the person's whatever their kind.
+     - Have 1b's census see a helper's and a reviewer's park told.
+     - Change TASKS 1b's row and D173's round-4 note to match.
+3. **The re-arm's permission prompt is not measured. Not blocking.**
+   - **What is wrong:** each wake ends with the steward starting `<copy> events relay --once …`, and the copy's path changes with each build (design:643-644, :664). M5 (design:844) measures the command's lifetime and its wake, but not whether the owner's session runs it without asking.
+   - **Smallest change:** M5 records whether `--where` and the re-arm run unprompted under the session's permission mode, and §6.1 names the allow rule the owner sets, one that survives a change of build path.
+4. **The second-client rule needs a second listening instance, and the design never says so. Not blocking.**
+   - **What is wrong:** design:709-717 serves one pipe with `FirstPipeInstance`, takes "one connection in its life", and still expects to see a second client and to keep waiting after a refusal. With one instance, a second client gets a busy pipe, so the silent holder of O4 is never said. `InstancePipe.Create` takes the instance count (`InstancePipe.cs:759-762`).
+   - **Smallest change:** say the relay keeps one more instance listening until it ends, and that "connected" means a client whose first line has passed.
+5. **The steward's half is unspecified, and the bound becomes a 15-minute wake loop. Not blocking.**
+   - **What is wrong:** the design says what each line means, but nowhere what the subscriber does next. While the plugin is off, unsound (`WorkBounds.cs:24-25`) or refused (F1), the bound (design:767-775) wakes the steward every 15 minutes indefinitely, and the line does not say why. An update line that a fresh `--where` meets again (for example, a set that computed its build once, design:425-426) would also re-arm in a loop. A `--where` run while the swap is pending stops that swap (`Launcher/Program.cs:72`, `:86`).
+   - **Smallest change:**
+     - a short procedure for each fixed line, in §8 or a knowledge document the steward reads: re-arm with the last bracket; run `--where` only after the update line; do not re-arm after an update line that the new copy meets again;
+     - a closed reason code on the no-events line (no client at all, only refusals, not contained);
+     - after two such lines in a row, the steward checks `plugins show event-relay` and tells the owner.
+6. **A busy lease read stops the plugin, and §4.4's wording could mark it unsound. Not blocking.**
+   - **What is wrong:** see §1 (`Hooks.cs:705-709`, `:725-749`; `HomeLease.cs:194-202`, `:362-377`). design:544 counts "any other way it stops" as an unasked exit, so three such stops in an hour would mark the plugin unsound.
+   - **Smallest change:** count only the late stop and the plugin's own exits; a reconcile whose read is busy keeps the last look's answer; correct design:415-420.
+7. **`--where`'s own output is unbound. Not blocking.**
+   - **What is wrong:** design:676-679 has a junction or entry "said once" with no rule on the words. `RelaySaid` covers the relay only (design:689-693), and `--where` runs in the steward's Bash.
+   - **Smallest change:** `--where`'s lines also come from `RelaySaid` and name no entry, apart from its one line giving the copy's path and the home.
+8. **A half-removed build is reused as whole. Not blocking.**
+   - **What is wrong:** design:668-669 trusts any folder with the build's name. A removal that stopped partway (a file held by a scanner) leaves that name with no `in-use` file. If the same bytes come back (a republish or a rollback), `--where` prints it, and every relay refuses or runs half a build.
+   - **Smallest change:** remove a build by renaming it to a staging name first, then deleting it; a build folder without its `in-use` file is not whole.
+9. **1c's Process-lane class puts the plugin in the wrong job. Not blocking.**
+   - **What is wrong:** `HookProcess` joins the calling process's jobs (`AgentStarts.cs:33`), so started by the test, the plugin is in the test's job, not the host's (design:896).
+   - **Smallest change:** the built host's own reconcile starts the plugin, which is installed and switched on in the laid-out home, with the stand-in service `drive --once` needs. The run is kept alive until the relay prints.
+10. **Smaller corrections. Not blocking.**
+    - **What is wrong:**
+      - `NamedHolds`, not `OpenHolding`, is the query-alone open (`ProcessJob.cs:125-137`).
+      - The lists of moved files miss `StandingConfirmation.cs`, `InstancePipe.cs` and `PipeCensus.cs` (design:76-77, :1073-1075).
+      - Two `TASKS.md` line citations are stale (design:348, :442).
+      - The gloss's lanes need the en/zh locale files and the glossary (`HookPoints.cs:15-23` names only `PluginKit.tsx`).
+      - The M9 and M10 probes cannot be Node (design:832-833).
+    - **Smallest change:** correct the five lines.
+
+10 findings, 2 blocking (1 and 2).
+
+**Verdict: accept after named changes the steward can check without another read.** Round 4 answers both reads of round 3 faithfully: every blocking finding of each is taken, and the protocol is now closed against an agent's words on both of the relay's streams. The two new blocking holes come from round 4's own changes, and each is narrow:
+- step 3's job check rests on an open that the design's own citation says fails across elevations, so the fallback must be named now (finding 1);
+- the conversation rule uses the record's kind, which drops the driver's own intakes', helpers' and reviewers' parks, so it should use `ActiveSessions.HoldsSlot` (finding 2).
+
+Findings 3-10 are line-level corrections. Of them, 3 (the re-arm runs unprompted, measured in M5) and 5 (the steward's procedure for each line) decide whether the steward actually stops polling unattended. If the steward would rather change the agents' job's descriptor (finding 1's option b), that touches D201's judge and should have its own read.

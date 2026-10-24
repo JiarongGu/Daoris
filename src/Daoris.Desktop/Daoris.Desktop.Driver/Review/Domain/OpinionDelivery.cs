@@ -37,6 +37,12 @@ public sealed record OpinionReading(string Session, string? Tip, DateTimeOffset 
 {
     /// <summary>Whether any finding counts as fixed: what a recheck reads (design §6.5).</summary>
     public bool AnyFixed => Findings.Any(finding => finding.Counts == OpinionViews.Fixed);
+
+    /// <summary>
+    /// <c>person-steered</c> (CHATFLOW1e, the chat-flow design §6.1 (c), the Opus check's finding 6): a chat's answering turn took a word of the
+    /// person's at a step, so their work lies inside the boundary this reading froze. No recheck is asked for it; its answers go to the person.
+    /// </summary>
+    public bool Steered { get; init; }
 }
 
 /// <summary>Why an answer does not count as said (XAGENT1e; design §6.4), each with the line the driver says.</summary>
@@ -119,6 +125,13 @@ public static class OpinionToPerson
     public const string Conversation = "conversation";
 
     /// <summary>
+    /// The person went on in the conversation after the press that asked the opinion (CHATFLOW1e, the chat-flow design §6, §6.1 (b), (f)): their
+    /// turn count rose, whether their word waits, was being kept, or was answered by a turn that ended, so their words went first and the
+    /// findings are theirs, never queued behind work they have moved past.
+    /// </summary>
+    public const string PersonWentOn = "person-went-on";
+
+    /// <summary>
     /// The line for <paramref name="code"/>, this list's or <see cref="ContinueWhy"/>'s for a session that could not go on, in
     /// the driver's English.
     /// </summary>
@@ -127,6 +140,9 @@ public static class OpinionToPerson
         NotFound => "there is no session of this machine's by its id",
         Recheck => "a recheck's findings go to the person, never back to the working session by themselves",
         Conversation => "the work was a conversation's, which another agent's findings do not reach by themselves",
+        PersonWentOn => "you went on in the conversation after you asked for them, so your words went first",
+        // CHATFLOW1e (§6.1 (e)): the record they went to went on in another, which could not take them again.
+        WordsNever.Continued => "the conversation they went to went on in another, which could not take them",
         // COWORK1e: the person's *Not now* to findings the answers-alone bound held for them.
         GoOnMarks.NotNow => "you kept them rather than let a third answer in a row go on with nobody between",
         // A reason whose line names an adapter is said by its code here: the session's own note says it whole.
@@ -184,6 +200,12 @@ public static class OpinionRechecks
     public const string Refused = "refused";
 
     /// <summary>
+    /// A chat's answering turn took a word of the person's at a step (CHATFLOW1e, the chat-flow design §6.2, the Opus check's finding 6): their
+    /// work lies inside what it read, so no recheck is asked for it and its answers go to the person.
+    /// </summary>
+    public const string PersonSteered = "person-steered";
+
+    /// <summary>
     /// Null where a recheck is due (design §6.5): a first pass whose working session's answers were read, one of them a fix
     /// whose commit the turn made, under a rule that keeps the recheck. Else why not, by code.
     /// </summary>
@@ -191,6 +213,7 @@ public static class OpinionRechecks
         !first.First ? NotFirst
         : !rule.Recheck ? Off
         : reading is null ? NotAnswered
+        : reading.Steered ? PersonSteered
         : !reading.AnyFixed || reading.Tip is null ? NoFix
         : null;
 
@@ -202,6 +225,7 @@ public static class OpinionRechecks
         NotAnswered => "the working session has not answered yet",
         NoFix => "no finding was answered fixed with a commit its turn made, so there is nothing new to read",
         Refused => "the pass that would have read it again did not open",
+        PersonSteered => "your words reached the turn that answered, so its answers are yours to judge",
         // The reviewer choice's codes (§3.3): nobody could read it again, said by the code the choice gave.
         _ => $"no reviewer could read it again ({code})",
     };

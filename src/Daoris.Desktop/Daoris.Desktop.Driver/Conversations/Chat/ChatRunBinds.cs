@@ -64,6 +64,41 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, SessionEv
         }
     }
 
+    /// <summary>
+    /// Whether a chat run's conversation is handed <c>opinion_answer</c> at its spawn (CHATFLOW1e, the chat-flow design §6): its run's process
+    /// names a second opinion, whose findings may come back to it. A live conversation's rules are fixed at its spawn.
+    /// </summary>
+    public static bool AnswersFindings(WorkflowProcess process) => process.Opinion is { Rule.IsNone: false };
+
+    /// <summary>
+    /// <see cref="AnswersFindings(WorkflowProcess)"/> for a record its spawn starts or resumes in <paramref name="tree"/> (a hand-over's next
+    /// record, an ended conversation going on): its chat run read from the service's records, as a turn's end reads it. False where it is no
+    /// chat run's, or nothing could be read; it is then handed what a conversation always was.
+    /// </summary>
+    public async Task<bool> AnswersAsync(string session, string tree, DriverConfig config)
+    {
+        try
+        {
+            var trees = new SessionTrees(home);
+            if (!trees.Holds(tree)) return false;
+            var sessions = Trace.ParseSessions(await service.SessionRecordsJsonAsync(CancellationToken.None).ConfigureAwait(false));
+            if (sessions.FirstOrDefault(each => string.Equals(each.Id, session, StringComparison.OrdinalIgnoreCase)) is not { } record
+                || ChatRuns.ChatOf(record, sessions, trees.Holds) is not { } run)
+            {
+                return false;
+            }
+
+            var registry = await service.RegistryAsync(CancellationToken.None).ConfigureAwait(false);
+            var workspace = registry.FirstOrDefault(each => string.Equals(each.Repository, record.Repository, StringComparison.OrdinalIgnoreCase))?.Workspace;
+            return AnswersFindings(WorkflowProcesses.Read(home, config, record.Repository, workspace, run));
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException
+                                          or UnauthorizedAccessException or OperationCanceledException or InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>Bind <paramref name="run"/> and say what the conversation is told of it, once.</summary>
     private ChatRunBound Bind(string session, string run, string repository, string? workspace, DriverConfig config)
     {

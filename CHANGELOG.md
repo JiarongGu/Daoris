@@ -11,6 +11,16 @@ with the version and date at release.
   as the asker's words and either makes the act itself, which closes the request, or declines it with a reason. One asker may have
   ten requests waiting and the desk a hundred. *Notifications* shows the desk under the steward's line: each request, its words as
   written, and whether it waits, was done or was declined, with the steward's reason.
+- A chat or Ask Daoris conversation whose agent refuses its model on one account now opens on the next account or choice in the same
+  press, instead of running at the account's default model (MODELROLE1d2). Your first words, and anything you type while it moves,
+  reach the new conversation once, and the window follows it. If nothing can run the model, your words wait on the conversation that
+  did not start. Going on with such a conversation later starts it afresh by your Chat or Ask Daoris order; one you started on an
+  agent you picked never goes on with another agent. A conversation moved by its usage curve now goes only to an account that offers its model.
+- A second opinion's findings on a chat's work now go back into that conversation (CHATFLOW1e). They arrive as their own turn,
+  shown as *Another agent's findings*, only once a turn has ended, so they never cut into one. A word you sent after asking for
+  them goes first, and the findings are then yours to read rather than queued behind it. A chat that has ended goes on with them
+  in its own conversation. Its answers are read at that turn's end, and a fix is read again once. Where a word of yours reached that
+  turn, its answers are yours to judge and nothing is read again. Accept still lands nothing until you press it.
 - A terminal's change that waits for your Confirm and rests on a plan now has *Look at it now* on its card (CONFIRMWAIT1c): a land
   opens its session's review, a set-up its repository's page, a sweep or a bring-up-to-date its workspace's Branches, and a history
   clear the workspace, quest or ask it clears. You see what it would act on as it stands now before you confirm a change asked hours

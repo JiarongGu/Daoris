@@ -204,6 +204,58 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Empty(Asked());
     }
 
+    /// <summary>The conversation's record asking <paramref name="model"/> of its entry, and the composer's change kept where one is given.</summary>
+    private static void Asking(ChatLedger ledger, string model, string? changed = null) =>
+        ledger.Edit("c0nv0001", record =>
+        {
+            record["asked"] = System.Text.Json.JsonSerializer.SerializeToNode(
+                new ActorAsked("talk", new("entry", model, true), new("account-default", null, false)), ActorRun.Json);
+            if (changed is not null) record["override"] = new System.Text.Json.Nodes.JsonObject { ["model"] = changed };
+        });
+
+    /// <summary>
+    /// 🔴 MODELROLE1d2 (D205 §3.5(a)): the curve move never takes an account that does not offer the conversation's model. Over its curve,
+    /// the account with the most room has refused the record's asked model on this version within the day, so it is not ready, and the
+    /// next with room is moved to.
+    /// </summary>
+    [Fact]
+    public async Task A_candidate_whose_reading_refuses_the_conversation_s_model_is_not_moved_to()
+    {
+        Said("account-1", 0.75);
+        Said("account-2", 0.55);
+        Said("account-3", 0.30);
+        var ledger = Ledger();
+        Asking(ledger, "opus");
+        var roster = Roster();
+        var version = (await roster.ReportAsync("talk", DriverConfig.Empty))?.Version;
+        Assert.Null(AgentOffers.Refused(_home, "talk", version, "account-3", "opus", _now));
+        using var runner = Runner(ledger, roster);
+
+        var move = Assert.IsType<SwitchChoice.MoveTo>(await JudgeAsync(runner));
+
+        Assert.Equal("account-2", move.Account);
+    }
+
+    /// <summary>
+    /// The composer's change kept on the record is what is judged (D205 §3.5(a): the <c>override</c>'s model where one is kept): an
+    /// account that refused only the opening's model is moved to for a conversation the person moved to another.
+    /// </summary>
+    [Fact]
+    public async Task The_kept_override_s_model_is_the_one_each_candidate_is_judged_for()
+    {
+        Said("account-1", 0.75);
+        Said("account-2", 0.55);
+        Said("account-3", 0.30);
+        var ledger = Ledger();
+        Asking(ledger, "opus", changed: "sonnet");
+        var roster = Roster();
+        var version = (await roster.ReportAsync("talk", DriverConfig.Empty))?.Version;
+        Assert.Null(AgentOffers.Refused(_home, "talk", version, "account-3", "opus", _now));
+        using var runner = Runner(ledger, roster);
+
+        Assert.Equal("account-3", Assert.IsType<SwitchChoice.MoveTo>(await JudgeAsync(runner)).Account);
+    }
+
     /// <summary>`switch: off` moves nothing however far over (the switch design §2), and reads nothing.</summary>
     [Fact]
     public async Task Switch_off_moves_nothing()

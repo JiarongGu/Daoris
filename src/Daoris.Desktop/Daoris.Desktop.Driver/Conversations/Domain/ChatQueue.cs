@@ -65,6 +65,31 @@ public enum PressHold
     NotHere,
 }
 
+/// <summary>
+/// What a second opinion's send-back into a live conversation came to (CHATFLOW1e, the chat-flow design §6.1 (b), <c>ChatTurns.SendBackAsync</c>):
+/// three outcomes the findings' delivery keeps distinct, and two that say why nothing was taken.
+/// </summary>
+public enum SendBack
+{
+    /// <summary>Reserved and taken: the findings word the service kept is the conversation's next turn, at once.</summary>
+    Reserved,
+
+    /// <summary>The person's turn count rose since the press: their words went first, and the findings go to them.</summary>
+    PersonWentOn,
+
+    /// <summary>Activity that is not the person's (a turn of Daoris's or a hand-over's, a press, a limit): the next look tries again.</summary>
+    Waiting,
+
+    /// <summary>Reserved, but the service's hand refused: the reservation is let go, and the next look tries again.</summary>
+    Refused,
+
+    /// <summary>No runner in this process holds the conversation: the findings wait, as a hand-over's box waits for a runner.</summary>
+    NotHere,
+
+    /// <summary>An ended conversation its runner cannot resume (§6.1 (f)): the findings go to the person, never to a new session.</summary>
+    CannotGoOn,
+}
+
 /// <summary>What became of a word said to a conversation (MSG1c, D137 §2.1), in the reach the record and the page speak of.</summary>
 public enum TurnReach
 {

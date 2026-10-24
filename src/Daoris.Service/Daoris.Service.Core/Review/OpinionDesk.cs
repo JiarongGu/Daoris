@@ -224,9 +224,16 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
     /// to a record of this machine's that ended and takes words: a running turn takes them at its end, never mid-step, so
     /// the driver hands them then. A recheck's findings go to the person, and a pass that raised nothing has nothing to hand.
     /// </summary>
-    public async Task<OpinionOutcome> HandAsync(string id, DateTimeOffset now, CancellationToken ct = default)
+    /// <param name="to">
+    /// A chat run's record to hand them to (CHATFLOW1e, the chat-flow design §6.1 (a), (e)), the line's newest in its tree, which the driver
+    /// names; null for the working session itself, as before. A conversation's line may hand them to its live record between turns, which its
+    /// runner takes as an ordinary turn of its own, or to its ended newest record, which goes on with them. Once handed, they are handed again
+    /// only once, to the newest record, where a hand-over ended the record they went to before it answered.
+    /// </param>
+    public async Task<OpinionOutcome> HandAsync(string id, DateTimeOffset now, CancellationToken ct = default, string? to = null)
     {
         if (!local) return Shared();
+        var named = Blank(to);
 
         return await sessions.ExclusiveAsync(async inside =>
         {
@@ -240,25 +247,112 @@ public sealed class OpinionDesk(OpinionStore opinions, SessionStore sessions, bo
                 : opinion.Given is null ? $"Second opinion `{opinion.Id}` has said nothing yet: its findings are handed once it says them"
                 : opinion.Given.Findings.Count == 0
                     ? $"{Who(opinion)} raised nothing in what it read for second opinion `{opinion.Id}`, so there is nothing to answer"
-                : opinion.Handed is { } handed
+                : opinion.Handed is { } handed && named is null
                     ? $"Second opinion `{opinion.Id}`'s findings went to session `{handed.Session}` at {Moment(handed.At)}: they go once"
                 : null;
             if (nothing is not null) return Refused(OpinionRefusal.NotHanded, nothing);
 
             var working = await sessions.FindAsync(opinion.Working, inside).ConfigureAwait(false);
-            if (CannotTake(working, opinion.Working) is { } why) return Refused(OpinionRefusal.CannotTake, why);
+            Session? target;
+            if (named is null)
+            {
+                if (CannotTake(working, opinion.Working) is { } why) return Refused(OpinionRefusal.CannotTake, why);
+                target = working;
+            }
+            else
+            {
+                target = await sessions.FindAsync(named, inside).ConfigureAwait(false);
+                if (await LineCannotTakeAsync(working, opinion.Working, target, named, inside).ConfigureAwait(false) is { } why)
+                {
+                    return Refused(OpinionRefusal.CannotTake, why);
+                }
 
-            var word = new SaidWord(NewId(), Opinions.Words(opinion), now, [], Reopens: true, By: opinion.Id);
-            var kept = await sessions.KeepSaidAsync(working!.Id, word, ct: inside).ConfigureAwait(false);
-            var handedTo = new OpinionHanded(working.Id, word.Id, now);
-            await opinions.KeepHandedAsync(opinion.Id, handedTo, inside).ConfigureAwait(false);
+                if (opinion.Handed is { } before && await AgainRefusedAsync(opinion, before, target!, inside).ConfigureAwait(false) is { } again)
+                {
+                    return Refused(OpinionRefusal.NotHanded, again);
+                }
+            }
+
+            // A chat run's findings are an ordinary word of their own turn (CHATFLOW1e, §6): never steered into a turn in flight.
+            var word = new SaidWord(
+                NewId(), Opinions.Words(opinion), now, [], Reopens: true, By: opinion.Id, Level: named is null ? null : SaidLevel.Ordinary);
+            var kept = await sessions.KeepSaidAsync(target!.Id, word, ct: inside).ConfigureAwait(false);
+            var handedTo = new OpinionHanded(target.Id, word.Id, now) { From = opinion.Handed?.Session };
+            if (opinion.Handed is null) await opinions.KeepHandedAsync(opinion.Id, handedTo, inside).ConfigureAwait(false);
+            else await opinions.KeepRehandedAsync(opinion.Id, handedTo, inside).ConfigureAwait(false);
 
             return new OpinionOutcome(
                 OpinionRefusal.None,
-                $"Handed second opinion `{opinion.Id}`'s {Count(opinion.Given!.Findings.Count, "finding")} to session `{working.Id}`: they "
-                + "wait on its record as another agent's claims, never the person's words, and it goes on with them at the driver's next look.",
+                $"Handed second opinion `{opinion.Id}`'s {Count(opinion.Given!.Findings.Count, "finding")} to session `{target.Id}`"
+                + (opinion.Handed is { } earlier ? $", again, since session `{earlier.Session}` ended before it answered them" : "")
+                + ": they wait on its record as another agent's claims, never the person's words, and it goes on with them "
+                + (named is null ? "at the driver's next look." : "as a turn of its own, only between turns."),
                 opinion with { Handed = handedTo }) { Session = kept, Word = word };
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Why a chat run's record cannot take the findings (CHATFLOW1e, the chat-flow design §6.1 (a)), or null where it can: a conversation of this
+    /// machine's that serves no quest, no ask, no opinion and nobody else, in <paramref name="working"/>'s tree and line, either live between
+    /// turns (its runner takes them as a turn of its own, never into one in flight) or ended and the line's newest record in that tree.
+    /// </summary>
+    private async Task<string?> LineCannotTakeAsync(Session? working, string workingId, Session? target, string named, CancellationToken inside)
+    {
+        if (working is not { Origin: null }) return $"There is no session `{workingId}` of this machine's whose line takes them: they go to the person instead";
+        if (target is not { Origin: null }) return $"There is no session `{named}` of this machine's to hand them to";
+
+        string? notAChat =
+            target.Kind != SessionKind.Chat || target.Quest is not null ? $"Session `{target.Id}` is no conversation of a chat run's"
+            : target.Ask is { } ask ? $"Session `{target.Id}` is the intake for ask `#{ask}`, which is answered through its ask"
+            : target.Opinion is { } reads ? $"Session `{target.Id}` read the work for second opinion `{reads}`: a pass takes no words"
+            : target.Serves is not null ? $"Session `{target.Id}` serves another session: it takes no words"
+            : null;
+        if (notAChat is not null) return notAChat;
+
+        if (!string.Equals(Trees.Normalize(target.Tree), Trees.Normalize(working.Tree), StringComparison.Ordinal)
+            || !(target.Id == working.Id || (working.Entry is { Length: > 0 } entry && string.Equals(target.Entry, entry, StringComparison.Ordinal))))
+        {
+            return $"Session `{target.Id}` is not in session `{working.Id}`'s line in its tree, whose work the findings read";
+        }
+
+        if (target.State == SessionState.Working) return null;
+        if (target.Active)
+        {
+            return $"Session `{target.Id}` is {Session.Spell(target.State)}: another agent's findings reach a conversation only between its turns";
+        }
+
+        if (target.State == SessionState.StoodDown) return $"Session `{target.Id}` stood down, so it has nothing to go on with: they go to the person instead";
+        var newest = await NewestOfLineAsync(working, inside).ConfigureAwait(false);
+        return newest is not null && newest.Id != target.Id
+            ? $"Session `{target.Id}` ended, and its line went on in session `{newest.Id}`, which takes them"
+            : null;
+    }
+
+    /// <summary>The newest record of <paramref name="working"/>'s line in its tree, by when each was made; null for a line with none.</summary>
+    private async Task<Session?> NewestOfLineAsync(Session working, CancellationToken inside)
+    {
+        var tree = Trees.Normalize(working.Tree);
+        return (await sessions.ListAsync(working.Repository, includeClosed: true, ct: inside).ConfigureAwait(false))
+            .Where(each => each.Origin is null && string.Equals(Trees.Normalize(each.Tree), tree, StringComparison.Ordinal)
+                           && (each.Id == working.Id || (working.Entry is { Length: > 0 } entry && string.Equals(each.Entry, entry, StringComparison.Ordinal))))
+            .OrderBy(each => each.Created)
+            .LastOrDefault();
+    }
+
+    /// <summary>
+    /// Why findings already handed are not handed again to <paramref name="target"/> (CHATFLOW1e, the chat-flow design §6.1 (e)), or null where
+    /// they are: once, where the record they went to ended before any answer was kept, and only to its line's newest record, never itself.
+    /// </summary>
+    private async Task<string?> AgainRefusedAsync(Opinion opinion, OpinionHanded before, Session target, CancellationToken inside)
+    {
+        if (before.Session == target.Id) return $"Second opinion `{opinion.Id}`'s findings went to session `{target.Id}` at {Moment(before.At)}: they go once";
+        if (before.From is not null) return $"Second opinion `{opinion.Id}`'s findings were handed again already, to session `{before.Session}`: again only once";        if (opinion.Answers.Count > 0) return $"Session `{before.Session}` answered second opinion `{opinion.Id}`'s findings: they are not handed again";
+        if (await sessions.FindAsync(before.Session, inside).ConfigureAwait(false) is { Active: true })
+        {
+            return $"Session `{before.Session}` still has second opinion `{opinion.Id}`'s findings: they are handed again only once it ended";
+        }
+
+        return null;
     }
 
     /// <summary>

@@ -61,6 +61,7 @@ internal static class OpinionDeliveryFiles
             writer.WriteString("session", reading.Session);
             if (reading.Tip is not null) writer.WriteString("tip", reading.Tip);
             writer.WriteString("at", OpinionViews.Moment(reading.At));
+            if (reading.Steered) writer.WriteBoolean("steered", true);
             writer.WriteStartArray("findings");
             foreach (var finding in reading.Findings)
             {
@@ -110,7 +111,10 @@ internal static class OpinionDeliveryFiles
             }
         }
 
-        return new OpinionReading(session, Text(answered, "tip"), at, findings);
+        return new OpinionReading(session, Text(answered, "tip"), at, findings)
+        {
+            Steered = answered.TryGetProperty("steered", out var steered) && steered.ValueKind == JsonValueKind.True,
+        };
     }
 
     private static DateTimeOffset? Moment(JsonElement element, string name) => Moments.Read(Text(element, name));

@@ -280,6 +280,7 @@
   "note.handed.why.resume": "its own conversation was lost",
   "note.handed.why.carry-on": "it stopped before its work was done",
   "note.handed.why.retry": "its own conversation could not be resumed",
+  "note.handed.why.not-offered": "its agent did not offer the model asked on its account",
   "note.handover.asked": "Its agent asked to hand this session over; it waits for your yes or no to go on with {{agent}}.",
   "note.handover.taking": "Its agent asked to hand this session over: it goes on with {{agent}} once its turn ends.",
   "note.handover.refused": "Its agent’s ask to hand this session over was refused: {{why}}.",

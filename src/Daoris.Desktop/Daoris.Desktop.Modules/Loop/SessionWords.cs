@@ -304,6 +304,13 @@ public sealed class SessionWords : IDisposable
     /// </summary>
     public WordsAnswer? ReachHere(string id)
     {
+        // MODELROLE1d2: the replacement a refused start moved to answers for it; moving there, a word joins its words.
+        if (_loop.Chat is { } replaced)
+        {
+            id = replaced.CurrentOf(id);
+            if (replaced.Replacing(id)) return new(true, null, null);
+        }
+
         // What the door can do while a turn runs rides it (COWORK1a): whether its agent steers, and whether it can stop a turn
         // keeping the session, which the page offers the levels and the keeping stop by.
         if (_loop.Processes.InboxOf(id) is { State.Taking: true } inbox)
@@ -374,6 +381,14 @@ public sealed class SessionWords : IDisposable
         string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct,
         MessageLevel level = MessageLevel.Urgent, string? key = null, string? choice = null)
     {
+        // MODELROLE1d2 (D205 §3.5(b)): a conversation whose agent refused its choice at the open is answered by its replacement, and while
+        // that opens a word joins the words moving to it, so it reaches the replacement once.
+        if (_loop.Chat is { } replaced)
+        {
+            id = replaced.CurrentOf(id);
+            if (replaced.Replacing(id) && replaced.Say(id, text, files, preface)) return new(true, null, null) { Running = true };
+        }
+
         var now = level == MessageLevel.Now;
         // A driven session that hears words during its run (SESS3, D136; the native door's run, MSG1b). COWORK1c: kept on its record
         // first, under the press's key, then held by its one dispatcher under the record's id.

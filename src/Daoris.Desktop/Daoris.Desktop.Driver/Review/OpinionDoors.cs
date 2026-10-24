@@ -57,13 +57,30 @@ public sealed class OpinionDoors
     /// host keeps them on its record as a word whose <c>by</c> names the opinion, in its fixed words, once. A refusal is an
     /// answer, the host's sentence, not an exception, and so is a host older than the door.
     /// </summary>
-    public async Task<(bool Handed, string Message, OpinionView? Opinion)> HandAsync(string id, CancellationToken ct = default)
+    /// <param name="to">
+    /// A chat run's record of the line to hand them to (CHATFLOW1e, the chat-flow design §6.1 (a)), live between turns or ended and newest;
+    /// null for the working session itself.
+    /// </param>
+    public async Task<(bool Handed, string Message, OpinionView? Opinion)> HandAsync(string id, CancellationToken ct = default, string? to = null)
+    {
+        var (handed, message, opinion, _) = await HandWordAsync(id, ct, to).ConfigureAwait(false);
+        return (handed, message, opinion);
+    }
+
+    /// <summary>
+    /// <see cref="HandAsync"/>, with the word the host kept the findings in (CHATFLOW1e): a chat run's runner takes it as its reserved turn's
+    /// message, under the record's id, so it leaves the record once that turn is on the wire.
+    /// </summary>
+    public async Task<(bool Handed, string Message, OpinionView? Opinion, SaidWordView? Word)> HandWordAsync(
+        string id, CancellationToken ct = default, string? to = null)
     {
         var door = $"/api/opinions/{Uri.EscapeDataString(id)}/hand";
-        var (ok, status, payload, root) = await _service.PostJsonAsync(door, "{}", ct).ConfigureAwait(false);
-        if (root is not { } answer) return (false, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?", null);
-        if (!ok) return (false, Text(answer, "error") ?? payload, null);
+        var body = to is null ? "{}" : JsonSerializer.Serialize(new { to });
+        var (ok, status, payload, root) = await _service.PostJsonAsync(door, body, ct).ConfigureAwait(false);
+        if (root is not { } answer) return (false, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?", null, null);
+        if (!ok) return (false, Text(answer, "error") ?? payload, null, null);
         var opinion = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("opinion", out var kept) ? OpinionViews.Read(kept) : null;
-        return (true, Text(answer, "message") ?? "", opinion);
+        var word = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("said", out var said) ? ServiceClient.ReadWord(said) : null;
+        return (true, Text(answer, "message") ?? "", opinion, word);
     }
 }

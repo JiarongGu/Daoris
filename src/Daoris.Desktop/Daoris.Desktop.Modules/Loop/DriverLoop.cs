@@ -765,6 +765,13 @@ public sealed class DriverLoop(
         // answers with, so a page that asked once follows them. Machine-local, like the queue.
         chat.OptionsChanged += (session, options) =>
             _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", ConversationRoutes.OptionsAnswer(session, options));
+        // MODELROLE1d2 (D205 §3.5(b), its `chat.replaced { from, to }`): a conversation whose agent refused its choice at the open went on
+        // in its replacement within the same press, so a window showing the refused one follows it, and the sessions are read again.
+        chat.Replaced += (from, to) =>
+        {
+            _ = eventBus.EmitAsync("DAORIS", ReplacedType, new { From = from, To = to });
+            StatePublisher.Publish(eventBus, StateScopes.Sessions | StateScopes.Help, to);
+        };
         // HELPWIREDLIVE1b (D183 point 4): told once the start receipt is written, so an open What it has reads a resume's new one.
         chat.WiredKept += WiredKeptTold(eventBus);
         await ComeUpAsync(service, chat).ConfigureAwait(false);
@@ -911,6 +918,9 @@ public sealed class DriverLoop(
             HandsOver = (session, agent, token) => chat.HandOverAsync(
                 session, agent, null, HandOverWhy.Agent, HandOverBy.Agent, DriverConfig.Load(ConfigPath),
                 onEnded: (ended, state) => Ended(eventBus, ended, state), token),
+            // CHATFLOW1e: a chat run's second-opinion findings reach its conversation through this shell's chat runner, a turn of their own only
+            // between turns, or its ended conversation resumed with them.
+            SendsBack = chat,
             // SESSCTX1c part B: a closed quest's session whose conversation is proven lost goes on as a conversation in its tree, through
             // this shell's chat runner, handed Daoris's brief and the person's words.
             GoesOnLost = (session, why, token) => chat.GoOnLostAsync(
@@ -1225,6 +1235,12 @@ public sealed class DriverLoop(
 
     /// <summary>The event's type, spelled here alone: a slice that wakes on it names it by this (PUSH1a).</summary>
     public const string EndedType = "SESSION_ENDED";
+
+    /// <summary>
+    /// A conversation's start refused at its open went on in its replacement (MODELROLE1d2, D205 §3.5(b)): <c>{ from, to }</c>, the refused
+    /// record and the one that took its words, which a window showing the first follows.
+    /// </summary>
+    public const string ReplacedType = "CHAT_REPLACED";
 
     /// <summary>
     /// What the person's words to a session do, whatever its state (MSG1d, D137 §2): the one judge <c>SESSION_INPUT</c> and

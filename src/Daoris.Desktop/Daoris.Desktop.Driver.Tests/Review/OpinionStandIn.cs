@@ -44,6 +44,9 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>Each hand asked, by opinion id, in order, whether it was taken or refused.</summary>
     public List<string> Hands { get; } = [];
 
+    /// <summary>The record each hand named (CHATFLOW1e), in the order asked; null where it named none.</summary>
+    public List<string?> HandsTo { get; } = [];
+
     /// <summary>Each helper's answer handed, by the helper's session, with the words as the driver composed them (MIXAGENT2a-ii).</summary>
     public List<(string Helper, string Text)> HelperHands { get; } = [];
 
@@ -90,6 +93,26 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                 ["id"] = id, ["quest"] = "q1", ["repository"] = "reports", ["state"] = state, ["kind"] = kind, ["adapter"] = adapter,
                 ["tree"] = tree, ["said"] = new JsonArray(),
             });
+        }
+
+        return this;
+    }
+
+    /// <summary>
+    /// A conversation in a tree of its own (CHATFLOW1e): no quest, a line of its own unless <paramref name="from"/> names the record it continues,
+    /// made at <paramref name="minute"/> past nine, so a line reads its records in order.
+    /// </summary>
+    public OpinionStandIn Chat(string id, string state, string tree, string? from = null, int minute = 0, string adapter = "claude-code-acp")
+    {
+        Session(id, state, tree, adapter, kind: "chat");
+        lock (_gate)
+        {
+            var record = Find(id)!;
+            record["quest"] = null;
+            var first = from is null ? id : (Find(from)!["entry"]!.GetValue<string>().Split('/')[0])["session:".Length..];
+            record["entry"] = $"session:{first}/reports";
+            record["from"] = from;
+            record["created"] = $"2026-10-09T09:{minute:00}:00Z";
         }
 
         return this;
@@ -256,24 +279,37 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                     if (opinion["pass"]!.GetValue<string>() == "recheck") return Refuse(HttpStatusCode.Conflict, "a recheck's findings go to the person");
                     if (opinion["given"] is not JsonObject given) return Refuse(HttpStatusCode.Conflict, "it has said nothing yet");
                     if (given["findings"]!.AsArray().Count == 0) return Refuse(HttpStatusCode.Conflict, "it raised nothing");
-                    if (opinion["handed"] is not null) return Refuse(HttpStatusCode.Conflict, "they go once");
+                    // CHATFLOW1e: a chat run's record of the line the driver names, live between turns or ended; handed again once, after a hand-over.
+                    var to = string.IsNullOrWhiteSpace(body) ? null : JsonNode.Parse(body)?["to"]?.GetValue<string>();
+                    HandsTo.Add(to);
+                    if (opinion["handed"] is JsonObject earlier)
+                    {
+                        if (to is null || earlier["session"]!.GetValue<string>() == to || earlier["from"] is not null) return Refuse(HttpStatusCode.Conflict, "they go once");
+                        if (opinion["answers"]!.AsArray().Count > 0) return Refuse(HttpStatusCode.Conflict, "they were answered");
+                    }
 
-                    var working = Find(opinion["working"]!.GetValue<string>());
+                    var working = Find(to ?? opinion["working"]!.GetValue<string>());
                     var state = working?["state"]!.GetValue<string>();
                     if (working is null) return Refuse(HttpStatusCode.Conflict, "there is no such session: they go to the person instead");
                     if (state == "stood-down") return Refuse(HttpStatusCode.Conflict, "it stood down");
                     if (state == "awaiting-person") return Refuse(HttpStatusCode.Conflict, "it waits on the person's answer");
-                    if (Running.Contains(state!)) return Refuse(HttpStatusCode.Conflict, "another agent's findings reach a running session at its turn's end");
+                    if (to is not null && working["kind"]?.GetValue<string>() != "chat") return Refuse(HttpStatusCode.Conflict, "it is no conversation of a chat run's");
+                    if (Running.Contains(state!) && !(to is not null && state == "working"))
+                    {
+                        return Refuse(HttpStatusCode.Conflict, "another agent's findings reach a running session at its turn's end");
+                    }
 
                     var word = new JsonObject
                     {
                         ["id"] = $"op-w{++_words}", ["text"] = $"Another agent, Codex by OpenAI, read your work at `{Tip}` and claims what follows.",
                         ["at"] = "2026-10-09T09:15:00Z", ["files"] = new JsonArray(), ["reopens"] = true, ["by"] = id,
                     };
+                    if (to is not null) word["level"] = "ordinary";
                     working["said"]!.AsArray().Add(word);
                     opinion["handed"] = new JsonObject
                     {
                         ["session"] = working["id"]!.GetValue<string>(), ["word"] = word["id"]!.GetValue<string>(), ["at"] = "2026-10-09T09:15:00Z",
+                        ["from"] = (opinion["handed"] as JsonObject)?["session"]?.GetValue<string>(),
                     };
                     return Answer(HttpStatusCode.OK, new JsonObject
                     {

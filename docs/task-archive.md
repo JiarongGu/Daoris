@@ -20686,3 +20686,39 @@ goes; the sweep's empty rests kept, said; the landing found by its branch; an un
 doors read again under `.going`; and a slim's stamped end read as its millisecond's end, which that read again exposed.
 `KeepSizeStopsGitTests` and `KeepSizeGitTests` gained the blocking cases, each seen failing with its guard taken out. Detail: D195's
 KEEPSIZE1b notes.
+## MODELROLE1d2 — what row d still owed (2026-10-25, D205; its installed proof MODELROLE1d3)
+
+> - [ ] **MODELROLE1d2 — what row d still owes** (driver, modules, web; after MODELROLE1d). §3.5(b)'s pending conversation start: `ChatPending`, keyed by the issued id, owning a Chat's or Ask Daoris's attempt from placement until dispatched or exhausted, a refusal at the open re-asked within the same press, the refused record ended `choice-not-offered` and its replacement opened (Ask Daoris in its workspace's room), the queued words moved to it under the queue's lock, `chat.replaced { from, to }` and the window following; a `choice-not-offered` chat's go-on a fresh start of its actor; a pick never walked afresh; a refused continuation's brief recomposed through `BriefedMove`'s seam. The curve move judging each candidate's reading for the record's model. Today a conversation whose model its account refuses at the open runs at account default, said as *not carried* (`docs/2026-10-24-modelrole1d-build.md`). Proof: design §13's §3.5(b) tests (Ask Daoris refused after `START_HELP` returned, words reaching the replacement once; a pick's recovery; a refused continuation's brief); on the install, a chat on *Chat* · sonnet shows sonnet beside its composer and in *Details*, and keeps it across a restart.
+
+(Quest `#006b2be2d299`.)
+
+**Outcome** 2026-10-25, in four parts. **Built:** the curve move judging each candidate's offer reading for the chat's model
+(`HarnessRoster.SwitchCandidates`); `ChatPending`, owning a Chat's or Ask Daoris's start on the protocol door from placement until
+dispatched or exhausted: refused at the open, the reading kept and the walk asked again with the account passed, a later entry on
+the same agent and account set on the same session, anything else ending the record `choice-not-offered` and opening the walk's
+answer in the same call (Ask Daoris in its workspace's room, linked in its history), the words moved out under the queue's lock and
+each reaching the replacement once, the press's id answering for it, and `CHAT_REPLACED { from, to }` told; nothing left, the words
+wait on the refused record. Its go-on after an interruption is a fresh start of its actor (`BriefedMove.NotOfferedAsync`), a pick
+tried only on its own agent's entries on its own account, a refused continuation handed Daoris's brief of its line first. The window
+and Ask Daoris's panel follow the replacement; `not-offered` is a reason a record continues another by, worded in en and zh. Proved
+with real conversations on a stand-in that refuses a model per account (`ChatPendingProcessTests`). **Remaining, as MODELROLE1d3:**
+the installed proof. Detail: D205's MODELROLE1d2 note; `docs/2026-10-25-modelrole1d2-build.md`.
+
+## CHATFLOW1e — a chat run's send-back only between turns (2026-10-25, D157, D155)
+
+> **CHATFLOW1e — its send-back only between turns** (service, driver, modules; after d). §6.1's six: (a) the service's hand admitting
+> a chat run's `working` record of the line, and an ended chat record that is the newest of `opinion.Working`'s line in its tree;
+> (b) `LoopContext.SendsBack`, its reservation one operation of the dispatcher's keep, comparing the person's turn count with the
+> press's; (c) the answering turn's own completion and frozen reading; (d) `DeliverAsync` reading a chat run's record by the runner's
+> turn state; (e) findings handed before a hand-over re-handed once to the newest record; (f) an ended chat's path, the count compared
+> first. D155's automatic recheck reading the frozen reading; `opinion_answer` in a chat run's rules from its spawn.
+
+(Row e of `docs/2026-10-24-chat-flow-design.md` §11, of the backlog's CHATFLOW1; quest `#8db1454a3d47`.)
+
+**Outcome** 2026-10-25. The row as named and amended by Codex's findings 2 to 5 and 9 and the Opus check's findings 4, 6 and 7: a chat
+run's findings go back into its own conversation as an ordinary word with `by`, reserved only between turns in one operation of its
+keep; they go to the person (`person-went-on`) only where the person's turn count rose since the press, and wait only for activity
+not theirs, a conversation no runner here holds or a headless host. The answering turn's reading is frozen at its own end and read by
+the recheck; a hand-over's newest record and an ended chat take them by their own paths. Each proof seen failing first, the
+`OpinionResumeTickTests` `Process` case on both doors included. **Not reached:** no real conversation or agent ran. Detail: D157's
+CHATFLOW1e note.

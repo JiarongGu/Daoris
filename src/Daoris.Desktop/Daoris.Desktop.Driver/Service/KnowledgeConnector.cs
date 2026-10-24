@@ -26,6 +26,12 @@ public static class KnowledgeConnector
     public const string ServerName = "daoris-knowledge";
 
     /// <summary>
+    /// What a run handed another agent's findings is given beside the person's rules (XAGENT1e, D155 point 7): this connector's
+    /// <c>opinion_answer</c>, which no default names. A driven run takes it at its resume, a chat run from its spawn (CHATFLOW1e).
+    /// </summary>
+    internal static readonly IReadOnlyList<string> AnswersFindings = [$"mcp__{ServerName}__opinion_answer"];
+
+    /// <summary>
     /// The home this driver keeps its rules in (PERM2) — where a session's proposal to change them is
     /// written. 🔴 The service's <c>RuleProposalBox.HomeVariable</c> reads the same name.
     /// </summary>

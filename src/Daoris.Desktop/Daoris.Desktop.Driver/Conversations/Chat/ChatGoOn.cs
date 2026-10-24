@@ -15,6 +15,12 @@ internal sealed class GoingOn(PriorSession record, ResumeAsk ask)
 
     public ResumeAsk Ask => ask;
 
+    /// <summary>
+    /// The completion of its first turn where that turn answers another agent's findings (CHATFLOW1e, the chat-flow design §6.1 (c), (f)):
+    /// its reading frozen before another word is taken. Null for every other going-on.
+    /// </summary>
+    public Func<bool, Task>? Answering { get; init; }
+
     /// <summary>The words are on the wire. True once, where they went now: at once, or where the harness already named it.</summary>
     /// <param name="named">Whether they went only once the harness has named its conversation too (the native door).</param>
     public bool Sent(bool named)
@@ -319,6 +325,49 @@ internal sealed class ChatGoOn
         });
     }
 
+    // CHATFLOW1e: the answering turn's completion an ended chat goes on with another agent's findings under, by record, until its go-on takes it.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Func<bool, Task>> _answering = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether an ended conversation can go on with another agent's findings (CHATFLOW1e, the chat-flow design §6.1 (f)), asked before they are
+    /// kept on it: null where it can; else why it never can, as its go-on would judge it with them waiting (a teammate's, a stand-down, the
+    /// adapter or account changed, its tree gone, no conversation kept, a door that cannot resume), which sends them to the person.
+    /// </summary>
+    internal ContinueReason? CannotGoOnWithFindings(PriorSession record)
+    {
+        ISessionAdapter? adapter = null;
+        try
+        {
+            if (record.Adapter is { Length: > 0 } ranOn) adapter = _context.Harnesses.Adapters.Resolve(ranOn);
+        }
+        catch (DriverException)
+        {
+            // An adapter no longer here: its conversation cannot be resumed.
+        }
+
+        if (adapter is null) return ContinueWhy.Of(ContinueWhy.Refused);
+        // Judged with the findings counted as the word that will wait, so an ended record with nothing waiting yet is not refused for it.
+        var waiting = record with { Said = [.. record.Said ?? [], new SaidWordView(null, "", DateTimeOffset.UtcNow, [], Reopens: true) { By = "findings" }] };
+        return Continuations.Judge(waiting, adapter.Name, adapter.Resumes, record.Profile, _context.Conversations.Read(record.Session));
+    }
+
+    /// <summary>
+    /// An ended chat goes on with another agent's findings kept on its record (CHATFLOW1e, §6.1 (f)): its own go-on, the first turn's completion
+    /// <paramref name="answering"/>, its end announced as a go-on no route started is. Why it did not, where it did not.
+    /// </summary>
+    internal async Task<ChatStart> GoOnWithFindingsAsync(string sessionId, Func<bool, Task> answering, CancellationToken ct)
+    {
+        _answering[sessionId] = answering;
+        try
+        {
+            return await GoOnAsync(sessionId, onEnded: Announce, ct: ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _answering.TryRemove(sessionId, out _);
+        }
+    }
+
     /// <summary>
     /// Go on with an ended chat the person wrote to (MSG1c, D137 §2.2): its record reopened, its own conversation resumed by
     /// the id kept for it with every word waiting its first turn, or why not said in its conversation. Nothing for a record
@@ -463,6 +512,16 @@ internal sealed class ChatGoOn
         new SessionArchive(_context.Home).Unarchive([sessionId]);
         _context.Marks.Clear(sessionId);
 
+        // 🔴 MODELROLE1d2 (D205 §3.5(b)): one its agent refused at the open began no conversation there, so it is never resumed: its go-on
+        // is a fresh start of its actor, its words the first message, a pick trying only its own agent's entries on its own account, and a
+        // refused continuation handed the brief of its line first. The come-up's go-on takes the same path.
+        if (record.NotOffered)
+        {
+            var fresh = await _move.NotOfferedAsync(record, json, config, onEnded, ct).ConfigureAwait(false);
+            if (fresh.SessionId is null) _context.Note(sessionId, LimitNotes.NotMoved(fresh.Message));
+            return new(fresh.SessionId, fresh.Message);
+        }
+
         // Its conversation is the adapter's that opened it, so it goes on on that one or not at all.
         var ranOn = record.Adapter ?? config.Adapter;
         ISessionAdapter? adapter = null;
@@ -573,6 +632,15 @@ internal sealed class ChatGoOn
         // SESSCTX1b: a part that continues another keeps reading its line's kept folders, whose files its brief named.
         var continued = record.From is { Length: > 0 } from ? await ContextBriefs.LineIdsAsync(_context.Service, from, ct).ConfigureAwait(false) : [];
 
+        // CHATFLOW1e (§6.1 (c), (f)): a go-on with another agent's findings answers them in its first turn, whose reading is frozen at its end; a
+        // word of the person's that went with them puts their work inside that turn, as a word steered into it does.
+        Func<bool, Task>? answering = null;
+        if (words.Any(word => word.By is not null) && _answering.TryGetValue(sessionId, out var answers))
+        {
+            var persons = words.Any(word => word.Persons);
+            answering = steered => answers(steered || persons);
+        }
+
         return await _runner.RunAsync(
             record.Actor ?? "chat", sessionId,
             words.Any(word => word.Persons)
@@ -582,8 +650,10 @@ internal sealed class ChatGoOn
                     ? $"conversation `{sessionId}` goes on with Daoris's words in its own conversation."
                     : $"conversation `{sessionId}` goes on with another agent's answer in its own conversation.",
             adapter, selection, config,
-            _runner.RepositoryPlace(config, registry, known, record.Repository!, record.Tree!, continued), onEnded, ct,
-            new GoingOn(record, ask)).ConfigureAwait(false);
+            _runner.RepositoryPlace(
+                config, registry, known, record.Repository!, record.Tree!, continued,
+                answers: await _runner.AnswersFindingsAsync(sessionId, record.Tree!, config).ConfigureAwait(false)), onEnded, ct,
+            new GoingOn(record, ask) { Answering = answering }).ConfigureAwait(false);
     }
 
     /// <summary>
