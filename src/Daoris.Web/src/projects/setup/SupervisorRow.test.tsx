@@ -27,7 +27,7 @@ import { SupervisorRow, type SupervisorSetup } from './SupervisorRow';
 const SINCE = '2026-10-24T14:02:00Z';
 const LIVE: AppointmentNow = {
   role: 'supervisor', repository: 'engine', holder: 'terminal', since: SINCE, dormant: false, answers: 3, scope: 'repository:engine', holderId: 'h1',
-  acts: [], setup: false,
+  acts: [], setup: false, workspace: '', window: 5,
 };
 const FOUND: AppointmentNow = { ...LIVE, dormant: true, answers: 0, holderId: null };
 
@@ -105,7 +105,98 @@ describe("Setup's supervisor row", () => {
 
     await userEvent.click(add);
     await userEvent.click(within(ask).getByRole('button', { name: 'Appoint' }));
-    expect(onAppoint).toHaveBeenCalledWith(expect.anything(), 'h1');
+    expect(onAppoint).toHaveBeenCalledWith(expect.anything(), 'h1', 5);
+  });
+
+  // SUPERVISOR1e (§6.3, §12): the overrule window is the owner's, set in the ask, 1 to 60 minutes, five unless they set another.
+  it('sets the overrule window in the ask, five unless the owner sets another, and never outside 1 to 60', async () => {
+    const onAppoint = vi.fn();
+    render(<SupervisorRow repository="engine" supervisor={setup({ onAppoint })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
+    const ask = screen.getByRole('group', { name: 'appoint the supervisor for engine' });
+    const field = within(ask).getByRole('spinbutton', { name: "Minutes its answers are held for your overrule (1 to 60)" });
+    expect(field).toHaveValue(5);
+    expect(within(ask).getByText(/never as your words, and held 5 minutes for your overrule/)).toBeInTheDocument();
+
+    for (const out of ['0', '61', '2.5', '']) {
+      await userEvent.clear(field);
+      if (out) await userEvent.type(field, out);
+      expect(within(ask).getByRole('button', { name: 'Appoint' })).toBeDisabled();
+      expect(within(ask).getByRole('alert')).toHaveTextContent('A whole number of minutes from 1 to 60.');
+    }
+
+    await userEvent.clear(field);
+    await userEvent.type(field, '1');
+    expect(within(ask).getByText(/held 1 minute for your overrule/)).toBeInTheDocument();
+    await userEvent.clear(field);
+    await userEvent.type(field, '12');
+    expect(within(ask).queryByRole('alert')).toBeNull();
+    expect(within(ask).getByText(/held 12 minutes for your overrule/)).toBeInTheDocument();
+    await userEvent.click(within(ask).getByRole('button', { name: 'Appoint' }));
+    expect(onAppoint).toHaveBeenCalledWith(expect.anything(), undefined, 12);
+  });
+
+  it('says how long an appointment holds its answers for the overrule', () => {
+    render(<SupervisorRow repository="engine" supervisor={setup({ appointment: { ...LIVE, window: 20 } })} />);
+    expect(screen.getByText('Its answers are held 20 minutes for your overrule.')).toBeInTheDocument();
+  });
+
+  // SUPERVISOR1e (§5): a workspace's appointment covers every repository of it, a later one included; a repository's own wins.
+  it('appoints for a workspace, naming every repository of it and that a repository’s own wins, and sends its scope and window', async () => {
+    invoke.mockResolvedValue({ done: true });
+    function Pressed() {
+      const appoint = useSetAppointment();
+      return (
+        <SupervisorRow
+          workspace="games"
+          supervisor={setup({
+            onAppoint: (answered, share, window) => appoint.mutate({ role: 'supervisor', workspace: 'games', on: true, share, window }, {
+              onSuccess: () => answered.done(),
+            }),
+          })}
+        />
+      );
+    }
+
+    render(<QueryClientProvider client={new QueryClient()}><Pressed /></QueryClientProvider>);
+    expect(screen.getByText(/in every repository of games on your behalf/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Appoint…' }));
+    const ask = screen.getByRole('group', { name: 'appoint the supervisor for games' });
+    expect(within(ask).getByText(/every repository of games on this machine, a repository added to it later included, until Daoris restarts/))
+      .toBeInTheDocument();
+    expect(within(ask).getByText(/A repository's own supervisor, appointed on its page, wins over this one/)).toBeInTheDocument();
+    const field = within(ask).getByRole('spinbutton');
+    await userEvent.clear(field);
+    await userEvent.type(field, '30');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Appoint' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'SET_APPOINTMENT', { payload: { role: 'supervisor', scope: 'workspace:games', holder: 'terminal', on: true, window: 30 } }));
+  });
+
+  it('says a repository with none of its own is covered by its workspace’s appointment, or waits while that one is dormant', () => {
+    const workspace: AppointmentNow = { ...LIVE, repository: '', scope: 'workspace:games', workspace: 'games', window: 15 };
+    const { rerender } = render(<SupervisorRow repository="engine" supervisor={setup({ covering: workspace })} />);
+    expect(screen.getByText(/Covered by the supervisor appointed for games, its answers held 15 minutes for your overrule/)).toBeInTheDocument();
+    // Its own is offered still, and none is turned off from here.
+    expect(screen.getByRole('button', { name: 'Appoint…' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Turn off' })).toBeNull();
+
+    rerender(<SupervisorRow repository="engine" supervisor={setup({ covering: { ...workspace, dormant: true } })} />);
+    expect(screen.getByText(/dormant until you press Appoint again on its page, so every question here waits for you/)).toBeInTheDocument();
+
+    // Its own appointment wins: the row says its own.
+    rerender(<SupervisorRow repository="engine" supervisor={setup({ appointment: LIVE, covering: workspace })} />);
+    expect(screen.queryByText(/Covered by/)).toBeNull();
+    expect(screen.getByText('Its answers are held 5 minutes for your overrule.')).toBeInTheDocument();
+  });
+
+  it('says the scope and the window in Chinese', async () => {
+    await i18n.changeLanguage('zh');
+    render(<SupervisorRow workspace="games" open supervisor={setup()} />);
+    expect(screen.getByRole('group', { name: '为 games 任命主管' })).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: '回答保留供你否决的分钟数（1 到 60）' })).toHaveValue(5);
+    expect(screen.getByText(/并保留 5 分钟供你否决/)).toBeInTheDocument();
+    expect(screen.getByText(/包括以后加入的仓库/)).toBeInTheDocument();
   });
 
   it('sends a terminal of its own as the share', async () => {
