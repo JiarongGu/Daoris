@@ -965,7 +965,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             new(sessionId, $"{state}  helper {sessionId} ({named}): {note}") { State = state, LastWords = lastWords };
         // The record says who asked: an opening's line, then the helper's own on another account of the order, as a quest's start does.
         RotatedOpening.Say(service, _context.Events, sessionId, agent, selection, carried: null);
-        OneTurnReask.Say(_context.Events, sessionId, "helper", choice);
+        OneTurnReask.Say(_context.Events, sessionId, "helper", choice, _driver.Log);
         var bound = HelperPass.Bound(_context.Config);
         var posture = OpinionPosture.Of(adapter);
 

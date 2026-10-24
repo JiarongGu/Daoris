@@ -595,7 +595,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var piece = ask.Ask.Id;
         var repository = ask.Lead.Repository ?? "";
         RotatedOpening.Say(service, _context.Events, sessionId, agent, selection, carried: null);
-        OneTurnReask.Say(_context.Events, sessionId, "partner", choice);
+        OneTurnReask.Say(_context.Events, sessionId, "partner", choice, _driver.Log);
         var bound = PartnerPass.Bound(_context.Config);
         PartnerPassRun Ended(string state, string end, string note, string? lastWords = null) =>
             new(sessionId, $"{state}  partner {sessionId} (piece `{piece}`): {note}") { End = end, LastWords = lastWords };

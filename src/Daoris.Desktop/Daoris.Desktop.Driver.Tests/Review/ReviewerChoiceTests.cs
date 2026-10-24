@@ -540,6 +540,34 @@ public sealed class ReviewerChoiceTests : IDisposable
         Assert.Null(choice.Code);
     }
 
+    /// <summary>
+    /// MODELROLE1e (D205 §3.5(f)): a partner is named by its ask, so as a pick: the named agent's other accounts, then its other entries on
+    /// the same account, then refused with the reasons; never another agent, whatever else is installed.
+    /// </summary>
+    [Fact]
+    public async Task A_named_agent_walks_its_own_accounts_and_entries_and_never_another_agent()
+    {
+        Account("codex", "work");
+        Account("codex", "spare");
+        Refuses("codex-acp", "opus", "work");
+        Refuses("codex-acp", "opus", "spare");
+        Refuses("codex-acp", "sonnet", "work");
+        var config = Actor("partner", new ActorChoice("codex-acp", "opus"), new ActorChoice("codex-acp", "sonnet"));
+        var roster = Roster();
+
+        var choice = await ReviewerChoice.ChooseAsync(roster, Rule("codex-acp"), ["claude-code"], config, null, actor: "partner");
+
+        // Entry 1 is passed (neither account offers it); entry 2 runs on the account that still does.
+        Assert.Equal(("sonnet", "spare"), (choice.Effective!.Model, choice.Selection!.Profile));
+
+        Refuses("codex-acp", "sonnet", "spare");
+        var none = await ReviewerChoice.ChooseAsync(roster, Rule("codex-acp"), ["claude-code"], config, null, actor: "partner");
+
+        Assert.False(none.Chosen);
+        Assert.NotEmpty(none.Tried);
+        Assert.All(none.Tried, each => Assert.Equal("codex-acp", each.Reviewer));
+    }
+
     /// <summary>A cool-off is the account's, so an agent that is cooling holds each of its entries alike and is asked once.</summary>
     [Fact]
     public async Task A_cooling_agent_holds_each_of_its_entries_alike_and_is_asked_once()

@@ -161,7 +161,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
         // An opinion on another account of the order says so, as a quest's start does (TOOL4f, D125 §3.2).
         RotatedOpening.Say(service, _context.Events, sessionId, reviewer, selection, carried: null);
-        OneTurnReask.Say(_context.Events, sessionId, "opinion", choice);
+        OneTurnReask.Say(_context.Events, sessionId, "opinion", choice, _driver.Log);
         var bound = OpinionPass.Bound(ask.Rule, _context.Config);
 
         try
