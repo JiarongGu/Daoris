@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { type ChildProcess, execFileSync, execSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
+import { listenFetchable } from '../../../tools/listen-port.mjs';
 import { makeFixture, unroled } from '../test/_fixture.ts';
 
 /**
@@ -421,9 +421,8 @@ async function questDoor(): Promise<{ url: string; moves: Move[]; close: () => P
       response.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ message: `${action} recorded` }));
     });
   });
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   return {
-    url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
+    url: await listenFetchable(server),
     moves,
     close: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };

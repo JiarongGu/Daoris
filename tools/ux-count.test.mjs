@@ -19,6 +19,7 @@ import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { Cdp, freePort, targetsAt } from './cdp.mjs';
 import { evalExpression } from './desktop.mjs';
+import { listenFetchable } from './listen-port.mjs';
 import {
   LANGUAGE_KEY, LIST_ROW, REGION, countExpression, countStories, expandFiles, expandStories, glossaryTerms, loadChromium,
   parseLooks, parseSizes, readAnswer, readTasks, renderRows, storyIndex, writeWindowScript,
@@ -371,8 +372,7 @@ async function standIn() {
       response.writeHead(404).end();
     }
   });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  return { url: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((resolve) => server.close(resolve)) };
+  return { url: await listenFetchable(server), close: () => new Promise((resolve) => server.close(resolve)) };
 }
 
 test('the runner counts each story in each look at each size, against a Storybook the caller started', { skip: noBrowser }, async () => {
