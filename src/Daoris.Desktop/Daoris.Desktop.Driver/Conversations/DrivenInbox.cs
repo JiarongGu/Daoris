@@ -533,6 +533,8 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         if (_reach is not null) Tell(said, ReachOf(said.Level));
         if (GoesAtNextStep(said)) Send(said);
         else _held.Add(said);
+        // AGENTERRORS1a: a word that makes a turn ends a transient episode's wait.
+        if (_waiting && !said.Rides) _woke.TrySetResult();
         Publish();
     }
 
@@ -566,7 +568,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     private SentNow NowHeld(ChatMessage said)
     {
         var onTheirWay = _sent.Any(answer => !answer.IsCompleted);
-        if (_reach == DrivenReach.NextStep && _flowing && _steer is { } steer)
+        if (_reach == DrivenReach.NextStep && _flowing && !_waiting && _steer is { } steer)
         {
             Tell(said, DrivenReach.Steered);
             Steer(steer, said);
@@ -613,7 +615,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
         {
             if (_closed || _reach is null || _quiet) return false;
             var said = message with { Id = $"said-{++_said}" };
-            if (said.Level != MessageLevel.Ordinary && _reach == DrivenReach.NextStep && _flowing)
+            if (said.Level != MessageLevel.Ordinary && _reach == DrivenReach.NextStep && _flowing && !_waiting)
             {
                 Tell(said, DrivenReach.NextStep);
                 Send(said);
@@ -1072,7 +1074,62 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
 
     /// <summary>Whether a word goes to the running turn now: urgent or now, on a door that takes words at its next step, its first prompt on the wire.</summary>
     private bool GoesAtNextStep(ChatMessage message) =>
-        _reach == DrivenReach.NextStep && _flowing && message.Level != MessageLevel.Ordinary;
+        _reach == DrivenReach.NextStep && _flowing && !_waiting && message.Level != MessageLevel.Ordinary;
+
+    // AGENTERRORS1a (the agent-errors design §5.1): while a transient episode waits, every word is held, none goes alone, and one that
+    // makes a turn ends the wait at once.
+    private bool _waiting;
+    private TaskCompletionSource _woke = Landed();
+
+    /// <summary>
+    /// A transient episode's wait begins (AGENTERRORS1a, the design §5.1): from now every word is held, its mid-turn route and the steer
+    /// sending nothing, so none goes alone and none is cut by a go-on sent after it. Completes once a word that makes a turn is held, at
+    /// once where one already is; never while the inbox is closed.
+    /// </summary>
+    public Task Waiting()
+    {
+        lock (_gate)
+        {
+            _waiting = true;
+            _woke = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (!_closed && Turns()) _woke.TrySetResult();
+            return _woke.Task;
+        }
+    }
+
+    /// <summary>The episode's wait is over (AGENTERRORS1a): a word said from now goes as it did, at its next step where it is urgent.</summary>
+    public void Waited()
+    {
+        lock (_gate) _waiting = false;
+    }
+
+    /// <summary>
+    /// The answer of the oldest word sent to the turn on the wire and not yet waited for (AGENTERRORS1a, the design §5.1's settling
+    /// turns), taken without closing anything; null where none is on its way.
+    /// </summary>
+    public Task<string>? TakeSent()
+    {
+        lock (_gate) return !_closed && _sent.TryDequeue(out var answer) ? answer : null;
+    }
+
+    /// <summary>
+    /// Every word held that a try carries (AGENTERRORS1a, the design §5.1), in the order said, with the claims held to ride beside them,
+    /// each dispatched as <see cref="NextOrClose"/> dispatches one: never closing the inbox, and none where no word makes a turn.
+    /// </summary>
+    public IReadOnlyList<ChatMessage> TakeHeld()
+    {
+        lock (_gate)
+        {
+            if (_closed || !Turns()) return [];
+            Ride();
+            List<ChatMessage> taken = [.. _held.Select(Dispatched)];
+            _held.Clear();
+            _turn++;
+            _quiet = false;
+            Publish();
+            return taken;
+        }
+    }
 
     /// <summary>Send one word now, under the gate so words leave in the order said; its answer waits for the run.</summary>
     private void Send(ChatMessage message)
