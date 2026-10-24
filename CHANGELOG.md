@@ -59,6 +59,12 @@ with the version and date at release.
   The terminal names the change's request at once, before Daoris has checked it. It can read or take back the change for as long as
   the change waits, even after Daoris restarts or `run/` is cleared. If Daoris cannot keep your answer, nothing is done, and the card
   says so and still waits.
+- A chat's *Accept…* now waits for the second opinion its repository's rules name (CHATFLOW1d). The first press asks it and says
+  so; press Accept again once it settles, and a notice tells you when it has. A press made while a turn is running, or while another
+  window holds the conversation, says so and lands nothing, and a commit made while the work was being judged is never landed under
+  that judgement. Words you send while Accept is landing wait and go once it answers. Where the rules ask for a look, a chat's review
+  says no conversation can set one up, and *Accept without the look…* lands its work at the commit it stands at, with your words;
+  `daoris-driver trees land <session> --without-look "<words>"` does the same (CHATFLOW1d2). Both say why in your language.
 - A chat that works in a tree of its own now runs its repository's workflow (CHATFLOW1c). Its session's *Workflow* view draws the
   run: your turn to talk, the commits beyond the line waiting for you to accept them, and its work landed at the commit its tree
   stands at. A hand-over goes on in the same run. Its checks are shown and marked *not yet enforced for a conversation*, and its
