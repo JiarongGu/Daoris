@@ -20316,3 +20316,13 @@ those few trees' git walks (the same 244-tree part took 0.6 to 18.8 s on 2026-10
 `HelpTreesReadTests.A_part_walks_only_the_trees_still_here_never_a_gone_or_set_aside_one`; the page's and the trees' failed first,
 the open's held what was already so. Detail: D89's
 HELPNEWCHAT1 note, FIX-LOG.
+## GITHUBDOCS1 — the README is the landing page the package ships, read right on GitHub and npm (2026-10-24, D211)
+
+> - [ ] **GITHUBDOCS1 — the README is the landing page the package ships, read right on GitHub and npm** (docs, CLI packaging, tools; the owner's direction, 2026-10-24, from Shenora's 0.24.0 docs and Lyntai's D197). The CLI's pack stages the root README, so npm shows it as the package's page, and GitHub shows it as the repository's. Both sibling kits rebuilt theirs on 2026-10-22 and 23; what they learned, to take here: the README opens on what the product is (the pitch, a quickstart, what is in the box, the package table, its status, and the rules a coding agent gets wrong) and the long reference moves to a guide under `docs/`; every link is absolute where a registry renders it (nuget.org empties a relative link and an in-page anchor, shows raw HTML as text and strips comments even inside code fences, so the logo is a markdown image beside the title at 36 px, not HTML above it); `llms.txt` and `context7.json` give coding agents the adopter docs and samples, records out, each carrying the README's agent-rules block, the three copies held equal by a check (Context7's 255-character rule limit included); the doc checks resolve every link, absolute into the repository or relative, case-exact through `git ls-files`, with its `#anchor` by GitHub's slug rule, and read the shipped README as its registry would; each package an icon, the changelog as its release notes, tags for what it serves; GitHub's About and social preview set. Shenora's commit `7289456f` and Lyntai's `88a65303` show their shapes, read-only. Proof: the packed CLI's README read as npm renders it; the link and agent-file checks in the doc gates; a quickstart that runs.
+
+(Quest `#5201ef7272b3`.)
+
+**Outcome** 2026-10-24: the README is the landing page, every link absolute; the reference is `docs/guide/README.md`, with the
+text for GitHub's settings, left to the owner; `llms.txt` and `context7.json` carry its rules; `tools/doc-links.mjs` (in `verify`)
+holds links, anchors, the three copies and the registry read, seen failing on a broken link and an unequal copy. Held by
+`tools/doc-links.test.mjs`, `tool-test/packed-readme.test.ts` and `test/readme-quickstart.test.ts`. Detail: D211.

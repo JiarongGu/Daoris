@@ -452,8 +452,11 @@ local brief outside the doctrine region. Canon edits also require syncing both e
 
 ## Packaging, service and desktop loops
 
-`tools/stage-package.mjs` stages the root canon, README and LICENSE into the CLI package during
-`prepack`; `postpack` cleans those copies. The published entry prefers compiled `dist/cli.js`, so
+`tools/stage-package.mjs` stages the root canon, README, LICENSE and CHANGELOG into the CLI package during
+`prepack`; `postpack` cleans those copies. The README is the package's page on npm, so every link in it
+is absolute: `tools/doc-links.mjs` (in `verify`) reads it as its registry would, resolves every link in the
+documents with its anchor, and holds its agent rules equal in `llms.txt` and `context7.json` (D211);
+`tool-test/packed-readme.test.ts` reads it out of a packed tarball. The published entry prefers compiled `dist/cli.js`, so
 a source checkout with old `dist/` can execute that build. Tests and the release rehearsal cover the
 source/package distinction. `DAORIS_CANON` selects a fixture canon for offline doctrine tests.
 

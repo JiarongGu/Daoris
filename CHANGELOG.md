@@ -8,6 +8,11 @@ with the version and date at release.
 - When a repository's own git hook refuses the merge commit as you accept a session's work, Daoris now says so (HOOKMERGE1). It
   says that the hook refused it and nothing conflicted, and quotes what the hook printed. Before, it said only that git would not
   merge. Daoris still runs the repository's hooks and never skips them. Change what the hook refuses, or merge the branch yourself.
+- The README is now the landing page on GitHub and on npm, which shows it as the `daoris` package's page (GITHUBDOCS1). It opens
+  on what Daoris is: a quickstart, what is in the box, the packages, the status and the rules a coding agent most often gets wrong,
+  with every link working off GitHub. The full reference of commands and the manifest moved to `docs/guide/README.md`. `llms.txt`
+  and `context7.json` point coding agents at the adopter documents and carry the same rules. The package now ships its changelog
+  and names its keywords and repository.
 - The window is on the desktop kit's Shenora 0.24 (SHENORA024), from 0.22. Nothing you see changes.
 - The window no longer stops answering while the session list works out where each session's work went (NOBLOCK1). That
   look, a repository's heavy-run slot, a conversation's first words, Ask Daoris's proposals and the tools list now show what
