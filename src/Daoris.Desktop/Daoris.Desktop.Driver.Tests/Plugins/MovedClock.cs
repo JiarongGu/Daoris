@@ -24,6 +24,18 @@ internal sealed class MovedClock : TimeProvider
         }
     }
 
+    /// <summary>
+    /// When each timer made on this clock is due, earliest first, those not fired (AGENTERRORS1, the tick tests' determinism): what
+    /// the code waits on, so a test moves the clock to exactly the moment a wait it can name ends, never by a guess of its own.
+    /// </summary>
+    public IReadOnlyList<DateTimeOffset> Pending
+    {
+        get
+        {
+            lock (_gate) return [.. _timers.Select(timer => timer.Due).OfType<DateTimeOffset>().Order()];
+        }
+    }
+
     public override DateTimeOffset GetUtcNow()
     {
         lock (_gate) return _now;
