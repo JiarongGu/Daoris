@@ -134,8 +134,58 @@ export const Reading: Story = { args: { answer: undefined, reading: true } };
 /** The read refused: the driver's sentence, whole. */
 export const Refused: Story = { args: { answer: undefined, refusal: 'the driver is still coming up — its service is not answering yet. A moment.' } };
 
-/** No run: a conversation serves no quest, said in the driver's sentence. */
+/** No run from a driver before its codes: the driver's sentence, whole. */
 export const NoRun: Story = { args: { answer: { runs: [], problem: 'session `c1` serves no quest, so no workflow runs for it.' }, here: null } };
+
+// CHATFLOW1b (the chat-flow design §10): no run, by its code, in the reader's language; the driver's English beside it is never shown.
+const noRun = (code: string, values: { id?: string; workflow?: string } = {}): Story => ({
+  args: { answer: { runs: [], problem: 'the driver’s English, not shown', code, id: values.id ?? null, workflow: values.workflow ?? null }, here: null, onRetry: nothing },
+});
+
+/** No session by the id asked. */
+export const NoRunNoSession: Story = noRun('no-session', { id: 's1a2b3c4' });
+
+/** No quest by the id asked. */
+export const NoRunNoQuest: Story = noRun('no-quest', { id: 'q9' });
+
+/** An ask, or its intake, before it published a quest. */
+export const NoRunAskNoQuest: Story = noRun('ask-no-quest', { id: 'a1' });
+
+/** A chat in the person's checkout: its work is theirs to commit, and how to have a run. */
+export const NoRunChatCheckout: Story = noRun('chat-checkout');
+
+/** A chat in a tree of its own, before a conversation's work has a run. */
+export const NoRunChatOwnTree: Story = noRun('chat-own-tree');
+
+/** A chat whose repository follows a graph version, before CHATFLOW1f. */
+export const NoRunChatGraphLater: Story = noRun('chat-graph-later', { workflow: 'reviewed' });
+
+/** A chat whose tree is gone, never bound. */
+export const NoRunChatTreeGone: Story = noRun('chat-tree-gone');
+
+/** Ask Daoris's conversation. */
+export const NoRunAskDaoris: Story = noRun('ask-daoris');
+
+/** A reviewer's session. */
+export const NoRunReviewer: Story = noRun('reviewer');
+
+/** A helper's session. */
+export const NoRunHelper: Story = noRun('helper');
+
+/** A partner's session. */
+export const NoRunPartner: Story = noRun('partner');
+
+/** A teammate's session. */
+export const NoRunTeammate: Story = noRun('teammate');
+
+/** The service did not answer: *Try again* reads again. */
+export const NoRunUnanswered: Story = noRun('unanswered');
+
+/** A chat in the checkout, in 中文. */
+export const NoRunChatCheckoutChinese: Story = { ...NoRunChatCheckout, decorators: [chinese] };
+
+/** The service did not answer, in 中文: 重试. */
+export const NoRunUnansweredChinese: Story = { ...NoRunUnanswered, decorators: [chinese] };
 
 /** In 中文: 等你处理, 智能体与你, 本会话, the state words their glossary words. */
 export const InReviewChinese: Story = { ...InReview, decorators: [chinese] };

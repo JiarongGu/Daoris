@@ -69,7 +69,9 @@ public static class WorkflowRunCommand
         var read = await WorkflowRunReader.ReadAsync(asked, sources, ct).ConfigureAwait(false);
         if (read.Runs.Count == 0)
         {
-            output.WriteLine($"workflow: {read.Problem ?? "nothing runs here yet: no quest of this work is published."}");
+            // A code's English is the page's en (CHATFLOW1a); a service that did not answer says what its failure said after it.
+            var why = read.Why is { } failure ? $" ({failure})" : "";
+            output.WriteLine($"workflow: {read.Problem ?? "nothing runs here yet: no quest of this work is published."}{why}");
             return read.Unanswered ? 2 : 1;
         }
 

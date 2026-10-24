@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import type { GraphRun, RunStep } from './run';
-import { addedSaid, graphSaid, runSaid, runShort, stateSaid } from './runSaid';
+import { addedSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { WORKING } from './runFixtures';
 
 // WORKFLOW1c5 (D157's WORKFLOW1c5 note, `.claude/knowledge/twins.md`): the English a run says is one table with the driver, its
@@ -16,6 +16,7 @@ const TABLE = JSON.parse(readFileSync(
   states: Record<string, string>;
   added: Record<string, string>;
   rows: Row[];
+  none: { code: string; id?: string; workflow?: string; said: string }[];
   graph: (Partial<Pick<GraphRun, 'quest' | 'branch' | 'judged' | 'unread' | 'ended'>> & { said: string[] })[];
 };
 
@@ -68,6 +69,14 @@ describe("a run's English, as the driver's table holds it", () => {
     }
     const handed = TABLE.rows.find((row) => row.node === 'handed' && row.detail === 'active' && row.commit)!;
     expect(runSaid(zh, stepOf(handed))).toBe('在 `daoris/q2-work` 的 `11111111` 上观察中。');
+  });
+
+  // CHATFLOW1b (the chat-flow design §10): each code a read that names no run answers, in the en catalogue's words, which the driver's
+  // `WorkflowNoRun.Said` says on the terminal; and each has its zh words.
+  it.each(TABLE.none.map((row) => [row.code, row] as const))('words the no-run code %s in the table’s words', (_code, row) => {
+    const answer = { runs: [], problem: 'the driver’s sentence', code: row.code, id: row.id ?? null, workflow: row.workflow ?? null };
+    expect(noRunSaid(t, answer)).toBe(row.said);
+    expect(noRunSaid(i18n.getFixedT('zh'), answer)).toMatch(/[一-鿿]/);
   });
 
   it('words each state and each look added as the table has it', () => {

@@ -128,14 +128,17 @@ public sealed class WorkflowRunCommandTests : IDisposable
         Assert.Equal(byQuest, bySession.Replace(" · this session", "", StringComparison.Ordinal));
     }
 
-    /// <summary>A conversation serves no quest: no run, and the driver's sentence says why (WORKFLOW1c). Nothing names a run, exit 1.</summary>
+    /// <summary>
+    /// A conversation serves no quest: no run, and its code's English says why, the page's en words (CHATFLOW1a, the chat-flow design
+    /// §10). A chat with no tree of its own works in the checkout. Nothing names a run, exit 1.
+    /// </summary>
     [Fact]
-    public async Task A_chat_has_no_run_and_says_the_drivers_sentence()
+    public async Task A_chat_has_no_run_and_says_its_codes_english()
     {
         var (said, exit) = await RunAsync("--session", "c1");
 
         Assert.Equal(1, exit);
-        Assert.Equal("workflow: session `c1` serves no quest, so no workflow runs for it.\n", said);
+        Assert.Equal($"workflow: {WorkflowNoRun.Said(WorkflowNoRun.ChatCheckout)}\n", said);
     }
 
     [Fact]
@@ -144,10 +147,10 @@ public sealed class WorkflowRunCommandTests : IDisposable
         var (said, exit) = await RunAsync("--quest", "q9");
 
         Assert.Equal(1, exit);
-        Assert.Equal("workflow: no quest `#q9` is here.\n", said);
+        Assert.Equal("workflow: No quest `#q9` is here.\n", said);
     }
 
-    /// <summary>A service that does not answer is a tool error, exit 2, in the reader's sentence.</summary>
+    /// <summary>A service that does not answer is a tool error, exit 2, in its code's English and then what the failure said.</summary>
     [Fact]
     public async Task A_service_that_does_not_answer_is_exit_2()
     {
@@ -159,7 +162,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
         var exit = await WorkflowRunCommand.RunAsync(new WorkflowRunAsk(Quest: "q1"), sources, output);
 
         Assert.Equal(2, exit);
-        Assert.StartsWith("workflow: the service did not answer, so no run could be read: ", output.ToString());
+        Assert.StartsWith($"workflow: {WorkflowNoRun.Said(WorkflowNoRun.Unanswered)} (", output.ToString());
     }
 
     // ——— the words

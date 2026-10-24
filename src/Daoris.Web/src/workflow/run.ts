@@ -142,10 +142,16 @@ export interface WorkflowRun {
   graph?: GraphRun | null;
 }
 
-/** What `WORKFLOW_RUN` answers: the runs, or none with the driver's sentence. */
+/**
+ * What `WORKFLOW_RUN` answers: the runs, or none with the driver's English sentence and, from a driver with CHATFLOW1a, its code (the
+ * chat-flow design §10), which the page words in the reader's language, with the record's id and the workflow's id its words name.
+ */
 export interface WorkflowRunAnswer {
   runs: WorkflowRun[];
   problem?: string | null;
+  code?: string | null;
+  id?: string | null;
+  workflow?: string | null;
 }
 
 /** Whose runs are read: a session's, a quest's or an ask's. */

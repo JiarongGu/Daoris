@@ -294,6 +294,108 @@ describe("the session's Workflow view", () => {
     expect(screen.queryByRole('list')).toBeNull();
   });
 
+  // CHATFLOW1b (the chat-flow design §10): a read that names no run comes with a code, which the page words in the reader's language;
+  // a code it does not know is the driver's sentence, and no code at all the page's own fallback.
+  describe('no run, by its code', () => {
+    const NO_RUN: { code: string; id?: string; workflow?: string; en: string; zh: string }[] = [
+      { code: 'no-session', id: 's1a2b3c4', en: 'No session s1a2b3c4 is recorded here.', zh: '这里没有记录会话 s1a2b3c4。' },
+      { code: 'no-quest', id: 'q9', en: 'No quest #q9 is here.', zh: '这里没有委托 #q9。' },
+      { code: 'ask-no-quest', id: 'a1', en: 'Nothing runs here yet: ask #a1 has published no quest.', zh: '这里还没有进展：需求 #a1 还没有发布委托。' },
+      {
+        code: 'chat-checkout',
+        en: 'This chat works in your checkout, not in a tree of its own, so its work runs no workflow: what it changes is yours to commit. To give work a workflow, start a conversation with a tree of its own.',
+        zh: '这个聊天在你的检出中工作，没有自己的工作树，所以它的工作不走工作流：它改动的内容由你自己提交。想让工作走工作流，请开始一个有自己工作树的对话。',
+      },
+      {
+        code: 'chat-own-tree',
+        en: "This chat works in a tree of its own, but this build reads no workflow for a conversation's work yet.",
+        zh: '这个聊天在自己的工作树中工作，但这个版本还不为对话的工作读取工作流。',
+      },
+      {
+        code: 'chat-graph-later', workflow: 'reviewed',
+        en: "This chat's repository follows the workflow reviewed, which this build does not run for a conversation's work yet, so its work is landed as before.",
+        zh: '这个聊天所在仓库遵循工作流 reviewed，这个版本还不为对话的工作运行它，所以它的工作仍按以前的方式落地。',
+      },
+      {
+        code: 'chat-tree-gone',
+        en: "This chat's tree is gone, and its work was never bound to a workflow, so there is no run to show.",
+        zh: '这个聊天的工作树已经不在了，它的工作也从未绑定工作流，所以没有进展可显示。',
+      },
+      {
+        code: 'ask-daoris',
+        en: "Ask Daoris works in its workspace's room, not in a repository's tree, and a repository's work is asked for through a quest, so no workflow runs for its conversations.",
+        zh: '问道衍在工作区的房间里工作，不在任何仓库的工作树中；仓库的工作要通过委托来请求，所以它的对话不走工作流。',
+      },
+      {
+        code: 'reviewer',
+        en: "This session reads another's work for a second opinion and changes nothing of its own, so no workflow runs for it.",
+        zh: '这个会话为第二意见阅读另一个会话的工作，自己不做任何改动，所以没有工作流为它运行。',
+      },
+      {
+        code: 'helper',
+        en: 'This session helps another and changes nothing of its own, so no workflow runs for it: the session it helps has the run.',
+        zh: '这个会话协助另一个会话，自己不做任何改动，所以没有工作流为它运行：进展在它协助的会话那里。',
+      },
+      {
+        code: 'partner',
+        en: "This session writes one piece that the session that asked it lands, so that session's run is the run.",
+        zh: '这个会话写一个分项，由请它来的会话落地，所以那个会话的进展就是这项工作的进展。',
+      },
+      { code: 'teammate', en: "This session ran on a teammate's machine, which keeps its run.", zh: '这个会话在队友的机器上运行，它的进展保存在那里。' },
+      {
+        code: 'unanswered',
+        en: 'The service did not answer, so where this work stands could not be read. Try again.',
+        zh: '服务没有回应，读不到这项工作的进展。请重试。',
+      },
+    ];
+    // The driver's English, which the page must not show where it words the code.
+    const DRIVER = 'the driver said this in English';
+
+    it.each(NO_RUN.flatMap((row) => (['en', 'zh'] as const).map((language) => [row.code, language, row] as const)))(
+      'words %s in %s',
+      async (_code, language, row) => {
+        await i18n.changeLanguage(language);
+        render(<WorkflowRunView answer={{ runs: [], problem: DRIVER, code: row.code, id: row.id ?? null, workflow: row.workflow ?? null }} />);
+        expect(screen.getByText((_content, element) => element?.tagName === 'P' && element.textContent === row[language])).toBeInTheDocument();
+        expect(screen.queryByText(DRIVER)).toBeNull();
+        if (row.id) expect(screen.getByText(code(row.code === 'no-session' ? row.id : `#${row.id}`))).toBeInTheDocument();
+        if (row.workflow) expect(screen.getByText(code(row.workflow))).toBeInTheDocument();
+      },
+    );
+
+    it('says a chat with no tree of its own in both languages, and an own-tree chat as one', async () => {
+      const { rerender } = render(<WorkflowRunView answer={{ runs: [], problem: DRIVER, code: 'chat-checkout' }} />);
+      expect(screen.getByText(/This chat works in your checkout, not in a tree of its own/)).toBeInTheDocument();
+      await i18n.changeLanguage('zh');
+      rerender(<Tooltip.Provider><WorkflowRunView answer={{ runs: [], problem: DRIVER, code: 'chat-checkout' }} /></Tooltip.Provider>);
+      expect(screen.getByText(/这个聊天在你的检出中工作，没有自己的工作树/)).toBeInTheDocument();
+      rerender(<Tooltip.Provider><WorkflowRunView answer={{ runs: [], problem: DRIVER, code: 'chat-own-tree' }} /></Tooltip.Provider>);
+      expect(screen.getByText(/这个聊天在自己的工作树中工作/)).toBeInTheDocument();
+      expect(screen.queryByText(/检出/)).toBeNull();
+    });
+
+    it("shows the driver's sentence for a code it does not know, in zh too", async () => {
+      await i18n.changeLanguage('zh');
+      render(<WorkflowRunView answer={{ runs: [], problem: 'a code from a newer driver, said in `English`', code: 'from-a-newer-driver' }} />);
+      expect(screen.getByText(code('English'))).toBeInTheDocument();
+      expect(screen.getByText(/a code from a newer driver, said in/)).toBeInTheDocument();
+    });
+
+    it('offers Try again where the service did not answer, which reads again', async () => {
+      const onRetry = vi.fn();
+      const { rerender } = render(<WorkflowRunView answer={{ runs: [], problem: DRIVER, code: 'unanswered' }} onRetry={onRetry} />);
+      await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      expect(onRetry).toHaveBeenCalledOnce();
+
+      await i18n.changeLanguage('zh');
+      rerender(<Tooltip.Provider><WorkflowRunView answer={{ runs: [], problem: DRIVER, code: 'unanswered' }} onRetry={onRetry} /></Tooltip.Provider>);
+      expect(screen.getByRole('button', { name: '重试' })).toBeInTheDocument();
+
+      rerender(<Tooltip.Provider><WorkflowRunView answer={{ runs: [], problem: DRIVER, code: 'chat-checkout' }} onRetry={onRetry} /></Tooltip.Provider>);
+      expect(screen.queryByRole('button')).toBeNull();
+    });
+  });
+
   it('is worded in 中文', async () => {
     await i18n.changeLanguage('zh');
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} here="work" />);

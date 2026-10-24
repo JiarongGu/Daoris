@@ -66,6 +66,27 @@ public sealed record TracedSession(string Id, string Repository, string State)
     /// <summary>A failure an account's limit made (TOOL4c).</summary>
     public bool Limit { get; init; }
 
+    /// <summary>The second opinion a reviewer's record reads another session's work for (XAGENT1c), or null.</summary>
+    public string? Opinion { get; init; }
+
+    /// <summary>The session a helper's or a partner's record serves (MIXAGENT2a-i, COAGENT1b), or null.</summary>
+    public string? Serves { get; init; }
+
+    /// <summary>The piece a partner's record writes (COAGENT1b), or null.</summary>
+    public string? Piece { get; init; }
+
+    /// <summary>The session this one continues (MIXAGENT1a-iii), or null.</summary>
+    public string? From { get; init; }
+
+    /// <summary>The line of work it belongs to, <c>&lt;origin&gt;/&lt;repository&gt;</c> (SESSONE1a), or null from a host before it.</summary>
+    public string? Entry { get; init; }
+
+    /// <summary>The quest a chat took through its own connector (CHATTAKE1), its own <see cref="Quest"/> staying null; null otherwise.</summary>
+    public string? TookQuest { get; init; }
+
+    /// <summary>The origin its <see cref="Entry"/> names, what comes before its first slash, or null where it names none.</summary>
+    public string? Origin => Entry is { Length: > 0 } entry && entry.IndexOf('/') is > 0 and var slash ? entry[..slash] : null;
+
     /// <summary>A record that came down from the team (SYNC4): it ran on another machine, which keeps what is machine-local.</summary>
     public bool Teammate => Id.Contains('/');
 

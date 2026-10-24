@@ -29,6 +29,27 @@ public sealed class TraceTests : IDisposable
 
     private static DateTimeOffset At(int hour, int minute) => new(2026, 10, 3, hour, minute, 0, TimeSpan.Zero);
 
+    /// <summary>
+    /// CHATFLOW1a (the chat-flow design §4.2): a record is read with the six fields that tell its kind and its line apart, as the service
+    /// answers this machine: <c>opinion</c>, <c>serves</c>, <c>piece</c>, <c>from</c>, <c>entry</c> and <c>tookQuest</c>; a record
+    /// answering none reads none, and its origin is the entry's first half.
+    /// </summary>
+    [Fact]
+    public void A_records_kind_and_line_are_read_with_its_six_fields()
+    {
+        var read = Trace.ParseSessions("""
+            [
+              { "id": "p1", "repository": "engine", "state": "working", "kind": "chat", "opinion": "op1", "serves": "c2", "piece": "p1a2b3c4",
+                "from": "c1", "entry": "session:c1/engine", "tookQuest": "q4" },
+              { "id": "c2", "repository": "engine", "state": "working", "kind": "chat" }
+            ]
+            """);
+
+        Assert.Equal(("op1", "c2", "p1a2b3c4", "c1", "session:c1/engine", "q4", "session:c1"),
+            (read[0].Opinion, read[0].Serves, read[0].Piece, read[0].From, read[0].Entry, read[0].TookQuest, read[0].Origin));
+        Assert.All(new[] { read[1].Opinion, read[1].Serves, read[1].Piece, read[1].From, read[1].Entry, read[1].TookQuest, read[1].Origin }, Assert.Null);
+    }
+
     private const string Sentence = "the dashboard figure reads zero; use the v3 bridge, as common-report does";
 
     private const string Answer = "common-report, not a report type of its own";

@@ -7,7 +7,7 @@ import type { CurrentWorkflow } from './current';
 import { NodeWord } from './NodeWord';
 import { type NodeWordAnswer, type NodeWordAsk, type RunStep, runTone, type WorkflowRun, type WorkflowRunAnswer } from './run';
 import { whySaid } from './routeSaid';
-import { addedSaid, graphSaid, runSaid, runShort, stateSaid } from './runSaid';
+import { addedSaid, graphSaid, noRunSaid, runSaid, runShort, stateSaid } from './runSaid';
 import { type RunMarks, WorkflowChart } from './WorkflowChart';
 import { WorkflowHold } from './WorkflowHold';
 
@@ -270,7 +270,7 @@ function Run({ run, here, doors, controls, named, onNodeWord }: {
  *
  * A molecule: the answer arrives as a prop, and every door goes out.
  */
-export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, onNodeWord }: {
+export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, onNodeWord, onRetry }: {
   /** What the shell answered; absent while it is read, or where it was refused. */
   answer?: WorkflowRunAnswer | null;
   reading?: boolean;
@@ -286,6 +286,8 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
    * word kept is drawn.
    */
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
+  /** Read again, where the service did not answer (CHATFLOW1b): *Try again*; absent where nothing reads again. */
+  onRetry?: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -298,9 +300,15 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
     );
   }
 
-  // No run: the driver's sentence where it gave one (a chat serves no quest), shown as it said it.
+  // No run (CHATFLOW1b): its code in the reader's language, or the driver's sentence for a code the page does not know; a service that
+  // did not answer offers *Try again*, which reads again before the view's next tick.
   if (answer.runs.length === 0) {
-    return <Prose className="text-small"><Inline text={answer.problem ?? t('workflow.run.none')} /></Prose>;
+    return (
+      <div className="grid justify-items-start gap-2">
+        <Prose className="text-small"><Inline text={noRunSaid(t, answer)} /></Prose>
+        {answer.code === 'unanswered' && onRetry && <Button onClick={onRetry}>{t('workflow.run.retry')}</Button>}
+      </div>
+    );
   }
 
   return (
