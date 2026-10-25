@@ -17,7 +17,7 @@ the per-task record. Entries preserve their original wording so the archive stay
 **Outcome.** Built as the row names it. `BriefedMove` asks `ChatRunner.StartAsync` with `ownFirst`, the roster's `SelectHandedAsync` (the own account, then its agent's accounts), so the
 person's press and a lost part open on the own account where ready and on another where it cools, never refused on it as a pick; an account the person picked stays the one account, and
 the not-offered path holds only that, an agent pick walking its agent's accounts. `LimitMove`'s live move judges once and opens on `settled`, both moves give back the count of a walk that
-opened nothing, and the ended move, where a limit ended it and every account of its agent cools, goes on with its actor's next choice on the walk it judged (`StartWalkedAsync`); never
+opened nothing, and the ended move, where a limit ended it and every account of its agent cools, goes on with its actor's next choice on another agent, judged uncounted and counted once by the new part's own walk; never
 for a closed quest's session or outside a limit, which §8's first question keeps the owner's. The closed quest's case is LIMITSWITCH2's, unchanged and kept green. Every case is seen
 failing first, in `BriefedMoveTests` (new), `LimitWaitsProcessTests` and `ChatPendingProcessTests` (the refused agent pick walks, the account pick waits). Detail and the readings taken:
 D212's note of 2026-10-26.
