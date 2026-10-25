@@ -872,13 +872,6 @@
       }
     },
     {
-      "family": "Service names Participants",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["HelperDoors","PartnerDoors"]
-      }
-    },
-    {
       "family": "Service names Roles",
       "after": "Service",
       "files": {

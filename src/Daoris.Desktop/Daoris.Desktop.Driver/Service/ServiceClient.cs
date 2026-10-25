@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 /// It writes each request and reads each answer, and the HTTP is behind
 /// <see cref="IServiceDoors"/>, whose real one, <see cref="ServiceHttp"/>, the constructors that take a URL compose. Every
 /// module names this client; none names the HTTP. A family of doors on a resource of its own that another module asks is a
-/// class over the client, reached through it (<c>Opinions</c>, <see cref="Helpers"/>; PART8): it reaches the HTTP, the
+/// class over the client, reached through it (<c>Opinions</c>, <c>Helpers</c> and <c>Partners</c>, each its owner's member of the client; PART8): it reaches the HTTP, the
 /// JSON reading and <see cref="Opened"/> through the internal surface below (D166's PART8 note).
 /// </remarks>
 public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort
@@ -28,8 +28,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     {
         _doors = doors;
         _base = doors.BaseUrl;
-        Helpers = new HelperDoors(this);
-        Partners = new PartnerDoors(this);
         Confirmations = new ConfirmationDoors(this);
     }
 
@@ -38,12 +36,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         : this(new ServiceHttp(baseUrl, key, http))
     {
     }
-
-    /// <summary>The local host's helper doors (MIXAGENT2a-ii), over this client.</summary>
-    public HelperDoors Helpers { get; }
-
-    /// <summary>The local host's partner door (COAGENT1b), over this client.</summary>
-    public PartnerDoors Partners { get; }
 
     /// <summary>The local host's confirmation doors, read for the windows (NOTIFY2j), over this client.</summary>
     public ConfirmationDoors Confirmations { get; }

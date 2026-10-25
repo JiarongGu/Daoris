@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The local host's partner door, as the driver asks it (COAGENT1b, D199 point 2; <c>POST /api/partners</c>): a class over the
-/// service's client, reached as its <see cref="ServiceClient.Partners"/>, beside <see cref="HelperDoors"/>.
+/// service's client, reached as its <c>ServiceClient.Partners</c> (<see cref="PartnerDoorsOfClient"/>), beside <see cref="HelperDoors"/>.
 /// </summary>
 public sealed class PartnerDoors
 {
@@ -79,5 +79,18 @@ public sealed class PartnerDoors
         var word = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("said", out var said) ? Text(said, "id") : null;
         var to = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("session", out var session) ? Text(session, "id") : null;
         return (true, Text(answer, "message") ?? "", word, to);
+    }
+}
+
+/// <summary>
+/// The client's partner door, as the participants' own member of it (FOUNDATION1 mod-iv, the design §14.2: the door classes are their owners',
+/// over the service's client, which names none of them): each read hands a door over the client, which holds no state of its own.
+/// </summary>
+public static class PartnerDoorsOfClient
+{
+    extension(ServiceClient client)
+    {
+        /// <summary>The local host's partner door (COAGENT1b), over this client.</summary>
+        public PartnerDoors Partners => new(client);
     }
 }
