@@ -2148,7 +2148,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 Workspace = RemoteTarget.Workspace(Text(session, "workspace")),
                 // What the cap counts by (CAPCOUNT1): its kind, and the mark of each conversation the driver opens for itself, an
                 // intake's ask above, a helper's serves and a reviewer's opinion. A conversation the person holds has none of them.
-                Kind = Text(session, "kind") ?? ActiveSessions.DrivenKind,
+                Kind = Text(session, "kind") ?? SessionKinds.Driven,
                 Opinion = Text(session, "opinion") is { Length: > 0 } opinion ? opinion : null,
                 Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
                 // A partner's piece (COAGENT1b): its reservation is counted once its record opens.

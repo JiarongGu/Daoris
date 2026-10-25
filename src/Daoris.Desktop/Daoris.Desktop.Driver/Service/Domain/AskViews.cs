@@ -87,3 +87,66 @@ public sealed record DeclarationView(
     /// </summary>
     public IReadOnlyList<LaneView> Lanes { get; init; } = [];
 }
+
+/// <summary>An ask as the local service answered it (D65 §1a) — enough to open an intake and observe it.</summary>
+/// <param name="State">`Open`, `Proposed`, `Published` or `Closed`, as the record spells it.</param>
+/// <param name="Tier">Which tier answered — `declarations`, `named` or `intake` — never a model (D24).</param>
+public sealed record AskView(string Id, string Workspace, string Sentence, string State, string Tier)
+{
+    public string? Asker { get; init; }
+
+    /// <summary>Why it was closed, when it was.</summary>
+    public string? Note { get; init; }
+
+    /// <summary>The intake session that served it, once one opened.</summary>
+    public string? Intake { get; init; }
+
+    public IReadOnlyList<string> Links { get; init; } = [];
+
+    /// <summary>Its files, each with where THIS machine keeps it — the service's answer, never derived here.</summary>
+    public IReadOnlyList<QuestFileView> Attachments { get; init; } = [];
+
+    /// <summary>The quests it became, in order.</summary>
+    public IReadOnlyList<string> Quests { get; init; } = [];
+
+    /// <summary>What the declarations tier proposed, best first — a name the sentence holds, or a word match, offered as one.</summary>
+    public IReadOnlyList<string> Proposed { get; init; } = [];
+
+    /// <summary>
+    /// Those of <see cref="Proposed"/> the ask's sentence names (ASKNAME1b): a proposal whose evidence is its own name alone,
+    /// which the tier ranks above every word match (ASKNAME1). The rest are word matches. Absent is none.
+    /// </summary>
+    public IReadOnlyList<string> Named { get; init; } = [];
+
+    /// <summary>Whether the service would delete it with its quests (D95). Absent is false.</summary>
+    public bool Deletable { get; init; }
+
+    /// <summary>
+    /// The person's words on it (DRIFT1a, D133 §1), oldest first: its sentence, then each answer and each message added to a
+    /// session on its work. Null where the host answered none, a host from before them: never read as having said nothing.
+    /// </summary>
+    public IReadOnlyList<AskWordView>? Words { get; init; }
+
+    /// <summary>For an ask made before its words were kept: from when they are, since nothing is back-filled (DRIFT1a).</summary>
+    public DateTimeOffset? WordsKeptFrom { get; init; }
+
+    /// <summary>
+    /// The go-aheads its sessions asked the person for (KNOWUSE1a, D135 §2), oldest first, one per act. Null where the host
+    /// answered none, a host from before them.
+    /// </summary>
+    public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
+
+    // The review's and the workflow's parts of an ask; their element records are declared in Service/Domain.
+
+    /// <summary>The person's review choices on it, oldest first, the latest standing (REVIEWENV1b); empty where they made none.</summary>
+    public IReadOnlyList<AskReviewChoiceView> ReviewChoices { get; init; } = [];
+
+    /// <summary>Its intake's review proposals, oldest first (REVIEWENV1b); empty where it proposed none.</summary>
+    public IReadOnlyList<AskReviewProposalView> ReviewProposals { get; init; } = [];
+
+    /// <summary>Its intake's kind proposals, oldest first (WORKFLOW1i); empty where it proposed none. Nothing here applies one.</summary>
+    public IReadOnlyList<AskWorkflowProposalView> WorkflowProposals { get; init; } = [];
+
+    /// <summary>The person's kind and workflow choices on it, oldest first, the latest standing (WORKFLOW1e); empty where they made none.</summary>
+    public IReadOnlyList<AskWorkflowChoiceView> WorkflowChoices { get; init; } = [];
+}

@@ -15,6 +15,8 @@ public sealed class RecordNotesTests
         Assert.Equal(NoteCodes.UpdateClosed.Code, RecordNotes.UpdateClosed);
         Assert.Equal(NoteCodes.EndedTransient.Code, RecordNotes.EndedTransient);
         Assert.Equal(NoteCodes.EndedChoiceNotOffered.Code, RecordNotes.EndedChoiceNotOffered);
+        Assert.Equal(NoteCodes.EndedStoppedSteward.Code, RecordNotes.EndedStoppedSteward);
+        Assert.Equal(NoteCodes.StoppedCheckpointStoppedSteward.Code, RecordNotes.StoppedCheckpointStoppedSteward);
         Assert.Equal(NoteCodes.AccountsOwn.Select(code => code.Code), RecordNotes.AccountsOwn);
     }
 

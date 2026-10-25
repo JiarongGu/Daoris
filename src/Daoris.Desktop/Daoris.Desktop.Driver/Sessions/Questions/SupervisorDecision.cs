@@ -201,7 +201,7 @@ public delegate Task<bool> SupervisorTakeBack(string session, string word, Cance
 public static class SupervisorHanded
 {
     /// <summary>The author a supervisor's word names on a record (<c>from</c>), and on the record's <c>user</c> event.</summary>
-    public const string From = "supervisor";
+    public const string From = SaidFrom.Supervisor;
 
     public static string Text(string label) =>
         $"The supervisor the owner appointed for this repository chose \"{label}\" among the answers you offered, on the owner's behalf. "

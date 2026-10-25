@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 public static class DaorisWords
 {
     /// <summary>The author a word of Daoris's names on a record (<c>from</c>), and on the record's <c>user</c> event.</summary>
-    public const string From = "daoris";
+    public const string From = SaidFrom.Daoris;
 
     /// <summary>The driver's English for <see cref="SessionEventCodes.Dropped"/>: what a page that does not know the code shows.</summary>
     public const string DroppedLine = "— Daoris did not send this: what it said no longer holds.";
