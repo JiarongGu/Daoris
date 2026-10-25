@@ -11,6 +11,9 @@ internal static class SourceFiles
     /// <summary>The modules library's project folder's name.</summary>
     public const string ModulesProject = "Daoris.Desktop.Modules";
 
+    /// <summary>The driver library's project folder's name.</summary>
+    public const string DriverProject = "Daoris.Desktop.Driver";
+
     /// <summary>The modules' tests' project folder's name.</summary>
     public const string ModulesTestsProject = "Daoris.Desktop.Modules.Tests";
 
@@ -22,6 +25,10 @@ internal static class SourceFiles
     /// <summary>The one modules source of this name, at any depth of the modules' folder.</summary>
     /// <exception cref="InvalidOperationException">No source has the name, or two do.</exception>
     public static string Module(string name) => Find(ModulesProject, name);
+
+    /// <summary>The one driver source of this name, at any depth of the driver's folder (FOUNDATION1 mod-0, D166 point 4).</summary>
+    /// <exception cref="InvalidOperationException">No source has the name, or two do.</exception>
+    public static string Driver(string name) => Find(DriverProject, name);
 
     /// <summary>The one file of this name under a desktop project's folder, at any depth, its build output aside.</summary>
     /// <exception cref="InvalidOperationException">No file has the name, or two do.</exception>

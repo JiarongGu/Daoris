@@ -41,6 +41,22 @@ or the Ask Daoris repository, each file listed with the Part B row that moves it
 and driver), `SessionStoreTests`, `ParticipantWorkHostTests`, `SessionsStateSliceTests`, `ParticipantWorkReadersTests` (driver, modules, service),
 and the page's `identity.test.ts`, `acts.test.ts` and `WorkFrame.landed.test.tsx`, each case seen failing first where the row adds one. Detail:
 D212's note of this date.
+## FOUNDATION1mod-0 — the structure gate (2026-10-25)
+
+> **FOUNDATION1mod-0 — the structure gate** (driver tests, and the modules' and the service's tests that read driver sources by path; D212's row of
+> Part A, accepted by the steward 2026-10-25; the design `docs/2026-10-25-foundation-design.md` §10's row, §14.5, §17, §18). `StructureTests` and
+> `fixtures/structure.json` hold the twenty-one subdomains in their order, every file of the driver placed in one, the subdomain, direction, purity,
+> Loop, mirror and global-using rules and today's edges against the order as an exact census; the direction rule reads every type reference by Roslyn's
+> semantic model, in the driver's tests alone; the fourteen sites that read driver sources by folder path are made name-based first. It moves no file and
+> changes no product code. It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. The fourteen sites find their sources by name (the service's tests gained a `SourceFiles` of their own, the
+modules' its `Driver`, and `driver-names.test.ts` reads the service's tests too). The gate places all 784 files, reads each name through one compilation
+(about 27 s over the tree), lists 993 edges against the order in 102 families, none into `Loop/`'s folder, the `Domain/` crossings (eight in seven
+files, nine `async` files) and the eighteen static `bool` rules of the files placed in Loop. Each planted form was seen failing against today's
+identifier scan, and each rule's cases with the rule switched off. What the census found beyond the design's counts (`DaorisHome` and two more name
+`AtomicFile`; Platform's containment files name higher subdomains; two more `Domain/` crossings; `Acp.cs` below Course) is D212's note of the same date,
+which holds the detail.
 
 ## SUPERVISORRACE1 — a supervisor's word released in a race with the appointment's revoke is left on a stale decision (2026-10-25)
 
