@@ -980,9 +980,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// switches (it goes elsewhere only at a limit, D205 §3.5(e)), and a record whose own account cannot carry the words for another reason
     /// is the person's press. The default is a driven record that cannot switch.
     /// </param>
+    /// <param name="picked">
+    /// The person picked <paramref name="account"/> for this record (FOUNDATION1a-ii, kept on its binding in the desktop store): the rule
+    /// holds it to that account as a pick (<see cref="LineConstraint.Pick"/>), which waits while it cools and is never moved. False for an agent's
+    /// pick, the curve's account and a record from before, which walk their agent's accounts as they did.
+    /// </param>
     public async Task<ResumeChoice> ResumeAsync(
         string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false,
-        LineKind line = default, CancellationToken ct = default, bool limited = false, string? model = null)
+        LineKind line = default, CancellationToken ct = default, bool limited = false, string? model = null, bool picked = false)
     {
         var resolved = adapters.Resolve(adapter);
         var trigger = new LineTrigger(newSession, limited);
@@ -1042,8 +1047,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // The rule (LIMITSWITCH1, D137's note of 2026-10-25, point 7 amended): a record's words never wait for its own account while another
         // account of the line's choices is ready where the line can carry them to a new part by itself, and wait otherwise for the earliest
         // reset (D206 point 2); LIMITSWITCH2 gave a conversation and a closed quest's session the same, their runner opening the part.
+        // A recorded account pick is the rule's constraint (FOUNDATION1a-ii, §3.2 step 4): the account the person picked and nothing else.
+        var constraint = picked && named is not null ? LineConstraint.Pick(named) : LineConstraint.None;
         var ownState = new LineOwn(own, unoffered, before.Cooling);
-        var answer = await LineAccount.DecideAsync(ownState, trigger, LineConstraint.None, line, Walk).ConfigureAwait(false);
+        var answer = await LineAccount.DecideAsync(ownState, trigger, constraint, line, Walk).ConfigureAwait(false);
         if (answer is LineAnswer.Resume)
         {
             // Ready before any probe: asked for by name, as a pick is; a record that began in the tool's own home goes on there, as a
@@ -1052,7 +1059,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             if (asked is not { Allowed: false, NotReady: AccountReadiness.SignedOut }) return new ResumeChoice(asked, NextHold.Ready) { Answer = answer };
 
             // What the probe learned, the rule read again: the own account is signed out.
-            answer = await LineAccount.DecideAsync(ownState with { Hold = NextHold.SignedOut }, trigger, LineConstraint.None, line, Walk)
+            answer = await LineAccount.DecideAsync(ownState with { Hold = NextHold.SignedOut }, trigger, constraint, line, Walk)
                 .ConfigureAwait(false);
         }
 
@@ -1066,7 +1073,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
             // The own account's reset is the earliest where the walk found none sooner: its hold says its conversation is there.
             LineAnswer.Wait { Set: ResetSet.Switch, OwnFirst: false } sooner => Waiting(sooner),
-            LineAnswer.Wait { Set: ResetSet.Switch } ownWait => new ResumeChoice(
+            // A pick waits for its own account too: the account the person picked, whose reset is the wait, as the own account's is above.
+            LineAnswer.Wait { OwnFirst: true } ownWait => new ResumeChoice(
                 new HarnessSelection(ResumeWords.Waits(ownWait.Earliest, Zone, names)) { Cooling = ownWait.Earliest }, ownWait.Why)
             {
                 Waiting = ResumeWords.Waiting(ownWait.Earliest, Zone, names, ResumeWords.NotYet),

@@ -140,6 +140,42 @@ public sealed class LimitGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1a-ii (D205 §3.5(d)): the same limit refusing a chat whose account the person picked moves nothing. Its binding in the
+    /// store says they picked account-1, so the conversation waits for that account, its held words with it, though account-2 has room: one
+    /// record, no prompt on account-2, the wait said as the limit's, and no part opened on another account.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_whose_account_the_person_picked_waits_for_it_at_its_limit_rather_than_going_on_on_the_next_account()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: events, harnesses: roster);
+
+        var old = (await runner.StartAsync("engine", "acp-stub", config, profile: "account-1", picked: true)).SessionId!;
+        await Poll.Until(() => ledger.State(old) == "working", () => Seen(ledger, events, old));
+        Assert.True(new HarnessConversations(_home).PickedOn(old, "account-1"));
+        Assert.True(runner.Say(old, "Earlier answered exchange."));
+        await Poll.Until(() => events.After(old, 0).Events.Any(e => e.Kind == SessionEventKind.Turn), () => Seen(ledger, events, old));
+        Assert.True(runner.Say(old, "Make the port configurable."));
+
+        // The limit refuses its turn; it waits for its account, said as the limit's wait, with nothing opened beside it.
+        await Poll.Until(
+            () => events.After(old, 0).Events.Any(e => e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == NoteCodes.ChatLimitWaits.Code) == true),
+            () => Seen(ledger, events, old));
+        Assert.NotNull(roster.CoolingOf("acp-stub", "account-1"));
+        Assert.Equal(1, ledger.Count);
+        Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("prompt[account-2]", StringComparison.Ordinal));
+        Assert.DoesNotContain(events.After(old, 0).Events, e => e.Parts?.Any(part => part.Code == "moved.on") == true);
+        var waits = events.After(old, 0).Events.Select(Coded).OfType<NotePart>().Single(part => part.Code == NoteCodes.ChatLimitWaits.Code);
+        Assert.NotNull(waits.Value("until"));
+    }
+
+    /// <summary>
     /// 🔴 Ask Daoris: the limit refuses its turn on account-1, and the same conversation goes on on account-2 in its room, its history
     /// naming the one it continues and what it was handed, the held words its first turn; the log's opening line says what it carries.
     /// </summary>

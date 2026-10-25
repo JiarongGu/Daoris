@@ -82,9 +82,11 @@ public sealed record ResumeChoice(HarnessSelection Selection, NextHold Own)
 
     /// <summary>
     /// The words wait: the record's own account cools, nobody chose a new session, no limit ended it, and no account of the line's
-    /// choices is ready (LIMITSWITCH1), so they wait for the earliest reset of any of them, which <see cref="Selection"/> carries.
+    /// choices is ready (LIMITSWITCH1), so they wait for the earliest reset of any of them, which <see cref="Selection"/> carries. An account
+    /// the person picked waits too, whatever else is asked of it (FOUNDATION1a-ii): its own reset is the wait, and it is never moved.
     /// </summary>
-    public bool Waits => LineAccount.CoolingHolds(Own, new LineTrigger(NewSession, Limited)) && !Switched;
+    public bool Waits => (LineAccount.CoolingHolds(Own, new LineTrigger(NewSession, Limited)) && !Switched)
+                         || Answer is LineAnswer.Wait { Set: ResetSet.Walk, OwnFirst: true };
 
     /// <summary>
     /// What the account rule answered (FOUNDATION1a-i, <see cref="LineAccount.Decide"/>) for this resume, of which the flags above are the

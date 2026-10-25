@@ -74,7 +74,7 @@ public sealed class ConversationRoutes(DriverContext context)
             // The per-conversation tree choice (D51). Absent falls back to the repository's
             // standing opt-in, which the runner reads from the same config.
             ownTree: TreeChoice(request),
-            ct: cancellationToken, order: order);
+            ct: cancellationToken, order: order, picked: !string.IsNullOrWhiteSpace(profile));
 
         _loop.Nudge();
         return new { start.SessionId, start.Message };

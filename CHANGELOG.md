@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation you picked an account for now waits for that account when it cools or reaches its limit, instead of going on elsewhere
+  (FOUNDATION1a-ii, D212). Picking an account when you start a conversation, from the terminal, or when you hand one over, is now
+  remembered on this machine: where another account of the agent is ready, the conversation still waits for the one you picked, says
+  when it resets, and goes on in its own conversation then. A conversation whose account Daoris chose, whether you named an agent or
+  an agent asked for it, and one started before this change, go on on another account as they did.
 - A word you say while Daoris waits to try again after the provider failed is no longer lost when the next try meets the account's limit
   (AGENTERRORS1b2, D210). It no longer reads *it may have read what you added; say it again*: it goes on with the conversation once the
   limit lifts, in its own conversation on its own account, or in the new part another account opens, handed with Daoris's brief, and

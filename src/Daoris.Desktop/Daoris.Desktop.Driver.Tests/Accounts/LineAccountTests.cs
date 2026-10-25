@@ -120,12 +120,12 @@ public sealed class LineAccountTests : IDisposable
             "|", resume.Selection.Refusal, resume.Waiting?.Note, string.Join(",", resume.Waiting?.Parts.Select(part => part.Code) ?? []),
             resume.Selection.RefusalNote?.Note, resume.Elsewhere?.Code, resume.Elsewhere?.Detail?.Note, resume.Selection.Profile));
 
-    private async Task<Outcome> Today(Case each)
+    private async Task<Outcome> Today(Case each, bool picked = false)
     {
         var (roster, _) = Build(each);
         var (selected, marked) = (roster.Selected, roster.Mark());
         var resume = await roster.ResumeAsync(
-            each.Adapter, Config, null, each.Account, each.Start, each.NewSession, each.Line, limited: each.Limited, model: each.Model);
+            each.Adapter, Config, null, each.Account, each.Start, each.NewSession, each.Line, limited: each.Limited, model: each.Model, picked: picked);
         return new Outcome(
             new Answered(
                 resume.Own, resume.Selection.Allowed, resume.Selection.Profile, CoolingOf(resume.Selection.Cooling), resume.NewSession, resume.Limited,
@@ -135,9 +135,10 @@ public sealed class LineAccountTests : IDisposable
 
     // ——— The rule: the same case read by LineAccount.Decide, its walk handed lazily to a roster that counts what it is asked.
 
-    private async Task<Outcome> Rule(Case each)
+    private async Task<Outcome> Rule(Case each, bool picked = false)
     {
         var (roster, home) = Build(each);
+        var constraint = picked ? LineConstraint.Pick(each.Account) : LineConstraint.None;
         var (marked, asked) = (roster.Mark(), 0L);
         var trigger = new LineTrigger(each.NewSession, each.Limited);
 
@@ -155,7 +156,7 @@ public sealed class LineAccountTests : IDisposable
         }
 
         var own = OwnOf(each, roster, home);
-        var answer = await LineAccount.DecideAsync(own, trigger, LineConstraint.None, each.Line, Walk);
+        var answer = await LineAccount.DecideAsync(own, trigger, constraint, each.Line, Walk);
         HarnessSelection? named = null;
         if (answer is LineAnswer.Resume { Walked: null })
         {
@@ -163,7 +164,7 @@ public sealed class LineAccountTests : IDisposable
             named = await roster.SelectAsync("fake", Config, null, each.Account, each.Start);
             if (named is { Allowed: false, NotReady: AccountReadiness.SignedOut })
             {
-                answer = await LineAccount.DecideAsync(own with { Hold = NextHold.SignedOut, NotOffered = false }, trigger, LineConstraint.None, each.Line, Walk);
+                answer = await LineAccount.DecideAsync(own with { Hold = NextHold.SignedOut, NotOffered = false }, trigger, constraint, each.Line, Walk);
                 named = null;
             }
         }
@@ -182,6 +183,8 @@ public sealed class LineAccountTests : IDisposable
             LineAnswer.Elsewhere { Switched: true } e => new(e.Why, true, e.Selection.Profile, "-", false, false, true, false, false),
             LineAnswer.Elsewhere e => new(e.Why, true, e.Selection.Profile, "-", NewSession(e.Why), limited, false, false, e.NotOffered),
             LineAnswer.Wait { Set: ResetSet.Switch } w => new(w.Why, false, null, CoolingOf(w.Earliest), false, false, false, true, false),
+            // A pick waits for its own account too (FOUNDATION1a-ii), whatever the trigger says.
+            LineAnswer.Wait { Set: ResetSet.Walk, OwnFirst: true } w => new(w.Why, false, null, CoolingOf(w.Earliest), false, false, false, true, false),
             LineAnswer.Wait w => new(w.Why, false, null, CoolingOf(w.Earliest), NewSession(w.Why), limited, false, false, w.NotOffered),
             LineAnswer.Hold h => new(h.Why, false, null, h.Walked is null ? CoolingOf(h.Cooling) : "-", NewSession(h.Why), limited, false, false, h.NotOffered),
             _ => throw new InvalidOperationException("an answer the rule does not give"),
@@ -493,6 +496,110 @@ public sealed class LineAccountTests : IDisposable
 
         Assert.True(failures.Count == 0, $"{failures.Count} cases disagree:\n" + string.Join("\n", failures));
     }
+
+    // ——— The constraint axis, whole (FOUNDATION1a-ii): an account the person picked, over every case of the grid.
+
+    /// <summary>
+    /// A recorded account pick is the rule's constraint (the design §3.2 step 4): <b>every case of the grid</b>, run through the roster's resume
+    /// with the pick and through the rule with its pick constraint, gives the same answer, the same walks and the same starts counted, and
+    /// the answer is the pick's alone: it does not move with the others' states, the trigger or the line's kind, since a pick is the one
+    /// account, never moved. Where the adapter has no accounts there is nothing to pick, and it spawns as it always did.
+    /// </summary>
+    [Fact]
+    public async Task A_recorded_pick_holds_every_case_of_the_grid_to_its_account()
+    {
+        var failures = new List<string>();
+        var byOwn = new Dictionary<(OwnState, StartKind), (string Key, Answered Answer)>();
+        var cases = 0;
+        foreach (var each in Grid())
+        {
+            cases++;
+            var today = await Today(each, picked: true);
+            var rule = await Rule(each, picked: true);
+            if (today.Answer != rule.Answer || today.Walks != rule.Walks || today.Starts != rule.Starts)
+            {
+                failures.Add($"{each.Key}\n    today {today.Today}\n    rule  {rule.Shaped}");
+            }
+
+            if (each.Own == OwnState.NoToolchain) continue;
+
+            // The pick walks nothing, and its answer is the same wherever the others stand and whatever asked it.
+            if (today.Walks != 0) failures.Add($"{each.Key}: a pick walked {today.Walks} times");
+            var answer = today.Answer with { NewSession = false, Limited = false };
+            if (!byOwn.TryGetValue((each.Own, each.Start), out var first)) byOwn[(each.Own, each.Start)] = (each.Key, answer);
+            else if (first.Answer != answer) failures.Add($"{each.Key} answered {answer}, where {first.Key} answered {first.Answer}");
+        }
+
+        Assert.True(failures.Count == 0, $"{failures.Count} of {cases} cases disagree:\n" + string.Join("\n", failures.Take(25)));
+        // Every own state with an account, for a driven and for a conversation's start, was read.
+        Assert.Equal(
+            [OwnState.Ready, OwnState.Cooling, OwnState.SignedOut, OwnState.Refused, OwnState.Missing, OwnState.MissingCooling, OwnState.Kept, OwnState.NotOffered],
+            byOwn.Keys.Select(key => key.Item1).Distinct().OrderBy(own => own));
+        Assert.Equal(16, byOwn.Count);
+    }
+
+    /// <summary>
+    /// What a pick changes and what it leaves: the same cooling own account of a conversation that carries its words, the others ready,
+    /// goes on elsewhere as an agent's pick and a record from before the pick was kept do (the switch), and waits for its own reset where the
+    /// person picked it, its refusal naming that reset and nothing counted; the same ready account is resumed either way.
+    /// </summary>
+    [Fact]
+    public async Task A_picked_account_waits_where_an_agent_s_pick_and_a_record_from_before_walk_their_agent_s_accounts()
+    {
+        var cooling = new Case(OwnState.Cooling, Others.Ready, Trigger.None, Kind.ConversationCarries);
+
+        var walked = await Today(cooling);
+        var waited = await Today(cooling, picked: true);
+
+        Assert.True(walked.Answer.Switched && walked.Answer.Allowed);
+        Assert.Equal("account-2", walked.Answer.Profile);
+        Assert.Equal((false, false, true, false), (waited.Answer.Allowed, waited.Answer.Switched, waited.Answer.Waits, waited.Answer.NotOffered));
+        Assert.Equal("account-1+2h", waited.Answer.Cooling);
+        Assert.Equal((0L, 0L), (waited.Walks, waited.Starts));
+
+        var ready = new Case(OwnState.Ready, Others.Ready, Trigger.None, Kind.ConversationCarries);
+        Assert.Equal((await Today(ready)).Answer, (await Today(ready, picked: true)).Answer);
+    }
+
+    /// <summary>The rule alone: a pick asks no walk at any hold, trigger or line, and answers each hold as a start asked for the one account does.</summary>
+    [Fact]
+    public void A_pick_asks_no_walk_and_answers_each_hold_as_the_one_account()
+    {
+        var cooling = new CoolingEntry("fake", "account-1", Seen.AddHours(2), true, "session", Seen.AddMinutes(-5), "s1");
+        foreach (var hold in Enum.GetValues<NextHold>())
+        foreach (var notOffered in new[] { false, true })
+        foreach (var trigger in new[] { default, new LineTrigger(NewSession: true), new LineTrigger(Limited: true), new LineTrigger(true, true) })
+        foreach (var line in new[] { LineKind.DrivenOpen, LineKind.DrivenClosed(true), LineKind.DrivenClosed(false), LineKind.DrivenLimit, LineKind.Conversation(true), LineKind.AskDaoris })
+        {
+            var own = new LineOwn(hold, notOffered, hold == NextHold.Cooling ? cooling : null);
+            var asked = new List<LineAsk>();
+
+            var answer = LineAccount.Decide(own, default, LineConstraint.Pick("account-1"), line, ask => { asked.Add(ask); return Pick; });
+            var other = LineAccount.Decide(own, trigger, LineConstraint.Pick("account-1"), line, ask => { asked.Add(ask); return Pick; });
+
+            Assert.Empty(asked);
+            Assert.Equal(Said(answer), Said(other));
+            if (hold is NextHold.Ready or NextHold.Near)
+            {
+                Assert.Equal(new LineAnswer.Resume(), answer);
+            }
+            else if (hold == NextHold.Cooling)
+            {
+                var wait = Assert.IsType<LineAnswer.Wait>(answer);
+                Assert.Equal((cooling, ResetSet.Walk, hold, true, (HarnessSelection?)null), (wait.Earliest, wait.Set, wait.Why, wait.OwnFirst, wait.Walked));
+                Assert.Equal([cooling], wait.Accounts);
+            }
+            else
+            {
+                Assert.Equal(new LineAnswer.Hold(hold, LineAccount.RepairOf(hold, false)), answer);
+            }
+        }
+    }
+
+    /// <summary>An answer as a string, a wait's accounts listed: the rule's records hold lists, which compare by reference.</summary>
+    private static string Said(LineAnswer answer) => answer is LineAnswer.Wait wait
+        ? $"Wait {wait.Earliest.Account} {wait.Set} {wait.Why} {wait.OwnFirst} [{string.Join(",", wait.Accounts.Select(each => each.Account))}]"
+        : answer.ToString()!;
 
     // ——— The rule alone.
 

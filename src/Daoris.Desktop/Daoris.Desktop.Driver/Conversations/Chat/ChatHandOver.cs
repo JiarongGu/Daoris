@@ -153,8 +153,11 @@ internal sealed class ChatHandOver(ChatContext context, ChatRunner runner)
             var moved = ask.Why == HandOverWhy.Curve && _context.CurveMoves.TryRemove(sessionId, out var move) ? move : null;
             return await HandOverTake.RunAsync(
                 _context.Service, _context.Home, _context.Events, _context.Output, sessionId, ask, AccountsOf, EndForHandOverAsync,
+                // The person's press with an account named is their pick of it, which the new conversation waits for (FOUNDATION1a-ii); an
+                // agent's ask or the curve's move names an account that keeps today's reading.
                 (prior, request, from, token) => _runner.StartAsync(
-                    prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree, from: from),
+                    prior.Repository!, request.Agent, config, onEnded, request.Account, ct: token, tree: prior.Tree, from: from,
+                    picked: request.AskedBy == HandOverBy.Person && !string.IsNullOrWhiteSpace(request.Account)),
                 SayHandedOver, ct, moved, closing).ConfigureAwait(false);
         }
         finally

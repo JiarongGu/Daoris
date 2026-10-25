@@ -103,6 +103,36 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
         store.Write(Family, write => Upsert(write, session, adapter, conversation));
     }
 
+    /// <summary>
+    /// Keep that the person picked this session's account (FOUNDATION1a-ii, the design §3.2 step 4): the account a start they named one for
+    /// opened on, set by name beside the binding, so the account rule reads it as its constraint. Only a session of this machine has one, and
+    /// a blank account keeps nothing. Throws what the store throws where it cannot write.
+    /// </summary>
+    public void Pick(string session, string account)
+    {
+        using var store = Open();
+        store.Write(
+            Family,
+            write => write.Execute(
+                """
+                INSERT INTO binding_picks (session, account, at) VALUES ($session, $account, $at)
+                ON CONFLICT (session) DO UPDATE SET account = excluded.account, at = excluded.at
+                """,
+                ("$session", session), ("$account", account),
+                ("$at", DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture))));
+    }
+
+    /// <summary>
+    /// The account the person picked for a session, or null where they picked none: an agent's pick, the curve's account, a record from before
+    /// the pick was kept and a teammate's mirror hold none, and a home with no store holds none. The store's failure is thrown.
+    /// </summary>
+    public string? Picked(string session)
+    {
+        using var store = DesktopStoreReader.Open(Location);
+        if (store is not { Version: >= 3 }) return null;
+        return store.Query("SELECT account FROM binding_picks WHERE session = $session", row => row.GetString(0), ("$session", session)).FirstOrDefault();
+    }
+
     /// <summary>The bindings of these sessions gone, each by its record's deletion (§13.6): the ones that held a row. Nothing is made for a home with no store.</summary>
     public IReadOnlyList<string> Forget(IReadOnlyCollection<string> sessions)
     {
@@ -111,18 +141,28 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
         using var store = Open();
         store.Write(Family, write =>
         {
-            foreach (var session in held) write.Execute("DELETE FROM bindings WHERE session = $session", ("$session", session));
+            foreach (var session in held)
+            {
+                write.Execute("DELETE FROM bindings WHERE session = $session", ("$session", session));
+                write.Execute("DELETE FROM binding_picks WHERE session = $session", ("$session", session));
+            }
         });
         return held;
     }
 
-    /// <summary>Which of these sessions the store holds a binding for, read without writing or making anything; none for a home with no store.</summary>
+    /// <summary>
+    /// Which of these sessions the store holds a binding for, or a pick of its account, read without writing or making anything; none for a
+    /// home with no store.
+    /// </summary>
     public IReadOnlyList<string> Holding(IReadOnlyCollection<string> sessions)
     {
         if (sessions.Count == 0) return [];
         using var store = DesktopStoreReader.Open(Location);
         if (store is not { Version: >= 2 }) return [];
-        return [.. sessions.Where(session => store.Query("SELECT 1 FROM bindings WHERE session = $session", row => row.GetInt32(0), ("$session", session)).Count > 0)];
+        var picks = store.Version >= 3;
+        return [.. sessions.Where(session =>
+            store.Query("SELECT 1 FROM bindings WHERE session = $session", row => row.GetInt32(0), ("$session", session)).Count > 0
+            || (picks && store.Query("SELECT 1 FROM binding_picks WHERE session = $session", row => row.GetInt32(0), ("$session", session)).Count > 0))];
     }
 
     /// <summary>

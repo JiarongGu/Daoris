@@ -5,6 +5,23 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## FOUNDATION1a-ii — the account pick's provenance (2026-10-26)
+
+> **FOUNDATION1a-ii — the account pick's provenance** (driver, modules; D212's row of Part B, accepted by the steward 2026-10-25; the design `docs/2026-10-25-foundation-design.md`
+> §10's row *1a-ii*, §7's row 2 and §3.2 step 4, on the account rule row 1a-i built and the store rows z-i and z-iii). A start the person names an account for (`START_CHAT`'s
+> `profile`, the terminal's account, their hand-over press with an account; never an agent's ask or the curve's account) keeps on its binding in the desktop store that they picked its
+> account, never a field on the service's record or on any wire; the account rule reads it as its constraint: a recorded pick waits, an agent's pick and a record from before walk their
+> agent's accounts. Nothing else changes for a person but that a conversation whose account they picked waits for that account rather than going on elsewhere. It was a row of the
+> FOUNDATION1 backlog entry, which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. `binding_picks` is store migration 3, a new table with every column required that leaves the writer stamp where it was, so a build from before
+the row never reads a pick as a conversation; `BindingStore.Pick` and `Picked` hold the rows, `HarnessConversations.Pick` and `PickedOn` every caller, and a deleted record takes its pick.
+The three doors pass `picked` to the runner's start, which records the account the record opened on; `HarnessRoster.ResumeAsync` hands the rule `LineConstraint.Pick`, which the
+conversation's go-on, the limits wake and both limit moves read, so the conversation waits for its account, said as the own account's wait, and goes on in its own conversation at the
+reset. Every proof the row states is a case seen failing first, in `BindingPicksTests`, `ChatHandOverTests`, `LineAccountTests`' constraint axis, `DriverModuleStartWithProcessTests`,
+`LimitGoesOnProcessTests` and `LimitWaitsProcessTests`; the terminal's `chat --profile` is the one door no test runs. Detail and the readings taken (the pick in a table of its own, the limit
+moves reading it too, only a conversation's start a pick): D212's note of 2026-10-26.
+
 ## FOUNDATION1z-iii — the bindings (2026-10-26)
 
 > **FOUNDATION1z-iii — the bindings** (driver; D212's row of Part B, accepted by the steward 2026-10-25; the design `docs/2026-10-25-foundation-design.md` §10's row *1z-iii*,

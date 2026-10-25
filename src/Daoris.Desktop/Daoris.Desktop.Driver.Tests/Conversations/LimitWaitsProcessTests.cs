@@ -371,6 +371,75 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1a-ii (D205 §3.5(d)): the same ended conversation whose account the person picked, its binding in the store saying so,
+    /// does not go on elsewhere. The person's words wait for <c>account-1</c> though <c>account-2</c> is ready, said as the wait for its own
+    /// account, nothing opened, counted or handed; the limits stage's look moves nothing either, and at the account's own reset the
+    /// conversation goes on in its own conversation there. A record from before, with no pick, is the test beside it.
+    /// </summary>
+    [Fact]
+    public async Task An_ended_conversation_whose_account_the_person_picked_waits_for_it_with_another_ready_and_goes_on_there_at_its_reset()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "acp-stub", _root, profile: "account-1");
+        var conversations = new HarnessConversations(_home);
+        conversations.Keep("c1", "acp-stub", "conv-account-1");
+        conversations.Pick("c1", "account-1");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        Cooling("account-1", _now.AddDays(4));
+        using var runner = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
+
+        Said(ledger, events, "c1", "w1", "Also log the port.");
+
+        var waits = await NoteAsync(events, "c1", e => Coded(e, NoteCodes.WaitsAccount.Code));
+        Assert.Equal("account-1", waits.Parts!.Single(part => part.Code == NoteCodes.WaitsAccount.Code).Value("account"));
+        Assert.StartsWith(ResumeWords.NotYet, waits.Text);
+        Assert.Equal((1, counted), (ledger.Count, roster.Mark()));
+        Assert.Equal(["w1"], ledger.Said("c1"));
+        Assert.Empty(Prompts);
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        Assert.Equal((1, counted), (ledger.Count, roster.Mark()));
+
+        // Its own account's reset comes: it goes on in its own conversation there, never in a part on account-2.
+        _now = _now.AddDays(5);
+        var woke = Assert.Single(await runner.WakeLimitsAsync(config));
+        Assert.Equal("c1", woke.SessionId);
+        await Poll.Until(() => Prompts.Any(line => line.Contains("Also log the port.", StringComparison.Ordinal)), () => Seen(ledger, events, "c1"));
+        Assert.StartsWith("prompt[account-1]", Prompts.Single(line => line.Contains("Also log the port.", StringComparison.Ordinal)), StringComparison.Ordinal);
+        Assert.Contains("resumed[account-1]: conv-account-1", StubFile.Lines(Heard));
+        Assert.Equal(1, ledger.Count);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1a-ii: the limit's wake of an ended conversation whose account the person picked reads that account's reset alone: the
+    /// limit that ended it, <c>account-2</c> ready, moves it nowhere, and the stage's wait is its own account's, not the agent's first.
+    /// </summary>
+    [Fact]
+    public async Task The_wake_of_a_picked_conversation_the_limit_ended_moves_it_nowhere_and_waits_for_its_own_accounts_reset()
+    {
+        var events = Events;
+        var ledger = HeldEnded(events, ("w1", "Hello again."));
+        new HarnessConversations(_home).Pick("c1", "account-1");
+        Cooling("account-1", _now.AddDays(4));
+        var config = Config();
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        using var runner = Runner(client, adapters, Roster(adapters), events);
+
+        // account-2 frees first, in a day, and a record on no pick goes on there; the picked one waits for account-1's four days.
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        _now = _now.AddDays(2);
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        Assert.Equal(1, ledger.Count);
+        Assert.Empty(Prompts);
+        Assert.Equal(["w1"], ledger.Said("c1"));
+    }
+
+    /// <summary>
     /// 🔴 LIMITSWITCH2: with no account of its agent ready, an ended conversation's words wait and say the earliest reset of any account,
     /// <c>account-2</c>'s, never its own account's alone, in D206 §3.7's words with the door that starts a conversation with them. At
     /// that reset, its own account still cooling, the stage goes on on <c>account-2</c> in one move; the start is counted once.
