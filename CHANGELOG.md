@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A conversation you picked an account for keeps that pick when Daoris moves it to a new part (PICKCARRY1, D212). Going on with Daoris's brief,
+  a part opened after the conversation was lost, and a hand-over or limit move that lands on the same account of the same agent each carry the pick
+  to the new part, so it too waits for that account while it cools instead of going on with another. A hand-over to another agent, and a
+  conversation Daoris chose the account for, keep no pick, as before.
 - *Go on with Daoris's brief* no longer fails on a conversation whose account is cooling while another account of its agent is ready
   (FOUNDATION1a-iii, D212). It opens the new part on the conversation's own account where that is ready, and on another account of
   the same agent where it is not, as the press you chose a new part over waiting is meant to; a conversation whose account you picked

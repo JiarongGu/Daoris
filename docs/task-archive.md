@@ -5,6 +5,19 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PICKCARRY1 — a pick belongs to the conversation, so a new part keeps it (2026-10-26)
+
+> **PICKCARRY1 — a pick belongs to the conversation, so a new part keeps it** (driver; the steward's call of 2026-10-26, recorded in D212's note for this row, a correction to FOUNDATION1 rows
+> 1a-ii and 1a-iii, whose readings (3) and (2) had the new part a briefed move, a limit's move, a hand-over press or a lost conversation opens keep no pick). Wherever a move opens a new part of a
+> conversation whose record holds the person's account pick, the new part's binding keeps the same pick, so the rule reads it there as on the part it came from; an agent's pick, the curve's account
+> and a record from before keep none; the move itself opens on the account the rule judged. It was a quest of the steward's, not a row of `TASKS.md`; the FOUNDATION1 backlog entry is unchanged.
+
+**Outcome.** Built as the call states it, at `ChatRunner`'s start, which every move opens its part through: a start continuing a part whose binding holds a pick for the account the new record opened on,
+on the same agent, keeps that pick on the new binding. Nothing is added to the store, the record or any wire. Every case is seen failing first, by taking the carry out: `BriefedMoveTests` (the press and a
+lost conversation's part keep the pick and the part's next go-on waits for it while it cools; an unpicked conversation's part walks), `LimitWaitsProcessTests` (the ended move's part for a picked, lost
+conversation; the start the live limit move makes, which keeps the pick on the picked account only) and `ChatHandOverTests` (a hand-over to another agent keeps none); the cases of rows 1a-ii and 1a-iii pass.
+Detail and the readings taken (the pick carried only where the part opens on the picked account and agent; the live limit move opens no part for a picked conversation today): D212's and D137's notes of 2026-10-26.
+
 ## FOUNDATION1a-iii — the briefed move's walk, one selection, the closed quest's case (2026-10-26)
 
 > **FOUNDATION1a-iii — the briefed move's walk, one selection, the closed quest's case** (driver; D212's row of Part B, accepted by the steward 2026-10-25; the design
