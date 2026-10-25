@@ -1156,7 +1156,7 @@ Findings 5 to 12 can be taken in passing.
 
 ## Codex, round 4
 
-Codex's read of round 4, with the Opus foundation reader's named changes taken in the design's §15, at `eced2688e`: 11 findings, 7 of them blocking; another round for row a. Its §0 re-reads round 3's answers and opens none of its own: the gaps it names there are its findings below. The steward ran it read-only on main from outside the install. Round 5 answers it in the design's §16.
+Codex's read of round 4, with the Opus foundation reader's named changes taken in the design's §15, at `eced2688e`: 11 findings, 7 of them blocking; another round for row a. Its §0 re-reads round 3's answers and opens none of its own: the gaps it names there are its findings below. It was run read-only at that commit, on main. Round 5 answers it in the design's §16.
 
 Reviewed read-only at `eced2688e`; nothing changed. I excluded checkout-relative `local/` and everything outside this checkout.
 
