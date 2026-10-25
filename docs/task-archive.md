@@ -20836,3 +20836,17 @@ rail row, the page's head and Attention say *Waiting for a limit to reset…* in
 a new session* still taking the pick), `SessionWordsWaitingTests`, `DriverModuleSessionsTests`, and the web's `SessionRow.test.tsx` and
 `headFacts.test.ts`, each seen failing first. **Left, as LIMITSWITCH2:** a conversation's go-on and its wake, which wait for the own
 account as D206 §3.5 and a picked account's §3.5(d) have them. Detail: D137's LIMITSWITCH1 note.
+
+## LIMITSWITCH2 — a conversation, and a closed quest's session, whose own account cools go on elsewhere now (2026-10-25, D137)
+
+> **LIMITSWITCH2 — a conversation whose own account cools goes on elsewhere now, as a driven record does** (driver, web; after LIMITSWITCH1, D137's note of 2026-10-25). LIMITSWITCH1 built the switch for a driven record of an open or taken quest; an ended conversation (`ChatGoOn.cs:573`, `:674`) still holds its words for the own account (`resume.Waits`, `walks: false`), and the limits stage wakes it on its own account only (D206 §3.5). Decide, then build: a conversation not on the person's pick (`PriorSession.Choice`, D205 §3.5(d)) goes on through `BriefedMove` on another ready account of its agent, and waits for the earliest reset of any where none is ready, said in D206 §3.7's words; a pick and Ask Daoris's room keep the own account. Proof: a stand-in ended conversation whose own account cools with another ready goes on there once, the words once; with none ready it waits and names the earliest reset; a pick waits for its own.
+
+(Quest `#f276fa9f33ef`, asked by `#975dcf`, whose build quest widened the row: a closed quest's session too, through the ended limit move's body and never `BriefedMove`, the move walking once.)
+
+**Outcome** 2026-10-25. **Built:** an ended conversation, and a closed quest's session where the shell's chat runner is, whose own account cools go on
+at once on another ready account of their agent through `LimitMove.MoveEndedAsync`, its guard widened to a record whose own account is cooling;
+the move walks once and opens on the selection it judged, its words received once and its start counted once. With none ready the words wait for the
+earliest reset of any account, in the chat wake and the held row alike. Ask Daoris's room and an account signed out, refused, gone or kept are
+unchanged. **Proved** by `ResumeAccountTests`, `LimitWaitsProcessTests`, `AccountRotationTickTests` and `SessionWordsWaitingTests`, each seen failing
+first. **Reading:** the record keeps no account pick, so every conversation walks its agent's accounts and a picked account's wait (D205 §3.5(d)) is
+for FOUNDATION1's row 1a, whose design keeps `accountPicked` on the record. Detail: D137's LIMITSWITCH2 note.

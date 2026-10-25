@@ -233,8 +233,11 @@ public sealed class LimitWaitsProcessTests : IDisposable
         // Account-2 frees first; account-1 still cools.
         Assert.True(AccountCooling.End(_home, "stub", "account-2", _now));
         using var again = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
         var woke = Assert.Single(await again.WakeLimitsAsync(config));
         Assert.Equal("c2", woke.SessionId);
+        // FIX-LOG (the double walk): the move walks once and opens on what it judged, so the one start it makes is counted once.
+        Assert.Equal(counted + 1, roster.Mark());
         var next = (await client.RecordAsync("c2"))!;
         Assert.Equal(("account-2", chat, HandOverWhy.Limit), (next.Profile, next.From, next.FromWhy));
 
@@ -251,11 +254,12 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
-    /// An ended chat whose person's words wait for its own cooling account (D137 point 7) never met a limit: another account free moves
-    /// nothing, and at its own account's reset the stage goes on with its words in its own conversation, on that account.
+    /// An ended chat whose person's words wait for its own cooling account (D137 point 7) never met a limit. LIMITSWITCH2 (D137's note of
+    /// 2026-10-25): with every account of its agent cooling, the wait is the earliest reset of any of them, and where that is its own
+    /// account's the stage goes on at the reset with its words in its own conversation, on that account, nothing moved.
     /// </summary>
     [Fact]
-    public async Task An_ended_chats_waiting_words_are_never_moved_and_go_on_on_its_own_account_at_its_reset()
+    public async Task An_ended_chats_waiting_words_with_every_account_cooling_go_on_on_its_own_account_when_it_resets_first()
     {
         var ledger = new ChatLedger().Register("engine", _root);
         ledger.Chat("c1", "completed", "acp-stub", _root, profile: "account-1").Say("w1", "Hello again.");
@@ -266,6 +270,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var adapters = AdapterSet.Built();
         var roster = Roster(adapters);
         Cooling("account-1", _now.AddHours(1));
+        Cooling("account-2", _now.AddDays(1));
         using var runner = Runner(client, adapters, roster, events);
 
         Assert.Empty(await runner.WakeLimitsAsync(config));
@@ -280,6 +285,227 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.Contains("resumed[account-1]: conv-account-1", StubFile.Lines(Heard));
         Assert.DoesNotContain(LimitResetWord.Text, string.Join("\n", Prompts), StringComparison.Ordinal);
         Assert.Equal(1, ledger.Count);
+    }
+
+    /// <summary>The person's words as MSG1d's say door leaves them: kept on the record, and shown in its conversation, which the runner hears.</summary>
+    private static void Said(ChatLedger ledger, SessionEvents events, string session, string id, string text)
+    {
+        ledger.For(session).Say(id, text);
+        events.Append(session, new SessionEvent
+        {
+            Kind = SessionEventKind.User, Origin = "person", Id = id, Text = text, Reaches = "resume", Door = "screen",
+        });
+    }
+
+    private static bool IsHandedTo(string account, string line) => line.StartsWith($"prompt[{account}]", StringComparison.Ordinal);
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH2 (D137's note of 2026-10-25): an ended conversation the person writes to, its own account cooling for days while
+    /// <c>account-2</c> is ready, goes on at once in one move on <c>account-2</c>: a new part continuing it, handed Daoris's brief and the
+    /// words, which leave the old record once, named as taken by the new part. Its own conversation is never resumed on the cooling
+    /// account, the words reach the agent once, the start is counted once, and the old record never says it waits.
+    /// </summary>
+    [Fact]
+    public async Task An_ended_conversation_whose_account_cools_with_another_ready_goes_on_there_in_one_move()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "acp-stub", _root, profile: "account-1");
+        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-account-1");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        Cooling("account-1", _now.AddDays(4));
+        using var runner = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
+
+        Said(ledger, events, "c1", "w1", "Also log the port.");
+
+        await Poll.Until(() => Prompts.Any(line => IsHandedTo("account-2", line)), () => Seen(ledger, events, "c1"));
+        var handed = Prompts.Single(line => IsHandedTo("account-2", line));
+        Assert.Contains($"You continue session `c1`", handed);
+        Assert.Equal(1, Count(handed, "Also log the port."));
+        await Poll.Until(() => ledger.TakenBy.Contains(("c1", "w1", "c2")), () => Seen(ledger, events, "c1"));
+        Assert.Single(ledger.Taken);
+        Assert.Empty(ledger.Said("c1"));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("account-2", "c1", HandOverWhy.Retry, HandOverBy.Daoris), (next.Profile, next.From, next.FromWhy, next.FromBy));
+        Assert.Equal(2, ledger.Count);
+        Assert.Equal(counted + 1, roster.Mark());
+        Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("resumed[", StringComparison.Ordinal));
+        Assert.DoesNotContain(events.After("c1", 0).Events, e => e.Text?.StartsWith(ResumeWords.NotYet, StringComparison.Ordinal) == true);
+        Assert.Single(events.After("c1", 0).Events, e => e.Kind == SessionEventKind.Note && e.Text?.StartsWith("Went on in session c2", StringComparison.Ordinal) == true);
+        Assert.Equal("completed", ledger.State("c1"));
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH2: the same where no runner heard the words (the shell was not running): the limits stage reads the waiting words
+    /// and the cooling own account at its look and goes on at once on <c>account-2</c>, in one move, the start counted once.
+    /// </summary>
+    [Fact]
+    public async Task The_wake_goes_on_now_for_an_ended_conversation_whose_account_cools_with_another_ready()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "acp-stub", _root, profile: "account-1").Say("w1", "Hello again.");
+        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-account-1");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        Cooling("account-1", _now.AddDays(4));
+        using var runner = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
+
+        var woke = Assert.Single(await runner.WakeLimitsAsync(config));
+
+        Assert.Equal("c2", woke.SessionId);
+        await Poll.Until(() => Prompts.Any(line => IsHandedTo("account-2", line)), () => Seen(ledger, events, "c2"));
+        Assert.Equal(1, Count(Prompts.Single(line => IsHandedTo("account-2", line)), "Hello again."));
+        await Poll.Until(() => ledger.Said("c1").Count == 0, () => Seen(ledger, events, "c1"));
+        Assert.Contains(("c1", "w1", "c2"), ledger.TakenBy);
+        Assert.Equal((2, counted + 1), (ledger.Count, roster.Mark()));
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        Assert.Equal(2, ledger.Count);
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH2: with no account of its agent ready, an ended conversation's words wait and say the earliest reset of any account,
+    /// <c>account-2</c>'s, never its own account's alone, in D206 §3.7's words with the door that starts a conversation with them. At
+    /// that reset, its own account still cooling, the stage goes on on <c>account-2</c> in one move; the start is counted once.
+    /// </summary>
+    [Fact]
+    public async Task An_ended_conversation_with_every_account_cooling_waits_for_the_earliest_reset_of_any_then_goes_on_there()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "acp-stub", _root, profile: "account-1");
+        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-account-1");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        Cooling("account-1", _now.AddDays(4));
+        Cooling("account-2", _now.AddHours(4));
+        using var runner = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
+
+        Said(ledger, events, "c1", "w1", "Also log the port.");
+
+        var held = events.After("c1", 0).Events.FirstOrDefault(e => Coded(e, NoteCodes.HeldLimitWaits.Code));
+        await Poll.Until(
+            () => (held = events.After("c1", 0).Events.FirstOrDefault(e => Coded(e, NoteCodes.HeldLimitWaits.Code))) is not null,
+            () => Seen(ledger, events, "c1"));
+        Assert.StartsWith(ResumeWords.NotYet, held!.Text);
+        Assert.Equal("account-2", held.Parts!.Single(part => part.Code == NoteCodes.HeldLimitWaits.Code).Value("account"));
+        Assert.EndsWith("`daoris-driver sessions start-from c1`.", held.Text);
+        Assert.Equal((1, counted), (ledger.Count, roster.Mark()));
+        Assert.Equal(["w1"], ledger.Said("c1"));
+        Assert.Empty(StubFile.Lines(Heard));
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+
+        // account-2's reset comes, account-1 cooling still: the words go on there once.
+        _now = _now.AddHours(5);
+        var woke = Assert.Single(await runner.WakeLimitsAsync(config));
+        Assert.Equal("c2", woke.SessionId);
+        await Poll.Until(() => Prompts.Any(line => IsHandedTo("account-2", line)), () => Seen(ledger, events, "c2"));
+        Assert.Equal(1, Count(Prompts.Single(line => IsHandedTo("account-2", line)), "Also log the port."));
+        await Poll.Until(() => ledger.Said("c1").Count == 0, () => Seen(ledger, events, "c1"));
+        Assert.Equal((2, counted + 1), (ledger.Count, roster.Mark()));
+        Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("resumed[", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// LIMITSWITCH2's bounds: Ask Daoris's room goes elsewhere only at a limit (D205 §3.5(e)), so its ended conversation whose own account
+    /// cools still waits for that account with another ready; and a conversation whose account is signed out is still the person's press,
+    /// its words marked, nothing opened.
+    /// </summary>
+    [Fact]
+    public async Task Ask_Daoris_and_a_signed_out_account_are_unchanged()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var room = Path.Combine(_home, "room");
+        Directory.CreateDirectory(room);
+        ledger.Chat("h1", "completed", "acp-stub", room, repository: HelpRoom.Repository, profile: "account-1");
+        ledger.Chat("c3", "completed", "acp-stub", _root, profile: "account-3");
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", "account-3"));
+        new HarnessSettings().WithRotation("stub", ["account-1", "account-2", "account-3"]).Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
+        var conversations = new HarnessConversations(_home);
+        conversations.Keep("h1", "acp-stub", "conv-account-1");
+        conversations.Keep("c3", "acp-stub", "conv-account-3");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        Cooling("account-1", _now.AddDays(4));
+        AccountReads.Keep(_home, "stub", "account-3", LoginState.Out, _now);
+        using var runner = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
+
+        Said(ledger, events, "h1", "w1", "how do I drive a repository?");
+        Said(ledger, events, "c3", "w3", "Also log the port.");
+
+        var waits = await NoteAsync(events, "h1", e => Coded(e, NoteCodes.WaitsAccount.Code));
+        Assert.Equal("account-1", waits.Parts!.Single(part => part.Code == NoteCodes.WaitsAccount.Code).Value("account"));
+        Assert.StartsWith(ResumeWords.NotYet, waits.Text);
+        var cannot = await NoteAsync(events, "c3", e => e.Why is not null);
+        Assert.Equal(ContinueWhy.Account, cannot.Why);
+        Assert.Equal((2, counted), (ledger.Count, roster.Mark()));
+        Assert.Equal(["w1"], ledger.Said("h1"));
+        Assert.Equal(["w3"], ledger.Said("c3"));
+        Assert.Equal(ContinueWhy.Account, new GoOnMarks(_home).Read("c3")!.Why);
+        Assert.Empty(Prompts);
+    }
+
+    /// <summary>The first note the condition matches, waited for: the runner takes the words up on its own thread.</summary>
+    private static async Task<SessionEvent> NoteAsync(SessionEvents events, string session, Func<SessionEvent, bool> matches)
+    {
+        SessionEvent? found = null;
+        await Poll.Until(
+            () => (found = events.After(session, 0).Events.FirstOrDefault(e => matches(e))) is not null,
+            () => string.Join(" | ", events.After(session, 0).Events.Select(e => $"{e.Kind}:{e.Text}")));
+        return found!;
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH2: a closed quest's session whose own account cools with another ready goes on at once as a conversation in its tree, by
+    /// the runner's ended move (the reason <c>account</c> its driver hands over): its words handed once on <c>account-2</c>, taken off the
+    /// old record once, the start counted once; a session of a quest still open is the driver's own carry-on, never this.
+    /// </summary>
+    [Fact]
+    public async Task A_closed_quests_session_whose_account_cools_goes_on_as_a_conversation_on_the_ready_account()
+    {
+        var ledger = new ChatLedger().Register("engine", _root).Quest("q1", "Done").Quest("q2", "Open");
+        ledger.Chat("s1", "completed", "acp-stub", _root, kind: "driven", quest: "q1", profile: "account-1").Say("w1", "Also log the port.");
+        ledger.Chat("s2", "completed", "acp-stub", _root, kind: "driven", quest: "q2", profile: "account-1").Say("w2", "Not mine to move.");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        Cooling("account-1", _now.AddDays(4));
+        using var runner = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
+        var held = ContinueWhy.AccountHeld(NextHold.Cooling);
+
+        var open = await runner.GoOnLostAsync("s2", held, config);
+        Assert.Null(open.SessionId);
+        Assert.Equal((2, counted), (ledger.Count, roster.Mark()));
+
+        var closed = await runner.GoOnLostAsync("s1", held, config);
+
+        Assert.Equal((true, true), (closed.SessionId is not null, closed.Sent));
+        await Poll.Until(() => Prompts.Any(line => IsHandedTo("account-2", line)), () => Seen(ledger, events, closed.SessionId!));
+        Assert.Equal(1, Count(Prompts.Single(line => IsHandedTo("account-2", line)), "Also log the port."));
+        await Poll.Until(() => ledger.Said("s1").Count == 0, () => Seen(ledger, events, "s1"));
+        Assert.Contains(("s1", "w1", closed.SessionId), ledger.TakenBy);
+        var next = (await client.RecordAsync(closed.SessionId!))!;
+        Assert.Equal(("chat", "account-2", "s1", HandOverWhy.Retry), (next.Kind, next.Profile, next.From, next.FromWhy));
+        Assert.Equal(counted + 1, roster.Mark());
+        Assert.Equal(["w2"], ledger.Said("s2"));
+        Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("resumed[", StringComparison.Ordinal));
     }
 
     /// <summary>An ended conversation held by its limit, on account-1, its conversation kept; account-2 cooling for a day.</summary>

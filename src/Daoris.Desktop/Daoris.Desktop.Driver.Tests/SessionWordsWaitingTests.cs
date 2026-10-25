@@ -117,6 +117,34 @@ public sealed class SessionWordsWaitingTests : IDisposable
         Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset, "work is cooling until 11:00."), (held.Why, held.Until, held.Reason));
     }
 
+    /// <summary>
+    /// LIMITSWITCH2 (D137's note of 2026-10-25): a chat whose runner held its words because every account of its agent cools is held until the
+    /// earliest reset of any, naming that account, never its own account's alone; Ask Daoris's room alone keeps its own.
+    /// </summary>
+    [Fact]
+    public void A_chat_held_with_every_account_cooling_says_the_earliest_reset_of_any()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude", "work"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude", "home"));
+        var json = Json(
+            Record("c1", "completed", kind: "chat", said: ["w1"]),
+            Record("he1p0000", "stopped", kind: "chat", repository: HelpRoom.Repository, said: ["w2"]));
+        foreach (var session in new[] { "c1", "he1p0000" })
+        {
+            Events.Append(session, new SessionEvent { Kind = SessionEventKind.Note, Text = ResumeWords.NotYet + "the accounts are cooling." });
+        }
+
+        var earlier = new CoolingEntry("claude", "home", Reset.AddHours(-1), Stated: true, Window: null, Seen: T0, Session: null);
+        var look = Waiting(json, fresh: false, coolingOf: (adapter, profile) => profile == "home" ? earlier : CoolingOf(adapter, profile));
+
+        Assert.Equal(
+            (WordsHold.Cooling, (DateTimeOffset?)Reset.AddHours(-1), "home"),
+            (look.Held["c1"].Why, look.Held["c1"].Until, look.Held["c1"].Account));
+        Assert.Equal(
+            (WordsHold.Cooling, (DateTimeOffset?)Reset, "work"),
+            (look.Held["he1p0000"].Why, look.Held["he1p0000"].Until, look.Held["he1p0000"].Account));
+    }
+
     /// <summary>ASKHIST1: Ask Daoris's own conversation goes on with the words waiting on it, as a chat does, so it is listed so.</summary>
     [Fact]
     public void Ask_daoris_s_conversation_whose_words_wait_is_waiting()
@@ -168,7 +196,8 @@ public sealed class SessionWordsWaitingTests : IDisposable
     /// <summary>
     /// LIMITSWITCH1 (D137's note of 2026-10-25): where no loop has looked, a taken quest's record whose own account cools is held by
     /// nothing while another account of its agent is ready, since the loop's look carries its words on there; with every account
-    /// cooling it is held for the earliest reset of any, naming that account; a closed quest's keeps the own account's.
+    /// cooling it is held for the earliest reset of any, naming that account. LIMITSWITCH2: a closed quest's session is read the same, its
+    /// door out of the wait the conversation with the words.
     /// </summary>
     [Fact]
     public void A_fresh_plan_holds_the_words_of_a_taken_quest_only_where_no_account_is_ready_and_for_the_earliest_reset()
@@ -179,10 +208,12 @@ public sealed class SessionWordsWaitingTests : IDisposable
         Consideration[] taken = [GoesOn(Quest("q1", "Taken"), json, "s1")];
         Consideration[] closed = [GoesOn(Quest("q1", "Done"), json, "s1")];
 
-        // `home` is ready: the loop's look takes the words there, so nothing is held for a reset.
+        // `home` is ready: the loop's look takes the words there, so nothing is held for a reset, and the shell's runner takes a closed
+        // quest's session's words there too.
         Assert.Empty(Waiting(json, taken).Held);
-        // A closed quest's session has nothing that carries its words on, so its own account's reset still holds them.
-        Assert.Equal(Reset, Waiting(json, closed).Held["s1"].Until);
+        Assert.Empty(Waiting(json, closed).Held);
+        var closedHeld = Waiting(json, closed, coolingOf: (adapter, profile) => new CoolingEntry("claude", profile, Reset, Stated: true, Window: null, Seen: T0, Session: null)).Held["s1"];
+        Assert.EndsWith(ResumeWords.ChatDoor("s1"), closedHeld.Reason);
 
         // Every account cools, `home` first: the earliest reset of any holds them, naming it.
         var earlier = new CoolingEntry("claude", "home", Reset.AddHours(-1), Stated: true, Window: null, Seen: T0, Session: null);

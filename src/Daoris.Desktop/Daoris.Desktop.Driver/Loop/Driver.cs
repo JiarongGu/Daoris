@@ -1982,11 +1982,15 @@ public sealed class Driver(
                 // A resume asks for its record's own account (MSG1g, D137 §2.2): its conversation lives in that account's
                 // configuration home (D131 §1), so the walk that chooses a start's account never chooses a resume's. A limited record's
                 // words go where its line goes, never waiting on its cooling account while another could take them (step 2). So do an
-                // ended record's of a line the driver carries on (LIMITSWITCH1, D137's note of 2026-10-25): an open or taken quest's.
+                // ended record's of a line the driver carries on (LIMITSWITCH1, D137's note of 2026-10-25): an open or taken quest's. And a
+                // closed quest's session's (LIMITSWITCH2): the shell's chat runner goes on in a new part of it, so where it has one and the
+                // person's words wait, they go on at once too, the runner's ended move walking and counting the start itself.
+                var carried = quest.Status is "Open" or "Taken";
                 resume = await Context.Harnesses
                     .ResumeAsync(
                         agent, config, start.Workspace, words.Profile, StartKind.Driven, Context.NewSessions.Covers(words), ct: ct,
-                        limited: limitedWords, model: words.Asked?.NamedModel, switches: quest.Status is "Open" or "Taken")
+                        limited: limitedWords, model: words.Asked?.NamedModel,
+                        switches: carried || (Context.GoesOnLost is not null && words.Waiting.Any(word => word.Persons)), walkCounts: carried)
                     .ConfigureAwait(false);
                 selection = resume.Selection;
                 limitResume = limitedWords && resume.Own == NextHold.Ready && selection.Allowed;
@@ -2375,7 +2379,10 @@ public sealed class Driver(
                 // 🔴 SESSCTX1c part B (D189 point 3; the steward's choice: a closed quest opens no driven record): a closed quest's session
                 // whose own conversation is proven lost goes on by itself as a conversation in its tree, through the shell's chat runner,
                 // handed the brief and the person's words. Anything else, and a host with no runner, waits for the person as before.
-                if (!fellBack.Never && !fellBack.Holds && fellBack.Lost && Context.GoesOnLost is { } goesOn
+                // LIMITSWITCH2 (D137's note of 2026-10-25): so does one whose own account cools while another of the line's is ready, the reason
+                // `account` the roster's switch made; the runner's ended move opens it there, never the brief's move, which asks the cooling one.
+                var switched = resume is { Switched: true } && fellBack.Code == ContinueWhy.Account;
+                if (!fellBack.Never && !fellBack.Holds && (fellBack.Lost || switched) && Context.GoesOnLost is { } goesOn
                     && await GoOns.GoesOnLostAsync(goesOn, quest, park, fellBack, ct).ConfigureAwait(false) is { } moved)
                 {
                     return moved;

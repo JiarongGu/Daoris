@@ -452,9 +452,95 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH1's bound: nothing carries a closed quest's session on by itself (D137 §2.2), so words to a record whose quest is done
-    /// still wait for the own account's reset while another is ready, said with the door that starts a conversation with them, as
-    /// before; the switch is for a line that is open or taken.
+    /// 🔴 LIMITSWITCH2 (D137's note of 2026-10-25): words to a closed quest's session whose own account cools with <c>account-2</c> ready go
+    /// on at once as a conversation in its tree where the shell's chat runner is: the driver hands the session over with the reason
+    /// <c>account</c>, once, holds nothing, opens no driven record and walks no start it does not make (its judgement counts none; the
+    /// runner's ended move walks and counts the one start).
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_session_of_a_closed_quest_whose_account_cools_go_on_through_the_runner_on_the_ready_account()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var handed = new List<(string Session, string Why)>();
+        Task<StartedFrom> GoesOn(string session, ContinueReason why, CancellationToken _)
+        {
+            lock (handed) handed.Add((session, why.Code));
+            return Task.FromResult(new StartedFrom("c9", true, null, $"`{session}` went on in conversation `c9` on the next account."));
+        }
+
+        var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster)
+        {
+            GoesOnLost = GoesOn,
+        };
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Done", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until.AddDays(4), true, "weekly", Seen, "s0"), Seen);
+        await service.SayAsync("s1", "Also log the port.");
+        var counted = roster.Mark();
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        lock (handed) Assert.Equal([("s1", ContinueWhy.Account)], handed);
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.Empty(look.Waits);
+        Assert.Equal(counted, roster.Mark());
+        Assert.Null(new GoOnMarks(_home).Read("s1"));
+        Assert.Contains(look.Events, line => line.Contains("went on in conversation `c9`", StringComparison.Ordinal));
+        Assert.DoesNotContain(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet:", StringComparison.Ordinal) == true);
+    }
+
+    /// <summary>
+    /// LIMITSWITCH2: with every account cooling, a closed quest's session's words wait, the hold naming the earliest reset of any account,
+    /// <c>account-2</c>'s, never the own account's alone; nothing is handed to the runner while none is ready.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_session_of_a_closed_quest_with_every_account_cooling_wait_for_the_earliest_reset()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var handed = new List<string>();
+        Task<StartedFrom> GoesOn(string session, ContinueReason why, CancellationToken _)
+        {
+            lock (handed) handed.Add(session);
+            return Task.FromResult(new StartedFrom("c9", true, null, "went on"));
+        }
+
+        var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster)
+        {
+            GoesOnLost = GoesOn,
+        };
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until.AddDays(4), true, "weekly", Seen, "s0"), Seen);
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-2", Until, true, "weekly", Seen, "s0"), Seen);
+        await service.SayAsync("s1", "Also log the port.");
+
+        var held = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", held.Events)}\nafter: {service.Record("s1")}";
+        var verdict = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
+        Assert.True(verdict.Verdict == StartVerdict.Blocked, seen);
+        Assert.Contains("`account-2`", verdict.Reason);
+        Assert.DoesNotContain("Oct 7", verdict.Reason);
+        var wait = Assert.Single(held.Waits);
+        Assert.Equal(("account-2", Until), (wait.Account, wait.Until));
+        lock (handed) Assert.Empty(handed);
+        Assert.Equal(1, service.SessionCount);
+        Assert.Equal(["w1"], service.Said("s1"));
+    }
+
+    /// <summary>
+    /// LIMITSWITCH1's bound, kept where no runner is (the headless host, LIMITSWITCH2): nothing carries a closed quest's session on by
+    /// itself (D137 §2.2), so words to a record whose quest is done still wait for the own account's reset while another is ready, said
+    /// with the door that starts a conversation with them, as before; the switch is for a line that is open or taken, or that a runner
+    /// takes on.
     /// </summary>
     [Fact]
     public async Task Words_to_a_session_of_a_closed_quest_still_wait_for_their_own_account_with_another_ready()
