@@ -608,6 +608,7 @@
     "Sessions/History/SessionArchive.cs": "Workplace",
     "Sessions/History/SessionDeletion.cs": "Workplace",
     "Sessions/History/SessionHomeFiles.cs": "Workplace",
+    "Sessions/LiveSessionReads.cs": "Agents",
     "Sessions/LookFacts.cs": "Participants",
     "Sessions/Questions/QuestionFiles.cs": "Work orders",
     "Sessions/Questions/QuestionSupervisorDecisions.cs": "Roles",
@@ -898,8 +899,7 @@
       "family": "Install names Workplace",
       "after": "Install",
       "files": {
-        "Install/ToolInstall.cs": ["DownloadAsked","DownloadClearing","DownloadJudge","LiveSessions"],
-        "Install/ToolsCommand.cs": ["LiveSessions"]
+        "Install/ToolInstall.cs": ["DownloadAsked","DownloadClearing","DownloadJudge"]
       }
     },
     {
