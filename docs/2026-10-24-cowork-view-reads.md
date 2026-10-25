@@ -1,6 +1,6 @@
-# COWORKVIEW1: the reads of rounds 1 to 8, the Opus foundation reader's of each and Codex's of rounds 2 to 8 (D191)
+# COWORKVIEW1: the reads of rounds 1 to 9, the Opus foundation reader's of each and Codex's of rounds 2 to 9 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17. Both read round 6 at `7341acf9f`: Codex asks another round for row a (9 findings, 3 blocking), and the Opus foundation reader accepts it (8 findings, none blocking), asking that two be written into the contract before the row is filed; round 7 answers both in the design's §18. The Opus foundation reader read round 7 at `0d8e25085` and would accept row a after named changes (8 findings, none blocking), which the design's §19 places. Codex read round 7 with those named changes at `26ef34d80` and asks another round for row a (8 findings, 2 blocking, one point seen twice); round 8 answers it in the design's §20. Both read round 8 at `103fc1aa6`: Codex asks another round for row a (6 findings, 4 blocking, on two points), and the Opus foundation reader would accept it after named changes (5 findings, 1 blocking); round 9 answers both in the design's §21.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17. Both read round 6 at `7341acf9f`: Codex asks another round for row a (9 findings, 3 blocking), and the Opus foundation reader accepts it (8 findings, none blocking), asking that two be written into the contract before the row is filed; round 7 answers both in the design's §18. The Opus foundation reader read round 7 at `0d8e25085` and would accept row a after named changes (8 findings, none blocking), which the design's §19 places. Codex read round 7 with those named changes at `26ef34d80` and asks another round for row a (8 findings, 2 blocking, one point seen twice); round 8 answers it in the design's §20. Both read round 8 at `103fc1aa6`: Codex asks another round for row a (6 findings, 4 blocking, on two points), and the Opus foundation reader would accept it after named changes (5 findings, 1 blocking); round 9 answers both in the design's §21. Both read round 9 at `a30797bce`: Codex asks another round for row a (7 findings, 6 blocking, one point seen from five sides: a close resting on evidence that is not proof of exit), and the Opus foundation reader would accept it after named changes (7 findings, 1 blocking: a chat go-on's retry unbracketed); round 10 answers both in the design's §22.
 
 ## Opus (foundation), round 1
 
@@ -2003,3 +2003,208 @@ Read at `103fc1aa6`. Its `src/` is the same as `26ef34d80`'s, the commit Codex r
 5 findings, 1 blocking.
 
 **Verdict for row a: accept after named changes the steward can check without another read.** Finding 1 must be written into §3.6 rule 2, rule 5's go-on variant, and the §9 and §20 sentences before the row is filed. Findings 2 to 5 are narrowings, placements and named residues, and none of them changes row a's shape.
+
+## Codex, round 9
+
+Codex's read of round 9 at `a30797bce`, verbatim: 7 findings, 6 of them blocking, on one point seen from five sides: a closing that rests on evidence which is not proof of a process's exit (a record leaving `working`, its 1.1; a later taking, its 2.1; a false stop and an issuer's crash, its 2.2), a foreign issuer's life read as its child's (its 2.3), rule 5's prefixes held only against fresh compositions (its 2.4), and D173's truthful partial visibility (its 3.1); another round for row a. Its §0 takes round 8's findings as taken or answered but its 3.1, open and restated as its own 3.1. It was run read-only at that commit, whose `src/` is `26ef34d80`'s, the code round 9 was written from. Its sections are bold lines, not headings, and are kept so. Its two links, to `Orphans.cs:76` and `SessionProcesses.cs:272`, were written from the repository's root with a line number after the file's name and would not resolve from `docs/`, so each is given as the plain citation its other lines are. Round 10 answers it in the design's §22.
+
+Reviewed read-only at HEAD `a30797bce`; nothing changed. **Design** below means `docs/2026-10-24-cowork-view-design.md`.
+
+**0. Round-8 findings**
+
+| Finding | Disposition | Reason |
+|---|---|---|
+| 1.1 Issuer death does not establish agent death | **Taken — non-blocking for the reported case** | Design:1137–1149 makes the untaken competitor uncertain. The taken-generation premise remains wrong; see §1 below. |
+| 2.1 Local token lifetime answers the original race | **Answered with a reason that holds — non-blocking** | Design:940–955 specifies one process-wide set, independent entries, and removal after exit and end disposition. |
+| 2.2 Foreign issuer crashes while its untaken agent survives | **Taken — non-blocking** | Design:2351 requires uncertain after issuer exit, including the surviving-agent variant. |
+| 2.3 Late go-on contradicts generation ordering | **Taken — non-blocking for that ordering** | Design:1072–1078 orders takings by their own positions, so C’s earlier taking cannot close subsequently admitted B. |
+| 3.1 Truthful partial visibility remains violated | **Open — blocking** | Design:2768–2769 expressly retains two live-to-lost paths. Naming them does not make their states truthful. |
+| 3.2 No upward edge or routing/Part B dependency | **Answered with a reason that holds — non-blocking** | Design:1858–1872 preserves downward calls; FOUNDATION1:1270 explicitly leaves row a independent. |
+
+**1. Wrong claims about existing code**
+
+1. **Blocking — a record leaving `working` does not prove process exit.** Design:1139–1141 and `docs/decisions/D173.md:5770` claim that implication, but `Orphans.cs:76` accepts missing tracking/markers and advances to stopped at :81 without ending a process. The chat exception path also calls `EndIfRunning` at `Conversations/Chat/ChatRunner.cs:2943`, then concludes at :2954 or :2967; `SessionProcesses.cs:272` calls `Kill` without waiting for exit. Delaying every lineage `end` until exit does not establish the claimed ordering for record transitions.
+
+**2. Changed protocol and prefix proof**
+
+1. **Blocking — rule 2 can override a live token.** Let taken A remain running; competitor B finishes and removes the shared entry and marker (`Sessions/SessionProcesses.cs:668`, :675), another issuer sweeps the record stopped, and a go-on takes it (`Core/Sessions/SessionLedger.cs:1725`). Design:1072–1091 then closes A lost at that taking despite A’s held token; Design:2768–2769 acknowledges this exact exception. A later taking therefore cannot be unconditional exit proof.
+
+2. **Blocking — rule 3 still closes a surviving taken process.** After that false stop, crash A’s issuer while its uncontained agent and child survive; containment failure remains possible at `Platform/AgentJobs.cs:127` and `Platform/ProcessJob.cs:58`. Design:1137–1141 now combines issuer-gone with the false stopped record and draws lost, although the agent lives. The taken case needs uncertainty wherever the record supplies no verified exit evidence.
+
+3. **Blocking — a living foreign issuer can retain a gone child as working indefinitely.** Design:1133–1136 uses issuer liveness regardless of the record, and Design:2743–2747 explicitly preserves open children after a refused `end`. Since `Sessions/ChildLineage.cs:108` silently drops failed writes, an exited competitor with a lost `end` remains working in another Daoris process until its issuer exits; issuer liveness proves no continued agent execution.
+
+4. **Blocking — rule 5’s prefixes do not prove the stated safety property.** Design:2351 covers the original counterexamples, but omits the false-stop/successor-taking and false-stop/issuer-crash prefixes above, and its foreign-reader variant deliberately expects working after the agent exited. Held-versus-fresh equality only shows that both compositions agree; each prefix also needs an independently justified state assertion. **Non-blocking wording correction:** its refusal sequence still says `end` then process exit, contradicting rule 4’s required order at Design:2350.
+
+**3. Decided rules, module edges and scope**
+
+1. **Blocking — D173’s truthful partial visibility is still breached.** The definite states above contradict `docs/decisions/D173.md:11–12` and round 9’s promise at :5766–5771. Design:2762–2769 may defer repairing the registry, but row a must still render its consequences truthfully.
+
+2. **Non-blocking — no translation, upward-edge, routing-half or Part B dependency issue found.** Design:2090, :2094 and :2161 specify the new bilingual state and `lastSeen` mapping, with both-catalogue checks at :2365. The placements at :1866–1872 agree with `Driver.Tests/fixtures/structure.json:325`, :510 and :576, and FOUNDATION1:1270 keeps the routing half separate.
+
+**Verdict for row a: another round.** Settle the remaining record/taking-as-exit assumptions and foreign-issuer false-working case, then add the missing safety assertions to rule 5’s prefix comparisons.
+
+## Opus (foundation), round 9
+
+The independent Opus 5.5 reader's foundation read of round 9 at `a30797bce`, verbatim but for its headings set one level down: 7 findings, 1 blocking; accept row a after named changes the steward can check without another read, finding 1 (a chat go-on's one retry, a spawn row a does not bracket) to be written into §1.1, §3.6 and rule 4 before the row is filed, findings 2 to 4 corrections to §9, §3.6, D173's note and rule 5, and findings 5 to 7 one-line fixes. Its §0 holds every answer round 9 gave both reads of round 8, with residues it names as its own findings. The steward ran it read-only beside Codex's read of the same commit. It carries no link, so none is rewritten. Round 10 answers it in the design's §22.
+
+### 0. Both reads of round 8
+
+| Read · finding | Round 9's answer | Does it hold? |
+|---|---|---|
+| **Codex 1.1** (an issuer's death is not its agent's; an untaken competitor's record says nothing of its exit) | Taken | **Holds.** §3.6 withdraws "issuer gone is agents gone". An untaken generation is never read by its record, and an issuer that is gone or cannot be told yields *not known*. Every cited containment line checks out (`AgentJobs.cs:46-49`, `:111-117`, `:127`; `ProcessJob.cs:50`, `:53`, `:58`; `AgentStarts.cs:33`, `:40-55`). The taken half still rests on the sweep's marker, which has more gaps than §9 names (F2). |
+| **Codex 2.2** (crashing a foreign issuer closes its live competitor) | Taken | **Holds.** From the issuer's exit the competitor reads *not known*, never *lost*. Rule 5 carries the surviving-agent case and its contained variant at every prefix. |
+| **Codex 2.3** (late go-on against generation order) | Taken, as O8-F1 | **Holds for B.** B is taken at its `took`, the last taking in the file. Rule 5's ordering of A's `end` is not the order the code writes (F4). |
+| **Codex 3.1** (truthful partial visibility) | Taken | **Holds for both counterexamples.** Other residues remain: F1, F2 and F3. |
+| Codex §0, 2.1, 3.2 (non-blocking) | Answered. 2.1's token life is now placed. | **Hold.** The one-set-per-process claim checks out (`DriverLoop.cs:69`, `LoopContext.cs:174`, `AgentJobs.cs:56`). The placements are rechecked in §2 below. |
+| **Opus F1** (rule 2 by `start` lines) | Taken as named | **Holds.** |
+| Opus F2 (record half's false *working*; `starting` left for good) | (a) taken as named; (b) answered with *not known*, and §9 names the record left `starting` | **Holds.** The reason for rejecting "`queued`/`starting` read as not running" is sound. |
+| Opus F3 (token lifecycle) | Taken, and a step further | **Holds in the main.** Gaps remain: the chat go-on's retry and take-back (F1), and three small points (F6). |
+| Opus F4 (issuer liveness) | Taken | **Holds.** `HomeLease.cs:426-449` matches, and Part B's reading (cannot tell = alive, foundation `:812-813`) stays compatible. One linked-file point (F7). |
+| Opus F5 (taken generation read through `running`) | Taken, the read's first way | **Holds.** §9's registry-defect bullet is too narrow (F2). |
+| Opus §3 items 1–3 | Taken | **Hold.** |
+
+### 1. The changed protocol
+
+- **Rule 1, every `end` after its process's exit.** Checked on every path:
+  - the driven ordinary path (`Driver.cs:3845`, then `:3910`);
+  - a continuation and the retry (`DriverContinuations.cs:1272-1275`, `:1312-1315`);
+  - a refused run (after `:3971`);
+  - a chat's ordinary path (`ChatRunner.cs:2895`, then `:2977`);
+  - a chat's exception path (`:2943`, then the `finally`).
+
+  It holds: an `end` the fold reads is its issuer's word that the process has gone.
+
+- **Rule 2, takings in the file's order.** The argument is sound: a taking is written after its advance returns and before its run can let the record go, and the record is taken again only after it is let go. It held against every ordering I tried:
+  - two record starts racing, where the loser is refused working→working;
+  - the late go-on;
+  - a run moved first;
+  - a lost `took`, which leaves an untaken generation that closes nothing;
+  - a lost taken `start`, whose lines go unplaced while its predecessor is left to its token or issuer.
+
+  It fails only where the record leaves `working` without its run letting it go: the sweep's false `stopped`. That has more causes than §9 names. In those cases rule 2 closes a live run `lost` whatever its token says (F2).
+
+- **Rule 3, the process read by its issuer.**
+  - **This window's token.** It never draws *lost* while the token's process lives. It does draw *working* after the token set has seen the exit, until the `end` lands (F3b).
+  - **Another issuer, alive.** It reads "as the harness says, whatever the record". That is sound only while that issuer will write the `end`. It is not sound for a taken generation whose `end` was refused or never written (F3a).
+  - **Another issuer, gone or cannot be told.** An untaken generation reads *not known*, which is sound in the surviving and contained variants. A taken one closes on its record's move past `working`, which is only as sound as the sweep's marker (F2).
+  - Gone and cannot-tell read alike, so the judge waiting only on issuers read alive misses no move.
+
+- **Unbracketed spawn.** A chat go-on's one retry (SESSCTX1c) spawns again with no move, and the design names no `start` or token for it (F1). Under a build that carries the go-on's token, the retry's live children land in the generation the first attempt's unclean `end` closed, and read *lost*.
+
+- **Is *not known* hiding a truth?** I found none the file holds. In each case where *not known* is drawn, no line proves the exit:
+  - an untaken generation whose record a lost `took` took;
+  - a history generation under a `working` record;
+  - an issuer that cannot be told.
+
+  The opposite happens once: the issuing window knows of an exit (its set watched it) and still draws *working* (F3b).
+
+- **Rule 5's prefix proof.** For the orderings it names, held equals fresh at each prefix. Every input that moves a prefix wakes the held composition: lines, records, a token leaving, the exit of an issuer read alive, and the registration's own judgement for a token or issuer that moved mid-composition. It has three gaps:
+  - no case for F1's retry;
+  - two cases written in an order the specified writes do not produce;
+  - one prefix's reading left unstated (F4).
+
+### 2. The module map and decided rules
+
+- **No upward edge.** I checked each placement against `fixtures/structure.json` (`:126`, `:291`, `:325`, `:510`, `:576`):
+  - The token set sits in Agents (9). It is named from below by:
+    - the writer in Participants (12);
+    - `ChatGoOn` in Course (14);
+    - Loop (21);
+    - the modules.
+  - The lease function sits in Platform (1). It is named from below by:
+    - Agents;
+    - the verb in Work orders (15);
+    - the modules.
+  - The composition takes token presence and issuer answers as plain values, so §14.3's `Domain/` purity holds.
+- **One linked consumer is unnamed.** `HomeLease.cs` is compiled into the launcher (F7).
+- **D173 ADR-B (truthful partial visibility).** Kept for both counterexamples. Residues: F1, F2, F3.
+- **D182.** Point 6 holds: one .NET function serves the read and the verb; the verb issues no token and reads every generation by its issuer. Point 3 is unchanged.
+- **Translation parity.** Holds:
+  - `child.uncertain` is in both catalogues and in §5.4's mapping, placed before `child.lastSeen`, in the neutral palette;
+  - story 18 is drawn in both languages, and the count of eighteen is right;
+  - rule 19's table test covers the new key;
+  - there is no new glossary term.
+- **Routing half and Part B.** Nothing leans on either. FOUNDATION1 §5.1 names round 9 (`foundation-design.md:1270`).
+
+### 3. Claims about the code
+
+**Wrong or overstated:**
+1. Design:1105 cites `DriverWatch.cs:715-717` for "once per watch start". Those lines are the config load's comment. The sweep is `:721-730` (`Orphans.EndAsync` at `:723`, guarded by `swept`) (F5).
+2. Design:1090 says "The one way a taking does not follow its predecessor's exit is …". Design:1139-1142 says the record left `working` "only once the process it took had exited (… the orphan sweep only once the process its session's marker names is gone)". D173's round-9 note says "which follows the exit of the process it took". All three claim more than the code holds (F2).
+3. Rule 5 (Design:2351) cites "the residue §9 names" for C, a taken continuation. §9 (Design:2740-2746) names the residue for an untaken process only (F3).
+4. Rule 5 writes A's `end` before C's `start`, and the first run's `end` before its continuation in Codex's ordering of round 7. But §3.6 (Design:874, :1069), §9 and §21 place a driven run's `end` at `Driver.cs:3910`, after `:3870` and `:3879`. §9's "a few lines" (Design:2774) understates the gap (F4).
+5. Design:952 says "So a token gone says its process has exited". That holds only if the set never reads a process it cannot watch as exited. The shape it follows does exactly that (`AgentJobs.cs:278-282`) (F6).
+
+**Verified as cited:**
+- `AgentJobs.cs:56`, `:203-208`, `:260-283`
+- `AgentStarts.cs:33`, `:40-55`
+- `HomeLease.cs:426-449`, `:444-448`
+- `SessionProcesses.cs:223`, `:405-406`, `:408`, `:409`, `:455-459`, `:500-508`, `:520-523`, `:589`, `:623`, `:640`, `:668`, `:675`
+- `Orphans.cs:74-81`
+- `Driver.cs:3661-3667`, `:3673`, `:3831-3840`, `:3910`, `:3971-3990`
+- `DriverContinuations.cs:1242`, `:1299`
+- `ChatRunner.cs:2893`, `:2896`, `:2943`, `:2977`
+- `ChatGoOn.cs:667-674`, `:756-761`
+- `SessionLedger.cs:1723-1726`, `:1821-1822`
+- `DriverLoop.cs:69`, `LoopContext.cs:174`
+- `ProcessJob.cs:48-68`, `:289`
+- §21's three corrections of Codex's lines; `src/` is unchanged from `26ef34d80` through `a30797bce`.
+
+### 4. Findings
+
+1. **A chat go-on's one retry is a spawn row a does not bracket. Blocking for row a.**
+   - **The code.** SESSCTX1c retries a pipe-door go-on (Ask Daoris's too) whose harness ended before naming its conversation:
+     - the first attempt returns (`ChatRunner.cs:2902-2909`);
+     - its `finally` writes that process's unclean `end` (`:2970-2977`);
+     - `AgainAsync` calls `RunAsync` with `new GoingOn(goOn.Record, goOn.Ask)` (`:1808-1819`);
+     - that spawns at the chat's place (`:1596`) with no move, the record still `working` from `ChatGoOn.cs:667`.
+   - **The design.** §3.6 writes a go-on's taken `start` at its move, "its token issued there and carried with the run to its spawn" (Design:886-895). It names no `start` or token for this retry, and rule 4 has no case for it.
+   - **Two plausible builds, both wrong:**
+     - A build that keeps the token on the shared `ResumeAsk` (`ChatGoOn.cs:683-690`) places the retry's lines in the generation the first `end` closed. Its live children then read *lost*.
+     - A build that issues no token leaves every retry line unplaced, so its children are never rows.
+   - **Change.** Treat it as the driven retry: issue a fresh token and write a taken `start` (`took: true`) before the spawn, set it on the spawn and hand it its process. List it in §1.1 and §3.6 among the runs whose record is the process's before its spawn. Add a rule 4 case: the first attempt exits non-zero before naming, and the retry has a child working; the child reads *working* in the retry's own generation. Cover both a chat's and Ask Daoris's go-on.
+   - **Not blocking, same row:** the token issued at a go-on's move is never told when:
+     - the go-on is put back (`TakenBackAsync`, `ChatGoOn.cs:680`, `:765`);
+     - it throws before reaching the runner (`:678-715`, `:763-782`).
+
+     §4.3's Course row and rule 4 should say who tells the token set.
+
+2. **The sweep's false `stopped` has more causes than §9 names, and then rule 2 closes a live run. Not blocking.**
+   - **The rule.** The sweep stops a `working` record wherever neither this registry nor a live marker holds the session (`Orphans.cs:74-81`; `SessionProcesses.cs:455-459`, `:493-525`).
+   - **§9 names one cause:** a competitor's `Untrack` (Design:2762-2769).
+   - **Further causes:**
+     - **A run moved first** is `working` from its move until its spawn's `Track`, with no marker in between. That spans the move (`DriverContinuations.cs:278-285`; `ChatGoOn.cs:667`, `:756`), the preparation, the start gate, and the spawn's `Track` (`Driver.cs:3666`).
+     - **A continuation or the retry:** the marker still names the exited first process until its own `Track` (`DriverContinuations.cs:1242`→`:1261`, `:1299`→`:1302`; the first's tracking is held to the end of `HoldAsync`, `Driver.cs:3666`).
+     - **`Mark` is best effort** (`SessionProcesses.cs:627-632`).
+   - **What follows.** Another Daoris process's sweep at its watch start (a `--share` loop's among them, foundation `:302`) stops that record. §9's two consequences then follow, including rule 2's close beside a live run even in the window holding its token.
+   - **Change.**
+     - Name these causes in §9's bullet.
+     - Make Design:1090, Design:1139-1142 and D173's note point to that bullet.
+     - Optionally, rule 2 closes no generation whose token the reader holds with its exit not yet seen. That removes the issuing window's false *lost* at little cost.
+
+3. **Two cases draw *working* where nothing proves the process runs. Not blocking.**
+   - **(a) Another Daoris process reading, issuer alive.** A taken generation whose `end` was refused, or never written, reads *working* for as long as its issuer lives. "Never written" covers round 9's own throw past `Driver.cs:3910` and a continuation's throw past `DriverContinuations.cs:1272-1275`. §9 names this only for an untaken process, and rule 5 miscites it (§3 item 3).
+   - **(b) The issuing window.** A token leaves at the later of its process's exit and its `end`, so after the set has watched the exit its runs still read *working* until the `end` lands:
+     - on the driven path, through the drain and the conclusion (`Driver.cs:3845-3910`, bounded by `:3956`, `:3997`, `:4007-4028`);
+     - on a chat's ordinary path, without bound, since it awaits its capture whole (`ChatRunner.cs:2895-2896`), so a stray process holding the pipe keeps the children *working* after the agent has gone.
+   - **Change.** Name both in §9 with their bounds, and correct rule 5's citation. For (b), alternatively, rule 3 reads a held token whose exit has been seen as the exit proven, and the `end` gives the close its word where it lands.
+
+4. **Rule 5 writes two orderings the specified writes do not produce, and leaves one prefix unstated. Not blocking.**
+   - **The order.** A driven first process's `end` follows the conclusion (`Driver.cs:3910`), which follows its retry and continuations (`:3870`, `:3879`). Rule 2 therefore closes A at C's taking, and A's open runs read `lost` for C's whole run. They read as A's `end` says only after the conclusion. §9's O7-F7 bullet covers only a go-on's or a resume's taking.
+   - **The unstated prefix.** In the variant with C's `end` lost, rule 3 reads C as `ended` between the conclusion and B's `took` (its token gone, its record `completed`). B's `took` then turns it `lost`. The case states only `lost`.
+   - **Change.** Either:
+     - restate both cases in the order the code produces, stating A's interim `lost` and C's `ended`, and widen §9's bullet to a continuation's and the retry's takings; or
+     - write a driven first process's `end` at its drain (`Driver.cs:3851`), before any retry or continuation, and keep the cases as written.
+
+5. **A wrong citation. Not blocking.** `DriverWatch.cs:715-717` (Design:1105) should be `:721-730` (sweep at `:723`).
+
+6. **Three small gaps in the token's life. Not blocking.**
+   - (i) §4.1's judge (Design:1566-1570) lists the token leavings that no line records, but not a run that ended without its `end`. Add it.
+   - (ii) The set watches "as `AgentStart.Lives`" (Design:947), and `Lives` releases on a process it cannot open (`AgentJobs.cs:278-282`). Say the set keeps such a token until Loop tells it the exit Loop read itself.
+   - (iii) The new exit reads before a refused run's `end` (after `Driver.cs:3971`, Design:914) and before a chat exception-path `end` (after `ChatRunner.cs:2943`, Design:880-881) have no bound. Name one. Past it, write no `end` and let the token leave at its seen exit.
+
+7. **The lease's test is a linked file. Not blocking.** `HomeLease.cs` is compiled into the launcher (`Daoris.Desktop.Launcher.csproj:35`; foundation §14.6). Declare the three-way answer's type in `HomeLease.cs`, or add any new file to the launcher's compile list. This is one sentence in §4.3's Platform row.
+
+7 findings, 1 blocking.
+
+**Verdict for row a: accept after named changes the steward can check without another read.** Finding 1 must be written into §1.1, §3.6 and rule 4 before the row is filed. Findings 2 to 4 are corrections to §9, §3.6, D173's note and rule 5. Findings 5 to 7 are one-line fixes.
