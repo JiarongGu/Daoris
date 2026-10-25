@@ -12,6 +12,8 @@ public sealed class ChoiceVerbTests : IDisposable
     private readonly StringWriter _out = new();
     private readonly StringWriter _error = new();
 
+    private string Config => DaorisHome.Entry(_home, HomeEntry.DriverConfig);
+
     public void Dispose()
     {
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
@@ -21,7 +23,7 @@ public sealed class ChoiceVerbTests : IDisposable
     {
         Verbs = verbs,
         Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = _error, Verb = "daoris" },
-        ConfigPath = Path.Combine(_home, "driver.json"),
+        ConfigPath = Config,
     };
 
     [Fact]
@@ -60,13 +62,11 @@ public sealed class ChoiceVerbTests : IDisposable
     [Fact]
     public async Task A_verb_the_world_carries_is_planned_and_said_by_it()
     {
-        var config = Path.Combine(_home, "driver.json");
-
         var exit = await DriverChoicesCommand.RunAsync(["helpers", "web-app", "--mode", "on"], World(DriverChoiceVerbs.All), CancellationToken.None);
 
         Assert.Equal(0, exit);
         Assert.Contains("helpers for `web-app`: on", _out.ToString());
-        Assert.Equal(HelperKey.On, DriverConfig.Load(config).Helpers["web-app"].Mode);
+        Assert.Equal(HelperKey.On, DriverConfig.Load(Config).Helpers["web-app"].Mode);
     }
 
     [Fact]
@@ -76,6 +76,6 @@ public sealed class ChoiceVerbTests : IDisposable
 
         Assert.Equal(2, exit);
         Assert.Contains("`helpers` is not a standing choice this program changes", _error.ToString());
-        Assert.False(File.Exists(Path.Combine(_home, "driver.json")));
+        Assert.False(File.Exists(Config));
     }
 }
