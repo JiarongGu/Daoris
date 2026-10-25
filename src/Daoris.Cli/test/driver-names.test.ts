@@ -28,7 +28,7 @@ test('a name found once is that file wherever it lies, and one found nowhere or 
 });
 
 test("the driver's sources and tests are found at any depth, and the build's output is none of them (STRUCT1)", () => {
-  assert.equal(driverFile('NoteCodes.cs'), join(DESKTOP, DRIVER, 'Platform', 'NoteCodes.cs'));
+  assert.equal(driverFile('NoteCodes.cs'), join(DESKTOP, DRIVER, 'Events', 'NoteCodes.cs'));
   assert.equal(driverFile('HelpGoProposals.cs'), join(DESKTOP, DRIVER, 'Help', 'Proposals', 'HelpGoProposals.cs'));
   assert.equal(driverTestFile('StructureTests.cs'), join(DESKTOP, DRIVER_TESTS, 'StructureTests.cs'));
   assert.equal(desktopFile('Daoris.Desktop.Modules', 'DriverLoop.cs'), join(DESKTOP, 'Daoris.Desktop.Modules', 'Loop', 'DriverLoop.cs'));
