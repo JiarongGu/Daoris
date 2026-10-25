@@ -17,7 +17,7 @@ public static class KeepKinds
     public static KeepKind SetAside { get; } = new(
         "set-aside", [HomeEntry.Trees.Name],
         "its package folders, a node_modules beside a package.json git tracks; nothing else of it",
-        TimeSpan.FromDays(14), MinDays: 1, MaxDays: 90, MaySetWhole: true, Remover: "the slim, then the purge");
+        TimeSpan.FromDays(14), MinDays: KeepKey.SetAsideMinDays, MaxDays: KeepKey.SetAsideMaxDays, MaySetWhole: true, Remover: "the slim, then the purge");
 
     /// <summary>How long a folder set aside waits after its move before its package folders go: a write by then keeps it whole (§5).</summary>
     public static readonly TimeSpan SetAsideSettle = TimeSpan.FromHours(1);
@@ -31,7 +31,7 @@ public static class KeepKinds
     public static KeepKind Downloads { get; } = new(
         "downloads", [HomeEntry.Toolchain.Name, HomeEntry.ToolVersions.Name],
         "every version, downloaded again by its next pin or use",
-        TimeSpan.FromDays(7), MinDays: 0, MaxDays: 365, MaySetWhole: false, Remover: "CACHECLEAR1's act, which Tools' delete takes too")
+        TimeSpan.FromDays(7), MinDays: KeepKey.DownloadsMinDays, MaxDays: KeepKey.DownloadsMaxDays, MaySetWhole: false, Remover: "CACHECLEAR1's act, which Tools' delete takes too")
     {
         MaySetNever = true,
     };
@@ -43,7 +43,7 @@ public static class KeepKinds
     /// </summary>
     public static KeepKind Logs { get; } = new(
         "logs", [HomeEntry.Logs.Name], "nothing: each day's file is this machine's evidence",
-        TimeSpan.FromDays(MachineLog.KeptDays), MinDays: 7, MaxDays: MachineLog.KeptDays, MaySetWhole: false,
+        TimeSpan.FromDays(MachineLog.KeptDays), MinDays: KeepKey.LogsMinDays, MaxDays: KeepKey.LogsMaxDays, MaySetWhole: false,
         Remover: "the log's prune, each process's at its open and the look's daily at the person's days");
 
     /// <summary>
@@ -54,7 +54,7 @@ public static class KeepKinds
     /// </summary>
     public static KeepKind History { get; } = new(
         "history", [HomeEntry.Sessions.Name, HomeEntry.Workflows.Name], "nothing: a record cleared is gone from this machine",
-        TimeSpan.Zero, MinDays: 30, MaxDays: 3650, MaySetWhole: false, Remover: "the clear, each refusal holding")
+        TimeSpan.Zero, MinDays: KeepKey.HistoryMinDays, MaxDays: KeepKey.HistoryMaxDays, MaySetWhole: false, Remover: "the clear, each refusal holding")
     {
         MaySetNever = true,
         NeverByDefault = true,
@@ -180,16 +180,16 @@ public sealed record HistoryPolicy(TimeSpan? Days);
 public sealed record FloorPolicy(int? Gb, int? Percent, bool Off)
 {
     /// <summary>The fewest GB the person may set.</summary>
-    public const int MinGb = 1;
+    public const int MinGb = KeepKey.FloorMinGb;
 
     /// <summary>The most GB a stored size may hold, whatever the volume; a door judges against half the volume it reads.</summary>
-    public const int MaxGb = 1 << 20;
+    public const int MaxGb = KeepKey.FloorMaxGb;
 
     /// <summary>The smallest share the person may set.</summary>
-    public const int MinPercent = 1;
+    public const int MinPercent = KeepKey.FloorMinPercent;
 
     /// <summary>The largest share the person may set: half the volume.</summary>
-    public const int MaxPercent = 50;
+    public const int MaxPercent = KeepKey.FloorMaxPercent;
 
     /// <summary>The default share of a volume.</summary>
     public const int DefaultPercent = 10;

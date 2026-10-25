@@ -46,8 +46,8 @@
     "Accounts/InstructionAccount.cs": "Context",
     "Accounts/InstructionAccounting.cs": "Context",
     "Accounts/Rotation/AccountRotation.cs": "Agents",
-    "Accounts/Rotation/RefusedAccounts.cs": "Agents",
     "Accounts/Rotation/LineAccount.cs": "Agents",
+    "Accounts/Rotation/RefusedAccounts.cs": "Agents",
     "Accounts/Rotation/ResumeAccount.cs": "Agents",
     "Accounts/SignIns/AccountReads.cs": "Agents",
     "Accounts/SignIns/AccountSignIns.cs": "Agents",
@@ -588,6 +588,8 @@
     "Settings/AcrossDeclarations.cs": "Settings",
     "Settings/ActorKey.cs": "Settings",
     "Settings/BrainstormKey.cs": "Settings",
+    "Settings/BranchName.cs": "Settings",
+    "Settings/CommitKey.cs": "Settings",
     "Settings/CoolOffDefault.cs": "Settings",
     "Settings/CycleText.cs": "Settings",
     "Settings/DriverChoicesCommand.cs": "Settings",
@@ -597,7 +599,10 @@
     "Settings/HeavyKey.cs": "Settings",
     "Settings/HelpModeNames.cs": "Settings",
     "Settings/HelperKey.cs": "Settings",
+    "Settings/KeepKey.cs": "Settings",
+    "Settings/LandingKey.cs": "Settings",
     "Settings/OpinionKey.cs": "Settings",
+    "Settings/PluginIds.cs": "Settings",
     "Settings/ReviewKey.cs": "Settings",
     "Settings/SessionChecksKey.cs": "Settings",
     "Settings/SessionLanguage.cs": "Settings",
@@ -853,9 +858,7 @@
       "family": "Settings names Workplace",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["BranchName","CommitRules","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","LandingSource","SpaceVolumes"],
-        "Settings/DriverConfig.cs": ["BranchName","CommitRule","CommitRules","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules"],
-        "Settings/StandingChoices.cs": ["LandingRule","LandingRules"]
+        "Settings/DriverChoicesCommand.cs": ["CommitRules","KeepRules","KeepSet","LandingRules","LandingSource","SpaceVolumes"]
       }
     },
     {
@@ -897,8 +900,7 @@
       "family": "Settings names Plugins",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["PluginCatalog"],
-        "Settings/StandingChoices.cs": ["PluginCatalog"]
+        "Settings/DriverChoicesCommand.cs": ["PluginCatalog"]
       }
     },
     {
@@ -996,8 +998,8 @@
       "after": "Service",
       "files": {
         "Service/Domain/RemoteSyncPayloads.cs": ["TreeProvenance","TreeRelation"],
-        "Service/LayoutGit.cs": ["BranchName","WorkingTree"],
-        "Service/RegistrationWorld.cs": ["BranchName","CanonicalLine","LandedBranches","WorkingTree"],
+        "Service/LayoutGit.cs": ["WorkingTree"],
+        "Service/RegistrationWorld.cs": ["CanonicalLine","LandedBranches","WorkingTree"],
         "Service/RegistryFollowing.cs": ["RefRepository","TreeTips"],
         "Service/RemoteSync.cs": ["CanonicalLine","TreeProvenance","TreeRelation","WorkingTree"],
         "Service/ServiceClient.cs": ["FinishedPost","LandingLine","LiveSession","RecordRefusal","SessionLocks"]
@@ -1371,7 +1373,7 @@
         "Help/HelpFacts.cs": ["CanonicalLine","HistoryReading","LineGuesses","LookTimes","RepositoryLine","SessionTrees","SweepPlan","TreeFolders","TreeReadMemo"],
         "Help/Room/HelpRoomLanding.cs": ["LandingRules"],
         "Help/Room/HelpRoomMachineNow.cs": ["AcceptedBy","HistoryCommand","HistoryReading","PullRequestAskFailed","PullRequestState","PullRequestWords"],
-        "Help/Room/HelpRoomWorkspaces.cs": ["Landing","LandingRule","LandingRules","LandingSource","Line","LineSource"],
+        "Help/Room/HelpRoomWorkspaces.cs": ["Landing","LandingRules","LandingSource","Line","LineSource"],
         "Sessions/Domain/Trace.Chain.cs": ["LandedBranch","LandingRules","PullRequestAskFailed","PullRequestState","TreeGuard","TreeHand"],
         "Sessions/Domain/Trace.Words.cs": ["AcceptedBy","AutoLandings","LandedBranches","PullRequestWords"],
         "Sessions/Domain/TracedRecords.cs": ["AutoLanding","LandedBranch"],
@@ -1984,6 +1986,10 @@
     "ReviewKeyTests.cs": "Settings",
     "OpinionKeyTests.cs": "Settings",
     "HeavyKeyTests.cs": "Settings",
-    "SessionChecksKeyTests.cs": "Settings"
+    "SessionChecksKeyTests.cs": "Settings",
+    "CommitKeyTests.cs": "Settings",
+    "KeepKeyTests.cs": "Settings",
+    "LandingKeyTests.cs": "Settings",
+    "PluginIdsTests.cs": "Settings"
   }
 }

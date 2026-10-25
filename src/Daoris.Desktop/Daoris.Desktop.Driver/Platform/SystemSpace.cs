@@ -21,7 +21,7 @@ public sealed record SpacePlaces(IReadOnlyList<string> Places, IReadOnlyList<str
 /// <summary>
 /// The card's rows, in its order (the cleanup design §4.1), and where each lies. Every rule a row shows already runs (§9): the set-aside
 /// folders' days and slim (KEEP1a), the downloads' days (KEEP1b), the machine log's days, history's press or the person's age (KEEP1g),
-/// the trees' clean-up; the rest say whose rule it is. The person sets the first four (KEEP1d, KEEP1g, <see cref="KeepChoices.Settable"/>),
+/// the trees' clean-up; the rest say whose rule it is. The person sets the first four (KEEP1d, KEEP1g, <see cref="KeepRules.Settable"/>),
 /// each row's <i>Change…</i>.
 /// </summary>
 public static class SpaceKinds
@@ -485,10 +485,10 @@ public static class SystemSpace
             // KEEP1f: a kind's entry on another volume than the Daoris folder's, said on its own row with that volume's floor.
             ["volume"] = KindVolume(world, kind, policy, folderId, stretches),
             ["rule"] = Rule(kind, policy),
-            // KEEP1d: the person sets the rules of the kinds `KeepChoices.Settable` names, on the card's *Change…* and `daoris driver keep`.
-            ["settable"] = kind.Keeps is { } settable && KeepChoices.Settable.Contains(settable),
+            // KEEP1d: the person sets the rules of the kinds `KeepRules.Settable` names, on the card's *Change…* and `daoris driver keep`.
+            ["settable"] = kind.Keeps is { } settable && KeepRules.Settable.Contains(settable),
             // KEEP1d: what the person may set, so the editor offers the kind's own choices and the driver's bounds, never a copy of them.
-            ["bounds"] = kind.Keeps is { } bounded && KeepChoices.Settable.Contains(bounded)
+            ["bounds"] = kind.Keeps is { } bounded && KeepRules.Settable.Contains(bounded)
                 ? new JsonObject { ["min"] = bounded.MinDays, ["max"] = bounded.MaxDays, ["whole"] = bounded.MaySetWhole, ["never"] = bounded.MaySetNever }
                 : null,
             ["next"] = next,
