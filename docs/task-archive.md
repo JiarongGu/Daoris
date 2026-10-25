@@ -5,6 +5,21 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## FOUNDATION1z-iii — the bindings (2026-10-26)
+
+> **FOUNDATION1z-iii — the bindings** (driver; D212's row of Part B, accepted by the steward 2026-10-25; the design `docs/2026-10-25-foundation-design.md` §10's row *1z-iii*,
+> §13.2 to §13.5 and §13.6's row z-iii, on the store row z-i built). Each session's `data/sessions/<s>.harness.json` imported into the store's `bindings`, every resume reading its
+> conversation id from the binding once imported and from the file before, the file set aside at the import so an older build finds none and carries on rather than resuming a stale id,
+> a deleted record taking its binding, and a binding file an older build wrote during a downgrade imported at the return, its conversation id winning for its own session. Nothing else
+> moves into the store. It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. `bindings` is store migration 2, a new table with every column required that leaves the writer stamp where it was; `BindingStore` in the new
+`Participants/` folder holds the rows and `HarnessConversations` the file's format and every caller, no census entry added. Each look of the loop imports the home's binding files once the
+start's confirmation is settled and sets each aside as `<s>.harness.json.imported`; from a home's first import a keep writes the binding and a read reads it, before it both are the file's;
+a file an older build writes after the import is imported at the next look or the read that meets it, its id winning; `SessionHomeFiles.Remove` takes a deleted record's binding and
+its set-aside file. Every proof the row states is a case seen failing first, in `BindingsTests` and `BindingsLookTests`. Detail and the readings taken (the store opened for each use with
+one run for the process, the look as the import's place, a re-found file whose SHA-256 a receipt holds only set aside): D212's note of 2026-10-26.
+
 ## FOUNDATION1z-i — the desktop store, read by nothing (2026-10-26)
 
 > **FOUNDATION1z-i — the desktop store, read by nothing** (driver, service, CLI; D212's row of Part B, accepted by the steward 2026-10-25; the design
