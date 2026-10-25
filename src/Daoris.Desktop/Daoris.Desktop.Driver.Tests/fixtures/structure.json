@@ -506,6 +506,7 @@
     "Service/Domain/MessageLevel.cs": "Service",
     "Service/Domain/NoteParts.cs": "Service",
     "Service/Domain/PressedWords.cs": "Service",
+    "Service/Domain/QuestClosePort.cs": "Service",
     "Service/Domain/QuestViews.cs": "Service",
     "Service/Domain/RecordNotes.cs": "Service",
     "Service/Domain/RegistrationRecords.cs": "Service",
@@ -885,13 +886,6 @@
       "after": "Service",
       "files": {
         "Service/ServiceClient.cs": ["Asks","BrainstormFound","BrainstormPackets","BrainstormSearch","ChannelPosted","ChannelView","Planner","SessionRecords","SessionStates","Snapshot"]
-      }
-    },
-    {
-      "family": "Service names Workflows",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["IClosureBindPort","IQuestClosePort","QuestCloseAnswer","QuestCloseItem","QuestCloseOutcomes"]
       }
     },
     {
