@@ -2003,7 +2003,7 @@ public sealed class Driver(
                         limited: limitedWords, model: words.Asked?.NamedModel,
                         line: carried
                             ? LineKind.DrivenOpen
-                            : LineKind.DrivenClosed(carries: Context.GoesOnLost is not null && words.Waiting.Any(word => word.CarriesOn)))
+                            : LineKind.DrivenClosed(carries: Context.GoesOnLost is not null && words.Waiting.Any(DaorisWords.NewPartCarries)))
                     .ConfigureAwait(false);
                 selection = resume.Selection;
                 limitResume = limitedWords && resume.Own == NextHold.Ready && selection.Allowed;
@@ -2392,7 +2392,7 @@ public sealed class Driver(
             // that state a fact go on in the new part with the person's, said as Daoris's (a go-on in another home, not a message that starts
             // a session: the planner went on with this record already). Every other fall-back carries the person's alone.
             switched = resume?.Answer is LineAnswer.Elsewhere { Switched: true } && fellBack!.Code == ContinueWhy.Account;
-            bool Goes(SaidWordView word) => switched ? word.CarriesOn : word.Persons;
+            bool Goes(SaidWordView word) => switched ? DaorisWords.NewPartCarries(word) : word.Persons;
             if (fellBack!.Never || fellBack.Holds || quest.Status is not ("Open" or "Taken"))
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
@@ -2696,7 +2696,7 @@ public sealed class Driver(
                 // LIMITSWITCH3: and a carry-on a cooling account's switch made, Daoris's own words it carries (the person's come by the ask).
                 Handed = handsOn is not null
                     ? [.. handsOn.Waiting.Where(DriverContinuations.HandedToResume)]
-                    : switched ? [.. written!.Waiting.Where(word => word is { Daoris: true, CarriesOn: true })] : [],
+                    : switched ? [.. written!.Waiting.Where(word => word.Daoris && DaorisWords.NewPartCarries(word))] : [],
                 // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
                 Released = carryingOn && start.Resumes!.PersonStopped && !handedFrom,
                 // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.

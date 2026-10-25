@@ -334,7 +334,7 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         {
             // The words said while it waited, the person's: Daoris's limit word never goes on, and was taken off before a refusal. Where its own
             // account cools and the part opens for that (LIMITSWITCH3), Daoris's own words that state a fact go too, said as Daoris's.
-            List<string> said = [.. prior.Waiting.Where(word => (switching ? word.CarriesOn : word.Persons) && word.Id is not null).Select(word => word.Id!)];
+            List<string> said = [.. prior.Waiting.Where(word => (switching ? DaorisWords.NewPartCarries(word) : word.Persons) && word.Id is not null).Select(word => word.Id!)];
             var box = new LimitMoveBox(
                 lost?.Code ?? (held is null && switching ? ContinueWhy.Account : HandOverWhy.Limit), held?.Before ?? events.Count, events.Count, said);
             boxes.Write(sessionId, box);
@@ -434,7 +434,7 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             .ToList();
         // Daoris's own words that waited (LIMITSWITCH3) are said as Daoris's after the person's, never as theirs.
         List<string> parts = [.. refused.Select(word => word.Text), .. waited.Where(word => !word.Daoris).Select(word => word.Text)];
-        if (waited.Where(word => word.Daoris).ToList() is { Count: > 0 } daoris) parts.Add(DaorisWords.WhileItWaited(daoris));
+        if (waited.Where(word => word.Daoris).ToList() is { Count: > 0 } daoris) parts.Add(TargetPrompt.DaorisWaited(daoris));
         return new ChatMessage(string.Join("\n\n", parts), files) { Brief = brief, TakenOver = opening };
     }
 
@@ -446,7 +446,7 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
     {
         var switching = box.Why == ContinueWhy.Account;
         List<string> later = [.. now.Waiting
-            .Where(word => (switching ? word.CarriesOn : word.Persons) && word.Id is { } id && !box.Said.Contains(id, StringComparer.Ordinal))
+            .Where(word => (switching ? DaorisWords.NewPartCarries(word) : word.Persons) && word.Id is { } id && !box.Said.Contains(id, StringComparer.Ordinal))
             .Select(word => word.Id!)];
         return later.Count == 0 ? box : box with { Said = [.. box.Said, .. later] };
     }

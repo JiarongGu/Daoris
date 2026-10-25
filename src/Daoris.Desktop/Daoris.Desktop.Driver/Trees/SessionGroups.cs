@@ -773,7 +773,7 @@ public static class SessionGroups
                 // that states a fact); with none, as Daoris's resume words only, its words wait for the own account, as the driver's look says.
                 var carried = verdict.Quest.Status is "Open" or "Taken";
                 var names = AccountNames.Of(home, cooling.Agent);
-                if (!carried && !words.Waiting.Any(word => word.CarriesOn))
+                if (!carried && !words.Waiting.Any(DaorisWords.NewPartCarries))
                 {
                     held[words.Session] = CoolingHold(
                         $"{ResumeWords.Waits(cooling, zone, names)} {ResumeWords.ChatDoor(words.Session)}", cooling, home);

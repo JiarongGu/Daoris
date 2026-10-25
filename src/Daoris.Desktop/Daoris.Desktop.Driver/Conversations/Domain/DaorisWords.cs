@@ -48,13 +48,12 @@ public static class DaorisWords
     }
 
     /// <summary>
-    /// Daoris's own words that waited on a record, said to a part that goes on from it (SAYHELD1; LIMITSWITCH3): as Daoris's words and not
-    /// the person's, quoted line by line, for the agent to weigh.
+    /// Whether a new part an ended record's account cooling opens carries this word (LIMITSWITCH3, D137's note of 2026-10-26): the person's,
+    /// and Daoris's own that state a fact (a rebase, a reopen, a step's go-on), said as Daoris's. Never Daoris's resume words (a limit's,
+    /// a restart's, a retry's), which ask for the record's own conversation, nor another agent's findings or a helper's answer, which
+    /// go to the person.
     /// </summary>
-    public static string WhileItWaited(IReadOnlyList<SaidWordView> words) =>
-        "While it waited, Daoris told that session what follows, and it never took it, so it is yours to weigh, as Daoris's "
-        + "words and not the person's:\n\n"
-        + string.Join("\n\n", words.Select(word => TextBounds.Quote(word.Text, indent: "  ")));
+    public static bool NewPartCarries(SaidWordView word) => word.Persons || (word.Daoris && !DaorisKeys.IsResume(word.Key));
 
     /// <summary>Tell a word of Daoris's it was delivered; a listener's failure is its own.</summary>
     internal static void Delivered(ChatMessage word)

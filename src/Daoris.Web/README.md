@@ -224,6 +224,11 @@ A folder past twenty sources keeps its scopes in folders named for what they hol
   session), `terminals/` (the person's terminals), `history/` (clearing finished work) and `pausing/` (pausing and
   abandoning it).
 
+Words an account's limit holds on an ended record, the person's or Daoris's own (a rebase request), are said as one wait wherever a row
+is read, from the driver's hold alone (`placedFact` in `rail/SessionRow.tsx`, shared by the rail row, the head's facts and *What needs
+you*'s review rows): *Waiting for a limit to reset: it resumes by itself at {{time}}, on {{account}}*, in English and 中文, naming the
+account that resets first, never only that the record completed (LIMITSWITCH1, LIMITSWITCH3).
+
 A take the person's own reopen made lose is said as that wherever a lost claim is read (FABRIC-CLOSE1c20): the hand-over's
 `quest-reopened`, the abandon's `source-reopened` and the pause's `asks.work.reopenedTake` each have their own sentence,
 never the one for a take on another machine.
