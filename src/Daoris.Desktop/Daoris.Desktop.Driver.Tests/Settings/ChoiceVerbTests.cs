@@ -45,6 +45,19 @@ public sealed class ChoiceVerbTests : IDisposable
     }
 
     [Fact]
+    public void The_terminal_a_command_is_said_on_is_the_settings_port_the_instances_world_implements_and_the_routes_vocabulary_is_one()
+    {
+        IChoiceTerminal terminal = new InstanceWorld { Home = _home, Out = _out, Error = _error };
+
+        Assert.Same(_out, terminal.Out);
+        Assert.Same(_error, terminal.Error);
+        Assert.Equal(_home, terminal.Home);
+        Assert.Equal(InstanceRoute.DriverModule, TreesRoutes.DriverModule);
+        Assert.Equal(TreesRoutes.Land.Module, ChoiceRoutes.Language.Module);
+        Assert.Equal(RouteClass.Person, ChoiceRoutes.Language.Class);
+    }
+
+    [Fact]
     public async Task A_verb_the_world_carries_is_planned_and_said_by_it()
     {
         var config = Path.Combine(_home, "driver.json");

@@ -600,6 +600,7 @@
     "Settings/BranchName.cs": "Settings",
     "Settings/ChoiceArgs.cs": "Settings",
     "Settings/ChoiceGrammar.cs": "Settings",
+    "Settings/ChoiceTerminal.cs": "Settings",
     "Settings/ChoiceVerb.cs": "Settings",
     "Settings/CommitKey.cs": "Settings",
     "Settings/CoolOffDefault.cs": "Settings",
@@ -611,6 +612,7 @@
     "Settings/HeavyKey.cs": "Settings",
     "Settings/HelpModeNames.cs": "Settings",
     "Settings/HelperKey.cs": "Settings",
+    "Settings/InstanceRoute.cs": "Settings",
     "Settings/KeepKey.cs": "Settings",
     "Settings/LandingKey.cs": "Settings",
     "Settings/OpinionKey.cs": "Settings",
@@ -857,13 +859,6 @@
   },
   "edges": [
     {
-      "family": "Settings names Instance",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["InstanceDoor","InstanceRoute","InstanceWorld","RouteClass","TreesRoutes"]
-      }
-    },
-    {
       "family": "Service names Agents",
       "after": "Service",
       "files": {
@@ -1046,8 +1041,8 @@
       "family": "Install names Instance",
       "after": "Install",
       "files": {
-        "Agents/ToolInstall/ToolChoices.cs": ["InstanceRoute","RouteClass","TreesRoutes"],
-        "Agents/ToolInstall/ToolsCommand.cs": ["InstanceDoor","InstanceRoute","InstanceWorld","RouteClass"]
+        "Agents/ToolInstall/ToolChoices.cs": ["TreesRoutes"],
+        "Agents/ToolInstall/ToolsCommand.cs": ["InstanceDoor","InstanceWorld"]
       }
     },
     {
