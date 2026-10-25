@@ -106,9 +106,6 @@ public static class VerbLeases
             // look hold it from the top; a read and the long verbs none, a download taking it itself to publish (the alone-path design §1.4).
             "tool" => ToolsCommand.Changes([.. args.Skip(1)]),
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
-            // `git branches`, `git identity list` and `public-key` are reads; an identity's change, a default and a pointer write the
-            // home's identities or the driver's file (GITAUTH1c).
-            "git" => GitIdentityCommand.Changes([.. args.Skip(1)]),
             _ => true,
         };
     }

@@ -715,6 +715,7 @@
     "Trees/Domain/TreeOnlyHere.cs": "Workplace",
     "Trees/Domain/TreeUpdate.cs": "Workplace",
     "Trees/GitFacts.cs": "Workplace",
+    "Trees/GitLease.cs": "Workplace",
     "Trees/GitReads/FilePreview.cs": "Workplace",
     "Trees/GitReads/GitLaunch.cs": "Workplace",
     "Trees/GitReads/GitReadCache.cs": "Workplace",
@@ -913,14 +914,6 @@
       }
     },
     {
-      "family": "Instance names Workplace",
-      "after": "Instance",
-      "files": {
-        "Instance/InstanceDoor.cs": ["TreesSaid"],
-        "Instance/VerbLeases.cs": ["GitIdentityCommand"]
-      }
-    },
-    {
       "family": "Events names Agents",
       "after": "Events",
       "files": {
@@ -981,8 +974,7 @@
       "family": "Events names Workplace",
       "after": "Events",
       "files": {
-        "Platform/HomeWatch.cs": ["HeldWordsFile","LandingJudged"],
-        "Platform/NoticesRead.cs": ["TreesSaid"]
+        "Platform/HomeWatch.cs": ["HeldWordsFile","LandingJudged"]
       }
     },
     {

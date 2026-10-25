@@ -12,7 +12,7 @@ public sealed class InstancePortsTests
     [Fact]
     public void The_verbs_whose_commands_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal(["access", "agent", "checks", "heavy", "plugin", "work", "workflow"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["access", "agent", "checks", "git", "heavy", "plugin", "work", "workflow"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -98,5 +98,20 @@ public sealed class InstancePortsTests
             Assert.Null(reading.Verbs);
             Assert.Null(reading.Isolated);
         });
+    }
+
+    [Fact]
+    public void The_workplaces_answer_is_the_git_commands_reading_of_what_changes_an_identity_or_a_default()
+    {
+        var git = VerbLeases.Answered["git"];
+
+        Assert.True(git.Holds(["identity", "add-ssh", "github.com", "--label", "work"]));
+        Assert.True(git.Holds(["default", "github.com", "work"]));
+        Assert.True(git.Holds(["use", "engine", "own"]));
+        Assert.False(git.Holds(["identity", "list"]));
+        Assert.False(git.Holds(["identity", "public-key", "work"]));
+        Assert.False(git.Holds(["branches"]));
+        Assert.Null(git.Verbs);
+        Assert.Null(git.Isolated);
     }
 }
