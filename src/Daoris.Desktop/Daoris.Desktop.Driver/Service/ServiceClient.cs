@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 /// It writes each request and reads each answer, and the HTTP is behind
 /// <see cref="IServiceDoors"/>, whose real one, <see cref="ServiceHttp"/>, the constructors that take a URL compose. Every
 /// module names this client; none names the HTTP. A family of doors on a resource of its own that another module asks is a
-/// class over the client, reached through it (<see cref="Opinions"/>, <see cref="Helpers"/>; PART8): it reaches the HTTP, the
+/// class over the client, reached through it (<c>Opinions</c>, <see cref="Helpers"/>; PART8): it reaches the HTTP, the
 /// JSON reading and <see cref="Opened"/> through the internal surface below (D166's PART8 note).
 /// </remarks>
 public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort
@@ -28,7 +28,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     {
         _doors = doors;
         _base = doors.BaseUrl;
-        Opinions = new OpinionDoors(this);
         Helpers = new HelperDoors(this);
         Partners = new PartnerDoors(this);
         Confirmations = new ConfirmationDoors(this);
@@ -39,9 +38,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         : this(new ServiceHttp(baseUrl, key, http))
     {
     }
-
-    /// <summary>The local host's opinion doors (XAGENT1c–XAGENT1e), over this client.</summary>
-    public OpinionDoors Opinions { get; }
 
     /// <summary>The local host's helper doors (MIXAGENT2a-ii), over this client.</summary>
     public HelperDoors Helpers { get; }

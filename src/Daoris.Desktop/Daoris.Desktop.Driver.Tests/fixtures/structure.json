@@ -879,13 +879,6 @@
       }
     },
     {
-      "family": "Service names Review",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["OpinionDoors"]
-      }
-    },
-    {
       "family": "Service names Roles",
       "after": "Service",
       "files": {
