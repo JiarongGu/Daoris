@@ -55,10 +55,25 @@ internal sealed class KeyedSayService : HttpMessageHandler
             ("POST", ["api", "sessions", var id, "state"]) => (HttpStatusCode.OK,
                 $$"""{"session":{"id":"{{Uri.UnescapeDataString(id)}}","state":"{{JsonDocument.Parse(body).RootElement.GetProperty("state").GetString()}}"},"message":"Moved."}"""),
             ("POST", ["api", "sessions", var id, "say"]) => Say(Uri.UnescapeDataString(id), body),
+            ("POST", ["api", "sessions", var id, "added"]) => Added(Uri.UnescapeDataString(id)),
             ("POST", _) => (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}"""),
             _ => (HttpStatusCode.NotFound, ""),
         };
         return new HttpResponseMessage(status) { Content = new StringContent(answer, Encoding.UTF8, "application/json") };
+    }
+
+    private readonly List<string> _added = [];
+
+    /// <summary>The sessions whose person's words were kept on their ask (<c>POST /api/sessions/{id}/added</c>), in order: what <c>WordsOnAsk</c> asks.</summary>
+    public IReadOnlyList<string> Added()
+    {
+        lock (_gate) return [.. _added];
+    }
+
+    private (HttpStatusCode, string) Added(string session)
+    {
+        lock (_gate) _added.Add(session);
+        return (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}""");
     }
 
     private (HttpStatusCode, string) Say(string session, string body)
