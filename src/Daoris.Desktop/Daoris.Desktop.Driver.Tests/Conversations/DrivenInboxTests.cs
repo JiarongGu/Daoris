@@ -569,14 +569,12 @@ public sealed class DrivenInboxTests
     [Fact]
     public void Only_a_stop_press_decides_a_stop_and_no_word_does()
     {
-        var root = Daoris.Desktop.Driver.Tests.EveryChildIsHandedTheToolsTests.SourceRoot();
-
         Assert.Equal(
             ["SendNowAsync"],
-            Callers(File.ReadAllText(Path.Combine(root, "Daoris.Desktop.Driver", "Conversations", "DrivenInbox.cs")), "StopThisTurn()"));
+            Callers(File.ReadAllText(Daoris.Desktop.Driver.Tests.SourceFiles.Driver("DrivenInbox.cs")), "StopThisTurn()"));
         Assert.Equal(
             ["StopKeepingAsync"],
-            Callers(File.ReadAllText(Path.Combine(root, "Daoris.Desktop.Driver", "Conversations", "Chat", "ChatTurns.cs")), "StopKeeping()"));
+            Callers(File.ReadAllText(Daoris.Desktop.Driver.Tests.SourceFiles.Driver("ChatTurns.cs")), "StopKeeping()"));
     }
 
     /// <summary>
