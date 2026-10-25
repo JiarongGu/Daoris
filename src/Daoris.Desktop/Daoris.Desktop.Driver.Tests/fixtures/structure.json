@@ -4,7 +4,7 @@
     { "name": "Store", "folder": "Store", "domain": false, "moved": true },
     { "name": "Settings", "folder": "Settings", "domain": true, "moved": true },
     { "name": "Service", "folder": "Service", "domain": true, "moved": true },
-    { "name": "Install", "folder": "Install", "domain": true },
+    { "name": "Install", "folder": "Install", "domain": true, "moved": true },
     { "name": "Instance", "folder": "Instance", "domain": false },
     { "name": "Events", "folder": "Events", "domain": true },
     { "name": "Knowledge", "folder": "Knowledge", "domain": true },
@@ -99,14 +99,6 @@
     "Agents/Streams/ClaudeStreams.cs": "Agents",
     "Agents/Streams/HarnessCapture.cs": "Agents",
     "Agents/Streams/StructuredOutput.cs": "Agents",
-    "Agents/ToolInstall/ToolActions.cs": "Install",
-    "Agents/ToolInstall/ToolArchives.cs": "Install",
-    "Agents/ToolInstall/ToolChoices.cs": "Install",
-    "Agents/ToolInstall/ToolInstall.cs": "Install",
-    "Agents/ToolInstall/ToolQuestions.cs": "Install",
-    "Agents/ToolInstall/ToolResources.cs": "Install",
-    "Agents/ToolInstall/ToolsCommand.cs": "Install",
-    "Agents/Tools.cs": "Install",
     "Brainstorms/BrainstormCommand.cs": "Work orders",
     "Brainstorms/BrainstormFiles.cs": "Work orders",
     "Brainstorms/BrainstormTurns.cs": "Work orders",
@@ -256,6 +248,25 @@
     "Help/Room/HelpRoomWindow.cs": "Knowledge",
     "Help/Room/HelpRoomWork.cs": "Knowledge",
     "Help/Room/HelpRoomWorkspaces.cs": "Knowledge",
+    "Install/ClaudeReleaseDownloads.cs": "Install",
+    "Install/CodexReleaseDownloads.cs": "Install",
+    "Install/Domain/CodexReleases.cs": "Install",
+    "Install/Domain/ReleaseChannel.cs": "Install",
+    "Install/HeldFiles.cs": "Install",
+    "Install/InstallSwap.cs": "Install",
+    "Install/InstallUpdate.cs": "Install",
+    "Install/ReleaseChannels.cs": "Install",
+    "Install/StagedBuild.cs": "Install",
+    "Install/ToolActions.cs": "Install",
+    "Install/ToolArchives.cs": "Install",
+    "Install/ToolChoices.cs": "Install",
+    "Install/ToolInstall.cs": "Install",
+    "Install/ToolQuestions.cs": "Install",
+    "Install/ToolResources.cs": "Install",
+    "Install/Tools.cs": "Install",
+    "Install/ToolsCommand.cs": "Install",
+    "Install/UpdateCommand.cs": "Install",
+    "Install/VerifiedBinary.cs": "Install",
     "Loop/ChannelReach.cs": "Work orders",
     "Loop/Driver.cs": "Loop",
     "Loop/DriverBrainstorms.cs": "Loop",
@@ -655,12 +666,8 @@
     "Settings/StandingChoices.cs": "Settings",
     "Settings/WorkflowKey.cs": "Settings",
     "Settings/WorkspaceNames.cs": "Settings",
-    "Setup/ClaudeReleaseDownloads.cs": "Install",
-    "Setup/CodexReleaseDownloads.cs": "Install",
-    "Setup/Domain/CodexReleases.cs": "Install",
     "Setup/Domain/IndexBrief.cs": "Setup",
     "Setup/Domain/IndexForms.cs": "Setup",
-    "Setup/Domain/ReleaseChannel.cs": "Install",
     "Setup/Domain/SelfDescription.cs": "Setup",
     "Setup/Domain/SetupBrief.cs": "Setup",
     "Setup/Domain/SetupOrder.cs": "Setup",
@@ -668,18 +675,11 @@
     "Setup/Domain/SetupPressRules.cs": "Setup",
     "Setup/Domain/WorkspaceSetupPlan.cs": "Setup",
     "Setup/Domain/WorkspaceSetupRules.cs": "Setup",
-    "Setup/HeldFiles.cs": "Install",
-    "Setup/InstallSwap.cs": "Install",
-    "Setup/InstallUpdate.cs": "Install",
-    "Setup/ReleaseChannels.cs": "Install",
     "Setup/SelfDescriptionFiles.cs": "Setup",
     "Setup/SetupCommand.cs": "Setup",
     "Setup/SetupPorts.cs": "Setup",
     "Setup/SetupPress.cs": "Setup",
     "Setup/SetupWorld.cs": "Setup",
-    "Setup/StagedBuild.cs": "Install",
-    "Setup/UpdateCommand.cs": "Install",
-    "Setup/VerifiedBinary.cs": "Install",
     "Setup/WorkspaceSetup.cs": "Setup",
     "Setup/WorkspaceSetupCommand.cs": "Setup",
     "Setup/WorkspaceSetupFile.cs": "Setup",
@@ -896,31 +896,31 @@
       "family": "Install names Agents",
       "after": "Install",
       "files": {
-        "Agents/ToolInstall/ToolInstall.cs": ["HarnessSettings"]
+        "Install/ToolInstall.cs": ["HarnessSettings"]
       }
     },
     {
       "family": "Install names Instance",
       "after": "Install",
       "files": {
-        "Agents/ToolInstall/ToolChoices.cs": ["TreesRoutes"],
-        "Agents/ToolInstall/ToolsCommand.cs": ["InstanceDoor","InstanceWorld"]
+        "Install/ToolChoices.cs": ["TreesRoutes"],
+        "Install/ToolsCommand.cs": ["InstanceDoor","InstanceWorld"]
       }
     },
     {
       "family": "Install names Work orders",
       "after": "Install",
       "files": {
-        "Setup/InstallUpdate.cs": ["Consideration","StartVerdict"]
+        "Install/InstallUpdate.cs": ["Consideration","StartVerdict"]
       }
     },
     {
       "family": "Install names Workplace",
       "after": "Install",
       "files": {
-        "Agents/ToolInstall/ToolInstall.cs": ["DownloadAsked","DownloadClearing","DownloadJudge","LiveSessions"],
-        "Agents/ToolInstall/ToolsCommand.cs": ["LiveSessions"],
-        "Agents/Tools.cs": ["GitWiring"]
+        "Install/ToolInstall.cs": ["DownloadAsked","DownloadClearing","DownloadJudge","LiveSessions"],
+        "Install/Tools.cs": ["GitWiring"],
+        "Install/ToolsCommand.cs": ["LiveSessions"]
       }
     },
     {
@@ -1781,6 +1781,22 @@
     "RegistrationFollowTests.cs": "Service",
     "RecordNotesTests.cs": "Service",
     "ServiceRecordsTests.cs": "Service",
-    "ServicePortsTests.cs": "Service"
+    "ServicePortsTests.cs": "Service",
+    "ToolActionsTests.cs": "Install",
+    "ToolDownloadsTests.cs": "Install",
+    "ToolInstallTests.cs": "Install",
+    "ToolResourcesTests.cs": "Install",
+    "ToolsChildProcessTests.cs": "Install",
+    "ToolsChildrenTests.cs": "Install",
+    "ToolsCommandTests.cs": "Install",
+    "ToolsTests.cs": "Install",
+    "ToolsTextTests.cs": "Install",
+    "HeldFilesProcessTests.cs": "Install",
+    "HeldFilesTests.cs": "Install",
+    "InstallUpdateTests.cs": "Install",
+    "ReleaseChannelTests.cs": "Install",
+    "StagedBuildTests.cs": "Install",
+    "UpdateCommandTests.cs": "Install",
+    "UpdateDrainTests.cs": "Install"
   }
 }

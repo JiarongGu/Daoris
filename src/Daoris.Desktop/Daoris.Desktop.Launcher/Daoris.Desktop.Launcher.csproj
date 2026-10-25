@@ -18,13 +18,13 @@
   <ItemGroup>
     <!-- The update's check and swap (UPDATE1, D139 §5): the driver library's own source, compiled in rather than
          referenced, so the launcher still references nothing and the check it runs before it moves a file is the one the
-         application runs before it closes. Two files of the Setup module (FLAT1b-iii-a): the records, names and their reads
+         application runs before it closes. Two files of the Install subdomain (FLAT1b-iii-a): the records, names and their reads
          and writes on the disk, and the swap. Each uses the base library alone; `StagedBuildTests` holds them. -->
-    <Compile Include="..\Daoris.Desktop.Driver\Setup\StagedBuild.cs" Link="StagedBuild.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Setup\InstallSwap.cs" Link="InstallSwap.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Install\StagedBuild.cs" Link="StagedBuild.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Install\InstallSwap.cs" Link="InstallSwap.cs" />
     <!-- What a move the swap was refused found held, and by which process (DEPLOYBUSY1). The base library and Windows'
          own calls alone. -->
-    <Compile Include="..\Daoris.Desktop.Driver\Setup\HeldFiles.cs" Link="HeldFiles.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Install\HeldFiles.cs" Link="HeldFiles.cs" />
     <!-- The marks of a process's own writes (FABRIC-EVENT4): `StagedBuild` marks the journal it writes, so the updater's watch
          wakes nothing on it. It uses the base library alone. -->
     <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeWrites.cs" Link="HomeWrites.cs" />
