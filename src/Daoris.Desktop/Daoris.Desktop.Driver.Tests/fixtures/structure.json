@@ -164,7 +164,6 @@
     "Conversations/Domain/HelperWords.cs": "Participants",
     "Conversations/Domain/HelpersVerb.cs": "Participants",
     "Conversations/Domain/LimitHeld.cs": "Course",
-    "Conversations/Domain/MessageLevel.cs": "Course",
     "Conversations/Domain/PartnerAdmission.cs": "Participants",
     "Conversations/Domain/PartnerConfiguration.cs": "Participants",
     "Conversations/Domain/PartnerInstruction.cs": "Participants",
@@ -490,9 +489,11 @@
     "Service/ConfirmationDoors.cs": "Service",
     "Service/Domain/AccountLine.cs": "Service",
     "Service/Domain/AskWorkflowViews.cs": "Service",
+    "Service/Domain/ContinuedFrom.cs": "Service",
     "Service/Domain/HistoryViews.cs": "Service",
     "Service/Domain/LayoutFacts.cs": "Service",
     "Service/Domain/LineRegistration.cs": "Service",
+    "Service/Domain/MessageLevel.cs": "Service",
     "Service/Domain/RegistrationRecords.cs": "Service",
     "Service/Domain/RemoteSyncPayloads.cs": "Service",
     "Service/Domain/ReviewViews.cs": "Service",
@@ -859,13 +860,6 @@
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Service names Course",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["ContinuedFrom","MessageLevels"]
-      }
-    },
     {
       "family": "Service names Events",
       "after": "Service",
