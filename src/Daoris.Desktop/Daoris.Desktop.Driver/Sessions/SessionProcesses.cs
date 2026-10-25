@@ -63,7 +63,53 @@ public sealed class SessionProcesses(string? markers = null)
     }
 
     private readonly object _gate = new();
-    private readonly Dictionary<string, Entry> _running = new(StringComparer.OrdinalIgnoreCase);
+
+    // Taken before the gate, so a session's marker follows its entries in the order they changed (SESSPROC1).
+    private readonly object _marks = new();
+
+    // An entry per process, oldest first (SESSPROC1): a session's second start beside a live process is kept beside it, and the one the
+    // reads answer is Answered's. A list is never empty.
+    private readonly Dictionary<string, List<Entry>> _running = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Whether an entry's process has exited; one whose state cannot be read is taken as exited, which is how a replaced entry was always read.</summary>
+    private static bool Exited(Entry entry)
+    {
+        try
+        {
+            return entry.Process.HasExited;
+        }
+        catch (Exception error) when (error is InvalidOperationException or ObjectDisposedException or System.ComponentModel.Win32Exception)
+        {
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// The entry a read of the session answers (SESSPROC1): the newest whose process still runs, so a start beside a live one answers
+    /// as it did while it was the only one and the live one answers again once it is gone; where none runs, the newest.
+    /// </summary>
+    private static Entry Answered(List<Entry> held)
+    {
+        for (var at = held.Count - 1; at >= 0; at--)
+        {
+            if (held.Count == 1 || !Exited(held[at])) return held[at];
+        }
+
+        return held[^1];
+    }
+
+    /// <summary>The entry the session's reads answer, or null where none is held; under the gate.</summary>
+    private Entry? Held(string sessionId) => _running.TryGetValue(sessionId, out var held) ? Answered(held) : null;
+
+    /// <summary>
+    /// Where the stop made of the session is read from (SESSPROC1): the newest entry a stop reached, so a run stopped reads its own stop
+    /// as it exits, though a process still running beside it is what <see cref="Held"/> answers; none stopped, as <see cref="Held"/>.
+    /// </summary>
+    private Entry? Stopped(string sessionId)
+    {
+        if (!_running.TryGetValue(sessionId, out var held)) return null;
+        return held.FindLast(entry => entry.StopRequested) ?? Answered(held);
+    }
     private readonly Dictionary<string, DrivenInbox> _inboxes = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Where a driven session's held words stand, each time that changes (SESS3) — the page shows them.</summary>
@@ -201,7 +247,7 @@ public sealed class SessionProcesses(string? markers = null)
     {
         get
         {
-            lock (_gate) return [.. _running.Where(entry => entry.Value.DrivesBrowser).Select(entry => entry.Key)];
+            lock (_gate) return [.. _running.Where(entry => Answered(entry.Value).DrivesBrowser).Select(entry => entry.Key)];
         }
     }
 
@@ -220,7 +266,7 @@ public sealed class SessionProcesses(string? markers = null)
         Entry? entry;
         lock (_gate)
         {
-            if (!_running.TryGetValue(sessionId, out entry)) return false;
+            if ((entry = Held(sessionId)) is null) return false;
             entry.StopRequested = true;
             entry.Reason ??= reason;
             entry.Note ??= note;
@@ -238,7 +284,9 @@ public sealed class SessionProcesses(string? markers = null)
 
         // Then its job (CONTAINCPU1): what the tree's walk cannot reach, a process whose parent had already exited, is still in it, and
         // a launcher's own job no longer ends with the launcher once the driver holds it.
-        JobOf(sessionId)?.Terminate();
+        ProcessJob? job;
+        lock (_gate) job = JobOf(entry);
+        job?.Terminate();
         return true;
     }
 
@@ -281,19 +329,19 @@ public sealed class SessionProcesses(string? markers = null)
     /// <summary>Whether this session's end was asked for — read by the driver before it concludes.</summary>
     public bool WasStopRequested(string sessionId)
     {
-        lock (_gate) return _running.TryGetValue(sessionId, out var entry) && entry.StopRequested;
+        lock (_gate) return Stopped(sessionId) is { StopRequested: true };
     }
 
     /// <summary>Why the driver ended this session itself — null when nobody did, or the person did.</summary>
     public Noted? StopReason(string sessionId)
     {
-        lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.Reason : null;
+        lock (_gate) return Stopped(sessionId)?.Reason;
     }
 
     /// <summary>What the person's stop of this session says on its record, where its door said more; null for the plain stop.</summary>
     public Noted? StopNote(string sessionId)
     {
-        lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.Note : null;
+        lock (_gate) return Stopped(sessionId)?.Note;
     }
 
     /// <summary>
@@ -304,7 +352,7 @@ public sealed class SessionProcesses(string? markers = null)
     {
         lock (_gate)
         {
-            return _running.TryGetValue(sessionId, out var entry) && entry.StopRequested ? new SessionStop(entry.Reason, entry.Note) : null;
+            return Stopped(sessionId) is { StopRequested: true } entry ?new SessionStop(entry.Reason, entry.Note) : null;
         }
     }
 
@@ -314,7 +362,7 @@ public sealed class SessionProcesses(string? markers = null)
     /// </summary>
     public string? RefusesInput(string sessionId)
     {
-        lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.RefusesInput : null;
+        lock (_gate) return Held(sessionId)?.RefusesInput;
     }
 
     /// <summary>
@@ -334,7 +382,7 @@ public sealed class SessionProcesses(string? markers = null)
         Entry? entry;
         lock (_gate)
         {
-            if (!_running.TryGetValue(sessionId, out entry) || entry.RefusesInput is not null) return false;
+            if ((entry = Held(sessionId)) is null || entry.RefusesInput is not null) return false;
         }
 
         try
@@ -370,7 +418,7 @@ public sealed class SessionProcesses(string? markers = null)
         Entry? entry;
         lock (_gate)
         {
-            if (!_running.TryGetValue(sessionId, out entry) || entry.RefusesInput is not null) return false;
+            if ((entry = Held(sessionId)) is null || entry.RefusesInput is not null) return false;
         }
 
         try
@@ -384,7 +432,11 @@ public sealed class SessionProcesses(string? markers = null)
         }
     }
 
-    /// <summary>Register a live process. Dispose the handle when the session concludes.</summary>
+    /// <summary>
+    /// Register a live process. Dispose the handle when the session concludes. A session's process still running when another is
+    /// tracked stays tracked beside it, and each handle's end takes only its own entry and, where none runs after, the marker
+    /// (SESSPROC1); a process that has exited is replaced.
+    /// </summary>
     /// <param name="refusesInput">
     /// Why this session takes no person's line, in the driver's words — null for a conversation, the
     /// one kind that takes turns with a person.
@@ -405,8 +457,19 @@ public sealed class SessionProcesses(string? markers = null)
         var launched = ThroughLauncher(process);
         var job = launched ? null : ProcessJob.Hold(process);
         var entry = new Entry { Process = process, RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Job = job, Launched = launched };
-        lock (_gate) _running[sessionId] = entry;
-        Mark(sessionId, process);
+        lock (_marks)
+        {
+            lock (_gate)
+            {
+                if (!_running.TryGetValue(sessionId, out var held)) _running[sessionId] = held = [];
+                // SESSPROC1: a process that has exited is replaced as ever, and one still running is kept beside this one.
+                held.RemoveAll(Exited);
+                held.Add(entry);
+            }
+
+            Mark(sessionId, process);
+        }
+
         return new Untrack(this, sessionId, entry);
     }
 
@@ -422,12 +485,14 @@ public sealed class SessionProcesses(string? markers = null)
     /// </remarks>
     public ProcessJob? JobOf(string sessionId)
     {
-        lock (_gate)
-        {
-            if (!_running.TryGetValue(sessionId, out var entry)) return null;
-            if (entry.Job is null && entry.Launched) entry.Job = LaunchedJob(entry.Process);
-            return entry.Job;
-        }
+        lock (_gate) return Held(sessionId) is { } entry ? JobOf(entry) : null;
+    }
+
+    // An entry's own job, under the gate: a stop ends the one it reached, whichever process answers the session once that one has exited.
+    private static ProcessJob? JobOf(Entry entry)
+    {
+        if (entry.Job is null && entry.Launched) entry.Job = LaunchedJob(entry.Process);
+        return entry.Job;
     }
 
     // The launcher's own job, where it holds the launcher: a name the launcher would not take leaves none to read.
@@ -663,16 +728,35 @@ public sealed class SessionProcesses(string? markers = null)
         public void Dispose()
         {
             ProcessJob? job;
-            lock (owner._gate)
+            lock (owner._marks)
             {
-                owner._running.Remove(sessionId);
-                // Taken under the gate, so no JobOf opens a launcher's job again after this.
-                job = entry.Job;
-                entry.Job = null;
-                entry.Launched = false;
+                Entry? kept = null;
+                var removed = false;
+                lock (owner._gate)
+                {
+                    // SESSPROC1: its own entry only. A session's other process is kept, answered and marked, and this end — a second
+                    // start's, or a run's that a later one replaced — takes neither it nor its marker.
+                    if (owner._running.TryGetValue(sessionId, out var held) && held.Remove(entry))
+                    {
+                        removed = true;
+                        if (held.Count == 0) owner._running.Remove(sessionId);
+                        else kept = Answered(held);
+                    }
+
+                    // Taken under the gate, so no JobOf opens a launcher's job again after this.
+                    job = entry.Job;
+                    entry.Job = null;
+                    entry.Launched = false;
+                }
+
+                if (removed)
+                {
+                    // The marker names the process still running, as the one it left; none running, it goes as it always did.
+                    if (kept is not null && !Exited(kept)) owner.Mark(sessionId, kept.Process);
+                    else owner.Unmark(sessionId);
+                }
             }
 
-            owner.Unmark(sessionId);
             // Last: whatever the session started and left running ends with it (ORPHAN1); through the launcher, as the launcher's own job
             // closes with this handle, or as the launcher ended where the driver never opened it.
             job?.Dispose();

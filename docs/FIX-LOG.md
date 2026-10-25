@@ -17,6 +17,29 @@ repository.
 - **Verification:** `LimitWaitsProcessTests.A_lost_conversation_whose_account_cools_waits_for_it_when_picked_and_walks_when_not` fails with
   either guard taken out and passes with both; `LimitWaitsProcessTests`, `ChatPendingProcessTests`, `LimitGoesOnProcessTests` (40, with
   `process.runsettings`), `BriefedMoveTests`, `ChatHandOverTests`, `LineAccountTests`, `ChatGoOnTests` and `StructureTests` (73) pass.
+## 2026-10-26 - A second process's end took the session's live process out of `running` and unmarked it (SESSPROC1)
+
+- **Symptom:** a second start of one record (a refused or abandoned run beside the live one) left the live process out of `running` and
+  without its marker once the second ended: the window's stop found no entry (`Stop` answered false), and another Daoris's orphan sweep read
+  the record as run by nothing and moved it `stopped` while it ran (the cowork view design §9; D173's note accepting COWORKVIEW1 row a).
+- **Root cause:** `SessionProcesses` kept one entry per session. `Track` replaced it (`_running[sessionId] = entry`) and the handle `Track`
+  returns removed whatever entry the session had and deleted the session's one marker, whether the entry was its own or not.
+- **Fix:** an entry per process, in track order. `Track` drops entries whose process has exited, as the replacement always did for a
+  continuation, and keeps one still running beside the new one. Each handle's end removes only its own entry; the marker is rewritten
+  for the process still running, and deleted only where none is. A handle ended twice, or late after its run was replaced, takes
+  nothing of another's. **Which of the two the record keeps:** both, answering the newest one still running (the live one again once
+  the newer has gone). The newest answers because a second start is the one every read of the session already reached while it was
+  the only entry — its refusal, its stop and the flags its conclusion reads are its own — so a start beside a live one answers exactly
+  as it did, and only its end now leaves the live one standing. The stop made is read from the newest entry a stop reached, so a run
+  stopped reads its own stop as it exits, and `Stop` ends the job of the entry it reached, not of whoever answers once that one is
+  gone. Nothing of how a process is started, stopped or swept changed; the sweep still reads the marker. A stop pressed while both run
+  ends the newest only, as a stop always ended the one entry the registry answered.
+- **Verification:** `SessionProcessesProcessTests` (stand-in node processes, a scratch home each, the real sweep over a stand-in
+  service), each case seen failing on the old registry: the second's end leaving the live one running, stoppable and marked, and the
+  sweep leaving its record; the older run's end beside a live newer one; an end told twice; a run that exited replaced by its
+  continuation and its late end; the newest answering while both run. One track and its end as today, and the first ending after the
+  second ended, passed before the fix too and stay as the guards of today. `OrphanedSessionTests`, `LaunchedSessionJobProcessTests` and
+  the driver's fast half pass; the launched-job class failed once in a run beside others, on its CPU-window row, and passed twice alone.
 
 ## 2026-10-26 - The review graph census read a graph that had gone quiet as one that never did (FLAKE1)
 
