@@ -101,10 +101,6 @@ public sealed record DeclarationView(
     public IReadOnlyList<LaneView> Lanes { get; init; } = [];
 }
 
-/// <summary>One lane of a repository, as the registry answered it (D115 §2.2): what a quest addresses as `repository:id`.</summary>
-/// <param name="Steward">The one lane that keeps the repository's records.</param>
-public sealed record LaneView(string Id, string Title, string Summary, bool Steward);
-
 /// <summary>
 /// The intake's instruction (D65 §1b), composed once and delivered by the harness's own door — the
 /// claiming instruction's sibling. It names no model (D24) and no repository layout: which harness
