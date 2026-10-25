@@ -428,6 +428,7 @@
     "Plugins/PluginCycles.cs": "Plugins",
     "Plugins/PluginFolders.cs": "Plugins",
     "Plugins/PluginHealth.cs": "Plugins",
+    "Plugins/PluginHomeTopic.cs": "Plugins",
     "Plugins/PluginInstall.cs": "Plugins",
     "Plugins/PluginKit.cs": "Plugins",
     "Plugins/PluginKitCommand.cs": "Plugins",
@@ -926,13 +927,6 @@
         "Events/RunningCalls.cs": ["SessionEvents"],
         "Events/SessionLog.cs": ["SessionEvents"],
         "Events/SessionWatch.cs": ["SessionEvents"]
-      }
-    },
-    {
-      "family": "Events names Plugins",
-      "after": "Events",
-      "files": {
-        "Events/HomeWatch.cs": ["PluginCatalog"]
       }
     },
     {

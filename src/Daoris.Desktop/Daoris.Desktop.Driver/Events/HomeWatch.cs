@@ -126,29 +126,6 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
             (moved, _) => names.Contains(moved, StringComparer.OrdinalIgnoreCase) || ways.Contains(moved, StringComparer.OrdinalIgnoreCase),
             () => names.Select(name => KeyValuePair.Create(Path.Combine(full, name), HomeWrites.Stamp(Path.Combine(full, name)))));
     }
-
-    /// <summary>
-    /// The plugins folder: a plugin arriving or leaving (a folder made, renamed or removed under it) and its manifest changing, never the
-    /// <see cref="PluginCatalog.DataFolder"/> its plugins keep their own state in, nor any folder named with a dot.
-    /// </summary>
-    public static HomePart Plugins(string folder)
-    {
-        var full = Path.GetFullPath(folder);
-        return new(
-            full,
-            Subfolders: true,
-            (moved, _) =>
-            {
-                var parts = moved.Split('/');
-                return !parts[0].StartsWith('.')
-                    && (parts.Length == 1 || (parts.Length == 2 && string.Equals(parts[1], PluginCatalog.ManifestName, StringComparison.OrdinalIgnoreCase)));
-            },
-            () => Directory.Exists(full)
-                ? Directory.EnumerateDirectories(full)
-                    .Where(dir => !Path.GetFileName(dir).StartsWith('.'))
-                    .Select(dir => KeyValuePair.Create(dir, HomeWrites.Stamp(Path.Combine(dir, PluginCatalog.ManifestName))))
-                : []);
-    }
 }
 
 /// <summary>
@@ -198,7 +175,7 @@ public sealed class HomeWatch : IAsyncDisposable
     {
         var watch = new HomeWatch(wake, every, source) { Log = log };
         watch.Topic(ChangeTopics.Config, Path.GetFileName(configPath), HomePart.File(configPath));
-        watch.Topic(ChangeTopics.Plugins, ChangeTopics.Plugins, HomePart.Plugins(DaorisHome.Entry(home, HomeEntry.Plugins)));
+        watch.Topic(ChangeTopics.Plugins, ChangeTopics.Plugins, HomeTopics.Of(ChangeTopics.Plugins, home));
         var lines = DaorisHome.Entry(home, HomeEntry.LinesMoved);
         watch.Topic(ChangeTopics.Lines, Path.GetFileName(lines), HomePart.File(lines));
         var words = HeldWordsFile.PathOf(home);

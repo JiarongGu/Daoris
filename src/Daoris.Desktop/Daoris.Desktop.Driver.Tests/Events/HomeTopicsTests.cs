@@ -15,7 +15,7 @@ public sealed class HomeTopicsTests
     [Fact]
     public void The_topics_whose_files_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal([ChangeTopics.Help], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal([ChangeTopics.Help, ChangeTopics.Plugins], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -26,6 +26,21 @@ public sealed class HomeTopicsTests
         var place = Assert.Single(places);
         Assert.Equal(Path.GetFullPath(HelpProposals.FolderOf(_home)), place.Folder);
         Assert.False(place.Subfolders);
+    }
+
+    [Fact]
+    public void The_plugins_answer_is_their_folder_heard_for_a_plugin_arriving_or_leaving_and_its_manifest_never_the_data_folder_nor_a_dotted_one()
+    {
+        var place = Assert.Single(HomeTopics.Of(ChangeTopics.Plugins, _home));
+
+        Assert.Equal(Path.GetFullPath(DaorisHome.Entry(_home, HomeEntry.Plugins)), place.Folder);
+        Assert.True(place.Subfolders);
+        Assert.True(place.Hears("one", ChangeKind.Created));
+        Assert.True(place.Hears("one/plugin.json", ChangeKind.Changed));
+        Assert.False(place.Hears("one/other.json", ChangeKind.Changed));
+        Assert.False(place.Hears(PluginCatalog.DataFolder + "/one/state.json", ChangeKind.Changed));
+        Assert.False(place.Hears(".hidden", ChangeKind.Created));
+        Assert.Empty(place.Stamps());
     }
 
     [Fact]
