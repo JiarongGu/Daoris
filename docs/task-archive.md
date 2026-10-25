@@ -69,6 +69,24 @@ took: the records and views `ServiceClient` returns and the lines it carries are
 door class or a read a subdomain owns is that subdomain's extension member of the client, the verbs that press through the instance and the files that read
 git through the workplace are placed above the service, and what the remote sync asks of a checkout's git and what a session's end lets go are ports Service
 declares and the workplace answers. Detail, the cuts one by one and the readings taken: D212's note of this date.
+
+## FOUNDATION1mod-v — Install moved (2026-10-26)
+
+> **FOUNDATION1mod-v — Install moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
+> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The fifth of the driver's moves: every file the map
+> places in Install (the toolchain, the staged update and its drain, the swap journal) sits in `Install/`, its namespace unchanged, every linked consumer with
+> it, the map's paths updated; then the cuts the census lists after Install, one edge family per commit, each a port declared or a type moved to its one owner,
+> each changing no behaviour, never a change to how an update installs. It adopts nothing of Part B. It was a row of the FOUNDATION1 backlog entry, which stays
+> open for the rows after it.
+
+**Outcome.** Built as the row names it. The 19 files the map places in Install moved into `Install/` (`Domain/` for the two pure release files), with the 16
+test classes that mirror them; the launcher's three includes (`StagedBuild`, `InstallSwap`, `HeldFiles`) follow, the GitDoor and PieceStart compile none of them;
+`structure.json` marks Install moved. The four families listed after Install (12 edges) came off the census whole, 642 → 630 edges and 79 → 75 families
+(`Install names Roles` had gone with mod-iii's settings key): the drain's hold over the planner's verdicts is the work orders' extension member of
+`InstallUpdate`, the agents' wiring file's path is Platform's, the tools' verb presses through a terminal the install declares, the running sessions' shape is the
+service's and their read the agents', and what a child is handed for its git and the clearing of a downloaded version are ports the workplace answers. Detail, the
+cuts one by one and the readings taken: D212's note of this date.
+
 ## FOUNDATION1z-i — the desktop store, read by nothing (2026-10-26)
 
 > **FOUNDATION1z-i — the desktop store, read by nothing** (driver, service, CLI; D212's row of Part B, accepted by the steward 2026-10-25; the design

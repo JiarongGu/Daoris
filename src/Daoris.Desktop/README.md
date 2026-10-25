@@ -107,8 +107,7 @@ hand-over box with its agent unchanged, by `daoris`, and its take holds the conv
 word said as it begins runs its own turn first, the box then waiting for that turn's end.
 
 `Agents/` and `Accounts/` group their files into scope folders by sub-area (SCOPE1b, D166's note): `Agents/` into `Acp/`,
-`ToolInstall/`, `Adapters/`, `Consoles/`, `Streams/`, `Permissions/` and `RepositoryKnowledge/`, with `Tools`, `Tools.Children`
-and `OutputTail` at the top because several scopes use them; `Accounts/` into `Harnesses/`, `Rotation/`, `Usage/` and
+`Adapters/`, `Consoles/`, `Streams/`, `Permissions/` and `RepositoryKnowledge/`, with `OutputTail` at the top because several scopes use it (the managed tools, `ToolInstall/` and `Tools`, are `Install/`'s since FOUNDATION1 mod-v); `Accounts/` into `Harnesses/`, `Rotation/`, `Usage/` and
 `SignIns/`, beside `Domain/`, with the files two scopes read (`AccountCooling`, `AccountNames`, `AccountReadings`,
 `AccountWindows`, `Usage`) and the instruction and settings files at the top. A scope holds its files whole; no namespace follows a folder.
 
@@ -231,10 +230,17 @@ composed by the loop and the hosts alone.
 (the presses' plans and the brief, `SetupPressRules` and `WorkspaceSetupRules`, a repository's description read through three
 questions, the release channel's names and refusals); its use cases (`SetupPress`, `WorkspaceSetup` and the three commands),
 written against the ports declared at its top (`ISetupWorld`, `IWorkspaceSetupWorld`), which the loop and the hosts compose,
-and the I/O (the two worlds, the plan's file, the description's files, the release bucket, `InstallUpdate`, `StagedBuild` and
-the swap) sit at the module's top. `InstallUpdate` and `StagedBuild` hold their records, rules and disk reads as one type each
-(FLAT1b-iii-a). The launcher compiles `StagedBuild.cs` and `InstallSwap.cs`, each on the base library alone. Callers name the
-rules (`SetupPressRules.Rules`), the files (`SelfDescriptionFiles.Read`) and the bucket (`ClaudeReleaseDownloads.InstallAsync`).
+and the I/O (the two worlds, the plan's file and the description's files) sit at the module's top. Install and update left it for `Install/` (FOUNDATION1 mod-v, D212):
+`InstallUpdate` and `StagedBuild` hold their records, rules and disk reads as one type each (FLAT1b-iii-a), and the launcher compiles `StagedBuild.cs`,
+`InstallSwap.cs` and `HeldFiles.cs` from there, each on the base library alone. Callers name the rules (`SetupPressRules.Rules`), the files
+(`SelfDescriptionFiles.Read`) and the bucket (`ClaudeReleaseDownloads.InstallAsync`).
+
+The toolchain, the staged update with its drain and the swap's journal sit in `Install/` (FOUNDATION1 mod-v, D212): the managed tools (`Tools`, `ToolInstall`, `ToolsCommand`),
+the release channels and downloads, `InstallUpdate`, `StagedBuild`, `InstallSwap` and `HeldFiles`, with `Domain/` for the two pure release files. It names no type of a subdomain above it:
+the drain's hold over the planner's verdicts (`InstallUpdate.HeldFor`) is the work orders' extension member of it (`UpdateHolds`), the running sessions' shape is the
+service's (`LiveSessions`, read by the agents' `LiveSessionReads`), the agents' wiring file's path is `HarnessWiringFile`, Platform's, `ToolsWorld` takes the terminal the
+install declares (`IToolTerminal`, which the instance's world implements), and what a child is handed for its git (`IChildGit`) and the clearing of a downloaded version
+(`IToolDownloads`) are ports the workplace answers, installed when the driver's assembly loads (`Trees/InstallWiring.cs`).
 
 `Quests/` keeps the onion for its model and rules alone (STRUCT3f, flattened by FLAT1a, folded by FLAT1b-ii): the plan and its
 records (`Planner`, `QuestView`, the considerations), the evidence's records, the attention events, the ask's words (`AskWords`,
