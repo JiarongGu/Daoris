@@ -42,11 +42,14 @@ public sealed class DesktopStoreTests : IDisposable
         return store;
     }
 
-    /// <summary>Version 2, which raises the writer stamp to 2: what a newer build's first start would migrate to.</summary>
-    private static readonly StoreMigration Raises = new(2, 2, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"));
+    /// <summary>The schema version this build's own steps leave a store at: the steps a row adds move it, and these cases are of the mechanism, not of the count.</summary>
+    private static readonly int Own = DesktopStore.Steps.Count;
 
-    /// <summary>Version 2 that adds a table and leaves the stamp where it is.</summary>
-    private static readonly StoreMigration Adds = new(2, 1, write => write.Execute("CREATE TABLE added (x TEXT NOT NULL)"));
+    /// <summary>The step after the build's own, which raises the writer stamp to 2: what a newer build's first start would migrate to.</summary>
+    private static readonly StoreMigration Raises = new(Own + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"));
+
+    /// <summary>The step after the build's own that adds a table and leaves the stamp where it is.</summary>
+    private static readonly StoreMigration Adds = new(Own + 1, 1, write => write.Execute("CREATE TABLE added (x TEXT NOT NULL)"));
 
     private static DesktopStoreOptions Newer(Func<StoreSettled>? settled = null, string kind = "shell") => new()
     {
@@ -76,7 +79,7 @@ public sealed class DesktopStoreTests : IDisposable
         var store = Open(at: at);
 
         Assert.True(File.Exists(at));
-        Assert.Equal((1, 1), store.Stamp);
+        Assert.Equal((Own, 1), store.Stamp);
         Assert.Null(store.Held);
         Assert.False(store.Newer);
         foreach (var table in new[] { "store_version", "store_revisions", "store_runs", "imports" }) Assert.True(HasTable(store, table), table);
@@ -101,7 +104,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         var second = Open();
 
-        Assert.Equal((1, 1), second.Stamp);
+        Assert.Equal((Own, 1), second.Stamp);
         Assert.Equal(1, Count(second, "imports"));
     }
 
@@ -226,7 +229,7 @@ public sealed class DesktopStoreTests : IDisposable
         var ids = await Task.WhenAll(runs);
 
         var read = Open();
-        Assert.Equal((1, 1), read.Stamp);
+        Assert.Equal((Own, 1), read.Stamp);
         Assert.Equal(60, Count(read, "imports"));
         Assert.Equal(kinds.ToDictionary(kind => kind, _ => 20L), read.Revisions());
         Assert.Equal(ids.Order().ToArray(), read.Runs().Select(each => each.Run).Order().ToArray());
@@ -242,7 +245,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         var older = Open(Older());
 
-        Assert.Equal((2, 2), older.Stamp);
+        Assert.Equal((Own + 1, 2), older.Stamp);
         Assert.True(older.Newer);
         Assert.Equal(1, older.Revisions()["settings"]);
         var refused = Assert.Throws<DesktopStoreNewerException>(() => older.Write("settings", _ => { }));
@@ -260,7 +263,7 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.False(older.Newer);
 
         // Another process, a newer build, opens the file after it and migrates it, raising the stamp.
-        using (var newer = DesktopStore.Open(Db, Newer(kind: "host"))) Assert.Equal((2, 2), newer.Stamp);
+        using (var newer = DesktopStore.Open(Db, Newer(kind: "host"))) Assert.Equal((Own + 1, 2), newer.Stamp);
 
         // The older process kept its connection and its idea of the file: its next write meets the stamp in its own transaction.
         Assert.Throws<DesktopStoreNewerException>(() => older.Write("settings", write => write.Execute(
@@ -280,7 +283,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         // The start's confirmation is not settled: the stamp stays where it was and an older build can still write.
         Assert.False(store.Migrate());
-        Assert.Equal((1, 1), store.Stamp);
+        Assert.Equal((Own, 1), store.Stamp);
         Assert.Contains("raises the store's writer stamp from 1 to 2", store.Held);
         Assert.Contains("`started`", store.Held);
         Assert.False(HasTable(store, "raised"));
@@ -290,7 +293,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         Assert.True(store.Migrate());
         Assert.Null(store.Held);
-        Assert.Equal((2, 2), store.Stamp);
+        Assert.Equal((Own + 1, 2), store.Stamp);
         Assert.True(HasTable(store, "raised"));
     }
 
@@ -300,7 +303,7 @@ public sealed class DesktopStoreTests : IDisposable
         var store = Open(new DesktopStoreOptions { Steps = [.. DesktopStore.Steps, Adds], Settled = () => StoreSettled.Not("started") });
 
         Assert.Null(store.Held);
-        Assert.Equal((2, 1), store.Stamp);
+        Assert.Equal((Own + 1, 1), store.Stamp);
         Assert.True(HasTable(store, "added"));
     }
 
@@ -310,7 +313,7 @@ public sealed class DesktopStoreTests : IDisposable
         var store = Open(new DesktopStoreOptions { Settled = () => StoreSettled.Not("started") });
 
         Assert.Null(store.Held);
-        Assert.Equal((1, 1), store.Stamp);
+        Assert.Equal((Own, 1), store.Stamp);
     }
 
     [Fact]
@@ -320,7 +323,7 @@ public sealed class DesktopStoreTests : IDisposable
         var unasked = Open(new DesktopStoreOptions { Writer = 2, Steps = [.. DesktopStore.Steps, Raises] });
 
         Assert.Contains("no reading", unasked.Held);
-        Assert.Equal((1, 1), unasked.Stamp);
+        Assert.Equal((Own, 1), unasked.Stamp);
         Assert.False(unasked.Import(new StoreImport("settings", "data/driver.json", 1, "x", 0, ImportClass.Left)).Done);
     }
 
@@ -333,12 +336,12 @@ public sealed class DesktopStoreTests : IDisposable
         IReadOnlyList<StoreMigration> Steps(bool fail) =>
         [
             .. DesktopStore.Steps.Select(step => interrupted == 1 && fail ? step with { Apply = write => { step.Apply(write); throw new IOException("killed"); } } : step),
-            new(2, 1, write =>
+            new(Own + 1, 1, write =>
             {
                 write.Execute("CREATE TABLE step_two (x TEXT)");
                 if (interrupted == 2 && fail) throw new IOException("killed");
             }),
-            new(3, 1, write =>
+            new(Own + 2, 1, write =>
             {
                 write.Execute("CREATE TABLE step_three (x TEXT)");
                 if (interrupted == 3 && fail) throw new IOException("killed");
@@ -348,7 +351,8 @@ public sealed class DesktopStoreTests : IDisposable
         Assert.Throws<IOException>(() => DesktopStore.Open(Db, new DesktopStoreOptions { Steps = Steps(fail: true) }));
 
         // The store is as the steps before the interrupted one left it, its tables and its version; the interrupted step's DDL is gone.
-        var after = interrupted - 1;
+        // The first case interrupts the build's own first step, so the store is made by none; the others interrupt the two steps after the build's.
+        var after = interrupted == 1 ? 0 : Own + interrupted - 2;
         using (var inspect = new SqliteConnection($"Data Source={Db};Pooling=False"))
         {
             inspect.Open();
@@ -357,7 +361,7 @@ public sealed class DesktopStoreTests : IDisposable
             list.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name";
             using (var reader = list.ExecuteReader()) while (reader.Read()) tables.Add(reader.GetString(0));
             Assert.Equal(after >= 1, tables.Contains("store_version"));
-            Assert.Equal(after >= 2, tables.Contains("step_two"));
+            Assert.Equal(after >= Own + 1, tables.Contains("step_two"));
             Assert.False(tables.Contains("step_three"));
             if (after >= 1)
             {
@@ -369,7 +373,7 @@ public sealed class DesktopStoreTests : IDisposable
 
         // And the next start, whole, goes on from there.
         var store = Open(new DesktopStoreOptions { Steps = Steps(fail: false) });
-        Assert.Equal((3, 1), store.Stamp);
+        Assert.Equal((Own + 2, 1), store.Stamp);
         Assert.True(HasTable(store, "step_two") && HasTable(store, "step_three"));
     }
 

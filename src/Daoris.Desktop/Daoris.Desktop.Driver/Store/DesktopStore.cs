@@ -23,6 +23,12 @@ public sealed record DesktopStoreOptions
     /// <summary>The writer stamp this build writes with: a store stamped past it is refused for writes (§13.3).</summary>
     public int Writer { get; init; } = DesktopStore.WriterStamp;
 
+    /// <summary>
+    /// The run this process writes under, for a caller that opens the store for one use and closes it: every open of one process names the
+    /// same run, so <c>store_runs</c> holds one row for the process however often it opens. Null draws a run of its own.
+    /// </summary>
+    public string? Run { get; init; }
+
     /// <summary>The build writing, kept on the store's version row and on each import; null for the assembly's own version.</summary>
     public string? Build { get; init; }
 
@@ -97,6 +103,18 @@ public sealed class DesktopStore : IDisposable
             );
             CREATE INDEX imports_family ON imports (family, path);
             """)),
+
+        // Row z-iii: the participants' bindings. A new table, every column required, which a build of z-i never opens, so the stamp stays
+        // where it is and the step runs at the first start (§13.3); later rows add their own columns nullable, each writer naming its own.
+        new(2, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE bindings (
+              session      TEXT PRIMARY KEY,
+              adapter      TEXT NOT NULL,
+              conversation TEXT NOT NULL,
+              kept         TEXT NOT NULL
+            );
+            """)),
     ];
 
     private readonly object _turn = new();
@@ -127,7 +145,7 @@ public sealed class DesktopStore : IDisposable
         _build = options.Build ?? typeof(DesktopStore).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0";
         _kind = options.Kind;
         Own = options.Writer;
-        Run = Guid.NewGuid().ToString("N");
+        Run = options.Run ?? Guid.NewGuid().ToString("N");
     }
 
     /// <summary>The store's file in a home: the home table's <c>desktop-db</c> entry.</summary>

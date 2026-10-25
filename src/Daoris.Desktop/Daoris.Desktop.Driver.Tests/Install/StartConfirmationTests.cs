@@ -47,7 +47,7 @@ public sealed class StartConfirmationTests : IDisposable
     {
         Kind = kind,
         Writer = 2,
-        Steps = [.. DesktopStore.Steps, new StoreMigration(2, 2, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"))],
+        Steps = [.. DesktopStore.Steps, new StoreMigration(DesktopStore.Steps.Count + 1, 2, write => write.Execute("CREATE TABLE raised (x TEXT NOT NULL)"))],
         Settled = () => StartConfirmation.Read(_install),
     };
 
@@ -141,7 +141,7 @@ public sealed class StartConfirmationTests : IDisposable
 
         Assert.False(outcome.Done);
         Assert.False(loaded);
-        Assert.Equal((1, 1), store.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count, 1), store.Stamp);
         Assert.Empty(store.Query("SELECT 1 FROM imports", row => 1));
         Assert.Empty(store.Revisions());
     }
@@ -157,7 +157,7 @@ public sealed class StartConfirmationTests : IDisposable
 
         Assert.False(outcome.Done);
         Assert.Contains("does not read", outcome.Said);
-        Assert.Equal((1, 1), store.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count, 1), store.Stamp);
         Assert.Empty(store.Query("SELECT 1 FROM imports", row => 1));
     }
 
@@ -168,7 +168,7 @@ public sealed class StartConfirmationTests : IDisposable
         var store = Open(Newer());
 
         Assert.Null(store.Held);
-        Assert.Equal((2, 2), store.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count + 1, 2), store.Stamp);
         Assert.True(store.Import(new StoreImport("settings", "data/driver.json", 1, "x", 1, ImportClass.Left)).Done);
     }
 
@@ -179,7 +179,7 @@ public sealed class StartConfirmationTests : IDisposable
         var loop = Open(Newer("host"));
         Assert.False(loop.Import(new StoreImport("settings", "data/driver.json", 1, "x", 1, ImportClass.Left)).Done);
         Assert.False(loop.Migrate());
-        Assert.Equal((1, 1), loop.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count, 1), loop.Stamp);
 
         // The swap goes on and the new application confirms: the launcher's journal moves, and the loop's next look reads it.
         Journal(SwapPhase.Started);
@@ -187,7 +187,7 @@ public sealed class StartConfirmationTests : IDisposable
         Journal(SwapPhase.Confirmed);
 
         Assert.True(loop.Migrate());
-        Assert.Equal((2, 2), loop.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count + 1, 2), loop.Stamp);
         Assert.True(loop.Import(new StoreImport("settings", "data/driver.json", 1, "x", 1, ImportClass.Left)).Done);
         Assert.Equal(1, loop.Revisions()["settings"]);
     }
@@ -227,7 +227,7 @@ public sealed class StartConfirmationTests : IDisposable
 
         Assert.Equal(before, files.Keys.ToDictionary(path => path, path => Hash(Path.Combine(_install, path))));
         Assert.All(files.Keys, path => Assert.False(File.Exists(Path.Combine(_install, path + ".imported"))));
-        Assert.Equal((1, 1), older.Stamp);
+        Assert.Equal((DesktopStore.Steps.Count, 1), older.Stamp);
         Assert.False(older.Newer);
         older.Write("settings", _ => { });   // a store it can still write
         Assert.Equal(1, older.Revisions()["settings"]);

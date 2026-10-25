@@ -850,6 +850,11 @@ public sealed class Driver(
         // meanwhile, so the account stays passed until its reset with no strike spent on a full disk.
         AccountCooling.WriteUnkept(home, Context.Harnesses.Clock());
 
+        // FOUNDATION1 z-iii (D212; the design §13.5, §13.6): the conversations the sessions' binding files keep move into the desktop store at
+        // the first look the start's confirmation is settled, and a file an older build wrote during a downgrade at the look that finds it, so
+        // a resume reads its id from the binding. A look with no such file asks nothing of the store.
+        Context.Conversations.ImportFiles();
+
         // The sync runs BESIDE the sessions, not only around them (D68 §6): every whole look syncs, and a whole look comes
         // round at the watch's pace while sessions work. After it, every session this driver runs whose take came
         // back LOST is stopped, because its quest is another machine's and its work would double theirs (D68 §5).

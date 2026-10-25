@@ -146,22 +146,9 @@ public static class ToolHomeLeftovers
     /// </summary>
     private static string? ConversationKeeps(string home, string session)
     {
-        var conversations = new HarnessConversations(home);
-        if (!SessionEventText.IsLocalId(session)) return null;
-        try
-        {
-            using var _ = AtomicFile.OpenRead(conversations.PathOf(session));
-        }
-        catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
-        {
-            return null;
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            return "record-unread";
-        }
-
-        return conversations.Read(session) is not null ? "resumable" : "record-unread";
+        // A binding the store holds (FOUNDATION1 z-iii) is a conversation kept as a file was, so the file's presence is no longer all of it.
+        var (kept, reads) = new HarnessConversations(home).Kept(session);
+        return !kept ? null : reads ? "resumable" : "record-unread";
     }
 
     private static string? Text(JsonElement element, string name) =>

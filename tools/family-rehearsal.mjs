@@ -4788,7 +4788,18 @@ let portKept = null;
 try {
   portKept = JSON.parse(readFileSync(homeEntry(scratch, 'sessions', `${portPark?.id}.harness.json`), 'utf8'));
 } catch {
-  // Not kept, or not JSON: the check below says so.
+  // Not a file: FOUNDATION1 z-iii keeps a conversation in the desktop store once a look has imported the home's binding files.
+  try {
+    const { DatabaseSync } = await import('node:sqlite');
+    const store = new DatabaseSync(homeEntry(scratch, 'desktop-db'), { readOnly: true });
+    try {
+      portKept = store.prepare('SELECT adapter, conversation FROM bindings WHERE session = ?').get(portPark?.id ?? '') ?? null;
+    } finally {
+      store.close();
+    }
+  } catch {
+    // Not kept, or not readable: the check below says so.
+  }
 }
 check(
   'the driver carries the cut-off on, and that session asks which port and parks holding the quest, its conversation id kept',
