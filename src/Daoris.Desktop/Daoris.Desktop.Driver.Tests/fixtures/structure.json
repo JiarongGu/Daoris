@@ -3,7 +3,7 @@
     { "name": "Platform", "folder": "Platform", "domain": false, "moved": true },
     { "name": "Store", "folder": "Store", "domain": false, "moved": true },
     { "name": "Settings", "folder": "Settings", "domain": true, "moved": true },
-    { "name": "Service", "folder": "Service", "domain": true },
+    { "name": "Service", "folder": "Service", "domain": true, "moved": true },
     { "name": "Install", "folder": "Install", "domain": true },
     { "name": "Instance", "folder": "Instance", "domain": false },
     { "name": "Events", "folder": "Events", "domain": true },
@@ -352,7 +352,6 @@
     "Platform/ProcessJob.cs": "Platform",
     "Platform/ProcessStarts.cs": "Platform",
     "Platform/PseudoConsole.cs": "Platform",
-    "Platform/RunningAddress.cs": "Service",
     "Platform/SafeNames.cs": "Platform",
     "Platform/SentPresses.cs": "Instance",
     "Platform/ShellWord.cs": "Instance",
@@ -507,6 +506,7 @@
     "Service/RegistryFollowing.cs": "Service",
     "Service/RemoteSync.cs": "Service",
     "Service/RemoteTarget.cs": "Service",
+    "Service/RunningAddress.cs": "Service",
     "Service/RunningService.cs": "Service",
     "Service/ServiceClient.cs": "Service",
     "Service/ServiceDoors.cs": "Service",
@@ -892,8 +892,8 @@
       "family": "Service names Instance",
       "after": "Service",
       "files": {
-        "Platform/RunningAddress.cs": ["PipeName"],
         "Service/RegisterCommand.cs": ["InstanceDoor","InstanceFound","InstanceWorld","OpenRoutes"],
+        "Service/RunningAddress.cs": ["PipeName"],
         "Service/SyncPass.cs": ["InstanceDoor","InstanceFound","InstanceWorld","OpenRoutes"]
       }
     },
@@ -1942,6 +1942,23 @@
     "KeepKeyTests.cs": "Settings",
     "LandingKeyTests.cs": "Settings",
     "PluginIdsTests.cs": "Settings",
-    "ChoiceVerbTests.cs": "Settings"
+    "ChoiceVerbTests.cs": "Settings",
+    "LayoutReaderTests.cs": "Service",
+    "LedgerChangesTests.cs": "Service",
+    "LineRegistrationTests.cs": "Service",
+    "RegisterCommandTests.cs": "Service",
+    "RegistryFollowingTests.cs": "Service",
+    "RemoteSyncTests.cs": "Service",
+    "RemoteTargetTests.cs": "Service",
+    "RunningServiceTests.cs": "Service",
+    "ServiceClientClosureTests.cs": "Service",
+    "ServiceClientReviewTests.cs": "Service",
+    "ServiceClientWorkflowProposalTests.cs": "Service",
+    "ServiceDoorsTests.cs": "Service",
+    "ServiceHostLocatorTests.cs": "Service",
+    "SetupLineProcessTests.cs": "Service",
+    "RunningAddressTests.cs": "Service",
+    "RegistrationFollowTests.cs": "Service",
+    "RegistrationLineProcessTests.cs": "Service"
   }
 }
