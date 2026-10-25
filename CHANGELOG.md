@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- A partner's session is now drawn as a partner (FOUNDATION1, D203): its row and page are titled *Partner* (搭档) where they used to say
+  *Helper*, since the partner's record also serves another session. Nothing else about it changes: like a helper, a partner takes one turn,
+  shows no message box and offers no act that takes words.
 - Words you write to a finished session whose account is cooling no longer wait days for that account's reset while another account
   is ready (LIMITSWITCH1, D137). For work that is open or taken, they go on at once as a new part of the same session on the ready
   account, handed Daoris's brief, as work cut off by a limit already did, and arrive once. Only when every account is at its limit do
