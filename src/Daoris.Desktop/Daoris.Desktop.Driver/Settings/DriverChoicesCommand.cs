@@ -282,7 +282,6 @@ public static class DriverChoicesCommand
         ChoicePress press;
         try
         {
-            if (verb == "keep" && !Changes(args)) return KeepsSaid(before, world);
             if (!Changes(args) && Registered(world, verb)?.Said(args, before, world) is { } exit) return exit;
             press = Plan(args, before, world);
         }
@@ -627,98 +626,10 @@ public static class DriverChoicesCommand
                     });
             }
 
-            case "commits":
-                return Commits(args, before, world);
-
-            // The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): one kind's days, `whole` or `slim`, `never`, or its
-            // default again. Judged here by the one judgement the window's SET_KEEP makes, so a value out of its bounds is refused before
-            // the window is asked, in the line both paths say (`… (KEEP_OUT_OF_RANGE)`).
-            case "keep":
-            {
-                var set = KeepAsked(args, world);
-                DriverConfig after;
-                try
-                {
-                    after = KeepRules.Apply(before, set);
-                }
-                catch (DriverException refused)
-                {
-                    throw new ChoiceWords(refused is ChoiceRefusal ? $"{refused.Message} ({ChoiceCodes.Of(refused)})" : refused.Message);
-                }
-
-                var payload = new JsonObject { ["kind"] = set.Kind };
-                if (set.Days is { } days) payload["days"] = days;
-                if (set.Never) payload["never"] = true;
-                if (set.Whole is { } whole) payload["whole"] = whole;
-                if (set.Default) payload["default"] = true;
-                // KEEP1f: the floor's size, share or `off`; the window judges a size against its own read of the volume.
-                if (set.Gb is { } gb) payload["gb"] = gb;
-                if (set.Percent is { } percent) payload["percent"] = percent;
-                if (set.Off) payload["off"] = true;
-                return Change(ChoiceRoutes.Keep, payload, config => KeepRules.Apply(config, set), () =>
-                {
-                    Say($"daoris: {KeepRules.Said(set.Kind, after.Keep)}.");
-                    Say($"  Written to {path} — the look's next pass keeps by it, so nothing restarts.");
-                    return 0;
-                });
-            }
-
             default:
                 return Registered(world, verb)?.Plan(args, before, world)
                     ?? throw new ChoiceWords($"`{verb}` is not a standing choice this program changes.");
         }
-    }
-
-    /// <summary><c>keep &lt;kind&gt; &lt;value&gt;</c>'s words read as the rule they set (KEEP1d); anything else is its usage.</summary>
-    private static KeepSet KeepAsked(IReadOnlyList<string> args, DriverChoicesWorld world)
-    {
-        const string Usage = "`driver keep` needs a kind and its rule — `set-aside <days>|whole|slim|default`, `downloads <days>|never|default`, "
-            + "`logs <days>|default`, `history <days>|never|default` or `floor <n>GB|<n>%|off|default`; e.g. `daoris driver keep set-aside 30`.";
-        if (args.Count != 3) throw new ChoiceWords(Usage);
-        try
-        {
-            if (!KeepRules.IsFloor(args[1])) KeepRules.Kind(args[1]);
-        }
-        catch (DriverException refused)
-        {
-            throw new ChoiceWords($"{refused.Message} {Usage}");
-        }
-
-        try
-        {
-            var set = KeepRules.Asked(args[1], args[2]);
-            if (!KeepRules.IsFloor(set.Kind) || set.Gb is null) return set;
-            // KEEP1f: a size is at most half the Daoris folder's volume, read here so the refusal comes before the window is asked.
-            var volume = world.FloorVolume is { } read
-                ? read()
-                : world.Instance.Home is { } home ? SpaceVolumes.Read(DaorisHome.FolderOf(home).Folder)?.Total : null;
-            return set with { Volume = volume };
-        }
-        catch (DriverException refused)
-        {
-            throw new ChoiceWords(refused.Message);
-        }
-    }
-
-    /// <summary><c>keep</c>: each kind's rule the person sets, and whether it is the default (KEEP1d).</summary>
-    private static int KeepsSaid(DriverConfig choices, DriverChoicesWorld world)
-    {
-        var write = world.Instance.Out;
-        write.WriteLine($"daoris: {world.ConfigPath}");
-        foreach (var kind in KeepRules.Settable)
-        {
-            var said = KeepRules.Said(kind.Id, choices.Keep);
-            write.WriteLine(choices.Keep.IsDefault(kind.Id)
-                ? $"  {kind.Id,-10} {said}  (the default — `daoris driver keep {kind.Id} …` changes it)"
-                : $"  {kind.Id,-10} {said}  (set — `daoris driver keep {kind.Id} default` takes the default again)");
-        }
-
-        // KEEP1f: the free-space floor, set beside the kinds' rules.
-        var floor = KeepRules.Said(KeepRules.Floor, choices.Keep);
-        write.WriteLine(choices.Keep.IsDefault(KeepRules.Floor)
-            ? $"  {KeepRules.Floor,-10} {floor}  (the default — `daoris driver keep floor …` changes it)"
-            : $"  {KeepRules.Floor,-10} {floor}  (set — `daoris driver keep floor default` takes the default again)");
-        return 0;
     }
 
     /// <summary><c>list</c>: what this machine drives, as <c>daoris driver list</c> always said it.</summary>
@@ -807,13 +718,7 @@ public static class DriverChoicesCommand
 
         Section("brainstorms");
 
-        foreach (var (repository, rule) in choices.Commits) Say($"  commits    {repository}  {CommitRules.Listed(rule)}");
-        foreach (var (workspace, rule) in choices.WorkspaceCommits) Say($"  commits    workspace {workspace}  {CommitRules.Listed(rule)}  (for each repository there that sets none)");
-        if (choices.Commits.Count == 0 && choices.WorkspaceCommits.Count == 0)
-        {
-            Say("  commits    none set — work is committed as it goes; `daoris driver commits <repository> "
-                + "--mode ask|at-end` sets one");
-        }
+        Section("commits");
 
         // A hold on something not opted in is inert, and saying so is the point: it reads as protection and is not.
         foreach (var held in choices.Holds.Where(each => FindName(choices.Drivable, each) is null))
@@ -924,60 +829,6 @@ public static class DriverChoicesCommand
 
         throw new ChoiceWords($"`driver across` sets read or write-to, not `{what ?? ""}` — e.g. `daoris driver across engine read off`, "
             + "`daoris driver across plugins write-to engine`.");
-    }
-
-    /// <summary><c>commits</c> (PROCESS1a): how work is committed here now.</summary>
-    private static ChoicePress Commits(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
-    {
-        var path = world.ConfigPath;
-        void Say(string line) => world.Instance.Out.WriteLine(line);
-        string[] valued = ["--workspace", "--mode", "--convention"];
-        const string usage = "`driver commits` needs <repository>|--workspace <name>, then --mode as-you-go|ask|at-end and/or "
-            + "--convention \"<your words>\" (one paragraph, at most 400 characters) or --no-convention, or --clear — "
-            + "e.g. `daoris driver commits web-app --mode ask --convention \"Imperative subject line.\"`.";
-        Flags(args, valued, ["--clear", "--no-convention"], "commits", usage);
-        var workspace = FlagValue(args, "--workspace");
-        var name = workspace ?? Operands(args, valued).Skip(1).FirstOrDefault();
-        var clear = args.Contains("--clear");
-        var mode = FlagValue(args, "--mode");
-        // `--no-convention` is the empty convention, which takes the standing one away (a flag cannot carry an empty value).
-        if (args.Contains("--no-convention") && args.Contains("--convention")) throw new ChoiceWords(usage);
-        var convention = args.Contains("--no-convention") ? "" : FlagValue(args, "--convention");
-        var set = new JsonObject();
-        if (mode is not null) set["mode"] = mode;
-        if (convention is not null) set["convention"] = convention;
-        if (string.IsNullOrEmpty(name) || (!clear && set.Count == 0)) throw new ChoiceWords(usage);
-
-        var payload = Scoped(workspace, name);
-        if (set.Count > 0) payload["set"] = set;
-        if (clear) payload["clear"] = true;
-        var edit = CommitRules.EditOf(JsonSerializer.SerializeToElement(payload));
-        var after = Judged(() => CommitRules.Apply(before, edit));
-        return new("commits", ChoiceRoutes.Commits, payload, _ =>
-        {
-            StandingChoices.Write(path, config => CommitRules.Apply(config, edit));
-            return Task.FromResult<object?>(null);
-        }, _ => null, _ =>
-        {
-            var map = workspace is not null ? after.WorkspaceCommits : after.Commits;
-            var key = FindName(map.Keys, name) ?? FindName((workspace is not null ? before.WorkspaceCommits : before.Commits).Keys, name) ?? name;
-            if (map.GetValueOrDefault(key) is not { } rule)
-            {
-                Say(workspace is not null
-                    ? $"daoris: repositories in the workspace `{key}` keep their own commit rule, else work is committed as it goes."
-                    : $"daoris: `{key}` takes its workspace's commit rule again, else work is committed as it goes.");
-            }
-            else
-            {
-                Say(workspace is not null
-                    ? $"daoris: commits for repositories in the workspace `{key}` that set none of their own: {CommitRules.Listed(rule)}"
-                    : $"daoris: commits for `{key}`: {CommitRules.Listed(rule)}");
-                Say($"  {CommitRules.Says(rule.Mode)}");
-            }
-
-            Say($"  Written to {path}.");
-            return 0;
-        });
     }
 
     /// <summary>Whether the file sets a key, read where it holds a whole number, as the CLI reads a choice set rather than defaulted.</summary>

@@ -31,5 +31,7 @@ public static class DriverChoiceVerbs
         new ReviewVerb(),
         new OpinionVerb(home => AdapterSet.Built().WithPlugins(PluginCatalog.Load(home, AdapterSet.Built().Names))),
         new BrainstormsVerb(),
+        new CommitsVerb(),
+        new KeepVerb(),
     ];
 }
