@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (306)
+## Files over 40 KB (307)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -365,10 +365,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
 | `docs/2026-10-24-switch-context-design.md` | 194 | 1454 |
 | `docs/2026-10-24-switch-context-reads.md` | 157 | 1604 |
-| `docs/2026-10-25-foundation-design.md` | 151 | 1004 |
+| `docs/2026-10-25-foundation-design.md` | 248 | 1595 |
 | `docs/2026-10-25-foundation-proposal-claude.md` | 70 | 664 |
 | `docs/2026-10-25-foundation-proposal-codex.md` | 53 | 523 |
 | `docs/2026-10-25-foundation-proposal-opus.md` | 63 | 654 |
+| `docs/2026-10-25-foundation-reads.md` | 73 | 548 |
 | `docs/2026-10-25-foundation-survey.md` | 103 | 597 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 50 | 269 |

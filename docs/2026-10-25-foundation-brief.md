@@ -257,8 +257,8 @@ steward set, which every round from 2 keeps:
 - **Roles in configuration.** A role is a configured record composed from those capabilities: its name in English and Chinese; the
   work it takes; its staffing, D205's ordered choices of agent, model and effort; its authority, the acts and doors it may use; its
   scope, the machine, a workspace or a repository; and how it is filled, always on or appointed (D208, D209).
-- **The default company.** D205's eight actors and the two appointed roles are seeded into configuration as the default company, so a
-  person who sets nothing sees Daoris work as today, and an upgrade changes nothing (D205 point 7).
+- **The default catalogue.** D205's eight actors and the two appointed roles are seeded into configuration as the role catalogue's
+  default, so a person who sets nothing sees Daoris work as today, and an upgrade changes nothing (D205 point 7).
 - **Who changes it.** The person adds, changes or removes a role, at its doors, or Ask Daoris proposes the change and the person's press
   applies it (D205 point 9's shape). A role gaining authority needs the person's press, and an act that is the owner's (D191 point 3;
   D209's *never what is the owner's*) stays the owner's whatever a role says.
@@ -280,7 +280,7 @@ Round 3 takes it as a fourth question beside the three areas, **where state is k
   record, words in transfer and their receipts, the journal's cursors and said-sets), so a move, its words and their receipts are
   kept in one transaction and an open is claimed once. The service's records (sessions, quests, asks) stay in the service's own
   store, and its journal with them.
-- **The person's configuration** (the driver's settings, the actors, the company's roles) is in the store too, edited by the window
+- **The person's configuration** (the driver's settings, the actors, the role catalogue) is in the store too, edited by the window
   and the terminal's verbs; whether a JSON export and import keeps today's hand-edited `driver.json` reviewable and editable is a
   question each proposal answers, and the steward's recommendation is to keep one.
 - **It lands in steps:** each file's move is a row of its own, imported once and the file kept as a backup, behind today's tests;
@@ -292,7 +292,7 @@ Round 3 takes it as a fourth question beside the three areas, **where state is k
 Daoris owns and more than one reader or writer reads and sets; JSON stays only where something outside Daoris owns the format, where
 the file is a repository's reviewed record, or where it is an export or a stream.
 
-- **In the desktop's store:** the Fabric's records (the participants' bindings, the appointments, the company's roles and their
+- **In the desktop's store:** the Fabric's records (the participants' bindings, the appointments, the role catalogue and its roles'
   capabilities), the actors' choices and every setting `driver.json` holds today, all machine-local state more than one process
   writes, and every record the synthesis adds. The owner judged the Fabric, actors and roles better read, set and managed there.
 - **JSON, kept:** the formats other tools own (an agent's `settings.json`, `.mcp.json`, the harness homes); the tracked repository
@@ -302,3 +302,23 @@ the file is a repository's reviewed record, or where it is an export or a stream
 - **`driver.json` becomes the export and import format alone:** the person exports the configuration as readable JSON to review,
   back up or edit by hand, and imports it back through the same judges, a change of authority through the person's own press. The
   first start of the build that moves it imports today's file once and keeps it as the backup.
+
+## 10. Amendment, 2026-10-25: the driver analyzed into its subdomains
+
+The owner directed, after round 2 of the synthesis, that the full update also analyze the driver properly into its subdomains, naming
+among them the context engine, the memory and knowledge system, the Fabric and the actors. Round 3 takes it as a section of the design,
+the driver's target module map:
+
+- **What the steward measured.** The driver library (`Driver/`) is about 230,000 lines in fifteen top-level folders, cut mostly by
+  technique rather than by domain: Trees 49k, Platform 26k (a grab bag), Sessions 25k, Conversations 21k, Agents 19k, Accounts 15k, Loop
+  15k, Help 13k, Plugins 11k, Workflows 9k, Service 7k, Review 7k, Quests 7k, Setup 6k, Brainstorms 3k. `StructureTests` enforces little
+  layering (Platform at the bottom, Loop holding no `Domain/`, some modules holding a `Domain/` part), and the owner's subdomains are spread
+  across those folders.
+- **What round 3 answers.** A map of the driver's subdomains, each with the folders and files it takes, the records it owns (its tables in
+  the desktop store, §9), its public seam, its tests and its place in one dependency graph; `StructureTests` extended to enforce that graph,
+  as a row of its own; folders held by a census weighed against separate assemblies, and one chosen; the code moved subdomain by subdomain
+  behind today's tests, each move a row that changes no behaviour; and where the three areas, the store and the roles land in the map. The owner left the
+  map's names and grouping to the steward, the subdomain of roles named **Roles** (the owner's confirmation); the configured set is the
+  **role catalogue**, and *the company* stays D193's narrative alone.
+- **Kept.** Never a big-bang rewrite (§7): a move of code changes no behaviour and keeps every gate of §6 green, and the constraints of §4
+  stand.
