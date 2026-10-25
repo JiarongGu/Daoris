@@ -1,6 +1,8 @@
-# The work cycle's events reach an outside agent's session by a plugin, pushed, never polled (EVENTHOOK1; proposed, 2026-10-24)
+# The work cycle's events reach an outside agent's session by a plugin, pushed, never polled (EVENTHOOK1; rows 1a to 1c accepted, 2026-10-25)
 
-**Standing:** proposed, round 4, under D191. Round 1 was written by Claude Opus 5.5 from the code at `5e9a563bd` and read at
+**Standing:** **rows 1a, 1b and 1c accepted by the steward on 2026-10-25**, after both makers' reads of round 4 and their named changes
+(§16, §17), under D191; rows 1d and 1e stay proposed for their own rounds. 1a is built first; 1b and 1c land after the FOUNDATION1
+Part A moves that hold their files (§17), since FOUNDATION1's build goes first. The rounds, under D191: round 1 was written by Claude Opus 5.5 from the code at `5e9a563bd` and read at
 `71e08c3c0` by the independent Opus foundation reader alone, its read verbatim in `docs/2026-10-24-event-hook-reads.md`: 16 findings,
 7 blocking, another round. Codex's read was then owed, its credits out. Round 2 is written by Claude Opus 5.5 from the code on main at
 `5d19f6b3a`, where nothing round 1 or the read cites has changed (an empty `git diff --stat 5e9a563bd` over `src/Daoris.Desktop`,
@@ -24,9 +26,8 @@ its read is recorded verbatim in the reads record. **Its named changes are taken
 `9f48860ba` (merged into this branch), where nothing it cites has moved since `eced2688e` (an empty `git diff --stat` over
 `src/Daoris.Desktop`, `src/Daoris.Service`, `tools` and `examples/plugins`), each finding checked there; §17 says where each went.
 **Both makers' reads of round 4 have landed, each asking accept after named changes, and both readers' named changes are taken (§16,
-§17): the design is ready for the steward's acceptance of rows 1a, 1b and 1c.** By D191's note of 2026-10-24 this design, which sends
-Daoris's events outside it, is accepted only by the steward after both makers' reads: it stays proposed until then, and nothing is built
-before it. Dated notes amend D173 (the fabric events design's decision), D119 and D120, each proposed with this, each round's changes
+§17), and the steward accepted rows 1a, 1b and 1c on them** (D173's note of 2026-10-25), as D191's note of 2026-10-24 asks of this
+design, which sends Daoris's events outside it. Dated notes amend D173 (the fabric events design's decision), D119 and D120, each proposed with this, each round's changes
 appended where they change it.
 
 The row EVENTHOOK1 in `TASKS.md` carries the case. The steward watches the install by polling its sessions in a shell loop it
