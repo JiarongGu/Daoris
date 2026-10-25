@@ -894,13 +894,6 @@
   },
   "edges": [
     {
-      "family": "Install names Agents",
-      "after": "Install",
-      "files": {
-        "Install/ToolInstall.cs": ["HarnessSettings"]
-      }
-    },
-    {
       "family": "Install names Instance",
       "after": "Install",
       "files": {

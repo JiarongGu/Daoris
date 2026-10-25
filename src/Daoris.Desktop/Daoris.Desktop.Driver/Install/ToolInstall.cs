@@ -468,7 +468,7 @@ public static class ToolInstall
         var entry = read.Entries[tool];
         if (entry.Way == ToolWay.Managed && entry.Version == version) throw RunsIt(declared, tool, version);
 
-        var judge = DownloadJudge.Of(home, harnesses ?? HarnessSettings.ResolvePath(home), config ?? DriverConfig.ResolvePath(home), sessions)
+        var judge = DownloadJudge.Of(home, harnesses ?? HarnessWiringFile.ResolvePath(home), config ?? DriverConfig.ResolvePath(home), sessions)
             with { KeepsRecent = false };
         var cleared = (await DownloadClearing.ClearAsync(home, [new DownloadAsked("tool", tool, version)], judge, log, move, ct, door: "tools")
             .ConfigureAwait(false)).Single();
