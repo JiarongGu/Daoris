@@ -586,6 +586,7 @@
     "Settings/AcrossDeclarations.cs": "Settings",
     "Settings/ActorKey.cs": "Settings",
     "Settings/CoolOffDefault.cs": "Settings",
+    "Settings/CycleText.cs": "Settings",
     "Settings/DriverChoicesCommand.cs": "Settings",
     "Settings/DriverConfig.cs": "Settings",
     "Settings/DriverConfigUnreadableException.cs": "Settings",
@@ -595,6 +596,7 @@
     "Settings/SessionLanguage.cs": "Settings",
     "Settings/StandingAnswer.cs": "Settings",
     "Settings/StandingChoices.cs": "Settings",
+    "Settings/WorkflowKey.cs": "Settings",
     "Settings/WorkspaceNames.cs": "Settings",
     "Setup/ClaudeReleaseDownloads.cs": "Install",
     "Setup/CodexReleaseDownloads.cs": "Install",
@@ -791,6 +793,7 @@
     "Trees/TreesWords.cs": "Workplace",
     "Trees/WorkingTree.cs": "Workplace",
     "Workflows/ChatRuns.cs": "Workflows",
+    "Workflows/CycleChoices.cs": "Workflows",
     "Workflows/Domain/GraphGate.cs": "Workflows",
     "Workflows/Domain/InvolvementRoutes.cs": "Workflows",
     "Workflows/Domain/WorkflowChanges.cs": "Workflows",
@@ -874,7 +877,7 @@
       "after": "Settings",
       "files": {
         "Settings/DriverChoicesCommand.cs": ["BrainstormEdit","BrainstormRule","BrainstormRules","BrainstormSet","Consideration","IntakeRoom","WorkUnitKind"],
-        "Settings/DriverConfig.cs": ["BrainstormRule","BrainstormRules","WorkUnitKind"],
+        "Settings/DriverConfig.cs": ["BrainstormRule","BrainstormRules"],
         "Settings/StandingChoices.cs": ["Consideration","StartVerdict","WorkScope"]
       }
     },
@@ -899,8 +902,7 @@
       "family": "Settings names Workflows",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["DriverWorkflowsCommand","NodeGraphHomes","NodeGraphs","NodeKinds"],
-        "Settings/DriverConfig.cs": ["NodeGraphHomes","NodeGraphs","WorkflowChoice","WorkflowSelection"]
+        "Settings/DriverChoicesCommand.cs": ["DriverWorkflowsCommand","NodeGraphHomes","NodeGraphs","NodeKinds"]
       }
     },
     {
@@ -1976,6 +1978,8 @@
     "WorkspaceNamesTests.cs": "Settings",
     "HelpModeNamesTests.cs": "Settings",
     "CoolOffDefaultTests.cs": "Settings",
-    "AcrossDeclarationsTests.cs": "Settings"
+    "AcrossDeclarationsTests.cs": "Settings",
+    "WorkflowKeyTests.cs": "Settings",
+    "CycleTextTests.cs": "Settings"
   }
 }

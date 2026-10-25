@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -749,8 +748,6 @@ public static class NodeGraphHomes
 
     private static readonly string[] Pulled = [NodeKinds.Handed, NodeKinds.Pushed, NodeKinds.PullRequest, NodeKinds.Line];
 
-    private static readonly JsonWriterOptions CompactWriting = new() { Indented = false, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
-
     /// <summary>
     /// The landing's own graph, as its rule reaches: <c>handed</c>, then <c>pushed</c> and <c>pull-request</c> where a branch rule names
     /// the plugin that pushes, then <c>line</c>, each after the one before; entered at <c>handed</c>, ended at <c>line</c>, cleaned up
@@ -894,19 +891,10 @@ public static class NodeGraphHomes
 
     /// <summary>
     /// <paramref name="json"/> as the config keeps it: compact, its keys in the order written, its text unescaped where JSON allows, so the
-    /// file says what the person wrote. Throws <see cref="JsonException"/> where it is not JSON.
+    /// file says what the person wrote. Throws <see cref="JsonException"/> where it is not JSON (the settings' <see cref="CycleText.Compact(string)"/>).
     /// </summary>
-    public static string Compact(string json)
-    {
-        using var document = JsonDocument.Parse(json);
-        return Compact(document.RootElement);
-    }
+    public static string Compact(string json) => CycleText.Compact(json);
 
-    /// <summary><paramref name="element"/>'s JSON, compact.</summary>
-    public static string Compact(JsonElement element)
-    {
-        using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer, CompactWriting)) element.WriteTo(writer);
-        return Encoding.UTF8.GetString(buffer.ToArray());
-    }
+    /// <summary><paramref name="element"/>'s JSON, compact (the settings' <see cref="CycleText.Compact(JsonElement)"/>).</summary>
+    public static string Compact(JsonElement element) => CycleText.Compact(element);
 }
