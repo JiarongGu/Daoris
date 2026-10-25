@@ -817,13 +817,108 @@
   },
   "edges": [
     {
-      "family": "the settings' parser's and verbs' names of other subdomains' rule types (§14.3)",
+      "family": "Settings names Service",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["AccountLimits","AcrossRules","ActorChoice","ActorChoices","ActorView","AdapterSet","BrainstormEdit","BrainstormRule","BrainstormRules","BrainstormSet","BranchName","CommitRules","Consideration","DriverWorkflowsCommand","HandOverRules","HelpModes","HelperRules","InstanceDoor","InstanceRoute","InstanceWorld","IntakeRoom","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","LandingSource","NodeGraphHomes","NodeGraphs","NodeKinds","OpinionRule","OpinionRules","PluginCatalog","ReviewRule","ReviewRules","RouteClass","SpaceVolumes","TreesRoutes","WorkUnitKind"],
-        "Settings/DriverConfig.cs": ["AccessEdit","AccessRules","AccessSetting","AccountLimits","AcrossRules","ActorChoice","ActorChoices","BrainstormRule","BrainstormRules","BranchName","CommitRule","CommitRules","HandOverRule","HandOverRules","HeavyGate","HeavyMapping","HelpModes","HelperRule","HelperRules","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","NodeGraphHomes","NodeGraphs","OpinionRule","OpinionRules","ReviewRule","ReviewRules","SessionChecks","StandingAnswer","WorkUnitKind","WorkflowChoice","WorkflowSelection"],
-        "Settings/StandingChoices.cs": ["Consideration","LandingRule","LandingRules","PluginCatalog","RemoteTarget","ReviewEdit","ReviewRules","StartVerdict","WorkScope"],
+        "Settings/StandingChoices.cs": ["RemoteTarget"],
         "Settings/SessionLanguage.cs": ["RemoteTarget"]
+      }
+    },
+    {
+      "family": "Settings names Instance",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["InstanceDoor","InstanceRoute","InstanceWorld","RouteClass","TreesRoutes"]
+      }
+    },
+    {
+      "family": "Settings names Knowledge",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverConfig.cs": ["StandingAnswer"]
+      }
+    },
+    {
+      "family": "Settings names Agents",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["AccountLimits","AcrossRules","AdapterSet"],
+        "Settings/DriverConfig.cs": ["AccountLimits","AcrossRules"]
+      }
+    },
+    {
+      "family": "Settings names Workplace",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["BranchName","CommitRules","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","LandingSource","SpaceVolumes"],
+        "Settings/DriverConfig.cs": ["BranchName","CommitRule","CommitRules","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules"],
+        "Settings/StandingChoices.cs": ["LandingRule","LandingRules"]
+      }
+    },
+    {
+      "family": "Settings names Roles",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["ActorChoice","ActorChoices","ActorView"],
+        "Settings/DriverConfig.cs": ["ActorChoice","ActorChoices"]
+      }
+    },
+    {
+      "family": "Settings names Participants",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["HelperRules"],
+        "Settings/DriverConfig.cs": ["AccessEdit","AccessRules","AccessSetting","HelperRule","HelperRules"]
+      }
+    },
+    {
+      "family": "Settings names Course",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["HandOverRules"],
+        "Settings/DriverConfig.cs": ["HandOverRule","HandOverRules"]
+      }
+    },
+    {
+      "family": "Settings names Work orders",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["BrainstormEdit","BrainstormRule","BrainstormRules","BrainstormSet","Consideration","IntakeRoom","WorkUnitKind"],
+        "Settings/DriverConfig.cs": ["BrainstormRule","BrainstormRules","WorkUnitKind"],
+        "Settings/StandingChoices.cs": ["Consideration","StartVerdict","WorkScope"]
+      }
+    },
+    {
+      "family": "Settings names Review",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["OpinionRule","OpinionRules","ReviewRule","ReviewRules"],
+        "Settings/DriverConfig.cs": ["HeavyGate","HeavyMapping","OpinionRule","OpinionRules","ReviewRule","ReviewRules","SessionChecks"],
+        "Settings/StandingChoices.cs": ["ReviewEdit","ReviewRules"]
+      }
+    },
+    {
+      "family": "Settings names Plugins",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["PluginCatalog"],
+        "Settings/StandingChoices.cs": ["PluginCatalog"]
+      }
+    },
+    {
+      "family": "Settings names Workflows",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["DriverWorkflowsCommand","NodeGraphHomes","NodeGraphs","NodeKinds"],
+        "Settings/DriverConfig.cs": ["NodeGraphHomes","NodeGraphs","WorkflowChoice","WorkflowSelection"]
+      }
+    },
+    {
+      "family": "Settings names Help",
+      "after": "Settings",
+      "files": {
+        "Settings/DriverChoicesCommand.cs": ["HelpModes"],
+        "Settings/DriverConfig.cs": ["HelpModes"]
       }
     },
     {
