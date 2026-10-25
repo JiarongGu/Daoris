@@ -102,8 +102,6 @@ public static class VerbLeases
             "sync" => next != "status",
             // `help mode` alone says the mode; naming one writes the driver's file (HELPMODE1a1).
             "help" => next is "rename" or "pin" or "unpin" or "delete" || (next == "mode" && args.Count > 2),
-            // `access` naming no change says the setup; a change writes the driver's file (AUTONOMY1a).
-            "access" => AccessCommand.Read([.. args.Skip(1)], out _)?.Edit is not null,
             // `heavy` naming no change lists or says the gates; a set or a clear writes the driver's file (HEAVYRUN1b2a).
             "heavy" => HeavyMappingCommand.Read([.. args.Skip(1)], out _)?.Changes == true,
             // `checks` naming no change lists or says the rule; a set or a clear writes the driver's file (FABRIC-PIPELINE1b).

@@ -12,7 +12,7 @@ public sealed class InstancePortsTests
     [Fact]
     public void The_verbs_whose_commands_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal(["agent"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["access", "agent"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -27,5 +27,18 @@ public sealed class InstancePortsTests
         Assert.True(reading.Isolated!(["settings", "claude-code"], Named));
         Assert.False(reading.Isolated!(["settings", "claude-code"], _ => null));
         Assert.False(reading.Isolated!(["rules", "allow", "WebFetch"], Named));
+    }
+
+    [Fact]
+    public void The_participants_answer_is_the_access_commands_reading_of_a_change_and_names_no_second_word()
+    {
+        var reading = VerbLeases.Answered["access"];
+
+        Assert.True(reading.Holds(["engine", "full"]));
+        Assert.True(reading.Holds(["engine", "--clear"]));
+        Assert.False(reading.Holds(["engine"]));
+        Assert.False(reading.Holds([]));
+        Assert.Null(reading.Verbs);
+        Assert.Null(reading.Isolated);
     }
 }

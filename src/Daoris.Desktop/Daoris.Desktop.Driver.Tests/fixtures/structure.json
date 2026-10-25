@@ -557,6 +557,7 @@
     "Service/SessionEnds.cs": "Service",
     "Service/SessionRecords.cs": "Service",
     "Sessions/AccessCommand.cs": "Participants",
+    "Sessions/AccessLease.cs": "Participants",
     "Sessions/ChildLineage.cs": "Participants",
     "Sessions/Domain/AbandonEntry.cs": "Workplace",
     "Sessions/Domain/AbandonPlan.cs": "Workplace",
@@ -900,13 +901,6 @@
       "after": "Instance",
       "files": {
         "Instance/InstanceRoutes.cs": ["PressesTold"]
-      }
-    },
-    {
-      "family": "Instance names Participants",
-      "after": "Instance",
-      "files": {
-        "Instance/VerbLeases.cs": ["AccessCommand"]
       }
     },
     {
