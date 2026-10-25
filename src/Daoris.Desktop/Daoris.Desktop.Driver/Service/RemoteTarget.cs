@@ -34,14 +34,13 @@ public sealed record RemoteTarget(string Url, string Key)
     /// duplicated deliberately: this assembly links against no service code, and the two constants
     /// being the same string is what the twin test tables exist to keep true.
     /// </summary>
-    public const string DefaultWorkspace = "default";
+    public const string DefaultWorkspace = WorkspaceNames.Default;
 
     /// <summary>The map's file name under the Daoris home (D63), beside the driver's own config.</summary>
     public const string FileName = "remotes.json";
 
-    /// <summary>A workspace name as it is stored and compared: trimmed, and the default when unstated.</summary>
-    public static string Workspace(string? name) =>
-        string.IsNullOrWhiteSpace(name) ? DefaultWorkspace : name.Trim();
+    /// <summary>A workspace name as it is stored and compared: trimmed, and the default when unstated (the settings' <see cref="WorkspaceNames.Of"/>).</summary>
+    public static string Workspace(string? name) => WorkspaceNames.Of(name);
 
     /// <summary>
     /// The environment's answer, where it gives one: the first half of the judgement <c>Load</c> makes over its surroundings.

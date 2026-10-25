@@ -152,6 +152,6 @@ public static class StandingChoices
         }
 
         return new(lacking, !registry.Any(row => row.Root is { Length: > 0 }
-            && string.Equals(RemoteTarget.Workspace(row.Workspace), RemoteTarget.Workspace(edit.Workspace), StringComparison.OrdinalIgnoreCase)));
+            && string.Equals(WorkspaceNames.Of(row.Workspace), WorkspaceNames.Of(edit.Workspace), StringComparison.OrdinalIgnoreCase)));
     }
 }

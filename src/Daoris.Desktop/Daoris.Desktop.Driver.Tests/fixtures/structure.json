@@ -587,6 +587,7 @@
     "Settings/DriverConfigUnreadableException.cs": "Settings",
     "Settings/SessionLanguage.cs": "Settings",
     "Settings/StandingChoices.cs": "Settings",
+    "Settings/WorkspaceNames.cs": "Settings",
     "Setup/ClaudeReleaseDownloads.cs": "Install",
     "Setup/CodexReleaseDownloads.cs": "Install",
     "Setup/Domain/CodexReleases.cs": "Install",
@@ -816,14 +817,6 @@
     "Workflows/WorkflowStore.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Settings names Service",
-      "after": "Settings",
-      "files": {
-        "Settings/StandingChoices.cs": ["RemoteTarget"],
-        "Settings/SessionLanguage.cs": ["RemoteTarget"]
-      }
-    },
     {
       "family": "Settings names Instance",
       "after": "Settings",
@@ -1994,6 +1987,7 @@
     "DriverChoicesTextTests.cs": "Settings",
     "DriverConfigKeepsTests.cs": "Settings",
     "SessionLanguageTests.cs": "Settings",
-    "StandingFormTests.cs": "Settings"
+    "StandingFormTests.cs": "Settings",
+    "WorkspaceNamesTests.cs": "Settings"
   }
 }
