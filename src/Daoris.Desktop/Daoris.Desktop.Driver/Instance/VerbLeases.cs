@@ -102,10 +102,6 @@ public static class VerbLeases
             "sync" => next != "status",
             // `help mode` alone says the mode; naming one writes the driver's file (HELPMODE1a1).
             "help" => next is "rename" or "pin" or "unpin" or "delete" || (next == "mode" && args.Count > 2),
-            // `heavy` naming no change lists or says the gates; a set or a clear writes the driver's file (HEAVYRUN1b2a).
-            "heavy" => HeavyMappingCommand.Read([.. args.Skip(1)], out _)?.Changes == true,
-            // `checks` naming no change lists or says the rule; a set or a clear writes the driver's file (FABRIC-PIPELINE1b).
-            "checks" => SessionChecksCommand.Read([.. args.Skip(1)], out _)?.Changes == true,
             "opinion" => next is "ask" or "stop" or "anyway" or "myself",
             // The driver's standing choices `daoris driver …` hands on (PUSH1f2a, D194 point 2): each change is a short act, held from the
             // top; `list`, the usage and a verb this program does not have hold none. Read through the command's own reading.

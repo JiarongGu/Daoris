@@ -12,7 +12,7 @@ public sealed class InstancePortsTests
     [Fact]
     public void The_verbs_whose_commands_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal(["access", "agent", "plugin"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["access", "agent", "checks", "heavy", "plugin"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -53,5 +53,26 @@ public sealed class InstancePortsTests
         Assert.False(reading.Holds(["update", "acme.gate"]));
         Assert.False(reading.Holds([]));
         Assert.Null(reading.Isolated);
+    }
+
+    [Fact]
+    public void The_reviews_answers_are_the_heavy_and_checks_commands_readings_of_a_change()
+    {
+        var heavy = VerbLeases.Answered["heavy"];
+        var checks = VerbLeases.Answered["checks"];
+
+        Assert.True(heavy.Holds(["engine", "build=x"]));
+        Assert.True(heavy.Holds(["engine", "--clear"]));
+        Assert.False(heavy.Holds([]));
+        Assert.False(heavy.Holds(["engine"]));
+        Assert.True(checks.Holds(["engine", "light"]));
+        Assert.True(checks.Holds(["engine", "--clear"]));
+        Assert.False(checks.Holds([]));
+        Assert.False(checks.Holds(["engine"]));
+        Assert.All(new[] { heavy, checks }, reading =>
+        {
+            Assert.Null(reading.Verbs);
+            Assert.Null(reading.Isolated);
+        });
     }
 }

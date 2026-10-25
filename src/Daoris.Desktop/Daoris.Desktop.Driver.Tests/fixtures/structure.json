@@ -591,6 +591,7 @@
     "Sessions/Events/SessionLog.cs": "Events",
     "Sessions/HarnessEnding.cs": "Agents",
     "Sessions/Heavy/HeavyGates.cs": "Review",
+    "Sessions/Heavy/HeavyLease.cs": "Review",
     "Sessions/Heavy/HeavyMapping.cs": "Review",
     "Sessions/Heavy/HeavyMappingCommand.cs": "Review",
     "Sessions/Heavy/HeavyRun.cs": "Review",
@@ -901,13 +902,6 @@
       "after": "Instance",
       "files": {
         "Instance/InstanceRoutes.cs": ["PressesTold"]
-      }
-    },
-    {
-      "family": "Instance names Review",
-      "after": "Instance",
-      "files": {
-        "Instance/VerbLeases.cs": ["HeavyMappingCommand","SessionChecksCommand"]
       }
     },
     {
