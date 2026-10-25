@@ -515,12 +515,29 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// The selection the caller's one walk judged and counted (LIMITSWITCH2): the conversation opens on it, never walking again, so the
     /// account judged is the account opened and the start is counted once. Null for every other start, which walks here.
     /// </param>
+    /// <param name="ownFirst">
+    /// <paramref name="profile"/> is the account of the part this one continues, asked for first where it is ready and walked past, within
+    /// its agent's accounts, where it is not (FOUNDATION1a-iii, §3.2 step 6): the person's press for a fresh part, or a part whose own
+    /// conversation is proven lost. False pins <paramref name="profile"/> as a pick, refused while it cools.
+    /// </param>
     public Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null,
-        EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false) =>
-        StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending: null, settled, picked);
+        EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false, bool ownFirst = false) =>
+        StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending: null, settled, picked, ownFirst: ownFirst);
+
+    /// <summary>
+    /// A new part that opens on the walk its caller judged over its actor's choices, never walking them again (FOUNDATION1a-iii, as
+    /// <c>settled</c> does for one agent's accounts): the agent, account and choice the walk took are the ones opened, and its start,
+    /// counted once by that walk, is the caller's to give back where nothing opens.
+    /// </summary>
+    internal Task<ChatStart> StartWalkedAsync(
+        string repository, ConversationWalk walked, IReadOnlyList<ActorEffective> order, DriverConfig config,
+        Func<string, string, Task>? onEnded, CancellationToken ct, string? tree, ContinuedFrom? from, EarlierMaker? leftBy) =>
+        StartAsync(
+            repository, walked.Adapter!.Name, config, onEnded, profile: null, ownTree: null, ct, tree, from, order, leftBy, pending: null,
+            settled: null, picked: false, walked);
 
     /// <param name="pending">
     /// The pending start a replacement opens for (MODELROLE1d2, D205 §3.5(b)): its order walked, the refused account passed, its passes
@@ -530,7 +547,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order,
-        EarlierMaker? leftBy, ChatPending? pending, HarnessSelection? settled = null, bool picked = false)
+        EarlierMaker? leftBy, ChatPending? pending, HarnessSelection? settled = null, bool picked = false, ConversationWalk? walked = null,
+        bool ownFirst = false)
     {
         if (_context.Closing) return new(null, "Daoris is closing.");
         var key = Guid.NewGuid().ToString("N");
@@ -539,7 +557,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         try
         {
             if (_context.Closing) return new(null, "Daoris is closing.");
-            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending, settled, picked).ConfigureAwait(false);
+            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending, settled, picked, walked, ownFirst).ConfigureAwait(false);
         }
         finally
         {
@@ -552,14 +570,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order, EarlierMaker? leftBy,
-        ChatPending? pending, HarnessSelection? settled, bool picked)
+        ChatPending? pending, HarnessSelection? settled, bool picked, ConversationWalk? walked, bool ownFirst)
     {
         // MODELROLE1d (D205 §4.1): an order of one is today's start on its agent, asking its model; more are walked below, once the
         // workspace whose accounts each choice walks is known. MODELROLE1d2: a replacement always walks its pending start's order.
+        // FOUNDATION1a-iii: a walk the caller judged is the walk, whatever the order's length.
         if (pending is not null) order = pending.Order;
-        var chosen = order is [var only] ? only : null;
+        var chosen = order is [var only] && walked is null ? only : null;
         if (chosen is not null) adapter = chosen.Agent;
-        var walking = order is { Count: > 1 } || pending is not null;
+        var walking = walked is not null || order is { Count: > 1 } || pending is not null;
 
         // Through the roster's LIVE set, not the one this runner was built with: the driver's tick
         // hands the roster the build's adapters plus whatever the plugins declare (D64), so a harness
@@ -594,9 +613,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         IReadOnlyList<BuildPass> passes = [];
         if (walking)
         {
-            var walk = await WalkAsync("chat", order!, config, known!.Workspace, profile, ct, pending?.Refusing).ConfigureAwait(false);
-            if (walk is not { Adapter: { } walked, Selection: { } taken, Chosen: { } entry }) return new(null, walk.Refusal!);
-            (resolved, selection, chosen, passes) = (walked, taken, entry, walk.Passes);
+            var walk = walked ?? await WalkAsync("chat", order!, config, known!.Workspace, profile, ct, pending?.Refusing).ConfigureAwait(false);
+            if (walk is not { Adapter: { } walkedOn, Selection: { } taken, Chosen: { } entry }) return new(null, walk.Refusal!);
+            (resolved, selection, chosen, passes) = (walkedOn, taken, entry, walk.Passes);
             if (pending is not null) passes = [.. pending.Passes, .. walk.Passes];
         }
         else if (settled is not null)
@@ -606,9 +625,14 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         }
         else
         {
-            selection = await _harnesses
-                .SelectAsync(resolved.Name, config, known!.Workspace, profile, StartKind.Conversation, ct, chosen?.Model)
-                .ConfigureAwait(false);
+            // FOUNDATION1a-iii: the own account first where ready, else the walk of its agent's accounts, as a handed quest's named one is.
+            selection = ownFirst && profile is not null
+                ? (await _harnesses
+                    .SelectHandedAsync(resolved.Name, config, known!.Workspace, profile, StartKind.Conversation, ct, chosen?.Model)
+                    .ConfigureAwait(false)).Selection
+                : await _harnesses
+                    .SelectAsync(resolved.Name, config, known!.Workspace, profile, StartKind.Conversation, ct, chosen?.Model)
+                    .ConfigureAwait(false);
             if (!selection.Allowed) return new(null, selection.Refusal!);
         }
 
