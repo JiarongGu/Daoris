@@ -113,16 +113,16 @@ public sealed class SessionWatch
     /// <summary>The step that ends its run, under a headless <c>--quiet-end</c> alone in this build.</summary>
     public const string Ended = "end";
 
-    private static readonly ConditionalWeakTable<SessionEvents, SessionWatch> Watches = new();
+    private static readonly ConditionalWeakTable<ISessionEvents, SessionWatch> Watches = new();
 
     private readonly ConcurrentDictionary<string, Watched> _watched = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
-    private readonly SessionEvents _events;
+    private readonly ISessionEvents _events;
     private readonly RunningCalls _calls;
     private int _episodes;
     private TimeSpan? _lastLook;
 
-    private SessionWatch(SessionEvents events)
+    private SessionWatch(ISessionEvents events)
     {
         _events = events;
         _calls = RunningCalls.Of(events);
@@ -132,7 +132,7 @@ public sealed class SessionWatch
     public MachineLog? Log { get; set; }
 
     /// <summary>The record's watcher, begun now where nothing began it.</summary>
-    public static SessionWatch Of(SessionEvents events) => Watches.GetValue(events, each => new SessionWatch(each));
+    public static SessionWatch Of(ISessionEvents events) => Watches.GetValue(events, each => new SessionWatch(each));
 
     /// <summary>The clock quiet is counted on; a test hands one it moves.</summary>
     public QuietClock Clock { get; set; } = QuietClock.System;

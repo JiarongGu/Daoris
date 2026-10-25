@@ -74,14 +74,14 @@ public sealed class SessionLog : IDisposable
 
     private readonly MachineLog _log;
     private readonly ServiceClient _service;
-    private readonly SessionEvents _events;
+    private readonly ISessionEvents _events;
     private readonly Func<DateTimeOffset> _clock;
     private readonly object _gate = new();
     private readonly Dictionary<string, Watched> _watched = new(StringComparer.OrdinalIgnoreCase);
     private bool _disposed;
 
     /// <param name="clock">What time it is; the system's by default. An event is timed by its own stamp.</param>
-    public SessionLog(MachineLog log, ServiceClient service, SessionEvents events, Func<DateTimeOffset>? clock = null)
+    public SessionLog(MachineLog log, ServiceClient service, ISessionEvents events, Func<DateTimeOffset>? clock = null)
     {
         _log = log;
         _service = service;

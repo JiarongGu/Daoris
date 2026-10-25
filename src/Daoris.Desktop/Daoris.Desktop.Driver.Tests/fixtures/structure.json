@@ -203,6 +203,7 @@
     "Events/Domain/AttentionEvent.cs": "Events",
     "Events/Domain/HandOverAskWhy.cs": "Events",
     "Events/Domain/HandOverWhy.cs": "Events",
+    "Events/Domain/HandedAccount.cs": "Events",
     "Events/Domain/HelperWhy.cs": "Events",
     "Events/Domain/Observation.cs": "Events",
     "Events/Domain/PartnerWhy.cs": "Events",
@@ -214,6 +215,7 @@
     "Events/HeldPermissions.cs": "Events",
     "Events/HomeTopics.cs": "Events",
     "Events/HomeWatch.cs": "Events",
+    "Events/ISessionEvents.cs": "Events",
     "Events/LookSaid.cs": "Events",
     "Events/MachineFacts.cs": "Events",
     "Events/MachineLogReader.cs": "Events",
@@ -921,17 +923,6 @@
       }
     },
     {
-      "family": "Events names Context",
-      "after": "Events",
-      "files": {
-        "Events/Domain/SessionEvents.cs": ["InstructionAccount"],
-        "Events/HeldPermissions.cs": ["SessionEvents"],
-        "Events/RunningCalls.cs": ["SessionEvents"],
-        "Events/SessionLog.cs": ["SessionEvents"],
-        "Events/SessionWatch.cs": ["SessionEvents"]
-      }
-    },
-    {
       "family": "Knowledge names Agents",
       "after": "Knowledge",
       "files": {
@@ -948,8 +939,6 @@
       "family": "Knowledge names Context",
       "after": "Knowledge",
       "files": {
-        "Sessions/Domain/Trace.Chain.cs": ["InstructionAccount"],
-        "Sessions/Domain/Trace.Words.cs": ["HandedSection"],
         "Sessions/Trace/TraceReads.cs": ["SessionEvents"]
       }
     },
@@ -1062,7 +1051,7 @@
         "Agents/Consoles/BatchRelay.cs": ["SessionEvents"],
         "Agents/Consoles/ConsoleRelay.cs": ["ConsoleLine","SessionOutput"],
         "Agents/Streams/ClaudeStreams.cs": ["SessionStream","SessionStreamKind","SessionStreams"],
-        "Agents/Streams/HarnessCapture.cs": ["InstructionAccount","SessionEvents","SessionOutput","SessionStreams","TranscriptFile"],
+        "Agents/Streams/HarnessCapture.cs": ["SessionEvents","SessionOutput","SessionStreams","TranscriptFile"],
         "Agents/Streams/StructuredOutput.cs": ["SessionStreams"],
         "Loop/TransientRetries.cs": ["SessionEvents","SessionOutput"]
       }
