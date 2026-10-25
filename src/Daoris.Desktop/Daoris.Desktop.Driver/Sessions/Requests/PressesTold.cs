@@ -36,34 +36,34 @@ public sealed record PressTold(string Route, string? Session, DateTimeOffset At)
 public sealed partial class PressesTold(string home)
 {
     /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
-    public const string Land = "LAND_SESSION_TREE";
+    public const string Land = TreesMarks.Land;
 
     /// <summary>
     /// <c>trees land &lt;session&gt; --without-look "…"</c> (CHATFLOW1d2): a chat run's <i>Accept without the look…</i>, the person's way past a look
     /// no set-up step can show, kept at the tip its press captures and landed there.
     /// </summary>
-    public const string LandWithoutLook = "LAND_WITHOUT_LOOK";
+    public const string LandWithoutLook = TreesMarks.LandWithoutLook;
 
     /// <summary><c>trees remove &lt;path&gt;</c>: a tree by its path.</summary>
-    public const string DiscardTree = "DISCARD_SESSION_TREE";
+    public const string DiscardTree = TreesMarks.DiscardTree;
 
     /// <summary><c>trees remove &lt;session|branch&gt;</c>: a session's branch, its tree with it (LAND3).</summary>
-    public const string DiscardBranch = "DISCARD_SESSION_BRANCH";
+    public const string DiscardBranch = TreesMarks.DiscardBranch;
 
     /// <summary><c>trees clean --yes</c>: the clean-up's press.</summary>
-    public const string Sweep = "SWEEP";
+    public const string Sweep = TreesMarks.Sweep;
 
     /// <summary><c>trees sync --yes</c>: bringing the repositories up to date.</summary>
-    public const string TreesSync = "TREES_SYNC";
+    public const string TreesSync = TreesMarks.TreesSync;
 
     /// <summary><c>trees hand &lt;session|branch&gt;</c>: a landed branch handed to a landing plugin.</summary>
-    public const string HandOff = "HANDOFF";
+    public const string HandOff = TreesMarks.HandOff;
 
     /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept (ACCEPTALL1e).</summary>
-    public const string LandEntry = "LAND_ENTRY";
+    public const string LandEntry = TreesMarks.LandEntry;
 
     /// <summary><c>trees land --ask &lt;id&gt;</c>: an ask's one Accept (ACCEPTALL1e).</summary>
-    public const string LandAsk = "LAND_ASK";
+    public const string LandAsk = TreesMarks.LandAsk;
 
     /// <summary><c>work recovery drop</c>: the person's delete of the recovery refs nothing holds (RECOVERYDROP1).</summary>
     public const string RecoveryDrop = "RECOVERY_DROP";

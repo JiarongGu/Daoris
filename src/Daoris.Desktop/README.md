@@ -242,6 +242,13 @@ service's (`LiveSessions`, read by the agents' `LiveSessionReads`), the agents' 
 install declares (`IToolTerminal`, which the instance's world implements), and what a child is handed for its git (`IChildGit`) and the clearing of a downloaded version
 (`IToolDownloads`) are ports the workplace answers, installed when the driver's assembly loads (`Trees/InstallWiring.cs`).
 
+The terminal's way into a running instance sits in `Instance/` (FOUNDATION1 mod-vi, D212): the door and the client (`InstanceDoor`, `InstanceClient`), the routes and their census
+(`InstanceRoutes`, `PipeName`, `SentPresses`), the verbs' leases (`VerbLeases`), the shell word, the register verb and the sync pass, with what a press says in a terminal (`TreesSaid`, its
+lines, its error and its exit code, which the workplace's `TreesWords` builds), the marks of the `trees` routes (`TreesMarks`, which `PressesTold`'s constants are) and a role's terminal's
+mark and refusal (`TerminalRole`, which `HolderKey.Take` writes). It names no type of a subdomain above it: how a verb's own words read its lease, where a command above owns them,
+is a port the instance declares (`VerbLeaseReading`, through `VerbLeases.Answer`) and the owner answers when the driver's assembly loads (`AgentsLease`, `AccessLease`, `PluginLease`,
+`HeavyLease`, `NodeLease`, `GitLease`, each beside its command); a verb nobody answers is unclassed and holds the lease. The GitDoor, the launcher and PieceStart compile none of it.
+
 `Quests/` keeps the onion for its model and rules alone (STRUCT3f, flattened by FLAT1a, folded by FLAT1b-ii): the plan and its
 records (`Planner`, `QuestView`, the considerations), the evidence's records, the attention events, the ask's words (`AskWords`,
 which reads the service in `ReadAsync`), the ask's channel as an entry reads it and how it is written to a session (`ChannelWords`,

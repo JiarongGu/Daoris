@@ -1,4 +1,22 @@
+using System.Collections.Concurrent;
+
 namespace Daoris.Driver;
+
+/// <summary>
+/// A verb's own reading of its lease (FOUNDATION1 mod-vi, the design §14.3): what <see cref="VerbLeases"/> cannot spell, since the verb's
+/// command is a higher subdomain's and the lower one names none of its types. The subdomain that owns the command answers it, once, when the
+/// driver's assembly loads (<see cref="VerbLeases.Answer"/>), before any host reads a lease.
+/// </summary>
+/// <param name="Holds">Whether the words after the verb change a home, so the verb holds its lease from the top.</param>
+/// <param name="Verbs">The second words that are the verb's own, which a lease may name (<see cref="VerbLeases.Name"/>); null where it has none.</param>
+/// <param name="Isolated">
+/// Whether the words after the verb act on a file a terminal's variable names, which is no instance's, so they hold nothing
+/// (<see cref="VerbLeases.HoldsHere"/>); null where the verb never does.
+/// </param>
+public sealed record VerbLeaseReading(
+    Func<IReadOnlyList<string>, bool> Holds,
+    IReadOnlyList<string>? Verbs = null,
+    Func<IReadOnlyList<string>, Func<string, string?>, bool>? Isolated = null);
 
 /// <summary>
 /// Which of <c>daoris-driver</c>'s verbs hold the home's lease while they act alone (HOMELEASE1, the terminal RPC design §5,
@@ -43,7 +61,19 @@ public static class VerbLeases
         "delete", "accept", "done", "check", "review", "reopen", "go-on",
     };
 
+    /// <summary>The verbs whose own command reads their lease, each answered by the subdomain that owns the command (<see cref="Answer"/>).</summary>
+    private static readonly ConcurrentDictionary<string, VerbLeaseReading> Readings = new(StringComparer.Ordinal);
+
     private static readonly HashSet<string> AskWork = new(StringComparer.Ordinal) { "--pause", "--resume", "--abandon", "--clear" };
+
+    /// <summary>
+    /// Answers how a verb's own words read its lease, for a verb whose command a lower subdomain cannot name (FOUNDATION1 mod-vi). A verb
+    /// nobody answers is unclassed, and an unclassed verb holds the lease.
+    /// </summary>
+    internal static void Answer(string verb, VerbLeaseReading reading) => Readings[verb] = reading;
+
+    /// <summary>The verbs answered, each with the reading its command's subdomain gave.</summary>
+    internal static IReadOnlyDictionary<string, VerbLeaseReading> Answered => Readings;
 
     /// <summary>Whether a verb's run, read off its words, holds the home's lease while it acts alone.</summary>
     public static bool Holds(IReadOnlyList<string> args)
@@ -52,31 +82,22 @@ public static class VerbLeases
         var verb = args[0];
         var next = args.Count > 1 ? args[1] : null;
         if (Reading.Contains(verb)) return false;
+        if (Readings.TryGetValue(verb, out var reading)) return reading.Holds([.. args.Skip(1)]);
 
         return verb switch
         {
             "chat" or "answer" => false,
             "drive" or "--once" or "--until-idle" => false,
             "run-heavy" => false,
-            // FABRIC-CUTOVER1f: the person's skip and stop of a run's node keep a word on its record, which only the lease's holder writes.
-            "workflow" => next is "keep" or NodeWordActs.Skip or NodeWordActs.Stop,
             "ask" => args.Skip(1).Any(AskWork.Contains),
             "quest" => next is not null && !ServiceQuests.Contains(next),
             "sessions" => next is not null && !next.StartsWith('-') && next is not ("start-from" or "hand-over"),
             "history" => next == "clear",
             "trees" => next is not (null or "list" or "state"),
-            // `work state` is a look; `work recovery drop` deletes refs (RECOVERYDROP1), which only the lease's holder does.
-            "work" => next == "recovery" || (next == "held" && args.Skip(2).Any(arg => HeldResolutions.All.Contains(arg))),
             "plugins" => next is "install" or "new" or "try",
             "sync" => next != "status",
             // `help mode` alone says the mode; naming one writes the driver's file (HELPMODE1a1).
             "help" => next is "rename" or "pin" or "unpin" or "delete" || (next == "mode" && args.Count > 2),
-            // `access` naming no change says the setup; a change writes the driver's file (AUTONOMY1a).
-            "access" => AccessCommand.Read([.. args.Skip(1)], out _)?.Edit is not null,
-            // `heavy` naming no change lists or says the gates; a set or a clear writes the driver's file (HEAVYRUN1b2a).
-            "heavy" => HeavyMappingCommand.Read([.. args.Skip(1)], out _)?.Changes == true,
-            // `checks` naming no change lists or says the rule; a set or a clear writes the driver's file (FABRIC-PIPELINE1b).
-            "checks" => SessionChecksCommand.Read([.. args.Skip(1)], out _)?.Changes == true,
             "opinion" => next is "ask" or "stop" or "anyway" or "myself",
             // The driver's standing choices `daoris driver …` hands on (PUSH1f2a, D194 point 2): each change is a short act, held from the
             // top; `list`, the usage and a verb this program does not have hold none. Read through the command's own reading.
@@ -84,16 +105,7 @@ public static class VerbLeases
             // The tools `daoris tool …` hands on (PUSH1f2c): a way set to the system's or a file, a delete, a location's change and a
             // look hold it from the top; a read and the long verbs none, a download taking it itself to publish (the alone-path design §1.4).
             "tool" => ToolsCommand.Changes([.. args.Skip(1)]),
-            // The agents' rules, trust and settings `daoris agent …` hands on (PUSH1f2d): a rule's edit, a proposal's answer, a setting's
-            // change and a trust granted hold it from the top; a read, a question and a dry run none.
-            "agent" => AgentsCommand.Changes([.. args.Skip(1)]),
-            // This machine's plugins `daoris plugin …` hands on (PUSH1f2f): an add, an update with --yes, a remove and a switch hold it
-            // from the top; the list, an update's plan, the kit's pointers and the usage none.
-            "plugin" => PluginCommand.Changes([.. args.Skip(1)]),
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
-            // `git branches`, `git identity list` and `public-key` are reads; an identity's change, a default and a pointer write the
-            // home's identities or the driver's file (GITAUTH1c).
-            "git" => GitIdentityCommand.Changes([.. args.Skip(1)]),
             _ => true,
         };
     }
@@ -107,13 +119,13 @@ public static class VerbLeases
     /// </summary>
     public static bool HoldsHere(IReadOnlyList<string> args, Func<string, string?> environment) =>
         Holds(args) && !(args[0] == "driver" && DriverConfig.Overridden(environment))
-        && !(args[0] == "agent" && AgentsCommand.Isolated([.. args.Skip(1)], environment));
+        && !(Readings.TryGetValue(args[0], out var reading) && reading.Isolated?.Invoke([.. args.Skip(1)], environment) == true);
 
     /// <summary>The words a lease names a verb by: its verb, and its sub-verb where it has one; never an argument.</summary>
     public static string Name(IReadOnlyList<string> args) =>
         args.Count > 1 && IsWord(args[1]) && (SubVerbs.Contains(args[1]) || (args[0] == "driver" && DriverChoicesCommand.Verbs.Contains(args[1]))
-            || (args[0] == "tool" && ToolsCommand.Verbs.Contains(args[1])) || (args[0] == "agent" && AgentsCommand.Verbs.Contains(args[1]))
-            || (args[0] == "plugin" && PluginCommand.Verbs.Contains(args[1])))
+            || (args[0] == "tool" && ToolsCommand.Verbs.Contains(args[1]))
+            || (Readings.TryGetValue(args[0], out var reading) && reading.Verbs?.Contains(args[1]) == true))
             ? $"daoris-driver {args[0]} {args[1]}"
             : $"daoris-driver {(args.Count > 0 ? args[0] : "")}".TrimEnd();
 

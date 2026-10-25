@@ -67,6 +67,23 @@ a file an older build writes after the import is imported at the next look or th
 its set-aside file. Every proof the row states is a case seen failing first, in `BindingsTests` and `BindingsLookTests`. Detail and the readings taken (the store opened for each use with
 one run for the process, the look as the import's place, a re-found file whose SHA-256 a receipt holds only set aside): D212's note of 2026-10-26.
 
+## FOUNDATION1mod-vi — Instance moved (2026-10-26)
+
+> **FOUNDATION1mod-vi — Instance moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
+> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The sixth of the driver's moves: every file the map
+> places in Instance (the instance pipe's client and door, its routes, the verbs' leases) sits in `Instance/`, its namespace unchanged, every linked consumer
+> with it, the map's paths updated; then the cuts the census lists after Instance, one edge family per commit, each a port declared or a type moved to its one
+> owner, each changing no behaviour, nothing of how an instance answers. It adopts nothing of Part B. It was a row of the FOUNDATION1 backlog entry, which
+> stays open for the rows after it.
+
+**Outcome.** Built as the row names it. The nine files the map places in Instance moved from `Platform/` into `Instance/`, with the five test classes that
+mirror them and the stand-in and test home they use; the GitDoor, the launcher and PieceStart compile none of them, so no include moved; `structure.json`
+marks Instance moved. The eight families listed after Instance (12 edges) came off the census whole, 630 → 617 edges and 75 → 67 families with the one edge of
+another family the same cuts took: the verbs' leases ask a registry for what a verb's own command says of its words, which the agents, participants, plugins,
+review, workflows and workplace answer from beside their commands, what a press says in a terminal (`TreesSaid`), a role's terminal's mark and refusal
+(`TerminalRole`) and the marks of the `trees` routes (`TreesMarks`) moved down to Instance, their readers keeping every spelling. Detail, the cuts one by
+one and the readings taken: D212's note of this date.
+
 ## FOUNDATION1mod-iv — Service moved (2026-10-26)
 
 > **FOUNDATION1mod-iv — Service moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design

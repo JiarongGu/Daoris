@@ -287,6 +287,42 @@ public static class PersonPresses
 }
 
 /// <summary>
+/// The marks of the window's routes the <c>trees</c> verbs' presses are twins of (RPC1b, STATEHUB1e; FOUNDATION1 mod-vi): the names the shell's
+/// modules declare each route by, which <see cref="TreesRoutes"/> sends and which a terminal that has acted tells (<see cref="PressesTold"/>,
+/// whose constants are these, and the modules hold each to a route that declares what it changes). The text is the wire's: a mark changes
+/// nowhere but with the modules'.
+/// </summary>
+public static class TreesMarks
+{
+    /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
+    public const string Land = "LAND_SESSION_TREE";
+
+    /// <summary><c>trees land &lt;session&gt; --without-look "…"</c> (CHATFLOW1d2): a chat run's <i>Accept without the look…</i>.</summary>
+    public const string LandWithoutLook = "LAND_WITHOUT_LOOK";
+
+    /// <summary><c>trees remove &lt;path&gt;</c>: a tree by its path.</summary>
+    public const string DiscardTree = "DISCARD_SESSION_TREE";
+
+    /// <summary><c>trees remove &lt;session|branch&gt;</c>: a session's branch, its tree with it (LAND3).</summary>
+    public const string DiscardBranch = "DISCARD_SESSION_BRANCH";
+
+    /// <summary><c>trees clean --yes</c>: the clean-up's press.</summary>
+    public const string Sweep = "SWEEP";
+
+    /// <summary><c>trees sync --yes</c>: bringing the repositories up to date.</summary>
+    public const string TreesSync = "TREES_SYNC";
+
+    /// <summary><c>trees hand &lt;session|branch&gt;</c>: a landed branch handed to a landing plugin.</summary>
+    public const string HandOff = "HANDOFF";
+
+    /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept (ACCEPTALL1e).</summary>
+    public const string LandEntry = "LAND_ENTRY";
+
+    /// <summary><c>trees land --ask &lt;id&gt;</c>: an ask's one Accept (ACCEPTALL1e).</summary>
+    public const string LandAsk = "LAND_ASK";
+}
+
+/// <summary>
 /// The routes the <c>trees</c> verbs' presses are twins of (RPC1b, the terminal RPC design §1.2 and §7.2): each verb acts alone, as it
 /// does today, until its client path is built.
 /// </summary>
@@ -305,31 +341,31 @@ public static class TreesRoutes
     public const string DriverModule = InstanceRoute.DriverModule;
 
     /// <summary><c>trees land &lt;session&gt;</c>: the review's Accept.</summary>
-    public static InstanceRoute Land { get; } = new(DriverModule, PressesTold.Land, RouteClass.Person);
+    public static InstanceRoute Land { get; } = new(DriverModule, TreesMarks.Land, RouteClass.Person);
 
     /// <summary><c>trees land &lt;session&gt; --without-look "…"</c> (CHATFLOW1d2): a chat run's <i>Accept without the look…</i>, the person's press.</summary>
-    public static InstanceRoute LandWithoutLook { get; } = new(DriverModule, PressesTold.LandWithoutLook, RouteClass.Person);
+    public static InstanceRoute LandWithoutLook { get; } = new(DriverModule, TreesMarks.LandWithoutLook, RouteClass.Person);
 
     /// <summary><c>trees land --entry &lt;id&gt;</c>: a line of work's one Accept.</summary>
-    public static InstanceRoute LandEntry { get; } = new(DriverModule, PressesTold.LandEntry, RouteClass.Person);
+    public static InstanceRoute LandEntry { get; } = new(DriverModule, TreesMarks.LandEntry, RouteClass.Person);
 
     /// <summary><c>trees land --ask &lt;id&gt;</c>: an ask's one Accept.</summary>
-    public static InstanceRoute LandAsk { get; } = new(DriverModule, PressesTold.LandAsk, RouteClass.Person);
+    public static InstanceRoute LandAsk { get; } = new(DriverModule, TreesMarks.LandAsk, RouteClass.Person);
 
     /// <summary><c>trees remove &lt;path&gt;</c>: a tree discarded.</summary>
-    public static InstanceRoute DiscardTree { get; } = new(DriverModule, PressesTold.DiscardTree, RouteClass.Person);
+    public static InstanceRoute DiscardTree { get; } = new(DriverModule, TreesMarks.DiscardTree, RouteClass.Person);
 
     /// <summary><c>trees remove &lt;session|branch&gt;</c>: a failed or superseded attempt's branch discarded (LAND3).</summary>
-    public static InstanceRoute DiscardBranch { get; } = new(DriverModule, PressesTold.DiscardBranch, RouteClass.Person);
+    public static InstanceRoute DiscardBranch { get; } = new(DriverModule, TreesMarks.DiscardBranch, RouteClass.Person);
 
     /// <summary><c>trees clean --yes</c>: the clean-up's press.</summary>
-    public static InstanceRoute Sweep { get; } = new(DriverModule, PressesTold.Sweep, RouteClass.Person);
+    public static InstanceRoute Sweep { get; } = new(DriverModule, TreesMarks.Sweep, RouteClass.Person);
 
     /// <summary><c>trees sync --yes</c>: bringing the repositories up to date.</summary>
-    public static InstanceRoute Sync { get; } = new(DriverModule, PressesTold.TreesSync, RouteClass.Person);
+    public static InstanceRoute Sync { get; } = new(DriverModule, TreesMarks.TreesSync, RouteClass.Person);
 
     /// <summary><c>trees hand &lt;session|branch&gt;</c>: a landed branch handed to a plugin.</summary>
-    public static InstanceRoute HandOff { get; } = new(DriverModule, PressesTold.HandOff, RouteClass.Person);
+    public static InstanceRoute HandOff { get; } = new(DriverModule, TreesMarks.HandOff, RouteClass.Person);
 
     /// <summary>Each press of the <c>trees</c> verbs, in the verb's words, with its route.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute Route)> Presses { get; } =
