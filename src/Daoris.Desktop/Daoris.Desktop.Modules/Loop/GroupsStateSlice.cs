@@ -63,7 +63,7 @@ public static class GroupsStateSlice
         ],
         ["work"] = ["commits", "uncommitted", "branch"],
         ["pausedBy"] = ["scope", "id"],
-        ["holds"] = ["why", "reason", "repository", "until"],
+        ["holds"] = ["why", "reason", "repository", "until", "account", "accountName"],
         ["lands"] = ["branch", "tree", "commits", "uncommitted"],
         ["discards"] = ["branch", "tree", "says", "keeps", "keptAt"],
         ["entry"] = ["entry", "origin", "repository", "group", "leading", "parts"],

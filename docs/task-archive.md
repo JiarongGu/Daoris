@@ -20822,3 +20822,17 @@ the turn ends `error` with `chat.transient-stopped` (en and zh) and the next wor
 ends a wait as a stopped turn. A limit on a try goes to LIMITGOON1/2 as a refused turn does, and `LimitHeld.Of` forgets every word asked
 before a quiet `transient` event. Each case seen failing first (D210's AGENTERRORS1b note). **Not built:** the pipe door and the native
 door's lifecycles (1c). Detail: D210's AGENTERRORS1b note.
+## LIMITSWITCH1 — words to a record whose account cools go on elsewhere now, and the wait is said as a wait (2026-10-25, D137)
+
+> **LIMITSWITCH1 — words to a record whose account cools go on elsewhere now, and the wait is said as a wait** (driver, web; the owner's decision, 2026-10-25, D137's note of that date). `ResumeChoice.Waits` (`Accounts/Rotation/ResumeAccount.cs:78`) holds an ended record's words for its own account's reset unless a limit ended it, so a finished record's words waited from 2026-10-24 to a weekly reset on 2026-10-28 while other accounts ran work, and its rail and page read *completed*. While another account of the line's choices is ready, the words go on now in a briefed part there, as a limited record's do; they wait only where none is, until the earliest reset of any (D206 point 2). The held record says *Waiting for a limit to reset: it resumes by itself at {{time}}, on {{account}}* (D206 §3.7), en and zh, on its rail row and page. Proof: a stand-in record whose own account cools with another ready goes on there in one briefed part, the words once; with none ready it waits and says the earliest reset; the page's held row in both languages.
+
+(Quest `#6b188d2789d2`.)
+
+**Outcome** 2026-10-25. **Built:** `ResumeAsync` walks the line's accounts for an open or taken quest's cooling record and a ready one makes
+`ResumeChoice.Switched`, so the words go on in a briefed part there, taken off the old record and prompted once; with none ready they wait
+for the earliest reset of any account, named, and at it the next look goes on there. The held record's row carries that account, and the
+rail row, the page's head and Attention say *Waiting for a limit to reset…* in English and 中文. **Proved** by `ResumeAccountTests`,
+`AccountRotationTickTests` (real ticks: the switch, the earliest-of-any wait then the move, a closed quest unchanged, the person's *Go on in
+a new session* still taking the pick), `SessionWordsWaitingTests`, `DriverModuleSessionsTests`, and the web's `SessionRow.test.tsx` and
+`headFacts.test.ts`, each seen failing first. **Left, as LIMITSWITCH2:** a conversation's go-on and its wake, which wait for the own
+account as D206 §3.5 and a picked account's §3.5(d) have them. Detail: D137's LIMITSWITCH1 note.

@@ -38,6 +38,23 @@ repository.
   order deterministic (keep, release, revoke's mutation step, admit, then the sweep) and failed every time before the fix (`taken`
   empty); the race test, unchanged, 50 of 50 after it; `StandingConfirmationTests`, `DriverModuleSessionQuestionTests` and the driver's
   supervisor classes green.
+## 2026-10-25 - An ended record's words waited days for its cooling account while other accounts were ready, and its row read only completed (LIMITSWITCH1)
+
+- **Symptom:** on the install a finished record's words waited from 2026-10-24 to a weekly reset on 2026-10-28 while other accounts ran
+  work; its rail row and page read *completed*, with no word of the wait.
+- **Root cause:** D137 point 7 held an ended record's words for its own account's reset (`ResumeChoice.Waits`), since a harness keeps a
+  conversation in its account's home. D206's LIMITRESUME1b amended that only for a record a limit ended (`ResumeChoice.Limited`), so a
+  record that finished, or failed with no limit flag, and then cooled its account, still waited. The row said *completed* because the
+  planner's hold (`WordsHold`) carried a time and no account, and the page's head and Attention had no D206 §3.7 words for it.
+- **Fix:** the roster walks the line's accounts for an open or taken quest's record whose own account cools; a ready one makes
+  `ResumeChoice.Switched` and the carry-on goes on there in a briefed part (D137's note of 2026-10-25). With none ready the words wait
+  for the earliest reset of any account, not the own's alone. `WordsHold` carries that account and the row, head and Attention say
+  *Waiting for a limit to reset: … at {{time}}, on {{account}}* in English and 中文. Conversations, closed quests and the person's *Go on in a
+  new session* keep their paths; a conversation's switch is the row LIMITSWITCH2.
+- **Verification:** each new case seen failing first, then green: `ResumeAccountTests`, `AccountRotationTickTests` (with
+  `process.runsettings`), `SessionWordsWaitingTests`, `DriverModuleSessionsTests`, and the web's `SessionRow.test.tsx` and
+  `headFacts.test.ts`. One native-door case, `SessionMessagesTickTests.Words_said_while_a_native_session_works_go_on_in_its_own_conversation_before_it_concludes`,
+  timed out in a batch run (*the first run never took its quest*, before any cool-off was written) and passed alone.
 
 ## 2026-10-25 - StandingCallerTests read every uncontained agent's event in the session, another Daoris's test run's included (TERMTRUST1a)
 

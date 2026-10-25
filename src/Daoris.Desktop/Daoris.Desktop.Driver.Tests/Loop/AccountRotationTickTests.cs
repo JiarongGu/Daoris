@@ -360,10 +360,133 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Its own account cooling, the words wait for its reset: the look holds the start with the account's cool-off, so the
+    /// 🔴 LIMITSWITCH1 (D137's note of 2026-10-25, point 7 amended): a record that ended, its own account cooling with
+    /// <c>account-2</c> ready, is not held for the weekly reset. The person's words go on at once in one briefed part on
+    /// <c>account-2</c>, in the same tree, taken off the old record once and handed to the new part once; nothing resumes the own
+    /// conversation, and no limit's word of Daoris's is kept.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_an_ended_session_whose_account_cools_go_on_at_once_briefed_on_the_ready_account()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var driver = new Daoris.Driver.Driver(client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("failed", "Taken", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
+        var tree = JsonNode.Parse(service.Record("s1"))!["tree"]!.GetValue<string>();
+        // A weekly limit: account-1 cools for days while account-2 has run no work.
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until.AddDays(4), true, "weekly", Seen, "s0"), Seen);
+        await service.SayAsync("s1", "Also log the port.");
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.Empty(look.Waits);
+        Assert.Equal(("completed", "account-2"), (service.State("s2"), Profile(service, "s2")));
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(JsonNode.Parse(service.Record("s2"))!["tree"]!.GetValue<string>()), ignoreCase: true);
+        Assert.Equal([("s1", "w1", "s2")], service.Taken);
+        Assert.Empty(service.DaorisSaid);
+        Assert.DoesNotContain(Frames(), frame => frame["method"]!.GetValue<string>() == "session/resume");
+        var carrying = Frames().Last(frame => frame["method"]!.GetValue<string>() == "session/prompt");
+        Assert.Equal("account-2", carrying["account"]!.GetValue<string>());
+        var prompt = carrying["prompt"]!.GetValue<string>();
+        Assert.Contains("Also log the port.", prompt);
+        Assert.Equal(1, prompt.Split("Also log the port.").Length - 1);
+        Assert.Equal(1, Frames().Count(frame => frame["method"]!.GetValue<string>() == "session/prompt" && frame["prompt"]!.GetValue<string>().Contains("Also log the port.")));
+        var went = Assert.Single(Events("s1"), e => e.To == "s2");
+        Assert.Equal(ContinueWhy.Account, went.Why);
+        Assert.DoesNotContain(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet:", StringComparison.Ordinal) == true);
+        // The one strike is the first part's own failed turn; going on elsewhere adds none.
+        Assert.Equal(new Dictionary<string, int> { ["q1"] = 1 }, await client.StrikesAsync());
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH1: with every account cooling, the ended record's words wait, and the hold names the earliest reset of any
+    /// account, <c>account-2</c>'s, never the own account's alone. At that reset the next look takes them on <c>account-2</c> briefed,
+    /// the own account still cooling, the words received once.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_an_ended_session_with_every_account_cooling_wait_for_the_earliest_reset_then_go_on_there()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var now = Seen;
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => now, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var driver = new Daoris.Driver.Driver(client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("failed", "account-1"), (service.State("s1"), Profile(service, "s1")));
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until.AddDays(4), true, "weekly", Seen, "s0"), Seen);
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-2", Until, true, "weekly", Seen, "s0"), Seen);
+        await service.SayAsync("s1", "Also log the port.");
+
+        var held = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", held.Events)}\nafter: {service.Record("s1")}";
+        var verdict = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
+        Assert.True(verdict.Verdict == StartVerdict.Blocked, seen);
+        Assert.Contains("`account-2`", verdict.Reason);
+        Assert.Contains($"at Oct 3, 16:02 ({Zone.Id})", verdict.Reason);
+        Assert.DoesNotContain("Oct 7", verdict.Reason);
+        var wait = Assert.Single(held.Waits);
+        Assert.Equal(("account-2", Until), (wait.Account, wait.Until));
+        Assert.Equal(1, service.SessionCount);
+        Assert.Equal(["w1"], service.Said("s1"));
+        Assert.Single(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet:", StringComparison.Ordinal) == true);
+
+        // At account-2's reset, the own account still cooling: the words go on there, once.
+        now = Until.AddMinutes(1);
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        seen = $"after: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.Equal("account-2", Profile(service, "s2"));
+        Assert.Equal([("s1", "w1", "s2")], service.Taken);
+        Assert.DoesNotContain(Frames(), frame => frame["method"]!.GetValue<string>() == "session/resume");
+        Assert.Equal(1, Frames().Count(frame => frame["method"]!.GetValue<string>() == "session/prompt" && frame["prompt"]!.GetValue<string>().Contains("Also log the port.")));
+    }
+
+    /// <summary>
+    /// LIMITSWITCH1's bound: nothing carries a closed quest's session on by itself (D137 §2.2), so words to a record whose quest is done
+    /// still wait for the own account's reset while another is ready, said with the door that starts a conversation with them, as
+    /// before; the switch is for a line that is open or taken.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_session_of_a_closed_quest_still_wait_for_their_own_account_with_another_ready()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Done", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until.AddDays(4), true, "weekly", Seen, "s0"), Seen);
+        await service.SayAsync("s1", "Also log the port.");
+
+        var held = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", held.Events)}\nafter: {service.Record("s1")}";
+        var verdict = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
+        Assert.True(verdict.Verdict == StartVerdict.Blocked, seen);
+        Assert.Contains("`account-1` is cooling", verdict.Reason);
+        Assert.EndsWith("`daoris-driver sessions start-from s1`.", verdict.Reason);
+        Assert.Equal(1, service.SessionCount);
+        Assert.Equal(["w1"], service.Said("s1"));
+    }
+
+    /// <summary>
+    /// 🔴 Its own account cooling with every other cooling too and its own the earliest, the words wait for its reset: the look holds the
+    /// start with the account's cool-off, so the
     /// quest waits for an account (TOOL4g) and the record's conversation says why once, with the door out; nothing is spawned
-    /// and the words stay waiting, unmarked. The person then chooses a new session (MSG1g's door), and the next look carries the
-    /// words on, on <c>account-2</c>, in the same tree, its note saying it was their choice and naming no account.
+    /// and the words stay waiting, unmarked. The person then chooses a new session (MSG1g's door), and the next look that finds an
+    /// account ready carries the words on, on <c>account-2</c>, in the same tree, its note saying it was their choice and naming no account.
     /// </summary>
     [Fact]
     public async Task Words_to_a_session_whose_account_is_cooling_wait_for_its_reset_until_the_person_chooses_a_new_session()
@@ -378,6 +501,7 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal(("failed", "Taken", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
         var tree = JsonNode.Parse(service.Record("s1"))!["tree"]!.GetValue<string>();
         AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until, true, "weekly", Seen, "s0"), Seen);
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-2", Until.AddDays(2), true, "weekly", Seen, "s0"), Seen);
         await service.SayAsync("s1", "Also log the port.");
 
         var held = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
@@ -406,6 +530,10 @@ public sealed class AccountRotationTickTests : IDisposable
 
         var chose = await GoOnNew.AskAsync(client, _home, (adapter, profile) => roster.CoolingOf(adapter ?? "acp-stub", profile), "s1", Seen);
         Assert.True(chose.Sent, chose.Message);
+        // Every account still cools, so the choice has nowhere to carry the words yet: they stay, and the choice stays.
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(1, service.SessionCount);
+        AccountCooling.End(_home, "stub", "account-2", Seen);
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);
 
         seen = $"after: {service.Record("s1")}";

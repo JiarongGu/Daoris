@@ -959,9 +959,15 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// The record's asked model (D205 §3.5(a), MODELROLE1c2): an own account whose reading refuses it cannot carry the words, which go to
     /// a new record on another account of the same choice, the own account passed, as an own account signed out does.
     /// </param>
+    /// <param name="switches">
+    /// The record's line can carry its words to a new part by itself (LIMITSWITCH1, D137's note of 2026-10-25): a driven record whose quest
+    /// is open or taken. Its words then never wait for a cooling own account while another account of the line's choices is ready
+    /// (<see cref="ResumeChoice.Switched"/>), and wait otherwise for the earliest reset of any. A closed quest's session, which nothing
+    /// carries on, and a conversation, which its runner does, keep the wait for the own account.
+    /// </param>
     public async Task<ResumeChoice> ResumeAsync(
         string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false,
-        bool walks = true, CancellationToken ct = default, bool limited = false, string? model = null)
+        bool walks = true, CancellationToken ct = default, bool limited = false, string? model = null, bool switches = false)
     {
         var resolved = adapters.Resolve(adapter);
         if (resolved.Toolchain is not { } toolchain)
@@ -1009,6 +1015,25 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             // CONVNOTE2g: the conversation's line by code beside the hold's English, composed here, where the names it says are read.
             var cooling = before.Cooling!;
+            // LIMITSWITCH1 (D137's note of 2026-10-25, point 7 amended): a driven record's words never wait for its own account while
+            // another account of the line's choices is ready: the walk's pick carries them now, as a limited record's. They wait only
+            // where none is, and then for the earliest reset of any (D206 point 2). A conversation is its own runner's (ChatGoOn).
+            if (kind == StartKind.Driven && walks && switches)
+            {
+                var walked = await SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model).ConfigureAwait(false);
+                if (walked.Allowed) return new ResumeChoice(walked, own) { Switched = true };
+
+                // The own account's reset is the earliest where the walk found none sooner: its hold says its conversation is there.
+                if (walked.Cooling is { } soonest && soonest.Until < cooling.Until)
+                {
+                    var waits = ResumeWords.LimitWaits(soonest, Zone, names);
+                    return new ResumeChoice(new HarnessSelection(waits.Note) { Cooling = soonest, RefusalNote = waits }, own)
+                    {
+                        Waiting = ResumeWords.LimitWaits(soonest, Zone, names, ResumeWords.NotYet),
+                    };
+                }
+            }
+
             return new ResumeChoice(new HarnessSelection(ResumeWords.Waits(cooling, Zone, names)) { Cooling = cooling }, own)
             {
                 Waiting = ResumeWords.Waiting(cooling, Zone, names, ResumeWords.NotYet),
