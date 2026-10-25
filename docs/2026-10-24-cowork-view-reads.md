@@ -1,6 +1,6 @@
-# COWORKVIEW1: the reads of rounds 1 to 4, the Opus foundation reader's of each and Codex's of rounds 2 and 3 (D191)
+# COWORKVIEW1: the reads of rounds 1 to 4, the Opus foundation reader's of each and Codex's of rounds 2 to 4 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex's read of round 4 is owed.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16.
 
 ## Opus (foundation), round 1
 
@@ -1153,3 +1153,71 @@ The routing half is carried cleanly, and row a stands alone once §4.2's three s
 - F4: an `end` with no `start` after it bounds a generation (so files written before row a read correctly), and each `end` is written after the capture drains.
 
 Findings 5 to 12 can be taken in passing.
+
+## Codex, round 4
+
+Codex's read of round 4, with the Opus foundation reader's named changes taken in the design's §15, at `eced2688e`: 11 findings, 7 of them blocking; another round for row a. Its §0 re-reads round 3's answers and opens none of its own: the gaps it names there are its findings below. It was run read-only at that commit, on main. Round 5 answers it in the design's §16.
+
+Reviewed read-only at `eced2688e`; nothing changed. I excluded checkout-relative `local/` and everything outside this checkout.
+
+`Design` means `docs/2026-10-24-cowork-view-design.md`; `Foundation` means `docs/2026-10-25-foundation-design.md`. `Driver/`, `Modules/` and `Web/` use the design’s path aliases.
+
+### 0. Round-3 findings
+
+Severity is the original finding’s. “Taken” means specified in the proposal, not built.
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| 1.1 Responsibility selector | **blocking** | **Deferred to routing**: row a reads no responsibility; `Design:500`, `:1885`. |
+| 1.2 Lane-sensitive registry wake | **blocking** | **Deferred to routing**: row a reads no registry; `Design:993`, `:1886`. |
+| 1.3 Reviewer enforcement overclaimed | **non-blocking** | **Deferred to routing, corrected**: present enforcement and future reviewer work are distinguished; `docs/decisions/D203.md:234`. |
+| 1.4 `RouteFlights` cannot retain burst inputs | **blocking** | **Answered for row a**: snapshots remove its service acquisitions; routing retains the unresolved acquisition contract; `Design:922`, `:1888`. |
+| 2.1 Call-only children discarded | **blocking** | **Taken**: first observation opens a run; late calls cannot reopen it; `Design:679`, `:1482`. |
+| 2.2 Process boundaries missing | **blocking** | **Taken for new writers**: all four sites are named; the new claim about historical boundaries is wrong, below; `Design:1480`. |
+| 2.3 Responsibility prevents crash closure | **blocking** | **Taken**: closure uses process presence and record state, with the exact completed-wait crash case; `Design:661`, `:1481`. |
+| 2.4 Ledger-only stale composition | **blocking** | **Taken**: records, entry and running membership join the source fence; `Design:939`, `:1487`. Delivery ordering remains a separate gap below. |
+| 3.1 One-at-a-time contradiction | **non-blocking** | **Deferred to routing, corrected**: the lead exception is explicit; `docs/decisions/D115.md:591`. |
+| 3.2 Routing availability is not execution assurance | **non-blocking** | **Answered**: *open* promises availability only; `docs/decisions/D115.md:597`. |
+| 4.1 Unmatched evidence permits false emptiness | **blocking** | **Taken**: unmatched ids replace the empty sentence; `Design:735`, `:1492`. |
+| 4.2 Failed refresh appears current | **blocking** | **Taken for composition failures**: failure events, retained rows and stale wording are specified; `Design:1004`, `:1491`. Input-owner failures remain uncovered below. |
+| 4.3 Other boundaries held | **non-blocking** | **Answered**: row a introduces no co-worker category, responsibility or mutation; `Design:803`, `:1493`. |
+| 5.1 Row-a lifecycle/delivery proofs missing | **blocking** | **Taken for the named cases**: rules 4–6 and 11 supply their expected outcomes; `Design:1480`. Further omissions are below. |
+| 5.2 Row-e lane proof cannot pass | **blocking** | **Deferred to routing**: neither standing nor lane detection is row a’s input; `Design:1533`. |
+| 5.3 Row-b responsibility proof incomplete | **blocking** | **Deferred to routing**: row a makes no executor selection; `Design:1885`, `:1900`. |
+| 5.4 Row-c coverage needs qualification | **non-blocking** | **Deferred to routing, corrected**: helpers precede reviewer/partner coverage; `docs/decisions/D203.md:237`. |
+| 5.5 Row-d terminal output ambiguous | **non-blocking** | **Deferred to routing**: row a’s session-keyed terminal door is independently specified; `Design:988`, `:1902`. |
+| 5.6 New requests cannot be discovered | **blocking** | **Deferred to routing**: row a reads no meeting/request listing; `Design:993`, `:1903`. |
+
+### 1. Wrong claims about existing code
+
+1. **Blocking — historical files do not universally contain one `end` per process.** `Design:175`, `:653` and `docs/decisions/D173.md:5593` assert this, but `Driver/Loop/DriverContinuations.cs:1242` and `:1299` spawn additional processes before the single outer `ChildLineage.End` at `Driver/Loop/Driver.cs:3907`. Rule 5 must distinguish recorded boundaries from unavailable historical boundaries; its manufactured three-process/three-end fixture does not represent this existing case.
+
+2. **Non-blocking — the strip does not simply word the record’s raw state.** `Design:1493` promises both strip-equivalent wording and a completed waiting record’s own state, but `Web/work/head/PartsStrip.tsx:56` uses `part.shown` through `shownOf`, which preserves derived waiting words at `Web/work/groups.ts:152`. Keep row a’s explicitly chosen raw-state behavior, but stop describing its state words as identical to the strip’s and test that deliberate difference.
+
+### 2. Row a’s read and updates
+
+1. **Blocking — delayed capture lines still have no reliable process attribution.** `Design:647` permits capture to outlive its `end`, but `:655` handles only late ending lines belonging to the just-closed generation. Capture remains running after abandonment (`Driver/Loop/Driver.cs:3969`, `:4023`), and its lineage callback identifies only the session (`Driver/Sessions/ChildLineage.cs:145`): a delayed start can invent another generation, or an old stop after the next start can close the reused id’s new run. Specify a process identity or writer fence, and test both delayed starts and delayed stops across a subsequent spawn.
+
+2. **Blocking — rule 13’s id-membership test wakes on root calls.** Registered ids comprise child runs and unmatched ids (`Design:937`); a Codex root thread belongs to neither, yet satisfies the “new id” condition at `Design:968`. Existing code explicitly counts that thread as the root, never a child (`Driver/Sessions/Domain/ChildBindings.cs:223`). Register root identity too and exclude root-only calls; prove repeated root calls cause zero `atWork` wakes.
+
+3. **Blocking — changing failure events does not cover immediate route failures.** A first work that fails inside `Patience` rejects `AskAsync` directly (`Modules/Bridge/HeldAnswers.cs:104`), and `askHeld` propagates that rejection (`Web/bridge/state/held.ts:30`); the application retries once (`Web/main.tsx:31`). `Design:1004` changes event handling only, so “Try again is the only re-ask” is not established. Specify how direct refusals become the same failed value, disable automatic error retries for this read, and test failures both before and after `Patience`.
+
+4. **Blocking — failed input slices are indistinguishable from pending or healthy cached inputs.** Both owners merely log their failures (`Modules/Loop/SessionsStateSlice.cs:77`, `GroupsStateSlice.cs:117`), while `StateSlice.Snapshot` exposes no failure status (`Modules/Platform/StateSlices.cs:170`). Consequently `Design:931` can remain *Reading* indefinitely after a failed first judgement, or present an old successful snapshot without *stale* after a failed refresh. Add observable input health and its wake, with tests for first-read failure, retained-snapshot failure and recovery; the row-a composer must still make no service call.
+
+### 3. Decided rules and foundation dependencies
+
+1. **Blocking — the source fence does not prevent late delivery from regressing the page.** `Design:1487` fences composition and registration, but `HeldAnswers` releases its gate before emitting (`Modules/Bridge/HeldAnswers.cs:170`), and the page accepts answers without a version (`Web/bridge/state/held.ts:49`). An older accepted landing can therefore emit after a newer one, restoring old rows or an old failure after recovery, contrary to `docs/decisions/D182.md:24`. Number row-a replies and success/failure events, reject older deliveries, and test reversed delivery including an old direct reply.
+
+2. **Non-blocking — Part A’s placement needs stating; Part B is not required.** `Foundation:1013` explicitly allows row a to proceed independently, but its map puts `AcpStreams` in Agents, lineage in Participants and `SessionOutput` in Context (`Foundation:1933`, `:1936`, `:1937`). The new ACP writer at `Design:628` should use an injected sink across that boundary, rather than introduce an Agents-to-Participants dependency forbidden by `Foundation:1955`. I found no substantive dependence on routing, the journal, move records or the desktop store.
+
+3. **Non-blocking — hook-only `finished` lacks a specified bilingual display mapping.** The type and rule retain `finished` (`Design:841`, `:1483`), but §5.4 supplies no corresponding key; the existing panel catalogues have completed, failed, stopped, cancelled and session-ended only (`Web/locales/en/work.panel.json:16`, `Web/locales/zh/work.panel.json:16`). Add an explicit mapping/key and a hook-only finished story; equal catalogue key sets would not detect a key omitted from both languages.
+
+No additional D173, D203, D115, D167 or translation-placeholder violation found.
+
+### 4. Row a’s proof
+
+1. **Blocking — rule 14’s bound and retention promises cannot all hold.** `Design:1490` requires at most 40 children while keeping every working/lost child and every drawn child’s ancestors; `Design:832` repeats that conjunction. Forty-one working children, or a retained child with more than 39 ancestors, makes it impossible. Choose an explicit overflow/ancestry policy and test those cases, including truthful counts.
+
+2. **Non-blocking — coverage is substantially better, but remains a proposed proof plan.** Rules 1–3, 7–9 and 18–22 name suitable checks or measurements for their stated scope (`Design:1477`, `:1483`, `:1494`); rule 17 needs the wording clarification above. Rules 4–6 need historical and delayed-capture cases; 10–13 need input-health and root-call cases; 15–16 need immediate-failure and upstream-failure cases; 11/15 also need reversed delivery. Rule 14 needs the overflow decision, while rule 22’s installed run appropriately remains distinct from those regressions (`Design:1502`).
+
+**Verdict for row a: another round.** Historical generation attribution, delayed writers, and failure/delivery ordering still require changes to the table’s contracts before its proof can establish them.
