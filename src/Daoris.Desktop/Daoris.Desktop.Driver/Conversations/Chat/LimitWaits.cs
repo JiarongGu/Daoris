@@ -43,7 +43,10 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
     public bool Wait(string session, ChatRunner.ITurnedChat chat, string adapter)
     {
         if (!chat.Turns.WaitForLimit()) return false;
-        if (context.Harnesses.CoolingsOf(adapter) is [var first, ..]) context.Note(session, LimitNotes.Waits(first, context.Harnesses.Zone));
+        if (LineAccount.Earliest(ResetSet.Wake, coolings: context.Harnesses.CoolingsOf(adapter)) is { } first)
+        {
+            context.Note(session, LimitNotes.Waits(first, context.Harnesses.Zone));
+        }
         Add(session);
         return true;
     }
@@ -163,8 +166,12 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
             return (null, null);
         }
 
-        // 🔴 Own first (§3.5): its own account ready, the same conversation goes on, whatever else is ready.
-        if (own is null)
+        // 🔴 Own first (§3.5): its own account ready, the same conversation goes on, whatever else is ready. The rule reads it with no walk: the
+        // wake's move and its ended move walk for themselves, and the one walk this stage judges is the go-on's (FOUNDATION1a-i).
+        var resumes = LineAccount.Decide(
+            LineOwn.Of(own), new LineTrigger(Limited: limited is not null), LineConstraint.None, LineKind.Conversation(carries: false),
+            ask => throw new InvalidOperationException($"the wake asks no {ask.Place} walk of the account rule")) is LineAnswer.Resume;
+        if (resumes)
         {
             var until = context.Harnesses.Clock();
             ChatStart start;
@@ -198,7 +205,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
                 judged = null;
             }
 
-            if (judged is not { Switched: true }) return (null, judged?.Selection.Cooling?.Until ?? own.Until);
+            if (judged?.Answer is not LineAnswer.Elsewhere { Switched: true }) return (null, judged?.Selection.Cooling?.Until ?? own!.Until);
 
             var went = await goOn.WakeAsync(session, limited: false, context.Harnesses.Clock(), config, onEnded, ct).ConfigureAwait(false);
             if (went.SessionId is null) return (null, null);
@@ -217,7 +224,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         }
 
         // Nothing has room: the first of its agent's accounts ready again is its wait.
-        return (null, cooling.Count > 0 ? cooling[0].Until : null);
+        return (null, LineAccount.Earliest(ResetSet.Wake, coolings: cooling)?.Until);
     }
 
     /// <summary>
@@ -306,7 +313,7 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
         if (WordsNever.ContinuedIn(json, record.Id) is not null) return false;
         if (LimitHeld.Waiting(context.Events.After(record.Id, 0).Events) is not null) return true;
         return prior.WordsWaiting && !GoOnMarks.Judged(prior, context.Marks.Read(record.Id))
-            && context.Harnesses.CoolingOf(prior.Adapter ?? "", prior.Profile) is not null;
+            && LineAccount.OwnHold(context.Harnesses.CoolingOf(prior.Adapter ?? "", prior.Profile)) == NextHold.Cooling;
     }
 
     private static bool Ended(PriorSession record) => record.State is "completed" or "declined" or "failed" or "stopped";

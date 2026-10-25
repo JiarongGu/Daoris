@@ -747,7 +747,7 @@ public static class RotationWords
     public static string Wait(
         string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
     {
-        var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until)!;
+        var first = LineAccount.Earliest(ResetSet.Walk, states)!;
         var when = $"the first ready, `{(first.Account is { } account ? AccountNames.Said(names, account) : null)}`, at "
                    + $"{CoolingWords.When(first.Until, zone)}, {CoolingWords.Why(first)}";
         var every = states.All(state => state.Readiness == AccountReadiness.Cooling)
@@ -765,7 +765,7 @@ public static class RotationWords
     public static Noted? WaitOf(
         string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
     {
-        var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until)!;
+        var first = LineAccount.Earliest(ResetSet.Walk, states)!;
         if (first.Account is not { } firstAccount) return null;
 
         var every = states.All(state => state.Readiness == AccountReadiness.Cooling);

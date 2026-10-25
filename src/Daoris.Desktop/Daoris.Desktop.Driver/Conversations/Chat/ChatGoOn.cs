@@ -488,8 +488,8 @@ internal sealed class ChatGoOn
     /// </summary>
     private Task<ResumeChoice> SwitchableAsync(PriorSession record, string adapter, DriverConfig config, string? workspace, CancellationToken ct) =>
         _context.Harnesses.ResumeAsync(
-            adapter, config, workspace, record.Profile, StartKind.Conversation, walks: false, ct: ct,
-            switches: record.Waiting.Any(word => word.Persons), walkCounts: false);
+            adapter, config, workspace, record.Profile, StartKind.Conversation, ct: ct,
+            line: LineKind.Conversation(carries: record.Waiting.Any(word => word.Persons)));
 
     /// <summary>
     /// What the limits stage's wake of an ended conversation whose words wait for a cooling account reads (LIMITSWITCH2): where another
@@ -728,7 +728,7 @@ internal sealed class ChatGoOn
 
         // Its account by name, as a chat's, among the machine's accounts (D89): going on keeps the account it ran on.
         var resume = await _context.Harnesses
-            .ResumeAsync(adapter.Name, config, workspace: null, record.Profile, StartKind.Conversation, walks: false, ct: ct)
+            .ResumeAsync(adapter.Name, config, workspace: null, record.Profile, StartKind.Conversation, line: LineKind.AskDaoris, ct: ct)
             .ConfigureAwait(false);
         if (resume.Waits)
         {
