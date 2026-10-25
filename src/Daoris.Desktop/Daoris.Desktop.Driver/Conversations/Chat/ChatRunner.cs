@@ -241,9 +241,34 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// the steward's choice: a closed quest opens no driven record), handed Daoris's brief and the person's words; the driver hands it
     /// here through its seam, since conversations are this runner's.
     /// </summary>
-    public Task<StartedFrom> GoOnLostAsync(
-        string sessionId, ContinueReason lost, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default) =>
-        _move.MoveAsync(sessionId, lost, HandOverBy.Daoris, config, onEnded, ct);
+    /// <remarks>
+    /// LIMITSWITCH2 (D137's note of 2026-10-25): where the reason is <see cref="ContinueWhy.Account"/>, its own conversation is not lost but on
+    /// an account that cools while another of its agent's is ready, so the ended limit move's body opens it there; the brief's move opens
+    /// on the account the record ran on, which is cooling.
+    /// </remarks>
+    public async Task<StartedFrom> GoOnLostAsync(
+        string sessionId, ContinueReason lost, DriverConfig config, Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+    {
+        if (lost.Code != ContinueWhy.Account) return await _move.MoveAsync(sessionId, lost, HandOverBy.Daoris, config, onEnded, ct).ConfigureAwait(false);
+
+        if (_context.Closing) return new StartedFrom(null, false, null, "the application is closing, so no conversation goes on now.");
+        var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!_context.GoingOn.TryAdd(sessionId, going.Task))
+        {
+            return new StartedFrom(null, false, StartFrom.Running, $"`{sessionId}` is going on already.");
+        }
+
+        try
+        {
+            return await _limit.MoveEndedAsync(sessionId, lost: null, config, onEnded, ct, holding: true, switching: true).ConfigureAwait(false)
+                   ?? new StartedFrom(null, false, null, $"`{sessionId}` did not go on in a new part now.");
+        }
+        finally
+        {
+            _context.GoingOn.TryRemove(sessionId, out _);
+            going.TrySetResult();
+        }
+    }
 
     /// <summary>
     /// The ended chats whose words wait from while no runner heard them are taken up, as the shell comes up (MSG1c2,
@@ -480,12 +505,16 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// The part a conversation that continues another goes on from, as its record says it ran (MAKERTRAIL2, LIMITGOON2): where it ran on
     /// another maker and left work uncommitted in the tree, the new part is told that maker's trailer too. Null for every other start.
     /// </param>
+    /// <param name="settled">
+    /// The selection the caller's one walk judged and counted (LIMITSWITCH2): the conversation opens on it, never walking again, so the
+    /// account judged is the account opened and the start is counted once. Null for every other start, which walks here.
+    /// </param>
     public Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null,
-        EarlierMaker? leftBy = null) =>
-        StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending: null);
+        EarlierMaker? leftBy = null, HarnessSelection? settled = null) =>
+        StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending: null, settled);
 
     /// <param name="pending">
     /// The pending start a replacement opens for (MODELROLE1d2, D205 §3.5(b)): its order walked, the refused account passed, its passes
@@ -495,7 +524,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order,
-        EarlierMaker? leftBy, ChatPending? pending)
+        EarlierMaker? leftBy, ChatPending? pending, HarnessSelection? settled = null)
     {
         if (_context.Closing) return new(null, "Daoris is closing.");
         var key = Guid.NewGuid().ToString("N");
@@ -504,7 +533,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         try
         {
             if (_context.Closing) return new(null, "Daoris is closing.");
-            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending).ConfigureAwait(false);
+            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending, settled).ConfigureAwait(false);
         }
         finally
         {
@@ -517,7 +546,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order, EarlierMaker? leftBy,
-        ChatPending? pending)
+        ChatPending? pending, HarnessSelection? settled)
     {
         // MODELROLE1d (D205 §4.1): an order of one is today's start on its agent, asking its model; more are walked below, once the
         // workspace whose accounts each choice walks is known. MODELROLE1d2: a replacement always walks its pending start's order.
@@ -563,6 +592,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
             if (walk is not { Adapter: { } walked, Selection: { } taken, Chosen: { } entry }) return new(null, walk.Refusal!);
             (resolved, selection, chosen, passes) = (walked, taken, entry, walk.Passes);
             if (pending is not null) passes = [.. pending.Passes, .. walk.Passes];
+        }
+        else if (settled is not null)
+        {
+            // LIMITSWITCH2: the caller's walk is the walk: asking the roster again could name another account, and counts a second start.
+            selection = settled;
         }
         else
         {

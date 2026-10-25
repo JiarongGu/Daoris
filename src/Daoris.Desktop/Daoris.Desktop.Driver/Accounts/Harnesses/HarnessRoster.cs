@@ -961,13 +961,21 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// </param>
     /// <param name="switches">
     /// The record's line can carry its words to a new part by itself (LIMITSWITCH1, D137's note of 2026-10-25): a driven record whose quest
-    /// is open or taken. Its words then never wait for a cooling own account while another account of the line's choices is ready
-    /// (<see cref="ResumeChoice.Switched"/>), and wait otherwise for the earliest reset of any. A closed quest's session, which nothing
-    /// carries on, and a conversation, which its runner does, keep the wait for the own account.
+    /// is open or taken, and since LIMITSWITCH2 an ended conversation and a closed quest's session, whose runner goes on in a new part of
+    /// the same line. Its words then never wait for a cooling own account while another account of the line's choices is ready
+    /// (<see cref="ResumeChoice.Switched"/>), and wait otherwise for the earliest reset of any. Ask Daoris's room never asks it (it goes
+    /// elsewhere only at a limit, D205 §3.5(e)), and a record whose own account cannot carry the words for another reason is the
+    /// person's press.
+    /// </param>
+    /// <param name="walkCounts">
+    /// Whether the switch's walk counts the start it picks as chosen (<see cref="SelectAsync"/>'s <c>counts</c>): a driven carry-on opens on
+    /// that pick, so it does; a conversation's and a closed quest's session are opened by the ended move, which walks and counts once
+    /// itself, so asking it here only judges (LIMITSWITCH2).
     /// </param>
     public async Task<ResumeChoice> ResumeAsync(
         string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false,
-        bool walks = true, CancellationToken ct = default, bool limited = false, string? model = null, bool switches = false)
+        bool walks = true, CancellationToken ct = default, bool limited = false, string? model = null, bool switches = false,
+        bool walkCounts = true)
     {
         var resolved = adapters.Resolve(adapter);
         if (resolved.Toolchain is not { } toolchain)
@@ -1017,10 +1025,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             var cooling = before.Cooling!;
             // LIMITSWITCH1 (D137's note of 2026-10-25, point 7 amended): a driven record's words never wait for its own account while
             // another account of the line's choices is ready: the walk's pick carries them now, as a limited record's. They wait only
-            // where none is, and then for the earliest reset of any (D206 point 2). A conversation is its own runner's (ChatGoOn).
-            if (kind == StartKind.Driven && walks && switches)
+            // where none is, and then for the earliest reset of any (D206 point 2). LIMITSWITCH2: a conversation's and a closed quest's
+            // session's words the same, their runner opening the part (ChatGoOn, the ended move), the walk only judged there.
+            if (switches)
             {
-                var walked = await SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model).ConfigureAwait(false);
+                var walked = await SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model, counts: walkCounts).ConfigureAwait(false);
                 if (walked.Allowed) return new ResumeChoice(walked, own) { Switched = true };
 
                 // The own account's reset is the earliest where the walk found none sooner: its hold says its conversation is there.

@@ -956,8 +956,15 @@ public static class SessionGroups
 
             chats.Add(record.Id);
             if (NotYet(events, record.Id) is not { } reason) continue;
+            // LIMITSWITCH2 (D137's note of 2026-10-25): a conversation's words wait for the earliest reset of any account of its agent, which
+            // the hold names, never its own account's alone; Ask Daoris's room alone keeps its own (D205 §3.5(e)).
             held[record.Id] = Cooling(coolingOf, prior) is { } cooling
-                ? CoolingHold(reason, cooling, home)
+                ? CoolingHold(
+                    reason,
+                    prior.Repository is { } repository && string.Equals(repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase)
+                        ? cooling
+                        : Soonest(coolingOf, home, prior.Adapter ?? adapter, cooling) ?? cooling,
+                    home)
                 : new WordsHold(WordsHold.Waits, reason);
         }
 
@@ -981,24 +988,15 @@ public static class SessionGroups
 
                 // LIMITSWITCH1 (D137's note of 2026-10-25): the words of an open or taken quest's record never wait for their own account
                 // while another is ready, so the loop's look carries them on there and nothing is held; where every account cools, they wait
-                // for the earliest reset of any, as the roster's resume says.
+                // for the earliest reset of any, as the roster's resume says. LIMITSWITCH2: a closed quest's session's words the same, the
+                // shell's chat runner going on in a new part of it; only the door out of the wait differs.
                 var carried = verdict.Quest.Status is "Open" or "Taken";
                 var names = AccountNames.Of(home, cooling.Agent);
-                string sentence;
-                if (!carried)
-                {
-                    sentence = ResumeWords.Waits(cooling, zone, names);
-                }
-                else if (Soonest(coolingOf, home, adapter, cooling) is not { } soonest)
-                {
-                    continue;
-                }
-                else
-                {
-                    // Where the own account is not the earliest, the sentence is the roster's: whose reset comes first.
-                    sentence = soonest.Until < cooling.Until ? ResumeWords.LimitWaits(soonest, zone, names).Note : ResumeWords.Waits(cooling, zone, names);
-                    cooling = soonest;
-                }
+                if (Soonest(coolingOf, home, adapter, cooling) is not { } soonest) continue;
+
+                // Where the own account is not the earliest, the sentence is the roster's: whose reset comes first.
+                var sentence = soonest.Until < cooling.Until ? ResumeWords.LimitWaits(soonest, zone, names).Note : ResumeWords.Waits(cooling, zone, names);
+                cooling = soonest;
 
                 var door = carried ? ResumeWords.NewSessionDoor(words.Session) : ResumeWords.ChatDoor(words.Session);
                 held[words.Session] = CoolingHold($"{sentence} {door}", cooling, home);

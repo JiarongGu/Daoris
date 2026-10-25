@@ -9,8 +9,12 @@ with the version and date at release.
   is ready (LIMITSWITCH1, D137). For work that is open or taken, they go on at once as a new part of the same session on the ready
   account, handed Daoris's brief, as work cut off by a limit already did, and arrive once. Only when every account is at its limit do
   they wait, until the first of them is ready again. Such a session's row and page now say *Waiting for a limit to reset: it resumes by
-  itself at {time}, on {account}*, in English and 中文, instead of only that it completed. A conversation's words still wait for their
-  own account for now (LIMITSWITCH2).
+  itself at {time}, on {account}*, in English and 中文, instead of only that it completed.
+- A conversation, and a closed quest's session, whose account is cooling now go on at once on another ready account too (LIMITSWITCH2,
+  D137): the words you write to it open a new part of it there, handed Daoris's brief, and arrive once; only when every account of its
+  agent is at its limit do they wait, until the first of them is ready again, and its row says which. Ask Daoris keeps waiting for its
+  own account, and a conversation whose account is signed out, refused or gone still waits for your press. The move a conversation makes
+  after its account's limit now chooses its account once, so it no longer counts a start it never made against another account.
 - A session's page now draws its whole line as one conversation (SWITCHCTX1c-i, D167). After a move or a hand-over, the parts the
   one you are on continues are drawn above it, oldest first and read-only, so the new part no longer opens empty under a brief as if it
   were a new session. The three nearest are drawn and a press (*Show the part before*, *Show 2 earlier parts*) draws up to three more; a
