@@ -879,7 +879,7 @@ public sealed class LimitWaitsProcessTests : IDisposable
         var adapters = TwoAgents();
         var roster = Roster(adapters);
         using var runner = Runner(client, adapters, roster, events);
-        var (counted, walks) = (roster.Mark(), roster.Selected);
+        var counted = roster.Mark();
 
         var woke = Assert.Single(await runner.WakeLimitsAsync(config));
 
@@ -892,8 +892,8 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.Equal((1, 1, 0), (Count(handed, "Make the port configurable."), Count(handed, "And add a test."), Count(handed, LimitResetWord.Text)));
         await Poll.Until(() => ledger.TakenBy.Contains(("c1", "w1", "c2")), () => Seen(ledger, events, "c1"));
         Assert.Empty(ledger.Said("c1"));
-        // The first agent's walk found none and the second has no accounts to count: two walks asked, none repeated at the open.
-        Assert.Equal((counted, walks + 2, 2), (roster.Mark(), roster.Selected, ledger.Count));
+        // The first agent has no account left to count and the second has none to count: nothing is counted, one new record opened.
+        Assert.Equal((counted, 2), (roster.Mark(), ledger.Count));
         var went = Assert.Single(events.After("c1", 0).Events, e => Coded(e, "moved.on"));
         Assert.Equal("acp-second", went.Parts!.Single(part => part.Code == "moved.on").Value("agent"));
         Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("resumed[", StringComparison.Ordinal));

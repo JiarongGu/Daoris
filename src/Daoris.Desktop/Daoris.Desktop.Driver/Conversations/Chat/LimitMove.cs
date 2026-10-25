@@ -117,9 +117,9 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             }
         }
 
-        // The start the one walk counted, given back below unless the new part opens: the chosen account's, or the walk over its actor's
-        // other choices'.
-        var counted = isHelp ? 0 : elsewhere?.Walk?.Selection?.Number ?? selection.Number;
+        // The start the one walk counted, given back below unless the new part opens. Going on another agent, the walk over its actor's other
+        // choices only judged: the open walks and counts for itself. Ask Daoris's room places itself, so counts none here.
+        var counted = isHelp || elsewhere is not null ? 0 : selection.Number;
         var made = false;
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!context.GoingOn.TryAdd(sessionId, going.Task))
@@ -161,11 +161,11 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             var started = isHelp
                 ? await HelpStartAsync(prior, agent, config, onEnded, ct, elsewhere?.Order).ConfigureAwait(false)
                 // On the account the walk judged, so its opening and `account.rotated` name the cooling one passed and what it carries;
-                // on another agent (LIMITGOON2), on the choice its actor's walk took over its other choices, told the earlier maker's
-                // trailer (MAKERTRAIL2).
-                : elsewhere?.Walk is { } walked
-                    ? await runner.StartWalkedAsync(
-                            prior.Repository!, walked, elsewhere.Order!, config, onEnded, ct, tree, from, LeftBy(prior, agent))
+                // on another agent (LIMITGOON2), by its actor's walk over its other choices, told the earlier maker's trailer (MAKERTRAIL2).
+                : elsewhere is { Order: { } order }
+                    ? await runner.StartAsync(
+                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
+                            leftBy: LeftBy(prior, agent))
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
                             prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection)
@@ -303,9 +303,9 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             }
         }
 
-        // The start the one walk counted, given back unless the new part opens: the chosen account's, or the walk over its actor's other
-        // choices' (Ask Daoris's room places itself, so this counts none).
-        var counted = isHelp ? 0 : elsewhere?.Walk?.Selection?.Number ?? selection.Number;
+        // The start the one walk counted, given back unless the new part opens; going on another agent, the walk over its actor's other
+        // choices only judged and the open counts for itself (Ask Daoris's room places itself, so this counts none).
+        var counted = isHelp || elsewhere is not null ? 0 : selection.Number;
         var opened = false;
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!holding && !context.GoingOn.TryAdd(sessionId, going.Task))
@@ -325,9 +325,10 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             var from = new ContinuedFrom(sessionId, moveWhy, HandOverBy.Daoris);
             var started = isHelp
                 ? await HelpStartAsync(prior, agent, config, onEnded, ct, elsewhere?.Order).ConfigureAwait(false)
-                : elsewhere?.Walk is { } walked
-                    ? await runner.StartWalkedAsync(
-                            prior.Repository!, walked, elsewhere.Order!, config, onEnded, ct, tree, from, LeftBy(prior, agent))
+                : elsewhere is { Order: { } order }
+                    ? await runner.StartAsync(
+                            prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, order: order,
+                            leftBy: LeftBy(prior, agent))
                         .ConfigureAwait(false)
                     : await runner.StartAsync(
                             prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree, from: from, settled: selection)
@@ -570,11 +571,9 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             return new(null, LimitNotes.NoOtherChoice(ranOn, none), none);
         }
 
-        // The walk counts the start it chooses, and the new part opens on it (FOUNDATION1a-iii); Ask Daoris's room walks again as it places itself.
-        var walk = await runner.WalkAsync(actor, others, config, workspace, null, ct, counts: !isHelp).ConfigureAwait(false);
-        return walk.Chosen is null
-            ? new(null, LimitNotes.NoOtherChoice(ranOn, walk.Refusal!), walk.Refusal!)
-            : new(others, null, "", isHelp ? null : walk);
+        // Judged only (FOUNDATION1a-iii): the new part's own walk over these choices counts the start it opens on, once.
+        var walk = await runner.WalkAsync(actor, others, config, workspace, null, ct, counts: false).ConfigureAwait(false);
+        return walk.Chosen is null ? new(null, LimitNotes.NoOtherChoice(ranOn, walk.Refusal!), walk.Refusal!) : new(others, null, "");
     }
 
     /// <summary>The part it moves from, as its record says it ran (MAKERTRAIL2): its harness, that harness's maker and its models.</summary>
@@ -582,7 +581,7 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         new(ran.Name, ran.Toolchain?.Maker, prior.Ran?.Models ?? []);
 
     /// <summary>What <see cref="ElsewhereAsync"/> came to: the choices to walk, or the line its conversation waits under and why.</summary>
-    private sealed record Elsewhere(IReadOnlyList<ActorEffective>? Order, Noted? Stays, string Why, ConversationWalk? Walk = null);
+    private sealed record Elsewhere(IReadOnlyList<ActorEffective>? Order, Noted? Stays, string Why);
 
     /// <summary>The workspace a repository's chat runs in, by the registry; null where the service does not name one.</summary>
     private async Task<string?> WorkspaceOfAsync(string? repository, CancellationToken ct)
