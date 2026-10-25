@@ -236,10 +236,17 @@ public sealed class ReviewGraphCensusTests : IDisposable
             graph.Nodes.Count(node => node.Order >= 0 && !node.Answered.IsCompleted) == held.Count
             && graph.Nodes.All(node => node.Order >= 0 || node.Needs.Any(need => !need.Answered.IsCompleted));
 
+        // A node the flow makes once an answer arrives is made by a continuation on the thread pool, so "a moment" is the pool's own lag
+        // as it is now, measured by a round trip and kept at its worst: a fixed 40 ms closed a round early under a loaded run, and its
+        // node read a round past its depth (FLAKE1, the CIs of 2026-10-24 and the stage on e8f1aed).
+        var lag = TimeSpan.Zero;
         var quietFor = 0;
-        for (var waited = 0; quietFor < 4 && !(read.IsCompleted && held.IsEmpty); waited++)
+        for (var waited = 0; quietFor < Math.Max(4, (int)Math.Ceiling(lag.TotalMilliseconds / 2)) && !(read.IsCompleted && held.IsEmpty); waited++)
         {
             Assert.True(waited < 2_000, $"the graph never went quiet on {world}");
+            var probe = System.Diagnostics.Stopwatch.StartNew();
+            await Task.Run(() => { });
+            if (probe.Elapsed > lag) lag = probe.Elapsed;
             await Task.Delay(10);
             quietFor = Quiet() ? quietFor + 1 : 0;
         }
