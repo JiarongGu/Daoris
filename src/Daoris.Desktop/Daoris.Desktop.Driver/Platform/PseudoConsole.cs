@@ -329,7 +329,7 @@ public sealed class PseudoConsole : ITerminal
 
         variables.Remove(IntakeRoom.SessionVariable);
         // SUPERVISOR1a-ii (D208 §2.2): the holder key is never inherited; the holder's own tab alone adds it back.
-        variables.Remove(HolderKey.Variable);
+        variables.Remove(ChildMarks.RoleKeyVariable);
 
         var home = added.FirstOrDefault(pair => string.Equals(pair.Key, DaorisHome.Variable, StringComparison.OrdinalIgnoreCase)).Value
             ?? DaorisHome.Resolve();

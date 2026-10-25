@@ -20,7 +20,7 @@ public static class HolderKey
     /// The variable the holder's terminal carries the key in, and the only place the verb reads it from: <c>DAORIS_ROLE_KEY</c> since
     /// STEWARDROLE1a-i (D209 §2.2), since a shared holder's key is no one role's. No install held the old name.
     /// </summary>
-    public const string Variable = "DAORIS_ROLE_KEY";
+    public const string Variable = ChildMarks.RoleKeyVariable;
 
     /// <summary>The key's length in bytes, and so its hex text's in characters twice that.</summary>
     public const int Bytes = 32;

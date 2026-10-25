@@ -288,6 +288,7 @@
     "Platform/CanonicalLine.cs": "Workplace",
     "Platform/Chain.cs": "Events",
     "Platform/ChangeWatch.cs": "Events",
+    "Platform/ChildMarks.cs": "Platform",
     "Platform/ChildProcess.cs": "Platform",
     "Platform/CommandPresence.cs": "Platform",
     "Platform/DaorisHome.cs": "Platform",
@@ -833,13 +834,6 @@
       "after": "Platform",
       "files": {
         "Platform/PieceJobs.cs": ["PartnerJob"]
-      }
-    },
-    {
-      "family": "Platform names Roles",
-      "after": "Platform",
-      "files": {
-        "Platform/PseudoConsole.cs": ["HolderKey"]
       }
     },
     {
