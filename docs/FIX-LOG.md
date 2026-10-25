@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-26 - A lost conversation whose account the person picked walked off that account (PICKLOST1)
+
+- **Symptom:** a conversation the person picked an account for, proven lost while that account cooled and another was ready, went on in a new
+  part on the other account and kept no pick, though a recorded pick waits (FOUNDATION1 row 1a-ii).
+- **Root cause:** the ended limit move skipped the pick's wait for a conversation proven lost (*no resume to keep*), so its walk was free; the
+  resume and the account were treated as one thing. PICKCARRY1's reading (1) then took the walk's other account as given.
+- **Fix:** `LimitMove.MoveEndedAsync` reads the pick for a lost conversation too and asks the roster for the picked account alone, waiting while
+  it cools (`LimitMove.OnPick`) and opening on it afresh, keeping the pick, once ready; `ChatGoOn.LostAsync` waits on that answer instead of
+  falling through to the brief's move, which refuses the same cooling account and marks the words as unable to go on.
+- **Verification:** `LimitWaitsProcessTests.A_lost_conversation_whose_account_cools_waits_for_it_when_picked_and_walks_when_not` fails with
+  either guard taken out and passes with both; `LimitWaitsProcessTests`, `ChatPendingProcessTests`, `LimitGoesOnProcessTests` (40, with
+  `process.runsettings`), `BriefedMoveTests`, `ChatHandOverTests`, `LineAccountTests`, `ChatGoOnTests` and `StructureTests` (73) pass.
+
 ## 2026-10-26 - The review graph census read a graph that had gone quiet as one that never did (FLAKE1)
 
 - **Symptom:** `ReviewGraphCensusTests.Every_combination_of_the_range_starts_each_node_at_its_depth_and_answers_as_today` failed with

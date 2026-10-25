@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## PICKLOST1 — a lost conversation whose account the person picked walks off that account (2026-10-26)
+
+> **PICKLOST1 — a lost conversation whose account the person picked walks off that account** (driver; found by reading PICKCARRY1's landing, 2026-10-26). The ended limit move lets a conversation proven lost walk its agent's accounts even where the person picked its account (`Conversations/Chat/LimitMove.cs:275`, *a conversation proven lost has no resume to keep*), so a lost conversation whose picked account cools opens on another and keeps no pick; that conflates the resume with the account, and FOUNDATION1 row 1a-ii's rule is that a recorded pick waits. A lost, picked conversation's new part waits for its picked account as any picked conversation does, and opens on it, keeping its pick (PICKCARRY1). Proof, seen failing first: a lost conversation picked on a cooling account waits and opens on it once it is ready; an unpicked lost conversation walks as today.
+
+**Outcome.** Built as the row names it. The ended move asks a lost, picked conversation's roster for its picked account alone, so the new part waits while it cools and opens on it afresh once ready, keeping the pick; the lost go-on waits there instead of falling through to the brief's move, which would mark the words as unable to go on. Unpicked, agent-picked and curve-account lost conversations walk as before. Seen failing first by taking each guard out: `LimitWaitsProcessTests.A_lost_conversation_whose_account_cools_waits_for_it_when_picked_and_walks_when_not`; PICKCARRY1's, row 1a-ii's and row 1a-iii's cases pass. Detail: D212's note and D137's dated note of 2026-10-26 (it amends PICKCARRY1's reading (1) for a lost conversation).
+
 ## PICKCARRY1 — a pick belongs to the conversation, so a new part keeps it (2026-10-26)
 
 > **PICKCARRY1 — a pick belongs to the conversation, so a new part keeps it** (driver; the steward's call of 2026-10-26, recorded in D212's note for this row, a correction to FOUNDATION1 rows
