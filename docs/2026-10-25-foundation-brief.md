@@ -281,7 +281,7 @@ Round 3 takes it as a fourth question beside the three areas, **where state is k
   kept in one transaction and an open is claimed once. The service's records (sessions, quests, asks) stay in the service's own
   store, and its journal with them.
 - **The person's configuration** (the driver's settings, the actors, the company's roles) is in the store too, edited by the window
-  and the terminal's verbs; whether a JSON export and import keeps today's hand-edited  reviewable and editable is a
+  and the terminal's verbs; whether a JSON export and import keeps today's hand-edited `driver.json` reviewable and editable is a
   question each proposal answers, and the steward's recommendation is to keep one.
 - **It lands in steps:** each file's move is a row of its own, imported once and the file kept as a backup, behind today's tests;
   an older build reading the home keeps working on what it knew, or is told to update; nothing is lost on a rollback.
