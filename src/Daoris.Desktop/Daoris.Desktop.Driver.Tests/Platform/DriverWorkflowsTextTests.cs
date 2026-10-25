@@ -70,6 +70,7 @@ public sealed partial class DriverWorkflowsTextTests
             var error = new StringWriter();
             var world = new DriverChoicesWorld
             {
+                Verbs = DriverChoiceVerbs.All,
                 Instance = new InstanceWorld
                 {
                     Home = home,

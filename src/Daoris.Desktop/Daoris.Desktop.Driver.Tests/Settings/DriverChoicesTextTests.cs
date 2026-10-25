@@ -69,6 +69,7 @@ public sealed partial class DriverChoicesTextTests
             var error = new StringWriter();
             var world = new DriverChoicesWorld
             {
+                Verbs = DriverChoiceVerbs.All,
                 Instance = new InstanceWorld
                 {
                     Home = home,

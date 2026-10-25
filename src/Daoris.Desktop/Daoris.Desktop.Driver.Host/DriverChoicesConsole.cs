@@ -14,6 +14,7 @@ internal static class DriverChoicesConsole
         var path = DriverConfig.ResolvePath();
         var world = new DriverChoicesWorld
         {
+            Verbs = DriverChoiceVerbs.All,
             // Said under `daoris`, as the CLI said each of these verbs before it handed them here: the person typed `daoris driver …`.
             Instance = InstanceHost.World(DriverConfig.HomeOf(path), "daoris"),
             ConfigPath = path,

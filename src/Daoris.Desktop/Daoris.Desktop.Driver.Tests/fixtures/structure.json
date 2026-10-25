@@ -160,6 +160,7 @@
     "Conversations/Domain/HelperRules.cs": "Participants",
     "Conversations/Domain/HelperWaits.cs": "Participants",
     "Conversations/Domain/HelperWords.cs": "Participants",
+    "Conversations/Domain/HelpersVerb.cs": "Participants",
     "Conversations/Domain/LimitHeld.cs": "Course",
     "Conversations/Domain/MessageLevel.cs": "Course",
     "Conversations/Domain/PartnerAdmission.cs": "Participants",
@@ -257,6 +258,7 @@
     "Loop/ChannelReach.cs": "Work orders",
     "Loop/Driver.cs": "Loop",
     "Loop/DriverBrainstorms.cs": "Loop",
+    "Loop/DriverChoiceVerbs.cs": "Loop",
     "Loop/DriverCommand.cs": "Loop",
     "Loop/DriverContinuations.cs": "Loop",
     "Loop/DriverHandOvers.cs": "Loop",
@@ -589,6 +591,8 @@
     "Settings/ActorKey.cs": "Settings",
     "Settings/BrainstormKey.cs": "Settings",
     "Settings/BranchName.cs": "Settings",
+    "Settings/ChoiceArgs.cs": "Settings",
+    "Settings/ChoiceVerb.cs": "Settings",
     "Settings/CommitKey.cs": "Settings",
     "Settings/CoolOffDefault.cs": "Settings",
     "Settings/CycleText.cs": "Settings",
@@ -866,13 +870,6 @@
       "after": "Settings",
       "files": {
         "Settings/DriverChoicesCommand.cs": ["ActorChoices","ActorView"]
-      }
-    },
-    {
-      "family": "Settings names Participants",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["HelperRules"]
       }
     },
     {
@@ -1990,6 +1987,7 @@
     "CommitKeyTests.cs": "Settings",
     "KeepKeyTests.cs": "Settings",
     "LandingKeyTests.cs": "Settings",
-    "PluginIdsTests.cs": "Settings"
+    "PluginIdsTests.cs": "Settings",
+    "ChoiceVerbTests.cs": "Settings"
   }
 }
