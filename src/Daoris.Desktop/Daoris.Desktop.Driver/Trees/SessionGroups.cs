@@ -995,7 +995,9 @@ public static class SessionGroups
                 if (Soonest(coolingOf, home, adapter, cooling) is not { } soonest) continue;
 
                 // Where the own account is not the earliest, the sentence is the roster's: whose reset comes first.
-                var sentence = soonest.Until < cooling.Until ? ResumeWords.LimitWaits(soonest, zone, names).Note : ResumeWords.Waits(cooling, zone, names);
+                var sentence = ReferenceEquals(LineAccount.Earliest(ResetSet.Switch, own: cooling, walked: soonest), cooling)
+                    ? ResumeWords.Waits(cooling, zone, names)
+                    : ResumeWords.LimitWaits(soonest, zone, names).Note;
                 cooling = soonest;
 
                 var door = carried ? ResumeWords.NewSessionDoor(words.Session) : ResumeWords.ChatDoor(words.Session);

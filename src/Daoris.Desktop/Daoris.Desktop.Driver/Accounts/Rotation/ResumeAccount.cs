@@ -84,7 +84,13 @@ public sealed record ResumeChoice(HarnessSelection Selection, NextHold Own)
     /// The words wait: the record's own account cools, nobody chose a new session, no limit ended it, and no account of the line's
     /// choices is ready (LIMITSWITCH1), so they wait for the earliest reset of any of them, which <see cref="Selection"/> carries.
     /// </summary>
-    public bool Waits => Own == NextHold.Cooling && !NewSession && !Limited && !Switched;
+    public bool Waits => LineAccount.CoolingHolds(Own, new LineTrigger(NewSession, Limited)) && !Switched;
+
+    /// <summary>
+    /// What the account rule answered (FOUNDATION1a-i, <see cref="LineAccount.Decide"/>) for this resume, of which the flags above are the
+    /// reading the callers have always made; null for a choice made by hand.
+    /// </summary>
+    public LineAnswer? Answer { get; init; }
 
     /// <summary>
     /// The own account's reading does not offer the record's asked model (D205 §3.5(a), MODELROLE1c2): it cannot carry the words, which

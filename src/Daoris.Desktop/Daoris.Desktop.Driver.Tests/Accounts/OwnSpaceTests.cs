@@ -173,7 +173,7 @@ public sealed class OwnSpaceTests : IDisposable
     {
         Account("daoris-1");
 
-        var resume = await Roster().ResumeAsync("fake", Config, "aurora", account: null, kind, walks: walks);
+        var resume = await Roster().ResumeAsync("fake", Config, "aurora", account: null, kind, line: walks ? LineKind.DrivenClosed(carries: false) : LineKind.AskDaoris);
         var info = new ProcessStartInfo();
         HarnessProbe.Apply(info, Real, resume.Selection.ProfileHome);
 
@@ -198,7 +198,7 @@ public sealed class OwnSpaceTests : IDisposable
         roster.Pool(null);
         Assert.Equal(["daoris-1", "daoris-2"], HarnessSettings.Load(Settings).Rotation["fake"]);
 
-        var resume = await roster.ResumeAsync("fake", Config, "aurora", account: null, kind, walks: walks);
+        var resume = await roster.ResumeAsync("fake", Config, "aurora", account: null, kind, line: walks ? LineKind.DrivenClosed(carries: false) : LineKind.AskDaoris);
 
         Assert.True(resume.Selection.Allowed, resume.Selection.Refusal);
         Assert.Equal((NextHold.Ready, (string?)null, (string?)null), (resume.Own, resume.Selection.Profile, resume.Selection.ProfileHome));
@@ -210,7 +210,7 @@ public sealed class OwnSpaceTests : IDisposable
         Account("daoris-1");
         var second = Account("daoris-2");
 
-        var resume = await Roster().ResumeAsync("fake", Config, "aurora", "daoris-2", StartKind.Conversation, walks: false);
+        var resume = await Roster().ResumeAsync("fake", Config, "aurora", "daoris-2", StartKind.Conversation, line: LineKind.AskDaoris);
 
         Assert.Equal(("daoris-2", second), (resume.Selection.Profile, resume.Selection.ProfileHome));
     }
@@ -262,7 +262,7 @@ public sealed class OwnSpaceTests : IDisposable
         Account("daoris-1");
         var second = Account("daoris-2");
         var roster = Roster();
-        var resume = await roster.ResumeAsync("fake", Config, "aurora", "daoris-2", StartKind.Conversation, walks: false);
+        var resume = await roster.ResumeAsync("fake", Config, "aurora", "daoris-2", StartKind.Conversation, line: LineKind.AskDaoris);
 
         var (carried, passed) = await roster.CarriedOnAsync(resume, "fake", Config, "aurora", null);
 

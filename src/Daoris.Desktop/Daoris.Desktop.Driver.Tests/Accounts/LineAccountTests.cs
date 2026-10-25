@@ -125,8 +125,7 @@ public sealed class LineAccountTests : IDisposable
         var (roster, _) = Build(each);
         var (selected, marked) = (roster.Selected, roster.Mark());
         var resume = await roster.ResumeAsync(
-            each.Adapter, Config, null, each.Account, each.Start, each.NewSession, each.Line.Walks, limited: each.Limited, model: each.Model,
-            switches: each.Line.Switches, walkCounts: each.Line.WalkCounts);
+            each.Adapter, Config, null, each.Account, each.Start, each.NewSession, each.Line, limited: each.Limited, model: each.Model);
         return new Outcome(
             new Answered(
                 resume.Own, resume.Selection.Allowed, resume.Selection.Profile, CoolingOf(resume.Selection.Cooling), resume.NewSession, resume.Limited,
@@ -557,6 +556,53 @@ public sealed class LineAccountTests : IDisposable
                 wanted is null ? asked.Count == 0 : asked.Count == 1 && asked[0] == wanted,
                 $"{hold} notOffered={notOffered} {trigger} {line}: asked {string.Join(", ", asked)}");
         }
+    }
+
+    // ——— The census.
+
+    /// <summary>
+    /// The files that read a cooling account (<c>CoolingOf</c>, <c>CoolingsOf</c>), ask a resume (<c>ResumeAsync</c>) or read whether its words
+    /// wait (<c>ResumeChoice.Waits</c>) and have not moved onto the rule. Each only hands the roster's reading of an account's cool-off to a
+    /// listing or a verb of the shell, which decides nothing by it (FOUNDATION1a-i's census; each moves with the row that moves its reader).
+    /// </summary>
+    private static readonly string[] NotYetMoved =
+    [
+        "Daoris.Desktop.Modules/Bridge/Routes/SessionsRoutes.cs",
+        "Daoris.Desktop.Modules/Bridge/Routes/SessionsVerbs.cs",
+    ];
+
+    /// <summary>
+    /// Every caller of the roster's resume, of <c>CoolingOf</c> and <c>CoolingsOf</c>, and every reader of <c>ResumeChoice.Waits</c>, reads
+    /// <see cref="LineAccount"/> or is named <i>not yet moved</i> (X4-1.1); and the walks the rule asks are the places today's resume walks,
+    /// the handed quest's start beside them.
+    /// </summary>
+    [Fact]
+    public void Every_caller_of_the_account_facts_reads_the_rule_or_is_named_not_yet_moved()
+    {
+        var root = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop");
+        var sites = new[] { @"Harnesses\s*\.ResumeAsync\s*\(", @"\.CoolingsOf\(", @"\.CoolingOf\(", @"\bresume\s+is\s*\{\s*Waits\b", @"\bresume\.Waits\b" };
+        var unread = new List<string>();
+        var found = 0;
+        foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
+            if (relative.Contains("/obj/") || relative.Contains("/bin/") || relative.Split('/')[0].EndsWith(".Tests", StringComparison.Ordinal)
+                || relative.EndsWith("Harnesses/HarnessRoster.cs", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var text = File.ReadAllText(path);
+            if (!sites.Any(site => Regex.IsMatch(text, site))) continue;
+
+            found++;
+            if (!Regex.IsMatch(text, @"\b(LineAccount|LineKind|LineAnswer)\b") && !NotYetMoved.Contains(relative)) unread.Add(relative);
+        }
+
+        Assert.True(found >= 5, $"the census found {found} files that read an account's cool-off or resume: its patterns have drifted");
+        Assert.True(unread.Count == 0, "read neither the account rule nor named not yet moved: " + string.Join(", ", unread));
+        Assert.All(NotYetMoved, name => Assert.True(File.Exists(Path.Combine(root, name)), $"{name} is named not yet moved but is not there"));
+        Assert.Equal(["NoToolchain", "Switch", "Elsewhere", "Handed"], Enum.GetNames<LineWalkPlace>());
     }
 
     // ——— The earliest reset, each caller's own set.
