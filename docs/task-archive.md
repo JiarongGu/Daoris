@@ -20850,3 +20850,17 @@ earliest reset of any account, in the chat wake and the held row alike. Ask Daor
 unchanged. **Proved** by `ResumeAccountTests`, `LimitWaitsProcessTests`, `AccountRotationTickTests` and `SessionWordsWaitingTests`, each seen failing
 first. **Reading:** the record keeps no account pick, so every conversation walks its agent's accounts and a picked account's wait (D205 §3.5(d)) is
 for FOUNDATION1's row 1a, whose design keeps `accountPicked` on the record. Detail: D137's LIMITSWITCH2 note.
+
+## FOUNDATION1u — the role's name (2026-10-25, D212)
+
+> **FOUNDATION1u — the role's name** (web: the glossary and ten Chinese strings; §6; round 4's named changes, O4-2). Ten Chinese strings that say 职责 for an
+> appointed role say 角色, 任命的角色 where the appointed shape must be said, under the UI and translation contracts; the glossary gains *role*, 角色, with its
+> match over the *Actor*, *Actors* and *Roles* labels and 职责 on its avoid list; *actor* becomes `use: "role"`, code and prose only. Proof: `i18n:check`,
+> `names:check -- --strict`, the glossary's own test over the new entry and the pointer. (`docs/2026-10-25-foundation-design.md` §10, row u of Part A.)
+
+(Quest `#308d072ce891`, asked by `#002379`.)
+
+**Outcome** 2026-10-25. **Built:** the ten strings of `zh/projects.json` and `zh/settings.daoris.json` say 角色, and 任命的角色 where a terminal is said to be started
+for the appointed role; *role* is in the glossary with 职责 avoided and *actor* points at it. **Proved** by `glossary.test.ts`' *the role* and `names.test.ts`' hold-the-role case,
+each seen failing first, with `i18n:check` and `names:check -- --strict` green. **Reading:** the match is `\b(actors?|roles?)\b`, wider than the three labels, so
+`names:check --all` also finds a sentence about a role that says 职责; its strays are unchanged. Detail: D212's note of 2026-10-25 (row 1u built).
