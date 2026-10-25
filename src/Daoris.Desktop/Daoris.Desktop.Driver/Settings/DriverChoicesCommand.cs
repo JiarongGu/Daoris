@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Daoris.Driver.ChoiceArgs;
@@ -138,12 +137,14 @@ public static class ChoiceRoutes
 /// <summary>
 /// <c>daoris-driver driver</c> (PUSH1f2a, PUSH1f2b, D194, the alone-path design §1.2): the driver family from a terminal, the words
 /// <c>daoris driver …</c> hands this program, every one of them since PUSH1f2b. Each change is its route through
-/// <see cref="InstanceDoor.PressAsync"/> where the running Daoris answers, confirmed in its window; else the choice's own operation, on
+/// <see cref="IChoiceTerminal.PressAsync"/> where the running Daoris answers, confirmed in its window; else the choice's own operation, on
 /// the terminal's word (D50), refused from a session's terminal (D194 point 5); and alone, holding nothing and sending nothing, on a
 /// file <c>DAORIS_DRIVER_CONFIG</c> names. A change no route takes acts alone even beside a running Daoris (<see cref="ChoiceRoutes"/>):
 /// a landing's cycle, <c>work-cycle</c>, <c>brainstorms</c> and the workflows' writes (<see cref="DriverWorkflowsCommand"/>). Its words
 /// are one function per verb on both paths, today's text kept (<c>fixtures/driver-choices-text.json</c>,
-/// <c>fixtures/driver-workflows-text.json</c>).
+/// <c>fixtures/driver-workflows-text.json</c>). The settings' own keys' verbs are here; a rule a subdomain above owns has its verb
+/// beside the rule (<see cref="ChoiceVerb"/>, FOUNDATION1 mod-iii), which Loop wires into the world (<see cref="DriverChoiceVerbs"/>)
+/// and this command asks for, so it names no type of theirs, nor the instance's world and door (<see cref="IChoiceTerminal"/>).
 /// </summary>
 /// <remarks>
 /// <para>Exit codes are the CLI's, case by case: 0 said or set · 1 the person's refusal in the window, its two minutes' end, or a
