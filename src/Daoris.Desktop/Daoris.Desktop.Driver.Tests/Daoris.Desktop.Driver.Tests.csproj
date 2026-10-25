@@ -9,6 +9,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
+    <!-- Read by StructureCheck alone (FOUNDATION1 mod-0): one compilation of the driver's sources, so each name binds to a symbol. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
   </ItemGroup>
 
   <ItemGroup>

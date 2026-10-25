@@ -46,6 +46,7 @@ const repositoryFiles = (): string[] =>
 /** What reads the driver's files: the desktop's C# tests, the CLI's tests, the page's sources and the tools. */
 const isReader = (path: string): boolean =>
   (/^src\/Daoris\.Desktop\/[^/]+\.Tests\/.+\.cs$/.test(path))
+  || (/^src\/Daoris\.Service\/Daoris\.Service\.Tests\/.+\.cs$/.test(path))
   || (/^src\/Daoris\.Cli\/test\/.+\.ts$/.test(path))
   || (/^src\/Daoris\.Web\/src\/.+\.tsx?$/.test(path))
   || (/^tools\/[^/]+\.mjs$/.test(path));

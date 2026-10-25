@@ -191,17 +191,20 @@ public sealed class GitLaunchTests
     }
 
     /// <summary>
-    /// The source census (the design §10.1, P1.5): under <c>Trees/</c>, git starts through <c>WorkingTree.GitStart</c>, and only the
+    /// The source census (the design §10.1, P1.5): in the trees' code, git starts through <c>WorkingTree.GitStart</c>, and only the
     /// three runners beneath the seam call it or hand a start to the gate. A git started there any other way would be uncounted.
+    /// Read over every driver source by name, never by a folder (FOUNDATION1 mod-0, D166 point 4), since the trees' files leave
+    /// <c>Trees/</c> for their subdomains' folders, so it lists each start of the driver with the file that holds it: the others
+    /// are the seams of their own, each a start a census of its own holds (<c>ProcessStartsCensusTests</c>), and the trees' two are
+    /// the same as before.
     /// </summary>
     [Fact]
-    public void No_git_is_started_under_trees_outside_the_seam()
+    public void No_git_is_started_in_the_trees_code_outside_the_seam()
     {
-        var root = Path.Combine(EveryChildIsHandedTheToolsTests.SourceRoot(), "Daoris.Desktop.Driver", "Trees");
         var found = new List<string>();
-        foreach (var file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+        foreach (var file in SourceFiles.All(SourceFiles.DriverProject, "*.cs"))
         {
-            var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
+            var relative = Path.GetFileName(file);
             var source = Regex.Replace(File.ReadAllText(file).Replace("\r\n", "\n"), @"//[^\n]*", "");
             // git's start info (GitStart), a start handed to the gate, a child run, the runtime's start, or a git's info built by hand.
             var starts = Regex.Matches(
@@ -210,11 +213,19 @@ public sealed class GitLaunchTests
             if (starts > 0) found.Add($"{relative}: {starts}");
         }
 
-        // WorkingTree: GitStart's definition, its three calls (one per runner), the Whole runner's two ChildProcess runs and the other
-        // two runners' gate starts. GeneratedWriters: a generator's shell (GEN1), which is no git.
-        Assert.Equal(["SessionTrees/GeneratedWriters.cs: 1", "WorkingTree.cs: 8"], found.Order(StringComparer.Ordinal));
+        // The trees' two: WorkingTree: GitStart's definition, its three calls (one per runner), the Whole runner's two ChildProcess runs
+        // and the other two runners' gate starts; GeneratedWriters: a generator's shell (GEN1), which is no git. The rest are other
+        // seams' starts (a harness, a plugin's tool, the launcher's containment), none of them a git start of the trees'.
+        Assert.Equal(
+            [
+                "AgentStarts.cs: 1", "ChatRunner.cs: 1", "ChildProcess.cs: 1", "CodexUsage.cs: 1", "Driver.cs: 1", "DriverContinuations.cs: 2",
+                "GeneratedWriters.cs: 1", "GitDoors.cs: 3", "GitIdentityActs.cs: 1", "HarnessActions.cs: 2", "HarnessSelection.cs: 1",
+                "HeavyStep.cs: 1", "HookProcess.cs: 1", "PieceLauncher.cs: 1", "PluginToolRuns.cs: 1", "PluginTrialProcess.cs: 1",
+                "ProcessStarts.cs: 2", "SetupWorld.cs: 1", "ToolQuestions.cs: 1", "WorkingTree.cs: 8",
+            ],
+            found.Order(StringComparer.Ordinal));
 
-        var tree = File.ReadAllText(Path.Combine(root, "WorkingTree.cs"));
+        var tree = File.ReadAllText(SourceFiles.Driver("WorkingTree.cs"));
         foreach (var runner in new[] { "RunLaunchedAsync", "BytesLaunchedAsync", "ReadLaunchedAsync" })
         {
             Assert.Contains($"() => {runner}(", tree, StringComparison.Ordinal);
