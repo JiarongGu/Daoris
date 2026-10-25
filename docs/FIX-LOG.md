@@ -83,6 +83,12 @@ repository.
   `process.runsettings`), `SessionWordsWaitingTests`, `DriverModuleSessionsTests`, and the web's `SessionRow.test.tsx` and
   `headFacts.test.ts`. One native-door case, `SessionMessagesTickTests.Words_said_while_a_native_session_works_go_on_in_its_own_conversation_before_it_concludes`,
   timed out in a batch run (*the first run never took its quest*, before any cool-off was written) and passed alone.
+- **Correction, 2026-10-25 (FOUNDATION1, round 3):** the install's case in the symptom was not this fix's. Its session was a finished
+  build session whose quest it had itself closed as done (a build session closes its quest with `quest_respond`), so its quest was closed
+  when its words were held for its own account's weekly reset, and this fix reaches only a record whose quest is open or taken: a closed
+  quest's session kept its wait, as the fix says. That case is LIMITSWITCH2's, built the same day (D137's LIMITSWITCH2 note), within
+  D137's LIMITSWITCH1 note by the steward's reading of *an ended record* (D137's note amending point 4), and FOUNDATION1's row 1a-iii
+  (`docs/2026-10-25-foundation-design.md` §10).
 
 ## 2026-10-25 - StandingCallerTests read every uncontained agent's event in the session, another Daoris's test run's included (TERMTRUST1a)
 

@@ -1,6 +1,6 @@
-# FOUNDATION1: the reads of round 1 (D191)
+# FOUNDATION1: the reads of rounds 1 and 2 (D191)
 
-The independent Opus 5.5 reader's foundation read and Codex's read of `docs/2026-10-25-foundation-design.md` and D212 at `c8eccf30e`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down; round 2 answers every finding by number in the design's §12.
+The independent Opus 5.5 reader's foundation reads and Codex's reads of `docs/2026-10-25-foundation-design.md` and D212, round 1 at `c8eccf30e` and round 2 at `29a066182`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Round 2 answers every finding of round 1 by number in the design's §12, and round 3 every finding of round 2 in its §15.
 
 ## Opus (foundation), round 1
 
@@ -239,3 +239,310 @@ Reviewed HEAD `c8eccf30e`, read-only; no tests run. References use the synthesis
 1. **Non-blocking — the rejection of service-owned move persistence misstates my proposal.** F:624 rejects it because moves perform desktop actions, but my proposal explicitly leaves execution semantics and harness access in the driver (`docs/2026-10-25-foundation-proposal-codex.md:215`). I still prefer conditional local-service persistence for claims, destination allocation and word transfer; files are acceptable only after supplying equivalent fencing and recovery guarantees. I otherwise accept the mark-derived kind, separate loops, trigger capture, and omission of a move record for same-conversation resume once durable delivery owns that recovery.
 
 **Verdict: another round.**
+
+## Opus (foundation), round 2
+
+The independent Opus 5.5 reader's foundation read of round 2 at `29a066182`: 14 findings, 6 blocking; accept after named changes.
+
+### 0. Both reads of round 1
+
+Read at HEAD `29a066182`. Its `src/` differs from `c8eccf30e`'s only by LIMITSWITCH1 (merged at `a85004bd0`) and KEEP1a (`git diff --stat c8eccf30e HEAD -- src`: 21 files, among them `HarnessRoster.cs`, `ResumeAccount.cs`, `Driver.cs` and `LimitResume.cs`). So every line the design cites from `c8eccf30e` holds, give or take the drift it names (`ResumeAccount.cs:87`, `HarnessRoster.cs:1014`, `Driver.cs:2368`, all confirmed). Line numbers below are HEAD's. *design:n* is a line of `docs/2026-10-25-foundation-design.md`. The paths use the design's aliases. I read the code but ran nothing.
+
+#### The Opus reader's foundation read (20 findings, 3 blocking)
+
+| # | Round 1 | Round 2 | Why |
+|---|---|---|---|
+| 1 | blocking | **Taken in part** | Two holds now go to the owner as §8's questions, and that reason holds: Ask Daoris outside a limit (`HandOver.cs:52-57`, `CurveMove.cs:70-71`), and a conversation whose account is refused, signed out or gone (`ChatGoOn.cs:566-581`). *Kept* is a hold of driven records only (`ResumeAccount.cs:31-36`). The closed quest's half stays in row a-i on the steward's reading, as a dated note on D137 point 4. Round 1 allowed exactly that route. But its stated reason does not hold (finding 7), and its executor cannot carry the case before a-iii (finding 5). |
+| 2 | blocking | Taken | A standing move now makes the old part `Never` (§3.1). Take-up runs before every other come-up step (`ChatGoOn.cs:195`, `:213-257`, `:260`). `TakeWaits` reads the move record (`SessionWords.cs:544-545`). Row o lands after h and i, and its proof carries HANDWORDS1-i's case. |
+| 3 | blocking | Taken | Each process reads the journal from its come-up, as `ServiceConfirmations.RunAsync` already does (`DriverLoop.cs:787`, `:841`). Row l carries the Process case. |
+| 4 | — | Taken | Triggers are guarded by OLD/NEW, journal only raw transitions, write nothing on a mirror pass and never raise. The codes are judged in .NET. |
+| 5 | — | Taken | `work` is additive beside the pushed `kind` (`SessionsStateSlice.cs:41`). The page falls back when a host sends no `work`. D203 point 10 is in the amend list. |
+| 6 | — | Taken | `Lines.HeadOf` serves the say door, `PartnerDesk` and `HelperDesk`. A new `Continued` refusal comes with its readers. An older driver reads a `!ok` refusal as a failed say (`ServiceClient.cs:511`). |
+| 7 | — | Taken, wider | Row d's census covers the briefed move, start-from and a refused open. |
+| 8 | — | Taken | The ended move's double walk is row a-iii. |
+| 9 | — | **Answered, and the reason holds** | The person's named account on a press is now a recorded pick. Splitting the other doors was withdrawn, rightly: today every door opens its named account as a pick (`ChatHandOver.cs:156-157`, `request.Account`; `CurveMove.cs:114-115`). |
+| 10 | — | Taken, as named | Row a is split into a-i, a-ii and a-iii. But a-i gained a case that needs a-iii (finding 5). |
+| 11 | — | Taken | Row p moves before row f, and row f's proof is scoped. |
+| 12 | — | Taken | Each teller has its own cursor, and news is keyed by a durable id. |
+| 13 | — | Taken | The words' state is a precondition. |
+| 14 | — | Taken | Each door keeps its own gate, and h and i add a census case per door. |
+| 15 | — | Taken | The wording is now *the tools its handed rules refuse*. |
+| 16 | — | Taken | Rows l and m are split into l-i to l-v and m-i to m-v. |
+| 17 | — | Taken; **reopened by §2.7** | The "one list" of ids now conflicts with configured role ids (finding 3). |
+| 18 | — | Taken | The reservation is counted at the selection, and only probes are uncounted. |
+| 19 | — | Taken | Moved words go ahead of later words, with a test. |
+| 20 | — | Taken | All three text fixes landed. The quest line's reason was corrected (`Channel.cs:106-116`, `:1121-1133`). |
+
+#### Codex's read (18 findings, 16 blocking)
+
+| # | Round 1 | Round 2 | Why |
+|---|---|---|---|
+| 1.1 | blocking | Taken | Containment is D201's best effort (`AgentStarts.cs:13`). |
+| 1.2 | — | Taken | A held call is told once while its process lives. |
+| 2.1 | blocking | Taken | The new field is `work`, additive. |
+| 2.2 | blocking | Taken | A voice is placed through `BrainstormScope` first (`BrainstormBox.cs:13`, `:29`), and each voice is served its own result tool (`:71-74`). |
+| 3.1 | blocking | Taken | The answers-alone hold and the boundary are course facts. |
+| 3.2 | blocking | Taken | `Start` has no `from` and its own intent key (`ChatRunner.cs:339`). |
+| 3.3 | blocking | Taken; **over-reaches** | `Hold(reason, repair)` was added, but its account set leaves out the record's own account (finding 4). |
+| 3.4 | blocking | Taken | One head across kinds. |
+| 3.5 | blocking | Taken in substance | The claim is fenced and the open is atomic under `opens`. The file's compare-and-replace names no lock across processes (finding 12). |
+| 3.6 | blocking | Taken | The producer key travels with the transfer id, in one transaction. |
+| 3.7 | blocking | Taken | Dispositions are kept, and the client reads the unmarked list (`SessionLedger.cs:1234-1246`; `ServiceClient.cs:569`). |
+| 4.1 | blocking | Taken | OLD/NEW guards, word-by-word diffs, and a `journal` family. |
+| 4.2 | blocking | Taken | 50,000 rows, the floor, *incomplete since*, and row k's landing limits. |
+| 4.3 | blocking | Taken | Told at most once, the claim made before the balloon. |
+| 4.4 | blocking | Taken | The claim is limited to the retained journal. |
+| 5.1 | blocking | Taken | Row p before row f, and row f's guarantee scoped. |
+| 5.2 | blocking | **Deferred, with a reason that holds** | The principle is stated: one recovery authority per phase, and the newer build reconciles to an older build's evidence. The per-phase table moves to row f, whose proof is a downgrade and re-upgrade at each phase. |
+| 6.1 | — | Taken in part; the reason holds | The rejection is reworded. Files stay, with Codex's fencing. |
+
+### 1. Claims about the code
+
+1. **The compatibility case §11 and row x mark *unverified* is answered by the code, and it fails** (design:354, :946). Every continuation passes the record's `actor` into its run: `Driver.cs:3666` (`actor = prior?.Actor ?? actor`), `DriverContinuations.cs:432`, `ChatGoOn.cs:645`, `:722`, `ChatRunner.cs:1398` and `LimitMove.cs:433`. `ActorRun`'s constructor throws `unknown actor` for any id outside the eight (`ActorRun.cs:176-178`). On a driven or one-turn run it throws after `AgentStarts.StartAsync` has already started the harness (`Driver.cs:3651`, `:3673`). So an older build cannot continue a record whose `actor` names an added role. Nor can the newer build, unless row x changes that guard.
+2. **§3.2 step 2, §8 and §12's answer to O-1 say the owner's reported case "was a closed quest's"** (design:439, :788, :962). Nothing the design cites supports this:
+   - D137's note says only "a finished record's words" (`D137.md:791-799`), and says it amends point 7.
+   - LIMITSWITCH1's build note leaves a closed quest's session as it was, "since nothing carries its words to a new part by itself" (`D137.md:814-816`).
+   - The FIX-LOG entry records LIMITSWITCH1's open-or-taken switch as the fix of that very symptom (`docs/FIX-LOG.md:54-66`).
+3. **§3.2 step 2 and row a-i say a closed quest's session goes on "through the path a lost conversation takes"** (design:435-437, :854-855). That path is `GoesOnLost` → `ChatRunner.GoOnLostAsync` → `BriefedMove.MoveAsync` (`DriverLoop.cs:926-927`; `ChatRunner.cs:243-246`). It opens on `record.Profile`, as a pick (`BriefedMove.cs:133`). A picked account that cools is refused, so this path fails exactly in the cooling case. The briefed move takes the walk only from row a-iii.
+4. **§3.3 says a standing limit box's "words are delivered under the box's own key (`limit-move/<session>`)"** (design:507). Only the take-up's re-delivery is a keyed `said` word (`LimitMove.cs:378`). The first delivery is a live turn taken by `ChatHandOver.SayHandedOver` (`ChatHandOver.cs:238-250`, called at `LimitMove.cs:277`). What stops a second delivery across builds is the take-up's `User`-event check (`LimitMove.cs:366`), plus the key while the word waits. Since one home runs one build at a time, the guarantee holds; the design names only half of how.
+5. **§2.7 models `role_propose` on "D205 point 9's `actor_propose`", and offers the Designer "on D205 point 7's suggestion card"** (design:339-340, :358). Neither exists in code. `actor_propose` is owed to MODELROLE1h (`HelpRoomOwed.cs:94-101`), and the card waits on MODELROLE1g's `ActorSuggestion` (`D205.md:389`), which does not appear in `src/`. Neither row is in `TASKS.md`. These are decided shapes, not exemplars in code, and row y-i depends on both.
+6. **§2.5, §2.7 and row t describe today's act check as "the act checked against the appointed role's authority"** (design:291-292, :349, :918). The code checks more. It refuses an act outside the appointment's own `acts` (`StandingConfirmation.cs:1276`), which the owner ticked at the window's ask and which is held in memory. An appointment found at a start stays dormant until *Appoint again*, never re-made from the file (D209 points 1, 2 and 4). The design names that check nowhere.
+
+The rest of §0.2's corrections and §12's code citations hold, from the spot checks I made:
+- `SessionLedger.cs:89-175` has no `Continued` refusal;
+- `:945-962` refuses a word for an active record that is not running, and answers a retry by key;
+- `ResumeAccount.cs:31-36`;
+- the LIMITSWITCH1 lines;
+- `Channel.cs:106-116`;
+- `Notices.cs:12-35`;
+- `ChatGoOn.cs:195`, `:260`;
+- `DriverLoop.cs:777`, `:787`, `:841`;
+- `ChatContext.cs:64`;
+- `LimitMove.cs:191-213`.
+
+### 2. The structure
+
+#### Who acts
+
+The participant read collapses today's parallel paths:
+- the kind, read as `work` from the marks by one twinned rule;
+- five rule shapes into one typed policy;
+- admission into four tables keyed by capability;
+- four walks, two pass-code sets and five re-asks into one start plan whose selection carries to the open.
+
+Nothing a test or decision holds is lost, because `work` is additive beside `kind`, `actor` stays provenance, and containment stays D201's.
+
+Still duplicated, by design:
+- Staffing has two homes: `actors[id]` for the default eight, `roles[].choices` for an added role.
+- Each work now has two scoped configurations: a scoped role's choices, and the scoped rules (`helpers.agents`, `opinions.reviewers`). D205 point 6's split survives, and the rules still fence. But row x's census should show which one a repository reads when a scoped role names an agent the repository's rule does not list.
+
+What it gets wrong:
+- `design` (finding 9).
+- Door-narrowing has no reader (finding 8).
+
+#### The company (§2.7)
+
+- **A configured role widening authority without the person's press.** Yes, as written.
+  - A role's `authority` lives in `driver.json`, a file with several writers (`DriverConfigKeepsTests`; the steward's own acts write it, `StewardActRows.cs`).
+  - The act door then reads it live, without the appointment's in-memory `acts` (§1 item 6). So editing a role's authority widens a holder already appointed (finding 1).
+  - "The person's own press in the window" (design:341) does not exclude `role_propose`'s card or the terminal's confirmed verb. D208 point 1 excludes both for an appointment.
+- **An appointed role taking work.** The field table does not stop it (design:325-329). Such a role would seat the dedicated holder in work orders, against D208 point 2's session that "does only the role". It also bypasses the per-role offered flags (`StandingConfirmation.cs:330`, `:336`, `:828`) and each act's scope kind (`:831-835`) (finding 2).
+- **Escaping containment.** No. Containment is keyed by work, in code (§2.3; `AgentStarts.cs:13`), and no field of a role names it.
+- **Taking an owner-only act.** No. The vocabulary excludes D209 point 3's list, and both the judge and the door refuse such acts. Their safety still depends on finding 1's intersection.
+- **The default company changing anything on upgrade.** Nothing is written, but three readings change it:
+  - D212's "a seed read where `roles` names nothing" (`D212.md:98`; design:331), read literally, drops the whole seed at the person's first added role (finding 6).
+  - Removing a role holds a work that D205's judge says may not be off (`ActorChoices.cs:43`, `:55`) (finding 6).
+  - Making "one list" of the seed's ids puts `supervisor` and `steward` in `ActorChoices.Ids`. That list feeds *Actors* (`ActorChoices.cs:320`) and `daoris driver actor` (`DriverChoicesCommand.cs:2059-2061`) (finding 3).
+- **An older build continuing a record.** It throws on an added role's id (finding 3).
+
+#### How work moves
+
+One pure `Course.Decide`, one `LineAccount` and one move record per executor is the right collapse. Round 2's additions fit the code:
+- `Start` for start-from;
+- the answers-alone hold as a course fact;
+- `Never` for a standing move's old part;
+- each door's gate;
+- the fenced claim with the atomic `opens`.
+
+What it loses:
+- **The own account's reset.** §3.2 steps 4-5 leave it out of the wait. Read literally, a record whose account cools while every other account is signed out holds for the person instead of resuming at its own reset. That is a behaviour D206 and LIMITSWITCH1 hold (`HarnessRoster.cs:1027`) (finding 4).
+
+What it leaves duplicated:
+- `LineAccount` beside the course's account facts until h and i;
+- the boxes until v;
+- `ContinuedIn` as a fallback;
+- the ended conversation path, which walks one agent (`LimitMove.cs:235-241`; no `ElsewhereAsync`), where step 4 promises the role's later choices (finding 13).
+
+What it gets wrong:
+- the closed quest's path and its order (finding 5);
+- its evidence (finding 7).
+
+Authority: the only new automatic start is a closed quest's session going on as a conversation. It rests on the steward's reading of D137 point 4.
+
+Words: rules 1 to 6 compose. With p before f and o after h and i, I found no word lost, doubled or replayed across a move, a crash or a restart, beyond the honest *uncertain* disposition. The one store question is the move file's cross-process write (finding 12).
+
+#### What is said
+
+Round 2's changes hold on the code:
+- guarded raw triggers, which journal nothing for a mirror pass, an attempt mark or a note-only move;
+- a `journal` family that wakes on every append;
+- the journal read from each process's come-up;
+- a cursor per teller;
+- at most once, with the claim made under `Notices`' `KeepLock` before the balloon.
+
+I found no event lost or told twice beyond the said crash window. Neither the journal nor `data/notices.json` has two authorities: the triggers are its one minter, and `Notices` is the notices' one owner.
+
+### 3. The choices between the proposals
+
+The round-1 choices I endorsed still stand on the code: Q1, Q2, Q3, Q6, Q7's provenance, Q8's files, Q9, Q11's trigger, Q13 and Q14. Of round 2's choices:
+
+- **Q4, one configured record (the owner's direction).** This is right as one concept, but the record should be **two exclusive shapes**:
+  - a working role: `takes`, `choices`, `scope`, `filled: always`;
+  - an appointed role: `authority`, `scope`, `filled: appointed`.
+
+  The judge should refuse a mixed record. A flat record invites finding 2.
+- **Q1/Q15, `actor` naming the role.** I would keep `actor` to the seed's eight always-on ids. An added role's id goes in a new machine-local `role` field that no older build reads, as `compatible-builds.md` asks of new meaning (finding 3).
+- **Q7, the closed quest's session.** I would not build it inside the first row on the steward's reading. Its executor needs a-iii's walk, and it reverses a *never by itself* rule the owner's note does not name. Put it in §8 beside the two questions, or land it in a-iii, saying it is the steward's reading.
+- **Q16, 角色 for both.** Right for one concept. The two English labels (*Actors*, *Roles*) stay two words for it until y-i, which is said.
+- **Q17, a-i first.** Right, for the owner's live defect class, provided a-i is cut back to the cooling rule for driven records and conversations, its earliest reset and its hold.
+
+### 4. The rows
+
+- **a-i** cannot land alone as written: its closed quest case fails until a-iii (finding 5). Its proof's "every account signed out" case contradicts, or encodes, finding 4. Cut back to the cooling rule for driven records and conversations, it lands alone on LIMITSWITCH1, and it is still the least change with the most defects removed (survey §2.4 rows 1, 11; LIMITSWITCH2).
+- **b, c, a-ii, a-iii, d, p, e, f, g, h, i, o, j** land alone in their order.
+  - c's lanes miss modules: `SessionsStateSlice` lives in `Modules/Loop/` (finding 14).
+  - f's proof now proves what it claims, on p's receipts.
+  - o's proof (an older shell's own sweep) proves the shape claim.
+- **w** is read by nothing. Its proof should add the refusals of findings 2 and 6, and a catalogue with one added role that reproduces all eight seeded roles' starts.
+- **x**'s proof "an older build's continuation of a record whose actor is an added role" will fail by construction (finding 3). Change where the id goes first.
+- **y-i** refuses starts (removing a role holds its work) and adds an Ask Daoris door. By §10's own definition it is ⚖, and it depends on the unbuilt MODELROLE1g and 1h (finding 11).
+- **k, l-i to l-v, m-i to m-v, n, s and u** land alone, and their proofs prove their claims.
+- **q, r, t, v and y-ii** are marked ⚖.
+  - t's text must keep the appointment's `acts` (finding 1).
+  - y-ii's proof must show a live appointment not widened by a later edit to its role (finding 1).
+
+### 5. Findings
+
+1. **Blocking.** A role's authority can widen a holder already appointed, without the person's press (design:291-292, :327, :340-341, :349, :918-919; D212 point 16).
+   - **What is wrong.** The act door checks only "the appointed role's authority", read from `driver.json`. Today it also refuses an act outside the appointment's own `acts`, taken from the window's ask and held in memory (`StandingConfirmation.cs:1273-1279`; D209 points 1, 2 and 4). An edit to `roles[].authority`, by any of `driver.json`'s writers, would therefore widen a live holder. And "the person's own press in the window" does not exclude `role_propose`'s card or a confirmed `daoris driver role`, which D208 point 1 excludes for an appointment.
+   - **Smallest change.** Admit an act only where it is in all three: the code's act table, the role's configured authority and the appointment's recorded `acts`. Authority a role gains after an appointment takes effect only at the next *Appoint*. A role gains authority only through a `Window`-class route, as `SET_APPOINTMENT` is, never through `role_propose` or the terminal. Row y-ii's proof gains a live appointment that a later edit to its role does not widen.
+2. **Blocking.** The two kinds of role are not exclusive (design:321-329).
+   - **What is wrong.** The judge does not refuse a role `filled: appointed` that `takes` work. That seats D208 point 2's dedicated holder in work orders. An added appointed role also has no rule for the per-role offered flags (`StandingConfirmation.cs:330`, `:336`, `:828`) or for each act's scope kind. The supervisor is admitted only for a repository or a workspace (`:831-835`).
+   - **Smallest change.** The judge refuses `takes`/`choices` on an appointed role and `authority` on an always-on role. Each act in the vocabulary carries its admissible scope kind and its offered flag in code. An added appointed role is offered only where every act it holds is. Row w's proof gains these refusals.
+3. **Blocking.** Writing an added role's id into `actor` breaks continuation, and the "one list" changes the page on upgrade (design:336, :350, :909; D212 point 2).
+   - **What is wrong.** Continuations read `actor` from the record (`Driver.cs:3666`; `DriverContinuations.cs:432`; `ChatGoOn.cs:645`, `:722`; `ChatRunner.cs:1398`; `LimitMove.cs:433`), and `ActorRun` throws on any id outside the eight (`ActorRun.cs:176-178`), after the harness started (`Driver.cs:3651`). Every build in the rollback window would fail every continuation of a Designer record. And making `ActorChoices.Ids` the seed's ten adds Supervisor and Steward to *Actors* (`ActorChoices.cs:320`) and to `daoris driver actor` (`DriverChoicesCommand.cs:2059-2061`).
+   - **Smallest change.** `actor` keeps the seed's always-on id for the role's work (`build` for a Designer start). An added role's id goes in a new machine-local `role` field, through `session-record-fields.md`'s chain. The run reads `role ?? actor`. The "one list" is the eight always-on roles. Row x's proof runs an older build's continuation of a Designer record.
+4. **Blocking.** The own account's reset is left out of the wait (design:449-462, :863).
+   - **What is wrong.** Step 4's set is "the asked choice's other accounts", and step 5 waits for "exactly the accounts step 4 allows", holding where none of them has a reset. So a record whose own account cools while every other account is signed out holds for the person. LIMITSWITCH1 as built counts the own reset (`HarnessRoster.cs:1027`) and resumes there by itself, as D206 has it. Row a-i's proof case "with every account signed out it holds naming the sign-in", listed among a conversation's cases beside "signed out is `CannotGoOn`", encodes the regression or contradicts itself.
+   - **Smallest change.** Step 5's set is step 4's plus the own account wherever step 1 may resume there. Split the proof case in two:
+     - own account cooling, every other signed out: it waits for the own reset;
+     - a driven record whose own account and every other are signed out: it holds, naming the sign-in.
+5. **Blocking.** Row a-i's closed quest case cannot land in its order (design:435-439, :854-855).
+   - **What is wrong.** `GoesOnLost` reaches `BriefedMove.MoveAsync` (`ChatRunner.cs:243-246`), which opens on the cooling own account as a pick (`BriefedMove.cs:133`), and that pick is refused. The walk arrives only in a-iii.
+   - **Smallest change.** Move the closed quest's case (§7 row 1b and its proof) into row a-iii, after the briefed move takes the walk.
+6. **Blocking.** The seed and removal semantics are unsafe as worded (`D212.md:98`; design:331, :335, :343-345).
+   - **What is wrong.** "A seed read where `roles` names nothing", read literally, drops all eight seeded roles at the person's first added role, so every build and conversation holds. And "removing the role that takes a work ... its starts hold" makes Build or Chat off, which D205's judge refuses (`ActorChoices.cs:43`, `:55`; design:314 lists only Intake, Ask Daoris and Design as works that may be off).
+   - **Smallest change.**
+     - Read the seed per id: a seeded role is the seed's until `roles` holds a record of that id, and a removal is written as such a record.
+     - The judge refuses removing a role of a work that may not be off, and refuses scoping a seeded role away from the machine.
+     - Row w's proof adds a catalogue with one added role.
+7. **Not blocking.** The closed quest extension rests on an unsupported claim (design:439, :788, :962; §1 item 2).
+   - **What is wrong.** D137's note and the FIX-LOG say nothing of a closed quest; the FIX-LOG records LIMITSWITCH1's fix as the fix of the reported case. The note amends point 7, not point 4.
+   - **Smallest change.** Drop "the case the owner reported was a closed quest's". Say the point-4 amendment is the steward's reading of "an ended record". List it in §8 as a reading the owner may overrule, beside the two questions.
+8. **Not blocking.** Narrowing a role's doors has no reader (design:316, :327, :340-341, :348-349).
+   - **What is wrong.** The admission tables "read the work, never the role", so a role's narrowed doors bind only through the handed rules, where the adapter takes settings. And "a door its work does not have" contradicts "doors only narrowing".
+   - **Smallest change.** Drop door-narrowing from the role until a row gives the call layer the role, and strike "or a door its work does not have".
+9. **Not blocking.** `design` fails its own census, and its quest mark is unrecorded (design:207, :213-216, :359, :888).
+   - **What is wrong.** `WorkOf` reads design sessions as `build`, while census C requires the role named by `actor` to take the marks' work, so a Designer record fails it. The quest's design mark is a new field set by a publisher, on a record that travels, and §5.2 does not list it. MODELROLE1i's `weight: exact`, its stated model, is not built.
+   - **Smallest change.** Either `WorkOf` answers `design` from the quest's mark, or census C admits `design` within `build`. Add the mark to §5.2 with its wire treatment and how an older build reads it.
+10. **Not blocking.** D205's rejection of "per-workspace choices" (`D205.md`, Rejected) is reversed by a role's `scope` but missing from the amend list.
+    - **Smallest change.** Add a dated note on it beside point 8's.
+11. **Not blocking.** Row y-i refuses starts and adds an Ask Daoris tool, but is unmarked (design:910).
+    - **What is wrong.** It depends on the unbuilt MODELROLE1g card and MODELROLE1h `actor_propose` (§1 item 5). D205 point 9's "no `settings_*` grant covers actors" is not carried over to roles.
+    - **Smallest change.** Mark y-i ⚖, or say why removing a role is not refusing a start. Name MODELROLE1g and 1h as its predecessors, or say `role_propose` retires 1h's door. Extend point 9's sentence to roles.
+12. **Not blocking.** The move record's fence has no lock (design:486-489, X-3.5).
+    - **What is wrong.** "An atomic replace guarded by the revision the writer read" is a read-compare-write that two processes can interleave.
+    - **Smallest change.** Name the lock: hold the file's lock from read to rename, as `Notices.KeepLock` does (`Notices.cs:15-16`).
+13. **Not blocking.** A conversation's ended move has no step to the role's later choices.
+    - **What is wrong.** Step 4 moves to "the role's later choices where ... every account of its agent cools", but the ended move walks one agent and has no `ElsewhereAsync` (`LimitMove.cs:235-241`; compare the live move, `:92`, `:444-469`).
+    - **Smallest change.** Say that a-i's conversation path waits as today there, or add `ElsewhereAsync` to the ended path with a case.
+14. **Not blocking.** Two text fixes:
+    - Row c's lanes omit modules (`Modules/Loop/SessionsStateSlice.cs`).
+    - §3.3's "delivered under the box's own key" (design:507) names half the mechanism. The first delivery is a live turn (`ChatHandOver.cs:238-250`); the keyed re-delivery and the `User` check are `LimitMove.cs:366-378`.
+
+14 findings, 6 blocking.
+
+**Verdict: accept after named changes the steward can check without another read.** The participant, the course with one account rule and a fenced move record per executor, and the journal with three orders now stand on the code. Round 1's three blocking findings are taken, or taken by the route round 1 allowed, and Codex's sixteen are taken or deferred with reasons that hold. The six blocking findings are bounded edits, each checkable against the lines cited: in §2.7 and row t, an act is admitted only within the appointment's `acts`; the two kinds of role are kept exclusive, with their flags and scopes; an added role's id stays out of `actor`; the seed is read per id, and no work that may not be off can be emptied; the own account's reset stays in step 5; and the closed quest's case moves to a-iii. Rows t and y-ii already wait for both makers' reads, so the authority half is read again before anything is built. This acceptance does not cover the closed quest extension: until the steward drops its evidence claim or the owner answers it, it stands on the steward's reading alone.
+
+## Codex, round 2
+
+Codex's read of round 2 at `29a066182`: 14 findings, 10 blocking; another round.
+
+Reviewed HEAD `29a066182`, read-only; no tests run or files changed. References use the design’s path aliases. **F** means `docs/2026-10-25-foundation-design.md`; **D212** means `docs/decisions/D212.md`.
+
+**0. Round-1 findings**
+
+“Answered” means taken with a reason that holds. None of my original findings was wrong.
+
+| Finding | Status | Assessment and evidence |
+|---|---|---|
+| 1.1 Containment | Answered — **non-blocking** | F:238 preserves ordinary starts’ best effort and pieces’ fail-closed rule. |
+| 1.2 Held-call lifetime | Answered — **non-blocking** | F:685 correctly ends the hold with its owning process. |
+| 2.1 Wire `kind` collision | Answered — **non-blocking** | F:191 adds `work` beside `kind`, with fallback at F:193. |
+| 2.2 Recordless callers | Answered — **non-blocking** | F:236 positively places brainstorm generators/synthesizers and preserves their result tools. Refusal-code precision remains below. |
+| 3.1 Missing course inputs | Answered — **non-blocking** | F:371 includes answers-alone history; F:397 includes waiting-word state and execution preconditions. |
+| 3.2 Start-from semantics | Answered — **non-blocking** | F:392 gives it an independent `Start` and press intent key, without `from`. |
+| 3.3 No eligible reset | Answered — **non-blocking** | F:460 supplies a non-timed hold naming the repair. |
+| 3.4 Driven-to-chat head | Answered — **non-blocking** | F:524 specifies one service traversal across kinds; F:899 requires the late-word regression. |
+| 3.5 Exclusive move claim | Open — **blocking** | F:488 specifies guarded file updates, but not exclusion or fencing of external effects. |
+| 3.6 Producer versus transfer identity | Answered — **non-blocking** | F:533 separates them and commits transfer/removal/receipt together; F:556 supplies a receipt horizon. Identity scope still needs precision. |
+| 3.7 Attempts and limit refusals | Open — **blocking** | Word-by-word acknowledgement is fixed; F:555’s transient-then-limit rule remains unsafe as written. |
+| 4.1 Transition guards and wakes | Answered — **non-blocking** | F:588 guards real changes; F:590 gives every append its own wake. |
+| 4.2 Retention and loss | Open — **blocking** | F:592 fixes count, positions and floor; F:911’s measured 5 MB limit does not bound arbitrary payloads. |
+| 4.3 Announcement guarantee | Open — **blocking** | F:687 fixes claim-before-show ordering, but the bounded said-set’s expiry/replay contract remains unspecified. |
+| 4.4 Journal versus relay durability | Answered — **non-blocking** | F:695 preserves relay loss and no replay; F:1001 explicitly excludes shell machine events from that stream. |
+| 5.1 Move-proof prerequisites | Answered — **non-blocking** | F:900 puts attempts before moves; F:906 defers moving keeps until the course holds the old part. The remaining proof wording is addressed below. |
+| 5.2 Executable rollback adapters | Open — **blocking** | F:504 postpones the essential phase mapping; F:508’s claimed deduplication does not hold against today’s code. |
+| 6.1 Persistence rejection | Answered — **non-blocking** | F:136 correctly distinguishes persistence ownership from execution ownership. Files remain a valid choice once their concurrency protocol is supplied. |
+
+**1. Wrong claims about existing code**
+
+1. **Blocking — the rollback deduplication argument is false.** F:507 says the legacy box key makes older and newer delivery deduplicate, but `Core/Sessions/SessionLedger.cs:956` searches only pending `said`; after removal, that key protects nothing, and an older service ignores the proposed receipts. Likewise, the successor guard cited at F:508 prevents another hand-over open, but `Driver/Conversations/HandOver/HandOver.cs:271` can leave it unbriefed and `:294` still clears its box. Supply the actual downgrade/re-upgrade phase table, including uncertain delivery and phases where no executable old box may exist, before claiming one recovery authority.
+
+**2. Who acts and the company**
+
+1. **Blocking — configured door restrictions have no enforcement path.** F:327 permits narrower role doors, while F:347 explicitly makes admission read work “never the role”; F:175 gives the connector only ledger/brainstorm classification. Specify the runtime intersection of capability permissions and the selected role’s restrictions, including how the connector obtains it and handles missing evidence. F:214 also requires the catalogue “as it stood at the start,” but neither the record chain at F:722 nor the catalogue contract retains that version.
+
+2. **Blocking — appointment grants and scope changes need an explicit lifecycle.** F:328 requires an appointment inside its role’s scope, but does not specify checking each resolved target against both scopes or what changing/removing the role does to live and pending acts. Today `Modules/Platform/StandingConfirmation.cs:188` snapshots appointment acts, `:1276` checks them, and `:1304` rechecks execution authority. Preserve an immutable owner-approved grant ceiling, intersect it with current restrictions at execution, and require a fresh window press for every effective increase—including scope expansion and removal of a restriction—not merely the “act added” case at F:919.
+
+3. **Blocking — the seed needs absence and deletion semantics.** F:331 falls back to the seed where `roles` “names nothing,” F:335 writes only the first changed role, and F:344 promises removed work stays unstaffed. Without an overlay/tombstone or complete-catalogue rule, the first edit can discard untouched defaults, or deleting the last explicit role can resurrect the seed. Define absent, empty, malformed and deleted states, and prove first edit, partial edit and last deletion preserve those distinctions.
+
+4. **Non-blocking — finish the single-judge and refusal-code contracts.** F:319 names `Company.Judge`, but its census should explicitly include legacy `SET_ACTOR` (`Modules/Bridge/Routes/DriverRoutes.cs:319`) and terminal/Help writers, alongside the new role doors. Reusing D205’s validation also needs capability-based checks: `Driver/Platform/ActorChoices.cs:51` rejects unfamiliar ids and `:65` applies brainstorm uniqueness by the literal actor id. Name the closed unplaced/unread/unknown-tool/forbidden-work refusal codes promised at F:231 and require identical cases at every relevant door.
+
+The owner-only act exclusion and fixed launcher containment are stated correctly at F:315–317 and F:342. Staffing alone grants no appointment authority under F:283; the gaps above concern making those rules effective for configurable roles.
+
+**3. How work moves**
+
+1. **Blocking — a fenced file update does not fence a spawn or prompt.** F:488 guards phase replacement, but a stalled executor can act after another process takes a newer claim and only discover its stale claim when saving afterward. `Driver/Platform/AtomicFile.cs:156` supplies unconditional replacement; `RecordLock.cs:42` supplies an available cross-process exclusion primitive, but the design chooses no complete claim/takeover protocol. Specify atomic claim acquisition, live-owner takeover rules and the execution cutoff for every external effect; test a paused old executor resuming after takeover, not only two competing file writes.
+
+2. **Blocking — eventual limit failure must not reclassify earlier transient attempts.** F:555 says a transient try followed by a limit refusal “is the limit’s,” and F:900 repeats that proof without qualifying which words were definitely refused. Today `Driver/Conversations/Domain/LimitHeld.cs:35` deliberately clears words already sent before a transient event because the agent may have read them. Keep dispositions per actual word attempt: only words conclusively refused before acceptance may carry; earlier uncertain attempts remain uncertain.
+
+3. **Non-blocking — define receipt identity beyond a bare producer key.** F:534 and F:556 do not say whether receipt uniqueness is per record, original line, producer or home, nor how legacy words without keys transfer idempotently. Today keys are record-scoped and null means each word is independent (`Core/Sessions/Sessions.cs:374`). Specify the logical identity, a stable transfer identity for keyless words, and tests for equal keys on unrelated lines and retries through multiple successors.
+
+4. **Non-blocking — narrow the account rule’s same-account prohibition.** F:463 forbids a new part on its own account where the conversation could resume, then F:464 gives the explicit briefed move that account first when ready. State which triggers the prohibition covers and which deliberate fresh-part presses override it. Otherwise two conforming implementations can choose different accounts from the same facts.
+
+**4. What is said**
+
+1. **Blocking — raw transitions need immutable projection inputs.** F:588 retains column old/new values and word ids, while F:619–623 require historical reason, class, park kind, author and level. A later lookup cannot recover these reliably: `Core/Sessions/Sessions.cs:886` overwrites notes and `:1605` removes words. Define a bounded, allow-listed snapshot of the necessary OLD/NEW facts at capture time, then classify it in .NET; prove end/reopen/end and park/answer/repark occurring before any reader runs.
+
+2. **Blocking — row count is not the promised payload/size bound.** F:592 bounds 50,000 rows, but neither raw values nor per-transition word-id collections have a maximum; F:911 measures 5 MB without an enforcement rule. Specify payload limits, overflow/loss reporting and whether the size limit includes database/index/WAL overhead. Also qualify “never raising” at F:588: trigger storage failure cannot simultaneously be ignored and guarantee atomic capture.
+
+3. **Blocking — the said-set’s expiry can invalidate “never repeated.”** F:681 gives it an unspecified horizon, while F:694 bounds catch-up by visible notices’ week/count; neither says when a deduplication key becomes safe to forget. Define retention together with cursor advancement and reconciliation eligibility, and key recurring facts by their occurrence—a later answer/end of the same resumed record must remain distinct (`Driver/Platform/Notices.cs:146` already renews answers). Test more than 200 eligible announcements, horizon expiry, a new teller and a floor reconciliation without replaying previously claimed news.
+
+**5. The migration**
+
+1. **Blocking — row d still depends on an undeclared receipt prerequisite.** F:899 adopts §3.4 rule 3’s transactional transfer receipt, but producer receipts are introduced afterward in row p (`F:900`, order at F:842). Either introduce the required receipt store/contract in d or place p first. Also replace F:902’s unconditional “delivers … exactly once” proof with explicit delivered, definitely refused and uncertain outcomes consistent with F:495 and F:554.
+
+2. **Non-blocking — split row f into actual standalone landings.** F:902 introduces claims, idempotent opens, recovery, three initial move families and two legacy-box adapters in one row, despite F:839’s one-path rule. Give each adoption its own subrow and compatibility proof; make the unknown-actor older-build case mandatory before x, since today `Driver/Sessions/Domain/ActorRun.cs:176` throws for an added role. The whole-design two-reader gate at F:809 and SWITCHCTX1’s outstanding-read gate at F:710 should remain.
+
+**Verdict: another round.** The role authorization lifecycle, move fencing/rollback protocol and journal capture schema still require foundational choices, rather than bounded editorial corrections.
