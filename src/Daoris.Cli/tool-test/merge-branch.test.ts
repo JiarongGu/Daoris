@@ -1438,6 +1438,9 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the digest's note table", ['tools/orient-index-fixtures/decision-notes.json'], [...BASE, 'service']],
     // HIST1m: the history words' table sits among the service's tests, and the driver's twin reads it too.
     ["the history words' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'], [...BASE, 'service', 'driver']],
+    // FOUNDATION1c: the participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
+    ["the participant's work table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work.json'], [...BASE, 'service', 'driver', 'web-unit']],
+    ["the participant's work readers' table", ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'], [...BASE, 'service', 'driver', 'modules']],
     // SESSDEL1c: the kept names' table sits among the driver's tests, and the page's twin reads it too.
     ["the kept names' table", [KEPT_NAMES], [...BASE, 'driver', 'web-unit']],
     // LANDBACKLOG1: the backlog merges' table sits among the driver's tests, and the merge tool's twin reads it too.

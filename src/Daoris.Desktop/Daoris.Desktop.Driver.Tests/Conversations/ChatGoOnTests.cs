@@ -747,13 +747,15 @@ internal sealed class ChatLedger : HttpMessageHandler
     {
         lock (_gate)
         {
-            _sessions.Add(new JsonObject
+            var record = new JsonObject
             {
                 ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["adapter"] = adapter,
                 ["harnessVersion"] = "1.0.0", ["tree"] = tree, ["note"] = "the conversation ended; its commits are its record.",
                 ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["quest"] = quest, ["ask"] = ask,
                 ["profile"] = profile, ["from"] = from?.Session, ["fromWhy"] = from?.Why, ["fromBy"] = from?.By,
-            });
+            };
+            StandInLedger.Works(record);
+            _sessions.Add(record);
         }
 
         return new Words(this, id);
@@ -938,6 +940,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                         // HELPMODE1a2: the mode its start got, none told being restricted, as the ledger keeps it.
                         ["helpMode"] = mode ?? "restricted",
                     };
+                    StandInLedger.Works(session);
                     _sessions.Add(session);
                     return (HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
                 }

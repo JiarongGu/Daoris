@@ -2511,6 +2511,8 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             // The person's words waiting on it (MSG1a): what goes on with it, parked or ended (MSG1b, D137 §2.2).
             Said = ReadSaid(session),
             Ask = Text(session, "ask"),
+            // The work its marks read as (FOUNDATION1c, D212): served on loopback, none for a mirror and from a host before the field.
+            Work = Text(session, "work") is { Length: > 0 } work ? work : null,
             // What a helper may be asked of, and where its rule resolves (MIXAGENT2a-ii): served on loopback with the record.
             Serves = Text(session, "serves"),
             // A partner's piece (COAGENT1b, the co-agent design §7.3): served on loopback beside its serves.

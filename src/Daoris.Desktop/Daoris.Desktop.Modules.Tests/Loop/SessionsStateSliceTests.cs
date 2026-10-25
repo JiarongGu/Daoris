@@ -30,6 +30,8 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         ["helpMode"] = null, ["access"] = new JsonObject { ["permissions"] = "ask" }, ["piece"] = null,
         ["actor"] = "build", ["choice"] = "before", ["asked"] = new JsonObject { ["agent"] = "claude-code" },
         ["override"] = null, ["ran"] = new JsonObject { ["models"] = new JsonArray("reported-model"), ["more"] = 0, ["entries"] = new JsonArray(), ["entriesMore"] = 0 },
+        // FOUNDATION1c: the work its marks read as, beside the kind, which stays driven or chat.
+        ["work"] = "build",
     };
 
     private static string Records(params JsonObject[] records) => new JsonArray([.. records.Select(record => record.DeepClone())]).ToJsonString();
@@ -105,11 +107,42 @@ public sealed partial class SessionsStateSliceTests : DriverModuleBridge
         // The first parameter, one after a generic type, and the last: the reading went through the whole record.
         Assert.Equal("id", service[0]);
         Assert.Contains("said", service);
-        Assert.Equal("ran", service[^1]);
+        Assert.Equal("work", service[^1]);
         Assert.Equal(page.Order(StringComparer.Ordinal), SessionsStateSlice.Fields.Order(StringComparer.Ordinal));
         Assert.Empty(SessionsStateSlice.Fields.Intersect(SessionsStateSlice.PulledOnly));
         var classed = SessionsStateSlice.Fields.Concat(SessionsStateSlice.PulledOnly).ToHashSet(StringComparer.Ordinal);
         Assert.All(service, field => Assert.Contains(field, classed));
+    }
+
+    /// <summary>
+    /// FOUNDATION1c (D212; the foundation design §2.1): the allow-list gains <c>work</c> beside <c>kind</c>, an additive field the page
+    /// draws a record by where the host sends it. The kind stays driven or chat; a record answered no <c>work</c> (an older service, a
+    /// teammate's mirror) is pushed with none, so the page reads today's predicates for it.
+    /// </summary>
+    [Fact]
+    public async Task The_work_is_pushed_beside_the_kind_and_a_record_answered_none_is_pushed_with_none()
+    {
+        var partner = Record("s1", "default", "working");
+        partner["kind"] = "chat";
+        partner["serves"] = "lead";
+        partner["piece"] = "pc1";
+        partner["work"] = "partner";
+        var mirror = Record("teammate/s2", "default");
+        mirror.Remove("work");
+        var older = Record("s3", "default");
+        older.Remove("work");
+        _service.Sessions = Records(partner, mirror, older);
+        var (_, slice) = await UpAsync();
+
+        await slice.JudgeAsync();
+        var pushed = Written(slice.Snapshot().Partitions.Single().Data);
+
+        Assert.Contains("work", SessionsStateSlice.Fields);
+        Assert.Contains("kind", SessionsStateSlice.Fields);
+        Assert.Equal(("partner", "chat"), (pushed["s1"]!["work"]!.GetValue<string>(), pushed["s1"]!["kind"]!.GetValue<string>()));
+        Assert.False(pushed["teammate/s2"]!.AsObject().ContainsKey("work"));
+        Assert.False(pushed["s3"]!.AsObject().ContainsKey("work"));
+        Assert.Equal("driven", pushed["s3"]!["kind"]!.GetValue<string>());
     }
 
     [Fact]

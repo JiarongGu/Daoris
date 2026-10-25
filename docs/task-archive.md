@@ -26,6 +26,21 @@ three are now rows of `SessionHomeFiles.Inventory` under the name `hand-over`, c
 same suffixes; a box in use is kept by the removal's own preconditions (the service's yes, a running process, the hour), not by reading
 the box. Held by `SessionDeletionTests` and `HistoryClearingTests`, seen failing first. Detail: D153's note of 2026-10-25 and the
 FIX-LOG's entry of the same date.
+## FOUNDATION1 row 1c — the participant's work, read once (2026-10-25)
+
+> **FOUNDATION1c — the participant's work, read once** (service, driver, modules, web: the sessions slice is the modules', `Modules/Loop/SessionsStateSlice.cs`; O2-14). *What.* `ParticipantWork` and `ParticipantWork.Of` in the service, its twin in the driver, one fixture table both suites read (§2.2); the driver's `ParticipantWork.Of` takes the marks as a value declared in Participants, `WorkMarks`, which each caller builds from its record view (O4-9). The service answers `work` for every record of this machine on loopback, never on the wire; the sessions slice's allow-list gains `work` beside `kind`; `HoldsSlot` reads the work's table; `identity.ts` reads the pushed `work` where a host sends it and today's predicates where it does not, so a partner is drawn as a partner, D203 point 1's reading and the one thing a person sees change, in a string of its own, `work.identity.partner` (*Partner*, 搭档, D203 point 9). **Drawn as a partner and nothing more** (X4-1.3, X4-2.1). *(Part A of the design `docs/2026-10-25-foundation-design.md` §10, accepted 2026-10-25, D212; FOUNDATION1's other rows stay open in `TASKS.md`.)*
+
+**Outcome.** Built as the row names it. Both runtimes carry the one rule (`ParticipantWork.Of`, the service's over a `Session`, the driver's over
+`WorkMarks`) and read `fixtures/participant-work.json`, which the page's identity tests read too: 14 rows of marks, each with its work, what each
+reader of the same marks answered before and what it reads by the work, every difference named and decided (the partner's drawing, a mirror's slot).
+The field's chain is walked (`session-record-fields.md`'s rows 8, 10, 11 and 12; the work is derived, so no column and no wire): `work` on
+`SessionResponse` on loopback only and none for a mirror, `PriorSession.Work`, the stand-in ledgers, the page's `Session`; the slice pushes it
+beside `kind`. `HoldsSlot` answers every case as before. The partner is drawn as one where its host sends `work` and as a helper where it sends
+none; its record still gets no box and no act that takes words, asserted on both hosts. Census B counts, per project, every line that tests a mark
+or the Ask Daoris repository, each file listed with the Part B row that moves it, a new one failing. **Proved** by `ParticipantWorkTests` (service
+and driver), `SessionStoreTests`, `ParticipantWorkHostTests`, `SessionsStateSliceTests`, `ParticipantWorkReadersTests` (driver, modules, service),
+and the page's `identity.test.ts`, `acts.test.ts` and `WorkFrame.landed.test.tsx`, each case seen failing first where the row adds one. Detail:
+D212's note of this date.
 
 ## SUPERVISORRACE1 — a supervisor's word released in a race with the appointment's revoke is left on a stale decision (2026-10-25)
 

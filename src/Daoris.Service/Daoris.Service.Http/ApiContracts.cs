@@ -456,7 +456,11 @@ public sealed record SessionResponse(
     // absent for every other record. This machine's own, like the opinion: answered to it only.
     string? TookQuest = null,
     // D205: this machine's actor provenance. Never on the feed or answered off loopback.
-    string? Actor = null, string? Choice = null, JsonElement? Asked = null, JsonElement? Override = null, JsonElement? Ran = null);
+    string? Actor = null, string? Choice = null, JsonElement? Asked = null, JsonElement? Override = null, JsonElement? Ran = null,
+    // FOUNDATION1c (D212; the foundation design §2.2): the work the record was opened for, read from its marks and never stored
+    // (`ParticipantWork.Of`): `build`, `chat`, `ask-daoris`, `intake`, `help`, `partner` or `review`. This machine's own, like the opinion:
+    // answered to it only, absent for a mirror, which is another machine's, and never on the sync wire.
+    string? Work = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended. XAGENT1c: `by`, the
 // second opinion whose findings these are, another agent's claims; absent, the person's words, as every word before it was.

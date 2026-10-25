@@ -216,6 +216,8 @@
     "OrphanedSessionTests.cs": "Loop",
     "OutputTailTests.cs": "Agents",
     "ParkedQuestsTests.cs": "Quests",
+    "ParticipantWorkReadersTests.cs": "Sessions",
+    "ParticipantWorkTests.cs": "Sessions",
     "PauseTickTests.cs": "Loop",
     "PausedWorkTests.cs": "Sessions",
     "PermissionRulesTests.cs": "Agents",
