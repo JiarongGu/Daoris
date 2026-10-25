@@ -381,6 +381,21 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
+    /// FOUNDATION1 z-i (D212, the design §13.2): the desktop's own store, a data file of its own after the knowledge index, as the
+    /// three twins hold it; new since the layout, so its old place is its new one.
+    /// </summary>
+    [Fact]
+    public void The_desktop_store_is_a_data_file_after_the_knowledge_index()
+    {
+        Assert.Same(HomeEntry.DesktopDb, HomeEntry.Named("desktop-db"));
+        Assert.Equal(
+            (HomeCategory.Data, "data/desktop.db", "data/desktop.db"),
+            (HomeEntry.DesktopDb.Category, HomeEntry.DesktopDb.New, HomeEntry.DesktopDb.Old));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.Knowledge) + 1, table.IndexOf(HomeEntry.DesktopDb));
+    }
+
+    /// <summary>
     /// CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, a data folder of its own after the
     /// agent offers, as the three twins hold it; kept in <c>data/</c>, which D172 backs up, never under <c>run/</c>, which anyone may
     /// clear while Daoris is closed. New since the layout, so its old place is its new one.

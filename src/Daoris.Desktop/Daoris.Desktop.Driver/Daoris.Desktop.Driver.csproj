@@ -11,6 +11,13 @@
     <InternalsVisibleTo Include="Daoris.Desktop.Driver.Tests" />
   </ItemGroup>
 
+  <!-- The desktop store's package and its native bundle (FOUNDATION1 z-i, D212 §13.2), pinned at the service's versions in
+       Directory.Packages.props and taken by `DesktopStore` alone: never Daoris.Service.Core, whose store is the service's. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
+  </ItemGroup>
+
   <!-- The tree guard's hook (PERM3), carried inside the assembly and written under the Daoris home on
        first use: it is found the same way in a scratch run, a test and an install, whatever the
        publish layout. -->

@@ -39,7 +39,7 @@
       "id": "modules",
       "title": "Desktop modules",
       "summary": "The modules the page talks to, the application, the launcher that starts it, and the desktop tree's package versions.",
-      "_why": "The launcher (D93) is a twin of the modules' taskbar identity (D108). The desktop tree's package versions are the kit the application and the modules run on; the driver has no package of its own.",
+      "_why": "The launcher (D93) is a twin of the modules' taskbar identity (D108). The desktop tree's package versions are the kit the application and the modules run on; the driver has one package of its own, the desktop store's SQLite, pinned beside them (FOUNDATION1 z-i).",
       "paths": [
         "src/Daoris.Desktop/Daoris.Desktop.Modules/**",
         "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**",

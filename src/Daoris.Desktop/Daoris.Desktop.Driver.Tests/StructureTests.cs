@@ -505,8 +505,8 @@ public sealed class StructureTests
         // And no file the map places in Platform names a type of Store (§14.1), the home's reads of a file beside its writer being Platform's own (FOUNDATION1 mod-ii).
         Assert.Empty(analysis.Edges.Where(edge => map.Files.GetValueOrDefault(edge.File) == "Platform" && map.Files.TryGetValue("Store/" + edge.Type + ".cs", out _)));
 
-        // Each seam a Domain may not name is a type the driver declares, but `DesktopStore`, which row z-i adds and this assertion then drops.
-        Assert.Equal(["DesktopStore"], map.Seams.Where(seam => !analysis.DeclaredTypes.Contains(seam)));
+        // Each seam a Domain may not name is a type the driver declares: `DesktopStore` too, since row z-i (FOUNDATION1).
+        Assert.Empty(map.Seams.Where(seam => !analysis.DeclaredTypes.Contains(seam)));
 
         // A record struct is declared, `BoundedLine` among them.
         Assert.Contains("BoundedLine", analysis.DeclaredTypes);
