@@ -253,7 +253,7 @@ public sealed class TransientRetryTickTests : IDisposable
 
     /// <summary>
     /// 🔴 AGENTERRORS1a2, <b>the release</b> (the design §5.1, §11's row, moved from 1a by R3-O11): exhausted, then <i>Try again</i> once
-    /// (<see cref="StandingChoices.Retry"/> over the look's verdicts) resumes the SAME conversation by D206's step 1 with Daoris's go-on
+    /// (<see cref="QuestRetry.Decide"/> over the look's verdicts) resumes the SAME conversation by D206's step 1 with Daoris's go-on
     /// alone; the resumed run, exhausted again, is held again by its new end, across several looks and a driver restart that reads the
     /// same release from its config: nothing starts. Red before the release, as <c>quest-not-held</c>.
     /// </summary>
@@ -272,7 +272,7 @@ public sealed class TransientRetryTickTests : IDisposable
 
         var held = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.Contains(held.Considerations, c => c.Quest.Id == "q1" && c.Verdict == StartVerdict.TransientHeld);
-        var pressed = StandingChoices.Retry("q1", held.Considerations);
+        var pressed = QuestRetry.Decide("q1", held.Considerations);
         Assert.Equal((RetryDecision.Released, "s1"), (pressed.Did, pressed.Session));
 
         // Released: the same record resumes its own conversation, Daoris's go-on alone, and keeps failing past its bound again.
@@ -330,7 +330,7 @@ public sealed class TransientRetryTickTests : IDisposable
         var target = Assert.Single(Prompts()[0]["blocks"]!.AsArray())!.GetValue<string>();
 
         var held = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
-        var pressed = StandingChoices.Retry("q1", held.Considerations);
+        var pressed = QuestRetry.Decide("q1", held.Considerations);
         var report = await Protocol(service, "always-open", clock, pressed.Change).RunOnceAsync().WaitAsync(Poll.Patience);
 
         var seen = Seen(service, string.Join(" | ", report.Events));

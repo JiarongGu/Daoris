@@ -1038,8 +1038,8 @@ public sealed record DriverConfig(
             HandOverKey.WriteMap(writer, "handOver", HandOver);
             HandOverKey.WriteMap(writer, "workspaceHandOver", WorkspaceHandOver);
             // Written only when set (BRAINSTORM1b), as the CLI writes them: absent is D176 point 9's proposed defaults.
-            BrainstormRules.WriteMachine(writer, Brainstorms);
-            BrainstormRules.WriteMap(writer, "workspaceBrainstorms", WorkspaceBrainstorms);
+            BrainstormKey.WriteMachine(writer, Brainstorms);
+            BrainstormKey.WriteMap(writer, "workspaceBrainstorms", WorkspaceBrainstorms);
             CommitRules.WriteMap(writer, "commits", Commits);
             CommitRules.WriteMap(writer, "workspaceCommits", WorkspaceCommits);
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
@@ -1569,8 +1569,8 @@ public sealed record DriverConfig(
             WorkspaceHelpers = HelperKey.Map(root, "workspaceHelpers"),
             HandOver = HandOverKey.Map(root, "handOver"),
             WorkspaceHandOver = HandOverKey.Map(root, "workspaceHandOver"),
-            Brainstorms = BrainstormRules.Machine(root),
-            WorkspaceBrainstorms = BrainstormRules.Map(root, "workspaceBrainstorms"),
+            Brainstorms = BrainstormKey.Machine(root),
+            WorkspaceBrainstorms = BrainstormKey.Map(root, "workspaceBrainstorms"),
             Commits =CommitRules.Map(root, "commits"),
             WorkspaceCommits = CommitRules.Map(root, "workspaceCommits"),
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
