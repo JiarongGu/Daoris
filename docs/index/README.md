@@ -376,4 +376,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-25-foundation-survey.md` | 103 | 597 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 53 | 269 |
-| `src/Daoris.Desktop/README.md` | 178 | 823 |
+| `src/Daoris.Desktop/README.md` | 178 | 827 |
