@@ -93,7 +93,7 @@ public sealed record HarnessSettings(
     public IReadOnlyDictionary<string, IReadOnlyList<PoolReceipt>> Pooled { get; init; } =
         new Dictionary<string, IReadOnlyList<PoolReceipt>>(StringComparer.OrdinalIgnoreCase);
 
-    public const string PathVariable = "DAORIS_HARNESS_CONFIG";
+    public const string PathVariable = HarnessWiringFile.PathVariable;
 
     /// <summary>
     /// The conventional home, beside the driver's own config and the remotes map — under the Daoris
@@ -109,8 +109,7 @@ public sealed record HarnessSettings(
     /// The same file for a reader handed its home (a driver, a loop, a chat runner): the override where set, as every surface reads
     /// it, else that home's own file, never the one the process's home variable names.
     /// </summary>
-    public static string ResolvePath(string home) =>
-        Environment.GetEnvironmentVariable(PathVariable) ?? DaorisHome.Entry(home, HomeEntry.Harnesses);
+    public static string ResolvePath(string home) => HarnessWiringFile.ResolvePath(home);
 
     /// <summary>
     /// The Daoris home (D63) the wiring file is in, which the profile tree is under: the home whose <see cref="HomeEntry.Harnesses"/>

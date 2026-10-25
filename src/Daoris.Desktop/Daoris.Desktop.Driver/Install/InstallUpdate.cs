@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// unreadable is the default, a staged build installed when idle, so a torn file never stops an update nor starts one now.</para>
 ///
 /// <para><b>The drain holds starts, never looks</b> (D139 §2, rejected: skipping looks). A look still reports endings, tells
-/// plugins and syncs; <see cref="Drained"/> is the config it plans with, and <see cref="HeldFor"/> says the hold in its own
+/// plugins and syncs; <see cref="Drained"/> is the config it plans with, and <c>HeldFor</c> says the hold in its own
 /// words where the person's hold would otherwise be named.</para>
 ///
 /// <para><b>One type</b> (FLAT1b-iii-a): the rules, the request's file read, written and cleared, and an install found beside a
@@ -54,23 +54,9 @@ public static class InstallUpdate
         Actors = new Dictionary<string, IReadOnlyList<ActorChoice>>(config.Actors, StringComparer.Ordinal) { ["intake"] = [] },
     };
 
-    /// <summary>
-    /// What a draining look said of each quest, with the drain's hold said as the drain's: a <see cref="StartVerdict.Held"/>
-    /// in a repository the person did not hold becomes <see cref="StartVerdict.Blocked"/> with <see cref="HoldReason"/>. A
-    /// hold the person made keeps its own sentence; nothing else is touched.
-    /// </summary>
-    public static IReadOnlyList<Consideration> HeldFor(IReadOnlyList<Consideration> considered, DriverConfig config) =>
-        considered
-            .Select(consideration =>
-                consideration.Verdict == StartVerdict.Held
-                && !config.Holds.Contains(consideration.Quest.To, StringComparer.OrdinalIgnoreCase)
-                    ? consideration with { Verdict = StartVerdict.Blocked, Reason = HoldReason }
-                    : consideration)
-            .ToList();
-
-    /// <summary>Whether a consideration is the drain's hold: what the tick marks <c>forUpdate</c> for the page.</summary>
-    public static bool IsHeldForUpdate(Consideration consideration) =>
-        consideration.Verdict == StartVerdict.Blocked && string.Equals(consideration.Reason, HoldReason, StringComparison.Ordinal);
+    // What a draining look said of each quest, said as the drain's (`HeldFor`), and whether one is the drain's hold
+    // (`IsHeldForUpdate`) are the work orders' members of this type (`UpdateHolds`): they read the planner's verdicts, which
+    // this subdomain does not name. Each caller keeps the spelling `InstallUpdate.HeldFor`.
 
     /// <summary>Whether the work allows the update (D139 §2): no driven session running and no conversation's turn in flight.</summary>
     public static bool Idle(int driven, int turns) => driven <= 0 && turns <= 0;

@@ -468,10 +468,9 @@ public static class ToolInstall
         var entry = read.Entries[tool];
         if (entry.Way == ToolWay.Managed && entry.Version == version) throw RunsIt(declared, tool, version);
 
-        var judge = DownloadJudge.Of(home, harnesses ?? HarnessSettings.ResolvePath(home), config ?? DriverConfig.ResolvePath(home), sessions)
-            with { KeepsRecent = false };
-        var cleared = (await DownloadClearing.ClearAsync(home, [new DownloadAsked("tool", tool, version)], judge, log, move, ct, door: "tools")
-            .ConfigureAwait(false)).Single();
+        var cleared = await ToolDownloads.Current.ClearAsync(
+            home, tool, version, harnesses ?? HarnessWiringFile.ResolvePath(home), config ?? DriverConfig.ResolvePath(home), sessions, log, move, ct)
+            .ConfigureAwait(false);
         switch (cleared.Outcome)
         {
             case "removed" or "unfinished":
@@ -481,14 +480,13 @@ public static class ToolInstall
         }
 
         // Kept, judged again under the use files' locks: said in the act's own terms, the version whole (nothing went before the rename).
-        var row = cleared.Version!;
-        if (row.Keeps == "used") throw RunsIt(declared, tool, version);
-        var why = row.Keeps switch
+        if (cleared.Keeps == "used") throw RunsIt(declared, tool, version);
+        var why = cleared.Keeps switch
         {
-            "running" => $"a running session was handed it ({string.Join(", ", row.By.Select(by => by.Replace("session:", "", StringComparison.Ordinal)))}); "
+            "running" => $"a running session was handed it ({string.Join(", ", cleared.By.Select(by => by.Replace("session:", "", StringComparison.Ordinal)))}); "
                 + "delete it once that session has ended",
-            "named" => $"{row.By.FirstOrDefault()} names a file inside it; change that first",
-            "unread" => $"what uses it cannot be read now ({row.By.FirstOrDefault()}); try again",
+            "named" => $"{cleared.By.FirstOrDefault()} names a file inside it; change that first",
+            "unread" => $"what uses it cannot be read now ({cleared.By.FirstOrDefault()}); try again",
             _ => $"{folder} could not be moved aside, so a program may be running from it: stop it and delete again",
         };
         var said = $"{declared.Name} {version} was not deleted — {why}. Nothing of it was removed";

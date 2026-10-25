@@ -64,41 +64,6 @@ public sealed record DownloadUses(HarnessSettings Harnesses, ToolsRead Tools, Dr
     }
 }
 
-/// <summary>The sessions running on this home, read right before a version is judged; <see cref="Problem"/> where they could not be read.</summary>
-public sealed record LiveSessions(IReadOnlyList<LiveSession> Sessions, string? Problem)
-{
-    /// <summary>None runs.</summary>
-    public static LiveSessions None { get; } = new([], null);
-
-    /// <summary>
-    /// The home's running sessions (§3.5): the service's active records, each with what its starts were handed. With no service to ask,
-    /// or one that did not answer, the home's process markers say whether a session runs here at all (<see cref="SessionProcesses"/>):
-    /// none is none, and one that runs keeps every version, since what it was handed cannot be read (§6.7).
-    /// </summary>
-    /// <param name="markers">The home's process markers, <see cref="HomeEntry.SessionPids"/>; null where none are kept.</param>
-    public static async Task<LiveSessions> ReadAsync(ServiceClient? service, string? markers, CancellationToken ct)
-    {
-        string? why = null;
-        if (service is not null)
-        {
-            try
-            {
-                return new(await service.LiveSessionsAsync(ct).ConfigureAwait(false), null);
-            }
-            catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
-                                              || (error is TaskCanceledException && !ct.IsCancellationRequested))
-            {
-                why = error.Message;
-            }
-        }
-
-        if (!SessionProcesses.AnyAlive(markers)) return None;
-        return new([], why is null
-            ? "a session runs on this home, and no service is here to say what it was handed"
-            : $"the service did not say which sessions run ({why.TrimEnd('.')})");
-    }
-}
-
 /// <summary>
 /// How the act judges each version right before it goes (KEEP1b, the cleanup design §3.5): the use files read as they stand, the keep locks
 /// of those files held per version from the judgement to the rename, the running sessions, and the first-unused time of a version's current

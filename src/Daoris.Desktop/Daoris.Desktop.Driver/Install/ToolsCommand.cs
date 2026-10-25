@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 public sealed record ToolsWorld
 {
     /// <summary>The terminal: its home (null where none is named), its variables, its streams, and where it finds the instance.</summary>
-    public required InstanceWorld Instance { get; init; }
+    public required IToolTerminal Instance { get; init; }
 
     /// <summary>Where the command runs from: a relative file is named from here.</summary>
     public string WorkingDirectory { get; init; } = Environment.CurrentDirectory;
@@ -284,7 +284,7 @@ public static class ToolsCommand
                 // KEEP1b: alone, no Daoris runs to say what a session was handed, so the home's process markers say whether one runs at all.
                 return new ToolPress("delete", ToolRoutes.Delete, new JsonObject { ["tool"] = tool.Id, ["version"] = version },
                     async stop => (object?)await ToolInstall.DeleteAsync(home, tool.Id, version,
-                        token => LiveSessions.ReadAsync(null, DaorisHome.Entry(home, HomeEntry.SessionPids), token), ct: stop).ConfigureAwait(false),
+                        token => ToolDownloads.Current.RunningAsync(home, token), ct: stop).ConfigureAwait(false),
                     answer => Text(answer, "folder") ?? "", Said);
             }
 
@@ -592,7 +592,7 @@ public static class ToolsCommand
             return press.Words(done);
         }
 
-        return await InstanceDoor.PressAsync(press.Route, press.Payload, Alone, answer => press.Words(press.Fields(answer)), world.Instance, ct)
+        return await world.Instance.PressAsync(press.Route, press.Payload, Alone, answer => press.Words(press.Fields(answer)), ct)
             .ConfigureAwait(false);
     }
 

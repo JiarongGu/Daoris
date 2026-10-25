@@ -64,7 +64,7 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `withdraw` | `Program.cs:762` | `Program.cs:762` (inline) | — |
 | `sync` | `Program.cs:768` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:56` · dismiss `SyncConsole.cs:57` · forward |
 | `plugins install` | `Program.cs:775` | `Daoris.Desktop.Driver/Plugins/PluginPackage.cs:134` PluginPackageCommand | — |
-| `update` | `Program.cs:782` | `Daoris.Desktop.Driver/Setup/UpdateCommand.cs:19` UpdateCommand | — |
+| `update` | `Program.cs:782` | `Daoris.Desktop.Driver/Install/UpdateCommand.cs:19` UpdateCommand | — |
 | `wiring` | `Program.cs:793` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
 | `space free` | `Program.cs:803` | `Daoris.Desktop.Driver/Platform/SpaceFreeCommand.cs:24` SpaceFreeCommand | — |
 | `space` | `Program.cs:818` | `Daoris.Desktop.Driver/Platform/SpaceCommand.cs:17` SpaceCommand | free `SpaceCommand.cs:54` |

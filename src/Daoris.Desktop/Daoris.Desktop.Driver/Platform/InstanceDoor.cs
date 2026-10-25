@@ -30,9 +30,10 @@ public sealed record InstanceLook(InstanceFound Found, string Why, InstanceClien
 
 /// <summary>
 /// Where a verb looks for the running Daoris, and what it says while it waits: the process's own, or a test's. It is the terminal the
-/// settings' command is said on and pressed from (<see cref="IChoiceTerminal"/>, FOUNDATION1 mod-iii), pressing through the door.
+/// settings' command is said on and pressed from (<see cref="IChoiceTerminal"/>, FOUNDATION1 mod-iii), and the tools' (<see cref="IToolTerminal"/>,
+/// mod-v), pressing through the door.
 /// </summary>
-public sealed class InstanceWorld : IChoiceTerminal
+public sealed class InstanceWorld : IToolTerminal
 {
     /// <summary>The home the verb acts on, or null where it has none.</summary>
     public required string? Home { get; init; }

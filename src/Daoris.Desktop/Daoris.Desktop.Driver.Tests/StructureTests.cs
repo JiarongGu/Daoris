@@ -440,9 +440,9 @@ public sealed class StructureTests
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // The moves that have landed, bottom up, one row each (FOUNDATION1 mod-i: Platform; mod-ii: Store; mod-iii: Settings; mod-iv: Service); no namespace row: every namespace stays
+        // The moves that have landed, bottom up, one row each (FOUNDATION1 mod-i: Platform; mod-ii: Store; mod-iii: Settings; mod-iv: Service; mod-v: Install); no namespace row: every namespace stays
         // Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform", "Store", "Settings", "Service"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
@@ -497,7 +497,7 @@ public sealed class StructureTests
         // A qualified reference (the design §14.5, X4-1.4), and a static import's target, which an identifier after a dot or in a `using` skipped.
         Assert.Contains(("Sessions/SessionsCommand.cs", "HolderKey"), edges);
         Assert.Contains(("Accounts/AccountCooling.cs", "AccountFileNodes"), edges);
-        Assert.Contains(("Agents/Tools.cs", "Json"), edges);
+        Assert.Contains(("Install/Tools.cs", "Json"), edges);
 
         // DaorisHome's HomeEntry members, named like higher subdomains' types, count none: a member's occurrence is told by its symbol, never by its spelling.
         string[] members = ["DriverConfig", "Notices", "HelpProposals", "OpinionGates", "AgentOffers", "GitIdentities", "ConfiguredAccess", "PluginState", "UsageHistory", "RuleProposals", "SessionBranches"];
