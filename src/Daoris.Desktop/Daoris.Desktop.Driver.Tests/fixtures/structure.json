@@ -150,6 +150,7 @@
     "Conversations/Domain/HandOverAsks.cs": "Course",
     "Conversations/Domain/HandOverRecords.cs": "Course",
     "Conversations/Domain/HandOverRules.cs": "Course",
+    "Conversations/Domain/HandOverVerb.cs": "Course",
     "Conversations/Domain/HandedQuest.cs": "Course",
     "Conversations/Domain/HelperAsks.cs": "Participants",
     "Conversations/Domain/HelperCaptures.cs": "Participants",
@@ -870,13 +871,6 @@
       "after": "Settings",
       "files": {
         "Settings/DriverChoicesCommand.cs": ["ActorChoices","ActorView"]
-      }
-    },
-    {
-      "family": "Settings names Course",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["HandOverRules"]
       }
     },
     {
