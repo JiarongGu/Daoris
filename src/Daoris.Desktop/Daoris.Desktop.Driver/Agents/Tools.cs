@@ -595,7 +595,7 @@ public static class Tools
     // GIT_CONFIG_GLOBAL, the other variable §2.4 names, is TOOLS6's: it joins ChildEnvironment with the git file it names.
 
     /// <summary>The variable a child's <c>PATH</c> is. Windows reads it in any case, and a start's environment there is case-blind.</summary>
-    public const string PathVariable = "PATH";
+    public const string PathVariable = CommandPresence.PathVariable;
 
     /// <summary>Where an install carries the launchers, from its root: the home's, which owns the layout (<see cref="DaorisHome.InstallBinLayout"/>).</summary>
     public static IReadOnlyList<string> InstallBinLayout => DaorisHome.InstallBinLayout;

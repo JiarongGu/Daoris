@@ -83,7 +83,6 @@
     "Agents/AgentLongCommand.cs": "Agents",
     "Agents/AgentPinCommand.cs": "Agents",
     "Agents/AgentsCommand.cs": "Agents",
-    "Agents/Consoles/AgentJobs.cs": "Agents",
     "Agents/Consoles/BatchRelay.cs": "Agents",
     "Agents/Consoles/ConsoleRelay.cs": "Agents",
     "Agents/Consoles/Terminals.cs": "Agents",
@@ -281,6 +280,7 @@
     "Loop/SupervisorQuarantine.cs": "Roles",
     "Loop/TransientRetries.cs": "Agents",
     "Platform/ActorChoices.cs": "Roles",
+    "Platform/AgentJobs.cs": "Platform",
     "Platform/AgentStarts.cs": "Platform",
     "Platform/AtomicFile.cs": "Store",
     "Platform/BrowserCaches.cs": "Workplace",
@@ -365,6 +365,7 @@
     "Platform/StandingChoices.cs": "Settings",
     "Platform/SystemSpace.cs": "Workplace",
     "Platform/SystemWiring.cs": "Loop",
+    "Platform/TerminalLaunch.cs": "Platform",
     "Platform/TextBounds.cs": "Platform",
     "Platform/ToolHomeLeftovers.cs": "Workplace",
     "Platform/VerbLeases.cs": "Instance",
@@ -813,14 +814,6 @@
     "Workflows/WorkflowStore.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Platform names Agents",
-      "after": "Platform",
-      "files": {
-        "Platform/AgentStarts.cs": ["AgentJobs","AgentStart","ContainedKind"],
-        "Platform/PseudoConsole.cs": ["ITerminal","TerminalLaunch"]
-      }
-    },
     {
       "family": "Platform names Store",
       "after": "Platform",

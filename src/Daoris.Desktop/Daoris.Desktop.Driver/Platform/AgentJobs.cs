@@ -194,7 +194,7 @@ public sealed class AgentJobs : IDisposable
 
     /// <summary>The start's PATH, where its environment sets one.</summary>
     private static string? PathOf(ProcessStartInfo info) =>
-        info.Environment.TryGetValue(Tools.PathVariable, out var path) && !string.IsNullOrEmpty(path) ? path : null;
+        info.Environment.TryGetValue(CommandPresence.PathVariable, out var path) && !string.IsNullOrEmpty(path) ? path : null;
 
     /// <summary>
     /// The test seam: until disposed, every start this flow makes through <see cref="AgentStarts"/> is contained under
