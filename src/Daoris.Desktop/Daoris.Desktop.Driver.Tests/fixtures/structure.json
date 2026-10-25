@@ -351,6 +351,7 @@
     "Platform/ProcessJob.cs": "Platform",
     "Platform/ProcessStarts.cs": "Platform",
     "Platform/PseudoConsole.cs": "Platform",
+    "Platform/RegisterCommand.cs": "Instance",
     "Platform/SafeNames.cs": "Platform",
     "Platform/SentPresses.cs": "Instance",
     "Platform/ShellWord.cs": "Instance",
@@ -358,6 +359,7 @@
     "Platform/SpaceFloor.cs": "Workplace",
     "Platform/SpaceFree.cs": "Workplace",
     "Platform/SpaceFreeCommand.cs": "Workplace",
+    "Platform/SyncPass.cs": "Instance",
     "Platform/SystemSpace.cs": "Workplace",
     "Platform/SystemWiring.cs": "Loop",
     "Platform/TerminalLaunch.cs": "Platform",
@@ -491,6 +493,7 @@
     "Service/Domain/AskWorkflowViews.cs": "Service",
     "Service/Domain/ContinuedFrom.cs": "Service",
     "Service/Domain/HistoryViews.cs": "Service",
+    "Service/Domain/HomePipe.cs": "Service",
     "Service/Domain/LayoutFacts.cs": "Service",
     "Service/Domain/LineRegistration.cs": "Service",
     "Service/Domain/LoopbackHosts.cs": "Service",
@@ -503,7 +506,6 @@
     "Service/KnowledgeConnector.cs": "Knowledge",
     "Service/LayoutGit.cs": "Service",
     "Service/LedgerChanges.cs": "Service",
-    "Service/RegisterCommand.cs": "Service",
     "Service/RegistrationFollow.cs": "Service",
     "Service/RegistrationWorld.cs": "Service",
     "Service/RegistryFollowing.cs": "Service",
@@ -515,7 +517,6 @@
     "Service/ServiceDoors.cs": "Service",
     "Service/ServiceHostLocator.cs": "Service",
     "Service/ServiceHttp.cs": "Service",
-    "Service/SyncPass.cs": "Service",
     "Sessions/AccessCommand.cs": "Participants",
     "Sessions/ChildLineage.cs": "Participants",
     "Sessions/Domain/AbandonEntry.cs": "Workplace",
@@ -868,15 +869,6 @@
         "Service/LedgerChanges.cs": ["ChangeTopics"],
         "Service/RegistrationFollow.cs": ["LookSaid"],
         "Service/ServiceClient.cs": ["NoteCodes","NotePart","Noted","SessionConclusion"]
-      }
-    },
-    {
-      "family": "Service names Instance",
-      "after": "Service",
-      "files": {
-        "Service/RegisterCommand.cs": ["InstanceDoor","InstanceFound","InstanceWorld","OpenRoutes"],
-        "Service/RunningAddress.cs": ["PipeName"],
-        "Service/SyncPass.cs": ["InstanceDoor","InstanceFound","InstanceWorld","OpenRoutes"]
       }
     },
     {
@@ -1927,7 +1919,6 @@
     "LayoutReaderTests.cs": "Service",
     "LedgerChangesTests.cs": "Service",
     "LineRegistrationTests.cs": "Service",
-    "RegisterCommandTests.cs": "Service",
     "RegistryFollowingTests.cs": "Service",
     "RemoteSyncTests.cs": "Service",
     "RemoteTargetTests.cs": "Service",

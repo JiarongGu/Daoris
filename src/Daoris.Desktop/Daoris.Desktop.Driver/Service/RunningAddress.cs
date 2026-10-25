@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// <param name="Started">That process's start time, in UTC ticks, so a process id used again is not taken for it.</param>
 /// <param name="Home">The home's id (HOMEID1, <see cref="HomeIdentity"/>), or null in a file written before it or where the home has none.</param>
 /// <param name="Pipe">
-/// The pipe the instance answers on (RPC1a, <see cref="PipeName"/>), or null before it serves one, in a file from before, or where
+/// The pipe the instance answers on (RPC1a, <see cref="HomePipe"/>), or null before it serves one, in a file from before, or where
 /// the name is not the pipe of the home the file names.
 /// </param>
 public sealed record RunningEntry(string Url, int Pid, long Started, string? Home = null, string? Pipe = null);
@@ -111,7 +111,7 @@ public sealed class RunningAddress : IDisposable
 
             var homeId = Text(root, "home") is { } named && HomeIdentity.IsId(named) ? named : null;
             // RPC1a: a pipe is read only where it is the pipe of the home this file names (the CLI's `isPipeOf` holds the same rows).
-            var pipe = Text(root, "pipe") is { } served && PipeName.IsOf(served, homeId) ? served : null;
+            var pipe = Text(root, "pipe") is { } served && HomePipe.IsOf(served, homeId) ? served : null;
             return new RunningEntry(address, id, ticks, homeId, pipe);
         }
         catch (JsonException)
