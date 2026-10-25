@@ -226,7 +226,7 @@ public enum QuestionSettle
 public static class QuestionWords
 {
     /// <summary>What a pressed answer is handed as, before its label.</summary>
-    public const string Chose = "chose: ";
+    public const string Chose = PressedWords.Chose;
 
     /// <summary>
     /// The answer of <paramref name="question"/> that <paramref name="text"/> begins with, as the page composes a press (the label alone,
@@ -238,10 +238,9 @@ public static class QuestionWords
 
     /// <summary>What the session is handed of words a press marked with <paramref name="choice"/>; words with none, or not so composed, as they are.</summary>
     public static string Handed(string text, string? choice) =>
-        choice is { Length: > 0 } label && Begins(text, label) ? Chose + text : text;
+        PressedWords.Handed(text, choice);
 
-    private static bool Begins(string text, string label) =>
-        string.Equals(text, label, StringComparison.Ordinal) || text.StartsWith(label + "\n\n", StringComparison.Ordinal);
+    private static bool Begins(string text, string label) => PressedWords.Begins(text, label);
 }
 
 /// <summary>

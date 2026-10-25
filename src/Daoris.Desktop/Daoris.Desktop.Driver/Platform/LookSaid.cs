@@ -251,3 +251,20 @@ public sealed class LookSaid(string? home, Func<MachineLog?> log, Action? notice
         return line;
     }
 }
+
+/// <summary>
+/// The look's line for a registration's outcome (<see cref="RegistrationFollow"/>, whose lines the service's follower makes): classed as it
+/// is made, which is the events' own member of it, so every caller keeps <c>RegistrationFollow.EventLine(followed, said)</c> as spelled.
+/// </summary>
+public static class RegistrationLines
+{
+    extension(RegistrationFollow)
+    {
+        /// <summary>
+        /// The look's line for one outcome, classed as it is made (NOTIFY2h2): what moved, a refusal included, since the repository's row is
+        /// keyed on its outcome and says it where the person fixes it. Null where <see cref="RegistrationFollow.EventLine(RegistrationFollowed)"/> says nothing.
+        /// </summary>
+        public static string? EventLine(RegistrationFollowed followed, LookSaid said) =>
+            RegistrationFollow.EventLine(followed) is { } line ? said.Progress("registry", line) : null;
+    }
+}

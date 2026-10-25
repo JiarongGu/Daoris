@@ -26,12 +26,6 @@ public sealed record ChannelAnswer(string Ask, string Entry, IReadOnlyList<Chann
 /// <summary>The person's post: the message kept, or the service's code where it refused, which the page words (<see cref="ChannelPosted"/>).</summary>
 public sealed record ChannelPostAnswer(bool Posted, string? Code, ChannelItemAnswer? Message);
 
-/// <summary>
-/// An ask the mirrored messages name and this machine does not hold (SESSONE2h): the service's list row, field for field. There is
-/// no ask record here, so no title; <paramref name="Origins"/> are the machines its messages came from.
-/// </summary>
-public sealed record ElsewhereAskAnswer(string Id, string Workspace, IReadOnlyList<string> Origins, DateTimeOffset Latest, int Messages, int Unread);
-
 /// <summary>The asks held elsewhere as the page reads them (<c>ASKS_ELSEWHERE</c>).</summary>
 public sealed record ElsewhereAnswer(IReadOnlyList<ElsewhereAskAnswer> Asks);
 

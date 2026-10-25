@@ -13,7 +13,7 @@ public sealed record HelperOpened(string? Session, string Message)
 
 /// <summary>
 /// The local host's helper doors, as the driver asks them (MIXAGENT2a-ii; <c>POST /api/helpers</c> and <c>/hand</c>): a class over
-/// the service's client, reached as its <see cref="ServiceClient.Helpers"/> (PART8).
+/// the service's client, reached as its <c>ServiceClient.Helpers</c> (PART8), a member the participants declare over the client (<see cref="HelperDoorsOfClient"/>).
 /// </summary>
 public sealed class HelperDoors
 {
@@ -128,4 +128,17 @@ public enum HelperHanded
 
     /// <summary>No answer that says either way: the word may wait on the asker's line, which the next look reads back.</summary>
     Uncertain,
+}
+
+/// <summary>
+/// The client's helper doors, as the participants' own member of it (FOUNDATION1 mod-iv, the design §14.2: the door classes are their owners',
+/// over the service's client, which names none of them): each read hands a door over the client, which holds no state of its own.
+/// </summary>
+public static class HelperDoorsOfClient
+{
+    extension(ServiceClient client)
+    {
+        /// <summary>The local host's helper doors (MIXAGENT2a-ii), over this client.</summary>
+        public HelperDoors Helpers => new(client);
+    }
 }

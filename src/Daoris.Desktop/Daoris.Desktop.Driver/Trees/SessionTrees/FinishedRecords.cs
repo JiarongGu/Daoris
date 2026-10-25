@@ -1,3 +1,5 @@
+using static Daoris.Driver.Json;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -186,5 +188,112 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
         {
             return false;
         }
+    }
+}
+
+/// <summary>
+/// A finished tree's record as the service takes it (<see cref="FinishedPost"/>, KEEPSIZE1b), posted through the service's client: the
+/// workplace's own member of it, which names the manifest and the tree it carries, so the client names neither and every caller keeps
+/// <c>service.PostWorkRecordAsync</c> as spelled, as a call or as the delegate a pass is handed.
+/// </summary>
+internal static class FinishedPosts
+{
+    extension(ServiceClient client)
+    {
+            /// <summary>
+            /// Post a finished tree's record (KEEPSIZE1b, the keep-size design §2.2) to <c>POST /api/trees/record</c>: the manifest's facts and the
+            /// commits read from the tip. Null where the service keeps it, a second post of a kept identity included; else why it does not, in its
+            /// words, a store a newer build stamped among them; a 404, a service with no door for it, says so (<see cref="RecordRefusal.NoDoor"/>).
+            /// </summary>
+        internal async Task<RecordRefusal?> PostWorkRecordAsync(FinishedPost record, CancellationToken ct = default)
+            {
+                var tree = record.Tree;
+                var body = ServiceClient.WriteJson(writer =>
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("workspace", record.Workspace);
+                    writer.WriteString("repository", record.Repository);
+                    writer.WriteString("folder", record.Folder);
+                    writer.WriteString("tree", tree.Tree);
+                    writer.WriteString("moved", record.Moved.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+                    Optional("unit", tree.Unit);
+                    writer.WriteString("branch", record.Manifest.Branch);
+                    Optional("line", tree.Line);
+                    writer.WriteStartObject("hold");
+                    writer.WriteString("kind", tree.Hold.Kind);
+                    Optional("where", tree.Hold.Where);
+                    Optional("form", tree.Hold.Form);
+                    writer.WriteEndObject();
+                    writer.WriteString("tip", tree.Tip);
+                    Optional("grewFrom", tree.GrewFrom);
+                    Optional("ref", tree.Ref);
+                    if (record.Commits is { } commits)
+                    {
+                        writer.WriteStartArray("commits");
+                        foreach (var commit in commits)
+                        {
+                            writer.WriteStartObject();
+                            writer.WriteString("id", commit.Id);
+                            writer.WriteString("subject", commit.Subject);
+                            writer.WriteStartArray("files");
+                            foreach (var (path, added, removed) in commit.Files)
+                            {
+                                writer.WriteStartObject();
+                                writer.WriteString("path", path);
+                                writer.WriteNumber("added", added);
+                                writer.WriteNumber("removed", removed);
+                                writer.WriteEndObject();
+                            }
+
+                            writer.WriteEndArray();
+                            writer.WriteEndObject();
+                        }
+
+                        writer.WriteEndArray();
+                    }
+                    else
+                    {
+                        writer.WriteNull("commits");
+                    }
+
+                    Optional("commitsUnread", record.Unread);
+                    writer.WriteStartObject("left");
+                    writer.WriteStartArray("names");
+                    foreach (var name in tree.Left.Names) writer.WriteStringValue(name);
+                    writer.WriteEndArray();
+                    writer.WriteNumber("count", tree.Left.Count);
+                    writer.WriteBoolean("cut", tree.Left.Cut);
+                    writer.WriteEndObject();
+                    writer.WriteBoolean("whole", tree.Whole);
+                    // Codex's read of the design, finding 6: the landing captured before the move, or why none is named.
+                    if (tree.Landing is { } landing)
+                    {
+                        writer.WriteStartObject("landing");
+                        writer.WriteString("branch", landing.Branch);
+                        Optional("line", landing.Line);
+                        writer.WriteString("at", landing.At.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+                        Optional("pullRequest", landing.PullRequest);
+                        writer.WriteEndObject();
+                    }
+                    else
+                    {
+                        writer.WriteNull("landing");
+                    }
+
+                    Optional("landingWhy", tree.LandingWhy);
+                    writer.WriteEndObject();
+
+                    void Optional(string name, string? text)
+                    {
+                        if (text is null) writer.WriteNull(name);
+                        else writer.WriteString(name, text);
+                    }
+                });
+
+                var (ok, status, payload, root) = await client.PostJsonAsync("/api/trees/record", body, ct).ConfigureAwait(false);
+                if (ok) return null;
+                if (status == 404) return new("the service has no door for a finished tree's record, so its folder keeps its days", NoDoor: true);
+                return new((root is { } refused ? Text(refused, "error") : null) ?? payload);
+            }
     }
 }

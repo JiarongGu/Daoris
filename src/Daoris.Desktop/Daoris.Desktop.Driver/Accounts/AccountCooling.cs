@@ -408,95 +408,96 @@ public static class CoolingWords
         : zone.Id;
 }
 
-/// <summary>
-/// The machine log's account lines (TOOL4d, D125 §5.4, D94 §4): <c>account.limited</c>, <c>starts.waiting</c> and, since TOOL4f,
-/// <c>account.rotated</c>, each with
-/// the fields its catalogue gives it and nothing else. An account is its profile name, null for the tool's own home:
-/// never a key, a key's handle, who signed in, or the agent's sentence.
-/// </summary>
-public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object? Value)> Data)
+/// <summary>The catalogue of <see cref="AccountLine"/> lines, which the owner of what they say keeps: each builder writes the fields its line gives it and nothing else.</summary>
+public static class AccountLines
 {
     /// <summary>What a profile name may be in a line: an identifier, never a phrase.</summary>
     private static readonly Regex Name = new("^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$", RegexOptions.CultureInvariant);
 
-    /// <summary>A limit met: which account, which window, until when, said or defaulted, at which turn and context.</summary>
-    /// <param name="turn">The refused turn: the turns its record ended, plus one.</param>
-    /// <param name="used">Its context at its high-water, where the door reported one.</param>
-    public static AccountLine Limited(string session, string adapter, string? account, LimitSeen seen, long turn, long? used) =>
-        new("account.limited",
-        [
-            ("session", session), ("adapter", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
-            ("window", Bounded(seen.Window)), ("until", AccountCooling.Stamp(seen.Until)), ("stated", seen.Stated),
-            ("assumedZone", seen.AssumedZone), ("turn", turn), ("used", used),
-        ]);
+    extension(AccountLine)
+    {
+        /// <summary>A limit met: which account, which window, until when, said or defaulted, at which turn and context.</summary>
+        /// <param name="turn">The refused turn: the turns its record ended, plus one.</param>
+        /// <param name="used">Its context at its high-water, where the door reported one.</param>
+        public static AccountLine Limited(string session, string adapter, string? account, LimitSeen seen, long turn, long? used) =>
+            new("account.limited",
+            [
+                ("session", session), ("adapter", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
+                ("window", Bounded(seen.Window)), ("until", AccountCooling.Stamp(seen.Until)), ("stated", seen.Stated),
+                ("assumedZone", seen.AssumedZone), ("turn", turn), ("used", used),
+            ]);
 
-    /// <summary>
-    /// A cool-off the file would not take, held in memory until it does or its reset passes (LIMITRESUME1b, D206): once per entry.
-    /// </summary>
-    public static AccountLine CoolingUnkept(string session, string adapter, string? account, LimitSeen seen) =>
-        new("account.cooling-unkept",
-        [
-            ("session", session), ("adapter", adapter), ("account", Profile(account)), ("until", AccountCooling.Stamp(seen.Until)),
-        ]);
+        /// <summary>
+        /// A cool-off the file would not take, held in memory until it does or its reset passes (LIMITRESUME1b, D206): once per entry.
+        /// </summary>
+        public static AccountLine CoolingUnkept(string session, string adapter, string? account, LimitSeen seen) =>
+            new("account.cooling-unkept",
+            [
+                ("session", session), ("adapter", adapter), ("account", Profile(account)), ("until", AccountCooling.Stamp(seen.Until)),
+            ]);
 
-    /// <summary>
-    /// An attempt refused with the same kind of limit just after its account's cool-off ended (LIMITRESUME1b, D206): that reset did not
-    /// lift it. Written once, beside its <c>account.limited</c>.
-    /// </summary>
-    public static AccountLine NotLifted(string session, string adapter, string? account, LimitSeen seen) =>
-        new("account.not-lifted",
-        [
-            ("session", session), ("adapter", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
-            ("window", Bounded(seen.Window)), ("until", AccountCooling.Stamp(seen.Until)),
-        ]);
+        /// <summary>
+        /// An attempt refused with the same kind of limit just after its account's cool-off ended (LIMITRESUME1b, D206): that reset did not
+        /// lift it. Written once, beside its <c>account.limited</c>.
+        /// </summary>
+        public static AccountLine NotLifted(string session, string adapter, string? account, LimitSeen seen) =>
+            new("account.not-lifted",
+            [
+                ("session", session), ("adapter", adapter), ("account", Profile(account)), ("hit", Bounded(seen.Hit)),
+                ("window", Bounded(seen.Window)), ("until", AccountCooling.Stamp(seen.Until)),
+            ]);
 
-    /// <summary>
-    /// Every account a start may use was cooling or not signed in: written once per wait. Where none cools, nothing comes
-    /// ready by itself, and <paramref name="until"/> is null (TOOL6g).
-    /// </summary>
-    /// <param name="account">The account whose cool-off ends first, or null for the tool's own home and where none cools.</param>
-    /// <param name="quests">How many quests the wait held when it was first written.</param>
-    /// <param name="signedOut">
-    /// The accounts it passed not signed in (TOOL6g), written as their profile names joined by commas, which no profile name
-    /// holds; a name that is not one is left out, and none is null.
-    /// </param>
-    public static AccountLine Waiting(
-        string adapter, string? account, string? workspace, DateTimeOffset? until, int quests, IReadOnlyList<string>? signedOut = null) =>
-        new("starts.waiting",
-        [
-            ("adapter", adapter), ("account", Profile(account)), ("workspace", workspace),
-            ("until", until is { } at ? AccountCooling.Stamp(at) : null), ("quests", quests),
-            ("signedOut", (signedOut ?? []).Select(Profile).OfType<string>().ToList() is { Count: > 0 } named ? string.Join(",", named) : null),
-        ]);
+        /// <summary>
+        /// Every account a start may use was cooling or not signed in: written once per wait. Where none cools, nothing comes
+        /// ready by itself, and <paramref name="until"/> is null (TOOL6g).
+        /// </summary>
+        /// <param name="account">The account whose cool-off ends first, or null for the tool's own home and where none cools.</param>
+        /// <param name="quests">How many quests the wait held when it was first written.</param>
+        /// <param name="signedOut">
+        /// The accounts it passed not signed in (TOOL6g), written as their profile names joined by commas, which no profile name
+        /// holds; a name that is not one is left out, and none is null.
+        /// </param>
+        public static AccountLine Waiting(
+            string adapter, string? account, string? workspace, DateTimeOffset? until, int quests, IReadOnlyList<string>? signedOut = null) =>
+            new("starts.waiting",
+            [
+                ("adapter", adapter), ("account", Profile(account)), ("workspace", workspace),
+                ("until", until is { } at ? AccountCooling.Stamp(at) : null), ("quests", quests),
+                ("signedOut", (signedOut ?? []).Select(Profile).OfType<string>().ToList() is { Count: > 0 } named ? string.Join(",", named) : null),
+            ]);
 
-    /// <summary>
-    /// A start that ran on another account of its scope's list than the one the scope begins at (TOOL4f, D125 §5.4; TOOL6b,
-    /// D130 §13 as §16 amends it): which step moved it, from which scope's list, and whether any account had said what it has
-    /// left.
-    /// </summary>
-    /// <param name="from">Where the scope begins: its default, else its list's first.</param>
-    /// <param name="to">The account the start ran on.</param>
-    /// <param name="carries">The cut-off session a carry-on carries on, or null for any other start.</param>
-    /// <param name="why">The step that moved it, by its word (<c>cooling</c>, <c>kept</c>, <c>fewest</c>, <c>leastRecent</c>, …).</param>
-    /// <param name="scope">The workspace whose list it was, or null for this machine's.</param>
-    /// <param name="said">
-    /// Whether any account of the list had said what it has left (§16.4): read from <c>windows.json</c>, where a door that
-    /// carries the agent's word about its windows kept it (TOOL6c).
-    /// </param>
-    /// <param name="fromSaid">
-    /// What <paramref name="from"/> last said, by Daoris's word only (TOOL6c): <c>refused</c>, <c>near</c>, <c>warned</c>
-    /// (its agent's pace warning, and not near: USAGEREAD3a) or <c>clear</c>, or null where it said nothing. Never a number
-    /// or the agent's words.
-    /// </param>
-    /// <param name="toSaid">What <paramref name="to"/> last said, as <paramref name="fromSaid"/> names it.</param>
-    public static AccountLine Rotated(
-        string session, string adapter, string from, string to, string? carries, WalkStep why, string? scope, bool said = false,
-        string? fromSaid = null, string? toSaid = null) =>
-        new("account.rotated",
-        [
-            ("session", session), ("adapter", adapter), ("from", Profile(from)), ("to", Profile(to)), ("carries", carries),
-            ("why", Word(why)), ("scope", Profile(scope)), ("said", said), ("fromSaid", Standing(fromSaid)), ("toSaid", Standing(toSaid)),
-        ]);
+        /// <summary>
+        /// A start that ran on another account of its scope's list than the one the scope begins at (TOOL4f, D125 §5.4; TOOL6b,
+        /// D130 §13 as §16 amends it): which step moved it, from which scope's list, and whether any account had said what it has
+        /// left.
+        /// </summary>
+        /// <param name="from">Where the scope begins: its default, else its list's first.</param>
+        /// <param name="to">The account the start ran on.</param>
+        /// <param name="carries">The cut-off session a carry-on carries on, or null for any other start.</param>
+        /// <param name="why">The step that moved it, by its word (<c>cooling</c>, <c>kept</c>, <c>fewest</c>, <c>leastRecent</c>, …).</param>
+        /// <param name="scope">The workspace whose list it was, or null for this machine's.</param>
+        /// <param name="said">
+        /// Whether any account of the list had said what it has left (§16.4): read from <c>windows.json</c>, where a door that
+        /// carries the agent's word about its windows kept it (TOOL6c).
+        /// </param>
+        /// <param name="fromSaid">
+        /// What <paramref name="from"/> last said, by Daoris's word only (TOOL6c): <c>refused</c>, <c>near</c>, <c>warned</c>
+        /// (its agent's pace warning, and not near: USAGEREAD3a) or <c>clear</c>, or null where it said nothing. Never a number
+        /// or the agent's words.
+        /// </param>
+        /// <param name="toSaid">What <paramref name="to"/> last said, as <paramref name="fromSaid"/> names it.</param>
+        public static AccountLine Rotated(
+            string session, string adapter, string from, string to, string? carries, WalkStep why, string? scope, bool said = false,
+            string? fromSaid = null, string? toSaid = null) =>
+            new("account.rotated",
+            [
+                ("session", session), ("adapter", adapter), ("from", Profile(from)), ("to", Profile(to)), ("carries", carries),
+                ("why", Word(why)), ("scope", Profile(scope)), ("said", said), ("fromSaid", Standing(fromSaid)), ("toSaid", Standing(toSaid)),
+            ]);
+
+        /// <summary>The marker's own word, kept short: a window's name, never a clause.</summary>
+        internal static string? Bounded(string? word) => word is { Length: > 0 and <= 40 } ? word : null;
+    }
 
     /// <summary>A standing in a line: one of Daoris's four words, or null.</summary>
     private static string? Standing(string? word) =>
@@ -506,9 +507,6 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
     private static string Word(WalkStep step) => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(step.ToString());
 
     private static string? Profile(string? account) => account is not null && Name.IsMatch(account) ? account : null;
-
-    /// <summary>The marker's own word, kept short: a window's name, never a clause.</summary>
-    internal static string? Bounded(string? word) => word is { Length: > 0 and <= 40 } ? word : null;
 }
 
 /// <summary>

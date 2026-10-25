@@ -539,24 +539,24 @@ public static class AutoLandingNotes
     }
 }
 
-/// <summary>
-/// The machine log's landing line (LAND2b, design §8, D94): <c>landing.auto</c>, one per try, with codes and counts and the
-/// plugin's id, never a sentence, a branch or a path.
-/// </summary>
-public sealed record LandingLine(string Event, IReadOnlyList<(string Key, object? Value)> Data)
+/// <summary>The catalogue of <see cref="LandingLine"/> lines, which the owner of what they say keeps: each builder writes the fields its line gives it and nothing else.</summary>
+public static class LandingLines
 {
     /// <summary>The longest plugin id a line carries: an id of the catalogue's own shape, never a phrase, and never a long one.</summary>
     private const int PluginIdLimit = 120;
 
-    /// <summary>One try: whose, where, its code, what it carried or what held it, and whether the plugin pushed.</summary>
-    public static LandingLine Auto(
-        string session, string repository, string workspace, string code, int? commits, int? uncommitted, string? plugin, bool? pushed) =>
-        new("landing.auto",
-        [
-            ("session", session), ("repository", repository), ("workspace", workspace), ("code", code), ("commits", commits),
-            ("uncommitted", uncommitted),
-            // The shape is asked of its one owner (REFAC1); the line adds only its bound.
-            ("plugin", plugin is { Length: <= PluginIdLimit } && PluginCatalog.IsId(plugin) ? plugin : null),
-            ("pushed", pushed),
-        ]);
+    extension(LandingLine)
+    {
+        /// <summary>One try: whose, where, its code, what it carried or what held it, and whether the plugin pushed.</summary>
+        public static LandingLine Auto(
+            string session, string repository, string workspace, string code, int? commits, int? uncommitted, string? plugin, bool? pushed) =>
+            new("landing.auto",
+            [
+                ("session", session), ("repository", repository), ("workspace", workspace), ("code", code), ("commits", commits),
+                ("uncommitted", uncommitted),
+                // The shape is asked of its one owner (REFAC1); the line adds only its bound.
+                ("plugin", plugin is { Length: <= PluginIdLimit } && PluginCatalog.IsId(plugin) ? plugin : null),
+                ("pushed", pushed),
+            ]);
+    }
 }

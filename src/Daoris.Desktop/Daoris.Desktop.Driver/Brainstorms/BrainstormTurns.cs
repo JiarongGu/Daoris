@@ -46,5 +46,3 @@ public static class BrainstormVariables
     };
 }
 
-/// <summary>What one wording's search found, and the tier that answered: <c>meaning</c>, <c>words</c> or <c>files</c>.</summary>
-public sealed record BrainstormSearch(IReadOnlyList<BrainstormFound> Found, string Tier);

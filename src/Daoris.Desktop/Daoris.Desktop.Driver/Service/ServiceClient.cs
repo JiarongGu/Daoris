@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 /// It writes each request and reads each answer, and the HTTP is behind
 /// <see cref="IServiceDoors"/>, whose real one, <see cref="ServiceHttp"/>, the constructors that take a URL compose. Every
 /// module names this client; none names the HTTP. A family of doors on a resource of its own that another module asks is a
-/// class over the client, reached through it (<see cref="Opinions"/>, <see cref="Helpers"/>; PART8): it reaches the HTTP, the
+/// class over the client, reached through it (<c>Opinions</c>, <c>Helpers</c> and <c>Partners</c>, each its owner's member of the client; PART8): it reaches the HTTP, the
 /// JSON reading and <see cref="Opened"/> through the internal surface below (D166's PART8 note).
 /// </remarks>
 public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort
@@ -28,9 +28,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     {
         _doors = doors;
         _base = doors.BaseUrl;
-        Opinions = new OpinionDoors(this);
-        Helpers = new HelperDoors(this);
-        Partners = new PartnerDoors(this);
         Confirmations = new ConfirmationDoors(this);
     }
 
@@ -39,15 +36,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         : this(new ServiceHttp(baseUrl, key, http))
     {
     }
-
-    /// <summary>The local host's opinion doors (XAGENT1c–XAGENT1e), over this client.</summary>
-    public OpinionDoors Opinions { get; }
-
-    /// <summary>The local host's helper doors (MIXAGENT2a-ii), over this client.</summary>
-    public HelperDoors Helpers { get; }
-
-    /// <summary>The local host's partner door (COAGENT1b), over this client.</summary>
-    public PartnerDoors Partners { get; }
 
     /// <summary>The local host's confirmation doors, read for the windows (NOTIFY2j), over this client.</summary>
     public ConfirmationDoors Confirmations { get; }
@@ -130,107 +118,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     public static ServiceClient FromEnvironment() => new(ServiceHttp.FromEnvironment());
 
     public void Dispose() => _doors.Dispose();
-
-    /// <summary>Everything one tick decides from, fetched together so the plan is coherent.</summary>
-    public async Task<Snapshot> SnapshotAsync(CancellationToken ct = default)
-    {
-        // PARALLEL1b (D181 point 3): the four reads asked at once, so one door slow to answer holds its own read, not the reads after it.
-        // Each is still the service's answer as it stood when asked; the plan was never one transaction across them.
-        var questsRead = GetAsync("/api/quests", ct);
-        var registryRead = GetAsync("/api/registry", ct);
-        var activeRead = GetAsync("/api/sessions", ct);
-        // A second read rather than deriving both from one (DRV6): `/api/sessions` means ACTIVE, the
-        // planner's "is this repository busy" rests on that, and re-deriving active-ness here would
-        // put a second opinion about it on this side of the wire.
-        var recordsRead = GetAsync("/api/sessions?includeClosed=true", ct);
-        await Task.WhenAll(questsRead, registryRead, activeRead, recordsRead).ConfigureAwait(false);
-        var quests = ReadQuests(await questsRead.ConfigureAwait(false));
-        var repositories = ReadRegistry(await registryRead.ConfigureAwait(false));
-        var active = ReadSessions(await activeRead.ConfigureAwait(false));
-        var records = await recordsRead.ConfigureAwait(false);
-        var lastRun = ReadLastRun(records);
-        // The stand-downs a bring-forward would carry on (SYNCMERGE1b), which the last run never holds.
-        var stoodDown = ReadStoodDown(records);
-        // The closed quests a session written to served (MSG1b, D137 §2.2), read only where one waits: no open list holds them.
-        var open = quests.Select(quest => quest.Id).ToList();
-        var closed = lastRun.Any(run => run.Value.WordsWaiting && !open.Contains(run.Key, StringComparer.OrdinalIgnoreCase))
-            ? ReadClosed(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false), lastRun, open)
-            : [];
-        var (claims, whys, forwards, taken) = await CarryOnClaimsAsync(quests, lastRun, stoodDown, ct).ConfigureAwait(false);
-        return new Snapshot(quests, repositories, active, ReadStrikes(records))
-        {
-            LastRun = lastRun,
-            StoodDown = stoodDown,
-            // The session a taken quest's reopen names, where a later one is its last here (FABRIC-CLOSE1c9): its words go on in it.
-            NamedByReopen = ReadNamedByReopen(records, quests, lastRun),
-            Started = ReadStarted(records, active),
-            Closed = closed,
-            // Whose the take is on each taken quest a look would carry on (CARRY2b), the claim asked of the host for those alone.
-            Takes = ReadTakes(records, claims, whys, forwards, taken),
-            // Each record's entry, which a quest's publisher names its line by (SESSONE1d).
-            Entries = ReadEntries(records),
-        };
-    }
-
-    /// <summary>
-    /// This machine's claim on each taken quest a look would carry on (CARRY2b): one that waits on nothing, whose last session
-    /// here ended as a carry-on goes on from (<see cref="Planner.CarriesOn"/>), a stop the person still holds included, which
-    /// the planner holds by the stop first. A claim the host does not answer is unread, and the carry-on is planned as before. A
-    /// step the person's reopen holds is not asked (FABRIC-CLOSE1c2): nothing carries it on until their go-on, which the next look reads.
-    /// And one whose newest record here stood down (<paramref name="stoodDown"/>, SYNCMERGE1b): its claim names the person's bring-forward,
-    /// where one made the take, which carries that record on.
-    /// </summary>
-    private async Task<(IReadOnlyDictionary<string, string> Claims, IReadOnlyDictionary<string, string?> Whys,
-        IReadOnlyDictionary<string, ForwardTake?> Forwards, IReadOnlyDictionary<string, DateTimeOffset?> Taken)> CarryOnClaimsAsync(
-        IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, PriorSession> lastRun, IReadOnlyDictionary<string, PriorSession> stoodDown,
-        CancellationToken ct)
-    {
-        var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var whys = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-        var forwards = new Dictionary<string, ForwardTake?>(StringComparer.OrdinalIgnoreCase);
-        var taken = new Dictionary<string, DateTimeOffset?>(StringComparer.OrdinalIgnoreCase);
-        var asked = quests
-            .Where(quest => quest is { Status: "Taken", Awaits: null or "", HeldByReopen: false }
-                            && ((lastRun.TryGetValue(quest.Id, out var last) && Planner.CarriesOn(last)) || (stoodDown.ContainsKey(quest.Id) && HeldHere(quest))))
-            .ToArray();
-
-        // PARALLEL1b (D181 point 3): asked at once, at most ClaimsAtOnce together, so a host slow to answer for one quest holds that
-        // question alone, not the snapshot's every other.
-        await Parallel.ForEachAsync(
-            asked, new ParallelOptions { MaxDegreeOfParallelism = ClaimsAtOnce, CancellationToken = ct },
-            async (quest, token) =>
-            {
-                try
-                {
-                    var (claim, why, forward, at) = await ClaimTakeAsync(quest.Id, token).ConfigureAwait(false);
-                    lock (claims)
-                    {
-                        claims[quest.Id] = claim;
-                        whys[quest.Id] = why;
-                        forwards[quest.Id] = forward;
-                        taken[quest.Id] = at;
-                    }
-                }
-                catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
-                                                  // The client's own timeout (DEV3a): a host that took the question and stalled.
-                                                  || (error is OperationCanceledException && !ct.IsCancellationRequested))
-                {
-                    // Unread: the ledger judges the carry-on, as it did before the planner asked. A stand-down unread carries nothing.
-                }
-            }).ConfigureAwait(false);
-
-        return (claims, whys, forwards, taken);
-    }
-
-    /// <summary>
-    /// Whether the quest list says this machine holds the quest (SYNCMERGE1b1): its holder is this machine's id. A stood-down quest held
-    /// elsewhere, or by no press, has no bring-forward of this machine's to read, so its claim is not asked.
-    /// </summary>
-    private static bool HeldHere(QuestView quest) =>
-        quest.Holder is { } holder && string.Equals(holder, quest.Here, StringComparison.Ordinal);
-
-    /// <summary>How many claim questions a snapshot asks the host together (PARALLEL1b): local, and each one small.</summary>
-    private const int ClaimsAtOnce = 4;
 
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from (FG4).</summary>
     public async Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct = default) =>
@@ -318,7 +205,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     }
 
     /// <summary>
-    /// How many sessions failed on each quest (DRV6), as <see cref="SnapshotAsync"/> derives them: what a workspace plan reads a
+    /// How many sessions failed on each quest (DRV6), as <c>SnapshotAsync</c> (the work orders' read of the client) derives them: what a workspace plan reads a
     /// parked set-up by (WSSETUP6), without the rest of a snapshot.
     /// </summary>
     public async Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct = default) =>
@@ -891,102 +778,6 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 $"the service refused recording the versions session `{sessionId}` was handed: "
                 + ((root is { } refused ? Text(refused, "error") : null) ?? payload));
         }
-    }
-
-    /// <summary>
-    /// Post a finished tree's record (KEEPSIZE1b, the keep-size design §2.2) to <c>POST /api/trees/record</c>: the manifest's facts and the
-    /// commits read from the tip. Null where the service keeps it, a second post of a kept identity included; else why it does not, in its
-    /// words, a store a newer build stamped among them; a 404, a service with no door for it, says so (<see cref="RecordRefusal.NoDoor"/>).
-    /// </summary>
-    internal async Task<RecordRefusal?> PostWorkRecordAsync(FinishedPost record, CancellationToken ct = default)
-    {
-        var tree = record.Tree;
-        var body = WriteJson(writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("workspace", record.Workspace);
-            writer.WriteString("repository", record.Repository);
-            writer.WriteString("folder", record.Folder);
-            writer.WriteString("tree", tree.Tree);
-            writer.WriteString("moved", record.Moved.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-            Optional("unit", tree.Unit);
-            writer.WriteString("branch", record.Manifest.Branch);
-            Optional("line", tree.Line);
-            writer.WriteStartObject("hold");
-            writer.WriteString("kind", tree.Hold.Kind);
-            Optional("where", tree.Hold.Where);
-            Optional("form", tree.Hold.Form);
-            writer.WriteEndObject();
-            writer.WriteString("tip", tree.Tip);
-            Optional("grewFrom", tree.GrewFrom);
-            Optional("ref", tree.Ref);
-            if (record.Commits is { } commits)
-            {
-                writer.WriteStartArray("commits");
-                foreach (var commit in commits)
-                {
-                    writer.WriteStartObject();
-                    writer.WriteString("id", commit.Id);
-                    writer.WriteString("subject", commit.Subject);
-                    writer.WriteStartArray("files");
-                    foreach (var (path, added, removed) in commit.Files)
-                    {
-                        writer.WriteStartObject();
-                        writer.WriteString("path", path);
-                        writer.WriteNumber("added", added);
-                        writer.WriteNumber("removed", removed);
-                        writer.WriteEndObject();
-                    }
-
-                    writer.WriteEndArray();
-                    writer.WriteEndObject();
-                }
-
-                writer.WriteEndArray();
-            }
-            else
-            {
-                writer.WriteNull("commits");
-            }
-
-            Optional("commitsUnread", record.Unread);
-            writer.WriteStartObject("left");
-            writer.WriteStartArray("names");
-            foreach (var name in tree.Left.Names) writer.WriteStringValue(name);
-            writer.WriteEndArray();
-            writer.WriteNumber("count", tree.Left.Count);
-            writer.WriteBoolean("cut", tree.Left.Cut);
-            writer.WriteEndObject();
-            writer.WriteBoolean("whole", tree.Whole);
-            // Codex's read of the design, finding 6: the landing captured before the move, or why none is named.
-            if (tree.Landing is { } landing)
-            {
-                writer.WriteStartObject("landing");
-                writer.WriteString("branch", landing.Branch);
-                Optional("line", landing.Line);
-                writer.WriteString("at", landing.At.UtcDateTime.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-                Optional("pullRequest", landing.PullRequest);
-                writer.WriteEndObject();
-            }
-            else
-            {
-                writer.WriteNull("landing");
-            }
-
-            Optional("landingWhy", tree.LandingWhy);
-            writer.WriteEndObject();
-
-            void Optional(string name, string? text)
-            {
-                if (text is null) writer.WriteNull(name);
-                else writer.WriteString(name, text);
-            }
-        });
-
-        var (ok, status, payload, root) = await PostJsonAsync("/api/trees/record", body, ct).ConfigureAwait(false);
-        if (ok) return null;
-        if (status == 404) return new("the service has no door for a finished tree's record, so its folder keeps its days", NoDoor: true);
-        return new((root is { } refused ? Text(refused, "error") : null) ?? payload);
     }
 
     /// <summary>
@@ -1870,7 +1661,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         // Use the returned state, never the requested one: a refused move releases nothing, and a teammate supplies no machine path.
         if (root is { ValueKind: JsonValueKind.Object } changed && changed.TryGetProperty("session", out var record) && record.ValueKind == JsonValueKind.Object
             && !IsTeams(record) && Text(record, "id") == id)
-            await SessionLocks.LetGoEndedAsync(Prior(record)).ConfigureAwait(false);
+            await SessionEnds.Ended(Prior(record)).ConfigureAwait(false);
         Raise(Moved, new SessionMoved(id, (root is { } moved ? StateOf(moved) : null) ?? state));
         return root is { } answer ? Text(answer, "message") ?? "" : "";
     }
@@ -1939,7 +1730,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 
     // A refused read throws with the service's own sentence (IServiceDoors.GetAsync): a bare
     // EnsureSuccessStatusCode threw it away, and the driver's log said less than the service said.
-    private Task<string> GetAsync(string path, CancellationToken ct) => _doors.GetAsync(path, ct);
+    internal Task<string> GetAsync(string path, CancellationToken ct) => _doors.GetAsync(path, ct);
 
     internal static IReadOnlyList<QuestView> ReadQuests(string json)
     {
@@ -2061,7 +1852,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return read.Count == 0 ? [] : read;
     }
 
-    private static IReadOnlyList<RepoView> ReadRegistry(string json)
+    internal static IReadOnlyList<RepoView> ReadRegistry(string json)
     {
         using var document = JsonDocument.Parse(json);
         var repositories = new List<RepoView>();
@@ -2160,7 +1951,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
                 Workspace = RemoteTarget.Workspace(Text(session, "workspace")),
                 // What the cap counts by (CAPCOUNT1): its kind, and the mark of each conversation the driver opens for itself, an
                 // intake's ask above, a helper's serves and a reviewer's opinion. A conversation the person holds has none of them.
-                Kind = Text(session, "kind") ?? ActiveSessions.DrivenKind,
+                Kind = Text(session, "kind") ?? SessionKinds.Driven,
                 Opinion = Text(session, "opinion") is { Length: > 0 } opinion ? opinion : null,
                 Serves = Text(session, "serves") is { Length: > 0 } serves ? serves : null,
                 // A partner's piece (COAGENT1b): its reservation is counted once its record opens.
@@ -2206,7 +1997,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// the cool-off bounds it. Counted, three refusals by one spent account parked a healthy quest in seconds on
     /// 1 October.</para>
     /// <para>🔴 <b>Nor is a failure whose account was refused</b> (ROSTER1b): its agent refused the start for its sign-in, or
-    /// its provider refused its credential (AGT3b), which its note says by an account's line (<see cref="NoteCodes.AccountsOwn"/>).
+    /// its provider refused its credential (AGT3b), which its note says by an account's line (<see cref="RecordNotes.AccountsOwn"/>).
     /// The account reads signed out and the next start walks past it; counted, four starts on one empty account parked a
     /// healthy quest on the install in two minutes (2026-10-04).</para>
     /// </remarks>
@@ -2222,10 +2013,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             var state = Text(session, "state");
             var cutOff = (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase) && !Limit(session) && !AccountRefused(session))
                          || (string.Equals(state, "stopped", StringComparison.OrdinalIgnoreCase) && Interrupted(session));
-            if (NotePart.Read(session)?.Any(part => part.Code == NoteCodes.UpdateClosed.Code) == true) continue;
+            if (NotePart.Read(session)?.Any(part => part.Code == RecordNotes.UpdateClosed) == true) continue;
             // AGENTERRORS1a (D210 §5.1): an end past a transient bound is its provider's outage, never the quest's: no strike, its
             // quest held for the person instead.
-            if (NotePart.Read(session)?.Any(part => part.Code == NoteCodes.EndedTransient.Code) == true) continue;
+            if (NotePart.Read(session)?.Any(part => part.Code == RecordNotes.EndedTransient) == true) continue;
             // D205 §3.5(c): a choice its agent refused at the open, before any prompt, is the account's, never the quest's.
             if (NotOffered(session)) continue;
             if (!cutOff) continue;
@@ -2384,9 +2175,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         {
             writer.WriteStartObject();
             if (choice is not null) writer.WriteString("choice", choice);
-            if (asked is not null) { writer.WritePropertyName("asked"); JsonSerializer.Serialize(writer, asked, ActorRun.Json); }
-            if (ran is not null) { writer.WritePropertyName("ran"); JsonSerializer.Serialize(writer, ran, ActorRun.Json); }
-            if (changed is not null) { writer.WritePropertyName("override"); JsonSerializer.Serialize(writer, changed, ActorRun.Json); }
+            if (asked is not null) { writer.WritePropertyName("asked"); JsonSerializer.Serialize(writer, asked, ActorWire.Json); }
+            if (ran is not null) { writer.WritePropertyName("ran"); JsonSerializer.Serialize(writer, ran, ActorWire.Json); }
+            if (changed is not null) { writer.WritePropertyName("override"); JsonSerializer.Serialize(writer, changed, ActorWire.Json); }
             writer.WriteEndObject();
         });
         var (ok, status, payload, _) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/actor", body, ct).ConfigureAwait(false);
@@ -2544,7 +2335,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     internal static T? ActorRead<T>(JsonElement session, string name)
     {
         if (!session.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Object) return default;
-        try { return JsonSerializer.Deserialize<T>(value.GetRawText(), ActorRun.Json); }
+        try { return JsonSerializer.Deserialize<T>(value.GetRawText(), ActorWire.Json); }
         catch (JsonException) { return default; }
     }
 
@@ -2679,14 +2470,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     private static bool AccountRefused(JsonElement session) =>
         NotePart.Read(session) is { } parts
-        && parts.Any(part => part.Code is { } code && NoteCodes.AccountsOwn.Any(own => own.Code == code));
+        && parts.Any(part => part.Code is { } code && RecordNotes.AccountsOwn.Contains(code));
 
     /// <summary>
     /// Whether a record ended <c>choice-not-offered</c> (D205 §3.5(c), MODELROLE1c2), read by its end code: its agent refused the choice at
     /// the open, before any prompt, so it is no strike, no last run and no start the walk counts.
     /// </summary>
     internal static bool NotOffered(JsonElement session) =>
-        NotePart.Read(session)?.Any(part => part.Code == NoteCodes.EndedChoiceNotOffered.Code) == true;
+        NotePart.Read(session)?.Any(part => part.Code == RecordNotes.EndedChoiceNotOffered) == true;
 
     /// <summary>A record that came down from the team — keyed `origin/id`, the id this machine's own never has.</summary>
     internal static bool IsTeams(JsonElement session) => Text(session, "id")?.Contains('/') == true;
@@ -2751,7 +2542,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return (id, Text(answer, "message") ?? "");
     }
 
-    private static string WriteJson(Action<Utf8JsonWriter> write)
+    internal static string WriteJson(Action<Utf8JsonWriter> write)
     {
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream))
@@ -2808,7 +2599,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         }
 
         // The words tier always answers a search (BM25, D151 §6); the header says where meaning answered beside it.
-        return new BrainstormSearch(found, answer.Tier?.Contains("semantic", StringComparison.Ordinal) == true ? BrainstormPackets.Meaning : BrainstormPackets.Words);
+        return new BrainstormSearch(found, answer.Tier?.Contains("semantic", StringComparison.Ordinal) == true ? BrainstormTier.Meaning : BrainstormTier.Words);
     }
 
     /// <summary>

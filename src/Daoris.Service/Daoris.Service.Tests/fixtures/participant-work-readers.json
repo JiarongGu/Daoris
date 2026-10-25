@@ -307,10 +307,20 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
+    "Service/Domain/SessionRecord.cs": {
+      "lines": 1,
+      "reads": "tells",
+      "note": "tells a partner (`Piece is not null`); the record's view moved here from Trees/SessionGroups.cs (FOUNDATION1 mod-iv); no row of this design moves it"
+    },
     "Service/ServiceClient.cs": {
       "lines": 5,
       "reads": "other",
       "note": "parses the marks off the service's answer into the driver's views; it tells no work"
+    },
+    "Service/SessionRecords.cs": {
+      "lines": 3,
+      "reads": "other",
+      "note": "parses the marks off the service's answer into the record view (moved from Trees/SessionGroups.cs, FOUNDATION1 mod-iv); it tells no work"
     },
     "Sessions/Domain/Trace.Chain.cs": {
       "lines": 3,
@@ -388,9 +398,9 @@
       "note": "tells an intake from its ask and the absence of a quest; no row of this design moves it"
     },
     "Trees/SessionGroups.cs": {
-      "lines": 5,
+      "lines": 1,
       "reads": "tells",
-      "note": "parses the marks into the record view, tells a partner (`Piece is not null`) and Ask Daoris's record by its repository; no row of this design moves it"
+      "note": "tells Ask Daoris's record by its repository; no row of this design moves it (the record's parse and its view moved to Service, FOUNDATION1 mod-iv)"
     },
     "Trees/SessionTrees/LandedCleanups.cs": {
       "lines": 1,

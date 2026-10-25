@@ -108,9 +108,6 @@ public static class Tools
     /// <summary>What Daoris's git may carry (§2.5): one key, the one WSR7 measured the need for.</summary>
     public static IReadOnlyList<string> GitSettings => Find("git")!.Settings;
 
-    /// <summary>This machine, named: the hosts an http:// location may have (rule 5).</summary>
-    private static readonly string[] Loopback = ["localhost", "127.0.0.1", "[::1]"];
-
     private static readonly string[] Ways = ["system", "managed", "file"];
 
     /// <summary>One to four numbers (§3.2), ASCII digits only; <c>\z</c>, since .NET's <c>$</c> passes a final newline.</summary>
@@ -234,7 +231,7 @@ public static class Tools
             : $"`{key}` is not a setting Daoris's git carries — the one it carries is {string.Join(", ", GitSettings)}";
 
     /// <summary>Whether a host, as a URL names it, is this machine. The CLI's <c>isLoopbackHost</c>.</summary>
-    public static bool IsLoopback(string host) => Loopback.Contains(host, StringComparer.Ordinal);
+    public static bool IsLoopback(string host) => LoopbackHosts.Is(host);
 
     /// <summary>
     /// Whether an address is one Daoris reads from: https://, or http:// to this machine. Rule 5's for a location,
@@ -252,7 +249,7 @@ public static class Tools
         IsAddress(address)
             ? null
             : $"`{address}` is not a resource location — an address is https://, or http:// to this machine "
-              + $"({Loopback[0]}, {Loopback[1]} or {Loopback[2]})";
+              + $"({LoopbackHosts.Names[0]}, {LoopbackHosts.Names[1]} or {LoopbackHosts.Names[2]})";
 
     /// <summary>
     /// Whether a path names something inside a folder: relative, in <c>/</c> form, with no empty, <c>.</c> or

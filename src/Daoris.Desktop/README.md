@@ -192,7 +192,12 @@ what an edit keeps). `DriverConfig` and the keys it reads sit in `Settings/` (FO
 reading and writing are the settings' own (`WorkflowKey`, `LandingKey`, `ReviewKey` and the rest), each rule's file answering through its key
 so that what a rule means stays with its subdomain; and `daoris-driver driver`'s verbs for a rule a subdomain above owns are `ChoiceVerb`s
 beside that rule, wired by `Loop/DriverChoiceVerbs` into the terminal's world, which the settings' command asks (`IChoiceTerminal` is the
-terminal it says and presses on), so `Settings/` names no type of a subdomain above it. `WorkflowGraphs` reads D157's stored versions as graphs by §E7's migration contract, never writing them, a
+terminal it says and presses on), so `Settings/` names no type of a subdomain above it. The service's client and its wire sit in `Service/` (FOUNDATION1 mod-iv, D212),
+which names no type of a subdomain above it: the records and views `ServiceClient` returns (`QuestView`, `SessionRecord`, `PriorSession`, `SaidWordView`, the
+channel's, the evidence's, a note's shapes) and the lines it carries (`AccountLine`, `SetupLine`, `LandingLine`, `EvidenceLine`, whose builders the owners keep as
+extension members) are `Service/`'s, a door class a subdomain owns (`Opinions`, `Helpers`, `Partners`) and what is read for the planner (`SnapshotAsync`) are that
+subdomain's own extension members of the client, and what a checkout's git says to the remote sync (`ICheckoutReads`) and what a session's end lets go
+(`SessionEnds`) are ports the workplace answers, installed when the driver's assembly loads (`Trees/ServiceWiring.cs`). `WorkflowGraphs` reads D157's stored versions as graphs by §E7's migration contract, never writing them, a
 version that does not decode read as unreadable whole (FABRIC-WORKFLOW2); the CLI's `workflowgraphs.ts` is its twin, on
 `test/fixtures/workflow-graphs.json`. `WorkflowRunNodes` reads a bound run's step states onto its decoded graph through the
 evaluation and the one table, and compares where each reading stands, every difference named (FABRIC-WORKFLOW2b); it writes nothing

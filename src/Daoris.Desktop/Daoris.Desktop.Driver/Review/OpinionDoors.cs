@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The local host's opinion doors, as the driver asks them (XAGENT1c–XAGENT1e): a pass's ask, an opinion's read and its findings'
-/// hand: a class over the service's client, reached as its <see cref="ServiceClient.Opinions"/> (PART8).
+/// hand: a class over the service's client, reached as its <c>ServiceClient.Opinions</c> (PART8), a member the review declares over the client (<see cref="OpinionDoorsOfClient"/>).
 /// </summary>
 public sealed class OpinionDoors
 {
@@ -82,5 +82,18 @@ public sealed class OpinionDoors
         var opinion = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("opinion", out var kept) ? OpinionViews.Read(kept) : null;
         var word = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("said", out var said) ? ServiceClient.ReadWord(said) : null;
         return (true, Text(answer, "message") ?? "", opinion, word);
+    }
+}
+
+/// <summary>
+/// The client's opinion doors, as the review's own member of it (FOUNDATION1 mod-iv, the design §14.2: the door classes are their owners', over
+/// the service's client, which names none of them): each read hands a door over the client, which holds no state of its own.
+/// </summary>
+public static class OpinionDoorsOfClient
+{
+    extension(ServiceClient client)
+    {
+        /// <summary>The local host's opinion doors (XAGENT1c–XAGENT1e), over this client.</summary>
+        public OpinionDoors Opinions => new(client);
     }
 }

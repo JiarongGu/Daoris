@@ -291,18 +291,18 @@ public sealed class RemoteSync : IDisposable
         // No home is no choices, and the guess alone, as before; the file is the one every door resolves (CONFIGSEAM1).
         var configPath = DriverConfig.FindPath();
         var choices = configPath is null ? DriverConfig.Empty : DriverConfig.Load(configPath);
-        var defaultBranch = (await CanonicalLine.ResolveAsync(repo.Root, repo.Repository, _workspace, choices, ct).ConfigureAwait(false)).Branch;
+        var defaultBranch = await CheckoutReads.Current.LineAsync(repo.Root, repo.Repository, _workspace, choices, ct).ConfigureAwait(false);
 
         // Where this checkout stands, asked of git at the moment of feeding — the claim the deployment
         // will compare against what it holds (D48 §6).
-        var provenance = await WorkingTree.ProvenanceAsync(repo.Root, ct).ConfigureAwait(false);
-        var clean = provenance is not null && (await WorkingTree.CleanAsync(repo.Root, ct).ConfigureAwait(false)).Clean;
+        var provenance = await CheckoutReads.Current.ProvenanceAsync(repo.Root, ct).ConfigureAwait(false);
+        var clean = provenance is not null && await CheckoutReads.Current.CleanAsync(repo.Root, ct).ConfigureAwait(false);
 
         // The declaration is the manifest, so a registration speaks for the commit while the manifest is
         // as that commit has it — whatever else is in flight (SYNC5b). A modified manifest names none,
         // and the deployment keeps a declaration that named one over it.
         var declaredAt = provenance is not null
-            && (clean || await WorkingTree.UnmodifiedAsync(repo.Root, Manifest, ct).ConfigureAwait(false))
+            && (clean || await CheckoutReads.Current.UnmodifiedAsync(repo.Root, Manifest, ct).ConfigureAwait(false))
                 ? provenance
                 : null;
         var held = declaredAt is null
@@ -400,7 +400,7 @@ public sealed class RemoteSync : IDisposable
                 && !string.Equals(held, here.Commit, StringComparison.OrdinalIgnoreCase)
                 && !_asked.TryGetValue(held, out relation))
             {
-                _asked[held] = relation = await WorkingTree.RelationAsync(repo.Root, held, here.Commit, ct).ConfigureAwait(false);
+                _asked[held] = relation = await CheckoutReads.Current.RelationAsync(repo.Root, held, here.Commit, ct).ConfigureAwait(false);
             }
 
             var plan = RemoteSyncPayloads.Order(repo.Repository, what, here, held, relation);

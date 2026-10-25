@@ -352,16 +352,3 @@ public sealed class AttentionWatch
     }
 }
 
-/// <summary>The one spelling of the state that means "only the person can clear this" (D46).</summary>
-/// <remarks>
-/// A constant rather than a literal because three things compare against it — the watch, the shell's
-/// surface and the ledger — and a fourth will; three copies of a string disagree eventually, and the
-/// disagreement is silent.
-/// </remarks>
-public static class SessionStates
-{
-    public const string AwaitingPerson = "awaiting-person";
-
-    public static bool IsParked(string? state) =>
-        string.Equals(state, AwaitingPerson, StringComparison.OrdinalIgnoreCase);
-}

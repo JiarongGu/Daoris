@@ -3,7 +3,7 @@
     { "name": "Platform", "folder": "Platform", "domain": false, "moved": true },
     { "name": "Store", "folder": "Store", "domain": false, "moved": true },
     { "name": "Settings", "folder": "Settings", "domain": true, "moved": true },
-    { "name": "Service", "folder": "Service", "domain": true },
+    { "name": "Service", "folder": "Service", "domain": true, "moved": true },
     { "name": "Install", "folder": "Install", "domain": true },
     { "name": "Instance", "folder": "Instance", "domain": false },
     { "name": "Events", "folder": "Events", "domain": true },
@@ -164,7 +164,6 @@
     "Conversations/Domain/HelperWords.cs": "Participants",
     "Conversations/Domain/HelpersVerb.cs": "Participants",
     "Conversations/Domain/LimitHeld.cs": "Course",
-    "Conversations/Domain/MessageLevel.cs": "Course",
     "Conversations/Domain/PartnerAdmission.cs": "Participants",
     "Conversations/Domain/PartnerConfiguration.cs": "Participants",
     "Conversations/Domain/PartnerInstruction.cs": "Participants",
@@ -352,7 +351,7 @@
     "Platform/ProcessJob.cs": "Platform",
     "Platform/ProcessStarts.cs": "Platform",
     "Platform/PseudoConsole.cs": "Platform",
-    "Platform/RunningAddress.cs": "Service",
+    "Platform/RegisterCommand.cs": "Instance",
     "Platform/SafeNames.cs": "Platform",
     "Platform/SentPresses.cs": "Instance",
     "Platform/ShellWord.cs": "Instance",
@@ -360,6 +359,7 @@
     "Platform/SpaceFloor.cs": "Workplace",
     "Platform/SpaceFree.cs": "Workplace",
     "Platform/SpaceFreeCommand.cs": "Workplace",
+    "Platform/SyncPass.cs": "Instance",
     "Platform/SystemSpace.cs": "Workplace",
     "Platform/SystemWiring.cs": "Loop",
     "Platform/TerminalLaunch.cs": "Platform",
@@ -448,6 +448,7 @@
     "Quests/QuestUnits.cs": "Work orders",
     "Quests/QuestWorkflowCommand.cs": "Work orders",
     "Quests/RetryVerb.cs": "Work orders",
+    "Quests/SnapshotReads.cs": "Work orders",
     "Quests/SyncForwardCommand.cs": "Work orders",
     "Review/ChatLooks.cs": "Review",
     "Review/ChatSendBacks.cs": "Review",
@@ -488,31 +489,61 @@
     "Review/ReviewServed.cs": "Review",
     "Review/ReviewVerb.cs": "Review",
     "Review/ServiceReviewWorld.cs": "Review",
+    "Service/CheckoutReads.cs": "Service",
     "Service/ConfirmationDoors.cs": "Service",
+    "Service/Domain/AccountLine.cs": "Service",
+    "Service/Domain/ActorAsked.cs": "Service",
+    "Service/Domain/ActorRan.cs": "Service",
+    "Service/Domain/ActorWire.cs": "Service",
+    "Service/Domain/AskViews.cs": "Service",
     "Service/Domain/AskWorkflowViews.cs": "Service",
+    "Service/Domain/BrainstormViews.cs": "Service",
+    "Service/Domain/ChannelViews.cs": "Service",
+    "Service/Domain/ContinuedFrom.cs": "Service",
+    "Service/Domain/EvidenceLine.cs": "Service",
+    "Service/Domain/EvidenceViews.cs": "Service",
     "Service/Domain/HistoryViews.cs": "Service",
+    "Service/Domain/HomePipe.cs": "Service",
+    "Service/Domain/LandingLine.cs": "Service",
     "Service/Domain/LayoutFacts.cs": "Service",
     "Service/Domain/LineRegistration.cs": "Service",
+    "Service/Domain/LoopbackHosts.cs": "Service",
+    "Service/Domain/MessageLevel.cs": "Service",
+    "Service/Domain/NoteShapes.cs": "Service",
+    "Service/Domain/PressedWords.cs": "Service",
+    "Service/Domain/QuestClosePort.cs": "Service",
+    "Service/Domain/QuestViews.cs": "Service",
+    "Service/Domain/RecordNotes.cs": "Service",
     "Service/Domain/RegistrationRecords.cs": "Service",
     "Service/Domain/RemoteSyncPayloads.cs": "Service",
+    "Service/Domain/RepoViews.cs": "Service",
     "Service/Domain/ReviewViews.cs": "Service",
+    "Service/Domain/SaidFrom.cs": "Service",
     "Service/Domain/ServiceAnswers.cs": "Service",
+    "Service/Domain/SessionConclusion.cs": "Service",
+    "Service/Domain/SessionKinds.cs": "Service",
+    "Service/Domain/SessionRecord.cs": "Service",
+    "Service/Domain/SessionRun.cs": "Service",
+    "Service/Domain/SessionViews.cs": "Service",
+    "Service/Domain/SetupLine.cs": "Service",
+    "Service/Domain/SetupQuests.cs": "Service",
     "Service/Domain/SyncReport.cs": "Service",
+    "Service/Domain/TreeFacts.cs": "Service",
     "Service/KnowledgeConnector.cs": "Knowledge",
-    "Service/LayoutGit.cs": "Service",
     "Service/LedgerChanges.cs": "Service",
-    "Service/RegisterCommand.cs": "Service",
+    "Service/LinkedWorktree.cs": "Service",
     "Service/RegistrationFollow.cs": "Service",
-    "Service/RegistrationWorld.cs": "Service",
     "Service/RegistryFollowing.cs": "Service",
     "Service/RemoteSync.cs": "Service",
     "Service/RemoteTarget.cs": "Service",
+    "Service/RunningAddress.cs": "Service",
     "Service/RunningService.cs": "Service",
     "Service/ServiceClient.cs": "Service",
     "Service/ServiceDoors.cs": "Service",
     "Service/ServiceHostLocator.cs": "Service",
     "Service/ServiceHttp.cs": "Service",
-    "Service/SyncPass.cs": "Service",
+    "Service/SessionEnds.cs": "Service",
+    "Service/SessionRecords.cs": "Service",
     "Sessions/AccessCommand.cs": "Participants",
     "Sessions/ChildLineage.cs": "Participants",
     "Sessions/Domain/AbandonEntry.cs": "Workplace",
@@ -635,7 +666,6 @@
     "Setup/Domain/SetupOrder.cs": "Setup",
     "Setup/Domain/SetupPlan.cs": "Setup",
     "Setup/Domain/SetupPressRules.cs": "Setup",
-    "Setup/Domain/SetupQuests.cs": "Setup",
     "Setup/Domain/WorkspaceSetupPlan.cs": "Setup",
     "Setup/Domain/WorkspaceSetupRules.cs": "Setup",
     "Setup/HeldFiles.cs": "Install",
@@ -714,6 +744,7 @@
     "Trees/Landing/LandingPlugins.cs": "Workplace",
     "Trees/Landing/LandingWakes.cs": "Workplace",
     "Trees/Landing/RebaseTelling.cs": "Workplace",
+    "Trees/LayoutGit.cs": "Workplace",
     "Trees/LookTimes.cs": "Workplace",
     "Trees/Nodes/BuiltInNodes.cs": "Workflows",
     "Trees/Nodes/GoAheadNode.cs": "Workflows",
@@ -747,6 +778,9 @@
     "Trees/PullRequestStates.cs": "Workplace",
     "Trees/PullRequestWords.cs": "Workplace",
     "Trees/RefWatch.cs": "Workplace",
+    "Trees/RegistrationWorld.cs": "Workplace",
+    "Trees/RegistryHeard.cs": "Workplace",
+    "Trees/ServiceWiring.cs": "Workplace",
     "Trees/SessionEntries.cs": "Workplace",
     "Trees/SessionGroups.cs": "Work orders",
     "Trees/SessionTrees/AutoTidies.cs": "Workplace",
@@ -859,178 +893,6 @@
   },
   "edges": [
     {
-      "family": "Service names Agents",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["AccountLine"]
-      }
-    },
-    {
-      "family": "Service names Course",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["ContinuedFrom","MessageLevels"]
-      }
-    },
-    {
-      "family": "Service names Events",
-      "after": "Service",
-      "files": {
-        "Service/LedgerChanges.cs": ["ChangeTopics"],
-        "Service/RegistrationFollow.cs": ["LookSaid"],
-        "Service/ServiceClient.cs": ["NoteCodes","NotePart","Noted","SessionConclusion"]
-      }
-    },
-    {
-      "family": "Service names Install",
-      "after": "Service",
-      "files": {
-        "Service/RegistrationWorld.cs": ["Tools"]
-      }
-    },
-    {
-      "family": "Service names Instance",
-      "after": "Service",
-      "files": {
-        "Platform/RunningAddress.cs": ["PipeName"],
-        "Service/RegisterCommand.cs": ["InstanceDoor","InstanceFound","InstanceWorld","OpenRoutes"],
-        "Service/SyncPass.cs": ["InstanceDoor","InstanceFound","InstanceWorld","OpenRoutes"]
-      }
-    },
-    {
-      "family": "Service names Participants",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["HelperDoors","PartnerDoors"]
-      }
-    },
-    {
-      "family": "Service names Review",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["OpinionDoors"]
-      }
-    },
-    {
-      "family": "Service names Roles",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["ActorAsked","ActorRan","ActorRun"]
-      }
-    },
-    {
-      "family": "Service names Setup",
-      "after": "Service",
-      "files": {
-        "Service/RegistrationWorld.cs": ["SetupQuests"],
-        "Service/ServiceClient.cs": ["SessionRun","SetupLine"]
-      }
-    },
-    {
-      "family": "Service names Work orders",
-      "after": "Service",
-      "files": {
-        "Service/Domain/RemoteSyncPayloads.cs": ["ForwardTake"],
-        "Service/ServiceClient.cs": ["ActiveSessions","AskWordView","AskWorkflowComposed","Asks","BrainstormFound","BrainstormPackets","BrainstormSearch","ChannelPosted","ChannelView","DeclarationView","ElsewhereAskAnswer","EvidenceCodes","EvidenceLine","EvidencePosted","EvidenceVerdict","ForwardTake","GoAheadAnswerView","GoAheadRequestView","GoAheadView","Planner","QuestAnswerView","QuestEvidenceItem","QuestFileView","QuestReopenView","QuestRequirementView","QuestStepView","QuestSubmissionRef","QuestSubmissionView","QuestTake","SessionRecords","SessionStarted","SessionStates","Snapshot"]
-      }
-    },
-    {
-      "family": "Service names Workflows",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["IClosureBindPort","IQuestClosePort","QuestCloseAnswer","QuestCloseItem","QuestCloseOutcomes"]
-      }
-    },
-    {
-      "family": "Service names Workplace",
-      "after": "Service",
-      "files": {
-        "Service/Domain/RemoteSyncPayloads.cs": ["TreeProvenance","TreeRelation"],
-        "Service/LayoutGit.cs": ["WorkingTree"],
-        "Service/RegistrationWorld.cs": ["CanonicalLine","LandedBranches","WorkingTree"],
-        "Service/RegistryFollowing.cs": ["RefRepository","TreeTips"],
-        "Service/RemoteSync.cs": ["CanonicalLine","TreeProvenance","TreeRelation","WorkingTree"],
-        "Service/ServiceClient.cs": ["FinishedPost","LandingLine","LiveSession","RecordRefusal","SessionLocks"]
-      }
-    },
-    {
-      "family": "the service's records, which move down to Service (O4-6)",
-      "after": "Service",
-      "files": {
-        "Agents/Adapters/Adapters.cs": ["QuestView","SaidWordView"],
-        "Agents/Permissions/Across.cs": ["RepoView"],
-        "Agents/Streams/HarnessCapture.cs": ["SaidWordView"],
-        "Conversations/Chat/BriefedMove.cs": ["PriorSession"],
-        "Conversations/Chat/ChatContext.cs": ["PriorSession"],
-        "Conversations/Chat/ChatGoOn.cs": ["PriorSession","SaidWordView","SessionRecord"],
-        "Conversations/Chat/ChatHelperWords.cs": ["PriorSession","SaidWordView"],
-        "Conversations/Chat/LimitMove.cs": ["PriorSession"],
-        "Conversations/Chat/LimitWaits.cs": ["PriorSession","SaidWordView","SessionRecord"],
-        "Conversations/Domain/AnswersAlone.cs": ["SaidWordView"],
-        "Conversations/Domain/ChatMessage.cs": ["SaidWordView"],
-        "Conversations/Domain/Continuation.cs": ["PriorSession","SaidWordView"],
-        "Conversations/Domain/DaorisWords.cs": ["QuestView"],
-        "Conversations/Domain/HandOverAsks.cs": ["PriorSession"],
-        "Conversations/Domain/HelperJudge.cs": ["PriorSession"],
-        "Conversations/Domain/HelperWaits.cs": ["PriorSession"],
-        "Conversations/Domain/PartnerAdmission.cs": ["SessionView"],
-        "Conversations/Domain/PartnerJudge.cs": ["PriorSession"],
-        "Conversations/Domain/ResumeAsk.cs": ["SaidWordView"],
-        "Conversations/GoOn/AnswersAloneHold.cs": ["PriorSession","SaidWordView"],
-        "Conversations/GoOn/ContinuationJudge.cs": ["PriorSession"],
-        "Conversations/GoOn/GoOnMarks.cs": ["PriorSession"],
-        "Conversations/GoOn/GoOnNew.cs": ["PriorSession"],
-        "Conversations/GoOn/SessionSay.cs": ["SaidWordView","SessionRecord"],
-        "Conversations/GoOn/UncertainWords.cs": ["PriorSession","SessionRecord"],
-        "Conversations/GoOn/WordsLeft.cs": ["SaidWordView"],
-        "Conversations/HandOver/HandOver.cs": ["PriorSession","SessionRecord"],
-        "Conversations/HandOver/HandOverQuest.cs": ["PriorSession","SessionRecord"],
-        "Conversations/Helpers/SessionsHelperCommand.cs": ["PriorSession"],
-        "Conversations/Partners/PartnerReservations.cs": ["SessionView"],
-        "Conversations/SaidDoor.cs": ["SaidWordView"],
-        "Help/HelpCheckouts.cs": ["RepoView"],
-        "Help/HelpCircle.cs": ["SessionRecord"],
-        "Help/HelpFacts.cs": ["AskView"],
-        "Help/Room/HelpRoomMayDo.cs": ["RepoView"],
-        "Loop/LimitResume.cs": ["PriorSession","SaidWordView"],
-        "Loop/SupervisorQuarantine.cs": ["PriorSession"],
-        "Platform/SpaceFree.cs": ["RepoView"],
-        "Platform/ToolHomeLeftovers.cs": ["SessionRecord"],
-        "Service/Domain/RegistrationRecords.cs": ["LaneView"],
-        "Service/Domain/RemoteSyncPayloads.cs": ["LaneView"],
-        "Service/Domain/ServiceAnswers.cs": ["SaidWordView"],
-        "Service/RegistrationFollow.cs": ["LaneView"],
-        "Service/ServiceClient.cs": ["AskView","LaneView","PriorSession","QuestView","RepoView","SaidWordView","SessionRecord","SessionView"],
-        "Sessions/Domain/DrivenAccess.cs": ["PriorSession"],
-        "Sessions/Domain/Observation.cs": ["PriorSession"],
-        "Sessions/Events/ContextBriefs.cs": ["PriorSession"],
-        "Sessions/History/HistoryClearing.cs": ["AskView","QuestView","SessionRecord"],
-        "Sessions/History/HistoryHome.cs": ["AskView","QuestView"],
-        "Sessions/History/SessionDeletion.cs": ["SessionRecord"],
-        "Sessions/LookFacts.cs": ["PriorSession","QuestView"],
-        "Sessions/Questions/SessionsSuperviseCommand.cs": ["PriorSession"],
-        "Sessions/Trace/TraceCommand.cs": ["AskView"],
-        "Trees/Branches/BranchTidying.cs": ["RepoView"],
-        "Trees/Branches/GitBranches.cs": ["SessionRecord"],
-        "Trees/Branches/GitBranchesCommand.cs": ["RepoView","SessionRecord"],
-        "Trees/Landing/AutoLander.cs": ["AskView","QuestView","SessionRecord"],
-        "Trees/Landing/Landing.cs": ["QuestView"],
-        "Trees/Orphans.cs": ["QuestView","SessionView"],
-        "Trees/PullRequestMoments.cs": ["RepoView"],
-        "Trees/RefWatch.cs": ["RepoView"],
-        "Trees/SessionEntries.cs": ["QuestView","SessionRecord"],
-        "Trees/SessionTrees/EntryAccepts.cs": ["SessionRecord"],
-        "Trees/SessionTrees/PressedResults.cs": ["QuestView"],
-        "Trees/SessionTrees/SessionBranchDoors.cs": ["SessionRecord"],
-        "Trees/SessionTrees/SessionLocks.cs": ["PriorSession"],
-        "Trees/SessionTrees/SessionTrees.cs": ["QuestView","RepoView","SessionRecord"],
-        "Trees/SessionTrees/TreeGates.cs": ["QuestView"],
-        "Trees/TreesCommand.cs": ["RepoView"],
-        "Trees/TreesPlanWords.cs": ["SessionRecord"],
-        "Trees/TreesWords.cs": ["SessionRecord"]
-      }
-    },
-    {
       "family": "Install names Agents",
       "after": "Install",
       "files": {
@@ -1125,8 +987,7 @@
         "Platform/HomeWatch.cs": ["AccountCooling"],
         "Platform/NoteCodes.cs": ["AcpResumeRefused","CoolingEntry"],
         "Sessions/Domain/Observation.cs": ["HarnessEnding","ModelRefusal","TransientEpisode"],
-        "Sessions/Domain/SessionEvents.cs": ["TurnModels"],
-        "Sessions/Events/SessionLog.cs": ["AccountLine"]
+        "Sessions/Domain/SessionEvents.cs": ["TurnModels"]
       }
     },
     {
@@ -1170,21 +1031,6 @@
       }
     },
     {
-      "family": "Events names Setup",
-      "after": "Events",
-      "files": {
-        "Sessions/Events/SessionLog.cs": ["SetupLine"]
-      }
-    },
-    {
-      "family": "Events names Work orders",
-      "after": "Events",
-      "files": {
-        "Sessions/Domain/Observation.cs": ["SessionStates"],
-        "Sessions/Events/SessionLog.cs": ["EvidenceLine","SessionStates"]
-      }
-    },
-    {
       "family": "Events names Workflows",
       "after": "Events",
       "files": {
@@ -1196,8 +1042,7 @@
       "after": "Events",
       "files": {
         "Platform/HomeWatch.cs": ["HeldWordsFile","LandingJudged"],
-        "Platform/NoticesRead.cs": ["TreesSaid"],
-        "Sessions/Events/SessionLog.cs": ["LandingLine"]
+        "Platform/NoticesRead.cs": ["TreesSaid"]
       }
     },
     {
@@ -1298,10 +1143,8 @@
         "Help/Room/HelpRoomMachineNow.cs": ["PausedBy","SessionGroup","SessionGroups","SessionLook","WorkScope"],
         "Help/Room/HelpRoomWork.cs": ["InventoryEntry","InventoryKind","WorkMilestone","WorkWords"],
         "Service/KnowledgeConnector.cs": ["IntakeRoom"],
-        "Sessions/Domain/Trace.Chain.cs": ["AskWordView","AskWords","EvidenceCodes","EvidenceVerdict","GoAheadAnswerView","QuestEvidenceItem"],
-        "Sessions/Domain/Trace.Words.cs": ["AskWordView","EvidenceCodes","EvidenceRead","EvidenceWords","GoAheadAnswerView"],
-        "Sessions/Domain/TracedRecords.cs": ["EvidenceVerdict","QuestRequirementView","QuestStepView"],
-        "Sessions/Trace/Trace.cs": ["EvidenceVerdict","QuestRequirementView","QuestStepView"]
+        "Sessions/Domain/Trace.Chain.cs": ["AskWords"],
+        "Sessions/Domain/Trace.Words.cs": ["EvidenceWords"]
       }
     },
     {
@@ -1399,8 +1242,6 @@
       "after": "Agents",
       "files": {
         "Accounts/Rotation/AccountRotation.cs": ["ActorEffective","ActorWords","BuildPass"],
-        "Agents/Acp/Acp.cs": ["ActorAsked","ActorValue"],
-        "Agents/Adapters/Adapters.cs": ["ActorAsked"],
         "Agents/Streams/HarnessCapture.cs": ["SupervisorHanded"]
       }
     },
@@ -1408,8 +1249,7 @@
       "family": "Agents names Work orders",
       "after": "Agents",
       "files": {
-        "Accounts/Harnesses/HarnessRoster.cs": ["SessionStarted"],
-        "Agents/Adapters/Adapters.cs": ["AskWords","AskWordsText","BrainstormVariables","ChannelHeld","ChannelText","GoAheadsText","IntakeRoom","QuestFileView","QuestRequirementView","QuestStepView"],
+        "Agents/Adapters/Adapters.cs": ["AskWords","AskWordsText","BrainstormVariables","ChannelHeld","ChannelText","GoAheadsText","IntakeRoom"],
         "Loop/TransientRetries.cs": ["QuestResults"]
       }
     },
@@ -1542,23 +1382,17 @@
         "Sessions/History/SessionHomeFiles.cs": ["QuestionFiles"],
         "Trees/Branches/SessionBranches.cs": ["WorkObligations"],
         "Trees/Branches/TidyEffect.cs": ["InventoryDisposition","InventoryFacts","InventoryKind","InventoryRole","WorkInventory"],
-        "Trees/ChatLandCommand.cs": ["SessionRecords"],
         "Trees/Domain/IWorkTrees.cs": ["TreeWork"],
         "Trees/GitReads/ReviewGraphReads.cs": ["LandOffer"],
         "Trees/GitReads/SessionReviews.cs": ["LandOffer"],
-        "Trees/LandedBranches.cs": ["QuestSubmissionRef"],
-        "Trees/Landing/AutoLander.cs": ["EvidenceCodes","QuestResults","SessionGroups"],
-        "Trees/Landing/AutoLanding.cs": ["SessionStates"],
-        "Trees/Landing/Landing.cs": ["QuestSubmissionRef"],
-        "Trees/Landing/LandingWakes.cs": ["EvidenceCodes"],
-        "Trees/Orphans.cs": ["EvidenceAt","EvidenceCheck","EvidenceCodes"],
+        "Trees/Landing/AutoLander.cs": ["QuestResults","SessionGroups"],
+        "Trees/Orphans.cs": ["EvidenceAt","EvidenceCheck"],
         "Trees/SessionEntries.cs": ["EntryKey","SessionGroup","SessionGrouping","SessionGroups","SessionLook"],
-        "Trees/SessionTrees/EntryAccepts.cs": ["Consideration","QuestSubmissionRef","SessionGrouping","SessionGroups"],
+        "Trees/SessionTrees/EntryAccepts.cs": ["Consideration","SessionGrouping","SessionGroups"],
         "Trees/SessionTrees/PressedResults.cs": ["QuestResults"],
         "Trees/SessionTrees/RecoveryRetention.cs": ["RecoveryRef","StandingBranch"],
         "Trees/SessionTrees/SessionBranchDoors.cs": ["SessionGroups"],
-        "Trees/SessionTrees/SessionTrees.cs": ["DiscardOffer","QuestSubmissionRef","TreeWork"],
-        "Trees/SessionTrees/TreeGates.cs": ["EvidenceCodes"],
+        "Trees/SessionTrees/SessionTrees.cs": ["DiscardOffer","TreeWork"],
         "Trees/SessionTrees/TreeLands.cs": ["DiscardOffer"],
         "Trees/SessionTrees/TreeReadMemo.cs": ["TreeWork"],
         "Trees/SessionTrees/TreeWorkReads.cs": ["DiscardOffer","HeldWork","TreeWork"]
@@ -1697,9 +1531,8 @@
       "family": "Context names Work orders",
       "after": "Context",
       "files": {
-        "Accounts/InstructionAccounting.cs": ["AskWordView","AskWords","AskWordsText","ChannelText","GoAheadsText"],
-        "Conversations/Domain/ContextBrief.cs": ["ChannelText"],
-        "Sessions/Events/ContextBriefs.cs": ["SessionRecords"]
+        "Accounts/InstructionAccounting.cs": ["AskWords","AskWordsText","ChannelText","GoAheadsText"],
+        "Conversations/Domain/ContextBrief.cs": ["ChannelText"]
       }
     },
     {
@@ -1739,20 +1572,9 @@
       "family": "Course names Work orders",
       "after": "Course",
       "files": {
-        "Conversations/Chat/BriefedMove.cs": ["SessionRecords"],
-        "Conversations/Chat/ChatGoOn.cs": ["SessionRecords"],
-        "Conversations/Chat/LimitMove.cs": ["SessionRecords"],
-        "Conversations/Chat/LimitWaits.cs": ["SessionRecords"],
-        "Conversations/Domain/ChatMessage.cs": ["ChannelItemView"],
-        "Conversations/Domain/DaorisWords.cs": ["QuestReopenView","QuestSubmissionRef"],
         "Conversations/DrivenInbox.cs": ["ChannelAcks","ChannelText"],
-        "Conversations/GoOn/GoOnNew.cs": ["SessionRecords"],
-        "Conversations/GoOn/ReopenMarks.cs": ["QuestReopenView"],
-        "Conversations/GoOn/SessionSay.cs": ["SessionRecords"],
-        "Conversations/GoOn/UncertainWords.cs": ["SessionRecords"],
-        "Conversations/HandOver/HandOver.cs": ["SessionRecords"],
         "Conversations/HandOver/HandOverAskWord.cs": ["SessionsAsk","SessionsWorld"],
-        "Conversations/HandOver/HandOverQuest.cs": ["Planner","SessionRecords"],
+        "Conversations/HandOver/HandOverQuest.cs": ["Planner"],
         "Loop/LimitResume.cs": ["Consideration","Planner"],
         "Sessions/Requests/SessionMoves.cs": ["StopAnswer"]
       }
@@ -1942,6 +1764,23 @@
     "KeepKeyTests.cs": "Settings",
     "LandingKeyTests.cs": "Settings",
     "PluginIdsTests.cs": "Settings",
-    "ChoiceVerbTests.cs": "Settings"
+    "ChoiceVerbTests.cs": "Settings",
+    "LayoutReaderTests.cs": "Service",
+    "LedgerChangesTests.cs": "Service",
+    "LineRegistrationTests.cs": "Service",
+    "RegistryFollowingTests.cs": "Service",
+    "RemoteSyncTests.cs": "Service",
+    "RemoteTargetTests.cs": "Service",
+    "RunningServiceTests.cs": "Service",
+    "ServiceClientClosureTests.cs": "Service",
+    "ServiceClientReviewTests.cs": "Service",
+    "ServiceClientWorkflowProposalTests.cs": "Service",
+    "ServiceDoorsTests.cs": "Service",
+    "ServiceHostLocatorTests.cs": "Service",
+    "RunningAddressTests.cs": "Service",
+    "RegistrationFollowTests.cs": "Service",
+    "RecordNotesTests.cs": "Service",
+    "ServiceRecordsTests.cs": "Service",
+    "ServicePortsTests.cs": "Service"
   }
 }
