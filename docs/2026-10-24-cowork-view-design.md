@@ -1,6 +1,6 @@
-# Who is at work on a session: its parts, its subagents, its co-workers and the quests it asked, what each is on and what waits on what, read from the Fabric's records, and how a session hands its work out (COWORKVIEW1, proposed, 2026-10-24)
+# Who is at work on a session: its parts, its subagents, its co-workers and the quests it asked, what each is on and what waits on what, read from the Fabric's records, and how a session hands its work out (COWORKVIEW1, row a accepted 2026-10-26; the routing half proposed)
 
-**Standing:** proposed, round 10 with both makers' named changes, under D191, with dated notes amending D173 (the Collaboration Fabric), D203 (co-workers), D115
+**Standing:** **row a accepted by the steward on 2026-10-26** (D173's note of that date), after both makers' reads of round 10 and their named changes (§23); the routing half proposed. Round 10 with both makers' named changes, under D191, with dated notes amending D173 (the Collaboration Fabric), D203 (co-workers), D115
 (lanes) and D167 (sessions and their parts). The design is two scopes with a standing each:
 - **Row a, *a chat's subagents seen*: the scope round 10 settles.** Its whole contract is §7 row a's table, each rule with where
   it is specified and its proof. Both makers have read round 9 at `a30797bce` (`docs/2026-10-24-cowork-view-reads.md`): Codex
@@ -18,8 +18,9 @@
   changes**: Codex (*Codex, round 10*: 6 findings, 2 blocking on one point, an unclean historical chat `end` read as proof of
   exit; two named changes) and the Opus foundation reader (*Opus (foundation), round 10*: 9 findings, none blocking). §23 takes
   every finding of both against the code on main at `0831acaea`, each place marked *(C10-n)*, Codex's named change n, or
-  *(O10-Fn)*, the Opus read's finding n, so row a is ready for the steward's acceptance. It is not accepted until the steward
-  accepts it, and nothing of it is built, filed or staged until then.
+  *(O10-Fn)*, the Opus read's finding n, and **the steward accepted row a on them on 2026-10-26**, each named change checked in
+  the passage §23 names. Row a is built after the FOUNDATION1 moves that hold its files (Agents, Participants, Context, Loop),
+  its new files in their subdomains' folders.
 - **The routing half (rows e, b, c, d and f, and the sections marked *routing half*): proposed for a later round**, under its own
   reads, unchanged by rounds 5 to 10. Round 4 corrected what the reads found in it and settled none of it. Nothing of it is built or
   filed until that round accepts it, which FOUNDATION1's §5.1 has written after its rows c, d and f land.
@@ -3992,9 +3993,8 @@ its read offered; where the two reads met, one change meets both, as said above.
 2's takings with `took`, and every *lost* drawn before an `end` said it. What they add is one neutral word, two writes of an
 `end` on paths that already read the exit, a narrower history reading, two stories and one rule 5 case, each in row a's table.
 
-**The standing (D191).** Both makers' reads of round 10 asked accept after named changes, and they are taken here, so row a is
-ready for the steward's acceptance. It is not accepted until the steward accepts it, and nothing of it is built, filed or staged
-until then. The routing half keeps its own round.
+**The standing (D191).** Both makers' reads of round 10 asked accept after named changes, they are taken here, and the steward
+accepted row a on them on 2026-10-26 (D173's note of that date). The routing half keeps its own round.
 
 **The decisions' notes.** D173's COWORKVIEW1 notes gain one dated 2026-10-26 for round 10's named changes. It changes point 2
 (a close saying only what its proof proves; every read exit written; the agent's end in the words; no taking) and point 4 (no
