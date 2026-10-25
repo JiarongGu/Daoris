@@ -150,3 +150,25 @@ public sealed record AskView(string Id, string Workspace, string Sentence, strin
     /// <summary>The person's kind and workflow choices on it, oldest first, the latest standing (WORKFLOW1e); empty where they made none.</summary>
     public IReadOnlyList<AskWorkflowChoiceView> WorkflowChoices { get; init; } = [];
 }
+
+public static class Asks
+{
+    /// <summary>
+    /// What a set of asks SAYS to the attention band, as one string — equal when the same asks stand
+    /// in the same states with the same intake and quests, whatever the order. The shell forwards a
+    /// tick to the page when this changes (INT4d), as it does for <see cref="Considerations.Signature"/>:
+    /// an ask made by the other door moves nothing else a tick reports.
+    /// </summary>
+    public static string Signature(IEnumerable<AskView> asks) =>
+        string.Join("\n", asks
+            .Select(ask => $"{ask.Id}\t{ask.State}\t{ask.Intake}\t{ask.Quests.Count}")
+            .OrderBy(line => line, StringComparer.Ordinal));
+
+    /// <summary>
+    /// Whether a proposal was made because the ask's sentence names its repository (ASKNAME1b): its evidence is that name
+    /// alone, which is what the tier writes for one (ASKNAME1). Without case, as the tier finds the name. The page reads a
+    /// proposal by the same rule, so the intake and the person are told the same thing.
+    /// </summary>
+    public static bool IsNamed(string repository, IReadOnlyList<string> matched) =>
+        matched is [var only] && string.Equals(only, repository, StringComparison.OrdinalIgnoreCase);
+}

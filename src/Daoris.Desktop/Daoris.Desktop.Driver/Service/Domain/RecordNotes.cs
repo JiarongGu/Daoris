@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The note codes the service's own reading of a session's record judges by (<see cref="ServiceClient.ReadStrikes"/>, <see cref="ServiceClient.NotOffered"/>, and the records
 /// <see cref="PriorSession"/>), never by the words: an update's close, a provider's outage past its bound, a choice its agent refused at the open, a
-/// steward's stop, and the account's own refusals and sign-outs. The vocabulary is the events' (<see cref="NoteCodes"/>, which the page's catalogue is held to, one declaration per line),
+/// steward's stop, a record that ended waiting on its helper, and the account's own refusals and sign-outs. The vocabulary is the events' (<see cref="NoteCodes"/>, which the page's catalogue is held to, one declaration per line),
 /// so each spelling here is held equal to its declaration there by <c>RecordNotesTests</c>.
 /// </summary>
 public static class RecordNotes
@@ -19,6 +19,9 @@ public static class RecordNotes
 
     /// <summary>A checkpoint's stop that was the steward's (<see cref="NoteCodes.StoppedCheckpointStoppedSteward"/>).</summary>
     public const string StoppedCheckpointStoppedSteward = "stopped.checkpoint-stopped-steward";
+
+    /// <summary>A session that ended waiting on its own helper (<see cref="NoteCodes.EndedAwaitsHelper"/>).</summary>
+    public const string EndedAwaitsHelper = "ended.awaits-helper";
 
     /// <summary>A choice its agent refused at the open (<see cref="NoteCodes.EndedChoiceNotOffered"/>).</summary>
     public const string EndedChoiceNotOffered = "ended.choice-not-offered";

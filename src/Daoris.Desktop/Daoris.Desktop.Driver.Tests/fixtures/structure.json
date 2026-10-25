@@ -448,6 +448,7 @@
     "Quests/QuestUnits.cs": "Work orders",
     "Quests/QuestWorkflowCommand.cs": "Work orders",
     "Quests/RetryVerb.cs": "Work orders",
+    "Quests/SnapshotReads.cs": "Work orders",
     "Quests/SyncForwardCommand.cs": "Work orders",
     "Review/ChatLooks.cs": "Review",
     "Review/ChatSendBacks.cs": "Review",
@@ -495,6 +496,8 @@
     "Service/Domain/ActorWire.cs": "Service",
     "Service/Domain/AskViews.cs": "Service",
     "Service/Domain/AskWorkflowViews.cs": "Service",
+    "Service/Domain/BrainstormViews.cs": "Service",
+    "Service/Domain/ChannelViews.cs": "Service",
     "Service/Domain/ContinuedFrom.cs": "Service",
     "Service/Domain/EvidenceLine.cs": "Service",
     "Service/Domain/EvidenceViews.cs": "Service",
@@ -537,6 +540,7 @@
     "Service/ServiceDoors.cs": "Service",
     "Service/ServiceHostLocator.cs": "Service",
     "Service/ServiceHttp.cs": "Service",
+    "Service/SessionRecords.cs": "Service",
     "Sessions/AccessCommand.cs": "Participants",
     "Sessions/ChildLineage.cs": "Participants",
     "Sessions/Domain/AbandonEntry.cs": "Workplace",
@@ -882,13 +886,6 @@
   },
   "edges": [
     {
-      "family": "Service names Work orders",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["Asks","BrainstormFound","BrainstormPackets","BrainstormSearch","ChannelPosted","ChannelView","Planner","SessionRecords","SessionStates","Snapshot"]
-      }
-    },
-    {
       "family": "Service names Workplace",
       "after": "Service",
       "files": {
@@ -1036,14 +1033,6 @@
       "after": "Events",
       "files": {
         "Platform/HomeWatch.cs": ["PluginCatalog"]
-      }
-    },
-    {
-      "family": "Events names Work orders",
-      "after": "Events",
-      "files": {
-        "Sessions/Domain/Observation.cs": ["SessionStates"],
-        "Sessions/Events/SessionLog.cs": ["SessionStates"]
       }
     },
     {
@@ -1399,12 +1388,10 @@
         "Sessions/History/SessionHomeFiles.cs": ["QuestionFiles"],
         "Trees/Branches/SessionBranches.cs": ["WorkObligations"],
         "Trees/Branches/TidyEffect.cs": ["InventoryDisposition","InventoryFacts","InventoryKind","InventoryRole","WorkInventory"],
-        "Trees/ChatLandCommand.cs": ["SessionRecords"],
         "Trees/Domain/IWorkTrees.cs": ["TreeWork"],
         "Trees/GitReads/ReviewGraphReads.cs": ["LandOffer"],
         "Trees/GitReads/SessionReviews.cs": ["LandOffer"],
         "Trees/Landing/AutoLander.cs": ["QuestResults","SessionGroups"],
-        "Trees/Landing/AutoLanding.cs": ["SessionStates"],
         "Trees/Orphans.cs": ["EvidenceAt","EvidenceCheck"],
         "Trees/SessionEntries.cs": ["EntryKey","SessionGroup","SessionGrouping","SessionGroups","SessionLook"],
         "Trees/SessionTrees/EntryAccepts.cs": ["Consideration","SessionGrouping","SessionGroups"],
@@ -1551,8 +1538,7 @@
       "after": "Context",
       "files": {
         "Accounts/InstructionAccounting.cs": ["AskWords","AskWordsText","ChannelText","GoAheadsText"],
-        "Conversations/Domain/ContextBrief.cs": ["ChannelText"],
-        "Sessions/Events/ContextBriefs.cs": ["SessionRecords"]
+        "Conversations/Domain/ContextBrief.cs": ["ChannelText"]
       }
     },
     {
@@ -1592,18 +1578,9 @@
       "family": "Course names Work orders",
       "after": "Course",
       "files": {
-        "Conversations/Chat/BriefedMove.cs": ["SessionRecords"],
-        "Conversations/Chat/ChatGoOn.cs": ["SessionRecords"],
-        "Conversations/Chat/LimitMove.cs": ["SessionRecords"],
-        "Conversations/Chat/LimitWaits.cs": ["SessionRecords"],
-        "Conversations/Domain/ChatMessage.cs": ["ChannelItemView"],
         "Conversations/DrivenInbox.cs": ["ChannelAcks","ChannelText"],
-        "Conversations/GoOn/GoOnNew.cs": ["SessionRecords"],
-        "Conversations/GoOn/SessionSay.cs": ["SessionRecords"],
-        "Conversations/GoOn/UncertainWords.cs": ["SessionRecords"],
-        "Conversations/HandOver/HandOver.cs": ["SessionRecords"],
         "Conversations/HandOver/HandOverAskWord.cs": ["SessionsAsk","SessionsWorld"],
-        "Conversations/HandOver/HandOverQuest.cs": ["Planner","SessionRecords"],
+        "Conversations/HandOver/HandOverQuest.cs": ["Planner"],
         "Loop/LimitResume.cs": ["Consideration","Planner"],
         "Sessions/Requests/SessionMoves.cs": ["StopAnswer"]
       }

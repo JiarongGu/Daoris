@@ -4,13 +4,6 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// What a search of Daoris's own knowledge found for a brainstorm's packet (BRAINSTORM1a, D176 point 2), before the bounds: an
-/// entry's kind, its path from the repository's root, its lines, its text, and the words that found it.
-/// </summary>
-/// <param name="Words">The wording of the question the search was asked in.</param>
-public sealed record BrainstormFound(string Kind, string Path, int? First, int? Last, string Text, string Words);
-
 /// <summary>One source of a frozen packet (D176 point 2): what it is, where, at which revision, why it was taken, and what was kept.</summary>
 /// <param name="Id">The packet's own id for it, <c>S1</c>…, which a proposal names in its <c>sources</c>.</param>
 /// <param name="Revision">The commit of the checkout it was read at; null where it could not be read.</param>
@@ -50,8 +43,8 @@ public static class BrainstormPackets
     /// <summary>The schema's version, written as <c>packet</c>.</summary>
     public const int Version = 1;
 
-    public const string Meaning = "meaning";
-    public const string Words = "words";
+    public const string Meaning = BrainstormTier.Meaning;
+    public const string Words = BrainstormTier.Words;
     public const string Files = "files";
 
     public const string LeftForBound = "bound";
