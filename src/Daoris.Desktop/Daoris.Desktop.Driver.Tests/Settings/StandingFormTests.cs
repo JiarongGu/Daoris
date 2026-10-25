@@ -42,6 +42,7 @@ public sealed class StandingFormTests
         var instance = running.World("daoris");
         return await DriverChoicesCommand.RunAsync(args[1..], new DriverChoicesWorld
         {
+            Verbs = DriverChoiceVerbs.All,
             Instance = new InstanceWorld
             {
                 Home = running.Home,

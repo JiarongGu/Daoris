@@ -21,6 +21,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     /// <summary>A terminal on this test's home with the variables named, where no Daoris runs (a workspace build reads no address file).</summary>
     private DriverChoicesWorld World(params (string Name, string Value)[] variables) => new()
     {
+        Verbs = DriverChoiceVerbs.All,
         Instance = new InstanceWorld
         {
             Home = _home,
@@ -221,6 +222,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         var config = DaorisHome.Entry(running.Home, HomeEntry.DriverConfig);
         var world = new DriverChoicesWorld
         {
+            Verbs = DriverChoiceVerbs.All,
             Instance = new InstanceWorld
             {
                 Home = running.Home,
@@ -266,6 +268,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         var instance = running.World("daoris");
         var world = new DriverChoicesWorld
         {
+            Verbs = DriverChoiceVerbs.All,
             Instance = new InstanceWorld
             {
                 Home = running.Home,
@@ -304,6 +307,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         var config = DaorisHome.Entry(running.Home, HomeEntry.DriverConfig);
         var world = new DriverChoicesWorld
         {
+            Verbs = DriverChoiceVerbs.All,
             Instance = new InstanceWorld
             {
                 Home = running.Home,

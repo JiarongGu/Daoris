@@ -25,6 +25,7 @@ public sealed class WorkflowAsGraphCommandTests : IDisposable
 
     private DriverChoicesWorld World() => new()
     {
+        Verbs = DriverChoiceVerbs.All,
         Instance = new InstanceWorld { Home = _home, Environment = _ => null, Out = _out, Error = _error, Verb = "daoris" },
         ConfigPath = Config,
         Folder = _home,

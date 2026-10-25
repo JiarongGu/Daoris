@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using static Daoris.Driver.ChoiceArgs;
 
 namespace Daoris.Driver;
 
@@ -42,6 +43,12 @@ public sealed record DriverChoicesWorld
     /// folder by default, a test's stand-in otherwise. Null where it does not read.
     /// </summary>
     public Func<long?>? FloorVolume { get; init; }
+
+    /// <summary>
+    /// The verbs the subdomains above the settings own (<see cref="ChoiceVerb"/>), wired by Loop (<c>DriverChoiceVerbs</c>); a verb's word
+    /// no verb here carries is no verb of the world's.
+    /// </summary>
+    public IReadOnlyList<ChoiceVerb> Verbs { get; init; } = [];
 }
 
 /// <summary>
@@ -362,6 +369,9 @@ public static class DriverChoicesCommand
             return 2;
         }
     }
+
+    /// <summary>The verb of the world's that carries <paramref name="verb"/>, or null where none does.</summary>
+    private static ChoiceVerb? Registered(DriverChoicesWorld world, string verb) => world.Verbs.FirstOrDefault(each => each.Word == verb);
 
     /// <summary>
     /// The press <paramref name="args"/> ask for, read from the words and judged against <paramref name="before"/>, the choices as this
@@ -731,9 +741,6 @@ public static class DriverChoicesCommand
             case "opinion":
                 return Opinion(args, before, world);
 
-            case "helpers":
-                return Helpers(args, before, world);
-
             case "handover":
                 return HandOver(args, before, world);
 
@@ -860,7 +867,8 @@ public static class DriverChoicesCommand
             }
 
             default:
-                throw new ChoiceWords($"`{verb}` is not a standing choice this program changes.");
+                return Registered(world, verb)?.Plan(args, before, world)
+                    ?? throw new ChoiceWords($"`{verb}` is not a standing choice this program changes.");
         }
     }
 
@@ -921,6 +929,7 @@ public static class DriverChoicesCommand
     {
         var write = world.Instance.Out;
         void Say(string line) => write.WriteLine(line);
+        void Section(string word) => Registered(world, word)?.Listed(choices, world);
         Say($"daoris: {world.ConfigPath}");
         Say($"  adapter    {choices.Adapter}");
         Say($"  cap        {choices.Cap} concurrent session(s)");
@@ -1022,13 +1031,7 @@ public static class DriverChoicesCommand
                 + "--reviewers <adapter>` declares one");
         }
 
-        foreach (var (repository, rule) in choices.Helpers) Say($"  helpers    {repository}  {HelperRules.Listed(rule)}");
-        foreach (var (workspace, rule) in choices.WorkspaceHelpers) Say($"  helpers    workspace {workspace}  {HelperRules.Listed(rule)}  (for each repository there that sets none)");
-        if (choices.Helpers.Count == 0 && choices.WorkspaceHelpers.Count == 0)
-        {
-            Say("  helpers    none set — each helper an agent asks for waits for your yes; `daoris driver helpers <repository> "
-                + "--mode on|off` sets one");
-        }
+        Section("helpers");
 
         foreach (var (repository, rule) in choices.HandOver) Say($"  hand-over  {repository}  {rule.Mode}");
         foreach (var (workspace, rule) in choices.WorkspaceHandOver) Say($"  hand-over  workspace {workspace}  {rule.Mode}  (for each repository there that sets none)");
@@ -1766,57 +1769,6 @@ public static class DriverChoicesCommand
         });
     }
 
-    /// <summary><c>helpers</c> (MIXAGENT2a-i): what a helper an agent asks for does here now.</summary>
-    private static ChoicePress Helpers(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
-    {
-        var path = world.ConfigPath;
-        void Say(string line) => world.Instance.Out.WriteLine(line);
-        string[] valued = ["--workspace", "--mode", "--agents"];
-        const string usage = "`driver helpers` needs <repository>|--workspace <name>, then --mode ask|on|off and/or --agents <adapter,adapter>, "
-            + "or --clear — e.g. `daoris driver helpers web-app --mode on --agents codex-acp`.";
-        Flags(args, valued, ["--clear"], "helpers", usage);
-        var workspace = FlagValue(args, "--workspace");
-        var name = workspace ?? Operands(args, valued).Skip(1).FirstOrDefault();
-        var clear = args.Contains("--clear");
-        var mode = FlagValue(args, "--mode");
-        var agents = FlagValue(args, "--agents");
-        var set = new JsonObject();
-        if (mode is not null) set["mode"] = mode;
-        if (agents is not null) set["agents"] = new JsonArray([.. agents.Split(',').Select(each => (JsonNode?)each.Trim())]);
-        if (string.IsNullOrEmpty(name) || (!clear && set.Count == 0)) throw new ChoiceWords(usage);
-
-        var payload = Scoped(workspace, name);
-        if (set.Count > 0) payload["set"] = set;
-        if (clear) payload["clear"] = true;
-        var edit = HelperRules.EditOf(JsonSerializer.SerializeToElement(payload));
-        var after = Judged(() => HelperRules.Apply(before, edit));
-        return new("helpers", ChoiceRoutes.Helpers, payload, _ =>
-        {
-            StandingChoices.Write(path, config => HelperRules.Apply(config, edit));
-            return Task.FromResult<object?>(null);
-        }, _ => null, _ =>
-        {
-            var map = workspace is not null ? after.WorkspaceHelpers : after.Helpers;
-            var key = FindName(map.Keys, name) ?? FindName((workspace is not null ? before.WorkspaceHelpers : before.Helpers).Keys, name) ?? name;
-            if (map.GetValueOrDefault(key) is not { } rule)
-            {
-                Say(workspace is not null
-                    ? $"daoris: repositories in the workspace `{key}` keep their own helpers rule, else each helper waits for your yes."
-                    : $"daoris: `{key}` takes its workspace's helpers rule again, else each helper waits for your yes.");
-            }
-            else
-            {
-                Say(workspace is not null
-                    ? $"daoris: helpers for repositories in the workspace `{key}` that set none of their own: {HelperRules.Listed(rule)}."
-                    : $"daoris: helpers for `{key}`: {HelperRules.Listed(rule)}.");
-                Say($"  {HelperRules.Says(rule.Mode)}");
-            }
-
-            Say($"  Written to {path}.");
-            return 0;
-        });
-    }
-
     /// <summary><c>handover</c> (MIXAGENT1c): what an agent's ask to hand its session over does here now.</summary>
     private static ChoicePress HandOver(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
@@ -1916,33 +1868,6 @@ public static class DriverChoicesCommand
             Say($"  Written to {path}.");
             return 0;
         });
-    }
-
-    /// <summary>A rule's own judgement made before the press, as the command's own check: its refusal is the command's words.</summary>
-    private static DriverConfig Judged(Func<DriverConfig> apply)
-    {
-        try
-        {
-            return apply();
-        }
-        catch (DriverException refused)
-        {
-            throw new ChoiceWords(refused.Message);
-        }
-    }
-
-    /// <summary>Each word that is a flag must be one the verb takes, a valued flag's value skipped.</summary>
-    private static void Flags(IReadOnlyList<string> args, string[] valued, string[] switches, string verb, string usage)
-    {
-        for (var at = 1; at < args.Count; at++)
-        {
-            var token = args[at];
-            if (valued.Contains(token)) at++;
-            else if (token.StartsWith("--", StringComparison.Ordinal) && !switches.Contains(token))
-            {
-                throw new ChoiceWords($"`{token}` is not a flag `driver {verb}` takes — {usage}");
-            }
-        }
     }
 
     /// <summary>A rule in a line of <c>list</c>: each environment with its kind, address, procedure and command, then whether it waits.</summary>
@@ -2204,82 +2129,4 @@ public static class DriverChoicesCommand
         return document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty(key, out var value)
             && value.ValueKind == JsonValueKind.Number && value.TryGetDouble(out var number) && double.IsInteger(number);
     }
-
-    /// <summary>A moment as the CLI said it: ISO 8601 to the second, in UTC.</summary>
-    private static string Moment(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
-
-    /// <summary>The scope of a press: the workspace where one is named, else the repository.</summary>
-    private static JsonObject Scoped(string? workspace, string name) =>
-        workspace is not null ? new JsonObject { ["workspace"] = workspace } : new JsonObject { ["repository"] = name };
-
-    /// <summary>The verb's name, the first operand after it: a flag's value is never the name (REV3).</summary>
-    private static string Named(IReadOnlyList<string> args, string verb) =>
-        Operands(args, ["--at", "--session"]).ElementAtOrDefault(1)
-        ?? throw new ChoiceWords($"`driver {verb}` needs a name — e.g. `daoris driver {verb} aurora-engine`.");
-
-    /// <summary>The positional operands, in order: every token that is neither a flag nor the value of one (the CLI's <c>operands</c>).</summary>
-    private static List<string> Operands(IReadOnlyList<string> args, string[] valued)
-    {
-        var found = new List<string>();
-        for (var at = 0; at < args.Count; at++)
-        {
-            var token = args[at];
-            if (valued.Contains(token)) at++;
-            else if (!token.StartsWith("--", StringComparison.Ordinal)) found.Add(token);
-        }
-
-        return found;
-    }
-
-    /// <summary>The value after a flag, refusing a flag with nothing after it (the CLI's <c>flagValue</c>).</summary>
-    private static string? FlagValue(IReadOnlyList<string> args, string flag)
-    {
-        var at = IndexOf(args, flag);
-        if (at == -1) return null;
-        var value = args.ElementAtOrDefault(at + 1);
-        if (string.IsNullOrEmpty(value) || value.StartsWith("--", StringComparison.Ordinal))
-        {
-            throw new ChoiceWords($"{flag} needs a name — e.g. `{flag} aurora`");
-        }
-
-        return value;
-    }
-
-    private static int IndexOf(IReadOnlyList<string> args, string word)
-    {
-        for (var at = 0; at < args.Count; at++)
-        {
-            if (args[at] == word) return at;
-        }
-
-        return -1;
-    }
-
-    /// <summary>A name in the list in any case, as it is spelled there, or null.</summary>
-    private static string? FindName(IEnumerable<string> names, string name) =>
-        names.FirstOrDefault(each => string.Equals(each, name, StringComparison.OrdinalIgnoreCase));
-
-    private static T? AtName<T>(IReadOnlyDictionary<string, T> map, string name) where T : class =>
-        FindName(map.Keys, name) is { } key ? map[key] : null;
-
-    /// <summary>A word read as a number as the CLI read it (JavaScript's <c>Number</c>): blank is 0, anything else not a number is NaN.</summary>
-    private static double Number(string word)
-    {
-        var text = word.Trim();
-        if (text.Length == 0) return 0;
-        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
-            && long.TryParse(text[2..], NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var hex))
-        {
-            return hex;
-        }
-
-        if (text is "Infinity" or "+Infinity") return double.PositiveInfinity;
-        if (text == "-Infinity") return double.NegativeInfinity;
-        return text.All(c => char.IsAsciiDigit(c) || c is '.' or 'e' or 'E' or '+' or '-')
-            && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
-                ? number
-                : double.NaN;
-    }
-
-    private static bool IsWhole(double value) => double.IsFinite(value) && Math.Floor(value) == value;
 }
