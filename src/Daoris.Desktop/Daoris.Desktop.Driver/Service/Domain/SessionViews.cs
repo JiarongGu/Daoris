@@ -367,3 +367,10 @@ public static class SessionStates
     public static bool IsParked(string? state) =>
         string.Equals(state, AwaitingPerson, StringComparison.OrdinalIgnoreCase);
 }
+
+/// <summary>
+/// A session running on this home as the downloads' guard reads it (KEEP1b, D195 point 6; the cleanup design §3.5, Fable F2.5): its id, when
+/// its record was opened, and the downloaded versions its starts were handed, <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>; null
+/// for a record from before that field, which keeps the start-time rule.
+/// </summary>
+public sealed record LiveSession(string Id, DateTimeOffset? Started, IReadOnlyList<string>? Resolved);

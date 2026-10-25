@@ -503,6 +503,7 @@
     "Service/Domain/EvidenceViews.cs": "Service",
     "Service/Domain/HistoryViews.cs": "Service",
     "Service/Domain/HomePipe.cs": "Service",
+    "Service/Domain/LandingLine.cs": "Service",
     "Service/Domain/LayoutFacts.cs": "Service",
     "Service/Domain/LineRegistration.cs": "Service",
     "Service/Domain/LoopbackHosts.cs": "Service",
@@ -774,6 +775,7 @@
     "Trees/PullRequestStates.cs": "Workplace",
     "Trees/PullRequestWords.cs": "Workplace",
     "Trees/RefWatch.cs": "Workplace",
+    "Trees/RegistryHeard.cs": "Workplace",
     "Trees/SessionEntries.cs": "Workplace",
     "Trees/SessionGroups.cs": "Work orders",
     "Trees/SessionTrees/AutoTidies.cs": "Workplace",
@@ -892,9 +894,8 @@
         "Service/Domain/RemoteSyncPayloads.cs": ["TreeProvenance","TreeRelation"],
         "Service/LayoutGit.cs": ["WorkingTree"],
         "Service/RegistrationWorld.cs": ["CanonicalLine","LandedBranches","WorkingTree"],
-        "Service/RegistryFollowing.cs": ["RefRepository","TreeTips"],
         "Service/RemoteSync.cs": ["CanonicalLine","TreeProvenance","TreeRelation","WorkingTree"],
-        "Service/ServiceClient.cs": ["FinishedPost","LandingLine","LiveSession","RecordRefusal","SessionLocks"]
+        "Service/ServiceClient.cs": ["SessionLocks"]
       }
     },
     {
@@ -1047,8 +1048,7 @@
       "after": "Events",
       "files": {
         "Platform/HomeWatch.cs": ["HeldWordsFile","LandingJudged"],
-        "Platform/NoticesRead.cs": ["TreesSaid"],
-        "Sessions/Events/SessionLog.cs": ["LandingLine"]
+        "Platform/NoticesRead.cs": ["TreesSaid"]
       }
     },
     {
