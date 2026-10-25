@@ -146,6 +146,62 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
         }
     }
 
+    /// <summary>
+    /// FOUNDATION1b (D137, D188; the foundation design §10): the shell restarts while a record winds up, before the take. A real process
+    /// holds the session whose record the service still answers as working, so the person's word is refused <c>running</c> and held with
+    /// its key; the process ends, the shell is replaced on the same home, the record ends, and the word is delivered once, under its key:
+    /// the producer's retry afterwards is answered with it. After the take it is row p's settlement, not this case's.
+    /// </summary>
+    [Fact]
+    public async Task A_word_held_as_a_record_winds_up_is_delivered_once_across_a_shell_restart()
+    {
+        var winding = true;
+        var service = new KeyedSayService
+        {
+            Records = """[{"id":"s1","repository":"engine","state":"working","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}]""",
+            Winding = _ => winding,
+        };
+        var before = Loop();
+        await before.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(service)));
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "node",
+            ArgumentList = { "-e", "setTimeout(() => {}, 60000)" },
+            RedirectStandardInput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        })!;
+        using var tracked = before.Processes.Track("s1", process);
+
+        try
+        {
+            var said = await before.Words.SayAsync(
+                "s1", "and the readme", [], preface: null, "screen", CancellationToken.None, key: "press/9d2e");
+            Assert.True(said!.Sent);
+            Assert.Single(service.Said("s1"), post => post.Refused);
+        }
+        finally
+        {
+            before.Processes.Stop("s1");
+        }
+
+        before.Stop();
+        winding = false;
+        service.Records = """[{"id":"s1","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}]""";
+        var after = Loop();
+        await after.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(service)));
+        await after.Service!.AdvanceAsync("s1", "completed", note: "the quest reached done.");
+        await UntilAsync(() => service.Kept("s1") == 1);
+        await UntilAsync(() => !File.Exists(SessionWords.HeldPath(Home)));
+
+        var retried = await after.Words.SayAsync(
+            "s1", "and the readme", [], preface: null, "screen", CancellationToken.None, key: "press/9d2e");
+
+        Assert.True(retried!.Sent);
+        Assert.Equal(1, service.Kept("s1"));
+        after.Stop();
+    }
+
     /// <summary>A service standing in that answers no record and keeps whatever is posted, each post heard by its path.</summary>
     private sealed class Answering(List<string> posts) : HttpMessageHandler
     {

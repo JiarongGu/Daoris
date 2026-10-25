@@ -13,6 +13,11 @@ with the version and date at release.
   were left behind on this machine, however small: the box of a move a limit made, and an agent's ask to hand a session over with its
   state. A workspace's clear takes them too once their session is gone and nothing has touched them for an hour, and counts them in
   what it freed. Nothing running is touched.
+- Words you write to a session that is still winding up, and that Daoris's desktop holds until the session ends, no longer land twice when
+  the desktop restarts in between and the sender says them again (FOUNDATION1b, D137, D188). A held word now keeps the key its sender gave
+  it, its level, its files and its display choice across the restart, so the repeat is answered with the word already kept, and a word
+  forwarded to the conversation its session went on in goes there at the level it was said at.
+
 - Words you write to a finished session whose account is cooling no longer wait days for that account's reset while another account
   is ready (LIMITSWITCH1, D137). For work that is open or taken, they go on at once as a new part of the same session on the ready
   account, handed Daoris's brief, as work cut off by a limit already did, and arrive once. Only when every account is at its limit do

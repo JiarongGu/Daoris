@@ -172,7 +172,7 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
             var kept = await inbox
                 .KeepOrHoldAsync(
                     service() is { } keeping ? new SaidDoor(keeping, id) : null,
-                    new ChatMessage(text, []) { Level = level, Key = request.Key is { Length: > 0 } key ? $"request/{key}" : null }, ct)
+                    new ChatMessage(text, []) { Level = level, Key = SessionRequests.WordKey(request) }, ct)
                 .ConfigureAwait(false);
             switch (kept)
             {
@@ -195,7 +195,8 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
             return WordsHeld.Failed("the driver is still coming up — its service is not answering yet. A moment.");
         }
 
-        var said = await client.SayAsync(id, text, request.Files, ct).ConfigureAwait(false);
+        // FOUNDATION1b: under the request's key as the inbox's is, so a request read again keeps one word on the record.
+        var said = await client.SayAsync(id, text, request.Files, ct, key: SessionRequests.WordKey(request)).ConfigureAwait(false);
         if (said.Kept)
         {
             if (said.Word is { } kept) Events?.Keep(id, Shown(kept, request.By), null);

@@ -352,6 +352,12 @@ public sealed partial class SessionRequests(string home)
     /// <summary>A fresh key for a say (MSG1e): enough of a random id that two said at once never share one.</summary>
     public static string NewKey() => Guid.NewGuid().ToString("N")[..12];
 
+    /// <summary>
+    /// The producer's key a say's words are kept under, whichever door says them (COWORK1c, FOUNDATION1b): the request's own key,
+    /// so a request read again after a restart keeps one word; null for a request that names none.
+    /// </summary>
+    public static string? WordKey(SessionRequest request) => request.Key is { Length: > 0 } key ? $"request/{key}" : null;
+
     /// <summary>Where a request is kept: a move under its session's id, a say under that and its own key.</summary>
     public string PathOf(SessionRequest request) => request.Key is null ? PathOf(request.Session) : Beside(request, ".json");
 

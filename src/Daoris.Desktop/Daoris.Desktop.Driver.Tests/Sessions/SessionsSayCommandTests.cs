@@ -515,6 +515,30 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Empty(room.Added);
     }
 
+    /// <summary>
+    /// FOUNDATION1b (D137, D188): where no shell holds the words, the headless fallback keeps a terminal's words on the ended record
+    /// under the request's key, as the inbox's path does, so a request read again after a restart keeps one word.
+    /// </summary>
+    [Fact]
+    public async Task The_headless_fallback_keeps_the_words_under_the_requests_key_so_a_request_read_again_keeps_one()
+    {
+        var room = Ended();
+        using var service = room.Client();
+        var words = new LoopWords(new SessionProcesses(Pids), () => service);
+        var request = new SessionRequest("d0ne0000", SessionMove.Say, DateTimeOffset.UtcNow)
+        {
+            Text = "also the changelog", Key = SessionRequests.NewKey(),
+        };
+
+        var first = await words.HoldAsync(request, CancellationToken.None);
+        var again = await words.HoldAsync(request, CancellationToken.None);
+
+        Assert.Equal(($"request/{request.Key}", $"request/{request.Key}"), (room.Keys[0], room.Keys[1]));
+        Assert.Equal(SessionRequests.WordKey(request), room.Keys[0]);
+        Assert.Equal((true, true, "w1"), (first.Sent, again.Sent, again.Word));
+        Assert.Single(room.Said("d0ne0000"));
+    }
+
     /// <summary>Where it could not go on in its own conversation, its words went to a new session, and the verb names it (D137 §3.1).</summary>
     [Fact]
     public async Task Words_that_went_to_a_new_session_say_which_and_why()
@@ -1078,6 +1102,17 @@ public sealed class SessionsSayCommandTests : IDisposable
         /// <summary>How many times the say door was posted to.</summary>
         public int Says { get; private set; }
 
+        private readonly List<string?> _keys = [];
+
+        /// <summary>The producer's key each word the say door took was said under, null for none, in order.</summary>
+        public IReadOnlyList<string?> Keys
+        {
+            get
+            {
+                lock (_gate) return [.. _keys];
+            }
+        }
+
         /// <summary>Told each post to the say door, with how many there have been: a test's condition (FLAKE5).</summary>
         public Action<int>? Heard { get; init; }
 
@@ -1173,10 +1208,22 @@ public sealed class SessionsSayCommandTests : IDisposable
                         return Refuse(HttpStatusCode.Conflict, "running", $"Session `{id}` is working; it hears words through its driver.");
                     }
 
+                    // FOUNDATION1b: one word per producer's key on a record, as the service's say door keeps it.
+                    var key = body!["key"]?.GetValue<string>();
+                    _keys.Add(key);
+                    if (key is not null && record["said"]!.AsArray().FirstOrDefault(each => (string?)each!["key"] == key) is { } waiting)
+                    {
+                        return Answer(HttpStatusCode.OK, new JsonObject
+                        {
+                            ["session"] = record.DeepClone(), ["message"] = $"Already kept for session `{id}` under key `{key}`.", ["said"] = waiting.DeepClone(),
+                        });
+                    }
+
                     var word = new JsonObject
                     {
-                        ["id"] = $"w{++_words}", ["text"] = body!["text"]!.GetValue<string>(), ["at"] = DateTimeOffset.UtcNow.ToString("O"),
+                        ["id"] = $"w{++_words}", ["text"] = body["text"]!.GetValue<string>(), ["at"] = DateTimeOffset.UtcNow.ToString("O"),
                         ["files"] = body["files"]?.DeepClone() ?? new JsonArray(), ["reopens"] = (string)record["state"]! != "awaiting-person",
+                        ["key"] = key,
                     };
                     record["said"]!.AsArray().Add(word.DeepClone());
                     return Answer(HttpStatusCode.OK, new JsonObject
