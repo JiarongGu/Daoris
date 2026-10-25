@@ -55,7 +55,7 @@ public static class ToolCodes
 /// </summary>
 public static class ToolRoutes
 {
-    private static InstanceRoute Person(string route) => new(TreesRoutes.DriverModule, route, RouteClass.Person);
+    private static InstanceRoute Person(string route) => new(InstanceRoute.DriverModule, route, RouteClass.Person);
 
     /// <summary><c>tool use &lt;tool&gt; system|file</c>: the Tools place's way chosen.</summary>
     public static InstanceRoute Use { get; } = Person("TOOLS_USE");
@@ -67,7 +67,7 @@ public static class ToolRoutes
     public static InstanceRoute Location { get; } = Person("TOOLS_LOCATION");
 
     /// <summary><c>tool look</c>: the driver's own look, so open.</summary>
-    public static InstanceRoute Look { get; } = new(TreesRoutes.DriverModule, "TOOLS_LOOK", RouteClass.Open);
+    public static InstanceRoute Look { get; } = new(InstanceRoute.DriverModule, "TOOLS_LOOK", RouteClass.Open);
 
     /// <summary>Each verb that changes the home, in the verb's words: the route it sends while Daoris runs, or null with why it acts alone.</summary>
     public static IReadOnlyList<(string Verb, InstanceRoute? Route, string Reason)> Verbs { get; } =

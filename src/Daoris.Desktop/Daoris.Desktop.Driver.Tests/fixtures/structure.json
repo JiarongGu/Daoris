@@ -894,14 +894,6 @@
   },
   "edges": [
     {
-      "family": "Install names Instance",
-      "after": "Install",
-      "files": {
-        "Install/ToolChoices.cs": ["TreesRoutes"],
-        "Install/ToolsCommand.cs": ["InstanceDoor","InstanceWorld"]
-      }
-    },
-    {
       "family": "Install names Workplace",
       "after": "Install",
       "files": {
