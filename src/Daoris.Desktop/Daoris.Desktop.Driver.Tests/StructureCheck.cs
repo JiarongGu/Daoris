@@ -105,7 +105,9 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 /// <list type="bullet">
 /// <item><c>place</c>: every source is placed in one subdomain, by <c>structure.json</c>'s list of files or, for new code, by the folder
 /// of the subdomain it sits in; a source in no subdomain's folder that the list does not place fails, and so does an entry for a file that
-/// is not there. A subdomain whose move has landed holds every file placed in it, in its folder.</item>
+/// is not there. A subdomain whose move has landed holds every file placed in it, in its folder; its folder may still hold the files of a
+/// subdomain whose move has not (Platform's folder is today's, which the rest leave one row at a time), since a file the map places in
+/// another subdomain is that subdomain's to move.</item>
 /// <item><c>module</c>: a subdomain's layer folder is a <c>Domain</c>, in a subdomain the map lets hold one; an <c>Application</c> or an
 /// <c>Infrastructure</c> folder is refused (FLAT1a).</item>
 /// <item><c>direction</c>: a file names only its own subdomain's types and those of the subdomains listed before it, read through Roslyn's
@@ -224,11 +226,6 @@ internal static class StructureCheck
                 if (placed.Moved && !inFolder)
                 {
                     breaches.Add(new(source.Path, 1, "place", $"{placed.Name} has moved, and the map places this file in it: its files sit in {placed.Folder}"));
-                }
-
-                if (parts.Length > 1 && byFolder.TryGetValue(parts[0], out var owner) && owner.Moved && owner.Name != placed.Name)
-                {
-                    breaches.Add(new(source.Path, 1, "place", $"sits in {owner.Folder}, where {owner.Name} has moved, and the map places it in {placed.Name}"));
                 }
 
                 if (inFolder && parts.Length > 2 && parts[1] == "Domain" && !placed.Domain)

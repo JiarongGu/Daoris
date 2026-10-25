@@ -1,6 +1,6 @@
 {
   "subdomains": [
-    { "name": "Platform", "folder": "Platform", "domain": false },
+    { "name": "Platform", "folder": "Platform", "domain": false, "moved": true },
     { "name": "Store", "folder": "Store", "domain": false },
     { "name": "Settings", "folder": "Settings", "domain": true },
     { "name": "Service", "folder": "Service", "domain": true },
@@ -86,8 +86,6 @@
     "Agents/Consoles/AgentJobs.cs": "Agents",
     "Agents/Consoles/BatchRelay.cs": "Agents",
     "Agents/Consoles/ConsoleRelay.cs": "Agents",
-    "Agents/Consoles/ProcessJob.cs": "Platform",
-    "Agents/Consoles/PseudoConsole.cs": "Platform",
     "Agents/Consoles/Terminals.cs": "Agents",
     "Agents/Errors/AgentErrors.cs": "Agents",
     "Agents/OutputTail.cs": "Agents",
@@ -204,9 +202,6 @@
     "Conversations/Partners/PartnerFiles.cs": "Participants",
     "Conversations/Partners/PartnerPersonAsk.cs": "Participants",
     "Conversations/Partners/PartnerReservations.cs": "Participants",
-    "Conversations/Partners/PieceJobs.cs": "Platform",
-    "Conversations/Partners/PieceLauncher.cs": "Platform",
-    "Conversations/Partners/PieceStarts.cs": "Platform",
     "Conversations/Partners/SessionsPartnerCommand.cs": "Participants",
     "Conversations/SaidDoor.cs": "Course",
     "Conversations/TranscriptFile.cs": "Context",
@@ -349,8 +344,13 @@
     "Platform/NoteCodes.cs": "Events",
     "Platform/Notices.cs": "Events",
     "Platform/NoticesRead.cs": "Events",
+    "Platform/PieceJobs.cs": "Platform",
+    "Platform/PieceLauncher.cs": "Platform",
+    "Platform/PieceStarts.cs": "Platform",
     "Platform/PipeName.cs": "Instance",
+    "Platform/ProcessJob.cs": "Platform",
     "Platform/ProcessStarts.cs": "Platform",
+    "Platform/PseudoConsole.cs": "Platform",
     "Platform/RecordList.cs": "Store",
     "Platform/RecordLock.cs": "Store",
     "Platform/RunningAddress.cs": "Service",
@@ -816,30 +816,30 @@
       "family": "Platform names Agents",
       "after": "Platform",
       "files": {
-        "Agents/Consoles/PseudoConsole.cs": ["ITerminal","TerminalLaunch"],
-        "Platform/AgentStarts.cs": ["AgentJobs","AgentStart","ContainedKind"]
+        "Platform/AgentStarts.cs": ["AgentJobs","AgentStart","ContainedKind"],
+        "Platform/PseudoConsole.cs": ["ITerminal","TerminalLaunch"]
       }
     },
     {
       "family": "Platform names Install",
       "after": "Platform",
       "files": {
-        "Agents/Consoles/PseudoConsole.cs": ["Tools"],
-        "Conversations/Partners/PieceStarts.cs": ["Tools"]
+        "Platform/PieceStarts.cs": ["Tools"],
+        "Platform/PseudoConsole.cs": ["Tools"]
       }
     },
     {
       "family": "Platform names Participants",
       "after": "Platform",
       "files": {
-        "Conversations/Partners/PieceJobs.cs": ["PartnerJob"]
+        "Platform/PieceJobs.cs": ["PartnerJob"]
       }
     },
     {
       "family": "Platform names Roles",
       "after": "Platform",
       "files": {
-        "Agents/Consoles/PseudoConsole.cs": ["HolderKey"]
+        "Platform/PseudoConsole.cs": ["HolderKey"]
       }
     },
     {
@@ -856,7 +856,7 @@
       "family": "Platform names Work orders",
       "after": "Platform",
       "files": {
-        "Agents/Consoles/PseudoConsole.cs": ["IntakeRoom"]
+        "Platform/PseudoConsole.cs": ["IntakeRoom"]
       }
     },
     {
@@ -1915,6 +1915,16 @@
     { "file": "Platform/SystemWiring.cs", "member": "SystemWiring.SameAddress", "after": "Loop" },
     { "file": "Platform/WiringVariables.cs", "member": "WiringVariables.Searched", "after": "Loop" }
   ],
-  "testFolders": ["Accounts","Agents","Brainstorms","Conversations","Help","Loop","Platform","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
-  "tests": {}
+  "testFolders": ["Accounts","Agents","Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
+  "tests": {
+    "AgentStartsProcessTests.cs": "Platform",
+    "AgentStartsTests.cs": "Platform",
+    "NoConsoleWindowTests.cs": "Platform",
+    "PieceJobsTests.cs": "Platform",
+    "PieceLauncherProcessTests.cs": "Platform",
+    "PieceLauncherTests.cs": "Platform",
+    "ProcessJobTests.cs": "Platform",
+    "ProcessStartsCensusTests.cs": "Platform",
+    "PseudoConsoleTests.cs": "Platform"
+  }
 }
