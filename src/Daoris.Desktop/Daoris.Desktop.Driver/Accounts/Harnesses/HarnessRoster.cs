@@ -908,8 +908,16 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public Task<HarnessSelection> SelectAsync(
         string adapter, DriverConfig config, string? workspace, string? chosen,
         StartKind kind = StartKind.Driven, CancellationToken ct = default, string? model = null,
-        IReadOnlyCollection<string>? passed = null, long except = 0, bool counts = true) =>
-        WalkAsync(adapter, config, workspace, chosen, kind, counts, ownHome: false, ct, new OfferAsk(model, passed, except));
+        IReadOnlyCollection<string>? passed = null, long except = 0, bool counts = true)
+    {
+        Interlocked.Increment(ref _selected);
+        return WalkAsync(adapter, config, workspace, chosen, kind, counts, ownHome: false, ct, new OfferAsk(model, passed, except));
+    }
+
+    private long _selected;
+
+    /// <summary>How many walks <see cref="SelectAsync"/> was asked: a test holds how many walks the account rule asks (FOUNDATION1a-i).</summary>
+    internal long Selected => Interlocked.Read(ref _selected);
 
     /// <summary>
     /// A handed quest's start (MIXAGENT1a-ii, D163 point 1): the account the hand-over named is asked for first, as a person's pick
