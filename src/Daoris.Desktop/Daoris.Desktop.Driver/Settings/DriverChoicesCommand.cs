@@ -946,7 +946,7 @@ public static class DriverChoicesCommand
         if (choices.KeptTimeoutMinutes is { } kept) Say($"  timeout    {kept}  (no longer limits a session; kept for an older Daoris)");
         Say(choices.CoolOffMinutes is { } cooloff
             ? $"  cooloff    {cooloff} minutes an account cools when its agent names no time for its limit"
-            : $"  cooloff    {(int)AccountLimits.DefaultCoolOff.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "
+            : $"  cooloff    {(int)CoolOffDefault.Value.TotalMinutes} minutes an account cools when its agent names no time for its limit  (the default — "
               + "`daoris driver cooloff <minutes>` changes it)");
         Say($"  notify     {(choices.Notify ? "on" : "off")}  (a session parking, or ending without you asking{(choices.Notify ? "" : " — not said")})");
         Say(choices.HelperAdapter is { } helper
@@ -1447,7 +1447,7 @@ public static class DriverChoicesCommand
                 throw new ChoiceWords("a relationship is declared from one repository — `daoris driver across <repository> write-to <other>`.");
             }
 
-            if (AcrossRules.Problem(name, value ?? "") is { } problem) throw new ChoiceWords(problem);
+            if (AcrossDeclarations.Problem(name, value ?? "") is { } problem) throw new ChoiceWords(problem);
             return new("across", ChoiceRoutes.WriteAcross, new JsonObject { ["repository"] = name, ["to"] = value, ["allow"] = !clear }, _ =>
             {
                 StandingChoices.Write(path, config => config.WithWriteAcross(name, value!, !clear));

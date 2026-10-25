@@ -76,7 +76,7 @@ public static class AccountLimits
     /// (D125 §2.2): long enough that a spent account is not started on at every look, short enough that a
     /// wrong guess costs an hour. Settable once TOOL4e lands <c>cooloff</c>.
     /// </summary>
-    public static readonly TimeSpan DefaultCoolOff = TimeSpan.FromMinutes(60);
+    public static readonly TimeSpan DefaultCoolOff = CoolOffDefault.Value;
 
     /// <summary>Added to a stated reset, so the next start does not race the provider's own clock (D125 §2.1).</summary>
     public static readonly TimeSpan Margin = TimeSpan.FromMinutes(2);

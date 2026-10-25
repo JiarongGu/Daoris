@@ -550,12 +550,12 @@ public sealed record DriverConfig(
     /// <summary>
     /// How long an account cools, in minutes, when its agent's limit names no time this reads, or one it does not believe
     /// (TOOL4e, D125 §2.2): <c>cooloff</c>, a whole number of at least 1. Null — absent, or anything else in the file —
-    /// is the default, <see cref="AccountLimits.DefaultCoolOff"/> (<c>CoolOffTests</c>).
+    /// is the default, <see cref="CoolOffDefault.Value"/> (<c>CoolOffTests</c>).
     /// </summary>
     public int? CoolOffMinutes { get; init; }
 
     /// <summary>The cool-off a limit naming no time takes on this machine: <see cref="CoolOffMinutes"/>, or the hour.</summary>
-    public TimeSpan CoolOff => CoolOffMinutes is { } minutes ? TimeSpan.FromMinutes(minutes) : AccountLimits.DefaultCoolOff;
+    public TimeSpan CoolOff => CoolOffMinutes is { } minutes ? TimeSpan.FromMinutes(minutes) : CoolOffDefault.Value;
 
     /// <summary>The refusal both doors say for less than a minute.</summary>
     public const string CoolOffRefusal =
@@ -790,7 +790,7 @@ public sealed record DriverConfig(
     /// </summary>
     public DriverConfig WithWriteAcross(string repository, string to, bool allow)
     {
-        if (AcrossRules.Problem(repository, to) is { } problem) throw new DriverException(problem);
+        if (AcrossDeclarations.Problem(repository, to) is { } problem) throw new DriverException(problem);
 
         bool Same(string name) => string.Equals(name, to.Trim(), StringComparison.OrdinalIgnoreCase);
         var next = new Dictionary<string, IReadOnlyList<string>>(WriteAcross, StringComparer.OrdinalIgnoreCase);
@@ -1401,7 +1401,7 @@ public sealed record DriverConfig(
             foreach (var item in property.Value.EnumerateArray())
             {
                 if (item.ValueKind == JsonValueKind.String && item.GetString()?.Trim() is { Length: > 0 } target
-                    && AcrossRules.Problem(property.Name, target) is null
+                    && AcrossDeclarations.Problem(property.Name, target) is null
                     && !targets.Contains(target, StringComparer.OrdinalIgnoreCase))
                 {
                     targets.Add(target);
