@@ -333,6 +333,7 @@
     "Platform/JsonText.cs": "Platform",
     "Platform/KeepChoices.cs": "Workplace",
     "Platform/KeepKinds.cs": "Workplace",
+    "Platform/KeepVerb.cs": "Workplace",
     "Platform/KeepingRecord.cs": "Workplace",
     "Platform/KeepingRun.cs": "Workplace",
     "Platform/LineGuesses.cs": "Workplace",
@@ -704,6 +705,7 @@
     "Trees/Landing/AutoLanding.cs": "Workplace",
     "Trees/Landing/ChatPresses.cs": "Workplace",
     "Trees/Landing/CommitRules.cs": "Workplace",
+    "Trees/Landing/CommitsVerb.cs": "Workplace",
     "Trees/Landing/Landing.cs": "Workplace",
     "Trees/Landing/LandingHoldNotice.cs": "Workplace",
     "Trees/Landing/LandingHolds.cs": "Workplace",
@@ -859,13 +861,6 @@
       "after": "Settings",
       "files": {
         "Settings/DriverChoicesCommand.cs": ["InstanceDoor","InstanceRoute","InstanceWorld","RouteClass","TreesRoutes"]
-      }
-    },
-    {
-      "family": "Settings names Workplace",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["CommitRules","KeepRules","KeepSet","SpaceVolumes"]
       }
     },
     {
