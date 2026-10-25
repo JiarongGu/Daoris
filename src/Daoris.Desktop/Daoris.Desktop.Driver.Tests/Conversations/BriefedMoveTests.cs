@@ -196,6 +196,75 @@ public sealed class BriefedMoveTests : IDisposable
     }
 
     /// <summary>
+    /// What the new part's next go-on reads, as the conversation's go-on reads it (<c>ChatGoOn.SwitchableAsync</c>): the roster's resume of the
+    /// record's account, held to it where the binding says the person picked it.
+    /// </summary>
+    private async Task<LineAnswer?> NextGoOnAsync(HarnessRoster roster, DriverConfig config, string session, string account) =>
+        (await roster.ResumeAsync(
+            "acp-stub", config, null, account, StartKind.Conversation, line: LineKind.Conversation(carries: true),
+            picked: new HarnessConversations(_home).PickedOn(session, account))).Answer;
+
+    /// <summary>
+    /// 🔴 PICKCARRY1 (the steward's call of 2026-10-26, amending row a-ii's reading (3) and row a-iii's): a pick belongs to the conversation,
+    /// so the new part the briefed move opens on the account the person picked keeps it, in the press and in the part a lost conversation
+    /// goes on in alike, and the new part's next go-on waits for that account while it cools, though another is ready, as the part it came
+    /// from did.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_picked_conversations_new_part_keeps_the_pick_and_its_next_go_on_waits_for_that_account(bool lost)
+    {
+        var config = Config();
+        var (runner, ledger, client, roster) = Runner();
+        using var r = runner;
+        using var c = client;
+        Waiting(ledger, "c1", "account-1");
+        var conversations = new HarnessConversations(_home);
+        conversations.Pick("c1", "account-1");
+
+        var answer = lost
+            ? await runner.GoOnLostAsync("c1", ContinueWhy.Of(ContinueWhy.Gone), config)
+            : await runner.GoOnBriefedAsync("c1", config);
+
+        Assert.True(answer.Sent, answer.Message);
+        var next = (await client.RecordAsync(answer.SessionId!))!;
+        Assert.Equal(("account-1", "c1"), (next.Profile, next.From));
+        Assert.True(conversations.PickedOn(answer.SessionId!, "account-1"), Seen(ledger, answer.SessionId!));
+
+        // Its account cools with the other ready: the part waits for it, as a pick does, and is never moved.
+        Cooling("account-1");
+        var goOn = await NextGoOnAsync(roster, config, answer.SessionId!, "account-1");
+        Assert.True(goOn is LineAnswer.Wait { OwnFirst: true }, $"the next go-on answered {goOn}");
+    }
+
+    /// <summary>
+    /// An unpicked conversation's new part walks as it did: the press moves it off its cooling account to the ready one, keeps no pick, and its
+    /// next go-on walks its agent's accounts.
+    /// </summary>
+    [Fact]
+    public async Task An_unpicked_conversations_new_part_keeps_no_pick_and_its_next_go_on_walks()
+    {
+        var config = Config();
+        var (runner, ledger, client, roster) = Runner();
+        using var r = runner;
+        using var c = client;
+        Waiting(ledger, "c1", "account-1");
+        Cooling("account-1");
+
+        var answer = await runner.GoOnBriefedAsync("c1", config);
+
+        Assert.True(answer.Sent, answer.Message);
+        Assert.Equal("account-2", (await client.RecordAsync(answer.SessionId!))!.Profile);
+        Assert.False(new HarnessConversations(_home).PickedOn(answer.SessionId!, "account-2"));
+
+        Cooling("account-2");
+        Assert.True(AccountCooling.End(_home, "stub", "account-1", DateTimeOffset.UtcNow));
+        var goOn = await NextGoOnAsync(roster, config, answer.SessionId!, "account-2");
+        Assert.False(goOn is LineAnswer.Wait { OwnFirst: true }, $"the next go-on answered {goOn}");
+    }
+
+    /// <summary>
     /// A conversation whose own conversation is proven lost goes on by itself in the same move: no resume to keep, so its own account where
     /// that is ready, and the walk's pick where it cools, asked by Daoris and counted once.
     /// </summary>

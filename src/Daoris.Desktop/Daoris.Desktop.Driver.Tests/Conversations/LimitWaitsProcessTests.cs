@@ -625,6 +625,82 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
+    /// What the new part's next go-on reads, as the conversation's go-on reads it (<c>ChatGoOn.SwitchableAsync</c>): the roster's resume of the
+    /// record's account, held to it where the binding says the person picked it.
+    /// </summary>
+    private async Task<LineAnswer?> NextGoOnAsync(HarnessRoster roster, DriverConfig config, string session, string account) =>
+        (await roster.ResumeAsync(
+            "acp-stub", config, null, account, StartKind.Conversation, line: LineKind.Conversation(carries: true),
+            picked: new HarnessConversations(_home).PickedOn(session, account))).Answer;
+
+    /// <summary>
+    /// 🔴 PICKCARRY1 (the steward's call of 2026-10-26, amending row a-ii's reading (3)): a conversation the person picked an account for,
+    /// ended by its limit and proven lost, goes on in the ended move's new part, which the move opens on the account the walk gives (here
+    /// its own, ready and first). The new part keeps the pick, and its next go-on waits for that account while it cools, another ready,
+    /// where it walked its agent's accounts before.
+    /// </summary>
+    [Fact]
+    public async Task A_picked_conversation_the_ended_move_opens_a_part_for_keeps_its_pick_and_the_part_waits_for_that_account()
+    {
+        var events = Events;
+        var ledger = HeldEnded(events);
+        var conversations = new HarnessConversations(_home);
+        conversations.Pick("c1", "account-1");
+        File.WriteAllText(Path.Combine(Gate, "gone-conv-account-1"), "");
+        var config = Config();
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        using var runner = Runner(client, adapters, roster, events);
+
+        Assert.Single(await runner.WakeLimitsAsync(config));
+        await Poll.Until(() => ledger.Count == 2 && Prompts.Count > 0, () => Seen(ledger, events, "c1"));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("account-1", "c1", HandOverWhy.Limit), (next.Profile, next.From, next.FromWhy));
+
+        Assert.True(conversations.PickedOn("c2", "account-1"), Seen(ledger, events, "c2"));
+        Cooling("account-1", _now.AddDays(4));
+        Assert.True(AccountCooling.End(_home, "stub", "account-2", _now));
+        var goOn = await NextGoOnAsync(roster, config, "c2", "account-1");
+        Assert.True(goOn is LineAnswer.Wait { OwnFirst: true }, $"the next go-on answered {goOn}");
+    }
+
+    /// <summary>
+    /// 🔴 PICKCARRY1: the new part the live limit move opens is started from its old part on the selection it judged
+    /// (<c>ChatRunner.StartAsync</c>'s <c>from</c> and <c>settled</c>, which the live move passes). The move itself leaves a picked conversation
+    /// waiting (row a-ii's guard), so the start is made here as it makes it: on the account the person picked, which the part keeps as a pick,
+    /// and on another account, which it does not; an unpicked conversation's part keeps none either way.
+    /// </summary>
+    [Theory]
+    [InlineData(true, "account-1", true)]
+    [InlineData(true, "account-2", false)]
+    [InlineData(false, "account-1", false)]
+    public async Task A_part_the_live_limit_moves_start_opens_keeps_the_pick_only_on_the_account_the_person_picked(bool picked, string opens, bool kept)
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        using var runner = Runner(client, adapters, roster, events);
+        var conversations = new HarnessConversations(_home);
+        var old = (await runner.StartAsync("engine", "acp-stub", config, profile: "account-1", picked: picked)).SessionId!;
+        await Poll.Until(() => ledger.State(old) == "working", () => Seen(ledger, events, old));
+        Assert.Equal(picked, conversations.PickedOn(old, "account-1"));
+        Cooling(opens == "account-1" ? "account-2" : "account-1", _now.AddDays(4));
+        var selection = await roster.SelectAsync("acp-stub", config, null, null, StartKind.Conversation, default, counts: false);
+        Assert.Equal(opens, selection.Profile);
+
+        var started = await runner.StartAsync(
+            "engine", "acp-stub", config, profile: null, tree: _root, from: new ContinuedFrom(old, HandOverWhy.Limit, HandOverBy.Daoris), settled: selection);
+
+        Assert.NotNull(started.SessionId);
+        Assert.Equal(opens, (await client.RecordAsync(started.SessionId!))!.Profile);
+        Assert.True(kept == conversations.PickedOn(started.SessionId!, opens), Seen(ledger, events, started.SessionId!));
+    }
+
+    /// <summary>
     /// A refusal that proves no loss (the protocol door's plain refusal, as the native door's <c>exited</c> is): the conversation waits for
     /// the person, said why, no Daoris word left on its record, and the stage tries it no more by itself.
     /// </summary>
