@@ -201,6 +201,8 @@
     "Events/Chain.cs": "Events",
     "Events/ChangeWatch.cs": "Events",
     "Events/Domain/AttentionEvent.cs": "Events",
+    "Events/Domain/HandOverAskWhy.cs": "Events",
+    "Events/Domain/HandOverWhy.cs": "Events",
     "Events/Domain/Observation.cs": "Events",
     "Events/Domain/SessionEnded.cs": "Events",
     "Events/Domain/SessionEvents.cs": "Events",
@@ -922,13 +924,6 @@
       }
     },
     {
-      "family": "Events names Course",
-      "after": "Events",
-      "files": {
-        "Events/NoteCodes.cs": ["HandOverAskWhy","HandOverWhy"]
-      }
-    },
-    {
       "family": "Events names Help",
       "after": "Events",
       "files": {
@@ -1207,8 +1202,7 @@
         "Trees/ChatLandCommand.cs": ["PressTold","PressesTold"],
         "Trees/Landing/AutoLander.cs": ["DaorisWords"],
         "Trees/Landing/ChatPresses.cs": ["PressHold"],
-        "Trees/Landing/RebaseTelling.cs": ["DaorisKeys"],
-        "Trees/SessionEntries.cs": ["HandOverWhy"]
+        "Trees/Landing/RebaseTelling.cs": ["DaorisKeys"]
       }
     },
     {
@@ -1427,7 +1421,7 @@
       "family": "Context names Course",
       "after": "Context",
       "files": {
-        "Conversations/Domain/ContextBrief.cs": ["DaorisWords","HandOverNote","HandOverWhy"],
+        "Conversations/Domain/ContextBrief.cs": ["DaorisWords","HandOverNote"],
         "Sessions/Events/ContextBriefs.cs": ["ChatFiles","ConversationTrees"]
       }
     },
