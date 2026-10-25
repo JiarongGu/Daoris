@@ -447,6 +447,7 @@
     "Quests/Domain/QuestResults.cs": "Work orders",
     "Quests/Domain/QuestRetry.cs": "Work orders",
     "Quests/Domain/TickReport.cs": "Work orders",
+    "Quests/Domain/UpdateHolds.cs": "Work orders",
     "Quests/EvidenceCheck.cs": "Work orders",
     "Quests/EvidenceReader.cs": "Work orders",
     "Quests/IntakeKinds.cs": "Work orders",
@@ -905,13 +906,6 @@
       "files": {
         "Install/ToolChoices.cs": ["TreesRoutes"],
         "Install/ToolsCommand.cs": ["InstanceDoor","InstanceWorld"]
-      }
-    },
-    {
-      "family": "Install names Work orders",
-      "after": "Install",
-      "files": {
-        "Install/InstallUpdate.cs": ["Consideration","StartVerdict"]
       }
     },
     {
