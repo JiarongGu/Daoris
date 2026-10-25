@@ -192,6 +192,7 @@
   "note.words.not-kept": "What you said as it wound up was not kept for it to go on with:",
   "note.words.why.ended-first": "it ended first",
   "note.words.why.unkept": "Daoris kept no id for its conversation",
+  "note.words.why.unmarked": "its record did not mark them attempted, so they wait there for the session's next go-on",
   "note.landing.person-accepted": "You accepted this work:",
   "note.landing.person-handed": "You handed this work on:",
   "note.landing.left-out": "You left this part out when its line of work landed on `{{branch}}`: its work did not land there.",

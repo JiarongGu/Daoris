@@ -4436,7 +4436,14 @@ public sealed class Driver(
                     blocks: resume?.Blocks,
                     prompted: resume is null ? null : () => resume.Prompted = true,
                     // COWORK1c: marked attempted on the record before the opening prompt carrying them is written.
-                    attempting: resume is null ? null : () => SaidDoor.AttemptedAsync(service, sessionId, resume.Words),
+                    // FOUNDATION1 row p (the design §3.4 rule 5): acknowledged, the opening narrowed to the words the record names marked, and
+                    // none named, nothing prompted.
+                    attempting: resume is null ? null : async () =>
+                    {
+                        var asked = resume.Ids.Count;
+                        resume.Narrow(await SaidDoor.AttemptedAsync(service, sessionId, resume.Words).ConfigureAwait(false));
+                        return asked > 0 && resume.Ids.Count == 0 ? null : (resume.Blocks, resume.Files);
+                    },
                     // The files said with them, a link each after the blocks (MSG1d3, D137 §2.4).
                     files: resume?.Files,
                     waitsOnBackground: waitsOnBackground,

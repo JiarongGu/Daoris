@@ -1235,10 +1235,35 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 return (exitCode, used);
             }
 
-            // COWORK1c (the message-urgency design §6): each kept word marked attempted on its record before the run that carries it.
+            // COWORK1c (the message-urgency design §6): each kept word marked attempted on its record before the run that carries it, and
+            // carried only once the record names it marked (FOUNDATION1 row p, the design §3.4 rule 5): a word it does not name is left
+            // waiting on its record, said, and the run carries the words it does, or none starts.
+            var acknowledged = new List<ChatMessage>();
             foreach (var word in words)
             {
-                if (word.Attempting is { } attempting) await attempting().ConfigureAwait(false);
+                if (word.Attempting is not { } attempting
+                    || word.Id is not { } wordId
+                    || (await attempting().ConfigureAwait(false)).Contains(wordId, StringComparer.Ordinal))
+                {
+                    acknowledged.Add(word);
+                }
+            }
+
+            if (acknowledged.Count < words.Count)
+            {
+                var unsent = words.Count - acknowledged.Count;
+                var note = WordsNotes.Unreached(unsent, "were not sent", UnreachedWhy.Unmarked);
+                _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts.Count > 0 ? note.Parts : null }, say: null);
+                words = acknowledged;
+                carried = words;
+                if (words.Count == 0) continue;
+                info = goOn(conversation!, NativeWords.Prompt(words));
+                if (info is null)
+                {
+                    Went(words);
+                    Untaken(sessionId, held.Close().Count + words.Count, UnreachedWhy.Unkept);
+                    return (exitCode, used);
+                }
             }
 
             // Through the start gate (PROCSTART2), as the first run's start is, waiting for its place on the loop's token

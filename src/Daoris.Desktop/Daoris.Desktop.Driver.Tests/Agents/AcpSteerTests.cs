@@ -707,6 +707,48 @@ public sealed class AcpSteerTests
     }
 
     /// <summary>
+    /// FOUNDATION1 row p (the design §3.4 rule 5): a word said during a turn is written only once its record names it marked attempted. Where
+    /// the record names none (the commit failed, or its answer was lost), nothing is written for it: it is thrown <see cref="AcpWordsUnmarked"/>
+    /// before the wire and waits on its record, and the turn's own prompt is the only one the agent heard. Named, it is written as ever.
+    /// </summary>
+    [Fact]
+    public async Task A_word_said_during_a_turn_is_written_only_once_the_record_names_it_marked()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when !first.Task.IsCompleted:
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "session/prompt":
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        var turn = session.PromptAsync("read the five files", CancellationToken.None);
+        await first.Task.WaitAsync(Poll.Patience);
+
+        var unnamed = new ChatMessage("put PINEAPPLE after the words", []) { Id = "k1", Kept = true, Attempting = () => Task.FromResult<IReadOnlyList<string>>([]) };
+        await Assert.ThrowsAsync<AcpWordsUnmarked>(() => session.SayAsync(unnamed, CancellationToken.None));
+        Assert.Equal(1, agent.Methods.Count(method => method == "session/prompt"));
+
+        var named = new ChatMessage("and the readme", []) { Id = "k2", Kept = true, Attempting = () => Task.FromResult<IReadOnlyList<string>>(["k2"]) };
+        _ = session.SayAsync(named, CancellationToken.None);
+        await Poll.Until(() => agent.Methods.Count(method => method == "session/prompt") == 2, () => "the named word never went");
+        Assert.NotNull(turn);
+        session.Release();
+    }
+
+    /// <summary>
     /// 🔴 A conversation on the next-step door (MSG1c, D137 §2.1): the session says so once it opens, and the person's word
     /// said while a turn runs goes at once as a prompt of the same session. It is taken when the agent hands the turn before
     /// it off, and the record reads as the driven door's does: the turn the wire ended there, the words taken, the work after.

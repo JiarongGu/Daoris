@@ -56,14 +56,38 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// to a door: the door awaits it before it writes the word, so a shell that comes up again never sends it twice. Null for a word
     /// kept nowhere, which needs none. Never faults.
     /// </summary>
-    internal Func<Task>? Attempting { get; init; }
+    /// <remarks>
+    /// <b>The attempt is acknowledged before the wire</b> (FOUNDATION1 row p, the design §3.4 rule 5): it answers the ids the record named
+    /// marked, none where the record did not answer, refused, or the answer was lost. A door writes only a word whose id is named, and
+    /// one it does not name is left waiting on its record and said (<see cref="Acknowledged"/>). The mark once failed open here, and a
+    /// transient try alone read its answer (Codex's owed read of D210, finding 4).
+    /// </remarks>
+    internal Func<Task<IReadOnlyList<string>>>? Attempting { get; init; }
 
     /// <summary>
-    /// The same mark as <see cref="Attempting"/>, answering whether the record acknowledged it (Codex's owed read of D210, finding 4): a
-    /// transient episode's try writes a kept word only once its attempt is durable, where <see cref="Attempting"/> fails open. Null where
-    /// <see cref="Attempting"/> is. Never faults: an unanswered record is no acknowledgement.
+    /// This message as it goes once the record named its words marked (row p): itself where nothing marks it (a word kept nowhere) or
+    /// <see cref="Attempting"/> names its id; a go-on carrying words under their ids narrowed to the words named, so an answer naming fewer
+    /// than asked sends only those; and null where nothing it carries was named. A null message is not written, its words wait on their
+    /// record, and <paramref name="unsent"/> is told how many of them it left there, once.
     /// </summary>
-    internal Func<Task<bool>>? Marking { get; init; }
+    internal async Task<ChatMessage?> AcknowledgedAsync(Action<int> unsent)
+    {
+        if (Attempting is not { } attempting) return this;
+        var marked = await attempting().ConfigureAwait(false);
+        if (GoesOn is { } ask)
+        {
+            var asked = ask.Ids.Count;
+            ask.Narrow(marked);
+            if (ask.Ids.Count < asked) unsent(asked - ask.Ids.Count);
+            // Nothing it carries was named: the go-on's own first line and appendix go for no word, so none goes.
+            if (asked > 0 && ask.Ids.Count == 0) return null;
+            return ask.Ids.Count == asked ? this : this with { Text = ask.Prompt };
+        }
+
+        if (Id is not { } id || marked.Contains(id, StringComparer.Ordinal)) return this;
+        unsent(1);
+        return null;
+    }
 
     /// <summary>
     /// Told once the door wrote this kept word to the wire, or settled it without the wire (a word of Daoris's dropped): its dispatcher

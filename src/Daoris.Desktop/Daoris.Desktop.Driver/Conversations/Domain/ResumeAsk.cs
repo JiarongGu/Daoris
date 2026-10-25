@@ -27,9 +27,28 @@ internal sealed class ResumeAsk(
     /// <summary>The first line's parts, where it was handed with them; null for English alone.</summary>
     private IReadOnlyList<NotePart>? FirstParts { get; }
 
+    // The words it carries, narrowed in place to those the record named marked (FOUNDATION1 row p, <see cref="Narrow"/>): every holder of this ask, the
+    // door that sends it and the dispatcher that takes its words off the record, reads the same words, so a word left out is neither sent nor taken off.
+    private readonly List<SaidWordView> _words = [.. words];
+
     // Each word's files, by its place in the words; read once, so both doors are handed the same.
-    private readonly IReadOnlyList<IReadOnlyList<KeptFile>> _files =
+    private readonly List<IReadOnlyList<KeptFile>> _files =
         [.. words.Select(word => files is null || word.Files.Count == 0 ? Array.Empty<KeptFile>() : files(word))];
+
+    /// <summary>
+    /// Keeps the words the record named marked attempted, and those it keeps under no id (a word kept nowhere has none to name) (row p, the
+    /// design §3.4 rule 5): an answer naming fewer words than asked sends only those. The rest are left waiting on their record, which is
+    /// theirs, never taken off by this ask; its prompt, blocks, files and ids are read again from the words that stay.
+    /// </summary>
+    internal void Narrow(IReadOnlyCollection<string> marked)
+    {
+        for (var at = _words.Count - 1; at >= 0; at--)
+        {
+            if (_words[at].Id is not { } id || marked.Contains(id, StringComparer.Ordinal)) continue;
+            _words.RemoveAt(at);
+            _files.RemoveAt(at);
+        }
+    }
 
     public string Conversation => conversation;
 
@@ -41,7 +60,7 @@ internal sealed class ResumeAsk(
     public IReadOnlyList<ChatMessage> Resent { get; init; } = [];
 
     /// <summary>The person's words, in the order said, each with the id its record's <c>said</c> gave it.</summary>
-    public IReadOnlyList<SaidWordView> Words => words;
+    public IReadOnlyList<SaidWordView> Words => _words;
 
     /// <summary>
     /// Every word's files in the order said (MSG1d3): the protocol door's links after the words' blocks, and what a run is
@@ -56,17 +75,17 @@ internal sealed class ResumeAsk(
     /// <remarks>A word pressed as an answer of its park's question is handed as that answer chosen (<see cref="SaidWordView.Handed"/>, PARKVIEW1).</remarks>
     public string Answer => string.Join(
         "\n\n",
-        [.. Resent.Select(word => word.Text + ChatFiles.PathLines(word.Files)), .. words.Select((word, at) => word.Handed + ChatFiles.PathLines(_files[at]))]);
+        [.. Resent.Select(word => word.Text + ChatFiles.PathLines(word.Files)), .. _words.Select((word, at) => word.Handed + ChatFiles.PathLines(_files[at]))]);
 
     /// <summary>What the conversation is resumed with on the native door: the words, then the appendix after a blank line.</summary>
     public string Prompt => appendix is { Length: > 0 } more ? $"{Answer}\n\n{more}" : Answer;
 
     /// <summary>The same on the protocol door (D137 §2.2): each word its own text block in order, then the appendix as one more.</summary>
     public IReadOnlyList<string> Blocks =>
-        [.. Resent.Select(word => word.Text), .. words.Select(word => word.Handed), .. appendix is { Length: > 0 } more ? new[] { more } : []];
+        [.. Resent.Select(word => word.Text), .. _words.Select(word => word.Handed), .. appendix is { Length: > 0 } more ? new[] { more } : []];
 
     /// <summary>The ids of the words its record keeps, for the service to take off once the session took them; none from before <c>said</c>.</summary>
-    public IReadOnlyList<string> Ids => [.. words.Select(word => word.Id).OfType<string>()];
+    public IReadOnlyList<string> Ids => [.. _words.Select(word => word.Id).OfType<string>()];
 
     /// <summary>Why the agent would not resume it, said by the door; null while nothing refused.</summary>
     public ContinueReason? Refused { get; set; }
@@ -101,7 +120,7 @@ internal sealed class ResumeAsk(
     /// The second opinions whose findings are among the words (XAGENT1e, D155 point 7), each once, in the order handed: what
     /// the run's end reads the answers of.
     /// </summary>
-    public IReadOnlyList<string> Opinions => [.. words.Select(word => word.By).OfType<string>().Distinct(StringComparer.Ordinal)];
+    public IReadOnlyList<string> Opinions => [.. _words.Select(word => word.By).OfType<string>().Distinct(StringComparer.Ordinal)];
 
     /// <summary>
     /// The record's opening for the resumed run: the driver's first line, then each of the person's words as theirs, under
@@ -115,7 +134,7 @@ internal sealed class ResumeAsk(
         return
         [
             new SessionEvent { Kind = SessionEventKind.Note, Text = firstLine, Parts = FirstParts is { Count: > 0 } ? FirstParts : null },
-            .. words.Select(word => new SessionEvent
+            .. _words.Select(word => new SessionEvent
             {
                 Kind = SessionEventKind.User,
                 Origin = word.Persons ? "person" : "target",

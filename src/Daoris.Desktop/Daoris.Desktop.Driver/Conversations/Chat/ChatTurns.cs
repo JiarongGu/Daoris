@@ -124,6 +124,12 @@ internal sealed class ChatTurns(
     private readonly HashSet<string> _known = new(StringComparer.Ordinal);
 
     /// <summary>
+    /// Told how many words a turn left waiting on their record because the record did not name them marked attempted (FOUNDATION1 row p, the
+    /// design §3.4 rule 5): nothing was written for them, and the conversation says so. Null says nothing.
+    /// </summary>
+    internal Action<int>? Unsent { get; set; }
+
+    /// <summary>
     /// The record's door for words kept there before this queue took them (COWORK1c): a helper's answer, kept by the driver, taken off by
     /// its id once its turn is on the wire, in the same order as the person's words. The first door named stays.
     /// </summary>
@@ -819,7 +825,7 @@ internal sealed class ChatTurns(
         {
             if (_finishing || _gone) return false;
             // Off the record once steered (COWORK1c): waiting again in this process alone.
-            _waiting.Insert(0, message with { Kept = false, Attempting = null, Marking = null, Went = null });
+            _waiting.Insert(0, message with { Kept = false, Attempting = null, Went = null });
             start = !_pumping;
             if (start)
             {
@@ -1225,16 +1231,21 @@ internal sealed class ChatTurns(
 
             try
             {
-                // COWORK1c: a kept word's attempt is marked on its record before its turn is on the wire.
-                if (Dispatched(message).Attempting is { } attempting) await attempting().ConfigureAwait(false);
-                await take(message, () =>
+                // COWORK1c: a kept word's attempt is marked on its record before its turn is on the wire, and acknowledged there
+                // (FOUNDATION1 row p, the design §3.4 rule 5): a word the record does not name marked is not written and waits on its record,
+                // said; a go-on carries only the words it names.
+                if (await Dispatched(message).AcknowledgedAsync(count => Unsent?.Invoke(count)).ConfigureAwait(false) is { } going)
                 {
-                    Sent();
-                    // A helper's answer comes off the record once its turn is on the wire (MIXAGENT2a-iii), and a kept word by its id
-                    // (COWORK1c), after every take-off before it.
-                    message.Delivered?.Invoke();
-                    lock (_gate) TakeOff([message]);
-                }).ConfigureAwait(false);
+                    message = message with { Text = going.Text };
+                    await take(message, () =>
+                    {
+                        Sent();
+                        // A helper's answer comes off the record once its turn is on the wire (MIXAGENT2a-iii), and a kept word by its id
+                        // (COWORK1c), after every take-off before it.
+                        message.Delivered?.Invoke();
+                        lock (_gate) TakeOff([message]);
+                    }).ConfigureAwait(false);
+                }
             }
             catch (Exception)
             {

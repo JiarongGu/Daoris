@@ -446,7 +446,12 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// design §6): the first moment kept, so a shell that comes up again never sends one twice. Whether they were marked is an answer,
     /// never an exception: a host without the door (one older than COWORK1c) is false with a sentence saying so.
     /// </summary>
-    public async Task<(bool Ok, string Message)> AttemptAsync(string id, IReadOnlyList<string> said, CancellationToken ct = default)
+    /// <remarks>
+    /// FOUNDATION1 row p (the design §3.4 rule 5): the answer names each word it marked. The service answers the words that no longer wait as
+    /// <c>unmarked</c>, a list this client once ignored, answering success; <see cref="AttemptAnswer.Marked"/> is the words asked less those, and
+    /// is empty where the mark was not acknowledged at all (a refusal, a host with no door, an answer that did not come or does not read).
+    /// </remarks>
+    public async Task<AttemptAnswer> AttemptAsync(string id, IReadOnlyList<string> said, CancellationToken ct = default)
     {
         var body = WriteJson(writer =>
         {
@@ -460,10 +465,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             .ConfigureAwait(false);
         if (root is not { } answered)
         {
-            return (false, $"the service at {_base} has no door for a word's attempt ({status}) — is it older than this driver?");
+            return new AttemptAnswer(false, $"the service at {_base} has no door for a word's attempt ({status}) — is it older than this driver?", [], said);
         }
 
-        return ok ? (true, Text(answered, "message") ?? "") : (false, Text(answered, "error") ?? payload);
+        if (!ok) return new AttemptAnswer(false, Text(answered, "error") ?? payload, [], said);
+        // The words the answer names as no longer waiting; every other word asked was marked.
+        var unmarked = answered.ValueKind == JsonValueKind.Object && answered.TryGetProperty("unmarked", out var named) && named.ValueKind == JsonValueKind.Array
+            ? named.EnumerateArray().Where(word => word.ValueKind == JsonValueKind.String).Select(word => word.GetString()!).ToList()
+            : [];
+        return new AttemptAnswer(true, Text(answered, "message") ?? "", [.. said.Except(unmarked, StringComparer.Ordinal)], unmarked);
     }
 
     /// <summary>

@@ -27,6 +27,16 @@ public sealed record SayAnswer(bool Kept, string Message)
 }
 
 /// <summary>
+/// What the service said of marking words attempted before the wire (COWORK1c's attempt door; FOUNDATION1 row p, the design §3.4 rule 5): whether
+/// the mark was acknowledged and which of the words asked it names marked. A word it does not name is not attempted and does not go.
+/// </summary>
+/// <param name="Ok">The record acknowledged the mark: it answered, and not with a refusal.</param>
+/// <param name="Message">The service's sentence, or why there was none.</param>
+/// <param name="Marked">The words asked that the answer marked, in the order asked: none where the mark was not acknowledged.</param>
+/// <param name="Unmarked">The words asked that no longer wait on the record, or all of them where the mark was not acknowledged.</param>
+public sealed record AttemptAnswer(bool Ok, string Message, IReadOnlyList<string> Marked, IReadOnlyList<string> Unmarked);
+
+/// <summary>
 /// What the service said of one word waiting on a record that the person took back or reworded (SAIDBACK1a's take-back door,
 /// D137 §2.4): whether it left the record, and its sentence.
 /// </summary>

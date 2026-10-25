@@ -192,6 +192,7 @@
   "note.words.not-kept": "你在它收尾时说的话没有保存下来，无法让它继续：",
   "note.words.why.ended-first": "它先结束了",
   "note.words.why.unkept": "Daoris 没有保存这次对话的编号",
+  "note.words.why.unmarked": "它的记录没有将它们标记为已尝试，因此它们留在记录里，等会话下次继续时再发送",
   "note.landing.person-accepted": "你已采纳这项工作：",
   "note.landing.person-handed": "你已将这项工作移交出去：",
   "note.landing.left-out": "这条工作线落在 `{{branch}}` 上时，你没有采纳这一段：它的工作没有落在那里。",

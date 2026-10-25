@@ -79,19 +79,29 @@ internal sealed class StandInSaid : ISaidDoor
     /// <summary>Every id marked attempted, in the order the marks arrived (COWORK1c).</summary>
     public List<string> Attempted { get; } = [];
 
-    public Task<bool> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct)
+    /// <summary>Where set, the answer to a mark names none of the words asked: a word is marked as the service marks one, only where it waits (FOUNDATION1 row p).</summary>
+    public Func<IReadOnlyList<string>, IReadOnlyList<string>>? Naming { get; set; }
+
+    /// <summary>Where set, a mark commits and its answer is then lost: the record holds the attempt and the dispatcher never hears so (FOUNDATION1 row p).</summary>
+    public bool AnswerLost { get; set; }
+
+    public Task<IReadOnlyList<string>> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct)
     {
-        if (RefusingAttempts) return Task.FromResult(false);
+        if (RefusingAttempts) return Task.FromResult<IReadOnlyList<string>>([]);
         lock (_gate)
         {
-            Attempted.AddRange(ids);
+            // The words the record names marked: those that still wait on it, as the service's answer lists the others `unmarked`.
+            IReadOnlyList<string> marked = [.. ids.Where(id => Said.Any(word => word.Id == id))];
+            if (Naming is { } naming) marked = naming(marked);
+            Attempted.AddRange(marked);
             for (var at = 0; at < Said.Count; at++)
             {
-                if (ids.Contains(Said[at].Id!) && Said[at].Attempt is null) Said[at] = Said[at] with { Attempt = DateTimeOffset.UnixEpoch };
+                if (marked.Contains(Said[at].Id!) && Said[at].Attempt is null) Said[at] = Said[at] with { Attempt = DateTimeOffset.UnixEpoch };
             }
-        }
 
-        return Task.FromResult(true);
+            if (AnswerLost) return Task.FromException<IReadOnlyList<string>>(new HttpRequestException("the answer was lost"));
+            return Task.FromResult(marked);
+        }
     }
 
     public async Task<bool> TakeOffAsync(IReadOnlyList<string> ids, CancellationToken ct)

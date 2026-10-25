@@ -599,7 +599,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed) : IEpisodeWords
         {
             if (_closed) return false;
             // Off the record once steered (COWORK1c): held again in this process alone.
-            _held.Insert(0, message with { Kept = false, Attempting = null, Marking = null, Went = null });
+            _held.Insert(0, message with { Kept = false, Attempting = null, Went = null });
             Publish();
             return true;
         }
