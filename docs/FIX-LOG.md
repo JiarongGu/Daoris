@@ -5,6 +5,44 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - A word a transient try carried was lost when a limit refused that try (AGENTERRORS1b2)
+
+- **Symptom:** found by reading, in D210's own AGENTERRORS1b note, not seen on an install: a person's word said while a conversation
+  waited to try again after a 529 rode the next try, a limit refused that try, and the word reached nobody. A kept word read *Say it
+  again* (`lost`); one said by the composer's plain `Say` had no note at all. The move's new part was handed the brief alone, and the
+  wake handed the record's refused words without it, though row 1b's proof says each original word is received once at the wake or move.
+- **Root cause:** a conversation records a try's words as the person's `User` events only when its session takes them (an update, or an
+  answer), and a limit refuses the prompt before either; the ledger's `said` had dropped the word as it was written. So the record held it
+  nowhere, and `LimitHeld.Of`, which reads the record and already held a word recorded after the episode's last quiet event, found none.
+  The episode's catch said every unacknowledged word of a failed try `lost` whatever the failure's kind.
+- **Fix:** where a try is refused and the failure reads as a limit, the session hands the person's words the try carried to
+  `TransientRetry.LimitRefused` and says no `lost` note, and the conversation records them as a refused turn's words are. The wake's
+  `Resent` and the move's composition read them from `LimitHeld` as they read any refused turn's. A driven run hands none and is unchanged;
+  a try refused otherwise keeps the `lost` note.
+- **Verification:** `ChatTransientProcessTests` (a kept word refused at the try with every account cooling: received once at the wake;
+  a plain word with another account ready: received once in the briefed move; neither `lost`; the failed turn's word not handed again)
+  failed on the word never reaching the wake or the new part, and pass; the 1b case that expected the brief alone was amended with it.
+  `LimitHeldTests`, and the Process half's `LimitGoesElsewhereProcessTests`, `LimitWaitsProcessTests`, `AccountRotationTickTests` and
+  `TransientRetryTickTests` (`process.runsettings`), pass.
+
+## 2026-10-25 - A session's delete or clear left its limit-move box and its agent's hand-over ask and state behind (SESSFILES1)
+
+- **Symptom:** found by reading, in FOUNDATION1's round 3, not seen on an install: `sessions/<s>.limit-move.json`,
+  `<s>.hand-over-ask.json` and `<s>.hand-over-state.json` stayed on the disk after the session's delete or its clear, unmeasured and
+  uncounted in the bytes a clear said it freed.
+- **Root cause:** `SessionHomeFiles.Inventory` is the one list a delete, a clear and the left-over scan read, and the three files, added
+  by LIMITRESUME1c and MIXAGENT1c after it, were never given rows. Nothing else took them once the record was gone: `LimitBoxes.Clear`
+  runs at the move's delivery, a start that made no part and the come-up for a box with no new part (a box whose record is gone is
+  skipped every come-up), and `HandOverAskFiles.Clear` only in the look's `asker-gone` case, which a state of `taken` or `refused`
+  never reaches (it returns before the record is read).
+- **Fix:** three rows under the name `hand-over`, which the page already says (no catalogue change); the left-over scan reads them by the
+  same suffixes, so a gone session's untouched box is taken at a workspace's clear, and a box whose record stands, whose process runs or
+  which was written within the hour is kept.
+- **Verification:** `SessionDeletionTests` (the delete takes the three and says `hand-over`; a refused delete keeps them; one the disk
+  keeps is left over) and `HistoryClearingTests` (the quest's, the failed sessions' and the ask's clears through the shared `Kept`, and
+  the workspace's left-over case with a young one, a standing record's and a live process's boxes), nine of them failing first, and
+  all passing with the fast half's filter on those classes.
+
 ## 2026-10-25 - The ended limit move walked twice, so the account judged and the one opened could differ and a start never made was counted (LIMITSWITCH2)
 
 - **Symptom:** a conversation a limit held went on, at the limits stage, in a new part on the account the walk offered; the walk was asked at

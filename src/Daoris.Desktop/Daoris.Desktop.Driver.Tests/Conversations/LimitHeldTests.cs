@@ -120,6 +120,24 @@ public sealed class LimitHeldTests
         Assert.Equal(5, held.Before);
     }
 
+    /// <summary>
+    /// AGENTERRORS1b2: the word a try carried that a limit refused is recorded as the refused turn's words are, after the try's quiet event,
+    /// so a limit holds it, and never the failed turn's own word before the episode. The brief is composed from what stands before it.
+    /// </summary>
+    [Fact]
+    public void A_limit_refusing_the_try_that_carried_a_word_holds_that_word_and_not_the_failed_turn_s()
+    {
+        IReadOnlyList<SessionEvent> events =
+        [
+            Person("Make the port configurable."), Wait(), Try(1), Person("Use 9090."), NotTaken(), Cooling(NoteCodes.AccountCooling), Turn("error"),
+        ];
+
+        var held = LimitHeld.Of(events)!;
+
+        Assert.Equal(["Use 9090."], held.Words.Select(word => word.Text));
+        Assert.Equal(3, held.Before);
+    }
+
     /// <summary>An episode a try answered ends no limit, and its quiet events change nothing for the next turn: held words are the next turn's alone.</summary>
     [Fact]
     public void An_episode_a_try_answered_holds_nothing_and_leaves_the_next_refused_turn_its_own_words()

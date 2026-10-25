@@ -3339,6 +3339,16 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                 _record(new SessionEvent { Kind = SessionEventKind.Transient, Try = number });
             },
             WaitsUntil = (_, until) => _record(new SessionEvent { Kind = SessionEventKind.Transient, Next = until }),
+            // AGENTERRORS1b2: a limit refused the try before its agent took the person's words it carried. They are recorded as a refused
+            // turn's words are, after the try's quiet event, so `LimitHeld` holds them for the wake or the move, which receive them once;
+            // never the failed turn's own, recorded before the episode's first event, nor Daoris's go-on.
+            LimitRefused = words =>
+            {
+                foreach (var word in words.Where(word => word.Daoris is null))
+                {
+                    _record(ChatMessage.Words(word));
+                }
+            },
         };
 
         // The words an episode holds, waits on and carries are this conversation's turns' (AGENTERRORS1b); the answers it settles are the

@@ -87,6 +87,14 @@ public sealed class TransientRetry
         return words is { Length: > 0 } said ? line.Then(" ", Noted.Said(said, NoteBy.Program)) : line;
     }
 
+    /// <summary>
+    /// AGENTERRORS1b2 (D210's note of 2026-10-25): told the person's words a try carried when a limit refused that try. A limit refuses a
+    /// prompt before the agent takes it, so those words are not uncertain and are never said <c>lost</c>: the one handed this hands them to
+    /// whoever answers the limit, the conversation's record holding them as the refused turn's words (<c>LimitHeld</c>), so the wake or the
+    /// move receives them once. Null keeps the words uncertain, as a driven run's are (its limit's conclusion takes its own words off).
+    /// </summary>
+    public Action<IReadOnlyList<ChatMessage>>? LimitRefused { get; init; }
+
     private readonly Lock _gate = new();
     private readonly List<ChatMessage> _uncertain = [];
 

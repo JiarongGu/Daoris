@@ -99,6 +99,12 @@ public sealed class ChatTransientProcessTests : IDisposable
 
     private static IEnumerable<string> Carrying(IEnumerable<string> prompts, string part) => prompts.Where(line => line.Contains(part, StringComparison.Ordinal));
 
+    /// <summary>
+    /// The prompts the stand-in took (AGENTERRORS1b2): past its 529 and its limit, so a prompt a limit refused is in <see cref="Prompts"/> and
+    /// never here. A word is received when it is carried by one of these.
+    /// </summary>
+    private IReadOnlyList<string> Received => [.. StubFile.Lines(Heard).Where(line => line.StartsWith("received[", StringComparison.Ordinal))];
+
     private const string GoOn = "The last request failed on the provider's side (Internal error: API Error: 529 Overloaded.";
 
     private static bool Coded(SessionEvent e, string code) =>
@@ -305,13 +311,14 @@ public sealed class ChatTransientProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A limit on a try goes to LIMITGOON1 once, as the move to the next account: the failed turn's own words and the words a try carried
-    /// are held to be sent again by nobody, so each original word is received once. The new part opens on account-2 handed Daoris's brief
-    /// alone, and no person's word is repeated to it. The conversation moves once, the account cools once, and the turn ends <c>error</c>
-    /// as a limit's turn does.
+    /// 🔴 A limit on a try goes to LIMITGOON1 once, as the move to the next account: the failed turn's own word is held to be sent again by
+    /// nobody, since the agent took it and failed after it, and the word the refused try carried is handed to the new part (AGENTERRORS1b2),
+    /// since the limit refused it before the agent took it. So each original word is received once: the failed turn's by the old account's
+    /// prompt, the word said during the wait by the new part's, in the same prompt as Daoris's brief, never lost. The conversation moves
+    /// once, the account cools once, and the turn ends <c>error</c> as a limit's turn does.
     /// </summary>
     [Fact]
-    public async Task A_limit_on_a_try_moves_the_chat_once_and_holds_no_word_the_failed_turn_or_a_try_carried()
+    public async Task A_limit_on_a_try_moves_the_chat_once_and_hands_the_new_part_the_word_the_try_carried_never_the_failed_turns()
     {
         var ledger = new ChatLedger().Register("engine", _root);
         var config = Config();
@@ -339,16 +346,21 @@ public sealed class ChatTransientProcessTests : IDisposable
         await Poll.Until(() => Prompts.Any(line => line.StartsWith("prompt[account-2]: ", StringComparison.Ordinal)), () => Seen(ledger, events, next.Session));
         await Poll.Until(() => Turns(events.After(next.Session, 0).Events) == 1, () => Seen(ledger, events, next.Session));
 
-        // Each original word was received once, by the conversation it was said to; the new part is handed none of them as the person's.
+        // The failed turn's word was taken once, by the prompt the 529 answered, and is not handed again; the word the limit refused is taken
+        // once, by the new part, handed with the brief, and never marked lost.
         var prompts = Prompts;
         Assert.Single(Carrying(prompts, "Make the port configurable."), line => line.StartsWith("prompt[account-1]: ", StringComparison.Ordinal));
-        Assert.Single(Carrying(prompts, "Use port 9090."), line => line.StartsWith("prompt[account-1]: ", StringComparison.Ordinal));
         Assert.Single(prompts, line => line.StartsWith("prompt[account-1]: Use port 9090. | " + GoOn, StringComparison.Ordinal));
         var handed = Assert.Single(prompts, line => line.StartsWith("prompt[account-2]: ", StringComparison.Ordinal));
-        Assert.DoesNotContain("Use port 9090.", handed, StringComparison.Ordinal);
+        Assert.Contains("Use port 9090.", handed, StringComparison.Ordinal);
         Assert.DoesNotContain(GoOn, handed, StringComparison.Ordinal);
+        var taken = Assert.Single(Carrying(Received, "Use port 9090."));
+        Assert.StartsWith("received[account-2]: ", taken, StringComparison.Ordinal);
+        Assert.DoesNotContain(events.After(old, 0).Events, e => e.Code == SessionEventCodes.Lost);
         var part = events.After(next.Session, 0).Events;
-        Assert.DoesNotContain(part, e => e is { Kind: SessionEventKind.User, Origin: "person" });
+        // The failed turn's word is in the brief as history, quoted, and is no word of the person's on the new part.
+        Assert.Single(part, e => e is { Kind: SessionEventKind.User, Origin: "person" });
+        Assert.Single(part, e => e is { Kind: SessionEventKind.User, Origin: "person", Text: "Use port 9090." });
         Assert.Single(part, e => e is { Kind: SessionEventKind.User, Origin: "target" } && e.Continues == old);
 
         // Said once on each part, and the old turn ended as a limit's does.
@@ -409,6 +421,66 @@ public sealed class ChatTransientProcessTests : IDisposable
         Assert.Equal(0, Count(went, GoOn));
         // The failed turn's words were received once in all: the prompt the 529 answered.
         Assert.Single(Carrying(prompts, "Make the port configurable."));
+        await Poll.Until(() => ledger.Said(id).Count == 0, () => Seen(ledger, events, id, clock));
+        Assert.Single(StubFile.Lines(Heard), line => line == "session/new");
+        Assert.Equal(1, ledger.Count);
+    }
+
+    /// <summary>
+    /// 🔴 AGENTERRORS1b2: a word said during a transient wait rides the next try, and where a limit refuses that try with every account of its
+    /// agent cooling, the conversation waits for its limit and the wake hands the word again, once, in its own conversation on its own
+    /// account, with Daoris's reset word. The failed turn's own word is not handed again (the agent took it before it failed), and the
+    /// refused word is never marked lost, since the limit refused it before the agent took it.
+    /// </summary>
+    [Fact]
+    public async Task A_word_a_limit_refused_try_carried_is_received_once_at_the_wake_and_never_lost()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config();
+        var events = Events;
+        var clock = new MovedClock();
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        using var runner = Runner(client, adapters, roster, events, clock);
+
+        var id = await WarmAsync(runner, ledger, events, config, help: false, profile: "account-1");
+        Limited("account-1");
+        Limited("account-2");
+        Assert.NotNull(roster.Limited("acp-stub", "account-2", Limit, "x0"));
+        Overloaded(1);
+        Assert.True(runner.Say(id, "Make the port configurable."));
+        await Poll.Until(() => Waits(events, id).Count == 1 && clock.Pending.Count == 1, () => Seen(ledger, events, id, clock));
+
+        // Said during the wait, kept on its record under an id as the page's composer keeps it: it ends the wait and rides the try, which
+        // account-1's limit refuses, and which today says it `lost`.
+        var said = await runner.SayKeptAsync(id, "Use port 9090.", null, null, MessageLevel.Urgent, "press-1");
+        Assert.Equal("turn-end", said!.Reaches);
+        await Poll.Until(
+            () => events.After(id, 0).Events.Any(e => Coded(e, NoteCodes.ChatLimitWaits.Code)), () => Seen(ledger, events, id, clock));
+        Assert.Equal(1, ledger.Count);
+        Assert.Single(Carrying(Prompts, "Use port 9090."));
+        Assert.Empty(Carrying(Received, "Use port 9090."));
+        Assert.DoesNotContain(events.After(id, 0).Events, e => e.Code == SessionEventCodes.Lost);
+
+        Lifted("account-1");
+        Lifted("account-2");
+        _now = _now.AddHours(2);
+        var woke = await runner.WakeLimitsAsync(config);
+        Assert.Equal([id], woke.Select(start => start.SessionId));
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        await Poll.Until(() => Carrying(Received, "Use port 9090.").Any(), () => Seen(ledger, events, id, clock));
+
+        // Received once, at the wake, on its own account, with Daoris's reset word and neither the failed turn's word nor the go-on.
+        var went = Assert.Single(Carrying(Received, "Use port 9090."));
+        Assert.StartsWith("received[account-1]: ", went, StringComparison.Ordinal);
+        Assert.Equal(1, Count(went, "Use port 9090."));
+        Assert.Equal(1, Count(went, LimitResetWord.Text));
+        Assert.Equal(0, Count(went, "Make the port configurable."));
+        Assert.Equal(0, Count(went, GoOn));
+        Assert.Empty(Carrying(Received, "Make the port configurable."));
+        Assert.Single(Carrying(Prompts, "Make the port configurable."));
+        Assert.DoesNotContain(events.After(id, 0).Events, e => e.Code == SessionEventCodes.Lost);
         await Poll.Until(() => ledger.Said(id).Count == 0, () => Seen(ledger, events, id, clock));
         Assert.Single(StubFile.Lines(Heard), line => line == "session/new");
         Assert.Equal(1, ledger.Count);
@@ -619,6 +691,8 @@ public sealed class ChatTransientProcessTests : IDisposable
                     return;
                   }
                 }
+                // Past every refusal: the agent took this prompt (AGENTERRORS1b2's receipt, which a refused prompt never earns).
+                note(`received[${account}]: ` + text.replace(/\r?\n/g, ' '));
                 await new Promise((resolve) => setTimeout(resolve, 60));
                 say('heard ' + text);
                 send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });

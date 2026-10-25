@@ -27,7 +27,7 @@ public sealed record SessionFilesRemoved(
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
 /// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<see cref="ReopenMarks"/>), its park's question (<see cref="QuestionFiles"/>) and the supervisor's decisions on it (<see cref="QuestionSupervisorDecisions"/>), each named <c>mark</c>, its choice of a new
-/// session, the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
+/// session, its hand-over boxes (<see cref="HandOverBox"/>, its agent's ask and that ask's state, and a limit's move), the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
 /// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
 ///
@@ -124,6 +124,12 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Mark, Place.Sessions, QuestionSupervisorDecisions.PointerSuffix, false, Beside),
         new(Choice, Place.Sessions, NewSessionChoices.Suffix, false, Beside),
         new(HandOver, Place.Sessions, HandOverBox.Suffix, false, Beside),
+        // SESSFILES1: the agent's ask to hand its session over and the driver's state of it (MIXAGENT1c, HandOverAskFiles), and an ended
+        // conversation's move at its limit's wake (LIMITRESUME1c, LimitBoxes): each a box of a record that goes with it, under the name
+        // its sibling box has, since each is a hand-over's file and the page says no new word for it.
+        new(HandOver, Place.Sessions, HandOverAskFiles.AskSuffix, false, Beside),
+        new(HandOver, Place.Sessions, HandOverAskFiles.StateSuffix, false, Beside),
+        new(HandOver, Place.Sessions, LimitBoxes.Suffix, false, Beside),
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.

@@ -5,6 +5,28 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## AGENTERRORS1b2 — a word a limit-refused try carried is held for the limit's wake or move (2026-10-25)
+
+> **AGENTERRORS1b2 — a word a limit-refused try carried is held for the limit's wake or move** (driver; what AGENTERRORS1b left, D210's note of 2026-10-25). A word the person says during a transient wait rides the next try as one prompt with the go-on; where a limit refuses that try, 1b marks the word `lost` with *Say it again* and the move's new part gets the brief alone, though row 1b's proof says each original word is received once at the limit's wake or move. `LimitHeld.Of` holds the words a limit-refused try carried (and never the failed turn's own, in history already), so they go at the wake or in the move. Proof: a stand-in turn failing transient, a word said in the wait, the try refused by a limit: the word received once at the wake and once in a briefed move, never `lost`.
+
+**Outcome.** `LimitHeld.Of` already held a word recorded after the episode's last quiet event; the word was never recorded, since a
+conversation records a try's words only when its session takes them, and a limit refuses the prompt before that (a word kept under an id
+was said `lost`, one with none vanished). A try the limit refuses now hands its person's words to the conversation
+(`TransientRetry.LimitRefused`), which records them as a refused turn's words are, so the wake hands them again first and the move's new
+part is handed them with the brief, once, never `lost`. A driven run keeps its own reading. The one 1b case that said the opposite
+(the new part handed the brief alone) was amended with it. Detail: D210's note of 2026-10-25 and the FIX-LOG's entry of the same date.
+
+## SESSFILES1 — a session's delete or clear may leave three of its files behind (2026-10-25)
+
+> **SESSFILES1 — a session's delete or clear may leave three of its files behind** (driver; found by FOUNDATION1 round 3). `<s>.limit-move.json`, `.hand-over-ask.json` and `.hand-over-state.json` are missing from `SessionHomeFiles.Inventory` (`SessionHomeFiles.cs:109-141`; *unverified* that nothing else takes them). D153; proof: a delete and a clear of a session holding each take it.
+
+**Outcome.** Nothing else took them once the record was gone: the limit-move box is cleared only at its own delivery, a start that made
+no part and the come-up's box with no new part, and the ask and its state only for an ask whose session left, never once settled. The
+three are now rows of `SessionHomeFiles.Inventory` under the name `hand-over`, cleared with their session and read as left over by the
+same suffixes; a box in use is kept by the removal's own preconditions (the service's yes, a running process, the hour), not by reading
+the box. Held by `SessionDeletionTests` and `HistoryClearingTests`, seen failing first. Detail: D153's note of 2026-10-25 and the
+FIX-LOG's entry of the same date.
+
 ## SUPERVISORRACE1 — a supervisor's word released in a race with the appointment's revoke is left on a stale decision (2026-10-25)
 
 > **SUPERVISORRACE1** (driver, modules; D208's SUPERVISOR1a-ii; the supervisor is dark, not offered). It had no backlog row: it came

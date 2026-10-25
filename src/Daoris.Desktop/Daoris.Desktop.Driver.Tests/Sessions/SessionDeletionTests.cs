@@ -123,6 +123,72 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.Contains("\"c2\"", File.ReadAllText(HeldWordsFile.PathOf(_home)));
     }
 
+    /// <summary>The three files a limit's move and an agent's ask to hand over keep for a session (SESSFILES1), named by its id.</summary>
+    private string[] Boxes(string id) =>
+    [
+        Path.Combine(Sessions, id + LimitBoxes.Suffix), Path.Combine(Sessions, id + HandOverAskFiles.AskSuffix),
+        Path.Combine(Sessions, id + HandOverAskFiles.StateSuffix),
+    ];
+
+    private void KeepBoxes(string id)
+    {
+        foreach (var file in Boxes(id)) File.WriteAllText(file, "{}");
+    }
+
+    /// <summary>
+    /// SESSFILES1 (D153 point 6): a session's limit-move box and its agent's hand-over ask and state were in no inventory row, so a
+    /// delete left all three behind. They go under the name <c>hand-over</c>, in the inventory's order; another session's stay.
+    /// </summary>
+    [Fact]
+    public async Task A_delete_takes_a_limit_moves_box_and_a_hand_over_asks_two_files_too()
+    {
+        foreach (var id in new[] { "c1", "c2" })
+        {
+            Kept(id);
+            KeepBoxes(id);
+        }
+
+        var ledger = new Ledger(Record("c1"), Record("c2"));
+        using var service = ledger.Client();
+
+        var outcome = await new SessionDeletion(_home).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
+
+        Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
+        Assert.Equal(["record", "conversation", "transcript", "files", "harness", "hand-over", "archived"], outcome.Removed);
+        Assert.All(Boxes("c1"), file => Assert.False(File.Exists(file), file));
+        Assert.All(Boxes("c2"), file => Assert.True(File.Exists(file), file));
+    }
+
+    /// <summary>
+    /// A delete the ledger refuses (a session running again) takes no box: the files go only after the ledger's yes, so a box a running
+    /// move or a pending ask still reads is never taken from under it. A box the disk keeps is said by the name <c>hand-over</c>, and
+    /// the next clear of a workspace takes it, as the sentence promises.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_delete_keeps_the_boxes_and_a_box_the_disk_keeps_is_left_over()
+    {
+        Kept("c1");
+        KeepBoxes("c1");
+        var refusing = new Ledger(Record("c1")) { DeleteRefusal = new JsonObject { ["deletable"] = false, ["error"] = "it is running again", ["refusal"] = "live" } };
+        using var refused = refusing.Client();
+
+        var live = await new SessionDeletion(_home).DeleteAsync(refused, "c1", PluginEvents.Screen, null);
+
+        Assert.Equal(DeleteVerdict.Live, live.Verdict);
+        Assert.All(Boxes("c1"), file => Assert.True(File.Exists(file), file));
+
+        var ledger = new Ledger(Record("c1"));
+        using var service = ledger.Client();
+        var outcome = await new SessionDeletion(_home, Holding(Boxes("c1")[0])).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
+
+        Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
+        Assert.Equal(["hand-over"], outcome.Stayed);
+        Assert.True(File.Exists(Boxes("c1")[0]));
+        Assert.False(File.Exists(Boxes("c1")[1]));
+        Assert.False(File.Exists(Boxes("c1")[2]));
+        Assert.Contains("its hand-over, which the disk would not let go of and is left over; the next clear of a workspace takes it.", outcome.Message);
+    }
+
     /// <summary>
     /// CHATFLOW1c (the chat-flow design §4.3): a chat's delete takes its chat run's three files, its binding, its opinion gate's file and its
     /// look's file, each named by the record its key names, under the name <c>run</c>; another line's run is untouched, and the delete of a
