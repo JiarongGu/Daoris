@@ -558,7 +558,7 @@ public static class SystemSpace
         {
             return kind.Id switch
             {
-                "set-aside" => SetAsideNext(world.Home, policy, reading),
+                "set-aside" => SetAsideNext(world.Home, policy, reading, now),
                 "downloads" => DownloadsNext(world, policy, record, now),
                 "logs" => LogsNext(world.Home, policy),
                 _ => (null, null),
@@ -598,7 +598,7 @@ public static class SystemSpace
         judged.Class == SetAsideClass.Recorded && judged.Manifest?.Why == SetAsideEligibility.NoCheckout;
 
     /// <summary>The set-aside folders: each goes when its class says (the hour after its record, else its days), its bytes from the kind's last walk.</summary>
-    internal static (JsonObject? Next, string? Why) SetAsideNext(string home, KeepPolicy policy, KindReading? reading)
+    internal static (JsonObject? Next, string? Why) SetAsideNext(string home, KeepPolicy policy, KindReading? reading, DateTimeOffset? now = null)
     {
         var roots = DaorisHome.Places(home, HomeEntry.Trees).Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).Where(Directory.Exists).ToList();
         if (roots.Count == 0) return (null, null);
@@ -617,7 +617,7 @@ public static class SystemSpace
             goes.Add((due, $"{Path.GetFileName(workspace)}/{Path.GetFileName(repository)}/{Path.GetFileName(folder)}"));
         }
 
-        return Earliest(goes, reading?.Folders);
+        return Earliest(goes, reading?.Folders, now);
     }
 
     /// <summary>The downloads: each unused version goes its days into its current unused stretch (<see cref="DownloadKeeping.Goes"/>).</summary>
@@ -643,7 +643,7 @@ public static class SystemSpace
             .Where(row => row.At is not null)
             .Select(row => (row.At!.Value, row.Folder))
             .ToList();
-        return Earliest(goes, null);
+        return Earliest(goes, null, now);
     }
 
     /// <summary>
@@ -681,12 +681,15 @@ public static class SystemSpace
     }
 
     /// <summary>The earliest day anything goes: how many go that UTC day, and their bytes where every one of them was measured.</summary>
-    private static (JsonObject? Next, string? Why) Earliest(IReadOnlyList<(DateTimeOffset At, string Folder)> goes, IReadOnlyDictionary<string, long>? sizes)
+    private static (JsonObject? Next, string? Why) Earliest(
+        IReadOnlyList<(DateTimeOffset At, string Folder)> goes, IReadOnlyDictionary<string, long>? sizes, DateTimeOffset? now = null)
     {
         if (goes.Count == 0) return (null, null);
         var first = goes.Min(each => each.At);
         var day = first.UtcDateTime.Date;
-        var that = goes.Where(each => each.At.UtcDateTime.Date == day).ToList();
+        // What the next clear takes: the earliest day's, and every one already due by now, whatever day it fell due on. The day alone
+        // counted one of two folders due an hour apart across midnight (SetAsidePlacesTests, between 00:00 and 01:00 UTC).
+        var that = goes.Where(each => each.At.UtcDateTime.Date == day || (now is { } at && each.At <= at)).ToList();
         long? bytes = sizes is null ? null : 0;
         foreach (var (_, folder) in that)
         {
