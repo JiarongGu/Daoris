@@ -1,6 +1,6 @@
-# FOUNDATION1: the reads of rounds 1 to 6 (D191)
+# FOUNDATION1: the reads of rounds 1 to 7 (D191)
 
-The independent Opus 5.5 reader's foundation reads and Codex's reads of `docs/2026-10-25-foundation-design.md` and D212, round 1 at `c8eccf30e`, round 2 at `29a066182`, round 3 at `68a396c65`, round 4 at `6bac9a0be` by the Opus reader and at `86f32f40c`, with the Opus reader's named changes taken, by Codex, round 5, Part B's alone, at `9f48860ba` by both, and round 6, Part B's alone, at `5be9557b9` by both, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down (and, in Codex's read of round 5, its three links' targets written from this file's folder). Round 2 answers every finding of round 1 by number in the design's §12, round 3 every finding of round 2 in its §15, and round 4 every finding of round 3 in its §16; the Opus reader's round-4 findings are taken in the design's §17 and Codex's in its §18; round 6 answers both reads of round 5 in the design's §20, and round 7 both reads of round 6 in its §21.
+The independent Opus 5.5 reader's foundation reads and Codex's reads of `docs/2026-10-25-foundation-design.md` and D212, round 1 at `c8eccf30e`, round 2 at `29a066182`, round 3 at `68a396c65`, round 4 at `6bac9a0be` by the Opus reader and at `86f32f40c`, with the Opus reader's named changes taken, by Codex, round 5, Part B's alone, at `9f48860ba` by both, round 6, Part B's alone, at `5be9557b9` by both, and round 7, Part B's alone, at `da419d196` by both, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down (and, in Codex's read of round 5, its three links' targets written from this file's folder). Round 2 answers every finding of round 1 by number in the design's §12, round 3 every finding of round 2 in its §15, and round 4 every finding of round 3 in its §16; the Opus reader's round-4 findings are taken in the design's §17 and Codex's in its §18; round 6 answers both reads of round 5 in the design's §20, round 7 both reads of round 6 in its §21, and round 8 both reads of round 7 in its §22.
 
 ## Opus (foundation), round 1
 
@@ -1800,3 +1800,261 @@ w-s cannot land as specified without moving the staffing's readers in the same r
 - w-s moving its readers and the drain's override.
 
 Each is a stated rule with its proof cases. The ⚖ rows still wait for both reads.
+
+## Codex, round 7
+
+Codex's read of round 7 at `da419d196`, Part B's alone: its §0 assesses its 12 findings of round 6 (ten taken or answered and not blocking; 1.5 open, and 3.1 partly taken and open, both blocking), and its §1 to §3 make 7 findings, 3 blocking for Part B (its §1's items 1 and 2, and its §3's item 1, which restates §1.2 as a wrong claim); Part B another round. Verbatim but for its headings set one level down; it holds no link, so none is rewritten. The design's §22.1 answers each finding.
+
+Reviewed HEAD `da419d1962` and the requested diff. No files changed or tests run.
+
+**F** = `docs/2026-10-25-foundation-design.md`; **D** = `docs/decisions/D212.md`. **Driver/** and **Modules/** identify their projects under `src/Daoris.Desktop/`; **Core/** identifies `src/Daoris.Service/Daoris.Service.Core/`. “Proof” below means the proposed tests.
+
+#### 0. My round-6 findings
+
+| Finding | Assessment | Reason / evidence |
+|---|---|---|
+| 1.1 Move exclusion and replay | **Answered — non-blocking** | The explicitly weaker mixed-build bound holds; F:2614–2635. |
+| 1.2 Word IDs not globally unique | **Taken — non-blocking** | Settlement rows preserve the record namespace; F:2670. A separate consumer problem remains below. |
+| 1.3 Successor retry misses settlement | **Taken — non-blocking** | The backward walk covers the stated predecessor counterexample; F:2686. |
+| 1.4 `User` cannot prove delivery | **Taken — non-blocking** | Recovery now uses post-write `move_words.sent`; F:2778. |
+| 1.5 Lock does not serialize | **Open — blocking** | The replacement still understates stale-writer schedules; §1.2 below. |
+| 1.6 Import rejects its own baseline | **Taken — non-blocking** | Taking and leaving compare against recorded `observed`; F:3203. |
+| 1.7 Unreadable added roles on downgrade | **Answered — non-blocking** | The guarantee is expressly narrowed, with Intake and Ask Daoris disabled; F:3183, D:563. |
+| 1.8 Equal turn-clock readings | **Taken — non-blocking** | Loss is stated and a held-clock proof added; F:2856, F:2868. |
+| 2.1 Row order | **Answered — non-blocking** | The earlier dependencies remain supplied; F:1587. |
+| 3.1 Unique IDs; uninterrupted lock ownership | **Partly taken; open — blocking** | ID claim corrected; the lock bound remains incomplete. |
+| 3.2 `ShownTaken` establishes delivery | **Taken — non-blocking** | It is now explicitly a display reading; F:2777. |
+| 3.3 Session-file inventory stale | **Taken — non-blocking** | SESSFILES1 is recorded as built; F:2076. |
+
+#### 1. The changed protocols
+
+1. **Blocking — a settled acknowledgment is still shaped as a dispatchable waiting word.** F:2695 returns historical settlement as `Again` with its word ID, but `Driver/Service/ServiceClient.cs:512` discards `Again`, while `Conversations/Chat/ChatTurns.cs:207` and `Conversations/DrivenInbox.cs:441` enqueue an unfamiliar returned ID. After K settles on A, retry it through a fresh dispatcher on successor B containing a different word with the same short ID: the ID-only attempt at `Core/Sessions/Sessions.cs:1627` can acknowledge B’s word, allowing K’s text to be sent again and B’s word taken. Give terminal settlement an acknowledgment that cannot enqueue or steer words, specify older-client handling, and prove this through both real dispatchers, including the reused-ID case.
+
+2. **Blocking — the older-writer fence leaves more than its one stated window.** F:3161–3165 and F:1677 describe a paused **newer** writer overwriting an older edit, but an **older** writer can pause after `Driver/Platform/DriverConfig.cs:1018`, have its lock reclaimed after one minute, and resume at `:1027` after the newer narrowing commits. That restores stale staffing—including an enabled Intake—because the older save performs no ownership recheck; moreover, reclamation depends on total lock age (`KeepLock.cs:120`), not a full minute between the final read and rename. The proof at F:3235 needs both directions and an already-aged lock, followed by an explicit decision about this wider downgrade bound.
+
+3. **Non-blocking — delivery evidence now meets the identified crash counterexample.** F:2778–2793 places `sent` after the write and before the take, and conservatively holds missing evidence; this matches the available boundaries at `Driver/Agents/Acp/Acp.cs:2125`, `Loop/DriverContinuations.cs:1252`, and `Conversations/Chat/ChatTurns.cs:1226`. The proposed cuts distinguish pre-send events, successful writes without durable evidence, and completed takes; per-word `User` events correctly serve display alone.
+
+4. **Non-blocking — the database settlement lookup and open checks address their stated cases.** F:2670 preserves unrelated records’ equal IDs, F:2686 reads predecessors and successors with the key first, and F:2810 orders replay lookup before head/state refusals. The proofs cover lost answers, forwarded retries, deletion, `BackToPersonAsync`, and host replacement; the remaining end-to-end acknowledgment gap is item 1 above.
+
+5. **Non-blocking — staffing readers, offer baselines, and unreadable added roles are now carried through.** F:3124–3133 supplies `Actors`/`ActorErrors` at load, retains the drain override, names the seven direct readers, and preserves Chat/Brainstorm when Build changes; these match `ActorChoices.cs:104`, `HelperChoice.cs:48`, and `Setup/InstallUpdate.cs:50`. F:3203 gives offers their observed baseline, while F:3137 and F:3183 explicitly cover unreadable added roles and the narrower older-build guarantee; their proposed proofs exercise those cases.
+
+#### 2. The order
+
+1. **Non-blocking — no remaining forward dependency identified.** F:1593–1612 now places delivery-dependent proofs in f-ii, and d-ii explicitly updates the ended move’s body, delivery, and box take-up before f-vi retires that box. The store, bindings, settlement, open, Course port, staffing, and catalogue predecessors remain explicit, with today’s suites and Part A’s required moves retained.
+
+#### 3. Wrong claims about existing code
+
+1. **Blocking — the claimed universal lock window does not describe HEAD.** F:1677 and D:561 describe the final ownership read as though it bounded every writer, whereas HEAD’s older `DriverConfig.Save` goes directly from its file computation to `AtomicFile.WriteText` (`Driver/Platform/DriverConfig.cs:1018`, `:1027`). This is the protocol consequence in §1.2, not merely stale wording.
+
+**Part B verdict: another round.** Resolve terminal settlement acknowledgments at their dispatching consumers, and settle the full stale-writer bound before acceptance.
+
+## Opus (foundation), round 7
+
+The independent Opus foundation reader's read of round 7 at `da419d196`, Part B's alone: its §0 assesses both reads of round 6 and finds no finding of either wrong; 13 findings, 3 blocking for Part B, all in row w-s ⚖; accept after named changes the steward can check without another read. Verbatim but for its headings set one level down; it holds no link, so none is rewritten. The design's §22.2 answers each finding.
+
+## FOUNDATION1 round 7, Part B: a foundation read
+
+I read everything at `da419d196`: the design (**F**), D212 (**D**), the reads of round 6, the brief and the diff `5be9557b9..da419d196`. I checked the claims against the code at that commit. Paths use the design's aliases, and `Host/` here means `Daoris.Desktop.Driver.Host/`. Nothing was run.
+
+### 0. Both reads of round 6
+
+None of the findings in either read was wrong.
+
+| Read · finding | Kind | Standing after round 7 |
+|---|---|---|
+| Codex §0 1.2 (settlement identity) | open, blocking | **Taken; holds**, through 1.2 and 1.3 |
+| Codex §0 1.4 and 2.3 (settlement versus delivery) | open, blocking | **Taken; holds.** `sent` is the evidence. The display event has a side effect (finding 4) |
+| Codex §0 1.15 (w-s recovery) | open, blocking | **Taken in part; open** (findings 1, 6 and 7) |
+| Codex §0 4.2 (never wider on a downgrade) | open, blocking | **Taken, narrowed; holds for an older build.** The newer build has a residual (finding 8) |
+| Codex §0 4.3 (settled read as taken) | open, blocking | **Taken; holds** |
+| Codex 1.2 (word ids not unique) | blocking | **Taken; holds.** Keying by (record, id, key) removes the random-id clash (`Core/Sessions/SessionLedger.cs:1384`) and the `answer` clash (`Sessions.cs:1545`, `:1651`) |
+| Codex 1.3 (a forward walk misses a predecessor) | blocking | **Taken; holds.** The back walk covers the pump's forward (`Modules/Loop/SessionWords.cs:773-799`, `:843-863`). Residual: a fourth keyed door is not named (finding 12) |
+| Codex 1.4 (`User` event is not delivery) | blocking | **Taken; holds as evidence.** The named hook sites are partly wrong (finding 5), and the event now hides the `lost` line (finding 4) |
+| Codex 1.5 (lock does not serialize) | blocking | **Taken; holds between newer writers.** Against an older writer, the stated window and its direction are wrong (finding 7). A pending left by a live run is never resolved (finding 6) |
+| Codex 1.6 (an import fails its own comparison) | blocking | **Taken; open.** The return's own turn-off write invalidates an offer's `observed` (finding 1) |
+| Codex 1.7 (unreadable added roles) | blocking | **Taken in its second form; holds for an older build.** The newer build has a residual (finding 8) |
+| Codex 1.8 (equal clock readings) | non-blocking | **Taken; holds** |
+| Codex 2.1 (order) | non-blocking | **Answered; holds** |
+| Codex 3.1 (unique ids; lock held throughout) | blocking, wrong claims | **Taken in §3.4 and 19.15.** 19.8 still says w-s writes "serialize under the file's lock" (F:2942; finding 13) |
+| Codex 3.2 (`ShownTaken` read as delivery) | blocking, wrong claim | **Taken.** The replacement claim, that it is "for the display alone", is also wrong (finding 4) |
+| Codex 3.3 (SESSFILES1 stale) | non-blocking | **Taken; holds** (`Sessions/History/SessionHomeFiles.cs:127-132`) |
+| Opus F1 (forward-only walk) | blocking | **Taken in its second form, key asked first; holds** |
+| Opus F2 (no per-word evidence) | blocking | **Taken for display, evidence stricter; holds.** See findings 4 and 5 |
+| Opus F3 (w-s readers) | blocking | **Taken for `Actors`, `ActorErrors` and the drain; open** for `adapter`'s direct readers (finding 2) and for the seam against the module map (finding 3) |
+| Opus F4 (retry under cached marks) | non-blocking | **Taken; holds** |
+| Opus F5 (order of the open's checks) | non-blocking | **Taken; holds** |
+| Opus F6 (`BackToPersonAsync`) | non-blocking | **Taken; holds.** The "park's move to working" clause is vacuous: a keyed open refuses an active record, and a parked record is active (`Core/Sessions/Sessions.cs:321-322`) |
+| Opus F7 (one hold rule) | non-blocking | **Taken; holds where the executor looks.** A shell without the lease runs no look (finding 11) |
+| Opus F8 (moved word's files) | non-blocking | **Taken; holds** |
+| Opus F9 (`Keep`) | non-blocking | **Taken for the newer build's own writes; open** for an older build's change found at the return (finding 9) |
+| Opus F10 (scoped off of an *as before* role) | non-blocking | **Taken for "off"; open** for removed or unreadable (finding 8) |
+| Opus F11 (receipt on roll-forward) | non-blocking | **Taken; holds** |
+| Opus F12 (f-i's delivering proofs) | non-blocking | **Taken; holds** |
+| Opus F13 (the ended move between d-ii and f-vi) | non-blocking | **Taken; holds** (`Chat/LimitMove.cs:338-355`, `:373-376`, `:394-429`) |
+| Opus F14 (the settlement's wording; one producer) | non-blocking | **Taken; holds.** See finding 12 for a further door |
+| Opus F15 (base moved) | non-blocking | **Taken; mostly holds** (finding 13) |
+
+### 1. The changed protocols
+
+**The settlement: keyed by the record left, read back along `from`, asked first.** It holds against each counterexample:
+- **Two shells:** every keeping door decides inside its own `BEGIN IMMEDIATE` step.
+- **An older build beside a newer one:** the older build's doors read nothing (19.12), and its takes settle through the trigger once the database is migrated.
+- **A crash:** the row is written in the same statement as the take.
+- **A lost answer and its retry:**
+  - Codex's pump schedule holds: D's back walk reaches A's row.
+  - A re-say at the head after `Continued`, or to a record now running, holds because the key is read before `Never`, `running` and `Continued` (today's order is at `SessionLedger.cs:941-956`).
+- **Wider deduplication:** the back walk extends "one word per key" across a line. That is right for Daoris's keys that are not scoped to a session (`reopen/…`, `gone-on/…`, `Conversations/Domain/DaorisWords.cs:121-128`). No Daoris producer deliberately re-says the same key after its word left `said`: the chat wake's key is the clock (`Chat/LimitWaits.cs:176`, `:184`), and the driven limit word's key is the record's cool-off.
+- **Proof:** p's planted successor and d-ii's keyed open prove it.
+- **Residuals:** a fourth keyed door, and the shape of a settled `Again` (finding 12).
+
+**Delivery by the move's own `sent`.** It holds at every boundary:
+- after the event and before the write;
+- after the write and before `sent`;
+- after `sent` and before the take, with or without an older come-up's take-back between;
+- after the take;
+- a `sent` that fails.
+
+The f-ii to f-vi cases cut each boundary. Two problems remain:
+- The per-word `User` event, recorded before the write, now suppresses `UncertainWords`' `lost` line (finding 4).
+- The hooks the text names do not exist for a move's message on the ACP door, nor for a native new part (finding 5).
+
+**`DriverConfig` filling `Actors` from `role_staffing`.**
+- Holds:
+  - for `Effective`, `ActorView.Of` and `HelperChoice.Order` (`Conversations/Helpers/HelperChoice.cs:48`);
+  - for the drain: `Drained` over the store-filled `Actors` keeps `intake: []` (`Setup/InstallUpdate.cs:50-55`, read at `Loop/DriverWatch.cs:641`);
+  - for the seven `intakeAdapter`/`helperAdapter` readers, which are complete for those two keys (git grep).
+- Fails for `adapter`, which more than twenty sites still read from the file (finding 2).
+- Crosses the module map (finding 3).
+- Does not carry an older build's `Keep` across the return (finding 9).
+
+**The store's pending and the one keeping write.**
+- Newer writers are serialized: a live run's pending refuses other processes, a dead run's is finished, and the generation guards the commit.
+- Older writers are fenced for any pause before w-s's last read of the lock.
+- The remaining window is wrongly described and can go the wider way (finding 7).
+- A pending left by a live run's own failure is never resolved (finding 6).
+
+**Each offer's observed file as its baseline.**
+- Holds for a lone offer, whether taken, left, or with an edit between the offer and the press.
+- Fails when the same return also finds a turn-off: the turn-off's write replaces the offer's `observed` with the projection, and the older build's other change is lost (finding 1).
+
+**An unreadable added role counted as taking Intake and Ask Daoris.**
+- Holds for an older build: it reads no added role (`Platform/ActorChoices.cs:216-217`), and both keys are written absent.
+- In the newer build, the O6-F10 materialization is triggered only by "off", so a machine-wide *as before* Intake or Ask Daoris goes off everywhere (finding 8).
+- The proof case sits in a row that has no added roles (finding 10).
+
+**The keyed open's checks (O6-F4, F5, F6)** hold. **The hold rule (O6-F7)** holds only where the executor runs looks (finding 11).
+
+### 2. The order
+
+The order holds: z-i, z-iii, a-ii, a-iii; p, d-i, d-ii; e, f-i and h after mod-xiv; o after h and i; j, w-s, w, x, y-i; k, z-v, l, m, n; then q, r, s and v.
+- Each row's proof stands on its own steps, or on fixtures planted by the service's own statements.
+- f-i's two delivering proofs now sit in f-ii.
+
+Two exceptions:
+- w-s's §10 proof includes "an added record whose work does not read" (F:1622), but added roles arrive with row w; row w's own proof does not list the case (finding 10).
+- w-s as specified cannot keep `StructureTests` whole, since Settings would read Roles' table (finding 3).
+
+### 3. Claims about the code
+
+Wrong:
+1. **The seven first-agent readers** (19.15, F:3110; §21.3, F:3461): the seven are the `intakeAdapter`/`helperAdapter` readers only. `adapter`, also a first-agent key, is read directly at:
+   - `Modules/Bridge/Routes/AgentsRoutes.cs:62`, `:287`, `:310`
+   - `Modules/Bridge/Routes/DriverRoutes.cs:519`, `:618`, `:620`
+   - `Modules/Bridge/Routes/LinesRoutes.cs:155`
+   - `Modules/Bridge/DriverContext.cs:166`
+   - `Help/Room/HelpRoomMachineNow.cs:15`
+   - `Help/Proposals/HelpSettingProposals.cs:292`, `:761`
+   - `Setup/SetupPress.cs:52`, `:80`; `Setup/WorkspaceSetup.cs:126`; `Setup/SetupWorld.cs:25`
+   - `Platform/DriverChoicesCommand.cs:925`
+   - `Loop/Driver.cs:671`
+   - `Host/ChatConsole.cs:92`, `:120`; `Host/SessionsConsole.cs:42`; `Host/DriverChoicesConsole.cs:63`
+
+   That is beside row j's own sites. So "no reader reads a projected key but `Effective`'s *as before* branch" (F:3127) is false, and so is D:557-558.
+2. **"`ShownTaken` makes that reading for the display alone"** (F:2777; F:879-881): `ShownTaken` decides whether `SettleOneAsync` writes the `lost` note, the one that offers the person's words again (`Conversations/GoOn/UncertainWords.cs:84-91`, `:97-98`).
+3. **"the moment the ACP door records its `sent` receipt"** (F:966-967): the receipt is recorded only for a message that carries a word id (`Agents/Acp/Acp.cs:2122`). A move's composed message carries none (`Chat/LimitMove.cs:354`). The write-return hook is `OnWire` (`Acp.cs:2109-2113`), or ChatTurns' `sent` (`Chat/ChatTurns.cs:1226-1233`).
+4. **"the native driven door its own (`Loop/DriverContinuations.cs:1252-1256`)"** (F:967): that is the native go-on's resume, which writes no move record. A native new part's start records no `sent` today (`Loop/Driver.cs:3661`).
+5. **The residual: "paused for more than a minute between that last read and its rename … never wider than the store"** (F:1677-1679, F:3162-3164; D:561):
+   - Staleness is the lock's age from its take (`Platform/KeepLock.cs:78`, `:120`), not the pause after the last read.
+   - An older writer's rename can land after w-s's (`Platform/DriverConfig.cs:1013-1027`), which leaves the file wider than the store.
+6. **19.8 "serialize under the file's lock"** (F:2942): `KeepLock.cs:120` treats a lock older than a minute as stale even while its holder lives.
+7. **"Every other file the Part B body cites … is `86f32f40c`'s unchanged"** (F:3477): Part A changed `Chat/ChatGoOn.cs`, `Agents/Acp/Acp.cs`, `Agents/Acp/TransientRetry.cs`, `Service/ServiceClient.cs`, `Trees/SessionGroups.cs` and `Http/Program.cs`. The cited lines still stand.
+8. **"Every door that answers a producer's key"** names three (F:934-941). `SuperviseAsync` (`SessionLedger.cs:991`, key check at `:1031-1044`) is a fourth.
+
+The rest of round 7's citations hold as written, among them:
+- `SessionLedger.cs:941-956`, `:1384`, `:1713-1733`, `:1901`
+- `Sessions.cs:1545`, `:1566-1572`, `:1651`
+- `SessionWords.cs:773-799`, `:843-863`, `:961-985`
+- `ChatRunner.cs:2588-2604`, `:2641-2647`, `:3502-3509`, `:3517-3519`, `:3758-3783`
+- `ResumeAsk.cs:112-134`; `ChatFiles.cs:85-110`
+- `ActorChoices.cs:104-105`, `:137-144`, `:151-205`, `:216-217`, `:323-330`
+- `DriverChoicesCommand.cs:534-589`, `:952-959`, `:2109`, `:2122`
+- `HelpSettingProposals.cs:221-231`, `:280-293`; `DriverConfig.cs:511-512`, `:579-580`
+- `Driver.cs:473`, `:1113`; `HelpRoutes.cs:52`, `:1303`; `AgentsRoutes.cs:293`; `DriverRoutes.cs:319`, `:531`, `:533`
+
+### 4. Findings
+
+1. **Blocking (w-s ⚖). A turn-off found at the return erases the change it is found beside.**
+   - **What is wrong:** a turn-off at the return is a staffing write whose baseline is the file as found (F:3208-3209). Its step 2 writes the pending projection over every owned key and `actors` (F:3157-3159), and that projection is computed from the store's staffing. Two older `SET_ACTOR`s in one downgrade show the problem: one turns Intake off, the other changes Build, writing `adapter` and `actors` whole with `Keep`'s Chat and Brainstorm (`ActorChoices.cs:151-205`). Applying the turn-off overwrites the Build change. The offer from the same comparison then fails its `observed` check, and the "new offer from the file as it now stands" finds `written`. The older write is lost, against §13.5 (F:1999) and against w-s's own proof case "its Intake turn-off applied and its turn-on held" (F:3232).
+   - **Smallest change:** a turn-off found at the return writes only its own paths (the key absent, the role's `actors` entry), and the offer for the rest is made after it, its `observed` being the file that write left.
+   - **Proof:** that schedule, with the offer taken and with it left.
+
+2. **Blocking (w-s ⚖). `adapter`'s direct readers stay on the file.**
+   - **What is wrong:** 19.15 exempts them because "the projection keeps it Build's first agent" (F:3221-3222). That fails whenever an older write or a hand edit of `adapter` is offered and not yet taken (F:3201-3202), which is exactly the window w-s exists for. The more than twenty sites in claim 1 then show wiring, an opinion's same-agent rule, the set-up press's words and the plans' door, and start `Host/ChatConsole.cs`'s conversations, all on an agent the store does not hold. The D50 amendment ("takes effect through that offered import") is false for them.
+   - **Smallest change:** the newer load also fills `Adapter`, `IntakeAdapter` and `HelperAdapter` in memory from the store where the role has a row; a role *as before* keeps the file's key. Its writer never writes those three keys except through w-s's file step, and the census fails any direct read outside the load.
+   - **Proof:** a hand-edited `adapter` with Build set, on the screen, the wiring and `daoris-driver chat`.
+
+3. **Blocking (w-s ⚖). The reader move crosses the module map.**
+   - **What is wrong:** `DriverConfig` belongs to Settings (§14.2 row 3) and `role_staffing` to Roles (row 11; §13.3). Filling `Actors` in `DriverConfig` (F:3124) is either an upward edge that mod-0's gate refuses unless listed (§14.5 rule 2), or Settings reading another subdomain's table, against §13.2, §13.3 and §14.3 (F:2240). It also leaves unsaid which store a `DAORIS_DRIVER_CONFIG` file's load reads (D194 point 2).
+   - **Smallest change:**
+     - Name the seam: a port that Settings declares and Roles implements, wired at each composition root (the loop, the host, the verbs, the routes).
+     - An override file reads `actors` whole, as today, with no store.
+     - `StructureTests` stays whole in w-s's proof.
+
+4. **Not blocking (d-ii; f-ii to f-vi). The per-word `User` event, recorded before the write, suppresses the person's *Say it again*.**
+   - **What is wrong:** `SettleOneAsync` writes the `lost` note only for words `ShownTaken` does not find (`UncertainWords.cs:84-91`, `:97-98`). d-ii records each word's event before the write (F:876-881). So at Codex's boundary, any come-up that settles through this reader shows the word as asked and says nothing. Today a move's single joined event, with no word id, gets the note. Today's go-on has the same gap.
+   - **Smallest change:** record the moved words' events as the write returns, beside `sent`; or have the take-up write `lost` for every attempted moved word without `sent`. Correct claim 2.
+
+5. **Not blocking (f-ii to f-vi). The `sent` hook sites are mis-named (claims 3 and 4).**
+   - **Smallest change:** name `OnWire` and ChatTurns' `sent` as the ACP door's hook, and the native start's return (`Loop/Driver.cs:3661`) as f-iv's, with a case each.
+
+6. **Not blocking (w-s). A pending left by its own live run is never resolved.**
+   - **What is wrong:** step 1 refuses every other process while the pending's run lives (F:3153-3156), and only a dead run's pending is finished (F:3169-3174). When step 2 throws (the lock held through `KeepLock.cs:70`/`:88`, or the file does not read) or step 3 fails, the pending stays. For that process's whole life, other writers are refused and the return's comparison does not run (F:3196). After a failed step 3, the file also holds an uncommitted projection; if it was a turn-on, an older build beside starts that work.
+   - **Smallest change:** on any failure after step 1, the writer resolves its own pending at once by the come-up's rule, and a later write of the same run resolves it first.
+   - **Proof:** a lock wait that expires, and a refused commit, each followed by another process's write.
+
+7. **Not blocking (w-s). The stated window is wrong (claim 5).**
+   - **What is wrong:** the window opens once w-s's lock is a minute old at its last read, however short the pause after that read. If an older writer re-reads the file before w-s's rename and renames after it, a committed narrowing (a turn-off) is undone in the file. The file is then wider than the store, and the return offers the result as a turn-on instead of applying anything.
+   - **Smallest change:** state both orders. After its rename, w-s takes the lock again, re-reads, and rewrites any narrowing the file no longer shows; a narrowing needs no press.
+
+8. **Not blocking (w; w-s). O6-F10's materialization covers "off" only.**
+   - **What is wrong:** the projection also writes the key absent when the role is removed or unreadable in a scope, or when an added record's work does not read (F:3134-3138). In those cases a machine role *as before* reads the absent key live (`ActorChoices.cs:137-144`) and is off machine-wide in the newer build. That contradicts F:3127-3128 and §2.7's "in its scope". Separately, a record that stops reading outside a staffing write leaves the keys stale until the next write.
+   - **Smallest change:** the clause covers every reason the key is written absent, and the load writes the projection when it first finds such a record.
+   - **Proof:** a workspace-scoped added record whose work does not read, with the machine's Intake still starting.
+
+9. **Not blocking (w-s). An older build's `Keep` is not carried across the return.**
+   - **What is wrong:** an older `SET_ACTOR` for Build pins Chat and Brainstorm in `actors` at the old `adapter`. The newer build offers those pins rather than reading them, while its *as before* Chat and Brainstorm read the new `adapter` live and follow Build, against both builds' intent. O6-F9 covers the newer build's own writes only.
+   - **Smallest change:** at the return, a Chat or Brainstorm `actors` entry at `written`'s `adapter`, for a role *as before* in the store, is applied as that role's row without a press; it pins what the role already ran.
+
+10. **Not blocking (order). C6-1.7's proof case is in the wrong row.** It sits in w-s's §10 proof (F:1622), but w-s has no added roles (F:3118), and row w's proof does not list it.
+    - **Smallest change:** move the case to row w.
+
+11. **Not blocking (f-i). The hold rule is read "at each come-up and each look" (F:753-756), but a shell beside a headless lease holder runs no look.**
+    - **What is wrong:** that shell builds its watch only after it holds the lease (`Modules/Loop/DriverLoop.cs:838-841`). Its conversations' holds therefore close only at its next come-up or on a press. Meanwhile the destination takes no move of its own (F:631-633), so a limit move, a hand-over or the curve there is held for the shell's life. Also, a hold that names only a begun effect closes at the next read.
+    - **Smallest change:** apply the rule wherever the course reads the destination's standing move (its precondition), under the claim, and say whether a begun effect alone keeps a hold.
+
+12. **Not blocking (p; d-ii). A fourth keyed door, and the settled answer's shape.**
+    - **What is wrong:**
+      - `SuperviseAsync` (`SessionLedger.cs:991`, `:1031-1044`) answers a producer's key too. It compares decision, question, choice and text, which a settlement row (record, id, key, moment) cannot carry.
+      - A settled `Again` has no word to return, yet the shell writes the answered word's text as a `User` event on the record the say named (`Modules/Loop/SessionWords.cs:1025-1045`). In Codex's case that is the successor, which never held the word.
+    - **Smallest change:** say that the supervisor's door stays as today while no appointment is offered (19.9). Specify the settled `Again`'s word view (its id, marked settled), with `Show` writing nothing for it, in p's census.
+
+13. **Not blocking (text).** Correct claims 6 and 7 (F:2942, F:3477), the "seven readers" (F:3110, F:3461), and D:557-561.
+
+13 findings, 3 blocking for Part B (findings 1 to 3, all in row w-s ⚖).
+
+**Verdict for Part B: accept after named changes the steward can check without another read.** They are:
+- finding 1: a turn-off at the return writes only its own paths, the offer is made after it, and the combined case is proved;
+- finding 2: the store's load fills the three first-agent keys, and the census covers every direct reader;
+- finding 3: w-s's seam is named against the map, with `StructureTests` whole.
+
+The settlement, `sent`, and the keyed open hold as written. The ⚖ rows still wait for both makers' reads.
