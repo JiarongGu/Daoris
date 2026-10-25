@@ -465,6 +465,13 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
     // FABRIC-CLOSE1i: a circle synced through a remote is judged here by the remote's handshake, so a driver asks this host's bind there.
     CloseRemote: true));
 
+// FOUNDATION1 row p (D212, the foundation design §19.12): how a newer client tells what this host does. `run` is an id this host draws at its
+// start, so a host replaced under one client is told from its predecessor; `marks` are the protocol versions it keeps, each a version: `settled` 1
+// is the settlement (a key the line settled answered `Settled` to a say or hand that asks with `settled: true`). A host before this answers none,
+// and a client keeps no mark for it.
+var hostRun = Guid.NewGuid().ToString("N");
+app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1 }));
+
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
 // one is the person's own machine (D21). The DOOR never invents a default: a caller that wants its
@@ -1528,7 +1535,10 @@ if (mode == ServiceMode.Local)
             id, body.Text, body.Files, now, ct, channel, from, key, level, body.Running == true,
             string.IsNullOrWhiteSpace(body.Decision) ? null : body.Decision.Trim(),
             string.IsNullOrWhiteSpace(body.Question) ? null : body.Question.Trim(),
-            string.IsNullOrEmpty(body.Choice) ? null : body.Choice);
+            string.IsNullOrEmpty(body.Choice) ? null : body.Choice,
+            settled: body.Settled == true);
+        // Row p: a key the line settled is answered with the record its word left and no word, nothing kept, so nothing beside the say is.
+        if (outcome.SettledOn is { } settledOn) return Results.Ok(new SettledResponse(outcome.Message, settledOn));
         if (outcome.Refusal == SessionSayRefusal.None)
         {
             // Words to a park are its answer, kept on its ask at once as the answer door keeps one (DRIFT1a); words to an
@@ -1738,14 +1748,14 @@ if (mode == ServiceMode.Local)
     // A piece's answer, handed to its lead's line (the co-agent design §2.3 step 9): ordinary, under the piece's key, never urgent.
     app.MapPost("/api/partners/{partner}/hand", async (ComposedService s, HttpContext http, string partner, HelperHandRequest body, CancellationToken ct) =>
         MachineLocal(http)
-            ? await HelperReply(await s.Partners.HandAsync(partner, body.Text ?? "", DateTimeOffset.UtcNow, ct), s, http)
+            ? await HelperReply(await s.Partners.HandAsync(partner, body.Text ?? "", DateTimeOffset.UtcNow, ct, settled: body.Settled == true), s, http)
             : OffMachineOpinion());
 
     app.MapPost("/api/helpers/{helper}/hand", async (ComposedService s, HttpContext http, string helper, HelperHandRequest body, CancellationToken ct) =>
         MachineLocal(http)
             ? await HelperReply(await s.Helpers.HandAsync(
                 helper, body.Text ?? "", DateTimeOffset.UtcNow, ct, running: body.Running == true,
-                level: string.IsNullOrWhiteSpace(body.Level) ? null : body.Level.Trim()), s, http)
+                level: string.IsNullOrWhiteSpace(body.Level) ? null : body.Level.Trim(), settled: body.Settled == true), s, http)
             : OffMachineOpinion());
 }
 
@@ -1801,7 +1811,8 @@ async Task<IResult> HelperReply(HelperOutcome outcome, ComposedService s, HttpCo
         HelperRefusal.None => Results.Ok(new HelperActionResponse(
             outcome.Message,
             outcome.Session is { } session ? await ToSessionAsync(s, session, MachineLocal(http)) : null,
-            outcome.Word is { } word ? ToSaid(word) : null)),
+            outcome.Word is { } word ? ToSaid(word) : null,
+            outcome.SettledOn)),
         HelperRefusal.NotFound or HelperRefusal.Shared => Results.NotFound(new ErrorResponse(outcome.Message)),
         HelperRefusal.BadShape => Results.BadRequest(new ErrorResponse(outcome.Message)),
         _ => Results.Conflict(new ErrorResponse(outcome.Message)),

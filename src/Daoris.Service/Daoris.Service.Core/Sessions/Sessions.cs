@@ -683,6 +683,47 @@ public sealed class SessionStore
             await words.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        // FOUNDATION1 row p (D212, the foundation design §3.4 rule 5, §19.2): the words that left a record's `said`, one row per record left,
+        // word id and producer key (`id:<word id>` for a word with none), written by this trigger in the statement that takes the word, so
+        // every writer settles a word as it takes it, a connector built before the table included, and no take changes. It says only that
+        // the word left `said`, never that a turn took it: a take-back, an uncertain word's settlement, a park's clear and a supersession
+        // leave by the same statements. The attempt mark rewrites the list with every id kept and settles nothing. The trigger trims by
+        // time alone, in its own statement over the index on the moment, with no count cap, so a settlement answers a retry for the seven
+        // days after the word left. The moment is whole seconds, which every build of SQLite reads. A list that is not a JSON array on
+        // either side settles nothing, never fails the statement that wrote it.
+        await using (var settled = _db.Command())
+        {
+            settled.CommandText = $"""
+                CREATE TABLE IF NOT EXISTS said_settled (
+                  session TEXT NOT NULL,
+                  word    TEXT NOT NULL,
+                  key     TEXT NOT NULL,
+                  at      INTEGER NOT NULL,
+                  PRIMARY KEY (session, word, key)
+                );
+                CREATE INDEX IF NOT EXISTS said_settled_key ON said_settled (key, session);
+                CREATE INDEX IF NOT EXISTS said_settled_at ON said_settled (at);
+
+                CREATE TRIGGER IF NOT EXISTS said_settled_left AFTER UPDATE OF said ON sessions
+                WHEN OLD.said IS NOT NEW.said AND NEW.origin IS NULL AND OLD.said IS NOT NULL
+                  AND json_valid(OLD.said) AND json_type(OLD.said) = 'array'
+                  AND (NEW.said IS NULL OR (json_valid(NEW.said) AND json_type(NEW.said) = 'array'))
+                BEGIN
+                  INSERT OR REPLACE INTO said_settled (session, word, key, at)
+                  SELECT NEW.id, json_extract(gone.value, '$.id'),
+                         COALESCE(NULLIF(json_extract(gone.value, '$.key'), ''), 'id:' || json_extract(gone.value, '$.id')),
+                         CAST(strftime('%s', 'now') AS INTEGER)
+                  FROM (SELECT value FROM json_each(OLD.said) WHERE type = 'object') AS gone
+                  WHERE json_extract(gone.value, '$.id') IS NOT NULL
+                    AND NOT EXISTS (
+                      SELECT 1 FROM (SELECT value FROM json_each(COALESCE(NEW.said, '[]')) WHERE type = 'object') AS kept
+                      WHERE json_extract(kept.value, '$.id') IS json_extract(gone.value, '$.id'));
+                  DELETE FROM said_settled WHERE at < CAST(strftime('%s', 'now') AS INTEGER) - {(long)SaidKeys.Horizon.TotalSeconds};
+                END;
+                """;
+            await settled.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         // SESSUX1f (D126 §5.4): whether a record went up to a remote, after the cursor it is derived from. For rows that
         // already exist it is read once from that cursor: a record of this machine's at or before what its workspace
         // pushed was examined by a push, so it is marked, which errs toward refusing a delete (a record of a repository
@@ -1609,6 +1650,31 @@ public sealed class SessionStore
         }
 
         return session with { Said = left };
+    }, ct);
+
+    /// <summary>
+    /// The newest settlement of a producer's key over these records, within the horizon (row p, the design §19.2): the word that left
+    /// one of them under <paramref name="key"/>, and when. Null where none did. A read, which the ledger and the desks make inside their
+    /// own exclusive step, so no take lands between it and the keep it decides.
+    /// </summary>
+    /// <param name="since">The earliest moment still answered, in whole seconds since the epoch (<see cref="SaidKeys.Horizon"/> before now).</param>
+    internal Task<SettledWord?> SettledAsync(IReadOnlyList<string> records, string key, long since, CancellationToken ct = default) => _db.RunAsync<SettledWord?>(async () =>
+    {
+        if (records.Count == 0) return null;
+        await using var command = _db.Command();
+        var names = records.Select((_, at) => $"$r{at}").ToList();
+        command.CommandText = $"""
+            SELECT session, word, key, at FROM said_settled
+            WHERE key = $key AND at >= $since AND session IN ({string.Join(", ", names)})
+            ORDER BY at DESC, session LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$key", key);
+        command.Parameters.AddWithValue("$since", since);
+        for (var at = 0; at < records.Count; at++) command.Parameters.AddWithValue(names[at], records[at]);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false)
+            ? new SettledWord(reader.GetString(0), reader.GetString(1), reader.GetString(2), DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64(3)))
+            : null;
     }, ct);
 
     /// <summary>
