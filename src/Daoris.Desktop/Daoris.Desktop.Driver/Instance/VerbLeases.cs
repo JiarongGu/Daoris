@@ -113,9 +113,6 @@ public static class VerbLeases
             // The tools `daoris tool …` hands on (PUSH1f2c): a way set to the system's or a file, a delete, a location's change and a
             // look hold it from the top; a read and the long verbs none, a download taking it itself to publish (the alone-path design §1.4).
             "tool" => ToolsCommand.Changes([.. args.Skip(1)]),
-            // This machine's plugins `daoris plugin …` hands on (PUSH1f2f): an add, an update with --yes, a remove and a switch hold it
-            // from the top; the list, an update's plan, the kit's pointers and the usage none.
-            "plugin" => PluginCommand.Changes([.. args.Skip(1)]),
             "update" => args.Skip(1).Any(arg => arg is "--when-idle" or "--now" or "--cancel"),
             // `git branches`, `git identity list` and `public-key` are reads; an identity's change, a default and a pointer write the
             // home's identities or the driver's file (GITAUTH1c).
@@ -139,8 +136,7 @@ public static class VerbLeases
     public static string Name(IReadOnlyList<string> args) =>
         args.Count > 1 && IsWord(args[1]) && (SubVerbs.Contains(args[1]) || (args[0] == "driver" && DriverChoicesCommand.Verbs.Contains(args[1]))
             || (args[0] == "tool" && ToolsCommand.Verbs.Contains(args[1]))
-            || (Readings.TryGetValue(args[0], out var reading) && reading.Verbs?.Contains(args[1]) == true)
-            || (args[0] == "plugin" && PluginCommand.Verbs.Contains(args[1])))
+            || (Readings.TryGetValue(args[0], out var reading) && reading.Verbs?.Contains(args[1]) == true))
             ? $"daoris-driver {args[0]} {args[1]}"
             : $"daoris-driver {(args.Count > 0 ? args[0] : "")}".TrimEnd();
 

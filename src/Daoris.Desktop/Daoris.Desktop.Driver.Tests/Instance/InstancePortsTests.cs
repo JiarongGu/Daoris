@@ -12,7 +12,7 @@ public sealed class InstancePortsTests
     [Fact]
     public void The_verbs_whose_commands_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal(["access", "agent"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["access", "agent", "plugin"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -39,6 +39,19 @@ public sealed class InstancePortsTests
         Assert.False(reading.Holds(["engine"]));
         Assert.False(reading.Holds([]));
         Assert.Null(reading.Verbs);
+        Assert.Null(reading.Isolated);
+    }
+
+    [Fact]
+    public void The_plugins_answer_is_its_commands_reading_of_a_short_change_and_its_verbs()
+    {
+        var reading = VerbLeases.Answered["plugin"];
+
+        Assert.Same(PluginCommand.Verbs, reading.Verbs);
+        Assert.True(reading.Holds(["add", "D:/work/acme.gate"]));
+        Assert.True(reading.Holds(["update", "acme.gate", "--yes"]));
+        Assert.False(reading.Holds(["update", "acme.gate"]));
+        Assert.False(reading.Holds([]));
         Assert.Null(reading.Isolated);
     }
 }

@@ -904,13 +904,6 @@
       }
     },
     {
-      "family": "Instance names Plugins",
-      "after": "Instance",
-      "files": {
-        "Instance/VerbLeases.cs": ["PluginCommand"]
-      }
-    },
-    {
       "family": "Instance names Review",
       "after": "Instance",
       "files": {
