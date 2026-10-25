@@ -582,6 +582,8 @@
     "Sessions/Work/WorkAbandoning.cs": "Work orders",
     "Sessions/Work/WorkCommand.cs": "Work orders",
     "Sessions/Work/WorkPausing.cs": "Work orders",
+    "Settings/AcrossDeclarations.cs": "Settings",
+    "Settings/CoolOffDefault.cs": "Settings",
     "Settings/DriverChoicesCommand.cs": "Settings",
     "Settings/DriverConfig.cs": "Settings",
     "Settings/DriverConfigUnreadableException.cs": "Settings",
@@ -830,8 +832,7 @@
       "family": "Settings names Agents",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["AccountLimits","AcrossRules","AdapterSet"],
-        "Settings/DriverConfig.cs": ["AccountLimits","AcrossRules"]
+        "Settings/DriverChoicesCommand.cs": ["AdapterSet"]
       }
     },
     {
@@ -1976,6 +1977,8 @@
     "SessionLanguageTests.cs": "Settings",
     "StandingFormTests.cs": "Settings",
     "WorkspaceNamesTests.cs": "Settings",
-    "HelpModeNamesTests.cs": "Settings"
+    "HelpModeNamesTests.cs": "Settings",
+    "CoolOffDefaultTests.cs": "Settings",
+    "AcrossDeclarationsTests.cs": "Settings"
   }
 }
