@@ -271,8 +271,9 @@ the page gains only the words a person needs to see and change a role, entering 
 
 *The name, 2026-10-25 (round 4, the steward's decision on both readers' reads of round 3):* a role is one concept in two shapes, working and
 appointed, so the page says **角色** for a role in both, and **任命的角色** where the appointed one must be said. **职务**, which round 3 gave the
-role beside 角色 for the actor, is withdrawn: it set two screen titles apart rather than two concepts, and every shipped string already says
-角色 for both shapes, so no page string changes (`docs/2026-10-25-foundation-design.md` §6, its row u).
+role beside 角色 for the actor, is withdrawn: it set two screen titles apart rather than two concepts. Seven shipped strings already say 角色
+for a role. The ten that say 职责 for the appointed role take 角色 in row u, so those ten page strings change; this corrects the round's first
+wording, which said every shipped string already said 角色 (round 4's named changes, `docs/2026-10-25-foundation-design.md` §6, §17, its row u).
 
 ## 9. Amendment, 2026-10-25: one SQLite store for the desktop's state and configuration
 
