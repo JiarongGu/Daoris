@@ -1,17 +1,19 @@
 # Who is at work on a session: its parts, its subagents, its co-workers and the quests it asked, what each is on and what waits on what, read from the Fabric's records, and how a session hands its work out (COWORKVIEW1, proposed, 2026-10-24)
 
-**Standing:** proposed, round 5, under D191, with dated notes amending D173 (the Collaboration Fabric), D203 (co-workers), D115
+**Standing:** proposed, round 6, under D191, with dated notes amending D173 (the Collaboration Fabric), D203 (co-workers), D115
 (lanes) and D167 (sessions and their parts). The design is two scopes with a standing each:
-- **Row a, *a chat's subagents seen*: the scope round 5 settles.** Its whole contract is §7 row a's table, each rule with where it
-  is specified and its proof. **Round 5** is written by Claude Opus 5.5 from the code on main at `9f48860ba`, whose `src/` is the
-  same as `eced2688e`'s, the commit Codex read round 4 at. It answers Codex's read of round 4 (11 findings, 7 blocking, *another
-  round* for row a; `docs/2026-10-24-cowork-view-reads.md`, *Codex, round 4*), every finding checked against that code, in §16;
-  each place it changes is marked *(C4-n.m)*, Codex's §n finding m. The Opus foundation reader's read of round 4 (12 findings, 4
-  blocking, *accept after named changes*) stays taken as §15 placed it. **Both makers read round 5 before row a is accepted**
-  (D191), and nothing of it is built, filed or staged until then.
+- **Row a, *a chat's subagents seen*: the scope round 6 settles.** Its whole contract is §7 row a's table, each rule with where it
+  is specified and its proof. **Round 6** is written by Claude Opus 5.5 from the code on main at `bdc1b03a2`. Its `src/` differs
+  from `6736d2db9`'s, the commit both makers read round 5 at, by three rows that landed since (SESSFILES1, AGENTERRORS1b2 and
+  FOUNDATION1's row 1b), which move of this design's citations only `Acp.cs`'s, by eighteen lines (§17). It answers both makers'
+  reads of round 5 (`docs/2026-10-24-cowork-view-reads.md`): Codex's, *Codex, round 5* (10 findings, 4 blocking, *another round*
+  for row a), and the Opus foundation reader's, *Opus (foundation), round 5* (9 findings, 2 blocking, *accept row a after named
+  changes*), every finding checked against that code, in §17. Where the two meet, on which process a line belongs to, the
+  stricter is taken. Each place round 6 changes is marked *(C5-n.m)*, Codex's §n finding m, or *(O5-Fn)*, the Opus read's finding
+  n. **Both makers read round 6 before row a is accepted** (D191), and nothing of it is built, filed or staged until then.
 - **The routing half (rows e, b, c, d and f, and the sections marked *routing half*): proposed for a later round**, under its own
-  reads, unchanged by round 5. Round 4 corrected what the reads found in it and settled none of it. Nothing of it is built or filed
-  until that round accepts it, which FOUNDATION1's §5.1 has written after its rows c, d and f land.
+  reads, unchanged by rounds 5 and 6. Round 4 corrected what the reads found in it and settled none of it. Nothing of it is built or
+  filed until that round accepts it, which FOUNDATION1's §5.1 has written after its rows c, d and f land.
 
 The split is the steward's call after two rounds of Codex's reads each found more than ten blocking points across the whole
 design: a row specified whole can be settled, while the width of both halves together kept every round open (§8).
@@ -27,8 +29,33 @@ nothing it reads, and answers every finding of both in §14; places it changes a
 verbatim in `docs/2026-10-24-cowork-view-reads.md`. §1 to §13 keep their rounds' citations; a passage round 4 changes cites
 `b4f096cc0`'s lines. The Opus foundation reader read round 4 at `953ae0c48` (12 findings, 4 blocking, *accept row a after named
 changes*), placed in §15, and Codex read it with those changes at `eced2688e` (11 findings, 7 blocking, *another round* for row a).
-**Round 5** answers Codex's read in §16; a passage it changes cites `eced2688e`'s lines, which are `9f48860ba`'s. Nothing here is
-built, publishes, signs in or spends an account.
+**Round 5** answers Codex's read in §16; a passage it changes cites `eced2688e`'s lines, which are `9f48860ba`'s. Both makers read
+round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it
+after named changes (9 findings, 2 blocking). **Round 6** answers both in §17; a passage it changes cites `bdc1b03a2`'s lines.
+Nothing here is built, publishes, signs in or spends an account.
+
+**What changed in round 6** (§17 places each):
+- **A line no process can be named for is no process's** (C5-2.1, C5-3.1, C5-4.1, O5-F4). From a file's first `start` on, a line is
+  placed only by its `proc`; one with none, or with a `proc` no `start` names, is *unplaced*: its agent ids are counted beside the
+  group, and it is never a row, a run or a state. The token reaches the hook and Claude Code's connector through the spawn's
+  environment, and Codex's connector, which is handed only its entry's own variables, through that entry, composed per process on
+  the protocol door; never through the pipe door's server file, which a record's later processes are handed again (§1.1, §3.6).
+- **A process its record never took ends void** (O5-F1). ANSWER2's duplicate resume writes its process's `end` as `void`, and a
+  void process's `start` closes no generation, so the live resume's children stay as its harness says (§3.6).
+- ***Last seen* moves only while its run is open** (C5-2.2, O5-F9c): a line after the one that closed its run moves nothing and
+  wakes nothing; a run rule 3 closed, which no line closes, is woken by a call naming it (§3.6, §4.1).
+- **The page's number is in the query's data** (O5-F2): a delivery to a query whose data carries none is always taken, so a
+  remount is never dropped; an event of another epoch is never installed, the read asked again (C5-2.3); and a slice's first
+  judgement wakes a pending read whether or not it pushed (C5-1.2) (§4.1).
+- **Smaller** (C5-1.1, C5-3.2, O5-F3, O5-F5 to F9): a chat's `end` waits for its capture on every path; D173's point 1 says the
+  record's own word; `stopped` and an unknown end word have their words; a teammate's part reads *not visible on this machine*; the
+  verb's wait is bounded; the port takes the raw stream line, and new files sit in their subdomain's folder once mod-0 lands; a
+  record with no `kind` reads as driven, *lost when its part ended*, an attended record not yet in the `sessions` slice pending,
+  every target kind's token, and the bound's ties and cycles (§1.1, §3.6, §3.8, §4.1, §4.3, §5.2 to §5.4).
+
+**Round 5's standing**, as it was: proposed, round 5, written by Claude Opus 5.5 from `9f48860ba`, answering Codex's read of round
+4 in §16, the Opus read of round 4 staying taken as §15 placed it; both makers' reads of round 5 owed, and nothing of row a built
+until they landed.
 
 **What changed in round 5** (§16 places each):
 - **Each process's lines carry its token** (C4-2.1). The driver issues a token, `proc`, before each spawn and writes it on that
@@ -220,6 +247,24 @@ Two things went wrong, and this design answers both:
     (`ChatRunner.cs:2896`). The hook and the connector are the agent's own children: the hook is handed its file as an argument
     (`lineage-hook.mjs:62`), and the connector reads its session from the environment it inherits (`LineageFile.FromEnvironment`,
     `Core/Sessions/LineageFile.cs:52-53`), where the start sets `DAORIS_SESSION_ID` (`Driver/Agents/Adapters/Adapters.cs:1574`).
+  - *(C5-1.1, O5-F4, O5-F1; read at `bdc1b03a2`, whose lines here are `6736d2db9`'s but for `Acp.cs`'s, eighteen later.)* **Three
+    of those claims were wrong.**
+    - **A chat awaits its capture on its usual path alone.** Its advance to `working` (`ChatRunner.cs:2893`) may throw before the
+      await (`:2896`); the catch (`:2938`) ends the process (`:2943`) and concludes, and the `finally`'s `end` (`:2977`) is then
+      written with the capture not awaited.
+    - **The connector is handed its session in its own server entry**, `KnowledgeConnector.SessionScope`
+      (`Driver/Service/KnowledgeConnector.cs:114-124`), never by the environment alone. Each protocol-door process's servers are
+      composed before it opens its session (a chat's at `ChatRunner.cs:1548`, its connector's scope at `:3030`; a driven run's at
+      `Driver.cs:4315`) and handed on `session/new` or `session/load` (`Acp.cs:1651`, `:3423`), each entry's variables as its `env`
+      (`:1757`). A pipe-door harness is handed a file instead (`SpawnServers.Write`), a driven record's written once (`Driver.cs:2720`)
+      and handed again to its continuation and its retry (`DriverContinuations.cs:1166`; "the files the first was handed",
+      `:1285-1286`). Claude Code hands its servers its whole environment, but Codex hands a server only its entry's own variables
+      (`KnowledgeConnector.cs:95-96`, CONNECTOR2), so nothing set on a Codex spawn reaches its connector. `Adapters.cs:1574` is a
+      quest session's line: the start sets `DAORIS_SESSION_ID` at five, by its target's kind (an intake's `:1539`, a reviewer's,
+      helper's or piece's `:1548`, a pass's `:1560`, a quest session's `:1574`, a chat's `:1602`).
+    - **A record's processes may overlap.** ANSWER2's duplicate resume spawns and starts its capture (`Driver.cs:3658`,
+      `:3807-3822`) before its advance to `working` is refused (`:3824-3837`); its abandon path then ends its process and observes
+      its capture (`:3831-3836`) and throws past the record's `end` (`:3907`), while the first resume's process runs on.
 - **Nobody reads it.** `ChildLineage.Read` (`ChildLineage.cs:125-139`) is called only by tests (`ChildLineageTests`,
   `LineageHookProcessTests`). No module route and no page code reads the lineage (searched `ChildBindings`, `ChildLineage` and
   `lineage` across `Modules/` and `Web/`). FABRIC-C1b, *a part's native children on its record*, is open and placed after C2a.
@@ -690,8 +735,9 @@ Only two stored changes, both additive and both desktop-only:
      - **its place**: `parent`, the announcing wire session's id where that is a child's, or `depth: 1` where the root announced it.
        This is the one place on that door where a parent is said (`AcpStreams.cs:152-158`).
    - **The end.** It appends another `acp` line, with the wire's `state` word, **only from `subagent_state_update`**
-     (`AcpStreams.cs:186-204`). `EndAllAsync` writes no lineage line. A child still open when the process lets go is closed by the
-     part's own `end` line, as `ended` where clean and `lost` where not. A killed root's child therefore reads *lost*, never
+     (`AcpStreams.cs:186-204`); *(O5-F3)* the word the wire said, and none where it said none, never `AcpStreams`' own default
+     `ended` (`:189`), which is the console's. `EndAllAsync` writes no lineage line. A child still open when the process lets go
+     is closed by the part's own `end` line, as `ended` where clean and `lost` where not. A killed root's child therefore reads *lost*, never
      *finished*.
    - **The pipe door.** The stream's start line keeps the task's `description`, bounded the same way. `ChildBindings.StreamLine`
      drops it today. Its end line already keeps the `status` (`ChildBindings.cs:313-318`).
@@ -710,50 +756,96 @@ Only two stored changes, both additive and both desktop-only:
      process's included; its `end` goes to the file its `start` made, and `End` still writes to no file that does not exist
      (`ChildLineage.cs:118-122`). Round 4 wrote both only to a file that existed, which left a file's first process with no `start`.
      A part whose process started before row a has no file until a line of it creates one, as today.
+     *(C5-1.1)* **A chat's `end` follows its capture on every path.** Where its advance to `working` throws before the capture is
+     awaited (`ChatRunner.cs:2893`, `:2896`), the catch ends the process (`:2943`), and the run's `finally` waits for the capture
+     within the drain's bound before it writes the `end` (`:2977`), as a driven run's drain does; a line the capture writes past
+     the bound carries its own `proc`, which places it (below).
+     *(O5-F1)* **A process its record never took ends void.** ANSWER2's duplicate resume spawns and starts its capture before its
+     advance is refused, and its abandon path ends that process while the first resume's runs (`Driver.cs:3824-3837`, §1.1). That
+     path writes its process's `end` once `AbandonedAsync` has observed the capture, `{at, by: "end", proc, clean: false, void:
+     true}`: the process was never the record's run. It is the one path the reads found where a record's processes overlap, and
+     any later door that starts a process its record does not take writes the same.
    - **Each line names its process** *(C4-2.1)*. Before each of the four spawns the driver issues a token, sixteen hex characters,
      shaped as an id (`ChildBindings.cs:85`; `lineage-hook.mjs:24`), and writes it as `proc` on that process's `start` and `end`
      and on every line the driver writes for it, the stream watcher's and the `acp` writer's. **The token is bound into that
      process's writers when they are made**: the watcher made for its capture (`HarnessCapture.cs:123`) and the sink handed to the
      `AcpStreams` of its connection (`Acp.cs:1668`) each hold it from the spawn, and none reads which process runs now. So a capture
-     that outlives its process (§1.1) writes only as that process: that is the writer's fence. The token is also set on the spawn's
-     environment as `DAORIS_LINEAGE_PROC`, beside `DAORIS_SESSION_ID` (`Adapters.cs:1574`), set anew before each of the four
-     spawns, since a continuation and a retry reuse the first run's start; and it joins the role variables a start drops when it
-     inherits them (`Adapters.Roles`, `Adapters.cs:1659-1665`, ENVLEAK1), so a driver run inside a session never writes as that
-     session's process. The hook and the connector, the agent's own children, copy it as `proc` where their environment holds it
-     and it is shaped as an id. Whether it reaches them on each door, the hook under the adapter and the connector under each
-     harness's own start of it, is rule 1's measure; a line that comes without one is placed by its position, as every line
-     written before row a is.
+     that outlives its process (§1.1) writes only as that process: that is the writer's fence. *(Round 6: the streams of a
+     connection are made at `Acp.cs:1686` at `bdc1b03a2`.)*
+   - **How the token reaches the hook and the connector** *(C5-2.1, O5-F4; round 5's "beside `DAORIS_SESSION_ID`
+     (`Adapters.cs:1574`)" and "where their environment holds it" corrected, §1.1)*. They are the agent's own children, and each
+     copies the token as `proc` where the variables it was handed hold one shaped as an id.
+     - **The spawn's environment**: `DAORIS_LINEAGE_PROC`, set at each of the five places a start sets `DAORIS_SESSION_ID` by its
+       target's kind (`Adapters.cs:1539`, `:1548`, `:1560`, `:1574`, `:1602`), *(O5-F9e)* so every kind of start carries it; set
+       anew before each of the four spawns, since a continuation and a retry reuse the first run's start; and among the role
+       variables a start drops when it inherits them (`Adapters.Roles`, `:1659-1665`, ENVLEAK1), so a driver run inside a session
+       never writes as that session's process. The hook inherits its harness's environment, and on the pipe door so does Claude
+       Code's connector, since Claude Code hands its servers its whole environment; whether the adapter hands the spawn's
+       environment on to the harness it runs, and so to the hook under it, is rule 1's measure.
+     - **The connector's entry, where it is composed per process**: the protocol door's, composed before each process opens its
+       session and handed as that entry's `env` (`ChatRunner.cs:1548`, `Driver.cs:4315`; `Acp.cs:1651`, `:3423`, `:1757`). The token
+       joins the entry's scope beside the session (`KnowledgeConnector.SessionScope`, `KnowledgeConnector.cs:114-124`). This is the
+       one way it reaches Codex's connector, which is handed only its entry's own variables (`:95-96`, CONNECTOR2), and every Codex
+       child is known by its calls alone (§1.1), so it is the one way a Codex child's lines name their process. Codex starts a
+       connector per thread from the same entry (`LineageFile.cs:24-26`), each so naming the process its thread runs in.
+     - **Never the pipe door's server file.** A driven record's is written once and handed again to its continuation and its retry
+       (`Driver.cs:2720`; `DriverContinuations.cs:1166`, `:1285-1286`), so a token in it would name the first run's process for
+       every later one. The pipe door's one harness, Claude Code, hands its connector the spawn's environment instead.
+
+     Whether the token reaches each writer on each door is still rule 1's measure, and where it does not, the line is *unplaced*
+     (below): no line is given a process by a guess. *(Round 5's "a line that comes without one is placed by its position" is
+     withdrawn, C5-2.1.)*
    - **Execution generations** *(C2.2, C2.3, C3-2.2, C3-2.3)*. The fold splits the lines into generations, one per process where
      the file recorded its processes. **Which generation a line is in** *(C4-2.1)*:
      - **a line with a `proc` is in the generation whose `start` names it**, wherever it sits in the file: a line its capture
-       wrote late, after its process's `end` or after the next process's `start`, is still its own process's. A `proc` no `start`
-       names (its `start` lost, which `Append` never says, `ChildLineage.cs:108-111`) is placed as a line with none;
-     - **a line with no `proc`** (every line written before row a, and the hook's and the connector's where the token did not reach
-       them) is placed by its position: in the generation open where it sits. *(O4-F4)* **Where none is open, after an `end`, it
-       begins a generation**, as today's fold reads an `end` as the boundary between runs (`ChildBindings.cs:176-177`), and the
-       owner's case is such a file. One exception: a line that only ends a run of the generation that `end` closed (a stream's
-       `ended`, an `acp` end, a hook's `stopped`, naming an id with a run there), coming before any line of a later generation,
-       stays in that generation, its end word taken as the end-word rule below has it, and begins nothing.
+       wrote late, after its process's `end` or after the next process's `start`, is still its own process's. *(C5-2.1; round 5's
+       "placed as a line with none" withdrawn)* A `proc` no `start` names (its `start` lost, which `Append` never says,
+       `ChildLineage.cs:108-111`) is **unplaced** (below);
+     - **a line with no `proc` before the file's first `start`** (every line written before row a) is history, placed by its
+       position: in the generation open where it sits. *(O4-F4)* **Where none is open, after an `end`, it begins a generation**, as
+       today's fold reads an `end` as the boundary between runs (`ChildBindings.cs:176-177`), and the owner's case is such a file.
+       One exception: a line that only ends a run of the generation that `end` closed (a stream's `ended`, an `acp` end, a hook's
+       `stopped`, naming an id with a run there), coming before any line of a later generation, stays in that generation, its end
+       word taken as the end-word rule below has it, and begins nothing;
+     - *(C5-2.1, C5-3.1; round 5's "placed by its position" withdrawn for these)* **a line with no `proc` from the file's first
+       `start` on is unplaced**: the hook's or the connector's where the token did not reach them, or a line an older build wrote
+       after a rollback. After a `start` a line's position says nothing of its process: an old stop sitting after P2's `start` may
+       be P1's, and an old start there may be.
+
+     ***Unplaced*** *(C5-2.1, C5-3.1)*: a line attributed to no process, because it carries no usable token or its token's `start`
+     is missing. It is evidence that its agent was named, and nothing more, so it is never given a state of a definite generation:
+     it begins, ends and words no run, opens and closes no generation, and moves no *last seen*. Each agent id unplaced lines name
+     is counted once, `unplaced`, beside the group: *its lineage also named {{count}} agent ids it could not tie to a process*.
+     Like the hook's unmatched ids (*the join*, below), they are never children: never rows or runs, never in *n working* or a
+     part's subagents' count. An id among them may also be a row's, since the count says only that some lines naming it could not
+     be tied; and where unplaced and unmatched ids are all a part holds, their counts stand in the empty sentence's place (§5.2).
+     So an old tokenless stop after P2's `start` never closes P2's reused X, and an old tokenless start never makes a working child
+     there: D173's partial visibility, said rather than filled (ADR-B, `D173.md:11-12`). Rule 1 measures how many lines each door
+     leaves unplaced, so the residue is a count; it changes no state.
 
      **Recorded and unrecorded boundaries** *(C4-1.1)*. A generation a `start` began is *recorded*: its process's boundaries are
      its `start` and its `end`. A generation begun without one is *history*: before row a no process wrote a `start`, a chat wrote
      one `end` per process, and a driven record one for all of its processes (§1.1). So a history generation's own `end` is its one
      process's only where the record is a chat, by its `kind`, which the `sessions` slice already holds (`SessionsStateSlice.cs:41`;
-     `kind?: 'driven' | 'chat'`, `Web/data/api.ts:445`). In a driven record's history generation the boundaries between its
+     `kind?: 'driven' | 'chat'`, `Web/data/api.ts:445`); *(O5-F9a)* a record with no `kind`, which the type allows, is read as
+     driven, the reading that claims no boundary. In a driven record's history generation the boundaries between its
      processes were never written, and the fold claims none: a run there that no harness ended may have ended at any of them, so
      it reads **`unrecorded`**, *its end was not recorded · last seen {time}*, never `ended`, `lost` or the `end`'s moment, which may
-     be a later process's. In a file row a's build writes, a history generation is begun only by a line with no `proc` sitting after
-     an `end` and before the next `start`: a late hook or connector line the token did not reach, or a process an older build
-     started after a rollback; it is read as history too. A generation closes at the first of:
+     be a later process's. *(C5-2.1; round 5's history generation begun after a `start` by a line with no `proc` withdrawn)* A
+     history generation sits only before a file's first `start`: from that `start` on, every generation is recorded, and a line
+     with no `proc` there is unplaced. A generation closes at the first of:
      1. its own `end` line, `ended` where clean and `lost` where not, as today (`ChildBindings.cs:241-244`), at the line's moment:
         a recorded generation, and a chat's history one; *(C4-1.1)* a driven record's history generation closes here too, its runs
         no harness ended reading `unrecorded`;
-     2. the next `start` line: `lost` for a recorded generation, whose process went without its `end`, which only a crash of the
-        application or the driver between the process's exit and its `end` line leaves, since every process now writes one;
+     2. the next `start` line *(O5-F1)* that is not void (below): `lost` for a recorded generation, whose process went without its
+        `end`, which a crash of the application or the driver between the process's exit and its `end` line leaves, or a write of
+        that `end` the file refused (`ChildLineage.cs:108-111`); *(O5-F1; round 5's "which only a crash … leaves" corrected)* a
+        duplicate resume's `start` once left one too, beside a live process, and is void now;
         *(C4-1.1)* `unrecorded` for a history one, whose process went before anything wrote its end (the first `start` after an
         upgrade closes a record's history so);
-     3. for the last generation only, where no `end` line came, **the part's process being gone**: no process of the part runs in
-        this window (the driver slice's `running`) and its record is neither `queued`, `starting` nor `working`. *(O4-F6)*
+     3. for the last generation only, *(O5-F1)* the last that is not void, where no `end` line came, **the part's process being
+        gone**: no process of the part runs in this window (the driver slice's `running`) and its record is neither `queued`,
+        `starting` nor `working`. *(O4-F6)*
         `running` is this window's own processes, not the machine's (§1.8): a part another Daoris process on this machine runs is
         `working` on its record and is closed only by its record's move. *(C3-2.3)* This reads the process, never responsibility: a
         record `completed` with a wait code is closed here as any other, so the crash between `Driver.cs:3876`'s conclusion and the
@@ -764,10 +856,28 @@ Only two stored changes, both additive and both desktop-only:
         watch comes up (`Orphans.cs:74-81`, once per watch start, `DriverWatch.cs:715-717`), and that move wakes the read (§4.1), so
         a process being spawned, `working` before it is tracked, is never read as gone.
 
+     **A void process** *(O5-F1)*. A `start` whose process's `end` says `void` is no boundary: it closes no generation by rule 2.
+     The generation it began holds its own process's lines alone, placed by its `proc`, and closes at its void `end` as a recorded
+     generation closes at an unclean one, an open run there `lost`; it is never the last generation rule 3 reads. So in ANSWER2's
+     race the live resume's generation stays open beside its duplicate's, its later lines placed in it by its own `proc`, and its
+     children read as their harness says. The fold reads the whole file before it places a line, as it reads the roots
+     (`ChildBindings.cs:139-163`), so a `start` is known void wherever its `end` sits. A void `end` the file refused leaves its
+     `start` a boundary (§9).
+
      **Rules 2 and 3 are Daoris's reading, not an end anyone said** *(O3-F11e)*. A child they close carries no end moment: it reads
      *lost* or *ended with its part* with *last seen {time}*, its own last line's moment in that generation, never the sweep's
      `updated` or the next start's. *(C4-1.1)* So is `unrecorded`, wherever it is read: *its end was not recorded · last seen
      {time}*. The read passes the record's state, its `kind` and the running set to the fold; nothing is written.
+
+     ***Last seen* moves only while its run is open** *(C5-2.2, O5-F9c)*. A run's *last seen* is the moment of its last line
+     before the line that closed it, in the file's order: its generation's `end`, the next `start` that is not void, or, for a run
+     begun in a generation already closed (below), its own first line. A line of the run's process placed after that, a late
+     call or a stop that begins nothing, changes no run, so it moves nothing the answer carries, *last seen* included: the call
+     line that wakes nothing (§4.1) moves nothing either, and a fresh composition draws what the held one does. A run rule 3
+     closed has no line that closed it, since rule 3 reads the process gone: its *last seen* is its generation's last line naming
+     it, and the composition registers it so that a call naming it wakes the read (§4.1), the one call that moves an answer. Rule
+     3 closes a last generation only once its part's process is gone and its record has moved past `working`, so a call naming one
+     of its runs is rare, and waking on it costs little.
 
      A child's state and moments belong to **its run** *(C2.3; made whole by O3-F1, C3-2.1)*:
      - a run begins at a start the harness said (the hook's `started`, the stream's `started`, an `acp` announcement), from that
@@ -802,17 +912,31 @@ Only two stored changes, both additive and both desktop-only:
      (`ChildLineage.cs:135-138`). An unreadable lineage is drawn as *its subagents could not be read* on that part, never as none,
      and keeps the view's empty sentence away. A missing file is a dependency of the read stamped absent (§4), since the first
      child's line is what creates it, or the root's first call (O4-F12e), or from row a on its first process's `start` (C4-2.1).
+   - **A teammate's part is not read here** *(O5-F6)*. An entry holds every record of its key, a teammate's among them: the
+     entries are grouped with no teammate filter (`Driver/Trees/SessionEntries.cs:96-98`). A teammate's record is one that came
+     down from the team, its id `origin/id` (`Driver/Trees/SessionGroups.cs:132`), and its process ran on another machine, so no
+     lineage of it is here, and the lineage's session shape refuses its id (`ChildLineage.cs:44`, `:127`). Such a part's
+     subagents read *its subagents are not visible on this machine*, never a count and never none: no file is looked for, and the
+     empty sentence is withheld, as it is for an unreadable lineage. The view draws the sentence on the part's row, and in the
+     *Subagents* group where the attended part is one.
    - **The hook** stays ids only. A label is not an id, and the hook's rule (`lineage-hook.mjs:10-12`) is that no value a path may
      hide in reaches the file through it.
    - **The fold** keeps, per run:
      - each child's first and last `at`, and whether its start was said or only first seen (O3-F1); the read's answer carries the
        first, the end the harness said with its moment, and, for a run rules 2 or 3 closed, the last as *last seen*, never a
-       working run's last, which only call lines would move (O3-F5, §4);
+       working run's last, which only call lines would move (O3-F5, §4); *(C5-2.2)* that last is its last line before the line
+       that closed it, as *last seen moves only while its run is open* (above) has it;
      - its label, where a line gave one;
      - its parent and depth from an `acp` line, beside the stream's and Codex's;
-     - **the end word as the wire or the stream said it**: `completed`, `failed`, `cancelled` or `disconnected`. A stop with no word
-       (the hook's) stays `finished`. The view draws each with the output panel's own words (`work.panel.stream.state.*`), adding
-       `disconnected`, and *(C4-3.3)* every other state, `finished` and `unrecorded` among them, with the key §5.4's mapping names.
+     - **the end word as the wire or the stream said it**: `completed`, `failed`, `cancelled` or `disconnected`, *(O5-F3)* and
+       `stopped`: the stream keeps any id-shaped `status` (`ChildBindings.cs:316`), and `stopped` is one of its words for a
+       stopped task (`Driver.Tests/fixtures/native/claude-background-cut.stream.jsonl:14`, a background command's, the same
+       `task_notification` an agent's end is), which the panel already words
+       (`work.panel.stream.state.stopped`, `Web/locales/en/work.panel.json:18`). A stop with no word (the hook's, or an `acp` end
+       whose wire said none) stays `finished`, and *(O5-F3)* so does a word none of these five: an end said with an outcome the view
+       cannot word, never a state of its own and never the fold's own `ended`. The view draws each with the output panel's own words
+       (`work.panel.stream.state.*`), adding `disconnected`, and *(C4-3.3)* every other state, `finished` and `unrecorded` among
+       them, with the key §5.4's mapping names.
    - **Why a label may enter a file the rule kept to ids.**
      - The file is the session's, under the home, never synced and never on a shared host (D47).
      - For a child of the root, the label is already on the session's events as the card's title and text (`AcpStreams.cs:169-181`).
@@ -822,7 +946,8 @@ Only two stored changes, both additive and both desktop-only:
      - *(R2-O13f)* A task's first line may name a path. The lineage's twin row (`.claude/knowledge/twins.md:180`) says a value is
        kept only where it is shaped as an id, *so no path is written*, which the label ends. Row a amends that row, adding the
        driver's `acp` and `start` lines beside its `stream` and `end` (C2.2), and *(C4-2.1)* `proc` on each line, the hook's and
-       the connector's where their environment holds it, and D173's note says the file becomes
+       the connector's where their environment holds it, *(O5-F4)* the connector's from its entry's variables, *(O5-F1)* and `void`
+       on an `end`, and D173's note says the file becomes
        transcript-class, kept on this machine (D47).
    - **The join.** The CONSOLE2 evidence says what the ids are: `subagentSessionId` is the harness's agent id, and a re-run is
      `<id>:generation:<n>` (§1.1). The hook's `agent_id` is the same harness's agent id.
@@ -901,16 +1026,20 @@ The read answers one type, fed whole to a presentational component (`Web/design/
 *(C6.1, C2.5, C2.6)* Round 2's `coworkers` group, `channel`, `sitting` and `at` are gone from it: the first three are read beside it
 (§3.9), and a composition moment would make every answer differ from the one held, so an unchanged answer would be told as moved.
 
-**Row a's type** *(round 4: the scope this round settles)*. It carries nothing a call line alone moves (O3-F5), and nothing of
+**Row a's type** *(round 4: the scope this round settles)*. It carries nothing a call line alone moves (O3-F5), *(C5-2.2)* save
+the *last seen* of a run rule 3 closed, which no line closed, so a call naming that run wakes the read (§3.6, §4.1); and nothing of
 responsibility, waits, quests or co-workers:
 
 ```ts
 type AtWorkHeld =                                 // what the page's query holds (O3-F8, C3-4.2, O4-F3)
-  | { reading: true }                             // the pending answer, never `undefined`, which the query library fails
-  | { failed: { why: string } }                   // a work failed with nothing held, or (C4-2.4) an input slice never judged
+  | { reading: true }                             // the pending answer, never `undefined`, which the query library fails;
+                                                  // it carries no number, so any delivery replaces it (O5-F2)
+  | { failed: { why: string }; at: AtWorkAt }     // a work failed with nothing held, or (C4-2.4) an input slice never judged
                                                   // and failing; never a query error (C4-2.3); the page asks nothing again
-  | { answer: AtWorkA; stale?: { why: string } }; // stale: a refresh failed over this answer, or (C4-2.4) an input slice
-                                                  // judged once is failing now (§4.1)
+  | { answer: AtWorkA; stale?: { why: string }; at: AtWorkAt }; // stale: a refresh failed over this answer, or (C4-2.4) an
+                                                  // input slice judged once is failing now (§4.1)
+type AtWorkAt = { epoch: string; n: number };     // (O5-F2) the number of the delivery that wrote it, kept in the query's own
+                                                  // data, never beside the cache; written by the page, never composed
 type AtWorkA = {
   of: { session: string };                        // row a asks for a session; an ask's view is the routing half's
   attended: string;                               // the part whose subagents are drawn: the one the page attends
@@ -924,16 +1053,21 @@ type AtWorkPart = {
   agent?: string; mark?: string;                  // the maker's mark, never a hue alone
   state: string;                                  // (C4-1.2) the record's own `state`, worded `sessionState.*`; never the
                                                   // strip's shown word, which carries the reader's derived waits; no liveness
-  children: { count: number; working: number; observed?: number; unreadable?: boolean }; // its subagents, as for the attended part
+  children:                                       // its subagents, as for the attended part
+    | { count: number; working: number; observed?: number; unplaced?: number; unreadable?: boolean }
+    | { elsewhere: true };                        // (O5-F6) a teammate's part: *not visible on this machine*, never a count
 };
 type AtWorkSubagents = {
-  read: 'read' | 'none' | 'unreadable';           // §3.6: no file, read, or could not be read
+  read: 'read' | 'none' | 'unreadable' | 'elsewhere'; // §3.6: no file, read, or could not be read; (O5-F6) a teammate's
+                                                  // part, whose lineage is on another machine, never read here
   unreadable?: string;                            // the error's kind
   harness?: 'claude-code' | 'codex';
   seenByCalls?: boolean;                          // a harness whose children appear only when they call Daoris (Codex)
   working: number;                                // never an `unsaid` run (O4-F1)
   turnWaits?: boolean;                            // `claude-code-acp` alone, a child working: its turn waits for them (O4-F1)
   observed?: number;                              // ids the hook, or a Codex part's calls, named that no announcement matched; never children
+  unplaced?: number;                              // (C5-2.1) ids named by lines tied to no process (no `proc` after the file's
+                                                  // first `start`, or a `proc` no `start` names); never children, rows or states
   children: AtWorkChild[];                        // at most 40, filled as §4.1's bound has it (C4-4.1): open runs, then lost,
                                                   // then the newest three of the rest, each only with its whole chain of ancestors
   folded?: number;                                // the rest past the newest three, none drawn as an ancestor: *n ended*
@@ -945,13 +1079,16 @@ type AtWorkChild = {
   type?: string;
   label?: { text: string; claim: true };          // the harness's announcement, the agent's words
   parentKey?: string; depth?: number;             // absent where no harness said: *parent not said*
-  state: 'working' | 'unsaid' | 'completed' | 'failed' | 'cancelled' | 'disconnected' | 'finished' | 'ended' | 'lost'
-    | 'unrecorded';                               // unsaid: open, its harness saying no end (Codex): never working (O4-F1);
-                                                  // unrecorded: closed in a driven record's history, its end never written (C4-1.1)
+  state: 'working' | 'unsaid' | 'completed' | 'failed' | 'cancelled' | 'disconnected' | 'stopped' | 'finished' | 'ended'
+    | 'lost' | 'unrecorded';                      // unsaid: open, its harness saying no end (Codex): never working (O4-F1);
+                                                  // unrecorded: closed in a driven record's history, its end never written (C4-1.1);
+                                                  // stopped: the stream's word (O5-F3); finished: an end with no word, or a word
+                                                  // none of the wire's or stream's five (O5-F3)
   since: string; startSaid: boolean;              // its run's start, or its first line where no start was said: *first seen* (O3-F1)
   ended?: string;                                 // the end its harness or its process's `end` line said, with its moment
   lastSeen?: string;                              // only for a run rules 2 or 3 closed, an `unrecorded` one, or one begun in a
-                                                  // generation already closed (O3-F11e, C4-1.1, C4-2.1)
+                                                  // generation already closed (O3-F11e, C4-1.1, C4-2.1); (C5-2.2) its last line
+                                                  // before the line that closed it, never moved by a later one
   opens: { stream?: string };                     // its console tab while the window holds it
 };
 ```
@@ -1032,7 +1169,9 @@ the routing judge's (§6.4). The page renders them.
   - the entry's parts, from the `groups` slice's snapshot, its `entries` partition, which is the strip's own (§1.8); an attended
     record in no entry, an ended intake whose ask became quests, is its own one part (O4-F12c);
   - each part's record, from the `sessions` slice's snapshot: only the fields the answer reads, its state, adapter, `created`,
-    *(C4-1.1)* `kind` and maker's mark, never its `note`, `ran` or `updated`, which move often (O4-F12d);
+    *(C4-1.1)* `kind` and maker's mark, never its `note`, `ran` or `updated`, which move often (O4-F12d); *(O5-F9d)* an attended
+    record the slice does not hold yet has no state to draw, so the read answers pending and registers the record as absent, as
+    a file is registered absent, and the push of the partition that brings it wakes the read;
   - which parts have a process running in this window, from the driver slice's `running` (O4-F6: this window's, never the
     machine's, §1.8);
   - *(C4-2.4)* each of those three slices' health, beside its snapshot (below);
@@ -1045,8 +1184,14 @@ the routing judge's (§6.4). The page renders them.
   failed input from a pending or a current one. Each slice gains its health, read from memory under its gate beside `Snapshot`
   (`StateSlices.cs:170`): whether its last judgement failed, and that failure's words. It tells `HealthMoved`, outside the gate
   and after its snapshot holds what the judgement left, whenever a judgement's failure begins or ends (its failing flag flipping,
-  `:207-220`), even where the judgement pushed nothing. The read takes each input slice's health with its snapshot, and no
-  service call:
+  `:207-220`), even where the judgement pushed nothing. *(C5-1.2)* **And at its first judgement**, the move from not judged to
+  judged, whether or not that judgement pushed a partition: a first judgement of no partition, as a sessions list with no record
+  judges (`SessionsStateSlice.cs:102`), sets the slice judged (`StateSlices.cs:241`) and tells no `Pushed`, which follows moves
+  alone (`:248`). Its health is so three facts, judged, failing and the failure's words, and `HealthMoved` is told when any of
+  them moves, once each time. *(O5-F7)* A slice whose judge answers null, as both do until the service comes up
+  (`SessionsStateSlice.cs:71`, `GroupsStateSlice.cs:111`), judges nothing and fails nothing, so it stays not judged and not
+  failing, and the view stays *reading* there **by design** (D182's PUSHUX1: not answered is not none). The read takes each
+  input slice's health with its snapshot, and no service call:
   - not judged, not failing: pending, as above;
   - not judged and failing: `{ failed: { why } }`, the slice's own words (*Who is at work could not be read: {{why}}*);
   - judged and failing: the answer composed from the snapshot the slice keeps, with `stale: { why }` (*Could not read again:
@@ -1068,6 +1213,10 @@ the routing judge's (§6.4). The page renders them.
   - *(O4-F2)* **a pending composition registers too**: where the `groups` or `sessions` slice has not judged, the dependency is
     that slice's not-judged status, so its first judgement's `Pushed` wakes the read and the answer follows with no other ask. A
     view restored open as the window starts so leaves *reading* as soon as the slices judge, not at a focus re-fetch.
+    *(C5-1.2; round 5's "its first judgement's `Pushed`" corrected)* It is that judgement's `HealthMoved` that wakes the read,
+    pushed or not, since an empty first judgement tells no `Pushed`;
+  - *(C5-2.1)* each lineage file's unplaced ids, and *(C5-2.2)* which of its runs rule 3 closed (§3.6), beside its runs,
+    unmatched ids and roots (above), so a call naming any of them is judged by what it would move;
 - **Checked as it lands: the source fence** (C3-2.4). A composition about to land compares every dependency with its current
   version: a file's stamp, a slice's partition in its snapshot, a slice's health (C4-2.4). Where one moved, it composes again
   before landing, at most three times; the last one lands and asks the judge at once. Its registration is told by `Land` (`HeldAnswers.cs:147-149`), which alone
@@ -1093,9 +1242,14 @@ the routing judge's (§6.4). The page renders them.
 - **What a lineage line wakes for** (O3-F5). Where a file's stamp moved, the judge reads the bytes past the registered length:
   - any line but a call wakes: a start, a stop, an `acp` line, a process's `start` or `end`;
   - a call line, the connector's or the hook's `event: call`, wakes only where it names a native id the composition holds neither
-    as a run in that generation, nor among the ids it counted as unmatched (O4-F5), *(C4-2.2)* nor as its part's root, since only
-    then does it begin a run or a new count (§3.6). Otherwise it moves nothing the answer carries (§3.8 carries no call count and
-    no working run's last moment), and the judge registers the new length and stamp as read, waking nothing;
+    as a run in that generation, nor among the ids it counted as unmatched (O4-F5), *(C4-2.2)* nor as its part's root, *(C5-2.1)*
+    nor, for an unplaced call, among its unplaced ids, since only then does it begin a run or a new count (§3.6). Otherwise it
+    moves nothing the answer carries (§3.8 carries no call count and no working run's last moment), and the judge registers the
+    new length and stamp as read, waking nothing;
+  - *(C5-2.2)* **a call naming a run already closed moves nothing**, since a run's *last seen* is frozen at the line that closed
+    it (§3.6): a delayed call of P1's naming its lost child after P2's `start` wakes nothing, and a fresh composition draws what
+    the held one does. The one exception is a run rule 3 closed, which no line closed: a call naming one wakes, once, since it
+    moves that run's *last seen*;
   - *(C4-2.2)* **a root's call names no child.** The fold reads a Claude Code call as the root's where the hook's line for it
     names no agent (`ChildBindings.cs:190`, `:217-219`), and a Codex call as the root's where it names a thread with no parent or
     the root its metadata names (`:154-162`, `:223-227`); neither ever begins a run. So a call the fold would read as the root's
@@ -1122,7 +1276,10 @@ the routing judge's (§6.4). The page renders them.
   which answers a held read by asking until it is not pending (`Modules/Platform/InstancePipe.cs:1061-1080`). With no window
   running, it composes the same answer with the same .NET function (D182 point 6), its inputs read under the home's lease: the
   service's records and `SessionEntries.Read` for the entry, `SessionProcesses.AliveOnThisMachine` for a part's process, and the
-  lineage files. Its tests cover both.
+  lineage files. Its tests cover both. *(O5-F7)* The pipe's own asking has no bound but the call's cancellation, re-asking every
+  100 ms while the read is pending (`InstancePipe.cs:1069-1077`), and a read is pending for as long as the slices are not judged,
+  which is as long as the service has not come up (above). So the verb bounds its own wait, thirty seconds, and past it prints
+  *not read yet: this window has not judged its sessions* and exits `2`, a tool error, never an empty answer and never *nobody*.
 - **No other wake.** Row a reads no quest, ask, channel, registry, standing or meeting, so none of them wakes it; the routing half
   adds its own (§4.2).
 - **Off the window's thread** (C2.6). A composition is a fold of the entry's few lineage files, on `HeldAnswers`' task. Each list
@@ -1136,6 +1293,11 @@ the routing judge's (§6.4). The page renders them.
   1. the open runs, `working` then `unsaid`, the newest start first;
   2. the `lost`, the newest last seen first;
   3. of the rest (ended by a word, `finished`, `ended`, `unrecorded`), the newest three.
+
+  *(O5-F9f)* A tie in any of these orders falls to `since`, the newest first, then to the native id, so the bound is the same at
+  every composition. The chain walk stops at an ancestor it has already walked, as `DepthOf` stops past the children's count
+  (`ChildBindings.cs:288`), so a parent cycle, which a harness's ids could make, gives each of its members a finite chain and never
+  a loop.
 
   The rest past those three that no drawn child needs as an ancestor are `folded`, drawn as *{{count}} ended*. Every child not
   drawn for want of room, whatever its state, is counted by its state in `more`, drawn as *{{count}} more not drawn* or, where any
@@ -1175,12 +1337,26 @@ the routing judge's (§6.4). The page renders them.
   - **Numbered** (C4-3.1). `HeldAnswers` keeps an epoch of its own, as a slice does (`StateSlice.Epoch`, `StateSlices.cs:128`),
     and a landing's number is its work's `begun` (`HeldAnswers.cs:90`), drawn from one counter that only grows. Every reply and
     every `ANSWERED` of a numbered read carries `{ epoch, n }`: an event its landing's number, a reply the number of the held state
-    it answers from (the newest landing, `Landed`, `:150`), or of the work it waited for within `Patience`. For each numbered
-    query the page keeps the newest number it took; a reply or an event of the same epoch with a lower number is dropped, the
-    query keeping what it holds, an equal one is the same landing, and one of another epoch replaces the number kept. So a landing
-    told after a newer one, which `Land`'s telling outside its gate allows (`:172-177`), and a direct reply arriving after a newer
-    event regress nothing: no old rows come back over new ones, and no old failure over a recovery (D182 point 3, `D182.md:24`,
-    as the slices have it).
+    it answers from (the newest landing, `Landed`, `:150`), or of the work it waited for within `Patience`. *(Round 5's "the page
+    keeps the newest number it took" and "one of another epoch replaces the number kept" are replaced by the next two points.)*
+    A reply or an event of the same epoch with a lower number than the query holds is dropped, the query keeping what it holds,
+    and an equal one is the same landing. So a landing told after a newer one, which `Land`'s telling outside its gate allows
+    (`:172-177`), and a direct reply arriving after a newer event regress nothing: no old rows come back over new ones, and no
+    old failure over a recovery (D182 point 3, `D182.md:24`, as the slices have it).
+  - **The number is in the query's data** *(O5-F2)*. What a numbered reply or event writes carries its `{ epoch, n }`
+    (`AtWorkHeld`'s `at`, §3.8), written by the page's reader beside the answer, and a delivery is compared with the number in the
+    data the query holds now. No number is kept beside the cache, as `held.ts` keeps its readers (`:16`, `:29`): such a number
+    outlives a query the cache collects once unmounted, so a remount, answered from the held state with the same `n`
+    (`HeldAnswers.cs:150`), would be dropped and the query left holding nothing, drawn as a false *failed* that the next landing,
+    unchanged, never told (`:160`), would not clear. **A delivery to a query whose data carries no number is always taken**: one
+    holding nothing, one holding the pending `{ reading: true }`, and one the cache collected and a remount made again.
+  - **An event of another epoch is never installed** *(C5-2.3; round 5's "another epoch replaces" corrected)*. The page asks the
+    read again instead, as a slice's consumer reads a push of another owner's life again rather than installing it
+    (`Web/bridge/state/slices.ts:249`). Only a reply, the answer to the query's own newest ask, takes a new epoch, and the query
+    library writes one fetch's result at a time, a refetch cancelling the one in flight (TanStack Query 5's `cancelRefetch`, its
+    default for a refetch). So E1, then E2, then a late E1 event leaves E2's answer drawn and asks once more. `HeldAnswers` is one
+    per module (`DriverModule.cs:100`), so its epoch moves only with the module's own life, and a page meets two epochs only
+    across that.
 
 ### 4.2 Round 3's text: the routing half's draft (a later round)
 
@@ -1284,17 +1460,26 @@ Part B: no journal, move record, desktop store or routing contract. Row a's piec
 | Piece | Subdomain (its place in the map) | Why there |
 |---|---|---|
 | the lineage writer's port: what an announcement and an end say, a type of its own, handed to `AcpStreams` | Agents (9) | `AcpStreams` is under `Agents/`; it names the port, never `ChildLineage` |
-| the same port handed to the stream watcher in place of `lineageHome` (`HarnessCapture.cs:111-123`) | Agents (9) | `HarnessCapture` calls `ChildLineage.Watch` today, an edge up into Participants, which this cuts |
+| the same port handed to the stream watcher in place of `lineageHome` (`HarnessCapture.cs:111-123`), *(O5-F8a)* taking each raw stream line | Agents (9) | `HarnessCapture` calls `ChildLineage.Watch` today, an edge up into Participants, which this cuts |
 | the port's implementation, writing each line with the session and the process's token bound, and `start` and `end` | Participants (12) | `Sessions/ChildLineage`, `Domain/ChildBindings` and the hook are Participants' |
 | the fold's generations and runs, and the composition of the answer, the one .NET function the read and the verb share | Participants (12) | beside the fold it reads; it takes the records, the running set and the health as plain values |
-| issuing the token, setting it on the spawn, and handing each process its writers, at the four spawns | Loop (21) | the look's runs and the chat runner's core are Loop's, and Loop wires a port a lower subdomain declares |
+| issuing the token, setting it on the spawn, *(O5-F4)* putting it in the connector's entry where the protocol door composes it per process (`KnowledgeConnector.SessionScope` taking it as a value), *(O5-F1)* writing a void `end` on ANSWER2's abandon path, and handing each process its writers, at the four spawns | Loop (21) | the look's runs and the chat runner's core are Loop's, and Loop wires a port a lower subdomain declares |
 | the `ForWork` topic, its judge a function it is handed | Events (7) | `HomeWatch` is Events'; it names no type of the read's |
 | each stream's newest moment (§3.7) | Context (13) | `Domain/SessionOutput` is Context's; the `calls` slice in the modules reads it |
 | `sessions at-work` | Work orders (15) | `Sessions/SessionsCommand` is Work orders', above Participants, so it calls the composition |
 | the held read, its numbering, the slices' health, the hub's scope and the page | the modules and the web | outside the map (its §14.2's last paragraph) |
 
+*(O5-F8a)* **The port takes what each side has before any lineage reading**: from `AcpStreams`, the announcement's and the end's
+own fields; from the stream watcher, **the raw stream line**, parsed behind the port by `ChildBindings.StreamLine`
+(`ChildBindings.cs:298-323`), which stays in Participants. A port taking announcements would have `HarnessCapture` parse the stream
+with `StreamLine` itself, the same edge up the map that the port cuts. The port also carries the process's token, bound when the
+port is made (§3.6), so neither caller names a process.
+
 So row a adds no edge up the map, and the one it touches, the stream watcher's, it cuts. Where a Part A move has landed before row
 a, row a's files are in their new folders; where none has, they are where today's code has them, and the move carries them.
+*(O5-F8b; round 5's sentence corrected)* That holds for files row a changes. A file row a adds goes in its subdomain's folder once
+FOUNDATION1's row mod-0 has landed, since its gate fails a file added outside it (the foundation design §14.5 rule 1, §14.6's last
+paragraph); at `bdc1b03a2` mod-0 has not landed.
 
 ## 5. The view
 
@@ -1333,15 +1518,17 @@ ask's section, the co-workers' rows and the *Workflow* link are the routing half
   judged, are told with their words (§4.1): the view keeps its rows, dimmed (`opacity-60`, `aria-busy` off), with *Could not read
   again: {{why}}* and *Try again*. An ask answered from the held answer keeps it; the first landing after the failure clears it,
   even an unchanged one; *(C4-3.1)* a delivery older than the one drawn changes nothing.
-- **In part.** A part whose lineage could not be read says so in its place (§3.6), and the rest is drawn.
+- **In part.** A part whose lineage could not be read says so in its place (§3.6), and the rest is drawn. *(O5-F6)* So does a
+  teammate's part, *its subagents are not visible on this machine*, never a count.
 - **Nobody** *(O3-F9, C3-4.1; O4-F9)*. *Nobody else is working on this* is drawn only where the read answered, *(C4-2.4)* not
-  stale, every part's lineage was read or recorded none, no part but the attended one is listed, no child and no unmatched id is
-  held, **and the
+  stale, every part's lineage was read or recorded none, *(O5-F6)* no part is a teammate's, no part but the attended one is
+  listed, no child and no unmatched id is held, *(C5-2.1)* no unplaced id is held, **and the
   attended part's harness shows its children other than by its calls**. It is withheld, and the *appear only when they call
   Daoris* line drawn in its place, for a harness seen only by its calls, read from the record's `adapter`
   (`SessionsStateSlice.cs:41`): a Codex lead with no lineage yet meets every other condition. The same holds for any door rule 1's
   measure finds shows no child, such as a protocol session started without streams (`Acp.cs:1756-1770`). Where the unmatched ids
-  are all there is, their count stands in the sentence's place.
+  are all there is, their count stands in the sentence's place, *(C5-2.1)* and so does the unplaced ids' count, beside it or
+  alone.
 
 **Row a draws, from top to bottom** *(round 4)*, each block absent where it has nothing to say:
 1. **This session**: the entry's parts as the strip lists them, the attended part first: mark · agent · *(C4-1.2)* its record's
@@ -1353,8 +1540,10 @@ ask's section, the co-workers' rows and the *Workflow* link are the routing half
    open run whose harness says no end reads *first seen {time} · its end is not said*, in the status palette's neutral word, never
    *working*, and is counted in no *working*. *(C4-1.1)* A child closed in a driven record's history reads *its end was not
    recorded · last seen {time}*, neutral too. *(C4-3.3)* A child whose only end is its hook's stop reads *finished {time}*, never
-   *completed*. *(C4-4.1)* Under the rows, *{{count}} ended* for the folded and *{{count}} more not drawn, {{working}} of them
-   working* for the children the bound left out.
+   *completed*; *(O5-F3)* one the stream said `stopped` reads *stopped {time}*. *(C4-4.1)* Under the rows, *{{count}} ended* for the
+   folded and *{{count}} more not drawn, {{working}} of them working* for the children the bound left out. *(C5-2.1)* Beside the
+   heading, where there are any, *its lineage also named {{count}} agent ids it could not tie to a process*, after the unmatched
+   ids' count; *(O5-F6)* and for an attended teammate's part, *its subagents are not visible on this machine* in the group's place.
 
 **The routing half's view**, as round 3 wrote it, from top to bottom (each block absent where it has nothing to say):
 
@@ -1401,8 +1590,8 @@ lays out by its own width (`docs/2026-09-19-platform-ux.md:304-311`).
 - **Languages**: every label is in both catalogues. zh lines are shorter by count but wider per glyph, so the narrow row wraps on the
   measured box, never by character count (FLOWCHART1e's measured-box check is the gate's precedent).
 - **Stories** in the side bar at 300 and 430 px, as the side bar's views are storied (`AskPanel.stories.tsx:335-341`), and as the whole
-  frame at 680 px, in both themes and both languages. One story per state; **row a's are the first fourteen** (round 5 adds two
-  and widens three, marked):
+  frame at 680 px, in both themes and both languages. One story per state; **row a's are the first seventeen** (round 5 added two
+  and widened three; round 6 adds the last three, marked):
   - a chat with three subagents (one working, one completed, one failed);
   - a nested child with *parent not said*;
   - a Codex lead whose subagents appear only when they call Daoris, one of them *first seen 14:02 · its end is not said* and
@@ -1423,7 +1612,12 @@ lays out by its own width (`docs/2026-09-19-platform-ux.md:304-311`).
   - the head's fragment, *3 working with it · last heard 1 min ago*, and *quiet* in its place;
   - *(C4-3.3)* a child whose only end is its hook's stop, *finished 14:02* / *已结束 14:02*, beside one the wire ended *completed*;
   - *(C4-1.1)* a driven record's history of a first run and a continuation, one child *its end was not recorded · last seen 14:05*
-    beside one its harness ended.
+    beside one its harness ended;
+  - *(C5-2.1)* a part whose only evidence is two agent ids its lineage could not tie to a process: their count, *its lineage also
+    named 2 agent ids it could not tie to a process*, in the empty sentence's place; and the same count beside a working child;
+  - *(O5-F6)* an entry with a teammate's part, *its subagents are not visible on this machine* on its row, and that part attended,
+    the sentence in the *Subagents* group's place;
+  - *(O5-F3)* a child the stream said `stopped`, *stopped 14:02* / *已停止 14:02*, beside one *finished*.
 
   The routing half's, for its round:
   - a session with two lane parts alongside and one untaken lane quest with its reason;
@@ -1445,8 +1639,8 @@ own (`work.panel.stream.state.completed`, `failed`, `cancelled`, and a new `disc
 reads the same in the panel and the view. *(R2-O10c)* The sameness holds for the wire's words only. A child the driver closed when
 its session ended is *ended with its session* in the panel and on the conversation's card (`AcpStreams.cs:134-139`;
 `work.panel.stream.state.session-ended`), while the view reads that child from the lineage, as *ended with its part* or *lost when
-its session stopped*. The panel's tab keeps its word: it is told by the driver at the session's end, and the view by the part's
-`end` line.
+its session stopped* (*(O5-F9b)* now *lost when its part ended*: a failed part and a crash stop nothing). The panel's tab keeps
+its word: it is told by the driver at the session's end, and the view by the part's `end` line.
 
 | Key | en | zh |
 |---|---|---|
@@ -1465,8 +1659,10 @@ its session stopped*. The panel's tab keeps its word: it is told by the driver a
 | `subagentsTurnWaits` | its turn waits for them | 它这一轮在等它们 |
 | `observed` | its hook also named {{count}} agent ids it could not match | 钩子另外记下 {{count}} 个无法对应的智能体 id |
 | `unreadable` | its subagents could not be read | 读不到它的子智能体 |
+| `unplaced` | its lineage also named {{count}} agent ids it could not tie to a process | 另外记下 {{count}} 个无法对应到进程的智能体 id |
+| `elsewhere` | its subagents are not visible on this machine | 在本机看不到它的子智能体 |
 | `child.ended` | ended with its part | 随所属段结束 |
-| `child.lost` | lost when its session stopped | 会话停止时丢失 |
+| `child.lost` | lost when its part ended | 所属段结束时丢失 |
 | `child.noParent` | parent not said | 未说明上级 |
 | `child.firstSeen` | first seen {{time}} | {{time}} 首次出现 |
 | `child.lastSeen` | last seen {{time}} | 最后出现于 {{time}} |
@@ -1509,13 +1705,17 @@ its session stopped*. The panel's tab keeps its word: it is told by the driver a
 is the host's refusal as it said it, passed through and never re-worded (`.claude/knowledge/translation-parity.md`).
 *(O4-F1)* `child.unsaid` follows `child.firstSeen` on one row (*first seen 14:02 · its end is not said*) and is a state word in
 the status palette's neutral, never *working*. *(C4-1.1)* `child.unrecorded` is read the same way, *its end was not recorded ·
-last seen 14:05*, and says only that no line recorded the child's end, never how it ended.
+last seen 14:05*, and says only that no line recorded the child's end, never how it ended. *(C5-2.1)* `unplaced`, like
+`observed`, counts agent ids, never subagents, and says only that some lines naming them could not be tied to a process; *(O5-F6)*
+`elsewhere` says where the lineage is, never that there is none; *(O5-F9b)* `child.lost` says the part ended, which a failed part
+and a crash do, where *its session stopped* said a stop nobody made.
 
 **Row a's words** *(O4-F10)*. Row a's keys are `view`, `group.parts`, `group.subagents`, `subagentsNote`, `subagentsWorking`,
 `subagentsByCalls`, `subagentsTurnWaits`, `observed`, `unreadable`, every `child.*`, `part.children`, `heard`, `heardSinceStart`,
-`withIt`, `empty`, `reading`, `failed` and `stale`, *(C4-3.3, C4-4.1)* `more`, `moreWorking` and `part.more`, beside the panel's
-end words with the new `disconnected`. Every other key above is the routing half's, added with its rows. Of the new glossary
-terms below, row a's are *at work* / 分工 and `disconnected` / 已断开; the rest are the routing half's.
+`withIt`, `empty`, `reading`, `failed` and `stale`, *(C4-3.3, C4-4.1)* `more`, `moreWorking` and `part.more`, *(C5-2.1, O5-F6)*
+`unplaced` and `elsewhere`, beside the panel's end words with the new `disconnected` and *(O5-F3)* its existing `stopped`. Every
+other key above is the routing half's, added with its rows. Of the new glossary terms below, row a's are *at work* / 分工 and
+`disconnected` / 已断开; the rest are the routing half's.
 
 **Each state's words** *(C4-3.3, C4-1.2)*. Every value a row a state can hold is drawn by one named key, so a key missing from
 both catalogues, which `i18n:check`'s equal key sets would pass, fails a test of the mapping instead:
@@ -1526,7 +1726,8 @@ both catalogues, which `i18n:check`'s equal key sets would pass, fails a test of
 | `unsaid` | `work.atWork.child.unsaid`, after `child.firstSeen` |
 | `completed`, `failed`, `cancelled` | `work.panel.stream.state.*`, the panel's own (`Web/locales/en/work.panel.json:16-20`, zh the same lines) |
 | `disconnected` | `work.panel.stream.state.disconnected`, new |
-| `finished` | `work.atWork.child.finished`, new: the hook's stop, which says no outcome, so never *completed* |
+| `stopped` | *(O5-F3)* `work.panel.stream.state.stopped`, the panel's own (`Web/locales/en/work.panel.json:18`, zh 已停止) |
+| `finished` | `work.atWork.child.finished`, new: the hook's stop, which says no outcome, so never *completed*; *(O5-F3)* and an end with no word, or with a word none of `completed`, `failed`, `cancelled`, `disconnected` and `stopped` |
 | `ended` | `work.atWork.child.ended` |
 | `lost` | `work.atWork.child.lost` |
 | `unrecorded` | `work.atWork.child.unrecorded`, new, before `child.lastSeen` |
@@ -1702,33 +1903,34 @@ They are filed in `TASKS.md` when this design is accepted; until then COWORKVIEW
    *after C2a*, since showing restricts nothing). **The scope round 5 settles.** *(C3-5.1, O3-F1, O3-F2, round 4; C4-4.2, round
    5.)* Its whole contract is the table below: every rule of its lifecycle, its watch and its empty states, where each is
    specified, and the test that proves it. Nothing outside the table is row a's. Its first step is the measure (rule 1). Round 5
-   widens rules 1, 4 to 7, 9 to 17, 19 and 21 and adds rule 23, each change marked with its finding.
+   widens rules 1, 4 to 7, 9 to 17, 19 and 21 and adds rule 23, each change marked with its finding. *(C5-4.1)* Round 6 widens
+   rules 1, 4 to 7, 10, 12 to 17 and 19 to 21 and 23, giving each case the reads found without one its expected outcome.
 
    | # | Rule | Specified in | Proved by |
    |---|---|---|---|
-   | 1 | **The measure first**: the install's lineage files and a stand-in's, on each door, first run and re-run; whether `SubagentStart` reaches the hook over the adapter; how many `acp` ids join a hook id, equal and by the suffix; *(O4-F1)* whether `codex-acp` announces children, whether its announced ids equal the threads its calls carry, and so which lines a Codex part draws its rows from; which doors show no child at all (a protocol session started without streams); *(C4-2.1)* whether `proc` reaches the hook's and the connector's lines on each door, and how many lines with none sit after a `start` their own moment precedes, the one placement position cannot make | §1.1, §3.6 *the join*, *each line names its process* | the counts, the Codex answer and the `proc` answer per door in D173's note before the fold joins |
+   | 1 | **The measure first**: the install's lineage files and a stand-in's, on each door, first run and re-run; whether `SubagentStart` reaches the hook over the adapter; how many `acp` ids join a hook id, equal and by the suffix; *(O4-F1)* whether `codex-acp` announces children, whether its announced ids equal the threads its calls carry, and so which lines a Codex part draws its rows from; which doors show no child at all (a protocol session started without streams); *(C4-2.1)* whether `proc` reaches the hook's and the connector's lines on each door, and how many lines with none sit after a `start` their own moment precedes, the one placement position cannot make; *(C5-2.1, O5-F4)* so how many lines each door leaves **unplaced**, a residue that is counted and changes no state, the expected count on Codex's protocol door none, its token in the connector's entry, and on the pipe door none, the hook and the connector inheriting the spawn's environment | §1.1, §3.6 *the join*, *each line names its process*, *how the token reaches*, *unplaced* | the counts, the Codex answer and the `proc` answer per door in D173's note before the fold joins; *(C5-2.1)* the unplaced count per door beside them |
    | 2 | **The `acp` lines**: the announcement bounded (name 120, task's first line 200) with its parent or `depth: 1`; an end only from `subagent_state_update`; `EndAllAsync` writes none | §3.6 | a new `AcpStreamsTests` class, each of the three |
    | 3 | **The pipe's description** kept on the stream's start line, bounded | §3.6 | `ChildBindingsTests` on `StreamLine` |
-   | 4 | **Every process bracketed**: a `start` before each of the four spawns, an `end` once that process's exit is read and *(O4-F4)* its capture has drained (or its bound passed), none again at the record's conclusion; *(C4-2.1)* each naming the process's `proc`, issued before its spawn, the `start` making the file where there is none and the `end` written only to a file that exists; `proc` on every line the driver writes for the process, bound into its writers at the spawn; `DAORIS_LINEAGE_PROC` set on the spawn's environment anew at each of the four, and among `Adapters.Roles` | §3.6 | per place: a chat, a driven first run, a continuation's run and a resume's retry each write `start` then `end` around their process, each with its own `proc` (stand-ins); a stream `ended` line the capture carries lands before the `end` (O4-F4); a record of two processes folds as two generations; *(C4-2.1)* a part with no file writes its `start` first; a continuation's lines carry its own `proc`, never the first run's; a capture held past its bound and abandoned, writing after the next `start`, writes with its own `proc`; a start inheriting `DAORIS_LINEAGE_PROC` drops it (ENVLEAK1's table); `ChildLineageTests`: an `end` with no file writes none |
-   | 5 | **A generation begins** at a `start`, or, with none, at the first line after an `end` (O4-F4), a line that only ends a run of the closed generation staying in it; **it closes** at its `end`; at the next `start` (`lost`); or, the last, where no process of the part runs in this window and the record is neither `queued`, `starting` nor `working` (`lost` for `stopped` and `failed`; `ended` for `completed`, `awaiting-person`, `declined` and `stood-down`, O4-F7); never by responsibility; a part another Daoris process here runs closes only by its record's move (O4-F6); *(C4-1.1)* **recorded** where a `start` began it, **history** where none did; a history generation's `end` its one process's only where the record's `kind` is a chat; in a driven record's history, and in any history generation the next `start` closes, a run no harness ended reads `unrecorded`, *last seen*, never `ended`, `lost` or an `end`'s moment | §3.6 | `ChildBindingsTests`, a case each; *(O4-F4)* a chat's file written before row a with three processes, each closed by its own `end`, a later process's runs never in an earlier generation, and a late stream `ended` after an `end` ending its run there; *(C4-1.1)* **the existing driven case**: a file written before row a by a driven record's first run and its continuation, no `start` and one `end`: a child of the first run its harness never ended reads `unrecorded` with *last seen* at its own last line, never that `end`'s word or moment, and one its harness ended reads its word; the same lines under a chat's record read the `end`'s word; a history generation the first `start` after an upgrade closes reads `unrecorded`, never `lost`; the crash between `Driver.cs:3876`'s conclusion and the `end` line, record `completed` with `ended.awaits`, child `ended`; each of the nine record states mapped (O4-F7); a `working` record with no process stays `working` until the sweep's `stopped`, then `lost`; a *Process* case: a stand-in chat orphaned with a child working, the sweep run, the view reading *lost* |
-   | 6 | **Runs**: begun by a start the harness said, or, for an id with no run in the generation, by its first line, a call's included (*first seen*); ended by a said stop or the generation's close; a said start after a stop is a new run; a call or stop after a run ended begins nothing; *(O4-F1)* a run whose harness says no end is `unsaid` while open, *first seen {time} · its end is not said*, working nowhere; *(C4-2.1)* a line with `proc` in its own process's generation wherever it sits, one with none by its position, and a line placed in a generation already closed changing that generation alone | §3.6 | *(C4-2.1)* `ChildBindingsTests`, across a later spawn: a late `started` with the first process's `proc` after the second's `start` begins no generation and draws its child closed with the first, *last seen*, never *working*; a late `ended` naming id X with the first's `proc` after the second's `start`, while the second runs X, leaves the second's X *working* and words the first's; a line with no `proc` after the second's `start` is placed in the second; a `proc` no `start` names is placed by position; `ChildBindingsTests`: the Codex fixture (`ChildBindingsTests.cs:125`) given its lines' `at`, which *first seen* needs (O4-F1: they carry none today, `:127-136`), keeps its children, each `ended` with its part and *first seen*; *(O4-F1)* an open Codex generation reads each child `unsaid`, counted in no *working* and no `turnWaits`; a finished id started again, in the same generation and a later one, reads `working`; a late call reopens nothing; a Claude Code agent seen only by calls on the pipe door is a row |
-   | 7 | **End words and moments**: *(O4-F8)* the wire's or the stream's word wins wherever a line of the run says one, whatever the order of the lines; otherwise the hook's stop makes it `finished`; a close by rule 5's second or third way, *(C4-1.1)* and every `unrecorded` one, carries no end moment and reads *last seen* at the child's own last line | §3.6, §3.8 | `ChildBindingsTests`: a hook `stopped` before a wire's `failed`, and after it, both read `failed` (O4-F8); the answer's test: no working run's last moment, no call count |
+   | 4 | **Every process bracketed**: a `start` before each of the four spawns, an `end` once that process's exit is read and *(O4-F4)* its capture has drained (or its bound passed), none again at the record's conclusion; *(C4-2.1)* each naming the process's `proc`, issued before its spawn, the `start` making the file where there is none and the `end` written only to a file that exists; `proc` on every line the driver writes for the process, bound into its writers at the spawn; `DAORIS_LINEAGE_PROC` set on the spawn's environment anew at each of the four, and among `Adapters.Roles`; *(O5-F9e)* set for every kind of target a start serves; *(O5-F4)* the token in the connector's server entry where the protocol door composes it per process, and never in the pipe door's server file; *(C5-1.1)* a chat's `end` after its capture on every path, its exception path waiting for the capture within the drain's bound; *(O5-F1)* ANSWER2's abandon path writing its process's `end` with `void: true` | §3.6 | per place: a chat, a driven first run, a continuation's run and a resume's retry each write `start` then `end` around their process, each with its own `proc` (stand-ins); a stream `ended` line the capture carries lands before the `end` (O4-F4); a record of two processes folds as two generations; *(C4-2.1)* a part with no file writes its `start` first; a continuation's lines carry its own `proc`, never the first run's; a capture held past its bound and abandoned, writing after the next `start`, writes with its own `proc`; a start inheriting `DAORIS_LINEAGE_PROC` drops it (ENVLEAK1's table); `ChildLineageTests`: an `end` with no file writes none; *(O5-F9e)* the token set, and an inherited one dropped, for each of the five kinds whose start sets `DAORIS_SESSION_ID` (`Adapters.cs:1539`, `:1548`, `:1560`, `:1574`, `:1602`); *(O5-F4)* a protocol-door chat's and a driven run's connector entry carry their process's token, a second process's entry its own; a driven pipe-door record's server file carries none, and its continuation's connector, a stand-in reading its environment, reads the continuation's token; *(C5-1.1)* a stand-in chat whose advance to `working` throws, its capture writing a stream `ended` line after the throw: the line lands before the `end`, or past the bound with its own `proc`; *(O5-F1)* two resumes of one record race and the second's advance is refused: its `start` and a void `end` are written, both with its `proc` |
+   | 5 | **A generation begins** at a `start`, or, with none, at the first line after an `end` (O4-F4), a line that only ends a run of the closed generation staying in it; **it closes** at its `end`; at the next `start` (`lost`); or, the last, where no process of the part runs in this window and the record is neither `queued`, `starting` nor `working` (`lost` for `stopped` and `failed`; `ended` for `completed`, `awaiting-person`, `declined` and `stood-down`, O4-F7); never by responsibility; a part another Daoris process here runs closes only by its record's move (O4-F6); *(C4-1.1)* **recorded** where a `start` began it, **history** where none did; a history generation's `end` its one process's only where the record's `kind` is a chat; in a driven record's history, and in any history generation the next `start` closes, a run no harness ended reads `unrecorded`, *last seen*, never `ended`, `lost` or an `end`'s moment; *(O5-F9a)* a record with no `kind` read as driven; *(C5-2.1)* no generation begun without a `start` after a file's first `start`; *(O5-F1)* a void process's `start` closing no generation, its own generation closed at its void `end`, never the last for the third way | §3.6 | `ChildBindingsTests`, a case each; *(O4-F4)* a chat's file written before row a with three processes, each closed by its own `end`, a later process's runs never in an earlier generation, and a late stream `ended` after an `end` ending its run there; *(C4-1.1)* **the existing driven case**: a file written before row a by a driven record's first run and its continuation, no `start` and one `end`: a child of the first run its harness never ended reads `unrecorded` with *last seen* at its own last line, never that `end`'s word or moment, and one its harness ended reads its word; the same lines under a chat's record read the `end`'s word; a history generation the first `start` after an upgrade closes reads `unrecorded`, never `lost`; the crash between `Driver.cs:3876`'s conclusion and the `end` line, record `completed` with `ended.awaits`, child `ended`; each of the nine record states mapped (O4-F7); a `working` record with no process stays `working` until the sweep's `stopped`, then `lost`; a *Process* case: a stand-in chat orphaned with a child working, the sweep run, the view reading *lost*; *(O5-F9a)* the driven fixture's lines under a record with no `kind` read `unrecorded`, as under a driven one; *(O5-F1)* the race's file, the first resume's `start`, the duplicate's `start` and void `end`, then the first's later lines: the first's child stays *working*, its later lines in its own generation, the duplicate's open child reads *lost*, and once the first's `end` comes its children read as it says; a *Process* case: two resumes raced on a stand-in, the second abandoned, the view reading the first's child *working* |
+   | 6 | **Runs**: begun by a start the harness said, or, for an id with no run in the generation, by its first line, a call's included (*first seen*); ended by a said stop or the generation's close; a said start after a stop is a new run; a call or stop after a run ended begins nothing; *(O4-F1)* a run whose harness says no end is `unsaid` while open, *first seen {time} · its end is not said*, working nowhere; *(C4-2.1)* a line with `proc` in its own process's generation wherever it sits, and a line placed in a generation already closed changing that generation alone; *(C5-2.1; round 5's "one with none by its position" withdrawn after a `start`)* a line with no `proc` before a file's first `start` placed by its position, as history; from that `start` on, a line with no `proc`, or with a `proc` no `start` names, **unplaced**: its ids counted once in `unplaced`, never a row, a run, a state or a generation's line | §3.6 | *(C4-2.1)* `ChildBindingsTests`, across a later spawn: a late `started` with the first process's `proc` after the second's `start` begins no generation and draws its child closed with the first, *last seen*, never *working*; a late `ended` naming id X with the first's `proc` after the second's `start`, while the second runs X, leaves the second's X *working* and words the first's; *(C5-2.1; round 5's "a line with no `proc` after the second's `start` is placed in the second" and "a `proc` no `start` names is placed by position" reversed)* a hook `stopped` with no `proc` naming X after the second's `start`, while the second runs X, leaves the second's X *working* and counts X once in `unplaced`; a hook `started` with no `proc` naming a new id Y there makes no row and no run, Y counted once; a call with no `proc` naming Y again counts nothing more; lines with a `proc` no `start` names are unplaced in the same way; a file of history lines and then a first `start` places the history by position and every later line by its `proc`; a part holding only unplaced ids holds no child; `ChildBindingsTests`: the Codex fixture (`ChildBindingsTests.cs:125`) given its lines' `at`, which *first seen* needs (O4-F1: they carry none today, `:127-136`), keeps its children, each `ended` with its part and *first seen*; *(O4-F1)* an open Codex generation reads each child `unsaid`, counted in no *working* and no `turnWaits`; a finished id started again, in the same generation and a later one, reads `working`; a late call reopens nothing; a Claude Code agent seen only by calls on the pipe door is a row |
+   | 7 | **End words and moments**: *(O4-F8)* the wire's or the stream's word wins wherever a line of the run says one, whatever the order of the lines; otherwise the hook's stop makes it `finished`; a close by rule 5's second or third way, *(C4-1.1)* and every `unrecorded` one, carries no end moment and reads *last seen* at the child's own last line; *(C5-2.2, O5-F9c)* that last line the last before the line that closed its run, a later line moving nothing; *(O5-F3)* `stopped` among the words; an `acp` end whose wire said no word writes none; an end with no word, or with a word none of `completed`, `failed`, `cancelled`, `disconnected` and `stopped`, reads `finished` | §3.6, §3.8 | `ChildBindingsTests`: a hook `stopped` before a wire's `failed`, and after it, both read `failed` (O4-F8); the answer's test: no working run's last moment, no call count; *(C5-2.2)* a delayed call of the first process naming its child closed `lost` by the second's `start` leaves that child's *last seen* where it was, the held answer and a fresh composition alike; a call of a run's process placed before the line that closed the run moves its *last seen*; *(O5-F3)* a stream `ended` with `status: stopped` reads `stopped`; one with an unknown id-shaped word reads `finished`; an `acp` end whose wire said no `state` writes a line with no word, never `ended`, and reads `finished` |
    | 8 | **The join**: equal id or the `:generation:<n>` suffix; on a part with `acp` lines, the hook's unmatched agent ids counted once, never rows or runs, on a door that joins and one that never does; *(O4-F1)* a Codex part with `acp` lines draws its rows from them and counts each thread no announcement matched, until the measure says the ids join; nothing by time or order | §3.6 | `ChildBindingsTests`, a Codex part with `acp` lines and threads among them: each child one row |
    | 9 | **Three outcomes of a read**: no file, read, unreadable with its kind; no file is a dependency stamped absent, *(C4-2.1)* which a process's `start` may end | §3.6, §4.1 | `ChildLineageTests`: an unreadable file is never an empty fold; *(C4-2.1)* a read holding a part registered absent wakes when that part's next process writes its `start` |
-   | 10 | **Inputs in memory**: the entry from the `groups` slice (an attended record in no entry its own one part, O4-F12c), the read fields of the records from the `sessions` slice (O4-F12d), this window's `running` from the driver slice (O4-F6), the lineage files by name; pending until both slices have judged, *(O4-F2)* a pending composition registering each slice's not-judged status; *(C4-1.1)* the record's `kind` among the read fields; *(C4-2.4)* each slice's health, read from memory: not judged and failing *failed*, judged and failing *stale*, each with the slice's words | §4.1 | the read's tests: no service call at the client's seam; *(O4-F2)* pending before the slices judge, then the answer once they judge, with no other ask; an ended intake drawn as its own part; a `note` or `updated` moving alone wakes nothing; *(C4-2.4)* a `sessions` slice whose first judgement fails draws *failed* with its words, never *reading* for good, with no ask of the page's; one that fails over a judged snapshot draws *stale* over the kept rows; its recovery, by a judgement that pushes nothing, draws the answer without *stale*; the same for the `groups` slice; none of them makes a service call at the client's seam; `StateSlicesTests`: `HealthMoved` told as a failure begins and as it ends, never at a second failure in a row |
+   | 10 | **Inputs in memory**: the entry from the `groups` slice (an attended record in no entry its own one part, O4-F12c), the read fields of the records from the `sessions` slice (O4-F12d), this window's `running` from the driver slice (O4-F6), the lineage files by name; pending until both slices have judged, *(O4-F2)* a pending composition registering each slice's not-judged status; *(C4-1.1)* the record's `kind` among the read fields; *(C4-2.4)* each slice's health, read from memory: not judged and failing *failed*, judged and failing *stale*, each with the slice's words; *(C5-1.2)* `HealthMoved` told at a slice's first judgement too, pushed or not, so it wakes a pending read; *(O5-F9d)* an attended record the `sessions` slice does not hold yet pending, registered absent; *(O5-F7)* a slice whose judge answers null staying not judged and not failing, the view *reading* by design | §4.1 | the read's tests: no service call at the client's seam; *(O4-F2)* pending before the slices judge, then the answer once they judge, with no other ask; an ended intake drawn as its own part; a `note` or `updated` moving alone wakes nothing; *(C4-2.4)* a `sessions` slice whose first judgement fails draws *failed* with its words, never *reading* for good, with no ask of the page's; one that fails over a judged snapshot draws *stale* over the kept rows; its recovery, by a judgement that pushes nothing, draws the answer without *stale*; the same for the `groups` slice; none of them makes a service call at the client's seam; `StateSlicesTests`: `HealthMoved` told as a failure begins and as it ends, never at a second failure in a row; *(C5-1.2)* `StateSlicesTests`: a first judgement of no partition tells `HealthMoved` once and no `Pushed`, and a second empty one tells neither; the read's: a pending read registered before a `groups` judgement holding no entry, its attended record in the `sessions` slice, is answered, the record its own one part, once that judgement lands, with no other ask; *(O5-F9d)* an attended record absent from a judged `sessions` slice reads *reading*, then its answer at the push that brings it; *(O5-F7)* a judge answering null leaves the view *reading*, never *failed* or *nobody* |
    | 11 | **The source fence**: dependencies with versions, compared as it lands, *(C4-2.4)* each slice's health among them; a moved one composes again, at most three times; registration told by `Land`, so a superseded composition registers nothing | §4.1 | the read's tests: a `sessions` push and a lineage append, each during a composition, compose again before it lands; *(C4-2.4)* so does a slice's failure beginning during one; an ask joined to a work begun before a record moved lands the fresh answer; a superseded composition registers nothing (`DriverModuleHeldTests`) |
-   | 12 | **One judge, waking each read once**: compared with the registered versions, by a `ForWork` topic whose judge is the read's own, never `HomeWatch`'s fixed judge; a read's dependencies leave the union when they wake it, back when it is asked again and lands; judged at registration; a length registered up to the last full line (O4-F12b); *(C4-2.4)* asked by each slice's `HealthMoved` too | §4.1 | the watch's tests: *(C4-2.4)* a slice's `HealthMoved` wakes a read registered on its health, once; a held read no page asks again wakes once and never again across appends and 30 s deadlines; three appends during one composition ask it once more; an append between a composition's read and its registration wakes it; a sibling part's append wakes the attended part's read; a lineage file created after the read wakes it; *(O4-F12b)* a half line at composition, completed after, wakes the read |
-   | 13 | **What a line wakes for**: any line but a call; a call only where it names an id the composition holds neither as a run nor among its unmatched ids (O4-F5), *(C4-2.2)* nor as its part's root, its root ids registered; a call the fold reads as the root's wakes nothing, but a Codex call naming with no parent a thread held as a child; a shorter file | §4.1 | the watch's tests: a call naming a held id wakes nothing and is registered; *(O4-F5)* a call by an unmatched id already counted wakes nothing; a call naming a new Codex thread with a parent wakes; *(C4-2.2)* a hundred root calls, a Codex root thread's, a parentless thread's never seen before, and a Claude Code root's hook and connector lines, cause zero `atWork` wakes; a parentless Codex call naming a held child thread wakes once; a `start` line wakes; a truncated file wakes |
-   | 14 | **Off the window's thread**: *(C4-4.1)* at most 40 rows a list, the subagents filled open runs, then lost, then the newest three of the rest, each child only with its whole chain of ancestors, a chain that does not fit passed over; the rest folded; every child not drawn for want of room counted by its state in `more`; the parts past 40 counted by state; `HeldAnswers` serialising before its gate; no composition moment | §3.8, §4.1 *the bound* | `DriverModuleHeldTests` (O4-F12e: there is no `HeldAnswersTests`): the text made before the gate; a timed case under a slow stand-in: an ask answered within the window's bound while a 40-member answer lands and three other held reads compose; an unchanged composition tells nothing; *(C4-4.1)* the fold's tests: forty-one working children make 40 rows and `more` of one working, the heading *41 working*; a working child under 40 ancestors is never drawn and is counted in `more`, its ancestors drawn by their own place in the order; a chain of 12 drawn whole after 25 others, and one of 20 passed over for a shorter one after it; in each, the rows, `folded` and `more` together count every child once and no drawn child lacks its parent; 45 parts make 40 rows and `moreParts` |
-   | 15 | **Reading, failed, stale**: pending held as `{ reading: true }`; *(O4-F3)* both failure events carrying the refusal's words, a failure with nothing held written as `{ failed: { why } }` and one over a held answer as `stale: { why }`, neither asking again; *(O4-F12a)* `stale` kept through an ask answered from the held answer and cleared by the first landing after the failure, even an unchanged one; *(C4-2.3)* the read **numbered**: its ask never throws, a failure within `Patience` and a held fault answered as the failed value until a landing replaces it, a held answer with a kept failure answered stale, the query's `retry: false`, a query in error drawn *failed*; *(C4-3.1)* every reply and event carrying `{ epoch, n }`, the page dropping one older than the newest it took, another epoch replacing it; every other held read unchanged | §4.1, §5.2 | `DriverModuleHeldTests`: both failures told with `why`, the held answer kept; *(O4-F3)* a work that always fails is begun once per ask, never once per failure; *(O4-F12a)* an unchanged landing after a kept failure is told; *(C4-2.3)* a work failing within `Patience` and one failing after it are each answered as the failed value, the ask never throwing, and a later ask with the fault held reads it again; `held.test.ts`: neither failure asks again, another held read keeps its handling; *(C4-2.3)* the query is never in error for a work's failure and is not retried when the bridge refuses; *(C4-3.1)* events told newest first then older keep the newest; an old direct reply after a newer event is dropped; an old failure after a recovery and an old answer after a failure each regress nothing; an equal number changes nothing; another epoch's delivery replaces the number kept; an unnumbered read's event is handled as today; the page's: reading is no query error, failed draws its sentence and *Try again*, stale stays through a re-ask answered from the held answer and keeps its rows dimmed |
-   | 16 | **Nobody** only where every source was read and holds nobody; unmatched ids stand in its place; an unreadable lineage withholds it; *(O4-F9)* a harness seen only by its calls, read from the record's `adapter`, or a door rule 1 finds shows no child, withholds it, its *appear only when they call Daoris* line in its place; *(C4-2.4)* an input slice failing, the answer *failed* or *stale*, withholds it | §5.2 | the page's tests, a case each; a Codex lead with no lineage draws the line, never *Nobody*; *(C4-2.4)* an answer *stale* for a failing `groups` slice, holding no child, never draws *Nobody* |
-   | 17 | **The parts are the strip's set and order**: the attended part first, *(C4-1.2)* each with its record's own state, `sessionState.*`, deliberately not the strip's shown word, which carries the reader's derived waits; its subagents' count; no part folded, called live, waiting or the lead | §3.1, §3.8, §5.2, §5.4 | the read's tests: the strip's set, one row each; a `completed` record with `ended.awaits` drawn with its own state, neither folded nor called waiting; *(C4-1.2)* the page's: a `completed` part the reader's grouping words `awaiting-helper` shows that derived word in the strip (`PartsStrip.tsx:56`) and *completed* in the view, the difference held on purpose |
+   | 12 | **One judge, waking each read once**: compared with the registered versions, by a `ForWork` topic whose judge is the read's own, never `HomeWatch`'s fixed judge; a read's dependencies leave the union when they wake it, back when it is asked again and lands; judged at registration; a length registered up to the last full line (O4-F12b); *(C4-2.4)* asked by each slice's `HealthMoved` too, *(C5-1.2)* its first judgement's among them | §4.1 | the watch's tests: *(C4-2.4)* a slice's `HealthMoved` wakes a read registered on its health, once; *(C5-1.2)* a first judgement's wakes a read registered on the slice's not-judged status, once; a held read no page asks again wakes once and never again across appends and 30 s deadlines; three appends during one composition ask it once more; an append between a composition's read and its registration wakes it; a sibling part's append wakes the attended part's read; a lineage file created after the read wakes it; *(O4-F12b)* a half line at composition, completed after, wakes the read |
+   | 13 | **What a line wakes for**: any line but a call; a call only where it names an id the composition holds neither as a run nor among its unmatched ids (O4-F5), *(C4-2.2)* nor as its part's root, its root ids registered; a call the fold reads as the root's wakes nothing, but a Codex call naming with no parent a thread held as a child; a shorter file; *(C5-2.1)* an unplaced call only where it names an id not yet counted unplaced; *(C5-2.2)* a call naming a run already closed wakes nothing and moves nothing, but one naming a run rule 3 closed wakes, which runs rule 3 closed registered | §4.1 | the watch's tests: a call naming a held id wakes nothing and is registered; *(O4-F5)* a call by an unmatched id already counted wakes nothing; a call naming a new Codex thread with a parent wakes; *(C4-2.2)* a hundred root calls, a Codex root thread's, a parentless thread's never seen before, and a Claude Code root's hook and connector lines, cause zero `atWork` wakes; a parentless Codex call naming a held child thread wakes once; a `start` line wakes; a truncated file wakes; *(C5-2.2)* after the first process's generation is closed by the second's `start`, a delayed call with the first's `proc` naming its *lost* child causes no `atWork` wake, and the held answer equals a fresh composition of the file; a call naming a run rule 3 closed wakes once, and the answer it lands, its *last seen* at that call, equals a fresh composition; *(C5-2.1)* an unplaced line naming a new id wakes once, and an unplaced call naming a counted id none; *(O5-F1)* a void `end` wakes |
+   | 14 | **Off the window's thread**: *(C4-4.1)* at most 40 rows a list, the subagents filled open runs, then lost, then the newest three of the rest, each child only with its whole chain of ancestors, a chain that does not fit passed over; the rest folded; every child not drawn for want of room counted by its state in `more`; the parts past 40 counted by state; `HeldAnswers` serialising before its gate; no composition moment; *(O5-F9f)* every order's ties by `since`, newest first, then by id; the chain walk stopping at an ancestor it walked | §3.8, §4.1 *the bound* | `DriverModuleHeldTests` (O4-F12e: there is no `HeldAnswersTests`): the text made before the gate; a timed case under a slow stand-in: an ask answered within the window's bound while a 40-member answer lands and three other held reads compose; an unchanged composition tells nothing; *(C4-4.1)* the fold's tests: forty-one working children make 40 rows and `more` of one working, the heading *41 working*; a working child under 40 ancestors is never drawn and is counted in `more`, its ancestors drawn by their own place in the order; a chain of 12 drawn whole after 25 others, and one of 20 passed over for a shorter one after it; in each, the rows, `folded` and `more` together count every child once and no drawn child lacks its parent; 45 parts make 40 rows and `moreParts`; *(O5-F9f)* two working children of one `since` draw in their ids' order at every composition; two children each naming the other its parent are each drawn once, with a finite chain, and counted once |
+   | 15 | **Reading, failed, stale**: pending held as `{ reading: true }`; *(O4-F3)* both failure events carrying the refusal's words, a failure with nothing held written as `{ failed: { why } }` and one over a held answer as `stale: { why }`, neither asking again; *(O4-F12a)* `stale` kept through an ask answered from the held answer and cleared by the first landing after the failure, even an unchanged one; *(C4-2.3)* the read **numbered**: its ask never throws, a failure within `Patience` and a held fault answered as the failed value until a landing replaces it, a held answer with a kept failure answered stale, the query's `retry: false`, a query in error drawn *failed*; *(C4-3.1)* every reply and event carrying `{ epoch, n }`, the page dropping one older than the number it holds; *(O5-F2; round 5's "the newest it took" corrected)* that number kept in the query's data, written with what the delivery wrote, and a delivery to a query whose data carries none always taken; *(C5-2.3; round 5's "another epoch replacing it" withdrawn)* an event of another epoch never installed, the page asking the read again, a reply alone taking a new epoch; every other held read unchanged | §4.1, §5.2 | `DriverModuleHeldTests`: both failures told with `why`, the held answer kept; *(O4-F3)* a work that always fails is begun once per ask, never once per failure; *(O4-F12a)* an unchanged landing after a kept failure is told; *(C4-2.3)* a work failing within `Patience` and one failing after it are each answered as the failed value, the ask never throwing, and a later ask with the fault held reads it again; `held.test.ts`: neither failure asks again, another held read keeps its handling; *(C4-2.3)* the query is never in error for a work's failure and is not retried when the bridge refuses; *(C4-3.1)* events told newest first then older keep the newest; an old direct reply after a newer event is dropped; an old failure after a recovery and an old answer after a failure each regress nothing; an equal number changes nothing; *(C5-2.3; round 5's "another epoch's delivery replaces the number kept" reversed)* E1's answer, then E2's reply, then a late E1 event: E2's answer stays drawn and the read is asked again; an E1 reply resolving after an E2 reply is never written; *(O5-F2)* a query unmounted past the cache's collection time (`gcTime`) and mounted again takes the held answer's reply of the same `n` it held before, and draws the answer, never *failed*; a delivery to a query holding `{ reading: true }` is taken; an unnumbered read's event is handled as today; the page's: reading is no query error, failed draws its sentence and *Try again*, stale stays through a re-ask answered from the held answer and keeps its rows dimmed |
+   | 16 | **Nobody** only where every source was read and holds nobody; unmatched ids stand in its place; an unreadable lineage withholds it; *(O4-F9)* a harness seen only by its calls, read from the record's `adapter`, or a door rule 1 finds shows no child, withholds it, its *appear only when they call Daoris* line in its place; *(C4-2.4)* an input slice failing, the answer *failed* or *stale*, withholds it; *(C5-2.1)* unplaced ids stand in its place as unmatched ones do; *(O5-F6)* a teammate's part withholds it | §5.2 | the page's tests, a case each; a Codex lead with no lineage draws the line, never *Nobody*; *(C4-2.4)* an answer *stale* for a failing `groups` slice, holding no child, never draws *Nobody*; *(C5-2.1)* a part holding only unplaced ids draws their count in its place; *(O5-F6)* an attended teammate's part draws *its subagents are not visible on this machine*, never *Nobody* |
+   | 17 | **The parts are the strip's set and order**: the attended part first, *(C4-1.2)* each with its record's own state, `sessionState.*`, deliberately not the strip's shown word, which carries the reader's derived waits; its subagents' count, *(O5-F6)* or for a teammate's part *not visible on this machine*, never a count; no part folded, called live, waiting or the lead | §3.1, §3.6, §3.8, §5.2, §5.4 | the read's tests: the strip's set, one row each; a `completed` record with `ended.awaits` drawn with its own state, neither folded nor called waiting; *(O5-F6)* an entry holding a teammate's record (`origin/id`) draws it with `elsewhere` and reads no lineage file for it; *(C4-1.2)* the page's: a `completed` part the reader's grouping words `awaiting-helper` shows that derived word in the strip (`PartsStrip.tsx:56`) and *completed* in the view, the difference held on purpose |
    | 18 | ***Last heard*** from the `calls` slice's `heard` partition, none in the answer; the head's fragment, giving way to *quiet* | §3.7 | `SessionOutput`'s newest moment; `CallsStateSliceTests`: judged from memory, one judgement per session per ten seconds, no `STATE_CHANGED`; the head's tests |
-   | 19 | **The view**: the side bar's `atWork` after *Workflow*, at 300, 430 and 680 px, both themes and languages, its words, *(O4-F10)* row a's keys and its two terms *at work* and `disconnected` marked as its own; *(O4-F1)* `turnWaits` on `claude-code-acp` alone; *(C4-3.3)* every state a child or a part can hold drawn by the key §5.4's mapping names, `finished` and `unrecorded` among them | §5.1, §5.3, §5.4 | §5.3's first fourteen stories; `presentational.test.ts`, `i18n:check`, `names:check -- --strict` with row a's keys added and no routing-half key, the tokens gate; `turnWaits` false on any other adapter; *(C4-3.3)* a table test naming, for every value of `AtWorkChild.state` and every record state, the key it draws, and finding that key in both the en and the zh catalogue |
-   | 20 | **Its doors**: `sessions at-work <session> [--json]`, *(O4-F11)* asking the running Daoris over its pipe, and with none running composing the same answer by the same .NET function under the home's lease; told by event, *(O4-F10)* through §4.1's own three steps, the hub's `sessions` entry not naming the read; no press; Ask Daoris's room learns the view's name | §4.1, §5.1 | the verb's words and JSON tests, with a window running and with none; `WindowCensusTests`; `PipeCensusTests`; `HelpCoverageTests`; `stateHub.test.tsx`: `atWork` asks the read again, `sessions` does not |
-   | 21 | **The records**: the lineage's twin row gains `acp` and `start` and the label (R2-O13f), *(C4-2.1)* and `proc` on every line, the hook's and the connector's where their environment holds it; D173's note keeps the measure | §3.6 | `twins.md`'s row; D173's note; *(C4-2.1)* the connector's `LineageFile.Line` and the hook's `lineageLine` tests: `proc` written where the environment holds an id-shaped one, absent where it holds none or another shape |
+   | 19 | **The view**: the side bar's `atWork` after *Workflow*, at 300, 430 and 680 px, both themes and languages, its words, *(O4-F10)* row a's keys and its two terms *at work* and `disconnected` marked as its own; *(O4-F1)* `turnWaits` on `claude-code-acp` alone; *(C4-3.3)* every state a child or a part can hold drawn by the key §5.4's mapping names, `finished` and `unrecorded` among them; *(O5-F3)* `stopped` by the panel's own key; *(C5-2.1, O5-F6, O5-F9b)* the keys `unplaced` and `elsewhere`, and `child.lost` as *lost when its part ended* | §5.1, §5.3, §5.4 | *(round 6)* §5.3's first seventeen stories; `presentational.test.ts`, `i18n:check`, `names:check -- --strict` with row a's keys added and no routing-half key, the tokens gate; `turnWaits` false on any other adapter; *(C4-3.3)* a table test naming, for every value of `AtWorkChild.state` and every record state, the key it draws, and finding that key in both the en and the zh catalogue |
+   | 20 | **Its doors**: `sessions at-work <session> [--json]`, *(O4-F11)* asking the running Daoris over its pipe, and with none running composing the same answer by the same .NET function under the home's lease; told by event, *(O4-F10)* through §4.1's own three steps, the hub's `sessions` entry not naming the read; no press; Ask Daoris's room learns the view's name; *(O5-F7)* the verb's wait on a pending read bounded, thirty seconds, past it *not read yet* and exit `2` | §4.1, §5.1 | the verb's words and JSON tests, with a window running and with none; *(O5-F7)* with a window whose slices never judge (a stand-in loop with no service), the verb prints *not read yet* and exits `2` at its bound, on a held clock (`.claude/knowledge/held-clocks.md`); `WindowCensusTests`; `PipeCensusTests`; `HelpCoverageTests`; `stateHub.test.tsx`: `atWork` asks the read again, `sessions` does not |
+   | 21 | **The records**: the lineage's twin row gains `acp` and `start` and the label (R2-O13f), *(C4-2.1)* and `proc` on every line, the hook's and the connector's where their environment holds it, *(O5-F4)* the connector's from its entry's variables, *(O5-F1)* and `void` on an `end`; D173's note keeps the measure | §3.6 | `twins.md`'s row; D173's note; *(C4-2.1)* the connector's `LineageFile.Line` and the hook's `lineageLine` tests: `proc` written where the environment holds an id-shaped one, absent where it holds none or another shape; *(O5-F4)* `LineageFile.FromEnvironment` reading the token from the variables its entry handed it; *(O5-F1)* `ChildBindings`' end line with `void`, and its reader taking an `end` with none as not void |
    | 22 | **The person's first**, on the install | below | below |
-   | 23 | *(C4-3.2)* **Where its code sits**, on FOUNDATION1 Part A's map: the lineage writer's port declared in Agents, handed to `AcpStreams` and to the stream watcher in place of `lineageHome`, implemented in Participants, wired by Loop at the spawns; no new edge up the map | §4.3 | a new `AcpStreamsTests` class with a recording port, naming no lineage type; `HarnessCapture` taking the port; the structure census (FOUNDATION1's row mod-0) where it has landed, its exceptions gaining none and losing the watcher's |
+   | 23 | *(C4-3.2)* **Where its code sits**, on FOUNDATION1 Part A's map: the lineage writer's port declared in Agents, handed to `AcpStreams` and to the stream watcher in place of `lineageHome`, implemented in Participants, wired by Loop at the spawns; no new edge up the map; *(O5-F8a)* the port taking the stream watcher's raw line, `ChildBindings.StreamLine` behind it; *(O5-F8b)* a file row a adds placed in its subdomain's folder once mod-0 has landed | §4.3 | a new `AcpStreamsTests` class with a recording port, naming no lineage type; `HarnessCapture` taking the port; the structure census (FOUNDATION1's row mod-0) where it has landed, its exceptions gaining none and losing the watcher's; *(O5-F8a)* `HarnessCapture` naming no Participants type, its recording port told the raw lines; *(O5-F8b)* mod-0's subdomain rule passing over row a's new files where it has landed |
 
    - *Proof*, beyond the table's: round 3's test list moved into the table's rows, less what left row a. The waiting, answered and
      lead tests and the ask-keyed read are the routing half's (rows b and d); the burst's service reads are none of row a's (§4.1).
@@ -1745,7 +1947,10 @@ They are filed in `TASKS.md` when this design is accepted; until then COWORKVIEW
      run; a dependency compared with anything but the version its composition registered (O3-F2); *(C4-2.1, C4-1.1)* placing a
      line with `proc` by its position, or one with none by its moment; reading a driven record's history `end` as each of its
      processes'; *(C4-2.3, C4-3.1)* a work's failure reaching the page as a refusal, or a numbered delivery taken without its
-     number.
+     number; *(C5-2.1)* placing a line with no usable token after a file's first `start` anywhere at all; *(O5-F4)* a token in a
+     server file a record's later processes are handed again; *(O5-F1)* reading a void process's `start` as a boundary;
+     *(C5-2.2)* moving *last seen* at a line after the one that closed its run; *(O5-F2, C5-2.3)* a number kept beside the query's
+     data, or an event of another epoch installed.
 
 **The routing half's rows, for a later round** *(round 4)*. Rows e, b, c, d and f stay proposed under their own standing (the
 design's *Standing*): round 4 corrects in them what the reads found, marked below, and settles none of them. Their order holds:
@@ -1919,13 +2124,29 @@ when this is accepted, since row a meets both its halves.
 - **A late capture line dropped at the writer** (the other fence C4-2.1 offers): it would hide a child its harness announced,
   which D173's ADR-B forbids. The line keeps its process's token and is placed in its own generation.
 - **A line with no token placed by its moment** against the `start` it follows: the fold joins nothing by time (§3.6), and a
-  clock read twice is no order. Rule 1's measure counts such lines instead, so the residue is a number, not a guess.
+  clock read twice is no order. Rule 1's measure counts such lines instead, so the residue is a number, not a guess. *(C5-2.1)*
+  Nor by its position after a `start`: it is unplaced (below).
 - **Telling `ANSWERED` under `HeldAnswers`' gate** (C4-3.1's other way): every landing would hold the gate across the bus's emit,
   the stall NOBLOCK1 removed. Numbers make any order of delivery safe, as D182 point 3 has the slices.
 - **Every held read made a value and numbered at once** (C4-2.3, C4-3.1): today's reads are tested on a refusal and a failure's
   re-ask; this read is the first numbered one, and another is numbered by a row of its own.
 - **Every working child kept past the bound** (round 4's, from O3-F11c; C4-4.1): forty-one cannot fit forty, and a chain deeper
   than the bound cannot fit at all. The bound fills by chain and counts what it leaves.
+- **A line with no usable token placed by its position after a `start`** (round 5's; C5-2.1, C5-3.1): an old stop sitting after
+  P2's `start` could end P2's reused X, and an old start make a working child there, a definite state from evidence of no definite
+  process. Such a line is unplaced: counted, never given a state (§3.6).
+- **The token in the pipe door's server file** (O5-F4's other place): a driven record's file is handed again to its continuation and
+  its retry, so it would name the first run's process for every later one. The pipe door's harness inherits the spawn's
+  environment instead.
+- **The `start` written only once the record is the run's** (the other way past O5-F1): the lines a process wrote before its
+  advance, the live first resume's earliest among them, would name a token no `start` named yet and so read unplaced until it
+  came, and a refused advance would leave its process's lines unplaced for good. The duplicate's `end` says `void` instead.
+- **A call naming a closed run waking its read** (C5-2.2's other way, for every close): *last seen* frozen at the line that closed
+  the run makes the call move nothing, so no wake is owed. Only a run rule 3 closed, which no line closed, is woken by its call.
+- **The page's number kept beside the query's data** (round 5's; O5-F2): it outlived a query the cache collected, and dropped the
+  remount's answer of the same number, leaving a false *failed*.
+- **An event of another epoch installed** (round 5's "another epoch replaces"; C5-2.3): a late event of an earlier life of the held
+  answers would restore its answer over a newer one. The page asks again, as a slice does.
 - ***Team at work* and `sessions team` widened** (round 1's): D203's word and verb (§5.4, §7).
 - **A second running view or a free graph of who is at work**: the running view is GRAPHVIEW1's, in *Workflow*. This view is a list,
   which reads at every width (the flowchart design §8).
@@ -1948,7 +2169,13 @@ when this is accepted, since row a meets both its halves.
   - *(Round 4)* how often a held read wakes on the install once call lines wake only for a new run and each read wakes once;
     row a's first week of the install's machine log says it, beside the measure in D173's note.
   - *(C4-2.1)* whether `DAORIS_LINEAGE_PROC` reaches the hook and the connector on each door, and so how many of their lines the
-    fold places by position, and how many of those sit after a `start` their own moment precedes (rule 1).
+    fold places by position, and how many of those sit after a `start` their own moment precedes (rule 1). *(C5-2.1)* Since round
+    6, how many it leaves unplaced, which costs a count and never a state; on Codex's protocol door, whose connector is handed the
+    token in its entry, the expected count is none.
+  - *(O5-F1)* a lineage write the file refuses is lost unsaid (`ChildLineage.cs:108-111`). A lost `start` leaves its process's
+    lines unplaced, and a lost `end` leaves its generation to rules 2 and 3, Daoris's reading. A lost void `end` leaves its
+    duplicate's `start` a boundary, which reads the live resume's open children *lost*: the one residue that says a state the
+    process did not have, and it needs ANSWER2's race and a refused write at once. Nothing counts refused writes today.
 - **Not designed here:**
   - DEV6's lane reservations and cap, and DEV9's steward;
   - a separate rule for self-published quests (§6.5);
@@ -1976,7 +2203,12 @@ amendments below come with the routing half's acceptance.
   token the driver binds into the process's writers, the `start` making the file, and a line is placed by that token; a driven
   record's history is read as unrecorded; a root's call wakes nothing; the read's failures are values and its deliveries
   numbered; its inputs' health is read; the bound fills by chain and counts what it leaves (C4-1.1, C4-2.1 to C4-2.4, C4-3.1,
-  C4-4.1). The lineage's twin row gains `proc`.
+  C4-4.1). The lineage's twin row gains `proc`. *(Round 6)* A line no process can be named for is unplaced, counted and given no
+  state; the token reaches Codex's connector in its entry, composed per process, and never through a reused server file; a process
+  its record never took ends void; *last seen* moves only while its run is open; the page compares a delivery with the number in
+  the query's own data and never installs another epoch's event; a slice's first judgement wakes a pending read; `stopped` is an
+  end word; a teammate's part reads not visible on this machine; and point 1 of the round-4 note takes the record's own word
+  (C5-1.2, C5-2.1 to C5-2.3, C5-3.2, O5-F1 to F6). The lineage's twin row gains `void`.
 - **D203**: points 1 and 2 stand as written. The view draws the team (the entry's parts and its co-workers) and, beside it, records
   point 1 keeps out, each under its own heading. `sessions team` stays COWORKUX1a's. This design's verb is `sessions at-work`.
   *(Round 3)* Its co-workers are COWORKUX1a's exchange read and open COWORKUX1b's thread; the view never reads the boxes (C5.3,
@@ -2236,5 +2468,79 @@ gains a note; nor do D56's NOBLOCK1 note or D182, whose rules the numbered read 
 changing what they say.
 
 **What stays owed.** Both makers' reads of round 5, on row a's table (D191): the Opus foundation reader's and Codex's. Row a is
+accepted, or not, on what they find; until then nothing of the design is built, filed or staged. The routing half keeps its own
+round. *(Both landed on 2026-10-25 at `6736d2db9`, Codex asking another round for row a and the Opus foundation reader accepting it
+after named changes; round 6 answers both in §17.)*
+
+## 17. Round 6: both reads of round 5 answered
+
+Both makers' reads of round 5, each at `6736d2db9` (`docs/2026-10-24-cowork-view-reads.md`, *Codex, round 5* and *Opus
+(foundation), round 5*): Codex's, 10 findings, 4 of them blocking, *another round* for row a; the Opus foundation reader's, 9
+findings, 2 of them blocking, *accept row a after named changes the steward can check without another read*. Each finding is
+checked against the code on main at `bdc1b03a2`, the commit round 6 is written from. Marked *(C5-n.m)* and *(O5-Fn)* in the text.
+*Taken* means the design now says it, and where; *answered* means no change is owed, with the reason. No finding is disputed: each
+held in the code it cites.
+
+**Whether the cited lines moved.** Both reads say `src/` at `6736d2db9` is `9f48860ba`'s. Three rows landed after them: SESSFILES1
+(`affb01737`), AGENTERRORS1b2 (`91ea87ba4`) and FOUNDATION1's row 1b (`cbbe43610`). FOUNDATION1's row u has not, nor its structure
+gate, row mod-0 (`Driver.Tests/fixtures/structure.json` still names D166's fifteen modules). Of the files the reads cite, two
+changed. `Acp.cs` gains eighteen lines before every line cited (AGENTERRORS1b2's hand of a limit-refused try's words, `:1233-1248`
+and `:1320-1322`), so its `:1668` is now `:1686`, its `:1739` `:1757` and its `:1756-1770` `:1774-1788`. `ChatRunner.cs` gains ten
+at `:3342-3351`, after every line cited, so `:1596`, `:2893`, `:2896`, `:2938`, `:2977`, `:3030` and `:3071` hold. Every other
+cited line holds where the reads say, and so do their `Design:` and `D173.md:` lines, since neither file changed between
+`6736d2db9` and `bdc1b03a2`. Row 1b's files (`SessionWords.cs`, `SessionSay.cs`, `SessionRequests.cs`, `SessionHomeFiles.cs`) are
+none this design reads. Where round 6 cites `Acp.cs` anew it gives `bdc1b03a2`'s lines; round 5's text keeps its own.
+
+**Where the two reads meet, the stricter is taken** (the steward's direction):
+- **A line's process** (C5-2.1, C5-3.1, O5-F4). Codex asks that no line be given a process where its token or its token's `start`
+  is missing; the Opus read shows that Codex's connector cannot carry the token by its spawn's environment at all, so on Codex every
+  child line would be placed by position. Both are taken: the token travels in the connector's entry where that entry is composed
+  per process, and a line with no usable token or `start` is unplaced, counted, and given no state.
+- ***Last seen*** (C5-2.2, O5-F9c). Codex offers freezing it or waking on it; the Opus read asks that it take only lines that change
+  a run. It is frozen at the line that closed its run, and only a close no line makes is woken.
+- **D173's point 1** (C5-3.2, O5-F5): amended in the round-6 note.
+
+**Codex's read of round 5** (10 findings, 4 blocking; another round for row a). Its §0 re-reads round 4's answers and opens none of
+its own: the one it leaves open in part is its finding 2.1.
+
+| # | Finding (blocking in bold) | Checked against | Answer |
+|---|---|---|---|
+| 1.1 | A chat does not always await its capture before its `end` | `ChatRunner.cs:2893` (the advance, which may throw), `:2896` (the await), `:2938` (the catch), `:2943` (the process ended), `:2977` (the `finally`'s `end`) | **Taken.** §1.1's claim qualified: the usual path alone awaits. A chat's `end` follows its capture on every path, the exception path waiting for it within the drain's bound, a line past the bound carrying its `proc`; rule 4 tests a chat whose advance throws, its capture's stream `ended` landing before the `end` (§1.1, §3.6; rule 4). |
+| 1.2 | A first judgement need not push | `SessionsStateSlice.cs:102` (no record, no partition); `StateSlices.cs:241` (judged), `:248` (`Told` only after moves) | **Taken.** A slice's health is whether it has judged, whether it is failing and the failure's words, and `HealthMoved` is told at the first judgement too, pushed or not; that is what wakes a pending composition, round 5's "its first judgement's `Pushed`" corrected. Rule 10 tests an empty first `groups` judgement answering a pending read with no other ask, and `StateSlicesTests` one `HealthMoved` and no `Pushed` (§4.1; rules 10, 12). |
+| **2.1** | **Optional attribution still permits the cross-spawn corruption** | `ChildLineage.cs:108-111` (a refused write lost unsaid); `KnowledgeConnector.cs:83`, `:95-96`, `:114-124`; `Acp.cs:1757` (`:1739` at `6736d2db9`, the entry's `env`); `ChatRunner.cs:1548`, `Driver.cs:4315` (each protocol-door process's servers) | **Taken, the stricter, with O5-F4.** From a file's first `start` on, a line is placed only by its `proc`; one with none, or with a `proc` no `start` names, is *unplaced*: it begins, ends and words no run, opens and closes no generation and moves no *last seen*, and its agent ids are counted once in `unplaced`, never children, standing in the empty sentence's place where they are all there is. Lines before a file's first `start` are history, placed by position as round 5 has it. The token reaches Codex's connector in its entry, composed per process on the protocol door, and the hook and Claude Code's pipe-door connector through the spawn's environment, never the pipe door's reused file. Rule 6's positional test is reversed: an old tokenless stop after P2's `start` leaves P2's X *working*, and an old tokenless start makes no row (§3.6, §3.8, §5.2 to §5.4; rules 1, 4, 6, 13, 16, 19, 21). |
+| **2.2** | **Suppressed calls against closed runs' *last seen*** | design §3.6 (`Design:768`, `:791`) and §4.1 (`:1095`) at `6736d2db9` | **Taken, by freezing it**, with O5-F9c. A run's *last seen* is its last line before the line that closed it, in the file's order: its generation's `end`, the next `start` that is not void, or its own first line for a run begun in a closed generation. A later line moves nothing, so the call that wakes nothing moves nothing, and a fresh composition draws the held answer. A run rule 3 closed has no closing line, and a call naming it wakes, once. Rules 7 and 13 test a delayed call of P1's naming its lost child after P2's `start` against a fresh composition, and the rule-3 wake (§3.6, §3.8, §4.1; rules 7, 13). |
+| 2.3 | Epoch replacement is weaker than the guarantee | `Web/bridge/state/slices.ts:249` (a push of another epoch read again, never installed); `DriverModule.cs:100` (one `HeldAnswers` per module) | **Taken, as the slices do it.** An event of another epoch is never installed, and the page asks again; only a reply, the answer to the query's newest ask, takes a new epoch, the query library writing one fetch's result at a time. Rule 15 tests E1, E2 and a late E1 event, and an E1 reply resolving after E2's (§4.1; rule 15). |
+| 2.4 | The other counterexamples have adequate answers | design rules 5, 10, 13 and 14 at `6736d2db9` | **Answered**: a check; nothing is owed beyond those rules' stated proofs. |
+| **3.1** | **The attribution fallback breaks truthful partial visibility** | `D173.md:11-12` (ADR-B), `:111` | **Taken, as 2.1**: after a `start` no line is given a process or a state by its position; what cannot be tied to a process is counted as unplaced, partial visibility said rather than filled (§3.6). |
+| 3.2 | D173's point 1 still says the strip's wording | `D173.md:5593-5594`, `:5636` | **Taken, with O5-F5.** The round-6 note amends point 1: a part's state is its record's own `sessionState.*` word, never the strip's, which round 5 made the design say without amending the note. |
+| **4.1** | **Rules 1, 4, 6 and 13 omit the expected outcomes** | design §7 rules 1, 4, 6 and 13 at `6736d2db9` | **Taken.** Rule 1 measures each door's unplaced lines, expecting none on Codex's protocol door; rule 4 the token in the protocol door's entry and never the pipe door's file, the token for every target kind, the chat's exception path and the void `end`; rule 6 the unplaced outcomes where position stood; rule 13 the delayed call against a fresh composition, the rule-3 wake and an unplaced id's wake; each with its expected outcome (§7 row a). |
+| 4.2 | The rest is a credible plan, its measurements owed | design rules 2-3, 5, 7-12, 14-21 and 23 at `6736d2db9` | **Answered**: no change beyond 1.2's and 2.3's qualifications, which rules 10 and 15 take. Rule 1's measures and rule 22's installed run stay evidence apart from the stand-ins. |
+
+**The Opus foundation reader's read of round 5** (9 findings, 2 blocking; accept row a after named changes). Its §0 confirms round
+5's answers to Codex's round 4 and points to its findings for what remains.
+
+| # | Finding (blocking in bold) | Checked against | Where it went |
+|---|---|---|---|
+| **F1** | **A duplicate resume's `start` closes a live process's generation as `lost`** | `Driver.cs:3658` (the spawn), `:3807-3822` (the capture started), `:3824-3837` (the advance refused, ANSWER2), `:3831-3836` (abandoned and thrown), `:3907` (the `end` the throw passes) | **Taken as named.** The abandon path writes its process's `end` with `void: true` once `AbandonedAsync` has observed the capture. A void process's `start` closes no generation; its own generation holds its lines alone and closes at its void `end`, and is never the last for rule 3. §1.1 and rule 2's "which only a crash … leaves" corrected. Rules 4 and 5 test the race, the first's child staying *working* and its later lines in its own generation, a fresh composition alike, with a *Process* case; a lost void `end` is §9's residue (§1.1, §3.6, §4.3, §9; rules 4, 5, 13, 21). |
+| **F2** | **The page's kept number outlives the query's data** | `held.ts:16`, `:29` (the readers kept beside the cache); `HeldAnswers.cs:150` (a remount answered with the same `n`), `:160` (an unchanged landing tells nothing) | **Taken as named.** The number is in the query's data (`AtWorkHeld`'s `at`), and a delivery is compared with what the query holds now; one to a query whose data carries no number, holding nothing, the pending answer or a remount, is always taken. Rule 15 tests a remount past `gcTime` drawing the answer, never *failed* (§3.8, §4.1; rule 15). |
+| F3 | End words outside the four have no state or key | `ChildBindings.cs:316`; `Driver.Tests/fixtures/native/claude-background-cut.stream.jsonl:14`; `NativeStreamsTests.cs:57`; `AcpStreams.cs:189`; `work.panel.json:18` | **Taken as named.** `stopped` is a state, worded by the panel's own key; the `acp` writer writes only the wire's word, none where it said none; an end with no word, or a word none of the five, reads `finished`. Rules 7 and 19 test an unknown word, `stopped` and an `acp` end with no word, and a story draws `stopped` (§3.6, §3.8, §5.2 to §5.4; rules 7, 19). |
+| F4 | The token cannot reach Codex's connector through the spawn's environment | `KnowledgeConnector.cs:95-96`, `:114-124`; `Driver.cs:4315`, `:4523`, `:2720`; `ChatRunner.cs:1548`, `:3030`; `Acp.cs:1651`, `:3423`, `:1757`; `DriverContinuations.cs:1166`, `:1285-1286`; `Adapters.cs:1539-1602` | **Taken, with C5-2.1.** §1.1 corrected. §3.6 says how the token reaches each writer: the spawn's environment for the hook and for Claude Code's connector on the pipe door; the connector's entry where the protocol door composes it per process; never the pipe door's server file, which a driven record's later processes are handed again. Rules 1, 4 and 21 (§1.1, §3.6, §4.3). |
+| F5 | D173's round-4 note still words a part as the strip does | `D173.md:5593-5594` | **Taken, with C5-3.2**, in the round-6 note. |
+| F6 | A teammate's part is drawn as having no subagents | `Driver/Trees/SessionEntries.cs:96-98`; `Driver/Trees/SessionGroups.cs:132`; `ChildLineage.cs:44`, `:127` | **Taken as named.** Such a part reads *its subagents are not visible on this machine* (`elsewhere`), never a count; no file is looked for, and the empty sentence is withheld. Rules 16, 17 and 19, and a story (§3.6, §3.8, §5.2 to §5.4). |
+| F7 | The verb waits for ever while the slices are not judged | `InstancePipe.cs:1069-1077`; `SessionsStateSlice.cs:71`; `GroupsStateSlice.cs:111` | **Taken as named.** The view stays *reading* there by design; the verb bounds its wait at thirty seconds and prints *not read yet*, exiting `2`. Rules 10 and 20, the bound on a held clock (§4.1). |
+| F8 | §4.3 is under-said | `ChildBindings.cs:298-323`; `HarnessCapture.cs:111-123`; foundation design §14.5 rule 1, §14.6's last paragraph | **Taken.** (a) The port takes the stream watcher's raw line, `StreamLine` staying behind it in Participants. (b) A file row a adds goes in its subdomain's folder once mod-0 has landed, which at `bdc1b03a2` it has not. Rule 23 (§4.3). |
+| F9 | Smaller | as each names | **Taken**, each: (a) a record with no `kind` read as driven (`api.ts:445`; §3.6; rule 5); (b) `child.lost` *lost when its part ended* / 所属段结束时丢失 (§5.4; rule 19); (c) with C5-2.2 (§3.6; rules 7, 13); (d) an attended record the `sessions` slice does not hold yet answered pending, registered absent (§4.1; rule 10); (e) the token for every target kind, at the five lines `Adapters.cs:1539`, `:1548`, `:1560`, `:1574`, `:1602` (§3.6; rule 4); (f) ties by `since` then id, and the chain walk stopping at an ancestor it walked, as `DepthOf` stops (`ChildBindings.cs:288`; §4.1; rule 14). |
+
+**The verdicts.** The Opus read would accept after two named changes, each now made (F1, F2), and the rest taken. Codex asks
+another round, and each of its four blocking findings holds in the code it cites: 2.1 and 3.1 are one protocol, the line no process
+can be named for, now unplaced and given no state; 2.2 is *last seen*, now frozen; 4.1 is their proofs, each now with its expected
+outcome in rules 1, 4, 6 and 13.
+
+**The decisions' notes.** D173's COWORKVIEW1 notes gain one dated 2026-10-25 for round 6, whose first point amends round 4's point
+1 as both reads ask, and whose others change points 2 and 4. D203's, D115's and D167's notes speak of the routing half, which round 6
+leaves as it was, so none gains a note; nor do D56's NOBLOCK1 note or D182, whose rules the numbered read and the slices' health
+extend for this read without changing what they say.
+
+**What stays owed.** Both makers' reads of round 6, on row a's table (D191): Codex's and the Opus foundation reader's. Row a is
 accepted, or not, on what they find; until then nothing of the design is built, filed or staged. The routing half keeps its own
 round.
