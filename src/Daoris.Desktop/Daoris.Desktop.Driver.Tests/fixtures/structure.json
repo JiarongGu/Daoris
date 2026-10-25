@@ -587,6 +587,7 @@
     "Settings/DriverChoicesCommand.cs": "Settings",
     "Settings/DriverConfig.cs": "Settings",
     "Settings/DriverConfigUnreadableException.cs": "Settings",
+    "Settings/HandOverKey.cs": "Settings",
     "Settings/HelpModeNames.cs": "Settings",
     "Settings/SessionLanguage.cs": "Settings",
     "Settings/StandingAnswer.cs": "Settings",
@@ -864,8 +865,7 @@
       "family": "Settings names Course",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["HandOverRules"],
-        "Settings/DriverConfig.cs": ["HandOverRule","HandOverRules"]
+        "Settings/DriverChoicesCommand.cs": ["HandOverRules"]
       }
     },
     {
