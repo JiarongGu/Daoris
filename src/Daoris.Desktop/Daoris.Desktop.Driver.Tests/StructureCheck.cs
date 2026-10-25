@@ -4,41 +4,93 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The driver's map (STRUCT1, D166): each module the design names (§2), with the layer folder it may hold, a <c>Domain</c> or
-/// none (FLAT1a), and every file still at the driver's top, by name, with the module it is to move to. <see cref="Split"/>
-/// notes a file that serves two domains: it moves with the one it mostly serves. Read from
-/// <c>fixtures/structure.json</c>.
+/// One subdomain of the driver's map (FOUNDATION1, D212; the design §14.2): its folder, whether it holds a <c>Domain/</c>, whether its
+/// move has landed, and, from its namespace row on, its namespace. The map lists them bottom to top.
 /// </summary>
-internal sealed record StructureMap(IReadOnlyDictionary<string, IReadOnlyList<string>> Modules, IReadOnlyDictionary<string, string> Root)
+internal sealed record Subdomain(string Name, string Folder, bool Domain)
 {
-    /// <summary>A file of <see cref="Root"/> that serves two domains, and why.</summary>
-    public IReadOnlyDictionary<string, string> Split { get; init; } = new Dictionary<string, string>();
+    /// <summary>Whether the subdomain's move row has landed: every file placed in it sits in its folder.</summary>
+    public bool Moved { get; init; }
+
+    /// <summary>The namespace its files are in once its namespace row has landed, or none.</summary>
+    public string? Namespace { get; init; }
+}
+
+/// <summary>
+/// An edge family of the census: the upward edges one cut takes off together, each an exact edge, a file and the type it names, and the
+/// subdomain row after which the cut lands (O4-6, X4-1.4).
+/// </summary>
+internal sealed record EdgeFamily(string Name, string After, IReadOnlyDictionary<string, IReadOnlyList<string>> Edges);
+
+/// <summary>A judgement Loop still holds today, named as moving: the file, <c>Type.Member</c>, and the subdomain row after which it leaves.</summary>
+internal sealed record LoopRule(string File, string Member, string After);
+
+/// <summary>
+/// The driver's map, read from <c>fixtures/structure.json</c> (the design §14.5): the subdomains in their order, every file of the driver
+/// placed in one of them, the census of today's exceptions to the rules (the edges against the order, the Domain files' crossings, the rules
+/// Loop holds) and the tests' folders not yet moved.
+/// </summary>
+internal sealed record StructureMap(IReadOnlyList<Subdomain> Subdomains, IReadOnlyDictionary<string, string> Files)
+{
+    private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> NoCrossings = new Dictionary<string, IReadOnlyList<string>>();
+
+    /// <summary>The I/O seams a <c>Domain/</c> file names none of: types of the world, which it takes as values or through a port.</summary>
+    public IReadOnlyList<string> Seams { get; init; } = [];
+
+    /// <summary>The census of the edges against the order, by family.</summary>
+    public IReadOnlyList<EdgeFamily> Families { get; init; } = [];
+
+    /// <summary>The census of the <c>Domain/</c> files' crossings: a file, and the seam types it names or <c>async</c>.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Pure { get; init; } = NoCrossings;
+
+    /// <summary>The census of the judgements Loop holds, each to leave.</summary>
+    public IReadOnlyList<LoopRule> LoopRules { get; init; } = [];
+
+    /// <summary>Today's test folders, listed as not yet moved: the mirror rule passes over them, each mod row moving its subdomain's tests.</summary>
+    public IReadOnlyList<string> TestFolders { get; init; } = [];
 
     /// <summary>
-    /// The tests of a module that has moved, by file name, with the module whose folder each is to sit under in the driver's
-    /// tests (STRUCT2a). A test not listed is not constrained.
+    /// The tests of a subdomain that has moved, by file name, with the subdomain whose folder each is to sit under in the driver's tests
+    /// (STRUCT2a). A test not listed is not constrained.
     /// </summary>
     public IReadOnlyDictionary<string, string> Tests { get; init; } = new Dictionary<string, string>();
 
-    /// <summary>The map as <c>structure.json</c> writes it, its modules in its order; <c>tests</c> is optional.</summary>
+    /// <summary>The map as <c>structure.json</c> writes it, its subdomains in its order.</summary>
     public static StructureMap Read(string json)
     {
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
-        var modules = new OrderedDictionary<string, IReadOnlyList<string>>();
-        foreach (var module in root.GetProperty("modules").EnumerateObject())
-        {
-            modules.Add(module.Name, module.Value.EnumerateArray().Select(layer => layer.GetString()!).ToList());
-        }
+        var subdomains = root.GetProperty("subdomains").EnumerateArray()
+            .Select(each => new Subdomain(each.GetProperty("name").GetString()!, each.GetProperty("folder").GetString()!, each.GetProperty("domain").GetBoolean())
+            {
+                Moved = each.TryGetProperty("moved", out var moved) && moved.GetBoolean(),
+                Namespace = each.TryGetProperty("namespace", out var space) ? space.GetString() : null,
+            })
+            .ToList();
 
-        return new StructureMap(modules, Strings(root.GetProperty("root")))
+        return new StructureMap(subdomains, Strings(root.GetProperty("files")))
         {
-            Split = Strings(root.GetProperty("split")),
-            Tests = root.TryGetProperty("tests", out var tests) ? Strings(tests) : new Dictionary<string, string>(),        };
+            Seams = root.GetProperty("seams").EnumerateArray().Select(each => each.GetString()!).ToList(),
+            Families = root.GetProperty("edges").EnumerateArray()
+                .Select(each => new EdgeFamily(each.GetProperty("family").GetString()!, each.GetProperty("after").GetString()!, Lists(each.GetProperty("files"))))
+                .ToList(),
+            Pure = Lists(root.GetProperty("pure")),
+            LoopRules = root.GetProperty("loopRules").EnumerateArray()
+                .Select(each => new LoopRule(each.GetProperty("file").GetString()!, each.GetProperty("member").GetString()!, each.GetProperty("after").GetString()!))
+                .ToList(),
+            TestFolders = root.GetProperty("testFolders").EnumerateArray().Select(each => each.GetString()!).ToList(),
+            Tests = root.TryGetProperty("tests", out var tests) ? Strings(tests) : new Dictionary<string, string>(),
+        };
     }
 
     private static Dictionary<string, string> Strings(JsonElement table) =>
         table.EnumerateObject().ToDictionary(entry => entry.Name, entry => entry.Value.GetString()!, StringComparer.Ordinal);
+
+    private static Dictionary<string, IReadOnlyList<string>> Lists(JsonElement table) =>
+        table.EnumerateObject().ToDictionary(
+            entry => entry.Name,
+            entry => (IReadOnlyList<string>)entry.Value.EnumerateArray().Select(each => each.GetString()!).ToList(),
+            StringComparer.Ordinal);
 }
 
 /// <summary>One rule a source breaks: where (<see cref="Line"/> 0 is the file as a whole), which rule, and why.</summary>
@@ -48,23 +100,30 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 }
 
 /// <summary>
-/// The structure gate's rules (the code-structure design §5), over a driver's sources as (path, text) pairs, each path
-/// relative to the driver's folder with <c>/</c> between its parts:
+/// The structure gate's rules (the design §14.5; D166, D212), over a driver's sources as (path, text) pairs, each path relative to the
+/// driver's folder with <c>/</c> between its parts:
 /// <list type="bullet">
-/// <item><c>top</c>: a file at the driver's top is one the map's <c>root</c> list names, and every name on it is still at the
-/// top, so the list only shrinks and a new file lands in its module's folder.</item>
-/// <item><c>module</c>: a file in a folder is in a module's folder; the onion is for a module's model and rules alone (FLAT1a),
-/// so the only layer folder is a <c>Domain</c>, in a module the map lets hold one, and an <c>Application</c> or an
-/// <c>Infrastructure</c> folder is refused.</item>
-/// <item><c>pure</c>: a <c>Domain</c> file does no I/O, by <see cref="Impure"/>'s tokens.</item>
-/// <item><c>loop</c>: nothing outside <c>Loop</c> names a type declared in it.</item>
+/// <item><c>place</c>: every source is placed in one subdomain, by <c>structure.json</c>'s list of files or, for new code, by the folder
+/// of the subdomain it sits in; a source in no subdomain's folder that the list does not place fails, and so does an entry for a file that
+/// is not there. A subdomain whose move has landed holds every file placed in it, in its folder.</item>
+/// <item><c>module</c>: a subdomain's layer folder is a <c>Domain</c>, in a subdomain the map lets hold one; an <c>Application</c> or an
+/// <c>Infrastructure</c> folder is refused (FLAT1a).</item>
+/// <item><c>direction</c>: a file names only its own subdomain's types and those of the subdomains listed before it, read through Roslyn's
+/// semantic model (<see cref="StructureAnalysis"/>): every name that binds to a type a driver file declares, however it is spelled. An edge
+/// against the order is allowed only where the census names it, as an exact edge, a file and the type it names, under its edge family and
+/// the subdomain row after which it is cut.</item>
+/// <item><c>pure</c>: a <c>Domain</c> file does no I/O, by <see cref="Impure"/>'s tokens, names no type of the I/O seams and holds no
+/// <c>async</c>, but where the census names the crossing.</item>
+/// <item><c>loop</c>: nothing outside <c>Loop</c>'s folder names a type declared in it, with no exception; and a file the map places in Loop
+/// declares no static <c>bool</c> rule the census does not name as moving.</item>
+/// <item><c>mirror</c>: a test folder is a subdomain's, today's not yet moved or support; a test the map lists sits under its subdomain's folder.</item>
+/// <item><c>namespace</c>: no global using names a subdomain's namespace.</item>
 /// </list>
-/// A file still at the top is placed by no folder, so only the first rule reads it; the others read the files in module
-/// folders, and the types declared there, by name, in code only: a comment or a string names nothing.
+/// A comment or a string names nothing, a <c>cref</c> included.
 /// </summary>
-internal static partial class StructureCheck
+internal static class StructureCheck
 {
-    /// <summary>The composition root: it may use every module, and no module uses it.</summary>
+    /// <summary>The composition root: it may use every subdomain, and none uses it.</summary>
     public const string Loop = "Loop";
 
     /// <summary>What a <c>Domain</c> may not name, and why: the world comes in as values, or through a port (design §3).</summary>
@@ -91,81 +150,112 @@ internal static partial class StructureCheck
     /// <summary>Every rule the sources and the tests' paths (relative to the tests' folder, <c>/</c> between parts) break.</summary>
     public static IReadOnlyList<StructureBreach> Check(StructureMap map, IEnumerable<(string Path, string Text)> sources, IEnumerable<string> tests)
     {
+        var list = sources.ToList();
+        return Check(map, list, tests, StructureAnalysis.Of(list));
+    }
+
+    /// <summary>The same over an analysis already made of the sources, for a caller that reads the edges too.</summary>
+    public static IReadOnlyList<StructureBreach> Check(
+        StructureMap map, IReadOnlyList<(string Path, string Text)> sources, IEnumerable<string> tests, StructureAnalysis analysis)
+    {
         var breaches = new List<StructureBreach>();
         Mirror(map, tests.ToList(), breaches);
-        var files = sources.Select(source => new Source(source.Path, source.Text, Place(map, source.Path))).ToList();
-
-        foreach (var (file, module) in map.Root)
+        var rank = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var (subdomain, at) in map.Subdomains.Select((subdomain, at) => (subdomain, at)))
         {
-            if (!map.Modules.ContainsKey(module))
+            if (!rank.TryAdd(subdomain.Name, at)) breaches.Add(new("structure.json", 0, "map", $"{subdomain.Name} is a subdomain of the map twice"));
+        }
+
+        var folders = map.Subdomains.GroupBy(subdomain => subdomain.Folder, StringComparer.Ordinal).ToList();
+        foreach (var shared in folders.Where(group => group.Count() > 1))
+        {
+            breaches.Add(new("structure.json", 0, "map", $"{string.Join(" and ", shared.Select(subdomain => subdomain.Name))} share the folder {shared.Key}"));
+        }
+
+        var byName = map.Subdomains.GroupBy(subdomain => subdomain.Name, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        var byFolder = map.Subdomains.GroupBy(subdomain => subdomain.Folder, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        var present = sources.Select(source => source.Path).ToHashSet(StringComparer.Ordinal);
+
+        // The map's own entries: a file it places is there, in a subdomain it declares; a census row names a subdomain it declares.
+        foreach (var (file, name) in map.Files)
+        {
+            if (!byName.ContainsKey(name))
             {
-                breaches.Add(new("structure.json", 0, "map", $"{file} is mapped to {module}, which is no module of the map"));
+                breaches.Add(new("structure.json", 0, "map", $"{file} is placed in {name}, which is no subdomain of the map"));
             }
 
-            if (!files.Any(source => source.Path == file))
+            if (!present.Contains(file))
             {
-                breaches.Add(new(file, 0, "top", "structure.json lists it at the driver's top, where it is not: a move takes its entry off the list"));
+                breaches.Add(new(file, 0, "place", "structure.json places it, and it is not there: a move gives its entry its new path, and a delete takes it off the list"));
             }
         }
 
-        foreach (var source in files)
+        foreach (var family in map.Families.Where(family => !byName.ContainsKey(family.After)))
+        {
+            breaches.Add(new("structure.json", 0, "map", $"the edge family {family.Name} is cut after {family.After}, which is no subdomain of the map"));
+        }
+
+        foreach (var rule in map.LoopRules.Where(rule => !byName.ContainsKey(rule.After)))
+        {
+            breaches.Add(new("structure.json", 0, "map", $"the rule {rule.Member} of {rule.File} leaves Loop after {rule.After}, which is no subdomain of the map"));
+        }
+
+        Subdomain? Place(string path)
+        {
+            if (map.Files.TryGetValue(path, out var name)) return byName.GetValueOrDefault(name);
+            var parts = path.Split('/');
+            return parts.Length > 1 ? byFolder.GetValueOrDefault(parts[0]) : null;
+        }
+
+        var loopFolder = byName.TryGetValue(Loop, out var loop) ? loop.Folder : Loop;
+        foreach (var source in sources)
         {
             var parts = source.Path.Split('/');
-            if (parts.Length == 1)
+            var placed = Place(source.Path);
+            if (placed is null)
             {
-                if (!map.Root.ContainsKey(source.Path))
+                breaches.Add(new(source.Path, 1, "place", parts.Length == 1
+                    ? "a file at the driver's top that structure.json does not place: put it in its subdomain's folder"
+                    : $"the folder {parts[0]} is no subdomain's, and structure.json does not place the file: put it in its subdomain's folder (structure.json's subdomains)"));
+            }
+            else
+            {
+                var inFolder = parts.Length > 1 && parts[0] == placed.Folder;
+                if (placed.Moved && !inFolder)
                 {
-                    breaches.Add(new(source.Path, 1, "top", "a new file at the driver's top: put it in its module's folder (structure.json's modules), not here"));
+                    breaches.Add(new(source.Path, 1, "place", $"{placed.Name} has moved, and the map places this file in it: its files sit in {placed.Folder}"));
+                }
+
+                if (parts.Length > 1 && byFolder.TryGetValue(parts[0], out var owner) && owner.Moved && owner.Name != placed.Name)
+                {
+                    breaches.Add(new(source.Path, 1, "place", $"sits in {owner.Folder}, where {owner.Name} has moved, and the map places it in {placed.Name}"));
+                }
+
+                if (inFolder && parts.Length > 2 && parts[1] == "Domain" && !placed.Domain)
+                {
+                    breaches.Add(new(source.Path, 1, "module", $"{placed.Name} holds no Domain layer: its layers are none"));
                 }
             }
-            else if (!map.Modules.TryGetValue(parts[0], out var held))
+
+            if (parts.Length > 2 && parts[1] is "Application" or "Infrastructure")
             {
-                breaches.Add(new(source.Path, 1, "module", $"the folder {parts[0]} is no module's: a source goes in its module's folder (structure.json's modules)"));
-            }
-            else if (parts.Length > 2 && parts[1] is "Application" or "Infrastructure")
-            {
-                breaches.Add(new(source.Path, 1, "module", $"{parts[0]} holds no {parts[1]} folder: a module keeps its model and rules in a Domain and the rest at its top"));
-            }
-            else if (parts.Length > 2 && parts[1] == "Domain" && !held.Contains("Domain"))
-            {
-                breaches.Add(new(source.Path, 1, "module", $"{parts[0]} holds no Domain layer: its layers are none"));
+                breaches.Add(new(source.Path, 1, "module", $"{parts[0]} holds no {parts[1]} folder: a subdomain keeps its model and rules in a Domain and the rest at its top"));
             }
         }
 
-        var placed = files.Where(source => source.Place is not null).ToList();
-        var declared = Declarations(placed);
-        foreach (var source in placed)
+        Purity(map, sources, analysis, breaches);
+        Direction(map, analysis, rank, Place, loopFolder, breaches);
+        LoopRules(map, analysis, Place, byName, breaches);
+
+        foreach (var (file, line, name) in analysis.GlobalUsings)
         {
-            var (module, layer) = source.Place!.Value;
-            if (layer == "Domain")
+            foreach (var subdomain in map.Subdomains.Where(subdomain => subdomain.Namespace is not null))
             {
-                foreach (var (token, why) in Impure)
+                if (name == subdomain.Namespace || name.StartsWith(subdomain.Namespace + ".", StringComparison.Ordinal))
                 {
-                    foreach (Match use in token.Matches(source.Code))
-                    {
-                        breaches.Add(new(source.Path, source.LineOf(use.Index), "pure",
-                            $"{use.Value.Trim()} {why}: a Domain is pure; it takes the world as values or through a port"));
-                    }
+                    breaches.Add(new(file, line, "namespace", $"a global using of {name}: no global using names a subdomain's namespace, so a file's dependencies stay in its own usings"));
                 }
             }
-
-            var named = new HashSet<string>(StringComparer.Ordinal);
-            void Named(string name, int at)
-            {
-                if (!declared.TryGetValue(name, out var where) || where.Any(place => place.Path == source.Path) || !named.Add(name)) return;
-                var line = source.LineOf(at);
-                foreach (var place in where)
-                {
-                    var why = Reach(module, place.Place!.Value.Module);
-                    if (why is not null)
-                    {
-                        breaches.Add(new(source.Path, line, why.Value.Rule, $"names {name}, declared in {place.Path}: {why.Value.Why}"));
-                        break;
-                    }
-                }
-            }
-
-            foreach (Match use in Identifier().Matches(source.Code)) Named(use.Value, use.Index);
         }
 
         return breaches
@@ -176,87 +266,180 @@ internal static partial class StructureCheck
             .ToList();
     }
 
-    /// <summary>Folders of the tests' project that are no module's: fixtures and the build's own output.</summary>
-    private static readonly string[] TestSupport = ["fixtures", "golden", "bin", "obj", "TestResults"];
-
-    /// <summary>The <c>mirror</c> rule: a listed test sits under its module's folder, and a test folder is a module's or support.</summary>
-    private static void Mirror(StructureMap map, List<string> tests, List<StructureBreach> breaches)
+    /// <summary>The <c>pure</c> rule: a <c>Domain</c> file's I/O tokens, its seams and its <c>async</c>, but where the census names them.</summary>
+    private static void Purity(StructureMap map, IReadOnlyList<(string Path, string Text)> sources, StructureAnalysis analysis, List<StructureBreach> breaches)
     {
-        foreach (var path in tests)
+        var named = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        foreach (var source in sources)
         {
-            var parts = path.Split('/');
-            if (parts.Length > 1 && !map.Modules.ContainsKey(parts[0]) && !TestSupport.Contains(parts[0]))
+            var parts = source.Path.Split('/');
+            if (parts.Length < 3 || parts[1] != "Domain") continue;
+            var code = CodeOf(source.Text);
+            foreach (var (token, why) in Impure)
             {
-                breaches.Add(new(path, 0, "mirror", $"the folder {parts[0]} is no module's: a test folder is a module's, or fixtures, golden or a build output"));
+                foreach (Match use in token.Matches(code))
+                {
+                    breaches.Add(new(source.Path, LineOf(code, use.Index), "pure", $"{use.Value.Trim()} {why}: a Domain is pure; it takes the world as values or through a port"));
+                }
+            }
+
+            var crossings = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var edge in analysis.Edges.Where(edge => edge.File == source.Path && map.Seams.Contains(edge.Type.Split('.')[0])))
+            {
+                crossings[edge.Type.Split('.')[0]] = edge.Line;
+            }
+
+            if (analysis.AsyncFiles.Contains(source.Path))
+            {
+                crossings["async"] = 0;
+            }
+
+            var allowed = map.Pure.GetValueOrDefault(source.Path) ?? [];
+            foreach (var (crossing, line) in crossings.Where(crossing => !allowed.Contains(crossing.Key)))
+            {
+                breaches.Add(new(source.Path, line, "pure", crossing == "async"
+                    ? "holds an async method: a Domain is pure; it takes the world as values or through a port, and awaits nothing"
+                    : $"names {crossing}, an I/O seam: a Domain is pure; it takes the world as values or through a port"));
+            }
+
+            named[source.Path] = crossings.Keys.ToHashSet(StringComparer.Ordinal);
+        }
+
+        foreach (var (file, crossings) in map.Pure)
+        {
+            foreach (var crossing in crossings.Where(crossing => !(named.GetValueOrDefault(file)?.Contains(crossing) ?? false)))
+            {
+                breaches.Add(new("structure.json", 0, "map", $"{file} is listed as crossing {crossing} in a Domain, and it does not: a cut takes its entry off the list"));
+            }
+        }
+    }
+
+    /// <summary>The <c>direction</c> rule, and the <c>loop</c> rule's edges into Loop's folder.</summary>
+    private static void Direction(
+        StructureMap map, StructureAnalysis analysis, Dictionary<string, int> rank,
+        Func<string, Subdomain?> place, string loopFolder, List<StructureBreach> breaches)
+    {
+        var upward = new Dictionary<(string File, string Type), TypeEdge>();
+        foreach (var edge in analysis.Edges)
+        {
+            var from = place(edge.File);
+            if (from is null) continue;
+            var inLoop = edge.DeclaredIn.Any(file => file.Split('/')[0] == loopFolder);
+            if (inLoop && edge.File.Split('/')[0] != loopFolder)
+            {
+                breaches.Add(new(edge.File, edge.Line, "loop", $"names {edge.Type}, declared in {edge.DeclaredIn.First(file => file.Split('/')[0] == loopFolder)}: Loop is the composition root, and nothing outside its folder names it"));
+                continue;
+            }
+
+            var above = edge.DeclaredIn.Select(place).Where(there => there is not null && rank.GetValueOrDefault(there.Name) > rank.GetValueOrDefault(from.Name)).FirstOrDefault();
+            if (above is null) continue;
+            if (inLoop)
+            {
+                breaches.Add(new(edge.File, edge.Line, "loop", $"names {edge.Type}, declared in a file of Loop's folder, and {from.Name} is below {above.Name}: no exception names an edge into Loop"));
+                continue;
+            }
+
+            upward[(edge.File, edge.Type)] = edge;
+        }
+
+        var listed = new HashSet<(string File, string Type)>();
+        foreach (var family in map.Families)
+        {
+            foreach (var (file, types) in family.Edges)
+            {
+                foreach (var type in types)
+                {
+                    if (!listed.Add((file, type)))
+                    {
+                        breaches.Add(new("structure.json", 0, "map", $"{file} names {type} in two edge families, {family.Name} among them"));
+                    }
+                    else if (!upward.ContainsKey((file, type)))
+                    {
+                        breaches.Add(new("structure.json", 0, "map", $"{family.Name} lists {file} naming {type}, which is no edge against the order now: a cut takes its entry off the list"));
+                    }
+                }
             }
         }
 
-        foreach (var (name, module) in map.Tests)
+        foreach (var ((file, type), edge) in upward.Where(edge => !listed.Contains(edge.Key)))
         {
-            if (!map.Modules.ContainsKey(module))
+            var from = place(file)!.Name;
+            var above = edge.DeclaredIn.Select(place).First(there => there is not null && rank.GetValueOrDefault(there.Name) > rank.GetValueOrDefault(from))!.Name;
+            breaches.Add(new(file, edge.Line, "direction",
+                $"names {type}, declared in {edge.DeclaredIn[0]}: {from} is below {above}, and no edge family of structure.json lists this edge (a file and the type it names, under the row after which it is cut)"));
+        }
+    }
+
+    /// <summary>The <c>loop</c> rule's judgements: Loop declares none the census does not name as moving.</summary>
+    private static void LoopRules(
+        StructureMap map, StructureAnalysis analysis, Func<string, Subdomain?> place, Dictionary<string, Subdomain> byName, List<StructureBreach> breaches)
+    {
+        var listed = map.LoopRules.Select(rule => (rule.File, rule.Member)).ToHashSet();
+        foreach (var rule in analysis.Rules.Where(rule => place(rule.File)?.Name == Loop && !listed.Contains((rule.File, rule.Member))))
+        {
+            breaches.Add(new(rule.File, rule.Line, "loop",
+                $"{rule.Member} is a rule, a static bool, in Loop: Loop holds no rules, so it moves to its subdomain as a pure function, and the census names it as moving until then"));
+        }
+
+        var found = analysis.Rules.Select(rule => (rule.File, rule.Member)).ToHashSet();
+        foreach (var rule in map.LoopRules.Where(rule => !found.Contains((rule.File, rule.Member))))
+        {
+            breaches.Add(new("structure.json", 0, "map", $"{rule.Member} of {rule.File} is listed as a rule Loop holds, and it is not one there: a move takes its entry off the list"));
+        }
+    }
+
+    /// <summary>Folders of the tests' project that are no subdomain's: fixtures and the build's own output.</summary>
+    private static readonly string[] TestSupport = ["fixtures", "golden", "bin", "obj", "TestResults"];
+
+    /// <summary>The <c>mirror</c> rule: a listed test sits under its subdomain's folder, and a test folder is a subdomain's, not yet moved, or support.</summary>
+    private static void Mirror(StructureMap map, List<string> tests, List<StructureBreach> breaches)
+    {
+        var folders = map.Subdomains.Select(subdomain => subdomain.Folder).ToHashSet(StringComparer.Ordinal);
+        foreach (var path in tests)
+        {
+            var parts = path.Split('/');
+            if (parts.Length > 1 && !folders.Contains(parts[0]) && !map.TestFolders.Contains(parts[0]) && !TestSupport.Contains(parts[0]))
             {
-                breaches.Add(new("structure.json", 0, "map", $"{name} is a test mapped to {module}, which is no module of the map"));
+                breaches.Add(new(path, 0, "mirror", $"the folder {parts[0]} is no subdomain's, and structure.json does not list it as not yet moved: a test folder is a subdomain's, today's not yet moved, fixtures, golden or a build output"));
+            }
+        }
+
+        foreach (var folder in map.TestFolders.Where(folder => !tests.Any(path => path.StartsWith(folder + "/", StringComparison.Ordinal))))
+        {
+            breaches.Add(new("structure.json", 0, "map", $"the tests' folder {folder} is listed as not yet moved, and none is there: a move takes its entry off the list"));
+        }
+
+        foreach (var (name, subdomain) in map.Tests)
+        {
+            var folder = map.Subdomains.FirstOrDefault(each => each.Name == subdomain)?.Folder;
+            if (folder is null)
+            {
+                breaches.Add(new("structure.json", 0, "map", $"{name} is a test mapped to {subdomain}, which is no subdomain of the map"));
             }
 
             var found = tests.Where(path => path.Split('/')[^1] == name).ToList();
             if (found.Count == 0)
             {
-                breaches.Add(new("structure.json", 0, "map", $"{name} is listed under {module}, and no such test is in the tests' tree: a delete takes its entry off the list"));
+                breaches.Add(new("structure.json", 0, "map", $"{name} is listed under {subdomain}, and no such test is in the tests' tree: a delete takes its entry off the list"));
             }
 
-            foreach (var path in found.Where(path => path.Split('/')[0] != module || !path.Contains('/')))
+            foreach (var path in found.Where(path => folder is not null && (path.Split('/')[0] != folder || !path.Contains('/'))))
             {
                 var where = path.Contains('/') ? $"under {path.Split('/')[0]}" : "at the top of the tests";
-                breaches.Add(new(path, 0, "mirror", $"sits {where}, and the map lists it under {module}: a test mirrors its module's folder"));
+                breaches.Add(new(path, 0, "mirror", $"sits {where}, and the map lists it under {subdomain}: a test mirrors its subdomain's folder"));
             }
         }
     }
 
-    /// <summary>Why a file of one module may not name a type of another, or null when it may.</summary>
-    private static (string Rule, string Why)? Reach(string module, string theirs) =>
-        theirs == Loop && module != Loop ? ("loop", "Loop is the composition root, and no module uses it") : null;
-
-    /// <summary>The module and layer a path's folders place it in, or null for a file at the top or in no module's folder.</summary>
-    private static (string Module, string? Layer)? Place(StructureMap map, string path)
+    private static int LineOf(string code, int offset)
     {
-        var parts = path.Split('/');
-        if (parts.Length == 1 || !map.Modules.TryGetValue(parts[0], out var held)) return null;
-        return (parts[0], parts.Length > 2 && held.Contains(parts[1]) ? parts[1] : null);
-    }
-
-    /// <summary>The types each placed source declares at its top level, by name: a nested type is named through its outer one.</summary>
-    private static Dictionary<string, List<Source>> Declarations(IEnumerable<Source> sources)
-    {
-        var declared = new Dictionary<string, List<Source>>(StringComparer.Ordinal);
-        foreach (var source in sources)
+        var line = 1;
+        for (var i = 0; i < offset && i < code.Length; i++)
         {
-            var top = BlockNamespace().IsMatch(source.Code) ? 1 : 0;
-            var depth = Depths(source.Code);
-            foreach (Match declaration in Declaration().Matches(source.Code))
-            {
-                var name = declaration.Groups["name"].Value;
-                if (name is "class" or "struct" || depth[declaration.Index] != top) continue;
-                if (!declared.TryGetValue(name, out var where)) declared[name] = where = [];
-                if (!where.Contains(source)) where.Add(source);
-            }
+            if (code[i] == '\n') line++;
         }
 
-        return declared;
-    }
-
-    /// <summary>The brace depth at each offset of a source's code.</summary>
-    private static int[] Depths(string code)
-    {
-        var depths = new int[code.Length];
-        var depth = 0;
-        for (var i = 0; i < code.Length; i++)
-        {
-            if (code[i] == '}') depth--;
-            depths[i] = depth;
-            if (code[i] == '{') depth++;
-        }
-
-        return depths;
+        return line;
     }
 
     /// <summary>
@@ -380,34 +563,5 @@ internal static partial class StructureCheck
         var end = i;
         while (end < text.Length && text[end] == c) end++;
         return end - i;
-    }
-
-    [GeneratedRegex(@"(?<![\w.@])[A-Za-z_]\w*")]
-    private static partial Regex Identifier();
-
-    [GeneratedRegex(@"\b(?:class|struct|interface|enum|record)\s+(?<name>[A-Za-z_]\w*)|\bdelegate\s+[\w.<>\[\]?, ]+?\s+(?<name>[A-Za-z_]\w*)\s*[<(]")]
-    private static partial Regex Declaration();
-
-    /// <summary>A namespace with a body, whose types sit one brace deep; a file-scoped one's sit at the top.</summary>
-    [GeneratedRegex(@"^\s*namespace\s+[\w.]+\s*\{", RegexOptions.Multiline)]
-    private static partial Regex BlockNamespace();
-
-    /// <summary>One source, its code, and the module and layer its folders place it in.</summary>
-    private sealed class Source(string path, string text, (string Module, string? Layer)? place)
-    {
-        private int[]? _lines;
-
-        public string Path { get; } = path;
-
-        public string Code { get; } = CodeOf(text);
-
-        public (string Module, string? Layer)? Place { get; } = place;
-
-        public int LineOf(int offset)
-        {
-            _lines ??= Code.Select((c, i) => (c, i)).Where(pair => pair.c == '\n').Select(pair => pair.i).ToArray();
-            var at = Array.BinarySearch(_lines, offset);
-            return (at < 0 ? ~at : at) + 1;
-        }
     }
 }
