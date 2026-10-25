@@ -530,10 +530,9 @@
     "Service/Domain/SyncReport.cs": "Service",
     "Service/Domain/TreeFacts.cs": "Service",
     "Service/KnowledgeConnector.cs": "Knowledge",
-    "Service/LayoutGit.cs": "Service",
     "Service/LedgerChanges.cs": "Service",
+    "Service/LinkedWorktree.cs": "Service",
     "Service/RegistrationFollow.cs": "Service",
-    "Service/RegistrationWorld.cs": "Service",
     "Service/RegistryFollowing.cs": "Service",
     "Service/RemoteSync.cs": "Service",
     "Service/RemoteTarget.cs": "Service",
@@ -745,6 +744,7 @@
     "Trees/Landing/LandingPlugins.cs": "Workplace",
     "Trees/Landing/LandingWakes.cs": "Workplace",
     "Trees/Landing/RebaseTelling.cs": "Workplace",
+    "Trees/LayoutGit.cs": "Workplace",
     "Trees/LookTimes.cs": "Workplace",
     "Trees/Nodes/BuiltInNodes.cs": "Workflows",
     "Trees/Nodes/GoAheadNode.cs": "Workflows",
@@ -778,6 +778,7 @@
     "Trees/PullRequestStates.cs": "Workplace",
     "Trees/PullRequestWords.cs": "Workplace",
     "Trees/RefWatch.cs": "Workplace",
+    "Trees/RegistrationWorld.cs": "Workplace",
     "Trees/RegistryHeard.cs": "Workplace",
     "Trees/ServiceWiring.cs": "Workplace",
     "Trees/SessionEntries.cs": "Workplace",
@@ -891,14 +892,6 @@
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Service names Workplace",
-      "after": "Service",
-      "files": {
-        "Service/LayoutGit.cs": ["WorkingTree"],
-        "Service/RegistrationWorld.cs": ["CanonicalLine","LandedBranches","WorkingTree"]
-      }
-    },
     {
       "family": "Install names Agents",
       "after": "Install",
@@ -1784,10 +1777,8 @@
     "ServiceClientWorkflowProposalTests.cs": "Service",
     "ServiceDoorsTests.cs": "Service",
     "ServiceHostLocatorTests.cs": "Service",
-    "SetupLineProcessTests.cs": "Service",
     "RunningAddressTests.cs": "Service",
     "RegistrationFollowTests.cs": "Service",
-    "RegistrationLineProcessTests.cs": "Service",
     "RecordNotesTests.cs": "Service",
     "ServiceRecordsTests.cs": "Service",
     "ServicePortsTests.cs": "Service"
