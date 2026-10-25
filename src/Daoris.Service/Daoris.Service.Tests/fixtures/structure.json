@@ -59,6 +59,8 @@
     "GoAheadTests.cs": "Sessions",
     "HelperBoxShapeTests.cs": "Sessions",
     "NotePartsTests.cs": "Sessions",
+    "ParticipantWorkReadersTests.cs": "Sessions",
+    "ParticipantWorkTests.cs": "Sessions",
     "SessionDeleteTests.cs": "Sessions",
     "SessionLedgerTests.cs": "Sessions",
     "SessionLockAcrossHostsTests.cs": "Sessions",

@@ -44,6 +44,9 @@ public static class SessionsStateSlice
         "limit",
         // D205 §9.3: the machine-local provenance, absent on a mirror and a sync.
         "actor", "choice", "asked", "override", "ran",
+        // FOUNDATION1c (D212): the work its marks read as, judged in .NET and answered on loopback, beside the kind; absent on a record a
+        // host answers none for, and then the page reads today's predicates.
+        "work",
     ];
 
     /// <summary>

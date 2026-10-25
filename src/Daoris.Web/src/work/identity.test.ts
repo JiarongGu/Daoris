@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import i18n from '../locales/i18n';
 import { HELP_REPOSITORY, type Ask, type Quest, type Session } from '../data/api';
 import {
-  askName, inTree, isHelp, isHelper, linkedSessions, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName,
+  askName, inTree, isHelp, isHelper, isPartner, linkedSessions, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName,
 } from './identity';
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -143,6 +145,91 @@ describe('a session title', () => {
   it('prefers the quest over the kind — a chat that took one is still about that quest', () => {
     expect(sessionTitle(session({ kind: 'chat', quest: '7a82cc' }), quest()))
       .toBe('Expose a streaming budget on the chunk API');
+  });
+});
+
+/**
+ * FOUNDATION1c (D212; the foundation design §2.2, §2.3): the page draws a record by the work a host sends it, and by today's predicates
+ * where the host sends none. The table is the shared one, `fixtures/participant-work.json` among the service's tests, which the service's
+ * and the driver's suites hold row for row: what each reader answered before the work (`today`), what the page draws by the work
+ * (`byWork`), and the decision for every difference. Only a partner's drawing changes, D203 point 1's reading, in a string of its own.
+ */
+describe('a record drawn by its work (FOUNDATION1c)', () => {
+  type Marks = { mirror: boolean; kind: string | null; repository: string | null; ask: string | null; serves: string | null; piece: string | null; opinion: string | null };
+  type Answers = { holdsSlot: boolean; drawn: string; connectorPartner: boolean; help: boolean };
+  type Row = { name: string; marks: Marks; work: string | null; today: Answers; byWork: Answers; disagrees: Record<string, string> };
+  const TABLE = JSON.parse(readFileSync(join(process.cwd(), '..', 'Daoris.Service', 'Daoris.Service.Tests', 'fixtures', 'participant-work.json'), 'utf8')) as {
+    rows: Row[]; decisions: Record<string, string>;
+  };
+
+  /** The words each drawing says, as the page's title says them for a record on no quest with no first line. */
+  const WORDS: Record<string, (ask: string | null) => string> = {
+    intake: (ask) => i18n.t('work.intake.title', { ask }),
+    opinion: () => i18n.t('opinion.session.title'),
+    helper: () => i18n.t('work.identity.helper'),
+    partner: () => i18n.t('work.identity.partner'),
+    help: () => i18n.t('help.title'),
+    conversation: () => i18n.t('work.identity.conversation'),
+    session: () => i18n.t('work.identity.session'),
+  };
+
+  const recordOf = (marks: Marks, work?: string | null): Session => session({
+    kind: (marks.kind ?? undefined) as Session['kind'], repository: marks.repository ?? 'engine',
+    ask: marks.ask, serves: marks.serves, piece: marks.piece, opinion: marks.opinion,
+    ...(work === undefined ? {} : { work }),
+  });
+
+  const titled = (row: Row, drawn: string) => WORDS[drawn](row.marks.ask);
+
+  it.each(TABLE.rows.map((row) => [row.name, row] as const))(
+    'draws %s by today’s predicates from a host that sends no work, as before the work', (_name, row) => {
+      expect(sessionTitle(recordOf(row.marks))).toBe(titled(row, row.today.drawn));
+      expect(isHelp(recordOf(row.marks))).toBe(row.today.help);
+    });
+
+  it.each(TABLE.rows.map((row) => [row.name, row] as const))(
+    'draws %s by the work a host sends, the one reading the table’s byWork column names', (_name, row) => {
+      expect(sessionTitle(recordOf(row.marks, row.work))).toBe(titled(row, row.byWork.drawn));
+    });
+
+  it('names every difference between the two drawings and decides it: only a partner’s drawing changes', () => {
+    for (const row of TABLE.rows) {
+      const differs = row.today.drawn !== row.byWork.drawn;
+      expect(Object.keys(row.disagrees).includes('drawn'), row.name).toBe(differs);
+      if (differs) {
+        expect(row.disagrees.drawn).toBe('partner-drawn');
+        expect(row.work).toBe('partner');
+      }
+    }
+    expect(Object.keys(TABLE.decisions)).toContain('partner-drawn');
+  });
+
+  /**
+   * X4-1.3: the two cases kept apart. A record from before the work, whose marks say a partner, answered by a host that has the reading
+   * (so it sends `partner`), is drawn as a partner; the same record from a host before the field sends no `work`, and is drawn by today's
+   * predicates, as a helper.
+   */
+  it('draws a partner as a partner on a host that sends work, and as a helper on one that sends none', async () => {
+    const partner = { kind: 'chat' as const, serves: 's1a2b3c4', piece: 'p1a2b3c4' };
+
+    expect(sessionTitle(session({ ...partner, work: 'partner' }))).toBe('Partner');
+    expect(sessionTitle(session(partner))).toBe('Helper');
+    expect(sessionTitle(session({ ...partner, work: null }))).toBe('Helper');
+    expect(sessionTitle(session({ kind: 'chat', serves: 's1a2b3c4', work: 'help' }))).toBe('Helper');
+
+    await i18n.changeLanguage('zh');
+    expect(sessionTitle(session({ ...partner, work: 'partner' }))).toBe('搭档');
+    expect(sessionTitle(session(partner))).toBe('助手');
+    await i18n.changeLanguage('en');
+  });
+
+  /** X4-1.3, X4-2.1: the drawing changes and nothing else: a partner stays a record that serves, which the readers of that keep refusing. */
+  it('keeps a partner a record that serves, whichever host drew it', () => {
+    for (const work of [undefined, 'partner'] as const) {
+      const partner = session({ kind: 'chat', serves: 's1a2b3c4', piece: 'p1a2b3c4', ...(work ? { work } : {}) });
+      expect(isHelper(partner)).toBe(true);
+      expect(isPartner(partner)).toBe(work === 'partner');
+    }
   });
 });
 

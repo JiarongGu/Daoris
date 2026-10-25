@@ -210,6 +210,27 @@ describe('the acts a session is offered', () => {
     }
   });
 
+  /**
+   * FOUNDATION1c (X4-1.3, X4-2.1): drawing a partner as a partner offers it nothing it is not offered now. A partner's record serves, as a
+   * helper's does, so it is refused words and resume exactly as a helper is, on a host that sends its `work` and on one that sends none:
+   * the acts offered are a helper's, none that takes words.
+   */
+  it('offers a partner no act that takes words, as a helper, on a host that sends work and on one that sends none', () => {
+    const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: TREE });
+    const wordless = ['handOver', 'answer', 'retry', 'resumeQuest', 'resumeAsk', 'pauseQuest', 'pauseAsk', 'askHelper'];
+    const helper = { ...chat, serves: 's9z8y7x6' };
+    for (const partner of [{ ...helper, piece: 'p1a2b3c4' }, { ...helper, piece: 'p1a2b3c4', work: 'partner' }]) {
+      for (const state of ['completed', 'awaiting-person'] as const) {
+        const grouping = placed(state === 'completed' ? { group: 'ended', shown: 'completed' } : { group: 'you', shown: 'parked' });
+        for (const door of ['row', 'header'] as const) {
+          const acts = offeredActs({ session: { ...partner, state }, grouping, root: ROOT }, door);
+          for (const act of wordless) expect(acts).not.toContain(act);
+          expect(acts).toEqual(offeredActs({ session: { ...helper, state }, grouping, root: ROOT }, door));
+        }
+      }
+    }
+  });
+
   it('names the hand-over by whether the conversation is working: go on, or stop and hand over', () => {
     expect(handOverLabel(session({ kind: 'chat', quest: null, state: 'working' }))).toBe('work.act.handOverStop');
     expect(handOverLabel(session({ kind: 'chat', quest: null, state: 'completed' }))).toBe('work.act.handOver');

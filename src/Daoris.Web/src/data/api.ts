@@ -514,6 +514,13 @@ export type Session = {
    * parts, and from a host older than the field, whose note is shown as kept.
    */
   noteParts?: NotePart[] | null;
+  /**
+   * The work the record was opened for (FOUNDATION1c, D212; the foundation design §2.2): `build`, `chat`, `ask-daoris`, `intake`,
+   * `help`, `partner` or `review`, read from its marks by the host and judged in .NET, pushed beside `kind`. This machine's own, as the
+   * opinion is: absent on a teammate's record, which has none here, in a browser, and from a host before the field, which `identity.ts`
+   * then draws by the marks themselves.
+   */
+  work?: string | null;
 };
 
 /**

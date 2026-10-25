@@ -629,6 +629,28 @@ describe('a session’s page header and its acts', () => {
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
+  /**
+   * FOUNDATION1c (D203 point 1; X4-1.3): a partner is drawn as one where its host sends its work, and is offered no box, as a helper is,
+   * on that host and on one that sends none (which draws it as a helper, as before).
+   */
+  it('titles a partner as one where the host sends its work, and offers it no box on either host', async () => {
+    const partner = { ...CHAT, id: 'p4rtn3r0', serves: 's1a2b3c4', piece: 'p1a2b3c4' };
+    SESSIONS = [DRIVEN, { ...partner, work: 'partner' }];
+    const sending = show('p4rtn3r0');
+
+    await screen.findByRole('heading', { level: 1, name: 'Partner' });
+    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    sending.unmount();
+
+    SESSIONS = [DRIVEN, partner];
+    show('p4rtn3r0');
+
+    await screen.findByRole('heading', { level: 1, name: 'Helper' });
+    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+  });
+
   /** M2: a quest parked on its failed sessions is tried again where its session is, the loud act in its header. */
   it('tries a parked quest again from its session’s page header', async () => {
     SESSIONS = [{ ...DRIVEN, id: 'f41led00', state: 'failed' }];

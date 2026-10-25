@@ -1183,6 +1183,11 @@ export const REACH = Object.freeze([
     gates: ['service', 'driver', 'web-unit'],
     why: "the service's and the driver's ParticipantWorkTests and the page's identity tests read the participant's work table (FOUNDATION1c)",
   },
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json'],
+    gates: ['service', 'driver', 'modules'],
+    why: "the service's, the driver's and the modules' ParticipantWorkReadersTests read the table of every reader of the marks that tells a work (FOUNDATION1c, census B)",
+  },
   { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   {
