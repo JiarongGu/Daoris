@@ -5,6 +5,21 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - The ended limit move walked twice, so the account judged and the one opened could differ and a start never made was counted (LIMITSWITCH2)
+
+- **Symptom:** a conversation a limit held went on, at the limits stage, in a new part on the account the walk offered; the walk was asked at
+  the move's judgement and again as the new part opened, so a start was counted against an account's load that the part never ran on, and
+  where the second walk chose another account the part opened somewhere other than where the move had judged it would, and said so.
+- **Root cause:** `LimitMove.MoveEndedAsync` asked `HarnessRoster.SelectAsync` to learn whether another account had room, which counts the
+  start it picks, then opened through `ChatRunner.StartAsync` with no account named, which walks and counts again. Nothing handed the first
+  answer on, so the judgement and the open were two walks. The same body would have doubled every conversation LIMITSWITCH2 sends through it.
+- **Fix:** the move walks once (counted, given back where it moves nothing) and `ChatRunner.StartAsync` takes the settled selection, so the
+  new part opens on the account judged and the start is counted once. Ask Daoris's room, which places itself through its own walk, judges
+  uncounted there. The live limit move (`LimitMove.MoveAsync`) has the same shape and is left as it was.
+- **Verification:** `LimitWaitsProcessTests.An_ended_conversation_another_account_frees_first_for_moves_with_the_brief_and_both_kinds_of_words_once`
+  now holds the roster's start count at one more after the move, and failed with the open walking again (two more); the new switch cases hold
+  the same count (`process.runsettings`).
+
 ## 2026-10-25 - The disk card's next removal counted only the earliest due day's folders, so overdue ones across midnight went uncounted (KEEP1a, KEEPSIZE1a)
 
 - **Symptom:** `SetAsidePlacesTests.The_card_counts_both_places_under_set_aside_and_none_under_the_rest` failed every run between
