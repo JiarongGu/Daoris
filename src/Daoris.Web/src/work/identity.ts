@@ -59,6 +59,9 @@ export function sessionTitle(session: Session, quest?: Quest | null, opening?: s
   if (session.ask) return i18n.t('work.intake.title', { ask: session.ask });
   // A reviewer's record is a chat only by the way it was opened (XAGENT1c): it reads another session's work once.
   if (isOpinion(session)) return i18n.t('opinion.session.title');
+  // A partner's record serves a lead as a helper's does, so a host before the work draws it a helper; one that sends the work draws it
+  // a partner (FOUNDATION1c, D203 point 1).
+  if (isPartner(session)) return i18n.t('work.identity.partner');
   // So is a helper's (MIXAGENT3a-i): it answers another session's one question, and its rail row says whose.
   if (isHelper(session)) return i18n.t('work.identity.helper');
   if (isHelp(session) && !opening) return i18n.t('help.title');
@@ -77,6 +80,15 @@ export const isOpinion = (session: Session): boolean => Boolean(session.opinion)
  * is a chat only by the way it was opened, one turn and no words: `sessionTitle` names it and the frame's `oneTurn` offers no box.
  */
 export const isHelper = (session: Session): boolean => Boolean(session.serves);
+
+/**
+ * Whether the host that answered a record says its work is a partner's (FOUNDATION1c, D212; D203 point 1): a naming only, read from the
+ * pushed `work` where a host sends it and false where it sends none, so an older host's partner is drawn by today's predicates, as a
+ * helper. A partner's record also serves, so `isHelper` stays true for it and the readers of that, the composer's one turn (`WorkFrame`'s
+ * `oneTurn`) and the acts that take words (`acts.ts`), keep refusing it exactly as they do: the naming repair offers a partner no box and
+ * no act it is not offered now (X4-1.3, X4-2.1).
+ */
+export const isPartner = (session: Session): boolean => session.work === 'partner';
 
 /**
  * The sessions a record names as its own (MIXAGENT3a-i, the mixed-agents design §4): the one it continues (`from`) and the one

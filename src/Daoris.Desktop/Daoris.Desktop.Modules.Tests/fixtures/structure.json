@@ -91,6 +91,7 @@
     "HelpStartingTests.cs": "Loop",
     "HostSupervisorTests.cs": "Loop",
     "LastLinesTests.cs": "Loop",
+    "ParticipantWorkReadersTests.cs": "Loop",
     "SessionWordsTerminalTests.cs": "Loop",
     "TickConsiderationTests.cs": "Loop",
     "TickErrorsTests.cs": "Loop",
