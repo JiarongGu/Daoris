@@ -127,11 +127,15 @@ internal sealed class BriefedMove(ChatContext context, ChatRunner runner, ChatHa
                 context.Service, context.Events, context.Home, sessionId, HandOverWhy.Resume, conversation: record.Kind == "chat", ct: ct)
             .ConfigureAwait(false);
         var help = WordsNever.IsHelp(listed);
+        // FOUNDATION1a-iii (the design's §3.2 step 6, §7 row 4): the new part takes the walk with its own account first where that is ready,
+        // the person's press and a part whose own conversation is proven lost alike, rather than the cooling account as a pick, which
+        // refused exactly when the person needed it. An account the person picked stays the one account (§3.5(d)): it waits while it cools.
+        var pinned = context.Conversations.PickedOn(sessionId, record.Profile);
         var started = help
             ? await HelpStartAsync(record, agent.Name, config, onEnded, ct).ConfigureAwait(false)
             : await runner.StartAsync(
                     record.Repository!, agent.Name, config, onEnded, record.Profile, ct: ct, tree: tree,
-                    from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by))
+                    from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by), ownFirst: !pinned)
                 .ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 
@@ -192,9 +196,11 @@ internal sealed class BriefedMove(ChatContext context, ChatRunner runner, ChatHa
         {
             if (record.Choice == "pick" && record.Adapter is { Length: > 0 } picked)
             {
+                // Only an account the person picked is held to its account (FOUNDATION1a-iii, §7 row 2): an agent pick walks its agent's
+                // accounts, the refused one passed by the reading kept.
                 order = ChatPending.Recovering(
                     actor, [new ActorEffective(picked, record.Asked?.NamedModel, record.Asked?.Effort.Value, "pick")], config);
-                pinned = record.Profile;
+                pinned = context.Conversations.PickedOn(sessionId, record.Profile) ? record.Profile : null;
             }
             else
             {

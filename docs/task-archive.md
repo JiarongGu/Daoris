@@ -5,6 +5,23 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## FOUNDATION1a-iii — the briefed move's walk, one selection, the closed quest's case (2026-10-26)
+
+> **FOUNDATION1a-iii — the briefed move's walk, one selection, the closed quest's case** (driver; D212's row of Part B, accepted by the steward 2026-10-25; the design
+> `docs/2026-10-25-foundation-design.md` §10's row *1a-iii*, §3.2 step 6 and §7's rows 1b and 4, on the account rule row 1a-i built and the account pick row 1a-ii kept). The briefed move
+> and its not-offered path through the walk, the own account first where ready, the person's fresh-part press the one exception to an automatic part's same-account refusal; the live
+> limit move opening on the selection it judged, counted once, as LIMITSWITCH2 made the ended move do; the ended move gaining `ElsewhereAsync`, so a conversation whose agent's accounts all
+> cool goes on with its role's later choice where the person allowed one; and the closed quest's cooling session going on as a conversation in its tree, as LIMITSWITCH2 built it, taken as
+> built, a headless host waiting. It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. `BriefedMove` asks `ChatRunner.StartAsync` with `ownFirst`, the roster's `SelectHandedAsync` (the own account, then its agent's accounts), so the
+person's press and a lost part open on the own account where ready and on another where it cools, never refused on it as a pick; an account the person picked stays the one account, and
+the not-offered path holds only that, an agent pick walking its agent's accounts. `LimitMove`'s live move judges once and opens on `settled`, both moves give back the count of a walk that
+opened nothing, and the ended move, where a limit ended it and every account of its agent cools, goes on with its actor's next choice on another agent, judged uncounted and counted once by the new part's own walk; never
+for a closed quest's session or outside a limit, which §8's first question keeps the owner's. The closed quest's case is LIMITSWITCH2's, unchanged and kept green. Every case is seen
+failing first, in `BriefedMoveTests` (new), `LimitWaitsProcessTests` and `ChatPendingProcessTests` (the refused agent pick walks, the account pick waits). Detail and the readings taken:
+D212's note of 2026-10-26.
+
 ## FOUNDATION1a-ii — the account pick's provenance (2026-10-26)
 
 > **FOUNDATION1a-ii — the account pick's provenance** (driver, modules; D212's row of Part B, accepted by the steward 2026-10-25; the design `docs/2026-10-25-foundation-design.md`

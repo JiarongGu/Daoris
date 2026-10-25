@@ -271,17 +271,19 @@ public sealed class ChatPendingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A pick is never walked afresh (round 4, Codex 2): a picked start interrupted after its refusal, account-2 free and offering the
-    /// model, the come-up's go-on never runs it there: with no other entry of the picked agent, it waits saying why, its words kept.
+    /// 🔴 An account the person picked is never walked afresh (round 4, Codex 2; FOUNDATION1a-iii, the design's §7 row 2): a start whose
+    /// account they picked, interrupted after its refusal, account-2 free and offering the model, the come-up's go-on never runs it there:
+    /// with no other entry of the picked agent, it waits saying why, its words kept.
     /// </summary>
     [Fact]
-    public async Task A_refused_pick_s_go_on_never_runs_on_another_account()
+    public async Task A_refused_account_pick_s_go_on_never_runs_on_another_account()
     {
         var config = Config("account-1:opus", "chat", [new ActorChoice("acp-stub", "opus")], "account-1", "account-2");
         var (runner, ledger, client, _) = Runner();
         using var r = runner;
         using var c = client;
         var refused = await RefusedAsync(ledger, client, "pick");
+        new HarnessConversations(_home).Pick(refused, "account-1");
 
         var taken = await runner.TakeUpAsync();
 
@@ -290,6 +292,29 @@ public sealed class ChatPendingProcessTests : IDisposable
         Assert.Equal(["w1"], ledger.Said(refused));
         Assert.Empty(StubFile.Lines(Heard));
         Assert.Contains(Events.After(refused, 0).Events, e => e.Parts?.Any(part => part.Code == NoteCodes.ChatLimitNotMoved.Code) == true);
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1a-iii (the design's §7 row 2): an agent pick, with no account the person picked, walks its agent's accounts: the same
+    /// interrupted start's go-on opens on account-2, which offers the model, the refused account passed by the reading kept, never on another
+    /// agent, continuing the refused record by <c>not-offered</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_agent_pick_s_go_on_walks_its_agents_accounts()
+    {
+        var config = Config("account-1:opus", "chat", [new ActorChoice("acp-stub", "opus")], "account-1", "account-2");
+        var (runner, ledger, client, _) = Runner();
+        using var r = runner;
+        using var c = client;
+        var refused = await RefusedAsync(ledger, client, "pick");
+
+        await runner.TakeUpAsync();
+
+        await Poll.Until(() => Prompts("account-2").Length == 1, () => Seen(ledger, refused));
+        Assert.Empty(Prompts("account-1"));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("acp-stub", "account-2", refused, HandOverWhy.NotOffered), (next.Adapter, next.Profile, next.From, next.FromWhy));
+        await Poll.Until(() => ledger.Said(refused).Count == 0, () => Seen(ledger, refused));
     }
 
     /// <summary>

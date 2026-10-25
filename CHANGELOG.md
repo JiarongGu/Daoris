@@ -5,6 +5,12 @@ with the version and date at release.
 
 ## Unreleased
 
+- *Go on with Daoris's brief* no longer fails on a conversation whose account is cooling while another account of its agent is ready
+  (FOUNDATION1a-iii, D212). It opens the new part on the conversation's own account where that is ready, and on another account of
+  the same agent where it is not, as the press you chose a new part over waiting is meant to; a conversation whose account you picked
+  still waits for that account. A conversation a limit ended, whose agent's accounts all cool, now goes on by itself with its role's
+  next choice on another agent where you allowed one, as one that was still running already did. A limit's move no longer counts a
+  second start it never made.
 - A conversation you picked an account for now waits for that account when it cools or reaches its limit, instead of going on elsewhere
   (FOUNDATION1a-ii, D212). Picking an account when you start a conversation, from the terminal, or when you hand one over, is now
   remembered on this machine: where another account of the agent is ready, the conversation still waits for the one you picked, says

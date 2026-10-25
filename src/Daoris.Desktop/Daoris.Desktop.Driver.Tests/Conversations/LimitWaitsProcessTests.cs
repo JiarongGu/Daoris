@@ -833,6 +833,131 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 FOUNDATION1a-iii: the live limit move opens on the account it judged, as LIMITSWITCH2 made the ended move do: a conversation whose
+    /// turn its account's limit refused goes on at that turn's end on <c>account-2</c> with one walk asked and one start counted, where it
+    /// walked twice and counted two, the second walk free to name another account than the one judged.
+    /// </summary>
+    [Fact]
+    public async Task A_live_conversations_limit_move_opens_on_the_account_it_judged_counted_once()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        using var runner = Runner(client, adapters, roster, events);
+        var chat = await WaitingAsync(runner, ledger, events, roster, config, help: false);
+        Limited("account-1");
+        var (counted, walks) = (roster.Mark(), roster.Selected);
+
+        Assert.True(runner.Say(chat, "Make the port configurable."));
+
+        await Poll.Until(() => ledger.Count == 2, () => Seen(ledger, events, chat));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("account-2", chat, HandOverWhy.Limit, HandOverBy.Daoris), (next.Profile, next.From, next.FromWhy, next.FromBy));
+        await Poll.Until(() => Prompts.Any(line => IsHandedTo("account-2", line)), () => Seen(ledger, events, "c2"));
+        Assert.Equal((counted + 1, walks + 1), (roster.Mark(), roster.Selected));
+        Assert.Equal(1, Count(Prompts.Single(line => IsHandedTo("account-2", line)), "Make the port configurable."));
+    }
+
+    /// <summary>
+    /// 🔴 FOUNDATION1a-iii (O2-13, D205 §3.5(e)): an ended conversation its limit held, with every account of its agent cooling, goes on
+    /// with its actor's next choice on another agent where the person allowed one, as the live move does: a new part continuing it by the
+    /// limit, handed the brief and both kinds of words once, the one start counted, the old part saying where it went; where it waits,
+    /// nothing went on by itself before.
+    /// </summary>
+    [Fact]
+    public async Task An_ended_conversation_with_every_account_of_its_agent_cooling_goes_on_with_its_next_choice()
+    {
+        var events = Events;
+        var ledger = HeldEnded(events, ("w1", "And add a test."));
+        Cooling("account-1", _now.AddDays(4));
+        Cooling("account-2", _now.AddDays(4));
+        var config = ConfigWithSecondChoice();
+        using var client = ledger.Client();
+        var adapters = TwoAgents();
+        var roster = Roster(adapters);
+        using var runner = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
+
+        var woke = Assert.Single(await runner.WakeLimitsAsync(config));
+
+        Assert.Equal("c2", woke.SessionId);
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("acp-second", _root, "c1", HandOverWhy.Limit, HandOverBy.Daoris), (next.Adapter, next.Tree, next.From, next.FromWhy, next.FromBy));
+        await Poll.Until(() => Prompts.Any(line => IsHandedTo("(own)", line)), () => Seen(ledger, events, "c2"));
+        var handed = Prompts.Single(line => IsHandedTo("(own)", line));
+        Assert.Contains("You continue session `c1`, which ran on acp-stub", handed);
+        Assert.Equal((1, 1, 0), (Count(handed, "Make the port configurable."), Count(handed, "And add a test."), Count(handed, LimitResetWord.Text)));
+        await Poll.Until(() => ledger.TakenBy.Contains(("c1", "w1", "c2")), () => Seen(ledger, events, "c1"));
+        Assert.Empty(ledger.Said("c1"));
+        // The first agent has no account left to count and the second has none to count: nothing is counted, one new record opened.
+        Assert.Equal((counted, 2), (roster.Mark(), ledger.Count));
+        var went = Assert.Single(events.After("c1", 0).Events, e => Coded(e, "moved.on"));
+        Assert.Equal("acp-second", went.Parts!.Single(part => part.Code == "moved.on").Value("agent"));
+        Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("resumed[", StringComparison.Ordinal));
+        Assert.False(File.Exists(new LimitBoxes(_home).PathOf("c1")));
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        Assert.Equal(2, ledger.Count);
+    }
+
+    /// <summary>
+    /// A conversation the person picked an account for (row a-ii) waits for it with every account cooling and a later choice on another
+    /// agent allowed: it goes nowhere, nothing is counted or opened, and its wait is its own account's reset. A conversation whose agent the
+    /// person picked is the same (LIMITGOON2's refusal, D205 §3.5(d)).
+    /// </summary>
+    [Theory]
+    [InlineData("account")]
+    [InlineData("agent")]
+    public async Task A_picked_conversation_with_every_account_cooling_waits_whatever_its_next_choice_is(string pick)
+    {
+        var events = Events;
+        var ledger = HeldEnded(events, ("w1", "And add a test."));
+        Cooling("account-1", _now.AddDays(4));
+        Cooling("account-2", _now.AddDays(4));
+        using var client = ledger.Client();
+        if (pick == "account") new HarnessConversations(_home).Pick("c1", "account-1");
+        else await client.TryKeepActorAsync("c1", null, "pick", new ActorEffective("acp-stub", null, null, "pick").Asked);
+        var config = ConfigWithSecondChoice();
+        var adapters = TwoAgents();
+        var roster = Roster(adapters);
+        using var runner = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
+
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        _now = _now.AddDays(2);
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+
+        Assert.Equal((1, counted), (ledger.Count, roster.Mark()));
+        Assert.Empty(Prompts);
+        Assert.Equal(["w1"], ledger.Said("c1"));
+    }
+
+    /// <summary>The built stand-ins, and a plugin's protocol door as the second agent.</summary>
+    private static AdapterSet TwoAgents() => new(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["stub"] = new StubAdapter(),
+        ["acp-stub"] = new AcpStubAdapter(),
+        ["acp-second"] = new DeclaredAcpAdapter(new PluginHarness("acp-second", ["node"]), "second-plugin"),
+    });
+
+    /// <summary>The machine's choices with Chat's order the first stand-in, then the second, which runs in its own home and answers every prompt.</summary>
+    private DriverConfig ConfigWithSecondChoice()
+    {
+        var first = Config();
+        var config = ActorChoices.With(
+            first with
+            {
+                Adapter = "acp-stub",
+                Commands = new Dictionary<string, IReadOnlyList<string>>(first.Commands!) { ["acp-second"] = ["node", Agent(), Heard, Gate] },
+            },
+            "chat", [new ActorChoice("acp-stub"), new ActorChoice("acp-second")]);
+        config.Save(DaorisHome.Entry(_home, HomeEntry.DriverConfig));
+        return config;
+    }
+
+    /// <summary>
     /// A stand-in ACP agent: names its conversation, writes down each prompt with the stub account and process it runs as, and answers a
     /// prompt with the protocol door's limit refusal while the gate says its account is limited. A resume is refused
     /// <c>resource_not_found</c> where the gate says the conversation is gone, plainly where it says resumes are refused.
