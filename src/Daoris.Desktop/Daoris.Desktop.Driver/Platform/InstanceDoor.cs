@@ -28,8 +28,11 @@ public enum InstanceFound
 /// <param name="Nonce">The hello's nonce for this connection (SUPERVISOR1a-ii), which a holder's proof is bound to; null from an older Daoris.</param>
 public sealed record InstanceLook(InstanceFound Found, string Why, InstanceClient? Client = null, string? Nonce = null);
 
-/// <summary>Where a verb looks for the running Daoris, and what it says while it waits: the process's own, or a test's.</summary>
-public sealed class InstanceWorld
+/// <summary>
+/// Where a verb looks for the running Daoris, and what it says while it waits: the process's own, or a test's. It is the terminal the
+/// settings' command is said on and pressed from (<see cref="IChoiceTerminal"/>, FOUNDATION1 mod-iii), pressing through the door.
+/// </summary>
+public sealed class InstanceWorld : IChoiceTerminal
 {
     /// <summary>The home the verb acts on, or null where it has none.</summary>
     public required string? Home { get; init; }
@@ -85,6 +88,10 @@ public sealed class InstanceWorld
     /// unless a test names its own. Such a verb sends no person's press and acts nothing alone (<see cref="RoleTerminal"/>).
     /// </summary>
     public Func<bool> RoleTerminal { get; init; } = () => HolderKey.RoleTerminal;
+
+    /// <summary>A person's press sent through <see cref="InstanceDoor.PressAsync"/> from this terminal.</summary>
+    public Task<int> PressAsync(InstanceRoute route, object? payload, Func<Task<int>> alone, Func<JsonElement, int> words, CancellationToken ct) =>
+        InstanceDoor.PressAsync(route, payload, alone, words, this, ct);
 }
 
 /// <summary>

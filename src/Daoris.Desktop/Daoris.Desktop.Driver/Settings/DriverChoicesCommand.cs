@@ -11,12 +11,12 @@ public sealed record ChoicesRegistry(IReadOnlyList<(string Repository, string? W
 /// <summary>
 /// Where <c>daoris-driver driver</c> acts (PUSH1f2a): the terminal it says its words on and finds the running Daoris from, the
 /// <c>driver.json</c> it reads and writes, and the facts a choice judges by when it acts alone: the registry's checkouts a review's
-/// procedure is looked for in, and the planner's verdicts *Try again* judges from. A test hands its own of each.
+/// procedure is looked for in. A test hands its own of each.
 /// </summary>
 public sealed record DriverChoicesWorld
 {
     /// <summary>The terminal: its home, its variables (read here, never the process's), its streams, and where it finds the instance.</summary>
-    public required InstanceWorld Instance { get; init; }
+    public required IChoiceTerminal Instance { get; init; }
 
     /// <summary>The <c>driver.json</c> the choices are read from and written to.</summary>
     public required string ConfigPath { get; init; }
@@ -73,7 +73,7 @@ public sealed class ChoiceWords(string message, int exit = 2) : Exception(messag
 /// </summary>
 public static class ChoiceRoutes
 {
-    private static InstanceRoute Person(string route) => new(TreesRoutes.DriverModule, route, RouteClass.Person);
+    private static InstanceRoute Person(string route) => new(InstanceRoute.DriverModule, route, RouteClass.Person);
 
     public static InstanceRoute Drivable { get; } = Person("SET_DRIVABLE");
     public static InstanceRoute Hold { get; } = Person("SET_HOLD");
@@ -321,7 +321,7 @@ public static class DriverChoicesCommand
 
         // A file DAORIS_DRIVER_CONFIG names is no instance's (D194 point 2): written alone, and nothing sent.
         if (press.Route is null || DriverConfig.Overridden(world.Instance.Environment)) return await Alone().ConfigureAwait(false);
-        return await InstanceDoor.PressAsync(press.Route, press.Payload, Alone, answer => press.Words(press.Fields(answer)), world.Instance, ct)
+        return await world.Instance.PressAsync(press.Route, press.Payload, Alone, answer => press.Words(press.Fields(answer)), ct)
             .ConfigureAwait(false);
     }
 
