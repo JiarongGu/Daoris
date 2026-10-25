@@ -235,7 +235,7 @@ public sealed class HomeWatch : IAsyncDisposable
         string home, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
     {
         var watch = new HomeWatch(wake, every, source) { Log = log };
-        watch.Topic(ChangeTopics.Help, "proposals", HomePart.Named(HelpProposals.FolderOf(home)));
+        watch.Topic(ChangeTopics.Help, "proposals", HomeTopics.Of(ChangeTopics.Help, home));
         return watch;
     }
 

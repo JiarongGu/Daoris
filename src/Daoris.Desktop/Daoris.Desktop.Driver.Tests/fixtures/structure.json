@@ -212,6 +212,7 @@
     "Events/FolderWatcherSource.cs": "Events",
     "Events/HeardReader.cs": "Events",
     "Events/HeldPermissions.cs": "Events",
+    "Events/HomeTopics.cs": "Events",
     "Events/HomeWatch.cs": "Events",
     "Events/LookSaid.cs": "Events",
     "Events/MachineFacts.cs": "Events",
@@ -229,6 +230,7 @@
     "Help/HelpCommand.cs": "Help",
     "Help/HelpConversations.cs": "Help",
     "Help/HelpFacts.cs": "Knowledge",
+    "Help/HelpHomeTopic.cs": "Help",
     "Help/HelpHousekeeping.cs": "Help",
     "Help/HelpMode.cs": "Help",
     "Help/HelpProposalKinds.cs": "Help",
@@ -924,13 +926,6 @@
         "Events/RunningCalls.cs": ["SessionEvents"],
         "Events/SessionLog.cs": ["SessionEvents"],
         "Events/SessionWatch.cs": ["SessionEvents"]
-      }
-    },
-    {
-      "family": "Events names Help",
-      "after": "Events",
-      "files": {
-        "Events/HomeWatch.cs": ["HelpProposals"]
       }
     },
     {
@@ -1714,6 +1709,7 @@
     "NoticesReadTests.cs": "Events",
     "NoticesTests.cs": "Events",
     "LookSaidTests.cs": "Events",
+    "HomeTopicsTests.cs": "Events",
     "SessionWatchProcessTests.cs": "Events",
     "ObservationTests.cs": "Events",
     "SessionEventsTests.cs": "Events",
