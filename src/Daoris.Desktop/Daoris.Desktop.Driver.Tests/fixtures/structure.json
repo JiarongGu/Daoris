@@ -596,6 +596,7 @@
     "Settings/BrainstormKey.cs": "Settings",
     "Settings/BranchName.cs": "Settings",
     "Settings/ChoiceArgs.cs": "Settings",
+    "Settings/ChoiceGrammar.cs": "Settings",
     "Settings/ChoiceVerb.cs": "Settings",
     "Settings/CommitKey.cs": "Settings",
     "Settings/CoolOffDefault.cs": "Settings",
@@ -834,6 +835,8 @@
     "Workflows/Domain/WorkflowWords.cs": "Workflows",
     "Workflows/DriverWorkflowsCommand.cs": "Workflows",
     "Workflows/LandedGates.cs": "Workflows",
+    "Workflows/LandingVerb.cs": "Workflows",
+    "Workflows/WorkCycleVerb.cs": "Workflows",
     "Workflows/WorkflowFiles.cs": "Workflows",
     "Workflows/WorkflowKeepCommand.cs": "Workflows",
     "Workflows/WorkflowNodeCommand.cs": "Workflows",
@@ -845,7 +848,8 @@
     "Workflows/WorkflowRunFiles.cs": "Workflows",
     "Workflows/WorkflowRunRecords.cs": "Workflows",
     "Workflows/WorkflowRunStart.cs": "Workflows",
-    "Workflows/WorkflowStore.cs": "Workflows"
+    "Workflows/WorkflowStore.cs": "Workflows",
+    "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
     {
@@ -856,38 +860,17 @@
       }
     },
     {
-      "family": "Settings names Agents",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["AdapterSet"]
-      }
-    },
-    {
       "family": "Settings names Workplace",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["CommitRules","KeepRules","KeepSet","LandingRules","LandingSource","SpaceVolumes"]
+        "Settings/DriverChoicesCommand.cs": ["CommitRules","KeepRules","KeepSet","SpaceVolumes"]
       }
     },
     {
       "family": "Settings names Work orders",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["BrainstormEdit","BrainstormRules","BrainstormSet","Consideration","IntakeRoom","QuestRetry","WorkUnitKind"]
-      }
-    },
-    {
-      "family": "Settings names Plugins",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["PluginCatalog"]
-      }
-    },
-    {
-      "family": "Settings names Workflows",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["DriverWorkflowsCommand","NodeGraphHomes","NodeGraphs","NodeKinds"]
+        "Settings/DriverChoicesCommand.cs": ["BrainstormEdit","BrainstormRules","BrainstormSet","Consideration","IntakeRoom","QuestRetry"]
       }
     },
     {

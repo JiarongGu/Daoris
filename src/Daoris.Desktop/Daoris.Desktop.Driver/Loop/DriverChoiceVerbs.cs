@@ -17,6 +17,9 @@ public static class DriverChoiceVerbs
         new HelperVerb(),
         new IntakeVerb(),
         new ActorVerb(),
+        new LandingVerb(),
+        new WorkCycleVerb(),
+        new WorkflowVerb(),
         new ReviewVerb(),
         new OpinionVerb(home => AdapterSet.Built().WithPlugins(PluginCatalog.Load(home, AdapterSet.Built().Names))),
     ];

@@ -23,6 +23,12 @@ public abstract class ChoiceVerb
     /// </summary>
     public virtual int? Said(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world) => null;
 
+    /// <summary>
+    /// Where the words run whole, never planned (a workflow's writes act on the terminal's word, since no route takes one): the run and
+    /// its exit code; null where <see cref="Plan"/> is the verb's.
+    /// </summary>
+    public virtual Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) => null;
+
     /// <summary>The lines this verb's keys add to <c>list</c>, said where its section stands in it.</summary>
     public virtual void Listed(DriverConfig choices, DriverChoicesWorld world)
     {
