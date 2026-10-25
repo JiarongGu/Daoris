@@ -1,7 +1,7 @@
 {
   "subdomains": [
     { "name": "Platform", "folder": "Platform", "domain": false, "moved": true },
-    { "name": "Store", "folder": "Store", "domain": false },
+    { "name": "Store", "folder": "Store", "domain": false, "moved": true },
     { "name": "Settings", "folder": "Settings", "domain": true },
     { "name": "Service", "folder": "Service", "domain": true },
     { "name": "Install", "folder": "Install", "domain": true },
@@ -282,7 +282,7 @@
     "Platform/ActorChoices.cs": "Roles",
     "Platform/AgentJobs.cs": "Platform",
     "Platform/AgentStarts.cs": "Platform",
-    "Platform/AtomicFile.cs": "Store",
+    "Platform/BesideReads.cs": "Platform",
     "Platform/BrowserCaches.cs": "Workplace",
     "Platform/BuildWalk.cs": "Roles",
     "Platform/CanonicalLine.cs": "Workplace",
@@ -328,12 +328,9 @@
     "Platform/InstanceClient.cs": "Instance",
     "Platform/InstanceDoor.cs": "Instance",
     "Platform/InstanceRoutes.cs": "Instance",
-    "Platform/Json.cs": "Store",
-    "Platform/JsonFile.cs": "Store",
-    "Platform/JsonKeeping.cs": "Store",
+    "Platform/JsonText.cs": "Platform",
     "Platform/KeepChoices.cs": "Workplace",
     "Platform/KeepKinds.cs": "Workplace",
-    "Platform/KeepLock.cs": "Store",
     "Platform/KeepingRecord.cs": "Workplace",
     "Platform/KeepingRun.cs": "Workplace",
     "Platform/LineGuesses.cs": "Workplace",
@@ -352,8 +349,6 @@
     "Platform/ProcessJob.cs": "Platform",
     "Platform/ProcessStarts.cs": "Platform",
     "Platform/PseudoConsole.cs": "Platform",
-    "Platform/RecordList.cs": "Store",
-    "Platform/RecordLock.cs": "Store",
     "Platform/RunningAddress.cs": "Service",
     "Platform/SafeNames.cs": "Platform",
     "Platform/SentPresses.cs": "Instance",
@@ -622,6 +617,13 @@
     "Setup/WorkspaceSetupCommand.cs": "Setup",
     "Setup/WorkspaceSetupFile.cs": "Setup",
     "Setup/WorkspaceSetupWorld.cs": "Setup",
+    "Store/AtomicFile.cs": "Store",
+    "Store/Json.cs": "Store",
+    "Store/JsonFile.cs": "Store",
+    "Store/JsonKeeping.cs": "Store",
+    "Store/KeepLock.cs": "Store",
+    "Store/RecordList.cs": "Store",
+    "Store/RecordLock.cs": "Store",
     "Trees/Branches/BranchTidying.cs": "Workplace",
     "Trees/Branches/GitBranches.Refs.cs": "Workplace",
     "Trees/Branches/GitBranches.cs": "Workplace",
@@ -814,16 +816,6 @@
     "Workflows/WorkflowStore.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Platform names Store",
-      "after": "Store",
-      "files": {
-        "Platform/DaorisHome.cs": ["AtomicFile"],
-        "Platform/HomeIdentity.cs": ["AtomicFile"],
-        "Platform/HomeLease.cs": ["AtomicFile"],
-        "Platform/Moments.cs": ["Json"]
-      }
-    },
     {
       "family": "the settings' parser's and verbs' names of other subdomains' rule types (§14.3)",
       "after": "Settings",
@@ -1884,12 +1876,21 @@
   "tests": {
     "AgentStartsProcessTests.cs": "Platform",
     "AgentStartsTests.cs": "Platform",
+    "BesideReadsTests.cs": "Platform",
+    "JsonTextTests.cs": "Platform",
     "NoConsoleWindowTests.cs": "Platform",
     "PieceJobsTests.cs": "Platform",
     "PieceLauncherProcessTests.cs": "Platform",
     "PieceLauncherTests.cs": "Platform",
     "ProcessJobTests.cs": "Platform",
     "ProcessStartsCensusTests.cs": "Platform",
-    "PseudoConsoleTests.cs": "Platform"
+    "PseudoConsoleTests.cs": "Platform",
+    "AtomicFileTests.cs": "Store",
+    "JsonFileTests.cs": "Store",
+    "JsonTests.cs": "Store",
+    "KeepLockProcessTests.cs": "Store",
+    "KeepLockTests.cs": "Store",
+    "RecordListTests.cs": "Store",
+    "RecordLockProcessTests.cs": "Store"
   }
 }

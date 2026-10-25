@@ -41,6 +41,20 @@ or the Ask Daoris repository, each file listed with the Part B row that moves it
 and driver), `SessionStoreTests`, `ParticipantWorkHostTests`, `SessionsStateSliceTests`, `ParticipantWorkReadersTests` (driver, modules, service),
 and the page's `identity.test.ts`, `acts.test.ts` and `WorkFrame.landed.test.tsx`, each case seen failing first where the row adds one. Detail:
 D212's note of this date.
+## FOUNDATION1mod-ii — Store moved (2026-10-25)
+
+> **FOUNDATION1mod-ii — Store moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
+> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The second of the driver's moves: every file the map
+> places in Store (today's file primitives; `DesktopStore` is row z-i's, Part B's) sits in `Store/`, its namespace unchanged, every linked consumer with it, the
+> map's paths updated; then the cuts the census lists after Store, one edge family per commit. It changes no behaviour and adopts nothing of Part B. It was a
+> row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. Seven files moved into `Store/` (`AtomicFile`, `Json`, `JsonFile`, `JsonKeeping`, `KeepLock`, `RecordList`,
+`RecordLock`), the GitDoor's two includes and the launcher's one with them; `structure.json` marks Store moved and lists its seven test classes, which moved
+into the tests' `Store/` folder. The one family after Store, `Platform names Store` (994 → 984 → 980 edges, 97 → 96 families), came off the census: the home's
+reads of a file beside its writer are `BesideReads` and the string a JSON field holds `JsonText`, both Platform's, which `AtomicFile` and `Json.Text` answer
+through. Detail and the readings taken: D212's note of this date.
+
 ## FOUNDATION1mod-i — Platform moved (2026-10-25)
 
 > **FOUNDATION1mod-i — Platform moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design

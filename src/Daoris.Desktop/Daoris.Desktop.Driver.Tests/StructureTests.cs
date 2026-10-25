@@ -440,9 +440,9 @@ public sealed class StructureTests
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // The moves that have landed, bottom up, one row each (FOUNDATION1 mod-i: Platform); no namespace row: every namespace stays
+        // The moves that have landed, bottom up, one row each (FOUNDATION1 mod-i: Platform; mod-ii: Store); no namespace row: every namespace stays
         // Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Equal(["Platform", "Store"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
@@ -502,8 +502,8 @@ public sealed class StructureTests
         // DaorisHome's HomeEntry members, named like higher subdomains' types, count none: a member's occurrence is told by its symbol, never by its spelling.
         string[] members = ["DriverConfig", "Notices", "HelpProposals", "OpinionGates", "AgentOffers", "GitIdentities", "ConfiguredAccess", "PluginState", "UsageHistory", "RuleProposals", "SessionBranches"];
         Assert.Empty(analysis.Edges.Where(edge => edge.File == "Platform/DaorisHome.cs" && members.Contains(edge.Type)));
-        // What the census does hold of it is the one type it names above Platform: Store's file primitive (§14.1 said it names none).
-        Assert.Equal(["AtomicFile"], map.Families.SelectMany(family => family.Edges).Where(entry => entry.Key == "Platform/DaorisHome.cs").SelectMany(entry => entry.Value));
+        // And no file the map places in Platform names a type of Store (§14.1), the home's reads of a file beside its writer being Platform's own (FOUNDATION1 mod-ii).
+        Assert.Empty(analysis.Edges.Where(edge => map.Files.GetValueOrDefault(edge.File) == "Platform" && map.Files.TryGetValue("Store/" + edge.Type + ".cs", out _)));
 
         // Each seam a Domain may not name is a type the driver declares, but `DesktopStore`, which row z-i adds and this assertion then drops.
         Assert.Equal(["DesktopStore"], map.Seams.Where(seam => !analysis.DeclaredTypes.Contains(seam)));
