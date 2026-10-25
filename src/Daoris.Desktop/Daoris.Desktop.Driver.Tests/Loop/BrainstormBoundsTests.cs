@@ -303,10 +303,15 @@ public sealed class BrainstormBoundsTests : IDisposable
     }
 
     /// <summary>🔴 A full cap waits: on a cap of one, the second generator starts when the first lets its slot go.</summary>
+    /// <remarks>
+    /// The generators' window is wide here (the request's 300 minutes less the synthesis's and the challenge's), since the claim is the
+    /// cap's, not the deadline's: with the default rule's 10 minutes, a second at this test's minute, a loaded run's first pass used it up
+    /// and the second read <c>cap-full</c> (FLAKE1, three times by 2026-10-25); the deadline's own case is the cap-full case below.
+    /// </remarks>
     [Fact]
     public async Task A_full_cap_waits_and_the_next_pass_runs_when_a_slot_is_free()
     {
-        var (driver, script) = Start(cap: 1);
+        var (driver, script) = Start(cap: 1, rule: Rule(request: 300));
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Behaviours["g1"] = async (turn, ct) =>
         {
