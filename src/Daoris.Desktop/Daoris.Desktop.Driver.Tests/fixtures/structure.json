@@ -203,9 +203,12 @@
     "Events/Domain/AttentionEvent.cs": "Events",
     "Events/Domain/HandOverAskWhy.cs": "Events",
     "Events/Domain/HandOverWhy.cs": "Events",
+    "Events/Domain/HelperWhy.cs": "Events",
     "Events/Domain/Observation.cs": "Events",
+    "Events/Domain/PartnerWhy.cs": "Events",
     "Events/Domain/SessionEnded.cs": "Events",
     "Events/Domain/SessionEvents.cs": "Events",
+    "Events/Domain/SetupSwap.cs": "Events",
     "Events/FolderWatcherSource.cs": "Events",
     "Events/HeardReader.cs": "Events",
     "Events/HeldPermissions.cs": "Events",
@@ -931,14 +934,6 @@
       }
     },
     {
-      "family": "Events names Participants",
-      "after": "Events",
-      "files": {
-        "Events/NoteCodes.cs": ["HelperWhy","PartnerWhy"],
-        "Events/Domain/Observation.cs": ["SetupSwap"]
-      }
-    },
-    {
       "family": "Events names Plugins",
       "after": "Events",
       "files": {
@@ -1120,9 +1115,7 @@
       "files": {
         "Agents/Adapters/Adapters.cs": ["DrivenAccess"],
         "Agents/Permissions/Permissions.cs": ["ChildLineage","LineageHook"],
-        "Agents/Streams/HarnessCapture.cs": ["ChildLineage"],
-        "Sessions/HarnessEnding.cs": ["SetupSwap"],
-        "Sessions/SessionProcesses.cs": ["SetupSwap"]
+        "Agents/Streams/HarnessCapture.cs": ["ChildLineage"]
       }
     },
     {
@@ -1230,7 +1223,7 @@
         "Trees/Branches/BranchTidying.cs": ["HelperWaits"],
         "Trees/Landing/AutoLanding.cs": ["AccessRules"],
         "Trees/Landing/Landing.cs": ["AccessRules"],
-        "Trees/Pieces/PieceKeeper.cs": ["PartnerAsk","PartnerReconcile","PartnerStates","PartnerWhy"],
+        "Trees/Pieces/PieceKeeper.cs": ["PartnerAsk","PartnerReconcile","PartnerStates"],
         "Trees/SessionTrees/SessionLocks.cs": ["HelperWaits"]
       }
     },
