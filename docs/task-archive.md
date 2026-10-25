@@ -41,6 +41,23 @@ or the Ask Daoris repository, each file listed with the Part B row that moves it
 and driver), `SessionStoreTests`, `ParticipantWorkHostTests`, `SessionsStateSliceTests`, `ParticipantWorkReadersTests` (driver, modules, service),
 and the page's `identity.test.ts`, `acts.test.ts` and `WorkFrame.landed.test.tsx`, each case seen failing first where the row adds one. Detail:
 D212's note of this date.
+## FOUNDATION1mod-iii — Settings moved (2026-10-26)
+
+> **FOUNDATION1mod-iii — Settings moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
+> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The third of the driver's moves: every file the map
+> places in Settings sits in `Settings/`, its namespace unchanged, every linked consumer with it, the map's paths updated; then the cuts the census lists
+> after Settings, one edge family per commit: the settings' parser's and verbs' names of other subdomains' rule types, `driver.json` read exactly as today,
+> never the import §13.5 proposes, and nothing of row w-s's store. It changes no behaviour and adopts nothing of Part B. It was a row of the FOUNDATION1
+> backlog entry, which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. Five files moved into `Settings/` (`DriverConfig`, `DriverConfigUnreadableException`, `StandingChoices`,
+`DriverChoicesCommand` from `Platform/`, `SessionLanguage` from `Sessions/Domain/`), none of them compiled by the GitDoor, the launcher or PieceStart;
+`structure.json` marks Settings moved and lists its test classes, which moved into the tests' `Settings/` folder. The one family listed after Settings
+(86 edges, regrouped into thirteen by the owner of the type named) came off the census whole, 980 → 881 edges and 96 → 94 families: the settings' parser
+reads each subdomain's key by a shape the settings own (`WorkflowKey`, `ReviewKey`, `LandingKey`, `KeepKey` and the like), the rules answering through it, and
+the terminal's verbs are a port the settings declare (`ChoiceVerb`, `IChoiceTerminal`) that each subdomain implements beside its rule and `Loop/DriverChoiceVerbs`
+wires. Detail, the cuts one by one and the readings taken: D212's note of this date.
+
 ## FOUNDATION1mod-ii — Store moved (2026-10-25)
 
 > **FOUNDATION1mod-ii — Store moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
