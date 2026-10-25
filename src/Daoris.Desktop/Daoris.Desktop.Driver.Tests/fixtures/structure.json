@@ -509,7 +509,7 @@
     "Service/Domain/LineRegistration.cs": "Service",
     "Service/Domain/LoopbackHosts.cs": "Service",
     "Service/Domain/MessageLevel.cs": "Service",
-    "Service/Domain/NoteParts.cs": "Service",
+    "Service/Domain/NoteShapes.cs": "Service",
     "Service/Domain/PressedWords.cs": "Service",
     "Service/Domain/QuestClosePort.cs": "Service",
     "Service/Domain/QuestViews.cs": "Service",

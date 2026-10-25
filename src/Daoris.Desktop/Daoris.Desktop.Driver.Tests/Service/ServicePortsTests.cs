@@ -15,7 +15,7 @@ public sealed class ServicePortsTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_scratch)) Directory.Delete(_scratch, recursive: true);
+        GitSeed.Discard(_scratch);
     }
 
     [Fact]
