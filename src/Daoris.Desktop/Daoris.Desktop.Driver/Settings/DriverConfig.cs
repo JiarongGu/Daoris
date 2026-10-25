@@ -443,10 +443,6 @@ public sealed record DriverConfig(
     /// <summary>This machine's access setup, for each pause neither a repository nor its workspace names; null sets none.</summary>
     public AccessSetting? MachineAccess { get; init; }
 
-    /// <summary>One change to an access setup, through <see cref="AccessRules.Apply"/>.</summary>
-    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
-    public DriverConfig WithAccess(AccessEdit edit) => AccessRules.Apply(this, edit);
-
     /// <summary>
     /// This machine's heavy gates for a repository whose own <c>daoris.gates.json</c> marks none (HEAVYRUN1b2a, D180's HEAVYRUN1b2a
     /// note), by repository, each list in the order its gates run; what <c>run-heavy</c> runs for it and its sessions are told of
@@ -1117,8 +1113,8 @@ public sealed record DriverConfig(
             OpinionRules.WriteMap(writer, "opinions", Opinions);
             OpinionRules.WriteMap(writer, "workspaceOpinions", WorkspaceOpinions);
             // Written only when set (MIXAGENT2a-i), as the CLI writes them: absent is the default, `ask`.
-            HelperRules.WriteMap(writer, "helpers", Helpers);
-            HelperRules.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
+            HelperKey.WriteMap(writer, "helpers", Helpers);
+            HelperKey.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
             // Written only when set (MIXAGENT1c), as the CLI writes them: absent is the default, `ask`.
             HandOverKey.WriteMap(writer, "handOver", HandOver);
             HandOverKey.WriteMap(writer, "workspaceHandOver", WorkspaceHandOver);
@@ -1131,9 +1127,9 @@ public sealed record DriverConfig(
             WorkflowSelection.WriteMap(writer, "workflows", Workflows, workspace: false);
             WorkflowSelection.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
             // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
-            AccessRules.WriteMap(writer, "access", Access);
-            AccessRules.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
-            AccessRules.WriteMachine(writer, MachineAccess);
+            AccessKey.WriteMap(writer, "access", Access);
+            AccessKey.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
+            AccessKey.WriteMachine(writer, MachineAccess);
             // Written only when set (HEAVYRUN1b2a), as the CLI writes it: absent is the repository's own heavy gates alone.
             HeavyMapping.WriteMap(writer, HeavyGates);
             // Written only when set (FABRIC-PIPELINE1b), as the CLI writes it: absent is today's, a session running as it did.
@@ -1650,8 +1646,8 @@ public sealed record DriverConfig(
             // A rule with a problem is not read, and `false` only for a repository (XAGENT1a).
             Opinions = OpinionRules.Map(root, "opinions", allowNone: true),
             WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
-            Helpers = HelperRules.Map(root, "helpers"),
-            WorkspaceHelpers = HelperRules.Map(root, "workspaceHelpers"),
+            Helpers = HelperKey.Map(root, "helpers"),
+            WorkspaceHelpers = HelperKey.Map(root, "workspaceHelpers"),
             HandOver = HandOverKey.Map(root, "handOver"),
             WorkspaceHandOver = HandOverKey.Map(root, "workspaceHandOver"),
             Brainstorms = BrainstormRules.Machine(root),
@@ -1662,9 +1658,9 @@ public sealed record DriverConfig(
             Workflows = WorkflowSelection.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowSelection.Map(root, "workspaceWorkflows", workspace: true),
             // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.
-            Access = AccessRules.Map(root, "access"),
-            WorkspaceAccess = AccessRules.Map(root, "workspaceAccess"),
-            MachineAccess = AccessRules.Machine(root),
+            Access = AccessKey.Map(root, "access"),
+            WorkspaceAccess = AccessKey.Map(root, "workspaceAccess"),
+            MachineAccess = AccessKey.Machine(root),
             // Read as a stored shape (HEAVYRUN1b2a): a list with a gate that does not read is not read, whole.
             HeavyGates = HeavyMapping.Map(root),
             // Read as a stored shape (FABRIC-PIPELINE1b): a value that is no choice is not read, and shadows none.
