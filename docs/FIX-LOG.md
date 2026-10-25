@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - The merge tool's census read the service tests' SourceFiles helper as a read of the desktop tree (FOUNDATION1 mod-0)
+
+- **Symptom:** FOUNDATION1 mod-ii's session found the merge tool's MOD9 census failing on main: `Daoris.Service.Tests/SourceFiles.cs
+  reads src/Daoris.Desktop/probe.txt, which no rule of the lane table places`. Row mod-0 had landed green, since its changed files
+  staged no node suite, so main had been red on this case since then.
+- **Root cause:** mod-0 made the tests read driver sources by name through a `SourceFiles` helper in each test project. The census
+  already counts each named read where it is called (`namedReads`), but it also scanned the service copy's own body, whose walk of a
+  project's folder names `src/Daoris.Desktop` and a variable project. The desktop copies passed only because their suites are reached
+  by every desktop change.
+- **Fix:** the census skips a suite's `SourceFiles.cs`, whose walk is the mechanism of the named reads it counts at their callers.
+- **Verification:** `merge-branch.test.ts`'s MOD9 case failed on the helper and passes; the whole file passes, 182 of 182.
+- **Note:** a landing whose staged files reach no node suite runs none, so a census the merge tool's own suite holds can go red unseen;
+  each FOUNDATION1 move's brief now runs `tool-test/merge-branch.test.ts`.
+
 ## 2026-10-25 - The account rule's census read the whole desktop tree, a read no lane places (FOUNDATION1a-i)
 
 - **Symptom:** landing FOUNDATION1 row 1c ran the merge tool's own suite, and its MOD9 census failed: `LineAccountTests.cs reads

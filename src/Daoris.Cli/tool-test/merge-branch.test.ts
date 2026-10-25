@@ -1902,6 +1902,9 @@ test("every repository file a .NET suite reads is one whose change reaches that 
   for (const file of files.filter((path) => path.endsWith('.cs'))) {
     const suite = suites.find(([folder]) => file.startsWith(folder));
     if (!suite) continue;
+    // A suite's `SourceFiles` is how its tests read a source by name (FOUNDATION1 mod-0): each read is counted where it is called
+    // (namedReads), so the helper's own walk of a project's folder is no read of its own.
+    if (posix.basename(file) === 'SourceFiles.cs') continue;
     const text = readFileSync(join(repoRoot, file), 'utf8');
     // A class's traits are its code's, not its strings': CategoryTests holds both traits in its fixtures' raw strings (PROCPAR1).
     const code = text.replace(/"""[\s\S]*?"""/g, '""').replace(/"(?:[^"\\\r\n]|\\.)*"/g, '""');
