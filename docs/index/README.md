@@ -376,7 +376,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-25-foundation-proposal-opus.md` | 63 | 654 |
 | `docs/2026-10-25-foundation-reads.md` | 278 | 2284 |
 | `docs/2026-10-25-foundation-survey.md` | 103 | 597 |
-| `docs/2026-10-26-agent-provider-design.md` | 173 | 1097 |
+| `docs/2026-10-26-agent-provider-design.md` | 231 | 1385 |
 | `docs/2026-10-26-agent-provider-proposal-codex.md` | 49 | 464 |
 | `docs/2026-10-26-agent-provider-proposal-opus.md` | 83 | 654 |
 | `docs/2026-10-26-agent-provider-reads.md` | 66 | 659 |
