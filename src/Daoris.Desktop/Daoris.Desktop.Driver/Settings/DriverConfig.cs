@@ -1131,8 +1131,8 @@ public sealed record DriverConfig(
             HelperRules.WriteMap(writer, "helpers", Helpers);
             HelperRules.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
             // Written only when set (MIXAGENT1c), as the CLI writes them: absent is the default, `ask`.
-            HandOverRules.WriteMap(writer, "handOver", HandOver);
-            HandOverRules.WriteMap(writer, "workspaceHandOver", WorkspaceHandOver);
+            HandOverKey.WriteMap(writer, "handOver", HandOver);
+            HandOverKey.WriteMap(writer, "workspaceHandOver", WorkspaceHandOver);
             // Written only when set (BRAINSTORM1b), as the CLI writes them: absent is D176 point 9's proposed defaults.
             BrainstormRules.WriteMachine(writer, Brainstorms);
             BrainstormRules.WriteMap(writer, "workspaceBrainstorms", WorkspaceBrainstorms);
@@ -1663,8 +1663,8 @@ public sealed record DriverConfig(
             WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
             Helpers = HelperRules.Map(root, "helpers"),
             WorkspaceHelpers = HelperRules.Map(root, "workspaceHelpers"),
-            HandOver = HandOverRules.Map(root, "handOver"),
-            WorkspaceHandOver = HandOverRules.Map(root, "workspaceHandOver"),
+            HandOver = HandOverKey.Map(root, "handOver"),
+            WorkspaceHandOver = HandOverKey.Map(root, "workspaceHandOver"),
             Brainstorms = BrainstormRules.Machine(root),
             WorkspaceBrainstorms = BrainstormRules.Map(root, "workspaceBrainstorms"),
             Commits =CommitRules.Map(root, "commits"),
