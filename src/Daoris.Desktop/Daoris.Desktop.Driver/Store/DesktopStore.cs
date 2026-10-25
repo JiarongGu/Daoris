@@ -115,6 +115,18 @@ public sealed class DesktopStore : IDisposable
               kept         TEXT NOT NULL
             );
             """)),
+
+        // Row a-ii: whether the person picked a session's account, kept with its binding (§13.3). A new table, every column required, so
+        // a build of z-iii, which reads `bindings` as a conversation to resume, never meets a row with no conversation in it, and the
+        // stamp stays where it is (`compatible-builds.md`): the pick is known when a start opens, the conversation's id only when the wire names it.
+        new(3, WriterStamp, write => write.Execute(
+            """
+            CREATE TABLE binding_picks (
+              session TEXT PRIMARY KEY,
+              account TEXT NOT NULL,
+              at      TEXT NOT NULL
+            );
+            """)),
     ];
 
     private readonly object _turn = new();

@@ -483,13 +483,15 @@ internal sealed class ChatGoOn
     /// The roster's reading of an ended conversation's own account (LIMITSWITCH2, D137's note of 2026-10-25): asked for by name as a chat's
     /// picker names one, and, where it cools while the person's words wait, the walk of its agent's accounts judged beside it, never counting
     /// a start: the ended limit move that goes on walks and counts once. A conversation the person picked an account for keeps waiting for
-    /// that account (D205 §3.5(d)); its record keeps no pick today, so every conversation walks its agent's accounts. Ask Daoris's room
-    /// never asks it (<see cref="HelpGoingOnAsync"/>).
+    /// that account (D205 §3.5(d)): its binding in the desktop store says so (FOUNDATION1a-ii), and the account rule holds it to that account as
+    /// a pick; every other conversation, an agent's pick and one from before the pick was kept among them, walks its agent's accounts. Ask
+    /// Daoris's room never asks it (<see cref="HelpGoingOnAsync"/>).
     /// </summary>
     private Task<ResumeChoice> SwitchableAsync(PriorSession record, string adapter, DriverConfig config, string? workspace, CancellationToken ct) =>
         _context.Harnesses.ResumeAsync(
             adapter, config, workspace, record.Profile, StartKind.Conversation, ct: ct,
-            line: LineKind.Conversation(carries: record.Waiting.Any(word => word.Persons)));
+            line: LineKind.Conversation(carries: record.Waiting.Any(word => word.Persons)),
+            picked: _context.Conversations.PickedOn(record.Session, record.Profile));
 
     /// <summary>
     /// What the limits stage's wake of an ended conversation whose words wait for a cooling account reads (LIMITSWITCH2): where another

@@ -23,9 +23,10 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
 
     /// <summary>
     /// Where no other account has room (LIMITRESUME1c, D206 §3.5): the conversation waits for its limit, its words with it, rather than
-    /// staying to be refused turn by turn (<see cref="LimitWaits.Wait"/>). Told the session, its turns and the adapter it runs on.
+    /// staying to be refused turn by turn (<see cref="LimitWaits.Wait"/>). Told the session, its turns, the adapter it runs on and, where the
+    /// person picked its account, that account, whose reset its wait is (FOUNDATION1a-ii).
     /// </summary>
-    internal Func<string, ChatRunner.ITurnedChat, string, bool>? Stays { get; set; }
+    internal Func<string, ChatRunner.ITurnedChat, string, string?, bool>? Stays { get; set; }
 
     /// <summary>A turn's end, told as the turns move: judged on a task of its own, as <see cref="CurveMove.Due"/> is.</summary>
     public void Due(string sessionId, DriverConfig config, Func<string, string, Task>? onEnded)
@@ -81,6 +82,14 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         }
 
         // The account the walk offers now, the cooling one passed (D197): where it is the same, or none, nothing has room, and it stays.
+        // FOUNDATION1a-ii (D205 §3.5(d)): an account the person picked is never moved off, at a limit as at a go-on: its conversation waits
+        // for it, its words with it, and the look's stage wakes it at that account's reset.
+        if (context.Conversations.PickedOn(sessionId, prior.Profile))
+        {
+            if (!chat.Turns.Limited) Stays?.Invoke(sessionId, chat, ranOn, prior.Profile);
+            return new StartedFrom(null, false, null, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
+        }
+
         var workspace = isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);
         var selection = await context.Harnesses
             .SelectAsync(agent.Name, config, workspace, null, StartKind.Conversation, ct).ConfigureAwait(false);
@@ -96,7 +105,7 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
                 if (!chat.Turns.Limited)
                 {
                     context.Note(sessionId, elsewhere.Stays!);
-                    Stays?.Invoke(sessionId, chat, ranOn);
+                    Stays?.Invoke(sessionId, chat, ranOn, null);
                 }
 
                 return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own: {elsewhere.Why}");
@@ -238,6 +247,13 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         catch (DriverException)
         {
             return null;
+        }
+
+        // FOUNDATION1a-ii (D205 §3.5(d)): an account the person picked is never moved off. Its words wait for it, as the rule says; a
+        // conversation proven lost (`lost`) has no resume to keep, so its new part walks as it did.
+        if (lost is null && context.Conversations.PickedOn(sessionId, prior.Profile))
+        {
+            return new StartedFrom(null, false, null, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
         }
 
         var workspace = isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);

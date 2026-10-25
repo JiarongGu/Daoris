@@ -389,7 +389,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         Task<StartedFrom> Run() => _context.Closing
             ? Task.FromResult(new StartedFrom(null, false, null, "the application is closing, so no conversation starts now."))
             : StartWith.RunAsync(
-                token => StartAsync(repository, adapter, config, onEnded, profile, ownTree, token, order: order),
+                token => StartAsync(
+                    repository, adapter, config, onEnded, profile, ownTree, token, order: order, picked: !string.IsNullOrWhiteSpace(profile)),
                 (id, words, attached, preface) => Say(id, words, attached, preface),
                 text, files, ct);
 
@@ -482,6 +483,11 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// The per-session picker (D49 §4): which credential profile this conversation runs as. Null takes
     /// the workspace's default, then the machine's, then the harness's own configuration home.
     /// </param>
+    /// <param name="picked">
+    /// The person named <paramref name="profile"/> for this start (FOUNDATION1a-ii): the page's picker, the terminal's account or their
+    /// hand-over press's. The conversation then keeps on its binding that they picked its account, and waits for it. Never an agent's
+    /// ask, the curve's account or a limit's move, whose named account keeps today's reading.
+    /// </param>
     /// <param name="ownTree">
     /// Open the conversation in a session tree of its own (D51) — the per-conversation choice, beside
     /// the repository's standing opt-in in the config. Either says yes; a chat is exactly the case the
@@ -513,8 +519,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null,
-        EarlierMaker? leftBy = null, HarnessSelection? settled = null) =>
-        StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending: null, settled);
+        EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false) =>
+        StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending: null, settled, picked);
 
     /// <param name="pending">
     /// The pending start a replacement opens for (MODELROLE1d2, D205 §3.5(b)): its order walked, the refused account passed, its passes
@@ -524,7 +530,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order,
-        EarlierMaker? leftBy, ChatPending? pending, HarnessSelection? settled = null)
+        EarlierMaker? leftBy, ChatPending? pending, HarnessSelection? settled = null, bool picked = false)
     {
         if (_context.Closing) return new(null, "Daoris is closing.");
         var key = Guid.NewGuid().ToString("N");
@@ -533,7 +539,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         try
         {
             if (_context.Closing) return new(null, "Daoris is closing.");
-            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending, settled).ConfigureAwait(false);
+            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending, settled, picked).ConfigureAwait(false);
         }
         finally
         {
@@ -546,7 +552,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order, EarlierMaker? leftBy,
-        ChatPending? pending, HarnessSelection? settled)
+        ChatPending? pending, HarnessSelection? settled, bool picked)
     {
         // MODELROLE1d (D205 §4.1): an order of one is today's start on its agent, asking its model; more are walked below, once the
         // workspace whose accounts each choice walks is known. MODELROLE1d2: a replacement always walks its pending start's order.
@@ -652,6 +658,10 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
             if (opened is not null) await new SessionTrees(_home).RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             return new(null, message);
         }
+
+        // FOUNDATION1a-ii: a start the person named an account for keeps, on its binding in the desktop store and nowhere else, that they
+        // picked the account it opened on, so the account rule holds the conversation to it (§3.2 step 4). Never the walk's own choice.
+        if (picked) _context.Conversations.Pick(sessionId, selection.Profile);
 
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();

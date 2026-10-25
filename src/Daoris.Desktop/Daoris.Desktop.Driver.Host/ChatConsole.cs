@@ -125,7 +125,9 @@ internal static class ChatConsole
                 // The per-session picker, on the surface a machine with no screen has (D49 §4, D50).
                 profile: Flag(args, "--profile"),
                 // The per-conversation tree choice (D51) — beside the repository's standing opt-in.
-                ownTree: args.Contains("--own-tree") ? true : null).ConfigureAwait(false);
+                ownTree: args.Contains("--own-tree") ? true : null,
+                // The account the person named is their pick, which the conversation then waits for (FOUNDATION1a-ii).
+                picked: !string.IsNullOrWhiteSpace(Flag(args, "--profile"))).ConfigureAwait(false);
 
             // A refusal is an answer the person acts on — the ledger's own sentence, verbatim.
             Console.Error.WriteLine($"chat: {start.Message}");

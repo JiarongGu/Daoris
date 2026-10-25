@@ -80,6 +80,46 @@ public sealed class HarnessConversations(string home, Func<StoreSettled>? settle
     }
 
     /// <summary>
+    /// Keep that the person picked <paramref name="account"/> for this session (FOUNDATION1a-ii): a start they named an account for, never an
+    /// agent's ask or the curve's account. Kept in the desktop store beside the binding, never on the service's record or any wire, so
+    /// the account rule reads it as its constraint. A write that fails is lost, which costs the wait and never the start: the conversation
+    /// then walks its agent's accounts as a record from before does, and the log says so.
+    /// </summary>
+    public void Pick(string session, string? account)
+    {
+        if (!SessionEventText.IsLocalId(session) || string.IsNullOrWhiteSpace(account)) return;
+
+        try
+        {
+            _bindings.Pick(session, account.Trim());
+        }
+        catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
+        {
+            using var log = new MachineLog(home, "driver");
+            log.Warn("account.unpicked", ("session", session), ("account", account.Trim()), ("error", error.GetType().Name));
+        }
+    }
+
+    /// <summary>
+    /// Whether the person picked the account a session's record runs on (<paramref name="account"/>): what the account rule reads as its
+    /// pick constraint. False for an agent's pick, the curve's account, a record from before and a teammate's mirror, none of which holds
+    /// one, and where the store cannot say, the conversation then walking as such a record does.
+    /// </summary>
+    public bool PickedOn(string session, string? account)
+    {
+        if (!SessionEventText.IsLocalId(session) || string.IsNullOrWhiteSpace(account)) return false;
+
+        try
+        {
+            return _bindings.Picked(session) is { } picked && string.Equals(picked, account.Trim(), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception error) when (error is SqliteException or IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Import every binding file the home holds, once the start's confirmation is settled (the loop calls it at each look until none is
     /// left): each conversation into the store, each file set aside.
     /// </summary>

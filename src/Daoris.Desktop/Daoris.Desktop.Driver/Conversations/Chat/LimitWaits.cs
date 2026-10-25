@@ -40,10 +40,14 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
     /// A live conversation whose move found no other account (LIMITGOON1's <i>stays</i>, written as a wait): its turns wait, its words
     /// with them, and its conversation says when the first account is ready again. False where its turns would not wait.
     /// </summary>
-    public bool Wait(string session, ChatRunner.ITurnedChat chat, string adapter)
+    /// <param name="picked">The account the person picked for it (FOUNDATION1a-ii): its own reset is what it waits for, not the agent's first.</param>
+    public bool Wait(string session, ChatRunner.ITurnedChat chat, string adapter, string? picked = null)
     {
         if (!chat.Turns.WaitForLimit()) return false;
-        if (LineAccount.Earliest(ResetSet.Wake, coolings: context.Harnesses.CoolingsOf(adapter)) is { } first)
+        var first = picked is null
+            ? LineAccount.Earliest(ResetSet.Wake, coolings: context.Harnesses.CoolingsOf(adapter))
+            : context.Harnesses.CoolingOf(adapter, picked);
+        if (first is not null)
         {
             context.Note(session, LimitNotes.Waits(first, context.Harnesses.Zone));
         }
@@ -168,8 +172,11 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
 
         // 🔴 Own first (§3.5): its own account ready, the same conversation goes on, whatever else is ready. The rule reads it with no walk: the
         // wake's move and its ended move walk for themselves, and the one walk this stage judges is the go-on's (FOUNDATION1a-i).
+        // An account the person picked is the rule's constraint (FOUNDATION1a-ii): it waits for that account alone (D205 §3.5(d)).
+        var picked = context.Conversations.PickedOn(session, record.Profile);
         var resumes = LineAccount.Decide(
-            LineOwn.Of(own), new LineTrigger(Limited: limited is not null), LineConstraint.None, LineKind.Conversation(carries: false),
+            LineOwn.Of(own), new LineTrigger(Limited: limited is not null), picked ? LineConstraint.Pick(record.Profile!) : LineConstraint.None,
+            LineKind.Conversation(carries: false),
             ask => throw new InvalidOperationException($"the wake asks no {ask.Place} walk of the account rule")) is LineAnswer.Resume;
         if (resumes)
         {
@@ -189,6 +196,9 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
             if (start.SessionId is null && WaitsAgain(session)) _held[session] = 0;
             return (start, null);
         }
+
+        // The account it was picked on cools: its wait is that account's reset, never another account's, and it moves nowhere.
+        if (picked) return (null, own!.Until);
 
         // An ended chat whose person's words wait for its own account never met a limit (§3.5, N5). LIMITSWITCH2 (D137's note of 2026-10-25): it
         // goes on now in a new part where another account of its agent is ready, and otherwise waits for the earliest reset of any of them
