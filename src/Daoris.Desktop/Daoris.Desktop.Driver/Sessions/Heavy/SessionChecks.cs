@@ -28,18 +28,22 @@ namespace Daoris.Driver;
 public static class SessionChecks
 {
     /// <summary>The file's key.</summary>
-    public const string Key = "sessionChecks";
+    public const string Key = SessionChecksKey.Key;
 
     /// <summary>The gates the repository does not mark heavy and the checks a change reaches; the heavy gates are the verification's.</summary>
-    public const string Light = "light";
+    public const string Light = SessionChecksKey.Light;
 
     /// <summary>The checks a change reaches while it works, then the heavy gates once, at the session's end.</summary>
-    public const string HeavyAtEnd = "heavy-at-end";
+    public const string HeavyAtEnd = SessionChecksKey.HeavyAtEnd;
 
     /// <summary>The choices, in the order a door offers them. The CLI's <c>SESSION_CHECKS</c> is a deliberate copy.</summary>
-    public static IReadOnlyList<string> Choices { get; } = [Light, HeavyAtEnd];
+    public static IReadOnlyList<string> Choices { get; } = SessionChecksKey.Choices;
 
     private const string Scope = "a session's checks are set for a repository: name one.";
+
+    /// <summary>A repository's sessions' checks set, or taken away with null, through <see cref="Apply"/>.</summary>
+    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
+    public static DriverConfig WithSessionChecks(this DriverConfig config, string? repository, string? checks) => Apply(config, repository, checks);
 
     /// <summary>A repository's rule, its name trimmed and matched in any case; null where it sets none, which is today's.</summary>
     public static string? For(DriverConfig config, string repository) =>
@@ -167,35 +171,12 @@ public static class SessionChecks
         }
     }
 
-    /// <summary>A choice as kept, trimmed and matched in any case, in its own spelling; null for anything else.</summary>
-    public static string? Choice(string? said) =>
-        said?.Trim() is { } trimmed ? Choices.FirstOrDefault(choice => string.Equals(choice, trimmed, StringComparison.OrdinalIgnoreCase)) : null;
+    /// <summary>A choice as kept, trimmed and matched in any case, in its own spelling; null for anything else (the settings' <see cref="SessionChecksKey.Choice"/>).</summary>
+    public static string? Choice(string? said) => SessionChecksKey.Choice(said);
 
-    /// <summary>
-    /// The map as <c>driver.json</c> holds it: each repository's name trimmed, a blank one and a value no choice passed over, a name written
-    /// twice in any case read where first readable; none where the key is absent or no object.
-    /// </summary>
-    internal static IReadOnlyDictionary<string, string> Map(JsonElement root)
-    {
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (!root.TryGetProperty(Key, out var element) || element.ValueKind != JsonValueKind.Object) return map;
+    /// <summary>The map as <c>driver.json</c> holds it (the settings' <see cref="SessionChecksKey.Map"/>).</summary>
+    internal static IReadOnlyDictionary<string, string> Map(JsonElement root) => SessionChecksKey.Map(root);
 
-        foreach (var property in element.EnumerateObject())
-        {
-            var named = property.Name.Trim();
-            if (named.Length == 0 || map.ContainsKey(named) || property.Value.ValueKind != JsonValueKind.String) continue;
-            if (Choice(property.Value.GetString()) is { } choice) map[named] = choice;
-        }
-
-        return map;
-    }
-
-    /// <summary>The map written as <c>driver.json</c> keeps it, only when set, repositories in ordinal order.</summary>
-    internal static void WriteMap(Utf8JsonWriter writer, IReadOnlyDictionary<string, string> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject(Key);
-        foreach (var (repository, checks) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteString(repository, checks);
-        writer.WriteEndObject();
-    }
+    /// <summary>The map written as <c>driver.json</c> keeps it (the settings' <see cref="SessionChecksKey.WriteMap"/>).</summary>
+    internal static void WriteMap(Utf8JsonWriter writer, IReadOnlyDictionary<string, string> map) => SessionChecksKey.WriteMap(writer, map);
 }

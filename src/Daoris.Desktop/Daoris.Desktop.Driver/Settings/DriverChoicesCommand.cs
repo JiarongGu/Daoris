@@ -1480,7 +1480,7 @@ public static class DriverChoicesCommand
 
     /// <summary>
     /// <c>review</c> (REVIEWENV1a, D154 point 2): the person's words made one edit, judged by the rules' table, then, for an environment
-    /// put, its procedure looked for in the checkouts the registry names (<see cref="StandingChoices.Review"/>) before anything is written.
+    /// put, its procedure looked for in the checkouts the registry names (<see cref="ReviewLooks.Of"/>) before anything is written.
     /// </summary>
     private static ChoicePress Review(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
@@ -1641,7 +1641,7 @@ public static class DriverChoicesCommand
             }
             else
             {
-                var look = StandingChoices.Review(checkouts, edit, looked);
+                var look = ReviewLooks.Of(checkouts, edit, looked);
                 reviewed = new(look.Lacking, look.Unchecked, null);
             }
 

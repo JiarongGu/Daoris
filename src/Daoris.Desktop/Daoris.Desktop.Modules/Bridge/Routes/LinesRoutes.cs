@@ -847,7 +847,7 @@ public sealed class LinesRoutes(DriverContext context)
             var service = _loop.Service ?? throw NotReady();
             var registry = (await service.RegistryAsync(cancellationToken).ConfigureAwait(false))
                 .Select(row => (Repository: row.Repository, Workspace: (string?)row.Workspace, Root: row.Root)).ToList();
-            looked = StandingChoices.Review(registry, edit, procedure);
+            looked = ReviewLooks.Of(registry, edit, procedure);
         }
 
         _context.Change(config => ReviewRules.Apply(config, edit));

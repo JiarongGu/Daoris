@@ -458,6 +458,7 @@
     "Review/Domain/OpinionView.cs": "Review",
     "Review/Domain/OpinionWriters.cs": "Review",
     "Review/Domain/ReviewGate.cs": "Review",
+    "Review/Domain/ReviewLooks.cs": "Review",
     "Review/Domain/ReviewRules.cs": "Review",
     "Review/Domain/ReviewSetUps.cs": "Review",
     "Review/Domain/ReviewShowing.cs": "Review",
@@ -593,8 +594,12 @@
     "Settings/DriverConfig.cs": "Settings",
     "Settings/DriverConfigUnreadableException.cs": "Settings",
     "Settings/HandOverKey.cs": "Settings",
+    "Settings/HeavyKey.cs": "Settings",
     "Settings/HelpModeNames.cs": "Settings",
     "Settings/HelperKey.cs": "Settings",
+    "Settings/OpinionKey.cs": "Settings",
+    "Settings/ReviewKey.cs": "Settings",
+    "Settings/SessionChecksKey.cs": "Settings",
     "Settings/SessionLanguage.cs": "Settings",
     "Settings/StandingAnswer.cs": "Settings",
     "Settings/StandingChoices.cs": "Settings",
@@ -885,9 +890,7 @@
       "family": "Settings names Review",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["OpinionRule","OpinionRules","ReviewRule","ReviewRules"],
-        "Settings/DriverConfig.cs": ["HeavyGate","HeavyMapping","OpinionRule","OpinionRules","ReviewRule","ReviewRules","SessionChecks"],
-        "Settings/StandingChoices.cs": ["ReviewEdit","ReviewRules"]
+        "Settings/DriverChoicesCommand.cs": ["OpinionRules","ReviewLooks","ReviewRules"]
       }
     },
     {
@@ -1438,7 +1441,7 @@
       "files": {
         "Agents/Acp/Acp.cs": ["RunningTask"],
         "Agents/Acp/AcpBackground.cs": ["RunningTask"],
-        "Agents/Adapters/Adapters.cs": ["ReviewDesk","ReviewEnvironment"]
+        "Agents/Adapters/Adapters.cs": ["ReviewDesk"]
       }
     },
     {
@@ -1697,8 +1700,8 @@
       "files": {
         "Conversations/Domain/HelperPass.cs": ["OpinionPosture","ReviewerChoice","ReviewerPassed"],
         "Conversations/Domain/HelperRules.cs": ["OpinionSource"],
-        "Conversations/Helpers/HelperChoice.cs": ["AgentFamily","OpinionRule","ReviewerChoice","ReviewerPassed","ReviewerUnavailable"],
-        "Conversations/Partners/PartnerChoice.cs": ["OpinionRule","ReviewerChoice","ReviewerPassed"],
+        "Conversations/Helpers/HelperChoice.cs": ["AgentFamily","ReviewerChoice","ReviewerPassed","ReviewerUnavailable"],
+        "Conversations/Partners/PartnerChoice.cs": ["ReviewerChoice","ReviewerPassed"],
         "Sessions/LookFacts.cs": ["OpinionDue","OpinionJudged"]
       }
     },
@@ -1737,8 +1740,7 @@
       "after": "Context",
       "files": {
         "Accounts/InstructionAccounting.cs": ["ReviewSource"],
-        "Conversations/Domain/ContextBrief.cs": ["HeavyGate"],
-        "Sessions/Events/ContextBriefs.cs": ["HeavyGate","HeavyGates","HeavyMapping"]
+        "Sessions/Events/ContextBriefs.cs": ["HeavyGates","HeavyMapping"]
       }
     },
     {
@@ -1978,6 +1980,10 @@
     "AcrossDeclarationsTests.cs": "Settings",
     "WorkflowKeyTests.cs": "Settings",
     "BrainstormKeyTests.cs": "Settings",
-    "CycleTextTests.cs": "Settings"
+    "CycleTextTests.cs": "Settings",
+    "ReviewKeyTests.cs": "Settings",
+    "OpinionKeyTests.cs": "Settings",
+    "HeavyKeyTests.cs": "Settings",
+    "SessionChecksKeyTests.cs": "Settings"
   }
 }
