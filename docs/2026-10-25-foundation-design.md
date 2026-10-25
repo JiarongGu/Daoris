@@ -1,16 +1,24 @@
-# The foundation: the participant, the course and the move, the event, and where state is kept (FOUNDATION1, 2026-10-25: Part A accepted and building; Part B in round 5, proposed)
+# The foundation: the participant, the course and the move, the event, and where state is kept (FOUNDATION1, 2026-10-25: Part A accepted and building; Part B in round 6, proposed)
 
-**Accepted in part, 2026-10-25:** Part A (rows 1a-i, 1b, 1c, mod-0, mod-i to mod-xxi and u) is accepted by the steward under D191 after both makers' reads of round 4 and their named changes (§17, §18), D212's note of that date; Part B stays proposed for round 5.
+**Accepted in part, 2026-10-25:** Part A (rows 1a-i, 1b, 1c, mod-0, mod-i to mod-xxi and u) is accepted by the steward under D191 after both makers' reads of round 4 and their named changes (§17, §18), D212's note of that date; Part B stays proposed, in round 6.
 
-**Standing (round 5):** Part A is accepted and building, its text as main has it. **Part B is in round 5** under D191, written from main at
-`eced2688e`, whose `src/` is round 4's `86f32f40c` unchanged: §19 settles §16.3's agenda item by item against that code, and Part B's body (§3, §4,
-§5.2, §11, §13 and the Part B rows of §10) carries what it settles. It withdraws four of round 4's additions for smaller protocols (`Lines.Forward`,
-the transition number, the settlement's disposition, row o's shape of its own) and proposes two cuts to later designs (the appointed half of the role
-catalogue; the store's families no Part B protocol reads, `driver.json`'s general settings among them), §19.15, while the actors' staffing stays in
-Part B as row w-s, the steward's change, so every role's staffing has one home in the store. Part B's rows: z-i, z-iii, a-ii, a-iii, p, d-i, d-ii,
-e, f-i to f-vi, g, h, i, o, j, w-s ⚖, w, x, y-i ⚖, k, z-v, l-i to l-v, m-i to m-v, n, q ⚖, r ⚖, s and v ⚖; proposed for later designs, w-0, t,
-y-ii, z-ii's general settings, z-iv and z-vi to z-xiv. **Both makers read round 5 before any of Part B is accepted**, and the ⚖ rows wait for both
-reads. Nothing of Part B is built.
+**Standing (round 6):** Part A is accepted and building, its text as main has it. **Part B is in round 6** under D191, written by Claude Opus 5.5
+from main at `6736d2db9`, whose `src/` is round 4's `86f32f40c` unchanged, so every line round 5 cites holds and every line this round adds is
+that commit's. It answers **both makers' reads of round 5** (`docs/2026-10-25-foundation-reads.md`, both at `9f48860ba`): Codex's, another
+round, its §1 to §4 making 35 findings, 16 blocking for Part B; the independent Opus reader's, accept after named changes, 15 findings, 4
+blocking; both yes to round 5's two cuts. **§20 answers every finding of each**, one row a finding, the stricter taken where the two overlap and
+the Opus reader's smallest change taken where it meets Codex's counterexample; §19 and Part B's body (§2.4, §2.7, §3, §4, §5, §7, §8, §9, §11,
+§13 and §10's Part B rows) carry the contracts, each changed passage marked *(C5-n.m)* for Codex's §n finding m or *(O5-Fn)* for the Opus
+reader's finding n. The cuts stand as both readers accepted them, the appointed half of the catalogue (w-0, t, y-ii, z-iv) and the store's
+families no Part B protocol reads (z-ii's general settings, z-vi to z-xiv) proposed for later designs, their deferrals of the brief's §8 and §9
+recorded in §8 as the steward's, for the owner to overrule. Part B's rows: z-i, z-iii, a-ii, a-iii, p, d-i, d-ii, e, f-i to f-vi, g, h, i, o, j,
+w-s ⚖, w, x, y-i ⚖, k, z-v, l-i to l-v, m-i to m-v, n, q ⚖, r ⚖, s and v ⚖. **Both makers read round 6 before any of Part B is accepted**, and
+the ⚖ rows wait for both reads. Nothing of Part B is built.
+
+**Round 5's standing:** round 5 under D191, Part B's alone, written from main at `eced2688e`, whose `src/` is round 4's `86f32f40c` unchanged:
+§19 settled §16.3's agenda item by item against that code, withdrew four of round 4's additions for smaller protocols (`Lines.Forward`, the
+transition number, the settlement's disposition, row o's shape of its own) and proposed the two cuts (§19.15), the actors' staffing kept in Part B
+as row w-s, the steward's change, so every role's staffing has one home in the store.
 
 **Round 4's standing:** round 4 under D191, with D212, written from main at `e8f1aed4f`, whose `src/` is round 3's `68a396c65` but for one test
 (`BrainstormBoundsTests.cs`), and the named changes of both its reads taken (§17, §18). **Both makers read round 4**
@@ -95,7 +103,7 @@ only after both readers find nothing blocking in it in a later round. Part A gra
 first row be accepted on one maker's read, no build carrying it staged until the other's landed, and both makers' reads of round 4 now accept
 Part A after named changes, which are made (§17, §18; the Standing). Nothing here is built, spends an account, signs in, publishes or deletes.
 
-Read for it: the brief (its §8, §9 and §10 amendments included), the survey and the three proposals whole; the reads of rounds 1 to 4; D139 and its design (`docs/2026-10-03-update-when-idle-design.md`) for the update's rollback; D137, D155, D163,
+Read for it: the brief (its §8, §9 and §10 amendments included), the survey and the three proposals whole; the reads of rounds 1 to 5; D139 and its design (`docs/2026-10-03-update-when-idle-design.md`) for the update's rollback; D137, D155, D163,
 D167, D173, D182, D188, D191, D193, D197, D203, D205, D206, D208, D209 and D210 at the points this cites; D119 and D120 for the plugins,
 whose points' frames are D101's; the in-flight designs EVENTHOOK1 (`docs/2026-10-24-event-hook-design.md`), COWORKVIEW1
 (`docs/2026-10-24-cowork-view-design.md`), SWITCHCTX1 (`docs/2026-10-24-switch-context-design.md`) and AGENTERRORS1 (D210 and its
@@ -111,7 +119,9 @@ survey's aliases (`Driver/`, `Modules/`, `Host/`, `Core/`, `Mcp/`, `Http/`, `Web
 `Loop/` for `Driver/Loop/` and `App/` for the desktop's executable as the survey shortens them. *C* is Claude's proposal, *X* Codex's,
 *O* the Opus reader's; *O-n* and *X-n.m* are the findings of round 1's reads, *O2-n* and *X2-n.m* those of round 2's, *O3-n* and *X3-n.m*
 those of round 3's, *O4-n* those of the Opus reader's read of round 4, and *X4-s.n* those of Codex's read of round 4 by its section and
-item (its §1's twenty-six rows, a-i to mod-xxi, are X4-1.1 to X4-1.26). Round 3's checks were made at `2a08bde4a`, and its lines are that
+item (its §1's twenty-six rows, a-i to mod-xxi, are X4-1.1 to X4-1.26); *C5-n.m* is Codex's read of round 5 by its section and item (its §0's
+rows by the earlier finding each assesses) and *O5-Fn* the Opus reader's read of round 5 by its finding, each answered in §20 and checked at
+`6736d2db9`, whose `src/` is `86f32f40c`'s unchanged. Round 3's checks were made at `2a08bde4a`, and its lines are that
 commit's; LIMITSWITCH2's merge moves a few of them (eleven files under `src/`, `LimitMove.cs`, `ChatGoOn.cs`, `HarnessRoster.cs` and `Driver.cs`
 among them), and what it built is read from D137's LIMITSWITCH2 note. Round 4's checks of round 3's reads were made at `e8f1aed4f`, whose `src/` is
 `68a396c65`'s where both reads were made, and a line cited in a round-4 change is that commit's. Round 4's named changes (§17) cite the read's
@@ -381,7 +391,9 @@ rules allow are refused at the server on every door, as the handed rules refuse 
 Every start resolves its role, choice, agent and account through `StartPlan.Resolve(work, trigger, place, record?, pick?, fence?)`: the
 role catalogue finds the working role that takes the work in the place (§2.7); D205's `ActorChoices.Effective` gives that role's order; one walk choice
 by choice for the entry (today four, survey §1.3 row 3), D197's account walk inside each choice, one set of pass codes (today two), one
-re-ask of a refused model (today five). Its answer is a **settled selection**: role, choice, agent, asked model and effort, account,
+re-ask of a refused model (today five). **Until row x**, the plan's role is the seeded role of the work (Build's for `design`) and its order
+`ActorChoices.Effective` over today's actor choices, read through w-s's `role_staffing` once w-s lands and through the same call, so row j
+stands on no catalogue; row x adopts `RoleCatalog.RoleFor` (round 6, *C5-3.6*). Its answer is a **settled selection**: role, choice, agent, asked model and effort, account,
 harness identity, the passes made and its reservation. The reservation is taken at the selection under the roster's gate, as a chosen
 start is counted today so a look's starts spread across accounts (`HarnessRoster.cs:894-897`); a probe that judges without starting asks
 `counts: false` (`:911`); the launcher consumes the reservation once and a failure releases it once (X; O-18). No caller walks again after
@@ -461,7 +473,11 @@ the appointments' persistence; that is the cut §14.3 names, a type moved to its
 
 **A role** is a record of the catalogue, judged by one judge, `RoleCatalog.Judge`, for every door, as `ActorChoices.Judge` is. It has **two
 exclusive shapes**, and the judge refuses a record that mixes them (O2-2; X2-2.2): a **working role** takes work and holds no authority; an
-**appointed role** holds acts and takes no work, so D208 point 2's dedicated holder never takes work orders.
+**appointed role** holds acts and takes no work, so D208 point 2's dedicated holder never takes work orders. **In Part B the catalogue holds
+working roles alone** (round 6, *C5-2.5*, *O5-F5*): its capabilities are the work codes, row w builds no act vocabulary and no appointed seed, and
+the judge refuses any record whose `filled` is `appointed` (`appointed-not-configurable`) before it judges anything else of it; the supervisor
+and the steward stay the shell's, in code, as today (`Modules/Platform/StandingConfirmation.cs:121-133`; `Modules/Platform/RoleActs.cs:44-65`),
+until the later design of the appointed half (§19.9), for which the rest of this section on appointed roles is input.
 
 | Field | Shape | Says | Bound |
 |---|---|---|---|
@@ -538,7 +554,8 @@ D205 point 4's sentence, until the person gives it one, and a running session is
 is ⚖. Every writer of today's actors and the catalogue is in the judge's census: `SET_ACTOR` (`Modules/Bridge/Routes/DriverRoutes.cs:319`),
 `daoris driver actor` and `daoris driver role`, Ask Daoris's proposals (`Driver/Help/Proposals/HelpSettingProposals.cs:222`), the import
 (§13.5) and the new role doors, each answering the judge's closed refusal codes: `unknown-work`, `mixed-shape`, `owner-act`, `not-offered`,
-`scope-kind`, `may-not-be-off`, `two-roles-one-work`, `widening` (X2-2.4).
+`scope-kind`, `may-not-be-off`, `two-roles-one-work`, `widening` (X2-2.4), and in Part B `appointed-not-configurable`, which refuses the
+appointed shape before `owner-act`, `not-offered` and `scope-kind` could be reached (round 6, *O5-F5*).
 
 **What reads it.** The start plan finds a start's role by its work and place (§2.4); the admission tables read the work, never the role
 (§2.3), so a configured role is admitted exactly as the seeded role taking the same work; the act door reads the intersection above (row t);
@@ -546,8 +563,9 @@ the page's Settings read the catalogue, the AI screen's actor rows its working r
 for the seeded ones.
 
 **An older build** (§13.5) reads no catalogue: a build from before the store reads the backup `driver.json`, and a store-aware build from
-before the catalogue's table never opens it. Round 5: every role's staffing moves into `role_staffing` by row w-s, `actors` set aside, so an older
-build reads every seeded role *as before* from the first-agent keys the newer build keeps written through (§19.15). It starts design work on Build and never starts an added role, and its continuation of a record
+before the catalogue's table never opens it. Round 5: every role's staffing moves into `role_staffing` by row w-s, `actors` set aside but for
+an entry that does not read, so an older build reads every seeded role *as before* from the first-agent keys the newer build keeps written
+through, never wider in whether a work starts, the price for each of the eight said in §19.15 (round 6, *O5-F3*). It starts design work on Build and never starts an added role, and its continuation of a record
 started on an added role reads `actor`, the seeded id, and runs as that role's seeded work (row x's first case, now answered by
 construction).
 
@@ -592,12 +610,12 @@ session*; *Start a conversation with these words*; the come-up.
 | `Start` | a new line with no `from`, the person's words as its first, keyed by the press's own intent key, so a second press opens a second line and none supersedes the source (X-3.2) | `ChatRunner.StartAsync` without `from` (`ChatRunner.cs:339`), as today; no move record |
 | `Wait` | until a moment, its reason code and the accounts it waits on | the hold (`Driver.cs:2041-2050`; `LimitWaits`) |
 | `Hold` | for the person, its reason code and the doors out, a repair named where one is the way out (§3.2 step 4) | the hold's note |
-| `Never` | a teammate's record, an intake, a stand-down, a record a later part supersedes, and the old part of a move that stands before `delivered`, whose words are the move's (O-2) | the say door's refusal (`SessionSay.cs:40-46`); the come-up's sweep passing the record |
+| `Never` | a teammate's record, an intake, a stand-down, a record a later part supersedes, and the old part of a standing move, whose words are the move's (O-2): a move stands from `decided` until it ends `delivered`, `fell-back` or `closed`, a `held` move standing until the person's press closes it (round 6, *O5-F1*) | the say door's refusal (`SessionSay.cs:40-46`); the come-up's sweep passing the record |
 
 Every answer carries its **preconditions** (X): the record's revision, the words' state (the ids waiting on `said`, since a word kept with
 no note moves no revision, `Sessions.cs:1565-1574`; O-13), the quest's status, the account's cooling entry and the move record's phase it
-read; a part that is a standing move's destination takes no `Move` of its own until that move has ended, `delivered`, `held` or `fell-back`
-(round 5, §19.3). The executor checks them before it acts and asks again where one moved, as the driven go-on reads the words again after the ledger's
+read; a part that is a standing move's destination takes no `Move` of its own until that move has ended, `delivered`, `fell-back` or `closed`
+(round 5, §19.3; a held move ending only at the person's press, round 6, *O5-F1*). The executor checks them before it acts and asks again where one moved, as the driven go-on reads the words again after the ledger's
 move today (`DriverContinuations.cs:346-355`), so no decision runs on facts that changed under it. Each automatic hand-over reaches `Move`
 only through the gate its door has today, else `Hold` for the person, each door a census case in rows h and i (O-14): an agent's ask once the
 hand-over rule admits it (`DriverHandOvers.cs:208-214`); the curve's move once its scope's switch does (`CurveMove.cs:17-19`, `:131-133`), since
@@ -706,13 +724,19 @@ Every `Move` keeps one durable **move record**, written before the old part ends
 record, which has no part to end (`LimitMove.cs:191-196`; O-20), and the record owns the move's delivery and recovery until the new part's
 first turn answers. It is SWITCHCTX1's carry record (its §2.3) made the record of every move, and what LimitBox already is for one.
 
-- **Where** (round 3). A row of the desktop store's `moves` table, keyed by the record left, its words in transfer in `move_words` (§13.3), owned
-  by the Course subdomain (§14); deleted with the session's record by a delete or a clear, as the session's files are today
-  (`SessionHomeFiles`). If SWITCHCTX1a lands first, its `<s>.carry.json` is a family row f-i imports; there are never two records of one move.
+- **Where** (round 3). A row of the desktop store's `moves` table, its words in transfer in `move_words` (§13.3), owned
+  by the Course subdomain (§14); **one standing move per record left**, by a partial unique index, `moves_standing`, on the record left over
+  the rows whose phase is not `delivered`, `fell-back` or `closed`, so a line moves again once its move has ended, and an ended row stays as
+  the move's evidence (round 6, *O5-F1*: round 5 keyed the row by the record left for its whole life, so after a move closed superseded, or a
+  hold the person resolved, the next move of that record found the row and read `Never` for good); deleted with the session's record by a
+  delete or a clear, as the session's files are today (`SessionHomeFiles`), and a move whose record left the ledger no longer holds closed
+  `gone` at the take-up. If SWITCHCTX1a lands first, its `<s>.carry.json` is a family row f-i imports; there are never two records of one move.
 - **What.** Its executor (`conversation` or `driven`) and its **claim**: the process run that holds it and its generation (§13.3, §13.4); its phase, each with its
   moment: `decided` → `quiescing` (waiting for its natural boundary, the person's cut against an agent's ask kept apart) → `old-ended` →
   `opening` (its `opens` key written) → `opened` (the new record's id and the words its open moved) → [`copied` → `verified`, the carry's] →
-  `delivering` → `delivered`, or `fell-back` (its code), or `held` (its reason); its **effect mark**, the external effect begun (a spawn, a prompt,
+  `delivering` → `delivered`, or `fell-back` (its code), or `held` (its reason) → `closed`, or `closed` (its reason: `superseded`, the old part
+  having gone on before the open; `gone`, its record left or its destination deleted; `resolved`, a hold the person's press answered through one of
+  its doors, or one with nothing it held still waiting) (round 6, *O5-F1*, *C5-1.5*); its **effect mark**, the external effect begun (a spawn, a prompt,
   a copy), its moment and, once known, its outcome; `why`, `by`, `how`; the settled selection's account by profile name; the brief's recipe (the
   why and the event bound it is composed up to, `ContextBriefs.cs:59-95`); the delivery: each word's id, producer key, transfer id and
   disposition, a limit's refused turns' bound, the channel messages held. Never a word's text, a path or a key.
@@ -731,10 +755,18 @@ first turn answers. It is SWITCHCTX1's carry record (its §2.3) made the record 
   mark** written, under a claim check, before the effect: no longer what keeps a second executor out, which the liveness rule does, but the
   evidence a taker reads, an effect a dead run marked and never recorded being the taker's `held`, made at most once and never repeated by
   itself (§13.4). A hung executor keeps its moves until its process ends: a move past `old-ended` and quiet for ten minutes under a live run is
-  said once in the machine log as `move.quiet`, and the person's quit ends it (round 5, §19.1). The row is keyed by the record left, so of two
-  executors deciding a move of one line, two shells on one home among them, the second finds the row and reads the line as `Never`; a shell that
-  finds another live shell's run on its home says so once, refusing nothing; the home is one machine's, as the lease assumes (§19.1). A
-  process's in-memory exclusion (`GoingOn`, `Chat/ChatContext.cs:64`) is no claim.
+  said once on its line, a note with its code beside `part.quiet` worded in both catalogues, and in the machine log as `move.quiet`, and the
+  person's quit ends it (round 5, §19.1; round 6, *O5-F15*). Of two executors deciding a move of one line, two shells on one home among them,
+  the second finds the standing row and reads the line as `Never`; a shell that finds another live shell's run on its home says so once,
+  refusing nothing; the home is one machine's, as the lease assumes (§19.1). A process's in-memory exclusion (`GoingOn`, `Chat/ChatContext.cs:64`)
+  is no claim. **What is not a move is kept apart by the service's steps** (round 6, *O5-F2*, *C5-1.1*): the keyed open's step refuses unless the
+  record left stands, is its line's head (`Lines.HeadOf`, row d-i) and is not active, answering the head, or `gone` for a record that does not
+  stand; and the ledger's move of a record out of an ended or parked state, a go-on's first step, taken before anything is spawned
+  (`SessionLedger.AdvanceAsync`, `Core/Sessions/SessionLedger.cs:1660`; `Chat/ChatGoOn.cs:663-667`; `Loop/DriverContinuations.cs:273`), refuses a
+  record a keyed open has left while the record it opened stands, naming that record. So a resume and a keyed open of one record are one or the
+  other, whichever step commits first, whether the resumer is a newer shell or an older one talking to this host; a keyed open refused so closes
+  its move `superseded`, or `gone` where its record left does not stand, and a go-on refused so holds its words as today's refused go-on does
+  (`ChatGoOn.cs:668-671`).
   At its come-up, and at each look after, an executor takes up every move of its kind whose claim's run is dead, and those alone, before
   anything else that could act on the same records: a dead run's conversation moves by any shell of the home, the first to claim under the write
   lock; a dead run's driven moves by the lease holder's look, a `--share` loop taking up only its own. A conversation's take-up runs where
@@ -747,13 +779,17 @@ first turn answers. It is SWITCHCTX1's carry record (its §2.3) made the record 
   `held` and never repeated by itself (X).
 - **The destination, never opened twice.** The ledger's opens take an optional `opens` key (round 4, X3-3.3, O3-12, X3-6.1). The service keeps
   each keyed open in a table of its own, `session_opens`: the key, unique; the record left; the record opened; and every word the open moved,
-  with its producer key, its transfer id and its order; written in the open's own exclusive step and kept while the opened record stands. A
+  with its producer key, its transfer id and its order; written in the open's own exclusive step and kept while its record left stands (below). A
   repeat open with the key answers the record and the words from that table, in the open's own step, even after the words have left `said`
   (`Core/Sessions/Sessions.cs:1602-1607`), so a lost answer is answered whole and nothing opens or moves twice (X; §3.4 rule 3). The key travels
   in the open's request and the transfer in its answer; nothing is added to the record and nothing to the wire, so `session-record-fields.md`'s
-  chain is not walked. It is row d-i's, landing before any row that moves words. Its rows go with their opened record, by a trigger on the
-  record's delete, so an older build's delete takes them too and no time bounds them (round 5, §19.5). An older host skips an `opens` member it
-  does not know (`Http/ApiContracts.cs:607-613`), so the desktop reads the host's protocol marks before it opens (§19.12): against a host
+  chain is not walked. It is row d-i's, landing before any row that moves words. **A row goes with its record left**, by a trigger on the
+  record's delete; where its opened record is deleted first, the same trigger keeps the row, its words cleared and its opened record marked gone,
+  so a repeat open with its key is answered `gone`, a terminal answer on which the move closes, never another open; the table stays bounded by the
+  records the home keeps, and an older build's delete moves it the same way (round 5, §19.5; round 6, *C5-1.5*: round 5 let the rows go with the
+  opened record, so a desktop that lost the answer and came back after an older build had deleted the destination opened again). An older host skips an `opens` member it
+  does not know (`Http/ApiContracts.cs:607-613`), so the desktop reads the host's protocol marks, kept per host run, before it opens (§19.12;
+  *C5-1.12*), and reads an answer with no echo of its key as an older host's: against a host
   without `opens`, which answers a new record each time and moves no words, the move is made as today's are, and an open whose answer was lost is
   `held` for the person with the candidates named, never searched for by `from` and moment, since successors are not unique by `from`
   (`Sessions.cs:998`; X-3.5), so the guarantee *never twice* is a newer host's alone.
@@ -767,7 +803,8 @@ first turn answers. It is SWITCHCTX1's carry record (its §2.3) made the record 
   before it acts, the line's head reconciled in every phase before anything is delivered (X3-3.4). A box an older build writes while it runs is
 imported once at the newer build's come-up, once that start's confirmation is settled, and set aside. Three records are not moves and stay what they are (O): the hand-over's **ask** (`HandOverAskBox.cs:28`), the agent's request
   through the connector, the service's, the move beginning at its approval; `data/handed/<quest>.json`, the agent a quest is handed to until it
-  leaves the machine (`Driver.cs:1914-1917`), a constraint the course reads; and `<s>.new-session.json`, the person's press. A same-conversation
+  leaves the machine (`Driver.cs:1914-1917`), a constraint the course reads; and `<s>.new-session.json`, the person's press. The last two stay
+  files in Part B, as today: z-viii, which would move them into the store, is proposed for a later design (§19.15; round 6, *O5-F12*). A same-conversation
   resume writes none: no word changes record.
 
 Today one path of five keeps a move durable, the ended limit move's box (survey §2.5); the record lands first on the live limit move, the
@@ -788,8 +825,10 @@ The dispatcher's guarantee (`.claude/knowledge/session-words.md`) holds by const
    `ServiceClient` and the headless door (`SessionSay.cs:207-209`), each say caller's handling named in row d's census from the survey §2.5's
    list, an older driver reading it as the refusal it already reads for an unknown value. No part can open between the judgement and the keep.
    The driver's `WordsNever.ContinuedIn`, which follows chats alone (`SessionSay.cs:54-58`), stays the older host's fallback (row d). The walk
-   is indexed, since the sessions table has none on `from_session` or `quest` and the step holds the write lock: row d-ii adds `sessions_from`
-   and `sessions_quest`, one probe per word on the common path, and lands only with the say door's p95 on the install within a tenth of before
+   is indexed, since the sessions table has none on `from_session` or `quest` and the step holds the write lock: row d-i adds `sessions_from`
+   and `sessions_quest` with `Lines.HeadOf`, which its keyed open's check reads (round 6, *O5-F2*); a word whose record has no successor costs one
+   probe on `sessions_from`, and a driven part with none a second on `sessions_quest`, its quest's last run here (`Sessions.cs:1041-1051`), each
+   branch measured (*C5-1.13*); row d-ii reads the walk in the say door and lands only with the say door's p95 on the install within a tenth of before
    (round 5, §19.13).
 3. **The open moves the words** (round 3). The new record opens in one service step that also moves the old part's waiting words: inside
    the say door's exclusive step (`SessionLedger.cs:933`), the ledger opens the new record under the move's `opens` key (§3.3) and keeps on it
@@ -797,8 +836,10 @@ The dispatcher's guarantee (`.claude/knowledge/session-words.md`) holds by const
    read it, which the service tells apart by its author fields (`SaidWord`'s `From`, `By` and `Helper`, `Core/Sessions/Sessions.cs:392-424`),
    each under **its producer key** with a **transfer id** (the move's key and the word's own id, so a word with no key has one too, X2-3.3), and
    takes them off the old. So the head and the words move at once, and no word falls between a read and an open. A word said to the old part
-   after the open is refused there with the head named (rule 2), and its caller passes it on. A retried open with the same key answers the
-   record it opened and the words it moved from the service's `session_opens`, whether or not those words still wait, and moves nothing again,
+   after the open is refused there with the head named (rule 2), and its caller passes it on. The keyed open is refused where the record left
+   does not stand, is not its line's head or is active (§3.3; round 6, *O5-F2*). A retried open with the same key answers the
+   record it opened and the words it moved from the service's `session_opens`, whether or not those words still wait, and `gone` once that record
+   is deleted (*C5-1.5*), and moves nothing again,
    so a lost answer neither opens twice nor moves twice (X-3.6; X3-3.3); the move record keeps the moved ids it is answered (§3.3). Moved words keep their order ahead of any word kept on the new part after its open, since
    the new part's first turn is the move's delivery (O-19). LIMITWORD1's second read, and the reads before the open that the ended and live limit
    moves, the driven carry-on, and the briefed move and its not-offered path make today (`BriefedMove.cs:99`, `:158`, `:179`, `:250`; O-7), are
@@ -809,15 +850,20 @@ The dispatcher's guarantee (`.claude/knowledge/session-words.md`) holds by const
    the head and the sites that move words row d-ii (O3-12; X3-6.1).
 4. **Every word is kept on `said` before anything holds it, a winding-up or moving record included.** The say door keeps a word for an active
    record whose dispatcher closed as waiting for its next part, asked only by the shell and the driver as `running` is (refused today,
-   `SessionLedger.cs:945-952`); the shell's holds become keeps; `held-words.json` is read once at a come-up for an older shell's words and never
-   written again; a chat dispatcher's `Hold()` during a move (`ChatTurns.cs:468-476`, under which a word is neither kept nor taken, `:192`) keeps
+   `SessionLedger.cs:945-952`); the shell's holds become keeps; `held-words.json` is read once at a come-up for an older shell's words and,
+   against a host whose marks keep `opens` and the head, never written again, the shell keeping today's hold against one without them (§19.11;
+   round 6, *O5-F12*); a chat dispatcher's `Hold()` during a move (`ChatTurns.cs:468-476`, under which a word is neither kept nor taken, `:192`) keeps
    and queues, as a limit's wait and a press already do (`:499-510`, `:570-599`). Such a word is the move's while the move stands (§3.1's
    `Never`). An older sweep would resume an old part in the tree its successor holds (`ChatGoOn.cs:191-262`; `SessionWords.cs:455-458`; O-2),
    but against a host whose marks keep `opens` and the head the successor and the move of the old part's words are one exclusive step, and the
    say door refuses the old part a word after it, so the two never coexist; before the open, an older shell's resume does what it would had the
    move never been decided, and the newer build closes the move superseded (§13.5). So **the shape is `said` itself** (round 5, §19.11), proven by
    an older shell's own come-up and sweep at each phase; against a host without those marks the shell keeps today's hold. It lands after rows h
-   and i (row o).
+   and i (row o). **What `said` does not reach** (round 6, *C5-1.11*, *O5-F2*): an older build's own move reads its words before its own open, which
+   carries no key, and delivers its copy (`Chat/BriefedMove.cs:99`, `:142-143`, its take at `:158`), and an older go-on sends a word whose mark
+   failed (`Driver/Conversations/SaidDoor.cs:47-62`, `:84-88`; `Driver/Service/ServiceClient.cs:569`); so against an older build's own move a word
+   can go twice, once by each build, as between two of today's shells on one home (§19.1), each delivery said on its own part. *Once* is asserted
+   only where the service's steps decide the order: a keyed open against a say, a take, a go-on's step or another keyed open.
 5. **A word is attempted once, its disposition kept, and an attempt acknowledged before the wire.** The mark that fails open today (§0.2) becomes
    mandatory, and the attempt's answer names each word it marked, so a word it does not name is not attempted and does not go: today the service
    answers an `unmarked` list (`SessionLedger.cs:1234-1246`) that the client ignores, answering success (`Driver/Service/ServiceClient.cs:569`)
@@ -835,22 +881,37 @@ The dispatcher's guarantee (`.claude/knowledge/session-words.md`) holds by const
    helper's answer under `helper:<id>` and a partner's piece under `partner:<piece>`, each kept by its own desk's `KeepSaidAsync` through its own
    route (`Core/Sessions/HelperDesk.cs:180-189`; `Core/Sessions/PartnerDesk.cs:136-147`; `Http/Program.cs:1739-1748`). So **a word leaves `said`
    only by a statement that settles it**: a trigger on `sessions`, `AFTER UPDATE OF said`, guarded by a real change on this machine's record,
-   writes into the service's `said_settled`, for each word the list lost, its line (its entry, D167), its producer key or, for a word with none, its
-   word id (`Sessions.cs:373-375`), and its moment, so every writer settles a word as it takes it, a connector built before the table included,
+   writes into the service's `said_settled`, for each word the list lost, **the word's id** (unique, `Sessions.cs:373-375`), **the record it
+   left**, its producer key or, for a word with none, `id:<word id>`, and its moment; a word that leaves a second record (moved by an open, then
+   taken) rewrites its row to the record it last left (round 6, *C5-1.2*, *O5-F7*: round 5 keyed the row by the line, its `entry` or the record's id
+   where none is stored, while the reader's line for such a record is the rule's key, `Core/Sessions/SessionEntries.cs:46`, so a successor read
+   another namespace). So every writer settles a word as it takes it, a connector built before the table included,
    and no take changes (round 5, §19.2). The settlement keeps no disposition, which is the attempt's (`move_words`, the record's notes): round 4's
-   disposition column is withdrawn. A word an open moves leaves the old record for the new one on the same line, its transfer `session_opens`'s.
+   disposition column is withdrawn. **It says only that the word left `said`**, never that a turn took it: a take-back, an uncertain word's
+   settlement, a park's clear and a supersession leave by the same statements (`Core/Sessions/SessionLedger.cs:1312`;
+   `GoOn/UncertainWords.cs:72`) (round 6, *C5-1.4*, *O5-F6*). A word an open moves leaves the old record for the new one, its transfer `session_opens`'s.
    **Every door that answers a producer's key reads the same function inside its own exclusive step**,
-   `SaidKeys.Settled(line, key)`, over the waiting words of the line and `said_settled`: the say door (`SessionLedger.cs:956`), the helper's desk
+   `SaidKeys.Settled(records, key)`, over the waiting words of those records and `said_settled` by key and record (its index, `said_settled_key`,
+   on the key and the record), **`records` being the records the say door's head walk visits** from the record the say names to the head (row
+   d-ii; before it, the record named alone): the say door (`SessionLedger.cs:956`), the helper's desk
    (`HelperDesk.cs:180`) and the partner's (`PartnerDesk.cs:137`), each step a `BEGIN IMMEDIATE` transaction across processes
-   (`Sessions.ExclusiveAsync`, `Core/Sessions/Sessions.cs:785-786`). So a retry after the take is answered as kept, by any keyed producer, with no
-   read across stores and no window between a check and a keep. **The horizon, decided** (round 5, §19.2): *never sent again by itself* holds
+   (`Sessions.ExclusiveAsync`, `Core/Sessions/Sessions.cs:785-786`). So a retry after the take is answered as kept, with its word's id as `Again`
+   answers a waiting word today (`SessionLedger.cs:956-961`; the supervisor's release reads it, `Loop/Driver.cs:473`), by any keyed producer, with no
+   read across stores and no window between a check and a keep; and the one line rule SQL and C# share is the record's own id, the walk giving the
+   line, so a record with no stored `entry` and its successors, whatever theirs, answer one word and no `entry` index is needed (*C5-1.2*, *O5-F7*,
+   *O5-F8*). **The horizon, decided** (round 5, §19.2): *never sent again by itself* holds
    with no horizon for the attempt, a word attempted never re-sent whatever its age, and for a producer's retry of a say whose answer it lost
-   for seven days after the word left `said`, past which a retry is a new word, said on its line; the trigger trims by time and caps the table at
-   50,000 rows, which row p measures against the install's rate. **Its identity** (X2-3.3) is the line and the key, so
-   equal keys on unrelated lines are two words and a retry through several successors finds its word on the line. The desktop store keeps a
+   for seven days after the word last left `said`, past which a retry is a new word, said on its line; the trigger trims **by time alone**, in its
+   own statement over an index on the moment, and keeps no count cap, so the seven days hold exactly, and the table's size is a week's takes,
+   which row p measures on the install and lands within (round 6, *C5-1.2*: round 5's cap of 50,000 rows could trim a settlement inside the
+   week). **Its identity** (X2-3.3) is the key over the records of one walk, so
+   equal keys on unrelated lines are two words and a retry through several successors finds its word. The desktop store keeps a
    move's view alone: each moved word's disposition in `move_words`, written in one transaction with the move's phase **after** the service has
-   taken the word, so a crash between the two is finished at the come-up from the word's settlement, and no word waits on `said` while its move
-   says `delivered` (round 5, §19.4). An older host writes no settlement and its doors answer a key only while its word waits, as today; an older
+   taken the word, so no word waits on `said` while its move says `delivered` (round 5, §19.4), and a crash between the two is finished at the
+   come-up **from the destination's events, never from the settlement** (round 6, *C5-1.4*, *O5-F6*): a word gone from `said` whose own `User`
+   event the destination's events hold, recorded before the write that takes it (`Chat/ChatRunner.cs:3495` before `:3501`, `:3755` before `:3775`),
+   as `UncertainWords.ShownTaken` reads it (`GoOn/UncertainWords.cs:97-98`), is *taken*; one gone without it is *left*, never delivered by the
+   move; and a begun effect no taken word answers is `held`. An older host writes no settlement and its doors answer a key only while its word waits, as today; an older
    writer over the migrated database settles its takes through the trigger and reads no settlement (§19.12). The come-up sends only words proven never attempted (X; row p). Across a harness write that carries no receipt, that is the guarantee there is: no automatic second
    attempt, the evidence kept, the person's press.
 6. **Which words a new part carries is one predicate**, `Carries`, where five sites write it today (survey §2.4 row 14): the person's waiting
@@ -884,7 +945,7 @@ generated ids, closed codes, counts and times, never a name, a word, a path, an 
 | What | a service record moved: a part opened (with its `from`, `why`, `by`), moved to a state, limited; a word kept or taken; a quest operation; an ask or a channel message kept | a fact no record holds: an account's wait, a Confirm waiting, a tool call held, a part gone quiet, a landing tried, a move's phase, the look's news, a child seen |
 | Minted | **by trigger, in the statement that writes the record**, into `event_journal` in the service's database, so every writer mints it (the host, the driver through it, each connector, and a connector built before the table), as the revisions are minted (`Sessions.cs:652-681`). A trigger journals the **raw transition** only (the record, the column, its old and new value, and for `said` each word's id added or removed), guarded by what changed (`WHEN OLD.state IS NOT NEW.state`, and per column), since `AFTER UPDATE OF` fires on a statement's list and `SetStateAsync` names `state`, `limited` and `said` on every move (`Sessions.cs:899-902`); an attempt mark, which rewrites `said` at its length (`:1626-1632`), journals nothing; a mirror's upsert (`:931-936`) journals nothing, since another machine's records are not this machine's facts; a trigger holds no logic that can raise, so an older writer's statement cannot fail through it (O-4; X-4.1). Each row carries **an allow-listed snapshot** of the facts its coding needs, taken from OLD and NEW at capture, so no later lookup is needed (round 3, X2-4.1; below). The code, the end's class, the work and a park's `for` are judged in .NET at projection from that snapshot alone, never in SQL (D182 point 6) | **by the hub of the process that runs the work**, at the judgement that owns the fact (O): the lease's loop for driven work, the shell for its conversations, the executor for a move's phases. The lease's loop alone tells plugins and outside readers (EVENTHOOK1 §4.1) |
 | Id and order | `position`, an integer in commit order under the store's write lock, never reused after a trim, its epoch the store's identity | `run` and `seq` (EVENTHOOK1 §4.3) |
-| Wake | the journal's insert moves a family of its own in the change stream, `journal`, so a reader is woken by every append, a word taken included, which today moves neither the session's revision nor the words family (`Sessions.cs:1605`, `:677`; X-4.1), and by nothing the guards leave out | the hub's teller |
+| Wake | the journal's insert moves a family of its own in the change stream, `journal`, so a reader is woken by every append, a word taken included, which today moves neither the session's revision nor the words family (`Sessions.cs:1605`, `:677`; X-4.1), and by nothing the guards leave out; the stream names `journal` only to a reader that asks for it, since an older client's stream reader wakes its `ledger` topic for any family named (`Driver/Service/LedgerChanges.cs:66-70`, `:107-115`) and only its family-filtering readers drop one (`Modules/Loop/QuestsStateSlice.cs:132-138`) (round 6, *O5-F10*) | the hub's teller |
 | Scope | the record's workspace, filtered as data (NEEDSSCOPE1) | this home |
 | Kept | durable, machine-local, never on the sync wire, in the service's own store (the brief §9); at most 50,000 rows of at most 1 KiB each, the insert's own statement deleting the oldest past the count, so an older build that never trims still bounds it; the **floor**, the lowest position kept, answered with every read (X-4.2; round 3's bound per row, X2-4.2) | memory, one run, bounded per reader with `missed` |
 
@@ -1020,17 +1081,24 @@ position and a reconciliation below the floor by the record's `updated`, so afte
 the first had told, and `updated` moves on a note-only write besides (`Core/Sessions/Sessions.cs:886-890`). Round 4 keyed it by the record's
 transition number, kept by trigger in `session_transitions`, so that both paths computed one key; round 5 withdraws that table and the
 reconciliation path's news with it (§19.6): **an occurrence's key is the durable id it was minted with, and one path tells it.** A record event is
-keyed by its journal `position`, so an end, a reopen and an end are two occurrences; a teller whose cursor is below the floor reads its records
+keyed by the store's identity and its journal `position` (round 6, *O5-F9*), so an end, a reopen and an end are two occurrences and a position
+of another store is never taken for this one's; a teller whose cursor is below the floor reads its records
 whole for state, tells nothing of the gap and says its history is incomplete, the waits staying in *What needs you*. A conversation's turn
-answers with no change of its record (`Chat/ChatRunner.cs:2893`, `:3824-3833`), so its answer is keyed by its session and the `seq` of the `turn`
-event it ended on, the durable handle the usage history already keys turns by (`Driver/Accounts/Usage/UsageHistory.cs:291`), and told by the
-shell that runs it, a restart ending the run as today and telling nothing for it (X4-3.3). A Confirm keeps its press id, a held call its request
+answers with no change of its record (`Chat/ChatRunner.cs:2893`, `:3824-3833`), so its answer is keyed by its session, the shell's process run
+(its `store_runs` id, §13.3) and the moment its queue recorded the turn's end (`ChatQueue.LastTurnEnded`, set at `Chat/ChatTurns.cs:1276` and
+read by the answer's judgement at `Chat/ChatRunner.cs:1673`), and told by the shell that runs it, a restart ending the run as today and telling
+nothing for it (X4-3.3). Round 5 keyed it by the `seq` of its `turn` event, which is not durable across writers: `SessionEvents` caches the
+sequence per instance and locks that instance alone (`Driver/Sessions/Events/SessionEventLog.cs:30`, `:45`), so two shells alternating on one
+conversation can number two events alike, and `Keep` lets a failed append pass while the conversation goes on (`:84-94`); the run and the
+moment depend on neither, and a moment repeated within one run, which only a clock stepped back could make, drops that answer's telling and
+never repeats one (round 6, *C5-1.6*, *O5-F9*). A Confirm keeps its press id, a held call its request
 within its process's run, an account's wait the account and its cool-off's `until`, and the look's news its code and subject. The said-set and the news a
 teller may tell share **one horizon**: a teller tells only occurrences whose moment is later than both the notices' week ago (`Notices.cs:32-35`)
 and the moment of the oldest key the said-set still holds, and the said-set forgets a key only once its moment is outside the week or its own
 count (10,000, oldest first, trimmed by its own statement) pushes it out, which raises the horizon with it. So no forgotten key's occurrence is
 ever eligible again; the 200 the notices keep bound what is shown, never what was said. Row m-iv proves more than 200 eligible pieces of news at
-once, a key expiring with the horizon, a new teller, a conversation answering three times with no change of its record, and a teller below the
+once, a key expiring with the horizon, a new teller, a conversation answering three times with no change of its record, the same with two
+shells running its turns one after the other and with an event append failing between them (*C5-1.6*), and a teller below the
 floor telling none of the gap and saying so, none told twice. The journal's
 retention is not EVENTHOOK1's delivery: its relay keeps no replay and says its losses (`docs/2026-10-24-event-hook-design.md` §4.4), and moving
 its session kinds onto the journal lets a restart of the lease's loop re-read what the journal still holds, never replay what a plugin missed
@@ -1045,9 +1113,9 @@ its session kinds onto the journal lets a restart of the lease's loop re-read wh
 | **LIMITSWITCH1** (D137's note of 2026-10-25), built for driven records of an open or taken quest, merged at `a85004bd0` | the account rule's driven half, as built | stands as built; row a-i reads its `Switched` through `LineAccount` |
 | **LIMITSWITCH2**, its remainder, built beside round 3 as its own quest in the shape of rows a-i and a-iii and merged at `db883b1cc` (D137's LIMITSWITCH2 note): a conversation and a closed quest's session whose own account cools go on elsewhere | the account rule's conversation half and the closed quest's case, as built: `switches` read for every kind, with `walkCounts`; a conversation through the ended limit move's body (`switching`); a closed quest's session through `GoOnLostAsync` with the reason `account` to the ended move; the ended move's one walk; the earliest reset of any; Ask Daoris, a signed-out, refused or gone account and another agent's accounts unchanged; every conversation walking its agent's accounts, since no pick is kept | rows a-i and a-iii absorb what it landed, each part taken as built and its proofs kept as the row's (`ResumeAccountTests`, `LimitWaitsProcessTests`, `AccountRotationTickTests`, `SessionWordsWaitingTests`). Row a-i's `LineAccount` reads `switches`, `walkCounts` and the wake's reading as one call and changes no behaviour, its proof the same answers, walks and counted starts on every case they built, each caller's set for the earliest reset read as today (O4-3), the walk asked only where today's code asks it, at each place row a-i names (O4-4; X4-1.1), the hold that names a repair where no account has a reset being `HarnessRoster.Unready`'s refusal today, given a name (round 4: Part A's); row a-iii keeps only what LIMITSWITCH2 left: the live limit move's one selection, the ended move's `ElsewhereAsync`, the walk of the person's briefed press, and the one earliest reset over the accounts a line may take (§7 row 3). Its note on D137 reads the decision as round 3 does; the amendment of point 4 for the cooling case is D137's dated note of round 3, and §7 rows 1 and 1b become conformance notes |
 | **MODELROLE1l** (D205's note of 2026-10-25), filed | a configured working role, *Designer*, taking `design` (§2.7) | its code is the `design` capability and the quest's `weight`, row x; its role a seeded suggestion applied by the person's press, row y-i |
-| **EVENTHOOK1** (proposed, round 4, Codex's read owed) | the first outside projection and the first instance of the vocabulary: built first as designed, then moved onto the journal (row n): its session kinds read the retained journal, its `WorkEventGrammar` becomes `EventCodes`' outside projection, its kinds keeping their names there, its `work.landed` and `quest.parked` machine events under its own `run` and `seq`, its relay's delivery contract unchanged | none waits on the foundation; 1d's quest kinds, a later round, are designed from the journal's `quest.<op>` rather than the look's snapshot; row n waits for 1b and row k |
-| **COWORKVIEW1** (proposed, round 4, Codex's read owed) | row a: the lineage's first production reader, the participant's child half, built as designed; the routing half (rows e, b, c, d, f): re-cut to read `Participant.Of` (row c) for who is at work, the line's head (row d) for the current executor in place of its own selector over `LastRun` (its §3.1), the move records (row f) for what waits on what, and the event codes (rows k to m) in place of reading waits from end codes | row a waits for nothing here; its routing half's round is written after rows c, d and f land |
-| **SWITCHCTX1's carry** (proposed, round 5, Codex's read owed); its line view 1c-i accepted and built | re-cut in storage, kept in protocol: its carry record is the move record's `copied` and `verified` phases and `how: carry`, so a carried move and every other kind have one owner of delivery; its compatibility table, replay check, model judgement and fallbacks stay as designed | 1c-i stands; 1a, 1b, 1c-ii, 1d, 1e and 1f wait for row f's record as well as their own owed read; if 1a is accepted and built first, its `<s>.carry.json` is a family row f-i imports into the store's `moves`, never a second record |
+| **EVENTHOOK1** (rows 1a to 1c accepted by the steward 2026-10-25 after both makers' reads of its round 4, 1a first; 1d and 1e proposed; round 6 corrects round 5's *proposed, Codex's read owed*) | the first outside projection and the first instance of the vocabulary: built first as designed, then moved onto the journal (row n): its session kinds read the retained journal, its `WorkEventGrammar` becomes `EventCodes`' outside projection, its kinds keeping their names there, its `work.landed` and `quest.parked` machine events under its own `run` and `seq`, its relay's delivery contract unchanged | none waits on the foundation; 1d's quest kinds, a later round, are designed from the journal's `quest.<op>` rather than the look's snapshot; row n waits for 1b and row k |
+| **COWORKVIEW1** (proposed: round 5 for row a, under D191, both makers' reads of round 5 owed; the routing half a later round's; round 6 corrects round 5's *round 4, Codex's read owed*) | row a: the lineage's first production reader, the participant's child half, built as designed; the routing half (rows e, b, c, d, f): re-cut to read `Participant.Of` (row c) for who is at work, the line's head (row d) for the current executor in place of its own selector over `LastRun` (its §3.1), the move records (row f) for what waits on what, and the event codes (rows k to m) in place of reading waits from end codes | row a waits for nothing here; its routing half's round is written after rows c, d and f land |
+| **SWITCHCTX1's carry** (proposed, round 5; Codex's read of its round 5 asks for protocol changes that are this design's move record, so the carry waits on it); its line view 1c-i accepted and built | re-cut in storage, kept in protocol: its carry record is the move record's `copied` and `verified` phases and `how: carry`, so a carried move and every other kind have one owner of delivery; its compatibility table, replay check, model judgement and fallbacks stay as designed | 1c-i stands; 1a, 1b, 1c-ii, 1d, 1e and 1f wait for row f's record as well as their own owed read; if 1a is accepted and built first, its `<s>.carry.json` is a family row f-i imports into the store's `moves`, never a second record |
 | **AGENTERRORS1** (D210; 1a, 1a2, 1b built) | the course's failure input | 1b2 and 1c to 1g built as designed, in their own order; row g adds only what they do not: a conversation's and a brainstorm's limit by code, and a conversation's limited flag |
 | **MODELROLE1** (D205; rows a to e built) | its `Effective` and walk become the start plan's; its eight actors the catalogue's seeded working roles | rows j and w |
 | **LIMITRESUME1** (D206), open rows 1e and 1f | read the account rule's constraints | built as designed; 1e's walk across choices is step 4's driven half |
@@ -1060,17 +1128,17 @@ record moves from a JSON file into the desktop store, §13.6 names its row and �
 | Record | Owner after | Travels | An older build |
 |---|---|---|---|
 | `sessions` with `said`, the marks, `from`, `entry`, `limited`, the actor's fields | the service, unchanged; the work read, never stored; `actor` naming the seeded role of its work (§2.7) | as today; the work, `actor` and `from` never | reads it as today |
-| `session_opens`, the keyed open and the words it moved (new, row d-i; round 3's `opens` field on the record, withdrawn in round 4, X3-3.3) | the service, written in the open's own exclusive step, the open's request carrying the key and its answer the transfer; a table, since a repeated open must be answered after its words leave `said`; the brief §9's one exception, its uniqueness the open's own statement; its rows deleted with their opened record by trigger (round 5, §19.5) | never | never reads it, and opens as today: a lost open against it is held (§3.3); its delete takes the rows through the trigger |
-| `said_settled`, a word's settlement after it leaves `said` (new, row p; round 3's receipts in the desktop store, withdrawn in round 4, X3-3.2) | the service, written by a trigger in the statement that takes the word (round 5, §19.2), read inside each keeping door's step (§3.4 rule 5) | never | never reads it; its doors answer a key only while its word waits, as today; its own takes settle through the trigger |
+| `session_opens`, the keyed open and the words it moved (new, row d-i; round 3's `opens` field on the record, withdrawn in round 4, X3-3.3) | the service, written in the open's own exclusive step, the open's request carrying the key and its answer the transfer; a table, since a repeated open must be answered after its words leave `said`; the brief §9's one exception, its uniqueness the open's own statement; a row deleted with its record left by trigger, and kept as `gone` where its opened record is deleted first (round 5, §19.5; round 6, *C5-1.5*) | never | never reads it, and opens as today: a lost open against it is held (§3.3); its delete moves the rows through the trigger |
+| `said_settled`, a word's settlement after it leaves `said` (new, row p; round 3's receipts in the desktop store, withdrawn in round 4, X3-3.2) | the service, written by a trigger in the statement that takes the word (round 5, §19.2), one row per word id with the record it last left and its key, trimmed at seven days by time alone, read by key over the records the head walk visits inside each keeping door's step (§3.4 rule 5; round 6, *C5-1.2*, *O5-F7*); it says the word left `said`, never that it was delivered (*C5-1.4*) | never | never reads it; its doors answer a key only while its word waits, as today; its own takes settle through the trigger |
 | `session_transitions`, a record's transition number (round 4, X3-3.6) | **withdrawn in round 5** with the reconciliation path's news, the journal's position being the occurrence's one key (§4.5, §19.6) | — | — |
 | The participants' bindings (new home of `<s>.harness.json`, row z-iii): the kept conversation, the account picked and whether the person picked it (row a-ii), the role taken and its revision (row x) | the desktop store, the Participants subdomain (§13.3, §14), each writer updating its own columns by name | never | the file set aside at the import, so a build from before the store finds none and falls back to a carry-on, never a stale conversation (§13.5; O3-6) |
 | `event_journal` (new, row k) | the service, by trigger, in the service's store | never | never reads it; its own writes mint rows through the triggers, which bound it |
 | Moves and words in transfer (new, rows f-i and p) | the desktop store | never | never reads them; it recovers a move from the ledger alone (§13.5) |
 | `<s>.limit-move.json`, the conversation's hand-over box | written no more once a move of their kind is the store's (rows f-v, f-vi); a box an older build writes is imported once and set aside (§13.5) | no | reads and writes its own as today |
-| `data/handed/<quest>.json`, `<s>.new-session.json`, the hand-over's ask | a constraint, a press and a request, read by the course; the first two move into the store (§13.6), the ask stays the service's | no | §13.5 |
+| `data/handed/<quest>.json`, `<s>.new-session.json`, the hand-over's ask | a constraint, a press and a request, read by the course; the first two stay files in Part B, z-viii being proposed for a later design (§19.15; round 6, *O5-F12*), the ask stays the service's | no | as today |
 | `held-words.json` | read once at a come-up for an older shell's words, never written again (row o); retired in row v | no | an older shell writes it; a newer one reads it once |
 | The notices, their said-set and the tellers' cursors | one owner, `Notices`, in the desktop store (row z-v), every teller submitting facts with its own cursor (row m) | no | §13.5: the file left as the backup |
-| The role catalogue (new, row w) and every setting of `driver.json` (row z-ii) | the desktop store, the Roles subdomain and the settings' one parser (§2.7, §13.3); the seed in code, read per id. Round 5 proposes z-ii's general settings for a later design, so they stay in `driver.json`, while every role's staffing, seeded or added, moves into `role_staffing` by row w-s, its `actors` key set aside (§19.15) | no | reads `driver.json` with `actors` set aside, so every seeded role *as before* from the first-agent keys the newer build keeps written through, and never starts an added role (§13.5, §19.15) |
+| The role catalogue (new, row w) and every setting of `driver.json` (row z-ii) | the desktop store, the Roles subdomain and the settings' one parser (§2.7, §13.3); the seed in code, read per id. Round 5 proposes z-ii's general settings for a later design, so they stay in `driver.json`, while every role's staffing, seeded or added, moves into `role_staffing` by row w-s, its `actors` key set aside but for an entry that does not read, the first-agent keys the newer build writes recorded with what it last wrote (`role_staffing_projection`, §13.3; round 6, *C5-1.15*, *O5-F4*) | no | reads `driver.json` with `actors` set aside, so every seeded role *as before* from the first-agent keys the newer build keeps written through, an unreadable entry holding its starts as today, and never starts an added role (§13.5, §19.15; *O5-F3*) |
 | A quest's `weight` (new, the first of row x and MODELROLE1i) | the service's quest record, written by its publisher or the intake | with the quest, a fact of the work carrying no path or name | reads no `weight`, so it starts the quest on Build's order |
 | `store_identity` | the schema's initialisation, not the change stream's observer (X; row k) | no | unchanged |
 | A reviewer's `serves` (D203 point 6, row v) | the service, at the desk's open | no field on the wire | an older page reads a reviewer with `serves` as a helper, so it lands only where every reader reads `opinion` first (D203 point 6's own rule) |
@@ -1144,17 +1212,18 @@ By the brief §7.3 each unification states which answer stands, as a dated note 
 | 13 | the usage slice and a driven end (survey §3.3) | reached only at its period | woken by `part.ended` | D182's PUSH1e note; row l |
 | 14 | the chain's ranks 3 and 4 (`Chain.cs:170-172`) | declared, bound nowhere | removed unless a row reads them | D173's FABRIC-CHAIN1 note; row s |
 | 15 | the notices' writers (§3.4 row 10) | the slice, the look and the headless host, each editing the file | one owner, `Notices`, to which each process that tells news submits its facts in one transaction of the store, with its own cursor, keyed by occurrence | D196; rows z-v and m |
-| 16 | who staffs a kind of work (the owner's direction) | eight actors and two appointed roles in code | configured roles over a closed vocabulary of capabilities, the seeded roles read per id | D205 points 1, 7, 8 and 9, D208 point 1 and D209 points 1 and 3, a note on each that the role is configured and its bounds stand; rows w to y |
-| 17 | an appointed role's authority (round 3; round 4) | the acts this build offered at *Appoint*, snapshotted and held for the appointment's life (`StandingConfirmation.cs:860`, `:1276`), the desk's decline outside them (`:1275-1279`) | the act within the code's table, the appointment's grant and the role's configuration as it stands, checked at admission and at its run; every narrowing lowering the live grant itself; a widening only at the next *Appoint*; the desk's decline outside every grant as today | D208 point 1 and D209 points 1, 2 and 4, a conformance note; rows t and y-ii |
+| 16 | who staffs a kind of work (the owner's direction) | eight actors and two appointed roles in code | configured roles over a closed vocabulary of capabilities, the seeded roles read per id; in Part B working roles alone, the appointed half proposed for a later design (§19.9, §19.15; round 6, *O5-F12*) | D205 points 1, 7, 8 and 9 in Part B, and D208 point 1 and D209 points 1 and 3 with the later design, a note on each that the role is configured and its bounds stand; rows w-s to y-i |
+| 17 | an appointed role's authority (round 3; round 4; *proposed for a later design* with rows t and y-ii, §19.9, round 6, *O5-F12*) | the acts this build offered at *Appoint*, snapshotted and held for the appointment's life (`StandingConfirmation.cs:860`, `:1276`), the desk's decline outside them (`:1275-1279`) | the act within the code's table, the appointment's grant and the role's configuration as it stands, checked at admission and at its run; every narrowing lowering the live grant itself; a widening only at the next *Appoint*; the desk's decline outside every grant as today | D208 point 1 and D209 points 1, 2 and 4, a conformance note; rows t and y-ii |
 | 18 | a role's scope (round 3) | D205 rejects per-workspace choices | a working role scoped to a workspace or a repository takes its work there, the machine's role staying | D205's rejection of per-workspace choices, amended (O2-10); row w |
-| 19 | where the configuration is read (the brief §9) | `driver.json`, hand-edited and read live (D50: *the file, not the surface, is authoritative*, `D50.md:7-9`) | the desktop store is the truth; `driver.json` its export and import, imported once and kept as the backup; a hand edit of it takes effect only by an import, offered at the next start through the judges (§13.5) | D205 point 6 (the rules' keys kept as their shapes in the store, a conformance note); **D50, amended**: for the configuration the store, not the file, is authoritative, and hand-editing works through the export and the import (O3-11); D110 (every door reaches the import and export); row z-ii |
+| 19 | where the configuration is read (the brief §9; in Part B the roles' staffing alone, row w-s, D50 amended for the staffing alone and the general settings with z-ii *proposed for a later design*, §19.15, round 6, *O5-F12*) | `driver.json`, hand-edited and read live (D50: *the file, not the surface, is authoritative*, `D50.md:7-9`) | the desktop store is the truth; `driver.json` its export and import, imported once and kept as the backup; a hand edit of it takes effect only by an import, offered at the next start through the judges (§13.5) | D205 point 6 (the rules' keys kept as their shapes in the store, a conformance note); **D50, amended**: for the configuration the store, not the file, is authoritative, and hand-editing works through the export and the import (O3-11); D110 (every door reaches the import and export); row z-ii |
 | 20 | an older build over a newer home (round 3; round 4) | each file read by whichever build opens it | a build from before the store reads the backups it left, which never hold a grant the store revoked; one from before a table never opens it; a store stamped past a build's reading refuses its writes, checked in every writing transaction; a family an older build acts on, a box among them, and a migration raising the stamp, only once the start's confirmation is settled | D139 (the imports and the stamp's raising after the build confirms), a note; rows z-i, z-ii, z-iv, z-xi |
 | 21 | the driver's shape (the brief §10) | fifteen modules cut by technique (D166 point 1, Brainstorms the fifteenth by D176 point 1, `StructureTests.cs:189-191`), one flat namespace | one acyclic map of twenty-one subdomains, each a folder, held by `StructureTests` reading every type reference; folders first and namespaces last | D166 point 1 (the modules replaced by the subdomains) and D176 point 1 (Brainstorms in Work orders), amended; D166 point 4 and its rejection of renaming namespaces as files move, kept (O3-10); D173, a note naming the map as the Fabric's code; rows mod-0 onward |
 
 ## 8. What is the owner's
 
 Nothing built from round 4, in either part, needs D191 point 3's answer. It changes no direction: the owner's FOUNDATION1 direction asks for exactly this
-structure, and the owner's directions on roles (§2.7), on SQLite (§13) and on the driver's subdomains (§14) are taken as given, with the line
+structure, and the owner's directions on roles (§2.7), on SQLite (§13) and on the driver's subdomains (§14) are taken as given, two of their
+lines deferred to later designs by round 5's cuts, each listed below for the owner (round 6, *O5-F13*), with the line
 between JSON and SQLite and the map's names and grouping the steward's by the owner's leave. It spends nothing beyond development's own runs
 and what the owner already decided: LIMITSWITCH1 and LIMITSWITCH2, built and absorbed by rows a-i and a-iii, move a driven record's, a
 repository conversation's and a closed quest's session's words to another ready account where the own account cools, which LIMITSWITCH1's decision covers in its own words (*words to an ended record whose
@@ -1187,8 +1256,19 @@ act) or delete records, and rows z-ii, z-iv and z-xi rehome authority records (t
 the appointments and the standing confirmation's grant; the permissions, the configured access and the plugin approvals, the GitDoor's grants
 among them) and z-ix the records a removal follows, so each is built only after both makers have read it (D191's note of 2026-10-24; O3-14);
 row z-ii's import holds a change of authority for the person's press; and every one of them is Part B's, waiting for its own rounds. Part A
-grants, refuses and deletes nothing. Round 5 proposes w-0, t, y-ii, z-ii's general settings, z-iv, z-ix and z-xi for later designs (§19.15),
-which would leave q, r, v, w-s and y-i the ⚖ rows of Part B, w-s being z-ii's `actors` part kept by the steward's change.
+grants, refuses and deletes nothing. Round 5 proposed w-0, t, y-ii, z-ii's general settings, z-iv, z-ix and z-xi for later designs (§19.15),
+and both makers' reads of round 5 said yes to both cuts, which leaves q, r, v, w-s and y-i the ⚖ rows of Part B, w-s being z-ii's `actors` part
+kept by the steward's change.
+
+**Two deferrals the cuts make, the steward's, for the owner to overrule** (round 6, *O5-F13*; *C5-2.6*). Each defers a line of the owner's
+directions to a later design rather than changing it, and the owner's word puts either back into Part B as rows of its own:
+1. **The brief's §8, *the two appointed roles seeded into configuration*.** In Part B the catalogue holds working roles alone; the supervisor and
+   the steward stay in code, as today, until the design read when the first appointment is offered (§19.9), since this build offers none
+   (`Modules/Platform/StandingConfirmation.cs:314`, `:330`, `:336`). Nothing a person can do changes.
+2. **The brief's §9, *the appointments and every setting `driver.json` holds today in the store, `driver.json` the export and import alone*.**
+   In Part B the store holds the Fabric's records Part B's protocols read, the bindings, the moves, the notices and every role's staffing (row
+   w-s); the appointments, the general settings and the other families stay files until the later design of the store's families, D50 standing
+   for every key but the staffing. The brief's §9 carries a dated note of this.
 
 ## 9. Rejected
 
@@ -1203,6 +1283,7 @@ which would leave q, r, v, w-s and y-i the ⚖ rows of Part B, w-s being z-ii's 
 | Old boxes written beside the move record; a home file per move | §1.1, Q8: two recovery authorities; a compare-and-replace fences no effect (round 3) |
 | A move taken over because a role passed; a word's receipt read across the two stores before a say; news keyed by a record's `updated` | §1.1, Q8, Q9 and Q14 (round 4) |
 | `Lines.Forward`; a record's transition number with a reconciliation path telling news; a disposition kept in the settlement; a narrowing written into each live grant; a narrowing committed to the store before its backup; `delivered` written before the take; a time horizon on the keyed open (round 5) | §19.3, §19.6, §19.2, §19.9, §19.8, §19.4 and §19.5: a hold, one path per key, the attempt's own record, the revisions intersected at each act, the backup first, the take first and retention by the record's delete each meet both readers' concerns with less |
+| A move's row unique by its record left for its whole life; a word's settlement keyed by `entry`, capped by count within its horizon, or read as delivery; a keyed open's row deleted with its opened record; a turn's news keyed by its event's `seq`; the protocol marks kept by the desktop's pid; an older build's staffing write applied by itself at the return; an unkeyed open refused for naming a record that is not its line's head (round 6) | §20: a partial index over standing moves; the word's id over the head walk's records and a horizon by time alone; the destination's events as delivery's evidence; the row kept as `gone` until its record left goes; the shell's run and the turn's end; the host's run on every marked answer; the import offered, never applied but a turn-off. The last would close Codex's delayed older move (*C5-1.1*) but refuse today's unkeyed opens, an older desktop's and the paths rows h and i have not moved, beside a cross-kind successor the head walk counts (§3.4 rule 2), so the bound is stated instead (§3.4 rule 4, §19.1) |
 | The store's alternatives (one store for the service and the desktop, a store per family, `driver.json` written through, blobs, `said` moved, the CLI on SQLite, credentials in the store) | §13.7 |
 | Separate assemblies per subdomain now | §14.4: the folders form one cycle today, so assemblies would need every cut at once |
 | A second carry record beside the move record | two owners of one delivery, the gap LIMITWORD1 came from |
@@ -1229,13 +1310,17 @@ neither moved nor is named. **Rows marked ⚖ grant or refuse authority, or dele
 points here. Both makers' reads of round 4 accept Part A after named changes, which are made (§17, §18), so Part A waits only for the
 steward's acceptance; its first row, a-i, accepted alone on the Opus reader's read and built on a branch held off main until Codex's read
 (D191's note of 2026-10-24), takes §18's corrected description of where the walk is asked (the Standing). *Row a-i* in this design is
-FOUNDATION1a-i, and so on. **The order** (round 4): Part A's rows a-i, b, c, mod-0 and u, then the
-driver's moves mod-i to mod-xxi (§14.6), bottom up, each when no open branch holds the files it moves, their cuts after each; Part B's rows z-i,
-z-iii, a-ii, a-iii, p, d-i, d-ii, e, f-i to f-vi, g, h, i, o, j, z-ii, z-iv, w-0, w, x, y-i, k, z-v, l-i to l-v, m-i to m-v, n, q, r, s, t, y-ii,
-v, once Part B is accepted, and any Part B row whose files a move of Part A holds waits for that move. The store's other families (z-vi to
-z-xiv, §13.6) land after z-i in any order, each before the first row that reads its family through the store; the namespace rows last
+FOUNDATION1a-i, and so on. **The order** (round 6, *O5-F12*; round 4's, which placed z-ii, z-iv and w-0 before w and t and y-ii before v, is
+withdrawn with round 5's cuts): Part A's rows a-i, b, c, mod-0 and u, then the
+driver's moves mod-i to mod-xxi (§14.6), bottom up, each when no open branch holds the files it moves, their cuts after each; Part B's rows z-i
+(after mod-ii, whose Store folder `DesktopStore` is written in), z-iii, a-ii, a-iii, p, d-i, d-ii, e, f-i to f-vi, g, h, i, o, j, w-s, w, x, y-i,
+k, z-v, l-i to l-v, m-i to m-v, n, q, r, s and v, once Part B is accepted, and any Part B row whose files a move of Part A holds waits for that
+move, rows e, f-i and h after mod-xiv and its port's cut (§19.14). The rows proposed for later designs (w-0, t, y-ii, z-ii's general settings,
+z-iv and z-vi to z-xiv) are ordered by those designs; the namespace rows last
 (§14.6). Row p comes before row d as well as f (X2-5.1), and row d-i, the keyed open, before d-ii and every row that moves words (O3-12,
-X3-6.1), so that each lands on acknowledged attempts and an idempotent open. The Opus reader's precondition for row a-i, that
+X3-6.1), so that each lands on acknowledged attempts and an idempotent open; p adds `GET /api/protocol` with its `settled` mark, d-i adds
+`opens` 1, d-ii raises `opens` to 2 and adds `head`, and k adds `journal` (§19.12; round 6, *C5-3.2*, *C5-1.12*), so each host says exactly
+which of them it keeps. The Opus reader's precondition for row a-i, that
 LIMITSWITCH1 merge onto a main that had moved under its branch (O's §4), is met: it merged at `a85004bd0`; and LIMITSWITCH2 landed its parts of
 rows a-i and a-iii ahead of them, merged at `db883b1cc` (§5.1).
 
@@ -1437,44 +1522,48 @@ the rows it proposes for later designs (§19.15): w-0, t, y-ii and z-iv, the app
 to z-xiv, the store's families no Part B protocol reads. z-ii's `actors` part stays, cut out as row w-s, so every role's staffing has one home
 in `role_staffing` (§19.15). Without the proposed rows Part B's order is z-i, z-iii, a-ii, a-iii, p, d-i, d-ii, e, f-i to f-vi, g, h, i, o, j,
 w-s, w, x, y-i, k, z-v, l-i to l-v, m-i to m-v, n, q, r, s, v, and w waits for w-s alone, no longer for z-ii, z-iv or w-0; rows e, f-i and h
-land after mod-xiv and its port's cut (§19.14).
+land after mod-xiv and its port's cut (§19.14). Round 6 (§20) carries both reads of round 5 into the rows below: each row that lands a
+trigger, an index or a read in the say door's step on `sessions` lands only within its limits (p, d-i, d-ii, k); each row writing in Course or
+Participants keeps `StructureTests` whole in its proof (*C5-1.14*); a row that reads a concept beside today's, *read by nothing*, changes no
+decision path until its adoption row (*C5-3.3*); and a row's proof that needs words moved by an open is d-ii's, the rows before it proving their
+own steps over fixtures planted by the service's own statements (*C5-3.2*).
 
 | Row | What | Proof |
 |---|---|---|
-| **1z-i** the desktop store, read by nothing (§13.2 to §13.4, §13.6) | `data/desktop.db`, `DesktopStore` in Store, its version, revisions, runs, imports and wake file; `Microsoft.Data.Sqlite` for the driver, pinned as the service's; the home's table and its two twins; the confirmation's *settled* read from the install's swap journal (round 5, §19.7); the GitDoor's start measured with a read-only open, its families moving only once it passes, which no Part B row needs (§19.10) | §13.6's row z-i |
+| **1z-i** the desktop store, read by nothing (§13.2 to §13.4, §13.6) | after mod-ii, whose Store folder it writes in (round 6, *O5-F12*); `data/desktop.db`, `DesktopStore` in Store, its version, revisions, runs, imports and wake file; `Microsoft.Data.Sqlite` for the driver, pinned as the service's; the home's table and its two twins; the confirmation's *settled* read from the install's swap journal, a journal that does not read never settled (round 5, §19.7; round 6, *C5-1.7*); the GitDoor's start measured with a read-only open, a busy store and a checkpoint among its cases, its families moving only once it passes, which no Part B row needs (§19.10; *C5-1.10*) | §13.6's row z-i |
 | **1z-iii** the bindings (§13.6) | `<s>.harness.json` into `bindings`, every resume reading its id there once imported, the file set aside | §13.6's row z-iii |
 | **1a-ii** account-pick provenance | a start the person names an account for (`START_CHAT`'s `profile`, the terminal's account, the person's hand-over press with an account; never an agent's ask or the curve's account, which keep today's reading) keeps on its binding in the desktop store that the person picked its account (round 3: the store's `bindings`, never a field on the service's record, so no chain through the host and no field on any wire); the rule reads it: a recorded account pick waits, an agent pick and a record from before walk their agent's accounts; §7 row 2 | a binding of a record from before and of a mirror holds no pick; `ChatHandOverTests` with a named account; `LineAccountTests`' constraint axis whole; an older build continuing a picked record reads it as today's `pick` |
 | **1a-iii** the briefed move's walk, one selection, the closed quest's case | the briefed move and its not-offered path through the walk, own account first where ready, the person's fresh-part press the one exception to an automatic part's same-account refusal (§3.2 step 6); the live limit move opens on the selection it judged, one count (`LimitMove.cs:86`, `:142`), as LIMITSWITCH2 made the ended move do (`:237`, `:256`); the ended move gains `ElsewhereAsync`, so a conversation whose agent's accounts all cool goes on with its role's later choice where the person allowed one (O2-13); **the closed quest's cooling session going on as a conversation in its tree** (O2-5), built by LIMITSWITCH2 through the ended move with the reason `account`, taken as built, a headless host waiting; §7 rows 1b and 4 | `BriefedMoveTests`, `LimitWaitsProcessTests`; the judged account is the opened one, counted once, on both moves; an ended conversation with every account of its agent cooling going on with its next choice; LIMITSWITCH2's closed quest cases (`AccountRotationTickTests`, `LimitWaitsProcessTests`) kept; the person's briefed press opening on the own account where ready |
-| **1p** attempts acknowledged, dispositions and settlement | §3.4 rule 5; §7 row 8; before rows d and f, so their proofs stand on it; the service's `said_settled`, written by a trigger in the statement that takes a word, by line and producer key, with no disposition, and `SaidKeys.Settled` read inside the say door's, the helper desk's and the partner desk's own steps (round 4, X3-3.2, O3-5; round 5, §19.2); the horizon a decision, seven days for a retry and none for the attempt, its cap 50,000 rows | the attempt's commit failing sends nothing and says so; an answer naming fewer words than asked sends only those; a commit whose answer is lost; a crash before and after the wire; a limit's refusal carrying its words once; **a transient try's words staying uncertain when a limit then ends the episode, only the words no try attempted carried** (X2-3.2); a producer's retry after the take answered as kept within the horizon; **a retry paused after its check while another dispatcher takes the word, then resumed, keeping one word** (X3-3.2); **a helper's and a partner's hand retried after its take keeping one word** (O3-5); **equal keys on unrelated lines two words, a retry through two successors one word, a keyless word moved and settled by its id** (X2-3.3); no automatic resend of an uncertain attempt, its words in en and zh; an older host's take writing no settlement and its doors answering as today; **a retry past seven days kept as a new word; an older connector's own take statement over the migrated database settling its word; a take-back settling its word** (round 5, §19.2); the install's rate of takes against the cap; the install's delivery latency and store writes before and after |
-| **1d-i** the keyed open and its record (round 4, O3-12, X3-6.1) | §3.3's destination: the ledger's opens taking an `opens` key, the service's `session_opens` written in the open's own exclusive step with the record opened and every word it moved, a repeat open answered from it whether or not its words still wait; the key in the open's request and the transfer in its answer, nothing on the record or the wire | a repeat open with the key opening nothing and moving nothing, answered the record and the words, in process; the same after the moved words were taken off `said`; two keys two records; an older host's open unchanged; **the opened record deleted by an older build's own statement, its rows gone by the trigger; the protocol marks answered, and against a stand-in host with none no key sent and the move made as today** (round 5, §19.5, §19.12); `SessionLedgerTests` whole; across a crash, row f-i's case |
-| **1d-ii** words follow the line's head, and the open moves them | §3.4 rules 2 and 3, on d-i's open: `Lines.HeadOf` inside `SayAsync`'s exclusive step, across kinds, read by `PartnerDesk` too, over the indexes `sessions_from` and `sessions_quest` this row adds (round 5, §19.13); the new `Continued` refusal with the head, each say caller's handling named; the ledger's open moving the old part's waiting words under their producer keys with transfer ids, in its own step, idempotent under its key; every site that opens and hands words, from the census (the ended and live limit moves, the driven carry-on, the briefed move and its not-offered path, start-from's `Start`, a refused open); moved words ahead of later ones | first the survey's *unverified* gap made a test: a word said to a live limit move between the old part's end and the new open lands once on the new part; a word kept between the course's read and the open moved by the open; a late word to a closed quest's driven part reaches the conversation that went on from it; a producer's retry at the new head keeps one word; a retried open moving nothing again; LIMITWORD1's, HANDWORDS1-i's and SAIDBACK1e's cases green; the say door's twin tables cell for cell; `SessionLedgerTests`, `DrivenInboxTests`, `ChatGoOnTests`, `HandOverTests`, `CurveMoveTests`, `BriefedMoveTests` whole; **the head over a chain of three parts and a planted cycle ending the walk; an older desktop reading `Continued` as a refusal it does not know** (round 5, §19.12, §19.13); the say door's latency on the install before and after, landing only with its p95 within a tenth |
-| **1e** the course, beside | `LineCourse.Decide` over paths A to N reproducing today's answers, read by nothing; its facts with the answers-alone hold and the boundary; `Start` for start-from; the consent before an agent's ask and the curve; a standing move's old part `Never`; one closed `from_why`/`from_by` enum; each place two paths differ on the same facts listed as a decision for its row | the paths' suites' cases ported as its table; the trigger-site census (§3.1); `AnswersAloneHoldTests`' cases as course rows |
-| **1f-i** the move record, read by nothing | `moves` and `move_words` in the store, the claim by process run (`store_runs`, `claim_run`, `claim_generation`), the effect marks, the take-up of dead runs' moves per kind before the sweep and after the imports, the imports run once the start's confirmation is settled; on d-i's keyed open; a box from SWITCHCTX1a, if built, imported (split by round 3, X2-5.2) | the store's transactions over a claim; **a takeover only of a run dead by the lease's test, never of a live one: two shells on one home, each keeping its own conversation moves; a `--share` loop beside the instance, each keeping the moves of the lines it runs; a paused executor whose process lives, never taken over, and paused after its mark commits and before its effect, the effect then made once by it alone** (O3-1, X3-3.1); a killed executor's marked effect with no outcome held by the taker, never repeated (X2-3.1); a run whose start time cannot be read never taken over; a lost open's answer found by its key across a crash, never opened twice; an older host's lost open held, never searched; **two shells deciding a move of one line, one row; an older shell's resume beside a newer shell's open, each word once and the empty destination held; the second shell on a home said once; an executor paused past ten minutes said `move.quiet` once and never taken over** (round 5, §19.1) |
-| **1f-ii** to **1f-iv** each move without a record keeps one, one per branch: ii the live limit move; iii the curve; iv the driven carry-on | the move written and taken up through the store; nothing else of the path changes | for each, a shell or loop killed at each phase comes up and ends with **each word on `said` when the open moved it either delivered once, held at a limit's conclusive refusal and carried once, or uncertain and said**, never sent twice (X2-5.1); a word said during a chat's `Hold()` named *row o's* in the census; §13.5's downgrade table run at each phase with an older build's own come-up, then the newer build's return acting once; **an older build opening a successor of the destination and crashing before it moved the destination's words, the newer build back delivering nothing to the destination and holding the move for the person with the words named, each said once by the person's take-back and say** (X3-3.4; round 5, §19.3); **a crash after a word's take and before `delivered`, the come-up closing the move delivered from the settlement** (§19.4); `LimitWaitsProcessTests`, `CurveMoveTests`, `ContinuationTests` |
+| **1p** attempts acknowledged, dispositions and settlement | §3.4 rule 5; §7 row 8; before rows d and f, so their proofs stand on it; the service's `said_settled`, written by a trigger in the statement that takes a word, one row per word id with the record it last left and its producer key, with no disposition, and `SaidKeys.Settled` read by key over the record the say names (the head walk's records from d-ii) inside the say door's, the helper desk's and the partner desk's own steps (round 4, X3-3.2, O3-5; round 5, §19.2; round 6, *C5-1.2*, *O5-F7*, *O5-F8*); the horizon a decision, seven days for a retry, trimmed by time alone, and none for the attempt; `GET /api/protocol` with the host's run and its `settled` mark (§19.12; *C5-1.12*, *O5-F12*) | the attempt's commit failing sends nothing and says so; an answer naming fewer words than asked sends only those; a commit whose answer is lost; a crash before and after the wire; a limit's refusal carrying its words once; **a transient try's words staying uncertain when a limit then ends the episode, only the words no try attempted carried** (X2-3.2); a producer's retry after the take answered as kept within the horizon, with its word's id; **a retry paused after its check while another dispatcher takes the word, then resumed, keeping one word** (X3-3.2); **a helper's and a partner's hand retried after its take keeping one word** (O3-5); **equal keys on unrelated records two words** (X2-3.3); no automatic resend of an uncertain attempt, its words in en and zh; an older host's take writing no settlement and its doors answering as today; **a retry past seven days kept as a new word; an older connector's own take statement over the migrated database settling its word; a take-back settling its word** (round 5, §19.2); **a settlement six days and twenty-three hours old answering its retry while more than 50,000 others are written that week, and one seven days and a minute old trimmed; a word left on two records, by a statement planted in the test as an open would write it, settled once under the record it last left; a record with no stored `entry` settling and answering its word** (*C5-1.2*, *C5-3.2*); the moved-word and successor cases being d-ii's; the install's rate of takes and the table's size at a week; the install's delivery latency and store writes before and after, **landing only with the say door's p95 and the `sessions` write's p95 within a tenth of before** (*O5-F8*) |
+| **1d-i** the keyed open and its record (round 4, O3-12, X3-6.1) | §3.3's destination: the ledger's opens taking an `opens` key, the service's `session_opens` written in the open's own exclusive step with the record opened and every word it moved (none until d-ii), a repeat open answered from it whether or not its words still wait; the key in the open's request and its echo and the transfer in its answer, nothing on the record or the wire; **the open refused unless the record left stands, is its line's head and is not active, and the go-on's step refusing a record a keyed open left** (round 6, *O5-F2*), with `Lines.HeadOf` and the indexes `sessions_from` and `sessions_quest` it reads; **a row kept as `gone` where its opened record is deleted first, and gone with its record left** (*C5-1.5*); the `opens` mark at 1 (§19.12) | a repeat open with the key opening nothing and moving nothing, answered the record, in process; the same after a word the test planted on the opened record was taken off `said` (*C5-3.2*); two keys two records; an older host's open unchanged; **the opened record deleted by an older build's own statement, then the key asked again: answered `gone`, never opened again; the record left deleted, the row gone with it and the key refused** (*C5-1.5*); **a keyed open of an active record, of one with a successor and of one a driven quest ran again refused with the head; an ended record's go-on step refused once a keyed open left it, and a keyed open refused once the go-on's step committed** (*O5-F2*); the protocol marks answered with the host's run, and against a stand-in host with none no key sent and the move made as today (round 5, §19.5, §19.12); the `sessions` write's p95 within a tenth of before; `SessionLedgerTests` whole; across a crash, row f-i's case |
+| **1d-ii** words follow the line's head, and the open moves them | §3.4 rules 2 and 3, on d-i's open: d-i's `Lines.HeadOf` inside `SayAsync`'s exclusive step, across kinds, read by `PartnerDesk` too (round 5, §19.13); the new `Continued` refusal with the head, each say caller's handling named; `SaidKeys.Settled` read over the records the walk visits (round 6, *C5-1.2*); the ledger's open moving the old part's waiting words under their producer keys with transfer ids, in its own step, idempotent under its key; the `opens` mark raised to 2 and the `head` mark added (*C5-1.12*); every site that opens and hands words, from the census (the ended and live limit moves, the driven carry-on, the briefed move and its not-offered path, start-from's `Start`, a refused open); moved words ahead of later ones | first the survey's *unverified* gap made a test: a word said to a live limit move between the old part's end and the new open lands once on the new part; a word kept between the course's read and the open moved by the open; a late word to a closed quest's driven part reaches the conversation that went on from it; a producer's retry at the new head keeps one word; a retried open moving nothing again; LIMITWORD1's, HANDWORDS1-i's and SAIDBACK1e's cases green; the say door's twin tables cell for cell; `SessionLedgerTests`, `DrivenInboxTests`, `ChatGoOnTests`, `HandOverTests`, `CurveMoveTests`, `BriefedMoveTests` whole; **the head over a chain of three parts and a planted cycle ending the walk; an older desktop reading `Continued` as a refusal it does not know** (round 5, §19.12, §19.13); **row p's moved cases, now that words move: a retry through two successors one word; a keyless word moved and settled by its id; a word moved from a record with no stored `entry` to a successor holding one, taken there, its retry to the old record answered as kept** (round 6, *C5-1.2*, *C5-3.2*); **the same repeat open after the moved words were taken; against a d-i host (`opens` 1, no `head`), the key sent and the words moved by the executor as today** (*C5-1.12*); the say door's latency on the install before and after, both branches of the walk measured (*C5-1.13*), landing only with its p95 within a tenth |
+| **1e** the course, beside | `LineCourse.Decide` over paths A to N reproducing today's answers, read by nothing; its facts with the answers-alone hold and the boundary; `Start` for start-from; the consent before an agent's ask and the curve; a standing move's old part `Never`; one closed `from_why`/`from_by` enum; each place two paths differ on the same facts listed as a decision for its row | the paths' suites' cases ported as its table; the trigger-site census (§3.1); `AnswersAloneHoldTests`' cases as course rows; `StructureTests` whole and no production path reading it (round 6, *C5-1.14*, *C5-3.3*) |
+| **1f-i** the move record, read by nothing | `moves` and `move_words` in the store, one standing move per record left by the partial index `moves_standing` (round 6, *O5-F1*), the claim by process run (`store_runs`, `claim_run`, `claim_generation`), the effect marks, the take-up of dead runs' moves per kind before the sweep and after the imports, the imports run once the start's confirmation is settled; on d-i's keyed open; `move.quiet` said on the line and in the log (*O5-F15*); a box from SWITCHCTX1a, if built, imported (split by round 3, X2-5.2) | the store's transactions over a claim; **a takeover only of a run dead by the lease's test, never of a live one: two shells on one home, each keeping its own conversation moves; a `--share` loop beside the instance, each keeping the moves of the lines it runs; a paused executor whose process lives, never taken over, and paused after its mark commits and before its effect, the effect then made once by it alone** (O3-1, X3-3.1); a killed executor's marked effect with no outcome held by the taker, never repeated (X2-3.1); a run whose start time cannot be read never taken over; a lost open's answer found by its key across a crash, never opened twice; an older host's lost open held, never searched; **two shells deciding a move of one line, one row; an older shell's resume beside a newer shell's open, each word once and the empty destination held; the second shell on a home said once; an executor paused past ten minutes said `move.quiet` once, on its line and in the log, and never taken over** (round 5, §19.1; round 6, *O5-F15*); **a move closed `superseded`, and one held and then resolved by the person's press, each followed by a second move of the same record, which claims** (*O5-F1*); **one newer shell resuming a record while another keyed-opens from it, in both orders: one of them made, the other refused by the service's step** (*O5-F2*); **Codex's delayed older move: an older build's briefed move reading its words, paused, a newer move opening, delivering and ending, the older move then opening its own successor and delivering its copy: the newer move's words delivered once by the newer build, the older copy once by the older build, each said on its part, nothing a third time, the bound §3.4 rule 4 states** (*C5-1.1*); `StructureTests` whole (*C5-1.14*) |
+| **1f-ii** to **1f-iv** each move without a record keeps one, one per branch: ii the live limit move; iii the curve; iv the driven carry-on | the move written and taken up through the store; nothing else of the path changes | for each, a shell or loop killed at each phase comes up and ends with **each word on `said` when the open moved it either delivered once, held at a limit's conclusive refusal and carried once, or uncertain and said**, never sent twice (X2-5.1); a word said during a chat's `Hold()` named *row o's* in the census; §13.5's downgrade table run at each phase with an older build's own come-up, then the newer build's return acting once; **an older build opening a successor of the destination and crashing before it moved the destination's words, the newer build back delivering nothing to the destination and holding the move for the person with the words named, each said once by the person's take-back and say** (X3-3.4; round 5, §19.3); **the same with the older build live and not crashing, advancing the head while the newer one runs; the hold offering the person's words alone for saying again, their files named, another author's words kept as claims, and a word the head's events already show said so** (round 6, *C5-1.3*, *O5-F14*); **a crash after a word's take and before `delivered`, the come-up closing the move delivered from the destination's `User` event, never from the settlement; and a crash at `delivering` before the take, the word then removed by the person's take-back or by an older come-up's uncertain settlement, each read *left* at the return, the move never closed delivered for it and its begun effect held** (§19.4; *C5-1.4*, *O5-F6*); `LimitWaitsProcessTests`, `CurveMoveTests`, `ContinuationTests` |
 | **1f-v**, **1f-vi** the boxed moves, one per branch: v the hand-over; vi the ended limit move | the move through the store, its box imported once and no longer written (§3.3) | as ii to iv, and an older build's own box written during a downgrade imported once at the return and set aside; `HandOverProcessTests`, `LimitWaitsProcessTests` |
 | **1g** failures read once on every path | what AGENTERRORS1's remaining rows do not already reach: a conversation's and a brainstorm's limit by the reader's code, a conversation's limited record written as the ledger's flag at its end | a chat's limit by code alone moves it; AGENTERRORS1's C4-6 case on a conversation; `AcpTransientTests`, `ChatTransientProcessTests`, `TransientRetryTickTests`, `LimitResumeTickTests` whole |
-| **1h** conversations onto the course, one path per branch: the curve; the live and ended limit moves; the wake; the go-on; the briefed move and go-on-new; the hand-over | each path calls `LineCourse.Decide`, its old decision the adapter, the hand-over rule's consent kept on the curve's and an agent's door | the path's suite whole (`CurveMoveTests`, `LimitWaitsProcessTests`, `ChatGoOnTests`, `ChatGoesOnProcessTests`, `HandOverTests`, `HandOverLookTests`); a consent case per door; the census's *not yet moved* list shorter by one |
+| **1h** conversations onto the course, one path per branch: the curve; the live and ended limit moves; the wake; the go-on; the briefed move and go-on-new; the hand-over | each path calls `LineCourse.Decide`, its old decision the adapter, the hand-over rule's consent kept on the curve's and an agent's door | the path's suite whole (`CurveMoveTests`, `LimitWaitsProcessTests`, `ChatGoOnTests`, `ChatGoesOnProcessTests`, `HandOverTests`, `HandOverLookTests`); a consent case per door; the census's *not yet moved* list shorter by one; `StructureTests` whole, no runner type crossing Course's port (round 6, *C5-1.14*) |
 | **1i** driven lines onto the course, one path per branch: the go-on and the limit resume; the quest's hand-over; the carry-on; past the transient bound; the send-back | as 1h | `ContinuationTests`, `SessionMessagesTickTests`, `LimitResumeTickTests`, `PlannerTests`, `TransientRetryTickTests`; a consent case per door; the family rehearsal |
-| **1o** words never held outside `said` | §3.4 rule 4, after 1h and 1i: the say door's keep for a winding-up or moving record, on `said` itself, where the host's marks keep `opens` and the head (round 5, §19.11); the shell's holds become keeps there; a chat's `Hold()` during a move keeps and queues; `held-words.json` read once and no longer written against such a host, a host without the marks keeping today's hold | HANDWORDS1-i's case with the shell restarted mid-hand-over; an older shell's own come-up and sweep over a word kept for a moving record at each phase, before the open and after, resuming nothing in a successor's tree and delivering each word once; the hold kept against a stand-in host without the marks; `DrivenInboxTests`, `SessionMessagesTickTests`, `ChatGoOnTests`; a restart between keep and delivery; the say-to-wire latency on the install |
-| **1j** one start plan and one walk | §2.4, one start per branch; four walks into one, one pass-code set, one re-ask; the reservation at the selection, probes uncounted; §7 row 5 | `ActorChoicesTests`, `HelperLookTests`, `OneTurnReaskTests`, the intake's and the brainstorm's suites; a record on Build's second choice resumed by the person's words; exactly one reservation per start; a look's starts spread as today |
+| **1o** words never held outside `said` | §3.4 rule 4, after 1h and 1i: the say door's keep for a winding-up or moving record, on `said` itself, where the host's marks keep `opens` and the head (round 5, §19.11); the shell's holds become keeps there; a chat's `Hold()` during a move keeps and queues; `held-words.json` read once and no longer written against such a host, a host without the marks keeping today's hold | HANDWORDS1-i's case with the shell restarted mid-hand-over; an older shell's own come-up and sweep over a word kept for a moving record at each phase, before the open and after, resuming nothing in a successor's tree and delivering each word once; **an older executor paused after it read its words and before its open, resumed after the newer destination ended: each build's delivery once, the bound §3.4 rule 4 states, and no word kept on `said` sent a third time** (round 6, *C5-1.11*, *C5-2.4*); the hold kept against a stand-in host without the marks; `DrivenInboxTests`, `SessionMessagesTickTests`, `ChatGoOnTests`; a restart between keep and delivery; the say-to-wire latency on the install |
+| **1j** one start plan and one walk | §2.4, one start per branch; four walks into one, one pass-code set, one re-ask; the reservation at the selection, probes uncounted; §7 row 5; the role the seeded role of the work and its order `ActorChoices.Effective` over today's actor choices, no catalogue read, row x adopting `RoleCatalog.RoleFor` (round 6, *C5-3.6*) | `ActorChoicesTests`, `HelperLookTests`, `OneTurnReaskTests`, the intake's and the brainstorm's suites; a record on Build's second choice resumed by the person's words; exactly one reservation per start; a look's starts spread as today |
 | **1z-ii** ⚖ the configuration (§13.5, §13.6; its general settings *proposed for a later design*, round 5, §19.15, its `actors` part cut out as row w-s) | `data/driver.json` into `settings`, every writer and reader through Settings; the export and the import at every door; the narrowings of `drivable`, `access` and `standing` written through to the backup, the backup first (§19.8); ⚖ since its import door changes `access`, `drivable`, `standing` and a role's authority (O3-14) | §13.6's row z-ii |
 | **1z-iv** ⚖ the appointments (§13.6; *proposed for a later design*, round 5, §19.9) | `data/standing-confirmation.json` into `appointments`, each with its grant and the role's revision at *Appoint*, the standing confirmation's own family, set aside; ⚖ since it rehomes the grant (O3-14) | §13.6's row z-iv |
 | **1w-0** ⚖ the act vocabulary in the driver (round 4, O3-6; *proposed for a later design*, round 5, §19.9) | each role's and act's name, its offered flag and its admissible scope kind moved from the shell's library (`Modules/Platform/StandingConfirmation.cs:121-133`, `:330`, `:336`; `Modules/Platform/RoleActs.cs:44-65`; `Modules/Bridge/StewardActRows.cs:145-161`) into the driver's `Capabilities`, read from there by the shell's judge, tables and handlers, which stay; no behaviour changed; ⚖ since it rehomes what authority reads | `StandingConfirmationTests` and `PipeCensusTests` whole; every act's offered flag and scope kind read alike before and after; the GitDoor untouched |
-| **1w-s** ⚖ the roles' staffing, `actors` into `role_staffing` (round 5, §19.15, the steward's change; cut out of z-ii) | `driver.json`'s `actors` imported once into `role_staffing` once the start's confirmation is settled, every entry judged, an unreadable one holding its starts; every staffing writer (`SET_ACTOR`, `daoris driver actor`, Ask Daoris's proposals) writing `role_staffing` alone and keeping `adapter`, `intakeAdapter` and `helperAdapter` written through as `ActorChoices.With` does today; the key set aside under `data/driver.actors.imported`, an older build reading every seeded role *as before*; an `actors` key found again, or a first-agent key changed, imported once and set aside again, a widening held for the press; D50 amended for `actors` alone; `daoris driver role export` and `import` and the AI screen's *Export* and *Import*; the seeding tools moved to the import or `DAORIS_DRIVER_CONFIG`; ⚖ since its import door turns Intake and Ask Daoris on or off | §19.15's proof: the three states round-tripped; an unreadable entry holding its starts; Intake off in the store and an older build's own start starting no intake; a second choice in the store and an older build walking the first alone; an older build's `SET_ACTOR` during a downgrade imported at the return, a turn-on held for the press; a hand edit offered as an import; `ActorChoicesTests` and `DriverConfigKeepsTests` whole; the screen in both languages |
-| **1w** the role catalogue, read beside | §2.7's capability vocabulary (each act with its scope kind and offered flag) and the two exclusive shapes; with the appointed half left for later (round 5, §19.9), an appointed role its seeded one, read per id from the code, and a record of the appointed shape refused (`appointed-not-configurable`); every role's staffing read from `role_staffing`, which w-s fills (§19.15); `RoleCatalog.Read` over the store's `roles` and the seed per id; `RoleCatalog.RoleFor(work, place)`; `RoleCatalog.Judge` with its closed refusal codes, keyed by the work, its census every writer (`SET_ACTOR`, `daoris driver actor` and `role`, Ask Daoris's proposals, the import); the eight always-on ids one list; read by nothing | the seed reproduces today's every start case; **a catalogue with one added role reproduces the eight seeded roles' starts** (O2-6); the judge refuses an owner's act, a mixed shape, an appointed role taking work, an act not offered or out of its scope kind, removing or scoping away a role of a work that may not be off, two roles taking one work in one scope; first edit, partial edit and last deletion keep absent, set, removed and unreadable apart (X2-2.3); **a mixed record written past the judge read as unreadable, never as either shape; an unreadable added record holding every start in its scope until it reads or is deleted, each said** (O3-16); `ActorChoicesTests` whole |
+| **1w-s** ⚖ the roles' staffing, `actors` into `role_staffing` (round 5, §19.15, the steward's change; cut out of z-ii; its protocol round 6's, *C5-1.15*, *O5-F3*, *O5-F4*) | `driver.json`'s `actors` imported once into `role_staffing` once the start's confirmation is settled, every entry judged by today's `ActorChoices.Judge`, an unreadable one kept as its error and **left in `actors`**, where an older build holds on it too; every staffing writer (`SET_ACTOR`, `daoris driver actor`, Ask Daoris's proposals) writing `role_staffing` and the projection it owns in `driver.json` (`adapter`, `intakeAdapter`, `helperAdapter`, and `actors` holding only entries that do not read) by §19.15's three steps under `driver.json`'s `KeepLock`, intent, file, commit, each crash boundary rolled forward or said at the come-up; `intakeAdapter` and `helperAdapter` absent wherever their work is off, removed or unreadable in any scope; what it last wrote kept in `role_staffing_projection`; a role *as before* reading its first-agent key live; at the return an `actors` key found again, a set role's first-agent key changed or a role turned on **offered as an import, never applied by itself**, a turn-off applied with no press; D50 amended for the staffing alone; its own verbs, `daoris driver actor export` and `import`, and the import's offer on the AI screen's *Actors*, the seeded eight alone until y-i; ⚖ since its import door turns Intake and Ask Daoris on or off | §19.15's proof: every crash boundary of the first import and of a write, an older build's start at each; two writers, newer and older; an unreadable entry holding its starts in both builds and its repair; a second choice and a model in the store, an older build walking the first agent alone at account default; an older build's `SET_ACTOR` during a downgrade offered at the return, the store's staffing untouched until the person takes it, its turn-off applied; a hand edit of a set role's key offered and of an *as before* role's read live; the seeding tools' census; `ActorChoicesTests` and `DriverConfigKeepsTests` whole; the screen in both languages |
+| **1w** the catalogue of working roles, read beside (round 6, *C5-2.5*, *O5-F5*) | the work vocabulary alone, its capabilities the work codes, and the working shape; no act vocabulary and no appointed seed: the supervisor and the steward stay the shell's, in code, and `RoleCatalog.Judge` refuses any record whose `filled` is `appointed` (`appointed-not-configurable`) before it judges anything else of it; every role's staffing read from `role_staffing`, which w-s fills (§19.15); `RoleCatalog.Read` over the store's `roles` and the seed per id; `RoleCatalog.RoleFor(work, place)`; `RoleCatalog.Judge` extending w-s's `ActorChoices.Judge`, keyed by the work, with its closed refusal codes, its census every writer (`SET_ACTOR`, `daoris driver actor` and `role`, Ask Daoris's proposals, the import); w-s's projection over scoped roles, a work off in any scope writing its key absent (*O5-F3*); the eight always-on ids one list; read by nothing | the seed reproduces today's every start case; **a catalogue with one added role reproduces the eight seeded roles' starts** (O2-6); the judge refuses an appointed record before any other code, a mixed shape, an unknown work, removing or scoping away a role of a work that may not be off, two roles taking one work in one scope; first edit, partial edit and last deletion keep absent, set, removed and unreadable apart (X2-2.3); **a mixed record written past the judge read as unreadable, never as either shape; an unreadable added record holding every start in its scope until it reads or is deleted, each said** (O3-16); a workspace's Intake off with the machine's on, an older build starting no intake (*O5-F3*); `ActorChoicesTests` whole; `StandingConfirmationTests` and `PipeCensusTests` untouched |
 | **1x** starts take their role | the start plan finds each start's role by its work and place; `actor` written as the seeded role of its work, the role taken and its revision on the binding, each binding writer updating its own columns by name (O3-16); census C, moved here from row c in round 4: every record carrying an `actor` held to a role taking its work by the role's revision the start kept, a role taking `design` admitted on a record whose marks read `build` (O2-9); the `design` capability, admitted as `build` and falling back to it, taken by a quest whose `weight` its publisher or the intake marks `design` (MODELROLE1l's code; the field shared with MODELROLE1i) | **first, an older build's continuation of a record started on an added role runs as its seeded work** (O2-3; X2-5.2); a quest marked design starts on Build's order while no role takes `design`, and on the role that takes it once one does, each said in *Details*; an unmarked quest on Build's; a scoped role naming an agent its place's rule does not permit walks only the permitted (the census's case); the seeded catalogue changes no start (`ActorChoicesTests`, `PlannerTests`, `HelperLookTests` whole) |
 | **1y-i** ⚖ the person sets the catalogue up | adding, changing and removing a working role (name, work, staffing, scope) in Settings, with `daoris driver role` and through `role_propose` with the person's press; the one place a role is set, its words in both catalogues under the UI and translation contracts; the *Designer* suggestion on D205 point 7's card; after MODELROLE1g's card and MODELROLE1h's `actor_propose`, which `role_propose` extends (O2-11); ⚖ since removing a role holds its work's starts | the judge's cases at every door; a removed role's work holding its starts, said; a running session untouched; no `settings_*` grant reaching a role; `i18n:check`, `names:check -- --strict`; the screen in both themes, widths and languages; an installed proof of the owner adding a role |
-| **1k** the event journal, read by nothing | `event_journal` with §4.1's capture schema, its guarded raw triggers on `sessions`, `quest_log`, `asks` and the channel, each row's allow-listed snapshot; round 4's `session_transitions` withdrawn, the row's position being the occurrence's key (round 5, §19.6); the `journal` family; the floor and the trim; `store_identity` written by the schema's initialisation | each ledger move once, in order, as its raw transition; a note-only move, a same-state write and a mirror pass journalling nothing; a word taken waking the `journal` family; **an end, a reopen and an end, and a park, its answer and a park again, made before any reader runs, each coded from its own row** (X2-4.1); a statement adding more than 64 words journalling an overflow row; an older build's own statements, run in the test, mint rows and never fail (`compatible-builds.md`); the bound per row and per table holds; positions never reused; landing limits measured on the install before and after: the `sessions` write's p95 latency within 10 % and the journal's typical size under 5 MB; the rows a week journals, which sizes the gap a teller below the floor misses (§19.6) |
+| **1k** the event journal, read by nothing | `event_journal` with §4.1's capture schema, its guarded raw triggers on `sessions`, `quest_log`, `asks` and the channel, each row's allow-listed snapshot; round 4's `session_transitions` withdrawn, the row's position with the store's identity being the occurrence's key (round 5, §19.6; round 6, *O5-F9*); the `journal` family, named only to a reader that asks for it (*O5-F10*), and the `journal` mark (§19.12); the floor and the trim; `store_identity` written by the schema's initialisation | each ledger move once, in order, as its raw transition; a note-only move, a same-state write and a mirror pass journalling nothing; a word taken waking the `journal` family; **an end, a reopen and an end, and a park, its answer and a park again, made before any reader runs, each coded from its own row** (X2-4.1); a statement adding more than 64 words journalling an overflow row; an older build's own statements, run in the test, mint rows and never fail (`compatible-builds.md`); an older client's own stream reader over a journal-only append, woken by nothing (*O5-F10*); the bound per row and per table holds; positions never reused; landing limits measured on the install before and after: the `sessions` write's p95 latency within 10 % and the journal's typical size under 5 MB; the rows a week journals, which sizes the gap a teller below the floor misses (§19.6) |
 | **1z-v** the notices (§13.6) | `data/notices.json` into `notices`, with the said-set's and cursors' tables | §13.6's row z-v |
 | **1l-i** to **1l-v** one end, one reader per branch | `part.ended` with its reason and class judged in .NET, §4.2's filter table; i the usage slice wakes on it; ii `SESSION_ENDED`; iii `session/ended`; iv the log's `session.ended`; v *Ended*; every process reading the journal from its come-up | `AttentionTests`, `NoteCodesTests`, `PluginKitTests`, `StatePublisherTests` whole; a driven end wakes the usage slice; LIMITRESUME1a's case; the class table both ways against `NoteCodes`' `ended.*`; a Process case with a shell beside a headless lease holder, a conversation's end told once and at once |
-| **1m-i** to **1m-v** news from the journal, one reader per branch | i one owner of the notices, a cursor per teller; ii parks from the journal; iii ends; iv the said-set in place of each first-read baseline, one baseline per branch; v the notify rule in one table | a park made just before a restart told once after it; a crash between claim and balloon telling nothing twice; a held call told once while its process lives; nothing told twice; m-iv's horizon cases: more than 200 eligible at once, a key expiring with the horizon, a new teller, none told twice (X2-4.3); **an end, a reopen and an end told as two positions; a note-only write after an end telling nothing new; a teller below the floor telling none of the gap and saying so** (X3-3.6; round 5, §19.6); **a conversation answering three times with no change of its record, each answer told once by its session and `seq`** (X4-3.3); `AttentionStateSliceTests`, `AttentionTests`, `LookSaidTests`; the look's time on the install before and after |
+| **1m-i** to **1m-v** news from the journal, one reader per branch | i one owner of the notices, a cursor per teller; ii parks from the journal; iii ends; iv the said-set in place of each first-read baseline, one baseline per branch; v the notify rule in one table | a park made just before a restart told once after it; a crash between claim and balloon telling nothing twice; a held call told once while its process lives; nothing told twice; m-iv's horizon cases: more than 200 eligible at once, a key expiring with the horizon, a new teller, none told twice (X2-4.3); **an end, a reopen and an end told as two positions; a note-only write after an end telling nothing new; a teller below the floor telling none of the gap and saying so** (X3-3.6; round 5, §19.6); **a conversation answering three times with no change of its record, each answer told once by its session, the shell's run and its turn's end; the same with two shells running its turns one after the other, and with an event append failing between them** (X4-3.3; round 6, *C5-1.6*, *O5-F9*); **a record event of a store with another identity at an equal position told as its own** (*O5-F9*); `AttentionStateSliceTests`, `AttentionTests`, `LookSaidTests`; the look's time on the install before and after |
 | **1n** EVENTHOOK1 onto the journal | after EVENTHOOK1's rows land as designed, its session kinds read the retained journal (§5.1); its relay's delivery contract unchanged | its grammar census and relay proofs whole; a restart of the lease's loop re-reads a session event the journal holds; a missed frame still said as missed |
 | **1q** ⚖ one policy shape and start admission | §2.3's policy over today's keys and the start layer's table, keyed by the work; §7 row 9 | `HelperLookTests`, `HelperJudgeTests`, `PartnerJudgeTests`; the five doors of survey §1.3 row 6 asked the same cases; `DriverConfigKeepsTests` (no key moved) |
 | **1r** ⚖ the connector by work, failing closed | the call layer's table over every tool × every work, derived from the registration; a brainstorm's scope placed first, generator and synthesizer apart; `SessionRole` becomes the work; §7 rows 10 and 11 | `McpToolsTests`, `McpRoleFilterTests` over every work × every tool; a voice's result tools served; a stand-in named caller with no record served reads and refused mutations; C2a's measurement of the ACP doors first (FABRIC-ACP1) |
 | **1s** push only | with D182's remaining rows: `DRIVER_TICK`'s data into slices; `STATE_CHANGED` for unmoved scopes and plugins alone; held answers by declared inputs and versions; §7 row 14 | `pushedState.test.tsx`, `bridge/state/*.test.ts*`, `StateSlicesTests`; bridge reads per minute on the install with two windows, before and after (D182 point 8) |
 | **1t** ⚖ one role door (*proposed for a later design*, round 5, §19.9) | §2.5: one act form and proof, the act admitted within §2.7's three (the code's act table, the appointment's grant, the role's configuration as it stands) at admission and again at its run (X3-2.2), the appointment's `acts` kept (O2-1), the desk's decline outside every grant as today (O3-7), the holder a participant placed as a holder, its authority read in the shell | `PipeCensusTests`, `StandingConfirmationTests` whole; a role's act never read as the person's; an act outside the appointment's grant refused whatever the role's configuration says; **an admitted act whose role a narrowing left without it cancelled at its run**; the desk's decline admitted on every steward appointment; an owner's act refused whatever the role says |
 | **1y-ii** ⚖ appointed roles configured (*proposed for a later design*, round 5, §19.9) | an appointed role configured with acts from the vocabulary, after row t, through a `Window`-class route alone; every narrowing lowering each live appointment's grant, computed at each act as the intersection of every revision of the role since its *Appoint* rather than written into the grant (round 5, §19.9, replacing round 4's write in the standing confirmation's one mutation step; X3-2.2, X4-3.2); an increase (an act added, a scope widened, a restriction lifted) effective only at the next *Appoint*; appointing unchanged (D208 point 1) | **a live appointment not widened by a later edit to its role, nor by a scope's widening or a restriction's removal, until the next *Appoint*** (O2-1; X2-2.2); **appointed with `answer` and `defer`, the role narrowed to `answer` and `defer` restored, `defer` refused until *Appoint again*** (X3-2.2); a narrowing made in one shell refused at the next act of an appointment another instance holds (X4-3.2); a narrowing effective at once on a live appointment; removing an appointed role revoking its appointments and cancelling its admitted acts; an authority added by a proposal, a card or the terminal refused; `StandingConfirmationTests`, `PipeCensusTests` whole; a configured appointed role's act recorded as its own |
-| **1v** ⚖ records last | `held-words.json`'s reader and the driver's `ContinuedIn` fallback retired once no pairing of §19.12's matrix has a build that writes or needs them, D139 keeping no build past a confirmation (round 5, §19.7, §19.12); the set-aside backups (§13.5) kept until then; a reviewer's `serves` (D203 point 6) once every reader reads `opinion` first | an older build's statements over each new shape; `SessionHomeFiles`' inventory and its kept names; `QuestSyncTests` (nothing new on the wire); `SessionStoreTests` (the field null for a record from before and for a mirror); every word of a retired file on `said` before it goes |
+| **1v** ⚖ records last | `held-words.json`'s reader and the driver's `ContinuedIn` fallback retired once no pairing of §19.12's matrix has a build that writes or needs them, D139 keeping no build past a confirmation (round 5, §19.7, §19.12), that condition shown for each pairing in the row and never read from this install's confirmation alone, since a second install or a build published in place is no update's (round 6, *C5-3.10*); the set-aside backups (§13.5) kept until then; a reviewer's `serves` (D203 point 6) once every reader reads `opinion` first | an older build's statements over each new shape; `SessionHomeFiles`' inventory and its kept names; `QuestSyncTests` (nothing new on the wire); `SessionStoreTests` (the field null for a record from before and for a mirror); every word of a retired file on `said` before it goes |
 | **1z-vi** to **1z-xiv** the store's other families (*proposed for a later design*, round 5, §19.15) | one family per row, §13.6's table: the accounts, the agents' wiring, the course's marks and presses, the workplace's records (⚖, z-ix), the work records, the rules (⚖, z-xi), Ask Daoris's links, the service's boxes, the CLI's own files | each its §13.6 proof |
 
 1a-i is first because it builds the one call every account path reads, over the decision the owner already made and LIMITSWITCH1 and LIMITSWITCH2
@@ -1482,7 +1571,7 @@ built, so the class of LIMITSWITCH1, LIMITRESUME1b, LIMITRESUME1c and LIMITGOON1
 did not; its provenance and its briefed move are Part B's rows (O-10), and round 3 moved the closed quest's case into a-iii (O2-5), which
 LIMITSWITCH2 built by the ended move rather than the briefed one. 1b is a day at the common boundary where three losses sit. 1c proves the participant on the defects it came from (CAPCOUNT1,
 ASKRAIL1, SESSBADGE1) before anything is admitted by it. mod-0 comes next so every new file of the rows after it is written in its subdomain; u
-at any time. In Part B, z-i and z-iii before a-ii, whose provenance is a binding in the store; 1p and d-i before d-ii and f so their proofs stand
+at any time. In Part B, z-i after mod-ii, whose Store folder it writes in (round 6, *O5-F12*), and z-i and z-iii before a-ii, whose provenance is a binding in the store; 1p and d-i before d-ii and f so their proofs stand
 on acknowledged attempts, the service's settlement and an idempotent open; 1o after 1h and 1i so the course's `Never` holds the old part before a
 word is kept there; z-ii, z-iv and w-0 before w, whose catalogue, grants and act vocabulary it reads (round 5: w-s alone before w, the
 others proposed for later designs, §19.15).
@@ -1493,19 +1582,24 @@ others proposed for later designs, §19.15).
   its landing limits. That every end writes a reason code in `note_parts` is read from the state's statement and the codes' list, not proven for
   every writer; one that writes none is told `reason` absent and class `unknown`.
 - **The head's cost at the say door**: a chain of `from` reads per word, and the sessions table has no index on `from_session` or `quest`
-  (`Core/Sessions/Sessions.cs:504`, `:632`, `:762`; round 5 read it); row d-ii adds both and lands only with the say door's p95 within a tenth
-  (§19.13).
+  (`Core/Sessions/Sessions.cs:504`, `:632`, `:762`; round 5 read it); row d-i adds both with the walk its keyed open reads, and row d-ii, which
+  reads the walk at the say door, lands only with the say door's p95 within a tenth (§19.13), each branch measured: one probe for a word whose
+  record has no successor, a second for a driven part's quest's last run (round 6, *C5-1.13*).
 - **A hung executor and two shells on one home** (round 5, §19.1): how often a move is said `move.quiet`, measured by row f-i on the install.
 - **Whether the course reproduces every live combination**: it is proven on the cases the paths' suites hold and on the census, not on every state a
   line reaches on the install.
 - **The live limit move's word gap** (survey §2.4 row 3, *unverified* that it loses one): row d's first test.
 - **News after a long downtime**: whether a cursor resuming after days tells too much at once; row m bounds it by the notices' week and measures it.
 - **The settlement's and the move record's cost**, and how often an uncertain delivery happens: rows p and f measure them; the settlement's horizon
-  is a decision (round 5, §19.2: seven days for a producer's retry, none for the attempt), its cap of 50,000 rows checked by row p against the
-  install's rate of takes.
+  is a decision (round 5, §19.2: seven days for a producer's retry, none for the attempt), trimmed by time alone with no count cap (round 6,
+  *C5-1.2*), so its size is a week's takes, which row p measures on the install; a week far past that rate makes the table larger, never the
+  horizon shorter.
+- **Delivery's evidence across a crash** (round 6, *C5-1.4*): a taken word is told by its own `User` event, which the runner records before the
+  write that takes it; an append that fails (`SessionEventLog.cs:84-94`) leaves no event, and the move then reads the word *left* and holds its
+  begun effect, the conservative reading, never a second delivery.
 - **Whether lineage reaches Daoris over either harness's ACP door** (FABRIC-ACP1, C2b's), on which row r's child column waits.
 - **Whether two processes append one session's event file**, and whether a shell not holding the lease reconciles its slices only at the manifest
-  (survey §3.2, §3.4 row 7, *unverified*): the hub's rule assumes neither.
+  (survey §3.2, §3.4 row 7, *unverified*): the hub's rule assumes neither, and since round 6 no news key reads an event's `seq` (§4.5; *C5-1.6*).
 - **How often each move happens on the install**, which sizes row f's recovery cases: read from the machine log's `session.moved` lines first.
 - **A brainstorm voice resolved at the connector through its box** in time for its first call (*unverified*).
 - **An older build's continuation of a record started on an added role**: answered by round 3 (§2.7: `actor` keeps the seeded id, O2-3), proven by
@@ -1526,7 +1620,9 @@ others proposed for later designs, §19.15).
   for round 3 (whose `src/` is round 2's `29a066182`), at `e8f1aed4f` for round 4 (whose `src/` is round 3's `68a396c65` but for one test), and
   LIMITSWITCH1 on its branch at `3fdc6bbeb` and `adacd5fdc`, merged at `a85004bd0`; LIMITSWITCH2, merged at `db883b1cc` as round 3 was committed,
   was read from its note on D137 in round 3 and in its code in round 4, at the lines round 4 cites; EVENTHOOK1, COWORKVIEW1's routing half and SWITCHCTX1's carry are proposed, not built, and what this
-  says of them is read from their documents at that commit.
+  says of them is read from their documents at that commit. Round 5 read the code on main at `eced2688e` and round 6 at `6736d2db9`, each
+  `src/` being `86f32f40c`'s unchanged; by round 6 EVENTHOOK1's rows 1a to 1c are accepted, and COWORKVIEW1's row a is in its
+  round 5 (§5.1).
 
 ## 12. Round 2: the reads of round 1 answered
 
@@ -1644,7 +1740,8 @@ whole of §13 is Part B's. The inventory below was read at `2a08bde4a`, every fi
   uniqueness and its answer must be the open's own statement in the service's exclusive step; and a word's settlement, `said_settled` (§3.4 rule
   5), since a producer's retry must be answered inside the step that would keep it, written by a trigger so that every writer settles (§19.2).
   Round 4's third, a record's transition number in `session_transitions` (§4.5), is withdrawn in round 5 (§19.6). The service also answers its
-  protocol marks, `GET /api/protocol`, read by the desktop once per host run (§19.12).
+  protocol marks with its run's id, `GET /api/protocol`, added by row p, every answer of a step a mark changes naming that run, so the desktop
+  reads the marks again whenever an answer names another run or none (§19.12; round 6, *C5-1.12*).
 - **Who opens it**: the shell (the modules and the driver library in one process); `daoris-driver`, as the headless loop and as each terminal
   verb, the Node CLI's management verbs reaching it by spawning `daoris-driver` as they do today; and the GitDoor, read-only, for the families it
   reads today (the git pointers, the permissions, the tools, the git identities), through the store class compiled into it as `GitIdentityUse`
@@ -1669,12 +1766,12 @@ only for rows an older store-aware build may keep writing; a column is never rep
 |---|---|---|---|
 | The store's own | `store_version` (the schema's version and the oldest build that may write it); `store_revisions` (one revision per family, moved in the writing transaction); `store_runs` (each process run that writes: its run id, kind, pid and start time, and the moment it began, the claim's identity, §3.3; round 4, O3-1); `imports` (each file imported: family, its path in the home, size and SHA-256, moment, build, rows, class) | Store | — |
 | Settings | `settings` (one row per key of today's `driver.json`, its value the key's JSON shape, read by today's one parser, `DriverConfig.Parse`, key by key, and every key this build does not know kept as it is, as `JsonKeeping` keeps it today) | Settings | `data/driver.json` |
-| The role catalogue | `roles`, `role_revisions` (every revision of every role, never rewritten), `role_staffing` (each working role's ordered choices, seeded or added, its one home: the seeded eight's imported once from `driver.json`'s `actors` by row w-s, cut out of z-ii, the key then set aside, an added role's from its record; round 5, §19.15) | Roles | `driver.json`'s `actors`; round 2's `roles` key |
+| The role catalogue | `roles`, `role_revisions` (every revision of every role, never rewritten), `role_staffing` (each working role's ordered choices, seeded or added, its one home: the seeded eight's imported once from `driver.json`'s `actors` by row w-s, cut out of z-ii, the key then set aside but for entries that do not read, each kept here as its error, an added role's from its record; round 5, §19.15), `role_staffing_projection` (one row: what w-s last wrote into `driver.json`, the first-agent keys it owns and the unreadable entries it left in `actors`, and a pending projection with its staffing change while a write is between its intent and its commit; round 6, *C5-1.15*, *O5-F4*) | Roles | `driver.json`'s `actors`; round 2's `roles` key |
 | Appointments (*proposed for a later design*, round 5, §19.9) | `appointments` (each with its grant: the acts *Appoint* snapshotted, the set-up tick, its scope, its generation, its window, and the role's revision at *Appoint*, every revision since intersected at each act rather than written into the grant, §19.9), the standing confirmation's own records | the shell's standing confirmation (`Modules/Platform/StandingConfirmation.cs`), outside the driver's map, through `DesktopStore` (O3-6) | `data/standing-confirmation.json` |
 | Bindings | `bindings` (one per session record of this machine: the kept conversation's id and door; the account by profile name and whether the person picked it, row a-ii; the role taken and its revision, row x; the process generation), each writer updating its own columns by name, never replacing a row (O3-16) | Participants | `data/sessions/<s>.harness.json` |
 | Accounts | `account_cooling`, `account_windows`, `account_reads`, `account_names`, `usage`, `usage_epochs` | Agents | `data/cooling.json`, `windows.json`, `reads.json`, `accounts.json`, `usage.json`, `usage-history/epochs.json` |
 | Agents' wiring | `agent_offers`, `harness_wiring`, `tools` | Agents (`tools` Install's) | `data/agent-offers.json`, `harnesses.json`, `tools.json` |
-| The course | `moves` (§3.3: keyed by the record left, unique, so two executors of one line find one row, round 5, §19.1; the executor kind; the claim, `claim_run` naming a `store_runs` row and `claim_generation`; the phase and each moment; the effect mark; the selection; the recipe; why, by, how), `move_words` (each word in transfer: its id, producer key, transfer id, order and disposition), `go_on_marks`, `reopen_marks`, `go_on_new` (the person's press), `handed_quests` | Course | `<s>.cannot.json`, `.reopened.json`, `.new-session.json`, `data/handed/<quest>.json`; the boxes `<s>.limit-move.json` and `.hand-over.json`, imported and no longer written |
+| The course | `moves` (§3.3: one standing move per record left, by the partial unique index `moves_standing` over the rows not `delivered`, `fell-back` or `closed`, so two executors of one line find one row and a line moves again once its move ends, round 5, §19.1; round 6, *O5-F1*; the executor kind; the claim, `claim_run` naming a `store_runs` row and `claim_generation`; the phase and each moment; the effect mark; the selection; the recipe; why, by, how), `move_words` (each word in transfer: its id, producer key, transfer id, order and disposition: taken, refused at a limit, uncertain, or *left*, round 6, *C5-1.4*), and, with z-viii *proposed for a later design*, `go_on_marks`, `reopen_marks`, `go_on_new` (the person's press), `handed_quests` | Course | `<s>.cannot.json`, `.reopened.json`, `.new-session.json`, `data/handed/<quest>.json`; the boxes `<s>.limit-move.json` and `.hand-over.json`, imported and no longer written |
 | News | `notices`, `news_said` (the said-set, §4.5), `journal_cursors` (one per teller) | Events | `data/notices.json` |
 | The workplace | `keeping_runs`, `landed_branches`, `session_branches`, `abandoned`, `auto_landings`, `lines_moved`, `registry_followed` | Workplace | `data/keeping.json`, `landings.json`, `session-branches.json`, `abandoned.json`, `sessions/auto-landings.json`, `lines-moved.json`, `registry-followed.json` |
 | Work records | `workflow_plans`, `workflow_runs`, `workflow_units`, `workflow_resources`, `workflow_closures`, `chat_looks`; `setup_plans`; `opinion_gates`, `opinion_dues` | Workflows; Setup; Review | `data/workflows/*`; `data/setup/<workspace>.json`; `data/opinions/gates/*`, `opinions/due.json` |
@@ -1709,17 +1806,21 @@ stamp where it is and runs at the first start.
      fails stops the executor before the effect. Between the mark and the effect nothing can take the move, since a claim passes only from a dead
      run (below).
   3. *The open is the service's, idempotent.* The open under the `opens` key moves the old part's words in the service's one step and keeps its
-     result in `session_opens` (§3.3, §3.4 rule 3); the next transaction writes `opened`, the new record's id, every word the open moved
+     result in `session_opens` (§3.3, §3.4 rule 3), and is refused unless the record left stands, is its line's head and is not active, the
+     move then closing `superseded` or `gone` (round 6, *O5-F2*); the next transaction writes `opened`, the new record's id, every word the open moved
      (`move_words`) and the phase, together.
   4. *Delivery.* The prompt's mark (step 2) and the service's acknowledged attempt (§3.4 rule 5); once the turn took a word, the service takes
      it off `said`, whose trigger settles it (§3.4 rule 5); and only then does one transaction write each word's disposition and the phase
-     `delivered`, a crash between finished at the come-up from the word's settlement, so no word waits on `said` while its move says `delivered`
-     (round 5, §19.4, where round 4 wrote `delivered` before the take).
+     `delivered`, so no word waits on `said` while its move says `delivered` (round 5, §19.4, where round 4 wrote `delivered` before the take). A
+     crash between is finished at the come-up from the destination's events, never from the settlement, which says only that a word left `said`:
+     a word gone whose own `User` event is there is taken, one gone without it *left*, and the move closes `delivered` only when every word it
+     moved is taken, else `held` with its begun effect, the *left* words named (round 6, *C5-1.4*, *O5-F6*).
   5. *Before anything is delivered, in every phase, the line's head is read* (round 4, X3-3.4): `Lines.HeadOf` from the move's destination, and
      the destination's attempts. Where the head has moved past the destination (a record `from` it under no key of the move's, which only an older
-     build makes, since a newer one moves neither the old part nor the destination while the move stands, §3.1), nothing is delivered to the destination: the move closes
-     `superseded` and is `held` for the person, its note naming the destination, the head and the destination's waiting words, which the person
-     takes back there and says in the session with today's presses; each attempted one is settled uncertain and said. Round 4's `Lines.Forward`,
+     build makes, since a newer one moves neither the old part nor the destination while the move stands, §3.1), nothing is delivered to the destination: the move is
+     `held` for the person (reason `superseded`), its note naming the destination, the head and the destination's waiting words, the person's
+     own offered to be taken back there and said at the head with today's presses, others' kept as claims, each said where the head's events
+     already show it (§19.3; round 6, *O5-F14*); each attempted one is settled uncertain and said. Round 4's `Lines.Forward`,
      a new service step moving them to the head, is withdrawn in round 5 for that hold (§19.3).
 - **The claim is a process run, and passes only from a dead one** (round 4, O3-1, X3-1.1, X3-3.1). Round 3 made the claim's holder *the
   holder of the executor's role* and let a role's current holder take a move over from a run that no longer held the role. No such holder
@@ -1737,9 +1838,13 @@ stamp where it is and runs at the first start.
   effect, however long it pauses, the move is its own. A dead run's effect, marked and never recorded, is the taker's `held`, named and never
   repeated by itself (X). Row f-i proves the three cases with live processes, not only two writes: two shells on one home, a `--share` loop
   beside the instance, and an executor paused after its mark commits and before its effect while another process tries to take its move.
-  **Round 5** (§19.1): the row keyed by the record left makes two executors of one line exclusive; a pre-store build beside a newer one is
-  §13.5's older build at every moment, the service's exclusive steps giving each word to one of them and an empty destination held; a hung
-  executor is said `move.quiet` past ten minutes and keeps its moves until its process ends; a shell says once that another runs on its home.
+  **Round 5** (§19.1): one standing row per record left makes two executors of one line exclusive (round 6: a partial index, *O5-F1*); a
+  pre-store build beside a newer one is §13.5's older build at every moment, an empty destination held; a hung executor is said `move.quiet`
+  past ten minutes, on its line and in the log, and keeps its moves until its process ends; a shell says once that another runs on its home.
+  **Round 6** (*O5-F2*, *C5-1.1*) restates what the service's steps decide: a keyed open against a resume, by the open's check and the go-on's
+  step (§3.3), and against a say, a take or another keyed open, by the say door's and the open's exclusive steps; there each word goes once.
+  An older build's own move reads its words before its own unkeyed open and delivers its copy (`Chat/BriefedMove.cs:99`, `:142-143`), so
+  against it a word can go twice, once by each build, as between two of today's shells; that is the bound, said, never *once*.
 - **Wakes.** A write moves its family's revision in `store_revisions` in the same transaction, and after its commit touches the store's wake
   file, `data/desktop.db.wake`, which holds nothing; `HomeWatch` watches that one file where it watches `driver.json`, `cooling.json`,
   `harnesses.json`, `held-words.json`, `lines-moved.json`, the gates and the notices today, reads the revisions, and wakes exactly the families
@@ -1763,7 +1868,9 @@ stamp where it is and runs at the first start.
   confirms. So a start's confirmation is **settled** once its install's swap journal (`<install>/update/swap.json`, `Driver/Setup/StagedBuild.cs:183`,
   `:198`, `:222`) is at no phase the launcher can still roll back from: no journal, no install (a workspace build), or `confirmed`, `installed`
   (confirmed or not, the silent swap among them, never rolled back after, `Driver/Setup/InstallSwap.cs:322-326`), `rolled-back` or `refused`;
-  `swapping` and `started` are not settled (round 5, §19.7). The window confirms in `OnStarting` before its loop starts (`App/Program.cs:307-335`),
+  `swapping` and `started` are not settled (round 5, §19.7), nor is a journal that is there and does not read, which `StagedBuild.ReadJournal`
+  answers as null like a missing one (`Driver/Setup/StagedBuild.cs:357-361`), so the guard reads absence and unreadability apart (round 6,
+  *C5-1.7*). The window confirms in `OnStarting` before its loop starts (`App/Program.cs:307-335`),
   so its come-up meets it settled; a headless start and a verb meet it settled or do not run, since the launcher holds the home's Swap lease
   through its wait (`Launcher/Program.cs:90-107`) and they wait thirty seconds and refuse (`Host/Program.cs:870-886`). It is read at each come-up
   and look until settled. Every import of a family an older build acts on, the come-up's import of an older build's box among them (§3.3), and every migration
@@ -1826,9 +1933,9 @@ stamp where it is and runs at the first start.
 | Phase at the downgrade | The ledger shows | An older build | The newer build, back |
 |---|---|---|---|
 | `decided`, `quiescing`, `old-ended` | the old part as it was, its words on `said` | settles the old part as after any crash: an ended record's words go on by its own rules, resumed or held for its account; nothing opened | a later run on the old part, or a record `from` it under no key of the move's, closes the move as superseded; else it goes on from its phase |
-| `opening` | nothing new (the open not made), or the new record under the move's key with the words already moved (the answer lost) | without the open, as above; with it, the new record is the line's head and its words wait there: its come-up resumes it where its conversation exists, else takes it as lost and briefs it (today's path), skipping the old part, which went on (`ChatGoOn.cs:228`) | asks the open again under its key, is answered the record and the words, and reconciles as below |
-| `opened`, `copied`, `verified` | the new record with the moved words, no prompt yet; or, where an older build found no kept conversation, a later record `from` it that the older build opened before it moved the new record's words (`Chat/BriefedMove.cs:130-158` opens before it delivers and takes) | as the open's second case: each moved word goes once, from the new record; or it opened its successor and crashed | the head read first (§13.4 step 5): the moved words taken by an older build's turn make the move `delivered` by that evidence; a head past the destination closes the move `superseded` and holds it for the person, its waiting words named and its attempted ones uncertain and said (X3-3.4; round 5, §19.3); else it delivers |
-| `delivering` | the new record, its words marked attempted or not, or taken and settled | settles attempted words as uncertain, never sent again (`GoOn/UncertainWords.cs:25-94`), and goes on with the rest: the window every word has today between its attempt and its take, no wider (round 5, §19.4) | the head read first, as above; a word gone from `said` and settled on its line is taken; the begun effect is `held` for the person unless a turn's events and the words' takes show it delivered |
+| `opening` | nothing new (the open not made), or the new record under the move's key with the words already moved (the answer lost) | without the open, as above; with it, the new record is the line's head and its words wait there: its come-up resumes it where its conversation exists, else takes it as lost and briefs it (today's path), skipping the old part, which went on (`ChatGoOn.cs:228`) | asks the open again under its key, is answered the record and the words, and reconciles as below; or is answered `gone`, the older build having deleted the destination meanwhile, or refused, the record left gone or no longer the head, and closes the move `gone` or `superseded`, said on the line, never opening again (round 6, *C5-1.5*, *O5-F2*) |
+| `opened`, `copied`, `verified` | the new record with the moved words, no prompt yet; or, where an older build found no kept conversation, a later record `from` it that the older build opened before it moved the new record's words (`Chat/BriefedMove.cs:130-158` opens before it delivers and takes) | as the open's second case: each moved word goes once, from the new record; or it opened its successor and crashed | the head read first (§13.4 step 5): the moved words taken by an older build's turn, each shown by its own `User` event on the destination, make the move `delivered` by that evidence (round 6, *C5-1.4*); a head past the destination holds the move for the person (reason `superseded`), its waiting words named as §19.3 offers them and its attempted ones uncertain and said (X3-3.4; round 5, §19.3; *O5-F14*); else it delivers |
+| `delivering` | the new record, its words marked attempted or not, or taken and settled | settles attempted words as uncertain, never sent again (`GoOn/UncertainWords.cs:25-94`), and goes on with the rest: the window every word has today between its attempt and its take, no wider (round 5, §19.4) | the head read first, as above; a word gone from `said` is taken only where the destination's events hold its own `User` event, and *left* otherwise, an older come-up's uncertain take-back and the person's take-back among them, never delivered again by the move (round 6, *C5-1.4*, *O5-F6*: round 5 read a word gone and settled as taken); the begun effect is `held` for the person unless a turn's events show it delivered |
 | `delivered`, `held`, `fell-back` | an ordinary line, or one held for the person with its reason; at `delivered` no moved word waits on `said`, since the take precedes it (§19.4) | as any such line | closes or keeps the hold |
 
 No phase leaves a box an older build could execute, and no phase delivers to a part that is not the line's head, so no move is made twice
@@ -1836,8 +1943,10 @@ across builds and no word reaches a superseded part (round 4, X3-3.4); the price
 opened by its own lost-conversation path rather than the move's recipe. Against an older *host*, which takes no
 `opens` and moves no words, a move is made as today's are, a lost open held for the person (round 2's X-3.5), the host told by its protocol marks
 (§19.12). The same table holds while an older build runs **beside** a newer one, a second install's on the home, and not only after a
-downgrade: the service's exclusive steps give each waiting word to one of them, and a destination an older build's resume of the old part left
-with no words is held for the person (round 5, §19.1).
+downgrade, and a destination an older build's resume of the old part left with no words is held for the person (round 5, §19.1). Where the
+service's steps decide the order, a keyed open against an older shell's go-on step, say or take, each waiting word goes to one of them; an
+older build's own move, which reads its words before its own open and delivers its copy, can send a word the newer move also delivers, the
+bound §3.4 rule 4 states (round 6, *O5-F2*, *C5-1.1*: round 5 said the service's steps gave every word to one of them).
 
 ### 13.6 The migration rows, one family each
 
@@ -1849,9 +1958,9 @@ z-vi to z-xiv to later designs, each row below standing as that design's input w
 
 | Row | Files | Into | Class (§13.5) | Its proof beyond the gates |
 |---|---|---|---|---|
-| **z-i** the store, read by nothing | — | `data/desktop.db`, `DesktopStore`, `store_version`, `store_revisions`, `store_runs`, `imports`, the wake file; `Microsoft.Data.Sqlite` in the driver, pinned as the service's, its recorded rule amended (§13.2); the GitDoor's read-only open only once a family it reads moves and its start passes the limit below, which no Part B row needs (round 5, §19.10) | — | the three home tables' twins equal; the shell, a headless loop and a verb opening one store at once; the confirmation's *settled* read from the install's swap journal, a start finding `started` importing nothing and raising no stamp (round 5, §19.7); a store stamped ahead refused for writes and said, **and a writer that opened the store before another process's migration and resumes after it refused, the stamp read inside its own transaction** (X3-3.5); **a rollback after a first start: the older build meets every file it acts on as it was and a store it can still write, no stamp raised before the confirmation** (O3-4); a migration interrupted at each step leaving the store as it was; write latency with `FULL` on the install; **the GitDoor's start on a remote act with the store opened read-only, measured cold and warm against today's, the limit a tenth at p95** (O3-3), a measurement no Part B row lands on (§19.10) |
+| **z-i** the store, read by nothing (after mod-ii, round 6, *O5-F12*) | — | `data/desktop.db`, `DesktopStore`, `store_version`, `store_revisions`, `store_runs`, `imports`, the wake file; `Microsoft.Data.Sqlite` in the driver, pinned as the service's, its recorded rule amended (§13.2); the GitDoor's read-only open only once a family it reads moves and its start passes the limit below, which no Part B row needs (round 5, §19.10) | — | the three home tables' twins equal; the shell, a headless loop and a verb opening one store at once; the confirmation's *settled* read from the install's swap journal, a start finding `started` importing nothing and raising no stamp (round 5, §19.7), **and one finding a journal that does not read importing nothing and saying so** (round 6, *C5-1.7*); a store stamped ahead refused for writes and said, **and a writer that opened the store before another process's migration and resumes after it refused, the stamp read inside its own transaction** (X3-3.5); **a rollback after a first start: the older build meets every file it acts on as it was and a store it can still write, no stamp raised before the confirmation** (O3-4); a migration interrupted at each step leaving the store as it was; write latency with `FULL` on the install; **the GitDoor's start on a remote act with the store opened read-only, measured cold and warm against today's, and beside a busy writer and a checkpoint, the limit a tenth at p95** (O3-3; round 6, *C5-1.10*), a measurement no Part B row lands on (§19.10) |
 | **z-ii** ⚖ the configuration's general settings (*proposed for a later design*, round 5, §19.15; its `actors` part is row w-s, below) | `data/driver.json` but its `actors` | `settings`; the export and import | left in place, the narrowings of `drivable`, `access` and `standing` written through, the backup first (round 5, §19.8; `trees` an ordinary key) | every key round-tripped through the import and the export (`DriverConfigKeepsTests`' fixture whole, every writer of the explorer's census, `DriverConfig.cs:1066-1180`, and the raw git pointers); an import widening authority held for the press; an older build reading the backup; **a revoke of `access`, `drivable` or `standing` made in the store, then an older build's start finding it revoked** (O3-2); **a crash between the backup's narrowing and the store's commit, the come-up applying the narrowing with no press** (X4-3.2); a changed backup offered at the return; a hand edit offered as an import at the next start; the rehearsals' and the proof kit's seeding through `DAORIS_DRIVER_CONFIG` or the import, the seed file imported again when it changes (O3-11) |
-| **w-s** ⚖ the roles' staffing (round 5, §19.15, the steward's change; cut out of z-ii) | `data/driver.json`'s `actors` key | `role_staffing` | set aside: the key removed under the file's lock, its value under `data/driver.actors.imported`; an older build reads every seeded role *as before* from `adapter`, `intakeAdapter` and `helperAdapter`, which the newer build keeps written through as `ActorChoices.With` does today (`Driver/Platform/ActorChoices.cs:151-182`, `:212`), so Intake and Ask Daoris start or not as the store has them | §19.15's proof: every actor's three states round-tripped through the import and the export; Intake off in the store and an older build's own start starting no intake; an older build's `SET_ACTOR` during a downgrade imported once at the return, a turn-on held for the press; a hand edit of `actors` offered as an import; the seeding tools on the import or `DAORIS_DRIVER_CONFIG` |
+| **w-s** ⚖ the roles' staffing (round 5, §19.15, the steward's change; cut out of z-ii; its protocol round 6's) | `data/driver.json`'s `actors` key | `role_staffing`, `role_staffing_projection` | set aside but for the entries that do not read, which stay in `actors` so an older build holds on them as the newer does: the readable entries removed under the file's lock, the key's value kept under `data/driver.actors.imported`; an older build reads every seeded role *as before* from `adapter`, `intakeAdapter` and `helperAdapter`, which the newer build keeps written through (`Driver/Platform/ActorChoices.cs:151-182`, `:212`), Intake's and Ask Daoris's key absent wherever their work is off, removed or unreadable in any scope, so neither starts where the store holds it; each write by §19.15's intent, file and commit under the file's lock (round 6, *C5-1.15*, *O5-F3*, *O5-F4*) | §19.15's proof: every crash boundary of the first import and of a write, an older build's start at each; two writers; unreadable entries in both builds; a second choice and a model; an older build's `SET_ACTOR` offered at the return, its turn-off applied; a set role's key changed by hand offered and an *as before* one read live; the seeding tools' census |
 | **z-iii** the bindings | `data/sessions/<s>.harness.json` | `bindings` | set aside (round 4, O3-6: the kept id is replaced whenever the wire names the conversation, `Conversations/GoOn/HarnessConversations.cs:28-37`, so a backup left in place would hand an older build a stale id; set aside, an older build finds none and falls back to a carry-on, `:15-16`) | every resume reads its id from the binding once imported, and from the file before; a record deleted takes its binding; an older build after the import carrying on rather than resuming; a binding file an older build wrote during a downgrade imported at the return, its conversation id winning for its own session |
 | **z-iv** ⚖ the appointments (*proposed for a later design*, round 5, §19.9: no appointment or grant is offered in this build, `StandingConfirmation.cs:314`, `:330`, `:336`) | `data/standing-confirmation.json` | `appointments`, the standing confirmation's records, the shell's family through `DesktopStore` | set aside (round 4, O3-2: its older reader reads a missing file as off, `StandingConfirmation.cs:267-271`; an appointment found at a start stays dormant, D209 points 1, 2 and 4) | `StandingConfirmationTests`, `PipeCensusTests` whole; **a `presses` revoke made in the store, then an older build's start finding no grant** (O3-2); an imported appointment dormant, its grant set by *Appoint* alone (O3-16) |
 | **z-v** the notices | `data/notices.json` (its unreadable copies stay files, as evidence) | `notices` | left in place | `NoticesStateSlice`'s and `LookSaid`'s suites; two tellers in two processes |
@@ -2395,6 +2504,8 @@ smaller protocol meets both readers' concerns it is taken, and four of round 4's
 `session_transitions` with the reconciliation path's news (19.6), the settlement's disposition (19.2) and row o's shape of its own (19.11). Two
 larger cuts are proposed for both readers' reads rather than made (19.15): the appointed half of the role catalogue, and the store's families
 no Part B protocol reads, `driver.json`'s general settings among them; the actors' staffing stays, as row w-s (19.15, the steward's change). The body (§3, §4, §5.2, §11, §13 and §10's Part B rows) carries what is settled. Nothing of Part B is built.
+**Round 6** changes the items below in place where both makers' reads of round 5 found them short, each change marked *(C5-n.m)* or
+*(O5-Fn)* and answered by its finding in §20.
 
 ### 19.1 The claim by process run: a hung live executor, two shells on one home
 
@@ -2407,21 +2518,34 @@ without the lease (`Modules/Loop/DriverLoop.cs:777`, `:1221-1225`, `:841`), the 
 one `DAORIS_HOME`) both run conversations today, and both come-ups may take up one ended chat: a race of today's that no move makes.
 
 **Settled.**
-1. *Two newer shells.* A move's row is keyed by the record left (§3.3), so of two executors deciding a move of one line the second's claim
-   finds the row under the write lock and reads the line as the course's `Never` (§3.1). The key, not the lease, makes them exclusive, and
-   each keeps the moves it claimed while it lives.
-2. *A newer shell beside an older one.* A build from before the store is §13.5's older build at every moment, not only after a downgrade.
-   The service's exclusive steps give each waiting word to one of them, the keyed open moving it or the older build's take as it resumes the
-   old part, and the newer build reads the line's head before it delivers (§13.4 step 5). A destination that an older build's resume left
-   with no words is `held` for the person, naming both parts, and never delivered. A store-aware older build is refused every write once a
+1. *Two newer shells.* One standing move per record left, by the partial unique index `moves_standing` over the moves not `delivered`,
+   `fell-back` or `closed` (§3.3), so of two executors deciding a move of one line the second's claim finds the standing row under the write lock
+   and reads the line as the course's `Never` (§3.1). The index, not the lease, makes them exclusive, and each keeps the moves it claimed while
+   it lives; once a move ends, `superseded` or a hold the person resolved among its ends, the next move of that record claims, and the ended row
+   stays as evidence (round 6, *O5-F1*: round 5's row unique for its record's whole life read `Never` for good after any such end).
+   *A newer shell's resume beside another's keyed open* is decided by the service (round 6, *O5-F2*): the keyed open's step refuses a record
+   left that is active, is not its line's head or does not stand, and the go-on's step, the ledger's move out of an ended or parked state taken
+   before anything is spawned (`Core/Sessions/SessionLedger.cs:1660`; `Chat/ChatGoOn.cs:663-667`), refuses a record a keyed open has left while
+   the record it opened stands, so whichever commits first is made and the other refused.
+2. *A newer shell beside an older one* (restated in round 6, *O5-F2*, *C5-1.1*). A build from before the store is §13.5's older build at every
+   moment, not only after a downgrade, and the newer build reads the line's head before it delivers (§13.4 step 5). **Where the service's steps
+   decide the order, each waiting word goes once**: an older shell's go-on against this host is refused at its step once a keyed open left the
+   record, and a keyed open is refused once the older go-on's step made the record active; a say, a take and a keyed open meet in the service's
+   exclusive steps. **Against an older build's own move it is not *once***: that move reads its words before its own open, which names no key and
+   which no newer step refuses (`Chat/BriefedMove.cs:99`), and delivers its copy (`:142-143`) before its take (`:158`), so in Codex's schedule
+   (the older move reads, pauses, a newer move opens, delivers and ends, the older move opens its successor and delivers) a word goes twice, once
+   by each build, each said on its part, as between two of today's shells on one home (above); refusing an unkeyed open from a record that has
+   a successor would close it, but would refuse today's unkeyed opens too (§9). A destination that an older build's resume left with no words is
+   `held` for the person, naming both parts, and never delivered. A store-aware older build is refused every write once a
    migration has raised the stamp past it (§13.3), so it claims no move; short of that it writes the tables it knows under the same claim, and is
    a newer shell to every move it knows.
 3. *Said.* At its come-up a shell reads `store_runs` for another live shell's run on its home, by the lease's test, and says once that another
    Daoris runs on this home, with its pid and since when, on the channel and in the words the lease's wait uses (`DriverLoop.cs:1281-1288`,
    `:1307-1311`). It refuses nothing.
 4. *A hung executor* keeps its moves until its process ends. Nothing takes a move from a live run, since a hung run cannot be told from a slow
-   one. A move in a phase after `old-ended` whose moment is older than ten minutes, claimed by a live run, is said once in the machine log as
-   `move.quiet`, with the move, its phase and the run's kind and pid. The person's door is the one they have today for a hung Daoris: quitting
+   one. A move in a phase after `old-ended` whose moment is older than ten minutes, claimed by a live run, is said once on its line, a note
+   with its code beside `part.quiet`, worded in both catalogues, and in the machine log as `move.quiet`, with the move, its phase and the run's
+   kind and pid (round 6, *O5-F15*: round 5 said it in the log alone, which the person does not read). The person's door is the one they have today for a hung Daoris: quitting
    it, whose end makes its run dead and its moves taken up. `quiescing` has no such bound, since it waits for the old part's own turn, which
    the line already shows.
 5. *The home is one machine's*, as the lease assumes: a pid of another machine reads as gone, so neither the lease nor the claim is relied on
@@ -2429,7 +2553,10 @@ one `DAORIS_HOME`) both run conversations today, and both come-ups may take up o
 
 **Proof**, row f-i: two shells on one home deciding a move of one line, one row and one claim; an older shell's resume of the old part beside a
 newer shell's open, each word once and the empty destination held; the second shell said once; an executor paused past ten minutes said
-`move.quiet` once and never taken over, then killed and its moves taken up at the next look. **Measured** by f-i on the install: how often
+`move.quiet` once, on its line and in the log, and never taken over, then killed and its moves taken up at the next look; round 6's: a move
+closed `superseded`, and one held and resolved, each followed by a second move of the record, which claims (*O5-F1*); a newer resume and a newer
+keyed open of one record in both orders, one made and the other refused (*O5-F2*); and Codex's delayed older move, asserting the bound in
+point 2 and nothing a third time (*C5-1.1*). **Measured** by f-i on the install: how often
 `move.quiet` is said; until then nothing more is built for a hung executor, and a person's door for it is a row of its own if it happens.
 **To drop:** the claim is what makes a move one executor's, so it stays with the move record; dropping 3 and 4 costs only their telling.
 
@@ -2444,30 +2571,49 @@ An older connector composes its own stores and desks (`Mcp/Program.cs:104`; `Cor
 
 **Settled.**
 1. *Written by trigger*, as the journal and the revisions are (`Sessions.cs:652-681`). `said_settled` is filled by a trigger on `sessions`,
-   `AFTER UPDATE OF said`, guarded `WHEN OLD.said IS NOT NEW.said AND NEW.origin IS NULL`, inserting, for each word of OLD's list whose id
-   NEW's lacks, its line (`entry`, or the record's id for a record with none), its producer key (or `id:<word id>` for a word with none) and the
-   moment, unique by line and key (`INSERT OR IGNORE`). So every writer settles a word as it takes it, the host, each connector and a connector
+   `AFTER UPDATE OF said`, guarded `WHEN OLD.said IS NOT NEW.said AND NEW.origin IS NULL`, writing, for each word of OLD's list whose id
+   NEW's lacks, one row keyed by **the word's id**, with **the record it left** (`NEW.id`), its producer key (or `id:<word id>` for a word with
+   none) and the moment, `INSERT OR REPLACE`, so a word that leaves a second record holds the record it last left (round 6, *C5-1.2*,
+   *O5-F7*). So every writer settles a word as it takes it, the host, each connector and a connector
    built before the table, through the statement it already runs, and no take changes. The attempt mark settles nothing, since it keeps every
-   id. A word the keyed open moves leaves the old record and waits on the new one, on the same line, so either reading answers its key as kept.
-2. *No disposition.* The settlement says only that the word left `said`, which is all a retry asks. Whether it was taken, carried or uncertain is
-   the attempt's, kept by the move's `move_words` and the record's notes (§3.4 rule 5). Round 4's disposition column is withdrawn.
-3. *Read by every newer keeping door* inside its own exclusive step: `SaidKeys.Settled(line, key)` in the say door, the helper desk (by
-   `helper:<id>`, where today it reads the helper's waiting word) and the partner desk.
+   id. A word the keyed open moves leaves the old record and waits on the new one, which the head walk visits from the old, so either reading
+   answers its key as kept. **Round 5's line was wrong for a record with no `entry`**: the trigger wrote the record's id where the reader's line is
+   the rule's key, never written back (`Core/Sessions/Sessions.cs:599-601`; `Core/Sessions/SessionEntries.cs:46-49`), so a successor holding the
+   rule's key read another namespace; no line rule SQL can compute reaches that key, which walks quests and publishers
+   (`SessionEntries.cs:71-121`), so the settlement keeps the record and the reader brings the line.
+2. *No disposition.* The settlement says only that the word left `said`, which is all a retry asks, **and never that a turn took it**: a
+   take-back, an uncertain word's settlement, a park's clear, the owner superseding the supervisor's word and the restore leave `said` by the same
+   statements (`Core/Sessions/SessionLedger.cs:1312`; `GoOn/UncertainWords.cs:72`) (round 6, *C5-1.4*, *O5-F6*). Whether it was taken, carried or
+   uncertain is the attempt's, kept by the move's `move_words` and the record's notes, and a take is told by the session's events (19.4, §3.4
+   rule 5). Round 4's disposition column is withdrawn.
+3. *Read by every newer keeping door* inside its own exclusive step: `SaidKeys.Settled(records, key)`, by key over `records`, the records the
+   say door's head walk visits from the record the say names (the record named alone until d-ii), with the index `said_settled_key` on the key and
+   the record, in the say door, the helper desk (by `helper:<id>`, where today it reads the helper's waiting word) and the partner desk; a
+   settled retry is answered `Again` with its word's id, as a waiting one is today (`SessionLedger.cs:956-961`), the supervisor's release reading
+   that id (`Loop/Driver.cs:473`) (*O5-F7*). The walk's records, not `entry`, are the line, so no `entry` index is needed (*O5-F8*), and row p
+   lands within the say door's and the `sessions` write's limits (19.13, row k).
 4. **The horizon, decided.** D137's and D188's *never sent again by itself* has two halves. **The attempt's half has no horizon**: a word
    attempted is never re-sent by itself, whatever its age, since its mark is on the record and an uncertain word leaves it with the `lost` note
    (`GoOn/UncertainWords.cs:25-94`). **The retry's half**, a producer saying again a word whose answer it lost, **holds for seven days after the
    word left `said`**; past them a retry is a new word, said on its line under its key as any word is. The one producer that retries across a
    restart is the shell, reading its held words at its come-up (`Modules/Loop/SessionWords.cs:949-973`), and a word it held is one whose say it
    could not finish. So the case past the horizon is a say kept with its answer lost, the word taken, and the shell then down for more than a
-   week: that word may be said twice, and is said as a new word, never hidden. The trigger trims by time in its own statement and caps the
-   table at 50,000 rows, the journal's, oldest first; row p measures the install's rate of takes, and the cap is raised there if a week's takes
-   come near it, since a trim by the cap shortens the horizon.
+   week: that word may be said twice, and is said as a new word, never hidden. The trigger trims **by time alone** in its own statement, over an
+   index on the moment, and keeps no count cap, so a settlement is answered for seven days after the word last left `said`, however many others
+   are written that week (round 6, *C5-1.2*: round 5's cap of 50,000 rows could trim one inside the week, the 50,001st recent settlement
+   evicting the oldest); the table's size is a week's takes, a row of a few ids and a moment, which row p measures on the install and lands
+   within.
 5. *An older door* reads no settlement: its keyed hand retried after a take keeps a second word, as today (19.12).
 
-**Proof**, row p: a producer's retry after the take answered as kept within seven days and kept as a new word past them; a retry paused after
-its check while another dispatcher takes the word, one word; a helper's and a partner's hand retried after its take, one word; equal keys on
-unrelated lines two words; a keyless word moved and settled by its id; an older connector's own take statement, run in the test over the migrated
-database, writing its settlement; a take-back settling its word, the producer's retry then answered as kept. **To drop:** the settlement is row
+**Proof**, row p: a producer's retry after the take answered as kept, with its word's id, within seven days and kept as a new word past them;
+a retry paused after its check while another dispatcher takes the word, one word; a helper's and a partner's hand retried after its take, one
+word; equal keys on unrelated records two words; an older connector's own take statement, run in the test over the migrated database, writing
+its settlement; a take-back settling its word, the producer's retry then answered as kept; round 6's: a settlement six days and twenty-three
+hours old answered while more than 50,000 others are written that week, and one seven days and a minute old trimmed; a record with no stored
+`entry` settling and answering its word; a word planted on two records by the test's own statements, as an open would leave it, settled once
+under the record it last left (*C5-1.2*, *C5-3.2*). Row d-ii, once words move: a retry through two successors one word; a keyless word moved
+and settled by its id; a word moved from a record with no stored `entry` to a successor holding one, taken there, its retry to the old record
+answered as kept (*C5-1.2*). **To drop:** the settlement is row
 p's one service addition; without it a retry after a take keeps a second word, the remainder of COWORK1b's trap 19, while row p's attempts and
 dispositions, the client's, stand alone.
 
@@ -2480,13 +2626,22 @@ keyed by it (19.1), and none from its destination until the move has ended, `del
 word said again at the head under its producer key is answered as already kept while it still waits on the destination, since the settlement
 reads the line (19.2), and taken off first it is lost across a crash.
 
-**Settled, the smaller protocol.** No new step. The move closes `superseded` and is `held` for the person, its note naming the destination, the
-head and the destination's waiting words; attempted ones are settled uncertain and said, as before. The person takes each word back from the
-destination (SAIDBACK1a's take-back) and says it in the session, two of today's presses. Codex's concern, that nothing is delivered to a part
-that is not the head, is met by the hold as it was by the step. **Proof**, rows f-ii to f-vi: an older build opening a successor of the
-destination and crashing before it moved the destination's words; the newer build back delivering nothing to the destination and holding the
-move with the words named, each said once by the person's press. **Dropping it, as done here, costs** the person's two presses in a case only a
-downgrade and a crash together make; keeping it would be one service step reusing d-ii's word move, with an idempotency key of its own.
+**Settled, the smaller protocol.** No new step. The move is `held` for the person (reason `superseded`), its note naming the destination, the
+head and the destination's waiting words; attempted ones are settled uncertain and said, as before. **What the hold offers** (round 6,
+*O5-F14*): the person's own words alone, each to be taken back from the destination (SAIDBACK1a's take-back) and said at the head, two of
+today's presses, the hold naming the files said with each, since the take-back leaves them in the destination's folder and the person attaches
+them again; another author's words (a helper's answer, an agent's findings, Daoris's) stay on the destination as claims, never offered as the
+person's to say (D188 point 4); and for each word the hold says whether the head's events already show it, since an older briefed move may have
+said its copy live to its successor (`Chat/BriefedMove.cs:142-143`), as the take-up's guard reads the new part's `User` event
+(`Chat/LimitMove.cs:408`). The hold closes `resolved` once nothing it holds still waits on the destination, or at the person's press through one
+of its doors (§3.3). Codex's concern, that nothing is delivered to a part that is not the head, is met by the hold as it was by the step.
+**Proof**, rows f-ii to f-vi: an older build opening a successor of the destination and crashing before it moved the destination's words; the
+newer build back delivering nothing to the destination and holding the move with the words named, each said once by the person's press; round
+6's: the same with the older build live, never crashing, advancing the head while the newer build runs (*C5-1.3*); a word of another author
+kept as a claim, a word with files, and one the head's events show, each said so (*O5-F14*). **Dropping it, as done here, costs** the person's
+presses wherever an older build moves a line's head past a newer move's destination, crashing or not, beside a newer build or after a
+downgrade (round 6, *C5-1.3*: round 5 said only a downgrade and a crash together made it), and a word's files attached again; keeping it would
+be one service step reusing d-ii's word move, with an idempotency key of its own.
 
 ### 19.4 The `delivered` window
 
@@ -2494,12 +2649,21 @@ downgrade and a crash together make; keeping it would be one service step reusin
 downgrade a word the move called delivered still waited, marked attempted, and an older build's come-up settled it as uncertain.
 
 **Settled, by order.** The take comes first. Once the turn took a word, the dispatcher has the service take it off `said`, whose trigger settles it
-(19.2), and only then does one desktop transaction write the dispositions and `delivered`; a crash between is finished at the come-up from the
-settlement, a word gone from `said` and settled on its line being taken. So no word waits on `said` while its move says `delivered`, and the window
-across a downgrade is today's for every word, between its attempt and its take (`Chat/ChatTurns.cs:1224-1233`), which an older build's come-up
-settles as uncertain as it does today (`GoOn/UncertainWords.cs:25-94`). **Proof**, rows f-ii to f-vi: a crash after the take and before
-`delivered`, the come-up closing the move delivered with no word said again; an older build's come-up at that moment finding nothing on `said`.
-**To drop:** nothing; it is an order.
+(19.2), and only then does one desktop transaction write the dispositions and `delivered`. So no word waits on `said` while its move says
+`delivered`, and the window across a downgrade is today's for every word, between its attempt and its take (`Chat/ChatTurns.cs:1224-1233`), which
+an older build's come-up settles as uncertain as it does today (`GoOn/UncertainWords.cs:25-94`). **A crash between is finished from the
+destination's events, never from the settlement** (round 6, *C5-1.4*, *O5-F6*: round 5 read a word gone from `said` and settled as taken, but the
+person's take-back and an older come-up's uncertain settlement leave `said` by the same statement, `Core/Sessions/SessionLedger.cs:1312`,
+`GoOn/UncertainWords.cs:72`, so the newer build back would have closed delivered a move whose word no turn took, and skipped the hold on its
+begun effect). A word gone from `said` is *taken* where the destination's events hold its own `User` event, which the runner records before the
+write that takes it (`Chat/ChatRunner.cs:3495` before `:3501`, `:3755` before `:3775`), the reading `UncertainWords.ShownTaken` already makes
+(`GoOn/UncertainWords.cs:97-98`); otherwise it is *left*, a disposition of `move_words` that says another door took it off and the move did not
+deliver it, never sent again by the move. The move closes `delivered` when every word it moved is taken, and is `held` for the person, naming
+the *left* words and its begun effect, otherwise; an event append that failed (`SessionEventLog.cs:84-94`) makes a taken word read *left*, the
+conservative side. **Proof**, rows f-ii to f-vi: a crash after the take and before `delivered`, the come-up closing the move delivered from the
+`User` event with no word said again; an older build's come-up at that moment finding nothing on `said`; round 6's: a crash at `delivering`
+before the take, the word then taken back by the person, and in another run settled uncertain by an older come-up, each read *left* at the
+return, the move held and nothing delivered again (*C5-1.4*). **To drop:** nothing; it is an order and a reading.
 
 ### 19.5 The keyed open: its retention, and an older host's lost open
 
@@ -2508,17 +2672,30 @@ no `JsonUnmappedMemberHandling`, so an older host's binder skips an `opens` memb
 are read newest first by `from` (`Core/Sessions/Sessions.cs:995-1002`), never unique.
 
 **Settled.**
-1. *Retention by trigger.* `session_opens` rows go with their opened record, by a trigger `AFTER DELETE ON sessions`, so every writer's delete
-   takes them, an older build's included, and the table is bounded by the records the home keeps. No time horizon: a lost answer may be asked
-   again while the destination stands, and once it is gone the move it served is over.
-2. *An older host is told before the open, and by its answer.* The desktop reads the host's protocol marks (19.12). Where the host keeps no
-   `opens`, the move is made as today's moves are (the executor reads the words, opens, delivers and takes them), no key is written into the
-   move's phase, and a lost answer is held for the person with the candidates named, the records `from` the one left, never adopting one. A host
-   whose marks keep `opens` answers the open with its transfer, the words it moved; an answer without it is read as an older host's. So *never
-   twice* is a newer host's guarantee alone, as X-3.5 has it.
+1. *Retention by trigger, a row kept until its record left goes* (round 6, *C5-1.5*). One trigger `AFTER DELETE ON sessions` deletes the rows whose
+   record left is the deleted record, and marks `gone` the rows whose opened record it is, clearing their words, so every writer's delete moves
+   them, an older build's included (`Core/Sessions/Sessions.cs:1524-1533` deletes by id and knows no desktop move), and the table is bounded by the
+   records the home keeps. No time horizon. A repeat open with a `gone` row's key is answered `gone`, a terminal answer on which the desktop
+   closes its move `gone`, said on the line, and never opens again. Round 5 let a row go with its opened record, and Codex's schedule broke it: a
+   desktop loses the open's answer and stays down while an older build finishes the move and deletes the destination, then asks the key again,
+   finds no row and opens a second destination; the move was not over because the service's record was gone.
+2. *The keyed open's own check* (round 6, *O5-F2*): the open's step refuses unless the record left stands, is its line's head (`Lines.HeadOf`,
+   row d-i: no record `from` it and, for a driven part, no later run of its quest here) and is not active, answering the head, or `gone` for a
+   record left that does not stand. With the go-on's step refusing a record a keyed open left (19.1 point 1), a resume and a keyed open of one
+   record are one or the other.
+3. *An older host is told before the open, and by its answer.* The desktop reads the host's protocol marks, kept per host run (19.12; *C5-1.12*).
+   Where the host keeps no `opens`, the move is made as today's moves are (the executor reads the words, opens, delivers and takes them), no key is
+   written into the move's phase, and a lost answer is held for the person with the candidates named, the records `from` the one left, never
+   adopting one. A host whose marks keep `opens` answers the open with its run, the key's echo and its transfer, the words it moved (none at
+   `opens` 1, d-i's); an answer without the echo is read as an older host's, its record new and nothing moved, and the move goes on as today's.
+   So *never twice* is a newer host's guarantee alone, as X-3.5 has it.
 
-**Proof**, row d-i: a repeat open with the key answered from `session_opens` after its words left `said`; the opened record deleted by an older
-build's own statement, its rows gone with it; against a stand-in host with no marks, no key sent, the move made as today, a lost answer held.
+**Proof**, row d-i: a repeat open with the key answered from `session_opens` after a word planted on its opened record was taken off `said`;
+the opened record deleted by an older build's own statement, then the key asked again: answered `gone`, never opened again (*C5-1.5*); the
+record left deleted, its rows gone and the key refused; a keyed open of an active record, of one with a successor and of a driven part whose
+quest ran again, each refused with the head (*O5-F2*); against a stand-in host with no marks, no key sent, the move made as today, a lost answer
+held; and a host replaced under the shell by one with no marks, the next answer naming no run and the marks read again before the next keyed
+step (*C5-1.12*).
 **To drop:** the keyed open is what makes a move's destination one; without it every lost answer is held, as against an older host.
 
 ### 19.6 News keys, the occurrences that change no state among them
@@ -2531,10 +2708,16 @@ concludes (`Chat/ChatRunner.cs:2893`, `:3824-3833`). Its answers are told apart 
 (`Driver/Sessions/Domain/SessionEvents.cs:33-34`, `:189-190`; `Driver/Sessions/Events/SessionEventLog.cs:39-64`), by which the usage history
 already keys turns (`Driver/Accounts/Usage/UsageHistory.cs:291`).
 
-**Settled: an occurrence's key is the durable id it was minted with, and one path tells it.** A record event is keyed by its journal `position`.
-A turn's answer is keyed by its session and the `seq` of the `turn` event it ended on, told by the shell that runs the conversation at the
-judgement it makes today (`ChatRunner.cs:1655-1675`); a restart ends the conversation's run as it does today, so no answer is told for a run that
-ended, as none is for a held call. A Confirm is keyed by its press id (`Modules/Platform/PipeConfirmations.cs:63-69`); a held call by its request
+**Settled: an occurrence's key is the durable id it was minted with, and one path tells it.** A record event is keyed by the store's identity
+and its journal `position` (round 6, *O5-F9*: a position alone carries no store). A turn's answer is keyed by its session, the shell's process
+run (its `store_runs` id) and the moment its queue recorded the turn's end, `ChatQueue.LastTurnEnded` (set at `Chat/ChatTurns.cs:1276`, read by
+the judgement at `ChatRunner.cs:1673`), told by the shell that runs the conversation at the judgement it makes today (`ChatRunner.cs:1655-1675`);
+a restart ends the conversation's run as it does today, so no answer is told for a run that ended, as none is for a held call. **Round 5's key
+was the `seq` of the `turn` event, which is not durable** (round 6, *C5-1.6*, *O5-F9*): `SessionEvents` caches each session's last `seq` per
+instance and locks that instance alone (`Driver/Sessions/Events/SessionEventLog.cs:29-30`, `:45`), so two shells taking turns on one conversation
+can number two events alike and an answer is dropped, and `Keep` lets an append fail while the conversation goes on (`:84-94`), leaving no
+event to key. The run and the moment need neither the file nor its numbering; a moment repeated within one run, which only a clock stepped back
+could make, drops that answer's telling and never repeats one. A Confirm is keyed by its press id (`Modules/Platform/PipeConfirmations.cs:63-69`); a held call by its request
 within its process's run; an account's wait by the account and its cool-off's `until`; the look's news by its code and subject, a repeat inside
 the week dropped as today (`Driver/Platform/LookSaid.cs:223-236`). **The transition number and `session_transitions` are withdrawn.** They were
 there so that a reconciliation below the journal's floor could key an end as the journal did (X3-3.6); no reconciliation tells news now, so one
@@ -2542,11 +2725,15 @@ path gives one key. A teller whose cursor is below the floor reads its records w
 is incomplete since its cursor (§4.1); the waits it would have told of stay in *What needs you*, judged from the records. The visible notice
 keeps its id, one per conversation, renewed as today; the said-set holds the occurrence.
 
-**Proof**, row m: a conversation answering three times with no change of its record, each answer told once by its session and `seq`; a crash
-between a claim and its balloon telling nothing twice; an end, a reopen and an end told as two positions; a teller below the floor telling none
-of the gap and saying so; two tellers reading one row, told once. **Measured** by row k on the install: how many rows a week journals, so the gap
-a teller below the floor misses is known (under 7,000 rows a day, 50,000 rows are more than the notices' week). **To drop:** the reconciliation
-path is dropped here; what it told is news older than a gap of 50,000 journal rows, which the notices' week would not show either.
+**Proof**, row m: a conversation answering three times with no change of its record, each answer told once by its session, the shell's run and
+its turn's end; the same with two shells running its turns one after the other, and with an append failing between two turns (*C5-1.6*); a crash
+between a claim and its balloon telling nothing twice; an end, a reopen and an end told as two positions; a position of another store told as
+its own (*O5-F9*); a teller below the floor telling none of the gap and saying so; two tellers reading one row, told once. **Measured** by row k
+on the install: how many rows a week journals, so the gap a teller below the floor misses is known (under 7,000 rows a day, 50,000 rows are more
+than the notices' week). **To drop:** the reconciliation path is dropped here; what it told is news of the gap below the floor, and the gap is
+not always older than the notices' week (round 6, *C5-2.2*): a burst of more than 50,000 journal rows inside a week trims news a teller had not
+yet read, recent news among it, which the teller's *incomplete since* says and the waits in *What needs you* keep, and row k's weekly count
+says how near the install comes to it.
 
 ### 19.7 The confirmation's *settled*: a headless start and a silent swap
 
@@ -2561,7 +2748,10 @@ a verb does (`HomeLease.ForVerb`). A headless start confirms nothing.
 
 **Settled.** A start's confirmation is settled once **its install's swap journal is at no phase the launcher can still roll back from**: no
 journal, no install (a workspace build), or `confirmed`, `installed` (confirmed or not), `rolled-back` or `refused`. `swapping` and `started` are
-not settled, a `started` with a reason being a roll-back stopped part way, which the launcher finishes as one (`StagedBuild.cs:470-477`). The
+not settled, a `started` with a reason being a roll-back stopped part way, which the launcher finishes as one (`StagedBuild.cs:470-477`). **A
+journal that is there and does not read is not settled** (round 6, *C5-1.7*): `StagedBuild.ReadJournal` answers null both for no journal and for
+one that does not read (`StagedBuild.cs:357-361`), so the guard reads the file's presence apart and holds every import and stamp on an
+unreadable one, saying so, until it reads. The
 window's come-up meets it settled, having confirmed before its loop; a headless start and a verb meet it settled or do not run, the swap's lease
 keeping them out until the swap ends; the silent swap is settled, being installed. It is read at each come-up and at each look until it is
 settled, which in practice is the first read, and the read stays because a confirmation's write can fail. No build identity is compared, and none
@@ -2571,7 +2761,8 @@ confirms, so after a confirmed start an older build meets this home only as a se
 check refuses for being older (`StagedBuild.Check`, `StagedBuild.cs:299-349`); row v's condition is restated by the matrix (19.12).
 
 **Proof**, row z-i: a rollback before the confirmation meeting every file as it was; a start finding `started` importing nothing and raising no
-stamp; the silent swap's start importing at its first look; a headless loop beside a swap waiting, then finding it settled. **To drop:** the guard
+stamp; one finding a journal that does not read importing nothing and saying so (*C5-1.7*); the silent swap's start importing at its first look;
+a headless loop beside a swap waiting, then finding it settled. **To drop:** the guard
 almost never bites, since the window confirms before its loop; it costs one read, and without it a start whose confirmation failed to be written
 could import what a roll-back then meets moved.
 
@@ -2604,9 +2795,12 @@ role's narrowing never needs to reach another instance's memory (19.9).
 
 **Proof**, rows z-ii, z-iv and z-xi: for each file left in place, a narrowing in the store followed by an older build's start finding it narrowed; a
 crash between the backup's write and the store's commit, the come-up applying the narrowing with no press; a widening in the store, the backup
-unchanged and an older build reading it narrower; for each file set aside, an older build's start finding it absent and reading it off. **To
+unchanged and an older build reading it narrower; for each file set aside, an older build's start finding it absent and reading it off; and
+(round 6, *C5-1.8*) two different narrowings interleaved between one's backup write and its store commit, from two shells, neither the value nor
+its import's baseline losing the other's. **To
 drop:** if Part B leaves z-ii, z-iv and z-xi to a later design (19.15), this table is that design's input, and nothing in Part B rehomes an
-authority record.
+authority record; both makers' reads of round 5 said yes, so it is that design's, with the interleaved case among its proofs. Row w-s's own
+writes keep this order's direction and serialize under the file's lock (19.15).
 
 ### 19.9 Row w-0, and the appointed half of the role catalogue
 
@@ -2624,11 +2818,15 @@ reads the store's revisions at admission and at the run. It replaces round 4's w
 confirmation's one mutation step, which reaches only its own instance (`:378`, `:390`; X4-3.2).
 
 **Proposed: leave it to a later design** (19.15). Rows w-0, t and y-ii, and z-iv with them, serve appointments no build can make yet. Part B's
-catalogue holds working roles; an appointed role stays its seeded one, read per id from the code, and the judge refuses a record of the appointed
-shape (`appointed-not-configurable`). **Cost:** the owner's direction that roles be configured (the brief §8) is met in Part B for working roles,
+catalogue holds working roles alone, its capabilities the work codes; the supervisor and the steward stay the shell's, in code, outside the
+catalogue, since the driver cannot name the act vocabulary without w-0 (round 6, *O5-F5*, *C5-2.5*: round 5 kept an appointed seed read per id
+and the act vocabulary in row w); and the judge refuses a record of the appointed shape (`appointed-not-configurable`) before it judges anything
+else of it. **Cost:** the owner's direction that roles be configured (the brief §8) is met in Part B for working roles,
 and for appointed roles in the design read when the first appointment is offered; D208 point 1 and D209 points 1 to 4 keep their text; the two
 role doors stay two; nothing a person can do today changes. **Gain:** three ⚖ rows and the grant's lifecycle leave Part B, and this item's
-settlement is that design's input.
+settlement is that design's input, with a case it must prove (round 6, *C5-1.9*): a role id removed and made again while an appointment from
+its first life stands, its revision history never resetting the ceiling, so `role_revisions` keeps every revision of an id across its removal.
+Both makers' reads of round 5 said yes to the cut.
 
 ### 19.10 The GitDoor's start with SQLite
 
@@ -2640,7 +2838,7 @@ helper's run (D198 points 2 and 11; `Driver/Platform/GitDoors.cs:78-103`, `:361-
 about 0.25 s on a loaded machine and a whole `ls-remote` at about 1.7 s (`docs/decisions/D198.md:290-293`); nothing times it today.
 
 **Measured, and held until then.** Row z-i measures a door's start with `Microsoft.Data.Sqlite` opening a store read-only against today's, cold
-and warm, at p95 on the install; the limit stays a tenth. **Until a door passes it, no family the door reads moves into the store**, and the door
+and warm, and beside a busy writer and a write-ahead log's checkpoint (round 6, *C5-1.10*), at p95 on the install; the limit stays a tenth. **Until a door passes it, no family the door reads moves into the store**, and the door
 takes no package; past the limit those families stay files, or their writers keep a file the door reads, a choice for the design that moves them.
 With 19.15's proposal no family the door reads moves in Part B (the pointers are `driver.json`'s, z-ii's; the identities and permissions z-xi's;
 the tools z-vii's), so **Part B's door opens no store**, z-i adds no package to it, and this design amends no part of D198. **To drop:** nothing of
@@ -2659,16 +2857,28 @@ head (19.12), d-ii's open makes the successor and moves the old part's waiting w
 old part after it, naming the head, so the two never coexist. Before the open, an older shell's resume of the old part does what it would have
 done had the move never been decided, and the newer build back closes the move `superseded` (§13.5's first row), the words having gone on once,
 with the old part. So no shape of its own is needed. Against a host without those marks, the shell keeps today's hold (`TakeWaits`, the held
-words and `held-words.json`). Round 4's *where no such shape exists the row waits* is withdrawn. **Proof**, row o: an older shell's own come-up
+words and `held-words.json`). Round 4's *where no such shape exists the row waits* is withdrawn. **What `said` cannot do** (round 6, *C5-1.11*,
+*C5-2.4*): it cannot take back a copy an older executor already made. An older briefed move reads its words before its own open
+(`Chat/BriefedMove.cs:99`), which names no key, and delivers that copy (`:142-143`) before its take (`:158`), so where it pauses before its
+open and goes on after a newer move's destination has taken its words and ended, both builds deliver; row o asserts that bound (§3.4 rule 4,
+19.1 point 2) and *once* only where the service's steps decide. **Proof**, row o: an older shell's own come-up
 and its sweep run over a word kept for a moving record at each phase, before the open and after, resuming nothing in a successor's tree and
-delivering each word once; the same against a stand-in host without the marks, the hold kept. **To drop:** `held-words.json` stays a second home
+delivering each word once; an older executor paused after its read and before its open and resumed after the newer destination ended, each
+build's delivery once and nothing a third time (*C5-1.11*); the same against a stand-in host without the marks, the hold kept. **To drop:** `held-words.json` stays a second home
 of the words a winding-up or moving record waits for, with row b's identity, and nothing is lost; row o is small now and stays.
 
 ### 19.12 The version matrix
 
-**How the newer side tells.** The service answers `GET /api/protocol` with the marks it keeps, each a version (`opens`, `head`, `settled`,
-`journal`); the desktop reads it once per host run, by the running entry's pid and start (`Driver/Platform/RunningAddress.cs:15`), and a host that
-answers none keeps none. A connector reads no marks: it writes the database itself, and what binds it is the tables' triggers.
+**How the newer side tells** (round 6, *C5-1.12*, *O5-F12*). The service answers `GET /api/protocol`, added by row p, with **its run**, an id
+the host draws at its start, and the marks it keeps, each a version: `settled` 1 (row p: retries answered from the settlement), `opens` 1 (row
+d-i: a keyed open answered from `session_opens`, its transfer empty) and 2 (row d-ii: the open moves the old part's words), `head` 1 (row d-ii:
+the say door's `Continued`), `journal` 1 (row k). Every answer of a step a mark changes (the open, the say, the take, the attempt, the change
+stream) carries the host's run, a header an older host never writes; the desktop keeps the marks by that run and reads them again whenever an
+answer names another run or none, before its next step that depends on one, and a host that answers no `GET /api/protocol` keeps none. A step
+already sent to a replaced host is read by its answer: a keyed open answered without the key's echo is an older host's open, its record new and
+nothing moved (19.5). Round 5 kept the marks by the running entry's pid and start, which are the desktop's own process, written by the desktop
+(`Driver/Platform/RunningAddress.cs:8`, `:65-67`), so a host replaced under the same shell kept its predecessor's marks. A connector reads no
+marks: it writes the database itself, and what binds it is the tables' triggers.
 
 **When an older build meets a newer one.** After a confirmed update none of this install's older processes runs: the launcher refuses a swap while
 anything runs from `app/`, its host and connectors among them (`Launcher/Program.cs:72`, `:82-87`), and keeps no build past the confirmation
@@ -2676,19 +2886,21 @@ anything runs from `app/`, its host and connectors among them (`Launcher/Program
 
 | Protocol (row) | A newer desktop, an older host | An older desktop, a newer host | An older writer over the migrated database (a connector or host from before the table) |
 |---|---|---|---|
-| The keyed open, `session_opens` (d-i) | no `opens` mark: no key sent, the move made as today, a lost answer held (19.5) | no key sent: opened as today, no row | never opens with a key; its delete takes the rows, by trigger (19.5) |
+| The keyed open, `session_opens` (d-i) | no `opens` mark: no key sent, the move made as today, a lost answer held (19.5); `opens` 1 alone: the key sent for its replay, the words read, delivered and taken by the executor as today, the open's transfer empty | no key sent: opened as today, no row; its go-on refused at the ledger's step once a keyed open left its record (19.1) | never opens with a key; its delete moves the rows, by trigger (19.5) |
 | The head and `Continued` (d-ii) | no `head` mark: the driver's `WordsNever.ContinuedIn`, chats alone, as today (`Conversations/GoOn/SessionSay.cs:54-58`) | `Continued` read as a refusal it does not know, the service's sentence naming the head said (`SessionSay.cs:205-210`) | its say door judges no head, so a word it keeps on a superseded part waits there, as today |
-| The open moving words (d-ii), and row o's keeps | no `opens` mark: the move reads and delivers the words itself and the shell holds as today (19.11) | its opens move nothing | moves nothing |
+| The open moving words (d-ii), and row o's keeps | `opens` below 2: the move reads and delivers the words itself and the shell holds as today (19.11) | its opens move nothing | moves nothing |
 | The attempt's answer (p) | the client's change alone: every host with the door answers `unmarked` (`Core/Sessions/SessionLedger.cs:1218-1246`); a host without the door, a word unmarked, not sent and said (`Driver/Service/ServiceClient.cs:564-567`) | unchanged | unchanged |
 | `said_settled` (p) | no `settled` mark: a retry after a take keeps a second word, as today | its takes settled by trigger, its retries answered by the newer doors | its takes settled by trigger; its own keyed doors read none, so its retry after a take keeps a second word, as today (`HelperDesk.cs:180-189`) |
-| The journal (k) | no `journal` mark: each reader keeps its old surface as its adapter, the attention watch's snapshot and `onEnded` (§4.3) | passes the `journal` family over (*unverified* that an older client's stream reader passes an unknown family over; row k runs an older client's own reader to prove it) | its statements journal through the triggers, whose inserts trim it |
+| The journal (k) | no `journal` mark: each reader keeps its old surface as its adapter, the attention watch's snapshot and `onEnded` (§4.3) | never hears the `journal` family, which the stream names only to a reader that asks for it: an older client's stream reader would wake its `ledger` topic for any family named (`Driver/Service/LedgerChanges.cs:66-70`, `:107-115`), only its family-filtering readers dropping one (`Modules/Loop/QuestsStateSlice.cs:132-138`), so round 5's *passes it over* was wrong (round 6, *O5-F10*); row k runs an older client's own reader to prove it | its statements journal through the triggers, whose inserts trim it |
 | The head's indexes (d-ii, 19.13) | — | invisible to it | maintained by its statements |
 
 Nothing keeps an older writer from writing, and nothing need: what it writes is what it wrote before, and every record it writes is journaled and
 settled by the triggers it fires. **Row v's condition**, *once no build in the update's rollback window reads them*, becomes *once no pairing of
-this table has a build that writes or needs them*, since D139 keeps no build past a confirmation. **Proof**, in each row named: the older build's
+this table has a build that writes or needs them*, since D139 keeps no build past a confirmation, shown for each pairing in row v, never read
+from one install's confirmation (*C5-3.10*). **Proof**, in each row named: the older build's
 own statements run in the test over the migrated database (`compatible-builds.md`), and the newer desktop against a stand-in host that answers no
-marks. **To drop:** the marks are one read; without them rows d-ii and o could not tell an older host before they act.
+marks; round 6's: a host replaced under one shell by a stand-in with no marks, the next answer naming no run and the marks read again before
+the next keyed step, and the reverse; a d-i-only host (`opens` 1, no `head`), the key sent and the words moved by the executor (*C5-1.12*). **To drop:** the marks are one read; without them rows d-ii and o could not tell an older host before they act.
 
 ### 19.13 The say door's head read, and its landing limit
 
@@ -2696,11 +2908,17 @@ marks. **To drop:** the marks are one read; without them rows d-ii and o could n
 successor's read and the quest's last run here scan it (`:995-1002`, `:1041-1051`); and the say door runs inside a `BEGIN IMMEDIATE` step
 (`:785-786`), so a scan there holds every writer of the database.
 
-**Settled.** Row d-ii adds `sessions_from` on `(from_session, created)` and `sessions_quest` on `(quest, created)` in the service's migration,
-invisible to an older build's statements, which maintain them. `Lines.HeadOf` asks one indexed probe of a word whose record has no successor, the
-common case, and one per hop otherwise, a record already walked ending the walk as unplaced. **The landing limit:** the say door's latency at p95
-on the install within a tenth of before, measured before and after on the same home; past it row d-ii does not land. **Proof**, row d-ii: the head
-across kinds; a chain of three parts; a cycle planted by hand ending the walk; the latency before and after. **To drop:** the head is what closes
+**Settled.** Row d-i adds `sessions_from` on `(from_session, created)` and `sessions_quest` on `(quest, created)` in the service's migration,
+with `Lines.HeadOf`, which its keyed open's check reads (round 6, *O5-F2*), invisible to an older build's statements, which maintain them.
+`Lines.HeadOf` asks one indexed probe on `sessions_from` of a record with no successor, and for a driven part with none **a second, on
+`sessions_quest`, for its quest's last run here** (`LastOwnForQuestAsync`, `Core/Sessions/Sessions.cs:1041-1051`; round 6, *C5-1.13*: round 5
+said one probe for every record with no successor), and one per hop otherwise, a record already walked ending the walk as unplaced. **The
+landing limits:** d-i lands with the `sessions` write's p95 within a tenth of before, and d-ii, which reads the walk in the say door, with the
+say door's latency at p95 on the install within a tenth of before, measured before and after on the same home, both branches of the walk among
+the says measured; past either a row does not land. Row p lands within the same two limits, its trigger on `sessions` and its read in the say
+door's step coming before d-ii's indexes and k's limits (*O5-F8*). **Proof**, row d-ii: the head across kinds; a chain of three parts; a cycle
+planted by hand ending the walk; a driven part with no successor whose quest ran again here, and one whose quest did not (*C5-1.13*); the
+latency before and after. **To drop:** the head is what closes
 LIMITWORD1's and HANDWORDS1-i's race; without it the driver's `ContinuedIn`, chats alone, stays.
 
 ### 19.14 The chat runner's boundary in Part B's rows
@@ -2709,7 +2927,8 @@ Part A's map places `ChatContext`, `ChatStart`, the pending family and `Conversa
 Rows e, f-i and h write in Course: the course's pure decision in its `Domain/`; the move record and its take-up in Course's family, the take-up asked
 first in `ChatGoOn.TakeUpAsync` where `LimitMove.TakeUpBoxesAsync` is asked today (`Chat/ChatGoOn.cs:195`); and each conversation path calling
 `LineCourse.Decide` from its own Course file. Each names only Course's types and lower ones, the runner through the port, so they land after
-mod-xiv and its port's cut, as §10's rule already orders for any Part B row whose files a move of Part A holds. **To drop:** nothing; it is an
+mod-xiv and its port's cut, as §10's rule already orders for any Part B row whose files a move of Part A holds, and each keeps `StructureTests`
+whole in its proof, so no runner type crosses the port unseen (round 6, *C5-1.14*). **To drop:** nothing; it is an
 order.
 
 ### 19.15 What round 5 proposes to drop, and Part B's rows now
@@ -2741,38 +2960,196 @@ actors and the roles are better read, set and managed in the store, the brief §
   where their key is absent, as today (`:42-43`).
 - **What moves.** w-s imports `actors` once into `role_staffing`, at the first start of the build that has it once that start's confirmation is
   settled (§13.5, §19.7), reading `actors` as today until then, without a press, the staffing the person already set, each entry through `ActorChoices.Judge` (`:49-77`), one that does not read kept as its error and holding the starts that
-  read it, as `ActorUnreadableException` holds them today (`:333-338`). From then on every writer of a role's staffing writes `role_staffing`
-  alone, the eight seeded roles' and every added role's, judged by `RoleCatalog.Judge`; and keeps the three first-agent keys written through from
-  it, as `ActorChoices.With` writes them today, since they are general settings an older build and today's `config.Adapter` fallbacks read (§2.4;
-  row j retires the fallbacks). The newer `DriverConfig` no longer reads or writes `actors`, and a `driver.json` writer keeps an `actors` key it
-  finds, as it keeps any key it does not know (`DriverConfig.cs:918-928`, `:1057-1063`), for the come-up's import to take.
+  read it, as `ActorUnreadableException` holds them today (`:333-338`), **and left in `driver.json`'s `actors`**, where an older build holds on it
+  too (`:104`; round 6, *O5-F3*). From then on every writer of a role's staffing writes `role_staffing` and the projection below, the eight
+  seeded roles' (an added role's once rows w and y-i give one), **judged by today's `ActorChoices.Judge`** (round 6, *C5-3.7*, *O5-F12*: round 5
+  named row w's `RoleCatalog.Judge`, which lands after w-s; row w extends this judge, keyed by the work); and keeps the three first-agent keys
+  written through, as `ActorChoices.With` writes them today, since they are general settings an older build and today's `config.Adapter`
+  fallbacks read (§2.4; row j retires the fallbacks). The newer `DriverConfig` reads `actors` only for the entries the projection left, and a
+  `driver.json` writer keeps an `actors` key it finds, as it keeps any key it does not know (`DriverConfig.cs:918-928`, `:1057-1063`), for the
+  return's rule below.
+- **The projection, and what it owns** (round 6, *C5-1.15*, *O5-F3*, *O5-F4*). From a staffing the newer build computes what `driver.json`
+  must say for an older build: `adapter` is Build's first agent where Build is set; `intakeAdapter` and `helperAdapter` are Intake's and Ask
+  Daoris's first agent where the role is on in every scope, and **absent wherever it is off, removed or unreadable in any scope** (scopes and
+  removal from row w on), so neither starts in an older build where the store holds it; `actors` holds the entries that do not read, as found,
+  and nothing else, the key removed where none is left. A role *as before* (no row in `role_staffing`) owns nothing: it reads its first-agent key
+  live from `driver.json`, as `ActorChoices.Effective` does today (`:137-144`), so a hand edit of it or a seeding tool's key takes effect as
+  today, with no import. What the newer build last wrote of the keys it owns is `role_staffing_projection`'s `written`, the baseline the return
+  compares with (§13.3).
+- **A write's order, and its crash boundaries** (round 6, *C5-1.15*). Every staffing write, the first import included, holds `driver.json`'s
+  `KeepLock` from its first step to its last, so two writers of either build serialize on it (an older build's `DriverConfig.Save` takes the same
+  lock, `DriverConfig.cs:1009-1028`), and is three steps:
+  1. *Intent*: one store transaction records the staffing change and its projection as `pending` beside `written`; nothing a start reads changes.
+     For the first import, `written` is the file's owned keys and `actors` as found, and the receipt `data/driver.actors.imported` is written
+     next, create-only, holding `actors` as found.
+  2. *The file*: where the file's owned keys and `actors` read as `written`, the pending projection is written, touching those paths alone, as
+     `JsonKeeping` does; where they read as the pending one already, nothing; otherwise a writer that takes no lock, a hand edit, changed them
+     between: the pending is dropped, the press answered not done and saying so, and the file's change read by the return's rule.
+  3. *Commit*: one store transaction writes `role_staffing`, sets `written` to the projection and clears `pending`; only then is the press
+     answered done.
+  So a narrowing, a work made off, reaches the file before the store, and the file is never wider than the store in whether a work starts; a
+  widening reaches the file at step 2, the person's own press, just before the store commits. At a come-up, holding the lock: a pending with
+  the file at `written` is written and committed, and a pending with the file at the pending projection is committed, so a press made and judged
+  is finished once and said on the AI screen's *Actors*; a pending with the file at neither is dropped and said, its file's change read by the
+  return's rule; no pending and the file at `written` is nothing. **This is how the come-up tells its own unfinished write from an older build's
+  edit**: its own is a recorded pending whose projection, or whose baseline, the file still shows; anything else is another writer's.
+- **The price, all eight** (round 6, *O5-F3*: round 5 named three and called the rest never wider). An older build reading `driver.json` after
+  w-s: **Build** on `adapter`, its first agent at account default, no later choice, model or effort; **Chat** and **Brainstorm** on `adapter`
+  too, Build's first agent, so where the person set another agent, a different one; **Intake** and **Ask Daoris** on their first agent only where
+  on in every scope, never wider, narrower where one scope has the work on and another off; **Helper** on its callers' rules' candidates
+  (`HelperChoice.Order` with no `helper` actor, `Conversations/Helpers/HelperChoice.cs:43-49`), the person's list or every agent of another maker,
+  never the staffing's order, an agent the staffing leaves out askable where the rule names none; **Second opinion** and **Partner** on their
+  rules' own choice (`ActorChoices.cs:93-99`; `ReviewerChoice`, `PartnerChoice`), never the staffing; and any entry that does not read holding its
+  starts, as in the newer build. So an older build is never wider in **whether** a work starts; **which agent** runs is the price above.
 - **Its class: set aside**, by §13.5's rule: an older build acts on it, staffing every start, and its older reader reads the key's absence as
-  *as before* from keys the newer build keeps true, which is never wider in who may start. The key is removed from
-  `driver.json` under the file's lock and its value kept under the import's receipt, `data/driver.actors.imported`, never deleted. An older
-  build then reads every seeded role *as before* from the first-agent keys the newer build keeps written through: Intake and Ask Daoris on or off
-  exactly as the store has them, never wider in who may start; Build on its first agent; Chat and Brainstorm on Build's first agent, at account
-  default, the price said: narrower in the choices it walks, and a different agent for Chat or Brainstorm where the person set another. Left in
-  place instead, a stale `actors` would win over the written-through `adapter` in an older build's `Effective` and read back an agent the person
-  removed.
-- **The return, and a hand edit.** An `actors` key found again in `driver.json` (an older build's `SET_ACTOR`, or a hand edit), or a first-agent
-  key differing from what the newer build last wrote, is imported once and set aside again (§13.5's rule for a set-aside family written anew),
-  each entry judged, a role turned on (Intake or Ask Daoris given an agent) or an agent added held for the person's press as a widening, every
-  other change applied. So for `actors` alone **D50 is amended**: a hand edit of the staffing takes effect through that import, offered at the next
-  start and when the home's watch sees the file change; for every other key D50 stands.
-- **Its export and import.** `daoris driver role export` and the AI screen's *Export* write every role's staffing as readable JSON in D205's
-  shape, `actors` for the seeded eight and `roles` for the added ones; `daoris driver role import` and *Import* read one back through
-  `RoleCatalog.Judge`, a widening held for the person's press in the window, the screen's words in both catalogues under the UI and translation
-  contracts. The row's census names every test and tool that seeds `actors` into a home's `driver.json` (the family rehearsal and the proof kit
-  among them, §13.5) and moves each to the import or to `DAORIS_DRIVER_CONFIG`, whose file is imported again whenever its SHA-256 changes.
-- **Proof.** Every actor's three states round-tripped through the import and the export (`ActorChoicesTests` whole); an unreadable entry holding
-  its starts after the import as before it; Intake turned off in the store, then an older build's own start, reading `driver.json` with
-  `actors` set aside, starting no intake; Build given a second choice in the store and an older build walking its first alone; an older build's
-  `SET_ACTOR` during a downgrade imported once at the return, Intake turned on by it held for the press; a hand edit of `actors` offered as an
-  import at the next start; the seeding tools moved, the seed file imported again when it changes. ⚖, since its import door changes who may
+  *as before* from keys the newer build keeps true. The readable entries are removed from `driver.json` under the file's lock and the key's
+  value kept under the import's receipt, `data/driver.actors.imported`, never deleted; the unreadable ones stay (above). Left in place instead, a
+  stale `actors` would win over the written-through `adapter` in an older build's `Effective` and read back an agent the person removed.
+- **The return, and a hand edit** (round 6, *O5-F4*: round 5 applied every change but a widening, and said both *applied* and *offered*). With
+  no pending, the file's owned keys and `actors` are compared with `written` at every start, when the home's watch sees the file change and at
+  each write's step 2. A **turn-off** found there, Intake's or Ask Daoris's key absent where `written` has it or its `actors` entry `[]`, is
+  applied with no press, a narrowing, through the three steps. **Everything else is offered as an import, never applied by itself**: an `actors`
+  key found again with readable entries (an older build's `SET_ACTOR` writes `actors` whole, Chat and Brainstorm made explicit as its old
+  `adapter` through its `Keep`, since to it every role is *as before*, `ActorChoices.cs:191-205`), a set role's first-agent key changed, a role
+  turned on or an agent added; each entry judged by `ActorChoices.Judge`, the offer on the AI screen's *Actors* and at `daoris driver actor import`,
+  taken or left by the person's press; until then the newer build runs on `role_staffing`, and leaving the offer writes the projection back to
+  the file through the three steps. So **D50 is amended for the staffing alone**: a hand edit of `actors` or of a set role's first-agent key
+  takes effect through that offered import; a role *as before* reads its key live, and for every other key D50 stands.
+- **Its own verbs, and its census** (round 6, *C5-3.7*, *O5-F11*, *O5-F12*). `daoris driver actor export` writes the seeded eight's staffing as
+  readable JSON in D205's shape, `actors`, and `daoris driver actor import` reads one back through `ActorChoices.Judge`, a turn-on held for the
+  person's press in the window; the AI screen's *Actors* shows the return's and a hand edit's offer, its words in both catalogues under the UI and
+  translation contracts. Added roles join the export with row y-i, and nothing here names a verb of row y-i's or a judge of row w's. No tool
+  seeds `actors` (`git grep actors -- tools` finds none): the family rehearsal seeds `adapter` and `intakeAdapter`
+  (`tools/family-rehearsal.mjs:981-988`, `:1180`), the INT4f proof both (`tools/int4f-proof.mjs:174`), and the proof kit writes its caller's
+  configuration (`tools/proof-kit.mjs:284-291`), each reaching a role *as before*, read live, so each works unchanged; the row's census fails a
+  tool that writes `actors` into a home's `driver.json`, which would move to `daoris driver actor import`. Round 5's census named seeds no tool
+  writes.
+- **Proof** (round 6, *C5-1.15*). Every actor's three states round-tripped through the export and the import (`ActorChoicesTests` whole); the
+  first import killed after the receipt, after the intent and after the file's write, each come-up finishing it once, and an older build's own
+  start between each reading no wider staffing; a turn-off killed between the file and the commit, an older build's start then starting no intake
+  and the come-up committing it off; a turn-on killed after the intent, an older build's start starting no intake and the come-up finishing it;
+  two newer writers changing two roles at once, both kept; a newer and an older writer at once, serialized on the lock, the older's write offered
+  at the return; a hand edit between the intent and the file, the pending dropped and said and the edit offered; an unreadable entry holding its
+  starts in both builds, then repaired by the person, its entry gone from the file and its key written; Build given a second choice and a model in
+  the store, an older build walking its first agent alone at account default; Chat given another agent, an older build running Chat on Build's;
+  a workspace's Intake off with the machine's on (once row w gives scopes), an older build starting no intake; an older build's `SET_ACTOR` during
+  a downgrade offered at the return, the store's staffing untouched until the person takes it, its Intake turn-off applied and its turn-on held; a
+  set role's key changed by hand offered, an *as before* role's read live; the seeding tools' census. ⚖, since its import door changes who may
   start (Intake and Ask Daoris on or off).
 - **To drop:** without it the seeded roles' staffing would stay in `actors` and an added role's in the store, two homes for one kind of record,
   which the steward's change refuses.
 
 **Part B's rows now**, in order: z-i, z-iii, a-ii, a-iii, p, d-i, d-ii, e, f-i to f-vi, g, h, i, o, j, w-s ⚖, w, x, y-i ⚖, k, z-v, l-i to l-v,
 m-i to m-v, n, q ⚖, r ⚖, s, v ⚖; and, proposed for later designs, w-0 ⚖, t ⚖, y-ii ⚖, z-ii's general settings ⚖, z-iv ⚖ and z-vi to z-xiv (z-ix
-and z-xi ⚖). Both makers read round 5 before any of it is accepted, and the ⚖ rows wait for both reads.
+and z-xi ⚖). Both makers read round 5 and said yes to both cuts, the deferrals they make recorded in §8 for the owner (round 6, *O5-F13*); row w
+is the catalogue of working roles alone (19.9; *C5-2.5*, *O5-F5*), row j's resolver today's actor choices (§2.4; *C5-3.6*), and both makers read
+round 6 before any of it is accepted, the ⚖ rows waiting for both reads.
+
+## 20. Round 6: both reads of round 5 answered
+
+Both makers read round 5 at `9f48860ba` (`docs/2026-10-25-foundation-reads.md`, *Codex, round 5* and *Opus (foundation), round 5*). Round 6 is
+written by Claude Opus 5.5 from main at `6736d2db9`, whose `src/` is `86f32f40c`'s unchanged (`git diff 86f32f40c 6736d2db9 -- src` is empty), so
+every line both reads cite is HEAD's, and the steward checked each against it (§20.3). Each finding has one row: *taken*, with where it went;
+*answered*, with the reason that holds; or *open*, with why. Where the two reads found one thing, the stricter is taken, and where Codex asks a
+protocol choice and the Opus reader names a smallest change, that change is taken where it meets Codex's counterexample, each such row saying so.
+No finding is left open.
+
+### 20.1 Codex's read (its §0's fifteen earlier findings; 35 findings in its §1 to §4, 16 blocking)
+
+| Finding | Read | Round 6 |
+|---|---|---|
+| §0, 1.1 one shell per home | open, blocking | **Taken** as C5-1.1, below |
+| §0, 1.2 keyed producers past the client | answered | Holds; the settlement's identity changes under C5-1.2, its doors do not |
+| §0, 1.3 individually ticked acts | settled | Holds; nothing changed |
+| §0, 2.1 authority and containment | answered | Holds |
+| §0, 2.2 retained attenuation | withdrawn soundly | Holds; the cut stands with both readers' yes, C5-1.9's case added to that design |
+| §0, 3.1 effect fencing | settled | Holds |
+| §0, 3.2 settlement race | settled | Holds; identity and retention taken as C5-1.2 |
+| §0, 3.3 open replay evidence | open, blocking | **Taken** as C5-1.5 |
+| §0, 3.4 the destination's successor | answered | Holds; its cost corrected as C5-1.3 |
+| §0, 3.5 migration admission | settled | Holds |
+| §0, 3.6 announcement identity | partly settled, open | **Taken**: the turn key is C5-1.6's; the journal position keeps the store's identity (O5-F9) |
+| §0, 3.7 one-use git grants | settled | Holds |
+| §0, 6.1 open before word-moving rows | settled | Holds; the marks' versions now tell d-i from d-ii (C5-1.12, C5-3.2) |
+| §0, round 4 §3.1 older MCP writers | answered | Holds |
+| §0, round 4 §3.2 cross-process attenuation | answered | Holds; w-s's ordering taken as C5-1.15 |
+| §0, round 4 §3.3 non-state occurrences | open, blocking | **Taken** as C5-1.6 |
+| 1.1 an older `BriefedMove` delivering words it copied before a newer move | blocking | **Taken, with O5-F2's smallest change, stricter in its proof.** The keyed open refuses a record left that is active, not its line's head or gone, and the go-on's step refuses a record a keyed open left (§3.3, 19.1 point 1), so a resume and a keyed open are one or the other. Codex's schedule is not closed by either, since the older move's open names no key: its double delivery is stated as today's bound, once by each build, as between two of today's shells, and *once* asserted only where the service's steps decide (§3.4 rule 4, §13.4, §13.5, 19.1 point 2); refusing every unkeyed open from a record with a successor would close it but refuse today's unkeyed opens too (§9). Row f-i's proof runs Codex's delayed schedule asserting that bound and nothing a third time |
+| 1.2 the settlement's identity and horizon | blocking | **Taken.** One row per word id, with the record it last left and its key; read by key over the records the say door's head walk visits, so a legacy record with no `entry` and its successors share one answer and no `entry` rule is computed in SQL; trimmed by time alone, no count cap, so seven days hold exactly and the table is a week's takes, measured by p (§3.4 rule 5, 19.2). The Opus reader's one line rule in SQL and C# (O5-F7) is taken in the form that meets this counterexample, the record's id, the walk giving the line (O5-F8's second branch): a shared `entry`-or-id rule would still differ from the reader's rule key for a legacy quest session. Proofs: legacy null-entry and its successor (d-ii), the boundary at seven days with more than 50,000 settlements that week (p) |
+| 1.3 `Lines.Forward`'s withdrawal | not blocking | **Taken**: the cost restated, wherever an older build moves a head past a destination, live or crashed; the live case in rows f-ii to f-vi (19.3), with O5-F14 |
+| 1.4 settlement does not prove delivery | blocking | **Taken, with O5-F6.** The settlement says only that a word left `said`; a take is told by the destination's own `User` event for the word, recorded before the write that takes it, as `ShownTaken` reads it; a word gone without it is *left*, never delivered again, the move held with its begun effect (§3.4 rule 5, §13.4 step 4, §13.5's `delivering` row, 19.4). Proofs: the take-back and the uncertain settlement after a crash at `delivering` |
+| 1.5 a deleted destination's key reopened | blocking | **Taken.** A `session_opens` row goes with its record left; where its opened record is deleted first the row stays `gone`, and a repeat open is answered `gone`, terminal, the move closing without another open; the keyed open refuses a record left that does not stand (§3.3, 19.5). Proof: the key replayed after an older build's delete |
+| 1.6 `session + seq` not durable | blocking | **Taken, with O5-F9's smallest change, which meets both counterexamples**: a turn's answer keyed by its session, the shell's `store_runs` run and `ChatQueue.LastTurnEnded`, none of which another writer's numbering or a failed append touches (§4.5, 19.6). Proofs: two shells alternating, a failed append |
+| 1.7 an unreadable swap journal | not blocking | **Taken**: not settled, the guard telling absence from unreadability (§13.5, 19.7, z-i) |
+| 1.8 two narrowings interleaved | not blocking | **Taken** into 19.8's proof, the later design's; w-s's own writes serialize on the file's lock (19.15) |
+| 1.9 a role id deleted and made again | not blocking | **Taken** into 19.9 as the later design's case |
+| 1.10 the GitDoor beside a busy store and a checkpoint | not blocking | **Taken** into z-i's measurement (19.10) |
+| 1.11 row o against copied older deliveries | blocking | **Taken**, as 1.1: row o states the bound and its proof pauses the older executor before its open and resumes it after the newer destination ends (§3.4 rule 4, 19.11, row o) |
+| 1.12 the capability cache on the desktop's pid | blocking | **Taken.** The host's run, drawn at its start, answered by `GET /api/protocol` (row p) and on every marked step's answer; the marks read again on another run or none; concrete versions, `settled` 1, `opens` 1 and 2, `head` 1, `journal` 1, so a d-i host is told from a d-ii one (19.12, §13.2). Proofs: a host replaced under one shell, a d-i-only host |
+| 1.13 the head's quest fallback | not blocking | **Taken**: a second probe for a driven part with no successor, both branches measured (§3.4 rule 2, 19.13, d-ii) |
+| 1.14 the structure gate in each row | not blocking | **Taken**: `StructureTests` whole in rows e, f-i and h (19.14, §10) |
+| 1.15 w-s's file and store protocol | blocking | **Taken.** Intent, file, commit under `driver.json`'s `KeepLock`, every boundary rolled forward or said, the come-up telling its own pending write from another writer's edit by the recorded pending and baseline (`role_staffing_projection`), two writers serialized, unreadable entries left in `actors`, a model and later choices in the price (19.15; §13.3, §13.6, row w-s). Proof: every crash boundary and two writers |
+| 2.1 `Lines.Forward`'s withdrawal | not blocking | Holds; the person-driven recovery kept and its cost corrected (C5-1.3) |
+| 2.2 the transition number's withdrawal | not blocking | **Taken**: 19.6 no longer calls every gap older than the week; a burst inside a week is said by *incomplete since* |
+| 2.3 the disposition's withdrawal | blocking where recovery leans on it | **Taken** as 1.4: recovery reads the session's events, never the settlement |
+| 2.4 row o's own shape | blocking as justified | **Taken** as 1.11 |
+| 2.5 the appointed cut; row w's dependency on w-0 | yes, a change | **Taken, with O5-F5**: row w is a working-role catalogue, its capabilities the work codes, refusing `appointed` first (`appointed-not-configurable`), the appointed roles left with the shell (§2.7, 19.9, row w) |
+| 2.6 the store-families cut | yes | **Answered**: the deferred families stay later designs' obligations, recorded with the brief's lines they defer in §8 (O5-F13) |
+| 3.1 z-i, z-iii, a-ii, a-iii | holds | Holds |
+| 3.2 p, d-i, d-ii proof and order | blocking | **Taken.** p proves its steps on one record and on fixtures the service's own statements plant; every proof that needs words moved by an open is d-ii's; the marks' versions name each row's protocol (§10's order and its Part B note; rows p, d-i, d-ii; 19.2, 19.12) |
+| 3.3 e and f-i read by nothing | holds | **Answered**: stated as a rule of every *beside* row (§10's Part B note), row e's proof checking no production path reads it |
+| 3.4 f-ii to f-vi | holds | Holds |
+| 3.5 g, h, i, o | holds | Holds |
+| 3.6 j's resolver before w's catalogue | blocking | **Taken**: j's role the seeded role of the work, its order `ActorChoices.Effective` over today's choices; x adopts `RoleCatalog.RoleFor` (§2.4, row j) |
+| 3.7 w-s naming w's judge | blocking | **Taken, with O5-F12**: `ActorChoices.Judge` and w-s's own verbs, `daoris driver actor export` and `import`, the seeded eight alone until y-i (19.15) |
+| 3.8 k, z-v, l | holds | Holds |
+| 3.9 m and n, subject to occurrence identity | holds | Holds; the identity is C5-1.6's |
+| 3.10 q, r, s, v | holds, with v's condition | **Taken**: v's condition shown for each pairing, never read from a confirmation (row v, 19.12) |
+| 4.1 the running entry and the service's run | blocking, wrong claim | **Taken**: corrected as 1.12 (19.12) |
+| 4.2 w-s's *never wider* | blocking, wrong claim | **Taken**: corrected as 1.15 and O5-F3; the price names all eight (19.15) |
+| 4.3 a settled word read as taken | blocking, wrong claim | **Taken**: corrected as 1.4 (19.4, §13.5) |
+| 4.4 one probe for every head | wrong claim | **Taken**: corrected as 1.13 (19.13) |
+
+### 20.2 The independent Opus reader's read (15 findings, 4 blocking)
+
+| Finding | Read | Round 6 |
+|---|---|---|
+| F1 a move's row unique for its record's whole life | blocking | **Taken as named**: the partial unique index `moves_standing` over moves not `delivered`, `fell-back` or `closed`; a hold closes at the person's press; an ended row kept as evidence (§3.1, §3.3, §13.3, 19.1, f-i) |
+| F2 exclusivity between moves only; *each word once* false beside an older shell | blocking | **Taken as named**, and with C5-1.1's schedule in the proof: the keyed open refuses a non-head, active or gone record left; the go-on's step refuses a record a keyed open left; point 2 restated, *once* where the service's steps decide (§3.3, §3.4 rules 3 and 4, §13.4, §13.5, 19.1, 19.5, d-i, f-i) |
+| F3 w-s's *never wider* | blocking | **Taken as named**: unreadable entries left in `actors`; `intakeAdapter` and `helperAdapter` absent wherever their work is off, removed or unreadable in any scope; all eight in the price (19.15, §2.7, row w-s, row w) |
+| F4 the return applying an older build's write | blocking | **Taken as named**: offered as an import, never applied, but a turn-off; the last written keys in `role_staffing_projection`; a role *as before* reads its key live; *applied* and *offered* now one rule (19.15) |
+| F5 row w leaning on w-0 | not blocking | **Taken as named**, with C5-2.5 (§2.7, 19.9, row w) |
+| F6 a settlement read as *taken* | not blocking | **Taken** in its first form, the session's events, with C5-1.4 (19.4) |
+| F7 no word id; a no-`entry` record's line | not blocking | **Taken**: the word's id and the record it left are the row; the one rule both sides share is the record's id, the walk giving the line, the form that meets C5-1.2's legacy successor (19.2) |
+| F8 no `entry` index; p's limits | not blocking | **Taken** in its second form, the walk's records, with an index on key and record; p lands within the say door's and the `sessions` write's limits (19.2, 19.13, row p) |
+| F9 the keys in 19.6 | not blocking | **Taken as named**, with C5-1.6: the turn's key the session, the run and `LastTurnEnded`; a record event's the store's identity and its position (§4.5, 19.6, rows k and m) |
+| F10 the matrix's journal cell | not blocking | **Taken** in its second form: the stream names `journal` only to a reader that asks, so an older client is woken by nothing; its wrong claim corrected (§4.1, 19.12, row k) |
+| F11 w-s's census | not blocking | **Taken as named**: the `adapter` and `intakeAdapter` seeds named, read live for a role *as before* (19.15) |
+| F12 order and text | not blocking | **Taken**: w-s's judge and verbs (19.15); `GET /api/protocol` row p's (§10, 19.12); §10's order (§10); §3.3 and §5.2 on z-viii (files in Part B); D212 point 15's ⚖ list and its points 5, 16 and 17 marked by its round-6 note, §7 rows 16, 17 and 19 marked; rule 4's `held-words.json` wording (§3.4); and its §3's last item, z-i after mod-ii (§10, §13.6) |
+| F13 §8 and the brief's deferred lines | not blocking | **Taken as named**: both deferrals listed in §8 as the steward's, for the owner to overrule, and a dated note on the brief's §9 (and its §8 bullet) |
+| F14 the person's two presses | not blocking | **Taken as named**, with C5-1.3: the hold offers the person's words alone, names their files, keeps others' as claims and says where the head's events show a word (19.3, §13.4 step 5, §13.5) |
+| F15 a hung executor told in the log alone | not blocking | **Taken as named**: `move.quiet` said on the line too, beside `part.quiet`, in both catalogues (§3.3, 19.1, f-i) |
+
+The reader's §0 assessments of both round-4 reads and its §1 and §2 readings of each item agree with the rows above, and its §4 claims are
+the findings' (claim 1 F2, claim 2 F6, claim 3 F10, claim 4 F11, claim 5 F3, claim 6 F7), each corrected where the finding is.
+
+### 20.3 The code, checked
+
+Every line both reads cite was read at `6736d2db9`, whose `src/` is the reads' `9f48860ba`'s and `86f32f40c`'s. The claims hold as the reads
+state them: an older briefed move reads its words at `Chat/BriefedMove.cs:99`, delivers its copy at `:142-143` and takes at `:158`; the chat open
+refuses only an occupied tree (`Core/Sessions/SessionLedger.cs:684-691`); a record with no `entry` answers the rule's key, never written back
+(`Core/Sessions/Sessions.cs:599-601`, `SessionEntries.cs:46-49`); the take-back and the uncertain settlement leave `said` by one statement
+(`SessionLedger.cs:1312`, `GoOn/UncertainWords.cs:72`), and `ShownTaken` reads the word's own `User` event (`:97-98`), which the runner records
+before the write (`Chat/ChatRunner.cs:3495`, `:3755`); a record's delete knows no desktop move (`Sessions.cs:1524-1533`); `SessionEvents` caches
+each session's `seq` per instance and `Keep` swallows a failed append (`Driver/Sessions/Events/SessionEventLog.cs:29-30`, `:45`, `:84-94`);
+`ReadJournal` answers null for no journal and for one that does not read (`Driver/Setup/StagedBuild.cs:357-361`); the running entry's pid is the
+desktop's (`Driver/Platform/RunningAddress.cs:8`, `:65-67`); a driven part's head falls back to its quest's last run (`Sessions.cs:1041-1051`);
+`Effective` throws for an unreadable entry and reads *as before* from the three keys (`Driver/Platform/ActorChoices.cs:104`, `:137-144`), `With`
+writes them only on a set and `Keep` makes Chat and Brainstorm explicit (`:159-189`, `:191-205`), and a helper *as before* walks its rule's
+candidates (`Conversations/Helpers/HelperChoice.cs:43-49`); an older go-on sends a word whose mark failed and its client ignores `unmarked`
+(`Driver/Conversations/SaidDoor.cs:47-62`, `:84-88`; `Driver/Service/ServiceClient.cs:569`); an older stream reader wakes its `ledger` topic for
+any family (`Driver/Service/LedgerChanges.cs:66-70`, `:107-115`); no tool writes `actors`, and the family rehearsal, the INT4f proof and the proof
+kit seed `adapter` and `intakeAdapter` or their caller's configuration (`tools/family-rehearsal.mjs:981-988`, `:1180`; `tools/int4f-proof.mjs:174`;
+`tools/proof-kit.mjs:284-291`); the supervisor's release reads the said word's id (`Loop/Driver.cs:473`); the chat go-on's ledger step precedes its
+spawn (`Chat/ChatGoOn.cs:663-671`). One line has moved since the design cited it: the take-up's guard on the new part's `User` event is at
+`Chat/LimitMove.cs:408`, cited so in 19.3. Nothing was run: the code was read, and this round's checks are a document's (§11).
