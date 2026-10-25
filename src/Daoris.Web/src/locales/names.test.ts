@@ -440,6 +440,21 @@ describe('the real glossary and catalogues', () => {
     // It runs the check twice in a process of its own: under the CI beside five workers that took past the 20 s default.
   }, 90_000);
 
+  /**
+   * FOUNDATION1u: the role is 角色 in both its shapes, so a label that says Actor, Actors or Roles in English must say it
+   * in Chinese, and a sentence that says *role* must not call it 职责 (the words *role*'s entry avoids), under `--all`.
+   */
+  it('hold the role to 角色: its labels say it and no sentence about a role says 职责', () => {
+    const labels = ['work.actor.title', 'settings.ai.actors.title', 'settings.daoris.label.roles'];
+    const sentence = 'projects.supervisor.refused.window-only';
+    const wrong = { ...zh, ...Object.fromEntries(labels.map((key) => [key, '职责'])), [sentence]: '只有 Daoris 的窗口可以任命或停用一个职责。' };
+    const found = check(glossary, en, wrong, { all: true })
+      .filter((finding) => finding.rule === 'glossary' && finding.language === 'zh')
+      .map(({ key }) => key).filter((key) => [...labels, sentence].includes(key)).sort();
+    expect(found).toEqual([...labels, sentence].sort());
+    expect(check(glossary, en, zh, { all: true }).filter((finding) => [...labels, sentence].includes(finding.key))).toEqual([]);
+  });
+
   it('are gated by the build: --strict runs beside the parity check, before the bundle is built', () => {
     const scripts = (JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
     const build = scripts.build!.split('&&').map((step) => step.trim());

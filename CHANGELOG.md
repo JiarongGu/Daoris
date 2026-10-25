@@ -18,6 +18,8 @@ with the version and date at release.
   it, its level, its files and its display choice across the restart, so the repeat is answered with the word already kept, and a word
   forwarded to the conversation its session went on in goes there at the level it was said at.
 
+- In 中文, the supervisor's and the steward's appointing screens and refusals now say 角色 for a role, as Settings already did, where they said 职责
+  (FOUNDATION1u, D212). Where a terminal Daoris started is said to be for an appointed role, it says 任命的角色. English is unchanged.
 - Words you write to a finished session whose account is cooling no longer wait days for that account's reset while another account
   is ready (LIMITSWITCH1, D137). For work that is open or taken, they go on at once as a new part of the same session on the ready
   account, handed Daoris's brief, as work cut off by a limit already did, and arrive once. Only when every account is at its limit do
