@@ -323,6 +323,13 @@ public sealed record PriorSession(
     public string? Ask { get; init; }
 
     /// <summary>
+    /// The work the record was opened for, as the service answers it on loopback (FOUNDATION1c, D212; <see cref="ParticipantWork"/>); null
+    /// for a teammate's mirror, which has none here, and from a host before the field, whatever its marks say. Read by nothing yet: the
+    /// readers that tell the work build it from the marks (<see cref="WorkMarks"/>), which every host answers.
+    /// </summary>
+    public string? Work { get; init; }
+
+    /// <summary>
     /// <c>driven</c> or <c>chat</c>, as the record says: an ended chat the person wrote to goes on through the chat runner
     /// (MSG1c), never the planner, which plans a quest's sessions.
     /// </summary>
@@ -870,19 +877,16 @@ public static class ActiveSessions
     /// reads that need the whole list (<see cref="Snapshot.Active"/>).</para>
     /// </remarks>
     public static bool HoldsSlot(SessionView session) =>
-        HoldsSlot(session.Kind, session.Repository, session.Ask, session.Serves, session.Opinion);
+        ParticipantWork.HoldsSlot(ParticipantWork.Of(
+            new WorkMarks(Mirror: false, session.Kind, session.Repository, session.Ask, session.Serves, session.Piece, session.Opinion)));
 
     /// <summary>
     /// The same rule over a record's fields as the service answers them (SESSBADGE1): what the Sessions badge and the status bar count
     /// the sessions the driver runs by, from the records every window holds, so the count a person reads is the one the cap spends.
     /// A null <paramref name="kind"/> is a host that answers none, read as driven work, as <see cref="SessionView.Kind"/> reads it.
     /// </summary>
-    public static bool HoldsSlot(string? kind, string? repository, string? ask, string? serves, string? opinion)
-    {
-        if (ask is { Length: > 0 } || serves is { Length: > 0 } || opinion is { Length: > 0 }) return true;
-        if (string.Equals(repository, HelpRoom.Repository, StringComparison.Ordinal)) return false;
-        return !string.Equals(kind ?? DrivenKind, ChatKind, StringComparison.Ordinal);
-    }
+    public static bool HoldsSlot(string? kind, string? repository, string? ask, string? serves, string? opinion) =>
+        ParticipantWork.HoldsSlot(ParticipantWork.Of(new WorkMarks(Mirror: false, kind, repository, ask, serves, Piece: null, opinion)));
 
     /// <summary>How many of the sessions take a place under the cap (<see cref="HoldsSlot"/>).</summary>
     public static int Held(IEnumerable<SessionView> sessions) => sessions.Count(HoldsSlot);
