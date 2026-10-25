@@ -1,6 +1,6 @@
-# COWORKVIEW1: the reads of rounds 1 to 7, the Opus foundation reader's of each and Codex's of rounds 2 to 6 (D191)
+# COWORKVIEW1: the reads of rounds 1 to 7, the Opus foundation reader's of each and Codex's of rounds 2 to 7 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17. Both read round 6 at `7341acf9f`: Codex asks another round for row a (9 findings, 3 blocking), and the Opus foundation reader accepts it (8 findings, none blocking), asking that two be written into the contract before the row is filed; round 7 answers both in the design's §18. The Opus foundation reader read round 7 at `0d8e25085` and would accept row a after named changes (8 findings, none blocking), which the design's §19 places; Codex's read of round 7 is owed, its credits out.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17. Both read round 6 at `7341acf9f`: Codex asks another round for row a (9 findings, 3 blocking), and the Opus foundation reader accepts it (8 findings, none blocking), asking that two be written into the contract before the row is filed; round 7 answers both in the design's §18. The Opus foundation reader read round 7 at `0d8e25085` and would accept row a after named changes (8 findings, none blocking), which the design's §19 places. Codex read round 7 with those named changes at `26ef34d80` and asks another round for row a (8 findings, 2 blocking, one point seen twice); round 8 answers it in the design's §20.
 
 ## Opus (foundation), round 1
 
@@ -1592,7 +1592,7 @@ The changes to `Spawning` (Agents) are left out of the table (finding 7). Rows u
 
 ## Opus (foundation), round 7
 
-The independent Opus 5.5 reader's foundation read of round 7 at `0d8e25085`, the only read of the round, verbatim, its title line (*COWORKVIEW1 round 7, row a: a foundation read*) given as this heading and its headings set one level down: 8 findings, none blocking; accept row a after named changes the steward can check without another read, findings 1, 2 and 3 to be written into the design's §3.6, §4.1 and rules 4, 15 and 20 before the row is filed. The steward ran it read-only, on main. Codex's read of round 7 stopped when its credits ran out and is owed; under D191's note of 2026-10-24 row a is not accepted on this read alone. The design's §19 places each finding.
+The independent Opus 5.5 reader's foundation read of round 7 at `0d8e25085`, the only read of the round, verbatim, its title line (*COWORKVIEW1 round 7, row a: a foundation read*) given as this heading and its headings set one level down: 8 findings, none blocking; accept row a after named changes the steward can check without another read, findings 1, 2 and 3 to be written into the design's §3.6, §4.1 and rules 4, 15 and 20 before the row is filed. The steward ran it read-only, on main. Codex's read of round 7 stopped when its credits ran out and is owed; under D191's note of 2026-10-24 row a is not accepted on this read alone. The design's §19 places each finding. (Codex's read of round 7 has since landed: *Codex, round 7*, below.)
 
 Read at `0d8e25085`. Its product code is the same as `abf03ea26`'s and `7341acf9f`'s. The only `src/` change since round 6 is FOUNDATION1 mod-0, which touched tests, fixtures, `Directory.Packages.props` and a README. Paths use the design's aliases. `Design:n` is a line of `docs/2026-10-24-cowork-view-design.md` at `0d8e25085`.
 
@@ -1789,3 +1789,49 @@ Every other citation round 7 adds holds at `0d8e25085`:
 8 findings, 0 blocking.
 
 **Verdict for row a: accept after named changes the steward can check without another read.** Write findings 1, 2 and 3 into §3.6, §4.1 and rules 4, 15 and 20 before the row is filed. Findings 4 to 8 are a smaller ordering and §9 records, and none of them changes row a's shape.
+
+## Codex, round 7
+
+Codex's read of round 7, with the Opus foundation reader's named changes taken in the design's §19, at `26ef34d80`: 8 findings, 2 of them blocking, one point seen from the protocol (its 2.1) and from D173's rule (its 3.1); another round for row a. Its §0 re-reads round 6's answers: all taken or answered but 2.4 and 3.1, which it opens again under the closure round 7's named changes added, as its findings 2.1 and 3.1. It was run read-only at that commit, on main. Its sections are bold lines, not headings, and are kept so. Its one link, to `Design:1012`, was written from the repository's root and would not resolve from `docs/`, so it is given as the plain citation its other `Design:` lines are. Round 8 answers it in the design's §20.
+
+Reviewed read-only at `26ef34d80`; nothing changed. Path aliases follow the design. **Taken** means adequately specified, not implemented or demonstrated.
+
+**0. Round-6 findings**
+
+| Finding | Severity now | Disposition |
+|---|---|---|
+| 1.1 Refetch cancellation overstated | non-blocking | **Taken.** The initial-data exception is explicit and matches `Web/bridge/state/stateHub.ts:75` (`Design:1554`). |
+| 2.1 Unplaced attribution | non-blocking | **Answered with a reason that holds.** Unplaced evidence remains a count without a process state (`Design:2165`). |
+| 2.2 Connector transport | non-blocking | **Answered with a reason that holds.** Per-process entry variables remain the correct seam (`Driver/Service/KnowledgeConnector.cs:114`; `Design:2163`). |
+| 2.3 Frozen last seen | non-blocking | **Answered with a reason that holds.** Later suppressed calls move neither the answer nor its moment (`Design:1034`, `:2166`). |
+| 2.4 Observable prefixes | **blocking** | **Taken for the original two-process race; open under the new closure exception.** See §2.1 below (`Design:1012`, `:2164`). |
+| 2.5 Initial epoch admission | non-blocking | **Taken.** Rule 15 now names the requested ordering on both empty and remounted queries (`Design:2174`). |
+| 2.6 Changed failure words | non-blocking | **Taken.** Contract and proof now distinguish unchanged and changed consecutive failures (`Design:1357`, `:2169`). |
+| 3.1 Truthful visibility and delivery | **blocking** | **Open for visibility** under §2.1; the original delivery counterexample is answered (`Design:2485`, `:2174`). |
+| 3.2 Module edges and scope | non-blocking | **Answered with a reason that holds.** The port, token declaration and composition remain correctly placed (`Design:1686`, `:1693`). |
+
+**1. Wrong claims about existing code**
+
+None found in row a’s operative contract. Round 7 correctly retracts the duplicate-resume explanation: admission precedes spawning at `Driver/Loop/DriverContinuations.cs:268`, and `movedFirst` skips the later advance at `Driver/Loop/Driver.cs:3827`.
+
+**2. Changed protocols and their proofs**
+
+1. **Blocking — the added untaken-generation closure still fails an overlapping-process prefix.** `Design:1012` lets a `took:true` successor close an earlier untaken generation, but the winner’s exit establishes nothing about a delayed competing process: `Driver/Loop/Driver.cs:3673` awaits a service call before its advance at `:3831`, while a continuation spawns after the winner exits (`DriverContinuations.cs:1242`). Hold that competitor before its advance, let the winner finish and start its continuation, then compose: rule 5 reports the competitor’s still-live child **lost before refusal**. §9 explicitly admits this ordering (`Design:2485`), while rule 5’s prefix proof (`:2164`) omits it; require process-exit evidence or an honest uncertain state, and test every prefix with held-versus-fresh comparisons.
+
+2. **Non-blocking — crash recovery holds after the successor’s taken start, with an admitted reopening interval.** Rule 5 now covers a crash between advance and `took`, preventing permanent reopening once the next taken start lands (`Design:2164`). Before that start, moving the record back to `working` still revives old children (`Design:2470`); writing immediately after return narrows this interval, but an awaited HTTP response separates the service mutation from that write (`Driver/Service/ServiceClient.cs:1857`). The proof establishes recovery after the marker, not uninterrupted correctness across that interval.
+
+3. **Non-blocking — the first-fetch fence answers the specified epoch counterexample.** `Design:1564` requires the reply to install before buffered events are compared, so **E1 request → E2 event → E1 reply** draws E1, rejects the E2 event and re-asks; rule 15 requires this on empty and remounted queries (`:2174`). Keeping numbered pending landings as `{reading:true, at}` also closes the n7-pending/late-n6 regression (`:1521`), while `HeldAnswers.Pending` remains distinct (`Modules/Bridge/HeldAnswers.cs:43`). The planned proof covers the requested orderings; it must exercise actual query installation, as `Web/bridge/state/held.test.ts:55` does through `fetchQuery`.
+
+4. **Non-blocking — changed failure words are covered consistently.** Health now includes judged status, failure status and failure words, with one notification when any changes (`Design:1357`). Rule 10 explicitly tests repeated identical failures and changed-reason failures (`:2169`), addressing today’s suppression after the first failure at `Modules/Platform/StateSlices.cs:211`.
+
+5. **Non-blocking — the identity-only first pass is adequately specified.** `Design:952` includes unplaced lines in identity joins while leaving placement and lifecycle changes to each line’s own `proc`, consistent with the existing preliminary pass at `Driver/Sessions/Domain/ChildBindings.cs:139`. Rule 6 tests a tokened call joined only through an unplaced hook line, both with and without ACP announcements (`Design:2165`).
+
+6. **Non-blocking — a query error over a held answer now draws stale.** `Design:1530` distinguishes no held answer from retained rows, and rule 15 tests both outcomes (`:2174`). This correctly supplements `Web/bridge/state/held.ts:30`, where a bridge rejection currently escapes the reader; the proposed work-failure values and `retry:false` remain separate.
+
+**3. Decided rules, module edges and scope**
+
+1. **Blocking — the prefix exception conflicts with truthful partial visibility.** D173 requires partial visibility to be shown truthfully (`docs/decisions/D173.md:11`); calling a still-running competitor’s child “lost when its part ended” does not satisfy that rule. The dated amendment’s guarantee at `D173.md:5698` therefore exceeds what rule 5 establishes, as §2.1 demonstrates.
+
+2. **Non-blocking — no added upward edge or routing/Part B dependency found.** The raw-line port cuts `HarnessCapture → ChildLineage` (`Driver/Agents/Streams/HarnessCapture.cs:123`), and the token name belongs below Agents in Platform (`Design:1693`). New unlisted files are placed by folder as the landed gate actually operates (`Driver.Tests/StructureCheck.cs:205`); Foundation explicitly leaves row a independent (`docs/2026-10-25-foundation-design.md:1225`).
+
+**Verdict for row a: another round.** Settle closure of a still-live untaken process when the winner starts its next process, and add that ordering to rule 5’s prefix proof.
