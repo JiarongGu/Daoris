@@ -5,7 +5,7 @@
     { "name": "Settings", "folder": "Settings", "domain": true, "moved": true },
     { "name": "Service", "folder": "Service", "domain": true, "moved": true },
     { "name": "Install", "folder": "Install", "domain": true, "moved": true },
-    { "name": "Instance", "folder": "Instance", "domain": false },
+    { "name": "Instance", "folder": "Instance", "domain": false, "moved": true },
     { "name": "Events", "folder": "Events", "domain": true },
     { "name": "Knowledge", "folder": "Knowledge", "domain": true },
     { "name": "Agents", "folder": "Agents", "domain": true },
@@ -267,6 +267,15 @@
     "Install/ToolsCommand.cs": "Install",
     "Install/UpdateCommand.cs": "Install",
     "Install/VerifiedBinary.cs": "Install",
+    "Instance/InstanceClient.cs": "Instance",
+    "Instance/InstanceDoor.cs": "Instance",
+    "Instance/InstanceRoutes.cs": "Instance",
+    "Instance/PipeName.cs": "Instance",
+    "Instance/RegisterCommand.cs": "Instance",
+    "Instance/SentPresses.cs": "Instance",
+    "Instance/ShellWord.cs": "Instance",
+    "Instance/SyncPass.cs": "Instance",
+    "Instance/VerbLeases.cs": "Instance",
     "Loop/ChannelReach.cs": "Work orders",
     "Loop/Driver.cs": "Loop",
     "Loop/DriverBrainstorms.cs": "Loop",
@@ -337,9 +346,6 @@
     "Platform/HomeLease.cs": "Platform",
     "Platform/HomeWatch.cs": "Events",
     "Platform/HomeWrites.cs": "Platform",
-    "Platform/InstanceClient.cs": "Instance",
-    "Platform/InstanceDoor.cs": "Instance",
-    "Platform/InstanceRoutes.cs": "Instance",
     "Platform/JsonText.cs": "Platform",
     "Platform/KeepChoices.cs": "Workplace",
     "Platform/KeepKinds.cs": "Workplace",
@@ -358,25 +364,19 @@
     "Platform/PieceJobs.cs": "Platform",
     "Platform/PieceLauncher.cs": "Platform",
     "Platform/PieceStarts.cs": "Platform",
-    "Platform/PipeName.cs": "Instance",
     "Platform/ProcessJob.cs": "Platform",
     "Platform/ProcessStarts.cs": "Platform",
     "Platform/PseudoConsole.cs": "Platform",
-    "Platform/RegisterCommand.cs": "Instance",
     "Platform/SafeNames.cs": "Platform",
-    "Platform/SentPresses.cs": "Instance",
-    "Platform/ShellWord.cs": "Instance",
     "Platform/SpaceCommand.cs": "Workplace",
     "Platform/SpaceFloor.cs": "Workplace",
     "Platform/SpaceFree.cs": "Workplace",
     "Platform/SpaceFreeCommand.cs": "Workplace",
-    "Platform/SyncPass.cs": "Instance",
     "Platform/SystemSpace.cs": "Workplace",
     "Platform/SystemWiring.cs": "Loop",
     "Platform/TerminalLaunch.cs": "Platform",
     "Platform/TextBounds.cs": "Platform",
     "Platform/ToolHomeLeftovers.cs": "Workplace",
-    "Platform/VerbLeases.cs": "Instance",
     "Platform/WiringCommand.cs": "Loop",
     "Platform/WiringRedact.cs": "Loop",
     "Platform/WiringSizes.cs": "Workplace",
@@ -899,57 +899,57 @@
       "family": "Instance names Agents",
       "after": "Instance",
       "files": {
-        "Platform/VerbLeases.cs": ["AgentsCommand"]
+        "Instance/VerbLeases.cs": ["AgentsCommand"]
       }
     },
     {
       "family": "Instance names Course",
       "after": "Instance",
       "files": {
-        "Platform/InstanceRoutes.cs": ["PressesTold"]
+        "Instance/InstanceRoutes.cs": ["PressesTold"]
       }
     },
     {
       "family": "Instance names Participants",
       "after": "Instance",
       "files": {
-        "Platform/VerbLeases.cs": ["AccessCommand"]
+        "Instance/VerbLeases.cs": ["AccessCommand"]
       }
     },
     {
       "family": "Instance names Plugins",
       "after": "Instance",
       "files": {
-        "Platform/VerbLeases.cs": ["PluginCommand"]
+        "Instance/VerbLeases.cs": ["PluginCommand"]
       }
     },
     {
       "family": "Instance names Review",
       "after": "Instance",
       "files": {
-        "Platform/VerbLeases.cs": ["HeavyMappingCommand","SessionChecksCommand"]
+        "Instance/VerbLeases.cs": ["HeavyMappingCommand","SessionChecksCommand"]
       }
     },
     {
       "family": "Instance names Roles",
       "after": "Instance",
       "files": {
-        "Platform/InstanceDoor.cs": ["HolderKey","RoleTerminal"]
+        "Instance/InstanceDoor.cs": ["HolderKey","RoleTerminal"]
       }
     },
     {
       "family": "Instance names Workflows",
       "after": "Instance",
       "files": {
-        "Platform/VerbLeases.cs": ["HeldResolutions","NodeWordActs"]
+        "Instance/VerbLeases.cs": ["HeldResolutions","NodeWordActs"]
       }
     },
     {
       "family": "Instance names Workplace",
       "after": "Instance",
       "files": {
-        "Platform/InstanceDoor.cs": ["TreesSaid"],
-        "Platform/VerbLeases.cs": ["GitIdentityCommand"]
+        "Instance/InstanceDoor.cs": ["TreesSaid"],
+        "Instance/VerbLeases.cs": ["GitIdentityCommand"]
       }
     },
     {
@@ -1770,6 +1770,11 @@
     "StagedBuildTests.cs": "Install",
     "UpdateCommandTests.cs": "Install",
     "UpdateDrainTests.cs": "Install",
-    "InstallPortsTests.cs": "Install"
+    "InstallPortsTests.cs": "Install",
+    "InstanceDoorTests.cs": "Instance",
+    "SentPressesTests.cs": "Instance",
+    "ShellWordTests.cs": "Instance",
+    "VerbLeasesTests.cs": "Instance",
+    "RegisterCommandTests.cs": "Instance"
   }
 }
