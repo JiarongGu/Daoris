@@ -46,6 +46,7 @@
     "Accounts/InstructionAccount.cs": "Context",
     "Accounts/InstructionAccounting.cs": "Context",
     "Accounts/Rotation/AccountRotation.cs": "Agents",
+    "Accounts/Rotation/LineAccount.cs": "Agents",
     "Accounts/Rotation/RefusedAccounts.cs": "Agents",
     "Accounts/Rotation/ResumeAccount.cs": "Agents",
     "Accounts/SignIns/AccountReads.cs": "Agents",
@@ -519,6 +520,7 @@
     "Sessions/Domain/ChildBindings.cs": "Participants",
     "Sessions/Domain/DeleteOutcome.cs": "Workplace",
     "Sessions/Domain/DrivenAccess.cs": "Participants",
+    "Sessions/Domain/ParticipantWork.cs": "Participants",
     "Sessions/Domain/GoAheads.cs": "Work orders",
     "Sessions/Domain/HistoryAnswers.cs": "Workplace",
     "Sessions/Domain/HistoryPlan.cs": "Workplace",
@@ -1467,7 +1469,7 @@
       "after": "Workplace",
       "files": {
         "Sessions/History/HistoryHome.cs": ["HandedQuests"],
-        "Sessions/History/SessionHomeFiles.cs": ["GoOnMarks","HandOverBox","NewSessionChoices","ReopenMarks"],
+        "Sessions/History/SessionHomeFiles.cs": ["GoOnMarks","HandOverAskFiles","HandOverBox","LimitBoxes","NewSessionChoices","ReopenMarks"],
         "Trees/ChatLandCommand.cs": ["PressTold","PressesTold"],
         "Trees/Landing/AutoLander.cs": ["DaorisWords"],
         "Trees/Landing/ChatPresses.cs": ["PressHold"],
@@ -1803,7 +1805,6 @@
       "family": "Work orders names Help",
       "after": "Work orders",
       "files": {
-        "Quests/Domain/Planner.cs": ["HelpRoom"],
         "Sessions/SessionsCommand.cs": ["HelpRoom"],
         "Trees/SessionGroups.cs": ["HelpRoom"]
       }
