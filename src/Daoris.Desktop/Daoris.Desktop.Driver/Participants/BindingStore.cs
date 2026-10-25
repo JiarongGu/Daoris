@@ -161,13 +161,12 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
 
     /// <summary>
     /// Import one session's file now, as <see cref="ImportFiles"/> does each: whether the store holds its conversation, a file that does not
-    /// read being no import. Throws what the store throws.
+    /// read being no import, and the store's own gate holding it until the start's confirmation is settled. Throws what the store throws.
     /// </summary>
     public bool ImportFile(string session)
     {
         var path = FileOf(session);
         if (!File.Exists(path)) return false;
-        if (Settled() is { Is: false }) return false;
         using var store = Open();
         return ImportOne(store, session, path, out _) == Imported.Done;
     }

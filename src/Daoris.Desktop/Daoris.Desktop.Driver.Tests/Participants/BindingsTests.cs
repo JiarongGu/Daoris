@@ -400,6 +400,29 @@ public sealed class BindingsTests : IDisposable
         Assert.Single(Receipts());
     }
 
+    [Fact]
+    public void A_file_an_older_build_rewrites_while_it_is_imported_is_not_set_aside_and_is_imported_at_the_next_look()
+    {
+        var conversations = Newer();
+        conversations.Keep("s1", "claude-code-acp", "c-1");
+        // The older build's write lands between the import's read of the file and its set-aside.
+        var racing = new BindingStore(_home, () => StoreSettled.Yes, path =>
+        {
+            var read = GoOnFiles.ReadConversation(path);
+            GoOnFiles.WriteConversation(path, "claude-code-acp", "c-1-older");
+            return read is { } kept ? (kept.Adapter, kept.Conversation) : null;
+        });
+
+        Assert.Equal(1, racing.ImportFiles().Imported);
+
+        Assert.Equal([("s1", "claude-code-acp", "c-1")], Rows());
+        Assert.True(File.Exists(FileOf("s1")));
+        Assert.Equal("c-1-older", OlderRead("s1")!.Conversation);
+        Assert.Equal(1, conversations.ImportFiles().Imported);
+        Assert.Equal([("s1", "claude-code-acp", "c-1-older")], Rows());
+        Assert.False(File.Exists(FileOf("s1")));
+    }
+
     // ——— The store's own side: a table a z-i build never opens.
 
     [Fact]
