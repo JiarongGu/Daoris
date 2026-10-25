@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - The disk card's next removal counted only the earliest due day's folders, so overdue ones across midnight went uncounted (KEEP1a, KEEPSIZE1a)
+
+- **Symptom:** `SetAsidePlacesTests.The_card_counts_both_places_under_set_aside_and_none_under_the_rest` failed every run between
+  00:00 and 01:00 UTC on 2026-10-25 (on main and on LIMITSWITCH1's merge alike), green in the stage two hours before: the card's
+  `next` counted 1 of the two folders, both past their days.
+- **Root cause:** `SystemSpace.Earliest` grouped the folders due on the UTC calendar day of the earliest one. The test sets its two
+  folders aside an hour apart from the real clock, so in the hour after midnight they fall on two days, and the second, already due,
+  was left out though the next clear takes it. On the install the same undercount meets every set of folders that fell due on more
+  than one day before the card was read.
+- **Fix:** `next` is the earliest day's folders and every one due by now, whatever day it fell due on; the set-aside and downloads
+  rows both pass the card's `now`.
+- **Verification:** the disk-space and keep-size classes, 55 of 55, run at 00:4x UTC, the hour the test failed in.
+
 ## 2026-10-25 - The driver's tests referenced the service's HTTP host, which the merge tool's build rule refuses (KEEPSIZE1b3)
 
 - **Symptom:** the CI's tool test `every project a .NET project references is in its own component` (`merge-branch.test.ts`) failed on
