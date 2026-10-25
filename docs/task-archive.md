@@ -51,8 +51,8 @@ D212's note of this date.
 > changes no product code. It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
 
 **Outcome.** Built as the row names it. The fourteen sites find their sources by name (the service's tests gained a `SourceFiles` of their own, the
-modules' its `Driver`, and `driver-names.test.ts` reads the service's tests too). The gate places all 784 files, reads each name through one compilation
-(about 27 s over the tree), lists 993 edges against the order in 102 families, none into `Loop/`'s folder, the `Domain/` crossings (eight in seven
+modules' its `Driver`, and `driver-names.test.ts` reads the service's tests too). The gate places all 786 files, reads each name through one compilation
+(about 27 s over the tree), lists 994 edges against the order in 102 families, none into `Loop/`'s folder, the `Domain/` crossings (eight in seven
 files, nine `async` files) and the eighteen static `bool` rules of the files placed in Loop. Each planted form was seen failing against today's
 identifier scan, and each rule's cases with the rule switched off. What the census found beyond the design's counts (`DaorisHome` and two more name
 `AtomicFile`; Platform's containment files name higher subdomains; two more `Domain/` crossings; `Acp.cs` below Course) is D212's note of the same date,
