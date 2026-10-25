@@ -6,7 +6,7 @@
     { "name": "Service", "folder": "Service", "domain": true, "moved": true },
     { "name": "Install", "folder": "Install", "domain": true, "moved": true },
     { "name": "Instance", "folder": "Instance", "domain": false, "moved": true },
-    { "name": "Events", "folder": "Events", "domain": true },
+    { "name": "Events", "folder": "Events", "domain": true, "moved": true },
     { "name": "Knowledge", "folder": "Knowledge", "domain": true },
     { "name": "Agents", "folder": "Agents", "domain": true },
     { "name": "Workplace", "folder": "Workplace", "domain": true },
@@ -198,6 +198,25 @@
     "Conversations/Partners/SessionsPartnerCommand.cs": "Participants",
     "Conversations/SaidDoor.cs": "Course",
     "Conversations/TranscriptFile.cs": "Context",
+    "Events/Chain.cs": "Events",
+    "Events/ChangeWatch.cs": "Events",
+    "Events/Domain/Observation.cs": "Events",
+    "Events/Domain/SessionEnded.cs": "Events",
+    "Events/Domain/SessionEvents.cs": "Events",
+    "Events/FolderWatcherSource.cs": "Events",
+    "Events/HeardReader.cs": "Events",
+    "Events/HeldPermissions.cs": "Events",
+    "Events/HomeWatch.cs": "Events",
+    "Events/LookSaid.cs": "Events",
+    "Events/MachineFacts.cs": "Events",
+    "Events/MachineLogReader.cs": "Events",
+    "Events/NoteCodes.cs": "Events",
+    "Events/Notices.cs": "Events",
+    "Events/NoticesRead.cs": "Events",
+    "Events/QuietClock.cs": "Events",
+    "Events/RunningCalls.cs": "Events",
+    "Events/SessionLog.cs": "Events",
+    "Events/SessionWatch.cs": "Events",
     "Help/ConfiguredAccess.cs": "Knowledge",
     "Help/HelpCheckouts.cs": "Knowledge",
     "Help/HelpCircle.cs": "Knowledge",
@@ -310,8 +329,6 @@
     "Platform/BrowserCaches.cs": "Workplace",
     "Platform/BuildWalk.cs": "Roles",
     "Platform/CanonicalLine.cs": "Workplace",
-    "Platform/Chain.cs": "Events",
-    "Platform/ChangeWatch.cs": "Events",
     "Platform/ChildMarks.cs": "Platform",
     "Platform/ChildProcess.cs": "Platform",
     "Platform/CommandPresence.cs": "Platform",
@@ -321,7 +338,6 @@
     "Platform/Downloads.cs": "Platform",
     "Platform/DriverException.cs": "Platform",
     "Platform/DriverHttp.cs": "Platform",
-    "Platform/FolderWatcherSource.cs": "Events",
     "Platform/GitAccessRules.cs": "Workplace",
     "Platform/GitAuthor.cs": "Workplace",
     "Platform/GitDoors.cs": "Workplace",
@@ -344,7 +360,6 @@
     "Platform/GitWords.cs": "Workplace",
     "Platform/HomeIdentity.cs": "Platform",
     "Platform/HomeLease.cs": "Platform",
-    "Platform/HomeWatch.cs": "Events",
     "Platform/HomeWrites.cs": "Platform",
     "Platform/JsonText.cs": "Platform",
     "Platform/KeepChoices.cs": "Workplace",
@@ -353,14 +368,8 @@
     "Platform/KeepingRecord.cs": "Workplace",
     "Platform/KeepingRun.cs": "Workplace",
     "Platform/LineGuesses.cs": "Workplace",
-    "Platform/LookSaid.cs": "Events",
-    "Platform/MachineFacts.cs": "Events",
     "Platform/MachineLog.cs": "Platform",
-    "Platform/MachineLogReader.cs": "Events",
     "Platform/Moments.cs": "Platform",
-    "Platform/NoteCodes.cs": "Events",
-    "Platform/Notices.cs": "Events",
-    "Platform/NoticesRead.cs": "Events",
     "Platform/PieceJobs.cs": "Platform",
     "Platform/PieceLauncher.cs": "Platform",
     "Platform/PieceStarts.cs": "Platform",
@@ -571,12 +580,9 @@
     "Sessions/Domain/GoAheads.cs": "Work orders",
     "Sessions/Domain/HistoryAnswers.cs": "Workplace",
     "Sessions/Domain/HistoryPlan.cs": "Workplace",
-    "Sessions/Domain/Observation.cs": "Events",
     "Sessions/Domain/ParticipantWork.cs": "Participants",
     "Sessions/Domain/PauseOutcome.cs": "Work orders",
     "Sessions/Domain/PausedBy.cs": "Work orders",
-    "Sessions/Domain/SessionEnded.cs": "Events",
-    "Sessions/Domain/SessionEvents.cs": "Events",
     "Sessions/Domain/SessionOutput.cs": "Context",
     "Sessions/Domain/StartRun.cs": "Work orders",
     "Sessions/Domain/StopAnswer.cs": "Work orders",
@@ -584,11 +590,8 @@
     "Sessions/Domain/Trace.Words.cs": "Knowledge",
     "Sessions/Domain/TracedRecords.cs": "Knowledge",
     "Sessions/Events/ContextBriefs.cs": "Context",
-    "Sessions/Events/HeldPermissions.cs": "Events",
-    "Sessions/Events/RunningCalls.cs": "Events",
     "Sessions/Events/SessionEventLog.cs": "Context",
     "Sessions/Events/SessionLastWords.cs": "Context",
-    "Sessions/Events/SessionLog.cs": "Events",
     "Sessions/HarnessEnding.cs": "Agents",
     "Sessions/Heavy/HeavyGates.cs": "Review",
     "Sessions/Heavy/HeavyLease.cs": "Review",
@@ -630,9 +633,6 @@
     "Sessions/Trace/Trace.cs": "Knowledge",
     "Sessions/Trace/TraceCommand.cs": "Knowledge",
     "Sessions/Trace/TraceReads.cs": "Knowledge",
-    "Sessions/Watch/HeardReader.cs": "Events",
-    "Sessions/Watch/QuietClock.cs": "Events",
-    "Sessions/Watch/SessionWatch.cs": "Events",
     "Sessions/Work/AbandonRecord.cs": "Work orders",
     "Sessions/Work/CommittedWork.cs": "Work orders",
     "Sessions/Work/PausedWork.cs": "Work orders",
@@ -903,71 +903,71 @@
       "family": "Events names Agents",
       "after": "Events",
       "files": {
-        "Platform/HomeWatch.cs": ["AccountCooling"],
-        "Platform/NoteCodes.cs": ["AcpResumeRefused","CoolingEntry"],
-        "Sessions/Domain/Observation.cs": ["HarnessEnding","ModelRefusal","TransientEpisode"],
-        "Sessions/Domain/SessionEvents.cs": ["TurnModels"]
+        "Events/HomeWatch.cs": ["AccountCooling"],
+        "Events/NoteCodes.cs": ["AcpResumeRefused","CoolingEntry"],
+        "Events/Domain/Observation.cs": ["HarnessEnding","ModelRefusal","TransientEpisode"],
+        "Events/Domain/SessionEvents.cs": ["TurnModels"]
       }
     },
     {
       "family": "Events names Context",
       "after": "Events",
       "files": {
-        "Sessions/Domain/SessionEvents.cs": ["InstructionAccount"],
-        "Sessions/Events/HeldPermissions.cs": ["SessionEvents"],
-        "Sessions/Events/RunningCalls.cs": ["SessionEvents"],
-        "Sessions/Events/SessionLog.cs": ["SessionEvents"],
-        "Sessions/Watch/SessionWatch.cs": ["SessionEvents"]
+        "Events/Domain/SessionEvents.cs": ["InstructionAccount"],
+        "Events/HeldPermissions.cs": ["SessionEvents"],
+        "Events/RunningCalls.cs": ["SessionEvents"],
+        "Events/SessionLog.cs": ["SessionEvents"],
+        "Events/SessionWatch.cs": ["SessionEvents"]
       }
     },
     {
       "family": "Events names Course",
       "after": "Events",
       "files": {
-        "Platform/NoteCodes.cs": ["HandOverAskWhy","HandOverWhy"]
+        "Events/NoteCodes.cs": ["HandOverAskWhy","HandOverWhy"]
       }
     },
     {
       "family": "Events names Help",
       "after": "Events",
       "files": {
-        "Platform/HomeWatch.cs": ["HelpProposals"]
+        "Events/HomeWatch.cs": ["HelpProposals"]
       }
     },
     {
       "family": "Events names Participants",
       "after": "Events",
       "files": {
-        "Platform/NoteCodes.cs": ["HelperWhy","PartnerWhy"],
-        "Sessions/Domain/Observation.cs": ["SetupSwap"]
+        "Events/NoteCodes.cs": ["HelperWhy","PartnerWhy"],
+        "Events/Domain/Observation.cs": ["SetupSwap"]
       }
     },
     {
       "family": "Events names Plugins",
       "after": "Events",
       "files": {
-        "Platform/HomeWatch.cs": ["PluginCatalog"]
+        "Events/HomeWatch.cs": ["PluginCatalog"]
       }
     },
     {
       "family": "Events names Workflows",
       "after": "Events",
       "files": {
-        "Platform/HomeWatch.cs": ["WorkflowRunBindings","WorkflowStore"]
+        "Events/HomeWatch.cs": ["WorkflowRunBindings","WorkflowStore"]
       }
     },
     {
       "family": "Events names Workplace",
       "after": "Events",
       "files": {
-        "Platform/HomeWatch.cs": ["HeldWordsFile","LandingJudged"]
+        "Events/HomeWatch.cs": ["HeldWordsFile","LandingJudged"]
       }
     },
     {
       "family": "the attention vocabulary, split out of Attention.cs into Events (O4-6)",
       "after": "Events",
       "files": {
-        "Platform/Notices.cs": ["AttentionEvent","AttentionKind"]
+        "Events/Notices.cs": ["AttentionEvent","AttentionKind"]
       }
     },
     {
@@ -1187,7 +1187,7 @@
         "Accounts/Rotation/ResumeAccount.cs": ["ContinueReason","ContinueWhy"],
         "Agents/Acp/Acp.cs": ["ContinueWhy"],
         "Agents/Acp/AcpResumeRefused.cs": ["ContinueReason"],
-        "Platform/NoteCodes.cs": ["ContinueReason","ContinueWhy"]
+        "Events/NoteCodes.cs": ["ContinueReason","ContinueWhy"]
       }
     },
     {
@@ -1722,6 +1722,23 @@
     "ShellWordTests.cs": "Instance",
     "VerbLeasesTests.cs": "Instance",
     "RegisterCommandTests.cs": "Instance",
-    "InstancePortsTests.cs": "Instance"
+    "InstancePortsTests.cs": "Instance",
+    "ChainTests.cs": "Events",
+    "ChangeWatchProcessTests.cs": "Events",
+    "ChangeWatchTests.cs": "Events",
+    "HomeWatchTests.cs": "Events",
+    "MachineFactsTests.cs": "Events",
+    "MachineLogReaderTests.cs": "Events",
+    "NoteCodesTests.cs": "Events",
+    "NoticesReadTests.cs": "Events",
+    "NoticesTests.cs": "Events",
+    "LookSaidTests.cs": "Events",
+    "SessionWatchProcessTests.cs": "Events",
+    "ObservationTests.cs": "Events",
+    "SessionEventsTests.cs": "Events",
+    "HeldPermissionsTests.cs": "Events",
+    "RunningCallsTests.cs": "Events",
+    "SessionLogTests.cs": "Events",
+    "SessionWatchTests.cs": "Events"
   }
 }
