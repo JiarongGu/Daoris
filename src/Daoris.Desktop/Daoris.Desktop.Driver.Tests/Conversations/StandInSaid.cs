@@ -30,6 +30,19 @@ internal sealed class StandInSaid : ISaidDoor
     /// <summary>Every attempt answered not marked (AGENTERRORS1, Codex's finding 4): a record that would not mark a word.</summary>
     public bool RefusingAttempts { get; set; }
 
+    /// <summary>
+    /// Each producer's key the line settled, with the record its word left (FOUNDATION1 row p, the design §3.4 rule 5): a keyed keep with no word
+    /// waiting under it is answered <see cref="SayAnswer.Settled"/>, with no word, as the service's say door answers a client that asks, and
+    /// the stand-in keeps nothing.
+    /// </summary>
+    public Dictionary<string, string> Settled { get; } = [];
+
+    /// <summary>
+    /// Whether the client asks for a settled answer: false is an older client's say, answered by today's door, which keeps a second word under
+    /// a new id where only a settlement stands (row p, §19.12).
+    /// </summary>
+    public bool AsksSettled { get; set; } = true;
+
     /// <summary>Every take-off answered not landed: a record that would not take a word off.</summary>
     public bool RefusingTakeOff { get; set; }
 
@@ -50,6 +63,7 @@ internal sealed class StandInSaid : ISaidDoor
         {
             var key = word.Key ?? word.Daoris?.Key;
             if (key is not null && Said.FirstOrDefault(each => each.Key == key) is { } waiting) return new SayAnswer(true, "again") { Word = waiting };
+            if (key is not null && AsksSettled && Settled.TryGetValue(key, out var left)) return new SayAnswer(true, "settled") { Settled = left };
 
             kept = new SaidWordView($"w{++_ids}", word.Text, DateTimeOffset.UnixEpoch, [], false)
             {

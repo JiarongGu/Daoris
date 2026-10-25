@@ -377,6 +377,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             if (channel is { Length: > 0 }) writer.WriteString("channel", channel);
             if (from is { Length: > 0 }) writer.WriteString("from", from);
             if (key is { Length: > 0 }) writer.WriteString("key", key);
+            // FOUNDATION1 row p (the design §3.4 rule 5): every keyed say reads a settled answer, the supervisor's release excepted, whose
+            // door reads no settlement. A host before the row ignores the field and answers as it did.
+            if (key is { Length: > 0 } && supervised is null) writer.WriteBoolean("settled", true);
             if (level is { Length: > 0 }) writer.WriteString("level", level);
             if (running) writer.WriteBoolean("running", true);
             if (files is { Count: > 0 })
@@ -396,6 +399,13 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         }
 
         if (!ok) return new SayAnswer(false, Text(answered, "error") ?? payload) { Refusal = Text(answered, "refusal") };
+        // Settled before a word (row p): a success naming the record the key's word left carries no `said`, so it is read first and no
+        // reader below it finds a word to act on.
+        if (answered.ValueKind == JsonValueKind.Object && Text(answered, "settled") is { Length: > 0 } settled)
+        {
+            return new SayAnswer(true, Text(answered, "message") ?? "") { Settled = settled };
+        }
+
         return new SayAnswer(true, Text(answered, "message") ?? "")
         {
             Word = answered.ValueKind == JsonValueKind.Object && answered.TryGetProperty("said", out var said) ? ReadWord(said) : null,

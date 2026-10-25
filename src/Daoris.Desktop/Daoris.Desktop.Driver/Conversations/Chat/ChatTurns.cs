@@ -204,6 +204,10 @@ internal sealed class ChatTurns(
                 said = null;
             }
 
+            // FOUNDATION1 row p (the design §3.4 rule 5): the record answered the retry settled, so its word is held or went already: answered as
+            // a retry of a word held, with nothing held, queued, steered, attempted or taken, and no word to read an id from.
+            if (said is { Settled: not null }) return new TurnKept(TurnReach.TurnEnd, null) { Settled = true };
+
             var id = said is { Kept: true, Word.Id: { } kept } ? kept : null;
             var word = id is null ? message : message with { Id = id, Kept = true };
             if (id is not null)

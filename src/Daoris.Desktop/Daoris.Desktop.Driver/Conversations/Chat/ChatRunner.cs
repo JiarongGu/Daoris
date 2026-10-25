@@ -2296,6 +2296,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         return kept switch
         {
             null => null,
+            { Settled: true } => new ChatSaid(null, null) { Settled = true },
             { Now: { } now } => new ChatSaid(now.Reaches, kept.Word) { Now = now },
             _ => new ChatSaid(Spelled(kept.Reach), kept.Word),
         };

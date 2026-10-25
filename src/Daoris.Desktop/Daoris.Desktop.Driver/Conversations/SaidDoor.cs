@@ -112,6 +112,13 @@ public enum InboxKeep
 /// <param name="Said">The say door's answer; null where nothing was asked of it.</param>
 public sealed record InboxKept(InboxKeep Outcome, SayAnswer? Said = null)
 {
+    /// <summary>
+    /// The record answered the say <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5): a retry of a word held already, which left a
+    /// record of the line. The outcome reads <see cref="InboxKeep.Held"/>, so a caller that asks only whether the word is held reads it so,
+    /// and nothing was kept, held, sent, steered, attempted or taken now.
+    /// </summary>
+    public bool Settled => Said?.Settled is not null;
+
     /// <summary>Where a held word reaches the session; null until the door is known, and for any other outcome.</summary>
     public DrivenReach? Reach { get; init; }
 

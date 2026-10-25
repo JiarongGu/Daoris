@@ -61,7 +61,7 @@ public sealed class PartnerDoors
     /// under the piece's key on the newest record of the lead's line, which it names. A refusal is an answer, the host's sentence, and
     /// so is a host older than the door.
     /// </summary>
-    public async Task<(bool Handed, string Message, string? Word, string? To)> HandAsync(string partner, string text, CancellationToken ct = default)
+    public async Task<(bool Handed, string Message, string? Word, string? To, string? Settled)> HandAsync(string partner, string text, CancellationToken ct = default)
     {
         var door = $"/api/partners/{Uri.EscapeDataString(partner)}/hand";
         using var stream = new MemoryStream();
@@ -69,16 +69,21 @@ public sealed class PartnerDoors
         {
             writer.WriteStartObject();
             writer.WriteString("text", text);
+            // FOUNDATION1 row p (the design §3.4 rule 5): the hand reads a settled answer, a key its line settled. A host before the row ignores it.
+            writer.WriteBoolean("settled", true);
             writer.WriteEndObject();
         }
 
         var (ok, status, payload, root) = await _service.PostJsonAsync(door, System.Text.Encoding.UTF8.GetString(stream.ToArray()), ct).ConfigureAwait(false);
-        if (root is not { } answer) return (false, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?", null, null);
-        if (!ok) return (false, Text(answer, "error") ?? payload, null, null);
+        if (root is not { } answer) return (false, $"the service at {_service.BaseUrl} has no `{door}` door ({status}) — is it older than this driver?", null, null, null);
+        if (!ok) return (false, Text(answer, "error") ?? payload, null, null, null);
+
+        // Settled before a word (row p): the key's word left a record of the lead's line, so nothing was kept and there is no word.
+        if (answer.ValueKind == JsonValueKind.Object && Text(answer, "settled") is { Length: > 0 } settled) return (true, Text(answer, "message") ?? "", null, null, settled);
 
         var word = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("said", out var said) ? Text(said, "id") : null;
         var to = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("session", out var session) ? Text(session, "id") : null;
-        return (true, Text(answer, "message") ?? "", word, to);
+        return (true, Text(answer, "message") ?? "", word, to, null);
     }
 }
 

@@ -811,6 +811,16 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 $"helper  ask `{ask.Id}`'s hand to session {to} is uncertain: {message}. The next look reads session {to}'s line for it, and never hands it twice.");
         }
 
+        // FOUNDATION1 row p (the design §3.4 rule 5): the host answered the hand settled, its key's word left a record of the asker's line and
+        // was kept and dispatched by an earlier hand whose answer this look lost. Nothing is dispatched and no event is recorded, as for a
+        // word handed already: the ask is marked handed, never handed again.
+        if (handed == HelperHanded.Settled)
+        {
+            files.WriteState(state with { Handed = "settled", Attempted = null });
+            Forget(ask.Id);
+            return Helper(LookClass.Progress, $"helper  ask `{ask.Id}`'s answer was handed to session {to} already: its word is settled, and it is not handed again.");
+        }
+
         // HELPERWAIT1b2: dispatched before the state's mark, so a mark that fails to write leaves a word the next look's read-back
         // completes, idempotently, rather than one marked handed that nothing here was told of.
         var atNextStep = Dispatch(state, record, word, composed, inbox, _context.Events);
