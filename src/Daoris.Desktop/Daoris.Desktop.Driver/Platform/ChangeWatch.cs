@@ -60,7 +60,7 @@ public static class ChangeTopics
     /// A ledger family moved, the subject naming it (§A4.2's change stream): its wake runs the look's local plan alone, the remote
     /// sync left to the <see cref="Look"/> topic's deadline (FABRIC-EVENT3a).
     /// </summary>
-    public const string Ledger = "ledger";
+    public const string Ledger = LedgerChanges.Topic;
 
     /// <summary>The driver's configuration file (<c>driver.json</c>), heard moving; the loop reads it afresh at each look (FABRIC-EVENT4, link 7).</summary>
     public const string Config = "config";

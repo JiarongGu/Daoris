@@ -2194,7 +2194,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// the cool-off bounds it. Counted, three refusals by one spent account parked a healthy quest in seconds on
     /// 1 October.</para>
     /// <para>🔴 <b>Nor is a failure whose account was refused</b> (ROSTER1b): its agent refused the start for its sign-in, or
-    /// its provider refused its credential (AGT3b), which its note says by an account's line (<see cref="NoteCodes.AccountsOwn"/>).
+    /// its provider refused its credential (AGT3b), which its note says by an account's line (<see cref="RecordNotes.AccountsOwn"/>).
     /// The account reads signed out and the next start walks past it; counted, four starts on one empty account parked a
     /// healthy quest on the install in two minutes (2026-10-04).</para>
     /// </remarks>
@@ -2210,10 +2210,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
             var state = Text(session, "state");
             var cutOff = (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase) && !Limit(session) && !AccountRefused(session))
                          || (string.Equals(state, "stopped", StringComparison.OrdinalIgnoreCase) && Interrupted(session));
-            if (NotePart.Read(session)?.Any(part => part.Code == NoteCodes.UpdateClosed.Code) == true) continue;
+            if (NotePart.Read(session)?.Any(part => part.Code == RecordNotes.UpdateClosed) == true) continue;
             // AGENTERRORS1a (D210 §5.1): an end past a transient bound is its provider's outage, never the quest's: no strike, its
             // quest held for the person instead.
-            if (NotePart.Read(session)?.Any(part => part.Code == NoteCodes.EndedTransient.Code) == true) continue;
+            if (NotePart.Read(session)?.Any(part => part.Code == RecordNotes.EndedTransient) == true) continue;
             // D205 §3.5(c): a choice its agent refused at the open, before any prompt, is the account's, never the quest's.
             if (NotOffered(session)) continue;
             if (!cutOff) continue;
@@ -2667,14 +2667,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// </summary>
     private static bool AccountRefused(JsonElement session) =>
         NotePart.Read(session) is { } parts
-        && parts.Any(part => part.Code is { } code && NoteCodes.AccountsOwn.Any(own => own.Code == code));
+        && parts.Any(part => part.Code is { } code && RecordNotes.AccountsOwn.Contains(code));
 
     /// <summary>
     /// Whether a record ended <c>choice-not-offered</c> (D205 §3.5(c), MODELROLE1c2), read by its end code: its agent refused the choice at
     /// the open, before any prompt, so it is no strike, no last run and no start the walk counts.
     /// </summary>
     internal static bool NotOffered(JsonElement session) =>
-        NotePart.Read(session)?.Any(part => part.Code == NoteCodes.EndedChoiceNotOffered.Code) == true;
+        NotePart.Read(session)?.Any(part => part.Code == RecordNotes.EndedChoiceNotOffered) == true;
 
     /// <summary>A record that came down from the team — keyed `origin/id`, the id this machine's own never has.</summary>
     internal static bool IsTeams(JsonElement session) => Text(session, "id")?.Contains('/') == true;

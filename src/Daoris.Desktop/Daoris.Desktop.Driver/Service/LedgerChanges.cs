@@ -25,6 +25,9 @@ namespace Daoris.Driver;
 /// </remarks>
 internal static class LedgerChanges
 {
+    /// <summary>The topic each answer that names a family wakes (<see cref="ChangeTopics.Ledger"/> is this name): the change stream's own, so the service owns its spelling.</summary>
+    public const string Topic = "ledger";
+
     /// <summary>How long each wait asks to be held: under the client's own timeout (<see cref="DriverHttp.Timeout"/>).</summary>
     public const int WaitSeconds = 20;
 
@@ -67,7 +70,7 @@ internal static class LedgerChanges
                 else
                 {
                     var (next, moved) = Read(reply.Payload);
-                    if (moved.Count > 0) wake(ChangeTopics.Ledger, string.Join(',', moved));
+                    if (moved.Count > 0) wake(Topic, string.Join(',', moved));
 
                     var took = Stopwatch.GetElapsedTime(began);
                     var early = since is not null && moved.Count == 0 && took < TimeSpan.FromSeconds(WaitSeconds / 2.0);

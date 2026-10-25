@@ -501,10 +501,13 @@
     "Service/Domain/LineRegistration.cs": "Service",
     "Service/Domain/LoopbackHosts.cs": "Service",
     "Service/Domain/MessageLevel.cs": "Service",
+    "Service/Domain/NoteParts.cs": "Service",
+    "Service/Domain/RecordNotes.cs": "Service",
     "Service/Domain/RegistrationRecords.cs": "Service",
     "Service/Domain/RemoteSyncPayloads.cs": "Service",
     "Service/Domain/ReviewViews.cs": "Service",
     "Service/Domain/ServiceAnswers.cs": "Service",
+    "Service/Domain/SessionConclusion.cs": "Service",
     "Service/Domain/SessionRun.cs": "Service",
     "Service/Domain/SetupLine.cs": "Service",
     "Service/Domain/SetupQuests.cs": "Service",
@@ -867,15 +870,6 @@
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Service names Events",
-      "after": "Service",
-      "files": {
-        "Service/LedgerChanges.cs": ["ChangeTopics"],
-        "Service/RegistrationFollow.cs": ["LookSaid"],
-        "Service/ServiceClient.cs": ["NoteCodes","NotePart","Noted","SessionConclusion"]
-      }
-    },
     {
       "family": "Service names Work orders",
       "after": "Service",
@@ -1898,6 +1892,7 @@
     "SetupLineProcessTests.cs": "Service",
     "RunningAddressTests.cs": "Service",
     "RegistrationFollowTests.cs": "Service",
-    "RegistrationLineProcessTests.cs": "Service"
+    "RegistrationLineProcessTests.cs": "Service",
+    "RecordNotesTests.cs": "Service"
   }
 }
