@@ -5,6 +5,21 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## FOUNDATION1z-i — the desktop store, read by nothing (2026-10-26)
+
+> **FOUNDATION1z-i — the desktop store, read by nothing** (driver, service, CLI; D212's row of Part B, accepted by the steward 2026-10-25; the design
+> `docs/2026-10-25-foundation-design.md` §10's row *1z-i*, §13.2 to §13.4, §13.6's row z-i, §19.7 and §19.10). After mod-ii, whose Store folder it writes in:
+> `data/desktop.db` and `DesktopStore`, its version, revisions, runs, imports and wake file; `Microsoft.Data.Sqlite` for the driver, pinned as the service's; the home's
+> table and its two twins; the confirmation's *settled* read from the install's swap journal, a journal that does not read never settled; the GitDoor's start measured with
+> a read-only open, a busy store and a checkpoint among its cases. Nothing reads the store and no family moves into it. It was a row of the FOUNDATION1 backlog entry,
+> which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. `DesktopStore` and its read-only `DesktopStoreReader` sit in `Store/`, the settled reading (`StartConfirmation`) in `Install/`,
+the `desktop-db` entry in the three home tables, the package in the driver alone. Every proof the row states is a case seen failing first, in `DesktopStoreTests`,
+`DesktopStoreReaderTests` and `StartConfirmationTests`. **The GitDoor's start measured (`GitDoorStartTests`, run where `DAORIS_MEASURE_GITDOOR` is set): opening the store
+read-only costs 45 to 58 ms a start on this machine, p50 +36 to +43 %, far past the limit of a tenth, so no family the door reads moves into the store and the door takes no
+package**; the write latency `FULL` costs, p50 3.4 ms and p95 about 6 ms, is in the same note. Detail and the readings taken: D212's note of 2026-10-26.
+
 ## AGENTERRORS1b2 — a word a limit-refused try carried is held for the limit's wake or move (2026-10-25)
 
 > **AGENTERRORS1b2 — a word a limit-refused try carried is held for the limit's wake or move** (driver; what AGENTERRORS1b left, D210's note of 2026-10-25). A word the person says during a transient wait rides the next try as one prompt with the go-on; where a limit refuses that try, 1b marks the word `lost` with *Say it again* and the move's new part gets the brief alone, though row 1b's proof says each original word is received once at the limit's wake or move. `LimitHeld.Of` holds the words a limit-refused try carried (and never the failed turn's own, in history already), so they go at the wake or in the move. Proof: a stand-in turn failing transient, a word said in the wait, the try refused by a limit: the word received once at the wake and once in a briefed move, never `lost`.
