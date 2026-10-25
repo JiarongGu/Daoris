@@ -2,7 +2,7 @@
   "subdomains": [
     { "name": "Platform", "folder": "Platform", "domain": false, "moved": true },
     { "name": "Store", "folder": "Store", "domain": false, "moved": true },
-    { "name": "Settings", "folder": "Settings", "domain": true },
+    { "name": "Settings", "folder": "Settings", "domain": true, "moved": true },
     { "name": "Service", "folder": "Service", "domain": true },
     { "name": "Install", "folder": "Install", "domain": true },
     { "name": "Instance", "folder": "Instance", "domain": false },
@@ -295,9 +295,6 @@
     "Platform/DownloadClearing.cs": "Workplace",
     "Platform/DownloadKeeping.cs": "Workplace",
     "Platform/Downloads.cs": "Platform",
-    "Platform/DriverChoicesCommand.cs": "Settings",
-    "Platform/DriverConfig.cs": "Settings",
-    "Platform/DriverConfigUnreadableException.cs": "Settings",
     "Platform/DriverException.cs": "Platform",
     "Platform/DriverHttp.cs": "Platform",
     "Platform/FolderWatcherSource.cs": "Events",
@@ -357,7 +354,6 @@
     "Platform/SpaceFloor.cs": "Workplace",
     "Platform/SpaceFree.cs": "Workplace",
     "Platform/SpaceFreeCommand.cs": "Workplace",
-    "Platform/StandingChoices.cs": "Settings",
     "Platform/SystemSpace.cs": "Workplace",
     "Platform/SystemWiring.cs": "Loop",
     "Platform/TerminalLaunch.cs": "Platform",
@@ -526,7 +522,6 @@
     "Sessions/Domain/PausedBy.cs": "Work orders",
     "Sessions/Domain/SessionEnded.cs": "Events",
     "Sessions/Domain/SessionEvents.cs": "Events",
-    "Sessions/Domain/SessionLanguage.cs": "Settings",
     "Sessions/Domain/SessionOutput.cs": "Context",
     "Sessions/Domain/StartRun.cs": "Work orders",
     "Sessions/Domain/StopAnswer.cs": "Work orders",
@@ -587,6 +582,11 @@
     "Sessions/Work/WorkAbandoning.cs": "Work orders",
     "Sessions/Work/WorkCommand.cs": "Work orders",
     "Sessions/Work/WorkPausing.cs": "Work orders",
+    "Settings/DriverChoicesCommand.cs": "Settings",
+    "Settings/DriverConfig.cs": "Settings",
+    "Settings/DriverConfigUnreadableException.cs": "Settings",
+    "Settings/SessionLanguage.cs": "Settings",
+    "Settings/StandingChoices.cs": "Settings",
     "Setup/ClaudeReleaseDownloads.cs": "Install",
     "Setup/CodexReleaseDownloads.cs": "Install",
     "Setup/Domain/CodexReleases.cs": "Install",
@@ -820,10 +820,10 @@
       "family": "the settings' parser's and verbs' names of other subdomains' rule types (§14.3)",
       "after": "Settings",
       "files": {
-        "Platform/DriverChoicesCommand.cs": ["AccountLimits","AcrossRules","ActorChoice","ActorChoices","ActorView","AdapterSet","BrainstormEdit","BrainstormRule","BrainstormRules","BrainstormSet","BranchName","CommitRules","Consideration","DriverWorkflowsCommand","HandOverRules","HelpModes","HelperRules","InstanceDoor","InstanceRoute","InstanceWorld","IntakeRoom","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","LandingSource","NodeGraphHomes","NodeGraphs","NodeKinds","OpinionRule","OpinionRules","PluginCatalog","ReviewRule","ReviewRules","RouteClass","SpaceVolumes","TreesRoutes","WorkUnitKind"],
-        "Platform/DriverConfig.cs": ["AccessEdit","AccessRules","AccessSetting","AccountLimits","AcrossRules","ActorChoice","ActorChoices","BrainstormRule","BrainstormRules","BranchName","CommitRule","CommitRules","HandOverRule","HandOverRules","HeavyGate","HeavyMapping","HelpModes","HelperRule","HelperRules","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","NodeGraphHomes","NodeGraphs","OpinionRule","OpinionRules","ReviewRule","ReviewRules","SessionChecks","StandingAnswer","WorkUnitKind","WorkflowChoice","WorkflowSelection"],
-        "Platform/StandingChoices.cs": ["Consideration","LandingRule","LandingRules","PluginCatalog","RemoteTarget","ReviewEdit","ReviewRules","StartVerdict","WorkScope"],
-        "Sessions/Domain/SessionLanguage.cs": ["RemoteTarget"]
+        "Settings/DriverChoicesCommand.cs": ["AccountLimits","AcrossRules","ActorChoice","ActorChoices","ActorView","AdapterSet","BrainstormEdit","BrainstormRule","BrainstormRules","BrainstormSet","BranchName","CommitRules","Consideration","DriverWorkflowsCommand","HandOverRules","HelpModes","HelperRules","InstanceDoor","InstanceRoute","InstanceWorld","IntakeRoom","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","LandingSource","NodeGraphHomes","NodeGraphs","NodeKinds","OpinionRule","OpinionRules","PluginCatalog","ReviewRule","ReviewRules","RouteClass","SpaceVolumes","TreesRoutes","WorkUnitKind"],
+        "Settings/DriverConfig.cs": ["AccessEdit","AccessRules","AccessSetting","AccountLimits","AcrossRules","ActorChoice","ActorChoices","BrainstormRule","BrainstormRules","BranchName","CommitRule","CommitRules","HandOverRule","HandOverRules","HeavyGate","HeavyMapping","HelpModes","HelperRule","HelperRules","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","NodeGraphHomes","NodeGraphs","OpinionRule","OpinionRules","ReviewRule","ReviewRules","SessionChecks","StandingAnswer","WorkUnitKind","WorkflowChoice","WorkflowSelection"],
+        "Settings/StandingChoices.cs": ["Consideration","LandingRule","LandingRules","PluginCatalog","RemoteTarget","ReviewEdit","ReviewRules","StartVerdict","WorkScope"],
+        "Settings/SessionLanguage.cs": ["RemoteTarget"]
       }
     },
     {
@@ -1891,6 +1891,14 @@
     "KeepLockProcessTests.cs": "Store",
     "KeepLockTests.cs": "Store",
     "RecordListTests.cs": "Store",
-    "RecordLockProcessTests.cs": "Store"
+    "RecordLockProcessTests.cs": "Store",
+    "ConfigReadTests.cs": "Settings",
+    "ConfigSeamTests.cs": "Settings",
+    "ConfigTests.cs": "Settings",
+    "DriverChoicesCommandTests.cs": "Settings",
+    "DriverChoicesTextTests.cs": "Settings",
+    "DriverConfigKeepsTests.cs": "Settings",
+    "SessionLanguageTests.cs": "Settings",
+    "StandingFormTests.cs": "Settings"
   }
 }
