@@ -950,7 +950,7 @@ public static class DriverChoicesCommand
               + "`daoris driver cooloff <minutes>` changes it)");
         Say($"  notify     {(choices.Notify ? "on" : "off")}  (a session parking, or ending without you asking{(choices.Notify ? "" : " — not said")})");
         Say(choices.HelperAdapter is { } helper
-            ? $"  helper     {helper}  ({(choices.HelpMode == HelpModes.Full
+            ? $"  helper     {helper}  ({(choices.HelpMode == HelpModeNames.Full
                 ? "Ask Daoris, full access: it acts on this machine itself, with no asking"
                 : "Ask Daoris, restricted: it proposes, and you apply")} — `daoris-driver help mode` says and sets it)"
             : "  helper     off — Ask Daoris offers its starters; `daoris driver helper <adapter>` names an agent");
