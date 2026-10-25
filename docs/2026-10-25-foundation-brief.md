@@ -269,6 +269,11 @@ steward set, which every round from 2 keeps:
 The constraints of §4 stand unchanged: the person's door, D208's and D209's bounds, the state hub, the Fabric's guards, and *Simple*:
 the page gains only the words a person needs to see and change a role, entering through the glossary.
 
+*Round 6, 2026-10-25 (the steward's, for the owner to overrule):* the *default catalogue* line's two appointed roles are not seeded into
+configuration by Part B. Round 5 proposed the appointed half of the catalogue for a later design, since this build offers no appointment, and
+both makers' reads of round 5 agreed; until that design, the supervisor and the steward stay in code, and Part B's catalogue holds working roles
+alone (`docs/2026-10-25-foundation-design.md` §8, §19.9).
+
 *The name, 2026-10-25 (round 4, the steward's decision on both readers' reads of round 3):* a role is one concept in two shapes, working and
 appointed, so the page says **角色** for a role in both, and **任命的角色** where the appointed one must be said. **职务**, which round 3 gave the
 role beside 角色 for the actor, is withdrawn: it set two screen titles apart rather than two concepts. Seven shipped strings already say 角色
@@ -314,6 +319,13 @@ service in the statement that takes the word, and the keyed open's result in a t
 before a say races the service's take across the two stores; the move and its words in transfer stay in one desktop transaction
 (`docs/2026-10-25-foundation-design.md` §3.3, §3.4 rule 5). The store and every family are Part B of the design's acceptance, read in rounds of
 their own.
+
+*Round 6, 2026-10-25 (the steward's, for the owner to overrule):* the line *In the desktop's store* is met in steps. Part B moves into the
+store the Fabric's records its own protocols read (the participants' bindings, the moves, the notices) and every role's staffing, seeded or
+added (the actors' choices, row w-s); the appointments, every other setting `driver.json` holds today and the families no Part B protocol reads
+stay files until a later design of the store's families, so until then `driver.json` is not the export and import alone, and D50 stands for
+every key but the staffing. Round 5 proposed the cut and both makers' reads of round 5 agreed (`docs/2026-10-25-foundation-design.md` §8,
+§19.15).
 
 ## 10. Amendment, 2026-10-25: the driver analyzed into its subdomains
 
