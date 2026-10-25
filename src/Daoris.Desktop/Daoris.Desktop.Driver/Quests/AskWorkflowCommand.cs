@@ -1,10 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>
-/// The kind and workflow a new ask carries from a terminal (WORKFLOW1e): each null where none is chosen, and the person's words.
-/// </summary>
-public sealed record AskWorkflowComposed(string? Kind, string? Workflow, string? Words);
-
 /// <summary>What <c>daoris-driver ask --set-workflow</c> was asked: the ask, the kind and workflow (neither clears), and the words.</summary>
 public sealed record AskWorkflowAsk(string Ask, string? Kind, string? Workflow, string? Words);
 

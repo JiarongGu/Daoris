@@ -3,43 +3,6 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>One of the person's words on an ask (DRIFT1a, D133 §1), as the service answers it.</summary>
-/// <param name="Kind">
-/// <c>asked</c>, <c>answered</c>, <c>added</c>, <c>reopened</c>, or a review's <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>, as the
-/// service spells it. A kind this build does not know is kept as spelled and said as a word they said, never dropped: what the
-/// person said outranks what this build can name.
-/// </param>
-/// <param name="Text">Their words, verbatim.</param>
-/// <param name="Session">The session it was said to; none for the ask's own sentence, and none for a review's verdict.</param>
-/// <param name="Quest">
-/// The quest that session worked, or the quest a review's verdict was given on; none for the ask's own sentence, an intake's,
-/// and a conversation's.
-/// </param>
-public sealed record AskWordView(string Kind, string Text, DateTimeOffset At, string? Session = null, string? Quest = null)
-{
-    public const string Asked = "asked";
-    public const string Answered = "answered";
-    public const string Added = "added";
-
-    /// <summary>Said to a session after it ended, kept once a session took them (MSG1a's <c>reopened</c>, D137 §2.4).</summary>
-    public const string Reopened = "reopened";
-
-    /// <summary>Their words with a <c>reviewed</c> on a set-up step (REVIEWENV1b, D154 point 8; design §3.5).</summary>
-    public const string Reviewed = "reviewed";
-
-    /// <summary>Their words with a <c>not-yet</c> on a set-up step: what is not right yet (REVIEWENV1b; design §3.4).</summary>
-    public const string NotYet = "not-yet";
-
-    /// <summary>Their words with a skip of a review (REVIEWENV1b; design §3.6).</summary>
-    public const string Skipped = "skipped";
-
-    /// <summary>
-    /// Their message on the ask's channel (SESSONE2a's <c>AskWordKind.Channel</c>, D167 point 7), kept on the ask when they post it. A
-    /// part that takes it reports nothing more (SESSONE2b), so it is held here once.
-    /// </summary>
-    public const string Channel = "channel";
-}
-
 /// <summary>
 /// The person's words on the ask a session's work is for (DRIFT1b, D133 §2), as the driver read them for its start: every
 /// one, oldest first, or, where the service did not answer them, none, which the session is told.

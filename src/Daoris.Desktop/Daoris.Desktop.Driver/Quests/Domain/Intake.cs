@@ -87,20 +87,6 @@ public static class Asks
         matched is [var only] && string.Equals(only, repository, StringComparison.OrdinalIgnoreCase);
 }
 
-/// <summary>A repository's declaration as the registry answered it — what the intake decides from (D34).</summary>
-/// <param name="Registered">Whether it declared a domain at all — adopted and silent is not the same as owning nothing.</param>
-/// <param name="Root">Where it is on this machine, answered only to this machine; null elsewhere.</param>
-public sealed record DeclarationView(
-    string Repository, bool Adopted, bool Registered, string? Summary,
-    IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, string? Root)
-{
-    /// <summary>
-    /// The lanes it declares (D115 §2.2), as the registry answers them — their words, never their paths.
-    /// Absent is none: a host from before lanes answers without them.
-    /// </summary>
-    public IReadOnlyList<LaneView> Lanes { get; init; } = [];
-}
-
 /// <summary>
 /// The intake's instruction (D65 §1b), composed once and delivered by the harness's own door — the
 /// claiming instruction's sibling. It names no model (D24) and no repository layout: which harness

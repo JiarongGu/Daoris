@@ -493,8 +493,11 @@
     "Service/Domain/ActorAsked.cs": "Service",
     "Service/Domain/ActorRan.cs": "Service",
     "Service/Domain/ActorWire.cs": "Service",
+    "Service/Domain/AskViews.cs": "Service",
     "Service/Domain/AskWorkflowViews.cs": "Service",
     "Service/Domain/ContinuedFrom.cs": "Service",
+    "Service/Domain/EvidenceLine.cs": "Service",
+    "Service/Domain/EvidenceViews.cs": "Service",
     "Service/Domain/HistoryViews.cs": "Service",
     "Service/Domain/HomePipe.cs": "Service",
     "Service/Domain/LayoutFacts.cs": "Service",
@@ -502,6 +505,7 @@
     "Service/Domain/LoopbackHosts.cs": "Service",
     "Service/Domain/MessageLevel.cs": "Service",
     "Service/Domain/NoteParts.cs": "Service",
+    "Service/Domain/QuestViews.cs": "Service",
     "Service/Domain/RecordNotes.cs": "Service",
     "Service/Domain/RegistrationRecords.cs": "Service",
     "Service/Domain/RemoteSyncPayloads.cs": "Service",
@@ -876,8 +880,7 @@
       "family": "Service names Work orders",
       "after": "Service",
       "files": {
-        "Service/Domain/RemoteSyncPayloads.cs": ["ForwardTake"],
-        "Service/ServiceClient.cs": ["ActiveSessions","AskWordView","AskWorkflowComposed","Asks","BrainstormFound","BrainstormPackets","BrainstormSearch","ChannelPosted","ChannelView","DeclarationView","ElsewhereAskAnswer","EvidenceCodes","EvidenceLine","EvidencePosted","EvidenceVerdict","ForwardTake","GoAheadAnswerView","GoAheadRequestView","GoAheadView","Planner","QuestAnswerView","QuestEvidenceItem","QuestFileView","QuestReopenView","QuestRequirementView","QuestStepView","QuestSubmissionRef","QuestSubmissionView","QuestTake","SessionRecords","SessionStarted","SessionStates","Snapshot"]
+        "Service/ServiceClient.cs": ["ActiveSessions","Asks","BrainstormFound","BrainstormPackets","BrainstormSearch","ChannelPosted","ChannelView","Planner","SessionRecords","SessionStates","Snapshot"]
       }
     },
     {
@@ -1099,7 +1102,7 @@
       "after": "Events",
       "files": {
         "Sessions/Domain/Observation.cs": ["SessionStates"],
-        "Sessions/Events/SessionLog.cs": ["EvidenceLine","SessionStates"]
+        "Sessions/Events/SessionLog.cs": ["SessionStates"]
       }
     },
     {
@@ -1216,10 +1219,8 @@
         "Help/Room/HelpRoomMachineNow.cs": ["PausedBy","SessionGroup","SessionGroups","SessionLook","WorkScope"],
         "Help/Room/HelpRoomWork.cs": ["InventoryEntry","InventoryKind","WorkMilestone","WorkWords"],
         "Service/KnowledgeConnector.cs": ["IntakeRoom"],
-        "Sessions/Domain/Trace.Chain.cs": ["AskWordView","AskWords","EvidenceCodes","EvidenceVerdict","GoAheadAnswerView","QuestEvidenceItem"],
-        "Sessions/Domain/Trace.Words.cs": ["AskWordView","EvidenceCodes","EvidenceRead","EvidenceWords","GoAheadAnswerView"],
-        "Sessions/Domain/TracedRecords.cs": ["EvidenceVerdict","QuestRequirementView","QuestStepView"],
-        "Sessions/Trace/Trace.cs": ["EvidenceVerdict","QuestRequirementView","QuestStepView"]
+        "Sessions/Domain/Trace.Chain.cs": ["AskWords"],
+        "Sessions/Domain/Trace.Words.cs": ["EvidenceWords"]
       }
     },
     {
@@ -1324,8 +1325,7 @@
       "family": "Agents names Work orders",
       "after": "Agents",
       "files": {
-        "Accounts/Harnesses/HarnessRoster.cs": ["SessionStarted"],
-        "Agents/Adapters/Adapters.cs": ["AskWords","AskWordsText","BrainstormVariables","ChannelHeld","ChannelText","GoAheadsText","IntakeRoom","QuestFileView","QuestRequirementView","QuestStepView"],
+        "Agents/Adapters/Adapters.cs": ["AskWords","AskWordsText","BrainstormVariables","ChannelHeld","ChannelText","GoAheadsText","IntakeRoom"],
         "Loop/TransientRetries.cs": ["QuestResults"]
       }
     },
@@ -1462,19 +1462,15 @@
         "Trees/Domain/IWorkTrees.cs": ["TreeWork"],
         "Trees/GitReads/ReviewGraphReads.cs": ["LandOffer"],
         "Trees/GitReads/SessionReviews.cs": ["LandOffer"],
-        "Trees/LandedBranches.cs": ["QuestSubmissionRef"],
-        "Trees/Landing/AutoLander.cs": ["EvidenceCodes","QuestResults","SessionGroups"],
+        "Trees/Landing/AutoLander.cs": ["QuestResults","SessionGroups"],
         "Trees/Landing/AutoLanding.cs": ["SessionStates"],
-        "Trees/Landing/Landing.cs": ["QuestSubmissionRef"],
-        "Trees/Landing/LandingWakes.cs": ["EvidenceCodes"],
-        "Trees/Orphans.cs": ["EvidenceAt","EvidenceCheck","EvidenceCodes"],
+        "Trees/Orphans.cs": ["EvidenceAt","EvidenceCheck"],
         "Trees/SessionEntries.cs": ["EntryKey","SessionGroup","SessionGrouping","SessionGroups","SessionLook"],
-        "Trees/SessionTrees/EntryAccepts.cs": ["Consideration","QuestSubmissionRef","SessionGrouping","SessionGroups"],
+        "Trees/SessionTrees/EntryAccepts.cs": ["Consideration","SessionGrouping","SessionGroups"],
         "Trees/SessionTrees/PressedResults.cs": ["QuestResults"],
         "Trees/SessionTrees/RecoveryRetention.cs": ["RecoveryRef","StandingBranch"],
         "Trees/SessionTrees/SessionBranchDoors.cs": ["SessionGroups"],
-        "Trees/SessionTrees/SessionTrees.cs": ["DiscardOffer","QuestSubmissionRef","TreeWork"],
-        "Trees/SessionTrees/TreeGates.cs": ["EvidenceCodes"],
+        "Trees/SessionTrees/SessionTrees.cs": ["DiscardOffer","TreeWork"],
         "Trees/SessionTrees/TreeLands.cs": ["DiscardOffer"],
         "Trees/SessionTrees/TreeReadMemo.cs": ["TreeWork"],
         "Trees/SessionTrees/TreeWorkReads.cs": ["DiscardOffer","HeldWork","TreeWork"]
@@ -1613,7 +1609,7 @@
       "family": "Context names Work orders",
       "after": "Context",
       "files": {
-        "Accounts/InstructionAccounting.cs": ["AskWordView","AskWords","AskWordsText","ChannelText","GoAheadsText"],
+        "Accounts/InstructionAccounting.cs": ["AskWords","AskWordsText","ChannelText","GoAheadsText"],
         "Conversations/Domain/ContextBrief.cs": ["ChannelText"],
         "Sessions/Events/ContextBriefs.cs": ["SessionRecords"]
       }
@@ -1660,10 +1656,8 @@
         "Conversations/Chat/LimitMove.cs": ["SessionRecords"],
         "Conversations/Chat/LimitWaits.cs": ["SessionRecords"],
         "Conversations/Domain/ChatMessage.cs": ["ChannelItemView"],
-        "Conversations/Domain/DaorisWords.cs": ["QuestReopenView","QuestSubmissionRef"],
         "Conversations/DrivenInbox.cs": ["ChannelAcks","ChannelText"],
         "Conversations/GoOn/GoOnNew.cs": ["SessionRecords"],
-        "Conversations/GoOn/ReopenMarks.cs": ["QuestReopenView"],
         "Conversations/GoOn/SessionSay.cs": ["SessionRecords"],
         "Conversations/GoOn/UncertainWords.cs": ["SessionRecords"],
         "Conversations/HandOver/HandOver.cs": ["SessionRecords"],

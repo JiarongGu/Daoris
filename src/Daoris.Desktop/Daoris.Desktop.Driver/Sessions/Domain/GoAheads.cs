@@ -3,32 +3,6 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>One session's request for a go-ahead (KNOWUSE1a), as the service answers it.</summary>
-public sealed record GoAheadRequestView(string Session, string? Quest, DateTimeOffset At, string Why);
-
-/// <summary>The person's answer to a go-ahead (KNOWUSE1a): yes or no, their words where they gave any, and when.</summary>
-public sealed record GoAheadAnswerView(bool Approved, string? Words, DateTimeOffset At);
-
-/// <summary>
-/// A go-ahead held on an ask (KNOWUSE1a, D135 §2), as the service answers it: the person's yes for one act outside a
-/// repository, named by its kind, where it lands and what it touches, with each session's request and the person's answer.
-/// </summary>
-/// <param name="Number">Its number on the ask, from 1: how a session and the person name it.</param>
-/// <param name="Kind">write, release, push, sign-in or run, as the service spells it.</param>
-/// <param name="On">Where it lands, as the service read it.</param>
-/// <param name="Act">What it touches, in the words of the session that first asked it.</param>
-public sealed record GoAheadView(int Number, string Kind, string On, string Act, IReadOnlyList<GoAheadRequestView> Asked)
-{
-    /// <summary>The person's answer, the latest where they answered twice; null while it waits on them.</summary>
-    public GoAheadAnswerView? Answer { get; init; }
-
-    /// <summary>The go-ahead whose words this one's shared where they could not tell, when that is why it was asked again.</summary>
-    public int? Near { get; init; }
-
-    /// <summary>The act in one line, as the service names it: <c>write on production: "dashboard configuration"</c>.</summary>
-    public string Named => $"{Kind} on {On}: \"{Act}\"";
-}
-
 /// <summary>
 /// The terminal's door onto a go-ahead (KNOWUSE1a, D50): <c>daoris-driver ask --go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]</c>,
 /// read here, in the library, so its words are held by a test.
