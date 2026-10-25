@@ -380,5 +380,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-26-agent-provider-proposal-opus.md` | 83 | 654 |
 | `docs/2026-10-26-agent-provider-survey.md` | 79 | 632 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `docs/README.md` | 55 | 273 |
+| `docs/README.md` | 56 | 274 |
 | `src/Daoris.Desktop/README.md` | 178 | 827 |
