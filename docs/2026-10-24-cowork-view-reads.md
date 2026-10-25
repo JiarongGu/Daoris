@@ -1,6 +1,6 @@
-# COWORKVIEW1: the reads of rounds 1 to 5, the Opus foundation reader's of each and Codex's of rounds 2 to 5 (D191)
+# COWORKVIEW1: the reads of rounds 1 to 6, the Opus foundation reader's of each and Codex's of rounds 2 to 6 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17. Both read round 6 at `7341acf9f`: Codex asks another round for row a (9 findings, 3 blocking), and the Opus foundation reader accepts it (8 findings, none blocking), asking that two be written into the contract before the row is filed; round 7 answers both in the design's §18.
 
 ## Opus (foundation), round 1
 
@@ -1410,3 +1410,182 @@ All other round-5 citations I checked hold. That covers `ChildLineage.cs`, `Chil
 9 findings, 2 of them blocking.
 
 **Verdict for row a: accept after named changes the steward can check without another read.** The two required changes are F1 (a void `end` for the abandoned duplicate, with its race test) and F2 (the number kept in the query's data, a delivery to an empty query taken, with the remount test). F3 to F9 are one-line contract or record corrections.
+
+## Codex, round 6
+
+Codex's read of round 6 at `7341acf9f`: 9 findings, 3 of them blocking; another round for row a. Its §0 re-reads round 5's answers and opens none of its own: the one it leaves open, 2.3, is its finding 2.5 below. It was run read-only at that commit, on main. Its sections are bold lines, not headings, and are kept so. Round 7 answers it in the design's §18, beside the Opus foundation reader's read of the same round.
+
+Reviewed read-only at `7341acf9f`; nothing changed. Excluded checkout-relative `local/` and everything outside this checkout.
+
+Aliases below: **Design** = `docs/2026-10-24-cowork-view-design.md`; **Foundation** = `docs/2026-10-25-foundation-design.md`. `Driver/`, `Modules/`, and `Web/` use Design’s path aliases. “Taken” means adequately specified, not implemented or demonstrated.
+
+**0. Round-5 findings**
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| 1.1 Chat’s exceptional capture path | non-blocking | **Taken.** The correction matches `Driver/Conversations/Chat/ChatRunner.cs:2893`, `:2938`, `:2977`; rule 4 names the exceptional drain case (`Design:1914`). |
+| 1.2 First judgement need not push | non-blocking | **Taken.** First-judgement `HealthMoved` and the empty-judgement test address `Modules/Platform/StateSlices.cs:241`, `:248` (`Design:1920`). |
+| 2.1 Optional process attribution | blocking | **Taken.** Missing tokens and missing starts now produce unplaced evidence; the contrary positional tests are reversed (`Design:1916`). |
+| 2.2 Closed runs’ last seen | blocking | **Taken.** Frozen moments and the rule-3 exception have explicit held-versus-fresh comparisons (`Design:1917`, `:1923`). |
+| 2.3 Epoch replacement | **blocking now** | **Open.** Established-baseline events are handled, but an event reaching an initially unnumbered query can still be overwritten by an older epoch’s outstanding reply (`Design:1351`, `:1355`). |
+| 2.4 Other counterexamples | non-blocking | **Answered.** History, root calls and bounded ancestry retain adequate prospective cases (`Design:1915`, `:1923`, `:1924`). |
+| 3.1 Attribution violates partial visibility | blocking | **Taken.** Unplaced evidence receives no child state (`Design:815`; `docs/decisions/D173.md:5669`). |
+| 3.2 D173’s state wording | non-blocking | **Taken.** The dated amendment explicitly replaces strip wording with the record’s own wording (`docs/decisions/D173.md:5667`). |
+| 4.1 Missing expected outcomes | blocking | **Taken.** The original attribution and suppressed-call cases now specify outcomes (`Design:1914`, `:1916`, `:1923`); the new gaps below are separate. |
+| 4.2 Remaining proof plan | non-blocking | **Answered.** Measurements and installed-window evidence remain explicitly owed, distinct from stand-ins (`Design:1911`, `:1937`). |
+
+**1. Wrong claims about existing code**
+
+1. **Non-blocking — refetch cancellation is overstated.** `Design:1355` relies on a refetch cancelling the outstanding fetch, but `Web/bridge/state/stateHub.ts:71` explicitly documents the initial-data exception, with its regression at `stateHub.test.tsx:194`. Qualify this claim and specify the baseline/request fence needed below; the library’s default alone is insufficient.
+
+**2. Changed protocols and their proofs**
+
+1. **Non-blocking — unplaced attribution answers the original counterexample.** Rules 6 and 13 now require tokenless or missing-start evidence to change no run or state, count ids once, and wake only for a new unplaced count (`Design:1916`, `:1923`). This safely accommodates the silent append loss at `Driver/Sessions/ChildLineage.cs:108`; the named tests cover the old stop and old start cases.
+
+2. **Non-blocking — connector transport is specified at the correct seam.** The per-process entry reaches ACP’s `env` (`Driver/Service/KnowledgeConnector.cs:114`; `Driver/Agents/Acp/Acp.cs:1757`), while continuations reuse the pipe server file (`Driver/Loop/DriverContinuations.cs:1166`, `:1285`). Rules 1, 4 and 21 cover entry renewal, inherited variables and exclusion from the reused file (`Design:1911`, `:1914`, `:1931`); real-door propagation remains a measurement owed.
+
+3. **Non-blocking — frozen last seen answers suppressed calls.** Rules 7 and 13 compare a delayed P1 call after P2’s start against a fresh composition, and separately require a wake for a run closed without a closing line (`Design:1917`, `:1923`). Those outcomes resolve the original contradiction between a changed displayed moment and no wake.
+
+4. **Blocking — void ends repair the completed file, not every observable prefix.** The duplicate spawns before its advance is attempted (`Driver/Loop/Driver.cs:3661`, `:3831`), and abandonment may wait ten seconds before returning (`:3956`, `:3985`); during that interval its proposed `start` exists without its future void end. Rules 5 and 13 therefore permit a composition to mark the live first child lost before the void end restores it (`Design:1915`, `:1923`), while the proposed proof reads the file after abandonment. Define how an unconfirmed successor avoids closing the live generation, and test a composition held between its start and void end.
+
+5. **Blocking — cache-local numbering fixes collection, but epoch admission still has a hole.** With an initial E1 request outstanding, rule 15 accepts an E2 event into a query holding no number; E1’s reply can then replace E2 because it remains the newest ask’s reply (`Design:1351`, `:1355`, `:1925`). The slice exemplar buffers events before its baseline (`Web/bridge/state/slices.ts:167`), which this proposal does not specify. Add an initial-baseline/request fence and test **E1 request → E2 event → E1 reply**, including an initially empty or remounted query.
+
+6. **Non-blocking — first-judgement health works, but one proof contradicts the health contract.** The empty-first-judgement case correctly addresses `Modules/Platform/StateSlices.cs:241`, `:248`, and rules 10 and 12 require its wake (`Design:1920`, `:1922`). However, `Design:1190` requires notification when failure words change, while rule 10 says never on a second consecutive failure: restrict that assertion to unchanged health and add a changed-reason case.
+
+**3. Decided rules, module edges and scope**
+
+1. **Blocking — truthful visibility and delivery remain unmet in the two cases above.** A live child temporarily reported lost conflicts with D173’s truthful partial visibility (`docs/decisions/D173.md:11`); replacing E2 with E1 conflicts with D182’s no-regression rule (`docs/decisions/D182.md:24`). The admitted lost-void-write residue also preserves false lost state permanently (`Design:2175`), so the boundary protocol needs to address uncertainty before treating the successor as authoritative.
+
+2. **Non-blocking — no new upward edge or routing/Part B dependency found.** The raw-line port keeps parsing in Participants, its declaration in Agents, and wiring in Loop (`Design:1462`, `:1472`), consistent with `Foundation:2123`, `:2126`, `:2145`. Row a remains independently buildable as Foundation explicitly permits (`Foundation:1117`); its parts, terminal twin and translated states require neither routing records nor Part B.
+
+**Verdict for row a: another round.** Settle successor admission before its void end is known, and initial epoch admission while an older reply remains outstanding; add the two intermediate-ordering tests above.
+
+## Opus (foundation), round 6
+
+The independent Opus 5.5 reader's foundation read of round 6 at `7341acf9f`, verbatim, its title line (*COWORKVIEW1 round 6, row a: a foundation read*) given as this heading and its headings set one level down: 8 findings, none blocking; accept row a, asking that its findings 1 and 2 be written into the contract before the row is filed. Round 7 places each in the design's §18, beside Codex's read of the same round.
+
+Read at `7341acf9f`. Paths use the design's aliases. Round 6 cites `bdc1b03a2`. Between that commit and this one, FOUNDATION1 rows u, a-i and 1c landed. Of the files row a cites, they move only `Driver.cs` and `SessionsStateSlice.cs`, each by three lines (§3). Row mod-0 has still not landed.
+
+### 0. Both reads of round 5
+
+| Read · finding | Severity | Disposition | Why |
+|---|---|---|---|
+| Codex 1.1, a chat's `end` before its capture | non-blocking | **Taken, holds** | `ChatRunner.cs:2893`, `:2938`, `:2943`, `:2977` are as cited. The `finally` waiting within the drain's bound is right, and rule 4 has the case. |
+| Codex 1.2, a first judgement need not push | non-blocking | **Taken, holds** | `_judged` is set at `StateSlices.cs:241` even with no moves, and `Told` fires only on moves (`:248`). A null judge stays not judged (`:220-222`). The groups slice always judges two partitions (`GroupsStateSlice.cs:179`), so only the sessions slice needs this. |
+| **Codex 2.1, optional attribution** | blocking | **Taken, holds** | After a file's first `start`, a line is placed only by its `proc`. A tokenless line, or one whose `start` is lost, is unplaced and counted. Rule 6's reversed case proves that an old stop never closes P2's X. Residue: finding 2. |
+| **Codex 2.2, *last seen* against suppressed calls** | blocking | **Taken, holds** | *Last seen* is frozen at the line that closed the run, and only rule 3's line-less close is woken. Rules 7 and 13 compare the result with a fresh composition. |
+| Codex 2.3, epoch replacement | non-blocking | **Taken, holds** | An event of another epoch is never installed and the read is asked again, as `slices.ts:249` does. There is one `HeldAnswers` per module (`DriverModule.cs:100`). |
+| Codex 2.4, 4.2 | non-blocking | **Answered** | No change was owed. |
+| **Codex 3.1, partial visibility** | blocking | **Taken, holds** | Unplaced lines are counted and given no state. The race's transient in finding 1 is the one place a false state is still drawn. |
+| Codex 3.2, D173 point 1 | non-blocking | **Taken** | The round-6 note's first point amends it. |
+| **Codex 4.1, expected outcomes** | blocking | **Taken** | Rules 1, 4, 6 and 13 now state an outcome for each case. Rule 1 expects zero unplaced lines on Codex's protocol door and on the pipe door. |
+| **Opus F1, a duplicate's `start`** | blocking | **Taken; holds at steady state, open in part** | The fold reads the whole file, so the void `end` is found wherever it sits. Not covered: the window before the void `end` lands, and a duplicate whose spawn fails, which writes no `end` (finding 1). |
+| **Opus F2, the number outlives the query's data** | blocking | **Taken, holds** | A query whose data has no number takes any delivery, so a remount past `gcTime` takes the reply with the same `n`. |
+| Opus F3, end words | non-blocking | **Taken, holds** | `work.panel.stream.state.stopped` is at `work.panel.json:18` in en and zh. Any id-shaped `status` is kept (`ChildBindings.cs:316`). |
+| Opus F4, Codex's connector | non-blocking | **Taken, holds** | `KnowledgeConnector.cs:95-96`, `:114-124`. See §1 for why per-process composition holds. |
+| Opus F5 | non-blocking | **Taken** | Round-6 note. |
+| Opus F6, a teammate's part | non-blocking | **Taken, holds** | `SessionGroups.cs:132`; `ChildLineage.cs:44`, `:127`. |
+| Opus F7, the verb's unbounded wait | non-blocking | **Taken, sentence wrong in one case** | Finding 3. |
+| Opus F8, §4.3 under-said | non-blocking | **Taken, one omission** | Finding 7. |
+| Opus F9 a–f | non-blocking | **Taken, each** | — |
+
+### 1. The changed protocols
+
+- **Placement by `proc` from a file's first `start`; unplaced lines.**
+  - **Holds:** overlapping processes, given the void `end`.
+  - **Holds:** a delayed tokened line after a later spawn stays in its own generation. A delayed tokenless line is unplaced, never closes P2's reused X and never makes a working child.
+  - **Holds:** a crash. The next `start` closes the generation `lost`, which is true, since the agents die with the application.
+  - **Holds:** a rollback. An older build's tokenless lines after a `start` stay unplaced, counted.
+  - **Proof:** rule 6 proves each of these, and rule 1 measures the residue.
+  - **Gap:** the fold's order-free first pass, which builds Claude's `toolUse`→agent join and Codex's roots (`ChildBindings.cs:139-163`), is not said to include or exclude unplaced lines (finding 2).
+- **The token in Codex's connector entry.** Holds. On the protocol door every process composes its entry:
+  - a chat at each run (`ChatRunner.cs:1548`, scope `:3030`);
+  - a driven run inside `CaptureAcpAsync` (`Driver.cs:4318`), which `HoldAsync` calls once per process (`:3810`). Brainstorm passes, intakes, reviewers, helpers and pieces all go through it.
+
+  The protocol door has no continuation or retry: `GoOnWith` requires the pipe (`DriverContinuations.cs:1147`), and `AgainAsync` is for a structured capture only (`Driver.cs:3867`). The pipe door's only harnesses are Claude Code and the stub (`Adapters.cs:1330`, `:2176`), and Claude Code merges its environment into a server's. Rules 1 and 4 prove it.
+- **The chat's `end` after its capture.** Holds on every path, as Codex 1.1 above.
+- ***Last seen* frozen at the line that closed its run.**
+  - **Holds:** a crash.
+  - **Holds:** a delayed call after P2's `start`, which moves nothing and wakes nothing.
+  - **Holds:** a void `end` landing. It wakes the read, and the recomposition moves the closing line.
+  - **Holds:** a run rule 3 closed. It is registered, and a call naming it wakes the read once.
+  - **Proof:** rules 7 and 13 compare with a fresh composition.
+- **The abandon path's void `end`.**
+  - **Holds at steady state.** Rule 5's whole-file case and its Process case prove the end state.
+  - **Holds against a crash.** The live process dies too, so `lost` is true.
+  - **Does not hold before the void `end` lands.** From the duplicate's `start` (written before its spawn, `Driver.cs:3661`) through the refused advance (`:3831`) and `AbandonedAsync`'s wait of up to 10 s (`:3956`, `:3985`), the live process's children read *lost*.
+  - **Does not hold if the duplicate's spawn throws** (`:3661-3663`): it leaves a `start` with no `end` at all, which is O5-F1's permanent false *lost*.
+  - **Side effect of the race:** the duplicate's `Track` also overwrites the live process's entry, and its `Untrack` removes it (`SessionProcesses.cs:408`, `:668`), so `running` misses the live process. Rule 3 stays safe only because it also requires the record not to be `working`.
+  - See finding 1.
+- **The number in the query's data.**
+  - **Holds:** a remount, since data with no number takes any delivery.
+  - **Holds:** reversed delivery within an epoch.
+  - **Holds:** a pending reply, which carries no number and keeps the data.
+  - **One fetch's result at a time holds.** `askAgain` invalidates with TanStack's default `cancelRefetch` (`stateHub.ts:75-87`), and with no data the library joins the fetch in flight rather than starting another.
+  - **Gap:** a query in error that still holds an answer (finding 4).
+- **Another epoch's event never installed.** Holds, and converges in one ask. Rule 15's E1/E2 case proves it.
+- **`HealthMoved` at a first judgement.** Holds against an empty first judgement and a null judge (by design). `StateSlicesTests` and rule 10 prove it.
+
+### 2. The module map and decided rules
+
+**The map.** No edge goes up:
+- The port is declared in Agents (9), handed to `AcpStreams` (`Acp.cs:1686`) and to `HarnessCapture` in place of `lineageHome` (`HarnessCapture.cs:110-123`). This cuts the watcher's edge up into Participants.
+- It is implemented in Participants (12) and wired by Loop (21) at the four spawns (`ChatRunner.cs:1596`, `Driver.cs:3661`, `DriverContinuations.cs:1242`, `:1299`). These are the only `ContainedKind.Agent` starts.
+- `KnowledgeConnector.SessionScope` (Knowledge, 8) takes the token as a string.
+- `ForWork` (Events, 7) takes a delegate.
+- The verb (Work orders, 15) calls down: `SessionEntries` (Workplace, 10), `SessionProcesses` (Agents, 9) and `ServiceClient` (Service, 4).
+
+The changes to `Spawning` (Agents) are left out of the table (finding 7). Rows u, a-i and 1c touch none of row a's seams.
+
+**Decided rules:**
+- **D173 ADR-B:** holds, except during the race's transient (finding 1). **Point 1:** amended.
+- **D203, D115, D167:** untouched; the parts keep the strip's set and order.
+- **D182 point 3:** met by the numbers in the data. **Point 6:** one .NET composition for the read and the verb. **PUSHUX1:** *reading* by design.
+- **D185 R5:** the verb and Ask Daoris's door are named.
+- **Translation parity:** `unplaced`, `elsewhere` and `child.lost` are in both catalogues, `{{count}}` kept, 段 used for part. `unplaced`'s two languages differ in what they name (finding 8).
+- **Routing half and Part B:** nothing load-bearing. §5.1's "the waiting row's *waits on*" is still routing-half text, and row a builds none of it.
+
+### 3. Claims about the code
+
+1. §17 (design `:2485`) says "FOUNDATION1's row u has not [landed]". At `7341acf9f` it has (`ba7f8e050`), with a-i (`c0ad819ba`) and 1c (`4748ad294`). Their effect on the cited lines:
+   - `Driver.cs` moves +3 from about line 2685: spawn `:3661`, advance `:3831`, abandon `:3838`, `end` `:3910`, servers file `:2723`, connector `:4318` and `:4526`.
+   - `SessionsStateSlice.cs` moves +3 from line 47: null judge `:74`, `Failed` `:80`, empty judgement `:105`.
+   - mod-0 is still unlanded: `Driver.Tests/fixtures/structure.json` holds D166's modules.
+2. §3.6 (`:788-789`) says "every Codex child is known by its calls alone, so it is the one way a Codex child's lines name their process". Not so where `codex-acp` announces children. The driver asks every streamed session for `nativeSubagentSessions` (`Acp.cs:1783-1790`), which is the design's own *the join*, O4-F1. Those `acp` lines carry the driver's bound token.
+3. §3.6 (`:780`) says "a continuation and a retry reuse the first run's start". The retry does (`DriverContinuations.cs:1298-1299`). A continuation prepares a new start from the same target and reuses only the settings and servers files (`:1145-1152`, `:1159-1168`). The rule it supports, setting the token anew at each spawn, still stands.
+4. §3.6 (`:765`) says the void `end` is written "once `AbandonedAsync` has observed the capture". `AbandonedAsync` returns after at most 10 s, observed or not (`Driver.cs:3956`, `:3983-3990`). The duplicate's late lines are still placed by `proc`, so nothing breaks, but the sentence is wrong.
+
+### 4. Findings
+
+1. **The race still draws a false *lost* for a while, and a failed spawn leaves no `end`.** Not blocking.
+   - **What is wrong:** the duplicate's `start` closes the live generation until its void `end` lands. That window covers the spawn, the gate, two service calls (`Driver.cs:3673`, `:3681`), the advance and up to `AbandonedWait`. A duplicate whose spawn throws (`:3661-3663`) writes no `end`, which leaves the live run's children *lost* for good. The race also drops the live process from `running` (`SessionProcesses.cs:408`, `:668`).
+   - **Smallest change:**
+     - Write each `start` once the launcher has answered a process (after `:3661-3663`, `ChatRunner.cs:1596-1597`, `DriverContinuations.cs:1242-1251`, `:1299-1300`). Placement by `proc` does not need the `start` first, and with no process there is no `start`.
+     - Write the void `end` at the refused advance, before `AbandonedAsync`.
+     - Name the remaining window in §9.
+     - Rule 5 reads the intermediate file, and its Process case asserts the live child working with the session absent from `running`.
+2. **Whether the order-free first pass reads unplaced lines is unsaid.** Not blocking.
+   - **What is wrong:** the pass builds Claude's `toolUse`→agent join and Codex's roots (`ChildBindings.cs:139-163`). Suppose a tokened connector call on the protocol door is joined to an agent only through an unplaced hook line. The builder must decide whether that call begins a *first seen* run or counts as unjoined. This is the kind of builder's choice Codex 4.1 objected to.
+   - **Smallest change:** one sentence: the first pass says who an id is, never which process, and reads every line, unplaced ones included; placement and state follow each line's own `proc`. Add a rule 6 case.
+3. **The verb's sentence is false for an absent record.** Not blocking.
+   - **What is wrong:** under O5-F9d (`:1173`), a judged sessions slice that never holds the attended record keeps the read pending. That covers a wrong or deleted id. The verb then prints *this window has not judged its sessions* (`:1282`), which is false.
+   - **Smallest change:** the pending answer says which of the two it is, and the verb prints *no session {id} is held here* for the second.
+4. **A bridge refusal over a held answer is drawn *failed*.** Not blocking.
+   - **What is wrong:** `:1336` says a query in error is drawn *failed*. TanStack keeps `data` when a refetch fails, so held rows are hidden. §5.2 draws every other failure over a held answer as *stale*.
+   - **Smallest change:** a query in error that still holds an answer draws it stale with the error's words. Add the case to rule 15.
+5. **The design's code citations have drifted at the merge.** Not blocking.
+   - **What is wrong:** as §3 item 1.
+   - **Smallest change:** §17 names `7341acf9f` and the +3 shifts, or says plainly that its lines are `bdc1b03a2`'s; drop "row u has not".
+6. **Stale records.** Not blocking.
+   - **What is wrong:** §7 row a still says "**The scope round 5 settles.**" (`:1903`). §10's round-6 list for D173 leaves out C5-1.1 and O5-F7.
+   - **Smallest change:** say "round 6" and complete the list.
+7. **§4.3 does not place `Spawning`'s share.** Not blocking.
+   - **What is wrong:** `Adapters.Roles` gains `DAORIS_LINEAGE_PROC`, and five places set it (`Adapters.cs:1539`–`:1602`). Both are in Agents (9), and neither adds an edge, but the table claims to place every piece. The Codex sentence in §3 item 2 is also wrong.
+   - **Smallest change:** add one table row, and change §3.6's sentence to "a Codex child's call lines".
+8. **`unplaced`'s two languages name different things.** Not blocking.
+   - **What is wrong:** en says "its lineage also named…", which puts an internal file name in front of the person; no catalogue uses that word anywhere else. zh 另外记下… names no source at all. `observed` names the hook in both languages.
+   - **Smallest change:** both name the same source in the person's words, or neither does.
+
+8 findings, 0 blocking.
+
+**Verdict for row a: accept.** None of the eight blocks. Findings 1 and 2 are worth writing into the contract before the row is filed, and the steward can check both without another read. The rest are record corrections.
