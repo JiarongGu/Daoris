@@ -1,8 +1,10 @@
-# AGENTPROVIDER1: the reads of rounds 1 and 2 (D191)
+# AGENTPROVIDER1: the reads of rounds 1, 2 and 3 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-26-agent-provider-design.md` and D213, round 1, both at `ed455c6dd`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Neither carries a link, so none is rewritten; the paths both cite are code spans, in each read's own aliases. Round 2 answers every finding of both in the design's §17, one row each, and each changed passage of the design and D213 is marked *(C1-n.m)* for Codex's §n item m or *(O1-Fn)* for the Opus reader's finding n.
 
 Both makers' reads of round 2, at `e69b58872`, follow in the same way: run from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down (Codex's section labels, bold in its output, set as headings, as round 1's are). Round 3 answers every finding of both in the design's §18, one row each, and each changed passage of the design and D213 is marked *(C2-n.m)* for Codex's §n item m or *(O2-Fn)* for the Opus reader's finding n.
+
+Both makers' reads of round 3, at `0e588c2a4` (round 3 with PICKCARRY1 merged after it), follow in the same way. Round 4 answers every finding of both in the design's §19, one row each, and each changed passage of the design and D213 is marked *(C3-n.m)* for Codex's §n item m or *(O3-Fn)* for the Opus reader's finding n.
 
 ## Codex, round 1
 
@@ -657,3 +659,342 @@ Change: add a rule, with a planted case, that a provider's folder names another 
 - Take F1 (where Daoris's variables are applied) and F2 (a joined door's home variable, own home and trust file kept as today, three cells added to row a's table) in the design and in D213 points 3, 6 and 7.
 - Take F3 and F4 now.
 - Take the rest before the row each names: F5 before b, F17 before k, F6 and F9 before h, F16 before j, F10 before l, F11 before n, F19 before q, F8 before u, F7 before s-vi and OPENROUTER1.
+
+## Codex, round 3
+
+Codex's read of round 3 at `0e588c2a4`: another round. Its §0 checks its own round-2 findings against round 3 (1.1 and 2.2 taken, 2.3 and 4.3 answered with a reason that holds, 4.1 and 4.2 taken, and 2.1 open: a plugin joining a provider made for a door-named `accountOf` takes that provider's account key); it then finds five, one blocking (its 2.1, that chained account ownership becomes transitive), and four not (the target variable is a driven start's alone, account-key resolution's result named, the native stub cannot resume, the rest sound). The design's §19.1 answers each finding.
+
+Reviewed HEAD `0e588c2a4bbb10e2881c2912a638c28459c3e7e6`. No files changed or tests run.
+
+References: **P** = `docs/2026-10-26-agent-provider-design.md`; **D/** = `src/Daoris.Desktop/Daoris.Desktop.Driver/`; **T/** = `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/`.
+
+### 0. Your round-2 findings
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| 1.1 Protocol interactivity | **blocking** | **Taken** — P:341–346 preserves dsh’s refusal and factory-declared plugin interactivity. |
+| 2.1 Account-owner/door collision | **blocking** | **Open** — P:219 fixes the direct collision, but joining another declaration to that provider changes its account key; §2.1 below. |
+| 2.2 Downward spawn boundary | **blocking** | **Taken** — P:303–310 and :611–626 place completion in Agents, with Platform receiving its own launch value. |
+| 2.3 Remaining contract/service exception | **non-blocking** | **Answered with a reason that holds** — P:491–498 explicitly retains the service’s ordered readers and precedence. |
+| 4.1 Several readings from one frame | **non-blocking** | **Taken** — P:1003 requires each semantic fact once, allowing several distinct readings. |
+| 4.2 Wrong-door dialect fixtures | **non-blocking** | **Taken** — P:858–861 and :1001 require cross-fed frames and exact allowed effects. |
+| 4.3 Sequence and proof responsibilities | **non-blocking** | **Answered with a reason that holds**, subject to the findings below — P:1022–1025 retains the dependency order and moves retry at m. |
+
+### 1. Wrong claims about the existing code
+
+1. **Non-blocking — qualify the target-environment claim.** P:641 says the shell sets `DAORIS_TARGET` “for every door as today”; that must remain specific to driven starts. Ordinary chats clear inherited targets and add no target (`D/Agents/Adapters/Adapters.cs:1595–1603`, :1635), expressly held by `T/Agents/AdapterTests.cs:379–384`; state that distinction and include chats in row h’s environment comparison.
+
+### 2. The contract
+
+1. **Blocking — provider joining still makes account ownership transitive.** Under P:219, plugin `alpha` with `accountOf: "claude-code-acp"` becomes provider `alpha`, keyed `claude-code-acp`; under P:218, plugin `beta` with `accountOf: "alpha"` then joins it and acquires that key. HEAD accepts both declarations and gives `beta` the literal key `alpha`, whose pool it reads (`D/Plugins/Domain/PluginCatalog.cs:405`; `D/Accounts/Harnesses/Harnesses.cs:281`; `D/Accounts/Harnesses/HarnessRoster.cs:1207–1209`). Specify a representation preserving that one-level identity in P §2.2, §4.1 and D213:24–27, and require row a’s table to cover chained declarations, cycles and declaration order.
+
+2. **Non-blocking — define account-key resolution’s result explicitly.** P:232 permits multiple providers sharing one key, while P:700 describes resolution both to “the provider” and to multiple providers. Name whether `Resolve(accountKey, kind)` returns an account-pool descriptor or a provider collection, with no first-provider selection; row a’s two-plugin fixture at P:926 should prove that result and unchanged pool access.
+
+3. **Non-blocking — the other named counterexamples are addressed.** Required parts, explicit absence, opening-scoped negotiation and refusal before writing are stated at P:240, :278–293 and :316–324; plugin declarations cannot supply privileged abilities at :667–690. Events-owned payloads, owner-composed sinks and the spawn ports at P:375–415 fit FOUNDATION1’s downward-only rule (`docs/2026-10-25-foundation-design.md:2363`), while dialect isolation has the explicit service exception above.
+
+### 3. Where it chose between the proposals
+
+None beyond the account-identity issue in §2.1. No further consequential contribution needs restoring.
+
+### 4. Rows, proofs, census, conformance and OPENROUTER1
+
+1. **Non-blocking — row b asks the native stub to resume something it cannot resume.** P:969–971 requires a real-process resume on each door, including an early failed native-stub resume. `StubAdapter` implements neither resume capability nor preparation, so it inherits false/null (`D/Agents/Adapters/Adapters.cs:1506`, :1512, :1683–1749); require its unsupported-resume fallback, and exercise the plain-capture early-exit case through a separate resumable fixture.
+
+2. **Non-blocking — the remaining sequence and proof specifications are sound, subject to those corrections.** P:886–902 and :1022–1030 separate moves, corrections, spending proofs and the ⚖ rows; the census and conformance requirements include narrow exceptions, sabotage and wrong-door fixtures (P:817–860). OPENROUTER1 waits for both dialects and the reach gate, names its executor and keeps live-key measurements owner-authorized (P:1034–1055); its proof must also exercise the final account-key representation.
+
+### 5. What is the owner’s
+
+None missing.
+
+**Verdict: another round.** Settle chained account ownership and shared-key resolution before accepting the foundational identity contract; correct the chat-spawn wording and native-stub proof alongside them.
+
+## Opus (foundation), round 3
+
+The independent Opus 5.5 reader's foundation read of round 3 at `0e588c2a4`: 11 findings, 2 blocking (F1, a plugin naming a made provider joins it and takes its key, Codex's 2.1 in another case, and F2, the pool of a provider made for `codex-acp` loses Codex's limit words and usage question at row d); accept after named changes the steward can check without another read, F1, F2 and F11 now and the rest before the row each names (F9 and F10 before d, F3 and F4 before h, F5 before l and n, F3(b) before q, F6 before u, F8 before s-v, F7 before s-vi and OPENROUTER1). It finds no answer to a blocking finding of round 2 wrong. The design's §19.2 answers each finding.
+
+### 0. Both reads of round 2
+
+Read at `0e588c2a4`. That commit is round 3 plus PICKCARRY1 (`0bbf38b4d`), which was merged after round 3's read commit `28609b631`. Outside the tests, PICKCARRY1 changed only `Conversations/Chat/ChatRunner.cs`: it inserted 9 lines at `:676-684`. Paths use the survey's aliases, and `structure.json` means `Driver.Tests/fixtures/structure.json`. Each finding's status is one of:
+- **taken**: the change was made and holds against the code;
+- **answered**: the change was not made, and the reason holds;
+- **open**: not dealt with;
+- **wrong**: the answer is mistaken.
+
+**Codex, round 2 (7 findings, 3 blocking)**
+
+| Finding | Blocking | Round 3 | Status | Against the code at `0e588c2a4` |
+|---|---|---|---|---|
+| §0: its round-1 1.2, left open on the collision its 2.1 names | yes | met by 2.1's row | taken | `acme` and a disabled plugin's names hold (`Adapters.cs:2475-2482`, `:2532-2536`). The collision's representation leaks → F1, F2 |
+| 1.1 dsh is not interactive | yes | interactive becomes each door's own declaration; dsh's refusal kept; the factory states it for a plugin's door | taken | `Adapters.cs:1395` (default false), `:1773`, `:1864`, `:2069`; dsh declares none (`:1970-2037`); `ChatRunner.cs:574-582` and `:994` (round 3 cites `:985`, → F11); `DeclaredAcpAdapter.cs:32` |
+| 2.1 an `accountOf` naming a door breaks the identity rule | yes | the account key; a door-named `accountOf` becomes a provider of its own, keyed by the string | taken for `claude-code-acp`; **open** for two cases | `Harnesses.cs:281`; `PluginCatalog.cs:405` accepts any string; `HarnessRoster.cs:120-129`, `:813-823`. Holds for `claude-code-acp`. A plugin naming such a made provider moves its accounts (F1). A plugin naming `codex-acp` loses Codex's words at row d (F2) |
+| 2.2 the spawn boundary needs a downward type | yes | Platform's `ProcessRecipe`; the shell in Agents; `ISessionGit`; Loop composes the values; row h's structure proof | taken | `Adapters.cs:1606-1653`; `HarnessSelection.cs:529-581`; `Install/ChildGit.cs:11-32`; `Trees/InstallWiring.cs:11-17`; `structure.json:299`, `:317`, `:329`, `:334`. Platform names nothing above itself. Two residuals: the list's git names (F3) and today's order (F4) |
+| 2.3 the rest holds; the service's exception | no | answered | answered, holds | `Core/Sessions/CallLineage.cs:29-38`, `:65-79` |
+| 4.1 one frame may give several readings | no | row l's proof restated | taken | `StructuredOutput.cs:329-369` |
+| 4.2 cross-fed dialect cases | no | §10 and row j | taken | `Acp.cs:1714-1734` |
+| 4.3 the sequence is coherent | no | answered | answered, holds | — |
+| 5 the owner's | none | — | — | — |
+
+**The independent Opus reader, round 2 (19 findings, 2 blocking)**
+
+| Finding | Blocking | Status | Against the code |
+|---|---|---|---|
+| F1 Platform applying Daoris's variables makes upward edges | yes | taken (option a) | Holds. Residuals F3 and F4 |
+| F2 a joined door's home variable, own home and trust file | yes | taken | `Loop/Driver.cs:2293-2299`, `:3010-3015`; `ChatRunner.cs:1513-1517`; `HarnessSelection.cs:567-580`; `HarnessRoster.cs:1212`; `Adapters.cs:1930`, `:1939`; `PluginCatalog.cs:401`, `:410-411` |
+| F3 `ModelAsked` over Service's `ActorAsked` | no | taken | `Service/Domain/ActorAsked.cs:11`; `SessionRecord.cs:18`; `structure.json:1213-1218` |
+| F4 citations that mod-iv moved | no | taken at `28609b631`; stale again at `0e588c2a4` | → F11 |
+| F5 `stub` is read by the plain capture | no | taken | `Adapters.cs:1487`, `:1709-1741`; `Loop/Driver.cs:3827-3830` |
+| F6 the list against a door's declared variables | no | taken: refused at registration, the session tokens excepted | `GitWiring.cs:47`, `:96-99`; `HarnessSelection.cs:535-538`. Residual F3 |
+| F7 another provider's variable, and OPENROUTER1 | no | taken | Holds for OpenRouter's own spawn. The reverse direction is open → F7 |
+| F8 `Reach` as a pass; a start with no repository | no | taken | The answer is right but split across two layers → F6 |
+| F9 the trailer is a table keyed by maker | no | taken | `Adapters.cs:383-425` |
+| F10 the sink's parts | no | taken | Review `structure.json:600`; Course `ChatRunner.cs:2913-2918`; the offers store `Loop/Driver.cs:3375`, `:3787`, `ChatRunner.cs:1889`. Two readings wait for an answer and have no way back → F5 |
+| F11 the native refusal | no | taken | `Loop/Driver.cs:3361-3384` |
+| F12 the limit resume reads `Resumes` | no | taken | `DriverContinuations.cs:54-63`; `Continuation.cs:238` |
+| F13 the roots compared by kind | no | taken | `coagent-design.md:341-343` |
+| F14 the census inside the providers' folders; the service's third site | no | taken | `Core/Registry/RepositoryLayout.cs:39` |
+| F15 the door-named `accountOf` | no | taken in C2-2.1's form | → F1, F2 |
+| F16 `jetbrains.air` | no | taken | `Acp.cs:1783-1796` |
+| F17 the retry's guards are `ResumeAsk`'s | no | taken (retry moves at row m through `IResumeState`) | `ResumeAsk.cs:17`, `structure.json:168`; `Loop/Driver.cs:3872-3878`; `ChatRunner.cs:2932-2942` |
+| F18 the spending proofs | no | taken | — |
+| F19 `SpawnSkills` and Plugins | no | taken | `SpawnSkills.cs:61-90`; `PluginFolders.cs:94-104`; `structure.json:1200` |
+
+No answer to a blocking finding is wrong:
+- Codex's 2.1 is met for the case it names, and leaks in two cases it does not name (F1, F2).
+- Codex's 2.2 and the Opus reader's F1 are met, with two residuals (F3, F4).
+
+### 1. Claims about the code
+
+These claims are wrong at `0e588c2a4`:
+
+1. **"Today's order, step for step, … the home variable last"** (§2.5 stage 3, §4.6, D213 point 3). Today the door's carriers are added *after* `HarnessProbe.Apply` has resolved the program and set the home:
+   - **A driven start**: it prepares and applies (`Loop/Driver.cs:2701`, Apply at `:3012-3014`). Only then does it append `--mcp-config`, `--plugin-dir` and `--settings` (`:2728`, `:2730`, `:2736`→`:3154`; `Adapters.cs:2309-2341`).
+   - **A chat**: it applies (`ChatRunner.cs:1515-1517`). Only then does it set the tools-up-front variables and append the plugins and the settings (`:1525-1527`, `:1535-1536`, `:1554`).
+
+   So the shim's argument refusal (`Accounts/Harnesses/HarnessActions.cs:590-602`) checks the arguments `Prepare` built and never sees the carriers. (F4)
+2. **"Neither the shell nor the launcher names Workplace"** (§2.5, §2.7, §4.6). The wiring half of `Spawning.Daoris` consists of Workplace's names:
+   - `GitWiring.Prompts`, `Removed` and `SessionTokens` (`Platform/GitWiring.cs:28-47`, placed in Workplace at `structure.json:334`);
+   - the variables `Hand` sets (`:76-92`);
+   - `GitRouting.Scope`'s numbered `GIT_CONFIG_KEY_n` and `GIT_CONFIG_VALUE_n` (`Platform/GitRouting.cs:37-48`).
+
+   Only the identity names are moved down. (F3)
+3. **"Keeps today's key and answers … no exception"** (§2.2, §4.1, D213 point 1).
+   - It holds for `claude-code-acp`, which declares no account facts (`Adapters.cs:1919-1945`).
+   - It fails for `codex-acp`, which declares Codex's limit words and usage question itself (`:2120-2125`). The roster reads those as the door's own, else its owner's (`HarnessRoster.cs:120-129`, `:2090-2099`), and row d moves them to `codex`. (F2)
+   - It also fails for a plugin that names a made provider. (F1)
+4. **"a closed code of D212 §2.4's one set of pass codes (`not-opened`)"** (row u). D212 §2.4 names the set but no codes (`foundation-design.md:439`, "one set of pass codes (today two)"). `not-opened` is an addition to that set. (F6)
+5. **`ModelRefused` "kept in … the start plan's re-ask on the protocol door"** (§3.2). Today the re-ask is not a kept reading. It is a callback the open awaits (`Acp.cs:688-721`; `ChatRunner.cs:1756-1764`; `Loop/Driver.cs:3785-3790`). The callback returns the later choice; the open then sets back what the refused attempt changed and carries the later choice on the same session. `RequestHeld` is likewise a hold the transport awaits on Events' registry (`Acp.cs:2772-2796`; `Sessions/Events/HeldPermissions.cs:136`). (F5)
+6. **s-v's reach** (§7 row 7, s-v). The Claude Code seam reaches every protocol door, a plugin's included (`HarnessRoster.cs:1313-1316`; `HarnessSelection.cs:565`), not only Codex's and dsh's. (F8)
+7. **Lines moved, and one mis-cite** (F11):
+   - Every `ChatRunner.cs` line round 3 cites past `:675` is 9 short at `0e588c2a4`: `:985`→`:994`, `:1504-1508`→`:1513-1517`, `:1666-1668`→`:1675-1677`, `:1700`→`:1709`, `:1760`→`:1769`, `:1880`→`:1889`, `:2904-2909`→`:2913-2918`, `:2919-2932`→`:2928-2941`, `:3066-3194`→`:3075-3203`.
+   - §2.3's door `Home` row cites `HarnessSelection.cs:569-574` for "the start in its own home". Those lines are the named-account refusal. The own-home rule is `HarnessToolchain.StartsInOwnHome` (`Harnesses.cs:275`), read at the walk (`HarnessRoster.cs:1212`).
+
+Everything else round 3 adds or re-cites holds at `0e588c2a4`, including:
+- `Interactive` and dsh;
+- `Harnesses.cs:281` and the catalogue's `accountOf`;
+- the shell (`Adapters.cs:1528-1675`) and `HarnessProbe.Apply`;
+- `IChildGit` and `InstallWiring`;
+- `HarnessWiringFile`;
+- `ActorAsked`;
+- the stub's mirrored tables and `WeekFixed`;
+- the retry's guards;
+- `LimitResumes` passing `Resumes`;
+- the native refusal and its keeping;
+- the session tokens and the order the key is set in;
+- Claude Code's variables (`:2368`, `:2395`);
+- the brainstorm's start (`:1553-1565`);
+- `CommitTrailers` and `AgentFamily`;
+- `SpawnSkills` and `CopyTree`;
+- `jetbrains.air`;
+- every `structure.json` placement and family line cited. The *Install names Agents* and *Service names Agents* families are gone.
+
+### 2. The contract as round 3 states it
+
+**The account key, and a plugin door naming another provider's door becoming a provider of its own.**
+- It meets Codex's counterexample, two plugins naming `claude-code-acp`:
+  - their key, account agent and words are today's;
+  - no provider's id equals another provider's door's.
+- It fails two counterexamples that use the same mechanism:
+  - **A chained `accountOf`** (F1). Take plugin `foo` with `accountOf: "claude-code-acp"` and plugin `bar` with `accountOf: "foo"`.
+    - Today `bar`'s key is `foo`, one level (`Harnesses.cs:281`), and its account agent is `foo` (`HarnessRoster.cs:813-823`).
+    - Under round 3, `foo` is a provider. So `bar`, whose `accountOf` "names a registered provider", becomes a door of it and reads its `Accounts`, whose key is `claude-code-acp` (§2.2 table, §4.8).
+    - `bar`'s accounts, cooling and family owner move.
+  - **`codex-acp`** (F2), as §1 item 3 describes.
+- It fits the map: every type is in Agents.
+
+**A door's own `Home` part.**
+- It holds against the Opus reader's counterexample. A plugin door joined to `claude-code` with its own `profileVariable` is handed that variable and gets no trust hold; one with none is refused a named account (`HarnessSelection.cs:569-574`).
+- The new refusal of the list's names at registration now reaches a plugin's `profileVariable` (F3).
+
+**The spawn: the transports' one shell in Agents completes the recipe; Loop composes the values; Workplace's git goes through `ISessionGit`.**
+- Structurally sound, and it fits the map:
+  - Platform (1) takes a completed recipe and names nothing above itself.
+  - The shell in Agents (9) reads Install (5) and Platform.
+  - Workplace (10) implements `ISessionGit` exactly as it implements `IChildGit`.
+  - Loop (21) composes the request: the chat runner's core is Loop's (§14.2 row 21), as are the ten executors.
+  - The shim resolver (`HarnessActions`) is Agents'.
+  - The git author is read by Loop through Workplace.
+- Two residuals:
+  - the list's git names sit in Workplace, and `GIT_CONFIG_*` is a numbered family no fixed list can hold (F3);
+  - "today's order" leaves out the carriers that come after the program is resolved (F4).
+
+**A provider refused at registration for a name on Daoris's list, the cleared session tokens excepted.**
+- It answers the Opus reader's F6 for the built-ins: a `GH_TOKEN` key is set after `Untoken`, as today.
+- For a plugin, it refuses a manifest's `profileVariable` inside a move, against C1-4.4 (F3).
+
+**Interactive as each door's own declaration.** Holds:
+- dsh is refused before its record opens, and a chat's walk passes it as `unavailable`;
+- a plugin's door is stated interactive by the factory;
+- the conformance fallback matches.
+
+**`Opened` as a pass in the walk.**
+- The answer is right, and Roles reading Agents' `Reach` is downward.
+- But row u and §2.8 row q put the read in FOUNDATION1's start layer. That layer is row 1q: Participants', keyed by the work, and it asks outside any walk (§2.3's table; `foundation-design.md:1734`).
+- Participants (12) cannot pass a choice in Roles' (11) walk without an upward call. The walk is row 1j's `StartPlan.Resolve` (`:1721`). (F6)
+
+**The sink's parts.**
+- Every part implements an Events port downward: Context, Participants, Review, Course, Agents' offers store and usage history, and the hub. Loop composes it.
+- Two readings are requests, not reports: `ModelRefused` at the protocol open, and `RequestHeld`. Their answers have no path in `AgentRun` or in the sink, and `HeldPermissions` is not among the parts (F5).
+
+### 3. The rows
+
+**Row by row:**
+- **a**: right in shape. Its owner table and plugin fixture need F1's chained case and F2's `codex-acp`.
+- **b, c**: hold. Row b's shim and stand-ins compared old against new, and row c's folder-plus-one-line proof, are sound.
+- **d**: carries F1's and F2's cells. By §11's own criterion it is ⚖ (F10).
+- **e, f, g**: hold. Row g's dsh case is right.
+- **h ⚖**: needs F3 and F4. Its spawn table should include a carrier path that the shim's check would refuse.
+- **i, j ⚖**: hold. Row j's cross-fed cases and its Codex background task answer C2-4.2 and O2-F16.
+- **k, m**: hold. The retry moving at m through `IResumeState` adds no edge into Course.
+- **l**: holds, apart from F5.
+- **n**: F5, the re-ask's path back into the open.
+- **o ⚖, p ⚖**: hold.
+- **q ⚖**: F3(b), a manifest's `profileVariable` that is on the list.
+- **r**: holds.
+- **s-i to s-iv, s-vii, s-viii, s-ix on**: hold.
+- **s-v ⚖**: F8.
+- **s-vi ⚖**: F7.
+- **t**: holds.
+- **u ⚖**: F6.
+
+**The ⚖ set** (h, j, o, p, q, u, s-v, s-vi) is right, but it should include d (F10).
+
+**The census** is well specified:
+- the registration list is classified narrowly;
+- the rule inside the providers' folders is planted at row c;
+- the permanent exceptions carry their decisions.
+
+It cannot see PICKCARRY1's comparison of door ids read as "the same agent" (`ChatRunner.cs:676-684`). By the design's own rule an identity comparison is allowed, so this is a §7 cell, not a census site (F9).
+
+**The conformance suite** has the right mandatory cases. It needs:
+- registry cases for F1 and F2;
+- a case that registering a provider leaves every other provider's spawn table as it was (F7);
+- cases for the open's re-ask on the same session and for a held request's answer (F5).
+
+**OPENROUTER1's prerequisites** (d, e, f, h, i, k, l, n, u) are enough for its stated reading. Through u it also waits on D212's 1j as well as 1q (F6). Its registration must strip nothing from Claude Code's spawns (F7).
+
+**Order against FOUNDATION1's moves.** Holds:
+- every row lands after mod-ix;
+- h, l, m, n, o and q land before mod-xxi;
+- f's cut landed with mod-v (no *Install names Agents* family at `0e588c2a4`);
+- l waits for mod-vii's cut, and p and r for mod-viii's;
+- m and o wait while mod-xiv or mod-xii holds Course's or Participants' files;
+- D212 orders 1j before 1q, so F6 changes u's reader, not its date.
+
+### 4. Findings
+
+**F1 — blocking.** A plugin's harness whose `accountOf` names a provider made for a door-named `accountOf` joins that provider and takes its account key.
+- Where: §2.2's table and identity rules, §4.1, §4.8 ("what a joined door reads"), §5's account-key row, D213 points 1 and 7, row a.
+- Case: `foo` with `accountOf: "claude-code-acp"`, and `bar` with `accountOf: "foo"`.
+  - Today `bar`'s accounts, cooling and keys sit under `foo` (`Harnesses.cs:281`; `Adapters.cs:2475-2482`), its account agent is `foo` (`HarnessRoster.cs:813-823`), and its family owner is `foo` (`ReviewerChoice.cs:31`).
+  - After rows a and d they are read under `claude-code-acp`: accounts move inside a move.
+- The same leak makes §5's "resolves to the provider whose `Accounts.Key` it is" plural.
+- Smallest change:
+  - A door's account key is its declaration's `accountOf`, verbatim, where it declares one, and otherwise its provider's id.
+  - A plugin's harness joins the provider its `accountOf` names only where that provider's key equals the string. Otherwise it is a provider of its own, keyed by the string: round 3's door-named rule, generalized.
+  - `Resolve(key, AccountKey)` answers the set of providers holding the key.
+  - Row a's fixture adds `bar`.
+
+**F2 — blocking.** The pool of a provider made for a door-named `accountOf` is "that named door's own declarations, one level". But the contract has no door-level account facts, and row d moves `codex-acp`'s own (`Limits: CodexLimits.Words`, `Usage: CodexUsage.Question`, `Adapters.cs:2120-2125`) to `codex`.
+- Where: §2.2, §4.1, row d.
+- Today a plugin with `accountOf: "codex-acp"` reads Codex's limit words and usage question (`HarnessRoster.cs:120-129`, `:2090-2099`).
+- After row d it reads none: a limit on it reads as a failure with no cool-off, and no windows are asked.
+- Row a's fixture names only `claude-code-acp`, which declares none (`:1919-1945`), so neither the owner table nor row d's proof sees this.
+- Smallest change:
+  - The made provider's pool references by name each fact that row a's owner table records the named door declaring itself today: for `codex-acp`, Codex's limit words and usage question; for `claude-code-acp`, none. This works as the stand-ins reference Claude Code's tables (§3.3), declared in its registration so the census allows it (§9).
+  - Add a plugin naming `codex-acp` to row a's fixture and row d's proof.
+
+**F3 — not blocking, before h and q.** `Spawning.Daoris` and its refusal at registration.
+- (a) The list's wiring names are Workplace's: `GitWiring.cs:28-47`, `:76-92`; `GitRouting.cs:37-48`; `structure.json:334`. An Agents check against them names Workplace, which is the edge row h's structure proof forbids. And `GIT_CONFIG_KEY_n` is a numbered family, not a name.
+- (b) The refusal reaches a plugin's declared `profileVariable` (`PluginCatalog.cs:401`; `DeclaredAcpAdapter.cs:49`). Today that registers, and is set last over whatever the shell set (`HarnessSelection.cs:580`). Refusing it is a manifest's claim refused inside a move, which §4.8 and C1-4.4 rule out.
+- Smallest change:
+  - Move the git names down with the identity names, or have `ISessionGit` answer the names it sets, with the numbered family stated as a family.
+  - A plugin door's declared name that is on the list keeps today's order, and refusing it becomes a correction of its own (s-ix on).
+
+**F4 — not blocking, before h.** Today's order is misstated (§1 item 1).
+- Completing the recipe with its carriers before the program is resolved puts the `--settings`, `--mcp-config` and `--plugin-dir` paths under the shim's refusal of `"`, `%`, `&`, `|`, `<`, `>`, `^` (`HarnessActions.cs:590-602`).
+- So an npm-installed Claude Code (a `.cmd` shim) whose home path holds `&` starts today and would be refused after row h.
+- Smallest change:
+  - §2.5 stage 3, §4.6 and D213 point 3 say the carriers and the tools-up-front variables are applied after the program is resolved and the home is set, as today; or the stricter check becomes a correction of its own.
+  - Row h's table adds such a path on a `.cmd` shim.
+
+**F5 — not blocking, before l and n.** Two readings are requests, and §3.1's sink is one-way.
+- `ModelRefused` at the protocol open waits for the re-ask. The re-ask returns a later choice, which the transport carries on the same session after setting back what the refused attempt changed; or the open ends (`Acp.cs:688-721`; `ChatRunner.cs:1756-1764`; `Loop/Driver.cs:3785-3790`).
+- `RequestHeld` waits for the person's answer to write the response to `session/request_permission` (`Acp.cs:2772-2796`; `HeldPermissions.cs:136`).
+- Neither answer has a path in `AgentRun` (§2.5), and `HeldPermissions` is not among the sink's parts.
+- Smallest change:
+  - Name each answer's path. Either the open takes a re-ask port (declared in Agents, implemented by Roles' re-ask through Loop), or the open ends `refused` with the session held unprompted for `ApplyChoice`.
+  - The transport keeps Events' `HeldPermissions` as its own two-way port.
+  - Add a conformance case for each.
+
+**F6 — not blocking, before u.** Where `Opened` is read.
+- Row u and §2.8 row q place the read in row 1q's start layer (Participants', keyed by the work, `foundation-design.md:1734`), yet call it a pass in row 1j's walk (Roles', `:1721`).
+- Participants cannot pass a choice in Roles' walk without an upward call.
+- `not-opened` is new to D212 §2.4's set of pass codes (§1 item 4).
+- Smallest change:
+  - Row u's reader is the plan's walk, reading Agents' `Reach`.
+  - D212 takes a note adding `not-opened` to its pass codes.
+  - Row u waits for 1j.
+
+**F7 — not blocking, before s-vi and OPENROUTER1.** Registering one provider changes another provider's spawn.
+- OpenRouter declares `ANTHROPIC_AUTH_TOKEN` as its key (`TASKS.md:188`). Claude Code declares `ANTHROPIC_API_KEY` and `CLAUDE_CONFIG_DIR` (`Adapters.cs:2368`, `:2395`), not `ANTHROPIC_AUTH_TOKEN`.
+- By the rule "another provider's variable is one another provider registers and the selected provider does not declare", s-vi strips an inherited `ANTHROPIC_AUTH_TOKEN` from every Claude Code spawn from the day OpenRouter registers.
+- Yet Claude Code's program reads that variable, today's spawns inherit it, and s-vi is meant to strip nothing an agent relies on (§15).
+- Smallest change:
+  - "Another provider's variable" is one that another provider registers and that the selected provider neither declares nor is measured to read.
+  - Add a conformance case that registering a provider leaves every other provider's spawn table as it was.
+
+**F8 — not blocking, before s-v.** The Claude Code seam reaches a plugin's protocol door today (`HarnessRoster.cs:1313-1316`; `HarnessSelection.cs:565`).
+- §7 row 7's answer, *on Claude Code's doors alone*, would take it off a plugin door that runs `claude-agent-acp`, the very door-named plugin round 3 builds.
+- s-v measures only Codex's and dsh's doors.
+- Smallest change: s-v takes the seam off Codex's and dsh's doors only, plugin doors keeping it until measured, and §7 row 7 says so.
+
+**F9 — not blocking, before d.** PICKCARRY1 (`ChatRunner.cs:676-684`; D212's PICKCARRY1 note) carries a person's account pick to a new part only where the record's door equals the new part's door, which it reads as "the same agent".
+- A move between one agent's two doors (`claude-code` → `claude-code-acp`) opens on the same account key and drops the pick.
+- §2.8's rows for a-ii and a-iii were written before PICKCARRY1 landed.
+- Smallest change:
+  - Add the carry to §2.8: it reads `OwnerOf`, or keeps door identity as today.
+  - Add its by-door cell to §7 row 10 (s-vii), or give it a correction of its own.
+
+**F10 — not blocking, before d.** Row d is ⚖ by §11's own criterion.
+- It moves the one reader of whose accounts a door runs as, and so which account home and key reach a process. Row h is ⚖ "since it rehomes how credentials reach a process".
+- F1 and F2 are cells where row d would move them.
+- Smallest change: mark row d ⚖ in §11, §13 and D213 point 13.
+
+**F11 — not blocking.** The citations at `0e588c2a4` (§1 item 7).
+- Smallest change: add a line to *Read at* naming PICKCARRY1's 9-line shift past `ChatRunner.cs:675`, and correct §2.3's own-home citation.
+
+11 findings, 2 blocking (F1, F2).
+
+**Verdict: accept after named changes the steward can check without another read.**
+- **Now:** take F1 and F2 in §2.2, §4.1, §4.8 and §5, in D213 points 1 and 7, and in row a's fixture, and F11.
+- **Before the row each names:**
+
+| Before | Findings |
+|---|---|
+| d | F9, F10 |
+| h | F3, F4 |
+| l and n | F5 |
+| q | F3(b) |
+| u | F6 |
+| s-v | F8 |
+| s-vi and OPENROUTER1 | F7 |
