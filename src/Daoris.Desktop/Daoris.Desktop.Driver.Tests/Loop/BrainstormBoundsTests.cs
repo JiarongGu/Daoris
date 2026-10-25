@@ -380,7 +380,9 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task The_person_s_stop_ends_every_pass_and_keeps_what_answered()
     {
-        var (driver, script) = Start();
+        // FLAKE1: the stop is pressed after 100 ms, so the pass's own deadline is held far past it; at the default ten minutes of
+        // 100 ms a loaded machine let the deadline end the pass first, `failed`/`deadline` in place of the person's stop.
+        var (driver, script) = Start(rule: Rule(pass: 100, request: 300));
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Behaviours["g2"] = async (turn, ct) =>

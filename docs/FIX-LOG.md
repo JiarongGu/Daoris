@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-26 - The brainstorm's stop case read the pass's deadline where the person's stop (FLAKE1)
+
+- **Symptom:** `BrainstormBoundsTests.The_person_s_stop_ends_every_pass_and_keeps_what_answered` read `failed`/`deadline` where
+  `stopped`/`stopped`, in a rerun of the driver's fast half for SESSPROC1's landing beside three install sessions and three design readers;
+  green alone, 14 of 14.
+- **Root cause:** the case presses the stop 100 ms into the second generator's pass, on the default rule's 10 minutes, one second at its
+  100 ms minute; under load the stop command and the look that reads it took longer than that second, so the pass's own deadline ended it
+  first. The same rule had already been widened for the generators' case of the class (the entry of 2026-10-25 below).
+- **Fix:** the case takes a wide window (`pass: 100`, `request: 300`), its claim being that the person's stop ends every pass, not when.
+- **Verification:** `BrainstormBoundsTests` passes, 14 of 14.
+
 ## 2026-10-26 - A lost conversation whose account the person picked walked off that account (PICKLOST1)
 
 - **Symptom:** a conversation the person picked an account for, proven lost while that account cooled and another was ready, went on in a new
