@@ -493,6 +493,7 @@
     "Service/Domain/HistoryViews.cs": "Service",
     "Service/Domain/LayoutFacts.cs": "Service",
     "Service/Domain/LineRegistration.cs": "Service",
+    "Service/Domain/LoopbackHosts.cs": "Service",
     "Service/Domain/MessageLevel.cs": "Service",
     "Service/Domain/RegistrationRecords.cs": "Service",
     "Service/Domain/RemoteSyncPayloads.cs": "Service",
@@ -867,13 +868,6 @@
         "Service/LedgerChanges.cs": ["ChangeTopics"],
         "Service/RegistrationFollow.cs": ["LookSaid"],
         "Service/ServiceClient.cs": ["NoteCodes","NotePart","Noted","SessionConclusion"]
-      }
-    },
-    {
-      "family": "Service names Install",
-      "after": "Service",
-      "files": {
-        "Service/RegistrationWorld.cs": ["Tools"]
       }
     },
     {

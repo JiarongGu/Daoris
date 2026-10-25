@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <param name="config">The driver's choices, which name each repository's line (D86).</param>
 public sealed class RegistrationWorld(ServiceClient service, string home, DriverConfig config) : IRegistrationWorld
 {
-    public bool LocalService => Uri.TryCreate(service.BaseUrl, UriKind.Absolute, out var uri) && Tools.IsLoopback(uri.Host);
+    public bool LocalService => Uri.TryCreate(service.BaseUrl, UriKind.Absolute, out var uri) && LoopbackHosts.Is(uri.Host);
 
     public Task<IReadOnlyList<RegistrationRow>> RegistrationsAsync(CancellationToken ct) => service.RegistrationsAsync(ct);
 
