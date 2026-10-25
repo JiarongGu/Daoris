@@ -15,7 +15,7 @@ public sealed class HomeTopicsTests
     [Fact]
     public void The_topics_whose_files_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal([ChangeTopics.Help, ChangeTopics.Plugins], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal([ChangeTopics.Gates, ChangeTopics.Help, ChangeTopics.Plugins], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -41,6 +41,21 @@ public sealed class HomeTopicsTests
         Assert.False(place.Hears(PluginCatalog.DataFolder + "/one/state.json", ChangeKind.Changed));
         Assert.False(place.Hears(".hidden", ChangeKind.Created));
         Assert.Empty(place.Stamps());
+    }
+
+    [Fact]
+    public void The_workflows_answer_is_the_opinion_gates_records_and_the_workflows_with_the_runs_a_gate_read_listed_by_name()
+    {
+        var places = HomeTopics.Of(ChangeTopics.Gates, _home);
+
+        Assert.Equal(2, places.Length);
+        Assert.Equal(2, HomeWatch.GateParts(_home).Length);
+        Assert.Equal(Path.GetFullPath(DaorisHome.Entry(_home, HomeEntry.OpinionGates)), places[0].Folder);
+        Assert.False(places[0].Subfolders);
+        Assert.Null(places[0].ByName);
+        Assert.Equal(Path.GetFullPath(WorkflowStore.FolderOf(_home)), places[1].Folder);
+        Assert.True(places[1].Subfolders);
+        Assert.NotNull(places[1].ByName);
     }
 
     [Fact]

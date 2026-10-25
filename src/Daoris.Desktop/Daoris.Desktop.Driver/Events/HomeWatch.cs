@@ -15,23 +15,6 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
     /// </summary>
     public Func<IEnumerable<string>>? ByName { get; init; }
 
-    /// <summary>
-    /// The workflows (FABRIC-END7, FABRIC-END7b): each version's file by its stamp, and of the runs' bindings under <c>runs/</c>, kept one
-    /// per run for good, only those <paramref name="runs"/> names, by name: the runs a due entry's gate read, which alone can release a
-    /// landing. Every <c>*.json</c> under the folder is heard, and its judge reads the same.
-    /// </summary>
-    public static HomePart Workflows(string folder, Func<IEnumerable<string>> runs)
-    {
-        var full = Path.GetFullPath(folder);
-        return Records(full, subfolders: true) with
-        {
-            Stamps = () => Directory.Exists(full)
-                ? Directory.EnumerateFiles(full, "*.json", SearchOption.TopDirectoryOnly).Select(file => KeyValuePair.Create(file, HomeWrites.Stamp(file)))
-                : [],
-            ByName = () => runs().Where(WorkflowRunBindings.IsRunId).Select(run => Path.Combine(full, WorkflowRunBindings.Folder, run + ".json")),
-        };
-    }
-
     /// <summary>One file of a folder, heard by its final name alone: a writer's temporary and its neighbours are not it.</summary>
     public static HomePart File(string path)
     {
@@ -190,15 +173,11 @@ public sealed class HomeWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// The <c>gates</c> topic's places (FABRIC-END7): the second opinions' records and the workflows, whose runs are listed by the names
-    /// the due entries' gates read (FABRIC-END7b, <see cref="LandingJudged.Runs"/>), so the deadline's listing grows with the due list,
-    /// never with every run there ever was.
+    /// The <c>gates</c> topic's places (FABRIC-END7), as the workflows answered them (<see cref="HomeTopics"/>): the second opinions' records
+    /// and the workflows, whose runs are listed by the names the due entries' gates read (FABRIC-END7b), so the deadline's listing grows
+    /// with the due list, never with every run there ever was.
     /// </summary>
-    internal static HomePart[] GateParts(string home) =>
-    [
-        HomePart.Records(DaorisHome.Entry(home, HomeEntry.OpinionGates), subfolders: false),
-        HomePart.Workflows(WorkflowStore.FolderOf(home), () => LandingJudged.Runs(home)),
-    ];
+    internal static HomePart[] GateParts(string home) => HomeTopics.Of(ChangeTopics.Gates, home);
 
     /// <summary>What a topic's judge lists of <paramref name="parts"/>, each file's full path with its stamp, which a test counts.</summary>
     internal static IReadOnlyDictionary<string, string> Listed(IEnumerable<HomePart> parts) => Read(parts).Stamps;

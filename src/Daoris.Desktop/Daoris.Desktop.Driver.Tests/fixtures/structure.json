@@ -894,6 +894,7 @@
     "Workflows/LandingVerb.cs": "Workflows",
     "Workflows/WorkCycleVerb.cs": "Workflows",
     "Workflows/WorkflowFiles.cs": "Workflows",
+    "Workflows/WorkflowHomeTopic.cs": "Workflows",
     "Workflows/WorkflowKeepCommand.cs": "Workflows",
     "Workflows/WorkflowNodeCommand.cs": "Workflows",
     "Workflows/WorkflowPorts.cs": "Workflows",
@@ -930,17 +931,10 @@
       }
     },
     {
-      "family": "Events names Workflows",
-      "after": "Events",
-      "files": {
-        "Events/HomeWatch.cs": ["WorkflowRunBindings","WorkflowStore"]
-      }
-    },
-    {
       "family": "Events names Workplace",
       "after": "Events",
       "files": {
-        "Events/HomeWatch.cs": ["HeldWordsFile","LandingJudged"]
+        "Events/HomeWatch.cs": ["HeldWordsFile"]
       }
     },
     {
