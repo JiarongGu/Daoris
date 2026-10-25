@@ -77,13 +77,19 @@ public sealed class StructureTests
             Files = new Dictionary<string, string> { ["Landing.cs"] = "Platform", ["Help/Loose.cs"] = "Platform", ["Platform/Strayed.cs"] = "Help" },
         };
 
+        // A subdomain whose move has not landed may still sit in a moved one's folder (Platform's is today's, which the rest leave a row
+        // at a time): Strayed is Help's to move, so it is no breach until Help's own move has landed.
         Assert.Equal(
             [
                 "Help/Loose.cs:1 [place] Platform has moved, and the map places this file in it: its files sit in Platform",
                 "Landing.cs:1 [place] Platform has moved, and the map places this file in it: its files sit in Platform",
-                "Platform/Strayed.cs:1 [place] sits in Platform, where Platform has moved, and the map places it in Help",
             ],
             Check(moved, Landing, Src("Help/Loose.cs", "class Loose { }"), Src("Platform/Strayed.cs", "class Strayed { }")));
+
+        var both = moved with { Subdomains = [.. moved.Subdomains.Select(each => each.Name == "Help" ? each with { Moved = true } : each)] };
+        Assert.Contains(
+            "Platform/Strayed.cs:1 [place] Help has moved, and the map places this file in it: its files sit in Help",
+            Check(both, Landing, Src("Help/Loose.cs", "class Loose { }"), Src("Platform/Strayed.cs", "class Strayed { }")));
     }
 
     [Fact]
@@ -434,8 +440,10 @@ public sealed class StructureTests
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // No move has landed and no namespace row: every namespace stays Daoris.Driver (D166 point 4).
-        Assert.All(map.Subdomains, subdomain => Assert.False(subdomain.Moved || subdomain.Namespace is not null, subdomain.Name));
+        // The moves that have landed, bottom up, one row each (FOUNDATION1 mod-i: Platform); no namespace row: every namespace stays
+        // Daoris.Driver (D166 point 4).
+        Assert.Equal(["Platform"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
         Assert.Equal("Loop", map.Subdomains[^1].Name);

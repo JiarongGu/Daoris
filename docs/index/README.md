@@ -269,7 +269,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/desktop-tool.test.ts` | 47 | 895 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 840 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 75 | 1281 |
-| `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 81 | 1377 |
+| `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 81 | 1378 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 473 | 7034 |
 | `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 49 | 751 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 55 | 1029 |

@@ -15,7 +15,7 @@ public static class PieceStarts
 {
     /// <summary>The launcher in the install beside <paramref name="home"/>, or null where it is not laid out (a test's home, a development run's).</summary>
     public static string? LauncherPath(string? home) =>
-        home is not null && Tools.InstallBin(home) is { } bin && File.Exists(Path.Combine(bin, PieceLauncher.Program))
+        home is not null && DaorisHome.InstallBin(home) is { } bin && File.Exists(Path.Combine(bin, PieceLauncher.Program))
             ? Path.Combine(bin, PieceLauncher.Program)
             : null;
 

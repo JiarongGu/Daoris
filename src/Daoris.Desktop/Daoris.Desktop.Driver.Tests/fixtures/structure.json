@@ -1,6 +1,6 @@
 {
   "subdomains": [
-    { "name": "Platform", "folder": "Platform", "domain": false },
+    { "name": "Platform", "folder": "Platform", "domain": false, "moved": true },
     { "name": "Store", "folder": "Store", "domain": false },
     { "name": "Settings", "folder": "Settings", "domain": true },
     { "name": "Service", "folder": "Service", "domain": true },
@@ -83,11 +83,8 @@
     "Agents/AgentLongCommand.cs": "Agents",
     "Agents/AgentPinCommand.cs": "Agents",
     "Agents/AgentsCommand.cs": "Agents",
-    "Agents/Consoles/AgentJobs.cs": "Agents",
     "Agents/Consoles/BatchRelay.cs": "Agents",
     "Agents/Consoles/ConsoleRelay.cs": "Agents",
-    "Agents/Consoles/ProcessJob.cs": "Platform",
-    "Agents/Consoles/PseudoConsole.cs": "Platform",
     "Agents/Consoles/Terminals.cs": "Agents",
     "Agents/Errors/AgentErrors.cs": "Agents",
     "Agents/OutputTail.cs": "Agents",
@@ -204,9 +201,6 @@
     "Conversations/Partners/PartnerFiles.cs": "Participants",
     "Conversations/Partners/PartnerPersonAsk.cs": "Participants",
     "Conversations/Partners/PartnerReservations.cs": "Participants",
-    "Conversations/Partners/PieceJobs.cs": "Platform",
-    "Conversations/Partners/PieceLauncher.cs": "Platform",
-    "Conversations/Partners/PieceStarts.cs": "Platform",
     "Conversations/Partners/SessionsPartnerCommand.cs": "Participants",
     "Conversations/SaidDoor.cs": "Course",
     "Conversations/TranscriptFile.cs": "Context",
@@ -286,6 +280,7 @@
     "Loop/SupervisorQuarantine.cs": "Roles",
     "Loop/TransientRetries.cs": "Agents",
     "Platform/ActorChoices.cs": "Roles",
+    "Platform/AgentJobs.cs": "Platform",
     "Platform/AgentStarts.cs": "Platform",
     "Platform/AtomicFile.cs": "Store",
     "Platform/BrowserCaches.cs": "Workplace",
@@ -293,6 +288,7 @@
     "Platform/CanonicalLine.cs": "Workplace",
     "Platform/Chain.cs": "Events",
     "Platform/ChangeWatch.cs": "Events",
+    "Platform/ChildMarks.cs": "Platform",
     "Platform/ChildProcess.cs": "Platform",
     "Platform/CommandPresence.cs": "Platform",
     "Platform/DaorisHome.cs": "Platform",
@@ -349,8 +345,13 @@
     "Platform/NoteCodes.cs": "Events",
     "Platform/Notices.cs": "Events",
     "Platform/NoticesRead.cs": "Events",
+    "Platform/PieceJobs.cs": "Platform",
+    "Platform/PieceLauncher.cs": "Platform",
+    "Platform/PieceStarts.cs": "Platform",
     "Platform/PipeName.cs": "Instance",
+    "Platform/ProcessJob.cs": "Platform",
     "Platform/ProcessStarts.cs": "Platform",
+    "Platform/PseudoConsole.cs": "Platform",
     "Platform/RecordList.cs": "Store",
     "Platform/RecordLock.cs": "Store",
     "Platform/RunningAddress.cs": "Service",
@@ -364,6 +365,7 @@
     "Platform/StandingChoices.cs": "Settings",
     "Platform/SystemSpace.cs": "Workplace",
     "Platform/SystemWiring.cs": "Loop",
+    "Platform/TerminalLaunch.cs": "Platform",
     "Platform/TextBounds.cs": "Platform",
     "Platform/ToolHomeLeftovers.cs": "Workplace",
     "Platform/VerbLeases.cs": "Instance",
@@ -813,50 +815,13 @@
   },
   "edges": [
     {
-      "family": "Platform names Agents",
-      "after": "Platform",
-      "files": {
-        "Agents/Consoles/PseudoConsole.cs": ["ITerminal","TerminalLaunch"],
-        "Platform/AgentStarts.cs": ["AgentJobs","AgentStart","ContainedKind"]
-      }
-    },
-    {
-      "family": "Platform names Install",
-      "after": "Platform",
-      "files": {
-        "Agents/Consoles/PseudoConsole.cs": ["Tools"],
-        "Conversations/Partners/PieceStarts.cs": ["Tools"]
-      }
-    },
-    {
-      "family": "Platform names Participants",
-      "after": "Platform",
-      "files": {
-        "Conversations/Partners/PieceJobs.cs": ["PartnerJob"]
-      }
-    },
-    {
-      "family": "Platform names Roles",
-      "after": "Platform",
-      "files": {
-        "Agents/Consoles/PseudoConsole.cs": ["HolderKey"]
-      }
-    },
-    {
       "family": "Platform names Store",
-      "after": "Platform",
+      "after": "Store",
       "files": {
         "Platform/DaorisHome.cs": ["AtomicFile"],
         "Platform/HomeIdentity.cs": ["AtomicFile"],
         "Platform/HomeLease.cs": ["AtomicFile"],
         "Platform/Moments.cs": ["Json"]
-      }
-    },
-    {
-      "family": "Platform names Work orders",
-      "after": "Platform",
-      "files": {
-        "Agents/Consoles/PseudoConsole.cs": ["IntakeRoom"]
       }
     },
     {
@@ -1915,6 +1880,16 @@
     { "file": "Platform/SystemWiring.cs", "member": "SystemWiring.SameAddress", "after": "Loop" },
     { "file": "Platform/WiringVariables.cs", "member": "WiringVariables.Searched", "after": "Loop" }
   ],
-  "testFolders": ["Accounts","Agents","Brainstorms","Conversations","Help","Loop","Platform","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
-  "tests": {}
+  "testFolders": ["Accounts","Agents","Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
+  "tests": {
+    "AgentStartsProcessTests.cs": "Platform",
+    "AgentStartsTests.cs": "Platform",
+    "NoConsoleWindowTests.cs": "Platform",
+    "PieceJobsTests.cs": "Platform",
+    "PieceLauncherProcessTests.cs": "Platform",
+    "PieceLauncherTests.cs": "Platform",
+    "ProcessJobTests.cs": "Platform",
+    "ProcessStartsCensusTests.cs": "Platform",
+    "PseudoConsoleTests.cs": "Platform"
+  }
 }

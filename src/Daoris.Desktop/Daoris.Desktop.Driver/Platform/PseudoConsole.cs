@@ -28,6 +28,19 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class PseudoConsole : ITerminal
 {
+    /// <summary>
+    /// What the tools add to a shell's environment (TOOLS5, D121 §2.6), as the subdomain that owns the tools answers it: the variables
+    /// to set, from <paramref name="home"/> and the <paramref name="variables"/> the block holds so far. The port <see cref="ToolsEnvironment"/>
+    /// holds, so the terminal's start names none of the tools.
+    /// </summary>
+    public delegate IReadOnlyDictionary<string, string> ChildTools(string home, IReadOnlyDictionary<string, string> variables);
+
+    /// <summary>
+    /// The tools' share of every shell's environment, set by the terminals' factory (<c>PseudoConsoleTerminals</c>, which every
+    /// terminal is started through) when it is first used; null adds none.
+    /// </summary>
+    public static ChildTools? ToolsEnvironment { get; set; }
+
     private readonly Action<int> _exited;
     private readonly FileStream _writer;
     private readonly ProcessJob _job;
@@ -308,7 +321,7 @@ public sealed class PseudoConsole : ITerminal
     /// <remarks>
     /// Sorted by name without regard to case, as the system keeps its own block. The tools are read from the home the
     /// launch names, else this process's; with none, nothing is added.
-    /// <para>The marker a session's shell carries (<see cref="IntakeRoom.SessionVariable"/>) is never handed on (PUSH1f2a, D194 point 5):
+    /// <para>The marker a session's shell carries (<see cref="ChildMarks.SessionVariable"/>) is never handed on (PUSH1f2a, D194 point 5):
     /// a terminal the window opens is the person's own, and a Daoris started from a session's shell would otherwise pass it to them.</para>
     /// </remarks>
     /// <param name="inherited">The variables the block starts from: this process's, where none are handed.</param>
@@ -327,16 +340,18 @@ public sealed class PseudoConsole : ITerminal
             }
         }
 
-        variables.Remove(IntakeRoom.SessionVariable);
+        variables.Remove(ChildMarks.SessionVariable);
         // SUPERVISOR1a-ii (D208 §2.2): the holder key is never inherited; the holder's own tab alone adds it back.
-        variables.Remove(HolderKey.Variable);
+        variables.Remove(ChildMarks.RoleKeyVariable);
 
         var home = added.FirstOrDefault(pair => string.Equals(pair.Key, DaorisHome.Variable, StringComparison.OrdinalIgnoreCase)).Value
             ?? DaorisHome.Resolve();
         if (home is not null)
         {
-            var paths = variables.TryGetValue(Tools.PathVariable, out var path) ? path : null;
-            foreach (var (name, value) in Tools.ChildEnvironment(Tools.Read(home), home, paths)) variables[name] = value;
+            if (ToolsEnvironment is { } tools)
+            {
+                foreach (var (name, value) in tools(home, variables)) variables[name] = value;
+            }
         }
 
         foreach (var (name, value) in added) variables[name] = value;

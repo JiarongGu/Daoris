@@ -609,6 +609,8 @@ public sealed class ToolsChildrenTests : IDisposable
     {
         Write("""{"tools":{"gh":{"use":"managed","version":"2.62.0"}}}""");
 
+        // The factory wires the tools into the pseudo-console as it is first used, which every terminal is started through.
+        _ = new PseudoConsoleTerminals();
         var block = PseudoConsole.EnvironmentBlock(new Dictionary<string, string> { [DaorisHome.Variable] = Home });
 
         var path = block.Split('\0').Single(line => line.StartsWith(Tools.PathVariable + "=", StringComparison.OrdinalIgnoreCase));

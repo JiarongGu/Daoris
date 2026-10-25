@@ -33,3 +33,16 @@ public static class PieceJobs
         };
     }
 }
+
+/// <summary>What is known of a partner's strict job.</summary>
+public enum PartnerJob
+{
+    /// <summary>Never started, or ended and observed empty.</summary>
+    Empty,
+
+    /// <summary>A process of the partner's, or a child of it, still runs in it.</summary>
+    Running,
+
+    /// <summary>Its state cannot be known (a restart lost its handle).</summary>
+    Unknown,
+}

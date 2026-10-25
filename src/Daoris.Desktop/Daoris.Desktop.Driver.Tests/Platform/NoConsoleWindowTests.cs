@@ -23,7 +23,7 @@ public sealed class NoConsoleWindowTests
     {
         ["Daoris.Desktop.Driver/Platform/GitDoors.cs"] =
             "the git doors' ssh: the door is git's console child, and its ssh speaks git's protocol over the stdio git handed it",
-        ["Daoris.Desktop.Driver/Conversations/Partners/PieceLauncher.cs"] =
+        ["Daoris.Desktop.Driver/Platform/PieceLauncher.cs"] =
             "the agents' launcher (TERMTRUST1a): it joins the agents' job and any piece's, then starts the harness, which speaks its protocol "
             + "over the stdio the driver handed the launcher",
     };

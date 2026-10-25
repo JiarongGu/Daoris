@@ -1146,12 +1146,13 @@ test('a terminal’s programs find the install and the running Daoris where the 
 
 /**
  * WSSETUP3 (D124 §1.3): the launchers' folder is where every child's PATH begins. The publish lays it out, and the driver's
- * `Tools.InstallBinLayout` finds it beside the home, which in an install is the same `app/`. Two spellings, held here: the CLI's
- * `INSTALL_BIN` left with `tools.ts` (PUSH1f2f), the driver's program its one child, which hands its own children the tools.
+ * `DaorisHome.InstallBinLayout` (which `Tools.InstallBinLayout` reads) finds it beside the home, which in an install is the same
+ * `app/`. Two spellings, held here: the CLI's `INSTALL_BIN` left with `tools.ts` (PUSH1f2f), the driver's program its one child, which
+ * hands its own children the tools.
  */
 test('the launchers are where the tools’ environment puts them first on every child’s PATH', () => {
-  const driver = readFileSync(driverFile('Tools.cs'), 'utf8');
-  assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'Tools.InstallBinLayout');
+  const driver = readFileSync(driverFile('DaorisHome.cs'), 'utf8');
+  assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'DaorisHome.InstallBinLayout');
 });
 
 test('a launcher for each shell runs the package’s bin entry on the node PATH finds, and names no machine path', () => {

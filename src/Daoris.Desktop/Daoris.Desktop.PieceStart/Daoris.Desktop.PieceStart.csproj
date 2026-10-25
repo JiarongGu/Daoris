@@ -18,8 +18,8 @@
 
   <ItemGroup>
     <!-- The launcher's words, its join and its start (COAGENT1b): `PieceLauncherTests` holds them. -->
-    <Compile Include="..\Daoris.Desktop.Driver\Conversations\Partners\PieceLauncher.cs" Link="PieceLauncher.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Agents\Consoles\ProcessJob.cs" Link="ProcessJob.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\PieceLauncher.cs" Link="PieceLauncher.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\ProcessJob.cs" Link="ProcessJob.cs" />
   </ItemGroup>
 
 </Project>

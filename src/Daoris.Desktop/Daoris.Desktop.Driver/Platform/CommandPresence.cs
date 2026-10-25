@@ -7,6 +7,9 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class CommandPresence
 {
+    /// <summary>The variable a child's <c>PATH</c> is. Windows reads it in any case, and a start's environment there is case-blind.</summary>
+    public const string PathVariable = "PATH";
+
     public static bool Resolvable(string command) => Resolve(command) is not null;
 
     /// <summary>
@@ -33,7 +36,7 @@ public static class CommandPresence
         IEnumerable<string> extensions = !OperatingSystem.IsWindows()
             ? [""]
             : startable ? pathExt : pathExt.Prepend("");
-        var directories = (path ?? Environment.GetEnvironmentVariable("PATH") ?? "")
+        var directories = (path ?? Environment.GetEnvironmentVariable(PathVariable) ?? "")
             .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var directory in directories)
