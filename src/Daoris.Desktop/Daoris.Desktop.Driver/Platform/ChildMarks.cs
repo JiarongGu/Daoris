@@ -6,6 +6,9 @@ namespace Daoris.Driver;
 /// </summary>
 public static class ChildMarks
 {
+    /// <summary>The variable a session's shell carries its id in (<see cref="IntakeRoom.SessionVariable"/>, which reads it from here).</summary>
+    public const string SessionVariable = "DAORIS_SESSION_ID";
+
     /// <summary>The variable the holder's terminal carries its key in (<see cref="HolderKey.Variable"/>, which reads it from here).</summary>
     public const string RoleKeyVariable = "DAORIS_ROLE_KEY";
 }

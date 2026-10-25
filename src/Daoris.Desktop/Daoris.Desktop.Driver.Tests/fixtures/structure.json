@@ -847,13 +847,6 @@
       }
     },
     {
-      "family": "Platform names Work orders",
-      "after": "Platform",
-      "files": {
-        "Platform/PseudoConsole.cs": ["IntakeRoom"]
-      }
-    },
-    {
       "family": "the settings' parser's and verbs' names of other subdomains' rule types (§14.3)",
       "after": "Settings",
       "files": {

@@ -308,7 +308,7 @@ public sealed class PseudoConsole : ITerminal
     /// <remarks>
     /// Sorted by name without regard to case, as the system keeps its own block. The tools are read from the home the
     /// launch names, else this process's; with none, nothing is added.
-    /// <para>The marker a session's shell carries (<see cref="IntakeRoom.SessionVariable"/>) is never handed on (PUSH1f2a, D194 point 5):
+    /// <para>The marker a session's shell carries (<see cref="ChildMarks.SessionVariable"/>) is never handed on (PUSH1f2a, D194 point 5):
     /// a terminal the window opens is the person's own, and a Daoris started from a session's shell would otherwise pass it to them.</para>
     /// </remarks>
     /// <param name="inherited">The variables the block starts from: this process's, where none are handed.</param>
@@ -327,7 +327,7 @@ public sealed class PseudoConsole : ITerminal
             }
         }
 
-        variables.Remove(IntakeRoom.SessionVariable);
+        variables.Remove(ChildMarks.SessionVariable);
         // SUPERVISOR1a-ii (D208 §2.2): the holder key is never inherited; the holder's own tab alone adds it back.
         variables.Remove(ChildMarks.RoleKeyVariable);
 

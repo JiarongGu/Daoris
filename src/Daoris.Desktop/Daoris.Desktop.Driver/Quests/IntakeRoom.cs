@@ -29,7 +29,7 @@ public static class IntakeRoom
     public const string AskVariable = "DAORIS_ASK_ID";
 
     /// <summary>Which session is answering — what the ask checks before it says a harness decided.</summary>
-    public const string SessionVariable = "DAORIS_SESSION_ID";
+    public const string SessionVariable = ChildMarks.SessionVariable;
 
     /// <summary>What an intake's spawn and its connector carry beyond a session's usual environment.</summary>
     public static IReadOnlyDictionary<string, string> Scope(string ask, string session) =>
