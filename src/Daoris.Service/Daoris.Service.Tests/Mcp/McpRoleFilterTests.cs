@@ -66,10 +66,7 @@ public sealed class McpRoleFilterTests : McpToolsFixture
     [Fact]
     public void The_drivers_partner_rules_offer_what_this_host_allows()
     {
-        var at = new DirectoryInfo(AppContext.BaseDirectory);
-        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
-        var source = File.ReadAllText(Path.Combine(
-            at!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Conversations", "Domain", "PartnerPermissions.cs"));
+        var source = File.ReadAllText(SourceFiles.Driver("PartnerPermissions.cs"));
 
         var list = System.Text.RegularExpressions.Regex.Match(source, @"Offered\s*=\s*\[(?<names>[^\]]*)\]").Groups["names"].Value;
         var named = System.Text.RegularExpressions.Regex.Matches(list, "\"([a-z_]+)\"").Select(match => match.Groups[1].Value);

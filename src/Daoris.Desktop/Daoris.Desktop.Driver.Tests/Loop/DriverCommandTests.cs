@@ -135,8 +135,8 @@ public sealed class DriverCommandTests
         Assert.DoesNotContain("SyncWords.NotFetched(", program);
         Assert.Contains("TreesPlanWords.SyncPlan(plan, ask,", program);
         Assert.Contains("TreesWords.Sync(done", program);
-        Assert.Contains("SyncWords.NotFetched(", File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesWords.cs")));
-        Assert.Equal(1, File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesPlanWords.cs")).Split("SyncWords.NotFetched(").Length - 1);
+        Assert.Contains("SyncWords.NotFetched(", File.ReadAllText(SourceFiles.Driver("TreesWords.cs")));
+        Assert.Equal(1, File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")).Split("SyncWords.NotFetched(").Length - 1);
     }
 
     /// <summary>
@@ -163,7 +163,7 @@ public sealed class DriverCommandTests
         Assert.Contains("trees.SyncAsync(repositories, inUse, only: null, fetch: true,", console);
         // The press each list suggests is the library's words' (`TreesPlanWords.CleanPlan` and `SyncPlan`, which the routes answer too).
         Assert.Equal(0, Count("TreesCommand.Press(ask)"));
-        Assert.Equal(2, File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesPlanWords.cs")).Split("TreesCommand.Press(ask)").Length - 1);
+        Assert.Equal(2, File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")).Split("TreesCommand.Press(ask)").Length - 1);
         Assert.Contains("TreesPlanWords.CleanPlan(plan, records, ask)", console);
         // No look reads the registry's checkouts itself any more: the one rule is the library's.
         Assert.DoesNotContain("args.Contains(\"--yes\")", console);
@@ -181,7 +181,7 @@ public sealed class DriverCommandTests
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
         Assert.Contains("remove <path|session|branch> [--repository <name>] [--force]", program);
         Assert.Contains("RemoveSessionBranchAsync(trees, named, Option(args, \"--repository\"), force)", program);
-        Assert.Contains("if (SessionBranchDoors.RemovalOffered(item) is { } offer)", File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesPlanWords.cs")));
+        Assert.Contains("if (SessionBranchDoors.RemovalOffered(item) is { } offer)", File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
         Assert.Contains("landing.LandAsync(tree, subject, inUse:", program);
     }
 
@@ -200,7 +200,7 @@ public sealed class DriverCommandTests
         Assert.Contains("TreesPlanWords.LandPlanAsync(landing, home, session, tree, plan, gate, before, [])", program);
         Assert.Contains(
             "if (await landing.DiscardOfferAsync(tree, ct).ConfigureAwait(false) is { } carried) said.Add($\"trees: {carried.NotLanded}\");",
-            File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "TreesPlanWords.cs")));
+            File.ReadAllText(SourceFiles.Driver("TreesPlanWords.cs")));
         Assert.Contains("landing.LandAsync(tree, subject, inUse:", program);
         Assert.DoesNotContain("WorkAsync(", program);
         Assert.DoesNotContain("ContentHold", program);
@@ -281,8 +281,8 @@ public sealed class DriverCommandTests
     {
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
         var route = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "Bridge", "Routes", "TreesRoutes.cs"));
-        var accepts = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "SessionTrees", "EntryAccepts.cs"));
-        var lands = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "Trees", "SessionTrees", "EntryLands.cs"));
+        var accepts = File.ReadAllText(SourceFiles.Driver("EntryAccepts.cs"));
+        var lands = File.ReadAllText(SourceFiles.Driver("EntryLands.cs"));
 
         foreach (var door in new[] { console, route })
         {

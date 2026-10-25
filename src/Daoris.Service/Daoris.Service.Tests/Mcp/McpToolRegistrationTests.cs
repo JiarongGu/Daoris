@@ -55,10 +55,7 @@ public sealed class McpToolRegistrationTests : McpToolsFixture
     [Fact]
     public void The_driver_denies_a_brainstorm_pass_every_tool_this_host_advertises()
     {
-        var root = new DirectoryInfo(AppContext.BaseDirectory);
-        while (root is not null && !File.Exists(Path.Combine(root.FullName, "daoris.json"))) root = root.Parent;
-        var source = File.ReadAllText(Path.Combine(
-            root!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Driver", "Brainstorms", "Domain", "BrainstormPermissions.cs"));
+        var source = File.ReadAllText(SourceFiles.Driver("BrainstormPermissions.cs"));
 
         var list = System.Text.RegularExpressions.Regex.Match(source, @"ConnectorTools\s*=\s*\[(?<names>[^\]]*)\]").Groups["names"].Value;
         var named = System.Text.RegularExpressions.Regex.Matches(list, "\"([a-z_]+)\"").Select(match => match.Groups[1].Value);
