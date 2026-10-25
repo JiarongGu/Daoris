@@ -33,10 +33,10 @@ public static class Moments
         DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var moment) ? moment : null;
 
     /// <summary>The string field <paramref name="name"/> of <paramref name="element"/> as a moment; null when absent, not a string or unreadable.</summary>
-    public static DateTimeOffset? Read(JsonElement element, string name) => Read(Json.Text(element, name));
+    public static DateTimeOffset? Read(JsonElement element, string name) => Read(JsonText.Of(element, name));
 
     /// <summary>The string a node holds as a moment; null when it is missing, not a string or unreadable.</summary>
-    public static DateTimeOffset? Read(JsonNode? node) => Read(Json.Text(node));
+    public static DateTimeOffset? Read(JsonNode? node) => Read(JsonText.Of(node));
 
     /// <summary>
     /// A moment as ISO 8601 writes it in the four forms the cooling, window and config files hold (UTC <c>Z</c> or an offset,

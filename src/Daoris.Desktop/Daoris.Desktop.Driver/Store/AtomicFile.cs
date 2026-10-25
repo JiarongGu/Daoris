@@ -26,36 +26,23 @@ public static class AtomicFile
 
     /// <summary>A file these writes keep, read whole, sharing its writing and deletion with a writer.</summary>
     /// <remarks>
-    /// 🔴 Measured (BINDRACE1): Windows' move opens the file it moves for deletion and closes it only once the file is in place, so for a
-    /// moment the file is there, whole, and still held. A reader that does not share deletion, as <c>File.ReadAllText</c> does not, is
-    /// refused in that moment with a sharing violation: 478 reads of 700 that read a file as it appeared under load, and none of 700 that
-    /// shared deletion. A start that lost the race for its run's binding read the winner's as unread, and held.
+    /// 🔴 Measured (BINDRACE1), as <see cref="BesideReads"/> holds it: a reader that does not share deletion is refused a file the move
+    /// that landed it still holds. The read is Platform's, where the home's own files read through it (FOUNDATION1 mod-ii); this is
+    /// the spelling every other reader of such a file finds.
     /// </remarks>
     /// <exception cref="FileNotFoundException">No file is there.</exception>
     /// <exception cref="IOException">It could not be read.</exception>
-    public static string ReadText(string path)
-    {
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using var reader = new StreamReader(stream, Utf8);
-        return reader.ReadToEnd();
-    }
+    public static string ReadText(string path) => BesideReads.Text(path);
 
     /// <summary>A file these writes keep, read whole as bytes, sharing as <see cref="ReadText"/> does (READSHARE1).</summary>
     /// <exception cref="FileNotFoundException">No file is there.</exception>
     /// <exception cref="IOException">It could not be read.</exception>
-    public static byte[] ReadBytes(string path)
-    {
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using var copy = new MemoryStream();
-        stream.CopyTo(copy);
-        return copy.ToArray();
-    }
+    public static byte[] ReadBytes(string path) => BesideReads.Bytes(path);
 
     /// <summary>A file these writes keep, opened to read as a stream, sharing as <see cref="ReadText"/> does (READSHARE1).</summary>
     /// <exception cref="FileNotFoundException">No file is there.</exception>
     /// <exception cref="IOException">It could not be opened.</exception>
-    public static FileStream OpenRead(string path) =>
-        new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+    public static FileStream OpenRead(string path) => BesideReads.Open(path);
 
     /// <summary>Write <paramref name="text"/> to <paramref name="path"/> whole, or not at all.</summary>
     public static void WriteText(string path, string text) =>

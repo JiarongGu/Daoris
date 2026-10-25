@@ -36,8 +36,10 @@
     <Compile Include="..\Daoris.Desktop.Driver\Platform\HomeIdentity.cs" Link="HomeIdentity.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\DaorisHome.cs" Link="DaorisHome.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\DriverException.cs" Link="DriverException.cs" />
-    <!-- The shared read of a file moved into place (READSHARE1): the update request is read beside its writer. The base library alone. -->
+    <!-- The shared read of a file moved into place (READSHARE1): the update request is read beside its writer, and the home's own files
+         read through it. The base library alone. -->
     <Compile Include="..\Daoris.Desktop.Driver\Store\AtomicFile.cs" Link="AtomicFile.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\BesideReads.cs" Link="BesideReads.cs" />
   </ItemGroup>
 
 </Project>

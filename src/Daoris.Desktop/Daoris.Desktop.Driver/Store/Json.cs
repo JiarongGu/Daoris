@@ -17,8 +17,7 @@ namespace Daoris.Driver;
 public static class Json
 {
     /// <summary>The string a field holds, empty included; null when missing, not a string, or the element not an object.</summary>
-    public static string? Text(JsonElement element, string name) =>
-        Field(element, name, JsonValueKind.String) is { } value ? value.GetString() : null;
+    public static string? Text(JsonElement element, string name) => JsonText.Of(element, name);
 
     /// <summary>As <see cref="Text(JsonElement, string)"/>, with an empty string read as missing.</summary>
     public static string? NonEmpty(JsonElement element, string name) =>
@@ -64,8 +63,7 @@ public static class Json
             : [];
 
     /// <summary>The string a node holds; null when it is missing or not a string.</summary>
-    public static string? Text(JsonNode? node) =>
-        node is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
+    public static string? Text(JsonNode? node) => JsonText.Of(node);
 
     /// <summary>The string a node holds, trimmed; null when it is blank or not a string.</summary>
     public static string? Trimmed(JsonNode? node) =>

@@ -31,6 +31,7 @@
     <Compile Include="..\Daoris.Desktop.Driver\Platform\GitFolders.cs" Link="GitFolders.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\GitSshFiles.cs" Link="GitSshFiles.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Store\AtomicFile.cs" Link="AtomicFile.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Platform\BesideReads.cs" Link="BesideReads.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Store\JsonFile.cs" Link="JsonFile.cs" />
     <!-- The home's table, where the grants and the permissions file are, with the error its refusal is. -->
     <Compile Include="..\Daoris.Desktop.Driver\Platform\DaorisHome.cs" Link="DaorisHome.cs" />
