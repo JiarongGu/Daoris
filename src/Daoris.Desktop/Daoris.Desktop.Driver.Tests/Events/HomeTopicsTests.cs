@@ -15,7 +15,7 @@ public sealed class HomeTopicsTests
     [Fact]
     public void The_topics_whose_files_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal([ChangeTopics.Gates, ChangeTopics.Help, ChangeTopics.Plugins], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal([ChangeTopics.Gates, ChangeTopics.Help, ChangeTopics.Plugins, ChangeTopics.Words], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -56,6 +56,19 @@ public sealed class HomeTopicsTests
         Assert.Equal(Path.GetFullPath(WorkflowStore.FolderOf(_home)), places[1].Folder);
         Assert.True(places[1].Subfolders);
         Assert.NotNull(places[1].ByName);
+    }
+
+    [Fact]
+    public void The_workplaces_answer_is_the_held_words_file_whose_wake_names_it_by_its_file_name()
+    {
+        var place = Assert.Single(HomeTopics.Of(ChangeTopics.Words, _home));
+
+        Assert.Equal(Path.GetDirectoryName(Path.GetFullPath(HeldWordsFile.PathOf(_home))), place.Folder);
+        Assert.False(place.Subfolders);
+        Assert.True(place.Hears("held-words.json", ChangeKind.Changed));
+        Assert.False(place.Hears("held-words.json.tmp", ChangeKind.Changed));
+        Assert.Equal("held-words.json", HomeTopics.SubjectOf(ChangeTopics.Words));
+        Assert.Equal(ChangeTopics.Gates, HomeTopics.SubjectOf(ChangeTopics.Gates));
     }
 
     [Fact]

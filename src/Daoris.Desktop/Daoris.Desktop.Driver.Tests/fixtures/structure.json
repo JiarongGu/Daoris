@@ -868,6 +868,7 @@
     "Trees/TreesCommand.cs": "Workplace",
     "Trees/TreesPlanWords.cs": "Workplace",
     "Trees/TreesWords.cs": "Workplace",
+    "Trees/WordsHomeTopic.cs": "Workplace",
     "Trees/WorkingTree.cs": "Workplace",
     "Workflows/ChatRuns.cs": "Workflows",
     "Workflows/CycleChoices.cs": "Workflows",
@@ -928,13 +929,6 @@
         "Events/RunningCalls.cs": ["SessionEvents"],
         "Events/SessionLog.cs": ["SessionEvents"],
         "Events/SessionWatch.cs": ["SessionEvents"]
-      }
-    },
-    {
-      "family": "Events names Workplace",
-      "after": "Events",
-      "files": {
-        "Events/HomeWatch.cs": ["HeldWordsFile"]
       }
     },
     {

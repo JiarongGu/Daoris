@@ -16,8 +16,20 @@ public static class HomeTopics
 {
     private static readonly ConcurrentDictionary<string, Func<string, HomePart[]>> Answers = new(StringComparer.Ordinal);
 
-    /// <summary>Answers the places of a topic's files under a home, for the topic's owner (FOUNDATION1 mod-vii).</summary>
-    internal static void Answer(string topic, Func<string, HomePart[]> places) => Answers[topic] = places;
+    private static readonly ConcurrentDictionary<string, string> Subjects = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Answers the places of a topic's files under a home, for the topic's owner (FOUNDATION1 mod-vii), and, where its wake names what
+    /// moved by something other than the topic's own name, that name (<paramref name="subject"/>).
+    /// </summary>
+    internal static void Answer(string topic, Func<string, HomePart[]> places, string? subject = null)
+    {
+        Answers[topic] = places;
+        if (subject is not null) Subjects[topic] = subject;
+    }
+
+    /// <summary>The name a topic's wake carries: what its owner answered, else the topic's own name.</summary>
+    internal static string SubjectOf(string topic) => Subjects.GetValueOrDefault(topic, topic);
 
     /// <summary>The topics answered, each with the places its owner gave.</summary>
     internal static IReadOnlyDictionary<string, Func<string, HomePart[]>> Answered => Answers;
