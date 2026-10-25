@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - A session's delete or clear left its limit-move box and its agent's hand-over ask and state behind (SESSFILES1)
+
+- **Symptom:** found by reading, in FOUNDATION1's round 3, not seen on an install: `sessions/<s>.limit-move.json`,
+  `<s>.hand-over-ask.json` and `<s>.hand-over-state.json` stayed on the disk after the session's delete or its clear, unmeasured and
+  uncounted in the bytes a clear said it freed.
+- **Root cause:** `SessionHomeFiles.Inventory` is the one list a delete, a clear and the left-over scan read, and the three files, added
+  by LIMITRESUME1c and MIXAGENT1c after it, were never given rows. Nothing else took them once the record was gone: `LimitBoxes.Clear`
+  runs at the move's delivery, a start that made no part and the come-up for a box with no new part (a box whose record is gone is
+  skipped every come-up), and `HandOverAskFiles.Clear` only in the look's `asker-gone` case, which a state of `taken` or `refused`
+  never reaches (it returns before the record is read).
+- **Fix:** three rows under the name `hand-over`, which the page already says (no catalogue change); the left-over scan reads them by the
+  same suffixes, so a gone session's untouched box is taken at a workspace's clear, and a box whose record stands, whose process runs or
+  which was written within the hour is kept.
+- **Verification:** `SessionDeletionTests` (the delete takes the three and says `hand-over`; a refused delete keeps them; one the disk
+  keeps is left over) and `HistoryClearingTests` (the quest's, the failed sessions' and the ask's clears through the shared `Kept`, and
+  the workspace's left-over case with a young one, a standing record's and a live process's boxes), nine of them failing first, and
+  all passing with the fast half's filter on those classes.
+
 ## 2026-10-25 - The ended limit move walked twice, so the account judged and the one opened could differ and a start never made was counted (LIMITSWITCH2)
 
 - **Symptom:** a conversation a limit held went on, at the limits stage, in a new part on the account the walk offered; the walk was asked at

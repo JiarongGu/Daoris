@@ -53,14 +53,20 @@ public sealed class HistoryClearingTests : IDisposable
         File.WriteAllText(Path.Combine(Sessions, id + ReopenMarks.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + NewSessionChoices.Suffix), "{}");
         File.WriteAllText(Path.Combine(Sessions, id + HandOverBox.Suffix), "{}");
+        // SESSFILES1: a limit's move, and an agent's ask to hand over with its state.
+        foreach (var suffix in Boxes) File.WriteAllText(Path.Combine(Sessions, id + suffix), "{}");
         Directory.CreateDirectory(DaorisHome.Entry(_home, HomeEntry.Spawn));
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.mcp.json"), "{}");
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Spawn,$"{id}.settings.json"), "{}");
     }
 
+    /// <summary>What follows a session's id in the three files SESSFILES1 added to the inventory.</summary>
+    private static readonly string[] Boxes = [LimitBoxes.Suffix, HandOverAskFiles.AskSuffix, HandOverAskFiles.StateSuffix];
+
     private string[] KeptOf(string id) =>
     [
         .. new[] { ".events.jsonl", ".log", HarnessConversations.Suffix, ".pid", GoOnMarks.Suffix, ReopenMarks.Suffix, NewSessionChoices.Suffix, HandOverBox.Suffix }
+            .Concat(Boxes)
             .Select(suffix => Path.Combine(Sessions, id + suffix))
             .Where(File.Exists),
         .. new[] { ".mcp.json", ".settings.json" }.Select(suffix => DaorisHome.Entry(_home, HomeEntry.Spawn,id + suffix)).Where(File.Exists),
@@ -625,6 +631,44 @@ public sealed class HistoryClearingTests : IDisposable
         Assert.Equal(3, plan.Reading!.LeftOver);
         Assert.All(Files("c1"), file => Assert.True(File.Exists(file), file));
         Assert.All(Files("cgone"), file => Assert.False(File.Exists(file), file));
+    }
+
+    /// <summary>
+    /// SESSFILES1 (D153 §2.3): a limit's move box and an agent's hand-over ask and state are left over once their session's record is
+    /// gone, nothing runs it here and nothing touched them for an hour, and a workspace's clear takes them. A box still in use is
+    /// kept, and the inventory knows by the same three reads as for every other file: the record that stands (a move reads the
+    /// ended record, and an ask its session's), a process marked for the session, and the hour a writer's last touch holds.
+    /// </summary>
+    [Fact]
+    public async Task A_workspaces_clear_takes_a_gone_sessions_boxes_and_keeps_one_still_in_use()
+    {
+        var now = DateTimeOffset.UtcNow + TimeSpan.FromHours(2);
+        string[] Files(string id) => [.. Boxes.Select(suffix => Path.Combine(Sessions, id + suffix))];
+        foreach (var id in new[] { "gone1", "young1", "c1", "live1" })
+        {
+            foreach (var file in Files(id))
+            {
+                File.WriteAllText(file, "{}");
+                File.SetLastWriteTimeUtc(file, id == "young1" ? now.UtcDateTime : DateTime.UtcNow - TimeSpan.FromHours(3));
+            }
+        }
+
+        using var self = Process.GetCurrentProcess();
+        File.WriteAllText(Path.Combine(Sessions, "live1.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        File.SetLastWriteTimeUtc(Path.Combine(Sessions, "live1.pid"), DateTime.UtcNow - TimeSpan.FromHours(3));
+        var service = new StandIn { Records = [Record("c1", kind: "chat", workspace: "aurora")] };
+        service.Listings["workspace=aurora"] = [];
+        var world = World(service, clock: () => now);
+
+        var plan = await HistoryClearing.PlanAsync(world, HistoryScope.Workspace, "aurora");
+        var outcome = await HistoryClearing.ClearAsync(world, HistoryScope.Workspace, "aurora", [], PluginEvents.Screen);
+
+        Assert.Equal(3, plan.Reading!.LeftOver);
+        Assert.Equal(3, outcome.LeftOver);
+        Assert.All(Files("gone1"), file => Assert.False(File.Exists(file), file));
+        Assert.All(Files("young1"), file => Assert.True(File.Exists(file), file));
+        Assert.All(Files("c1"), file => Assert.True(File.Exists(file), file));
+        Assert.All(Files("live1"), file => Assert.True(File.Exists(file), file));
     }
 
     // ——— A workspace.

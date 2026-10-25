@@ -221,7 +221,6 @@ D88/D102 cleanup notes, machine log §4. Installed clears require the owner's ex
 - [ ] **AUTOTIDY1c — automatic squash cleanup** (driver; after AUTOTIDY1b; decide first). Consider content proof plus merged PR state, preserving recovery refs. D88/D102; Process guards.
 - [ ] **QUESTBACK1 — hand back without a session** (owner's decision first; then service → driver + web). No hand back exists from anywhere: `QuestTransitions.Allows` lets nothing move back to open (D46 §3), and D126 ~:570-573 parks it. A new operation kind (quest-operations.md's eleven places), so a decision amending D46 §3 and D68 must say which taker facts survive (the claim, `Awaits`, set-ups, the ledger's carry-on, a remote's held claim). The label cannot be *Send back…* (DiffPane's); *Hand back…*/交还… to check against D116. After QUESTCLOSE1b1 (same files).
 - [ ] **HIST1h — installed clear** (parent; republish a–f first). Verify counts/bytes, terminal/page agreement at 1280/888/680 px, themes/languages. D153 §12.
-- [ ] **SESSFILES1 — a session's delete or clear may leave three of its files behind** (driver; found by FOUNDATION1 round 3). `<s>.limit-move.json`, `.hand-over-ask.json` and `.hand-over-state.json` are missing from `SessionHomeFiles.Inventory` (`SessionHomeFiles.cs:109-141`; *unverified* that nothing else takes them). D153; proof: a delete and a clear of a session holding each take it.
 
 ## Consistent screens
 

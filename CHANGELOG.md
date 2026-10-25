@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- Deleting a conversation, or clearing a closed quest's history, now takes every file Daoris kept of a session (SESSFILES1, D153). Three
+  were left behind on this machine, however small: the box of a move a limit made, and an agent's ask to hand a session over with its
+  state. A workspace's clear takes them too once their session is gone and nothing has touched them for an hour, and counts them in
+  what it freed. Nothing running is touched.
 - Words you write to a finished session whose account is cooling no longer wait days for that account's reset while another account
   is ready (LIMITSWITCH1, D137). For work that is open or taken, they go on at once as a new part of the same session on the ready
   account, handed Daoris's brief, as work cut off by a limit already did, and arrive once. Only when every account is at its limit do
