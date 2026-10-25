@@ -75,10 +75,11 @@ public sealed class DesktopStoreReader : IDisposable
     }
 
     /// <summary>Rows read by <paramref name="map"/> from one statement; no parameter changes what the file holds.</summary>
-    public IReadOnlyList<T> Query<T>(string sql, Func<SqliteDataReader, T> map)
+    public IReadOnlyList<T> Query<T>(string sql, Func<SqliteDataReader, T> map, params (string Name, object? Value)[] values)
     {
         using var command = _connection.CreateCommand();
         command.CommandText = sql;
+        foreach (var (name, value) in values) command.Parameters.AddWithValue(name, value ?? DBNull.Value);
         using var reader = command.ExecuteReader();
         var rows = new List<T>();
         while (reader.Read()) rows.Add(map(reader));

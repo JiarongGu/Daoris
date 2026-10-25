@@ -112,6 +112,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Transcript, Place.Sessions, ".log", false, bytes => HistoryBytes.None with { Transcripts = bytes }),
         new(Files, Place.Files, "", true, bytes => HistoryBytes.None with { Files = bytes }),
         new(Harness, Place.Sessions, HarnessConversations.Suffix, false, Beside),
+        // FOUNDATION1 z-iii: the file once its conversation is imported into the store, set aside beside it; the binding itself goes below.
+        new(Harness, Place.Sessions, HarnessConversations.Suffix + HarnessConversations.SetAsideSuffix, false, Beside),
         new(Marker, Place.Pids, ".pid", false, Beside),
         new(Mark, Place.Sessions, GoOnMarks.Suffix, false, Beside),
         // FABRIC-CLOSE1c8: the reopens it was told of, a mark too, which goes with its record.
@@ -243,6 +245,32 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         {
             Each(HeldWordsFile.PathOf(home), sessions, () => HeldWordsFile.Forget(home, sessions), Held);
             Each(new AutoLandings(home).FilePath, sessions, () => new AutoLandings(home).Forget(sessions), Landing);
+
+            // FOUNDATION1 z-iii: the binding in the desktop store goes with its record, under the name its file went by. A store that
+            // will not take the delete (busy, or written by a newer Daoris) leaves the binding, named as a file the disk would not let go.
+            var bindings = new HarnessConversations(home);
+            try
+            {
+                foreach (var id in bindings.ForgetBindings(sessions))
+                {
+                    if (removed.TryGetValue(id, out var went)) Named(went, Harness);
+                }
+            }
+            catch (Exception error) when (error is DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+            {
+                failed.Add(bindings.StoreLocation);
+                IReadOnlyList<string> held;
+                try
+                {
+                    held = bindings.BindingsOf(sessions);
+                }
+                catch (Exception unread) when (unread is Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException)
+                {
+                    held = sessions;
+                }
+
+                foreach (var id in held) Named(stayed[id], Harness);
+            }
         }
 
         // Every id, a teammate's included: this machine marks their records archived too (D126 §5.2), by the record's id.
