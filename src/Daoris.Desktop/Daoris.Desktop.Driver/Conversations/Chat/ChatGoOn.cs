@@ -479,6 +479,47 @@ internal sealed class ChatGoOn
             ? record with { Said = [.. said.Where(word => !(word.Daoris && DaorisKeys.IsResume(word.Key)))] }
             : record;
 
+    /// <summary>
+    /// The roster's reading of an ended conversation's own account (LIMITSWITCH2, D137's note of 2026-10-25): asked for by name as a chat's
+    /// picker names one, and, where it cools while the person's words wait, the walk of its agent's accounts judged beside it, never counting
+    /// a start: the ended limit move that goes on walks and counts once. A conversation the person picked an account for keeps waiting for
+    /// that account (D205 §3.5(d)); its record keeps no pick today, so every conversation walks its agent's accounts. Ask Daoris's room
+    /// never asks it (<see cref="HelpGoingOnAsync"/>).
+    /// </summary>
+    private Task<ResumeChoice> SwitchableAsync(PriorSession record, string adapter, DriverConfig config, string? workspace, CancellationToken ct) =>
+        _context.Harnesses.ResumeAsync(
+            adapter, config, workspace, record.Profile, StartKind.Conversation, walks: false, ct: ct,
+            switches: record.Waiting.Any(word => word.Persons), walkCounts: false);
+
+    /// <summary>
+    /// What the limits stage's wake of an ended conversation whose words wait for a cooling account reads (LIMITSWITCH2): where another
+    /// account of its agent is ready it goes on there now (<see cref="ResumeChoice.Switched"/>); else its wait is the earliest reset of any
+    /// account of the walk, which <see cref="ResumeChoice.Selection"/> carries (D206 point 2). Null for Ask Daoris's room, a conversation
+    /// its agent refused at the open and one with no checkout or agent here, whose wait is the own account's as before.
+    /// </summary>
+    internal async Task<ResumeChoice?> JudgeWaitAsync(PriorSession record, DriverConfig config, CancellationToken ct)
+    {
+        if (record.NotOffered || record.Adapter is not { Length: > 0 } ranOn
+            || string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        ISessionAdapter adapter;
+        try
+        {
+            adapter = _context.Harnesses.Adapters.Resolve(ranOn);
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+
+        var registry = await _context.Service.RegistryAsync(ct).ConfigureAwait(false);
+        var known = registry.FirstOrDefault(r => string.Equals(r.Repository, record.Repository, StringComparison.OrdinalIgnoreCase));
+        return known is null ? null : await SwitchableAsync(record, adapter.Name, config, known.Workspace, ct).ConfigureAwait(false);
+    }
+
     private async Task<ChatStart> GoingOnAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, DateTimeOffset? woke, CancellationToken ct)
     {
@@ -567,13 +608,31 @@ internal sealed class ChatGoOn
         // that account's home. Cooling, the words wait for its reset, said with the door out of the wait; unable to run there
         // at all, it cannot go on, at once and saying why, since nothing carries a chat's words on by itself; anything else the
         // selection will not start holds the words.
-        var resume = await _context.Harnesses
-            .ResumeAsync(adapter.Name, config, known.Workspace, record.Profile, StartKind.Conversation, walks: false, ct: ct)
-            .ConfigureAwait(false);
+        // LIMITSWITCH2 (D137's note of 2026-10-25): cooling, and another account of its agent ready, the person's words go on now in a new part
+        // there, through the ended limit move's body, which walks once and opens on what it judged; otherwise they wait for the earliest
+        // reset of any account of its agent, never its own alone.
+        var resume = await SwitchableAsync(record, adapter.Name, config, known.Workspace, ct).ConfigureAwait(false);
+        if (resume.Switched)
+        {
+            StartedFrom? moved;
+            try
+            {
+                moved = await _limit.MoveEndedAsync(sessionId, lost: null, config, onEnded, ct, holding: true, switching: true).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or IOException or System.Text.Json.JsonException
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                moved = new StartedFrom(null, false, null, error.Message);
+            }
+
+            // Where nothing opened its words stay on the record, said why where the move said it, for the person's next word.
+            return moved is { SessionId: { } onTo } ? new(onTo, moved.Message) : new(null, moved?.Message ?? $"conversation `{sessionId}` did not go on in a new part now.");
+        }
+
         if (resume.Waits)
         {
             _context.Note(sessionId, ResumeWords.NotYetOn(resume, ResumeWords.ChatDoorOf(sessionId)));
-            // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it on its own account at the reset.
+            // LIMITRESUME1c (D206 §3.5, D137 point 7): the look's limits stage wakes it at the reset.
             Waits?.Invoke(sessionId);
             return new(null, resume.Selection.Refusal);
         }

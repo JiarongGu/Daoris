@@ -16,8 +16,9 @@ namespace Daoris.Driver;
 /// <para><b>Own first</b> (§3.5): its own account ready, the same conversation goes on, the next turn on the same process where it
 /// still runs, else its agent's own resume on that account (<see cref="ChatGoOn"/>), handed the refused turns' words, the words said
 /// while it waited and Daoris's word last, each once. Otherwise another account of its agent ready, it moves there handed the brief
-/// (<see cref="LimitMove"/>). An ended chat whose words wait for its own account never met a limit, and is woken on that account
-/// only.</para>
+/// (<see cref="LimitMove"/>). An ended chat whose words wait for its own account never met a limit: another account of its agent ready, it
+/// goes on there now, and otherwise it is woken at the earliest reset of any account of its agent (LIMITSWITCH2, D206 point 2); Ask
+/// Daoris's room alone keeps its own account's.</para>
 ///
 /// <para><b>Who leaves the wait</b>: one that went on or moved; one the person stopped, or told to stop waiting; one whose refusal waits
 /// for them. Each is read from the record and its events, so a shell that comes up reads what the one before it saw.</para>
@@ -182,8 +183,28 @@ internal sealed class LimitWaits(ChatContext context, LimitMove move, ChatGoOn g
             return (start, null);
         }
 
-        // An ended chat whose person's words wait for its own account never met a limit: woken on that account only (§3.5, N5).
-        if (limited is null) return (null, own.Until);
+        // An ended chat whose person's words wait for its own account never met a limit (§3.5, N5). LIMITSWITCH2 (D137's note of 2026-10-25): it
+        // goes on now in a new part where another account of its agent is ready, and otherwise waits for the earliest reset of any of them
+        // (D206 point 2), never its own account's alone.
+        if (limited is null)
+        {
+            ResumeChoice? judged;
+            try
+            {
+                judged = await goOn.JudgeWaitAsync(record, config, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException)
+            {
+                judged = null;
+            }
+
+            if (judged is not { Switched: true }) return (null, judged?.Selection.Cooling?.Until ?? own.Until);
+
+            var went = await goOn.WakeAsync(session, limited: false, context.Harnesses.Clock(), config, onEnded, ct).ConfigureAwait(false);
+            if (went.SessionId is null) return (null, null);
+            _held.TryRemove(session, out _);
+            return (went, null);
+        }
 
         // Another account of its agent ready first: it moves there, handed the brief and both kinds of words, none twice.
         var moved = live

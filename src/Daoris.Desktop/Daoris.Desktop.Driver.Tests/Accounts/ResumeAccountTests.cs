@@ -476,11 +476,11 @@ public sealed class ResumeAccountTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITSWITCH1: a conversation is still no driven line (D137 §2.2, the chat's own go-on): it walks nothing, and its words wait for
-    /// the account it ran on while another is ready, as before.
+    /// LIMITSWITCH1: a conversation that does not ask the switch (Ask Daoris's room, which goes elsewhere only at a limit, D205 §3.5(e)) walks
+    /// nothing, and its words wait for the account it ran on while another is ready, as before.
     /// </summary>
     [Fact]
-    public async Task A_conversation_whose_account_cools_still_waits_for_it_with_another_ready()
+    public async Task A_conversation_that_does_not_switch_still_waits_for_its_account_with_another_ready()
     {
         Accounts("account-1", "account-2");
         new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
@@ -490,6 +490,100 @@ public sealed class ResumeAccountTests : IDisposable
 
         Assert.Equal((NextHold.Cooling, true, false), (resume.Own, resume.Waits, resume.Switched));
         Assert.Equal("account-1", resume.Selection.Cooling!.Account);
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH2 (D137's note of 2026-10-25): an ended conversation whose own account cools with another account of its agent ready
+    /// goes on there now, as a driven record does: the walk's pick carries its words, the reason says the account held them, and nothing
+    /// waits. The ended move that opens it walks and counts the start once, so this judgement counts none (<c>walkCounts</c> false).
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_whose_account_cools_while_another_is_ready_goes_on_there_without_counting_a_start()
+    {
+        Accounts("account-1", "account-2");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
+        Cool("account-1");
+        var roster = Roster();
+        var before = roster.Mark();
+
+        var resume = await roster.ResumeAsync(
+            "fake", Config, null, "account-1", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+
+        Assert.Equal((NextHold.Cooling, false, true), (resume.Own, resume.Waits, resume.Switched));
+        Assert.Equal((true, "account-2"), (resume.Selection.Allowed, resume.Selection.Profile));
+        Assert.Equal(ContinueWhy.Account, resume.Elsewhere!.Code);
+        Assert.Equal(before, roster.Mark());
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH2: with none of an ended conversation's accounts ready its words wait until the earliest reset of any of them, D206
+    /// point 2's computation, never the own account's alone: account-2's, before account-1's, said in the held words, whose conversation
+    /// line leads with <i>it does not go on yet</i>.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_with_no_account_ready_waits_for_the_earliest_reset_of_any_account()
+    {
+        Accounts("account-1", "account-2");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
+        Cool("account-1", hours: 30);
+        Cool("account-2", hours: 4);
+
+        var resume = await Roster().ResumeAsync(
+            "fake", Config, null, "account-1", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+
+        Assert.Equal((NextHold.Cooling, true, false, false), (resume.Own, resume.Waits, resume.Switched, resume.Selection.Allowed));
+        Assert.Equal(("account-2", Seen.AddHours(4)), (resume.Selection.Cooling!.Account, resume.Selection.Cooling.Until));
+        Assert.Equal(("held.limit-waits", "account-2"), (resume.Waiting!.Parts[^1].Code, resume.Waiting.Parts[^1].Value("account")));
+        Assert.StartsWith(ResumeWords.NotYet, resume.Waiting.Note);
+        Assert.DoesNotContain(CoolingWords.When(Seen.AddHours(30), TimeZoneInfo.Utc), resume.Selection.Refusal);
+    }
+
+    /// <summary>
+    /// LIMITSWITCH2: where the own account is the earliest to reset, an ended conversation's wait says what it always said, its conversation
+    /// being there, and the earliest reset is its own.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_whose_own_account_resets_first_keeps_saying_its_conversation_is_there()
+    {
+        Accounts("account-1", "account-2");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
+        Cool("account-1", hours: 2);
+        Cool("account-2", hours: 9);
+
+        var resume = await Roster().ResumeAsync(
+            "fake", Config, null, "account-1", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+
+        Assert.Equal((true, "account-1", Seen.AddHours(2)), (resume.Waits, resume.Selection.Cooling!.Account, resume.Selection.Cooling.Until));
+        Assert.Equal("waits.account", resume.Waiting!.Parts[0].Code);
+    }
+
+    /// <summary>
+    /// LIMITSWITCH2's bound (D137 §2.2): a conversation whose own account is refused, signed out or gone is still the person's press, not a
+    /// switch: nothing is walked or counted, and the answer says what holds it, each by its own reason.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_whose_own_account_cannot_run_is_not_switched()
+    {
+        Accounts("account-1", "account-2", "account-3");
+        new HarnessSettings().WithRotation("fake", ["account-1", "account-2", "account-3"]).Save(Settings);
+        var roster = Roster();
+        roster.Refuse("fake", "account-1", "its provider refused it");
+        AccountReads.Keep(_home, "fake", "account-3", LoginState.Out, Seen);
+        var before = roster.Mark();
+
+        var refused = await roster.ResumeAsync(
+            "fake", Config, null, "account-1", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+        var signedOut = await roster.ResumeAsync(
+            "fake", Config, null, "account-3", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+        var gone = await roster.ResumeAsync(
+            "fake", Config, null, "account-9", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+
+        Assert.Equal((NextHold.Refused, false, false), (refused.Own, refused.Switched, refused.Selection.Allowed));
+        Assert.Equal("account.resume-refused", refused.Elsewhere!.Detail!.Parts.Single().Code);
+        Assert.Equal((NextHold.SignedOut, false, false), (signedOut.Own, signedOut.Switched, signedOut.Selection.Allowed));
+        Assert.Equal("account.resume-signed-out", signedOut.Elsewhere!.Detail!.Parts.Single().Code);
+        Assert.Equal((NextHold.Missing, false, false), (gone.Own, gone.Switched, gone.Selection.Allowed));
+        Assert.Equal(before, roster.Mark());
     }
 
     /// <summary>

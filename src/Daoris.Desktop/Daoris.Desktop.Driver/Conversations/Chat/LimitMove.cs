@@ -201,27 +201,35 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
     /// turn is on the wire, the box with them. A shell that ends between leaves the box for the next come-up (<see cref="TakeUpBoxesAsync"/>).
     /// </remarks>
     /// <param name="holding">Whether the caller holds the session's going-on already (a go-on refused before its spawn).</param>
+    /// <param name="switching">
+    /// LIMITSWITCH2 (D137's note of 2026-10-25): the guard widened from a record a limit ended to a record whose own account is cooling while
+    /// another account of its agent is ready, the words going on there now, the reason <c>account</c>. The caller has judged that: an ended
+    /// conversation's go-on, or the driver's closed quest's session, which this goes on in as a conversation in its tree. Never Ask Daoris's
+    /// room, which goes elsewhere only at a limit (D205 §3.5(e)).
+    /// </param>
     /// <returns>Where it went on; null where nothing was judged to move.</returns>
     public async Task<StartedFrom?> MoveEndedAsync(
         string sessionId, ContinueReason? lost, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default,
-        bool holding = false, bool restarted = false)
+        bool holding = false, bool restarted = false, bool switching = false)
     {
         var boxes = new LimitBoxes(context.Home);
         if (context.Closing || context.Holds(sessionId) || boxes.Read(sessionId) is not null) return null;
         var events = context.Events.After(sessionId, 0).Events;
         var held = LimitHeld.Of(events);
-        if (held is null && !restarted) return null;
-        var moveWhy = held is null ? HandOverWhy.Resume : HandOverWhy.Limit;
+        if (held is null && !restarted && !switching) return null;
+        var moveWhy = ComposedWhy(held is not null, switching);
 
         var json = await context.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
-        if (ServiceClient.ReadRecord(json, sessionId) is not { Kind: "chat", Teammate: false, Ask: null, Adapter: { Length: > 0 } ranOn } prior
-            || prior.Tree is not { Length: > 0 } tree || WordsNever.ContinuedIn(json, sessionId) is not null)
+        if (ServiceClient.ReadRecord(json, sessionId) is not { Teammate: false, Ask: null, Adapter: { Length: > 0 } ranOn } prior
+            || prior.Tree is not { Length: > 0 } tree || WordsNever.ContinuedIn(json, sessionId) is not null
+            || !await EndedLineAsync(prior, json, switching, ct).ConfigureAwait(false))
         {
             return null;
         }
 
         var listed = SessionRecords.Parse(json).First(each => string.Equals(each.Id, sessionId, StringComparison.Ordinal));
         var isHelp = WordsNever.IsHelp(listed);
+        if (isHelp && switching) return null;
         ISessionAdapter agent;
         try
         {
@@ -233,32 +241,44 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         }
 
         var workspace = isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);
+        // The one walk (LIMITSWITCH2): the account judged here is the one the new part opens on, which is handed the selection rather than
+        // asking the roster again, so a second walk neither names another account nor counts a start never made.
+        // Ask Daoris's room places itself through its own walk, which counts, so this one judges only there.
         var selection = await context.Harnesses
-            .SelectAsync(agent.Name, config, workspace, null, StartKind.Conversation, ct).ConfigureAwait(false);
+            .SelectAsync(agent.Name, config, workspace, null, StartKind.Conversation, ct, counts: !isHelp).ConfigureAwait(false);
         if (!selection.Allowed
             || (lost is null && string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase)))
         {
+            // Counted as chosen, and none chosen after all: its count is given back.
+            if (selection.Allowed) context.Harnesses.Release(selection.Number);
             return new StartedFrom(null, false, null, $"no other account of {agent.Name} has room, so `{sessionId}` waits on its own.");
         }
 
         var going = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        if (!holding && !context.GoingOn.TryAdd(sessionId, going.Task)) return null;
+        if (!holding && !context.GoingOn.TryAdd(sessionId, going.Task))
+        {
+            context.Harnesses.Release(selection.Number);
+            return null;
+        }
+
         try
         {
             // The words said while it waited, the person's alone: Daoris's limit word never goes on, and was taken off before a refusal.
             List<string> said = [.. prior.Waiting.Where(word => word.Persons && word.Id is not null).Select(word => word.Id!)];
-            var box = new LimitMoveBox(lost?.Code ?? HandOverWhy.Limit, held?.Before ?? events.Count, events.Count, said);
+            var box = new LimitMoveBox(
+                lost?.Code ?? (held is null && switching ? ContinueWhy.Account : HandOverWhy.Limit), held?.Before ?? events.Count, events.Count, said);
             boxes.Write(sessionId, box);
 
             var started = isHelp
                 ? await HelpStartAsync(prior, agent, config, onEnded, ct).ConfigureAwait(false)
                 : await runner.StartAsync(
                         prior.Repository!, agent.Name, config, onEnded, profile: null, ct: ct, tree: tree,
-                        from: new ContinuedFrom(sessionId, moveWhy, HandOverBy.Daoris))
+                        from: new ContinuedFrom(sessionId, moveWhy, HandOverBy.Daoris), settled: selection)
                     .ConfigureAwait(false);
             if (started.SessionId is not { } to)
             {
                 boxes.Clear(sessionId);
+                context.Harnesses.Release(selection.Number);
                 context.Note(sessionId, LimitNotes.NotMoved(started.Message));
                 return new StartedFrom(null, false, null, started.Message);
             }
@@ -290,6 +310,28 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
     }
 
     /// <summary>
+    /// The reason the new part's record continues the old by: <c>limit</c> where a limit held it; <c>retry</c> where its own account cools and
+    /// another's is ready (LIMITSWITCH2), as the driven carry-on's switch says it (LIMITSWITCH1: its own conversation could not be resumed);
+    /// else <c>resume</c>, its own conversation proven lost.
+    /// </summary>
+    private static string ComposedWhy(bool limited, bool switching) =>
+        limited ? HandOverWhy.Limit : switching ? HandOverWhy.Retry : HandOverWhy.Resume;
+
+    /// <summary>
+    /// Whether the record's line is one an ended move goes on in (LIMITSWITCH2): a conversation, or, where its own account cools while
+    /// another is ready, a driven record whose quest is closed, which goes on as a conversation in its tree. A session of an open or taken
+    /// quest is the driver's own carry-on, never this.
+    /// </summary>
+    private async Task<bool> EndedLineAsync(PriorSession prior, string json, bool switching, CancellationToken ct)
+    {
+        if (prior.Kind == "chat") return true;
+        if (!switching || prior.Quest is not { } quest) return false;
+        var listed = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, prior.Session, StringComparison.Ordinal));
+        if (listed is null || WordsNever.Judge(listed, WordsNever.LastHere(json, listed.Quest), null) is not null) return false;
+        return await context.Service.FindQuestAsync(quest, ct).ConfigureAwait(false) is { Status: not ("Open" or "Taken") };
+    }
+
+    /// <summary>
     /// The ended-record move's message, composed from its box (Codex 8): Daoris's brief of the line before the refused turns, then those
     /// turns' words read within the box's bound, then the words said while it waited, by their ids on the old record, each with its files.
     /// </summary>
@@ -298,10 +340,10 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         var events = context.Events.After(sessionId, 0).Events;
         var held = LimitHeld.Of([.. events.Take(box.Through)]);
         var refused = held?.Words ?? [];
-        var moveWhy = held is null ? HandOverWhy.Resume : HandOverWhy.Limit;
+        var moveWhy = ComposedWhy(held is not null, box.Why == ContinueWhy.Account);
         var waited = prior.Waiting.Where(word => word.Id is { } id && box.Said.Contains(id, StringComparer.Ordinal)).ToList();
         var brief = await ContextBriefs.ComposeAsync(
-                context.Service, context.Events, context.Home, sessionId, moveWhy, conversation: true, ct: ct, before: box.Before)
+                context.Service, context.Events, context.Home, sessionId, moveWhy, conversation: prior.Kind == "chat", ct: ct, before: box.Before)
             .ConfigureAwait(false);
         var high = RotatedOpening.ContextOf(null, context.Events, sessionId);
         var opening = HandOverNotes.MovedFrom(sessionId, prior.Adapter ?? "", prior.Profile, moveWhy, high, brief.Text.Length);
