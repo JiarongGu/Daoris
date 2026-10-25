@@ -362,7 +362,7 @@ public static class StewardActRows
             RetryDecision decision;
             try
             {
-                decision = StandingChoices.Retry(quest, verdicts);
+                decision = QuestRetry.Decide(quest, verdicts);
             }
             catch (ChoiceRefusal)
             {

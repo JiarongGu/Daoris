@@ -421,7 +421,7 @@ public sealed class DriverRoutes(DriverContext context)
                 .ConfigureAwait(false);
         // PUSH1f2a: the verdict's switch is the library's operation, which `daoris-driver driver retry` acting alone calls too; a
         // pause or a quest neither parked nor held is its coded refusal (ChoiceCodes), raised here by the module's one mapping.
-        var decision = StandingChoices.Retry(quest, considered);
+        var decision = QuestRetry.Decide(quest, considered);
         _context.Change(decision.Change);
         return State(_loop, new { Quest = quest, decision.Did, decision.Session });
     }

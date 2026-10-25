@@ -428,6 +428,7 @@
     "Quests/Domain/ParkedQuests.cs": "Work orders",
     "Quests/Domain/Planner.cs": "Work orders",
     "Quests/Domain/QuestResults.cs": "Work orders",
+    "Quests/Domain/QuestRetry.cs": "Work orders",
     "Quests/Domain/TickReport.cs": "Work orders",
     "Quests/EvidenceCheck.cs": "Work orders",
     "Quests/EvidenceReader.cs": "Work orders",
@@ -585,6 +586,7 @@
     "Settings/AccessKey.cs": "Settings",
     "Settings/AcrossDeclarations.cs": "Settings",
     "Settings/ActorKey.cs": "Settings",
+    "Settings/BrainstormKey.cs": "Settings",
     "Settings/CoolOffDefault.cs": "Settings",
     "Settings/CycleText.cs": "Settings",
     "Settings/DriverChoicesCommand.cs": "Settings",
@@ -876,9 +878,7 @@
       "family": "Settings names Work orders",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["BrainstormEdit","BrainstormRule","BrainstormRules","BrainstormSet","Consideration","IntakeRoom","WorkUnitKind"],
-        "Settings/DriverConfig.cs": ["BrainstormRule","BrainstormRules"],
-        "Settings/StandingChoices.cs": ["Consideration","StartVerdict","WorkScope"]
+        "Settings/DriverChoicesCommand.cs": ["BrainstormEdit","BrainstormRules","BrainstormSet","Consideration","IntakeRoom","QuestRetry","WorkUnitKind"]
       }
     },
     {
@@ -1980,6 +1980,7 @@
     "CoolOffDefaultTests.cs": "Settings",
     "AcrossDeclarationsTests.cs": "Settings",
     "WorkflowKeyTests.cs": "Settings",
+    "BrainstormKeyTests.cs": "Settings",
     "CycleTextTests.cs": "Settings"
   }
 }

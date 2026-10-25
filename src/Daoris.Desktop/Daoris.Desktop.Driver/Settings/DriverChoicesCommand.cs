@@ -1065,7 +1065,7 @@ public static class DriverChoicesCommand
 
     /// <summary>
     /// <c>retry</c> (RETRY1, SESSUX1b): with <c>--session</c> the person's stop released, with <c>--at</c> a mark the person gives, both
-    /// alone; else the quest's *Try again*, judged from the planner's verdict (<see cref="StandingChoices.Retry"/>) on both paths.
+    /// alone; else the quest's *Try again*, judged from the planner's verdict (<see cref="QuestRetry.Decide"/>) on both paths.
     /// </summary>
     private static ChoicePress Retry(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
     {
@@ -1148,7 +1148,7 @@ public static class DriverChoicesCommand
                     + "  The quest's page's *Try again* counts them for you.");
             }
 
-            var decision = StandingChoices.Retry(quest, verdicts);
+            var decision = QuestRetry.Decide(quest, verdicts);
             var now = StandingChoices.Write(path, decision.Change);
             return new Retried(decision.Did, decision.Session, now.ForgivenAt(quest), now.Strikes);
         }, answer =>
