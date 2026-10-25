@@ -985,6 +985,19 @@ public static class BackgroundState
 }
 
 /// <summary>
+/// An agent's refusal to resume a conversation, as the notes read it (FOUNDATION1 mod-vii, the design §14.3): its reason and the agent's own
+/// words where it refused in any. The door's failure, <c>AcpResumeRefused</c>, is the agents' and answers this port.
+/// </summary>
+public interface IResumeRefused
+{
+    /// <summary>Why, by a code the log writes and a line the note says, which never quotes the agent.</summary>
+    ContinueReason Why { get; }
+
+    /// <summary>The agent's own words, where it refused in any: for the record's conversation on this machine, never a note.</summary>
+    string? Words { get; }
+}
+
+/// <summary>
 /// The notes for a conversation's door that failed (CONVNOTE2e): each English as its site always wrote it, byte for byte, with
 /// its parts. An exception's message is a program's words, never a value, since it may hold a path.
 /// </summary>
@@ -1004,20 +1017,20 @@ public static class DoorNotes
 
     /// <summary>A conversation the agent would not resume (MSG1c): its refusal, as the chat runner has always said it.</summary>
     /// <param name="ranOn">The adapter it ran on, which <c>elsewhere</c>'s line names; null where none is known.</param>
-    public static Noted ResumeRefused(AcpResumeRefused refused, string? ranOn) => Refusal(refused, ranOn).Then(".");
+    public static Noted ResumeRefused(IResumeRefused refused, string? ranOn) => Refusal(refused, ranOn).Then(".");
 
     /// <summary>An answer the agent would not resume its conversation for (ANSWER1a): its refusal, then that it is carried on.</summary>
     /// <param name="ranOn">The adapter it ran on, which <c>elsewhere</c>'s line names; null where none is known.</param>
-    public static Noted AnswerCarriedOn(AcpResumeRefused refused, string? ranOn) =>
+    public static Noted AnswerCarriedOn(IResumeRefused refused, string? ranOn) =>
         Refusal(refused, ranOn)
             .Then("; ", Noted.Of(NoteCodes.DoorAnswerCarriedOn, "your answer is carried on in a new session"))
             .Then(".");
 
     /// <summary>
     /// The refusal's message after the lead's dash: its reason's sentence, coded by its reason, then the agent's words where it
-    /// refused in any, as <see cref="AcpResumeRefused"/> composes its message.
+    /// refused in any, as the door's failure composes its message.
     /// </summary>
-    private static Noted Refusal(AcpResumeRefused refused, string? ranOn)
+    private static Noted Refusal(IResumeRefused refused, string? ranOn)
     {
         var said = new Noted("— ", []).Then("", Noted.Of(NoteCodes.DoorResumeRefused, refused.Why.Sentence, NoteCodes.Reason(refused.Why, ranOn)));
         return refused.Words is { Length: > 0 } words ? said.Then(": ", Noted.Said(words, NoteBy.Agent)) : said;

@@ -97,7 +97,7 @@ public sealed class DriverLoop(
     /// the same rule, and reachable only over this bridge. Watched from the first event for the call each
     /// session's agent is inside (WAITSAY1b), which <c>SESSION_GROUPS</c> answers whether or not a window watched it begin.
     /// </summary>
-    public SessionEvents Events { get; } = RunningCalls.Watched(new(DaorisHome.Entry(HomeOfChoices(), HomeEntry.Sessions)));
+    public SessionEvents Events { get; } = RunningCalls.Watched(new SessionEvents(DaorisHome.Entry(HomeOfChoices(), HomeEntry.Sessions)));
 
     /// <summary>
     /// What sessions consumed (TOOL3/D57 §4) — machine-local by the same rule as the console and the

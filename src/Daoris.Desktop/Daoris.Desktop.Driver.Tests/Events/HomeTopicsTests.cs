@@ -15,7 +15,7 @@ public sealed class HomeTopicsTests
     [Fact]
     public void The_topics_whose_files_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal([ChangeTopics.Gates, ChangeTopics.Help, ChangeTopics.Plugins, ChangeTopics.Words], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal([ChangeTopics.Accounts, ChangeTopics.Gates, ChangeTopics.Help, ChangeTopics.Plugins, ChangeTopics.Words], HomeTopics.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -69,6 +69,19 @@ public sealed class HomeTopicsTests
         Assert.False(place.Hears("held-words.json.tmp", ChangeKind.Changed));
         Assert.Equal("held-words.json", HomeTopics.SubjectOf(ChangeTopics.Words));
         Assert.Equal(ChangeTopics.Gates, HomeTopics.SubjectOf(ChangeTopics.Gates));
+    }
+
+    [Fact]
+    public void The_agents_answer_is_the_cool_offs_and_the_harnesses_wiring_each_heard_by_its_final_name()
+    {
+        var places = HomeTopics.Of(ChangeTopics.Accounts, _home);
+
+        Assert.Equal(2, places.Length);
+        Assert.Equal(Path.GetDirectoryName(Path.GetFullPath(AccountCooling.PathOf(_home))), places[0].Folder);
+        Assert.True(places[0].Hears(Path.GetFileName(AccountCooling.PathOf(_home)), ChangeKind.Changed));
+        Assert.False(places[0].Hears(Path.GetFileName(AccountCooling.PathOf(_home)) + ".tmp", ChangeKind.Changed));
+        Assert.Equal(Path.GetDirectoryName(Path.GetFullPath(DaorisHome.Entry(_home, HomeEntry.Harnesses))), places[1].Folder);
+        Assert.True(places[1].Hears(Path.GetFileName(DaorisHome.Entry(_home, HomeEntry.Harnesses)), ChangeKind.Changed));
     }
 
     [Fact]

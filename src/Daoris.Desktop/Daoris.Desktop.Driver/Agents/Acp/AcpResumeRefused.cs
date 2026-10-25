@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// as one; the continuation catches it first, because a refused resume is not a turn that failed.
 /// </remarks>
 public sealed class AcpResumeRefused(ContinueReason why, string? words)
-    : DriverException(words is { Length: > 0 } ? $"{why.Sentence}: {words}" : why.Sentence)
+    : DriverException(words is { Length: > 0 } ? $"{why.Sentence}: {words}" : why.Sentence), IResumeRefused
 {
     /// <summary>Why, by a code the log writes and a line the note says, which never quotes the agent.</summary>
     public ContinueReason Why { get; } = why;
