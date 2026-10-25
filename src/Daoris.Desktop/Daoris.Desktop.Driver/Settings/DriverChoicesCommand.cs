@@ -25,10 +25,6 @@ public sealed record DriverChoicesWorld
     public Func<CancellationToken, Task<ChoicesRegistry>> Registry { get; init; } =
         _ => Task.FromResult(new ChoicesRegistry(null, "this command was handed no way to read it"));
 
-    /// <summary>The planner's verdict on each quest, over a fresh snapshot of the service this machine's driver watches.</summary>
-    public Func<DriverConfig, CancellationToken, Task<IReadOnlyList<Consideration>>> Verdicts { get; init; } =
-        (_, _) => throw new DriverException("this command was handed no way to read them");
-
     /// <summary>The moment a standing answer is set, and a workflow's version saved.</summary>
     public Func<DateTimeOffset> Now { get; init; } = () => DateTimeOffset.UtcNow;
 
@@ -207,7 +203,7 @@ public static class DriverChoicesCommand
         """;
 
     /// <summary>The marker a shell Daoris started carries (D194 point 5): its session's record id.</summary>
-    public const string SessionVariable = IntakeRoom.SessionVariable;
+    public const string SessionVariable = ChildMarks.SessionVariable;
 
     /// <summary>
     /// The refusal of a person's press acting in this process from a session's terminal (D194 point 5, the alone-path design §2): advice,
@@ -239,7 +235,7 @@ public static class DriverChoicesCommand
         {
             "list" => false,
             "workflow" => ChoiceGrammar.WorkflowChanges([.. args.Skip(1)]),
-            "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || MinuteFlags.Any(each => each.Flag == arg)),
+            "brainstorms" => args.Any(arg => arg is "--clear" or "--mode" or "--agents" || ChoiceGrammar.BrainstormMinuteFlags.Contains(arg)),
             // `keep` naming no kind says each rule, a read (KEEP1d).
             "keep" => args.Count > 1,
             // `actor` naming one actor, or none, says its order, a read (MODELROLE1c).
@@ -247,10 +243,6 @@ public static class DriverChoicesCommand
             _ => Verbs.Contains(verb, StringComparer.Ordinal),
         };
     }
-
-    /// <summary>The brainstorm policy's minutes, each by its flag and its name in the rule.</summary>
-    private static readonly (string Flag, string Name)[] MinuteFlags =
-        [("--pass-minutes", "pass"), ("--synthesis-minutes", "synthesis"), ("--challenge-minutes", "challenge"), ("--request-minutes", "request")];
 
     /// <summary>
     /// The verb's run: a read said, a change pressed (its route where the instance answers, its operation alone), or its usage.
@@ -290,8 +282,6 @@ public static class DriverChoicesCommand
         ChoicePress press;
         try
         {
-            // `brainstorms` naming no change says the policy, a read that holds nothing and asks no confirmation (BRAINSTORM1b).
-            if (verb == "brainstorms" && !Changes(args)) return BrainstormsSaid(args, before, world);
             if (verb == "keep" && !Changes(args)) return KeepsSaid(before, world);
             if (!Changes(args) && Registered(world, verb)?.Said(args, before, world) is { } exit) return exit;
             press = Plan(args, before, world);
@@ -481,9 +471,6 @@ public static class DriverChoicesCommand
                 });
             }
 
-            case "retry":
-                return Retry(args, before, world);
-
             // SESSWATCH1a (D200, the session-watch design §3): retired, changing nothing, and saying why.
             case "timeout":
                 throw new ChoiceWords(TimeoutRetired, exit: 1);
@@ -642,34 +629,6 @@ public static class DriverChoicesCommand
 
             case "commits":
                 return Commits(args, before, world);
-
-            // The brainstorm policy (BRAINSTORM1b, D176 point 9): this machine's, or with `--workspace` for the questions about a workspace's
-            // repositories. `--mode`, `--agents` and the minutes set what they name over the rule set there; `--clear`. No route sets it.
-            case "brainstorms":
-            {
-                var (workspace, clear, set) = BrainstormsAsked(args);
-                var edit = new BrainstormEdit { Workspace = workspace, Set = set, Clear = clear };
-                var after = Judged(() => BrainstormRules.Apply(before, edit));
-                return Change(null, null, config => BrainstormRules.Apply(config, edit), () =>
-                {
-                    if (workspace is null)
-                    {
-                        Say(after.Brainstorms is { } machine
-                            ? $"daoris: brainstorms on this machine: {BrainstormRules.Listed(machine)}."
-                            : $"daoris: this machine's brainstorms take the default again: {BrainstormRules.Listed(BrainstormRule.Default)}.");
-                    }
-                    else
-                    {
-                        var key = FindName(after.WorkspaceBrainstorms.Keys, workspace) ?? FindName(before.WorkspaceBrainstorms.Keys, workspace) ?? workspace;
-                        Say(AtName(after.WorkspaceBrainstorms, key) is { } rule
-                            ? $"daoris: brainstorms for questions about repositories in the workspace `{key}`: {BrainstormRules.Listed(rule)}."
-                            : $"daoris: questions about repositories in the workspace `{key}` take this machine's brainstorms rule again.");
-                    }
-
-                    Say($"  Written to {path}.");
-                    return 0;
-                });
-            }
 
             // The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): one kind's days, `whole` or `slim`, `never`, or its
             // default again. Judged here by the one judgement the window's SET_KEEP makes, so a value out of its bounds is refused before
@@ -846,10 +805,7 @@ public static class DriverChoicesCommand
 
         Section("handover");
 
-        Say(choices.Brainstorms is { } brainstorms
-            ? $"  brainstorms  {BrainstormRules.Listed(brainstorms)}"
-            : $"  brainstorms  none set — {BrainstormRules.Listed(BrainstormRule.Default)}; `daoris driver brainstorms --agents <a,b>` sets one");
-        foreach (var (workspace, rule) in choices.WorkspaceBrainstorms) Say($"  brainstorms  workspace {workspace}  {BrainstormRules.Listed(rule)}  (for its repositories' questions)");
+        Section("brainstorms");
 
         foreach (var (repository, rule) in choices.Commits) Say($"  commits    {repository}  {CommitRules.Listed(rule)}");
         foreach (var (workspace, rule) in choices.WorkspaceCommits) Say($"  commits    workspace {workspace}  {CommitRules.Listed(rule)}  (for each repository there that sets none)");
@@ -866,123 +822,6 @@ public static class DriverChoicesCommand
         }
 
         return 0;
-    }
-
-    /// <summary>What *Try again* did, as the words read it: from the operation alone, or from the route's answer.</summary>
-    private sealed record Retried(string Did, string? Session, int Mark, int Strikes);
-
-    /// <summary>
-    /// <c>retry</c> (RETRY1, SESSUX1b): with <c>--session</c> the person's stop released, with <c>--at</c> a mark the person gives, both
-    /// alone; else the quest's *Try again*, judged from the planner's verdict (<see cref="QuestRetry.Decide"/>) on both paths.
-    /// </summary>
-    private static ChoicePress Retry(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
-    {
-        var path = world.ConfigPath;
-        void Say(string line) => world.Instance.Out.WriteLine(line);
-        var named = Named(args, "retry");
-        var quest = named.StartsWith('#') ? named[1..] : named;
-
-        int Released(string session)
-        {
-            Say($"daoris: quest `#{quest}` is released from your stop of session `{session}`.");
-            Say("  The driver takes it up again at its next look: a taken quest is carried on in the tree that session");
-            Say("  worked in, an open one is planned again. A later stop holds it again.");
-            Say($"  Written to {path} — the driver re-reads it every tick, so nothing restarts.");
-            return 0;
-        }
-
-        int Marked(int mark, bool counted, int strikes)
-        {
-            Say($"daoris: quest `#{quest}` may be started again.");
-            Say($"  Counting from {mark} failure(s){(counted ? ", as this machine's records count them" : "")} — what already");
-            Say($"  happened is still in the records, and {(strikes == 0 ? "no" : strikes.ToString(CultureInfo.InvariantCulture))} more failure(s) will park it again.");
-            Say($"  Written to {path} — the driver re-reads it every tick, so nothing restarts.");
-            return 0;
-        }
-
-        var sessionAt = IndexOf(args, "--session");
-        if (sessionAt != -1)
-        {
-            var session = args.ElementAtOrDefault(sessionAt + 1)?.Trim();
-            if (string.IsNullOrEmpty(session) || session.StartsWith("--", StringComparison.Ordinal))
-            {
-                throw new ChoiceWords("`--session` needs the session your stop ended — the quest's *Sitting* names it: "
-                    + "`daoris driver retry <quest> --session <id>`.");
-            }
-
-            if (args.Contains("--at"))
-            {
-                throw new ChoiceWords("a retry either releases your stop (`--session <id>`) or counts the strikes from a mark "
-                    + "(`--at <n>`) — a stop is not a strike, so the two never go together.");
-            }
-
-            var key = FindName(before.Released.Keys, quest) ?? quest;
-            return new("retry", null, null, _ =>
-            {
-                StandingChoices.Write(path, config => config.WithReleased(key, session));
-                return Task.FromResult<object?>(null);
-            }, _ => null, _ => Released(session));
-        }
-
-        var at = IndexOf(args, "--at");
-        if (at != -1)
-        {
-            var mark = args.ElementAtOrDefault(at + 1) is { } given ? Number(given) : double.NaN;
-            if (!IsWhole(mark) || mark < 0 || mark > int.MaxValue) throw new ChoiceWords("`driver retry --at` needs a whole number of failures to count from.");
-            var count = (int)mark;
-            return new("retry", null, null, _ =>
-            {
-                StandingChoices.Write(path, config => config.WithForgiven(quest, count));
-                return Task.FromResult<object?>(null);
-            }, _ => null, _ => Marked(count, false, before.Strikes));
-        }
-
-        // While Daoris runs, the quest's *Try again* (RETRY_QUEST): the instance judges from its planner's verdict and answers what it
-        // did. Alone, the same operation judges from a fresh verdict over this machine's service.
-        return new("retry", ChoiceRoutes.Retry, new JsonObject { ["quest"] = quest }, async ct =>
-        {
-            IReadOnlyList<Consideration> verdicts;
-            try
-            {
-                verdicts = await world.Verdicts(DriverConfig.Load(path), ct).ConfigureAwait(false);
-            }
-            catch (Exception unread) when (unread is HttpRequestException or TaskCanceledException or DriverException or InvalidOperationException
-                                               && unread is not DriverConfigUnreadableException && !ct.IsCancellationRequested)
-            {
-                var mark = before.ForgivenAt(quest);
-                throw new ChoiceWords($"cannot count the failures of `#{quest}`: this machine's session records could not be read — "
-                    + $"{unread.Message.TrimEnd('.')}.\n  Nothing was written. Give the count yourself: `daoris driver retry {quest} --at <n>`, with n the "
-                    + $"failures its *Sitting* names{(mark > 0 ? $" plus {mark}, the mark its last retry left" : "")}.\n"
-                    + "  The quest's page's *Try again* counts them for you.");
-            }
-
-            var decision = QuestRetry.Decide(quest, verdicts);
-            var now = StandingChoices.Write(path, decision.Change);
-            return new Retried(decision.Did, decision.Session, now.ForgivenAt(quest), now.Strikes);
-        }, answer =>
-        {
-            var retried = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("retried", out var said) && said.ValueKind == JsonValueKind.Object
-                ? said
-                : default;
-            var did = retried.ValueKind == JsonValueKind.Object ? Json.Text(retried, "did") : null;
-            var session = retried.ValueKind == JsonValueKind.Object ? Json.Text(retried, "session") : null;
-            var mark = 0;
-            if (answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("forgiven", out var forgiven) && forgiven.ValueKind == JsonValueKind.Object)
-            {
-                foreach (var entry in forgiven.EnumerateObject())
-                {
-                    if (string.Equals(entry.Name, quest, StringComparison.OrdinalIgnoreCase) && entry.Value.ValueKind == JsonValueKind.Number)
-                    {
-                        mark = entry.Value.GetInt32();
-                        break;
-                    }
-                }
-            }
-
-            var strikes = answer.ValueKind == JsonValueKind.Object && Json.Number(answer, "strikes") is { } counted ? (int)counted : before.Strikes;
-            return new Retried(did ?? RetryDecision.Marked, session, mark, strikes);
-        }, fields => fields is Retried { Did: RetryDecision.Released, Session: { } session } ? Released(session)
-            : fields is Retried marked ? Marked(marked.Mark, true, marked.Strikes) : Marked(0, true, before.Strikes));
     }
 
     /// <summary><c>across</c> (READ1, D107): whether a checkout is read by agents outside it, and the writes declared into another.</summary>
@@ -1139,64 +978,6 @@ public static class DriverChoicesCommand
             Say($"  Written to {path}.");
             return 0;
         });
-    }
-
-    /// <summary>
-    /// <c>brainstorms</c>' words read (BRAINSTORM1b): its workspace, whether it clears, and the set it names, each part only where it was
-    /// said, as the screen and Ask Daoris send it. A minute given as anything but digits is handed on as written, to be refused in the
-    /// rule's words; a repository named is refused here.
-    /// </summary>
-    private static (string? Workspace, bool Clear, BrainstormSet? Set) BrainstormsAsked(IReadOnlyList<string> args)
-    {
-        const string usage = "`driver brainstorms` takes [--workspace <name>], then --mode ask|off, --agents <adapter,adapter>, --pass-minutes, "
-            + "--synthesis-minutes, --challenge-minutes and --request-minutes <n>, or --clear — e.g. "
-            + "`daoris driver brainstorms --agents claude-code,codex-acp --pass-minutes 10`.";
-        string[] valued = ["--workspace", "--mode", "--agents", .. MinuteFlags.Select(each => each.Flag)];
-        for (var at = 1; at < args.Count; at++)
-        {
-            var token = args[at];
-            if (valued.Contains(token)) at++;
-            else if (token.StartsWith("--", StringComparison.Ordinal) && token != "--clear")
-            {
-                throw new ChoiceWords($"`{token}` is not a flag `driver brainstorms` takes — {usage}");
-            }
-            else if (!token.StartsWith("--", StringComparison.Ordinal))
-            {
-                throw new ChoiceWords($"a brainstorms rule is set for this machine or for a workspace — never for one repository. {usage}");
-            }
-        }
-
-        var minutes = new Dictionary<string, object?>(StringComparer.Ordinal);
-        foreach (var (flag, name) in MinuteFlags)
-        {
-            if (FlagValue(args, flag) is { } value)
-            {
-                minutes[name] = value.All(char.IsAsciiDigit) ? double.Parse(value, CultureInfo.InvariantCulture) : value;
-            }
-        }
-
-        var set = new BrainstormSet
-        {
-            Mode = FlagValue(args, "--mode"),
-            Agents = FlagValue(args, "--agents")?.Split(',').Select(each => (string?)each.Trim()).ToList(),
-            Minutes = minutes.Count > 0 ? minutes : null,
-        };
-        return (FlagValue(args, "--workspace"), args.Contains("--clear"), set.Names ? set : null);
-    }
-
-    /// <summary><c>brainstorms</c> naming no change: this machine's rule and each workspace's, said.</summary>
-    private static int BrainstormsSaid(IReadOnlyList<string> args, DriverConfig choices, DriverChoicesWorld world)
-    {
-        BrainstormsAsked(args);
-        var said = world.Instance.Out;
-        said.WriteLine($"daoris: brainstorms on this machine: {BrainstormRules.Listed(choices.Brainstorms ?? BrainstormRule.Default)}"
-            + $"{(choices.Brainstorms is null ? " (the default)" : "")}.");
-        foreach (var (name, rule) in choices.WorkspaceBrainstorms)
-        {
-            said.WriteLine($"  for questions about repositories in the workspace `{name}`: {BrainstormRules.Listed(rule)}.");
-        }
-
-        return 0;
     }
 
     /// <summary>Whether the file sets a key, read where it holds a whole number, as the CLI reads a choice set rather than defaulted.</summary>

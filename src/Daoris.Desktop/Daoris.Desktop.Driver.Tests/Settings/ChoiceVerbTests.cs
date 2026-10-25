@@ -34,6 +34,17 @@ public sealed class ChoiceVerbTests : IDisposable
     }
 
     [Fact]
+    public void The_grammar_the_command_reads_before_any_verb_is_planned_is_the_verbs_own()
+    {
+        Assert.Equal(ChoiceGrammar.BrainstormMinuteFlags, BrainstormsVerb.MinuteFlags.Select(each => each.Flag));
+        Assert.Equal(DriverWorkflowsCommand.Writes, ChoiceGrammar.WorkflowWrites);
+        Assert.True(DriverChoicesCommand.Changes(["brainstorms", "--pass-minutes", "5"]));
+        Assert.False(DriverChoicesCommand.Changes(["brainstorms"]));
+        Assert.True(DriverChoicesCommand.Changes(["workflow", "use", "docs", "--repository", "engine"]));
+        Assert.False(DriverChoicesCommand.Changes(["workflow", "use", "docs", "--repository", "engine", "--plan"]));
+    }
+
+    [Fact]
     public async Task A_verb_the_world_carries_is_planned_and_said_by_it()
     {
         var config = Path.Combine(_home, "driver.json");
