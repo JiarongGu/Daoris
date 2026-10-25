@@ -98,23 +98,4 @@ public static class StandingChoices
 
         return workspace is not null ? config.WithWorkspaceLanding(workspace, rule) : config.WithLanding(repository!, rule);
     }
-
-    /// <summary>
-    /// A review rule's environment put, its procedure looked for in each checkout <paramref name="registry"/> names that the edit
-    /// reaches (REVIEWENV1a): a repository's checkout here that lacks it refuses the change; a workspace's names each one that lacks it.
-    /// </summary>
-    /// <exception cref="DriverException">The repository's checkout here does not hold the procedure; nothing is written.</exception>
-    public static ReviewLooked Review(IReadOnlyList<(string Repository, string? Workspace, string? Root)> registry, ReviewEdit edit, string procedure)
-    {
-        var lacking = ReviewRules.Lacking(registry, edit, procedure);
-        if (edit.Repository is { } repository)
-        {
-            if (lacking.Count > 0) throw new DriverException(ReviewRules.NotHeld(repository.Trim(), procedure));
-            return new(lacking, !registry.Any(row => row.Root is { Length: > 0 }
-                && string.Equals(row.Repository, repository.Trim(), StringComparison.OrdinalIgnoreCase)));
-        }
-
-        return new(lacking, !registry.Any(row => row.Root is { Length: > 0 }
-            && string.Equals(WorkspaceNames.Of(row.Workspace), WorkspaceNames.Of(edit.Workspace), StringComparison.OrdinalIgnoreCase)));
-    }
 }

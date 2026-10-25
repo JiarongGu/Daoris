@@ -452,10 +452,6 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, IReadOnlyList<HeavyGate>> HeavyGates { get; init; } =
         new Dictionary<string, IReadOnlyList<HeavyGate>>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>A repository's heavy gates set in order, or taken away with none, through <see cref="HeavyMapping.Apply"/>.</summary>
-    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
-    public DriverConfig WithHeavyGates(string repository, IReadOnlyList<HeavyGate>? gates) => HeavyMapping.Apply(this, repository, gates);
-
     /// <summary>
     /// Which checks each repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4), by repository: <c>light</c> or
     /// <c>heavy-at-end</c>; absent is today's. What a driven start's words, its deny rules and <c>run-heavy</c>'s refusal read
@@ -464,10 +460,6 @@ public sealed record DriverConfig(
     /// </summary>
     public IReadOnlyDictionary<string, string> SessionChecks { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>A repository's sessions' checks set, or taken away with null, through <see cref="Daoris.Driver.SessionChecks.Apply"/>.</summary>
-    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
-    public DriverConfig WithSessionChecks(string? repository, string? checks) => Daoris.Driver.SessionChecks.Apply(this, repository, checks);
 
     /// <summary>
     /// The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): <c>keep</c>, each kind absent meaning its default.
@@ -1026,11 +1018,11 @@ public sealed record DriverConfig(
             WriteWorkCycles(writer, "workCycles", WorkCycles);
             WriteWorkCycles(writer, "workspaceWorkCycles", WorkspaceWorkCycles);
             // Written only when set (REVIEWENV1a), as the CLI writes them: absent is no review environment, today's behaviour.
-            ReviewRules.WriteMap(writer, "reviews", Reviews);
-            ReviewRules.WriteMap(writer, "workspaceReviews", WorkspaceReviews);
+            ReviewKey.WriteMap(writer, "reviews", Reviews);
+            ReviewKey.WriteMap(writer, "workspaceReviews", WorkspaceReviews);
             // Written only when set (XAGENT1a), as the CLI writes them: absent is no second opinion, today's behaviour.
-            OpinionRules.WriteMap(writer, "opinions", Opinions);
-            OpinionRules.WriteMap(writer, "workspaceOpinions", WorkspaceOpinions);
+            OpinionKey.WriteMap(writer, "opinions", Opinions);
+            OpinionKey.WriteMap(writer, "workspaceOpinions", WorkspaceOpinions);
             // Written only when set (MIXAGENT2a-i), as the CLI writes them: absent is the default, `ask`.
             HelperKey.WriteMap(writer, "helpers", Helpers);
             HelperKey.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
@@ -1050,9 +1042,9 @@ public sealed record DriverConfig(
             AccessKey.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
             AccessKey.WriteMachine(writer, MachineAccess);
             // Written only when set (HEAVYRUN1b2a), as the CLI writes it: absent is the repository's own heavy gates alone.
-            HeavyMapping.WriteMap(writer, HeavyGates);
+            HeavyKey.WriteMap(writer, HeavyGates);
             // Written only when set (FABRIC-PIPELINE1b), as the CLI writes it: absent is today's, a session running as it did.
-            Daoris.Driver.SessionChecks.WriteMap(writer, SessionChecks);
+            SessionChecksKey.WriteMap(writer, SessionChecks);
             // Written only where set (KEEP1d): absent is each kind's default, and an edit elsewhere must not pin today's defaults.
             Keep.Write(writer);
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
@@ -1560,11 +1552,11 @@ public sealed record DriverConfig(
             WorkCycles = WorkCycleMap(root, "workCycles"),
             WorkspaceWorkCycles = WorkCycleMap(root, "workspaceWorkCycles"),
             // A rule with a problem is not read, and `false` only for a repository (REVIEWENV1a).
-            Reviews = ReviewRules.Map(root, "reviews", allowNone: true),
-            WorkspaceReviews = ReviewRules.Map(root, "workspaceReviews", allowNone: false),
+            Reviews = ReviewKey.Map(root, "reviews", allowNone: true),
+            WorkspaceReviews = ReviewKey.Map(root, "workspaceReviews", allowNone: false),
             // A rule with a problem is not read, and `false` only for a repository (XAGENT1a).
-            Opinions = OpinionRules.Map(root, "opinions", allowNone: true),
-            WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
+            Opinions = OpinionKey.Map(root, "opinions", allowNone: true),
+            WorkspaceOpinions = OpinionKey.Map(root, "workspaceOpinions", allowNone: false),
             Helpers = HelperKey.Map(root, "helpers"),
             WorkspaceHelpers = HelperKey.Map(root, "workspaceHelpers"),
             HandOver = HandOverKey.Map(root, "handOver"),
@@ -1581,9 +1573,9 @@ public sealed record DriverConfig(
             WorkspaceAccess = AccessKey.Map(root, "workspaceAccess"),
             MachineAccess = AccessKey.Machine(root),
             // Read as a stored shape (HEAVYRUN1b2a): a list with a gate that does not read is not read, whole.
-            HeavyGates = HeavyMapping.Map(root),
+            HeavyGates = HeavyKey.Map(root),
             // Read as a stored shape (FABRIC-PIPELINE1b): a value that is no choice is not read, and shadows none.
-            SessionChecks = Daoris.Driver.SessionChecks.Map(root),
+            SessionChecks = SessionChecksKey.Map(root),
             // Read as a stored shape (KEEP1d): a value out of its kind's bounds is not read, and its kind keeps its default.
             Keep = KeepChoices.Read(root),
             ReadAcross = FlagMap(root, "readAcross"),
