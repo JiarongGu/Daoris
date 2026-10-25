@@ -148,7 +148,8 @@ public sealed class SessionWords : IDisposable
 
     /// <summary>
     /// Where words held while a session winds up are kept across a restart (MSG1d4): each in the order said, with its session,
-    /// its text, the names its files are kept under and the door it was said at. Absent while nothing is held.
+    /// its text, the names its files are kept under and the door it was said at, and, where it had them, its producer's key, its level
+    /// and its display choice (FOUNDATION1b). Absent while nothing is held.
     /// </summary>
     /// <remarks>Its place is the driver library's (<see cref="HeldWordsFile"/>), which takes a cleared or deleted session's words out of it (HIST1c).</remarks>
     public static string HeldPath(string home) => HeldWordsFile.PathOf(home);
@@ -174,9 +175,13 @@ public sealed class SessionWords : IDisposable
 
     /// <summary>
     /// One word as it goes to the say door: its text, the names of its files, the door it was said at, and the answer of its park's
-    /// question it was pressed as (PARKVIEW1), which the conversation shows it under; null for every other word.
+    /// question it was pressed as (PARKVIEW1), which the conversation shows it under; null for every other word. FOUNDATION1b: it
+    /// keeps its producer's key and the level it was said at wherever it is held, in the held file too, so the record keeps one word
+    /// for a producer's retry and a forward says it as the first say did; a word held before has no key, and the default level.
     /// </summary>
-    private sealed record Word(string Text, IReadOnlyList<string> Files, string Door, string? Choice = null);
+    private sealed record Word(
+        string Text, IReadOnlyList<string> Files, string Door, string? Choice = null, string? Key = null,
+        MessageLevel Level = MessageLevel.Urgent);
 
     private static TaskCompletionSource Signal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -461,7 +466,7 @@ public sealed class SessionWords : IDisposable
 
         // Kept as a conversation keeps what is attached (CONV4c), so the names on the record name files that exist.
         var kept = files.Count > 0 ? ChatFiles.Keep(_loop.Home, id, files) : [];
-        var word = new Word(text, [.. kept.Select(file => file.Name)], door, choice);
+        var word = new Word(text, [.. kept.Select(file => file.Name)], door, choice, key, level);
         return holding
             ? await HoldForTakeAsync(id, word, ct).ConfigureAwait(false)
             : await KeepOrHoldAsync(id, word, ct).ConfigureAwait(false);
@@ -636,7 +641,7 @@ public sealed class SessionWords : IDisposable
         // COWORK1c: the request's own key, so a request read again after a restart keeps one word.
         var said = await SayAsync(
                 request.Session, text, Kept(request.Session, request.Files), preface: null, RequestDoor.Terminal, ct, request.Asked,
-                request.Key is { Length: > 0 } key ? $"request/{key}" : null)
+                SessionRequests.WordKey(request))
             .ConfigureAwait(false);
         if (said is null) return WordsHeld.Failed(NotUp);
         if (said.Running) KeepOnAsk(request.Session, text);
@@ -698,7 +703,7 @@ public sealed class SessionWords : IDisposable
             SayAnswer said;
             try
             {
-                said = await service.SayAsync(id, word.Text, word.Files, ct).ConfigureAwait(false);
+                said = await service.SayAsync(id, word.Text, word.Files, ct, key: word.Key).ConfigureAwait(false);
             }
             catch (Exception error) when (Unanswered(error))
             {
@@ -779,7 +784,7 @@ public sealed class SessionWords : IDisposable
                         SayAnswer said;
                         try
                         {
-                            said = await service.SayAsync(id, word.Text, word.Files, ct).ConfigureAwait(false);
+                            said = await service.SayAsync(id, word.Text, word.Files, ct, key: word.Key).ConfigureAwait(false);
                         }
                         catch (Exception error) when (Unanswered(error) && !ct.IsCancellationRequested)
                         {
@@ -840,7 +845,10 @@ public sealed class SessionWords : IDisposable
         WordsAnswer? said;
         try
         {
-            said = await SayAsync(next, word.Text, Uploads(id, word.Files), preface: null, word.Door, ct).ConfigureAwait(false);
+            // FOUNDATION1b (X4-1.2): said there as the first say was, with its key, level and display choice; a word held before
+            // the row has no key and says as it did, at the default level.
+            said = await SayAsync(next, word.Text, Uploads(id, word.Files), preface: null, word.Door, ct, word.Level, word.Key, word.Choice)
+                .ConfigureAwait(false);
         }
         catch (DriverException)
         {
@@ -926,6 +934,10 @@ public sealed class SessionWords : IDisposable
                     foreach (var name in word.Files) writer.WriteStringValue(name);
                     writer.WriteEndArray();
                     writer.WriteString("door", word.Door);
+                    // FOUNDATION1b: additive, each by name, so an older shell reads the text, files and door as before.
+                    if (word.Key is { Length: > 0 }) writer.WriteString("key", word.Key);
+                    writer.WriteString("level", MessageLevels.Spelled(word.Level));
+                    if (word.Choice is { Length: > 0 }) writer.WriteString("choice", word.Choice);
                     writer.WriteEndObject();
                 }
 
@@ -996,7 +1008,10 @@ public sealed class SessionWords : IDisposable
             IReadOnlyList<string> files = entry.TryGetProperty("files", out var named) && named.ValueKind == JsonValueKind.Array
                 ? [.. named.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
                 : [];
-            words.Add((session, new Word(text, files, door)));
+            words.Add((session, new Word(
+                text, files, door, Choice: Text(entry, "choice") is { Length: > 0 } choice ? choice : null,
+                Key: Text(entry, "key") is { Length: > 0 } key ? key : null,
+                Level: MessageLevels.Read(Text(entry, "level")) ?? MessageLevel.Urgent)));
         }
 
         return words;
