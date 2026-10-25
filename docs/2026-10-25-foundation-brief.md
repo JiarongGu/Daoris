@@ -269,6 +269,11 @@ steward set, which every round from 2 keeps:
 The constraints of §4 stand unchanged: the person's door, D208's and D209's bounds, the state hub, the Fabric's guards, and *Simple*:
 the page gains only the words a person needs to see and change a role, entering through the glossary.
 
+*The name, 2026-10-25 (round 4, the steward's decision on both readers' reads of round 3):* a role is one concept in two shapes, working and
+appointed, so the page says **角色** for a role in both, and **任命的角色** where the appointed one must be said. **职务**, which round 3 gave the
+role beside 角色 for the actor, is withdrawn: it set two screen titles apart rather than two concepts, and every shipped string already says
+角色 for both shapes, so no page string changes (`docs/2026-10-25-foundation-design.md` §6, its row u).
+
 ## 9. Amendment, 2026-10-25: one SQLite store for the desktop's state and configuration
 
 The owner directed, after round 2 of the synthesis, that as configuration and state grow complex they move from JSON files to SQLite.
@@ -302,6 +307,12 @@ the file is a repository's reviewed record, or where it is an export or a stream
 - **`driver.json` becomes the export and import format alone:** the person exports the configuration as readable JSON to review,
   back up or edit by hand, and imports it back through the same judges, a change of authority through the person's own press. The
   first start of the build that moves it imports today's file once and keeps it as the backup.
+
+*Round 4, 2026-10-25 (the steward's, on both readers' reads of round 3):* a word's settlement after its take, round 3's receipt, is kept by the
+service in the statement that takes the word, and the keyed open's result in a table of the service's, since a receipt in the desktop store read
+before a say races the service's take across the two stores; the move and its words in transfer stay in one desktop transaction
+(`docs/2026-10-25-foundation-design.md` §3.3, §3.4 rule 5). The store and every family are Part B of the design's acceptance, read in rounds of
+their own.
 
 ## 10. Amendment, 2026-10-25: the driver analyzed into its subdomains
 

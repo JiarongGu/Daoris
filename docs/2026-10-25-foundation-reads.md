@@ -1,6 +1,6 @@
-# FOUNDATION1: the reads of rounds 1 and 2 (D191)
+# FOUNDATION1: the reads of rounds 1 to 3 (D191)
 
-The independent Opus 5.5 reader's foundation reads and Codex's reads of `docs/2026-10-25-foundation-design.md` and D212, round 1 at `c8eccf30e` and round 2 at `29a066182`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Round 2 answers every finding of round 1 by number in the design's §12, and round 3 every finding of round 2 in its §15.
+The independent Opus 5.5 reader's foundation reads and Codex's reads of `docs/2026-10-25-foundation-design.md` and D212, round 1 at `c8eccf30e`, round 2 at `29a066182` and round 3 at `68a396c65`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Round 2 answers every finding of round 1 by number in the design's §12, round 3 every finding of round 2 in its §15, and round 4 every finding of round 3 in its §16.
 
 ## Opus (foundation), round 1
 
@@ -546,3 +546,334 @@ The owner-only act exclusion and fixed launcher containment are stated correctly
 2. **Non-blocking — split row f into actual standalone landings.** F:902 introduces claims, idempotent opens, recovery, three initial move families and two legacy-box adapters in one row, despite F:839’s one-path rule. Give each adoption its own subrow and compatibility proof; make the unknown-actor older-build case mandatory before x, since today `Driver/Sessions/Domain/ActorRun.cs:176` throws for an added role. The whole-design two-reader gate at F:809 and SWITCHCTX1’s outstanding-read gate at F:710 should remain.
 
 **Verdict: another round.** The role authorization lifecycle, move fencing/rollback protocol and journal capture schema still require foundational choices, rather than bounded editorial corrections.
+
+## Opus (foundation), round 3
+
+The independent Opus 5.5 reader's foundation read of round 3 at `68a396c65`: 16 findings, 2 blocking; accept after named changes.
+
+### 0. Both reads of round 2
+
+I read at HEAD `68a396c65`. Its `src/` is `2a08bde4a`'s plus LIMITSWITCH2 (`git diff --stat 2a08bde4a HEAD -- src`: 11 files), and I read LIMITSWITCH2's code as well as its note. Lines below are HEAD's. The design's lines are `2a08bde4a`'s, and they drift by a few lines in `Driver.cs`, `LimitMove.cs`, `ChatGoOn.cs` and `ChatRunner.cs`. Paths use the design's aliases. I read the code; I ran nothing.
+
+#### The Opus reader's foundation read (14 findings, 6 blocking)
+
+| # | Round 2 | Round 3 | Why |
+|---|---|---|---|
+| 1 | blocking | Taken | An act is admitted only within three things: the code's act table, the appointment's `Acts` (`StandingConfirmation.cs:187`, checked at `:1276`), and the role as it stands. Increases wait for the next *Appoint*, and authority is edited only through `Window`-class routes (§2.7; rows t and y-ii). One gap: today the desk's decline is admitted outside every grant (`:1275`), and "all three" drops that (finding 7). |
+| 2 | blocking | Taken | Two exclusive shapes, each act with its scope kind and offered flag. Those flags and the act tables are in the shell's library, which the driver cannot name (finding 7). |
+| 3 | blocking | Taken, its field placed better | `actor` keeps the seeded id (`ActorRun.cs:176-177`). The added role goes on the binding in the desktop store, which no older build reads and which needs no chain through the host. The reason holds. Binding writes must keep the role's columns (finding 16). |
+| 4 | blocking | Taken | Step 5 waits on the own account's reset wherever step 1 may resume there, and the proof case is split. |
+| 5 | blocking | Taken | Moved to a-iii. LIMITSWITCH2 built it through the ended move, which walks (`ChatRunner.GoOnLostAsync` → `LimitMove.MoveEndedAsync(…, switching: true)`), never through `BriefedMove`. |
+| 6 | blocking | Taken | Each id is absent, set, removed or unreadable. A work that may not be off keeps a machine-wide role. |
+| 7 | — | Answered, and the reason holds as a reading | The claim is now the steward's evidence and reading, recorded as one the owner may overrule (§8; `D137.md:856-863`; `FIX-LOG.md:89-90`). The evidence is the steward's account of the install, which no tracked record lets me check. It stands on that account. |
+| 8 | — | Taken | A role carries no doors. |
+| 9 | — | Taken | Census C admits `design` within `build`, and `weight` is listed in §5.2. |
+| 10 | — | Taken | §7 row 18 and D212's amend list. |
+| 11 | — | Taken | y-i is ⚖, and its predecessors are named. |
+| 12 | — | Taken, superseded | Store transactions replace the file claim. |
+| 13 | — | Taken | a-iii adds `ElsewhereAsync`. |
+| 14 | — | Taken | The lanes and the box mechanism are corrected. |
+
+#### Codex's read (14 findings, 10 blocking)
+
+| # | Round 2 | Round 3 | Why |
+|---|---|---|---|
+| 1.1 | blocking | Taken | No box is written beside the move record, and §13.5 gives the phase table. When the boxes are imported contradicts §13.5's own rule (finding 4). |
+| 2.1 | blocking | Taken, by removal | A role carries no doors, so there is nothing to enforce. The revision is kept on the binding. |
+| 2.2 | blocking | Taken | The appointment's grant is a ceiling for its life, intersected at each act. Increases wait for the next *Appoint*, narrowings apply at once, and removing a role revokes its appointments. |
+| 2.3 | blocking | Taken | Per-id states, with first edit, partial edit and last deletion proven in row w. |
+| 2.4 | — | Taken | The judge's census and its closed codes. |
+| 3.1 | blocking | **Open** | The fence has the right shape: a store row, and a mark under a claim check before each effect. But the takeover rests on "the holder of the executor's role", which neither the code nor §13.3's schema establishes. The design misreads `--share` as a role passing, and "one shell per home" is a per-install guard (finding 1). |
+| 3.2 | blocking | Taken | Dispositions are per attempt, and `LimitHeld.cs:35-41`'s reason is kept. |
+| 3.3 | — | Taken | Receipts are keyed by line and producer key, and a keyless word by its id. The desks' keyed hands fall outside the rule's census (finding 5). |
+| 3.4 | — | Taken | Step 6's one exception. |
+| 4.1 | blocking | Taken | Each row carries an allow-listed snapshot, and row k proves the sequences. |
+| 4.2 | blocking | Taken | At most 1 KiB a row and 50,000 rows, an overflow row, and *never raising* qualified. |
+| 4.3 | blocking | Taken | News is keyed by occurrence, with one horizon and m-iv's cases. |
+| 5.1 | blocking | Taken | Row d needs no receipt, p comes first, and row f names its three outcomes. Row d now needs f-i's `opens` (finding 12). |
+| 5.2 | — | Taken | Row f is split, and row x's older-build case comes first. |
+
+### 1. Claims about the code
+
+**What holds**, from what I checked:
+- §13.1's inventory: no `Microsoft.Data.Sqlite` under `src/Daoris.Desktop`; the service's pin (`src/Daoris.Service/Directory.Packages.props:30`); `knowledge.db` (`Core/Platform/DaorisHome.cs:338`); `KeepLock` and `JsonKeeping.Save` (`JsonKeeping.cs:72`); `DriverConfig.Save` (`:1009-1028`); `GitIdentityUse.Read` over `driver.json` (`:80-86`); the config's watch (`HomeWatch.cs:200`).
+- The lease (`HomeLease.cs:55-75`, `:165`, `:337-343`).
+- The GitDoor's fourteen compiled files.
+- The driver's 784 files, all in one namespace.
+- `StructureTests`' fifteen modules (`StructureTests.cs:191`), and §14.1's Loop rules at `2a08bde4a`.
+- The catalogue's citations: `ActorChoices.cs:37`, `:43`, `:51-72`, `:171-177` and `:320`; `ActorRun.cs:176-177`; `DriverChoicesCommand.cs:2059-2061`; `HelpRoomOwed.cs:94-101`; `StandingConfirmation.cs:187`, `:330`, `:336`, `:831-835` and `:1276`.
+- LIMITSWITCH2 as §5.1 describes it: `switches` read for every kind, with `walkCounts`; `ChatGoOn.SwitchableAsync`; the ended move's `switching` and its one walk; `GoOnLostAsync` for `ContinueWhy.Account`; `Driver.cs:1993` and `:2384`.
+
+**What is wrong:**
+
+1. **§13.4: "a role passes while its old holder lives (a lease given up or shared, `Host/Program.cs:868-885`)".** Sharing passes nothing. `--share` runs a second loop beside the instance, holding no lease, and "the two loops race for the same quests, and the take decides" (`Host/Program.cs:869-875`, `:890-895`).
+2. **§13.4: "one shell per home".** The kit's guard is "One instance per install" (`App/Program.cs:368`). `HostStartClaim` is keyed by the service's address and refuses no second launch: "A launch that cannot claim it … begins nothing, and its loop brings the host up as before" (`Modules/Loop/HostSupervisor.cs:478-486`). Nothing excludes a second shell on the home before its conversations run, and they run before and without the lease (`DriverLoop.cs:777-800`).
+3. **§13.2 and §13.4: the GitDoor opens the store "through the same class compiled into it as `GitIdentityUse` is".** The GitDoor is "Framework-dependent and referencing nothing … each using the base library alone" (`Daoris.Desktop.GitDoor.csproj:3-7`), and "The driver itself has ZERO package dependencies" (`src/Daoris.Desktop/Directory.Packages.props:6-9`). `DesktopStore` needs `Microsoft.Data.Sqlite` and its native bundle.
+4. **§13.6 row z-iii: "left in place (a record's conversation id never changes)".** `HarnessConversations.Keep` replaces what was kept whenever the wire names the conversation (`Conversations/GoOn/HarnessConversations.cs:28-37`), and every start and resume is handed it as `Keeping` (`:51`).
+5. **§3.4 rule 5: "Every keyed producer reaches the say door … (the HTTP host's say route is the door's one caller)".** Two keyed producers never pass the say door:
+   - a helper's answer, keyed `helper:<id>` (`Core/Sessions/HelperDesk.cs:186-189`);
+   - a partner's piece, keyed `partner:<piece>` (`PartnerDesk.cs:136-147`).
+
+   Each is kept by its own desk's `KeepSaidAsync` through its own route (`Http/Program.cs:1739-1748`), and each is answered as a repeat only while its word waits (`HelperDesk.cs:180`; `PartnerDesk.cs:137`).
+6. **§14.2 row 11 and §2.7.** Row 11 says Roles takes "`Sessions/Questions/`'s roles, appointments …", and §2.7 puts the act vocabulary "in the driver library". But the appointments, the role list, the act tables, the offered flags and the act judge all live in the shell's library: `Modules/Platform/StandingConfirmation.cs:121-133`, `:267-297`, `:330`, `:336` and `:1245-1290`; `Modules/Platform/RoleActs.cs:44-65`; `Modules/Bridge/StewardActRows.cs:145-161`. `Sessions/Questions/` holds the proof, the act form, the decisions and two verbs. The driver references no project (`Daoris.Desktop.Driver.csproj`), so it cannot name any of them.
+7. **§2.5, §2.7 and row t: an act admitted "only where it is in all three".** Today the steward's desk decline is admitted on every steward appointment, outside its `acts` (`StandingConfirmation.cs:1275-1279`; `RoleActs.cs:56-60`).
+8. **§14.1 and §14.3: `DaorisHome` "names six folders'" types.** It compiles into the GitDoor with the base library and thirteen other files (`GitDoor.csproj:20-35`), so it names none. The count read `HomeEntry` members (`HomeEntry.StandingConfirmation`, `.Notices`, …) as types.
+9. **Row a-i's installed proof, `session.moved … why=account`.** The conversation's switch continues the old part by `retry`: `LimitMove.cs:220` and `:317-318`, logged at `:296` through `Continuations.Moved` (`Conversations/Domain/Continuation.cs:588-594`). D137's LIMITSWITCH2 note says the same (`D137.md:836-837`). `account` is the box's reason and the note's (`ContinueWhy.Account`, `Continuation.cs:60`).
+10. **Row u.** Retiring 角色 at `zh/settings.daoris.json:108` is meant to retire it for an appointed role, but `:139` says it too (你任命的角色).
+11. **D137's LIMITSWITCH2 note, written beside this round.** It says row 1a "keeps `accountPicked` on the record" (`D137.md:848`). Round 3's a-ii keeps it on the binding in the store instead.
+
+### 2. Roles
+
+- **Widening authority through a role.** None:
+  - A working role holds no authority; its admission is its work's, in code.
+  - An appointed role's authority is edited only on a `Window`-class route and admitted only within the appointment's grant, so an edit narrows a live holder and never widens one.
+  - An older build reads no catalogue and finds every appointment dormant (`StandingConfirmation.cs:285-290`).
+  - The export carries "the appointments' grants". An imported appointment is dormant by construction, since the holder key's hash is the run's memory alone. The design should still say that an import never sets or raises a grant, which only *Appoint* does (D208 point 1; finding 16).
+
+  Authority does widen across a downgrade outside the catalogue (finding 2).
+- **Owner-only acts.** None: the vocabulary names none, the judge refuses `owner-act`, and the door refuses it again.
+- **Escaping containment.** No. Containment is keyed by work in code (`AgentStarts.cs:13`; `AgentJobs.cs:119`), and no role field names it.
+- **Granted without the person's own press in the window.** No:
+  - A working role changes only by the person's press at a door, or by Ask Daoris's proposal once pressed.
+  - Appointed authority changes only in the window, and takes effect at *Appoint*.
+
+  This holds, given finding 16's line on the import.
+- **Two exclusive shapes.** On write, yes (`mixed-shape`). On read the design says nothing. A row written by an older store-aware build, or by hand, is read by `RoleCatalog.Read`, which must judge its shape too and hold a mixed record as unreadable (finding 16). The judge's `not-offered` and `scope-kind` read flags and tables the driver cannot reach (§1 item 6; finding 7).
+- **The seed read per id.** Right, and it reproduces today. It does not say which starts an unreadable added record holds when its `takes` or `scope` is the part that does not read (finding 16).
+- **Continuations across builds.** Safe by construction. Every build's continuation reads a seeded `actor` that `ActorRun` knows (`ActorRun.cs:176-177`; `Driver.cs:3673`), and a newer build reads the binding's role first. That stays true only while writers update a binding's columns by name. An older store-aware build that replaced the row would drop the role (finding 16).
+
+### 3. The store (§13)
+
+- **Owner.** The driver library, through `DesktopStore`, with each family owned by one subdomain. But the appointments' writer is the shell's library, not a driver subdomain (finding 7).
+- **Processes.** The shell; `daoris-driver`, as the headless loop and as each verb; and the GitDoor, read-only. The driver and the GitDoor take their first package and native library, against constraints recorded for both (finding 3).
+- **Transactions and fences.** These are right: `BEGIN IMMEDIATE`, one connection per process behind a gate, no transaction across an effect, and mark → effect → outcome. Step 4's order also loses and doubles nothing: the disposition and the receipt commit first, then the take, and a crash between is finished from the receipt.
+
+  What fails is who may take a move over. The claim's holder is "the holder of the executor's role", and the code has no such holder for either kind (§1 items 1 and 2); §13.3 records none either. So a `--share` loop's driven moves either cannot be claimed, or the two live loops take each other's over. And a second install's shell on the same home takes over the first's live conversation moves (finding 1).
+- **Migrations and the rollback window.** Forward-only steps, one transaction each, are sound. Two timings conflict with D139's window:
+  - §3.3 imports an older build's boxes at the come-up, before the take-up, while §13.5 imports a family an older build acts on only after the build confirms.
+  - A migration that raises the oldest-writer stamp at a first start leaves a rolled-back build refusing every write (finding 4).
+- **What stays JSON.** The line is coherent, and the list matches the code: the formats other tools own, the tracked records, the manifests, the files read before the store opens, the streams, the credentials, the held words until row o, and `pipe-waiting` (one writer).
+- **Lost, doubled or replayed.**
+  - **Across a crash or a restart,** once finding 1 is fixed:
+    - a move's effect is begun at most once, and an uncertain one is held and said;
+    - a word is delivered once, or held at a conclusive limit and carried once, or left uncertain and said;
+    - news is told at most once.
+
+    One gap: a helper's or a partner's keyed hand retried after its take is kept again, because rule 5's receipt read covers only the say door (finding 5).
+  - **Across a downgrade,** the phase table holds for moves. But:
+    - a revoke made in the store is undone by an older build reading the backup left in place (finding 2);
+    - an older build resumes a binding's stale conversation id (finding 6);
+    - a hand edit of `driver.json` does nothing until a newer build returns (finding 11).
+
+### 4. The module map (§14)
+
+- **Does it follow the code's seams?** Mostly; most of the map follows real folders. Four places do not:
+  - Roles' appointments and act tables live in the shell's library (finding 7).
+  - `ResumeChoice` and `ResumeWords` (`Accounts/Rotation/ResumeAccount.cs:66`) move to Course, yet the roster in Agents names `ResumeChoice` on ten lines (`HarnessRoster.cs`, `ResumeAsync`). So Agents names row a-i's `LineAccount` upward from its first commit.
+  - `Trees/SessionGroups`, placed in Service (#4), reads `StartVerdict` (`Quests/Domain/Planner.cs`), `GoOnMarks`, `ResumeWords`, `AccountNames` and `SessionTrees`, all from higher subdomains.
+  - `Quests/Domain/Attention`, placed in Events (#7), names `CurveMove` (`Attention.cs:338`), `StartVerdict` (`:272`) and `HelpRoom` (`:80`) (finding 8).
+- **Acyclic and enforceable.** Acyclic by its order. Once namespaced, it is enforceable as a ratchet by `using` lines. The starting edges over-count (the `DaorisHome` edge is false, §1 item 8), so mod-0's exact census matters more than §14.1's figures.
+- **No behaviour changed.** Moving folders changes none, provided the GitDoor's `Compile Include` paths and the embedded resources' `Include` paths move with the files; their `LogicalName`s are pinned. Moving namespaces is not quite behaviour-free: the machine log writes an exception's `GetType().FullName` (`MachineLog.cs:322`). D166 also rejected renaming namespaces as files move (finding 10).
+- **Names.** *Roles* is the owner's name, and right. But `Course` and `Participants`, types the design introduces (`Course.Decide`, `Participants.Of`), are also their namespaces' names under `Daoris.Driver.<Name>`. From any `Daoris.Driver.*` file, the simple name binds to the namespace first, so every caller must qualify it (finding 9). *Work orders* needs a namespace spelling.
+
+### 5. Names on the page
+
+Round 2's single word is right, on the code and on the glossary.
+
+- **The code.** The design makes the actor and the appointed role one record, `Role`: one catalogue, one judge, and one place to set it once row y-i lands. It also says the AI screen's actor rows *are* the catalogue's working roles (§2.7, *What reads it*). Round 3's 职务 for the role beside 角色 for the actor therefore shows one record under two Chinese words, on two screens.
+- **Round 3's reason.** "So the page says the configured position and the staffing screen apart" separates two screen titles, not two concepts.
+- **The catalogues.** Every shipped string already says 角色 for both: `zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`, and `zh/settings.daoris.json:108` and `:139`.
+- **The glossary.** It already gives the term 角色 the meaning the working role now carries (`glossary.json:475`). Its `avoid` list refuses 岗位, which is close to 职务 in meaning.
+- **The appointed shape.** Where it must be said, 任命的角色 already says it (`settings.daoris.json:139`).
+
+Keep 角色 for the role in both shapes, keep *actor* as a code and prose word for a working role's staffing, and withdraw 职务 (finding 15).
+
+### 6. The rows
+
+- **Does each land alone, in order, behind today's tests?**
+  - These can: a-i, b, c, mod-0, a-ii, a-iii, p, e, g, h, i, o, j, w, x, y-i, k, l-i to l-v, m-i to m-v, n, q, r, s, t, y-ii and v.
+  - d cannot land before f-i. It opens under the move's `opens` key, which §5.2 and f-i introduce (finding 12).
+  - z-i needs the package decision (finding 3).
+  - z-ii does not land behind today's tests unchanged. The family rehearsal and the proof kit seed and re-read a home's `driver.json` (`tools/family-rehearsal.mjs:981`, `:5603-5607`; `tools/proof-kit.mjs:285-290`), and importing once makes their later writes inert (finding 11).
+  - f-i to f-vi wait on finding 1.
+- **Does each proof prove its claim?** Most do. The exceptions:
+  - a-i's installed line is `why=retry`, not `why=account` (finding 13).
+  - f-i's "a paused executor resuming after a takeover" proves nothing until the takeover rule says who may take over. It also needs two shells on one home and a `--share` loop (finding 1).
+  - z-ii, z-iv and z-xi lack the case of a revoke made in the store followed by an older build's start (finding 2).
+  - u's list misses `:139` (finding 15).
+- **Are the rows that grant authority marked to wait?** q, r, t, v, y-i and y-ii are marked ⚖. Four unmarked rows touch authority records or deletion:
+  - z-ii adds an import door that changes `access`, `drivable`, `trees`, `standing` and a role's authority;
+  - z-iv rehomes the appointments and the standing confirmation's grant;
+  - z-xi rehomes the permissions, the configured access and the plugin approvals, among them the GitDoor's grants;
+  - z-ix moves the records a removal follows (finding 14).
+
+### 7. Findings
+
+1. **Blocking. The move's takeover rests on an executor-role holder that nothing establishes** (§13.4; D212 point 8).
+   - **What is wrong.** A move is taken over "only by its role's current holder, of a move whose run is not that holder's run", and a live holder is never taken over. But §13.3's schema records no holder, and the code has none to read:
+     - `--share` runs a second driven loop beside the instance, holding nothing (`Host/Program.cs:869-875`, `:890-895`). Its moves are either unclaimable, or the instance takes them over while the loop still lives.
+     - "One shell per home" rests on a per-install guard (`App/Program.cs:368`) and on an address mutex that refuses no second launch (`HostSupervisor.cs:478-486`). So a second install's shell on the home takes over the first's live conversation moves.
+   - **Smallest change.**
+     - Take a move over only where its claim's run is dead by the lease's own test: pid and start time, with "cannot tell" read as alive (`HomeLease.cs:66-68`, `:165`, `:446`). Never take one over because a role passed.
+     - Each live loop, a `--share` loop included, claims and fences the moves of the lines it runs; a conversation's move belongs to the shell that runs it.
+     - Name the per-process run (id, pid, start time) and the claim's columns in §13.3.
+     - Row f-i proves three cases: two shells on one home, a `--share` loop beside the instance, and a paused executor whose process still lives.
+2. **Blocking. An older build undoes a revoke made in the store** (§13.5; rows z-ii, z-iv, z-xi).
+   - **What is wrong.** A family an older build only reads is left in place and never written through. So an older build run on the home (§13.5's own case) reads each authority as it stood at the import:
+     - the standing confirmation's `presses` grant is live from its file at an instance's start (`StandingConfirmation.cs:267-271`);
+     - `driver.json`'s `access`, `drivable`, `trees` and `standing` are §13.5's own authority keys;
+     - `permissions.json`, `configured-access.json` and `plugin-approvals.json` are z-xi's, and the GitDoor reads the first at every remote act.
+
+     Every revoke or narrowing the person makes after the import comes back, without any press.
+   - **Smallest change.** Choose one per authority-bearing family:
+     - a narrowing written to the store is also applied to the left-in-place file by that family's own writer, narrowing only; or
+     - the family is set aside, where its older reader reads absence as off, as the standing confirmation's does (`:270-271`).
+
+     Add a revoke followed by an older build's start to the proofs of z-ii, z-iv and z-xi.
+3. **Not blocking. The store gives the driver and the GitDoor their first package, against constraints recorded for both** (§13.2).
+   - **What is wrong.** `src/Daoris.Desktop/Directory.Packages.props:6-9` keeps the driver to the base library, and `GitDoor.csproj:3-7` keeps the door "referencing nothing … so a door starts small on every remote act". `DesktopStore` needs `Microsoft.Data.Sqlite` and the native bundle in both. D212 names neither constraint.
+   - **Smallest change.** State that the driver takes the package, pinned as the service's is (`src/Daoris.Service/Directory.Packages.props:30-31`), with its reason, as an amendment of that recorded rule. For the GitDoor, choose one: it takes the package and row z-i measures its start on a remote act, or its four families stay readable to it without SQLite.
+4. **Not blocking. The rollback window's timings conflict** (§3.3, §13.3, §13.5).
+   - **What is wrong.** Two timings disagree with D139's window:
+     - **Box imports.** §3.3 imports "any box an older build may have written" at the come-up, before the take-up. §13.5 imports a family an older build acts on, a box among them, only after the build confirms. But the app confirms asynchronously as it composes (`App/Program.cs:323`; `InstallUpdater.cs:135`), a swap can finish `confirmed: false` (the update design §3 step 5), and a headless start never confirms.
+     - **Migrations.** A migration that raises the oldest-writer stamp at a first start leaves a rolled-back build refusing every write.
+   - **Smallest change.**
+     - The come-up's imports run once this start's confirmation is settled, or once the swap journal shows none pending.
+     - Until a box is imported, its old part is the course's `Never`.
+     - A migration that raises the stamp runs only after confirmation.
+     - Row z-i proves a rollback after a first start.
+5. **Not blocking. Keyed hands bypass the receipts** (§3.4 rule 5; row p).
+   - **What is wrong.** A helper's and a partner's keyed words are kept by their desks, not the say door (`HelperDesk.cs:180-189`; `PartnerDesk.cs:136-147`; `Http/Program.cs:1739-1748`). Each is answered as a repeat only while its word waits. A hand retried after its take is kept twice.
+   - **Smallest change.** Rule 5 and row p's census name both hands beside the say door, and the desktop client reads the receipt before a hand as well.
+6. **Not blocking. An older build resumes a stale conversation id from the bindings left in place** (row z-iii).
+   - **What is wrong.** The kept id is replaced whenever the wire names one (`HarnessConversations.cs:28-37`). The backup holds the id as it stood at the import, and §13.5 gives the bindings no merge rule for the files an older build writes while it runs.
+   - **Smallest change.** Write a changed conversation id through to its file, which has one writer and is small; or class the bindings as set aside, where an older build reading none falls back to a carry-on (`:15-16`). At the return, an older build's newer file wins for its own session.
+7. **Not blocking. Half of Roles lives in the shell's library** (§2.7, §13.3, §14.2 row 11).
+   - **What is wrong.** The appointments, the role list, the act tables, the offered flags and the act judge are all in Modules (§1 item 6), and the driver cannot reference Modules. So neither `RoleCatalog.Judge` (`not-offered`, `scope-kind`) nor the Roles-owned `appointments` table can be written as the design says. The design's three-way intersection also drops the desk's acts, which are admitted outside every grant (`StandingConfirmation.cs:1275-1279`).
+   - **Smallest change.** Name either a row that moves `Roles`, `StewardActs`, `StewardActRows` and the appointment's persistence down into the driver (proven by `StandingConfirmationTests` and `PipeCensusTests`), or a port that Modules implements. Say that the desk's acts stay outside the grant.
+8. **Not blocking. Four placements in the map go against the code's dependencies** (§14.1, §14.2).
+   - **What is wrong.** Four of the map's placements create edges against its own order:
+     - the account rule's `ResumeChoice` and `ResumeWords` go to Course while the roster in Agents returns `ResumeChoice` (`ResumeAccount.cs:66`; `HarnessRoster.cs`);
+     - `SessionGroups` in Service reads Agents, Workplace, Course and Work orders;
+     - `Attention` in Events names Course and Work orders (`Attention.cs:272`, `:338`);
+     - the `DaorisHome` edge is false (§1 item 8).
+   - **Smallest change.** Place the resume's types with the roster, or the roster's resume in Course. Place `SessionGroups` and the attention policy above what they read (Work orders or Loop), with Events keeping the vocabulary. Correct §14.1's `DaorisHome` edge.
+9. **Not blocking. Two of the design's types share their namespaces' names** (§3.1, §2.1, §14.2).
+   - **What is wrong.** `Course` (`Course.Decide`) and `Participants` (`Participants.Of`, `.WorkOf`) would live in the namespaces `Daoris.Driver.Course` and `Daoris.Driver.Participants`. From any `Daoris.Driver.*` file the simple name binds to the namespace, so every call must be qualified. The same holds for the Modules' `Roles` class (`StandingConfirmation.cs:121`) once it moves to `Daoris.Driver.Roles`.
+   - **Smallest change.** Give those namespaces distinct names, or rename the types.
+10. **Not blocking. The map amends D166 and D176 without naming them** (§14; D212's amend list).
+    - **What is wrong.** §14 replaces D166's modules (point 1; Brainstorms is D176 point 1's fifteenth, held at `StructureTests.cs:191`). It also reverses D166's rejection of "renaming namespaces as files move" and its point 4's "namespaces per module last". Neither decision is in §7 or in D212. A namespace move also changes the machine log's `type` field (`MachineLog.cs:322`).
+    - **Smallest change.** Add D166 (points 1 and 4, and its rejection) and D176 point 1 to the amend list, with the reason. Either keep D166's order, folders first and namespaces last, or say why not. List the log field as a known change.
+11. **Not blocking. D212 understates the change to D50, and z-ii's test seeding is missing** (§13.5; row z-ii).
+    - **What is wrong.** D50 keeps hand-editing working because "the file, not the surface, is authoritative" (`D50.md:7-9`). After z-ii, nothing reads a hand edit of the left-in-place `driver.json` until a newer build returns and offers it, and today's live read ends (`HomeWatch.cs:200`; `DriverWatch.cs:1118`). D212 lists D50 only for "export and import at every door". Separately, the rehearsals and the proof kit seed `driver.json` (§6).
+    - **Smallest change.** State D50's change plainly: the store is the truth, and a hand edit takes effect only by an import. Say what a changed `driver.json` does at each start. Give z-ii a seeding rule for its census: a fixture home's seed file is imported at its first start, and `DAORIS_DRIVER_CONFIG`'s file whenever it changes.
+12. **Not blocking. Row d uses the `opens` key before row f-i introduces it** (§3.4 rule 3; §5.2; rows d, f-i).
+    - **What is wrong.** Row d's open "moving the old part's waiting words … idempotent under its key" uses `opens`, which is "new, row f-i". Row d lands before f-i, while no move record yet keeps the key across a crash.
+    - **Smallest change.** Move `opens` and its record-field chain into row d, proving its idempotency in-process there and across a crash in f-i.
+13. **Not blocking. Row a-i's installed proof names the wrong log line, and D137's note is stale** (§10; `D137.md:848`).
+    - **What is wrong.** The line will read `why=retry` (§1 item 9). D137's note keeps `accountPicked` on the record (§1 item 11).
+    - **Smallest change.** Make the proof read `session.moved … why=retry`, with the box's `account`. Add a dated line to D137 pointing at row a-ii's binding.
+14. **Not blocking. Rows that rehome authority, or move the records a removal follows, are not marked ⚖** (§10; §13.6).
+    - **What is wrong.** z-ii, z-iv, z-xi and z-ix are unmarked (§6).
+    - **Smallest change.** Mark z-ii, z-iv and z-xi ⚖, and z-ix as a deleting row.
+15. **Not blocking. One record appears under two Chinese words** (§6; row u).
+    - **What is wrong.** §5 gives the case. Row u also misses `zh/settings.daoris.json:139`.
+    - **Smallest change.** Use 角色 for the role in both shapes and 任命的角色 for the appointed one, and withdraw 职务. If 职务 stands instead, row u must retire 角色 from every string listed in §5 and rewrite the glossary's *actor* entry (`glossary.json:475`).
+16. **Not blocking. The catalogue's reads, its continuations and its import each leave one case unsaid** (§2.7; §13.3; §13.5).
+    - **What is wrong.** Four cases:
+      - shape is judged on write alone;
+      - an unreadable added record's held starts are unsaid;
+      - nothing says binding writers update named columns rather than replacing a row;
+      - the import's carrying of "the appointments' grants" does not say it never sets one.
+    - **Smallest change.** Four sentences, one per case:
+      - `RoleCatalog.Read` judges shape, and holds a mixed record as unreadable.
+      - An unreadable added record holds every start in its scope, until it reads or is deleted.
+      - Binding writers update named columns and never replace a row.
+      - An imported appointment is dormant, and its grant is set only by *Appoint* (D208 point 1).
+
+      Row w's proof gains the first two.
+
+16 findings, 2 blocking.
+
+**Verdict: accept after named changes the steward can check without another read.** The participant read, the course with one account rule, the journal with its capture schema, and the role catalogue's shapes, per-id seed and grant lifecycle now stand on the code. Round 2's blocking findings are taken, apart from Codex's 3.1. Two changes are needed, and each is bounded and checkable against the lines cited:
+- **Finding 1:** a move is taken over only from a run that is dead by the lease's own liveness test, never because a role passed, with the run and claim columns named and f-i's three cases added.
+- **Finding 2:** every authority-bearing family keeps an older build from reading a revoked grant, either by writing narrowings through to its backup or by setting it aside where absence is off.
+
+The rows the store and the map add should carry findings 3 to 16's edits, and z-ii, z-iv and z-xi should be marked ⚖ so the authority half is read again before it is built. This acceptance does not cover the reading that a closed quest's session falls inside LIMITSWITCH1's decision; that remains the owner's to overrule.
+
+## Codex, round 3
+
+Codex's read of round 3 at `68a396c65`: 17 findings, 11 blocking; another round.
+
+Reviewed HEAD `68a396c65a72e455b260bc384bc3f112ac7a4b34`, read-only. No files changed or tests run; nothing under checkout-relative `local/` was read.
+
+**F** = `docs/2026-10-25-foundation-design.md`; **D212** = `docs/decisions/D212.md`. Code paths use F’s aliases.
+
+**0. My round-2 findings**
+
+| Finding | Assessment | Evidence |
+|---|---|---|
+| 1.1 Rollback deduplication | **Open — blocking** | Removing the parallel boxes helps, but the replacement phase table misses an older build opening another successor; see §3 below. F:1355–1358. |
+| 2.1 Configured door restrictions | **Taken — non-blocking** | Roles carry no doors; admission remains capability-based, and bindings retain the selected role revision. F:349, F:365. |
+| 2.2 Appointment lifecycle | **Open — blocking** | The immutable grant is restored, but intersecting it with current configuration permits a restriction removed after narrowing to become effective again. F:390–399. |
+| 2.3 Seed semantics | **Taken — non-blocking** | Per-id absent/set/removed/unreadable states distinguish first edits, deletion and reset. F:367–377. |
+| 2.4 Judges and refusal codes | **Taken — non-blocking** | Legacy writers enter the census; validation follows work rather than actor id; refusal codes are named. F:266–268, F:409–412. |
+| 3.1 Effect fencing | **Open — blocking** | A transaction before an effect still leaves a pause between committed mark and effect. F:1299–1316. |
+| 3.2 Transient then limit | **Taken — non-blocking** | Dispositions remain per attempt, preserving `LimitHeld`’s uncertainty rule. F:649–655; `Driver/Conversations/Domain/LimitHeld.cs:35`. |
+| 3.3 Receipt identity | **Taken — non-blocking** | Line plus producer key, and word id for keyless words, answer the identity question. F:661–663; the new storage protocol has separate problems below. |
+| 3.4 Same-account exception | **Taken — non-blocking** | Automatic moves and deliberate fresh-part presses are distinguished. F:547–552. |
+| 4.1 Immutable projection inputs | **Taken — non-blocking** | Capture now specifies snapshots and delayed-reader proofs rather than later record lookups. F:701–723. |
+| 4.2 Bounds and storage failure | **Taken — non-blocking** | Payload/count limits, overflow reporting and atomic failure are specified; WAL is explicitly outside the payload bound. F:715–723. |
+| 4.3 Announcement retention | **Open — blocking** | The horizon is specified, but journal and reconciliation paths assign different keys to the same occurrence. F:827–836. |
+| 5.1 Word-move prerequisites | **Open — blocking** | Attempts now precede d, but d depends on the idempotent open introduced later in f-i. F:1004, F:1074, F:1076. |
+| 5.2 Standalone move landings | **Taken — non-blocking** | f is split by move family; the older-build actor case and both-reader gates remain explicit. F:1076–1078, F:1087, F:968. |
+
+None of those findings was wrong; none needs deferral.
+
+**1. Wrong claims about existing code**
+
+1. **Blocking — the cited guards do not establish one shell per home.** F:1307–1309 relies on that property, but `App/Program.cs:368` describes one instance **per install**, while `Modules/Loop/HostSupervisor.cs:480` guards early service startup by service address (`:495`), not conversation execution by home. Give conversation executors an explicit, home-scoped ownership mechanism rather than treating these guards as its proof.
+
+2. **Blocking — not every keyed producer passes through the desktop client.** F:659–660 and F:1401 use that claim to justify desktop-only receipts, but `Core/Sessions/HelperDesk.cs:185–189` and `PartnerDesk.cs:136–147` create keyed words directly through `KeepSaidAsync`. Include those producers in the receipt protocol or narrow the guarantee explicitly.
+
+3. **Non-blocking — today’s appointment does not offer individually ticked acts.** F:391 and D212:51 describe acts the owner ticked, whereas `Modules/Platform/StandingConfirmation.cs:247` has no requested acts list and `:860` snapshots `OffersActs(role)`; `Setup` is the separate tick. Describe individual act selection as a proposed change if that is intended.
+
+**2. Roles**
+
+1. **Non-blocking — the principal authority boundaries are now sound as requirements.** The exclusive shapes, closed act vocabulary, offered flags, scope checks, per-id seeds and absence of configurable containment fields prevent a role from inventing tools, owner-only acts or launcher privileges (F:343–377, F:405–407). Preserve the stated ordinary-start containment exception: configuration does not strengthen today’s best-effort containment into a guarantee.
+
+2. **Blocking — live attenuation needs its own retained ceiling.** Appoint with `{answer,defer}`, narrow the role to `{answer}`, then restore `defer`: the three-way intersection at F:390–397 admits `defer` again without *Appoint again*, contrary to F:394 and row y-ii. Retain reductions for that appointment, and require execution-time checks for queued acts and resolved targets; today `StandingConfirmation.RunAct` checks owner marks and appointment liveness, not new catalogue restrictions (`Modules/Platform/StandingConfirmation.cs:1300–1311`).
+
+**3. The store (§13)**
+
+1. **Blocking — marking an effect does not fence its execution.** An executor can commit its mark, pause, lose ownership, then resume directly into the spawn or prompt without making the “next mark” that F:1313–1316 expects to fail. Specify ownership exclusion through the actual effect, or fencing enforced by its recipient, and test suspension **after mark commit but before effect**; no external effect should be placed inside a SQLite transaction to solve this.
+
+2. **Blocking — the desktop receipt lookup races the service’s removal.** Under F:656–660, a retry can read “no receipt,” pause, then reach `SayAsync` after another dispatcher commits the receipt and removes the original word. `Core/Sessions/SessionLedger.cs:956` then finds no pending key and creates another word at `:965`; the two stores need a durable admission/settlement protocol, not a client-side precheck.
+
+3. **Blocking — `opens` belongs in the service, but one field is insufficient for the promised repeated answer.** F:589–591 and F:1302–1303 promise that a repeated open returns both its record and the words originally transferred, including after a lost answer. Once those words leave `said` (`Core/Sessions/Sessions.cs:1602–1607`), the `opens` column alone retains no transfer result; specify durable replay evidence committed with the service open.
+
+4. **Blocking — the downgrade table misses a successor of the destination.** At F:1357, suppose newer Daoris opened B, older Daoris finds no kept conversation and opens C from B, then crashes before transferring B’s words: today that opening precedes delivery and removal (`Driver/Conversations/Chat/BriefedMove.cs:130–158`). On return, the table’s “else it delivers” permits delivery to B despite C; reconcile the actual head and its attempts in every phase before delivering.
+
+5. **Blocking — migration admission needs a check inside every writing transaction.** F:1282–1286 specifies checking a newer stamp when opening, but a process already holding its connection can survive another process’s migration and subsequently write. Require the oldest-writer check under the same write lock as each mutation, with a proof that pauses an older writer before migration and resumes it afterward.
+
+6. **Blocking — reconciliation can repeat already announced news.** F:828 keys a journal occurrence by position, while F:830 keys reconciliation by `updated`; after trimming, another teller can claim the second key for the same end within the retained horizon. Moreover, `updated` changes on note-only writes (`Core/Sessions/Sessions.cs:886–890`), so retain a canonical occurrence identity or durable aliases across both paths.
+
+7. **Non-blocking — ownership and most JSON exceptions are well placed, but the inventory is incomplete.** Driver ownership, service separation, forward migrations and the prohibition on transactions spanning external effects are appropriate (F:1238–1258, F:1282–1295); keeping credentials, external formats, repository records, bootstrap files and streams as files has stated reasons. Explicitly place one-use git grants: the driver writes them and GitDoor consumes them by rename/delete (`Driver/Platform/GitAccessRules.cs:153–183`), yet neither their migration nor an exception appears beside F:1387–1394’s retained files.
+
+**4. The module map (§14)**
+
+1. **Blocking — the proposed enforcement does not yet hold the promised graph.** The rank order is acyclic, but F:1498 and F:1517 treat namespace `using` lines as dependencies after migration; fully qualified references need no such line, and this checkout already uses that form (`Driver/Sessions/SessionsCommand.cs:185`). Keep resolved type-reference checking, or equivalent comprehensive scanning, and prove rejection of qualified, aliased and static references as well as ordinary imports.
+
+2. **Non-blocking — the groupings are plausible targets, with real cuts still required.** For example, F:1472 puts `ChatGoOn` in Course while F:1479 puts its concrete `ChatRunner` and `ChatContext` dependencies in Loop (`Driver/Conversations/Chat/ChatGoOn.cs:87–105`). Name those port cuts in the census, and include linked consumers in each mechanical move: GitDoor’s explicit source paths (`Daoris.Desktop.GitDoor.csproj:20–37`) also need updating, so moving files and adding usings alone is insufficient.
+
+**5. Names**
+
+1. **Non-blocking — as defined here, this is one concept with two shapes.** F:307–309 and F:888 expressly make D205’s actor a working role; F:890 supplies no independently configured actor entity that would justify a second page concept. Use **role / 职务** consistently for configured positions, label their agent/model choices as staffing, and retain `actor`/角色 only for legacy compatibility surfaces until migrated; amend F:899–902 accordingly.
+
+**6. The migration**
+
+1. **Blocking — move the service-open prerequisite before d.** The order at F:1004 puts d before f-i, although d’s proof requires a retried atomic open that moves nothing twice (F:1074), and f-i introduces its unique `opens` key (F:1076). Give the service open and durable transfer-result contract an earlier standalone row, then keep p before every word-moving adoption.
+
+2. **Non-blocking — finish making the module rows individually landable.** F:1531 groups Platform with Store and Service with Install and Instance, despite F:1528’s one-subdomain rule; split those groups and give each cut its concrete compatibility/build proof. The whole-design two-reader gate, the marked authority/deletion rows and SWITCHCTX1’s independent outstanding read remain correctly retained (F:968, F:1002, F:852).
+
+**Verdict: another round.** The remaining authority, cross-store delivery, effect-fencing and downgrade gaps require protocol decisions; they are not bounded wording corrections.

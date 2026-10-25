@@ -1,6 +1,46 @@
-# The foundation: the participant, the course and the move, the event, and where state is kept (FOUNDATION1, proposed, round 3, 2026-10-25)
+# The foundation: the participant, the course and the move, the event, and where state is kept (FOUNDATION1, round 4, 2026-10-25: Part A for acceptance, Part B proposed)
 
-**Standing:** proposed with D212, round 3 under D191, written from main at `2a08bde4a`, whose `src/` is round 2's `29a066182` unchanged.
+**Standing:** round 4 under D191, with D212, written from main at `e8f1aed4f`, whose `src/` is round 3's `68a396c65` but for one test
+(`BrainstormBoundsTests.cs`). **Part A is ready for both readers' check; Part B stays proposed; nothing is built.** Both makers read round 3
+at `68a396c65` (`docs/2026-10-25-foundation-reads.md`): the independent Opus reader as a foundation, 16 findings, 2 blocking, accept after
+named changes; Codex, 17 findings, 11 blocking, another round, naming authority, cross-store delivery, effect fencing and the downgrade as
+protocol decisions rather than wording. Round 4 answers every finding by number in §16, each taken or disputed with the code line the steward
+checked, the stricter taken where the two overlap, and records the steward's two calls on both readers' reads: a role is **角色** in both its
+shapes (§6), and the design is split for acceptance.
+
+**The acceptance line (the steward's call, round 4).** Two rounds of Codex's reads have found protocol edges as fast as earlier ones closed,
+every one of them in the parts that change a protocol or rehome authority and none in the parts that only reorganise. So the design is
+accepted in two parts, each by both makers' reads:
+
+- **Part A**, accepted once both readers find nothing blocking in it: rows **a-i** (one account rule, `LineAccount`, over LIMITSWITCH1 and
+  LIMITSWITCH2 as built), **b** (a word keeps its identity wherever it is held), **c** (the participant's `work` read once), **mod-0** (the
+  structure gate), **mod-i to mod-xxi** with their cuts (the driver's folders moved one subdomain a row, no behaviour changed; the act
+  vocabulary's move, row w-0, excepted) and **u** (the names); and the text they stand on: §0, §1 as the comparison, §2.1 and §2.2, §3.2's
+  rule as LIMITSWITCH1 and LIMITSWITCH2 built it, §6, and §14 but its *Owns* column, which names Part B's tables. Each row changes no behaviour
+  or only reorganises; the one thing a person sees change is a partner drawn as a partner (row c), which D203 point 1 (accepted 2026-10-23)
+  decided and the page contradicts today (`Web/work/identity.ts:79`), so Part A asks no new decision of behaviour.
+- **Part B**, proposed and read in rounds of its own, its rows waiting: everything that changes a protocol or rehomes authority (the move
+  record and its claim and fences, §3.3 and §13.4; the open and the words' delivery and settlement across the two stores, §3.4; the journal and
+  the news, §4; the desktop store and its families, above all the authority-bearing ones marked ⚖, §13; the role catalogue's authority, §2.5
+  and §2.7; the downgrade table, §13.5), and with them every row that changes behaviour, each standing on one of those contracts or ordered
+  among them: a-ii, a-iii, p, d-i, d-ii, e, f-i to f-vi, g, h, i, o, j, w-0, w, x, y-i, y-ii, k, l-i to l-v, m-i to m-v, n, q, r, s, t, v and
+  z-i to z-xiv. The namespace rows (§14.6), which change the machine log's `type` field, are in neither part: they come last, once every
+  subdomain's edges point down, as D166 point 4 orders, and are designed then.
+
+**Why each Part A row stands on nothing in Part B.** *a-i*: `LineAccount` is pure, written beside `ResumeAccount` with the roster that reads it
+(both Agents' in §14.2), and reproduces the answers LIMITSWITCH1 and LIMITSWITCH2 give as built; it reads no recorded account pick (a-ii's, on a
+binding in the store), no settled selection (a-iii's, §2.4), no move record and no store. Round 3 wrote it in Course's folder, which the roster
+cannot name (O3-8), and had a picked conversation keep its own account where LIMITSWITCH2 walks it; both are corrected. *b*: the held word's
+identity rides in `held-words.json` additively and the record path and the headless fallback pass the key, which the say door answers by its
+waiting word as today (`Core/Sessions/SessionLedger.cs:956`), never by a settlement row (§3.4, Part B). *c*: the work is read from the marks
+every record carries, by one rule twinned in the service and the driver; the `Participant` type reads its other fields from today's stores (the
+binding from `<s>.harness.json`, the role from `actor`), its `Authority` left unread until row t. Round 3's census C, which compared `actor` with
+the catalogue's revision a start kept on its store binding, leaned on rows w, x and z-iii, and moves to row x. *mod-0 to mod-xxi*: the gate and the
+folder moves change no code path, every namespace staying `Daoris.Driver` (D166 point 4); the Roles subdomain moves only the driver's own role
+files, since the appointments, the act table and the act judge are the shell's library's (O3-6), and moving the act vocabulary down is row w-0,
+Part B's; the Store subdomain moves today's file primitives, `DesktopStore` being row z-i's. *u*: the glossary gains *role* as 角色 and *actor*'s
+entry says it is a working role's staffing; no page string changes, since every shipped string already says 角色 for both shapes.
+
 Round 1 was the synthesis of the three sealed proposals, `docs/2026-10-25-foundation-proposal-claude.md` (Claude's),
 `docs/2026-10-25-foundation-proposal-codex.md` (Codex's) and `docs/2026-10-25-foundation-proposal-opus.md` (the independent Opus
 reader's), each written from the brief `docs/2026-10-25-foundation-brief.md` and the survey `docs/2026-10-25-foundation-survey.md` alone,
@@ -15,10 +55,11 @@ round was committed (§5.1); carries the owner's direction that configuration an
 SQLite, with the steward's line between the two (the brief §9), as a fourth area, **where state is kept** (§13); and carries the owner's
 direction that the driver be analyzed into its subdomains (the brief §10) as the driver's module map (§14). §13 and §14 follow §12 so that
 every section number the reads cite stays where it was. It changes a foundation in every sense D191's amendment of 2026-10-20 names, and
-some of its rows grant or refuse authority and delete records, so by D191's note of 2026-10-24 it is not accepted on one maker's read: both
-makers read round 3 before anything is accepted. Nothing here is built, spends an account, signs in, publishes or deletes.
+some of its rows grant or refuse authority and delete records, so by D191's note of 2026-10-24 no part of it is accepted on one maker's read:
+Part A is accepted on both readers' check of round 4, and Part B only after both readers find nothing blocking in it in a later round. Nothing
+here is built, spends an account, signs in, publishes or deletes.
 
-Read for it: the brief (its §8, §9 and §10 amendments included), the survey and the three proposals whole; the reads of rounds 1 and 2; D139 and its design (`docs/2026-10-03-update-when-idle-design.md`) for the update's rollback; D137, D155, D163,
+Read for it: the brief (its §8, §9 and §10 amendments included), the survey and the three proposals whole; the reads of rounds 1 to 3; D139 and its design (`docs/2026-10-03-update-when-idle-design.md`) for the update's rollback; D137, D155, D163,
 D167, D173, D182, D188, D191, D193, D197, D203, D205, D206, D208, D209 and D210 at the points this cites; D119 and D120 for the plugins,
 whose points' frames are D101's; the in-flight designs EVENTHOOK1 (`docs/2026-10-24-event-hook-design.md`), COWORKVIEW1
 (`docs/2026-10-24-cowork-view-design.md`), SWITCHCTX1 (`docs/2026-10-24-switch-context-design.md`) and AGENTERRORS1 (D210 and its
@@ -32,9 +73,11 @@ written; its merge moves a few lines this cites by up to ten (`ResumeChoice.Wait
 where the brief, the survey or a proposal was wrong, and §12 where round 1 was. `Dnn` is `docs/decisions/Dnn.md`; paths use the
 survey's aliases (`Driver/`, `Modules/`, `Host/`, `Core/`, `Mcp/`, `Http/`, `Web/`), with `Chat/` for `Driver/Conversations/Chat/`,
 `Loop/` for `Driver/Loop/` and `App/` for the desktop's executable as the survey shortens them. *C* is Claude's proposal, *X* Codex's,
-*O* the Opus reader's; *O-n* and *X-n.m* are the findings of round 1's reads, *O2-n* and *X2-n.m* those of round 2's. Round 3's checks were
-made at `2a08bde4a`, and its lines are that commit's; LIMITSWITCH2's merge moves a few of them (eleven files under `src/`, `LimitMove.cs`,
-`ChatGoOn.cs`, `HarnessRoster.cs` and `Driver.cs` among them), and what it built is read from D137's LIMITSWITCH2 note.
+*O* the Opus reader's; *O-n* and *X-n.m* are the findings of round 1's reads, *O2-n* and *X2-n.m* those of round 2's, *O3-n* and *X3-n.m*
+those of round 3's. Round 3's checks were made at `2a08bde4a`, and its lines are that commit's; LIMITSWITCH2's merge moves a few of them
+(eleven files under `src/`, `LimitMove.cs`, `ChatGoOn.cs`, `HarnessRoster.cs` and `Driver.cs` among them), and what it built is read from D137's
+LIMITSWITCH2 note. Round 4's checks of round 3's reads were made at `e8f1aed4f`, whose `src/` is `68a396c65`'s where both reads were made, and a
+line cited in a round-4 change is that commit's.
 
 ## 0. What this rests on
 
@@ -84,7 +127,7 @@ builds the account rule.
 | C §2.3: *the loop that holds the home's lease reads every move record at its come-up* | A shell comes up and runs its conversations before and without the lease: `ComeUpAsync` (`Modules/Loop/DriverLoop.cs:777`), whose chat take-up runs at `:1224`, comes before `HoldHomeAsync` (`:841`), and *the host, the page, the conversations* carry on while a headless loop holds it (`:838-840`). A conversation's move is the shell's chat runner's to recover | X |
 | O §4.2: the record keeps no account pick, so D206 point 5's *a pick waits for its own account* is the code's choice against the text | The record keeps no account pick (`ResumeAccount.cs:15-17`), and `choice: pick` stands for both a pick of an agent and an account and the chip's agent-only pick (the actors design §3.5(d); `START_CHAT`'s `profile` is optional, `Modules/Bridge/Routes/ConversationRoutes.cs:46-58`), so no reader can tell which was picked. The live limit move moves a picked conversation among its agent's accounts (`LimitMove.cs:85-104`, its one pick rule at `:447` refusing another agent) | O on the code; X that provenance is missing |
 | LIMITSWITCH2 as filed on LIMITSWITCH1's branch: a conversation goes on *through `BriefedMove`* on another ready account | `BriefedMove` opens on its record's own account as a pick (`Chat/BriefedMove.cs:133`), refused exactly while it cools; the ended limit move's body walks (`LimitMove.cs:237`) and writes the one durable box a move has (survey §2.5). The filed row's other half, *a pick and Ask Daoris's room keep the own account*, stands, and round 2 keeps it (O-8) | C and O on the door; the filed row on the rest |
-| Brief §4: *Fabric, actor (角色), role … already have homes* | *Role* has no glossary entry, and Settings words the appointed roles 角色 (`Web/locales/zh/settings.daoris.json:108`), the glossary's word for *actor* (`glossary.json:475`; `zh/settings.ai.json:28`). Round 1 read that as two concepts sharing one Chinese word; round 2 took the owner's direction on roles to make one word right, 角色; round 3, the steward's choice, gives the role 职务 and leaves 角色 the actor's (§6) | O on the fact; the steward on the remedy |
+| Brief §4: *Fabric, actor (角色), role … already have homes* | *Role* has no glossary entry, and Settings words the appointed roles 角色 (`Web/locales/zh/settings.daoris.json:108`), the glossary's word for *actor* (`glossary.json:475`; `zh/settings.ai.json:28`). Round 1 read that as two concepts sharing one Chinese word; round 2 took the owner's direction on roles to make one word right, 角色; round 3 gave the role 职务 and left 角色 the actor's; round 4, the steward's decision on both readers' reads, says 角色 for a role in both shapes, since the role is one concept and every shipped string already says 角色 for it (§6) | O on the fact; the steward on the remedy |
 | Brief §5 Q16: *line* | The glossary's *line* is the branch work lands on, 主线 (`glossary.json:530`); D167's line of work is the *session*, 会话 (`:482`) | X and O |
 | Survey §1.3 row 17: the lineage *read by nothing* | Holds; and `ChildLineage.Read` folds an unreadable file as no children (`Driver/Sessions/ChildLineage.cs:134-137`), which a reader must not take as *nobody* (COWORKVIEW1 row a's rule 9 holds it) | X |
 
@@ -108,26 +151,26 @@ cell marked *(round 2)* changed in this round, by a read's finding or by the own
 
 | Q | C | X | O | Chosen |
 |---|---|---|---|---|
-| 1 **The participant** | A read over the stores; typed ids; its kind the stored `actor`, derived for records from before | A read contract with subject variants, relations, visibility and provenance; bindings issued by the service in new local-only tables | A type twinned in the service and the driver; its role read from the marks (D203 point 1), `actor` only provenance checked against it | **A read, never a store (all). Its work, a capability, read from the marks by one rule in the service, twinned in the driver (O), named `work` because the wire's `kind` already says driven or chat (round 2, O-5, X-2.1); its role the configured role it started under, `actor`'s value and D205's provenance, held to its work by a census (O, X; round 2); X's visibility field; ids Daoris already issues (C, O); its binding a row of the desktop store, today's `<s>.harness.json` moved there and the role it started under beside it (round 3)** (§2.1, §2.2, §13.3) |
+| 1 **The participant** | A read over the stores; typed ids; its kind the stored `actor`, derived for records from before | A read contract with subject variants, relations, visibility and provenance; bindings issued by the service in new local-only tables | A type twinned in the service and the driver; its role read from the marks (D203 point 1), `actor` only provenance checked against it | **A read, never a store (all). Its work, a capability, read from the marks by one rule in the service, twinned in the driver (O), named `work` because the wire's `kind` already says driven or chat (round 2, O-5, X-2.1); its role the configured role it started under, `actor`'s value and D205's provenance, held to its work by a census (O, X; round 2); X's visibility field; ids Daoris already issues (C, O); its binding today's `<s>.harness.json`, moved into the desktop store with the role it started under beside it by Part B's row z-iii (round 3; round 4 sets it aside at its import, O3-6)** (§2.1, §2.2, §13.3) |
 | 2 **Rule and admission** | One `KindRule` {mode, agents, minutes, atOnce} over today's keys; three admission tables, twinned | One resolved policy with typed requirements; a staged admission with closed refusal codes; unknown named subjects read only | One `KindRule` per kind; four layers (start, call, act, contain), a table each keyed by role, failing closed; the brainstorm's `off` honoured | **O's four layers, a table each, keyed by capability (the owner's direction, round 2); X's policy shape (common fields and typed requirements per work) and closed refusal codes; failing closed for a named subject (all), a brainstorm voice placed by its scope first (round 2, X-2.2); the brainstorm's mode given no new behaviour (C, X); containment as D201 has it, a piece failing closed (round 2, X-1.1)** (§2.3) |
 | 3 **The choice** | One `StartPlan`; one walk; one re-ask | One resolver whose answer is a settled selection with its reservation, uncounted until committed | One `ActorWalk`; one re-ask; every start through it | **One start plan whose answer is settled and carried to the open (X), its reservation taken at the selection under the roster's gate and only probes uncounted (round 2, O-18); one walk, one pass-code set and one re-ask (all); a start finds its role by its work and place, and a continuation takes its record's role and asked choice (all; round 2)** (§2.4) |
-| 4 **Roles and actors** | A role held by a participant; a holder plays an actor once SUPERVISOR1c runs; one act door late | The same; appointment authority stays in `StandingConfirmation`; no door unified | Two axes of one participant; one act door, both makers | **One configured record, the role (the owner's direction, round 2): D205's actors are roles always on that take work; the supervisor and the steward are roles filled by appointment that hold acts; in two exclusive shapes, working and appointed (round 3, O2-2); an act admitted only within the code's table, the appointment's grant and the role's configuration, the grant raised only at the next *Appoint* (round 3, O2-1, X2-2.2); the seed read per id (round 3, O2-6, X2-2.3); `actor` keeping the seeded id (round 3, O2-3); a holder fills an appointed role, its authority the appointment's, proven per act; C's and O's one act door and proof, a late row both makers read** (§2.5, §2.7) |
+| 4 **Roles and actors** | A role held by a participant; a holder plays an actor once SUPERVISOR1c runs; one act door late | The same; appointment authority stays in `StandingConfirmation`; no door unified | Two axes of one participant; one act door, both makers | **One configured record, the role (the owner's direction, round 2): D205's actors are roles always on that take work; the supervisor and the steward are roles filled by appointment that hold acts; in two exclusive shapes, working and appointed (round 3, O2-2); an act admitted only within the code's table, the appointment's grant and the role's configuration, the grant raised only at the next *Appoint* (round 3, O2-1, X2-2.2), every narrowing lowering the live grant itself so no later edit restores it, and the act checked again at its run (round 4, X3-2.2), the desk's decline outside every grant as today (round 4, O3-7); the act vocabulary moved down into the driver, the appointments and the act judge staying the shell's (round 4, O3-6); the seed read per id (round 3, O2-6, X2-2.3); `actor` keeping the seeded id (round 3, O2-3); a holder fills an appointed role, its authority the appointment's, proven per act; C's and O's one act door and proof, a late row both makers read** (§2.5, §2.7) |
 | 5 **Native subagents** | A participant bound to its part by lineage; first reader COWORKVIEW1 row a; C2a placing calls | The same; unreadable never *no children* | The same; COWORKVIEW1's `start`/`end` lines as its generation | **All three; X's three outcomes of a read** (§2.6) |
-| 6 **One decision** | `Course.Decide` → Resume, Move, Wait, Hold, Never | `MovementPlanner.Decide` with preconditions and intended effects | `LineNext.Decide` → Stay (resume, retry, hold) or Move with when, where, how and which words | **One pure `Course.Decide`: C's five answers and a sixth, `Start`, for a new line with no `from` (round 2, X-2.2's start-from, X-3.2); O's three axes on a move, X's preconditions, the words' state among them (round 2, O-13); the answers-alone hold and the boundary among the facts (round 2, X-3.1); a standing move makes its old part's own go-on `Never` (round 2, O-2); the retry stays inside the run (all); the carry a move's *how* (O)** (§3.1) |
+| 6 **One decision** | `Course.Decide` → Resume, Move, Wait, Hold, Never | `MovementPlanner.Decide` with preconditions and intended effects | `LineNext.Decide` → Stay (resume, retry, hold) or Move with when, where, how and which words | **One pure `LineCourse.Decide` (round 4's name, so no type shares its subdomain's namespace, O3-9): C's five answers and a sixth, `Start`, for a new line with no `from` (round 2, X-2.2's start-from, X-3.2); O's three axes on a move, X's preconditions, the words' state among them (round 2, O-13); the answers-alone hold and the boundary among the facts (round 2, X-3.1); a standing move makes its old part's own go-on `Never` (round 2, O-2); the retry stays inside the run (all); the carry a move's *how* (O)** (§3.1) |
 | 7 **The account** | Own for a resume; go on now where ready; wait for the earliest reset of the accounts it may take; a pick waits | The same, with ineligible accounts adding no reset, and an account pick told from an agent pick by recorded provenance | The same; D206 point 5 amended to *a pick of an agent*, by the owner | **The rule once, read by every path (all); go on now where the own account cools, for a driven record, a conversation and a closed quest's session, within LIMITSWITCH1's decision, Ask Daoris and the other holds left as today until each is decided (round 2, O-1); the earliest reset over exactly the accounts the line may take and the own account where it may resume, ineligible ones adding none, and a hold naming the repair where none has a reset (C, X; round 2, X-3.3; round 3, O2-4); the closed quest's session through the ended move, as LIMITSWITCH2 built it (round 3, O2-5); a recorded account pick waits, an agent pick walks its agent's accounts, a record with no provenance is an agent pick (X); a hand-over press's named account a recorded account pick (round 2, O-9); the briefed move takes the walk (O); one settled selection (X)** (§3.2) |
-| 8 **The move record** | A home file per move, the driver library's; recovered by the lease holder | Service-owned local tables, claimed by entry and generation; a destination allocated idempotently; a record even for a same-conversation resume | A home file per move, the driver library's; one come-up stage | **A row of the desktop store, the driver library's (round 3, the brief §9), claimed by the holder of its executor's role and fenced at every effect by a mark written before it, a begun effect never repeated (round 3, X2-3.1); recovered by the executor of its kind, a conversation's by the shell's chat runner (X), before the come-up's sweep (round 2, O-2); the destination opened atomically under the move's key in the service, the old part's waiting words moved in the same step (round 3); an older host's lost open held and never searched for (round 2, X-3.5); no old box written beside it, an older build recovering from the ledger alone (round 3, X2-1.1); a resume writes none** (§3.3, §13.4) |
-| 9 **Words across a move** | Words follow the line's head, judged at the say door; delivered after the open; none held in memory | A word's whole identity at every keep; mandatory acknowledged attempts; receipts after a word leaves `said` | Kept for a winding-up record; one receiver; delivery by id and key; one carry predicate | **All composed, in rows: X's identity first (row b); C's head at the say door, one service head across kinds (row d; round 2, O-6, X-3.4); O's keep for a winding-up record, after the course reads move records (row o; round 2, O-2); X's attempts, dispositions and receipts before the move record (row p; round 2, O-11, X-3.7, X-5.1), each disposition per attempt (round 3, X2-3.2), the receipts in the desktop store by line and key (round 3, X2-3.3); a moved word keeping its producer key beside its transfer id (round 2, X-3.6), moved by the open itself (round 3); one carry predicate (all)** (§3.4) |
+| 8 **The move record** | A home file per move, the driver library's; recovered by the lease holder | Service-owned local tables, claimed by entry and generation; a destination allocated idempotently; a record even for a same-conversation resume | A home file per move, the driver library's; one come-up stage | **A row of the desktop store, the driver library's (round 3, the brief §9), claimed by the process run that executes it and fenced at every effect by a mark written before it, a begun effect never repeated (round 3, X2-3.1); taken over only from a run dead by the lease's own liveness test, never because a role passed, so the claim holds through every effect its live run makes (round 4, O3-1, X3-1.1, X3-3.1); recovered by the executor of its kind, a conversation's by a shell's chat runner (X), before the come-up's sweep (round 2, O-2); the destination opened atomically under the move's key in the service, which keeps the open's result in a table of its own and moves the old part's waiting words in the same step (round 3; round 4, X3-3.3); an older host's lost open held and never searched for (round 2, X-3.5); no old box written beside it, an older build recovering from the ledger alone, the newer build reconciling the line's head before it delivers in every phase (round 3, X2-1.1; round 4, X3-3.4); a resume writes none** (§3.3, §13.4) |
+| 9 **Words across a move** | Words follow the line's head, judged at the say door; delivered after the open; none held in memory | A word's whole identity at every keep; mandatory acknowledged attempts; receipts after a word leaves `said` | Kept for a winding-up record; one receiver; delivery by id and key; one carry predicate | **All composed, in rows: X's identity first (row b); C's head at the say door, one service head across kinds (row d; round 2, O-6, X-3.4); O's keep for a winding-up record, after the course reads move records (row o; round 2, O-2); X's attempts, dispositions and receipts before the move record (row p; round 2, O-11, X-3.7, X-5.1), each disposition per attempt (round 3, X2-3.2), a word's settlement by line and key (round 3, X2-3.3) kept by the service in the statement that takes it off `said` and read inside every keeping door's own step, the say door's and the helper's and partner's desks' alike (round 4, X3-3.2, O3-5, X3-1.2); a moved word keeping its producer key beside its transfer id (round 2, X-3.6), moved by the open itself (round 3); one carry predicate (all)** (§3.4) |
 | 10 **The errors** | D210's kinds the course's input; a chat's limit by code | Typed outcomes; the survey's retry row stale | The same | **All three** (§3.5) |
 | 11 **The event** | Record events minted by trigger into a journal; machine events by the lease's loop | The transition's owner mints at commit, through a transactional outbox; three orders kept apart | A driver-side hub of judged deltas, minted by the judge that diffs the records; memory only | **Record events by trigger at the commit (C's mechanism is X's outbox, and the one an older connector also mints through), raw transitions guarded by what changed and coded in .NET at projection (round 2, O-4, X-4.1), each captured with an allow-listed snapshot of the facts its coding needs, bounded per row (round 3, X2-4.1, X2-4.2), with a retention contract (round 2, X-4.2); machine events by each working process's hub at the judgement that owns the fact (O), the lease's loop alone telling plugins and outside readers; every process reading the journal from its come-up (round 2, O-3); X's three orders** (§4.1) |
 | 12 **The vocabulary** | `EventCodes` beside `NoteCodes`; an end's reason and cause | One registry with payloads, privacy and rendering; subject-specific codes; *answered* split | `ChangeGrammar` from EVENTHOOK1's grammar; one end class | **X's registry and subject-specific codes, extending EVENTHOOK1's grammar (O); an end's note code and one class, judged in .NET (C, O; round 2); EVENTHOOK1's published meanings kept by its adapter (X)** (§4.2) |
 | 13 **The readers** | A table; a Confirm ungated as a wait | A table; a teammate's mirror gets nothing new | A table; a new `DAORIS.CHANGE` frame | **The three tables are one; no new frame (rejects O's)** (§4.4) |
-| 14 **Durability** | The journal durable and bounded; news told once by a durable said-set | A bounded outbox with an earliest cursor; a notice baseline is no event baseline | A change is a wake in memory; the first read a baseline | **C's journal and said-set, with X's floor and no balloon replayed; told at most once, the said-set claimed before the balloon, a cursor per teller (round 2, X-4.3, O-12); news keyed by its occurrence, the said-set's horizon one with the news a teller may tell, both kept in the desktop store (round 3, X2-4.3)** (§4.5) |
-| 15 **Records** | One owner each; `ledger_events` new | One owner per fact; new tables for bindings, moves, receipts | One owner each; one `<s>.move.json` | **§5.2 and §13: one owner per record; the journal in the service's store; the moves, the words in transfer, the receipts, the bindings, the cursors, the said-set, the role catalogue and every setting in one desktop store (round 3, the brief §9); one machine-local field on the service's record (`opens`), none on the wire** |
-| 16 **The names** | *role* 职务 in prose; *move* 接续; *Fabric* 协作织网 | *role* 任命职责; *move* 转接; *Fabric* 协作底座 | *role* 职务 on the page, retiring its 角色 | **The role 职务 on the page, the steward's choice of round 3, restoring round 1's word and withdrawing round 2's 角色 for both, *actor* keeping 角色 where D205's screens say it; the subdomain *Roles* and the configured set the *role catalogue*, *the company* D193's narrative alone (round 3); no Chinese for Fabric, participant, capability, move or event, which never reach the page; *work* for a participant's capability, D203's helper, partner and reviewer among them (round 2)** (§6) |
-| 17 **The order** | 1a the account rule; 1b words at the say door; 1c the kind | 1 a word's identity; 2 the planner beside; 3 LIMITSWITCH | F1 the account rule; F2 and F3 the concepts named | **The account rule first, split in three (round 2, O-10), a word's identity second (X), the participant's work third (C, O); attempts and receipts before the move record (round 2, X-5.1); the role catalogue's rows after the start plan (round 2); the store and each of its families a row, the code moved subdomain by subdomain (round 3)** (§10, §13.6, §14) |
+| 14 **Durability** | The journal durable and bounded; news told once by a durable said-set | A bounded outbox with an earliest cursor; a notice baseline is no event baseline | A change is a wake in memory; the first read a baseline | **C's journal and said-set, with X's floor and no balloon replayed; told at most once, the said-set claimed before the balloon, a cursor per teller (round 2, X-4.3, O-12); news keyed by its occurrence, the said-set's horizon one with the news a teller may tell, both kept in the desktop store (round 3, X2-4.3); one canonical identity per occurrence, a record's transition number the service keeps by trigger, read alike by the journal's path and a reconciliation's (round 4, X3-3.6)** (§4.5) |
+| 15 **Records** | One owner each; `ledger_events` new | One owner per fact; new tables for bindings, moves, receipts | One owner each; one `<s>.move.json` | **§5.2 and §13: one owner per record; the journal in the service's store; the moves, the words in transfer, the bindings, the cursors, the said-set, the role catalogue and every setting in one desktop store (round 3, the brief §9); the open's result, a word's settlement and a record's transition number in three new tables of the service's, none on the record and none on the wire (round 4, X3-3.2, X3-3.3, X3-3.6)** |
+| 16 **The names** | *role* 职务 in prose; *move* 接续; *Fabric* 协作织网 | *role* 任命职责; *move* 转接; *Fabric* 协作底座 | *role* 职务 on the page, retiring its 角色 | **The role 角色 on the page in both its shapes, 任命的角色 where the appointed one must be said, the steward's decision of round 4 on both readers' reads, withdrawing round 3's 职务, since a role is one concept in two shapes and every shipped string already says 角色 for it (O3-15; X3-5.1 on the concept); *actor* a code and prose word for a working role's staffing; the subdomain *Roles* and the configured set the *role catalogue*, *the company* D193's narrative alone (round 3); no Chinese for Fabric, participant, capability, move or event, which never reach the page; *work* for a participant's capability, D203's helper, partner and reviewer among them (round 2)** (§6) |
+| 17 **The order** | 1a the account rule; 1b words at the say door; 1c the kind | 1 a word's identity; 2 the planner beside; 3 LIMITSWITCH | F1 the account rule; F2 and F3 the concepts named | **The account rule first, split in three (round 2, O-10), a word's identity second (X), the participant's work third (C, O); attempts and receipts before the move record (round 2, X-5.1); the role catalogue's rows after the start plan (round 2); the store and each of its families a row, the code moved subdomain by subdomain (round 3); the keyed open its own row before the words move (round 4, O3-12, X3-6.1), one subdomain a move (round 4, X3-6.2); Part A, the rows that only reorganise, accepted apart from Part B (round 4)** (§10, §13.6, §14) |
 | 18 **The owner's** | Nothing | Nothing new | D206 point 5's amendment | **Two open questions, each its own decision, neither built until answered: Ask Daoris going on elsewhere outside a limit, and a conversation carried on where its own account is signed out, refused or gone (round 2, O-1); and one reading the owner may overrule, a closed quest's cooling session within LIMITSWITCH1's decision (round 3, O2-7)** (§8) |
-| S **Where state is kept** (the brief §9; round 3) | — | Service-owned local tables for moves, bindings and receipts | — | **The steward's line: one desktop SQLite store, machine-local and never synced, owned by the driver library, holding the Fabric's records, the role catalogue, every setting, the machine-local state more than one process writes and every record this design adds; the service keeps its own store; JSON kept for others' formats, tracked records, manifests and files read before the store opens, streams, and `driver.json` as export and import alone** (§13) |
-| M **The driver's subdomains** (the brief §10; round 3) | — | — | — | **Twenty-one subdomains in one order, bottom to top, each naming only those below it: Platform, Store, Settings, Service, Install, Instance, Events, Knowledge, Agents, Workplace, Roles, Participants, Context, Course, Work orders, Review, Plugins, Workflows, Setup, Help and Loop; folders, namespaces and a census in `StructureTests` rather than assemblies; the code moved one subdomain per row, bottom up, no behaviour changed; the steward's decision by the owner's leave, *Roles* the owner's name** (§14) |
+| S **Where state is kept** (the brief §9; round 3) | — | Service-owned local tables for moves, bindings and receipts | — | **The steward's line: one desktop SQLite store, machine-local and never synced, owned by the driver library, holding the Fabric's records, the role catalogue, every setting, the machine-local state more than one process writes and every record this design adds; the driver and the GitDoor taking `Microsoft.Data.Sqlite`, pinned as the service's, their first package (round 4, O3-3); no older build ever reading back a revoked grant, and every family an older build acts on imported only once the start's confirmation is settled (round 4, O3-2, O3-4); the service keeps its own store; JSON kept for others' formats, tracked records, manifests and files read before the store opens, streams, and `driver.json` as export and import alone** (§13) |
+| M **The driver's subdomains** (the brief §10; round 3) | — | — | — | **Twenty-one subdomains in one order, bottom to top, each naming only those below it: Platform, Store, Settings, Service, Install, Instance, Events, Knowledge, Agents, Workplace, Roles, Participants, Context, Course, Work orders, Review, Plugins, Workflows, Setup, Help and Loop; folders, namespaces and a census in `StructureTests` rather than assemblies, the census reading every type reference rather than `using` lines (round 4, X3-4.1); the code moved one subdomain per row, bottom up, no behaviour changed, folders first and namespaces last as D166 point 4 orders (round 4, O3-10); the account rule with the roster in Agents, the attention policy and the session groups in Work orders (round 4, O3-8); the steward's decision by the owner's leave, *Roles* the owner's name** (§14) |
 
 ### 1.1 What each choice rejects
 
@@ -146,6 +189,8 @@ cell marked *(round 2)* changed in this round, by a read's finding or by the own
 | 4 | One flat role record holding work and authority alike (round 2's) | It would seat D208 point 2's dedicated holder in work orders and bypass each act's offered flag and scope kind (O2-2; X2-2.2); two exclusive shapes, the judge refusing a mixture |
 | 4 | An added role's id in `actor` (round 2's) | Every continuation reads `actor` into a run that throws on an id it does not know, after the harness started (`ActorRun.cs:176-177`; `Driver.cs:3651`, `:3666`), in every build of the rollback window too (O2-3); the binding keeps the added role, `actor` the seeded id |
 | 4 | A role's authority read live from configuration (round 2's) | An edit by any writer would widen a holder already appointed without the owner's press (`StandingConfirmation.cs:1273-1279`; O2-1, X2-2.2); the act is admitted within the appointment's grant, which only the next *Appoint* raises |
+| 4 | A narrowing applied only by intersecting the role's configuration at each act (round 3's) | Appoint with `answer` and `defer`, narrow the role to `answer`, restore `defer`: the intersection admits `defer` again with no *Appoint again* (X3-2.2); a narrowing lowers the live appointment's grant itself, in the standing confirmation's one mutation step, and nothing but *Appoint* raises it |
+| 4 | Individually ticked acts at *Appoint* (round 3's wording) | Today's *Appoint* grants the acts this build offers its role, snapshotted (`Modules/Platform/StandingConfirmation.cs:860`), and the steward's set-up tick apart (`:861`); the request names no acts (`:247`) (X3-1.3). The grant is that snapshot; a choice of acts at *Appoint* would be a change of D208's window, which no row proposes |
 | 4 | A role widening what its work may call, or holding an act that is the owner's | Admission is the capability's, in code; an owner's act is never a role's (D208 points 1 and 6; D209 point 3's *everything else is never a role's act*) |
 | 4 | A role narrowing its work's doors (round 2's) | No table read it: admission reads the work, so a narrowing bound only through the handed rules, where the adapter takes settings (O2-8; X2-2.1); a role carries no doors until a row gives the call layer the role, with its reason |
 | 6 | One loop for driven lines and conversations; the decision inside each executor | A rewrite of both loops at once; the disagreement is in the decision, and a pure judge both call removes it without moving an executor (all three) |
@@ -155,14 +200,16 @@ cell marked *(round 2)* changed in this round, by a read's finding or by the own
 | 7 | C's *a pick waits for its own account* as written | The record cannot tell an account pick from an agent pick (§0.2), so waiting for every pick pins agent-only picks D205 §3.5(d) lets walk, and moving every pick moves an account the person named |
 | 7 | O's amendment of D206 point 5 to *a pick of an agent*, asked of the owner | An account the person named is a constraint D205 §3.5(d) keeps; once it is recorded the rule reads it, and the owner's LIMITSWITCH1 decision already chose another ready account over a wait for every other case, so nothing new is asked |
 | 7 | A wait with a reset manufactured where no account the line may take has one | Today `Unready` keeps a non-cooling refusal in exactly that case (`HarnessRoster.cs:1732`); a promised automatic resumption there would never come (X-3.3) |
-| 8 | X's service-owned move tables | One executor per kind writes and takes up a move (a conversation's the shell's chat runner, a driven line's the look), both in processes that open the desktop store, and service tables would give a desktop record a second owner reached only by routes. X's transactional needs are met where the move lives (round 3): the move's claim, its words in transfer and their receipts in one desktop transaction, and the destination opened once by the service's atomic open under the move's key, which moves the old part's words in the same step (§3.3, §13.4). X keeps the move's execution in the driver too (its proposal §*Durable movement*); the disagreement was where the move's persistence lives (X-6.1) |
+| 8 | X's service-owned move tables | One executor per kind writes and takes up a move (a conversation's the shell's chat runner, a driven line's the look), both in processes that open the desktop store, and service tables would give a desktop record a second owner reached only by routes. X's transactional needs are met where each fact lives (round 3; round 4): the move's claim and its words in transfer in one desktop transaction, a word's settlement in the service's statement that takes it, and the destination opened once by the service's atomic open under the move's key, which moves the old part's words in the same step (§3.3, §13.4). X keeps the move's execution in the driver too (its proposal §*Durable movement*); the disagreement was where the move's persistence lives (X-6.1) |
 | 8 | A home file per move with a compare-and-replace claim (round 2's) | A read, a compare and a rename can interleave across processes (O2-12), and a guarded write fences no spawn or prompt made between two writes (X2-3.1); a row of the store, written under its write lock with a mark before every effect, fences both |
 | 8 | Old boxes written beside the move record for the rollback window (round 2's) | Two recovery authorities: the old limit recovery delivers from its box and the hand-over's take clears its box whatever happened (`LimitMove.cs:352-379`; `HandOver.cs:294`), and a producer key dedupes only while its word waits (`SessionLedger.cs:956`), so the two builds do not dedupe against each other (X2-1.1; O2-14); no box is written, and an older build recovers from the ledger alone (§13.5) |
+| 8 | A move taken over by its executor role's current holder (round 3's) | No such holder exists to read: a `--share` loop runs driven lines beside the instance holding nothing, the two racing for the same quests (`Host/Program.cs:869-875`, `:890-895`), and the window's guard is one instance per install (`App/Program.cs:368`) while the host's start claim refuses no second launch (`Modules/Loop/HostSupervisor.cs:478-486`), so neither role has one holder (O3-1, X3-1.1); and a run that lost its role between its mark and its effect would make the effect with no next mark to refuse it (X3-3.1). A move is taken over only from a run its process no longer lives for, by the lease's own test (§3.3) |
 | 8 | C's recovery by the lease holder | A conversation's shell runs without the lease (§0.2) |
 | 8 | A move record for a same-conversation resume (X) | No word changes record in a resume; the dispatcher's keep, attempt and take already own it |
 | 8 | Round 1's *an older host's open found by its `from` and its moment* | Successors are not unique by `from` (`Sessions.cs:998`), so the search can find another part; against an older host a lost open is held for the person (X-3.5) |
 | 9 | O's receiver judged in the driver from the move record | The service's say door cannot read a driver's file, and a judgement made outside its exclusive step leaves the race LIMITWORD1 and HANDWORDS1-i came from; the head judged inside that step closes it |
 | 9 | A moved word kept under the move's key alone (round 1's) | The service answers a producer's retry only by the addressed record's `SaidWord.Key` (`SessionLedger.cs:956`), so a retry at the new head would keep a second word; the producer key stays the word's, the transfer id beside it (X-3.6) |
+| 9 | A word's receipt in the desktop store, read by the client before it says (round 3's) | A retry can read no receipt, pause, and reach the say door after another dispatcher wrote the receipt and the service took the word, so the door finds no waiting key (`SessionLedger.cs:956`) and keeps a second word (`:965`) (X3-3.2); and the helper's and partner's keyed hands never pass the say door (`Core/Sessions/HelperDesk.cs:180-189`; `Core/Sessions/PartnerDesk.cs:136-147`) (O3-5, X3-1.2). The settlement is the service's, written in the statement that takes the word and read in each keeping door's own exclusive step (§3.4 rule 5) |
 | 11 | O's minting by diffing records | A diff of snapshots misses a park answered between two judgements (AUTONOMY1e) and a park made around a restart (`Attention.cs:224`); X's rule, a watcher never manufactures history from its latest snapshot |
 | 11 | Minting in the driver's `ServiceClient` | It misses a connector's write and a second process's; a trigger mints for every writer, an older connector included, as the revisions do |
 | 11 | Codes, classes and kinds judged in SQL (round 1's) | A trigger cannot read the look's conclusions (`Attention.cs:250-252`), and a third copy of the work rule in SQL would be a twin with no test; the trigger writes the raw transition and .NET codes it (O-4) |
@@ -170,10 +217,15 @@ cell marked *(round 2)* changed in this round, by a read's finding or by the own
 | 14 | Changes in memory only (O) | A restart loses a park made just before it, today's defect (`SessionLog.cs:38-41`) |
 | 14 | C's and O's one writer of the notices in the lease's loop | The same shell tells its conversations' news without the lease, and machine events never cross processes but by the relay; one owner taking every teller's facts keeps both (X) |
 | 14 | News told exactly once (round 1's) | Daoris cannot commit its file and the system's balloon together; the said-set is claimed before the balloon, so a crash between loses one announcement, never repeats it (X-4.3) |
+| 14 | A reconciliation's news keyed by the record's `updated` (round 3's) | The journal's path keyed the same end by its position and the reconciliation's by `updated`, so after a trim a second teller could claim the second key for one end; and `updated` moves on a note-only write (`Core/Sessions/Sessions.cs:886-890`) (X3-3.6). Both paths key by the record's transition number (§4.5) |
 | 16 | 协作织网, 协作底座, 接续, 转接, 任命职责 | Fabric, participant, move and event never reach the page (D193's rejection), so they take no Chinese until one does; a move keeps each kind's own words (转交, 继续, 额度用尽); 任命职责 is a phrase where a status has five units |
-| 16 | Round 2's 角色 for every role | The steward's choice of round 3: a role is a position held, whichever of its two shapes, which 职务 names; 角色 stays D205's word for an actor where its screens show staffing (`zh/settings.ai.json:28`), so the page says the configured position and the staffing screen apart |
+| 16 | Round 3's 职务 for the role, beside 角色 for the actor; Codex's 职务 for every role | The steward's decision of round 4, on both readers' reads (O3-15; X3-5.1 on the concept): one record, `Role`, would read under two Chinese words on two screens, round 3's reason separating two screen titles rather than two concepts; every shipped string already says 角色 for both shapes, and 职务 for every role would retire it from seven strings for no concept the page lacks (§6) |
+| 16 | Round 2's 角色 for every role, without the shapes | Taken back in round 4 with the shapes round 3 drew: one word for one concept in two exclusive shapes, the appointed one 任命的角色 where it must be said |
 | 16 | *Company* for the subdomain or the configured set (round 2's) | Too broad a word for a module, and D193's narrative; the subdomain is *Roles* and the set the *role catalogue* (the owner's naming, round 3) |
 | 16 | *Roster*, *Org* and *Team* for it | *Roster* is the accounts' (`HarnessRoster`); *Org* collides with the fixtures' *Org A* and *Org B* and with GitHub's organisations; *Team* is D203's word for a session's co-workers |
+| 16 | `Course.Decide`, `Participants.Of` and `Participants.WorkOf` (round 3's) | The types would share their names with their subdomains' namespaces, `Daoris.Driver.Course` and `Daoris.Driver.Participants`, where a simple name binds to the namespace first, so every caller would qualify it (O3-9); they are `LineCourse.Decide`, `Participant.Of` and `ParticipantWork.Of`, and the shell's `Roles` class takes another name if it ever moves into `Daoris.Driver.Roles` |
+| M | Namespaces renamed as files move (round 3's map) | D166 rejected it and its point 4 orders namespaces last, resource names pinned; a namespace's move also changes the machine log's `type` field, an exception's full name (`Driver/Platform/MachineLog.cs:322`) (O3-10). The folders move first, changing no code path; each subdomain's namespace is a row of its own once its edges point down |
+| M | A gate reading `using` lines as a file's dependencies | A fully qualified reference needs no `using`, and the tree already has them (`Driver/Sessions/SessionsCommand.cs:185`) (X3-4.1); the gate reads every type reference, ordinary, qualified, aliased and static, by the declared-type table it builds from every file, as its Loop rule reads type names today |
 
 ### 1.2 What each proposal got that the others missed
 
@@ -197,23 +249,24 @@ move's *how*, not a trigger, and the workflow press as a word (§3.1). The brief
 
 ### 2.1 The read
 
-`Participant` is a read, never a store. One function, `Participants.Of`, builds it in the driver library from the stores that hold each
-kind of subject (survey §1.5), and its twin in the service, `Participants.WorkOf`, answers the connector and the HTTP host from the ledger
+`Participant` is a read, never a store. One function, `Participant.Of`, builds it in the driver library from the stores that hold each
+kind of subject (survey §1.5), and its work's twin in the service, `ParticipantWork.Of`, answers the connector and the HTTP host from the ledger
 and the brainstorm box alone; the two share no code and read one fixture table (`twins.md`).
 
 | Field | Says | Read from |
 |---|---|---|
 | `Id` | the record's id, unchanged on every wire, so an older driver's spawn names the same caller; for a subject with no record, the identity Daoris already issues it: a brainstorm's scope (`brainstorm-<id>-<turn>`, `Core/Sessions/BrainstormBox.cs:15-26`), a holder's id and generation, a child's part and native id from its lineage | the record; the box; the appointment; `ChildBindings.Fold` |
 | `Work` | the capability it was opened for, one closed code (§2.2, §2.7), or a placement with none: another machine's, a holder, a child | the marks, by one rule; the brainstorm's scope |
-| `Role` | the configured role whose staffing its start walked (§2.7), D205's provenance, with the choice it took | `actor`, `choice`, `asked` (`Sessions.cs:195-204`) |
+| `Role` | the configured role whose staffing its start walked (§2.7), D205's provenance, with the choice it took | `actor`, `choice`, `asked` (`Sessions.cs:195-204`); from row x, the role taken and its revision on the binding first (Part B) |
 | `Serves` | the part it works for: a helper's, a partner's, a reviewer's once D203 point 6 lands; a child's part | `serves`, `piece`, `opinion`; the lineage |
 | `Entry` | its line of work (D167) | `entry` |
-| `Binding` | D173's `RuntimeBinding`: adapter, account by profile name, door, harness version, the kept conversation, the process generation | the record's columns; `<s>.harness.json`; COWORKVIEW1 row a's `start` and `end` lines |
+| `Binding` | D173's `RuntimeBinding`: adapter, account by profile name, door, harness version, the kept conversation, the process generation | the record's columns; `<s>.harness.json` (`HarnessConversations.Read`), the desktop store's `bindings` once row z-iii imports it (Part B); COWORKVIEW1 row a's `start` and `end` lines |
 | `Visibility` | opaque, observed, connected or recoverable (D173 ADR-B; X) | what its harness said, unknown where it said nothing |
-| `Authority` | none, or the acts of the appointed role it holds while the appointment stands (D208, D209); never the owner's | the appointment and its role |
+| `Authority` | none, or the acts of the appointed role it holds while the appointment stands (D208, D209); never the owner's | the appointment and its role, which the shell's library holds (`Modules/Platform/StandingConfirmation.cs`) and the driver cannot name (O3-6): unread until row t, which reads it in the shell |
 
 D173's `Participant` and `RuntimeBinding` (ADR-B) are this type and its `Binding`: ADR-A's *no second Session state* holds, and ADR-B's
-identity exists in code. `WorkUnit` keeps its kinds and reads participants as its executors. The page reads the work as data: the
+identity exists in code. `WorkUnit` keeps its kinds and reads participants as its executors. A holder is placed by the shell, which holds its
+appointment, handing `Participant.Of` the holder's id and generation; the driver never reads the appointment. The page reads the work as data: the
 sessions slice's allow-list gains **`work`**, an additive field beside today's `kind` (driven or chat, `SessionsStateSlice.cs:41`), judged
 in .NET (D182 point 6), answered on loopback only, never on the sync wire, so a teammate's mirror reads as a teammate's session as today.
 A page reading a host that sends no `work` falls back to today's predicates (`identity.ts:70-79`), so an older host draws as it does.
@@ -237,7 +290,8 @@ meeting's turn is no participant until D177's turns start an agent (`DriverMeeti
 | child | its parent's | the lineage, never a record | its identity issued from lineage, never the environment, and read-only (C2a) |
 
 A co-worker is a relation, `Serves`, never a work of its own (D203 point 1). The work and the role agree by a census on every record
-carrying both: the role named by `actor` takes the work the marks say, by the catalogue as it stood at the start (§2.7); where they would
+carrying both (row x's census C, Part B, since it reads the catalogue's revision a start kept on its store binding; row c reads the work
+alone): the role named by `actor` takes the work the marks say, by the catalogue as it stood at the start (§2.7); where they would
 differ the marks decide the work, since the desks write them at the open and a record from before D205 has no actor, and the role says
 only its staffing. *The driver's own session*, which the cap counts, becomes a property of the work (`build`, `design`, `intake`, `help`,
 `partner`, `review`), the set `HoldsSlot` tells today (`Planner.cs:880-885`), judged equal on every case before it moves.
@@ -263,6 +317,8 @@ listed as a rule whose reader is unbuilt.
 | Act | may this holder make this act | the shell's pipe | the act, against the appointed role's authority (§2.7) | the two role doors (row 22, §2.5) | refused (D208's proof) |
 | Contain | how this process is contained | the launcher | the work | unchanged (`AgentStarts.StartAsync`, D201): a piece fails closed; an ordinary start contained where the launcher can and started as today where it cannot (`Driver/Platform/AgentStarts.cs:13`; `Driver/Agents/Consoles/AgentJobs.cs:119`) | as today |
 
+No configuration reaches the containment layer: a role names no launcher kind, and an ordinary start stays contained only where the
+launcher can contain it, so configuring roles never turns today's best effort into a guarantee nor weakens a piece's failing closed (X3-2.1).
 The closed refusal codes are named once and answered alike at every door that judges the same case (X2-2.4): the call layer's `unplaced` (a
 named session with no record), `unread` (its record could not be read), `unknown-tool` (a tool not yet classed) and `forbidden-work` (a tool its
 work may not call); the start layer's are its rule's, and the role catalogue's judge's are §2.7's. The harness's own rules handed at the spawn
@@ -319,9 +375,14 @@ started on a role's staffing grants nothing: the authority is the appointment's,
 The two doors (survey §1.3 row 22: `SUPERVISOR_ANSWER`/`DEFER` with `SupervisorProof.Canonical` against `ROLE_ACT` with `RoleActForm.Bytes`)
 become one act door with one canonical form and one whitespace rule, one reading of *a driven repository*, refusal sentences per role
 (`InstancePipe.cs:1365-1381` says *the supervisor* for both), and one check that the act is within §2.7's three (the code's act table,
-the appointment's grant and the role's configuration as it stands), the appointment's `acts` kept as today's check is (O2-1). The
-supervisor's decisions in files and the steward's acts in memory stay as D208 and D209 chose. It changes an authority's door, so it is
-built only after both makers read it (row t).
+the appointment's grant and the role's configuration as it stands), the appointment's `acts` kept as today's check is (O2-1). The check is
+made twice, at admission and again at the act's run, since an admitted act can wait: today the run checks the owner's marks and the
+appointment's liveness alone (`StandingConfirmation.RunAct`, `Modules/Platform/StandingConfirmation.cs:1300-1311`), and from row t it also
+checks the act against the grant and the role's configuration as they stand at the run, an act a narrowing put outside them cancelled there
+(X3-2.2). The steward's desk decline stays outside every grant, admitted on every steward appointment as today, since it changes nothing of
+Daoris's controls (`:1275-1279`; `Modules/Platform/RoleActs.cs:56-60`) (O3-7). The supervisor's decisions in files and the steward's acts in
+memory stay as D208 and D209 chose. The doors, the appointments, the act judge and the act handlers are the shell's library's, outside the
+driver's map (§14.2). It changes an authority's door, so it is built only after both makers read it (row t).
 
 ### 2.6 Native subagents
 
@@ -340,7 +401,13 @@ company D193 pictures. **The code keeps a closed vocabulary of capabilities; a r
 configured set is the role catalogue**, kept in the desktop store (§13) and owned by the Roles subdomain (§14). *The company* is D193's
 narrative alone, never a name in the code (the owner's naming, round 3).
 
-**The capabilities**, one closed vocabulary in the driver library, `Capabilities`, each with its admission row in each layer of §2.3:
+**The capabilities**, one closed vocabulary in the driver library, `Capabilities`, each with its admission row in each layer of §2.3. The act
+vocabulary lives in the shell's library today, beside the appointments and the act judge (the role list, `Modules/Platform/StandingConfirmation.cs:121-133`;
+the offered flags, `:330`, `:336`; the steward's table, `Modules/Platform/RoleActs.cs:44-65` and `Modules/Bridge/StewardActRows.cs:145-161`), where
+the driver, which references no project, cannot name it (O3-6). Row w-0 moves the vocabulary alone down into `Capabilities` (each role's and act's
+name, its offered flag and its admissible scope kind), read from there by the shell's judge, tables and handlers, which stay where they are with
+the appointments' persistence; that is the cut §14.3 names, a type moved to its one owner, and since it rehomes what authority reads it is Part B's:
+
 
 | Kind | Codes | What the code fixes for each |
 |---|---|---|
@@ -370,8 +437,11 @@ machine-wide, taking the work of its name, its staffing D205's actor's), the Sup
 `defer`) and the Steward (`appointed`, the machine, the steward's acts). No role takes `design`, so design work falls back to Build. The
 catalogue reads **each id** in one of four states: **absent**, the seed's; **set**, its record; **removed**, a record saying so; and
 **unreadable**, a record that does not read, kept as its error and holding the starts that read it, as `ActorUnreadableException` holds an
-actor's today, never read as the seed. So the person's first change writes that id's record alone and every other seeded role stays the
-seed's; an empty or absent catalogue is the seed whole; *Back to the default* deletes a seeded id's record. The judge refuses removing the
+actor's today, never read as the seed. `RoleCatalog.Read` judges a record's shape as the judge does on a write, so a mixed record, written by
+hand, by an import or by an older store-aware build, reads as unreadable, never as either shape (O3-16). An unreadable seeded id holds the starts
+of its work; an unreadable added record, whose `takes` or `scope` may be the part that does not read, holds every start in its scope until it
+reads or is deleted, each held start said with the record's error (O3-16). So the person's first change writes that id's record alone and every
+other seeded role stays the seed's; an empty or absent catalogue is the seed whole; *Back to the default* deletes a seeded id's record. The judge refuses removing the
 role of a work that may not be off (`ActorChoices.MayBeOff`, `ActorChoices.cs:43`, `:55`, lets only Intake and Ask Daoris be off, and Design
 falls back to Build), and refuses scoping such a seeded role away from the machine, so every such work has a role in every place; a role
 added for a workspace or a repository takes the work there and the machine's role stays. An upgrade writes nothing.
@@ -385,18 +455,30 @@ taking `design` or `build`), so every build's continuation reads an id `ActorRun
 run (`Loop/Driver.cs:3666`; `DriverContinuations.cs:432`; `Chat/ChatGoOn.cs:645`, `:722`; `ChatRunner.cs:1398`; `LimitMove.cs:433`), and
 `ActorRun` throws on any other id (`ActorRun.cs:176-177`) after the harness has started (`Driver.cs:3651`, `:3673`). The role the start took,
 with its revision, is kept on the participant's binding in the desktop store (§13.3), machine-local and in a table no older build reads
-(`compatible-builds.md`), and the run reads the binding's role before `actor`.
+(`compatible-builds.md`), and the run reads the binding's role before `actor`. Every writer of a binding updates the columns it owns by name
+and never replaces the row, so a writer that knows no role column, an older store-aware build's among them, leaves the role it does not know
+where it is (O3-16).
 
-**An appointed role's authority, as a lifecycle** (O2-1; X2-2.2). An act is admitted only where it is in all three: the code's act table;
-**the appointment's grant**, the acts the owner ticked at *Appoint* and its scope, kept with the appointment and never changed while it
-stands (`Appointment`'s `Acts`, `StandingConfirmation.cs:187-189`, checked at `:1276` and at the act's run, `:1304`); and the role's
-configuration as it stands at the act, its authority and scope, which only narrow. So an edit to a role narrows a live appointment at once and
-widens none: an act added to a role, a scope widened or a restriction lifted takes effect only at the next *Appoint*, the owner's press in the
-window (D208 point 1). A role's authority is edited only through a `Window`-class route, as `SET_APPOINTMENT` is, never through
-`role_propose`, a card or the terminal; an import that would widen it holds that change for the same press (§13.5). The act's target is
-checked against the appointment's scope and the role's as they stand. Removing an appointed role revokes its live appointments at once by
-D208's revoke and its sweep, cancelling every act admitted and not yet run. An appointment found at a start stays dormant until *Appoint
-again* (D209 points 1, 2 and 4).
+**An appointed role's authority, as a lifecycle** (O2-1; X2-2.2; round 4, X3-2.2, X3-1.3, O3-7). An act is admitted only where it is in all
+three: the code's act table; **the appointment's grant**, what *Appoint* granted and its scope, kept with the appointment; and the role's
+configuration as it stands at the act, its authority and scope. The grant is today's: the acts this build offers the role, snapshotted at
+*Appoint* (`OffersActs`, `Modules/Platform/StandingConfirmation.cs:860`), and the steward's set-up tick, the owner's own (`:861`); the request
+names no acts (`:247`), so *Appoint* grants no individually chosen acts, and nothing here proposes it (X3-1.3). **The grant is the retained
+ceiling, lowered and never raised while it stands** (X3-2.2): a narrowing of the role (an act removed, a scope narrowed, a restriction added)
+is written into every live appointment's grant of that role in the standing confirmation's one mutation step (its lock, `:1273-1290`'s
+judge reading under it), whatever door made the narrowing, the grant lowered before the role's record is written, so a crash between leaves
+the grant narrower and never wider; so restoring the role's act later restores nothing until the next *Appoint*; the intersection with the
+role's configuration stays as a second guard. So an edit to a role narrows a live appointment at once and widens none: an act added to a role, a
+scope widened or a restriction lifted takes effect only at the next *Appoint*, the owner's press in the window (D208 point 1). An admitted
+act is checked again at its run, against the grant and the role's configuration as they stand then (§2.5), an act a narrowing left outside
+them cancelled. The steward's desk decline is outside every grant, admitted on every steward appointment as today (`:1275-1279`;
+`Modules/Platform/RoleActs.cs:56-60`), since it changes nothing of Daoris's controls (O3-7). A role's authority is edited only through a
+`Window`-class route, as `SET_APPOINTMENT` is, never through `role_propose`, a card or the terminal; an import that would widen it holds that
+change for the same press (§13.5). **An import never sets or raises a grant**: an appointment it carries is dormant by construction, since the
+holder key's hash is the run's memory alone, and its grant is set only by *Appoint* (D208 point 1) (O3-16). The act's target is checked against
+the appointment's scope and the role's as they stand. Removing an appointed role revokes its live appointments at once by D208's revoke and
+its sweep, cancelling every act admitted and not yet run. An appointment found at a start stays dormant until *Appoint again* (D209 points 1,
+2 and 4).
 
 **Who changes the catalogue.** The person adds, changes or removes a working role in Settings and with `daoris driver role`; Ask Daoris
 proposes with `role_propose`, carrying the revision it read, judged by the same judge, and the person's press applies it in both modes.
@@ -433,7 +515,7 @@ the quest on Build's order (§5.2). The work read from the marks stays `build` f
 
 ### 3.1 One decision
 
-`Course.Decide(CourseFacts facts, Trigger trigger) → Course`, a pure function in `Driver/Conversations/Domain/`, beside `Continuation.Judge`
+`LineCourse.Decide(CourseFacts facts, Trigger trigger) → LineCourse`, a pure function in `Driver/Conversations/Domain/`, beside `Continuation.Judge`
 (`Continuation.cs:207-239`), whose reasons it reads. The look calls it for a driven line and the chat runner for a conversation; each
 executes the answer with the code it has today. Nothing merges the two loops.
 
@@ -455,7 +537,7 @@ session*; *Start a conversation with these words*; the come-up.
 
 **Answers.**
 
-| `Course` | Says | Executed by |
+| `LineCourse` | Says | Executed by |
 |---|---|---|
 | `Resume` | the same part, its own conversation, its own account, the words that go and Daoris's word by its key (`LimitReset`, `TransientRetry`) | the go-on (`DriverContinuations.ContinueAsync`; `ChatGoOn`) |
 | `Move` | a new part of the same line, on three axes: **when** (now, or at the turn's end), **where** (a role and choice, an account named or the walk's settled selection), **how** (`brief`, or `carry` once SWITCHCTX1 lands), with its `why` and `by` from one closed enum (`from_why`, `from_by`, `Driver.cs:4622-4633`) and the words it carries | the start (`Driver.RunAsync`; `ChatRunner.StartAsync`), with a move record |
@@ -493,7 +575,12 @@ neither calls the course nor is named *not yet moved*, as the brief §7.2 asks.
 
 ### 3.2 The account
 
-The rule, stated once in `LineAccount.Decide` and read by every path through the course's account facts:
+The rule, stated once in `LineAccount.Decide` and read by every path through the course's account facts. **Part A takes the rule as
+LIMITSWITCH1 and LIMITSWITCH2 built it** (row a-i): steps 1, 2, 3 and 5 as today's code answers them, a pick read as LIMITSWITCH2 reads it
+(every conversation walking its agent's accounts, since the record keeps no pick), and step 5's hold as `HarnessRoster.Unready`'s refusal
+where nothing cools (`Driver/Accounts/Harnesses/HarnessRoster.cs:1762-1779` at `e8f1aed4f`), named. What the rule adds beyond them is Part
+B's: step 4's recorded account pick (row a-ii, on a binding in the desktop store) and step 6's settled selection and the person's fresh-part
+exception (row a-iii, §2.4), with step 2's later choices for a conversation (`ElsewhereAsync` in the ended move, row a-iii).
 
 1. **A resume of the agent's own conversation asks for the record's own account** (D131, D137 point 8): ready or near, it resumes there.
 2. **The own account cools and an account the line may take is ready: the line goes on now** in a new part there, briefed today and
@@ -501,7 +588,10 @@ The rule, stated once in `LineAccount.Decide` and read by every path through the
    ended record whose own account is cooling*:
    - **a driven record of an open or taken quest**, as LIMITSWITCH1 built it (`switches`, its `HarnessRoster.ResumeAsync`);
    - **a repository conversation**, through the ended limit move's body, its guard (`LimitMove.cs:213`) widened from a record a limit ended
-     to a cooling own account, why `account`, among its agent's accounts, as LIMITSWITCH2 built it (its `switching`); where none of them is
+     to a cooling own account, among its agent's accounts, as LIMITSWITCH2 built it (its `switching`), the new part continuing the old by
+     `retry` (`Chat/LimitMove.cs:220`, `:317-318` at `e8f1aed4f`; D137's LIMITSWITCH2 note), `account` being the continue reason its note and
+     a closed quest's hand-over carry (`ContinueWhy.Account`, `Driver/Conversations/Domain/Continuation.cs:60`), never the record's `from_why`
+     (O3-13); where none of them is
      ready it waits for the earliest reset of any, since the ended move has no step to the role's later choices (`LimitMove.cs:235-241`, where
      the live move has `ElsewhereAsync`, `:92`, `:444-469`), which row a-iii adds with its case (O2-13);
    - **a closed quest's session**, as a conversation in its tree. Round 2 sent it through the path a lost conversation takes (`GoesOnLost`,
@@ -539,11 +629,11 @@ The rule, stated once in `LineAccount.Decide` and read by every path through the
    agent pick once row a-ii lands: Daoris invents no historical pin (X).
 5. **None ready: it waits** until the earliest reset of exactly the accounts step 4 allows **and of the record's own account wherever step 1
    may resume there** (O2-4), one computation (`EarliestReset`), where an account signed out, refused, not offered or outside the set adds no
-   reset (X): LIMITSWITCH1 as built keeps the own account's reset as the wait where the walk finds none sooner (`HarnessRoster.cs:1026-1034`),
-   and resumes there by itself, as D206 has it. Said in D206 §3.7's words on its record and its rail, woken by the look (D206 point 4).
+   reset (X): LIMITSWITCH1 as built keeps the own account's reset as the wait where the walk finds none sooner (`HarnessRoster.cs:1026-1034`;
+   `:1035-1048` at `e8f1aed4f`), and resumes there by itself, as D206 has it. Said in D206 §3.7's words on its record and its rail, woken by the look (D206 point 4).
    **Where none of them has a reset**, the own account and every other signed out, refused or not offered, it is `Hold`, naming the repair (a
-   sign-in, an account added, the model offered), as `HarnessRoster.Unready` keeps a non-cooling refusal today (`HarnessRoster.cs:1736-1740`),
-   never a manufactured reset or a promised resumption (X-3.3).
+   sign-in, an account added, the model offered), as `HarnessRoster.Unready` keeps a non-cooling refusal today (`HarnessRoster.cs:1736-1740`;
+   `:1762-1779` at `e8f1aed4f`), never a manufactured reset or a promised resumption (X-3.3).
 6. **A new part takes one settled selection** (§2.4). **An automatic new part** (a limit's move, a carry-on, the cooling go-on) never takes the
    own account where its conversation could resume there (D206's rejection of a briefed carry-on on the same account). **The person's own press
    for a fresh part** (*Go on with Daoris's brief*, *Go on in a new session*) is the one exception, since the person chose a new part over the
@@ -564,31 +654,46 @@ first turn answers. It is SWITCHCTX1's carry record (its §2.3) made the record 
 - **Where** (round 3). A row of the desktop store's `moves` table, keyed by the record left, its words in transfer in `move_words` (§13.3), owned
   by the Course subdomain (§14); deleted with the session's record by a delete or a clear, as the session's files are today
   (`SessionHomeFiles`). If SWITCHCTX1a lands first, its `<s>.carry.json` is a family row f-i imports; there are never two records of one move.
-- **What.** Its executor (`conversation` or `driven`) and its **claim**: the run that holds it and its generation (§13.4); its phase, each with its
+- **What.** Its executor (`conversation` or `driven`) and its **claim**: the process run that holds it and its generation (§13.3, §13.4); its phase, each with its
   moment: `decided` → `quiescing` (waiting for its natural boundary, the person's cut against an agent's ask kept apart) → `old-ended` →
   `opening` (its `opens` key written) → `opened` (the new record's id and the words its open moved) → [`copied` → `verified`, the carry's] →
   `delivering` → `delivered`, or `fell-back` (its code), or `held` (its reason); its **effect mark**, the external effect begun (a spawn, a prompt,
   a copy), its moment and, once known, its outcome; `why`, `by`, `how`; the settled selection's account by profile name; the brief's recipe (the
   why and the event bound it is composed up to, `ContextBriefs.cs:59-95`); the delivery: each word's id, producer key, transfer id and
   disposition, a limit's refused turns' bound, the channel messages held. Never a word's text, a path or a key.
-- **Who writes and recovers it, claimed and fenced** (round 3, X2-3.1; O2-12). The executor of its kind, alone: a conversation's move by the
-  shell's chat runner, a driven line's by the look of the loop that holds the home's lease, a closed quest's session going on as a conversation by
-  the chat runner the look hands it to. Every write is one store transaction under the write lock that checks the claim first, so a read, a
-  check and a write never interleave across processes; a move is claimed by its executor role's holder and taken over only by that role's current
-  holder from a run that no longer holds it, so a live executor, however long it pauses, is never taken over; and **every external effect is
-  fenced by a mark** written, under a claim check, before the effect, so after a takeover the old run begins none, and an effect it had begun and
-  never recorded is the new holder's `held`, made at most once and never repeated by itself (§13.4 gives the protocol and who holds each role). A
-  process's in-memory exclusion (`GoingOn`, `Chat/ChatContext.cs:64`) is no claim.
-  At its come-up the executor of a kind takes up every record of its kind before anything else that could act on the same records: a
-  conversation's where `LimitMove.TakeUpBoxesAsync` runs today (`ChatGoOn.cs:195`), before the come-up's go-ons (`:213-257`), the hand-over
-  boxes' take-up (`:260`) and the sweep (`:136-168`), none of which reads a box today, and before the lease; a driven line's at the slot where
-  uncertain words are settled (`DriverWatch.cs:739`); and before either, the imports of any box an older build may have written (§13.5). Taking one
-  up writes a newer generation. The shell's guard for words said meanwhile (`TakeWaits`, `SessionWords.cs:544-545`), which reads only the hand-over
+- **Who writes and recovers it, claimed and fenced** (round 3, X2-3.1; O2-12; round 4, O3-1, X3-1.1, X3-3.1). The executor of its kind: a
+  conversation's move by the shell whose chat runner runs that conversation; a driven line's by the loop whose look runs that line, the
+  instance's or a `--share` loop's beside it, each claiming the moves of the lines it runs, since the two race for the same quests and the take
+  decides (`Host/Program.cs:869-875`, `:890-895`); a closed quest's session going on as a conversation by the chat runner the look hands it to.
+  **The claim is the process run that executes the move**: a run id drawn at that process's start, kept with its pid and its start time (the
+  lease's own way of telling a live holder, `Driver/Platform/HomeLease.cs:165-173`, `:427-448`) in the store's `store_runs`, and the move's
+  `claim_run` and `claim_generation` (§13.3). Every write is one store transaction under the write lock that checks the claim first, so a read,
+  a check and a write never interleave across processes. **A move is taken over only from a run that is dead by the lease's own test**: its pid
+  gone, or alive under another start time, a process whose start time cannot be read counting as alive, as the lease's *cannot tell* holds
+  (`HomeLease.cs:66-68`, `:446`). Never because a role passed, a lease was given up or shared, or another shell or loop came up on the home: a
+  live executor, however long it pauses and whether or not it holds the lease, keeps every move it claimed, so **the claim holds through the
+  effect itself**, nothing being able to take it while the process that marked the effect lives (X3-3.1). **Every external effect is fenced by a
+  mark** written, under a claim check, before the effect: no longer what keeps a second executor out, which the liveness rule does, but the
+  evidence a taker reads, an effect a dead run marked and never recorded being the taker's `held`, made at most once and never repeated by
+  itself (§13.4). A hung executor keeps its moves until its process ends, the look saying a move quiet past its bound, and the person's stop or
+  quit ends it. A process's in-memory exclusion (`GoingOn`, `Chat/ChatContext.cs:64`) is no claim.
+  At its come-up, and at each look after, an executor takes up every move of its kind whose claim's run is dead, and those alone, before
+  anything else that could act on the same records: a dead run's conversation moves by any shell of the home, the first to claim under the write
+  lock; a dead run's driven moves by the lease holder's look, a `--share` loop taking up only its own. A conversation's take-up runs where
+  `LimitMove.TakeUpBoxesAsync` runs today (`ChatGoOn.cs:195`), before the come-up's go-ons (`:213-257`), the hand-over boxes' take-up (`:260`) and
+  the sweep (`:136-168`), none of which reads a box today, and before the lease; a driven line's at the slot where uncertain words are settled
+  (`DriverWatch.cs:739`); and before either, the imports of any box an older build may have written, which run only once this start's
+  confirmation is settled (§13.5): until a box is imported, the course reads its record's old part as `Never`, so no go-on, sweep or take-up acts
+  on it meanwhile (O3-4). Taking one up writes the taker's run and a newer generation. The shell's guard for words said meanwhile (`TakeWaits`, `SessionWords.cs:544-545`), which reads only the hand-over
   box, reads the move record. Each phase is safe to run again, and an unknown effect outside Daoris (a spawn or a prompt whose answer was lost) is
   `held` and never repeated by itself (X).
-- **The destination, never opened twice.** The ledger's opens take an optional `opens` key, kept on the record as a field of this machine's
-  and never on the wire (`session-record-fields.md`), unique in the service's store; a repeat open with the same key answers the record it opened
-  and the words it moved, in the open's own step (X; §3.4 rule 3). Against an older host, which answers a new record each time and moves no
+- **The destination, never opened twice.** The ledger's opens take an optional `opens` key (round 4, X3-3.3, O3-12, X3-6.1). The service keeps
+  each keyed open in a table of its own, `session_opens`: the key, unique; the record left; the record opened; and every word the open moved,
+  with its producer key, its transfer id and its order; written in the open's own exclusive step and kept while the opened record stands. A
+  repeat open with the key answers the record and the words from that table, in the open's own step, even after the words have left `said`
+  (`Core/Sessions/Sessions.cs:1602-1607`), so a lost answer is answered whole and nothing opens or moves twice (X; §3.4 rule 3). The key travels
+  in the open's request and the transfer in its answer; nothing is added to the record and nothing to the wire, so `session-record-fields.md`'s
+  chain is not walked. It is row d-i's, landing before any row that moves words. Against an older host, which answers a new record each time and moves no
   words, an open whose answer was lost is `held` for the person with the candidates named, never searched for by `from` and moment, since
   successors are not unique by `from` (`Sessions.cs:998`; X-3.5), so the guarantee *never twice* is a newer host's alone.
 - **No old box is written beside it** (round 3; X2-1.1, O2-14). Round 2 wrote `<s>.limit-move.json` and the conversation's hand-over box beside
@@ -598,7 +703,8 @@ first turn answers. It is SWITCHCTX1's carry record (its §2.3) made the record 
   guard the new part's `User` event, `:366-378`), and the hand-over's take clears its box however it came out, leaving a part it opened unbriefed
   (`HandOver.cs:271`, `:294`). So a move the store carries writes no box, and an older build recovers it from the ledger alone, as it recovers today
   a move that keeps no box; §13.5's table says what it does at each phase and what the newer build reads of its evidence when it comes back,
-  before it acts. A box an older build writes while it runs is imported once at the newer build's come-up and set aside. Three records are not moves and stay what they are (O): the hand-over's **ask** (`HandOverAskBox.cs:28`), the agent's request
+  before it acts, the line's head reconciled in every phase before anything is delivered (X3-3.4). A box an older build writes while it runs is
+imported once at the newer build's come-up, once that start's confirmation is settled, and set aside. Three records are not moves and stay what they are (O): the hand-over's **ask** (`HandOverAskBox.cs:28`), the agent's request
   through the connector, the service's, the move beginning at its approval; `data/handed/<quest>.json`, the agent a quest is handed to until it
   leaves the machine (`Driver.cs:1914-1917`), a constraint the course reads; and `<s>.new-session.json`, the person's press. A same-conversation
   resume writes none: no word changes record.
@@ -628,13 +734,15 @@ The dispatcher's guarantee (`.claude/knowledge/session-words.md`) holds by const
    each under **its producer key** with a **transfer id** (the move's key and the word's own id, so a word with no key has one too, X2-3.3), and
    takes them off the old. So the head and the words move at once, and no word falls between a read and an open. A word said to the old part
    after the open is refused there with the head named (rule 2), and its caller passes it on. A retried open with the same key answers the
-   record it opened and the words it moved, and moves nothing again, so a lost answer neither opens twice nor moves twice (X-3.6); the move
-   record keeps the moved ids it is answered (§3.3). Moved words keep their order ahead of any word kept on the new part after its open, since
+   record it opened and the words it moved from the service's `session_opens`, whether or not those words still wait, and moves nothing again,
+   so a lost answer neither opens twice nor moves twice (X-3.6; X3-3.3); the move record keeps the moved ids it is answered (§3.3). Moved words keep their order ahead of any word kept on the new part after its open, since
    the new part's first turn is the move's delivery (O-19). LIMITWORD1's second read, and the reads before the open that the ended and live limit
    moves, the driven carry-on, and the briefed move and its not-offered path make today (`BriefedMove.cs:99`, `:158`, `:179`, `:250`; O-7), are
    retired by it. Row d's census takes every site that hands words to a part it opens, `from` or not: start-from's `Start` names the record it
    takes the words from, with no `from` link (`ChatRunner.StartFrom.cs:101-131`), and a refused open moves its words (`ChatRunner.cs:1961-1982`).
-   Row d needs no receipt for this (X2-5.1): the open's key and the transfer ids on the new record are its idempotency, inside one service step.
+   Row d needs no settlement row for this (X2-5.1): the open's key, its `session_opens` row and the transfer ids on the new record are its
+   idempotency, inside one service step. The keyed open and its table are row d-i, proven in process there and across a crash in row f-i, and
+   the head and the sites that move words row d-ii (O3-12; X3-6.1).
 4. **Every word is kept on `said` before anything holds it, a winding-up or moving record included.** The say door keeps a word for an active
    record whose dispatcher closed as waiting for its next part, asked only by the shell and the driver as `running` is (refused today,
    `SessionLedger.cs:945-952`); the shell's holds become keeps; `held-words.json` is read once at a come-up for an older shell's words and never
@@ -653,15 +761,25 @@ The dispatcher's guarantee (`.claude/knowledge/session-words.md`) holds by const
    provider failed as transient is no conclusive refusal, since the agent may have read its prompt, which is why `LimitHeld.Of` clears every word
    asked before a transient event (`Driver/Conversations/Domain/LimitHeld.cs:35-41`): a word attempted in such a try stays uncertain, and a limit
    that then ends the episode carries only the words no try attempted, never reclassifying an earlier attempt. Round 2's *a transient try
-   followed by a limit's refusal is the limit's* is withdrawn. **The receipts** are rows of the desktop store (§13.3): each disposition is written
-   by the dispatcher of the process that runs the part, in one transaction with the move's phase where a move delivers it, before that process
-   asks the service to take the word off `said`; a word's producer receipt stays after the take for seven days and at most 10,000 a home, trimmed
-   by its own statement. Every keyed producer reaches the say door through the desktop's service client (the HTTP host's say route is the door's
-   one caller, `Http/Program.cs:1527`), which reads the receipt before it says, so a producer's retry after the take is answered as kept within
-   that horizon, as the service answers it by key while the word waits (`SessionLedger.cs:956`). **A receipt's identity** (X2-3.3) is the line (its
-   entry, D167) and the producer's key, so equal keys on unrelated lines are two words and a retry through several successors finds its word on
-   the line; a word with no key is its own, as today (`Sessions.cs:373-375`), moved and receipted by its word id. The come-up sends only words
-   proven never attempted (X; row p). Across a harness write that carries no receipt, that is the guarantee there is: no automatic second
+   followed by a limit's refusal is the limit's* is withdrawn. **A word's settlement is the service's** (round 4, X3-3.2, O3-5, X3-1.2). Round 3
+   kept a producer's receipt in the desktop store and had the desktop's client read it before it said; that races the service's take, since a
+   retry can read no receipt, pause, and reach the say door after another dispatcher wrote the receipt and the word was taken, where the door
+   finds no waiting key (`SessionLedger.cs:956`) and keeps a second word (`:965`); and two keyed producers never pass the say door at all, a
+   helper's answer under `helper:<id>` and a partner's piece under `partner:<piece>`, each kept by its own desk's `KeepSaidAsync` through its own
+   route (`Core/Sessions/HelperDesk.cs:180-189`; `Core/Sessions/PartnerDesk.cs:136-147`; `Http/Program.cs:1739-1748`). So **a word leaves `said`
+   only by a service statement that writes its settlement in the same statement**, into the service's `said_settled`: its line (its entry, D167),
+   its producer key or, for a word with none, its word id (`Sessions.cs:373-375`), the attempt's disposition (`taken`; `refused-limit`, carried;
+   `uncertain`; `withdrawn` by the person's take-back; `cleared` with its record's words) and its moment; a word an open moves is no settlement,
+   its transfer being `session_opens`'s. **Every door that answers a producer's key reads the same function inside its own exclusive step**,
+   `SaidKeys.Settled(line, key)`, over the waiting words of the line and `said_settled`: the say door (`SessionLedger.cs:956`), the helper's desk
+   (`HelperDesk.cs:180`) and the partner's (`PartnerDesk.cs:137`), each step a `BEGIN IMMEDIATE` transaction across processes
+   (`Sessions.ExclusiveAsync`, `Core/Sessions/Sessions.cs:785-786`). So a retry after the take is answered as kept, by any keyed producer, with no
+   read across stores and no window between a check and a keep. The settlement stays seven days and at most 10,000 rows a home, trimmed by its
+   own insert's statement; past that horizon a retry keeps a new word, said here as the bound. **Its identity** (X2-3.3) is the line and the key, so
+   equal keys on unrelated lines are two words and a retry through several successors finds its word on the line. The desktop store keeps a
+   move's view alone: each moved word's disposition in `move_words`, written in one transaction with the move's phase before the dispatcher asks
+   the service to take the word, so a crash between the two finishes the take at the come-up from the move's row. An older host writes no
+   settlement and its doors answer a key only while its word waits, as today. The come-up sends only words proven never attempted (X; row p). Across a harness write that carries no receipt, that is the guarantee there is: no automatic second
    attempt, the evidence kept, the person's press.
 6. **Which words a new part carries is one predicate**, `Carries`, where five sites write it today (survey §2.4 row 14): the person's waiting
    words and a limit's refused turns' words, each once; Daoris's never carried, composed again under their keys; a helper's answer and another
@@ -705,7 +823,7 @@ generated ids, closed codes, counts and times, never a name, a word, a path, an 
 |---|---|---|
 | `position`, `at` | the commit order and the moment | an integer never reused; the store's clock |
 | `record`, `family`, `change` | the record's id; its family (`sessions`, `quest_log`, `asks`, `channel`); one closed code of what changed (`opened`, `state`, `limited`, `word-added`, `word-removed`, `words-overflow`, `quest-op`, `ask`, `message`) | ids at most 64 characters (`substr`), codes 32 |
-| `state_old`, `state_new`, `limited_old`, `limited_new` | the state and the limit flag on either side | codes |
+| `state_old`, `state_new`, `limited_old`, `limited_new`, `transition` | the state and the limit flag on either side; for `state`, the record's transition number after it, read from `session_transitions` in the same statement (§4.5; round 4, X3-3.6) | codes; an integer |
 | `note_codes` | the codes of the note's parts on NEW, at most eight, never their values or the note's text | 8 × 64 |
 | `marks` | the work's facts on NEW: `kind`, and whether `ask`, `opinion`, `serves`, `piece`, `help_mode` and `daoris:help` hold, and the mirror's origin | codes and flags |
 | `entry`, `from_session`, `from_why`, `from_by`, `workspace`, `quest` | the line, the part it came from and why, its scope and its quest | ids and codes |
@@ -799,9 +917,9 @@ No reader parses a sentence back into a code.
 | A plugin | `work/event` frames; `session/ended`'s frame as today (D101's fields), with `reason` and `class` added; `state/changed`; `quest/consider` | `said`, a key |
 | An outside agent's session | `work/event` frames through the relay: ids, codes, counts, times | a name, a word, a path, an account; an event is no authority to act |
 | The terminal | the same .NET judges over the pipe (D182 point 6), English from the codes | another home's records |
-| A teammate's mirror | the records that travel, their travelling fields (`session-record-fields.md`) | the journal, move records, the work, the role's fields, `said`, receipts, the lineage, notices, the log, the role catalogue |
+| A teammate's mirror | the records that travel, their travelling fields (`session-record-fields.md`) | the journal, move records, the work, the role's fields, `said`, the words' settlements and the keyed opens, the lineage, notices, the log, the role catalogue |
 
-Never leaves the machine: the journal, every machine event but a relayed frame, move records, receipts, notices, the event file, the lineage, the
+Never leaves the machine: the journal, every machine event but a relayed frame, move records, the words' settlements and the keyed opens, notices, the event file, the lineage, the
 log, `said`, a participant's binding, every account's name, every path, the role catalogue.
 
 ### 4.5 Durability and loss
@@ -825,10 +943,15 @@ build that adds it, takes what stands as said, and so does a teller telling for 
 newest position. A claim the store refuses shows nothing, which keeps it at most once.
 
 **A key is an occurrence, and forgetting one never tells it again** (round 3, X2-4.3). A piece of news is keyed by its occurrence, never by its
-subject alone: a record event by the record's id and the journal position of the transition that made it, unique and never reused (§4.1); a
-machine event by its own durable id (a Confirm's confirmation id; a held call's request within its process's run); and news a reconciliation
-below the floor finds, which has no positions, by the record's id and the ledger's own moment for the state it reads (`updated`), so a later
-answer or end of the same resumed record is a new occurrence, as `Notices.cs:146` already renews an answered notice. The said-set and the news a
+subject alone, and **one occurrence has one key whichever path finds it** (round 4, X3-3.6). Round 3 keyed a record event by its journal
+position and a reconciliation below the floor by the record's `updated`, so after a trim a second teller could claim the second key for an end
+the first had told, and `updated` moves on a note-only write besides (`Core/Sessions/Sessions.cs:886-890`). So a record's occurrence is keyed
+by **the record's id and its transition number**: a count the service keeps per record in a table of its own, `session_transitions`, moved by
+a trigger in the statement that changes the record's state, guarded `WHEN OLD.state IS NOT NEW.state`, so every writer moves it, an older
+connector included, a note-only write and a mirror's upsert never; the journal's row carries the number in its snapshot (§4.1), and a
+reconciliation below the floor reads it beside the record, so both paths compute one key, and a later answer or end of the same resumed record is
+a new occurrence, as `Notices.cs:146` already renews an answered notice. A machine event keeps its own durable id (a Confirm's confirmation id;
+a held call's request within its process's run). The said-set and the news a
 teller may tell share **one horizon**: a teller tells only occurrences whose moment is later than both the notices' week ago (`Notices.cs:32-35`)
 and the moment of the oldest key the said-set still holds, and the said-set forgets a key only once its moment is outside the week or its own
 count (10,000, oldest first, trimmed by its own statement) pushes it out, which raises the horizon with it. So no forgotten key's occurrence is
@@ -845,10 +968,10 @@ its session kinds onto the journal lets a restart of the lease's loop re-read wh
 | Design | Becomes | Its rows |
 |---|---|---|
 | **LIMITSWITCH1** (D137's note of 2026-10-25), built for driven records of an open or taken quest, merged at `a85004bd0` | the account rule's driven half, as built | stands as built; row a-i reads its `Switched` through `LineAccount` |
-| **LIMITSWITCH2**, its remainder, built beside round 3 as its own quest in the shape of rows a-i and a-iii and merged at `db883b1cc` (D137's LIMITSWITCH2 note): a conversation and a closed quest's session whose own account cools go on elsewhere | the account rule's conversation half and the closed quest's case, as built: `switches` read for every kind, with `walkCounts`; a conversation through the ended limit move's body (`switching`); a closed quest's session through `GoOnLostAsync` with the reason `account` to the ended move; the ended move's one walk; the earliest reset of any; Ask Daoris, a signed-out, refused or gone account and another agent's accounts unchanged; every conversation walking its agent's accounts, since no pick is kept | rows a-i and a-iii absorb what it landed, each part taken as built and its proofs kept as the row's (`ResumeAccountTests`, `LimitWaitsProcessTests`, `AccountRotationTickTests`, `SessionWordsWaitingTests`). Row a-i's `LineAccount` reads `switches`, `walkCounts` and the wake's reading as one call and changes no behaviour, its proof the same answers on every case they built, adding only the hold that names a repair where no account has a reset; row a-iii keeps only what LIMITSWITCH2 left: the live limit move's one selection, the ended move's `ElsewhereAsync`, and the walk of the person's briefed press. Its note on D137 reads the decision as round 3 does; the amendment of point 4 for the cooling case is D137's dated note of round 3, and §7 rows 1 and 1b become conformance notes |
+| **LIMITSWITCH2**, its remainder, built beside round 3 as its own quest in the shape of rows a-i and a-iii and merged at `db883b1cc` (D137's LIMITSWITCH2 note): a conversation and a closed quest's session whose own account cools go on elsewhere | the account rule's conversation half and the closed quest's case, as built: `switches` read for every kind, with `walkCounts`; a conversation through the ended limit move's body (`switching`); a closed quest's session through `GoOnLostAsync` with the reason `account` to the ended move; the ended move's one walk; the earliest reset of any; Ask Daoris, a signed-out, refused or gone account and another agent's accounts unchanged; every conversation walking its agent's accounts, since no pick is kept | rows a-i and a-iii absorb what it landed, each part taken as built and its proofs kept as the row's (`ResumeAccountTests`, `LimitWaitsProcessTests`, `AccountRotationTickTests`, `SessionWordsWaitingTests`). Row a-i's `LineAccount` reads `switches`, `walkCounts` and the wake's reading as one call and changes no behaviour, its proof the same answers on every case they built, the hold that names a repair where no account has a reset being `HarnessRoster.Unready`'s refusal today, given a name (round 4: Part A's); row a-iii keeps only what LIMITSWITCH2 left: the live limit move's one selection, the ended move's `ElsewhereAsync`, and the walk of the person's briefed press. Its note on D137 reads the decision as round 3 does; the amendment of point 4 for the cooling case is D137's dated note of round 3, and §7 rows 1 and 1b become conformance notes |
 | **MODELROLE1l** (D205's note of 2026-10-25), filed | a configured working role, *Designer*, taking `design` (§2.7) | its code is the `design` capability and the quest's `weight`, row x; its role a seeded suggestion applied by the person's press, row y-i |
 | **EVENTHOOK1** (proposed, round 4, Codex's read owed) | the first outside projection and the first instance of the vocabulary: built first as designed, then moved onto the journal (row n): its session kinds read the retained journal, its `WorkEventGrammar` becomes `EventCodes`' outside projection, its kinds keeping their names there, its `work.landed` and `quest.parked` machine events under its own `run` and `seq`, its relay's delivery contract unchanged | none waits on the foundation; 1d's quest kinds, a later round, are designed from the journal's `quest.<op>` rather than the look's snapshot; row n waits for 1b and row k |
-| **COWORKVIEW1** (proposed, round 4, Codex's read owed) | row a: the lineage's first production reader, the participant's child half, built as designed; the routing half (rows e, b, c, d, f): re-cut to read `Participants.Of` (row c) for who is at work, the line's head (row d) for the current executor in place of its own selector over `LastRun` (its §3.1), the move records (row f) for what waits on what, and the event codes (rows k to m) in place of reading waits from end codes | row a waits for nothing here; its routing half's round is written after rows c, d and f land |
+| **COWORKVIEW1** (proposed, round 4, Codex's read owed) | row a: the lineage's first production reader, the participant's child half, built as designed; the routing half (rows e, b, c, d, f): re-cut to read `Participant.Of` (row c) for who is at work, the line's head (row d) for the current executor in place of its own selector over `LastRun` (its §3.1), the move records (row f) for what waits on what, and the event codes (rows k to m) in place of reading waits from end codes | row a waits for nothing here; its routing half's round is written after rows c, d and f land |
 | **SWITCHCTX1's carry** (proposed, round 5, Codex's read owed); its line view 1c-i accepted and built | re-cut in storage, kept in protocol: its carry record is the move record's `copied` and `verified` phases and `how: carry`, so a carried move and every other kind have one owner of delivery; its compatibility table, replay check, model judgement and fallbacks stay as designed | 1c-i stands; 1a, 1b, 1c-ii, 1d, 1e and 1f wait for row f's record as well as their own owed read; if 1a is accepted and built first, its `<s>.carry.json` is a family row f-i imports into the store's `moves`, never a second record |
 | **AGENTERRORS1** (D210; 1a, 1a2, 1b built) | the course's failure input | 1b2 and 1c to 1g built as designed, in their own order; row g adds only what they do not: a conversation's and a brainstorm's limit by code, and a conversation's limited flag |
 | **MODELROLE1** (D205; rows a to e built) | its `Effective` and walk become the start plan's; its eight actors the catalogue's seeded working roles | rows j and w |
@@ -862,10 +985,12 @@ record moves from a JSON file into the desktop store, §13.6 names its row and �
 | Record | Owner after | Travels | An older build |
 |---|---|---|---|
 | `sessions` with `said`, the marks, `from`, `entry`, `limited`, the actor's fields | the service, unchanged; the work read, never stored; `actor` naming the seeded role of its work (§2.7) | as today; the work, `actor` and `from` never | reads it as today |
-| `opens` on the record (new, row f-i) | the service, written at the open through `session-record-fields.md`'s chain (the record, its column, the create, the reader, the ledger's opens, the host's request, route and loopback answer, the driver's write and read, the stand-ins, the web type); it stays on the service's record, the brief §9's one exception, since its uniqueness is the open's own statement | no field on the wire | never reads it |
-| The participants' bindings (new home of `<s>.harness.json`, row z-iii): the kept conversation, the account picked and whether the person picked it (row a-ii), the role taken and its revision (row x) | the desktop store, the Participants subdomain (§13.3, §14) | never | a build from before the store reads the file it left as the backup (§13.5) |
+| `session_opens`, the keyed open and the words it moved (new, row d-i; round 3's `opens` field on the record, withdrawn in round 4, X3-3.3) | the service, written in the open's own exclusive step, the open's request carrying the key and its answer the transfer; a table, since a repeated open must be answered after its words leave `said`; the brief §9's one exception, its uniqueness the open's own statement | never | never reads it, and opens as today: a lost open against it is held (§3.3) |
+| `said_settled`, a word's settlement after it leaves `said` (new, row p; round 3's receipts in the desktop store, withdrawn in round 4, X3-3.2) | the service, written in the statement that takes the word, read inside each keeping door's step (§3.4 rule 5) | never | never reads it; its doors answer a key only while its word waits, as today |
+| `session_transitions`, a record's transition number (new, row k; round 4, X3-3.6) | the service, by trigger on a real change of state | never | never reads it; its own statements move it through the trigger |
+| The participants' bindings (new home of `<s>.harness.json`, row z-iii): the kept conversation, the account picked and whether the person picked it (row a-ii), the role taken and its revision (row x) | the desktop store, the Participants subdomain (§13.3, §14), each writer updating its own columns by name | never | the file set aside at the import, so a build from before the store finds none and falls back to a carry-on, never a stale conversation (§13.5; O3-6) |
 | `event_journal` (new, row k) | the service, by trigger, in the service's store | never | never reads it; its own writes mint rows through the triggers, which bound it |
-| Moves, words in transfer, receipts (new, rows f-i and p) | the desktop store | never | never reads them; it recovers a move from the ledger alone (§13.5) |
+| Moves and words in transfer (new, rows f-i and p) | the desktop store | never | never reads them; it recovers a move from the ledger alone (§13.5) |
 | `<s>.limit-move.json`, the conversation's hand-over box | written no more once a move of their kind is the store's (rows f-v, f-vi); a box an older build writes is imported once and set aside (§13.5) | no | reads and writes its own as today |
 | `data/handed/<quest>.json`, `<s>.new-session.json`, the hand-over's ask | a constraint, a press and a request, read by the course; the first two move into the store (§13.6), the ask stays the service's | no | §13.5 |
 | `held-words.json` | read once at a come-up for an older shell's words, never written again (row o); retired in row v | no | an older shell writes it; a newer one reads it once |
@@ -883,25 +1008,37 @@ None of these is a new word on the page except a role's, which the person sees a
 | Concept | en | zh | On the page | Code | Retires |
 |---|---|---|---|---|---|
 | Fabric | *Fabric*, the three concepts together, in prose (D173) | none | never | none | — |
-| participant | *participant* in prose | none until it reaches the page | never | `Participant`, `Participants.Of`, `RuntimeBinding` | — |
-| capability | *capability* in prose; a participant's is its *work* | none: each is shown by its role's name | never as a word; a role's work shown by the default roles' names (开发, 第二意见, 助手, 搭档, …) and 设计 for `design` | `Capabilities`, `ParticipantWork`, `Participants.WorkOf` | the connector's `SessionRole` (`Mcp/RoleFilter.cs:13-19`), which is neither a role nor a work (X), when its readers move |
-| role | *role* (the owner's direction): a configured position, working or appointed; D205's *actor* and D208's appointed role are both roles | 职务 (round 3, the steward's choice) | Settings → This Daoris → *Roles* and Settings → AI features → *Actors*, both reading the catalogue; the two labels stay as they are until row y-i designs the one place a role is set, under the UI and translation contracts | `Role`, `RoleCatalog` (`RoleCatalog.Judge`, `.Read`, `.RoleFor`), in the subdomain `Daoris.Driver.Roles` (§14) | the page's 角色 for an appointed role (`zh/settings.daoris.json:108`) |
+| participant | *participant* in prose | none until it reaches the page | never | `Participant`, `Participant.Of`, `RuntimeBinding` | — |
+| capability | *capability* in prose; a participant's is its *work* | none: each is shown by its role's name | never as a word; a role's work shown by the default roles' names (开发, 第二意见, 助手, 搭档, …) and 设计 for `design` | `Capabilities`, `ParticipantWork`, `ParticipantWork.Of` | the connector's `SessionRole` (`Mcp/RoleFilter.cs:13-19`), which is neither a role nor a work (X), when its readers move |
+| role | *role* (the owner's direction): a configured position, one concept in two exclusive shapes, working or appointed; D205's *actor* and D208's appointed role are both roles | **角色** in both shapes, and **任命的角色** where the appointed one must be said (round 4, the steward's decision on both readers' reads) | Settings → This Daoris → *Roles* (角色, `zh/settings.daoris.json:108`, its hint's 你任命的角色, `:139`) and Settings → AI features → *Actors* (角色, `zh/settings.ai.json:28`), both reading the catalogue, already saying 角色; the two English labels stay as they are until row y-i designs the one place a role is set, under the UI and translation contracts | `Role`, `RoleCatalog` (`RoleCatalog.Judge`, `.Read`, `.RoleFor`), in the subdomain `Daoris.Driver.Roles` (§14) | 职务, round 3's word, never shipped |
 | role catalogue | *role catalogue* in prose: the configured set of roles, the seed's per id where none is set | none until it reaches the page | the screens above | `RoleCatalog` | *the company* as a code or record name, which stays D193's narrative (the owner's naming) |
-| actor | *actor* (D205): a working role as its staffing reads | 角色, D205's | unchanged | `ActorChoices` | the word in prose, where *role* says it |
+| actor | *actor* (D205): in code and prose, a working role's staffing, its ordered choices | none of its own: the page says 角色 for the role whose staffing it is, as every shipped string does | unchanged | `ActorChoices` | the word in prose, where *role* says it |
 | the desktop store | *the desktop store* in prose | none | never: the person sees *Export* and *Import* of the configuration (row z-ii), worded in both catalogues | `DesktopStore` (§13), in the subdomain `Daoris.Driver.Store` | — |
 | subdomain | *subdomain* in prose (the brief §10) | none | never | one namespace each under `Daoris.Driver` (§14) | — |
 | line of work | *session* on the page; *line of work* in prose wherever *line* could mean the branch | 会话 | unchanged | `Entry` (D167's key), never `Line`, since `LinesStateSlice` is the branch's | — |
 | line (the branch) | *line* | 主线 | unchanged | unchanged | — |
 | part | *part* | 段 | unchanged | unchanged | — |
-| move | *move* in prose | none | never: each kind keeps its words (转交, 继续, 额度用尽) | `Course`, `Move`, `Moves`, `LineAccount` | the boxes' types, as adapters |
+| move | *move* in prose | none | never: each kind keeps its words (转交, 继续, 额度用尽) | `LineCourse`, `Move`, `Moves`, `LineAccount` | the boxes' types, as adapters |
 | event | *event* in prose (the brief's, EVENTHOOK1's) | none | never: the page shows notices | `DaorisEvent`, `EventCodes`, `event_journal` | `WorkEventGrammar`, as `EventCodes`' outside projection |
 
-*Role* enters the glossary with its reasons (D116): 职务, a position the owner sets up, held or played, of which an actor is a working one and the
-supervisor and the steward appointed ones (任命); 角色 stays *actor*'s, so the staffing screen and the position read apart; and 职务 is used nowhere
-else in the catalogues (O's §7). The steward chose it in round 3, withdrawing round 2's 角色 for both. The glossary's *actor* line *A co-worker's
-role names its actor* reads *A co-worker's work names the role it runs as*. Code names that change: `ResumeChoice.Waits` read through
-`LineAccount` (row a-i); `HoldsSlot` over the work (row c); `SessionRole` (row r); `LimitBox` read as a move (row f), its file moved in row v;
-`AttentionEvent` a projection of `DaorisEvent` (row m). Only in prose: Fabric, participant, capability, line of work, move, event.
+**The role is 角色, in both its shapes** (round 4, the steward's decision on both readers' reads; O3-15, X3-5.1). A role is one concept in two
+shapes: the design makes D205's actor and D208's appointed role one record, `Role`, read by one catalogue and one judge, and the AI screen's
+actor rows are the catalogue's working roles (§2.7). So it takes one Chinese word, and that word is the one every shipped string already says
+for it in both shapes: `zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`,
+`zh/settings.daoris.json:108` and `:139`. Where the appointed shape must be said, **任命的角色** says it, as `zh/settings.daoris.json:139`
+already does (你任命的角色); a working role needs no qualifier, being what the page has called 角色 since D205. **职务 is withdrawn**, with its
+reason: round 3 gave the role 职务 and left 角色 the actor's so that *the configured position and the staffing screen* read apart, which
+separates two screen titles, not two concepts, and would show one record under two Chinese words on two screens; it would also retire 角色
+from all seven strings and rewrite the glossary's *actor* entry (`glossary.json:475`), whose avoid list already refuses 岗位, a word close to
+职务. Codex's read agrees that the role is one concept and would say 职务 for it; the steward keeps the word the page has. *Role* enters the
+glossary with its reasons (D116; row u): *role*, 角色, *a configured position Daoris fills: a working role takes work, with its ordered choices
+of agent, model and effort (D205's actor); an appointed role holds acts the owner appoints it to (D208, D209), 任命的角色 where that must be
+said*, its avoid list 职务, 岗位, 演员, 人设 and 执行者; and *actor*'s entry says it is a working role's staffing, keeping 角色 and its line
+*A co-worker's role names its actor* read as *A co-worker's work names the role it runs as*. No page string changes. Code names that change:
+`ResumeChoice.Waits` read through `LineAccount` (row a-i); `HoldsSlot` over the work (row c); `SessionRole` (row r); `LimitBox` read as a move
+(row f), its file moved in row v; `AttentionEvent` a projection of `DaorisEvent` (row m); and the design's own types named apart from their
+subdomains' namespaces, `LineCourse.Decide`, `Participant.Of` and `ParticipantWork.Of` (O3-9). Only in prose: Fabric, participant,
+capability, line of work, move, event.
 
 ## 7. The disagreements this settles, each a dated note
 
@@ -917,7 +1054,7 @@ By the brief §7.3 each unification states which answer stands, as a dated note 
 | 5 | a carry-on's agent (§1.3 row 12) | the machine's first agent with the record's asked model | the record's role and asked choice | D205 point 1, a conformance note; row j |
 | 6 | the kind: stored or read (§1.3 row 8) | both, by 27 lines and more | the work read from the marks by one rule; `actor` D205's provenance, naming the role | D203 point 1 and D205 point 10, a note that each stands; D203 point 10's terminal field named `work`; row c |
 | 7 | words during a move (§2.4 row 3) | box, hold or none | kept on `said`, judged at the head inside the say door, delivered after the open | D188 point 6; D167 point 1; rows d and o |
-| 8 | an attempt mark that fails (§2.3) | the word still goes | the word waits, said; each attempt one disposition, an uncertain one never reclassified; receipts after the take, by line and key | D188 point 7; D137; D210's AGENTERRORS1b note (a transient try's words stay uncertain); row p |
+| 8 | an attempt mark that fails (§2.3) | the word still goes | the word waits, said; each attempt one disposition, an uncertain one never reclassified; a settlement after the take, by line and key, the service's, read inside each keeping door's step (round 4) | D188 point 7; D137; D210's AGENTERRORS1b note (a transient try's words stay uncertain); row p |
 | 9 | Ask Daoris asks a helper (§1.3 row 6) | allowed by the helper's copies, refused by the partner's | refused | D203 point 6, conformance; row q |
 | 10 | a caller the connector cannot place (§1.3 row 16) | passes | for a session Daoris names: a brainstorm's scope placed first, else reads served and every mutation refused | D173's FABRIC-C2a note; D199 for the role filter; row r |
 | 11 | a reviewer's and a voice's calls at the server (§1.3 rows 7, 15) | pass | refused beyond what their handed rules allow | D155, D176; row r |
@@ -926,15 +1063,15 @@ By the brief §7.3 each unification states which answer stands, as a dated note 
 | 14 | the chain's ranks 3 and 4 (`Chain.cs:170-172`) | declared, bound nowhere | removed unless a row reads them | D173's FABRIC-CHAIN1 note; row s |
 | 15 | the notices' writers (§3.4 row 10) | the slice, the look and the headless host, each editing the file | one owner, `Notices`, to which each process that tells news submits its facts in one transaction of the store, with its own cursor, keyed by occurrence | D196; rows z-v and m |
 | 16 | who staffs a kind of work (the owner's direction) | eight actors and two appointed roles in code | configured roles over a closed vocabulary of capabilities, the seeded roles read per id | D205 points 1, 7, 8 and 9, D208 point 1 and D209 points 1 and 3, a note on each that the role is configured and its bounds stand; rows w to y |
-| 17 | an appointed role's authority (round 3) | the appointment's ticked acts, held for its life (`StandingConfirmation.cs:1276`) | the act within the code's table, the appointment's grant and the role's configuration as it stands; a widening only at the next *Appoint* | D208 point 1 and D209 points 1, 2 and 4, a conformance note; rows t and y-ii |
+| 17 | an appointed role's authority (round 3; round 4) | the acts this build offered at *Appoint*, snapshotted and held for the appointment's life (`StandingConfirmation.cs:860`, `:1276`), the desk's decline outside them (`:1275-1279`) | the act within the code's table, the appointment's grant and the role's configuration as it stands, checked at admission and at its run; every narrowing lowering the live grant itself; a widening only at the next *Appoint*; the desk's decline outside every grant as today | D208 point 1 and D209 points 1, 2 and 4, a conformance note; rows t and y-ii |
 | 18 | a role's scope (round 3) | D205 rejects per-workspace choices | a working role scoped to a workspace or a repository takes its work there, the machine's role staying | D205's rejection of per-workspace choices, amended (O2-10); row w |
-| 19 | where the configuration is read (the brief §9) | `driver.json`, hand-edited and read live | the desktop store; `driver.json` its export and import, imported once and kept as the backup | D205 point 6 (the rules' keys kept as their shapes in the store, a conformance note); D50 and D110 (every door reaches the import and export); row z-ii |
-| 20 | an older build over a newer home (round 3) | each file read by whichever build opens it | a build from before the store reads the backups it left; one from before a table never opens it; a store stamped past a build's reading refuses its writes, saying to update | D139 (the imports after the build confirms), a note; row z-i |
-| 21 | the driver's shape (the brief §10) | fifteen folders cut by technique, one flat namespace | one acyclic map of subdomains, each a folder and a namespace, held by `StructureTests` | D173, a note naming the map as the Fabric's code; rows mod-0 onward |
+| 19 | where the configuration is read (the brief §9) | `driver.json`, hand-edited and read live (D50: *the file, not the surface, is authoritative*, `D50.md:7-9`) | the desktop store is the truth; `driver.json` its export and import, imported once and kept as the backup; a hand edit of it takes effect only by an import, offered at the next start through the judges (§13.5) | D205 point 6 (the rules' keys kept as their shapes in the store, a conformance note); **D50, amended**: for the configuration the store, not the file, is authoritative, and hand-editing works through the export and the import (O3-11); D110 (every door reaches the import and export); row z-ii |
+| 20 | an older build over a newer home (round 3; round 4) | each file read by whichever build opens it | a build from before the store reads the backups it left, which never hold a grant the store revoked; one from before a table never opens it; a store stamped past a build's reading refuses its writes, checked in every writing transaction; a family an older build acts on, a box among them, and a migration raising the stamp, only once the start's confirmation is settled | D139 (the imports and the stamp's raising after the build confirms), a note; rows z-i, z-ii, z-iv, z-xi |
+| 21 | the driver's shape (the brief §10) | fifteen modules cut by technique (D166 point 1, Brainstorms the fifteenth by D176 point 1, `StructureTests.cs:189-191`), one flat namespace | one acyclic map of twenty-one subdomains, each a folder, held by `StructureTests` reading every type reference; folders first and namespaces last | D166 point 1 (the modules replaced by the subdomains) and D176 point 1 (Brainstorms in Work orders), amended; D166 point 4 and its rejection of renaming namespaces as files move, kept (O3-10); D173, a note naming the map as the Fabric's code; rows mod-0 onward |
 
 ## 8. What is the owner's
 
-Nothing built from round 3 needs D191 point 3's answer. It changes no direction: the owner's FOUNDATION1 direction asks for exactly this
+Nothing built from round 4, in either part, needs D191 point 3's answer. It changes no direction: the owner's FOUNDATION1 direction asks for exactly this
 structure, and the owner's directions on roles (§2.7), on SQLite (§13) and on the driver's subdomains (§14) are taken as given, with the line
 between JSON and SQLite and the map's names and grouping the steward's by the owner's leave. It spends nothing beyond development's own runs
 and what the owner already decided: LIMITSWITCH1 and LIMITSWITCH2, built and absorbed by rows a-i and a-iii, move a driven record's, a
@@ -963,9 +1100,12 @@ answer and no row builds it:
    account, as a driven record does (D137 point 7)? Yes spends another account without the person's press and moves a conversation the person
    may mean to repair; no keeps today's door. Read D137 points 4 and 7 and this design's §3.2 step 3.
 
-Near the line, and named so the steward can check them: rows q, r, t, v, y-i and y-ii grant or refuse authority (who may start, call and act) or
-delete records, so each is built only after both makers have read it (D191's note of 2026-10-24); row z-ii's import holds a change of authority
-for the person's press; and the whole of D212 waits for both reads of round 3.
+Near the line, and named so the steward can check them: rows q, r, t, v, w-0, y-i and y-ii grant or refuse authority (who may start, call and
+act) or delete records, and rows z-ii, z-iv and z-xi rehome authority records (the configuration's `access`, `drivable`, `trees` and `standing`;
+the appointments and the standing confirmation's grant; the permissions, the configured access and the plugin approvals, the GitDoor's grants
+among them) and z-ix the records a removal follows, so each is built only after both makers have read it (D191's note of 2026-10-24; O3-14);
+row z-ii's import holds a change of authority for the person's press; and every one of them is Part B's, waiting for its own rounds. Part A
+grants, refuses and deletes nothing.
 
 ## 9. Rejected
 
@@ -978,6 +1118,7 @@ for the person's press; and the whole of D212 waits for both reads of round 3.
 | One loop for driven lines and conversations | §1.1, Q6 |
 | The service owning the move record's persistence | §1.1, Q8: one executor per kind recovers its moves, and the transactional needs are met in the desktop store and the service's atomic open (§13.4); where neither can be had, the move is held |
 | Old boxes written beside the move record; a home file per move | §1.1, Q8: two recovery authorities; a compare-and-replace fences no effect (round 3) |
+| A move taken over because a role passed; a word's receipt read across the two stores before a say; news keyed by a record's `updated` | §1.1, Q8, Q9 and Q14 (round 4) |
 | The store's alternatives (one store for the service and the desktop, a store per family, `driver.json` written through, blobs, `said` moved, the CLI on SQLite, credentials in the store) | §13.7 |
 | Separate assemblies per subdomain now | §14.4: the folders form one cycle today, so assemblies would need every cut at once |
 | A second carry record beside the move record | two owners of one delivery, the gap LIMITWORD1 came from |
@@ -1000,43 +1141,55 @@ Each row is its own branch, lands with every gate of the brief §6 green and its
 Daoris work as today except where its row names a decided change, and adds its own proof. A row that introduces a concept reads it beside today's
 mechanisms and moves no reader; a row that moves readers moves one path or channel, the old surface its adapter, the census failing on a path that
 neither moved nor is named. **Rows marked ⚖ grant or refuse authority, or delete, and are built only after both makers' reads** (D191's note of
-2026-10-24). The rows are filed in `TASKS.md` when D212 is accepted; until then FOUNDATION1 points here. *Row a-i* in this design is
-FOUNDATION1a-i, and so on. **The order** (round 3): a-i, b, c, mod-0, z-i, z-iii, a-ii, a-iii, p, d, e, f-i to f-vi, g, h, i, o, j, z-ii, z-iv, w,
-x, y-i, k, z-v, l-i to l-v, m-i to m-v, n, q, r, s, t, y-ii, u, v. The store's other families (z-vi to z-xiv, §13.6) land after z-i in any order,
-each before the first row that reads its family through the store; the driver's moves (mod-i to mod-xviii, §14.6) go bottom up after mod-0,
-each when no open branch holds the files it moves, their cuts after each. Row p now comes before row d as well as f (X2-5.1), though row d needs
-no receipt (§3.4 rule 3), so that every row that moves words lands on acknowledged attempts. The Opus reader's precondition for row a-i, that
+2026-10-24). The rows are filed in `TASKS.md` part by part: Part A's when Part A is accepted, Part B's when Part B is; until then FOUNDATION1
+points here. *Row a-i* in this design is FOUNDATION1a-i, and so on. **The order** (round 4): Part A's rows a-i, b, c, mod-0 and u, then the
+driver's moves mod-i to mod-xxi (§14.6), bottom up, each when no open branch holds the files it moves, their cuts after each; Part B's rows z-i,
+z-iii, a-ii, a-iii, p, d-i, d-ii, e, f-i to f-vi, g, h, i, o, j, z-ii, z-iv, w-0, w, x, y-i, k, z-v, l-i to l-v, m-i to m-v, n, q, r, s, t, y-ii,
+v, once Part B is accepted, and any Part B row whose files a move of Part A holds waits for that move. The store's other families (z-vi to
+z-xiv, §13.6) land after z-i in any order, each before the first row that reads its family through the store; the namespace rows last
+(§14.6). Row p comes before row d as well as f (X2-5.1), and row d-i, the keyed open, before d-ii and every row that moves words (O3-12,
+X3-6.1), so that each lands on acknowledged attempts and an idempotent open. The Opus reader's precondition for row a-i, that
 LIMITSWITCH1 merge onto a main that had moved under its branch (O's §4), is met: it merged at `a85004bd0`; and LIMITSWITCH2 landed its parts of
 rows a-i and a-iii ahead of them, merged at `db883b1cc` (§5.1).
 
-### The first three
+### Part A: the rows that only reorganise
 
-**FOUNDATION1a-i — one account rule, the cooling go-on inside it** (driver, web; on LIMITSWITCH1, merged; cut back in round 3 to the cooling
-rule for driven records and conversations, its earliest reset and its hold, O2-4, O2-5).
+Part A is a-i, b, c, mod-0, u and the driver's moves mod-i to mod-xxi with their cuts (§14.6). Each stands on today's code and records and on
+the other Part A rows alone, never on a Part B contract (the Standing says why, row by row), and each lands behind today's tests with its own
+proof.
+
+**FOUNDATION1a-i — one account rule, over LIMITSWITCH1 and LIMITSWITCH2 as built** (driver; on LIMITSWITCH1 and LIMITSWITCH2, merged; cut back
+in round 3 to the cooling rule for driven records and conversations, its earliest reset and its hold, O2-4, O2-5; in round 4 to a reorganisation
+alone, Part A's).
 - *What.* `LineAccount.Decide(own hold, trigger, constraint, line kind, the walk's answer over the accounts it may take) → Resume | Elsewhere(selection,
-  why) | Wait(earliest, accounts) | Hold(reason, repair)`, pure, in the Course subdomain's folder where row mod-0 has landed and beside
-  `ResumeAccount` where it has not: §3.2's rule. Read by `ResumeChoice` (`Waits` and LIMITSWITCH1's `Switched`) and the roster's resume, whose inline
-  twin (`HarnessRoster.cs:1014`) and `switches` parameter become one call; by the chat's go-on (`ChatGoOn.cs:571-587`) and the wake
-  (`LimitWaits.cs:186`, `:199`). Executors unchanged: a repository conversation's cooling *elsewhere* goes on through the ended move's body, its
-  guard (`LimitMove.cs:213`) widened to a cooling own account, why `account`, among its agent's accounts, waiting for the earliest reset where none
-  of them is ready (O2-13), the brief and the waiting words handed once, all as LIMITSWITCH2 built it. The closed quest's hold (`Driver.cs:2367-2384`)
-  reads the rule through `LineAccount` as LIMITSWITCH2's switch does. Ask Daoris's go-on (`ChatGoOn.cs:672-688`) reads the rule and keeps its wait; a `choice: pick` keeps its own account; a
-  conversation's other `CannotGoOn` cases are unchanged (§8). The earliest reset one computation, the own account's included where it may resume
-  (O2-4); none with a reset, a hold naming the repair. LIMITSWITCH2 has landed the conversation's switch and its wait (§5.1), so this row reads
-  them through `LineAccount` and changes no behaviour there; what it adds is the one call and the hold that names a repair.
+  why) | Wait(earliest, accounts) | Hold(reason, repair)`, pure, beside `ResumeAccount` in `Accounts/Rotation/`, which the map places in Agents with
+  the roster that reads it (§14.2; O3-8): §3.2's rule as LIMITSWITCH1 and LIMITSWITCH2 built it. Read by `ResumeChoice` (`Waits` and LIMITSWITCH1's
+  `Switched`) and the roster's resume, whose inline twin (`HarnessRoster.cs:1014`) and `switches` and `walkCounts` parameters become one call; by the
+  chat's go-on (`ChatGoOn.cs:571-587`) and the wake (`LimitWaits.cs:186`, `:199`). Executors unchanged: a repository conversation's cooling
+  *elsewhere* goes on through the ended move's body (`switching`), among its agent's accounts, its new part continuing the old by `retry`, waiting
+  for the earliest reset of any where none of them is ready (O2-13), the brief and the waiting words handed once; a closed quest's session through
+  `GoOnLostAsync` with the reason `account`, a headless host waiting; all as LIMITSWITCH2 built it. The closed quest's hold (`Driver.cs:2367-2384`)
+  reads the rule through `LineAccount` as LIMITSWITCH2's switch does. Ask Daoris's go-on (`ChatGoOn.cs:672-688`) reads the rule and keeps its
+  wait; a picked conversation walks its agent's accounts as LIMITSWITCH2 built it, since the record keeps no pick (round 3 had it keep its own
+  account, which is a-ii's recorded pick, Part B's); a conversation's other `CannotGoOn` cases are unchanged (§8). The earliest reset one
+  computation, the own account's included where it may resume (O2-4); where none has a reset, the hold that names the repair, which is
+  `HarnessRoster.Unready`'s refusal where nothing cools today (`:1762-1779` at `e8f1aed4f`), given a name. **It changes no behaviour**: every
+  answer is today's, read through one call. It reads no recorded pick, no settled selection, no move record and no store.
 - *Census.* Every caller of `ResumeAsync`, `CoolingOf`, `CoolingsOf` and `ResumeChoice.Waits` reads `LineAccount` or is named *not yet moved*.
 - *Proof.* `LineAccountTests`: own (ready, near, cooling, signed out, refused, missing, outside, kept, not offered) × trigger × constraint (none, a
   pick) × others (ready on its agent, ready on another choice, none, none with a reset) × kind (driven open or taken, driven closed, conversation, Ask
-  Daoris), every row LIMITSWITCH1 and LIMITSWITCH2 do not change compared with today's `ResumeChoice` and `LimitWaits` answers in the same commit.
-  The conversation's cases, LIMITSWITCH2's proofs kept as this row's, a case it did not build seen failing first: a stand-in ended conversation whose own account cools with another
-  ready goes on there in one briefed part, the words once; with none ready it waits and names the earliest reset; **its own account cooling and every
-  other signed out, it waits for its own reset; a driven record whose own account and every other are signed out holds, naming the sign-in** (O2-4);
-  a picked conversation walks its agent's accounts until row a-ii records the pick; Ask Daoris waits for its own; a closed quest's cooling session
-  goes on through the ended move, as LIMITSWITCH2 built it, its case row a-iii's; a conversation whose own account is signed out is `CannotGoOn`
-  as today. `ChatGoOnTests`, `ChatGoesOnProcessTests`, `LimitWaitsProcessTests`, `ContinuationTests`,
-  `AccountRotationTickTests`, `LimitResumeTickTests`, `ResumeAccountTests` and `SessionMessagesTickTests` whole; the held row in both languages.
-  Installed: the next real cooling own account with a conversation's words goes on within one look (`session.moved … why=account`).
-- *Notes.* §7 rows 1 and 3.
+  Daoris), every case asserted in the same commit against the answer today's `ResumeChoice`, roster and `LimitWaits` give, so a difference fails
+  before anything moves; LIMITSWITCH2's proofs kept as this row's: a stand-in ended conversation whose own account cools with another ready goes on
+  there in one briefed part, the words once; with none ready it waits and names the earliest reset; **its own account cooling and every other
+  signed out, it waits for its own reset; a driven record whose own account and every other are signed out holds, naming the sign-in** (O2-4); a
+  picked conversation walks its agent's accounts; Ask Daoris waits for its own; a closed quest's cooling session goes on through the ended move;
+  a conversation whose own account is signed out is `CannotGoOn` as today. `ChatGoOnTests`, `ChatGoesOnProcessTests`, `LimitWaitsProcessTests`,
+  `ContinuationTests`, `AccountRotationTickTests`, `LimitResumeTickTests`, `ResumeAccountTests` and `SessionMessagesTickTests` whole; the held
+  row in both languages unchanged. Installed: the next real cooling own account with a conversation's words still goes on within one look, its
+  machine-log line `session.moved … why=retry` (`Continuations.Moved`, `Driver/Conversations/Domain/Continuation.cs:588-594`, logged at
+  `Chat/LimitMove.cs:296`), its note's continue reason `account` (O3-13).
+- *Notes.* §7 rows 1 and 3, conformance notes; D137's LIMITSWITCH2 note, whose *row 1a … keeps `accountPicked` on the record* is row a-ii's
+  binding in the desktop store (§3.2 step 4), a dated line added with round 4 (O3-13).
 
 **FOUNDATION1b — a word keeps its identity wherever it is held** (modules, driver; any time, a day).
 - *What.* The shell's held word carries its producer's key, level, files and display choice (`SessionWords.cs:179`, `:464`), kept in
@@ -1048,67 +1201,96 @@ rule for driven records and conversations, its earliest reset and its hold, O2-4
   `SessionWordsWaitingTests`, `SessionLedgerTests` and `SessionStoreTests` whole.
 
 **FOUNDATION1c — the participant's work, read once** (service, driver, modules, web: the sessions slice is the modules', `Modules/Loop/SessionsStateSlice.cs`; O2-14).
-- *What.* `ParticipantWork` and `Participants.WorkOf` in the service, its twin in the driver, one fixture table both suites read (§2.2); the service
+- *What.* `ParticipantWork` and `ParticipantWork.Of` in the service, its twin in the driver, one fixture table both suites read (§2.2); the service
   answers `work` for every record of this machine on loopback, never on the wire; the sessions slice's allow-list gains `work` beside `kind`; `HoldsSlot`
   reads the work's table; `identity.ts` reads the pushed `work` where a host sends it and today's predicates where it does not, so a partner is drawn
-  as a partner. The `Participant` type with its census, read by nothing else yet.
-- *Census.* A: on every fixture row `WorkOf` agrees with `HoldsSlot`, `identity.ts`'s predicates (the page's test reads the same fixture),
+  as a partner, D203 point 1's reading and the one thing a person sees change. The `Participant` type with its census, read by nothing else yet,
+  every field read from today's stores: the role from `actor`, the binding from `<s>.harness.json` through `HarnessConversations.Read`, a holder
+  placed by the id and generation the shell hands it, `Authority` unread until row t (§2.1). It reads no catalogue, no store and no appointment.
+- *Census.* A: on every fixture row `ParticipantWork.Of` agrees with `HoldsSlot`, `identity.ts`'s predicates (the page's test reads the same fixture),
   `ConnectorRoles`' reading of `serves` and `piece` and `WordsNever.IsHelp`; each disagreement listed as a decision (the partner drawn as a helper is
-  one). B: every line outside `WorkOf` that reads `Serves`, `Opinion`, `Ask`, `Piece`, `HelpMode` or `HelpRoom.Repository` to tell a work is named
-  *not yet moved* with the row that moves it; a new one fails. C: every record carrying an `actor` maps it to a role taking its work, by the role's
-  revision the start kept, a role taking `design` admitted on a record whose marks read `build` (O2-9).
+  one, D203 point 1's). B: every line outside `ParticipantWork.Of` that reads `Serves`, `Opinion`, `Ask`, `Piece`, `HelpMode` or `HelpRoom.Repository`
+  to tell a work is named *not yet moved* with the row that moves it; a new one fails. Round 3's census C, every record's `actor` held to a role
+  taking its work by the catalogue's revision the start kept on its store binding, leans on rows w, x and z-iii and is row x's (round 4).
 - *Proof.* `SessionStoreTests` (a record from before answered its work; a mirror another machine's), `SessionsStateSliceTests` (`work` pushed,
   allow-listed, loopback only, `kind` unchanged), `PlannerTests`' CAPCOUNT1 and SESSBADGE1 cases, ASKRAIL1's rail case, the page's identity tests with a
   partner record and with a host sending no `work`; `McpToolsTests`, `ActorChoicesTests` and `SessionLedgerTests` whole.
 
-### The rest, in order
+**FOUNDATION1mod-0 — the structure gate** (driver tests; §14.5).
+- *What.* `StructureTests` and `fixtures/structure.json` hold the twenty-one subdomains in their order, each one's folder and its allowed
+  `Domain/`, and the subdomain, direction, purity, Loop and global-using rules, today's edges against the order named as *not yet cut* with the row
+  that cuts each; new code written in place from here on. The direction rule reads **every type reference**, by the declared-type table the gate
+  builds from every file's declarations, as its Loop rule reads type names today, so an ordinary, a fully qualified, an aliased and a static
+  reference all count, never a `using` line alone (X3-4.1). Every namespace stays `Daoris.Driver` (D166 point 4). It amends D166 point 1's fifteen
+  modules, Brainstorms the fifteenth by D176 point 1 (`Driver.Tests/StructureTests.cs:189-191`), by the twenty-one subdomains, a dated note on
+  each (O3-10).
+- *Proof.* The gate passes over the tree with today's exceptions listed and fails on a planted upward type named plainly, fully qualified (as
+  `Driver/Sessions/SessionsCommand.cs:185` names one today), through an alias and through a static import; a planted `Domain/` file naming
+  `ServiceClient`; a planted rule in Loop; a planted global using; `StructureTests`' fixtures for each.
+
+**FOUNDATION1u — the role's name** (web's glossary; §6).
+- *What.* The glossary gains *role*, 角色, with its reasons (D116): one concept in two shapes, a working role (D205's actor) and an appointed role
+  (D208, D209), 任命的角色 where the appointed one must be said; its avoid list 职务, 岗位, 演员, 人设 and 执行者. *actor*'s entry
+  (`glossary.json:475`) keeps 角色 and says it is a working role's staffing, its line *A co-worker's role names its actor* read as *A co-worker's
+  work names the role it runs as*. **No page string changes**: the strings that say a role already say 角色 and stay as they are,
+  `zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`, `zh/settings.daoris.json:108`
+  and `:139` (你任命的角色, the appointed shape). Round 3's row retired 角色 from `:108` for 职务; round 4 withdraws 职务, and retires nothing.
+- *Proof.* `i18n:check`, `names:check -- --strict`; the glossary's own test over the new entry.
+
+**FOUNDATION1mod-i to mod-xxi — the driver's folders moved, one subdomain a row** (driver; §14.6). Each moves one subdomain's files into its
+folder, its namespace unchanged, every linked consumer with it, no behaviour changed; its cuts after it, one edge family per row, a port declared
+or a type moved to its one owner, each changing no behaviour. Proof: the gates of the brief §6 whole, the GitDoor built and its tests where it
+compiles a moved file, and `StructureTests`' census shorter by the subdomain's files and edges.
+
+### Part B: the rest, in order
+
+Proposed, each row waiting for Part B's acceptance, read in rounds of its own.
 
 | Row | What | Proof |
 |---|---|---|
-| **1mod-0** the structure gate (§14.5) | `StructureTests` and `fixtures/structure.json` hold the twenty-one subdomains in their order, the subdomain, direction, purity, Loop and global-using rules, today's edges against the order named as *not yet cut*; new code written in place from here on | the gate passes over the tree with today's exceptions listed and fails on a planted upward type, a planted `Domain/` file naming `ServiceClient`, a planted rule in Loop and a planted global using; `StructureTests`' fixtures for each |
-| **1z-i** the desktop store, read by nothing (§13.2 to §13.4, §13.6) | `data/desktop.db`, `DesktopStore` in Store, its version, revisions, imports and wake file; the home's table and its two twins; the GitDoor's read-only open | §13.6's row z-i |
-| **1z-iii** the bindings (§13.6) | `<s>.harness.json` into `bindings`, every resume reading its id there | §13.6's row z-iii |
+| **1z-i** the desktop store, read by nothing (§13.2 to §13.4, §13.6) | `data/desktop.db`, `DesktopStore` in Store, its version, revisions, runs, imports and wake file; `Microsoft.Data.Sqlite` for the driver and the GitDoor, pinned as the service's; the home's table and its two twins; the GitDoor's read-only open | §13.6's row z-i |
+| **1z-iii** the bindings (§13.6) | `<s>.harness.json` into `bindings`, every resume reading its id there once imported, the file set aside | §13.6's row z-iii |
 | **1a-ii** account-pick provenance | a start the person names an account for (`START_CHAT`'s `profile`, the terminal's account, the person's hand-over press with an account; never an agent's ask or the curve's account, which keep today's reading) keeps on its binding in the desktop store that the person picked its account (round 3: the store's `bindings`, never a field on the service's record, so no chain through the host and no field on any wire); the rule reads it: a recorded account pick waits, an agent pick and a record from before walk their agent's accounts; §7 row 2 | a binding of a record from before and of a mirror holds no pick; `ChatHandOverTests` with a named account; `LineAccountTests`' constraint axis whole; an older build continuing a picked record reads it as today's `pick` |
 | **1a-iii** the briefed move's walk, one selection, the closed quest's case | the briefed move and its not-offered path through the walk, own account first where ready, the person's fresh-part press the one exception to an automatic part's same-account refusal (§3.2 step 6); the live limit move opens on the selection it judged, one count (`LimitMove.cs:86`, `:142`), as LIMITSWITCH2 made the ended move do (`:237`, `:256`); the ended move gains `ElsewhereAsync`, so a conversation whose agent's accounts all cool goes on with its role's later choice where the person allowed one (O2-13); **the closed quest's cooling session going on as a conversation in its tree** (O2-5), built by LIMITSWITCH2 through the ended move with the reason `account`, taken as built, a headless host waiting; §7 rows 1b and 4 | `BriefedMoveTests`, `LimitWaitsProcessTests`; the judged account is the opened one, counted once, on both moves; an ended conversation with every account of its agent cooling going on with its next choice; LIMITSWITCH2's closed quest cases (`AccountRotationTickTests`, `LimitWaitsProcessTests`) kept; the person's briefed press opening on the own account where ready |
-| **1p** attempts acknowledged, dispositions and receipts | §3.4 rule 5; §7 row 8; before rows d and f, so their proofs stand on it; the receipts in the desktop store, by line and producer key | the attempt's commit failing sends nothing and says so; an answer naming fewer words than asked sends only those; a commit whose answer is lost; a crash before and after the wire; a limit's refusal carrying its words once; **a transient try's words staying uncertain when a limit then ends the episode, only the words no try attempted carried** (X2-3.2); a producer's retry after the take answered as kept within the horizon; **equal keys on unrelated lines two words, a retry through two successors one word, a keyless word moved and receipted by its id** (X2-3.3); no automatic resend of an uncertain attempt, its words in en and zh; the install's delivery latency and store writes before and after |
-| **1d** words follow the line's head, and the open moves them | §3.4 rules 2 and 3: `Lines.HeadOf` inside `SayAsync`'s exclusive step, across kinds, read by `PartnerDesk` too; the new `Continued` refusal with the head, each say caller's handling named; the ledger's open moving the old part's waiting words under their producer keys with transfer ids, in its own step, idempotent under its key; every site that opens and hands words, from the census (the ended and live limit moves, the driven carry-on, the briefed move and its not-offered path, start-from's `Start`, a refused open); moved words ahead of later ones | first the survey's *unverified* gap made a test: a word said to a live limit move between the old part's end and the new open lands once on the new part; a word kept between the course's read and the open moved by the open; a late word to a closed quest's driven part reaches the conversation that went on from it; a producer's retry at the new head keeps one word; a retried open moving nothing again; LIMITWORD1's, HANDWORDS1-i's and SAIDBACK1e's cases green; the say door's twin tables cell for cell; `SessionLedgerTests`, `DrivenInboxTests`, `ChatGoOnTests`, `HandOverTests`, `CurveMoveTests`, `BriefedMoveTests` whole; the say door's latency on the install before and after |
-| **1e** the course, beside | `Course.Decide` over paths A to N reproducing today's answers, read by nothing; its facts with the answers-alone hold and the boundary; `Start` for start-from; the consent before an agent's ask and the curve; a standing move's old part `Never`; one closed `from_why`/`from_by` enum; each place two paths differ on the same facts listed as a decision for its row | the paths' suites' cases ported as its table; the trigger-site census (§3.1); `AnswersAloneHoldTests`' cases as course rows |
-| **1f-i** the move record, read by nothing | `moves` and `move_words` in the store, the claim, the effect marks, the come-up stage per kind before the sweep and after the imports; the ledger's `opens` key, unique, atomic; a box from SWITCHCTX1a, if built, imported (split by round 3, X2-5.2) | the store's transactions over a claim, a takeover by the role's current holder and none of a live holder; **a paused executor resuming after a takeover begins no effect, and an effect it began is held, never repeated** (X2-3.1); a lost open's answer found by its key, never opened twice; an older host's lost open held, never searched |
-| **1f-ii** to **1f-iv** each move without a record keeps one, one per branch: ii the live limit move; iii the curve; iv the driven carry-on | the move written and taken up through the store; nothing else of the path changes | for each, a shell or loop killed at each phase comes up and ends with **each word on `said` when the open moved it either delivered once, held at a limit's conclusive refusal and carried once, or uncertain and said**, never sent twice (X2-5.1); a word said during a chat's `Hold()` named *row o's* in the census; §13.5's downgrade table run at each phase with an older build's own come-up, then the newer build's return acting once; `LimitWaitsProcessTests`, `CurveMoveTests`, `ContinuationTests` |
+| **1p** attempts acknowledged, dispositions and settlement | §3.4 rule 5; §7 row 8; before rows d and f, so their proofs stand on it; the service's `said_settled`, written in the statement that takes a word, by line and producer key, and `SaidKeys.Settled` read inside the say door's, the helper desk's and the partner desk's own steps (round 4, X3-3.2, O3-5) | the attempt's commit failing sends nothing and says so; an answer naming fewer words than asked sends only those; a commit whose answer is lost; a crash before and after the wire; a limit's refusal carrying its words once; **a transient try's words staying uncertain when a limit then ends the episode, only the words no try attempted carried** (X2-3.2); a producer's retry after the take answered as kept within the horizon; **a retry paused after its check while another dispatcher takes the word, then resumed, keeping one word** (X3-3.2); **a helper's and a partner's hand retried after its take keeping one word** (O3-5); **equal keys on unrelated lines two words, a retry through two successors one word, a keyless word moved and settled by its id** (X2-3.3); no automatic resend of an uncertain attempt, its words in en and zh; an older host's take writing no settlement and its doors answering as today; the install's delivery latency and store writes before and after |
+| **1d-i** the keyed open and its record (round 4, O3-12, X3-6.1) | §3.3's destination: the ledger's opens taking an `opens` key, the service's `session_opens` written in the open's own exclusive step with the record opened and every word it moved, a repeat open answered from it whether or not its words still wait; the key in the open's request and the transfer in its answer, nothing on the record or the wire | a repeat open with the key opening nothing and moving nothing, answered the record and the words, in process; the same after the moved words were taken off `said`; two keys two records; an older host's open unchanged; `SessionLedgerTests` whole; across a crash, row f-i's case |
+| **1d-ii** words follow the line's head, and the open moves them | §3.4 rules 2 and 3, on d-i's open: `Lines.HeadOf` inside `SayAsync`'s exclusive step, across kinds, read by `PartnerDesk` too; the new `Continued` refusal with the head, each say caller's handling named; the ledger's open moving the old part's waiting words under their producer keys with transfer ids, in its own step, idempotent under its key; every site that opens and hands words, from the census (the ended and live limit moves, the driven carry-on, the briefed move and its not-offered path, start-from's `Start`, a refused open); moved words ahead of later ones | first the survey's *unverified* gap made a test: a word said to a live limit move between the old part's end and the new open lands once on the new part; a word kept between the course's read and the open moved by the open; a late word to a closed quest's driven part reaches the conversation that went on from it; a producer's retry at the new head keeps one word; a retried open moving nothing again; LIMITWORD1's, HANDWORDS1-i's and SAIDBACK1e's cases green; the say door's twin tables cell for cell; `SessionLedgerTests`, `DrivenInboxTests`, `ChatGoOnTests`, `HandOverTests`, `CurveMoveTests`, `BriefedMoveTests` whole; the say door's latency on the install before and after |
+| **1e** the course, beside | `LineCourse.Decide` over paths A to N reproducing today's answers, read by nothing; its facts with the answers-alone hold and the boundary; `Start` for start-from; the consent before an agent's ask and the curve; a standing move's old part `Never`; one closed `from_why`/`from_by` enum; each place two paths differ on the same facts listed as a decision for its row | the paths' suites' cases ported as its table; the trigger-site census (§3.1); `AnswersAloneHoldTests`' cases as course rows |
+| **1f-i** the move record, read by nothing | `moves` and `move_words` in the store, the claim by process run (`store_runs`, `claim_run`, `claim_generation`), the effect marks, the take-up of dead runs' moves per kind before the sweep and after the imports, the imports run once the start's confirmation is settled; on d-i's keyed open; a box from SWITCHCTX1a, if built, imported (split by round 3, X2-5.2) | the store's transactions over a claim; **a takeover only of a run dead by the lease's test, never of a live one: two shells on one home, each keeping its own conversation moves; a `--share` loop beside the instance, each keeping the moves of the lines it runs; a paused executor whose process lives, never taken over, and paused after its mark commits and before its effect, the effect then made once by it alone** (O3-1, X3-3.1); a killed executor's marked effect with no outcome held by the taker, never repeated (X2-3.1); a run whose start time cannot be read never taken over; a lost open's answer found by its key across a crash, never opened twice; an older host's lost open held, never searched |
+| **1f-ii** to **1f-iv** each move without a record keeps one, one per branch: ii the live limit move; iii the curve; iv the driven carry-on | the move written and taken up through the store; nothing else of the path changes | for each, a shell or loop killed at each phase comes up and ends with **each word on `said` when the open moved it either delivered once, held at a limit's conclusive refusal and carried once, or uncertain and said**, never sent twice (X2-5.1); a word said during a chat's `Hold()` named *row o's* in the census; §13.5's downgrade table run at each phase with an older build's own come-up, then the newer build's return acting once; **an older build opening a successor of the destination and crashing before it moved the destination's words, the newer build back delivering nothing to the destination and the words following the head** (X3-3.4); `LimitWaitsProcessTests`, `CurveMoveTests`, `ContinuationTests` |
 | **1f-v**, **1f-vi** the boxed moves, one per branch: v the hand-over; vi the ended limit move | the move through the store, its box imported once and no longer written (§3.3) | as ii to iv, and an older build's own box written during a downgrade imported once at the return and set aside; `HandOverProcessTests`, `LimitWaitsProcessTests` |
 | **1g** failures read once on every path | what AGENTERRORS1's remaining rows do not already reach: a conversation's and a brainstorm's limit by the reader's code, a conversation's limited record written as the ledger's flag at its end | a chat's limit by code alone moves it; AGENTERRORS1's C4-6 case on a conversation; `AcpTransientTests`, `ChatTransientProcessTests`, `TransientRetryTickTests`, `LimitResumeTickTests` whole |
-| **1h** conversations onto the course, one path per branch: the curve; the live and ended limit moves; the wake; the go-on; the briefed move and go-on-new; the hand-over | each path calls `Course.Decide`, its old decision the adapter, the hand-over rule's consent kept on the curve's and an agent's door | the path's suite whole (`CurveMoveTests`, `LimitWaitsProcessTests`, `ChatGoOnTests`, `ChatGoesOnProcessTests`, `HandOverTests`, `HandOverLookTests`); a consent case per door; the census's *not yet moved* list shorter by one |
+| **1h** conversations onto the course, one path per branch: the curve; the live and ended limit moves; the wake; the go-on; the briefed move and go-on-new; the hand-over | each path calls `LineCourse.Decide`, its old decision the adapter, the hand-over rule's consent kept on the curve's and an agent's door | the path's suite whole (`CurveMoveTests`, `LimitWaitsProcessTests`, `ChatGoOnTests`, `ChatGoesOnProcessTests`, `HandOverTests`, `HandOverLookTests`); a consent case per door; the census's *not yet moved* list shorter by one |
 | **1i** driven lines onto the course, one path per branch: the go-on and the limit resume; the quest's hand-over; the carry-on; past the transient bound; the send-back | as 1h | `ContinuationTests`, `SessionMessagesTickTests`, `LimitResumeTickTests`, `PlannerTests`, `TransientRetryTickTests`; a consent case per door; the family rehearsal |
 | **1o** words never held outside `said` | §3.4 rule 4, after 1h and 1i: the say door's keep for a winding-up or moving record, in a shape an older shell's sweep cannot read as waiting; the shell's holds become keeps; a chat's `Hold()` during a move keeps and queues; `held-words.json` read once, never written | HANDWORDS1-i's case with the shell restarted mid-hand-over; an older shell's own sweep over a word kept for a moving record resuming nothing; `DrivenInboxTests`, `SessionMessagesTickTests`, `ChatGoOnTests`; a restart between keep and delivery; the say-to-wire latency on the install |
 | **1j** one start plan and one walk | §2.4, one start per branch; four walks into one, one pass-code set, one re-ask; the reservation at the selection, probes uncounted; §7 row 5 | `ActorChoicesTests`, `HelperLookTests`, `OneTurnReaskTests`, the intake's and the brainstorm's suites; a record on Build's second choice resumed by the person's words; exactly one reservation per start; a look's starts spread as today |
-| **1z-ii** the configuration (§13.5, §13.6) | `data/driver.json` into `settings` and `role_staffing`, every writer and reader through Settings; the export and the import at every door | §13.6's row z-ii |
-| **1z-iv** the appointments (§13.6) | `data/standing-confirmation.json` into `appointments`, each with its grant | §13.6's row z-iv |
-| **1w** the role catalogue, read beside | §2.7's capability vocabulary (each act with its scope kind and offered flag) and the two exclusive shapes; `RoleCatalog.Read` over the store's `roles` and the seed per id; `RoleCatalog.RoleFor(work, place)`; `RoleCatalog.Judge` with its closed refusal codes, keyed by the work, its census every writer (`SET_ACTOR`, `daoris driver actor` and `role`, Ask Daoris's proposals, the import); the eight always-on ids one list; read by nothing | the seed reproduces today's every start case; **a catalogue with one added role reproduces the eight seeded roles' starts** (O2-6); the judge refuses an owner's act, a mixed shape, an appointed role taking work, an act not offered or out of its scope kind, removing or scoping away a role of a work that may not be off, two roles taking one work in one scope; first edit, partial edit and last deletion keep absent, set, removed and unreadable apart (X2-2.3); `ActorChoicesTests` whole |
-| **1x** starts take their role | the start plan finds each start's role by its work and place; `actor` written as the seeded role of its work, the role taken and its revision on the binding; the `design` capability, admitted as `build` and falling back to it, taken by a quest whose `weight` its publisher or the intake marks `design` (MODELROLE1l's code; the field shared with MODELROLE1i) | **first, an older build's continuation of a record started on an added role runs as its seeded work** (O2-3; X2-5.2); a quest marked design starts on Build's order while no role takes `design`, and on the role that takes it once one does, each said in *Details*; an unmarked quest on Build's; a scoped role naming an agent its place's rule does not permit walks only the permitted (the census's case); the seeded catalogue changes no start (`ActorChoicesTests`, `PlannerTests`, `HelperLookTests` whole) |
+| **1z-ii** ⚖ the configuration (§13.5, §13.6) | `data/driver.json` into `settings` and `role_staffing`, every writer and reader through Settings; the export and the import at every door; its authority keys' narrowings written through to the backup; ⚖ since its import door changes `access`, `drivable`, `trees`, `standing` and a role's authority (O3-14) | §13.6's row z-ii |
+| **1z-iv** ⚖ the appointments (§13.6) | `data/standing-confirmation.json` into `appointments`, each with its grant, the standing confirmation's own family, set aside; ⚖ since it rehomes the grant (O3-14) | §13.6's row z-iv |
+| **1w-0** ⚖ the act vocabulary in the driver (round 4, O3-6) | each role's and act's name, its offered flag and its admissible scope kind moved from the shell's library (`Modules/Platform/StandingConfirmation.cs:121-133`, `:330`, `:336`; `Modules/Platform/RoleActs.cs:44-65`; `Modules/Bridge/StewardActRows.cs:145-161`) into the driver's `Capabilities`, read from there by the shell's judge, tables and handlers, which stay; no behaviour changed; ⚖ since it rehomes what authority reads | `StandingConfirmationTests` and `PipeCensusTests` whole; every act's offered flag and scope kind read alike before and after; the GitDoor untouched |
+| **1w** the role catalogue, read beside | §2.7's capability vocabulary (each act with its scope kind and offered flag) and the two exclusive shapes; `RoleCatalog.Read` over the store's `roles` and the seed per id; `RoleCatalog.RoleFor(work, place)`; `RoleCatalog.Judge` with its closed refusal codes, keyed by the work, its census every writer (`SET_ACTOR`, `daoris driver actor` and `role`, Ask Daoris's proposals, the import); the eight always-on ids one list; read by nothing | the seed reproduces today's every start case; **a catalogue with one added role reproduces the eight seeded roles' starts** (O2-6); the judge refuses an owner's act, a mixed shape, an appointed role taking work, an act not offered or out of its scope kind, removing or scoping away a role of a work that may not be off, two roles taking one work in one scope; first edit, partial edit and last deletion keep absent, set, removed and unreadable apart (X2-2.3); **a mixed record written past the judge read as unreadable, never as either shape; an unreadable added record holding every start in its scope until it reads or is deleted, each said** (O3-16); `ActorChoicesTests` whole |
+| **1x** starts take their role | the start plan finds each start's role by its work and place; `actor` written as the seeded role of its work, the role taken and its revision on the binding, each binding writer updating its own columns by name (O3-16); census C, moved here from row c in round 4: every record carrying an `actor` held to a role taking its work by the role's revision the start kept, a role taking `design` admitted on a record whose marks read `build` (O2-9); the `design` capability, admitted as `build` and falling back to it, taken by a quest whose `weight` its publisher or the intake marks `design` (MODELROLE1l's code; the field shared with MODELROLE1i) | **first, an older build's continuation of a record started on an added role runs as its seeded work** (O2-3; X2-5.2); a quest marked design starts on Build's order while no role takes `design`, and on the role that takes it once one does, each said in *Details*; an unmarked quest on Build's; a scoped role naming an agent its place's rule does not permit walks only the permitted (the census's case); the seeded catalogue changes no start (`ActorChoicesTests`, `PlannerTests`, `HelperLookTests` whole) |
 | **1y-i** ⚖ the person sets the catalogue up | adding, changing and removing a working role (name, work, staffing, scope) in Settings, with `daoris driver role` and through `role_propose` with the person's press; the one place a role is set, its words in both catalogues under the UI and translation contracts; the *Designer* suggestion on D205 point 7's card; after MODELROLE1g's card and MODELROLE1h's `actor_propose`, which `role_propose` extends (O2-11); ⚖ since removing a role holds its work's starts | the judge's cases at every door; a removed role's work holding its starts, said; a running session untouched; no `settings_*` grant reaching a role; `i18n:check`, `names:check -- --strict`; the screen in both themes, widths and languages; an installed proof of the owner adding a role |
-| **1k** the event journal, read by nothing | `event_journal` with §4.1's capture schema, its guarded raw triggers on `sessions`, `quest_log`, `asks` and the channel, each row's allow-listed snapshot; the `journal` family; the floor and the trim; `store_identity` written by the schema's initialisation | each ledger move once, in order, as its raw transition; a note-only move, a same-state write and a mirror pass journalling nothing; a word taken waking the `journal` family; **an end, a reopen and an end, and a park, its answer and a park again, made before any reader runs, each coded from its own row** (X2-4.1); a statement adding more than 64 words journalling an overflow row; an older build's own statements, run in the test, mint rows and never fail (`compatible-builds.md`); the bound per row and per table holds; positions never reused; landing limits measured on the install before and after: the `sessions` write's p95 latency within 10 % and the journal's typical size under 5 MB |
+| **1k** the event journal, read by nothing | `event_journal` with §4.1's capture schema, its guarded raw triggers on `sessions`, `quest_log`, `asks` and the channel, each row's allow-listed snapshot; `session_transitions`, a record's transition number moved by trigger on a real change of state (round 4, X3-3.6); the `journal` family; the floor and the trim; `store_identity` written by the schema's initialisation | each ledger move once, in order, as its raw transition; a note-only move, a same-state write and a mirror pass journalling nothing and moving no transition number; a word taken waking the `journal` family; **an end, a reopen and an end, and a park, its answer and a park again, made before any reader runs, each coded from its own row** (X2-4.1); a statement adding more than 64 words journalling an overflow row; an older build's own statements, run in the test, mint rows and never fail (`compatible-builds.md`); the bound per row and per table holds; positions never reused; landing limits measured on the install before and after: the `sessions` write's p95 latency within 10 % and the journal's typical size under 5 MB |
 | **1z-v** the notices (§13.6) | `data/notices.json` into `notices`, with the said-set's and cursors' tables | §13.6's row z-v |
 | **1l-i** to **1l-v** one end, one reader per branch | `part.ended` with its reason and class judged in .NET, §4.2's filter table; i the usage slice wakes on it; ii `SESSION_ENDED`; iii `session/ended`; iv the log's `session.ended`; v *Ended*; every process reading the journal from its come-up | `AttentionTests`, `NoteCodesTests`, `PluginKitTests`, `StatePublisherTests` whole; a driven end wakes the usage slice; LIMITRESUME1a's case; the class table both ways against `NoteCodes`' `ended.*`; a Process case with a shell beside a headless lease holder, a conversation's end told once and at once |
-| **1m-i** to **1m-v** news from the journal, one reader per branch | i one owner of the notices, a cursor per teller; ii parks from the journal; iii ends; iv the said-set in place of each first-read baseline, one baseline per branch; v the notify rule in one table | a park made just before a restart told once after it; a crash between claim and balloon telling nothing twice; a held call told once while its process lives; nothing told twice; m-iv's horizon cases: more than 200 eligible at once, a key expiring with the horizon, a new teller, a reconciliation below the floor, none told twice (X2-4.3); `AttentionStateSliceTests`, `AttentionTests`, `LookSaidTests`; the look's time on the install before and after |
+| **1m-i** to **1m-v** news from the journal, one reader per branch | i one owner of the notices, a cursor per teller; ii parks from the journal; iii ends; iv the said-set in place of each first-read baseline, one baseline per branch; v the notify rule in one table | a park made just before a restart told once after it; a crash between claim and balloon telling nothing twice; a held call told once while its process lives; nothing told twice; m-iv's horizon cases: more than 200 eligible at once, a key expiring with the horizon, a new teller, a reconciliation below the floor, none told twice (X2-4.3); **an end told from the journal, the journal trimmed past it, and a second teller's reconciliation finding the same end under the same key, telling nothing; a note-only write after an end telling nothing new** (X3-3.6); `AttentionStateSliceTests`, `AttentionTests`, `LookSaidTests`; the look's time on the install before and after |
 | **1n** EVENTHOOK1 onto the journal | after EVENTHOOK1's rows land as designed, its session kinds read the retained journal (§5.1); its relay's delivery contract unchanged | its grammar census and relay proofs whole; a restart of the lease's loop re-reads a session event the journal holds; a missed frame still said as missed |
 | **1q** ⚖ one policy shape and start admission | §2.3's policy over today's keys and the start layer's table, keyed by the work; §7 row 9 | `HelperLookTests`, `HelperJudgeTests`, `PartnerJudgeTests`; the five doors of survey §1.3 row 6 asked the same cases; `DriverConfigKeepsTests` (no key moved) |
 | **1r** ⚖ the connector by work, failing closed | the call layer's table over every tool × every work, derived from the registration; a brainstorm's scope placed first, generator and synthesizer apart; `SessionRole` becomes the work; §7 rows 10 and 11 | `McpToolsTests`, `McpRoleFilterTests` over every work × every tool; a voice's result tools served; a stand-in named caller with no record served reads and refused mutations; C2a's measurement of the ACP doors first (FABRIC-ACP1) |
 | **1s** push only | with D182's remaining rows: `DRIVER_TICK`'s data into slices; `STATE_CHANGED` for unmoved scopes and plugins alone; held answers by declared inputs and versions; §7 row 14 | `pushedState.test.tsx`, `bridge/state/*.test.ts*`, `StateSlicesTests`; bridge reads per minute on the install with two windows, before and after (D182 point 8) |
-| **1t** ⚖ one role door | §2.5: one act form and proof, the act admitted within §2.7's three (the code's act table, the appointment's grant, the role's configuration as it stands), the appointment's `acts` kept (O2-1), the holder a participant placed as a holder | `PipeCensusTests`, `StandingConfirmationTests` whole; a role's act never read as the person's; an act outside the appointment's grant refused whatever the role's configuration says; an owner's act refused whatever the role says |
-| **1y-ii** ⚖ appointed roles configured | an appointed role configured with acts from the vocabulary, after row t, through a `Window`-class route alone; an increase (an act added, a scope widened, a restriction lifted) effective only at the next *Appoint*; appointing unchanged (D208 point 1) | **a live appointment not widened by a later edit to its role, nor by a scope's widening or a restriction's removal, until the next *Appoint*** (O2-1; X2-2.2); a narrowing effective at once on a live appointment; removing an appointed role revoking its appointments and cancelling its admitted acts; an authority added by a proposal, a card or the terminal refused; `StandingConfirmationTests`, `PipeCensusTests` whole; a configured appointed role's act recorded as its own |
-| **1u** the role's name | the glossary's *role* entry (职务, the steward's choice of round 3) with its reasons and *actor*'s line (§6); the page's 角色 for an appointed role retired (`zh/settings.daoris.json:108`) | `i18n:check`, `names:check -- --strict` |
+| **1t** ⚖ one role door | §2.5: one act form and proof, the act admitted within §2.7's three (the code's act table, the appointment's grant, the role's configuration as it stands) at admission and again at its run (X3-2.2), the appointment's `acts` kept (O2-1), the desk's decline outside every grant as today (O3-7), the holder a participant placed as a holder, its authority read in the shell | `PipeCensusTests`, `StandingConfirmationTests` whole; a role's act never read as the person's; an act outside the appointment's grant refused whatever the role's configuration says; **an admitted act whose role a narrowing left without it cancelled at its run**; the desk's decline admitted on every steward appointment; an owner's act refused whatever the role says |
+| **1y-ii** ⚖ appointed roles configured | an appointed role configured with acts from the vocabulary, after row t, through a `Window`-class route alone; every narrowing lowering each live appointment's grant in the standing confirmation's one mutation step, before the role is written (X3-2.2); an increase (an act added, a scope widened, a restriction lifted) effective only at the next *Appoint*; appointing unchanged (D208 point 1) | **a live appointment not widened by a later edit to its role, nor by a scope's widening or a restriction's removal, until the next *Appoint*** (O2-1; X2-2.2); **appointed with `answer` and `defer`, the role narrowed to `answer` and `defer` restored, `defer` refused until *Appoint again*** (X3-2.2); a crash between the grant's lowering and the role's write leaving the grant narrower; a narrowing effective at once on a live appointment; removing an appointed role revoking its appointments and cancelling its admitted acts; an authority added by a proposal, a card or the terminal refused; `StandingConfirmationTests`, `PipeCensusTests` whole; a configured appointed role's act recorded as its own |
 | **1v** ⚖ records last | `held-words.json`'s reader and the driver's `ContinuedIn` fallback retired once no build in the update's rollback window reads them; the set-aside backups (§13.5) kept until then; a reviewer's `serves` (D203 point 6) once every reader reads `opinion` first | an older build's statements over each new shape; `SessionHomeFiles`' inventory and its kept names; `QuestSyncTests` (nothing new on the wire); `SessionStoreTests` (the field null for a record from before and for a mirror); every word of a retired file on `said` before it goes |
-| **1z-vi** to **1z-xiv** the store's other families | one family per row, §13.6's table: the accounts, the agents' wiring, the course's marks and presses, the workplace's records, the work records, the rules, Ask Daoris's links, the service's boxes, the CLI's own files | each its §13.6 proof |
-| **1mod-i** to **1mod-xviii** the driver's moves (§14.6) | one subdomain per row, bottom up, its files moved to its folder and namespace, no behaviour changed; the cuts of each one's upward edges after it, one edge family per row | the gates of the brief §6 whole; `StructureTests`' census shorter by the moved subdomain's files and edges |
+| **1z-vi** to **1z-xiv** the store's other families | one family per row, §13.6's table: the accounts, the agents' wiring, the course's marks and presses, the workplace's records (⚖, z-ix), the work records, the rules (⚖, z-xi), Ask Daoris's links, the service's boxes, the CLI's own files | each its §13.6 proof |
 
-1a-i is first because it removes the most defects for the least change: one pure function and the places that read it remove survey §2.4 rows 1,
-11 and 13's account half, the class of LIMITSWITCH1, LIMITRESUME1b, LIMITRESUME1c and LIMITGOON1 (survey §2.6), and build a decision the owner already
-made; its provenance and its briefed move are rows of their own (O-10), and round 3 moves the closed quest's case into a-iii (O2-5), which
+1a-i is first because it builds the one call every account path reads, over the decision the owner already made and LIMITSWITCH1 and LIMITSWITCH2
+built, so the class of LIMITSWITCH1, LIMITRESUME1b, LIMITRESUME1c and LIMITGOON1 (survey §2.6) cannot reopen by one path learning what another
+did not; its provenance and its briefed move are Part B's rows (O-10), and round 3 moved the closed quest's case into a-iii (O2-5), which
 LIMITSWITCH2 built by the ended move rather than the briefed one. 1b is a day at the common boundary where three losses sit. 1c proves the participant on the defects it came from (CAPCOUNT1,
-ASKRAIL1, SESSBADGE1) before anything is admitted by it. mod-0 comes next so every new file of the rows after it is written in its subdomain, and
-z-i and z-iii before a-ii, whose provenance is a binding in the store. 1p comes before 1d and 1f so their proofs stand on acknowledged attempts and
-receipts; 1o after 1h and 1i so the course's `Never` holds the old part before a word is kept there; z-ii and z-iv before w, whose catalogue and
-grants are the store's.
+ASKRAIL1, SESSBADGE1) before anything is admitted by it. mod-0 comes next so every new file of the rows after it is written in its subdomain; u
+at any time. In Part B, z-i and z-iii before a-ii, whose provenance is a binding in the store; 1p and d-i before d-ii and f so their proofs stand
+on acknowledged attempts, the service's settlement and an idempotent open; 1o after 1h and 1i so the course's `Never` holds the old part before a
+word is kept there; z-ii, z-iv and w-0 before w, whose catalogue, grants and act vocabulary it reads.
 
 ## 11. What stays unmeasured, and what this design's checks do not cover
 
@@ -1120,8 +1302,8 @@ grants are the store's.
   line reaches on the install.
 - **The live limit move's word gap** (survey §2.4 row 3, *unverified* that it loses one): row d's first test.
 - **News after a long downtime**: whether a cursor resuming after days tells too much at once; row m bounds it by the notices' week and measures it.
-- **The receipts' and the move record's cost**, and how often an uncertain delivery happens: rows p and f measure them; the receipts' horizon (seven
-  days, 10,000) is a first bound, not a measurement.
+- **The settlement's and the move record's cost**, and how often an uncertain delivery happens: rows p and f measure them; the settlement's horizon
+  (seven days, 10,000) is a first bound, not a measurement, and a retry past it keeps a new word.
 - **Whether lineage reaches Daoris over either harness's ACP door** (FABRIC-ACP1, C2b's), on which row r's child column waits.
 - **Whether two processes append one session's event file**, and whether a shell not holding the lease reconciles its slices only at the manifest
   (survey §3.2, §3.4 row 7, *unverified*): the hub's rule assumes neither.
@@ -1131,15 +1313,19 @@ grants are the store's.
   row x's first case.
 - **The store's cost** (round 3): a write's latency with `synchronous = FULL` and write-ahead logging, the busy waits between the shell, a headless
   loop and the verbs, the wake file's latency against today's file watches, and the time of each family's import on the install's home: row z-i
-  and each family's row measure them. How the window kit's single-instance guard names itself is *unverified* (§13.4); the claim rests on the
-  lease's way of telling a live holder, which is read.
+  and each family's row measure them. The move's claim rests on the lease's way of telling a live process, which is read (`HomeLease.cs:427-448`),
+  and on no single-instance guard (round 4, O3-1). **The GitDoor's start with SQLite** on a remote act (round 4, O3-3): row z-i measures it
+  against today's door, its landing limit a p95 start no more than a tenth slower; past it, row z-i does not land, and how the door reads its
+  four families is designed again in a Part B round.
 - **The map's census**: the edge counts of §14.1 are a measurement by type names with comments and strings removed, a lower bound of the
-  dependencies (a type named only in a string or by reflection is missed); row mod-0's census is the exact list.
+  dependencies (a type named only in a string or by reflection is missed), and one of them over-counted (`DaorisHome`'s, §14.1; O3-8); row mod-0's
+  census is the exact list.
 - **The defects' classes** (survey §6): a judgement, which this order inherits.
 - **The checks.** A document only: `doc-links`, `doc-system`, `doc-shapes`, `doc-duplicates`, `doc-budgets` and `orient-index --check` check its
   place, its links and the index, never its claims. The code was read, not run, on main at `92ac2bd7e` and `c8eccf30e` (one `src/`), at `2a08bde4a`
-  for round 3 (whose `src/` is round 2's `29a066182`), and LIMITSWITCH1 on its branch at `3fdc6bbeb` and `adacd5fdc`, merged at `a85004bd0`;
-  LIMITSWITCH2, merged at `db883b1cc` as round 3 was committed, is read from its note on D137, not its code; EVENTHOOK1, COWORKVIEW1's routing half and SWITCHCTX1's carry are proposed, not built, and what this
+  for round 3 (whose `src/` is round 2's `29a066182`), at `e8f1aed4f` for round 4 (whose `src/` is round 3's `68a396c65` but for one test), and
+  LIMITSWITCH1 on its branch at `3fdc6bbeb` and `adacd5fdc`, merged at `a85004bd0`; LIMITSWITCH2, merged at `db883b1cc` as round 3 was committed,
+  was read from its note on D137 in round 3 and in its code in round 4, at the lines round 4 cites; EVENTHOOK1, COWORKVIEW1's routing half and SWITCHCTX1's carry are proposed, not built, and what this
   says of them is read from their documents at that commit.
 
 ## 12. Round 2: the reads of round 1 answered
@@ -1201,8 +1387,9 @@ The owner's direction of 2026-10-25, after round 2 (the brief §9): as configura
 SQLite. The line between the two is the steward's, by the owner's leave (the brief §9): **SQLite holds what Daoris owns and more than one
 reader or writer reads and sets; JSON stays only where something outside Daoris owns the format, where the file is a repository's reviewed
 record, where it is read before the store opens, or where it is an export or a stream.** This section is the fourth area of the design, and
-it is where round 3 makes the move's fencing and rollback choices Codex asked for (X2-1.1, X2-3.1). The inventory below was read at
-`2a08bde4a`, every file's writers and readers by `file:line`.
+it is where round 3 makes the move's fencing and rollback choices Codex asked for (X2-1.1, X2-3.1), and where round 4 settles the claim by
+process run, the stamp inside every writing transaction, the timings against D139's confirmation and the authority-bearing backups (§16). The
+whole of §13 is Part B's. The inventory below was read at `2a08bde4a`, every file's writers and readers by `file:line`.
 
 ### 13.1 Today
 
@@ -1238,15 +1425,25 @@ it is where round 3 makes the move's fencing and rollback choices Codex asked fo
 - **One file**, `data/desktop.db`, a row of D172's table of the home's entries, which has three twins (`Core/Platform/DaorisHome.cs:317-411`,
   `Driver/Platform/DaorisHome.cs`, the CLI's `home.ts:98`; `twins.md`), changed together in row z-i.
 - **Its owner is the driver library**: one class, `DesktopStore`, in the Store subdomain (§14), is the only code that opens the file, and every
-  family's table is read and written by the subdomain that owns it (§13.3) through it. It is machine-local and never synced: no table travels,
-  no shared host opens it (no shared host runs the driver), and no route answers its rows but through the judges that own them.
+  family's table is read and written by the subdomain that owns it (§13.3) through it, the shell's library's own families (the appointments and
+  the standing confirmation, §2.7) through the same class. It is machine-local and never synced: no table travels, no shared host opens it (no
+  shared host runs the driver), and no route answers its rows but through the judges that own them.
+- **Its package, the driver's and the GitDoor's first** (round 4, O3-3). The driver keeps to the base library today, its package pins saying it
+  has *zero package dependencies* so that it never reaches the service's store directly (`src/Daoris.Desktop/Directory.Packages.props:6-9`, the
+  doors of D46 §7), and the GitDoor is framework-dependent and references nothing so a door starts small on every remote act
+  (`Daoris.Desktop.GitDoor.csproj:3-7`). `DesktopStore` needs `Microsoft.Data.Sqlite` and its native bundle, so row z-i amends both recorded
+  rules: the driver takes the package, pinned at the service's version (`src/Daoris.Service/Directory.Packages.props:30-31`), for its own store
+  alone, never `Daoris.Service.Core`, so the doors' reason stands; and the GitDoor takes it with the store class compiled in as its other files
+  are, its start on a remote act measured against today's in row z-i, which lands only within its limit (§11).
 - **The service keeps its own store** for sessions, quests, asks, the channel and the event journal, and never opens the desktop's; what the
-  service needs of the desktop's state reaches it as today, over its HTTP API from the driver. **One field this design adds stays on the
-  service's record**, `opens` (§3.3), since a destination's uniqueness must be the open's own statement in the service's exclusive step.
+  service needs of the desktop's state reaches it as today, over its HTTP API from the driver. **What this design adds there stays there**, in
+  tables of the service's own and never on its record (round 4): the keyed open's record, `session_opens` (§3.3), since a destination's
+  uniqueness and its answer must be the open's own statement in the service's exclusive step; a word's settlement, `said_settled` (§3.4 rule 5),
+  since a producer's retry must be answered inside the step that would keep it; and a record's transition number, `session_transitions` (§4.5).
 - **Who opens it**: the shell (the modules and the driver library in one process); `daoris-driver`, as the headless loop and as each terminal
   verb, the Node CLI's management verbs reaching it by spawning `daoris-driver` as they do today; and the GitDoor, read-only, for the families it
-  reads today (the git pointers, the permissions, the tools, the git identities), through the same class compiled into it as `GitIdentityUse`
-  is. The service, its connectors, the launcher and the Node CLI never open it. The CLI's doctrine commands read no store at all.
+  reads today (the git pointers, the permissions, the tools, the git identities), through the store class compiled into it as `GitIdentityUse`
+  is, with the package above. The service, its connectors, the launcher and the Node CLI never open it. The CLI's doctrine commands read no store at all.
 - **Kept out of it, by the line**: the formats other tools own (an agent's `settings.json`, `.mcp.json` and `.claude.json`, the rooms'
   `.claude/settings.json`, the window kit's `window-state.json`, plugin and tool manifests); the tracked repository records (`daoris.json`,
   `daoris.lock`, `daoris.gates.json`, the lanes file); the install's manifests (`update/build.json`, `swap.json`); the files read before the store
@@ -1265,14 +1462,14 @@ only for rows an older store-aware build may keep writing; a column is never rep
 
 | Family | Tables | Subdomain | Replaces |
 |---|---|---|---|
-| The store's own | `store_version` (the schema's version and the oldest build that may write it); `store_revisions` (one revision per family, moved in the writing transaction); `imports` (each file imported: family, its path in the home, size and SHA-256, moment, build, rows, class) | Store | — |
+| The store's own | `store_version` (the schema's version and the oldest build that may write it); `store_revisions` (one revision per family, moved in the writing transaction); `store_runs` (each process run that writes: its run id, kind, pid and start time, and the moment it began, the claim's identity, §3.3; round 4, O3-1); `imports` (each file imported: family, its path in the home, size and SHA-256, moment, build, rows, class) | Store | — |
 | Settings | `settings` (one row per key of today's `driver.json`, its value the key's JSON shape, read by today's one parser, `DriverConfig.Parse`, key by key, and every key this build does not know kept as it is, as `JsonKeeping` keeps it today) | Settings | `data/driver.json` |
 | The role catalogue | `roles`, `role_revisions` (every revision of every role, never rewritten), `role_staffing` (each working role's ordered choices: the seeded eight's from `driver.json`'s `actors` key at the import, an added role's from its record) | Roles | `driver.json`'s `actors`; round 2's `roles` key |
-| Appointments | `appointments` (each with its grant: the acts ticked and its scope, its generation, its window), the standing confirmation's own records | Roles | `data/standing-confirmation.json` |
-| Bindings | `bindings` (one per session record of this machine: the kept conversation's id and door; the account by profile name and whether the person picked it, row a-ii; the role taken and its revision, row x; the process generation) | Participants | `data/sessions/<s>.harness.json` |
+| Appointments | `appointments` (each with its grant: the acts *Appoint* snapshotted, lowered by every narrowing and never raised, the set-up tick, its scope, its generation, its window), the standing confirmation's own records | the shell's standing confirmation (`Modules/Platform/StandingConfirmation.cs`), outside the driver's map, through `DesktopStore` (O3-6) | `data/standing-confirmation.json` |
+| Bindings | `bindings` (one per session record of this machine: the kept conversation's id and door; the account by profile name and whether the person picked it, row a-ii; the role taken and its revision, row x; the process generation), each writer updating its own columns by name, never replacing a row (O3-16) | Participants | `data/sessions/<s>.harness.json` |
 | Accounts | `account_cooling`, `account_windows`, `account_reads`, `account_names`, `usage`, `usage_epochs` | Agents | `data/cooling.json`, `windows.json`, `reads.json`, `accounts.json`, `usage.json`, `usage-history/epochs.json` |
 | Agents' wiring | `agent_offers`, `harness_wiring`, `tools` | Agents (`tools` Install's) | `data/agent-offers.json`, `harnesses.json`, `tools.json` |
-| The course | `moves` (§3.3: the executor kind, the claim's run and generation, the phase and each moment, the effect mark, the selection, the recipe, why, by, how), `move_words` (each word in transfer: its id, producer key, transfer id, order and disposition), `word_receipts` (by line and producer key, §3.4 rule 5), `go_on_marks`, `reopen_marks`, `go_on_new` (the person's press), `handed_quests` | Course | `<s>.cannot.json`, `.reopened.json`, `.new-session.json`, `data/handed/<quest>.json`; the boxes `<s>.limit-move.json` and `.hand-over.json`, imported and no longer written |
+| The course | `moves` (§3.3: the executor kind; the claim, `claim_run` naming a `store_runs` row and `claim_generation`; the phase and each moment; the effect mark; the selection; the recipe; why, by, how), `move_words` (each word in transfer: its id, producer key, transfer id, order and disposition), `go_on_marks`, `reopen_marks`, `go_on_new` (the person's press), `handed_quests` | Course | `<s>.cannot.json`, `.reopened.json`, `.new-session.json`, `data/handed/<quest>.json`; the boxes `<s>.limit-move.json` and `.hand-over.json`, imported and no longer written |
 | News | `notices`, `news_said` (the said-set, §4.5), `journal_cursors` (one per teller) | Events | `data/notices.json` |
 | The workplace | `keeping_runs`, `landed_branches`, `session_branches`, `abandoned`, `auto_landings`, `lines_moved`, `registry_followed` | Workplace | `data/keeping.json`, `landings.json`, `session-branches.json`, `abandoned.json`, `sessions/auto-landings.json`, `lines-moved.json`, `registry-followed.json` |
 | Work records | `workflow_plans`, `workflow_runs`, `workflow_units`, `workflow_resources`, `workflow_closures`, `chat_looks`; `setup_plans`; `opinion_gates`, `opinion_dues` | Workflows; Setup; Review | `data/workflows/*`; `data/setup/<workspace>.json`; `data/opinions/gates/*`, `opinions/due.json` |
@@ -1283,37 +1480,56 @@ Each family is migrated by its own row (§13.6). **Migrations** are numbered ste
 the first process to open a store older than its build migrates it while the others wait on the write lock; a crash mid-step leaves the store
 as it was, since SQLite's DDL is transactional. `store_version` is never lowered. A build opening a store whose oldest-writer stamp is past its
 own reads the tables it knows and refuses every write, saying the store was written by a newer Daoris and that it should update, as the quest
-store refuses a take's bind (QUESTSTOREVER1); a build older than a table never opens it.
+store refuses a take's bind (QUESTSTOREVER1); a build older than a table never opens it. **The stamp is checked inside every writing
+transaction** (round 4, X3-3.5): each write reads the oldest-writer stamp under the write lock its `BEGIN IMMEDIATE` holds, before it changes
+anything, and refuses if the stamp is past its build, so a process that opened the store before another process's migration and kept its
+connection cannot write after it. **A migration that raises the oldest-writer stamp runs only once the start's confirmation is settled** (§13.5;
+O3-4), so a build rolled back before it confirmed still writes; a migration that adds a table an older store-aware build never opens leaves the
+stamp where it is and runs at the first start.
 
 ### 13.4 Transactions and processes
 
 - **One connection per process** behind a gate, as the service's `ConnectionGate` keeps its own (SQLITETX1); write-ahead logging, so a reader
-  never waits on the writer; `synchronous = FULL`, since a claim or a receipt lost to a power cut could repeat an effect, at a write rate low
+  never waits on the writer; `synchronous = FULL`, since a claim or a mark lost to a power cut could repeat an effect, at a write rate low
   enough for it, measured in row z-i; a busy wait of five seconds, then a refusal said in the process's own words.
 - **Every write is one transaction under the write lock, taken at its start** (`BEGIN IMMEDIATE`), so a read, a check and a write never
   interleave across processes, which round 2's file claim could not promise (O2-12). No transaction spans an await on another process or an
   external effect: an effect is a mark's transaction, the effect, and an outcome's transaction.
-- **A move, its words and their receipts in one transaction; its open claimed once** (the brief §9; X2-3.1). The move's protocol:
-  1. *Claim.* The executor writes the move in one transaction: its phase, its claim (the run of the process that holds the move's executor
-     role, below, and a generation) and the `opens` key it will open under.
+- **A move and its words in transfer in one transaction; its open claimed once** (the brief §9; X2-3.1; round 4, the settlement the service's,
+  X3-3.2). The move's protocol:
+  1. *Claim.* The executor writes the move in one transaction: its phase, its claim (its own process run, `store_runs`, and a generation) and
+     the `opens` key it will open under.
   2. *Every external effect is fenced by a mark.* Before a spawn, a prompt or a copy, a transaction checks the claim (the row's run and
-     generation are the writer's, and the writer still holds its role) and writes the effect's mark; then the effect; then a transaction writes
-     its outcome. A mark whose transaction fails stops the executor before the effect.
-  3. *The open is the service's, idempotent.* The open under the `opens` key moves the old part's words in the service's one step (§3.4 rule 3);
-     the next transaction writes `opened`, the new record's id, every word the open moved (`move_words`) and the phase, together.
+     generation are the writer's) and writes the effect's mark; then the effect; then a transaction writes its outcome. A mark whose transaction
+     fails stops the executor before the effect. Between the mark and the effect nothing can take the move, since a claim passes only from a dead
+     run (below).
+  3. *The open is the service's, idempotent.* The open under the `opens` key moves the old part's words in the service's one step and keeps its
+     result in `session_opens` (§3.3, §3.4 rule 3); the next transaction writes `opened`, the new record's id, every word the open moved
+     (`move_words`) and the phase, together.
   4. *Delivery.* The prompt's mark (step 2) and the service's acknowledged attempt (§3.4 rule 5); then one transaction writes each word's
-     disposition, its receipt and the phase `delivered`; and only then is each word taken off `said`, a take a crash leaves undone finished at the
-     come-up by its receipt.
-- **The claim's holder is the holder of the executor's role.** A conversation's move is the shell's, and the shell's role is the instance it
-  is: one shell per home (the window kit's single-instance guard, `App/Program.cs:368-372`, *unverified* how it names itself; and the host's
-  start claim, a named mutex, `HostSupervisor.cs:480-505`). A driven line's move is the lease holder's (`run/home.lease`). Each process writes
-  its run (a random id drawn at its start, with its pid and start time, the lease's own way of telling a live holder, `HomeLease.cs:165-173`) as
-  the role's holder when it takes the role. **A move is taken over only by its role's current holder, of a move whose run is not that holder's
-  run**; so a live executor, however long it pauses, is never taken over while it holds its role. Where a role passes while its old holder
-  lives (a lease given up or shared, `Host/Program.cs:868-885`), the old holder's next mark fails its claim check, so it begins no effect after
-  the takeover; an effect it had begun, marked and never recorded, is the new holder's `held`, named and never repeated by itself (X). A paused
-  executor resuming after a takeover therefore finds its next mark refused, ends what it started where it can (a spawned harness before its
-  first prompt), and says so; row f-i proves it with a paused executor, not only two writes.
+     disposition and the phase `delivered`; and only then is each word taken off `said` by the service's statement that writes its settlement
+     (§3.4 rule 5), a take a crash leaves undone finished at the come-up from `move_words`.
+  5. *Before anything is delivered, in every phase, the line's head is read* (round 4, X3-3.4): `Lines.HeadOf` from the move's destination, and
+     the destination's attempts. Where the head has moved past the destination (a record `from` it under no key of the move's, an older build's
+     among them), nothing is delivered to the destination: the move closes `superseded`, each moved word never attempted follows the head in the
+     service's one step that moves words under their producer keys and transfer ids (the open's own word move, `Lines.Forward`), and each
+     attempted one is settled uncertain and said.
+- **The claim is a process run, and passes only from a dead one** (round 4, O3-1, X3-1.1, X3-3.1). Round 3 made the claim's holder *the
+  holder of the executor's role* and let a role's current holder take a move over from a run that no longer held the role. No such holder
+  exists to read: `--share` runs a second driven loop beside the instance holding nothing, the two racing for the same quests
+  (`Host/Program.cs:869-875`, `:890-895`), so a lease given up or shared passes no role; and the window's guard is one instance per install
+  (`App/Program.cs:368`) while the host's start claim is keyed by the service's address and refuses no second launch
+  (`Modules/Loop/HostSupervisor.cs:478-486`), so nothing excludes a second shell on the home before its conversations run, which they do before
+  and without the lease (`DriverLoop.cs:777-800`). And a run that lost its role between a committed mark and its effect would make the effect
+  with no next mark to refuse it (X3-3.1). So: every process that writes the store keeps a row in `store_runs` (a run id drawn at its start, its
+  kind, its pid and its start time, the lease's own way of telling a live process, `Driver/Platform/HomeLease.cs:165-173`, `:427-448`); a move's
+  claim names its executor's run; and **a move is taken over only where its claim's run is dead by that test**, its pid gone or alive under
+  another start time, a start time that cannot be read counting as alive (`HomeLease.cs:66-68`, `:446`). Each live executor claims and keeps the
+  moves of the lines it runs, whichever process it is: two shells on one home each keep their own conversations' moves, a `--share` loop and
+  the instance each keep the driven lines they took, and a paused executor whose process lives is never taken over, so between its mark and its
+  effect, however long it pauses, the move is its own. A dead run's effect, marked and never recorded, is the taker's `held`, named and never
+  repeated by itself (X). Row f-i proves the three cases with live processes, not only two writes: two shells on one home, a `--share` loop
+  beside the instance, and an executor paused after its mark commits and before its effect while another process tries to take its move.
 - **Wakes.** A write moves its family's revision in `store_revisions` in the same transaction, and after its commit touches the store's wake
   file, `data/desktop.db.wake`, which holds nothing; `HomeWatch` watches that one file where it watches `driver.json`, `cooling.json`,
   `harnesses.json`, `held-words.json`, `lines-moved.json`, the gates and the notices today, reads the revisions, and wakes exactly the families
@@ -1327,10 +1543,32 @@ store refuses a take's bind (QUESTSTOREVER1); a build older than a table never o
   composed (D139; `docs/2026-10-03-update-when-idle-design.md` §3 step 5, §5); a build that confirmed is never rolled back by itself. So a family
   an older build only *reads* (a configuration or a cache) is imported at the first start of the build that moves it and **left in place as the
   backup**; a family an older build would *act on* (a box it recovers, a press it performs, a mark that gates a go-on, a record a landing or a
-  removal follows) is imported only after that build has confirmed, then **set aside** under its import's receipt (`<file>.imported`, never
-  deleted), and its readers take it up only after its import. A rollback before the confirmation therefore meets every file as it was.
-- **After the move, no file is written through.** A file left in place is the configuration or state as it stood at its import; an older build
-  run later on this home (the person installing an older build, or a stage rolled back) reads it and writes it as it always did. When the newer
+  removal follows, a conversation id it resumes) is imported only after that build has confirmed, then **set aside** under its import's receipt
+  (`<file>.imported`, never deleted), and its readers take it up only after its import. A rollback before the confirmation therefore meets every
+  file as it was.
+- **When a start's confirmation is settled** (round 4, O3-4). The app confirms as it composes, off its start's thread
+  (`App/Program.cs:323`; `InstallUpdater.StartedAsync`, `Modules/Update/InstallUpdater.cs:125-150`, `StagedBuild.Confirm` at `:135`); a swap can
+  end `confirmed: false` when the new build stays silent past the launcher's minute (the update design §3 step 5); and a headless start never
+  confirms. So a start's confirmation is **settled** once this start's `StagedBuild.Confirm` has run, or once the swap journal shows no swap
+  waiting for this start's confirmation (none under way, or one already installed), which is how a headless start and a start with nothing staged
+  find it. Every import of a family an older build acts on, the come-up's import of an older build's box among them (§3.3), and every migration
+  that raises the store's oldest-writer stamp (§13.3) run only once it is settled; until a box is imported, the course reads its record's old
+  part as `Never`, so nothing acts on the box's move meanwhile. Row z-i proves a rollback after a first start: the older build meets every file it
+  acts on as it was and a store it can still write.
+- **No older build ever reads back a revoked grant** (round 4, O3-2). A family left in place as the backup is read by an older build run on the
+  home as it stood at its import, so a revoke or a narrowing made in the store after the import would come back with that build, unasked: the
+  standing confirmation's `presses` grant, live from its file at an instance's start (`Modules/Platform/StandingConfirmation.cs:267-271`);
+  `driver.json`'s `access`, `drivable`, `trees` and `standing`; `permissions.json`, which the GitDoor reads at every remote act,
+  `configured-access.json` and `plugin-approvals.json`. So each **authority-bearing family** is one of two, chosen in its row by how its older
+  reader reads absence, and proven there by a revoke made in the store followed by an older build's start finding it revoked: **set aside** where
+  its older reader reads a missing file as off (the standing confirmation's, which reads *absent, unreadable, newer or another machine's* as
+  off, `:267-271`: row z-iv; and each of z-xi's files whose reader is shown to do the same); otherwise **narrowings written through**: the
+  family's own writer applies every narrowing made in the store to the backup file too, in its own format and under its own lock, narrowing
+  only and never widening, so the backup is never wider than the store (`driver.json`'s authority keys, row z-ii, its other keys left as they
+  were imported). That is the one write through a backup takes, and it carries no widening, which stays an import's, by the person's press.
+- **After the move, no file is written through but a narrowing.** A file left in place is the configuration or state as it stood at its import,
+  narrowed where the store narrowed an authority; an older build run later on this home (the person installing an older build, or a stage
+  rolled back) reads it and writes it as it always did. When the newer
   build comes back, it compares each left file with its import's SHA-256: a configuration changed since is **offered as an import**, through the
   same judges and, for a change of authority, the person's own press, never applied by itself; a state family changed since is merged by its
   family's rule (a cool-off by the later `until`, a notice by its id, a landing record by its branch). A set-aside family whose file an older
@@ -1345,7 +1583,17 @@ store refuses a take's bind (QUESTSTOREVER1); a build older than a table never o
   own door judges it, and a change of authority (a role's acts, an appointment's grant, `access`, `drivable`, `trees`, `standing`) held for the
   person's own press in the window. The first start of the build that moves `driver.json` imports today's file once, as it stands, without a
   press: it is the configuration the person already set, granting what it already granted. `DAORIS_DRIVER_CONFIG` names a file imported into a
-  store of its own, as the tests seed a configuration today (`DriverConfig.cs:846`).
+  store of its own, as the tests seed a configuration today (`DriverConfig.cs:846`), imported again whenever its SHA-256 differs from its last
+  import, since tests and rehearsals rewrite it between runs; a fixture home's own `driver.json` is imported at its first start (O3-11).
+- **D50, amended for the configuration** (round 4, O3-11). D50 keeps hand-editing working because *the file, not the surface, is authoritative*
+  (`D50.md:7-9`), and today a hand edit of `driver.json` takes effect at the next tick (`HomeWatch.cs:200`; `DriverWatch.cs:1118`). After row
+  z-ii the store is the truth: a hand edit of the left `driver.json` takes effect only through an import. At every start, and when the home's
+  watch sees the file change, the newer build compares the file with its last import's SHA-256 and, where it differs, offers it as an import in
+  Settings and on the terminal (`daoris driver config import`), each key through its door's judge and a change of authority held for the person's
+  press, never applied by itself. Hand-editing keeps working as D50 asks, through the export and the import rather than the live file, which
+  is the dated note on D50 row z-ii adds. Row z-ii's census names every test and tool that writes a home's `driver.json` and reads it back:
+  the family rehearsal (`tools/family-rehearsal.mjs:981`, `:5603-5607`) and the proof kit (`tools/proof-kit.mjs:285-290`), each moved to
+  `DAORIS_DRIVER_CONFIG` or to `daoris driver config import` in the row, so no later write of theirs goes inert.
 - **A move in flight across a downgrade** (X2-1.1; O2-14). A move the store carries writes no old box, so an older build recovers it from the
   ledger alone, as it recovers today a move that keeps no box (the live limit move, the curve, a driven carry-on), and the newer build, back,
   reads the evidence it left before acting:
@@ -1354,12 +1602,13 @@ store refuses a take's bind (QUESTSTOREVER1); a build older than a table never o
 |---|---|---|---|
 | `decided`, `quiescing`, `old-ended` | the old part as it was, its words on `said` | settles the old part as after any crash: an ended record's words go on by its own rules, resumed or held for its account; nothing opened | a later run on the old part, or a record `from` it under no key of the move's, closes the move as superseded; else it goes on from its phase |
 | `opening` | nothing new (the open not made), or the new record under the move's key with the words already moved (the answer lost) | without the open, as above; with it, the new record is the line's head and its words wait there: its come-up resumes it where its conversation exists, else takes it as lost and briefs it (today's path), skipping the old part, which went on (`ChatGoOn.cs:228`) | asks the open again under its key, is answered the record and the words, and reconciles as below |
-| `opened`, `copied`, `verified` | the new record with the moved words, no prompt yet | as the open's second case: each moved word goes once, from the new record | the moved words taken by an older build's turn make the move `delivered` by that evidence; else it delivers |
-| `delivering` | the new record, its words marked attempted or not | settles attempted words as uncertain, never sent again (`GoOn/UncertainWords.cs:25-94`), and goes on with the rest | the begun effect is `held` for the person unless a turn's events and the words' takes show it delivered |
+| `opened`, `copied`, `verified` | the new record with the moved words, no prompt yet; or, where an older build found no kept conversation, a later record `from` it that the older build opened before it moved the new record's words (`Chat/BriefedMove.cs:130-158` opens before it delivers and takes) | as the open's second case: each moved word goes once, from the new record; or it opened its successor and crashed | the head read first (§13.4 step 5): the moved words taken by an older build's turn make the move `delivered` by that evidence; a head past the destination closes the move `superseded`, its unattempted words following the head and its attempted ones uncertain and said (X3-3.4); else it delivers |
+| `delivering` | the new record, its words marked attempted or not | settles attempted words as uncertain, never sent again (`GoOn/UncertainWords.cs:25-94`), and goes on with the rest | the head read first, as above; the begun effect is `held` for the person unless a turn's events and the words' takes show it delivered |
 | `delivered`, `held`, `fell-back` | an ordinary line, or one held for the person with its reason | as any such line | closes or keeps the hold |
 
-No phase leaves a box an older build could execute, so no move is made twice across builds; the price, said here, is that an older build
-briefs a part the newer one opened by its own lost-conversation path rather than the move's recipe. Against an older *host*, which takes no
+No phase leaves a box an older build could execute, and no phase delivers to a part that is not the line's head, so no move is made twice
+across builds and no word reaches a superseded part (round 4, X3-3.4); the price, said here, is that an older build briefs a part the newer one
+opened by its own lost-conversation path rather than the move's recipe. Against an older *host*, which takes no
 `opens` and moves no words, a move is made as today's are, a lost open held for the person (round 2's X-3.5).
 
 ### 13.6 The migration rows, one family each
@@ -1369,17 +1618,17 @@ proves an older build's own reads and writes over what it leaves (`compatible-bu
 
 | Row | Files | Into | Class (§13.5) | Its proof beyond the gates |
 |---|---|---|---|---|
-| **z-i** the store, read by nothing | — | `data/desktop.db`, `DesktopStore`, `store_version`, `store_revisions`, `imports`, the wake file, the GitDoor's read-only open | — | the three home tables' twins equal; the shell, a headless loop, a verb and the GitDoor opening one store at once; a store stamped ahead refused for writes and said; a migration interrupted at each step leaving the store as it was; write latency with `FULL` on the install |
-| **z-ii** the configuration | `data/driver.json` | `settings`, `role_staffing`; the export and import | left in place | every key round-tripped through the import and the export (`DriverConfigKeepsTests`' fixture whole, every writer of the explorer's census, `DriverConfig.cs:1066-1180`, and the raw git pointers); an import widening authority held for the press; an older build reading the backup; a changed backup offered at the return |
-| **z-iii** the bindings | `data/sessions/<s>.harness.json` | `bindings` | left in place (a record's conversation id never changes) | every resume reads its id from the binding; a record deleted takes its binding |
-| **z-iv** the appointments | `data/standing-confirmation.json` | `appointments`, the standing confirmation's records | left in place (an appointment found at a start stays dormant, D209 points 1, 2 and 4) | `StandingConfirmationTests`, `PipeCensusTests` whole |
+| **z-i** the store, read by nothing | — | `data/desktop.db`, `DesktopStore`, `store_version`, `store_revisions`, `store_runs`, `imports`, the wake file, the GitDoor's read-only open; `Microsoft.Data.Sqlite` in the driver and the GitDoor, pinned as the service's, the two projects' recorded rules amended (§13.2) | — | the three home tables' twins equal; the shell, a headless loop, a verb and the GitDoor opening one store at once; a store stamped ahead refused for writes and said, **and a writer that opened the store before another process's migration and resumes after it refused, the stamp read inside its own transaction** (X3-3.5); **a rollback after a first start: the older build meets every file it acts on as it was and a store it can still write, no stamp raised before the confirmation** (O3-4); a migration interrupted at each step leaving the store as it was; write latency with `FULL` on the install; **the GitDoor's start on a remote act within a tenth of today's at p95** (O3-3) |
+| **z-ii** ⚖ the configuration | `data/driver.json` | `settings`, `role_staffing`; the export and import | left in place, its authority keys' narrowings written through (§13.5) | every key round-tripped through the import and the export (`DriverConfigKeepsTests`' fixture whole, every writer of the explorer's census, `DriverConfig.cs:1066-1180`, and the raw git pointers); an import widening authority held for the press; an older build reading the backup; **a revoke of `access`, `drivable`, `trees` or `standing` made in the store, then an older build's start finding it revoked** (O3-2); a changed backup offered at the return; a hand edit offered as an import at the next start; the rehearsals' and the proof kit's seeding through `DAORIS_DRIVER_CONFIG` or the import, the seed file imported again when it changes (O3-11) |
+| **z-iii** the bindings | `data/sessions/<s>.harness.json` | `bindings` | set aside (round 4, O3-6: the kept id is replaced whenever the wire names the conversation, `Conversations/GoOn/HarnessConversations.cs:28-37`, so a backup left in place would hand an older build a stale id; set aside, an older build finds none and falls back to a carry-on, `:15-16`) | every resume reads its id from the binding once imported, and from the file before; a record deleted takes its binding; an older build after the import carrying on rather than resuming; a binding file an older build wrote during a downgrade imported at the return, its conversation id winning for its own session |
+| **z-iv** ⚖ the appointments | `data/standing-confirmation.json` | `appointments`, the standing confirmation's records, the shell's family through `DesktopStore` | set aside (round 4, O3-2: its older reader reads a missing file as off, `StandingConfirmation.cs:267-271`; an appointment found at a start stays dormant, D209 points 1, 2 and 4) | `StandingConfirmationTests`, `PipeCensusTests` whole; **a `presses` revoke made in the store, then an older build's start finding no grant** (O3-2); an imported appointment dormant, its grant set by *Appoint* alone (O3-16) |
 | **z-v** the notices | `data/notices.json` (its unreadable copies stay files, as evidence) | `notices` | left in place | `NoticesStateSlice`'s and `LookSaid`'s suites; two tellers in two processes |
 | **z-vi** the accounts | `data/cooling.json`, `windows.json`, `reads.json`, `accounts.json`, `usage.json`, `usage-history/epochs.json` | the accounts' tables | left in place | the shell and a `daoris-driver` writing the windows and usage at once, lost by neither (today's race); `AccountRotationTickTests`, `ResumeAccountTests` |
 | **z-vii** the agents' wiring | `data/agent-offers.json`, `harnesses.json`, `tools.json` | `agent_offers`, `harness_wiring`, `tools` | left in place | the GitDoor reading `tools` |
 | **z-viii** the course's marks and presses | `<s>.cannot.json`, `<s>.reopened.json`, `<s>.new-session.json`, `data/handed/<quest>.json` | `go_on_marks`, `reopen_marks`, `go_on_new`, `handed_quests` | set aside | a press taken once across a restart and a downgrade |
-| **z-ix** the workplace's records | `data/keeping.json`, `landings.json`, `session-branches.json`, `abandoned.json`, `sessions/auto-landings.json`, `lines-moved.json`, `registry-followed.json` | the workplace's tables | set aside (an older build lands, removes or follows from them) | KEEPSIZE1's removal proofs whole; a due landing made once |
+| **z-ix** ⚖ the workplace's records | `data/keeping.json`, `landings.json`, `session-branches.json`, `abandoned.json`, `sessions/auto-landings.json`, `lines-moved.json`, `registry-followed.json` | the workplace's tables | set aside (an older build lands, removes or follows from them); ⚖ since a removal follows them (O3-14) | KEEPSIZE1's removal proofs whole; a due landing made once; nothing removed across the import that a removal's records did not name before it |
 | **z-x** the work records | `data/workflows/*`, `data/setup/<workspace>.json`, `data/opinions/gates/*`, `data/opinions/due.json` | the work records' tables | set aside | the workflow and opinion suites whole |
-| **z-xi** the rules | `data/permissions.json`, `configured-access.json`, `git-identities.json`, `plugins.json`, `plugin-approvals.json` | the rules' tables | left in place | the GitDoor reading `permissions` and `git_identities`; an import widening a rule held for the press |
+| **z-xi** ⚖ the rules | `data/permissions.json`, `configured-access.json`, `git-identities.json`, `plugins.json`, `plugin-approvals.json` | the rules' tables | per file, by how its older reader reads absence (§13.5): set aside where a missing file reads as off, else left in place with its narrowings written through; ⚖ since it rehomes the GitDoor's grants and the configured access (O3-14) | the GitDoor reading `permissions` and `git_identities`; an import widening a rule held for the press; **a revoke of a permission, a configured access and a plugin approval made in the store, then an older build's start and the older GitDoor's remote act finding each revoked** (O3-2) |
 | **z-xii** Ask Daoris's links | `<s>.help.json`, `.wired.json`, `.published.json`, `data/sessions/archived.json` | `help_links`, `session_archive` | left in place | `HelpCoverageTests` whole |
 | **z-xiii** the service's boxes, into the service's store | the service's halves of `<s>.question.json`, `.hand-over-ask.json`, `data/proposals/<id>.json`, `data/help/proposals/<id>.json`, the helpers', partners' and brainstorms' boxes, `run/requests/*`; their driver halves (`.hand-over-state.json`, a helper's `state`, `capture` and `back`, a partner's `state`, `facts` and `delivery`, a brainstorm's `state`, `stop` and turns) into the desktop store | the service's and the desktop's tables, one row per box family, designed with the service's owners | set aside | each box family's own suite, and its connector built before the row still answered |
 | **z-xiv** the CLI's own files | `data/browser/settings.json`, `data/browser/favorites.json` | `browser_settings`, `browser_favorites`, once the CLI's browser verbs spawn `daoris-driver` as its other management verbs do | left in place | the CLI's browser verbs' tests over the driver |
@@ -1387,8 +1636,10 @@ proves an older build's own reads and writes over what it leaves (`compatible-bu
 **What stays a file, and why** (§13.2): the backups the imports leave in place or set aside (§13.5), kept until row v; `data/sessions/held-words.json`,
 which row o retires by keeping its words on `said` rather than moving them; `data/pipe-waiting/<id>.json`, written and read by the shell
 alone (`PipeWaiting.cs:55`, `:107`), so outside the line until a second process reads it; `<s>.supervisor.json` with its `.decisions/`, a role's
-decisions kept with the session's history, which row t's one act record takes up rather than a row of its own; the credentials, the formats
-other tools own, the manifests, the pre-store files and the streams. The inventory also found three session files the session's file
+decisions kept with the session's history, which row t's one act record takes up rather than a row of its own; **the one-use git grants**
+(`run/git/grants/<id>.json`, the home's `git-grants` entry, `Driver/Platform/DaorisHome.cs:415`, written by the driver and taken by the GitDoor's rename and delete, `Driver/Platform/GitAccessRules.cs:153-183`),
+since the GitDoor writes nothing in the store and a grant is consumed by the door's own move of its file, one of two acts carrying it taking it
+(round 4, X3-3.7); the credentials, the formats other tools own, the manifests, the pre-store files and the streams. The inventory also found three session files the session's file
 inventory misses, so its delete and clear do not take them (`<s>.limit-move.json`, `.hand-over-ask.json`, `.hand-over-state.json`, absent from
 `SessionHomeFiles.Inventory`, `SessionHomeFiles.cs:109-141`; *unverified* that nothing else does): filed as SESSFILES1 in `TASKS.md`, since it
 is a defect today whatever the store does.
@@ -1398,9 +1649,10 @@ is a defect today whatever the store does.
 | Rejected | Why |
 |---|---|
 | The desktop's tables in the service's database, or one store for both | The service's database is the service's (D46, D47 §4), opened by every connector; a second owner of one file would make its schema two components' and a shared host's store carry desktop state |
-| The service reading the desktop store (for receipts or bindings) | The service stays blind to the desktop's state; every keyed producer reaches the say door through the desktop's client, which reads the receipts (§3.4 rule 5) |
-| A store per family | The one transaction across a move, its words and their receipts, and the one wake, would be lost |
-| `driver.json` written through beside the store, or read live | Two homes of one setting; and an older build's later write would be silently overruled or silently win |
+| The service reading the desktop store (for settlements or bindings) | The service stays blind to the desktop's state; a word's settlement is the service's own, written where the word is taken (§3.4 rule 5; round 4) |
+| A word's receipt in the desktop store, read by the client before a say (round 3's) | It races the service's take across the two stores, and the helper's and partner's hands never pass the client's say (X3-3.2, O3-5) |
+| A store per family | The one transaction across a move and its words in transfer, and the one wake, would be lost |
+| `driver.json` written through beside the store, or read live | Two homes of one setting; and an older build's later write would be silently overruled or silently win. Its authority keys' narrowings alone are applied to the backup (§13.5; round 4, O3-2), which makes no second home: the store stays the truth, and the backup is only never wider |
 | Every file kept as a JSON blob row | Leaves each file's parser and loses typed reads for the Fabric's records; only the settings keep `driver.json`'s key shapes, so its one parser and the export stay one |
 | `said` in the desktop store | The words are the service's record (D137 point 6), read by the say door inside its exclusive step |
 | The Node CLI opening SQLite (`node:sqlite`) | Its doctrine commands keep no runtime dependency and the packaged CLI supports Node from 22; its management verbs reach the store through `daoris-driver` |
@@ -1414,7 +1666,8 @@ The owner's direction of 2026-10-25, after round 2 (the brief §10): the full up
 the context engine, the memory and knowledge system, the Fabric and the actors. The owner confirmed **Roles** as one subdomain's name and left
 the map's other names and grouping to the steward; **the map below is the steward's decision by the owner's leave**, each choice over the
 steward's draft (Company, Fabric, Course, Context engine, Knowledge, Events, Agents and accounts, Work, Workplace, Store, Platform, Loop) given
-its reason in a line. Read at `2a08bde4a`: `Driver/` is 784 files and 231,407 lines, every file in one namespace, `Daoris.Driver` (the project's
+its reason in a line. §14 is Part A's but for the *Owns* column of §14.2, which names Part B's tables, and row w-0, Part B's. Read at
+`2a08bde4a`: `Driver/` is 784 files and 231,407 lines, every file in one namespace, `Daoris.Driver` (the project's
 `RootNamespace`), so namespaces follow nothing.
 
 ### 14.1 What the code says today
@@ -1425,8 +1678,10 @@ its reason in a line. Read at `2a08bde4a`: `Driver/` is 784 files and 231,407 li
 - **One cycle.** Measured by which folder's type names each folder's files use (comments and strings removed), 59 of the 105 pairs of folders
   depend on each other both ways, and all fourteen folders but Loop form one strongly connected cycle: Sessions and Conversations (9 files one
   way, 35 the other), Accounts and Agents (5 and 12), Trees and Platform (96 and 24), Trees and Sessions (19 and 26).
-- **Platform is no leaf**: it names types of fourteen folders, `DriverConfig` of nine and `DriverChoicesCommand` of ten, `DaorisHome` of six,
-  `NoteCodes` eight of Conversations'; 47 of its files name nothing outside it (`AtomicFile`, `Moments`, `MachineLog`, `Chain`, …).
+- **Platform is no leaf**: it names types of fourteen folders, `DriverConfig` of nine and `DriverChoicesCommand` of ten, `NoteCodes` eight of
+  Conversations'; 47 of its files name nothing outside it (`AtomicFile`, `Moments`, `MachineLog`, `Chain`, …), `DaorisHome` among them: round 3
+  counted six folders' types in it, which were its `HomeEntry` members (`HomeEntry.StandingConfirmation`, `.Notices`, …), and it compiles into the
+  GitDoor with the base library alone (`Daoris.Desktop.GitDoor.csproj:20-37`), so it names none (round 4, O3-8).
 - **Loop holds rules**: `LimitResume.NotLifted` (`Loop/LimitResume.cs:74-83`), `SupervisorQuarantine.Unhandable` (`:46`), `OpinionLook`'s
   `Concluded`, `MadeSince` and `HoldsPush` (`:19`, `:127`, `:134`), `DriverWatch.Due` (`:883`), `Driver.OnAnotherAccount` (`Loop/Driver.cs:4581`),
   `DriverHelpers.LeadWaits` and `Wait` (`:428`, `:547`), `DriverContinuations.HandedToResume` (`:966`), `ReopenTelling.BringsToSource` (`:357`).
@@ -1449,28 +1704,34 @@ its reason in a line. Read at `2a08bde4a`: `Driver/` is 784 files and 231,407 li
 
 ### 14.2 The map
 
-Twenty-one subdomains, each a folder and a namespace, `Daoris.Driver.<Name>`, listed **bottom to top: a subdomain names only its own types and
-those of the subdomains listed before it**, so the graph is acyclic by its order. *Takes* names today's folders and
-files (`Platform/` file by file, the rest by folder, a file named where its folder splits); *Owns* its store tables (§13.3); *Seam* the types the
-rest may name; *Tests* its test folder, which mirrors it (`Driver.Tests/<Name>/`).
+Twenty-one subdomains, each a folder and, at the last, a namespace `Daoris.Driver.<Name>` (§14.6), listed **bottom to top: a subdomain names only
+its own types and those of the subdomains listed before it**, so the graph is acyclic by its order. *Takes* names today's folders and
+files (`Platform/` file by file, the rest by folder, a file named where its folder splits); *Owns* its store tables (§13.3), Part B's, which a
+subdomain takes only once their rows land; *Seam* the types the rest may name; *Tests* its test folder, which mirrors it (`Driver.Tests/<Name>/`).
+Round 4 moves four placements that went against the map's own order (O3-8): the account rule stays with the roster in Agents, which returns
+`ResumeChoice` (`Accounts/Harnesses/HarnessRoster.cs:975`, `:1033-1060`), rather than going to Course; `Trees/SessionGroups`, which reads
+`StartVerdict`, `GoOnMarks`, `ResumeWords`, `AccountNames` and `SessionTrees`, goes to Work orders rather than Service; the attention policy,
+`Quests/Domain/Attention`, which names `CurveMove` (`Attention.cs:338`), `StartVerdict` (`:272`) and `HelpRoom.Repository` (`:80`), goes to
+Work orders too, Events keeping the vocabulary, its `HelpRoom` edge cut by the work rule's `daoris:help`, which the participant's work owns
+(§2.2); and `DaorisHome`'s edges are none (§14.1).
 
 | # | Subdomain, over the draft | Takes | Owns | Seam | Tests |
 |---|---|---|---|---|---|
 | 1 | **Platform** (the draft's) | `Platform/`'s `DaorisHome`, `HomeIdentity`, `HomeLease`, `ChildProcess`, `CommandPresence`, `ProcessStarts`, `AgentStarts` (the launcher's containment, D201), `DriverHttp`, `Downloads`, `DriverException`, `Moments`, `TextBounds`, `SafeNames`; `Agents/Consoles/`'s process job and pseudo-console | — (the home's table of entries, D172, stays its, naming paths, never another subdomain's type) | the home, the lease, a process start, the clock | `ProcessStartsCensusTests`, `NoConsoleWindowTests` |
-| 2 | **Store** (the draft's) | `AtomicFile`, `Json`, `JsonFile`, `JsonKeeping`, `KeepLock`, `RecordList`, `RecordLock`; `DesktopStore` and its migrations (§13) | `store_version`, `store_revisions`, `imports` | `DesktopStore`, a family's transaction, its revision and wake | the store's suite (row z-i) |
+| 2 | **Store** (the draft's) | `AtomicFile`, `Json`, `JsonFile`, `JsonKeeping`, `KeepLock`, `RecordList`, `RecordLock`, today's file primitives, which its Part A move takes; `DesktopStore` and its migrations (§13), row z-i's | `store_version`, `store_revisions`, `store_runs`, `imports` | `DesktopStore`, a family's transaction, its revision and wake | the store's suite (row z-i) |
 | 3 | **Settings** (new: the draft had none, and 165 files read it) | `DriverConfig`, `DriverConfigUnreadableException`, `StandingChoices`; the settings' writers' seam; the export and import | `settings` | a key's shape read through one parser; a subdomain reads its own keys, its rule types its own, so Settings names none of theirs (§14.3) | `ConfigSeamTests`, `DriverConfigKeepsTests` |
-| 4 | **Service** (new: the client of the local service is named by 102 files) | `Service/` (`ServiceClient`, the host's locator and doors, `LedgerChanges`, remote sync, registration following), `Platform/RunningAddress`; `Trees/SessionGroups` (the service's session records as groups) | — | `ServiceClient`, the change stream's families | the service client's and sync's suites, `QuestSyncTests` |
+| 4 | **Service** (new: the client of the local service is named by 102 files) | `Service/` (`ServiceClient`, the host's locator and doors, `LedgerChanges`, remote sync, registration following), `Platform/RunningAddress` | — | `ServiceClient`, the change stream's families | the service client's and sync's suites, `QuestSyncTests` |
 | 5 | **Install** (new: install, update and the managed tools, from Setup and Agents) | `Setup/`'s `InstallSwap`, `StagedBuild`, release channels and downloads, `UpdateCommand`; `Agents/ToolInstall/`, `Agents/Tools.cs` | `tools` | a tool's path, the staged build | the install's and tools' suites |
 | 6 | **Instance** (new: the terminal's way into a running instance) | `InstanceClient`, `InstanceDoor`, `InstanceRoutes`, `PipeName`, `SentPresses`, `VerbLeases`, `ShellWord` | — | the pipe's client and a verb's lease; each verb (`*Command.cs`) stays in its own subdomain and reaches the instance through this | the pipe's census in the modules (`PipeCensusTests`) and the driver's client tests |
-| 7 | **Events** (the draft's) | `Chain`, `ChangeWatch`, `FolderWatcherSource`, `HomeWatch`, `HomeWrites`, `MachineFacts`, `MachineLog`, `MachineLogReader`, `Notices`, `NoticesRead`, `LookSaid`, `NoteCodes` (the vocabulary, the eight Conversations codes it names moved into it as codes); `Sessions/Events/SessionLog`, `RunningCalls`, `Sessions/Watch/`; `Quests/Domain/Attention` (the attention watch, its policy); the journal's readers and the hubs (§4) | `notices`, `news_said`, `journal_cursors` | `EventCodes`, `NoteCodes`, a hub's teller, the notices' submit, the machine log | `AttentionTests`, `LookSaidTests`, `NoteCodesTests`, the notices' suites |
+| 7 | **Events** (the draft's) | `Chain`, `ChangeWatch`, `FolderWatcherSource`, `HomeWatch`, `HomeWrites`, `MachineFacts`, `MachineLog`, `MachineLogReader`, `Notices`, `NoticesRead`, `LookSaid`, `NoteCodes` (the vocabulary, the eight Conversations codes it names moved into it as codes); `Sessions/Events/SessionLog`, `RunningCalls`, `Sessions/Watch/`; the journal's readers and the hubs (§4); the attention policy is Work orders' (round 4, O3-8) | `notices`, `news_said`, `journal_cursors` | `EventCodes`, `NoteCodes`, a hub's teller, the notices' submit, the machine log | `LookSaidTests`, `NoteCodesTests`, the notices' suites |
 | 8 | **Knowledge** (the draft's *knowledge*, apart from the context engine: it answers across repositories from the index and the records, where the context engine composes one line's) | `Service/KnowledgeConnector` (the connector handed to sessions); `Agents/RepositoryKnowledge/` (the code map, indexes, standing answers); `Help/`'s `HelpFacts`, `Room/` and the room's sections, `HelpCheckouts`, `HelpCircle`; `Sessions/Trace/`, `Sessions/Domain/Trace.*`, `TracedRecords` | — | the facts a room or an agent is handed, the trace's records | `HelpCoverageTests`' facts half, the trace's suites |
-| 9 | **Agents** (the draft's *agents and accounts*, one subdomain, since an account is an agent's and the two folders depend on each other today) | `Agents/` but what Install, Knowledge and Context take; `Accounts/` but the account rule (to Course) and the instruction composer (to Context); `Sessions/SessionProcesses`, `HarnessEnding`; `Loop/TransientRetries` | the accounts' tables, `agent_offers`, `harness_wiring` | an adapter, a door's start and failure (`AgentErrors.Read`), the roster's walk and resume, cooling, usage | `AcpTransientTests`, `AccountRotationTickTests`, the adapters' suites |
+| 9 | **Agents** (the draft's *agents and accounts*, one subdomain, since an account is an agent's and the two folders depend on each other today) | `Agents/` but what Install, Knowledge and Context take; `Accounts/` but the instruction composer (to Context), the account rule with it (`Accounts/Rotation/ResumeAccount`'s `ResumeChoice` and `ResumeWords`, and row a-i's `LineAccount`), since the roster returns it (round 4, O3-8); `Sessions/SessionProcesses`, `HarnessEnding`; `Loop/TransientRetries` | the accounts' tables, `agent_offers`, `harness_wiring` | an adapter, a door's start and failure (`AgentErrors.Read`), the roster's walk and resume, cooling, usage, `LineAccount.Decide` | `AcpTransientTests`, `AccountRotationTickTests`, the adapters' suites |
 | 10 | **Workplace** (the draft's: trees, git, landing, keeping, named for the place work is done and lands) | `Trees/` but `Nodes/`, `Inventory/` and `SessionGroups`; `Platform/`'s git files (`GitAccessRules` to `LineGuesses`, 22) and keeping files (`KeepChoices` to `BrowserCaches`, 13); `Sessions/History/`; `Loop/FreshTree` | the workplace's tables, `git_identities`, `session_archive` | a session's tree, a landing, a git read, a removal's eligibility, the landing's hold | `SessionTreesTests`, the landing's and keep-size suites, the git half |
-| 11 | **Roles** (the owner's name; the draft's *Company*) | `Platform/ActorChoices`, `BuildWalk`; `Sessions/Questions/`'s roles, appointments, supervisor and steward and holder proof; `Sessions/Domain/ActorRun`; `Loop/SupervisorQuarantine`, `OneTurnReask`; the capabilities, the role catalogue and the start plan (§2.4, §2.7) | `roles`, `role_revisions`, `role_staffing`, `appointments` | `Capabilities`, `RoleCatalog`, `StartPlan.Resolve`, an act's admission | `ActorChoicesTests`, `StandingConfirmationTests`' driver half, `PipeCensusTests` |
-| 12 | **Participants** (the draft's *Fabric*, renamed: the code's `FABRIC-*` and the company concept's *fabric* are the workflows and pipelines; what this holds is who takes part) | the participant read, its work rule and its census (§2.1, §2.2); `Sessions/ChildLineage`, `RunningSessions`, `Domain/ChildBindings`, the lineage hook; `Conversations/Helpers/`, `Partners/` and their `Domain/` rules, `Chat/ChatRunBinds`; `Sessions/AccessCommand`, `Domain/AccessRules`, `DrivenAccess`; `Loop/DriverHelpers`, `DriverPartners`; admission's start layer (§2.3) | `bindings`, `permissions`, `configured_access` | `Participants.Of`, the work, a binding, the start layer's judgement | `ChildLineageTests`, `HelperLookTests`, the admission's suites |
+| 11 | **Roles** (the owner's name; the draft's *Company*) | `Platform/ActorChoices`, `BuildWalk`; `Sessions/Questions/`'s holder proof (`SupervisorProof`), act form (`RoleActForm`), the supervisor's decisions (`SupervisorDecision`, `QuestionSupervisorDecisions`), the roles' brief (`RolesBrief`) and its two verbs (`SessionsSuperviseCommand`, `StewardCommand`); `Sessions/Domain/ActorRun`; `Loop/SupervisorQuarantine`, `OneTurnReask`; the act vocabulary once row w-0 moves it down; the capabilities, the role catalogue and the start plan (§2.4, §2.7), their rows'. The appointments, the role list, the act tables, the offered flags and the act judge are the shell's library's (`Modules/Platform/StandingConfirmation.cs`, `RoleActs.cs`; `Modules/Bridge/StewardActRows.cs`), outside the map, since the driver references no project (round 4, O3-6) | `roles`, `role_revisions`, `role_staffing` | `Capabilities`, `RoleCatalog`, `StartPlan.Resolve` | `ActorChoicesTests`, the proof's and act form's suites |
+| 12 | **Participants** (the draft's *Fabric*, renamed: the code's `FABRIC-*` and the company concept's *fabric* are the workflows and pipelines; what this holds is who takes part) | the participant read, its work rule and its census (§2.1, §2.2); `Sessions/ChildLineage`, `RunningSessions`, `Domain/ChildBindings`, the lineage hook; `Conversations/Helpers/`, `Partners/` and their `Domain/` rules, `Chat/ChatRunBinds`; `Sessions/AccessCommand`, `Domain/AccessRules`, `DrivenAccess`; `Loop/DriverHelpers`, `DriverPartners`; admission's start layer (§2.3) | `bindings`, `permissions`, `configured_access` | `Participant.Of`, the work, a binding, the start layer's judgement | `ChildLineageTests`, `HelperLookTests`, the admission's suites |
 | 13 | **Context** (the draft's *context engine*) | `Sessions/Events/ContextBriefs`, `SessionEventLog`, `SessionLastWords`, `Domain/SessionOutput`; `Conversations/Domain/ContextBrief`, `TranscriptFile`; `Accounts/InstructionAccount`, `InstructionAccounting` (the instruction composer, misfiled under Accounts); `Agents/Adapters/SessionParts`; the carry's copy and read-back (SWITCHCTX1) and compaction when a row designs it | — (a session's event file stays a stream, §13.2) | a line's brief, a conversation's record, the instruction handed at a start | the briefs' and event log's suites |
-| 14 | **Course** (the draft's) | `Course.Decide`, `LineAccount`, the move record (§3); `Accounts/Rotation/ResumeAccount`, `Accounts/Domain/SwitchDecision`; `Conversations/` but the chat runner's core (to Loop), the helpers and partners (to Participants) and the context's files: `DrivenInbox`, `SaidDoor`, `GoOn/`, `HandOver/`, `Chat/`'s `LimitMove`, `CurveMove`, `LimitBox`, `LimitWaits`, `BriefedMove`, `ChatGoOn`, `ChatHandOver`, `Domain/Continuation`, `LimitHeld`, `WordsHeld`, `MessageLevel`; `Sessions/Requests/`; `Loop/DriverContinuations`, `DriverHandOvers`, `LimitResume` | `moves`, `move_words`, `word_receipts`, `go_on_marks`, `reopen_marks`, `go_on_new`, `handed_quests` | `Course.Decide`, `LineAccount.Decide`, a move's protocol, the dispatchers | the brief §6's *how work moves* suites |
-| 15 | **Work orders** (from the draft's *Work*, split: quests, asks and the person's orders, apart from review, workflows and set-up, each with records of its own) | `Quests/` but `Domain/Attention`; `Sessions/Work/`, `Questions/QuestionFiles`; `Trees/Inventory/` (the work inventory); `Brainstorms/` (a request the person orders, its voices started as any work, too small for a subdomain); `Loop/DriverIntakes`, `DriverBrainstorms`, `DriverMeetings`, `ChannelReach`, `ReopenTelling` | — | the planner, an intake, a quest's or an ask's verbs | `PlannerTests`, the intake's and brainstorm's suites |
+| 14 | **Course** (the draft's) | `LineCourse.Decide` and the move record (§3), their rows'; `Accounts/Domain/SwitchDecision`; `Conversations/` but the chat runner's core (to Loop), the helpers and partners (to Participants) and the context's files: `DrivenInbox`, `SaidDoor`, `GoOn/`, `HandOver/`, `Chat/`'s `LimitMove`, `CurveMove`, `LimitBox`, `LimitWaits`, `BriefedMove`, `ChatGoOn`, `ChatHandOver`, `Domain/Continuation`, `LimitHeld`, `WordsHeld`, `MessageLevel`; `Sessions/Requests/`; `Loop/DriverContinuations`, `DriverHandOvers`, `LimitResume` | `moves`, `move_words`, `go_on_marks`, `reopen_marks`, `go_on_new`, `handed_quests` | `LineCourse.Decide`, a move's protocol, the dispatchers; `ChatGoOn`'s use of the chat runner's `ChatRunner` and `ChatContext` (`Chat/ChatGoOn.cs:87-105`) a port Loop implements, named in the census (round 4, X3-4.2) | the brief §6's *how work moves* suites |
+| 15 | **Work orders** (from the draft's *Work*, split: quests, asks and the person's orders, apart from review, workflows and set-up, each with records of its own) | `Quests/`, its `Domain/Attention` (the attention policy, round 4) among it; `Trees/SessionGroups` (the service's session records as groups, round 4); `Sessions/Work/`, `Questions/QuestionFiles`; `Trees/Inventory/` (the work inventory); `Brainstorms/` (a request the person orders, its voices started as any work, too small for a subdomain); `Loop/DriverIntakes`, `DriverBrainstorms`, `DriverMeetings`, `ChannelReach`, `ReopenTelling` | — | the planner, an intake, a quest's or an ask's verbs, the attention policy, the session groups | `PlannerTests`, `AttentionTests`, the intake's and brainstorm's suites |
 | 16 | **Review** (from *Work*: a second opinion and verification) | `Review/`; `Sessions/Heavy/` (heavy gates and checks); `Loop/`'s five `Opinion*` files | `opinion_gates`, `opinion_dues` | an opinion's gate and its reviewer's choice; a check's verdict | the opinion's and heavy gates' suites |
 | 17 | **Plugins** (new: the draft placed only their wire) | `Plugins/` | `plugin_state`, `plugin_approvals` | the hook points, the catalogue, the work wire, `work/event`'s outside projection (§4) | `PluginKitTests`, the hooks' suites |
 | 18 | **Workflows** (from *Work*, with the node runtime that sat in Trees) | `Workflows/`; `Trees/Nodes/` | the workflows' tables, `chat_looks` | a run's evaluation, a node's contract | the workflow and node suites, the family rehearsal |
@@ -1478,16 +1739,17 @@ rest may name; *Tests* its test folder, which mirrors it (`Driver.Tests/<Name>/`
 | 20 | **Help** (new: Ask Daoris, the company concept's front desk, apart from the knowledge it reads) | `Help/` but what Knowledge takes: `HelpConversations`, `HelpMode`, `ConfiguredAccess`'s judge, `HelpSwap`, `HelpWired`, `HelpProposals` and its kinds, `HelpSettings`, `HelpHousekeeping`, `Proposals/` | `help_links` | the room's start, a proposal's judge | `HelpCoverageTests` |
 | 21 | **Loop** (the draft's, now both loops) | the look (`Loop/Driver`, `DriverCommand`, `LoopContext`, `LookStages`, `PassAsks`) and the chat runner's core (`Chat/ChatRunner`, `ChatTurns`, `ChatPending`, `StartRequests`, `ChatContext`, `ChatHelp`), which execute the course's answers (§3.1); the composition root; the wiring view (`SystemWiring`, `WiringCommand`, `WiringRedact`, `WiringSizes`, `WiringVariables`), a read of what it composed | — | none: nothing names Loop, as today | the brief §6's loop suites, the rehearsals |
 
-Not in the map: the modules (the shell's own library, held by its own structure gate, `Modules.Tests/StructureTests.cs:66-78`), the host
-(`Daoris.Driver.Host`), the GitDoor, the launcher and the piece start, each its own project; the service, whose side of this design (the head,
-`opens`, the journal's triggers, the work's twin) lands in its own code. A verb file (`*Command.cs`) belongs to the subdomain whose acts it
+Not in the map: the modules (the shell's own library, held by its own structure gate, `Modules.Tests/StructureTests.cs:66-78`, the
+appointments and the act judge among them), the host (`Daoris.Driver.Host`), the GitDoor, the launcher and the piece start, each its own
+project; the service, whose side of this design (the head, the keyed open, the settlement, the journal's triggers, the work's twin) lands in
+its own code. A verb file (`*Command.cs`) belongs to the subdomain whose acts it
 drives, never to a subdomain of verbs.
 
 ### 14.3 The rules the map keeps
 
 - **Downward only.** A file names only its own subdomain's types and those ranked below it. Where a lower subdomain calls a higher one today
-  (the landing calling a plugin's `work/land`, `NoteCodes` naming Conversations' types, `DaorisHome` naming six folders', the settings' parser
-  naming nine folders' rule types), the lower declares a port and the higher implements it, wired by Loop; or the type moves down to its one
+  (the landing calling a plugin's `work/land`, `NoteCodes` naming Conversations' types, `ChatGoOn` naming the chat runner's `ChatRunner` and
+  `ChatContext`, the settings' parser naming nine folders' rule types), the lower declares a port and the higher implements it, wired by Loop; or the type moves down to its one
   owner. Settings in particular reads keys by their shape and hands each subdomain its own keys, whose rule types that subdomain owns, so
   `DriverConfig` names none of them; until its 165 readers move, `DriverConfig` stays the composed record, read by each through a census that
   shrinks one subdomain at a time.
@@ -1495,7 +1757,9 @@ drives, never to a subdomain of verbs.
 - **`Domain/` stays pure, and is seen to be.** Beside today's tokens, a `Domain/` file names no type of the I/O seams (`ServiceClient`,
   `SessionProcesses`, `HarnessRoster`, `DaorisHome`, `MachineLog`, `WorkingTree`, `DesktopStore`) and holds no `async`; today's six crossings and
   nine `async` files are the census's named exceptions, each cut by its subdomain's row.
-- **No global usings** of a subdomain's namespace, so a file's `using` lines are its dependencies and the census reads them.
+- **No global usings** of a subdomain's namespace, once there are namespaces. The census never reads `using` lines as a file's dependencies:
+  a fully qualified reference needs none (`Driver/Sessions/SessionsCommand.cs:185` names `Daoris.Driver.HolderKey` so today), so it reads every
+  type reference, ordinary, qualified, aliased and static, by the declared-type table it builds from every file (round 4, X3-4.1).
 
 ### 14.4 Folders and a census, or assemblies
 
@@ -1510,38 +1774,55 @@ become an assembly in a row of its own, measured, Store and Platform the first c
 ### 14.5 The structure gate, a row of its own (row mod-0)
 
 `StructureTests` reads the map from `fixtures/structure.json`, which names the twenty-one subdomains in their order, each one's folder, its
-namespace and its allowed `Domain/`, and the census of today's exceptions; `StructureCheck` gains:
+allowed `Domain/` and, from its namespace row on, its namespace, and the census of today's exceptions; `StructureCheck` gains:
 
-1. **The subdomain rule**: a source sits in its subdomain's folder; once moved, its namespace is `Daoris.Driver.<Name>`; a file added outside
-   its subdomain fails, so new code is written in place from this row on.
-2. **The direction rule**: a file names (by its `using` lines once namespaced, by type names before, as `StructureCheck` reads Loop's today) only
-   its own subdomain's types and lower ones; an edge against the order is allowed only where the census names it, with its row.
+1. **The subdomain rule**: a source sits in its subdomain's folder; a file added outside its subdomain fails, so new code is written in place
+   from this row on. Every namespace stays `Daoris.Driver` until the subdomain's namespace row (§14.6).
+2. **The direction rule**: a file names only its own subdomain's types and lower ones, read by **every type reference** in it (an ordinary
+   name, a fully qualified one, an alias's target and a static import's type), found by the declared-type table the gate builds from every
+   file's declarations, comments and strings removed, as `StructureCheck` reads Loop's today, and never by `using` lines alone (X3-4.1); an edge
+   against the order is allowed only where the census names it, with its row.
 3. **The purity rule** widened as §14.3 says, its exceptions named.
 4. **Loop's rule** kept (nothing names Loop) and widened: Loop declares no judgement the census does not name as moving.
-5. **No global using** of a subdomain's namespace.
+5. **No global using** of a subdomain's namespace, from the namespace rows on.
 
 Its proof: the gate run over the tree at this row's commit passes with today's exceptions listed and fails on a planted file that names an
-upward type, a planted `Domain/` file naming `ServiceClient`, and a planted rule in Loop; `StructureTests`' own fixtures for each.
+upward type plainly, fully qualified, through an alias and through a static import; a planted `Domain/` file naming `ServiceClient`; and a planted
+rule in Loop; `StructureTests`' own fixtures for each. It amends D166 point 1's fifteen modules (Brainstorms the fifteenth by D176 point 1,
+`StructureTests.cs:189-191`) by the twenty-one subdomains, and keeps D166 point 4's order and its rejection of renaming namespaces as files
+move (O3-10).
 
 ### 14.6 The order of the moves
 
-Each move is a row that **changes no behaviour**: it moves one subdomain's files into its folder and namespace, adds the `using` lines its readers
-need, updates the map, and keeps every gate of the brief §6 green; it lands when no open branch holds the files it moves, since a move under
-another branch's edit is its conflict. The moves go **bottom up**, so each subdomain moves onto ground already in place: mod-i Platform and
-Store; mod-ii Settings; mod-iii Service, Install and Instance; mod-iv Events; mod-v Knowledge; mod-vi Agents; mod-vii Workplace; mod-viii Roles;
-mod-ix Participants; mod-x Context; mod-xi Course; mod-xii Work orders; mod-xiii Review; mod-xiv Plugins; mod-xv Workflows; mod-xvi Setup;
-mod-xvii Help; mod-xviii Loop, the remainder. **The cuts** follow each move, one edge family per row (a port declared, or a type moved to its
-owner), each changing no behaviour and shrinking the census by its edges; Loop's rules leave it in the rows that move their subdomains, each a
-move with its tests, never a rewrite. Foundation rows that add code (the account rule, the course, the store, the catalogue) write it in its
-subdomain's folder from row mod-0 on, so no new code needs moving.
+Each move is a Part A row that **changes no behaviour**: it moves one subdomain's files into its folder, **its namespace unchanged** (D166 point 4:
+namespaces last; O3-10), updates the map, moves every **linked consumer** with the files (the GitDoor's `Compile Include` paths,
+`Daoris.Desktop.GitDoor.csproj:20-37`; the driver project's embedded resources' `Include` paths, their logical names pinned; the launcher's
+compile of `StagedBuild.cs` by path) (X3-4.2), and keeps every gate of the brief §6 green, the GitDoor built and its tests run where it
+compiles a moved file; source-scan tests find files by name, so a move breaks none. It lands when no open branch holds the files it moves, since
+a move under another branch's edit is its conflict. The moves go **bottom up, one subdomain a row** (X3-6.2), so each moves onto ground already in
+place: mod-i Platform; mod-ii Store (today's file primitives; `DesktopStore` is row z-i's); mod-iii Settings; mod-iv Service; mod-v Install;
+mod-vi Instance; mod-vii Events; mod-viii Knowledge; mod-ix Agents; mod-x Workplace; mod-xi Roles (the driver's own role files; the act
+vocabulary's move is row w-0's, Part B's); mod-xii Participants; mod-xiii Context; mod-xiv Course; mod-xv Work orders; mod-xvi Review; mod-xvii
+Plugins; mod-xviii Workflows; mod-xix Setup; mod-xx Help; mod-xxi Loop, the remainder. **The cuts** follow each move, one edge family per row (a
+port declared, or a type moved to its owner), each changing no behaviour and shrinking the census by its edges, each named in the census with
+its edges before it lands (the account rule's types already with the roster, §14.2; `ChatGoOn`'s port onto the chat runner; `HelpRoom.Repository`'s
+`daoris:help` moved down to the participant's work rule; the settings' parser's rule types to their subdomains); Loop's rules leave it in the
+rows that move their subdomains, each a move with its tests, never a rewrite. Foundation rows that add code (the account rule, the course, the
+store, the catalogue) write it in its subdomain's folder from row mod-0 on, so no new code needs moving.
+
+**The namespace rows come last**, one per subdomain once every edge of it points down, each moving its files into `Daoris.Driver.<Name>` and adding
+the `using` lines its readers need. They are in neither part's acceptance and are designed when they come, since a namespace's move changes the
+machine log's `type` field, an exception's full name (`Driver/Platform/MachineLog.cs:322`), which each row names as its one known change, and
+since a simple name binds to a namespace before a type of the same name, which the design's own types avoid by their names (`LineCourse`,
+`Participant.Of`, `ParticipantWork.Of`; §6; O3-9).
 
 ### 14.7 Where the three areas, the store and the roles land
 
 | Part of this design | Lands in |
 |---|---|
 | **Who acts** (§2): the participant read, the work, bindings, lineage, admission | **Participants**, with the service's twin of the work in the service |
-| The capabilities, the role catalogue, the start plan, appointments and the act's admission (§2.4, §2.5, §2.7) | **Roles** |
-| **How work moves** (§3): `Course.Decide`, `LineAccount`, the move record, the words' rules | **Course**, executed by **Loop**'s two loops; a move's brief and carry in **Context**; the say door's head and the open's words in the service |
+| The capabilities, the role catalogue and the start plan (§2.4, §2.7) | **Roles**; the appointments, the act judge and the act door (§2.5) in the shell's library, outside the map |
+| **How work moves** (§3): `LineCourse.Decide`, the move record, the words' rules | **Course**, executed by **Loop**'s two loops; `LineAccount` in **Agents** with the roster; a move's brief and carry in **Context**; the say door's head, the keyed open and the words' settlement in the service |
 | **What is said** (§4): the vocabulary, the hubs, the journal's readers, the notices, the machine log | **Events**; the outside projection (`work/event`) in **Plugins**; the journal itself in the service's store |
 | **Where state is kept** (§13): `DesktopStore`, its migrations and imports | **Store**, each family's tables in the subdomain the §13.3 table names |
 | The settings and their export and import | **Settings** |
@@ -1602,3 +1883,75 @@ Its §0 finds five of round 1's findings still open: 3.5 (the claim, answered by
 | 4.3 | blocking | **Taken.** News is keyed by its occurrence (a journal position, a confirmation's id, or a record's own moment for a reconciliation); the said-set and the tellable news share one horizon, so a forgotten key is never eligible again; row m-iv tests more than 200 at once, the horizon's expiry, a new teller and a reconciliation below the floor (§4.5) |
 | 5.1 | blocking | **Taken.** Row d needs no receipt, since the open moves the words under its key and transfer ids in one service step (§3.4 rule 3), and row p moves before row d anyway; row f's proofs name three outcomes, delivered once, refused at a limit and carried once, uncertain and said (§10) |
 | 5.2 | — | **Taken.** Row f splits into f-i (the record, read by nothing) and one move kind per branch, ii to vi, each with its own compatibility proof; row x's older-build continuation is its first case; the two-maker gates and SWITCHCTX1's own owed read stand (§10) |
+
+## 16. Round 4: the reads of round 3 answered
+
+Each finding by number, as `docs/2026-10-25-foundation-reads.md` holds it, checked by the steward against the code at `e8f1aed4f`, whose `src/` is
+`68a396c65`'s, where both reads were made, but for one test; *taken* says where the body changed, *disputed* says why not. Where the two reads
+overlap the stricter is taken, and the pair is named. Every finding of both reads is taken but one word: Codex's 职务 for the role, where the
+steward's decision is 角色 (5.1). Codex's verdict names four protocol decisions, authority, cross-store delivery, effect fencing and the downgrade;
+round 4 makes each (§2.7, §3.4 rule 5 with §3.3, §13.4, §13.5), and they are Part B's, which stays proposed for its own rounds. Part A, the rows
+that only reorganise, is put to both readers' check on its own (the Standing).
+
+### 16.1 The Opus reader's foundation read (16 findings, 2 blocking)
+
+Its §0 holds round 3's answers but Codex's 3.1, which its finding 1 reopens, and notes three edges it carries into findings 4, 5 and 12; its §1
+lists eleven wrong claims, each placed in a finding below.
+
+| # | | Answer |
+|---|---|---|
+| 1 | blocking | **Taken, with X3-1.1 and X3-3.1, the stricter.** Round 3's takeover rested on an executor-role holder nothing establishes: `--share` runs a second driven loop beside the instance holding nothing, the two racing for the same quests (`Host/Program.cs:869-875`, `:890-895`), and the window's guard is one instance per install (`App/Program.cs:368`) while the host's start claim refuses no second launch (`Modules/Loop/HostSupervisor.cs:478-486`). A move is now taken over only where its claim's run is dead by the lease's own test, pid and start time, *cannot tell* read as alive (`Driver/Platform/HomeLease.cs:66-68`, `:427-448`), never because a role passed; each live executor, a `--share` loop included, claims and keeps the moves of the lines it runs, a conversation's the shell's that runs it; the run and the claim's columns are named (`store_runs`; `moves.claim_run`, `claim_generation`); row f-i proves two shells on one home, a `--share` loop beside the instance and a paused executor whose process lives (§3.3, §13.3, §13.4, §10) |
+| 2 | blocking | **Taken.** Each authority-bearing family keeps an older build from reading a revoked grant: set aside where its older reader reads a missing file as off (the standing confirmation's, `Modules/Platform/StandingConfirmation.cs:267-271`), else its narrowings written through to the backup by its own writer, narrowing only (`driver.json`'s `access`, `drivable`, `trees`, `standing`; z-xi's files by their readers); rows z-ii, z-iv and z-xi each prove a revoke in the store followed by an older build's start finding it revoked (§13.5, §13.6) |
+| 3 | — | **Taken.** The driver takes `Microsoft.Data.Sqlite`, pinned as the service's (`src/Daoris.Service/Directory.Packages.props:30-31`), amending the recorded *zero package dependencies* (`src/Daoris.Desktop/Directory.Packages.props:6-9`), whose reason, never reaching the service's store, stands; the GitDoor, *referencing nothing* (`Daoris.Desktop.GitDoor.csproj:3-7`), takes it too, row z-i measuring its start on a remote act and landing only within a tenth of today's at p95, else the door's reading is designed again (§13.2, §11) |
+| 4 | — | **Taken.** A start's confirmation is *settled* once its `StagedBuild.Confirm` has run (`Modules/Update/InstallUpdater.cs:135`, off the start's thread, `App/Program.cs:323`) or once the swap journal shows none waiting for it, which is how a headless start finds it; the come-up's box imports, every import of a family an older build acts on and every migration raising the oldest-writer stamp wait for it; until a box is imported its old part is the course's `Never`; row z-i proves a rollback after a first start (§3.3, §13.3, §13.5) |
+| 5 | — | **Taken, with X3-3.2 and X3-1.2, the stricter.** A helper's and a partner's keyed hands are kept by their desks, never the say door (`Core/Sessions/HelperDesk.cs:180-189`; `Core/Sessions/PartnerDesk.cs:136-147`; `Http/Program.cs:1739-1748`), so the settlement moves into the service, written in the statement that takes a word and read by one function inside each keeping door's own exclusive step, the two desks' included, rather than the client reading a receipt before a hand as the reader suggested, which Codex's 3.2 shows races (§3.4 rule 5; row p) |
+| 6 | — | **Taken.** The kept conversation id is replaced whenever the wire names one (`Conversations/GoOn/HarnessConversations.cs:28-37`), so the bindings are set aside at their import, an older build finding none and carrying on (`:15-16`) rather than resuming a stale id, and a binding file an older build writes is imported at the return, its id winning for its own session (§5.2, §13.5, §13.6 row z-iii) |
+| 7 | — | **Taken.** The appointments, the role list, the act tables, the offered flags and the act judge are the shell's library's (`StandingConfirmation.cs:121-133`, `:330`, `:336`, `:1245-1290`; `Modules/Platform/RoleActs.cs:44-65`; `Modules/Bridge/StewardActRows.cs:145-161`), which the driver cannot name: row w-0, ⚖, moves the act vocabulary alone (names, offered flags, scope kinds) down into `Capabilities`; the judge, the handlers and the appointments' persistence stay in the shell, their table written through `DesktopStore`; the desk's decline stays outside every grant (`StandingConfirmation.cs:1275-1279`; `RoleActs.cs:56-60`) (§2.5, §2.7, §13.3, §14.2) |
+| 8 | — | **Taken.** The account rule stays with the roster in Agents, which returns `ResumeChoice` (`Accounts/Harnesses/HarnessRoster.cs:975`, `:1033-1060`), so row a-i's `LineAccount` is written there; `Trees/SessionGroups` and the attention policy go to Work orders (`Quests/Domain/Attention.cs:80`, `:272`, `:338`), Events keeping the vocabulary, the `HelpRoom.Repository` edge cut by the work rule's `daoris:help`; `DaorisHome` names no other folder's types, round 3 having counted its `HomeEntry` members (§14.1, §14.2) |
+| 9 | — | **Taken.** `Course.Decide`, `Participants.Of` and `Participants.WorkOf` become `LineCourse.Decide`, `Participant.Of` and `ParticipantWork.Of`, so no type shares its subdomain's namespace; the shell's `Roles` class stays in the shell, outside the map (§1.1, §6, §14.6) |
+| 10 | — | **Taken.** D166 points 1 and 4 and its rejection of renaming namespaces as files move, and D176 point 1, join D212's amend list; D166's order is kept, folders first and namespaces last, the namespace rows coming once each subdomain's edges point down and naming the machine log's `type` field (`Driver/Platform/MachineLog.cs:322`) as their known change (§7 row 21, §14.5, §14.6) |
+| 11 | — | **Taken.** D50's change is stated plainly: for the configuration the store is the truth and a hand edit of `driver.json` takes effect only by an import, offered at every start and when the home's watch sees the file change, through the judges, a change of authority by the press (`D50.md:7-9`; today's live read, `HomeWatch.cs:200`, `DriverWatch.cs:1118`); `DAORIS_DRIVER_CONFIG`'s file is imported again whenever its SHA-256 changes and a fixture home's at its first start, and row z-ii's census moves the family rehearsal (`tools/family-rehearsal.mjs:981`, `:5603-5607`) and the proof kit (`tools/proof-kit.mjs:285-290`) onto it (§7 row 19, §13.5, §13.6) |
+| 12 | — | **Taken, with X3-6.1.** The keyed open is its own row, d-i, before d-ii and every row that moves words, proven in process there and across a crash in f-i; round 4 also replaces the `opens` field with the service's `session_opens` table, so the open's answer is kept whole (X3-3.3) (§3.3, §5.2, §10) |
+| 13 | — | **Taken.** Row a-i's installed line reads `session.moved … why=retry` (`Chat/LimitMove.cs:220`, `:296`, `:317-318`; `Continuations.Moved`, `Driver/Conversations/Domain/Continuation.cs:588-594`), the note's continue reason `account` (`:60`); §3.2 step 2 no longer says the conversation's move is why `account`; D137's LIMITSWITCH2 note, whose row 1a keeps `accountPicked` on the record (`D137.md:848`), gains a dated line pointing at row a-ii's binding (§3.2, §10) |
+| 14 | — | **Taken.** Rows z-ii, z-iv and z-xi are ⚖ as rehoming authority records and z-ix as moving the records a removal follows; all four are Part B's (§8, §10, §13.6) |
+| 15 | — | **Taken, as the steward's decision on both readers' reads.** The role is 角色 in both its shapes, 任命的角色 where the appointed one must be said; 职务 is withdrawn, its reason separating two screen titles rather than two concepts; every shipped string already says 角色 (`zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`, `zh/settings.daoris.json:108`, `:139`), and row u's list gains `:139` as a string that already says the appointed shape; row u changes no page string (§6, §10; D212; the brief §8) |
+| 16 | — | **Taken, the four sentences.** `RoleCatalog.Read` judges shape and reads a mixed record as unreadable; an unreadable added record holds every start in its scope until it reads or is deleted; every binding writer updates its own columns by name and never replaces a row; an import never sets or raises a grant, an imported appointment dormant and its grant set by *Appoint* alone (D208 point 1); row w's proof gains the first two (§2.7, §13.3; rows w, x, z-iv) |
+
+Its verdict's last line stands as written: the acceptance it offers does not cover the steward's reading that a closed quest's session falls
+inside LIMITSWITCH1's decision, which stays the owner's to overrule (§8).
+
+### 16.2 Codex's read (17 findings, 11 blocking)
+
+Its §0 finds five of round 2's findings open: 1.1 (the downgrade, answered by 3.4 here), 2.2 (live attenuation, 2.2), 3.1 (effect fencing, 3.1),
+4.3 (announcement keys, 3.6) and 5.1 (the open's order, 6.1); the rest it finds taken.
+
+| # | | Answer |
+|---|---|---|
+| 1.1 | blocking | **Taken, with O3-1.** No claim rests on *one shell per home*: the window's guard is per install (`App/Program.cs:368`) and the host's start claim guards the early service start by its address (`Modules/Loop/HostSupervisor.cs:480`, `:495`); a move's claim is the process run that executes it, taken over only from a dead run, so two shells on one home each keep their own conversations' moves (§3.3, §13.4) |
+| 1.2 | blocking | **Taken, with O3-5 and 3.2 here.** The keyed hands that never pass the desktop's client, a helper's (`HelperDesk.cs:185-189`) and a partner's (`PartnerDesk.cs:136-147`), are covered: the settlement is the service's and every keeping door reads it inside its own step (§3.4 rule 5) |
+| 1.3 | — | **Taken.** Today's *Appoint* grants the acts the build offers, snapshotted (`OffersActs`, `StandingConfirmation.cs:860`), and the steward's set-up tick apart (`:861`); the request names no acts (`:247`). The grant is described so in §2.7, §7 row 17 and D212 point 5; no individually chosen acts are proposed (§1.1 Q4) |
+| 2.1 | — | **Taken.** No configuration reaches containment, and configuring roles never turns today's best effort into a guarantee nor weakens a piece's failing closed (§2.3) |
+| 2.2 | blocking | **Taken.** The grant is the retained ceiling: every narrowing of a role lowers each live appointment's grant in the standing confirmation's one mutation step, before the role is written, so a restored act stays refused until *Appoint again*; an admitted act is checked again at its run against the grant and the role's configuration as they stand, where `RunAct` today checks the owner's marks and liveness alone (`StandingConfirmation.cs:1300-1311`); rows t and y-ii prove the restore case and the queued act (§2.5, §2.7, §10) |
+| 3.1 | blocking | **Taken, with O3-1.** Ownership is excluded through the effect itself: a claim passes only from a run dead by the lease's test, so a live executor paused between its committed mark and its effect keeps the move, and the mark becomes the evidence a taker reads after a death; no external effect is placed inside a transaction; row f-i tests suspension after the mark commits and before the effect while another process tries a takeover (§3.3, §13.4) |
+| 3.2 | blocking | **Taken.** The client-side precheck is withdrawn: a word leaves `said` only by a service statement that writes its settlement (`said_settled`, by line and producer key) in the same statement, and every door that answers a key reads `SaidKeys.Settled` inside its own `BEGIN IMMEDIATE` step (`Sessions.ExclusiveAsync`, `Core/Sessions/Sessions.cs:785-786`), so no retry can fall between a check and the keep at `SessionLedger.cs:956`, `:965`; the desktop keeps a move's `move_words` alone (§3.4 rule 5, §13.3, §13.4, §13.7) |
+| 3.3 | blocking | **Taken.** The open's replay evidence is the service's `session_opens`, written in the open's own exclusive step with the record opened and every word moved, its producer key, transfer id and order, kept while the opened record stands, so a repeated open is answered whole after the words leave `said` (`Sessions.cs:1602-1607`); it replaces round 3's `opens` field (§3.3, §5.2; row d-i) |
+| 3.4 | blocking | **Taken.** Before anything is delivered, in every phase, the line's head and the destination's attempts are read; where an older build opened a successor of the destination (`Chat/BriefedMove.cs:130-158` opens before it delivers), nothing is delivered to the destination, the move closes `superseded`, its unattempted words follow the head in the service's word move and its attempted ones are settled uncertain and said (§13.4 step 5, §13.5's table; rows f-ii to f-vi) |
+| 3.5 | blocking | **Taken.** The oldest-writer stamp is read under the write lock inside every writing transaction, not only at open; row z-i proves a writer that opened before another process's migration and resumes after it refused (§13.3) |
+| 3.6 | blocking | **Taken.** One occurrence has one key whichever path finds it: the record's id and its transition number, kept per record in the service's `session_transitions` by a trigger guarded by a real change of state, so a note-only write (`Sessions.cs:886-890`) moves nothing, carried in the journal row's snapshot and read beside the record by a reconciliation; row m-iv proves an end told from the journal and found again by a second teller's reconciliation after a trim, told once (§4.1, §4.5; rows k, m-iv) |
+| 3.7 | — | **Taken.** The one-use git grants (`run/git/grants`, `Driver/Platform/GitAccessRules.cs:153-183`) stay files, with the reason: the driver writes them and the GitDoor consumes each by its own rename and delete, and writes nothing in the store (§13.6's list) |
+| 4.1 | blocking | **Taken.** The direction rule reads every type reference, ordinary, fully qualified, aliased and static, by the gate's declared-type table, never `using` lines alone (a qualified reference today, `Driver/Sessions/SessionsCommand.cs:185`); row mod-0 proves each planted form refused (§14.3, §14.5; row mod-0) |
+| 4.2 | — | **Taken.** The port cuts are named in the census before their rows (`ChatGoOn` onto `ChatRunner` and `ChatContext`, `Chat/ChatGoOn.cs:87-105`, among them), and each move carries its linked consumers: the GitDoor's `Compile Include` paths (`Daoris.Desktop.GitDoor.csproj:20-37`), the embedded resources' `Include` paths and the launcher's compile by path, the GitDoor built in the move's proof (§14.2, §14.3, §14.6) |
+| 5.1 | — | **Taken in part.** One concept in two shapes takes one word on the page: taken. The word is **disputed**: the steward's decision is 角色, not 职务, since every shipped string already says 角色 for both shapes, the glossary's *actor* entry gives 角色 the meaning a working role carries and refuses 岗位, close to 职务, and 职务 would retire 角色 from seven strings for no concept the page lacks; *actor* stays a code and prose word for a working role's staffing, with no Chinese of its own (§6, §1.1 Q16) |
+| 6.1 | blocking | **Taken, with O3-12.** The service's keyed open and its transfer record are row d-i, standalone, before d-ii and every row that moves words; row p stays before them (§10) |
+| 6.2 | — | **Taken.** The moves are one subdomain a row, mod-i to mod-xxi, Platform apart from Store and Service, Install and Instance apart; each with its build proof, the GitDoor's where it compiles a moved file; the two-maker gates, the ⚖ rows and SWITCHCTX1's own owed read stand (§10, §14.6) |
+
+### 16.3 What Part B's next round must settle
+
+Part B's round 5 is read by both makers on the protocols round 4 chose, before any of its rows is built: the claim by process run and its
+takeover only from a dead run, with what a hung live executor costs and how two installs' shells on one home behave (§3.3, §13.4); the
+service's settlement, `said_settled`, its horizon and every door that answers a key, and `Lines.Forward`, the new service step that moves a
+superseded destination's words to the head (§3.4 rule 5, §13.4 step 5); `session_opens`, its retention and an older host's lost open; the
+transition number's trigger and its use as news's one key (§4.5); the confirmation's *settled* for a headless start and a silent swap (§13.5);
+each authority-bearing family's choice between setting aside and writing narrowings through, file by file of z-xi by its older reader (§13.5); the
+act vocabulary's move and the grant's lowering ordered across two stores until row z-iv (§2.7; row w-0); and the GitDoor's start with SQLite,
+measured in row z-i. Part B's rows wait for that round's acceptance, and the ⚖ rows for both makers' reads of it.
