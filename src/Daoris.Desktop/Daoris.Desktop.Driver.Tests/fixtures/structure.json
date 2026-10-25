@@ -896,13 +896,6 @@
   },
   "edges": [
     {
-      "family": "Instance names Agents",
-      "after": "Instance",
-      "files": {
-        "Instance/VerbLeases.cs": ["AgentsCommand"]
-      }
-    },
-    {
       "family": "Instance names Course",
       "after": "Instance",
       "files": {
@@ -1775,6 +1768,7 @@
     "SentPressesTests.cs": "Instance",
     "ShellWordTests.cs": "Instance",
     "VerbLeasesTests.cs": "Instance",
-    "RegisterCommandTests.cs": "Instance"
+    "RegisterCommandTests.cs": "Instance",
+    "InstancePortsTests.cs": "Instance"
   }
 }
