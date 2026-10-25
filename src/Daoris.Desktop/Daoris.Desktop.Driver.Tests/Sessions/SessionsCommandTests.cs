@@ -339,6 +339,46 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.DoesNotContain("going on", said);
     }
 
+    /// <summary>
+    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): a closed quest's session holding Daoris's own rebase word, every account of its agent
+    /// cooling, is listed under Resumes later saying the limit's wait for the earliest reset of any, naming that account, with the
+    /// door out of it: never only that it completed, and never the own account's weekly reset two days on that the word once waited for.
+    /// With another account ready it is listed going on, since the loop's look hands it to the runner.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_rebase_word_on_a_closed_quests_session_is_listed_saying_the_limits_wait_for_the_earliest_reset()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude", "work"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude", "home"));
+        var weekly = DateTimeOffset.UtcNow.AddDays(2);
+        var sooner = DateTimeOffset.UtcNow.AddHours(5);
+        var own = new CoolingEntry("claude", "work", weekly, Stated: true, Window: null, Seen: T0, Session: null);
+        var other = new CoolingEntry("claude", "home", sooner, Stated: true, Window: null, Seen: T0, Session: null);
+        var record = Record("r3base00", "completed", "q5", minutes: 60);
+        record["profile"] = "work";
+        record["said"] = new JsonArray(new JsonObject
+        {
+            ["id"] = "w1", ["text"] = "Daoris: rebase.", ["at"] = T0.AddMinutes(70).ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
+            ["from"] = "daoris", ["key"] = DaorisKeys.Rebase("r3base00", "0123abc"),
+        });
+        var ledger = new Ledger([record], [Quest("q5", "Trim the readme", "Done")]);
+        using var service = ledger.Client();
+        SessionsWorld Cooling(Func<string?, string?, CoolingEntry?> coolingOf) =>
+            World(ledger, service) with { Config = DriverConfig.Empty with { Drivable = ["engine"] }, CoolingOf = coolingOf };
+
+        var (_, said) = await RunAsync(ledger, [], world: Cooling((adapter, profile) =>
+            adapter != "claude-code" ? null : profile == "work" ? own : profile == "home" ? other : null));
+
+        Assert.Contains("Resumes later (1)\n  r3base00  completed  engine — Trim the readme", said);
+        Assert.Contains("held: it waits: Every account it may run on is at its limit", said);
+        Assert.Contains("Every account it may run on is at its limit: it goes on by itself once the `claude` account `home` is ready again", said);
+        Assert.DoesNotContain("so your words wait to go on in it then", said);
+        Assert.Contains("`daoris-driver sessions start-from r3base00`.", said);
+
+        var (_, ready) = await RunAsync(ledger, [], world: Cooling((adapter, profile) => adapter == "claude-code" && profile == "work" ? own : null));
+        Assert.DoesNotContain("Resumes later", ready);
+    }
+
     [Fact]
     public async Task The_listing_takes_a_group_and_a_repository()
     {

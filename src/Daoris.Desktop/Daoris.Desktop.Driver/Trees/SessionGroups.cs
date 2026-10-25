@@ -769,8 +769,17 @@ public static class SessionGroups
                 // while another is ready, so the loop's look carries them on there and nothing is held; where every account cools, they wait
                 // for the earliest reset of any, as the roster's resume says. LIMITSWITCH2: a closed quest's session's words the same, the
                 // shell's chat runner going on in a new part of it; only the door out of the wait differs.
+                // LIMITSWITCH3: a closed quest's session goes on in a new part only with a word that part carries (the person's, or Daoris's own
+                // that states a fact); with none, as Daoris's resume words only, its words wait for the own account, as the driver's look says.
                 var carried = verdict.Quest.Status is "Open" or "Taken";
                 var names = AccountNames.Of(home, cooling.Agent);
+                if (!carried && !words.Waiting.Any(word => word.CarriesOn))
+                {
+                    held[words.Session] = CoolingHold(
+                        $"{ResumeWords.Waits(cooling, zone, names)} {ResumeWords.ChatDoor(words.Session)}", cooling, home);
+                    continue;
+                }
+
                 if (Soonest(coolingOf, home, adapter, cooling) is not { } soonest) continue;
 
                 // Where the own account is not the earliest, the sentence is the roster's: whose reset comes first.

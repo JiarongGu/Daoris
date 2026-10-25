@@ -277,6 +277,14 @@ public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IR
 
     /// <summary>Whether these are the person's words: no second opinion's, no helper's and not Daoris's.</summary>
     public bool Persons => By is null && Helper is null && From is null;
+
+    /// <summary>
+    /// Whether a new part an ended record's account cooling opens carries this word (LIMITSWITCH3, D137's note of 2026-10-26): the person's,
+    /// and Daoris's own that state a fact (a rebase, a reopen, a step's go-on), said as Daoris's. Never Daoris's resume words (a limit's,
+    /// a restart's, a retry's), which ask for the record's own conversation, nor another agent's findings or a helper's answer, which
+    /// go to the person.
+    /// </summary>
+    public bool CarriesOn => Persons || (Daoris && !DaorisKeys.IsResume(Key));
 }
 
 /// <summary>An ACTIVE session as the service answered it — closed ones never reach the planner.</summary>

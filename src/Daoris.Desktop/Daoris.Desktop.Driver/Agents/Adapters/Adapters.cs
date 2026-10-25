@@ -639,6 +639,8 @@ public static class TargetPrompt
                     $"\n{Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,\n"
                     + $"and {InFlight(target)}{HandedNote(target)}{AccountChanged(target)}\n"),
             ],
+        // LIMITSWITCH3: Daoris's own words that waited on the session this carry-on goes on from, which its cooling account did not take.
+        new(HandedSections.WrittenTo, WhileItWaited(target)),
         .. Tail(target, target.Ready
             ? "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
               + $"gates, then say `#{target.QuestId}` is ready: `ready` when its work is done, with your note and an\n"
@@ -787,10 +789,7 @@ public static class TargetPrompt
 
         if (daoris.Count > 0)
         {
-            text.Append("\nWhile it waited, Daoris told that session what follows, and it never took it, so it is yours to weigh, as Daoris's ")
-                .Append("words and not the person's:\n\n")
-                .Append(string.Join("\n\n", daoris.Select(word => TextBounds.Quote(word.Text, indent: "  "))))
-                .Append('\n');
+            text.Append('\n').Append(DaorisWords.WhileItWaited(daoris)).Append('\n');
         }
 
         return text.ToString();

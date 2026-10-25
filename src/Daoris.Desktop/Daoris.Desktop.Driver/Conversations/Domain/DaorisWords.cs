@@ -47,6 +47,15 @@ public static class DaorisWords
         return true;
     }
 
+    /// <summary>
+    /// Daoris's own words that waited on a record, said to a part that goes on from it (SAYHELD1; LIMITSWITCH3): as Daoris's words and not
+    /// the person's, quoted line by line, for the agent to weigh.
+    /// </summary>
+    public static string WhileItWaited(IReadOnlyList<SaidWordView> words) =>
+        "While it waited, Daoris told that session what follows, and it never took it, so it is yours to weigh, as Daoris's "
+        + "words and not the person's:\n\n"
+        + string.Join("\n\n", words.Select(word => TextBounds.Quote(word.Text, indent: "  ")));
+
     /// <summary>Tell a word of Daoris's it was delivered; a listener's failure is its own.</summary>
     internal static void Delivered(ChatMessage word)
     {
@@ -132,6 +141,17 @@ public static class DaorisKeys
     /// look that tries the same tip again keeps one word. No quest's fact: <see cref="Read"/> names none, so the word waits as it is.
     /// </summary>
     public static string Rebase(string session, string tip) => $"{RebaseKind}/{session}/{tip}";
+
+    /// <summary>
+    /// The commit a rebase word's key names (<see cref="Rebase"/>), which the line may hold since (LIMITSWITCH3); null for any other key.
+    /// Read from the end, since a session's name may hold a slash (a teammate's).
+    /// </summary>
+    public static string? RebaseTipOf(string? key)
+    {
+        if (key is null || !key.StartsWith(RebaseKind + "/", StringComparison.Ordinal)) return null;
+        var tip = key[(key.LastIndexOf('/') + 1)..];
+        return key.IndexOf('/') < key.LastIndexOf('/') && tip.Length > 0 ? tip : null;
+    }
 
     public const string LimitResetKind = "limit-reset";
     public const string TransientRetryKind = "transient-retry";

@@ -230,6 +230,47 @@ public sealed class SessionWordsWaitingTests : IDisposable
         Assert.StartsWith(ResumeWords.Waits(Cooling, TimeZoneInfo.Utc, AccountNames.Of(_home, "claude")), own.Reason);
     }
 
+    /// <summary>A record with a word of Daoris's own on it, said under its fact's key (COWORK1b).</summary>
+    private static JsonObject WithDaoris(JsonObject record, string id, string key)
+    {
+        record["said"]!.AsArray().Add(new JsonObject
+        {
+            ["id"] = id, ["text"] = $"Daoris: {id}", ["at"] = T0.AddMinutes(10).ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
+            ["from"] = "daoris", ["key"] = key,
+        });
+        return record;
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): the install's case as the listing reads it. A closed quest's session holding Daoris's own
+    /// rebase word is held as one holding the person's words is: by nothing while another account of its agent is ready, since the loop's
+    /// look hands it to the runner; for the earliest reset of any, naming that account, with every account cooling. Its resume words
+    /// alone (a limit's) carry nothing to a new part, so they wait for the own account's reset as before.
+    /// </summary>
+    [Fact]
+    public void A_fresh_plan_reads_a_closed_quests_rebase_word_as_it_reads_the_persons_and_its_resume_words_as_the_own_accounts()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude", "work"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude", "home"));
+        var rebase = Json(WithDaoris(Record("s1", "completed", "q1"), "w1", DaorisKeys.Rebase("s1", "0123abc")));
+        var limit = Json(WithDaoris(Record("s1", "completed", "q1"), "w1", DaorisKeys.LimitReset("s1", "2026-10-07T11-00-00Z")));
+        Consideration[] closedRebase = [GoesOn(Quest("q1", "Done"), rebase, "s1")];
+        Consideration[] closedLimit = [GoesOn(Quest("q1", "Done"), limit, "s1")];
+
+        Assert.Empty(Waiting(rebase, closedRebase).Held);
+
+        var earlier = new CoolingEntry("claude", "home", Reset.AddHours(-1), Stated: true, Window: null, Seen: T0, Session: null);
+        CoolingEntry? Both(string? adapter, string? profile) => profile == "home" ? earlier : CoolingOf(adapter, profile);
+        var held = Assert.Single(Waiting(rebase, closedRebase, coolingOf: Both).Held).Value;
+        Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset.AddHours(-1), "home"), (held.Why, held.Until, held.Account));
+        Assert.StartsWith(LimitResume.Waits(earlier, TimeZoneInfo.Utc, AccountNames.Of(_home, "claude")).Note, held.Reason);
+        Assert.EndsWith(ResumeWords.ChatDoor("s1"), held.Reason);
+
+        var own = Assert.Single(Waiting(limit, closedLimit).Held).Value;
+        Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset, "work"), (own.Why, own.Until, own.Account));
+        Assert.StartsWith(ResumeWords.Waits(Cooling, TimeZoneInfo.Utc, AccountNames.Of(_home, "claude")), own.Reason);
+    }
+
     /// <summary>A closed quest's session has nothing to carry its words on by itself: its door is a conversation with them.</summary>
     [Fact]
     public void A_closed_quests_session_names_the_conversation_door()

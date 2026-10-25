@@ -381,6 +381,34 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LIMITSWITCH3 (D137's note of 2026-10-26): a closed quest's record holding Daoris's own rebase word, held by the loop's look for the
+    /// earliest reset of any account, resumes later and says that wait on the wire as it does the person's words': the account that resets
+    /// first, by its id and name, and its time, which the page's row, head and Attention say in D206 §3.7's words.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_rebase_word_a_limit_holds_resumes_later_saying_the_earliest_reset_of_any_account()
+    {
+        using var ledger = Ledger();
+        ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(
+            """[{"id":"done1","quest":"q4","repository":"engine","adapter":"claude-code","profile":"work","state":"completed","kind":"driven","created":"2026-10-02T09:50:00Z","updated":"2026-10-02T09:51:00Z","said":[{"id":"w1","text":"Daoris: rebase.","at":"2026-10-02T10:00:00Z","files":[],"reopens":true,"from":"daoris","key":"rebase/done1/0123abc"}]}]"""));
+        var loop = await UpAsync(ledger);
+        var until = new DateTimeOffset(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
+        const string reason = "Every account it may run on is at its limit: it goes on by itself once the `claude-code` account `home` is ready again at 12:00.";
+        loop.Look.Record(
+            [new Consideration(new QuestView("q4", "game", "engine", "The work of #q4", "A body.", "Done"), StartVerdict.Blocked, reason)],
+            [new AccountWait("claude-code", "Claude Code", "home", "aurora", until, Stated: true, reason) { Quests = ["q4"], Name = "Home" }]);
+
+        var row = (await AnswerAsync(new DriverModule(Bus, loop), "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
+
+        Assert.Equal(("later", "completed"), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
+        var holds = row.GetProperty("holds");
+        Assert.Equal(WordsHold.Cooling, holds.GetProperty("why").GetString());
+        Assert.Equal(until, holds.GetProperty("until").GetDateTimeOffset());
+        Assert.Equal(("home", "Home"), (holds.GetProperty("account").GetString(), holds.GetProperty("accountName").GetString()));
+        Assert.Equal(reason, holds.GetProperty("reason").GetString());
+    }
+
+    /// <summary>
     /// SESSUX1a (D126 §5.2): an ended session is archived on this machine, its mark in the home's
     /// <c>sessions/archived.json</c>, and listed as archived; unarchived, it is back in its group, and one that was not
     /// archived is said, never refused (D48 §6).

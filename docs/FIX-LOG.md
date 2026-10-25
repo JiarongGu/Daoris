@@ -51,6 +51,31 @@ repository.
   continuation and its late end; the newest answering while both run. One track and its end as today, and the first ending after the
   second ended, passed before the fix too and stay as the guards of today. `OrphanedSessionTests`, `LaunchedSessionJobProcessTests` and
   the driver's fast half pass; the launched-job class failed once in a run beside others, on its CPU-window row, and passed twice alone.
+## 2026-10-26 - Daoris's own word on an ended record waited days for its cooling account while another was ready, and its row read only completed (LIMITSWITCH3)
+
+- **Symptom:** on the install at `825d5f7`, which carries LIMITSWITCH1 and LIMITSWITCH2, a closed quest's completed driven record held Daoris's own
+  rebase word (said when its landing conflicted, key `rebase/<session>/<commit>`) for its account's weekly reset two days on, though another account was
+  ready and the cap had room. Its hold still said *your words wait to go on in it then*, no look decision for it had been logged since the word was held,
+  and the terminal's sessions list showed it `completed` under *Resumes later*.
+- **Root cause (the case those builds left out: Daoris's own word rather than the person's):** both builds read *the words that wait* as the person's.
+  A closed quest's session reached the shell's runner only where a word of the person's waited (`Driver.RunAsync`'s `carries`, LIMITSWITCH2), so for a
+  Daoris word the roster's switch was never asked and the words waited for the own account as before. For a record of an open or taken quest the switch was
+  asked, but `RunAsync`'s guard that Daoris's words start no new session (COWORK1b) marked them as words that cannot go on the moment the switch left the
+  own account. The other cases the row named are not causes: a closed quest's driven record is LIMITSWITCH2's and went on for the person's words; a hold written
+  before the build is said again at the next look and its row reads the look's wait; a driven record needs no wake beyond the look. And apart from the
+  switch, nothing took a rebase word off once its commit reached the line by another path, so it kept waiting for a session that had nothing left to rebase.
+- **Fix:** a word a new part carries (`SaidWordView.CarriesOn`) is the person's, or Daoris's own that states a fact; Daoris's resume words are never carried.
+  A closed quest's session is handed to the runner when one carries, the ended move taking Daoris's words after the person's, said as Daoris's; a driven
+  carry-on the switch made hands them on too; with no ready account the words wait for the earliest reset of any account and the hold names it, which the row,
+  the page's head and Attention already say in D206 §3.7's words. The look takes a rebase word off its record, said once, when the line holds its commit
+  (`merge-base --is-ancestor` in the repository's checkout), and plans from the snapshot without it. D137's note of this date has the detail and the amendment
+  to the message-urgency design's §4.1 it reads.
+- **Verification:** each case failed first and then passed: `AccountRotationTickTests` through real ticks (the install's case handed to the runner;
+  every account cooling, waiting for the earliest reset of any; a taken quest's record going on briefed on the ready account; a rebase word the real line holds,
+  settled), `ReopenTellingTests` (the word dropped once, a commit git cannot place kept), `LimitWaitsProcessTests` (the ended move carrying the rebase word, not the
+  limit word); `SessionWordsWaitingTests`' resume-words-only half failed first. The terminal's list (`SessionsCommandTests`), the wire's hold (`DriverModuleSessionsTests`)
+  and the web's Attention (`attention.test.ts`) were written beside the fix and pass on it: they hold what the driver now says, as the web already read it. LIMITSWITCH1's
+  and LIMITSWITCH2's classes stay green.
 
 ## 2026-10-26 - The review graph census read a graph that had gone quiet as one that never did (FLAKE1)
 

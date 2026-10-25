@@ -88,6 +88,17 @@ public sealed class ReopenTellingTests : IDisposable
         public StandInSaid? Running { get; set; }
 
         public ISaidDoor? SaidOf(string session) => Running;
+
+        /// <summary>What the line holds, by commit (LIMITSWITCH3): a commit it names, true or false; one it does not, git cannot say.</summary>
+        public Dictionary<string, bool?> OnLine { get; } = new(StringComparer.Ordinal);
+
+        public List<(string Repository, string Commit)> Asked { get; } = [];
+
+        public Task<bool?> LineHoldsAsync(RepoView repository, string commit, CancellationToken ct)
+        {
+            Asked.Add((repository.Repository, commit));
+            return Task.FromResult(OnLine.GetValueOrDefault(commit));
+        }
     }
 
     /// <summary>A source as the service lists it, read through the driver's own client: reopened unless <paramref name="sequence"/> is none.</summary>
@@ -342,6 +353,52 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.Equal("s1", dropped.Session);
         Assert.Equal(["w1"], dropped.Words);
         Assert.Contains(lines, line => line.StartsWith("reopen  ", StringComparison.Ordinal) && line.Contains("no longer holds", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): Daoris's rebase word asks its session to rebase a commit onto the line, so once the line
+    /// holds that commit, landed by whatever path, the word is settled: taken off and said once, never kept waiting for an account's reset.
+    /// A word for a commit the line does not hold, one git cannot place, and the person's words wait as they are.
+    /// </summary>
+    [Fact]
+    public async Task A_rebase_word_whose_commit_the_line_already_holds_is_taken_off_and_said_once()
+    {
+        var doors = new Doors();
+        doors.OnLine["aaa111"] = true;
+        doors.OnLine["bbb222"] = false;
+        var landed = new SaidWordView("w1", "Daoris: rebase.", Moved, [], Reopens: true) { From = DaorisWords.From, Key = DaorisKeys.Rebase("s1", "aaa111") };
+        var notYet = new SaidWordView("w2", "Daoris: rebase.", Moved, [], Reopens: true) { From = DaorisWords.From, Key = DaorisKeys.Rebase("s1", "bbb222") };
+        var unplaced = new SaidWordView("w3", "Daoris: rebase.", Moved, [], Reopens: true) { From = DaorisWords.From, Key = DaorisKeys.Rebase("s1", "ccc333") };
+        var persons = new SaidWordView("w4", "Also the changelog.", Moved, [], Reopens: true);
+        var last = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["q1"] = Record("completed") with { Said = [landed, notYet, unplaced, persons] },
+        };
+        var look = Look(Source(sequence: null, status: "Done")) with { LastRun = last, Repositories = [new RepoView("engine", true, "D:/repo")] };
+        var telling = Telling();
+
+        var lines = await LookAsync(telling, doors, look);
+        await LookAsync(telling, doors, look);
+
+        var dropped = Assert.Single(doors.Dropped);
+        Assert.Equal("s1", dropped.Session);
+        Assert.Equal(["w1"], dropped.Words);
+        Assert.Contains(lines, line => line.StartsWith("reopen  ", StringComparison.Ordinal) && line.Contains(DaorisKeys.Rebase("s1", "aaa111"), StringComparison.Ordinal));
+        Assert.All(doors.Asked, asked => Assert.Equal("engine", asked.Repository));
+    }
+
+    [Fact]
+    public async Task A_rebase_word_is_kept_where_the_repository_has_no_checkout_here_to_ask()
+    {
+        var doors = new Doors();
+        doors.OnLine["aaa111"] = true;
+        var word = new SaidWordView("w1", "Daoris: rebase.", Moved, [], Reopens: true) { From = DaorisWords.From, Key = DaorisKeys.Rebase("s1", "aaa111") };
+        var last = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase) { ["q1"] = Record("completed") with { Said = [word] } };
+
+        await LookAsync(Telling(), doors, Look(Source(sequence: null, status: "Done")) with { LastRun = last });
+
+        Assert.Empty(doors.Dropped);
+        Assert.Empty(doors.Asked);
     }
 
     [Fact]
