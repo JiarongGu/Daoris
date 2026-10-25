@@ -477,10 +477,12 @@
     "Review/OpinionPackets.cs": "Review",
     "Review/OpinionPresses.cs": "Review",
     "Review/OpinionTree.cs": "Review",
+    "Review/OpinionVerb.cs": "Review",
     "Review/ReviewDesk.cs": "Review",
     "Review/ReviewGit.cs": "Review",
     "Review/ReviewProcedureFiles.cs": "Review",
     "Review/ReviewServed.cs": "Review",
+    "Review/ReviewVerb.cs": "Review",
     "Review/ServiceReviewWorld.cs": "Review",
     "Service/ConfirmationDoors.cs": "Service",
     "Service/Domain/AskWorkflowViews.cs": "Service",
@@ -878,13 +880,6 @@
       "after": "Settings",
       "files": {
         "Settings/DriverChoicesCommand.cs": ["BrainstormEdit","BrainstormRules","BrainstormSet","Consideration","IntakeRoom","QuestRetry","WorkUnitKind"]
-      }
-    },
-    {
-      "family": "Settings names Review",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["OpinionRules","ReviewLooks","ReviewRules"]
       }
     },
     {
