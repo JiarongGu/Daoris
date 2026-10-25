@@ -188,7 +188,11 @@ and says what the file keeps there that no unit reads (`Strays`). The CLI's `cyc
 `test/fixtures/graph-homes.json`. `DriverConfig.Save` makes an edit onto the file as it stands at write (`Store/JsonKeeping`), so
 a key it has no field for stays where it stands, a value no edit changed keeps its value, and another writer's change made since the
 read stays; a file that does not read then is refused. The CLI's `jsonkeep.ts` is its twin (D173's FABRIC-GRAPH1 note says exactly
-what an edit keeps). `WorkflowGraphs` reads D157's stored versions as graphs by §E7's migration contract, never writing them, a
+what an edit keeps). `DriverConfig` and the keys it reads sit in `Settings/` (FOUNDATION1 mod-iii, D212): a key's record, limits, sentences,
+reading and writing are the settings' own (`WorkflowKey`, `LandingKey`, `ReviewKey` and the rest), each rule's file answering through its key
+so that what a rule means stays with its subdomain; and `daoris-driver driver`'s verbs for a rule a subdomain above owns are `ChoiceVerb`s
+beside that rule, wired by `Loop/DriverChoiceVerbs` into the terminal's world, which the settings' command asks (`IChoiceTerminal` is the
+terminal it says and presses on), so `Settings/` names no type of a subdomain above it. `WorkflowGraphs` reads D157's stored versions as graphs by §E7's migration contract, never writing them, a
 version that does not decode read as unreadable whole (FABRIC-WORKFLOW2); the CLI's `workflowgraphs.ts` is its twin, on
 `test/fixtures/workflow-graphs.json`. `WorkflowRunNodes` reads a bound run's step states onto its decoded graph through the
 evaluation and the one table, and compares where each reading stands, every difference named (FABRIC-WORKFLOW2b); it writes nothing
