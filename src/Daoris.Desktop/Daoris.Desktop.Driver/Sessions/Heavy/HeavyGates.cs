@@ -2,13 +2,6 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A gate a checkout's <c>daoris.gates.json</c> declares, as a heavy run reads it (HEAVYRUN1a).</summary>
-/// <param name="Name">Its name.</param>
-/// <param name="Run">Its command line, run through the platform's shell.</param>
-/// <param name="WorkingDirectory">Its <c>cwd</c>, under the checkout; null for the checkout itself.</param>
-/// <param name="Heavy">Whether the repository marks it <c>"heavy": true</c>: one that runs only through the slot.</param>
-public sealed record HeavyGate(string Name, string Run, string? WorkingDirectory, bool Heavy);
-
 /// <summary>The gates a run takes, or why it takes none and the exit that says it.</summary>
 /// <param name="Gates">In the order the repository declares them.</param>
 /// <param name="Refusal">Why nothing is run; null where something is.</param>

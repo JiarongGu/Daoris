@@ -35,9 +35,10 @@ the door one row at a time. The coverage and room tests come last and hold the r
 
 ### The places
 
-Paths are under `src/`. The verb itself (`daoris-driver driver`'s, `DriverChoicesCommand` in `Daoris.Desktop.Driver`, which
-`daoris driver` hands every word since PUSH1f2b; the CLI's `cli/driver.ts` keeps only its usage) exists before the door; the door
-judges by the verb's own rule, never a second one.
+Paths are under `src/`. The verb itself (`daoris-driver driver`'s, which `daoris driver` hands every word since PUSH1f2b; the CLI's
+`cli/driver.ts` keeps only its usage) exists before the door: `DriverChoicesCommand` in `Daoris.Desktop.Driver/Settings` for the
+settings' own keys, and for a rule a subdomain above owns, that subdomain's `ChoiceVerb` beside the rule (`HelpersVerb`, `ReviewVerb`,
+`LandingVerb`, …, wired in `Loop/DriverChoiceVerbs`; FOUNDATION1 mod-iii); the door judges by the verb's own rule, never a second one.
 
 | # | Place | Where | What goes in |
 |---|---|---|---|

@@ -70,6 +70,7 @@ public sealed partial class DriverWorkflowsTextTests
             var error = new StringWriter();
             var world = new DriverChoicesWorld
             {
+                Verbs = DriverChoiceVerbs.With((_, _) => throw new InvalidOperationException("no row of the table asks for the verdicts")),
                 Instance = new InstanceWorld
                 {
                     Home = home,
@@ -82,7 +83,6 @@ public sealed partial class DriverWorkflowsTextTests
                 Folder = home,
                 Now = () => Now,
                 Registry = _ => Task.FromResult(registry is null ? new ChoicesRegistry(null, "the service did not answer") : new ChoicesRegistry(registry, null)),
-                Verdicts = (_, _) => throw new InvalidOperationException("no row of the table asks for the verdicts"),
             };
 
             var exit = await DriverChoicesCommand.RunAsync([.. row.GetProperty("argv").EnumerateArray().Select(each => each.GetString()!)], world, CancellationToken.None);

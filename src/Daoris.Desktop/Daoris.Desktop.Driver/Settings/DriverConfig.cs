@@ -443,10 +443,6 @@ public sealed record DriverConfig(
     /// <summary>This machine's access setup, for each pause neither a repository nor its workspace names; null sets none.</summary>
     public AccessSetting? MachineAccess { get; init; }
 
-    /// <summary>One change to an access setup, through <see cref="AccessRules.Apply"/>.</summary>
-    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
-    public DriverConfig WithAccess(AccessEdit edit) => AccessRules.Apply(this, edit);
-
     /// <summary>
     /// This machine's heavy gates for a repository whose own <c>daoris.gates.json</c> marks none (HEAVYRUN1b2a, D180's HEAVYRUN1b2a
     /// note), by repository, each list in the order its gates run; what <c>run-heavy</c> runs for it and its sessions are told of
@@ -455,10 +451,6 @@ public sealed record DriverConfig(
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyList<HeavyGate>> HeavyGates { get; init; } =
         new Dictionary<string, IReadOnlyList<HeavyGate>>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>A repository's heavy gates set in order, or taken away with none, through <see cref="HeavyMapping.Apply"/>.</summary>
-    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
-    public DriverConfig WithHeavyGates(string repository, IReadOnlyList<HeavyGate>? gates) => HeavyMapping.Apply(this, repository, gates);
 
     /// <summary>
     /// Which checks each repository's sessions run under Current (FABRIC-PIPELINE1b, D192 point 4), by repository: <c>light</c> or
@@ -469,19 +461,11 @@ public sealed record DriverConfig(
     public IReadOnlyDictionary<string, string> SessionChecks { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>A repository's sessions' checks set, or taken away with null, through <see cref="Daoris.Driver.SessionChecks.Apply"/>.</summary>
-    /// <exception cref="DriverException">The edit's refusal, nothing changed.</exception>
-    public DriverConfig WithSessionChecks(string? repository, string? checks) => Daoris.Driver.SessionChecks.Apply(this, repository, checks);
-
     /// <summary>
     /// The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): <c>keep</c>, each kind absent meaning its default.
     /// Read by the one effective policy (<see cref="KeepPolicy.Of"/>); edited only through <see cref="KeepRules.Apply"/>.
     /// </summary>
     public KeepChoices Keep { get; init; } = KeepChoices.None;
-
-    /// <summary>One kind's keep rule set, or its default again, through <see cref="KeepRules.Apply"/>.</summary>
-    /// <exception cref="DriverException">The rule's refusal (<see cref="ChoiceRefusal"/> out of its bounds), nothing changed.</exception>
-    public DriverConfig WithKeep(KeepSet set) => KeepRules.Apply(this, set);
 
     /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
@@ -505,13 +489,6 @@ public sealed record DriverConfig(
     public string? IntakeAdapter { get; init; }
 
     /// <summary>
-    /// Which harness answers asks here, or null for none — the declarations tier alone. Intake's actor goes back to <i>as before</i>, so
-    /// the key this writes is what it reads (D205 §6.4, until row d writes it through <c>SET_ACTOR</c>).
-    /// </summary>
-    public DriverConfig WithIntake(string? adapter) =>
-        ActorChoices.With(this, "intake", null) with { IntakeAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
-
-    /// <summary>
     /// Each actor's order as the person set it (D205 §9.1, MODELROLE1c), by its id; an actor absent is <i>as before</i>, read from today's
     /// keys (<see cref="ActorChoices.Effective"/>). Written through <see cref="ActorChoices.With(DriverConfig, string, IReadOnlyList{ActorChoice}?)"/> alone.
     /// </summary>
@@ -529,33 +506,33 @@ public sealed record DriverConfig(
     public string? HelperAdapter { get; init; }
 
     /// <summary>
-    /// Ask Daoris's access mode (HELPMODE1a1, D183 point 1): <see cref="HelpModes.Restricted"/>, the default, or
-    /// <see cref="HelpModes.Full"/>. Read at each start of its conversation.
+    /// Ask Daoris's access mode (HELPMODE1a1, D183 point 1): <see cref="HelpModeNames.Restricted"/>, the default, or
+    /// <see cref="HelpModeNames.Full"/>. Read at each start of its conversation.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>Restricted unless the file names full</b>: a value that is neither reads as restricted, so nothing but the person's own
     /// choice ever widens it (D183 point 2). Written only while full, so an edit elsewhere never pins the default.
     /// </remarks>
-    public string HelpMode { get; init; } = HelpModes.Restricted;
+    public string HelpMode { get; init; } = HelpModeNames.Restricted;
 
     /// <summary>Ask Daoris's access mode here, as the person chose it (HELPMODE1a1).</summary>
     /// <exception cref="DriverException">A mode that is neither restricted nor full.</exception>
     public DriverConfig WithHelpMode(string mode) =>
         this with
         {
-            HelpMode = HelpModes.Named(mode)
-                ?? throw new DriverException($"Ask Daoris's mode is `{HelpModes.Restricted}` or `{HelpModes.Full}`, not `{mode}`."),
+            HelpMode = HelpModeNames.Named(mode)
+                ?? throw new DriverException($"Ask Daoris's mode is `{HelpModeNames.Restricted}` or `{HelpModeNames.Full}`, not `{mode}`."),
         };
 
     /// <summary>
     /// How long an account cools, in minutes, when its agent's limit names no time this reads, or one it does not believe
     /// (TOOL4e, D125 §2.2): <c>cooloff</c>, a whole number of at least 1. Null — absent, or anything else in the file —
-    /// is the default, <see cref="AccountLimits.DefaultCoolOff"/> (<c>CoolOffTests</c>).
+    /// is the default, <see cref="CoolOffDefault.Value"/> (<c>CoolOffTests</c>).
     /// </summary>
     public int? CoolOffMinutes { get; init; }
 
     /// <summary>The cool-off a limit naming no time takes on this machine: <see cref="CoolOffMinutes"/>, or the hour.</summary>
-    public TimeSpan CoolOff => CoolOffMinutes is { } minutes ? TimeSpan.FromMinutes(minutes) : AccountLimits.DefaultCoolOff;
+    public TimeSpan CoolOff => CoolOffMinutes is { } minutes ? TimeSpan.FromMinutes(minutes) : CoolOffDefault.Value;
 
     /// <summary>The refusal both doors say for less than a minute.</summary>
     public const string CoolOffRefusal =
@@ -574,10 +551,6 @@ public sealed record DriverConfig(
     /// <exception cref="DriverException">Less than one: no session would ever start.</exception>
     public DriverConfig WithCap(int cap) =>
         cap < 1 ? throw new DriverException(CapRefusal) : this with { Cap = cap };
-
-    /// <summary>Which harness Ask Daoris runs on here, or null for none; its actor back to <i>as before</i>, as <see cref="WithIntake"/>.</summary>
-    public DriverConfig WithHelper(string? adapter) =>
-        ActorChoices.With(this, "ask-daoris", null) with { HelperAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
 
     /// <summary>
     /// The line a repository's work grows from and lands on, as the person set it (WSR2), by
@@ -618,50 +591,6 @@ public sealed record DriverConfig(
         this with { WorkspaceLandings = Set(WorkspaceLandings, workspace, rule) };
 
     /// <summary>
-    /// Set the cycle on a repository's own landing rule (FABRIC-GRAPH1, §C2), or clear it with null to take the default, today's. The
-    /// cycle rides its rule (D164's amendment), so a repository with no rule of its own is refused, and so is a cycle whose graph does
-    /// not hold under its rule, naming the first problem.
-    /// </summary>
-    public DriverConfig WithLandingCycle(string repository, string? cycle) =>
-        this with { Landings = SetCycle(Landings, repository, cycle, "repository") };
-
-    /// <summary>Set the cycle on a workspace's landing rule, or clear it with null.</summary>
-    public DriverConfig WithWorkspaceLandingCycle(string workspace, string? cycle) =>
-        this with { WorkspaceLandings = SetCycle(WorkspaceLandings, workspace, cycle, "workspace") };
-
-    private static IReadOnlyDictionary<string, LandingRule> SetCycle(IReadOnlyDictionary<string, LandingRule> map, string key, string? cycle, string what)
-    {
-        if (!map.TryGetValue(key.Trim(), out var rule))
-        {
-            throw new DriverException($"`{key.Trim()}` has no landing rule of its own, and a cycle rides its {what}'s rule (D164): set the rule first, then its cycle.");
-        }
-
-        var next = new Dictionary<string, LandingRule>(map, StringComparer.OrdinalIgnoreCase);
-        if (cycle is null)
-        {
-            next[key.Trim()] = rule with { Cycle = null };
-            return next;
-        }
-
-        var kept = rule with { Cycle = CompactOrRefuse(cycle) };
-        if (NodeGraphHomes.OfLanding(kept, what).Problems is [var first, ..]) throw new DriverException(first.Words);
-        next[key.Trim()] = kept;
-        return next;
-    }
-
-    private static string CompactOrRefuse(string json)
-    {
-        try
-        {
-            return NodeGraphHomes.Compact(json);
-        }
-        catch (JsonException error)
-        {
-            throw new DriverException($"the cycle is not JSON: {error.Message}");
-        }
-    }
-
-    /// <summary>
     /// The cycles of the kinds of work that do not land (FABRIC-GRAPH1; §D7's <c>workCycles</c>): by repository, then by unit kind
     /// (<see cref="NodeGraphHomes.WorkCycleKinds"/>), each a whole graph's JSON text, compact. Absent is none, today's.
     /// </summary>
@@ -671,43 +600,6 @@ public sealed record DriverConfig(
     /// <summary>A workspace's work cycles (§D7's <c>workspaceWorkCycles</c>), by kind, for each repository in it naming none of that kind.</summary>
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkspaceWorkCycles { get; init; } =
         new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// Set a repository's cycle for a kind of work, or clear it with null to take its workspace's. A kind with no work cycle is refused,
-    /// a branch's included (its cycle is its landing rule's, §D7), and so is a graph that does not hold, naming the first problem.
-    /// </summary>
-    public DriverConfig WithWorkCycle(string repository, string kind, string? graph) =>
-        this with { WorkCycles = SetWorkCycle(WorkCycles, repository, kind, graph) };
-
-    /// <summary>Set a workspace's cycle for a kind of work, or clear it with null.</summary>
-    public DriverConfig WithWorkspaceWorkCycle(string workspace, string kind, string? graph) =>
-        this with { WorkspaceWorkCycles = SetWorkCycle(WorkspaceWorkCycles, workspace, kind, graph) };
-
-    private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> SetWorkCycle(
-        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> map, string key, string kind, string? graph)
-    {
-        if (!NodeGraphHomes.WorkCycleKinds.Contains(kind))
-        {
-            throw new DriverException(kind == WorkUnitKind.Branch
-                ? "a branch's cycle is its landing rule's `cycle`, so that a repository's landing and its end move together (D164); no kind has two homes."
-                : $"`{kind}` is no kind of work with a cycle of its own here — {string.Join(" or ", NodeGraphHomes.WorkCycleKinds.Select(each => $"`{each}`"))}.");
-        }
-
-        var kinds = new Dictionary<string, string>(map.GetValueOrDefault(key.Trim()) ?? new Dictionary<string, string>(), StringComparer.Ordinal);
-        if (graph is null) kinds.Remove(kind);
-        else
-        {
-            var kept = CompactOrRefuse(graph);
-            if (NodeGraphs.Read(kept).Problems is [var first, ..]) throw new DriverException(first.Words);
-            kinds[kind] = kept;
-        }
-
-        var next = new Dictionary<string, IReadOnlyDictionary<string, string>>(map, StringComparer.OrdinalIgnoreCase);
-        var spelled = next.Keys.FirstOrDefault(name => string.Equals(name, key.Trim(), StringComparison.OrdinalIgnoreCase)) ?? key.Trim();
-        next.Remove(spelled);
-        if (kinds.Count > 0) next[spelled] = kinds;
-        return next;
-    }
 
     /// <summary>
     /// The work cycles under <paramref name="name"/>: each repository's or workspace's kinds of work, every kind kept as written, compact, null
@@ -726,7 +618,7 @@ public sealed record DriverConfig(
             var kinds = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var kind in owner.Value.EnumerateObject())
             {
-                if (kind.Value.ValueKind != JsonValueKind.Null) kinds.TryAdd(kind.Name, NodeGraphHomes.Compact(kind.Value));
+                if (kind.Value.ValueKind != JsonValueKind.Null) kinds.TryAdd(kind.Name, CycleText.Compact(kind.Value));
             }
 
             if (kinds.Count > 0) map[owner.Name] = kinds;
@@ -742,19 +634,11 @@ public sealed record DriverConfig(
         foreach (var (owner, kinds) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
             writer.WriteStartObject(owner);
-            foreach (var (kind, cycle) in kinds.OrderBy(pair => pair.Key, StringComparer.Ordinal)) WriteCycle(writer, kind, cycle);
+            foreach (var (kind, cycle) in kinds.OrderBy(pair => pair.Key, StringComparer.Ordinal)) CycleText.Write(writer, kind, cycle);
             writer.WriteEndObject();
         }
 
         writer.WriteEndObject();
-    }
-
-    /// <summary>A cycle the config keeps as JSON text, written as JSON in the file's own layout.</summary>
-    private static void WriteCycle(Utf8JsonWriter writer, string name, string cycle)
-    {
-        using var document = JsonDocument.Parse(cycle);
-        writer.WritePropertyName(name);
-        document.RootElement.WriteTo(writer);
     }
 
     /// <summary>
@@ -790,7 +674,7 @@ public sealed record DriverConfig(
     /// </summary>
     public DriverConfig WithWriteAcross(string repository, string to, bool allow)
     {
-        if (AcrossRules.Problem(repository, to) is { } problem) throw new DriverException(problem);
+        if (AcrossDeclarations.Problem(repository, to) is { } problem) throw new DriverException(problem);
 
         bool Same(string name) => string.Equals(name, to.Trim(), StringComparison.OrdinalIgnoreCase);
         var next = new Dictionary<string, IReadOnlyList<string>>(WriteAcross, StringComparer.OrdinalIgnoreCase);
@@ -824,14 +708,11 @@ public sealed record DriverConfig(
             // FABRIC-GRAPH1: a door with no field for the cycle (Setup's landing row, Ask Daoris, the terminal) keeps the one the rule
             // has; only WithLandingCycle sets or clears it. A cycle the new form no longer reaches is said where it is read, never dropped.
             if (rule.Cycle is null && map.TryGetValue(key, out var held) && held.Cycle is not null) rule = rule with { Cycle = held.Cycle };
-            next[key] = LandingRules.Problem(rule) is { } problem ? throw new DriverException(problem) : Kept(rule);
+            next[key] = LandingKey.Problem(rule) is { } problem ? throw new DriverException(problem) : LandingKey.Kept(rule);
         }
 
         return next;
     }
-
-    /// <summary>A rule as it is kept: a merge carries no pattern, whatever it was handed.</summary>
-    private static LandingRule Kept(LandingRule rule) => rule.Form == LandingForm.Merge ? rule with { Pattern = null } : rule;
 
     private static IReadOnlyDictionary<string, string> Set(IReadOnlyDictionary<string, string> map, string key, string? branch)
     {
@@ -1083,9 +964,9 @@ public sealed record DriverConfig(
             if (IntakeAdapter is not null) writer.WriteString("intakeAdapter", IntakeAdapter);
             if (HelperAdapter is not null) writer.WriteString("helperAdapter", HelperAdapter);
             // Written only when an actor is set (MODELROLE1c, D205 §9.1): absent is every actor as before.
-            ActorChoices.Write(writer, Actors);
+            ActorKey.Write(writer, Actors);
             // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
-            if (HelpMode == HelpModes.Full) writer.WriteString("helpMode", HelpMode);
+            if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("pollSeconds", PollSeconds);
             writer.WriteNumber("strikes", Strikes);
@@ -1116,39 +997,39 @@ public sealed record DriverConfig(
             WriteMap(writer, "languages", Languages);
             WriteMap(writer, "workspaceLanguages", WorkspaceLanguages);
             // Written only when set (WSR1), for the same reason: absent is the merge it always was.
-            WriteRules(writer, "landings", Landings);
-            WriteRules(writer, "workspaceLandings", WorkspaceLandings);
+            LandingKey.WriteRules(writer, "landings", Landings);
+            LandingKey.WriteRules(writer, "workspaceLandings", WorkspaceLandings);
             // Written only when set (FABRIC-GRAPH1), as the CLI writes them: absent is no cycle for a quest or an ask, today's.
             WriteWorkCycles(writer, "workCycles", WorkCycles);
             WriteWorkCycles(writer, "workspaceWorkCycles", WorkspaceWorkCycles);
             // Written only when set (REVIEWENV1a), as the CLI writes them: absent is no review environment, today's behaviour.
-            ReviewRules.WriteMap(writer, "reviews", Reviews);
-            ReviewRules.WriteMap(writer, "workspaceReviews", WorkspaceReviews);
+            ReviewKey.WriteMap(writer, "reviews", Reviews);
+            ReviewKey.WriteMap(writer, "workspaceReviews", WorkspaceReviews);
             // Written only when set (XAGENT1a), as the CLI writes them: absent is no second opinion, today's behaviour.
-            OpinionRules.WriteMap(writer, "opinions", Opinions);
-            OpinionRules.WriteMap(writer, "workspaceOpinions", WorkspaceOpinions);
+            OpinionKey.WriteMap(writer, "opinions", Opinions);
+            OpinionKey.WriteMap(writer, "workspaceOpinions", WorkspaceOpinions);
             // Written only when set (MIXAGENT2a-i), as the CLI writes them: absent is the default, `ask`.
-            HelperRules.WriteMap(writer, "helpers", Helpers);
-            HelperRules.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
+            HelperKey.WriteMap(writer, "helpers", Helpers);
+            HelperKey.WriteMap(writer, "workspaceHelpers", WorkspaceHelpers);
             // Written only when set (MIXAGENT1c), as the CLI writes them: absent is the default, `ask`.
-            HandOverRules.WriteMap(writer, "handOver", HandOver);
-            HandOverRules.WriteMap(writer, "workspaceHandOver", WorkspaceHandOver);
+            HandOverKey.WriteMap(writer, "handOver", HandOver);
+            HandOverKey.WriteMap(writer, "workspaceHandOver", WorkspaceHandOver);
             // Written only when set (BRAINSTORM1b), as the CLI writes them: absent is D176 point 9's proposed defaults.
-            BrainstormRules.WriteMachine(writer, Brainstorms);
-            BrainstormRules.WriteMap(writer, "workspaceBrainstorms", WorkspaceBrainstorms);
-            CommitRules.WriteMap(writer, "commits", Commits);
-            CommitRules.WriteMap(writer, "workspaceCommits", WorkspaceCommits);
+            BrainstormKey.WriteMachine(writer, Brainstorms);
+            BrainstormKey.WriteMap(writer, "workspaceBrainstorms", WorkspaceBrainstorms);
+            CommitKey.WriteMap(writer, "commits", Commits);
+            CommitKey.WriteMap(writer, "workspaceCommits", WorkspaceCommits);
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
-            WorkflowSelection.WriteMap(writer, "workflows", Workflows, workspace: false);
-            WorkflowSelection.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
+            WorkflowKey.WriteMap(writer, "workflows", Workflows, workspace: false);
+            WorkflowKey.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
             // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
-            AccessRules.WriteMap(writer, "access", Access);
-            AccessRules.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
-            AccessRules.WriteMachine(writer, MachineAccess);
+            AccessKey.WriteMap(writer, "access", Access);
+            AccessKey.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
+            AccessKey.WriteMachine(writer, MachineAccess);
             // Written only when set (HEAVYRUN1b2a), as the CLI writes it: absent is the repository's own heavy gates alone.
-            HeavyMapping.WriteMap(writer, HeavyGates);
+            HeavyKey.WriteMap(writer, HeavyGates);
             // Written only when set (FABRIC-PIPELINE1b), as the CLI writes it: absent is today's, a session running as it did.
-            Daoris.Driver.SessionChecks.WriteMap(writer, SessionChecks);
+            SessionChecksKey.WriteMap(writer, SessionChecks);
             // Written only where set (KEEP1d): absent is each kind's default, and an edit elsewhere must not pin today's defaults.
             Keep.Write(writer);
             // Written only when set (D107), for the same reason: absent is reading on and no relationship.
@@ -1401,7 +1282,7 @@ public sealed record DriverConfig(
             foreach (var item in property.Value.EnumerateArray())
             {
                 if (item.ValueKind == JsonValueKind.String && item.GetString()?.Trim() is { Length: > 0 } target
-                    && AcrossRules.Problem(property.Name, target) is null
+                    && AcrossDeclarations.Problem(property.Name, target) is null
                     && !targets.Contains(target, StringComparer.OrdinalIgnoreCase))
                 {
                     targets.Add(target);
@@ -1412,33 +1293,6 @@ public sealed record DriverConfig(
         }
 
         return map;
-    }
-
-    private static void WriteRules(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, LandingRule> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject(name);
-        foreach (var (key, rule) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            writer.WriteStartObject(key);
-            writer.WriteString("form", rule.Form);
-            if (rule.Pattern is not null) writer.WriteString("pattern", rule.Pattern);
-            // Written only when named, after the pattern it serves (PROCESS1b-i): absent is the default key. The CLI writes it here too.
-            if (rule.Key is not null) writer.WriteString("key", rule.Key);
-            // Written only when named (D100): absent is the branch left for the person to push.
-            if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
-            // Written only when on: absent is the tree staying, as it always has.
-            if (rule.Tidy) writer.WriteBoolean("tidy", true);
-            // Written only when on (LAND2a): absent is the person's press, as it always was. The CLI writes it here too.
-            if (rule.AutoAccept) writer.WriteBoolean("autoAccept", true);
-            // Written only when on (PROCESS1b-ii): absent is the branch at the session's own commits. The CLI writes it here too.
-            if (rule.Squash) writer.WriteBoolean("squash", true);
-            // Written only when set (FABRIC-GRAPH1), last, as written: absent is the default cycle, today's. The CLI writes it here too.
-            if (rule.Cycle is not null) WriteCycle(writer, "cycle", rule.Cycle);
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndObject();
     }
 
     /// <summary>
@@ -1464,63 +1318,12 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
-    /// A map of names to landing rules; one that could not land work — an unknown form, a pattern that
-    /// names no branch, a merge naming a plugin or accepting automatically — is skipped. A ticket's key it refuses is ignored, the
-    /// rest of the rule standing. A plugin not installed here is still read: the press says so, and the file stays what the
-    /// person wrote. An empty key is none.
+    /// A landing rule as the file holds it, read as the settings' <see cref="LandingKey.RuleMap"/> reads it, or null where it is none or
+    /// does not read: then <paramref name="unread"/> says why (FABRIC-GRAPH1d) — no object, no <c>form</c>, or a rule
+    /// <see cref="LandingRules.Problem(LandingRule)"/> refuses — and is null for a rule written null, which is none. Both readers skip such
+    /// a rule, and <see cref="NodeGraphHomes.Strays"/> says it; <c>daoris-driver driver list</c> says it too.
     /// </summary>
-    private static IReadOnlyDictionary<string, LandingRule> RuleMap(JsonElement root, string name)
-    {
-        var map = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase);
-        if (root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Object)
-        {
-            foreach (var property in element.EnumerateObject())
-            {
-                // The first rule written in any case governs, as the CLI reads it, and a later spelling is said (the review's finding 3:
-                // the driver kept the last and the terminal the first, so the two chose different graphs).
-                if (RuleOf(property.Value, out _) is { } rule && !map.ContainsKey(property.Name)) map[property.Name] = Kept(rule);
-            }
-        }
-
-        return map;
-    }
-
-    /// <summary>
-    /// A landing rule as the file holds it, read as <see cref="RuleMap"/> reads it, or null where it is none or does not read: then
-    /// <paramref name="unread"/> says why (FABRIC-GRAPH1d) — no object, no <c>form</c>, or a rule <see cref="LandingRules.Problem"/> refuses
-    /// — and is null for a rule written null, which is none. Both readers skip such a rule, and <see cref="NodeGraphHomes.Strays"/> says it;
-    /// <c>daoris-driver driver list</c> says it too.
-    /// </summary>
-    internal static LandingRule? RuleOf(JsonElement value, out string? unread)
-    {
-        unread = null;
-        if (value.ValueKind == JsonValueKind.Null) return null;
-        if (value.ValueKind != JsonValueKind.Object)
-        {
-            unread = "it holds no rule's object.";
-            return null;
-        }
-
-        // Only JSON `true` switches the tidy or the automatic acceptance on (LAND2a): `"true"` or 1 is not the person's say-so for a
-        // push with no press.
-        var rule = new LandingRule(
-            Json.NonEmpty(value, "form") ?? "", Json.NonEmpty(value, "pattern"),
-            value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True,
-            Json.NonEmpty(value, "plugin"),
-            value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
-            Json.NonEmpty(value, "key"),
-            // Only JSON `true` squashes (PROCESS1b-ii), as only it accepts automatically.
-            value.TryGetProperty("squash", out var squash) && squash.ValueKind == JsonValueKind.True);
-        // A key refused here is ignored and the rest of the rule stands (PROCESS1b-i): a key another reader took never drops the rule,
-        // which would land the repository's work by its workspace's rule or a merge unasked.
-        if (rule.Key is not null && LandingRules.Problem(rule) is not null) rule = rule with { Key = null };
-        // FABRIC-GRAPH1: the cycle is kept as written whether or not it is a graph that holds, said where it is read, so a mistyped end
-        // never changes how the work lands; only null is none (the review's finding 2: `[]` was dropped).
-        if (value.TryGetProperty("cycle", out var cycle) && cycle.ValueKind != JsonValueKind.Null) rule = rule with { Cycle = NodeGraphHomes.Compact(cycle) };
-        if (LandingRules.Problem(rule) is not { } problem) return rule;
-        unread = rule.Form.Length == 0 ? "it names no `form`, `merge` or `branch`." : problem;
-        return null;
-    }
+    internal static LandingRule? RuleOf(JsonElement value, out string? unread) => LandingKey.RuleOf(value, out unread);
 
     /// <summary>
     /// The session languages (LANG1c): each name a code of the table, read in any case without the spaces around it. A code
@@ -1604,7 +1407,7 @@ public sealed record DriverConfig(
         // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind
         // (CONFIGREAD1): said here, so the reader can say it with its file.
         if (root.ValueKind != JsonValueKind.Object) throw new JsonException("it holds no JSON object");
-        var (actors, actorErrors) = ActorChoices.Read(root);
+        var (actors, actorErrors) = ActorKey.Read(root);
 
         return new DriverConfig(
             Drivable: Json.Strings(root,"drivable"),
@@ -1637,7 +1440,7 @@ public sealed record DriverConfig(
             Actors = actors,
             ActorErrors = actorErrors,
             // Restricted unless the file names full (HELPMODE1a1): never widened by a value it does not know.
-            HelpMode = HelpModes.Named(Json.NonEmpty(root, "helpMode")) == HelpModes.Full ? HelpModes.Full : HelpModes.Restricted,
+            HelpMode = HelpModeNames.Named(Json.NonEmpty(root, "helpMode")) == HelpModeNames.Full ? HelpModeNames.Full : HelpModeNames.Restricted,
             // Absent, or less than a minute, or not a whole number, is the default hour (TOOL4e): never a spin.
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,
@@ -1651,35 +1454,35 @@ public sealed record DriverConfig(
             WorkspaceLines = BranchMap(root, "workspaceLines"),
             Languages = LanguageMap(root, "languages"),
             WorkspaceLanguages = LanguageMap(root, "workspaceLanguages"),
-            Landings = RuleMap(root, "landings"),
-            WorkspaceLandings = RuleMap(root, "workspaceLandings"),
+            Landings = LandingKey.RuleMap(root, "landings"),
+            WorkspaceLandings = LandingKey.RuleMap(root, "workspaceLandings"),
             WorkCycles = WorkCycleMap(root, "workCycles"),
             WorkspaceWorkCycles = WorkCycleMap(root, "workspaceWorkCycles"),
             // A rule with a problem is not read, and `false` only for a repository (REVIEWENV1a).
-            Reviews = ReviewRules.Map(root, "reviews", allowNone: true),
-            WorkspaceReviews = ReviewRules.Map(root, "workspaceReviews", allowNone: false),
+            Reviews = ReviewKey.Map(root, "reviews", allowNone: true),
+            WorkspaceReviews = ReviewKey.Map(root, "workspaceReviews", allowNone: false),
             // A rule with a problem is not read, and `false` only for a repository (XAGENT1a).
-            Opinions = OpinionRules.Map(root, "opinions", allowNone: true),
-            WorkspaceOpinions = OpinionRules.Map(root, "workspaceOpinions", allowNone: false),
-            Helpers = HelperRules.Map(root, "helpers"),
-            WorkspaceHelpers = HelperRules.Map(root, "workspaceHelpers"),
-            HandOver = HandOverRules.Map(root, "handOver"),
-            WorkspaceHandOver = HandOverRules.Map(root, "workspaceHandOver"),
-            Brainstorms = BrainstormRules.Machine(root),
-            WorkspaceBrainstorms = BrainstormRules.Map(root, "workspaceBrainstorms"),
-            Commits =CommitRules.Map(root, "commits"),
-            WorkspaceCommits = CommitRules.Map(root, "workspaceCommits"),
+            Opinions = OpinionKey.Map(root, "opinions", allowNone: true),
+            WorkspaceOpinions = OpinionKey.Map(root, "workspaceOpinions", allowNone: false),
+            Helpers = HelperKey.Map(root, "helpers"),
+            WorkspaceHelpers = HelperKey.Map(root, "workspaceHelpers"),
+            HandOver = HandOverKey.Map(root, "handOver"),
+            WorkspaceHandOver = HandOverKey.Map(root, "workspaceHandOver"),
+            Brainstorms = BrainstormKey.Machine(root),
+            WorkspaceBrainstorms = BrainstormKey.Map(root, "workspaceBrainstorms"),
+            Commits =CommitKey.Map(root, "commits"),
+            WorkspaceCommits = CommitKey.Map(root, "workspaceCommits"),
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
-            Workflows = WorkflowSelection.Map(root, "workflows", workspace: false),
-            WorkspaceWorkflows = WorkflowSelection.Map(root, "workspaceWorkflows", workspace: true),
+            Workflows = WorkflowKey.Map(root, "workflows", workspace: false),
+            WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
             // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.
-            Access = AccessRules.Map(root, "access"),
-            WorkspaceAccess = AccessRules.Map(root, "workspaceAccess"),
-            MachineAccess = AccessRules.Machine(root),
+            Access = AccessKey.Map(root, "access"),
+            WorkspaceAccess = AccessKey.Map(root, "workspaceAccess"),
+            MachineAccess = AccessKey.Machine(root),
             // Read as a stored shape (HEAVYRUN1b2a): a list with a gate that does not read is not read, whole.
-            HeavyGates = HeavyMapping.Map(root),
+            HeavyGates = HeavyKey.Map(root),
             // Read as a stored shape (FABRIC-PIPELINE1b): a value that is no choice is not read, and shadows none.
-            SessionChecks = Daoris.Driver.SessionChecks.Map(root),
+            SessionChecks = SessionChecksKey.Map(root),
             // Read as a stored shape (KEEP1d): a value out of its kind's bounds is not read, and its kind keeps its default.
             Keep = KeepChoices.Read(root),
             ReadAcross = FlagMap(root, "readAcross"),

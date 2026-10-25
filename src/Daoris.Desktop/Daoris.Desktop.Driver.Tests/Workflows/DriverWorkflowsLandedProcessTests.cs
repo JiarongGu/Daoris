@@ -51,6 +51,7 @@ public sealed class DriverWorkflowsLandedProcessTests : IDisposable
         _error.GetStringBuilder().Clear();
         var world = new DriverChoicesWorld
         {
+            Verbs = DriverChoiceVerbs.All,
             Instance = new InstanceWorld
             {
                 Home = _home,

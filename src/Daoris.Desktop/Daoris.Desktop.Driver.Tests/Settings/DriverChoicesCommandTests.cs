@@ -21,6 +21,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     /// <summary>A terminal on this test's home with the variables named, where no Daoris runs (a workspace build reads no address file).</summary>
     private DriverChoicesWorld World(params (string Name, string Value)[] variables) => new()
     {
+        Verbs = DriverChoiceVerbs.All,
         Instance = new InstanceWorld
         {
             Home = _home,
@@ -108,7 +109,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     [Fact]
     public async Task A_retry_that_cannot_read_the_verdicts_writes_nothing_and_says_how_to_give_the_count()
     {
-        var world = World() with { Verdicts = (_, _) => throw new HttpRequestException("No connection could be made") };
+        var world = World() with { Verbs = DriverChoiceVerbs.With((_, _) => throw new HttpRequestException("No connection could be made")) };
 
         var exit = await DriverChoicesCommand.RunAsync(["retry", "q7"], world, CancellationToken.None);
 
@@ -124,7 +125,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     public async Task A_retry_of_a_quest_neither_parked_nor_held_is_refused_alone_in_its_code()
     {
         var quest = new QuestView("q7", "game", "engine", "A title", "A body.", "Open");
-        var world = World() with { Verdicts = (_, _) => Task.FromResult<IReadOnlyList<Consideration>>([new Consideration(quest, StartVerdict.Start, "it may start")]) };
+        var world = World() with { Verbs = DriverChoiceVerbs.With((_, _) => Task.FromResult<IReadOnlyList<Consideration>>([new Consideration(quest, StartVerdict.Start, "it may start")])) };
 
         var exit = await DriverChoicesCommand.RunAsync(["retry", "q7"], world, CancellationToken.None);
 
@@ -221,6 +222,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         var config = DaorisHome.Entry(running.Home, HomeEntry.DriverConfig);
         var world = new DriverChoicesWorld
         {
+            Verbs = DriverChoiceVerbs.All,
             Instance = new InstanceWorld
             {
                 Home = running.Home,
@@ -266,6 +268,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         var instance = running.World("daoris");
         var world = new DriverChoicesWorld
         {
+            Verbs = DriverChoiceVerbs.All,
             Instance = new InstanceWorld
             {
                 Home = running.Home,
@@ -304,6 +307,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         var config = DaorisHome.Entry(running.Home, HomeEntry.DriverConfig);
         var world = new DriverChoicesWorld
         {
+            Verbs = DriverChoiceVerbs.All,
             Instance = new InstanceWorld
             {
                 Home = running.Home,

@@ -166,7 +166,8 @@ public sealed class PluginCatalogTests : IDisposable
     /// <summary>
     /// REFAC1 (the second-opinion review of 2026-10-07): a plugin id's shape has one owner in the driver,
     /// <see cref="PluginCatalog.IsId"/>, which a landing rule's plugin, a plugin's tool id and the log's landing line ask too;
-    /// CASEFOLD1e had to mend the same pattern in two places. Only <c>PluginCatalog.cs</c> spells it. The CLI's
+    /// CASEFOLD1e had to mend the same pattern in two places. Only <c>PluginIds.cs</c> spells it (FOUNDATION1 mod-iii: the settings'
+    /// parser judges a landing rule's plugin, so the shape sits in Settings, and the catalogue answers through it). The CLI's
     /// <c>isPluginId</c> is the twin, which its own suite holds the same way.
     /// </summary>
     [Fact]
@@ -181,7 +182,7 @@ public sealed class PluginCatalogTests : IDisposable
             .Select(path => Path.GetFileName(path))
             .Order(StringComparer.Ordinal);
 
-        Assert.Equal(["PluginCatalog.cs"], spelled);
+        Assert.Equal(["PluginIds.cs"], spelled);
     }
 
     [Fact]

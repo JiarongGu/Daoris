@@ -4,17 +4,6 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// How work is committed in a repository (PROCESS1a, D164's amendment point 1): <c>as-you-go</c> (the default) commits each piece
-/// that passes its checks, <c>ask</c> waits for the person's yes before each commit, <c>at-end</c> makes one commit when the work
-/// is done. <see cref="Convention"/> is the person's words on how a commit is written: one paragraph, trimmed, none where blank.
-/// </summary>
-public sealed record CommitRule(string Mode, string? Convention)
-{
-    /// <summary>What stands where nothing is set: commits as the work goes, with no convention named.</summary>
-    public static CommitRule Default { get; } = new(CommitRules.AsYouGo, null);
-}
-
 /// <summary>Where a repository's commit rule was set: <see cref="CommitRules.DefaultSource"/> where nothing was.</summary>
 public sealed record ResolvedCommits(CommitRule Rule, string Source);
 
@@ -50,91 +39,31 @@ public sealed record CommitEdit
 /// </remarks>
 public static class CommitRules
 {
-    public const string AsYouGo = "as-you-go";
-    public const string Ask = "ask";
-    public const string AtEnd = "at-end";
+    public const string AsYouGo = CommitKey.AsYouGo;
+    public const string Ask = CommitKey.Ask;
+    public const string AtEnd = CommitKey.AtEnd;
 
-    public static readonly IReadOnlyList<string> Modes = [AsYouGo, Ask, AtEnd];
+    public static readonly IReadOnlyList<string> Modes = CommitKey.Modes;
 
     /// <summary>The longest convention kept, in characters.</summary>
-    public const int ConventionLimit = 400;
+    public const int ConventionLimit = CommitKey.ConventionLimit;
 
     public const string DefaultSource = "default";
 
-    private const string RuleShape = "a commit rule is an object with its `mode` and an optional `convention`.";
-    private const string ModeShape = "`mode` is `as-you-go`, `ask` or `at-end`: whether commits are made as the work goes, wait for your yes first, or are made once at the end.";
-    private const string ConventionShape = "`convention` is your words on how a commit is written: one paragraph with no line break, at most 400 characters.";
     internal const string Scope = "a commit rule is set for a repository or a workspace — name exactly one.";
     private const string OneAtATime = "one change at a time: set its mode or its convention, or clear.";
 
-    /// <summary>A rule as an entry or a door spells it, before it is judged: a null mode or convention is absent.</summary>
-    private sealed record Spelled(object? Mode, object? Convention);
+    /// <summary>An entry read as a rule, with its first problem: an object whose mode is one of the three (absent is `as-you-go`) and whose convention is one short paragraph (the settings' <see cref="CommitKey.Read"/>).</summary>
+    public static (CommitRule? Rule, string? Problem) Read(JsonElement value) => CommitKey.Read(value);
 
-    /// <summary>An entry read as a rule, with its first problem: an object whose mode is one of the three (absent is `as-you-go`) and whose convention is one short paragraph.</summary>
-    public static (CommitRule? Rule, string? Problem) Read(JsonElement value)
-    {
-        if (value.ValueKind != JsonValueKind.Object) return (null, RuleShape);
-        return Judge(new Spelled(Spell(value, "mode"), Spell(value, "convention")));
-    }
+    /// <summary>A map of commit rules as <c>driver.json</c> holds it (the settings' <see cref="CommitKey.Map"/>).</summary>
+    internal static IReadOnlyDictionary<string, CommitRule> Map(JsonElement root, string name) => CommitKey.Map(root, name);
 
-    private static object? Spell(JsonElement value, string name) =>
-        !value.TryGetProperty(name, out var written) || written.ValueKind == JsonValueKind.Null
-            ? null
-            : written.ValueKind == JsonValueKind.String ? written.GetString() : false;
+    /// <summary>A map written as <c>driver.json</c> keeps it (the settings' <see cref="CommitKey.WriteMap"/>).</summary>
+    internal static void WriteMap(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, CommitRule> map) => CommitKey.WriteMap(writer, name, map);
 
-    private static (CommitRule? Rule, string? Problem) Judge(Spelled spelled)
-    {
-        if (spelled.Mode is not null && (spelled.Mode is not string text || !Modes.Contains(text))) return (null, ModeShape);
-        string? convention = null;
-        if (spelled.Convention is not null)
-        {
-            if (spelled.Convention is not string words) return (null, ConventionShape);
-            convention = words.Trim();
-            if (convention.Length > ConventionLimit || convention.Contains('\n') || convention.Contains('\r')) return (null, ConventionShape);
-            if (convention.Length == 0) convention = null;
-        }
-
-        return (new CommitRule((string?)spelled.Mode ?? AsYouGo, convention), null);
-    }
-
-    /// <summary>A map of commit rules as <c>driver.json</c> holds it: each name trimmed, a blank one and a rule with a problem not read, a name written twice in any case read where first readable.</summary>
-    internal static IReadOnlyDictionary<string, CommitRule> Map(JsonElement root, string name)
-    {
-        var map = new Dictionary<string, CommitRule>(StringComparer.OrdinalIgnoreCase);
-        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return map;
-
-        foreach (var property in element.EnumerateObject())
-        {
-            var named = property.Name.Trim();
-            if (named.Length == 0 || Read(property.Value) is not ({ } rule, null) || map.ContainsKey(named)) continue;
-            map[named] = rule;
-        }
-
-        return map;
-    }
-
-    /// <summary>A map written as <c>driver.json</c> keeps it, only when set.</summary>
-    internal static void WriteMap(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, CommitRule> map)
-    {
-        if (map.Count == 0) return;
-        writer.WriteStartObject(name);
-        foreach (var (key, rule) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            writer.WritePropertyName(key);
-            Write(writer, rule);
-        }
-
-        writer.WriteEndObject();
-    }
-
-    /// <summary>One rule as kept: its mode, then its convention where it has one.</summary>
-    public static void Write(Utf8JsonWriter writer, CommitRule rule)
-    {
-        writer.WriteStartObject();
-        writer.WriteString("mode", rule.Mode);
-        if (rule.Convention is not null) writer.WriteString("convention", rule.Convention);
-        writer.WriteEndObject();
-    }
+    /// <summary>One rule as kept (the settings' <see cref="CommitKey.Write"/>).</summary>
+    public static void Write(Utf8JsonWriter writer, CommitRule rule) => CommitKey.Write(writer, rule);
 
     /// <summary>
     /// The rule standing for a repository: its own, else its workspace's (one in no workspace being in <c>default</c>), else
@@ -184,7 +113,7 @@ public static class CommitRules
         CommitRule? next = null;
         if (!edit.Clear)
         {
-            var judged = Judge(new Spelled(
+            var judged = CommitKey.Judge(new CommitKey.Spelled(
                 set!.ModeGiven ? (object?)set.Mode ?? false : own?.Mode,
                 set.ConventionGiven ? set.Convention ?? false : own?.Convention));
             next = judged.Rule ?? throw new DriverException(judged.Problem!);

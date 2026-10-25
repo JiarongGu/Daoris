@@ -2,7 +2,7 @@
   "subdomains": [
     { "name": "Platform", "folder": "Platform", "domain": false, "moved": true },
     { "name": "Store", "folder": "Store", "domain": false, "moved": true },
-    { "name": "Settings", "folder": "Settings", "domain": true },
+    { "name": "Settings", "folder": "Settings", "domain": true, "moved": true },
     { "name": "Service", "folder": "Service", "domain": true },
     { "name": "Install", "folder": "Install", "domain": true },
     { "name": "Instance", "folder": "Instance", "domain": false },
@@ -46,8 +46,8 @@
     "Accounts/InstructionAccount.cs": "Context",
     "Accounts/InstructionAccounting.cs": "Context",
     "Accounts/Rotation/AccountRotation.cs": "Agents",
-    "Accounts/Rotation/RefusedAccounts.cs": "Agents",
     "Accounts/Rotation/LineAccount.cs": "Agents",
+    "Accounts/Rotation/RefusedAccounts.cs": "Agents",
     "Accounts/Rotation/ResumeAccount.cs": "Agents",
     "Accounts/SignIns/AccountReads.cs": "Agents",
     "Accounts/SignIns/AccountSignIns.cs": "Agents",
@@ -110,6 +110,7 @@
     "Brainstorms/BrainstormCommand.cs": "Work orders",
     "Brainstorms/BrainstormFiles.cs": "Work orders",
     "Brainstorms/BrainstormTurns.cs": "Work orders",
+    "Brainstorms/BrainstormsVerb.cs": "Work orders",
     "Brainstorms/Domain/BrainstormAnswer.cs": "Work orders",
     "Brainstorms/Domain/BrainstormDocument.cs": "Work orders",
     "Brainstorms/Domain/BrainstormInstruction.cs": "Work orders",
@@ -150,6 +151,7 @@
     "Conversations/Domain/HandOverAsks.cs": "Course",
     "Conversations/Domain/HandOverRecords.cs": "Course",
     "Conversations/Domain/HandOverRules.cs": "Course",
+    "Conversations/Domain/HandOverVerb.cs": "Course",
     "Conversations/Domain/HandedQuest.cs": "Course",
     "Conversations/Domain/HelperAsks.cs": "Participants",
     "Conversations/Domain/HelperCaptures.cs": "Participants",
@@ -160,6 +162,7 @@
     "Conversations/Domain/HelperRules.cs": "Participants",
     "Conversations/Domain/HelperWaits.cs": "Participants",
     "Conversations/Domain/HelperWords.cs": "Participants",
+    "Conversations/Domain/HelpersVerb.cs": "Participants",
     "Conversations/Domain/LimitHeld.cs": "Course",
     "Conversations/Domain/MessageLevel.cs": "Course",
     "Conversations/Domain/PartnerAdmission.cs": "Participants",
@@ -257,6 +260,7 @@
     "Loop/ChannelReach.cs": "Work orders",
     "Loop/Driver.cs": "Loop",
     "Loop/DriverBrainstorms.cs": "Loop",
+    "Loop/DriverChoiceVerbs.cs": "Loop",
     "Loop/DriverCommand.cs": "Loop",
     "Loop/DriverContinuations.cs": "Loop",
     "Loop/DriverHandOvers.cs": "Loop",
@@ -280,6 +284,7 @@
     "Loop/SupervisorQuarantine.cs": "Roles",
     "Loop/TransientRetries.cs": "Agents",
     "Platform/ActorChoices.cs": "Roles",
+    "Platform/ActorVerbs.cs": "Roles",
     "Platform/AgentJobs.cs": "Platform",
     "Platform/AgentStarts.cs": "Platform",
     "Platform/BesideReads.cs": "Platform",
@@ -295,9 +300,6 @@
     "Platform/DownloadClearing.cs": "Workplace",
     "Platform/DownloadKeeping.cs": "Workplace",
     "Platform/Downloads.cs": "Platform",
-    "Platform/DriverChoicesCommand.cs": "Settings",
-    "Platform/DriverConfig.cs": "Settings",
-    "Platform/DriverConfigUnreadableException.cs": "Settings",
     "Platform/DriverException.cs": "Platform",
     "Platform/DriverHttp.cs": "Platform",
     "Platform/FolderWatcherSource.cs": "Events",
@@ -331,6 +333,7 @@
     "Platform/JsonText.cs": "Platform",
     "Platform/KeepChoices.cs": "Workplace",
     "Platform/KeepKinds.cs": "Workplace",
+    "Platform/KeepVerb.cs": "Workplace",
     "Platform/KeepingRecord.cs": "Workplace",
     "Platform/KeepingRun.cs": "Workplace",
     "Platform/LineGuesses.cs": "Workplace",
@@ -357,7 +360,6 @@
     "Platform/SpaceFloor.cs": "Workplace",
     "Platform/SpaceFree.cs": "Workplace",
     "Platform/SpaceFreeCommand.cs": "Workplace",
-    "Platform/StandingChoices.cs": "Settings",
     "Platform/SystemSpace.cs": "Workplace",
     "Platform/SystemWiring.cs": "Loop",
     "Platform/TerminalLaunch.cs": "Platform",
@@ -432,6 +434,7 @@
     "Quests/Domain/ParkedQuests.cs": "Work orders",
     "Quests/Domain/Planner.cs": "Work orders",
     "Quests/Domain/QuestResults.cs": "Work orders",
+    "Quests/Domain/QuestRetry.cs": "Work orders",
     "Quests/Domain/TickReport.cs": "Work orders",
     "Quests/EvidenceCheck.cs": "Work orders",
     "Quests/EvidenceReader.cs": "Work orders",
@@ -444,6 +447,7 @@
     "Quests/QuestReviewCommand.cs": "Work orders",
     "Quests/QuestUnits.cs": "Work orders",
     "Quests/QuestWorkflowCommand.cs": "Work orders",
+    "Quests/RetryVerb.cs": "Work orders",
     "Quests/SyncForwardCommand.cs": "Work orders",
     "Review/ChatLooks.cs": "Review",
     "Review/ChatSendBacks.cs": "Review",
@@ -461,6 +465,7 @@
     "Review/Domain/OpinionView.cs": "Review",
     "Review/Domain/OpinionWriters.cs": "Review",
     "Review/Domain/ReviewGate.cs": "Review",
+    "Review/Domain/ReviewLooks.cs": "Review",
     "Review/Domain/ReviewRules.cs": "Review",
     "Review/Domain/ReviewSetUps.cs": "Review",
     "Review/Domain/ReviewShowing.cs": "Review",
@@ -476,10 +481,12 @@
     "Review/OpinionPackets.cs": "Review",
     "Review/OpinionPresses.cs": "Review",
     "Review/OpinionTree.cs": "Review",
+    "Review/OpinionVerb.cs": "Review",
     "Review/ReviewDesk.cs": "Review",
     "Review/ReviewGit.cs": "Review",
     "Review/ReviewProcedureFiles.cs": "Review",
     "Review/ReviewServed.cs": "Review",
+    "Review/ReviewVerb.cs": "Review",
     "Review/ServiceReviewWorld.cs": "Review",
     "Service/ConfirmationDoors.cs": "Service",
     "Service/Domain/AskWorkflowViews.cs": "Service",
@@ -526,7 +533,6 @@
     "Sessions/Domain/PausedBy.cs": "Work orders",
     "Sessions/Domain/SessionEnded.cs": "Events",
     "Sessions/Domain/SessionEvents.cs": "Events",
-    "Sessions/Domain/SessionLanguage.cs": "Settings",
     "Sessions/Domain/SessionOutput.cs": "Context",
     "Sessions/Domain/StartRun.cs": "Work orders",
     "Sessions/Domain/StopAnswer.cs": "Work orders",
@@ -587,6 +593,37 @@
     "Sessions/Work/WorkAbandoning.cs": "Work orders",
     "Sessions/Work/WorkCommand.cs": "Work orders",
     "Sessions/Work/WorkPausing.cs": "Work orders",
+    "Settings/AccessKey.cs": "Settings",
+    "Settings/AcrossDeclarations.cs": "Settings",
+    "Settings/ActorKey.cs": "Settings",
+    "Settings/BrainstormKey.cs": "Settings",
+    "Settings/BranchName.cs": "Settings",
+    "Settings/ChoiceArgs.cs": "Settings",
+    "Settings/ChoiceGrammar.cs": "Settings",
+    "Settings/ChoiceTerminal.cs": "Settings",
+    "Settings/ChoiceVerb.cs": "Settings",
+    "Settings/CommitKey.cs": "Settings",
+    "Settings/CoolOffDefault.cs": "Settings",
+    "Settings/CycleText.cs": "Settings",
+    "Settings/DriverChoicesCommand.cs": "Settings",
+    "Settings/DriverConfig.cs": "Settings",
+    "Settings/DriverConfigUnreadableException.cs": "Settings",
+    "Settings/HandOverKey.cs": "Settings",
+    "Settings/HeavyKey.cs": "Settings",
+    "Settings/HelpModeNames.cs": "Settings",
+    "Settings/HelperKey.cs": "Settings",
+    "Settings/InstanceRoute.cs": "Settings",
+    "Settings/KeepKey.cs": "Settings",
+    "Settings/LandingKey.cs": "Settings",
+    "Settings/OpinionKey.cs": "Settings",
+    "Settings/PluginIds.cs": "Settings",
+    "Settings/ReviewKey.cs": "Settings",
+    "Settings/SessionChecksKey.cs": "Settings",
+    "Settings/SessionLanguage.cs": "Settings",
+    "Settings/StandingAnswer.cs": "Settings",
+    "Settings/StandingChoices.cs": "Settings",
+    "Settings/WorkflowKey.cs": "Settings",
+    "Settings/WorkspaceNames.cs": "Settings",
     "Setup/ClaudeReleaseDownloads.cs": "Install",
     "Setup/CodexReleaseDownloads.cs": "Install",
     "Setup/Domain/CodexReleases.cs": "Install",
@@ -670,6 +707,7 @@
     "Trees/Landing/AutoLanding.cs": "Workplace",
     "Trees/Landing/ChatPresses.cs": "Workplace",
     "Trees/Landing/CommitRules.cs": "Workplace",
+    "Trees/Landing/CommitsVerb.cs": "Workplace",
     "Trees/Landing/Landing.cs": "Workplace",
     "Trees/Landing/LandingHoldNotice.cs": "Workplace",
     "Trees/Landing/LandingHolds.cs": "Workplace",
@@ -782,6 +820,7 @@
     "Trees/TreesWords.cs": "Workplace",
     "Trees/WorkingTree.cs": "Workplace",
     "Workflows/ChatRuns.cs": "Workflows",
+    "Workflows/CycleChoices.cs": "Workflows",
     "Workflows/Domain/GraphGate.cs": "Workflows",
     "Workflows/Domain/InvolvementRoutes.cs": "Workflows",
     "Workflows/Domain/WorkflowChanges.cs": "Workflows",
@@ -802,6 +841,8 @@
     "Workflows/Domain/WorkflowWords.cs": "Workflows",
     "Workflows/DriverWorkflowsCommand.cs": "Workflows",
     "Workflows/LandedGates.cs": "Workflows",
+    "Workflows/LandingVerb.cs": "Workflows",
+    "Workflows/WorkCycleVerb.cs": "Workflows",
     "Workflows/WorkflowFiles.cs": "Workflows",
     "Workflows/WorkflowKeepCommand.cs": "Workflows",
     "Workflows/WorkflowNodeCommand.cs": "Workflows",
@@ -813,19 +854,10 @@
     "Workflows/WorkflowRunFiles.cs": "Workflows",
     "Workflows/WorkflowRunRecords.cs": "Workflows",
     "Workflows/WorkflowRunStart.cs": "Workflows",
-    "Workflows/WorkflowStore.cs": "Workflows"
+    "Workflows/WorkflowStore.cs": "Workflows",
+    "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "the settings' parser's and verbs' names of other subdomains' rule types (§14.3)",
-      "after": "Settings",
-      "files": {
-        "Platform/DriverChoicesCommand.cs": ["AccountLimits","AcrossRules","ActorChoice","ActorChoices","ActorView","AdapterSet","BrainstormEdit","BrainstormRule","BrainstormRules","BrainstormSet","BranchName","CommitRules","Consideration","DriverWorkflowsCommand","HandOverRules","HelpModes","HelperRules","InstanceDoor","InstanceRoute","InstanceWorld","IntakeRoom","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","LandingSource","NodeGraphHomes","NodeGraphs","NodeKinds","OpinionRule","OpinionRules","PluginCatalog","ReviewRule","ReviewRules","RouteClass","SpaceVolumes","TreesRoutes","WorkUnitKind"],
-        "Platform/DriverConfig.cs": ["AccessEdit","AccessRules","AccessSetting","AccountLimits","AcrossRules","ActorChoice","ActorChoices","BrainstormRule","BrainstormRules","BranchName","CommitRule","CommitRules","HandOverRule","HandOverRules","HeavyGate","HeavyMapping","HelpModes","HelperRule","HelperRules","KeepChoices","KeepRules","KeepSet","LandingForm","LandingRule","LandingRules","NodeGraphHomes","NodeGraphs","OpinionRule","OpinionRules","ReviewRule","ReviewRules","SessionChecks","StandingAnswer","WorkUnitKind","WorkflowChoice","WorkflowSelection"],
-        "Platform/StandingChoices.cs": ["Consideration","LandingRule","LandingRules","PluginCatalog","RemoteTarget","ReviewEdit","ReviewRules","StartVerdict","WorkScope"],
-        "Sessions/Domain/SessionLanguage.cs": ["RemoteTarget"]
-      }
-    },
     {
       "family": "Service names Agents",
       "after": "Service",
@@ -914,8 +946,8 @@
       "after": "Service",
       "files": {
         "Service/Domain/RemoteSyncPayloads.cs": ["TreeProvenance","TreeRelation"],
-        "Service/LayoutGit.cs": ["BranchName","WorkingTree"],
-        "Service/RegistrationWorld.cs": ["BranchName","CanonicalLine","LandedBranches","WorkingTree"],
+        "Service/LayoutGit.cs": ["WorkingTree"],
+        "Service/RegistrationWorld.cs": ["CanonicalLine","LandedBranches","WorkingTree"],
         "Service/RegistryFollowing.cs": ["RefRepository","TreeTips"],
         "Service/RemoteSync.cs": ["CanonicalLine","TreeProvenance","TreeRelation","WorkingTree"],
         "Service/ServiceClient.cs": ["FinishedPost","LandingLine","LiveSession","RecordRefusal","SessionLocks"]
@@ -1009,15 +1041,8 @@
       "family": "Install names Instance",
       "after": "Install",
       "files": {
-        "Agents/ToolInstall/ToolChoices.cs": ["InstanceRoute","RouteClass","TreesRoutes"],
-        "Agents/ToolInstall/ToolsCommand.cs": ["InstanceDoor","InstanceRoute","InstanceWorld","RouteClass"]
-      }
-    },
-    {
-      "family": "Install names Roles",
-      "after": "Install",
-      "files": {
-        "Setup/InstallUpdate.cs": ["ActorChoice"]
+        "Agents/ToolInstall/ToolChoices.cs": ["TreesRoutes"],
+        "Agents/ToolInstall/ToolsCommand.cs": ["InstanceDoor","InstanceWorld"]
       }
     },
     {
@@ -1296,7 +1321,7 @@
         "Help/HelpFacts.cs": ["CanonicalLine","HistoryReading","LineGuesses","LookTimes","RepositoryLine","SessionTrees","SweepPlan","TreeFolders","TreeReadMemo"],
         "Help/Room/HelpRoomLanding.cs": ["LandingRules"],
         "Help/Room/HelpRoomMachineNow.cs": ["AcceptedBy","HistoryCommand","HistoryReading","PullRequestAskFailed","PullRequestState","PullRequestWords"],
-        "Help/Room/HelpRoomWorkspaces.cs": ["Landing","LandingRule","LandingRules","LandingSource","Line","LineSource"],
+        "Help/Room/HelpRoomWorkspaces.cs": ["Landing","LandingRules","LandingSource","Line","LineSource"],
         "Sessions/Domain/Trace.Chain.cs": ["LandedBranch","LandingRules","PullRequestAskFailed","PullRequestState","TreeGuard","TreeHand"],
         "Sessions/Domain/Trace.Words.cs": ["AcceptedBy","AutoLandings","LandedBranches","PullRequestWords"],
         "Sessions/Domain/TracedRecords.cs": ["AutoLanding","LandedBranch"],
@@ -1366,7 +1391,7 @@
       "files": {
         "Agents/Acp/Acp.cs": ["RunningTask"],
         "Agents/Acp/AcpBackground.cs": ["RunningTask"],
-        "Agents/Adapters/Adapters.cs": ["ReviewDesk","ReviewEnvironment"]
+        "Agents/Adapters/Adapters.cs": ["ReviewDesk"]
       }
     },
     {
@@ -1625,8 +1650,8 @@
       "files": {
         "Conversations/Domain/HelperPass.cs": ["OpinionPosture","ReviewerChoice","ReviewerPassed"],
         "Conversations/Domain/HelperRules.cs": ["OpinionSource"],
-        "Conversations/Helpers/HelperChoice.cs": ["AgentFamily","OpinionRule","ReviewerChoice","ReviewerPassed","ReviewerUnavailable"],
-        "Conversations/Partners/PartnerChoice.cs": ["OpinionRule","ReviewerChoice","ReviewerPassed"],
+        "Conversations/Helpers/HelperChoice.cs": ["AgentFamily","ReviewerChoice","ReviewerPassed","ReviewerUnavailable"],
+        "Conversations/Partners/PartnerChoice.cs": ["ReviewerChoice","ReviewerPassed"],
         "Sessions/LookFacts.cs": ["OpinionDue","OpinionJudged"]
       }
     },
@@ -1665,8 +1690,7 @@
       "after": "Context",
       "files": {
         "Accounts/InstructionAccounting.cs": ["ReviewSource"],
-        "Conversations/Domain/ContextBrief.cs": ["HeavyGate"],
-        "Sessions/Events/ContextBriefs.cs": ["HeavyGate","HeavyGates","HeavyMapping"]
+        "Sessions/Events/ContextBriefs.cs": ["HeavyGates","HeavyMapping"]
       }
     },
     {
@@ -1894,6 +1918,30 @@
     "RecordLockProcessTests.cs": "Store",
     "DesktopStoreTests.cs": "Store",
     "DesktopStoreReaderTests.cs": "Store",
-    "DesktopStoreLatencyTests.cs": "Store"
+    "DesktopStoreLatencyTests.cs": "Store",
+    "ConfigReadTests.cs": "Settings",
+    "ConfigSeamTests.cs": "Settings",
+    "ConfigTests.cs": "Settings",
+    "DriverChoicesCommandTests.cs": "Settings",
+    "DriverChoicesTextTests.cs": "Settings",
+    "DriverConfigKeepsTests.cs": "Settings",
+    "SessionLanguageTests.cs": "Settings",
+    "StandingFormTests.cs": "Settings",
+    "WorkspaceNamesTests.cs": "Settings",
+    "HelpModeNamesTests.cs": "Settings",
+    "CoolOffDefaultTests.cs": "Settings",
+    "AcrossDeclarationsTests.cs": "Settings",
+    "WorkflowKeyTests.cs": "Settings",
+    "BrainstormKeyTests.cs": "Settings",
+    "CycleTextTests.cs": "Settings",
+    "ReviewKeyTests.cs": "Settings",
+    "OpinionKeyTests.cs": "Settings",
+    "HeavyKeyTests.cs": "Settings",
+    "SessionChecksKeyTests.cs": "Settings",
+    "CommitKeyTests.cs": "Settings",
+    "KeepKeyTests.cs": "Settings",
+    "LandingKeyTests.cs": "Settings",
+    "PluginIdsTests.cs": "Settings",
+    "ChoiceVerbTests.cs": "Settings"
   }
 }
