@@ -61,7 +61,7 @@ public static class SessionLanguages
 
     /// <summary>A workspace's own language, or null: what an intake takes, which answers its ask in no repository.</summary>
     public static SessionLanguage? OfWorkspace(DriverConfig config, string? workspace) =>
-        config.WorkspaceLanguages.TryGetValue(RemoteTarget.Workspace(workspace), out var shared)
+        config.WorkspaceLanguages.TryGetValue(WorkspaceNames.Of(workspace), out var shared)
             ? new SessionLanguage(shared, NameOf(shared), LanguageSource.Workspace)
             : null;
 }
