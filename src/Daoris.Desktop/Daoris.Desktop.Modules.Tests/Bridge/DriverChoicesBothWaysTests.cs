@@ -27,12 +27,11 @@ public sealed partial class DriverChoicesBothWaysTests : DriverModuleBridge
 
     private DriverChoicesWorld World(StringWriter output, StringWriter error, IReadOnlyList<Consideration>? verdicts = null, ChoicesRegistry? registry = null) => new()
     {
-        Verbs = DriverChoiceVerbs.All,
+        Verbs = DriverChoiceVerbs.With((_, _) => Task.FromResult(verdicts ?? [])),
         // No address file is read here (a workspace build), so the command acts alone; the route is asked of the module itself.
         Instance = new InstanceWorld { Home = Home, Environment = _ => null, Out = output, Error = error, Verb = "daoris" },
         ConfigPath = DriverConfigPath,
         Registry = _ => Task.FromResult(registry ?? new ChoicesRegistry(null, "the service did not answer")),
-        Verdicts = (_, _) => Task.FromResult(verdicts ?? []),
         Now = () => Moment,
     };
 

@@ -8,9 +8,17 @@ namespace Daoris.Driver;
 /// </summary>
 public static class DriverChoiceVerbs
 {
-    /// <summary>Every verb the settings' command hands on, each by the subdomain whose acts it drives.</summary>
+    /// <summary>Every verb the settings' command hands on, each by the subdomain whose acts it drives, a quest's <i>Try again</i> handed no way to read the planner's verdicts.</summary>
     public static IReadOnlyList<ChoiceVerb> All { get; } =
+        With((_, _) => throw new DriverException("this command was handed no way to read them"));
+
+    /// <summary>
+    /// Every verb, a quest's <i>Try again</i> handed <paramref name="verdicts"/>: the planner's verdict on each quest, over a fresh snapshot
+    /// of the service this machine's driver watches.
+    /// </summary>
+    public static IReadOnlyList<ChoiceVerb> With(Func<DriverConfig, CancellationToken, Task<IReadOnlyList<Consideration>>> verdicts) =>
     [
+        new RetryVerb(verdicts),
         new HelpersVerb(),
         new HandOverVerb(),
         new AdapterVerb(),
@@ -22,5 +30,6 @@ public static class DriverChoiceVerbs
         new WorkflowVerb(),
         new ReviewVerb(),
         new OpinionVerb(home => AdapterSet.Built().WithPlugins(PluginCatalog.Load(home, AdapterSet.Built().Names))),
+        new BrainstormsVerb(),
     ];
 }

@@ -7,6 +7,9 @@ namespace Daoris.Driver;
 /// </summary>
 public static class ChoiceGrammar
 {
+    /// <summary>The brainstorm policy's minutes' flags (BRAINSTORM1b), which set what they name: <c>brainstorms</c> naming one changes the home.</summary>
+    public static IReadOnlyList<string> BrainstormMinuteFlags { get; } = ["--pass-minutes", "--synthesis-minutes", "--challenge-minutes", "--request-minutes"];
+
     /// <summary>The sub-verbs of <c>workflow</c> that write a workflow or the choice; with <c>--plan</c> each only says what it would write.</summary>
     public static IReadOnlySet<string> WorkflowWrites { get; } = new HashSet<string>(StringComparer.Ordinal) { "new", "edit", "apply", "import", "use", "kind" };
 

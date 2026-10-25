@@ -110,6 +110,7 @@
     "Brainstorms/BrainstormCommand.cs": "Work orders",
     "Brainstorms/BrainstormFiles.cs": "Work orders",
     "Brainstorms/BrainstormTurns.cs": "Work orders",
+    "Brainstorms/BrainstormsVerb.cs": "Work orders",
     "Brainstorms/Domain/BrainstormAnswer.cs": "Work orders",
     "Brainstorms/Domain/BrainstormDocument.cs": "Work orders",
     "Brainstorms/Domain/BrainstormInstruction.cs": "Work orders",
@@ -445,6 +446,7 @@
     "Quests/QuestReviewCommand.cs": "Work orders",
     "Quests/QuestUnits.cs": "Work orders",
     "Quests/QuestWorkflowCommand.cs": "Work orders",
+    "Quests/RetryVerb.cs": "Work orders",
     "Quests/SyncForwardCommand.cs": "Work orders",
     "Review/ChatLooks.cs": "Review",
     "Review/ChatSendBacks.cs": "Review",
@@ -864,13 +866,6 @@
       "after": "Settings",
       "files": {
         "Settings/DriverChoicesCommand.cs": ["CommitRules","KeepRules","KeepSet","SpaceVolumes"]
-      }
-    },
-    {
-      "family": "Settings names Work orders",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["BrainstormEdit","BrainstormRules","BrainstormSet","Consideration","IntakeRoom","QuestRetry"]
       }
     },
     {
