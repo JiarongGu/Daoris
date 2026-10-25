@@ -12,5 +12,6 @@ public static class DriverChoiceVerbs
     public static IReadOnlyList<ChoiceVerb> All { get; } =
     [
         new HelpersVerb(),
+        new HandOverVerb(),
     ];
 }
