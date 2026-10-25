@@ -27,7 +27,7 @@ public sealed class StartConfirmationTests : IDisposable
     {
         foreach (var each in _open) each.Dispose();
         SqliteConnection.ClearAllPools();
-        try { Directory.Delete(_install, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_install);
     }
 
     private void Journal(string phase, string? reason = null, bool? confirmed = null) =>

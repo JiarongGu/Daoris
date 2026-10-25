@@ -56,7 +56,7 @@ public sealed class GitDoorStartTests : IDisposable
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private static bool Asked => Environment.GetEnvironmentVariable(Variable) is { Length: > 0 };

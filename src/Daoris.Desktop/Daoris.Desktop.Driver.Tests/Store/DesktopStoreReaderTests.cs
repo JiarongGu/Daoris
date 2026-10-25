@@ -22,7 +22,7 @@ public sealed class DesktopStoreReaderTests : IDisposable
     {
         foreach (var each in _open) each.Dispose();
         SqliteConnection.ClearAllPools();
-        try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        GitSeed.Discard(_root);
     }
 
     private string Db => Path.Combine(_root, "data", "desktop.db");
