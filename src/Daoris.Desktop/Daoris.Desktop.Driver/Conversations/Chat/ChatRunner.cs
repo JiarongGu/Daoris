@@ -738,7 +738,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
             var commits = CommitRules.Resolve(config, known.Repository, known.Workspace);
             // MAKERTRAIL2 (LIMITGOON2): a part on another maker than the one before it, which left work uncommitted in the tree, is told
             // that maker's trailer too, as a driven carry-on is.
-            var left = leftBy is not null && (await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false)).Count > 0 ? leftBy : null;
+            var left = leftBy is not null && await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) is { Count: > 0 } ? leftBy : null;
             _toldProcess[sessionId] = new ProcessBriefing(CommitTrailers.For(resolved, left), commits.Rule.Mode, commits.Source);
         }
 
