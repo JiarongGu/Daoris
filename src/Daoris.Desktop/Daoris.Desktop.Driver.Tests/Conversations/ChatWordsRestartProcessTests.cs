@@ -140,6 +140,41 @@ public sealed class ChatWordsRestartProcessTests : IDisposable
     }
 
     /// <summary>
+    /// FOUNDATION1 row p (the design §3.4 rule 5) through a real conversation: a producer's retry of a word the line settled, said to the
+    /// running conversation, is answered settled by the record: nothing is kept on the record, queued, handed to the turn or sent to the agent,
+    /// and the answer is the runner's own, <see cref="ChatSaid.Settled"/>, with no reach and no word.
+    /// </summary>
+    [Fact]
+    public async Task A_settled_retry_said_to_a_running_conversation_queues_and_sends_nothing()
+    {
+        var ledger = new ChatLedger().Register("engine", _root).Settle("press/7", "c0");
+        var config = Config();
+        using var client = ledger.Client();
+        using var runner = Runner(client, Events, Processes());
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        await Poll.Until(() => ledger.State(id) == "working", () => Seen(ledger, id));
+        Assert.True(runner.Say(id, "hold"));
+        await Poll.Until(() => HeardLines().Contains("prompt: hold") && runner.Taking(id), () => Seen(ledger, id));
+
+        var said = await runner.SayKeptAsync(id, "Also log the port.", null, null, MessageLevel.Urgent, "press/7");
+
+        Assert.True(said!.Settled);
+        Assert.Null(said.Reaches);
+        Assert.Null(said.Word);
+        Assert.Empty(ledger.Said(id));
+        Assert.Empty(runner.Queue(id).Queued);
+        Assert.Empty(ledger.Taken);
+        Assert.DoesNotContain(HeardLines(), line => line.Contains("Also log the port.", StringComparison.Ordinal));
+
+        // A key the line never settled is kept and queued as it always was.
+        var kept = await runner.SayKeptAsync(id, "No, 9090.", null, null, MessageLevel.Ordinary, "press/8");
+        Assert.False(kept!.Settled);
+        Assert.Equal(("turn-end", "k1"), (kept.Reaches, kept.Word));
+        Assert.Equal(["k1"], ledger.Said(id));
+        Assert.Equal(["k1"], runner.Queue(id).Queued.Select(word => word.Id));
+    }
+
+    /// <summary>
     /// A stand-in ACP agent, as <c>ChatGoesOnProcessTests</c>' is: it names its conversation <c>conv-1</c> and resumes it, writes down
     /// each method, a resume's id and each prompt's text blocks joined by <c> | </c>, and answers each prompt after a moment; a prompt
     /// <c>hold</c> runs until its input ends.

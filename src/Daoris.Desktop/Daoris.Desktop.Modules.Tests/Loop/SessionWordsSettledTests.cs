@@ -41,10 +41,12 @@ public sealed class SessionWordsSettledTests : DriverModuleBridge
     {
         var service = new KeyedSayService { Records = Records(Chat("c1", "completed"), Chat("c2", "completed")) }.Settle("c1", Key);
         var loop = await UpAsync(service);
+        var nudged = loop.Nudges;
 
         var settled = await loop.Words.SayAsync("c1", Words, [], preface: null, "screen", CancellationToken.None, key: Key);
 
         Assert.True(settled!.Sent);
+        Assert.Equal(nudged, loop.Nudges);
         Assert.Null(settled.Word);
         Assert.False(settled.Running);
         Assert.Equal(0, service.Kept("c1"));
@@ -79,10 +81,13 @@ public sealed class SessionWordsSettledTests : DriverModuleBridge
         service.Records = Records(Chat("c1", "completed"));
         service.Settle("c1", Key);
         var after = await UpAsync(service);
+        var nudged = after.Nudges;
         await after.Service!.AdvanceAsync("c1", "completed", note: "the conversation ended.");
 
         await UntilAsync(() => !File.Exists(SessionWords.HeldPath(Home)));
         Assert.Equal(0, service.Kept("c1"));
+        // No word came back to show, so no look is woken for one either (the record path's `Show` nudges the loop for a word kept).
+        Assert.Equal(nudged, after.Nudges);
         Assert.Empty(after.Events.Page("c1").Events);
         Assert.Empty(service.Added());
     }
