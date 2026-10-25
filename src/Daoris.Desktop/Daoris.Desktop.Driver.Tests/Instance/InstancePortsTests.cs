@@ -129,4 +129,31 @@ public sealed class InstancePortsTests
         Assert.Equal($"trees: {TerminalRole.Sentence} (role-terminal)", TerminalRole.Refusal("trees"));
         Assert.Equal(TerminalRole.Refusal("trees"), RoleTerminal.Refusal("trees"));
     }
+
+    [Fact]
+    public void The_marks_of_the_trees_routes_are_the_instances_and_what_a_terminal_tells_is_told_by_them()
+    {
+        (string Mark, string Told, string Text)[] each =
+        [
+            (TreesMarks.Land, PressesTold.Land, "LAND_SESSION_TREE"),
+            (TreesMarks.LandWithoutLook, PressesTold.LandWithoutLook, "LAND_WITHOUT_LOOK"),
+            (TreesMarks.DiscardTree, PressesTold.DiscardTree, "DISCARD_SESSION_TREE"),
+            (TreesMarks.DiscardBranch, PressesTold.DiscardBranch, "DISCARD_SESSION_BRANCH"),
+            (TreesMarks.Sweep, PressesTold.Sweep, "SWEEP"),
+            (TreesMarks.TreesSync, PressesTold.TreesSync, "TREES_SYNC"),
+            (TreesMarks.HandOff, PressesTold.HandOff, "HANDOFF"),
+            (TreesMarks.LandEntry, PressesTold.LandEntry, "LAND_ENTRY"),
+            (TreesMarks.LandAsk, PressesTold.LandAsk, "LAND_ASK"),
+        ];
+
+        Assert.All(each, one =>
+        {
+            Assert.Equal(one.Text, one.Mark);
+            Assert.Equal(one.Text, one.Told);
+            Assert.Contains(one.Text, PressesTold.Routes);
+        });
+        Assert.Equal(
+            each.Select(one => one.Text).Order(StringComparer.Ordinal),
+            TreesRoutes.Presses.Select(press => press.Route.Route).Order(StringComparer.Ordinal));
+    }
 }

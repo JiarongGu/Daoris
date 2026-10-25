@@ -900,13 +900,6 @@
   },
   "edges": [
     {
-      "family": "Instance names Course",
-      "after": "Instance",
-      "files": {
-        "Instance/InstanceRoutes.cs": ["PressesTold"]
-      }
-    },
-    {
       "family": "Events names Agents",
       "after": "Events",
       "files": {
