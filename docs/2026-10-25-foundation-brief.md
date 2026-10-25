@@ -242,3 +242,29 @@ green, each leaving Daoris working as it did for a person who sets nothing. The 
 5. **Measured on the install** where the step moves a hot path (the look, the pushes, the dispatcher), before and after.
 
 A proposal names its first three rows concretely, with their proofs, and the rest in order.
+
+## 8. Amendment, 2026-10-25: capabilities in code, roles in configuration
+
+The owner directed on 2026-10-25, after round 1 of the synthesis, that Daoris's actors and roles not be hard-coded: each role can be
+configured and set up into the company, as D193 pictures its staff (part 4). The proposals were sealed before this direction, so the
+synthesis carries it from its round 2 (`docs/2026-10-25-foundation-design.md` §2.7), read by both makers like the rest. The cut the
+steward set, which every round from 2 keeps:
+
+- **Capabilities in code.** The code keeps one closed vocabulary of capabilities: the kinds of work a participant can take (build,
+  design, review, intake, help, chat, and the other kinds Daoris starts today), the acts an appointed role may make (the supervisor's
+  and the steward's), the doors and tools each kind of work may use, and the containment each runs under. A capability's admission,
+  its doors and its containment are code, keyed by the capability and never by a fixed list of kinds.
+- **Roles in configuration.** A role is a configured record composed from those capabilities: its name in English and Chinese; the
+  work it takes; its staffing, D205's ordered choices of agent, model and effort; its authority, the acts and doors it may use; its
+  scope, the machine, a workspace or a repository; and how it is filled, always on or appointed (D208, D209).
+- **The default company.** D205's eight actors and the two appointed roles are seeded into configuration as the default company, so a
+  person who sets nothing sees Daoris work as today, and an upgrade changes nothing (D205 point 7).
+- **Who changes it.** The person adds, changes or removes a role, at its doors, or Ask Daoris proposes the change and the person's press
+  applies it (D205 point 9's shape). A role gaining authority needs the person's press, and an act that is the owner's (D191 point 3;
+  D209's *never what is the owner's*) stays the owner's whatever a role says.
+- **What it re-cuts.** Q1's participant carries its role and its work; Q2's admission tables are keyed by capability; Q4's actor and
+  appointed role are one configured record; Q16's names follow; MODELROLE1l's Design actor (D205's note of 2026-10-25) becomes a
+  configured Designer role, never new code beyond the capability it takes.
+
+The constraints of §4 stand unchanged: the person's door, D208's and D209's bounds, the state hub, the Fabric's guards, and *Simple*:
+the page gains only the words a person needs to see and change a role, entering through the glossary.
