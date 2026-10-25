@@ -572,6 +572,12 @@ public sealed class LineAccountTests : IDisposable
     ];
 
     /// <summary>
+    /// The projects a caller of the account facts can be written in: the driver, its host, the modules and the app, each of whose sources
+    /// reaches this gate (the lane table's MOD9c), never the whole desktop tree, which spans lanes the census cannot place.
+    /// </summary>
+    private static readonly string[] Projects = ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
+
+    /// <summary>
     /// Every caller of the roster's resume, of <c>CoolingOf</c> and <c>CoolingsOf</c>, and every reader of <c>ResumeChoice.Waits</c>, reads
     /// <see cref="LineAccount"/> or is named <i>not yet moved</i> (X4-1.1); and the walks the rule asks are the places today's resume walks,
     /// the handed quest's start beside them.
@@ -583,11 +589,11 @@ public sealed class LineAccountTests : IDisposable
         var sites = new[] { @"Harnesses\s*\.ResumeAsync\s*\(", @"\.CoolingsOf\(", @"\.CoolingOf\(", @"\bresume\s+is\s*\{\s*Waits\b", @"\bresume\.Waits\b" };
         var unread = new List<string>();
         var found = 0;
-        foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+        foreach (var project in Projects)
+        foreach (var path in Directory.EnumerateFiles(Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
-            if (relative.Contains("/obj/") || relative.Contains("/bin/") || relative.Split('/')[0].EndsWith(".Tests", StringComparison.Ordinal)
-                || relative.EndsWith("Harnesses/HarnessRoster.cs", StringComparison.Ordinal))
+            if (relative.Contains("/obj/") || relative.Contains("/bin/") || relative.EndsWith("Harnesses/HarnessRoster.cs", StringComparison.Ordinal))
             {
                 continue;
             }

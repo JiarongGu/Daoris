@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - The account rule's census read the whole desktop tree, a read no lane places (FOUNDATION1a-i)
+
+- **Symptom:** landing FOUNDATION1 row 1c ran the merge tool's own suite, and its MOD9 census failed: `LineAccountTests.cs reads
+  src/Daoris.Desktop/probe.cs, which no rule of the lane table places`. Row 1a-i had landed green before it, since its changed files
+  staged no node suite.
+- **Root cause:** 1a-i's census of the account facts' callers enumerated every C# file under `src/Daoris.Desktop`, a tree that spans
+  lanes, so a change to a source of a project whose lane reaches no driver gate (the GitDoor, the piece start) would not have run the test
+  that reads it.
+- **Fix:** the census enumerates the projects a caller can be written in, the driver, its host, the modules and the app, each of whose
+  sources reaches the driver gate (MOD9c), as the census's project-list shape (MOD9d) reads.
+- **Verification:** `merge-branch.test.ts`'s MOD9 cases failed on the read and pass; `LineAccountTests` passes whole, its census still
+  finding every caller.
+
 ## 2026-10-25 - A word a transient try carried was lost when a limit refused that try (AGENTERRORS1b2)
 
 - **Symptom:** found by reading, in D210's own AGENTERRORS1b note, not seen on an install: a person's word said while a conversation
