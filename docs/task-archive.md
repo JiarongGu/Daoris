@@ -37,6 +37,21 @@ a file an older build writes after the import is imported at the next look or th
 its set-aside file. Every proof the row states is a case seen failing first, in `BindingsTests` and `BindingsLookTests`. Detail and the readings taken (the store opened for each use with
 one run for the process, the look as the import's place, a re-found file whose SHA-256 a receipt holds only set aside): D212's note of 2026-10-26.
 
+## FOUNDATION1mod-iv — Service moved (2026-10-26)
+
+> **FOUNDATION1mod-iv — Service moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
+> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The fourth of the driver's moves: every file the map
+> places in Service sits in `Service/`, its namespace unchanged, every linked consumer with it, the map's paths updated; then the cuts the census lists after
+> Service, one edge family per commit, each a port declared or a type moved to its one owner, each changing no behaviour. The service's client and its wire
+> only, never the service itself. It adopts nothing of Part B. It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. One file moved into `Service/` (`RunningAddress`, from `Platform/`; the map's other Service files already sat there),
+none of the Service files compiled by the GitDoor, the launcher or PieceStart; `structure.json` marks Service moved and lists its test classes. The 13
+families listed after Service (186 edges) came off the census whole, 881 → 642 edges and 94 → 79 families with the 53 edges of other families the same moves
+took: the records and views `ServiceClient` returns and the lines it carries are the service's (their builders kept by their owners as extension members), a
+door class or a read a subdomain owns is that subdomain's extension member of the client, the verbs that press through the instance and the files that read
+git through the workplace are placed above the service, and what the remote sync asks of a checkout's git and what a session's end lets go are ports Service
+declares and the workplace answers. Detail, the cuts one by one and the readings taken: D212's note of this date.
 ## FOUNDATION1z-i — the desktop store, read by nothing (2026-10-26)
 
 > **FOUNDATION1z-i — the desktop store, read by nothing** (driver, service, CLI; D212's row of Part B, accepted by the steward 2026-10-25; the design
