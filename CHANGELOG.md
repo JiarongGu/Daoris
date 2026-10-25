@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A word you say while Daoris waits to try again after the provider failed is no longer lost when the next try meets the account's limit
+  (AGENTERRORS1b2, D210). It no longer reads *it may have read what you added; say it again*: it goes on with the conversation once the
+  limit lifts, in its own conversation on its own account, or in the new part another account opens, handed with Daoris's brief, and
+  arrives once. The words of the turn that failed are not sent again.
 - Deleting a conversation, or clearing a closed quest's history, now takes every file Daoris kept of a session (SESSFILES1, D153). Three
   were left behind on this machine, however small: the box of a move a limit made, and an agent's ask to hand a session over with its
   state. A workspace's clear takes them too once their session is gone and nothing has touched them for an hour, and counts them in

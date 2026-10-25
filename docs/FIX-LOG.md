@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - A word a transient try carried was lost when a limit refused that try (AGENTERRORS1b2)
+
+- **Symptom:** found by reading, in D210's own AGENTERRORS1b note, not seen on an install: a person's word said while a conversation
+  waited to try again after a 529 rode the next try, a limit refused that try, and the word reached nobody. A kept word read *Say it
+  again* (`lost`); one said by the composer's plain `Say` had no note at all. The move's new part was handed the brief alone, and the
+  wake handed the record's refused words without it, though row 1b's proof says each original word is received once at the wake or move.
+- **Root cause:** a conversation records a try's words as the person's `User` events only when its session takes them (an update, or an
+  answer), and a limit refuses the prompt before either; the ledger's `said` had dropped the word as it was written. So the record held it
+  nowhere, and `LimitHeld.Of`, which reads the record and already held a word recorded after the episode's last quiet event, found none.
+  The episode's catch said every unacknowledged word of a failed try `lost` whatever the failure's kind.
+- **Fix:** where a try is refused and the failure reads as a limit, the session hands the person's words the try carried to
+  `TransientRetry.LimitRefused` and says no `lost` note, and the conversation records them as a refused turn's words are. The wake's
+  `Resent` and the move's composition read them from `LimitHeld` as they read any refused turn's. A driven run hands none and is unchanged;
+  a try refused otherwise keeps the `lost` note.
+- **Verification:** `ChatTransientProcessTests` (a kept word refused at the try with every account cooling: received once at the wake;
+  a plain word with another account ready: received once in the briefed move; neither `lost`; the failed turn's word not handed again)
+  failed on the word never reaching the wake or the new part, and pass; the 1b case that expected the brief alone was amended with it.
+  `LimitHeldTests`, and the Process half's `LimitGoesElsewhereProcessTests`, `LimitWaitsProcessTests`, `AccountRotationTickTests` and
+  `TransientRetryTickTests` (`process.runsettings`), pass.
+
 ## 2026-10-25 - A session's delete or clear left its limit-move box and its agent's hand-over ask and state behind (SESSFILES1)
 
 - **Symptom:** found by reading, in FOUNDATION1's round 3, not seen on an install: `sessions/<s>.limit-move.json`,

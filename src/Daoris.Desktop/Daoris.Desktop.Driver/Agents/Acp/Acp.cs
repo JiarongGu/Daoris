@@ -1231,6 +1231,22 @@ public sealed class AcpSession(
     }
 
     /// <summary>
+    /// The person's words a limit-refused try carried (AGENTERRORS1b2): taken off the unacknowledged and handed to the retry's owner, which
+    /// holds them for the limit's wake or move. A listener's failure costs a line, never the episode.
+    /// </summary>
+    private void HandRefused(Action<IReadOnlyList<ChatMessage>> hand)
+    {
+        List<ChatMessage> words;
+        lock (_promptsGate)
+        {
+            words = [.. _unacknowledged];
+            _unacknowledged.Clear();
+        }
+
+        if (words.Count > 0) Said(() => hand(words));
+    }
+
+    /// <summary>
     /// A transient episode (AGENTERRORS1a, D210, the design §5.1): the run stays running on the same session, account and choice, and
     /// tries again in the same conversation after 1, 2, 4, 8 and 16 minutes on the handed clock, each try one prompt of the person's
     /// held words and then Daoris's go-on. Answers the stop reason of the try that answered, or of the turn's end where the owner's
@@ -1301,7 +1317,9 @@ public sealed class AcpSession(
             catch (AcpRefusal refused)
             {
                 var read = ReadFailure(refused);
-                SayUncertain();
+                // A limit refused the try before the agent took its words (AGENTERRORS1b2): handed to whoever answers the limit, never lost.
+                if (read.Kind == AgentErrorKind.Limit && retry.LimitRefused is { } refusedWords) HandRefused(refusedWords);
+                else SayUncertain();
                 if (read.Kind != AgentErrorKind.Transient) throw;
                 continue;
             }
