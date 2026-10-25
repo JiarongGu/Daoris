@@ -12,17 +12,16 @@ namespace Daoris.Driver;
 public static class HelpModes
 {
     /// <summary>It reads, advises and proposes, and the person applies (D89): the default.</summary>
-    public const string Restricted = "restricted";
+    public const string Restricted = HelpModeNames.Restricted;
 
     /// <summary>It acts on this machine itself, in its harness's mode that asks nothing (D183 point 1).</summary>
-    public const string Full = "full";
+    public const string Full = HelpModeNames.Full;
 
     /// <summary>The modes, in the order a person is offered them.</summary>
-    public static IReadOnlyList<string> All { get; } = [Restricted, Full];
+    public static IReadOnlyList<string> All => HelpModeNames.All;
 
-    /// <summary>The mode <paramref name="value"/> names, trimmed and in any case, or null for none.</summary>
-    public static string? Named(string? value) =>
-        All.FirstOrDefault(mode => string.Equals(mode, value?.Trim(), StringComparison.OrdinalIgnoreCase));
+    /// <summary>The mode <paramref name="value"/> names, trimmed and in any case, or null for none (the settings' <see cref="HelpModeNames.Named"/>).</summary>
+    public static string? Named(string? value) => HelpModeNames.Named(value);
 
     /// <summary>
     /// A record's mode as read (HELPMODE1a2, D183 point 3): full where it says full, in any case; restricted for none, a record from

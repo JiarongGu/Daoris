@@ -529,22 +529,22 @@ public sealed record DriverConfig(
     public string? HelperAdapter { get; init; }
 
     /// <summary>
-    /// Ask Daoris's access mode (HELPMODE1a1, D183 point 1): <see cref="HelpModes.Restricted"/>, the default, or
-    /// <see cref="HelpModes.Full"/>. Read at each start of its conversation.
+    /// Ask Daoris's access mode (HELPMODE1a1, D183 point 1): <see cref="HelpModeNames.Restricted"/>, the default, or
+    /// <see cref="HelpModeNames.Full"/>. Read at each start of its conversation.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>Restricted unless the file names full</b>: a value that is neither reads as restricted, so nothing but the person's own
     /// choice ever widens it (D183 point 2). Written only while full, so an edit elsewhere never pins the default.
     /// </remarks>
-    public string HelpMode { get; init; } = HelpModes.Restricted;
+    public string HelpMode { get; init; } = HelpModeNames.Restricted;
 
     /// <summary>Ask Daoris's access mode here, as the person chose it (HELPMODE1a1).</summary>
     /// <exception cref="DriverException">A mode that is neither restricted nor full.</exception>
     public DriverConfig WithHelpMode(string mode) =>
         this with
         {
-            HelpMode = HelpModes.Named(mode)
-                ?? throw new DriverException($"Ask Daoris's mode is `{HelpModes.Restricted}` or `{HelpModes.Full}`, not `{mode}`."),
+            HelpMode = HelpModeNames.Named(mode)
+                ?? throw new DriverException($"Ask Daoris's mode is `{HelpModeNames.Restricted}` or `{HelpModeNames.Full}`, not `{mode}`."),
         };
 
     /// <summary>
@@ -1085,7 +1085,7 @@ public sealed record DriverConfig(
             // Written only when an actor is set (MODELROLE1c, D205 §9.1): absent is every actor as before.
             ActorChoices.Write(writer, Actors);
             // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
-            if (HelpMode == HelpModes.Full) writer.WriteString("helpMode", HelpMode);
+            if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("pollSeconds", PollSeconds);
             writer.WriteNumber("strikes", Strikes);
@@ -1637,7 +1637,7 @@ public sealed record DriverConfig(
             Actors = actors,
             ActorErrors = actorErrors,
             // Restricted unless the file names full (HELPMODE1a1): never widened by a value it does not know.
-            HelpMode = HelpModes.Named(Json.NonEmpty(root, "helpMode")) == HelpModes.Full ? HelpModes.Full : HelpModes.Restricted,
+            HelpMode = HelpModeNames.Named(Json.NonEmpty(root, "helpMode")) == HelpModeNames.Full ? HelpModeNames.Full : HelpModeNames.Restricted,
             // Absent, or less than a minute, or not a whole number, is the default hour (TOOL4e): never a spin.
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,

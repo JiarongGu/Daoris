@@ -585,6 +585,7 @@
     "Settings/DriverChoicesCommand.cs": "Settings",
     "Settings/DriverConfig.cs": "Settings",
     "Settings/DriverConfigUnreadableException.cs": "Settings",
+    "Settings/HelpModeNames.cs": "Settings",
     "Settings/SessionLanguage.cs": "Settings",
     "Settings/StandingAnswer.cs": "Settings",
     "Settings/StandingChoices.cs": "Settings",
@@ -898,14 +899,6 @@
       "files": {
         "Settings/DriverChoicesCommand.cs": ["DriverWorkflowsCommand","NodeGraphHomes","NodeGraphs","NodeKinds"],
         "Settings/DriverConfig.cs": ["NodeGraphHomes","NodeGraphs","WorkflowChoice","WorkflowSelection"]
-      }
-    },
-    {
-      "family": "Settings names Help",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["HelpModes"],
-        "Settings/DriverConfig.cs": ["HelpModes"]
       }
     },
     {
@@ -1982,6 +1975,7 @@
     "DriverConfigKeepsTests.cs": "Settings",
     "SessionLanguageTests.cs": "Settings",
     "StandingFormTests.cs": "Settings",
-    "WorkspaceNamesTests.cs": "Settings"
+    "WorkspaceNamesTests.cs": "Settings",
+    "HelpModeNamesTests.cs": "Settings"
   }
 }
