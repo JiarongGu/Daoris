@@ -1,10 +1,12 @@
-# AGENTPROVIDER1: the reads of rounds 1, 2 and 3 (D191)
+# AGENTPROVIDER1: the reads of rounds 1 to 4 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-26-agent-provider-design.md` and D213, round 1, both at `ed455c6dd`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Neither carries a link, so none is rewritten; the paths both cite are code spans, in each read's own aliases. Round 2 answers every finding of both in the design's §17, one row each, and each changed passage of the design and D213 is marked *(C1-n.m)* for Codex's §n item m or *(O1-Fn)* for the Opus reader's finding n.
 
 Both makers' reads of round 2, at `e69b58872`, follow in the same way: run from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down (Codex's section labels, bold in its output, set as headings, as round 1's are). Round 3 answers every finding of both in the design's §18, one row each, and each changed passage of the design and D213 is marked *(C2-n.m)* for Codex's §n item m or *(O2-Fn)* for the Opus reader's finding n.
 
 Both makers' reads of round 3, at `0e588c2a4` (round 3 with PICKCARRY1 merged after it), follow in the same way. Round 4 answers every finding of both in the design's §19, one row each, and each changed passage of the design and D213 is marked *(C3-n.m)* for Codex's §n item m or *(O3-Fn)* for the Opus reader's finding n.
+
+Both makers' reads of round 4, at `e45549522`, follow in the same way. Each asks accept after named changes the steward can check without another read; the design's §20 takes every finding of both, one row each, marking each changed passage *(C4-n.m)* for Codex's §n item m or *(O4-Fn)* for the Opus reader's finding n, and the steward's acceptance follows it (D213's note).
 
 ## Codex, round 1
 
@@ -998,3 +1000,271 @@ It cannot see PICKCARRY1's comparison of door ids read as "the same agent" (`Cha
 | u | F6 |
 | s-v | F8 |
 | s-vi and OPENROUTER1 | F7 |
+
+## Codex, round 4
+
+Codex's read of round 4 at `e45549522`: accept after named changes. Its §0 finds each of its round-3 findings taken or answered with a reason that holds; it finds no wrong claim and two changes, neither blocking: its 4.1, the registration-invariance proof narrowed to the variables the selected provider declares or is measured to read, and its 4.2, two of D213's summary phrases aligned with round 4. The design's §20.1 answers each.
+
+Reviewed HEAD `e455495224496b301e2c209a96ed5090ea7b1721`. Nothing changed; no tests run. No `local/` content or files outside this checkout were read.
+
+### 0. Your round-3 findings
+
+References below use **P** = `docs/2026-10-26-agent-provider-design.md`.
+
+| Finding | Original severity | Disposition |
+|---|---|---|
+| 1.1 Chat starts carry no target | **Non-blocking** | **Taken.** P:704–706 and row h explicitly preserve clearing without setting a target. |
+| 2.1 Chained ownership becomes transitive | **Blocking** | **Taken.** P:258–265 preserves literal, one-level keys; P:1003–1016 requires chains, cycles and both declaration orders. |
+| 2.2 Account-key resolution needs a defined result | **Non-blocking** | **Taken.** P:263–265 defines `AccountPool`, with no first-provider selection. |
+| 2.3 Other contract counterexamples addressed | **Non-blocking** | **Answered with a reason that holds.** P:1517 preserves the required parts, admission and downward boundaries. |
+| 4.1 Native stub cannot resume | **Non-blocking** | **Taken.** P:1053–1056 tests its unsupported fallback and uses a separate resumable plain-capture fixture. |
+| 4.2 Sequence sound; OpenRouter must exercise final key representation | **Non-blocking** | **Taken** for the pool proof at P:1132–1133; **answered with a reason that holds** for the sequence at P:1107–1110. |
+
+### 1. Wrong claims about the existing code
+
+None newly found. The corrected one-level ownership matches `Accounts/Harnesses/Harnesses.cs:281` and `HarnessRoster.cs:813–823`; the chat and carrier-order corrections match `Agents/Adapters/Adapters.cs:1595–1603` and `Conversations/Chat/ChatRunner.cs:1513–1555`.
+
+### 2. The contract
+
+1. **Non-blocking — the named counterexamples are addressed.** Required parts prevent an added capability silently inheriting an answer; `Known<T>` separates opening-scoped negotiation from applicable measurements, and unsupported run operations refuse before their write (P:272–325, :350–364). Registry resolution preserves record strings and unavailable identities, while the account pool representation now preserves chained ownership without introducing a provider/door collision (P:252–268, :765–807).
+
+2. **Non-blocking — the dependency boundaries hold as designed.** Events owns reading payloads and the sink port; Loop composes the owners’ writers, and higher domains implement Agents-owned ports (P:414–456), consistent with FOUNDATION1’s downward-only rule at `docs/2026-10-25-foundation-design.md:2363`. Door-specific dialects and restricted plugin declarations address cross-agent keys and exaggerated manifest claims; the service’s ordered-reader exception is explicit and matches `Daoris.Service.Core/Sessions/CallLineage.cs:65–79`.
+
+### 3. Where it chose between the proposals
+
+None. The reasons for required records, shared transports, Events-owned readings, separate correction rows and deferred binding metadata remain sound; no consequential contribution needs restoring beyond what the synthesis retains at P:181–217.
+
+### 4. Rows, proofs, census, conformance and OPENROUTER1
+
+1. **Non-blocking — narrow the registration-invariance proof.** P:918–919 requires registering a provider to leave every other spawn table unchanged, but P:710–717 and row s-vi at P:1100 intentionally strip newly registered, unrelated credential variables. Replace exact invariance with preservation of variables the selected provider declares or is measured to read, and add a paired case where registering a new unrelated key correctly removes its inherited sentinel.
+
+2. **Non-blocking — align D213’s operative summary with round 4.** `docs/decisions/D213.md:112` still places the Claude seam on “Claude Code’s doors alone,” although P:842 and :1099 preserve plugin doors and remove it only from Codex and dsh; D213:133 still says reach is at the start layer, contradicting its own :138. Replace those phrases with the precise s-v scope and “reach in Roles’ plan walk.”
+
+3. **Non-blocking — the remaining sequence and proof responsibilities hold.** P:961–977 and :1107–1115 separate moves, corrections, the ⚖ rows and spending proofs; the census and conformance requirements include bounded exceptions, sabotage, cross-fed dialects and fallback cases. OPENROUTER1’s prerequisites, executor, pool proof and closed-place admission are explicit at P:1119–1143.
+
+### 5. What is the owner’s
+
+None missing. P:1150–1169 correctly reserves bounded installed measurements, the OpenRouter key and its live measurement, while keeping implementation choices with the steward and foundation readers.
+
+**Verdict: accept after named changes** — narrow the registration-invariance proof and correct the two D213 summary phrases. Both changes are checkable without another design read.
+
+## Opus (foundation), round 4
+
+The independent Opus 5.5 reader's foundation read of round 4 at `e45549522`: 10 findings, 1 blocking (F1, no contract part says which account facts a harness naming an id reads, so a plugin naming `codex` would read Codex's words after row d, and the made provider's references have no source); accept after named changes the steward can check without another read, F1, F7 and F8 now and the rest before the row each names. It finds no answer of round 3 wrong and O3-F2 half met. The design's §20.2 answers each finding.
+
+Read at `e45549522`, read-only. I read the design and D213 whole, the reads of rounds 1 to 3, the brief, FOUNDATION1 §2.4, §2.5 and §14, the round-4 diff (`0e588c2a4..e45549522`), and the code each claim below cites. I searched the survey and both proposals for the holder and `accountOf` rather than reading them through. Paths use the survey's aliases. *design* means `docs/2026-10-26-agent-provider-design.md`.
+
+### 0. Both reads of round 3
+
+**Codex, round 3 (5 findings, 1 blocking)**
+
+| Finding | Round 4 | Status | Against the code |
+|---|---|---|---|
+| §0, round-2 2.1 left open | met by the one-level key | taken | `Harnesses.cs:281`. The one-level key holds against every chain I tried (§2) |
+| 1.1 target variable | driven start sets it, chat clears it (design:703-706); row h's table holds both | taken | `Adapters.cs:1595-1603`, `:1635`. The cited test holds only "sets none" (§1 item 7) |
+| 2.1 transitive ownership | key is `accountOf` verbatim; join only where the key matches; made provider references the named harness's facts | taken | holds for every chain, cycle and order. Residual: the references have no source after row d, and a plugin naming `codex` is unrepresented → **F1** |
+| 2.2 the key's result | `AccountPool`, with no first provider chosen | taken | holds. A pool's providers agree by construction (§2) |
+| 2.3 the rest sound | — | answered, holds | — |
+| 4.1 the native stub cannot resume | the fallback case, plus a separate test door | taken | `Adapters.cs:1506`, `:1512`, `:1683-1749` |
+| 4.2 OPENROUTER1 on the final key | §12: its own id, read through the pool | taken | — |
+
+**Opus, round 3 (11 findings, 2 blocking)**
+
+| Finding | Status | Against the code |
+|---|---|---|
+| F1 chained `accountOf` | taken | holds (`HarnessRoster.cs:813-823`; `ReviewerChoice.cs:31`) |
+| F2 `codex-acp` loses Codex's words at row d | taken in words; the representation is **open** | the contract has no part the runtime factory can read after row d, and the mirror case (a plugin naming `codex`) is unrepresented → **F1** |
+| F3 git names; a plugin's home variable | taken; (a) is imprecise | the names at `GitWiring.cs:28-47` and `:76-92` are set through Install's `IChildGit`, not `ISessionGit` → **F6** |
+| F4 carriers after the program is resolved | taken | `Driver.cs:2701`, `:3012-3014`, then `:2728`, `:2730`, `:2736`; `ChatRunner.cs:1515-1517`, then `:1525-1527`, `:1535-1536`, `:1554` |
+| F5 two readings are requests | taken | shape holds; ordering and implementer residuals → **F5** |
+| F6 where `Opened` is read | taken | holds for starts inside the plan; starts outside it read nothing → **F2**; D213 has a stale phrase → **F8** |
+| F7 another provider's variable | taken | the rule fails when a measurement lapses or a door is unmeasured → **F3** |
+| F8 the seam on a plugin's door | taken | `HarnessRoster.cs:1313-1316`; `HarnessSelection.cs:565` |
+| F9 PICKCARRY1 | taken | carry by door holds (`ChatRunner.cs:676-684`); s-vii's `OwnerOf` answer → **F4** |
+| F10 row d ⚖ | taken | §11 row d, §13, D213 point 13 |
+| F11 citations | taken for `ChatRunner` and the own-home cite | `structure.json` and the *Instance* claims are stale → **F7** |
+
+No answer is wrong. O3-F2 is half-met.
+
+### 1. Claims about the code
+
+These claims are wrong at `e45549522` (equal to `ac2c09aef` for every cited file):
+
+1. **"*Instance names Agents* (`structure.json:899-904`) is FOUNDATION1's"** (design:439). D213 point 14 (D213.md:143-144) also lists only Service's and Install's as landed. mod-vi cut this family: `Agents/AgentsLease.cs` answers `VerbLeases` by a module initializer, and `structure.json` has no such family (its families start at `:903`, *Events names Agents*).
+2. **§19.3: "One placement moved"** (design:1555-1556). mod-vi shifted every placement past Install's, and every family:
+   - `AgentStarts` `:299`→`:308`; `ActorChoices` `:296`→`:305`; `GitRouting` `:332`→`:341`; `ChildLineage` `:560`→`:561`; `LongCalls` `:600`→`:602`;
+   - *Events names Agents* `:956`→`:903`; *Knowledge names Agents* `:1028`→`:974`; *Agents names …* `:1147`→`:1093`;
+   - the `IntakeRoom` edge `:1117`→`:1063`; the `SpawnSkills` edge `:1200`→`:1146`.
+
+   §4.6 also cites `GitRouting` at `:332` beside `GitWiring` at `:343` in one sentence (design:681, :691).
+3. **"only the Plugins folder gained a file"** (design:79, §19.3). mod-vi also added `Agents/AgentsLease.cs`, `Sessions/AccessLease.cs`, `Sessions/Heavy/HeavyLease.cs`, `Trees/GitLease.cs`, `Trees/Nodes/NodeLease.cs` and `Instance/TerminalRole.cs`/`TreesSaid.cs`. No cited file changed, so the conclusion stands; the sentence does not.
+4. **"`ISessionGit` answers the names it sets or clears (`GitWiring.cs:28-47`, `:76-92`)"** (design:689-692).
+   - Those names are `Prompts`, `Removed` (with `HolderKey.Variable`), the home variable and `GIT_SSH*`, plus `Scope`'s rewrites.
+   - `GitWiring.Hand` sets them through Install's port: `Tools.Hand` (`Install/Tools.cs:676-681`) → `ChildGit.Current` → `WorkingTreeGit` (`Trees/InstallWiring.cs:11-17`).
+   - The shell's own git calls are only `Untoken`, `GitAuthor.Hand` and `GitLongPaths.Hand` (`Adapters.cs:1644-1650`), which is the scope §2.7 gives `ISessionGit`.
+5. **"`IChoiceReask`, … which Roles' re-ask implements"** (design:355-356; D213 point 3 says "a port Roles implements").
+   - Today's chat re-ask names Course's `ChatPending` and `ConversationWalk`, and the runner's `WalkAsync` (`ChatRunner.cs:1885-1927`).
+   - The driven one also keeps the offers and writes the actor line (`Driver.cs:3783-3800`).
+   - Roles (11) cannot name Course (14). Only Loop can compose it.
+6. **"the agent that answers for its accounts is that harness (`AccountAgent`)"** (design:568). This holds only where the named harness is an enabled door. A disabled plugin is not in `adapters.Names` (`Adapters.cs:2467`, `:2524-2530`), so `AccountAgent` falls back to the door itself (`HarnessRoster.cs:817-822`).
+7. **"held by `Agents/AdapterTests.cs:379-384`"** for a chat that "clears an inherited one" (design:705-706). The test plants no inherited `DAORIS_TARGET`. It holds "sets none" only.
+8. **The shim's refused characters** (design:671-672, §19.2 F4) are listed as seven. `HarnessActions.cs:592` also refuses CR and LF. This is trivial.
+
+Everything else round 4 adds or re-cites holds:
+- `Harnesses.cs:275`, `:278-281`
+- `HarnessRoster.cs:120-129`, `:135-144`, `:188-197`, `:813-823`, `:1207-1209`, `:1212`, `:1311-1316`, `:1401`, `:2090-2099`
+- `ReviewerChoice.cs:17-38`, `:31`
+- `PluginCatalog.cs:397-411`, `:401`, `:405`, `:410-411`; `DeclaredAcpAdapter.cs:32`, `:46-59`
+- `Adapters.cs:1506`, `:1512`, `:1595-1603`, `:1635`, `:1644-1650`, `:1659-1665`, `:1683-1749`, `:1919-1945` (no account fact; `ClaudeAcpErrors` is only `AuthRequiredCode`, `AgentErrors.cs:329-344`, never inherited), `:2116-2125`, `:2475-2482`, `:2532-2536`
+- `HarnessSelection.cs:535-581`
+- `Driver.cs:2701`, `:2728-2736`, `:3010-3015`, `:3785-3790`
+- `ChatRunner.cs:574-582`, `:676-684`, `:994`, `:1513-1517`, `:1525-1554`, `:1675-1677`, `:1709`, `:1756-1764`, `:1769`, `:1889`, `:2913-2918`, `:2928-2941`, `:3075-3203`
+- `Acp.cs:688-721`, `:2772-2796`
+- `HeldPermissions.cs:136`, placed in Events (`structure.json:587`)
+- `GitWiring.cs:47`, `:96-99`; `GitWiring` at `:343`
+- `AgentErrors.cs:249-261` (one level, doors only); `TASKS.md:188`
+
+### 2. The contract as round 4 states it
+
+**The account key: `accountOf` verbatim, one level; joining only where the key is the string.**
+
+This is order-free and has no recursion. A harness naming `A` joins provider `A` exactly when `A` is a built-in provider id, a plugin harness with no `accountOf` (or naming itself), or an id nothing holds. Every one of those is decided from `A`'s own declaration. Against today (`Owner`, `AccountAgent`, `LimitsOf`/`UsageOf`):
+
+| Case | Today | Round 4 | Holds |
+|---|---|---|---|
+| `bar`→`foo`→`claude-code-acp`, either declaration order | key `foo`; words none | own provider `bar` keyed `foo`; references none | yes |
+| cycle `foo`↔`bar`; `foo`→`foo` | keys `bar`/`foo`; self = none | each its own provider, keyed by the other; self as none | yes |
+| `bar`→disabled `foo` (`foo`→`claude-code-acp`) | key `foo`; account agent `bar` (`:817-822`) | keyed `foo`, references none | key yes; the agent sentence is imprecise (F10) |
+| `bar`→disabled `foo` with no `accountOf` | key `foo`; agent `bar` | `bar` joins the unavailable provider `foo` | key yes; untested (F10) |
+| `bar`→removed `foo`; `acme` | key `foo` / `acme` | made provider | yes |
+| `y`→`x`, where `x` is joined to `claude-code` | key `x`; `x`'s own words (none) | own provider keyed `x` | yes |
+| `claude-code`, `stub`, `dsh` | the named door's own facts, which are its provider's | joins | yes |
+| `claude-code-acp`, `acp-stub` | own key; none | own provider; references none | yes |
+| `codex-acp` | key `codex-acp`; Codex words and usage as the owner door's own | own provider; references both | key yes; **the reference has no source after row d** (F1) |
+| **`codex`** | signs in through the holder; **no words, no usage** (owner is not a door, `:124-127`, `:2094-2097`) | joins provider `codex` and reads "its `Tables` … and its `Usage`" (design:747-749; row q) — Codex's words after row d moves them | **no** (F1) |
+| an id nothing registers | — | D23's error naming what exists, or a made provider for an `accountOf` | yes |
+
+**The key resolves to its pool.** A key `K` is held either by the one provider whose id is `K`, or by providers made for plugins naming `K`, all referencing `K`'s own facts. So a pool's providers agree on every account fact by construction, and "a reader asks the provider or door it serves" is safe. `Known` keeps today's `AdapterSet.Agents`, so an empty pool for a door id is not a stray. A conformance case should assert the agreement.
+
+**The made provider referencing the named harness's facts by name.**
+- After row d, `codex-acp` has no account fact in the contract.
+- The made provider is built at runtime by Agents' factory, outside the providers' folders, where a table keyed by `"codex-acp"` fails the census (§9).
+- §2.3 has no part that holds "what a harness naming me reads".
+
+The rule is right; it needs a part (F1).
+
+**The door's carriers after the program is resolved.** This holds, and the shell in Agents keeps that order. It fits the map.
+
+**The wiring's names as their owners' answers.** The direction is right: Workplace (10) answers Agents' (9) port. But the names cited are `IChildGit`'s, not `ISessionGit`'s (§1 item 4). The port must also keep D212's three bounds for module-initializer seams (`D212.md:854`); without them a registration check can fail open (F6).
+
+**`IChoiceReask`.**
+- Declared in Agents and composed by Loop: no upward edge, provided Loop implements it. Roles alone cannot, because the chat's pending is Course's.
+- The order is load-bearing: the refusal is kept in the offers store before the walk (`ChatRunner.cs:1889` then `:1903`; `Driver.cs:3787` then `:3794`).
+- The answer is constrained to the same door and account (`ChatRunner.cs:1913-1915`).
+- The port is absent where no actor choice was asked (`Driver.cs:3783-3784`; `ChatRunner.cs:1756`).
+
+None of these is stated (F5).
+
+**`HeldPermissions`.** It is in Events (`structure.json:587`), below Agents: holds. Its own *Events names Context* edge (`:917`) is FOUNDATION1's cut, and this design adds nothing to it.
+
+**`Reach` in Roles' walk, with `not-opened`.** Roles (11) reads Agents (9): downward. But D212 §2.4 keeps two starts outside the plan, the role holder's and a meeting's (`foundation-design.md:460`). They never read `Reach`, which is as wide as `Absent` (F2).
+
+**Another provider's variable: one the selected provider neither declares nor is measured to read.**
+- By §2.4, a measurement admits only its effective configuration, so "measured to read" lapses when Claude Code updates. An inherited `ANTHROPIC_AUTH_TOKEN` is then stripped until it is measured again.
+- A plugin's door is never measured. After s-vi, one running `claude-agent-acp` loses an inherited `ANTHROPIC_API_KEY`.
+
+F3.
+
+**The seam kept on a plugin's protocol door.** Holds.
+
+**PICKCARRY1's carry.** Kept by door: holds; it is an identity comparison the census allows. s-vii's answer reads `OwnerOf`, which carries a pick between two providers sharing a pool (two plugins naming `claude-code-acp`). PICKCARRY1's rule says another agent holds no pick (`ChatRunner.cs:676-678`) (F4).
+
+**Upward edges.** Every type round 4 adds fits FOUNDATION1's map with no upward edge, provided `IChoiceReask` is implemented by Loop.
+
+### 3. The rows
+
+- **a**: right in shape. Its fixture holds chains in both orders, a cycle and `codex-acp`. It needs the `codex`-joined cell's answer after d (F1) and a disabled `foo` both ways (F10).
+- **b**: holds, but "every id the registry holds" reserved would reserve made providers' ids (F9).
+- **c**: holds.
+- **d ⚖**: cannot keep the `codex` cell, and its `codex-acp` references need a part (F1).
+- **e, f, g**: hold.
+- **h ⚖**: F6.
+- **i, j ⚖, k, l, m**: hold.
+- **n**: F5.
+- **o ⚖, p ⚖, r, t**: hold.
+- **q ⚖**: its proof "a joined door reading its provider's `Accounts`, `Tables` and `Usage`" contradicts row d's cell (F1).
+- **s-i to s-v, s-viii**: hold.
+- **s-vi ⚖**: F3.
+- **s-vii**: F4. It changes which account a part is held to, so it is ⚖ by row d's own reason.
+- **s-ix on**: holds.
+- **u ⚖**: F2.
+
+**The ⚖ set** (d, h, j, o, p, q, u, s-v, s-vi) is right, but it should include s-vii.
+
+**The census** is sound. The made provider's references pass it only if they are declared in a provider's own folder (F1).
+
+**The conformance suite** has the re-ask, the held request and "registering leaves others' spawn tables". It needs four more cases:
+- pool agreement and the `codex`-joined cell (F1);
+- the re-ask's order (F5);
+- the outside-plan starts (F2);
+- a kept variable across a version change (F3).
+
+**OPENROUTER1's prerequisites** (d, e, f, h, i, k, l, n, u) are enough. F2 and F3 bear on its reach and its key.
+
+**Order against FOUNDATION1** holds:
+- mod-vi landed; mod-vii, viii and ix have not;
+- l waits for mod-vii's cut, p and r for mod-viii's;
+- u waits for D212's 1j (no `StartPlan` in the code yet);
+- h, l, m, n, o and q land before mod-xxi.
+
+### 4. Findings
+
+**F1 — blocking.** No contract part says what a harness naming an id reads.
+
+What is wrong:
+- (a) A plugin naming `codex` joins provider `codex` and, by design:747-751 and row q, reads its `Tables` and `Usage`. After row d those include Codex's limit words and usage question, moved from `codex-acp` (`Adapters.cs:2120-2125`). Today it reads neither (`HarnessRoster.cs:120-129`, `:2090-2099`; `CodexAccounts.cs:36-52`). That contradicts row d's "every cell answered as today" (design:1080), §4.1 (design:581-584) and §7 row 12 (design:847).
+- (b) "The made provider's registration references by name" (design:571-576; D213 point 1) has no runtime source once row d empties `codex-acp`. The factory sits outside the providers' folders, where the census refuses a table keyed by a door id. §2.3 (design:283-306) has no such part.
+
+Smallest change:
+- Add one declared part on each provider and door an `accountOf` may name: the account facts a harness naming that id reads, by reference to its provider's, one level. The values:
+  - `claude-code`, `stub`, `dsh`: all of their provider's;
+  - `codex`: the holder's sign-in, login question, device code and ports, with no words and no usage question until s-ix;
+  - `codex-acp`: Codex's limit words and usage question;
+  - `claude-code-acp`, `acp-stub` and any plugin's harness: none.
+- The factory gives joined and made doors exactly that set. §4.8 and row q's proof say so.
+- Rows a and d hold the `codex`-joined plugin reading no words after d.
+- Conformance asserts that every provider in one pool answers every account fact equally.
+
+**F2 — not blocking, before u and OPENROUTER1.** `Reach` is read only in the plan's walk (design:1105). The role holder's and a meeting's starts are outside the plan (`foundation-design.md:460`), so an `Opened` provider there is never checked. Smallest change: row u reads `Reach` at those two starts too, refused since there is no walk to pass in, or states that they take no `Opened` provider. Add a case for each.
+
+**F3 — not blocking, before s-vi.** "Neither declares nor is measured to read" (design:709-717, :1100) strips a variable the program relies on in two situations:
+- whenever §2.4's applicability lapses (a new version of the program);
+- on every unmeasured plugin door.
+
+Smallest change: the variables a program is measured to read are entered in its `Vocabulary` as declared, standing on the measurement and kept across versions. A door whose program is unmeasured (a plugin's) has nothing stripped until it is measured, as s-v keeps the seam.
+
+**F4 — not blocking, before s-vii.** §7 row 10 and §2.8 (design:845, :464) carry a pick by `OwnerOf`, which crosses two providers sharing a pool. Smallest change: carry where `ProviderOf` is equal and the account is the same. Mark s-vii ⚖ (it changes which account a part is held to, row d's reason).
+
+**F5 — not blocking, before n.** `IChoiceReask` (design:353-359; D213 point 3) omits four things:
+- its implementer is Loop's composition, Roles' walk inside it (§1 item 5);
+- the refusal is kept in the offers store before the walk;
+- its answer is a later choice on the same door and account, or none;
+- it is absent where no actor choice was asked, with nothing judged, as today.
+
+Smallest change: state the four, and add a conformance case for the order.
+
+**F6 — not blocking, before h.** The list's git names (design:689-692; §19.2 F3) are mostly `IChildGit`'s (§1 item 4), and `ISessionGit` does not name the D212 bounds. Smallest change:
+- the list takes `IChildGit`'s answer (Install's port) besides `ISessionGit`'s;
+- row h says `ISessionGit` keeps D212's three bounds (`D212.md:854`), above all that an unset port throws, so a registration check never passes a git name for want of its answer.
+
+**F7 — not blocking, now.** The stale claims of §1 items 1, 2, 3 and 7 (design:79, :439, :681, :705-706, :1543-1556; D213.md:143-144). Smallest change: say *Instance names Agents* landed with mod-vi, and correct §19.3's two sentences and the test's reach. Either re-cite `structure.json` at `e45549522` or drop "one placement moved".
+
+**F8 — not blocking, now.** D213 point 13 still says "reach at the start layer (u)" (D213.md:133), against its own :138 and its Rejected list (:172). Point 14 omits PICKCARRY1 among the Part B rows read beside the contract (:145-146). Smallest change: "reach in the plan's walk (u)", and add PICKCARRY1.
+
+**F9 — not blocking, before b.** "Every id the registry holds" is reserved (design:1049-1050). That reserves a made provider's id: a plugin's own harness name, refusing that plugin on its next read, or an `accountOf` like `acme`, refusing a later plugin's harness `acme`. Today `Reserved` is the built set's (`PluginCatalog.cs:124`; `Adapters.cs:2490-2495`). Smallest change: reserve `Providers.Built()`'s ids and doors, never a made provider's.
+
+**F10 — not blocking, before a.** A disabled plugin in the chain (§1 item 6). No observable fact differs, since a manifest declares no sign-in, but it is untested and the sentence overstates. Smallest change: §4.1 says "where that harness is an enabled door". Row a's fixture holds `bar` naming a disabled `foo` with and without its own `accountOf`.
+
+10 findings, 1 blocking (F1).
+
+**Verdict: accept after named changes the steward can check without another read.** Make F1, F7 and F8 now. Make the rest before the row each names: F10 before a, F9 before b, F6 before h, F5 before n, F3 before s-vi, F4 before s-vii, and F2 before u and OPENROUTER1.
