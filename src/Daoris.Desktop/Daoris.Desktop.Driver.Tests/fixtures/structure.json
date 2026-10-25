@@ -586,6 +586,7 @@
     "Settings/DriverConfig.cs": "Settings",
     "Settings/DriverConfigUnreadableException.cs": "Settings",
     "Settings/SessionLanguage.cs": "Settings",
+    "Settings/StandingAnswer.cs": "Settings",
     "Settings/StandingChoices.cs": "Settings",
     "Settings/WorkspaceNames.cs": "Settings",
     "Setup/ClaudeReleaseDownloads.cs": "Install",
@@ -822,13 +823,6 @@
       "after": "Settings",
       "files": {
         "Settings/DriverChoicesCommand.cs": ["InstanceDoor","InstanceRoute","InstanceWorld","RouteClass","TreesRoutes"]
-      }
-    },
-    {
-      "family": "Settings names Knowledge",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverConfig.cs": ["StandingAnswer"]
       }
     },
     {
