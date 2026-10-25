@@ -760,6 +760,7 @@
     "Trees/Nodes/NodeAcceptances.cs": "Workflows",
     "Trees/Nodes/NodeContract.cs": "Workflows",
     "Trees/Nodes/NodeGraphs.cs": "Workflows",
+    "Trees/Nodes/NodeLease.cs": "Workflows",
     "Trees/Nodes/NodeLifecycle.cs": "Workflows",
     "Trees/Nodes/NodeRecord.cs": "Workflows",
     "Trees/Nodes/NodeRecordFiles.cs": "Workflows",
@@ -909,13 +910,6 @@
       "after": "Instance",
       "files": {
         "Instance/InstanceDoor.cs": ["HolderKey","RoleTerminal"]
-      }
-    },
-    {
-      "family": "Instance names Workflows",
-      "after": "Instance",
-      "files": {
-        "Instance/VerbLeases.cs": ["HeldResolutions","NodeWordActs"]
       }
     },
     {

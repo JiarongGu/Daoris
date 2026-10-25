@@ -12,7 +12,7 @@ public sealed class InstancePortsTests
     [Fact]
     public void The_verbs_whose_commands_a_higher_subdomain_owns_are_answered_when_the_assembly_loads()
     {
-        Assert.Equal(["access", "agent", "checks", "heavy", "plugin"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(["access", "agent", "checks", "heavy", "plugin", "work", "workflow"], VerbLeases.Answered.Keys.Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -70,6 +70,30 @@ public sealed class InstancePortsTests
         Assert.False(checks.Holds([]));
         Assert.False(checks.Holds(["engine"]));
         Assert.All(new[] { heavy, checks }, reading =>
+        {
+            Assert.Null(reading.Verbs);
+            Assert.Null(reading.Isolated);
+        });
+    }
+
+    [Fact]
+    public void The_workflows_answers_are_the_words_of_a_nodes_door_and_a_held_attempts_resolutions()
+    {
+        var workflow = VerbLeases.Answered["workflow"];
+        var work = VerbLeases.Answered["work"];
+
+        Assert.True(workflow.Holds(["keep", "s-1"]));
+        Assert.True(workflow.Holds([NodeWordActs.Skip, "q7", "go", "nobody raises it"]));
+        Assert.True(workflow.Holds([NodeWordActs.Stop, "q7", "go"]));
+        Assert.False(workflow.Holds(["run", "s-1"]));
+        Assert.False(workflow.Holds([]));
+
+        Assert.True(work.Holds(["recovery", "drop"]));
+        Assert.All(HeldResolutions.All, resolution => Assert.True(work.Holds(["held", "q7", resolution])));
+        Assert.False(work.Holds(["held", "q7"]));
+        Assert.False(work.Holds(["state"]));
+        Assert.False(work.Holds([]));
+        Assert.All(new[] { workflow, work }, reading =>
         {
             Assert.Null(reading.Verbs);
             Assert.Null(reading.Isolated);

@@ -89,15 +89,11 @@ public static class VerbLeases
             "chat" or "answer" => false,
             "drive" or "--once" or "--until-idle" => false,
             "run-heavy" => false,
-            // FABRIC-CUTOVER1f: the person's skip and stop of a run's node keep a word on its record, which only the lease's holder writes.
-            "workflow" => next is "keep" or NodeWordActs.Skip or NodeWordActs.Stop,
             "ask" => args.Skip(1).Any(AskWork.Contains),
             "quest" => next is not null && !ServiceQuests.Contains(next),
             "sessions" => next is not null && !next.StartsWith('-') && next is not ("start-from" or "hand-over"),
             "history" => next == "clear",
             "trees" => next is not (null or "list" or "state"),
-            // `work state` is a look; `work recovery drop` deletes refs (RECOVERYDROP1), which only the lease's holder does.
-            "work" => next == "recovery" || (next == "held" && args.Skip(2).Any(arg => HeldResolutions.All.Contains(arg))),
             "plugins" => next is "install" or "new" or "try",
             "sync" => next != "status",
             // `help mode` alone says the mode; naming one writes the driver's file (HELPMODE1a1).
