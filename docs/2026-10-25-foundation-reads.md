@@ -1,6 +1,6 @@
 # FOUNDATION1: the reads of rounds 1 to 4 (D191)
 
-The independent Opus 5.5 reader's foundation reads and Codex's reads of `docs/2026-10-25-foundation-design.md` and D212, round 1 at `c8eccf30e`, round 2 at `29a066182`, round 3 at `68a396c65` and round 4 at `6bac9a0be`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Round 2 answers every finding of round 1 by number in the design's §12, round 3 every finding of round 2 in its §15, and round 4 every finding of round 3 in its §16; the Opus reader's round-4 findings are taken in the design's §17, and Codex's read of round 4 is owed, its credits out.
+The independent Opus 5.5 reader's foundation reads and Codex's reads of `docs/2026-10-25-foundation-design.md` and D212, round 1 at `c8eccf30e`, round 2 at `29a066182`, round 3 at `68a396c65`, and round 4 at `6bac9a0be` by the Opus reader and at `86f32f40c`, with the Opus reader's named changes taken, by Codex, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Round 2 answers every finding of round 1 by number in the design's §12, round 3 every finding of round 2 in its §15, and round 4 every finding of round 3 in its §16; the Opus reader's round-4 findings are taken in the design's §17 and Codex's in its §18.
 
 ## Opus (foundation), round 1
 
@@ -880,7 +880,7 @@ None of those findings was wrong; none needs deferral.
 
 ## Opus (foundation), round 4
 
-The independent Opus 5.5 reader's foundation read of round 4 at `6bac9a0be`: 12 findings, 3 blocking for Part A; Part A accept after named changes; Part B's agenda right as far as it goes, with six items added. Codex's read of round 4 is owed, its credits out.
+The independent Opus 5.5 reader's foundation read of round 4 at `6bac9a0be`: 12 findings, 3 blocking for Part A; Part A accept after named changes; Part B's agenda right as far as it goes, with six items added. Codex's read of round 4 was owed when this was recorded, its credits out; it follows, at `86f32f40c`.
 
 ### 0. Both reads of round 3
 
@@ -1125,3 +1125,111 @@ The proof also needs these builds and tests: the launcher, PieceStart, the modul
 **Verdict on Part A: accept after named changes the steward can check without another read.** Findings 1 to 3 are each a bounded edit against the lines cited: the Loop boundary in §14.2 and §14.5, row u's strings and its glossary entry, and §7 row 3 moved to Part B.
 
 **Verdict on Part B's agenda: §16.3 is right as far as it goes.** Add the six items in §3: row o's shape, the version matrix, the say door's head read, the settlement's horizon as a decision, the `delivered` window, and the chat runner's boundary.
+
+## Codex, round 4
+
+Codex's read of round 4 with the Opus reader's named changes taken, at `86f32f40c`, run by the steward read-only on main from outside the install: 31 findings, 4 blocking for Part A and 3 for Part B; Part A accept after named changes, checkable without another design read; Part B's agenda (the design's §16.3) right, with three additions.
+
+Reviewed HEAD `86f32f40cc957fe20367d41d5674e67bf05ca969`, read-only. No files changed or tests run; nothing under checkout-relative `local/` was read.
+
+**F** = `docs/2026-10-25-foundation-design.md`. Code paths use its aliases, including **Chat** = `Driver/Conversations/Chat/`. “Blocking” below means blocking Part A unless explicitly marked Part B.
+
+### 0. My round-3 findings
+
+| Finding | Assessment | Reason and evidence |
+|---|---|---|
+| 1.1 One shell per home | Deferred to Part B — non-blocking A | The false premise is withdrawn; process-run ownership replaces it. F:2075; `Driver/Platform/HomeLease.cs:427`. |
+| 1.2 Keyed producers bypassing the client | Deferred to Part B — non-blocking A | Settlement now belongs inside every service keeping door. F:2076; `Core/Sessions/HelperDesk.cs:180`. |
+| 1.3 Individually ticked acts | Taken — non-blocking | The grant is correctly described as `OffersActs`, with the separate setup tick. F:2077; `Modules/Platform/StandingConfirmation.cs:860`. |
+| 2.1 Authority boundaries and containment | Answered — non-blocking | Configuration does not strengthen ordinary containment or weaken pieces. F:337; `Driver/Platform/AgentStarts.cs:13`. |
+| 2.2 Retained attenuation | Deferred to Part B — non-blocking A | A retained, lowered ceiling answers the restore counterexample; its implementation remains a protocol question. F:2079; `StandingConfirmation.cs:1300`. |
+| 3.1 Effect fencing | Deferred to Part B — non-blocking A | Dead-run-only takeover addresses suspension between mark and effect. F:2080; `HomeLease.cs:427`. |
+| 3.2 Settlement race | Deferred to Part B — non-blocking A | Admission and settlement now meet in the service transaction. F:2081; `Core/Sessions/SessionLedger.cs:955`. |
+| 3.3 Open replay evidence | Deferred to Part B — non-blocking A | `session_opens` retains the result after words leave `said`. F:2082; `Core/Sessions/Sessions.cs:1593`. |
+| 3.4 Destination’s successor | Deferred to Part B — non-blocking A | Every delivery phase now reconciles the head. F:2083; `Chat/BriefedMove.cs:130`. |
+| 3.5 Migration admission | Deferred to Part B — non-blocking A | The stamp is checked inside each writing transaction. F:2084. |
+| 3.6 Announcement identity | Deferred to Part B — non-blocking A | The state-transition counter answers the repeated-end case; other occurrences need the addition below. F:2085; `Driver/Platform/Notices.cs:146`. |
+| 3.7 One-use git grants | Taken — non-blocking | Their file exception and consumption mechanism are explicit. F:2086; `Driver/Platform/GitAccessRules.cs:153`. |
+| 4.1 Comprehensive reference checking | Open — **blocking** | The revised scanner specification still permits missed declarations and references; §1.4 below. F:1905; `Driver.Tests/StructureCheck.cs:388`. |
+| 4.2 Ports and linked consumers | Open — **blocking** | The consumer list is repaired, but the expanded chat boundary leaves concrete upward edges; §1.19 below. F:1812; `Chat/ChatPending.cs:218`. |
+| 5.1 One concept, one page name | Answered — non-blocking | The steward’s choice of 角色 holds after correcting the shipped-string premise. F:1047; `Web/scripts/names-check.mjs:118`. |
+| 6.1 Open before word-moving adoption | Deferred to Part B — non-blocking A | Standalone d-i now precedes its consumers. F:2090. |
+| 6.2 Individually landable moves | Taken — non-blocking | The grouped moves are split, with linked-consumer proofs. F:2091, F:1943. |
+
+None of the round-3 findings was wrong.
+
+### 1. Part A, row by row
+
+The unflagged folder rows have appropriate proofs **as requirements**, conditional on the corrected mod-0 census: unchanged namespaces, today’s gates, linked builds, and the modules’ and service’s affected tests. They have not yet demonstrated those proofs by running them (F:1320, F:1943).
+
+1. **a-i — blocking wording contradiction.** F:1200–1202 permits the lazy walk only for cooling under `switches` or the live move’s `ElsewhereAsync`, “and nowhere else”; today `HarnessRoster.ResumeAsync` also walks through its own `ElsewhereAsync` (`HarnessRoster.cs:1052`, `:1063`) and its no-toolchain branch (`:984`). Name and preserve those branches, and include no-toolchain and both `walks` settings in the existing answer/walk/count comparison; no Part B contract is needed.
+
+2. **b — non-blocking, with one missing route in the proof.** The additive storage and before-take boundary stand independently of settlement, but `Modules/Loop/SessionWords.cs:843` forwards a held word through another `SayAsync` without key, level or display choice. Explicitly carry those through `PassAsync`, and prove a restarted hold forwarded to a live successor retains its key and deduplicates a retry while pending there.
+
+3. **c — non-blocking, provided “drawn as a partner” stays that narrow.** Changing `isHelper` to exclude partners also changes the composer and offered acts (`Web/work/WorkFrame.tsx:511`, `Web/work/acts.ts:139`), beyond changing their displayed identity. Preserve those restrictions for partners and add assertions for them; also distinguish “old record answered by a new host” from “old host omitting `work`” in the conflicting proof wording at F:1275–1278.
+
+4. **mod-0 — blocking; the census is not sound as specified.** A file-wide exemption for member *names* can hide a real type reference elsewhere in that file, and today’s declaration regex consumes `record struct` as the name `struct`, which `Declarations` discards (`StructureCheck.cs:238`, `:388`; an existing declaration is `Driver/Plugins/BoundedLines.cs:9`). Choose the offered Roslyn semantic option, ignoring member occurrences rather than spellings, and add mixed member/type, record-struct, record-class, namespace-alias and nested-alias fixtures. Exceptions must enumerate exact file/type edges grouped by family, so an existing family cannot admit a new crossing.
+
+5. **u — non-blocking.** The ten-string change and `actor → role` glossary pointer now match the code and avoid the duplicate-name rejection (`Web/scripts/names-check.mjs:110`, `:118`). Its parity, naming and screen proofs are appropriate, with no catalogue-authority dependency (F:1305).
+
+6. **mod-i, Platform — non-blocking.** Its process primitives and linked launcher files can move without changing their behavior. The expanded linked builds cover the important path consumers (F:1842, F:1932).
+
+7. **mod-ii, Store — non-blocking.** This moves today’s file primitives; it does not introduce `DesktopStore`. The distinction is explicit and independent of Part B (F:1843, F:1946).
+
+8. **mod-iii, Settings — non-blocking.** The composed configuration can remain behind named exceptions while its readers move. Parser and command cuts must retain today’s answers, rather than introduce the proposed import semantics (F:1844, F:1876).
+
+9. **mod-iv, Service — non-blocking.** Moving returned record views down beside their client is a behavior-preserving ownership cut. Their remaining upward vocabulary references belong in mod-0’s exact census (F:1824, F:1845).
+
+10. **mod-v, Install — non-blocking.** Installation, tool and swap code can move with unchanged paths at runtime. The launcher’s linked compilation is correctly included (F:1846, F:1933).
+
+11. **mod-vi, Instance — non-blocking.** This moves the existing pipe mechanism while domain verbs remain with their domains. Its client and pipe census are appropriate proof (F:1847).
+
+12. **mod-vii, Events — non-blocking.** Splitting the attention vocabulary from its policy avoids moving that policy beneath its dependencies. Journal implementation remains Part B’s (F:1828, F:1848).
+
+13. **mod-viii, Knowledge — non-blocking.** The existing connector wiring, room facts and trace reads can move unchanged. Upward dependencies remain explicit cut work, not permission to adopt Part B’s admission policy (F:1849).
+
+14. **mod-ix, Agents — non-blocking.** Keeping the account rule, roster and continuation vocabulary together repairs the previously misplaced dependency. Its behavior remains the LIMITSWITCH implementations’ behavior (F:1821, F:1850).
+
+15. **mod-x, Workplace — non-blocking.** Moving wiring sizes beside the space readers fixes that concrete placement. Git and removal behavior must remain behind the existing suites, without importing Part B’s store families (F:1819, F:1851).
+
+16. **mod-xi, Roles — non-blocking.** Only the driver’s existing role files move. The shell’s act vocabulary and its authority-bearing relocation remain explicitly outside this row (F:1852).
+
+17. **mod-xii, Participants — non-blocking.** `WorkMarks` and the binding-file reader provide usable lower seams without the proposed catalogue or database. Keeping the `LoopContext` executors in Loop removes the previous absolute-rule violation (F:1853).
+
+18. **mod-xiii, Context — non-blocking.** Existing briefs, transcripts and instruction composition can move independently. SWITCHCTX1’s carry implementation is still its own prerequisite, rather than something this move silently builds (F:1854).
+
+19. **mod-xiv, Course — blocking boundary omission.** F:1813 moves `ChatPendings` down but leaves `ChatPending` in Loop, although `ChatPendings` stores and returns it (`Chat/ChatPending.cs:209`, `:218`); `ChatPending.Next` also names `ConversationWalk` from `ChatRunner.cs:39`. Move the whole pending family and `ConversationWalk` into Course, and place the existing `ConfiguredAccess` data/read seam below Course: `ChatContext.cs:80` otherwise points up to Help. These are internal placement cuts, needing no Part B protocol.
+
+20. **mod-xv, Work orders — non-blocking.** Its planner, groups and attention policy retain their executors in Loop. Moving the service record views separately makes this row’s ownership coherent (F:1856).
+
+21. **mod-xvi, Review — non-blocking.** The pure opinion judgments and delivery values can leave Loop while its context-built executors stay. The revised split respects today’s absolute Loop rule (F:1857).
+
+22. **mod-xvii, Plugins — non-blocking.** The folder move need not change hooks or their delivery contract. Pinned template resource names and existing plugin proofs are necessary and named (F:1858, F:1936).
+
+23. **mod-xviii, Workflows — non-blocking.** Moving the node runtime with workflows is organizational. The workflow suites and family rehearsal are appropriate proof (F:1859).
+
+24. **mod-xix, Setup — non-blocking.** Workspace setup remains separate from installation and update. Its existing plan and press behavior needs no Part B store (F:1860).
+
+25. **mod-xx, Help — non-blocking after the seam correction in item 19.** Help can retain its judges while lower readers use the existing access data/read API. This must preserve grants exactly, rather than migrate or reinterpret them (F:1861; `Driver/Help/ConfiguredAccess.cs:26`, `:221`).
+
+26. **mod-xxi, Loop — blocked by items 4 and 19.** The rank ordering is acyclic by construction, but that does not establish that the specified concrete placements are acyclic. Its proof must show zero remaining upward exceptions and zero incoming Loop edges after the named cuts, while retaining all ten context-built executors (F:1862, F:1913).
+
+### 2. The line
+
+1. **Non-blocking: no further row needs moving to Part B.** The recorded pick, unified reset, catalogue census, store imports and authority relocation are now excluded explicitly (`docs/decisions/D212.md:15`; F:39). The corrections above concern preserving existing behavior and completing internal seams; c must not use the naming repair to expand partner actions.
+
+### 3. Part B: additions to the next agenda
+
+1. **Blocking for Part B: independently old MCP writers.** The version matrix must include an older connector writing the migrated database directly, not just desktop/service HTTP pairings: `Mcp/Program.cs:104` composes its own stores, and `Core/Composition/ServiceFactory.cs:410` constructs its own helper desk. Today that desk checks only pending words before keeping another (`HelperDesk.cs:180`, `:189`), so a newer HTTP service’s settlement check cannot protect that admission path.
+
+2. **Blocking for Part B: attenuation across crashes and live processes.** Specify the commit/recovery order between a store narrowing and its backup-file narrowing, including a crash between them (F:1648). Also prove that every live appointment is lowered across two shells: today the lock and appointment list are instance-local (`Modules/Platform/StandingConfirmation.cs:378`, `:390`), so “one mutation step” alone does not establish that property.
+
+3. **Blocking for Part B: occurrence keys beyond state transitions.** A conversation can answer repeatedly without changing session state; today those answers are distinguished by `ChatQueue.LastTurnEnded` (`Driver/Quests/Domain/Attention.cs:333`, `:339`) and renew the notice (`Notices.cs:146`). F:972’s state-transition counter therefore needs a separate durable correlation rule for turn answers and other non-state occurrences, with repeated-answer and reconciliation proofs.
+
+### 4. Wrong claims about existing code
+
+1. **Blocking: a-i’s exhaustive walk description is false.** The “and nowhere else” at F:1202 omits existing `ResumeAsync` walks at `HarnessRoster.cs:984` and `:1065`. Correct it as §1.1 specifies; the broader promise to preserve every walk and counted start is right.
+
+**Part A verdict: accept after the named changes above, checkable without another design read.** The blocking changes are a-i’s exhaustive walk description, mod-0’s semantic census and fixtures, and the pending/access seams before the final Loop move; b and c need the named preservation proofs.
+
+**Part B verdict: §16.3 is the right agenda, with the three additions in §3.** It remains proposed; the new protocols have requirements and counterexamples to prove, not implementation evidence yet.
