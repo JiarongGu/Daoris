@@ -727,6 +727,7 @@
     "Trees/GitReads/ReviewGraphReads.cs": "Workplace",
     "Trees/GitReads/SessionReviews.cs": "Workplace",
     "Trees/HeldFact.cs": "Workplace",
+    "Trees/InstallWiring.cs": "Workplace",
     "Trees/Inventory/WorkInventories.cs": "Work orders",
     "Trees/Inventory/WorkInventory.cs": "Work orders",
     "Trees/Inventory/WorkObligations.cs": "Work orders",
@@ -898,7 +899,6 @@
       "after": "Install",
       "files": {
         "Install/ToolInstall.cs": ["DownloadAsked","DownloadClearing","DownloadJudge","LiveSessions"],
-        "Install/Tools.cs": ["GitWiring"],
         "Install/ToolsCommand.cs": ["LiveSessions"]
       }
     },
@@ -1776,6 +1776,7 @@
     "ReleaseChannelTests.cs": "Install",
     "StagedBuildTests.cs": "Install",
     "UpdateCommandTests.cs": "Install",
-    "UpdateDrainTests.cs": "Install"
+    "UpdateDrainTests.cs": "Install",
+    "InstallPortsTests.cs": "Install"
   }
 }
