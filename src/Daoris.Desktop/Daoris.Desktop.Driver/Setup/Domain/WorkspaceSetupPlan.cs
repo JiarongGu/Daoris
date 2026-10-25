@@ -96,38 +96,35 @@ public sealed record SetupTouches(int Asked, int Read, int Sessions)
     public static SetupTouches None { get; } = new(0, 0, 0);
 }
 
-/// <summary>A session record this machine keeps, and the repository it ran in.</summary>
-public sealed record SessionRun(string Session, string Repository);
-
 /// <summary>A file one tool call touched, as the conversation record names it (D76): the call's id and the path.</summary>
 public sealed record ToolTouch(string Call, string Path);
 
-/// <summary>
-/// A workspace plan's line in the machine log (WSSETUP6, D94): its event and its fields, names, words and counts only,
-/// never a sentence or a path. The catalogue is here, so every writer writes the same lines.
-/// </summary>
-public sealed record SetupLine(string Event, IReadOnlyList<(string Key, object? Value)> Data)
+/// <summary>The catalogue of <see cref="SetupLine"/> lines, which the owner of what they say keeps: each builder writes the fields its line gives it and nothing else.</summary>
+public static class SetupLines
 {
-    /// <summary>The press wrote a plan.</summary>
-    public static SetupLine Planned(string workspace, int repositories, int atOnce, int pilot) =>
-        new("setup.planned", [("workspace", workspace), ("repositories", repositories), ("atOnce", atOnce), ("pilot", pilot)]);
+    extension(SetupLine)
+    {
+        /// <summary>The press wrote a plan.</summary>
+        public static SetupLine Planned(string workspace, int repositories, int atOnce, int pilot) =>
+            new("setup.planned", [("workspace", workspace), ("repositories", repositories), ("atOnce", atOnce), ("pilot", pilot)]);
 
-    /// <summary>A tick published a repository's set-up.</summary>
-    public static SetupLine Published(string workspace, string repository, string quest) =>
-        new("setup.published", [("workspace", workspace), ("repository", repository), ("quest", quest)]);
+        /// <summary>A tick published a repository's set-up.</summary>
+        public static SetupLine Published(string workspace, string repository, string quest) =>
+            new("setup.published", [("workspace", workspace), ("repository", repository), ("quest", quest)]);
 
-    /// <summary>A tick skipped a repository the press refused, by the refusal's code.</summary>
-    public static SetupLine Skipped(string workspace, string repository, string refusal) =>
-        new("setup.skipped", [("workspace", workspace), ("repository", repository), ("refusal", refusal)]);
+        /// <summary>A tick skipped a repository the press refused, by the refusal's code.</summary>
+        public static SetupLine Skipped(string workspace, string repository, string refusal) =>
+            new("setup.skipped", [("workspace", workspace), ("repository", repository), ("refusal", refusal)]);
 
-    /// <summary>The plan paused, by <see cref="SetupPausedBy"/>'s word.</summary>
-    public static SetupLine Paused(string workspace, string by) => new("setup.paused", [("workspace", workspace), ("by", by)]);
+        /// <summary>The plan paused, by <see cref="SetupPausedBy"/>'s word.</summary>
+        public static SetupLine Paused(string workspace, string by) => new("setup.paused", [("workspace", workspace), ("by", by)]);
 
-    /// <summary>The person resumed it.</summary>
-    public static SetupLine Resumed(string workspace) => new("setup.resumed", [("workspace", workspace)]);
+        /// <summary>The person resumed it.</summary>
+        public static SetupLine Resumed(string workspace) => new("setup.resumed", [("workspace", workspace)]);
 
-    /// <summary>The person stopped it.</summary>
-    public static SetupLine Stopped(string workspace) => new("setup.stopped", [("workspace", workspace)]);
+        /// <summary>The person stopped it.</summary>
+        public static SetupLine Stopped(string workspace) => new("setup.stopped", [("workspace", workspace)]);
+    }
 }
 
 /// <summary>The person's choices for a workspace press (D124 §4.5): each null or empty is the default.</summary>

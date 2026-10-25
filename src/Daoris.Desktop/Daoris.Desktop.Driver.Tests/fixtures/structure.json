@@ -502,6 +502,9 @@
     "Service/Domain/RemoteSyncPayloads.cs": "Service",
     "Service/Domain/ReviewViews.cs": "Service",
     "Service/Domain/ServiceAnswers.cs": "Service",
+    "Service/Domain/SessionRun.cs": "Service",
+    "Service/Domain/SetupLine.cs": "Service",
+    "Service/Domain/SetupQuests.cs": "Service",
     "Service/Domain/SyncReport.cs": "Service",
     "Service/KnowledgeConnector.cs": "Knowledge",
     "Service/LayoutGit.cs": "Service",
@@ -639,7 +642,6 @@
     "Setup/Domain/SetupOrder.cs": "Setup",
     "Setup/Domain/SetupPlan.cs": "Setup",
     "Setup/Domain/SetupPressRules.cs": "Setup",
-    "Setup/Domain/SetupQuests.cs": "Setup",
     "Setup/Domain/WorkspaceSetupPlan.cs": "Setup",
     "Setup/Domain/WorkspaceSetupRules.cs": "Setup",
     "Setup/HeldFiles.cs": "Install",
@@ -876,14 +878,6 @@
       "after": "Service",
       "files": {
         "Service/ServiceClient.cs": ["ActorAsked","ActorRan","ActorRun"]
-      }
-    },
-    {
-      "family": "Service names Setup",
-      "after": "Service",
-      "files": {
-        "Service/RegistrationWorld.cs": ["SetupQuests"],
-        "Service/ServiceClient.cs": ["SessionRun","SetupLine"]
       }
     },
     {
@@ -1126,13 +1120,6 @@
       "after": "Events",
       "files": {
         "Platform/HomeWatch.cs": ["PluginCatalog"]
-      }
-    },
-    {
-      "family": "Events names Setup",
-      "after": "Events",
-      "files": {
-        "Sessions/Events/SessionLog.cs": ["SetupLine"]
       }
     },
     {
