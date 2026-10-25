@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-25 - Four git tests failed inside Daoris's own sessions, and a brainstorm case under load (FLAKE1)
+
+- **Symptom:** FOUNDATION1 mod-ii's and z-i's sessions, running the driver's fast half on the install, saw `GitDoorsTests` (three cases)
+  and `GitAuthorTests` fail, and pass with the three `GIT_CONFIG_*` variables unset; and `BrainstormBoundsTests.The_generators_run_side_by_
+  side_within_one_deadline` read *failed* where *answered* in three loaded runs the same day, green alone each time.
+- **Root cause:** a Daoris session hands its agent `core.longpaths` through `GIT_CONFIG_COUNT` and its key and value
+  (`Agents/Adapters/Adapters.cs:1650`, `GitLongPaths.Hand`), so a test's `new ProcessStartInfo` inherits a count of one and the settings it
+  hands land one place later than the case expects; `GitLongPathsTests` already removed it first. The brainstorm case ran on the default
+  rule's 10 minutes, a second at its minute, so under load the second generator started after the first's pass was spent.
+- **Fix:** each git case starts from no inherited count, as `GitLongPathsTests` does; the brainstorm case takes a wide window (`pass: 100`,
+  `request: 300`), its claim being that the generators run side by side, as the cap case's fix of the same day did.
+- **Verification:** with a session's three variables set, the git classes failed 4 of 79 before and pass after; those classes,
+  `GitLongPathsTests` and `BrainstormBoundsTests` pass, 100 of 100, under the same variables.
+
 ## 2026-10-25 - The merge tool's census read the service tests' SourceFiles helper as a read of the desktop tree (FOUNDATION1 mod-0)
 
 - **Symptom:** FOUNDATION1 mod-ii's session found the merge tool's MOD9 census failing on main: `Daoris.Service.Tests/SourceFiles.cs

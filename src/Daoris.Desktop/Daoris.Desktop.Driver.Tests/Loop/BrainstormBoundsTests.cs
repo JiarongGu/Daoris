@@ -161,10 +161,15 @@ public sealed class BrainstormBoundsTests : IDisposable
     private JsonNode Document(string id) => JsonNode.Parse(File.ReadAllText(Files.PathOf(id, "document.json")))!;
 
     /// <summary>🔴 The generators run side by side: each waits for the other, so in sequence the first would wait out its minutes.</summary>
+    /// <remarks>
+    /// The generators' window is wide here, as the cap case's is, since the claim is that they run side by side, not the minutes': with the
+    /// default rule's 10 minutes, a second at this test's minute, a loaded run's second generator started after the first's pass was spent,
+    /// and the first read <c>failed</c> (FLAKE1, three times on 2026-10-25).
+    /// </remarks>
     [Fact]
     public async Task The_generators_run_side_by_side_within_one_deadline()
     {
-        var (driver, script) = Start();
+        var (driver, script) = Start(rule: Rule(pass: 100, request: 300));
         var id = await SentAsync(driver, "stub", "acp-stub");
         var arrived = 0;
         var both = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -40,6 +40,9 @@ public sealed class GitDoorsTests : IDisposable
     {
         Lay(GitWiring.SshDoor, GitWiring.RemoteHelper);
         var info = new ProcessStartInfo("x");
+        // A start inherits this process's git settings, and a Daoris session hands its agents `core.longpaths` (GitLongPaths), so a
+        // run inside one would count them: each case starts from none, as GitLongPathsTests' do.
+        info.Environment.Remove("GIT_CONFIG_COUNT");
         info.Environment[GitRouting.HomeVariable] = "C:/elsewhere";
 
         GitWiring.Hand(info, Home);
@@ -60,6 +63,7 @@ public sealed class GitDoorsTests : IDisposable
     public void With_no_door_installed_a_start_is_routed_nowhere_and_still_told_its_home()
     {
         var info = new ProcessStartInfo("x");
+        info.Environment.Remove("GIT_CONFIG_COUNT");
 
         GitWiring.Hand(info, Home);
 
@@ -74,6 +78,7 @@ public sealed class GitDoorsTests : IDisposable
     {
         Lay(GitWiring.SshDoor);
         var info = new ProcessStartInfo("x");
+        info.Environment.Remove("GIT_CONFIG_COUNT");
 
         GitWiring.Hand(info, Home);
 

@@ -68,6 +68,8 @@ public sealed class GitAuthorTests : IDisposable
         Assert.Equal(("Work Name", "work@example.invalid"), await GitAuthor.OfAsync(Home, Repo, CancellationToken.None));
         Assert.Equal(["-c", "user.name=Work Name", "-c", "user.email=work@example.invalid"], GitAuthor.Arguments(("Work Name", "work@example.invalid")));
         var info = new ProcessStartInfo("x");
+        // Inherited git settings, a Daoris session's `core.longpaths` among them, would come first: the case starts from none.
+        info.Environment.Remove("GIT_CONFIG_COUNT");
         GitAuthor.Hand(info.Environment, ("Work Name", "work@example.invalid"));
         Assert.Equal(("user.name", "Work Name"), (info.Environment["GIT_CONFIG_KEY_0"], info.Environment["GIT_CONFIG_VALUE_0"]));
     }
