@@ -159,6 +159,38 @@ public sealed class SettledServiceProcessTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// The pump's schedule (the design's O8-F1): K said through the shell to conversation A and kept, its answer lost and the word held there; a
+    /// move that read A's waiting words before the keep took only those and went on in B. The pump forwards K with its key to B, whose record
+    /// keeps it as a new word, never settled, since K never left <c>said</c>; B's dispatcher delivers it once, and A's copy, which waits on a
+    /// record the line has left, is never handed on. A key that waits on a record the line has left is answered by the door as it stands on the
+    /// record named, as today.
+    /// </summary>
+    [Fact]
+    public async Task A_word_waiting_on_a_record_the_line_has_left_is_kept_by_its_successor_and_delivered_once()
+    {
+        await ServiceAsync();
+        var a = await EndedAsync();
+        var first = await _client!.SayAsync(a, "the first record's words", key: Key, from: DaorisWords.From);
+        Assert.NotNull(first.Word);
+        // The move read A's waiting words before the keep: it takes none of K. B continues A.
+        var b = await EndedAsync(from: a);
+        var delivered = new List<string>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(interrupt: null, deliver: message => { delivered.Add(message.Text); return Task.FromResult("end_turn"); });
+        inbox.Flow();
+
+        var forwarded = await inbox.KeepAsync(
+            new SaidDoor(_client, b), new ChatMessage("the first record's words", []) { Key = Key, Level = MessageLevel.Urgent }, default);
+
+        Assert.Equal(InboxKeep.Held, forwarded.Outcome);
+        Assert.False(forwarded.Settled);
+        Assert.NotNull(forwarded.Said!.Word);
+        Assert.NotEqual(first.Word.Id, forwarded.Said.Word.Id);
+        Assert.Equal(["the first record's words"], delivered);
+        Assert.Equal([(first.Word.Id!, Key, false)], await WaitingAsync(a));
+    }
+
+    /// <summary>
     /// A helper's hand and a partner's, each retried after its take, are answered settled with no word: the helper's asker is the newest record
     /// of its line and its word left the predecessor it was kept on; nothing is kept again on either line.
     /// </summary>
