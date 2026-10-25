@@ -128,6 +128,15 @@ A branch in one lane cannot run the others; the hand-back then names the rows le
   from before; its reader is a reader of its own (`ServiceClient.LiveSessionsAsync`), not `SessionView`, which the planner compares.
   The door's row is in `PersonDoors.Table` and `PersonDoorTableTests`; `StandInLedger` answers it.
 
+- **FOUNDATION1c** (D212's note of 2026-10-25): `work`, a field the service **derives** from the marks the record already carries
+  (`ParticipantWork.Of`, the driver's twin over `WorkMarks`, the page's `identity.ts` over what a host sends), so it has no column, no
+  open, no request member and no wire: rows 1 to 7 and T1 to T5 do not apply. It takes row 8 (`SessionResponse.Work`, `ToSession`'s
+  `loopback ? ParticipantWork.Of(s) : null`, a mirror answering none), row 10 (`PriorSession.Work`, read once by `ServiceClient.Prior` and
+  by nothing else yet), row 11 (the stand-ins answer it through `StandInLedger.Works`, which every record they build calls) and row 12
+  (`Session.work`), and the sessions slice's allow-list. Its tests: `ParticipantWorkTests` (service, driver and the page's
+  `identity.test.ts`, one table, `fixtures/participant-work.json`), `SessionStoreTests` (a record from before answered its work, a mirror
+  none, no member on the wire), `ParticipantWorkHostTests`, `SessionsStateSliceTests`.
+
 ## What this does not cover
 
 A column on another table (`quests`, `asks`) has its own store and feed (`twins`). A word on a record (`SaidWord`'s
