@@ -200,6 +200,7 @@
     "Conversations/TranscriptFile.cs": "Context",
     "Events/Chain.cs": "Events",
     "Events/ChangeWatch.cs": "Events",
+    "Events/Domain/AttentionEvent.cs": "Events",
     "Events/Domain/Observation.cs": "Events",
     "Events/Domain/SessionEnded.cs": "Events",
     "Events/Domain/SessionEvents.cs": "Events",
@@ -964,13 +965,6 @@
       }
     },
     {
-      "family": "the attention vocabulary, split out of Attention.cs into Events (O4-6)",
-      "after": "Events",
-      "files": {
-        "Events/Notices.cs": ["AttentionEvent","AttentionKind"]
-      }
-    },
-    {
       "family": "Knowledge names Agents",
       "after": "Knowledge",
       "files": {
@@ -1363,7 +1357,7 @@
       "family": "HelpRoom.Repository's daoris:help, which moves down to the participant's work rule (O4-6)",
       "after": "Participants",
       "files": {
-        "Quests/Domain/Attention.cs": ["HelpRoom"]
+        "Events/Domain/AttentionEvent.cs": ["HelpRoom"]
       }
     },
     {
