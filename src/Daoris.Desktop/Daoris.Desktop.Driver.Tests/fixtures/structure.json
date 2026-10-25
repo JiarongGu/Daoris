@@ -583,6 +583,7 @@
     "Sessions/Work/WorkCommand.cs": "Work orders",
     "Sessions/Work/WorkPausing.cs": "Work orders",
     "Settings/AcrossDeclarations.cs": "Settings",
+    "Settings/ActorKey.cs": "Settings",
     "Settings/CoolOffDefault.cs": "Settings",
     "Settings/DriverChoicesCommand.cs": "Settings",
     "Settings/DriverConfig.cs": "Settings",
@@ -849,8 +850,7 @@
       "family": "Settings names Roles",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["ActorChoice","ActorChoices","ActorView"],
-        "Settings/DriverConfig.cs": ["ActorChoice","ActorChoices"]
+        "Settings/DriverChoicesCommand.cs": ["ActorChoices","ActorView"]
       }
     },
     {
@@ -1087,13 +1087,6 @@
       "files": {
         "Agents/ToolInstall/ToolChoices.cs": ["InstanceRoute","RouteClass","TreesRoutes"],
         "Agents/ToolInstall/ToolsCommand.cs": ["InstanceDoor","InstanceRoute","InstanceWorld","RouteClass"]
-      }
-    },
-    {
-      "family": "Install names Roles",
-      "after": "Install",
-      "files": {
-        "Setup/InstallUpdate.cs": ["ActorChoice"]
       }
     },
     {
