@@ -1,6 +1,8 @@
-# AGENTPROVIDER1: the reads of round 1 (D191)
+# AGENTPROVIDER1: the reads of rounds 1 and 2 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-26-agent-provider-design.md` and D213, round 1, both at `ed455c6dd`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Neither carries a link, so none is rewritten; the paths both cite are code spans, in each read's own aliases. Round 2 answers every finding of both in the design's §17, one row each, and each changed passage of the design and D213 is marked *(C1-n.m)* for Codex's §n item m or *(O1-Fn)* for the Opus reader's finding n.
+
+Both makers' reads of round 2, at `e69b58872`, follow in the same way: run from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down (Codex's section labels, bold in its output, set as headings, as round 1's are). Round 3 answers every finding of both in the design's §18, one row each, and each changed passage of the design and D213 is marked *(C2-n.m)* for Codex's §n item m or *(O2-Fn)* for the Opus reader's finding n.
 
 ## Codex, round 1
 
@@ -307,3 +309,351 @@ Two more:
 28 findings, 3 blocking (F4, F8, F11).
 
 **Verdict:** accept after named changes the steward can check without another read. The three blocking findings are each a sentence or a signature: `Offers(door, version, account)`; Events-owned payloads in §2.7's Events row; `Applies` as COAGENT1 §3.3's effective configuration whole. Before the ⚖ rows they touch are built, take F6 and F7 into row h, F13 and F14 into row q, and F19 into row p.
+
+## Codex, round 2
+
+Codex's read of round 2 at `e69b58872`: another round. Its §0 checks its own round-1 findings against round 2 (each taken but 4.1, answered with a reason that holds, and 1.2, open on the collision its 2.1 names); it then finds seven, three blocking (its 1.1, 2.1 and 2.2: dsh's door is not interactive, an account owner that names another provider's door breaks the registry's identity rule, and the spawn boundary needs a downward type), its 2.3 and 4.3 confirming what holds. The design's §18.1 answers each finding.
+
+Reviewed HEAD `e69b58872`. No files changed or tests run.
+
+References: **P** = `docs/2026-10-26-agent-provider-design.md`; **D** = `src/Daoris.Desktop/Daoris.Desktop.Driver/`; **S** = `src/Daoris.Service/Daoris.Service.Core/`.
+
+### 0. Your round-1 findings
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| 1.1 Native retry guards | Blocking | **Taken** — P:307–311 and :848 preserve the guards and require negative cases. |
+| 1.2 Owners without registrations | Blocking | **Open** — P:196–206 preserves `acme` and disabled identities, but the door-name collision below remains. |
+| 2.1 Readings’ ownership and binding writer | Blocking | **Taken** — P:328 and :354–360 put payloads below Agents and the binding writer in Participants. |
+| 2.2 Plugin provenance | Blocking | **Taken** — P:238 and :567–572 retain each door’s declarations independently. |
+| 3.1 Mischaracterizing Codex’s facets | Non-blocking | **Taken** — P:135 now argues construction and evolution without attributing defaults to Codex. |
+| 3.2 Applicability incomplete | Blocking | **Taken** — P:249–261 restores the effective configuration and mismatch cases. |
+| 4.1 Early sign-in plumbing | Blocking | **Answered with a reason that holds** — P:803–820 and :831–834 preserve terminal refusal and prove sign-in through existing window callers. |
+| 4.2 Environment proof | Blocking | **Taken** — P:526–542 names protected variables and inspects the spawned child’s environment. |
+| 4.3 Native model-refusal exception | Non-blocking | **Taken** — P:472–473 and :851 distinguish protocol refusal from the native silent-turn exception. |
+| 4.4 Corrections inside moves | Blocking | **Taken** — P:563–565 and :863–864 separate manifest, card-kind and owner-cell changes. |
+| 4.5 Registration census exception | Non-blocking | **Taken** — P:699–706 and :821 restrict registration and require sabotage coverage. |
+| 5.1 Installed-proof spending | Non-blocking | **Taken** — P:758–761 requires recorded authorization or a bounded owner authorization. |
+
+### 1. Wrong claims about the existing code
+
+1. **Blocking — interactivity is not universal to protocol doors.** P:298–303 calls it transport-provided to every protocol door, repeated at :573–574; HEAD defaults `Interactive` to false (`D/Agents/Adapters/Adapters.cs:1395`), and `DshAdapter` supplies neither interactivity nor `PrepareChat` (`:1970–2037`). `D/Conversations/Chat/ChatRunner.cs:568` and :974 consequently refuse or skip dsh before account selection. Keep interactivity door-declared, preserve dsh’s refusal, and require that case in rows g/q and conformance.
+
+### 2. The contract
+
+1. **Blocking — an accepted account owner can violate the registry’s identity invariant.** P:202 forbids a door id equalling another provider’s id, while :206 and row a (:782–786) require preserving `accountOf` naming another provider’s door. A plugin door with `accountOf: "claude-code-acp"` is accepted by `D/Plugins/Domain/PluginCatalog.cs:397–405`; its owner remains that exact string (`D/Accounts/Harnesses/Harnesses.cs:281`). Grouping it under provider `claude-code-acp` violates the invariant; grouping it under `claude-code` changes its account identity—specify a compatible representation before row a, rather than deferring the conflict until s-ix.
+
+2. **Blocking — the spawn boundary still needs a downward type contract.** P:330 places `SpawnRequest` in Agents, but :314 assigns its application to Platform; Platform cannot consume an Agents-owned request under FOUNDATION1’s `docs/2026-10-25-foundation-design.md:2363`. Today’s shell also invokes Install’s `Tools` and Workplace’s git helpers (`D/Agents/Adapters/Adapters.cs:1642–1650`; `Driver.Tests/fixtures/structure.json:108`, :306–323). Name a Platform-owned launch/environment value, have the higher owners compute its wiring, and require row h’s structure proof to exclude Platform-to-Agents/Install/Workplace edges.
+
+3. **Non-blocking — the remaining contract addresses the named counterexamples, with an explicit service exception.** P:249–261 prevents another opening’s negotiation from admitting a run; :328 and :354–360 repair readings and sink ownership; :556–576 limits manifest claims. The service deliberately still tries both lineage vocabularies (`S/Sessions/CallLineage.cs:65–79`), now accurately retained as a precedence-tested exception at P:438–442, rather than claimed as provider-selected decoding.
+
+### 3. Where it chose between the proposals
+
+None beyond the identity conflict in 2.1. The corrected reasons retain the consequential contributions of both proposals; I found no further dropped requirement that should return.
+
+### 4. Rows, proofs, census, conformance and OPENROUTER1
+
+1. **Non-blocking — row l’s no-duplication proof is stated too strongly.** P:849 requires “one input frame never two readings,” but one native result legitimately supplies usage, turn and failure facts (`D/Agents/Streams/StructuredOutput.cs:329–369`). Require each semantic fact to be emitted once, allowing several distinct readings from one frame; retain the byte-for-byte output and no-duplicate-lineage checks.
+
+2. **Non-blocking — make wrong-door dialect rejection an explicit conformance case.** Row j’s proof at P:847 covers valid vendor sessions, while P:723 chiefly specifies each dialect’s own recorded frames. Add cross-fed fixtures: Claude extensions on Codex/dsh/plugin doors, Codex refusal metadata on Claude’s door, and both on `acp-stub`; assert the exact allowed readings and absence of unintended abilities or account effects. HEAD’s shared decoding at `D/Agents/Acp/Acp.cs:1714–1734` shows why positive vendor fixtures alone cannot prove this boundary.
+
+3. **Non-blocking — otherwise the revised sequence and proof responsibilities are coherent, subject to findings 1–2.** P:868–870 places corrections after their moves, u before t, and the required cuts before mod-xxi; :755–761 identifies the ⚖ rows and bounded live proofs. The census’s narrow exceptions, row-b discovery plumbing and provider-local pending cases support the folder-plus-registration proof, while OPENROUTER1 now depends on both dialects and the reach gate (P:878–894).
+
+### 5. What is the owner’s
+
+None missing. P:898–924 now separates architectural settlement from live-account measurements, key entry and departures from the stated product direction, consistently with `docs/decisions/D191.md:19–21`.
+
+**Verdict: another round.** Resolve the account-owner/door collision, specify the downward spawn boundary, and preserve dsh’s non-interactive behavior before acceptance.
+
+## Opus (foundation), round 2
+
+The independent Opus 5.5 reader's foundation read of round 2 at `e69b58872`, which also carries FOUNDATION1's mod-iv: 19 findings, 2 blocking (F1, where Daoris's own variables are applied, and F2, what a joined door reads as its own); accept after named changes the steward can check without another read, F3 and F4 now and the rest before the row each names (F5 before b, F17 before k, F6 and F9 before h, F16 before j, F10 before l, F11 before n, F19 before q, F8 before u, F7 before s-vi and OPENROUTER1). It finds no blocking finding of round 1 open. The design's §18.2 answers each finding.
+
+### 0. Both reads of round 1
+
+I read everything at `e69b58872`. That commit also carries FOUNDATION1's mod-iv (the Service move), which landed after round 2's read commit `5fdf17962`. Paths use the survey's aliases, and `structure.json` means `Driver.Tests/fixtures/structure.json`.
+
+The statuses mean:
+- **Taken**: round 2 made the change and it holds against the code.
+- **Answered**: the change was not made, and the reason given holds.
+- **Open**: not dealt with.
+- **Wrong**: the answer is mistaken.
+
+"→ Fn" points to the finding in §4 that a leftover gap opens.
+
+**Codex, round 1 (12 findings, 8 blocking)**
+
+| Finding | Blocking? | Round 2 | Status | Against the code |
+|---|---|---|---|---|
+| 1.1 native retry too broad | yes | guards stated; row k gets negative cases | taken | `Loop/Driver.cs:3872-3878` and `ChatRunner.cs:2912-2921` hold. Moving the retry into the transport makes Agents name Course's `ResumeAsk` → F17 |
+| 1.2 owners with no door | yes | a provider made from declarations; a disabled plugin's ids kept | taken | `Adapters.cs:2475-2482`, `:2532-2536`, `AccountSetTests.cs:430-446` and `HarnessRoster.cs:813-823` hold → F15 |
+| 2.1 downward graph incomplete | yes | payloads moved to Events; sink composed in Loop; Participants' part keeps the binding | taken | `AgentErrors.cs:22`, `:47`, `:50-51` and `structure.json:89`, `:185` hold. The F7 change opens a new upward edge → F1. The sink's parts are incomplete → F10 |
+| 2.2 plugin provenance only on the provider | yes | doors get their own `Identity` | taken | `DeclaredAcpAdapter.cs:25-26`, `:46-59`, `ReviewerChoice.cs:24-38` and `Adapters.cs:386-399` hold → F9, F2 |
+| 3.1 rejection of Codex's facets inaccurate | no | §1.1 row 1 rewritten | taken | — |
+| 3.2 applicability narrowed | yes | COAGENT1 §3.3 taken whole | taken | → F13 |
+| 4.1 row c's plumbing | yes | row b names the listing's and the operands' readers and the pending layout | taken | `AgentsCommand.cs:653-658`, `AgentLoginCommand.cs:33-35`, `HarnessRoster.cs:863-867`, `Modules/Bridge/AgentActions.cs:468`, `:534` and `HarnessActions.cs:378-384` hold |
+| 4.2 environment proof | yes | a list instead of a prefix; s-vi reads the child's own environment | taken | `Adapters.cs:1688` now passes → F6, F7, F1 |
+| 4.3 row n against the native exception | no | row n states each door's case | taken | `StructuredOutput.cs:365-367` holds → F11 |
+| 4.4 behaviour changes inside moves | yes | manifest read kept; card kinds kept until s-viii; s-ix; s-v made ⚖ | taken | `PluginCatalog.cs:397-411`, `AcpStreams.cs:37` and `StructuredOutput.cs:490-500` hold. The F14 change opens a new one → F2 |
+| 4.5 census registration exception | no | narrow classification, planted cases | taken | → F14 |
+| 5.1 installed proofs and spending | no | spending proofs told apart from model-free checks | taken | → F18 |
+
+**The Opus reader, round 1 (28 findings, 3 blocking)**
+
+| Finding | Blocking? | Status | Against the code |
+|---|---|---|---|
+| F1 Driver.cs lines 5 short | no | taken | mod-iv did not touch `Loop/Driver.cs`. `:3811-3830`, `:4402-4446`, `:2287-2308` and `:2299-2305` hold |
+| F2 three places read unknown as the pipe; the scan test | no | taken | `Loop/Driver.cs:684-690`, `Modules/Bridge/DriverContext.cs:162-172`, `Setup/SetupWorld.cs:20-30` and `Loop/DriverCommandTests.cs:372` hold |
+| F3 older-build behaviour | no | taken | `DriverContinuations.cs:30-45` and `Adapters.cs:2539-2546` hold. `SessionGroups.cs:980-983` is now `:759-762` → F4 |
+| F4 offers kept per account | **yes** | taken | `AgentOffers.cs:33-39`, `:86-97` hold. The key's agent is the door (`HarnessRoster.cs:1339`, `Loop/Driver.cs:3774`) |
+| F5 stub's tables named exactly | no | taken for the tables | `Adapters.cs:1728-1738` and `AgentErrors.cs:322` hold. The stub's dialects are not named exactly → F5 |
+| F6 the `DAORIS_` rule fails the stub | no (before h) | taken | → F6 |
+| F7 the shell; PATH order | no (before h) | taken for the order | Placing the application in Platform → F1 |
+| F8 readings carry Agents types | **yes** | taken | `Acp.cs:34`, `:74` and `AgentErrors.cs:22`, `:47` hold |
+| F9 binding writer | no | taken | — |
+| F10 the judge walks Roles' order | no | taken | `ActorChoices` is placed in Roles (`structure.json:285`) |
+| F11 `Applies` narrower than COAGENT1 | **yes** | taken | → F13 |
+| F12 `Reach` absent; no reader | no | taken | → F8 |
+| F13 abilities the transport gives | no (before q) | taken | `DeclaredAcpAdapter.cs:32` holds. The limit resume also reads `Resumes` → F12 |
+| F14 a joined door's identity and what it reads | no (before q) | taken for identity; **wrong** for "only those" | → F2 |
+| F15–F16 offers part; run's own evidence | no | taken | — |
+| F17 service reads every key | no | answered: the door-table form is rejected because the service holds no plugin's door; the reason holds | `CallLineage.cs:65-79` holds |
+| F18 census vocabulary; service default | no | taken | The lines are actually `Http/Program.cs:1293`, `:1324`, `:1967` → F4 |
+| F19 D70 path relies on inheritance | no (before p) | taken | `Adapters.cs:1572-1574` holds |
+| F20–F22 | no | taken | `SessionEvents.cs:46-47` holds |
+| F23 stand-ins on the contract in b | no | taken | → F5 |
+| F24 scenario contract and glob | no | taken | `family-rehearsal.mjs:4528-4531`, `:4808`, `:4840-4841` and `Daoris.Desktop.Driver.csproj:25-26` hold |
+| F25 row k needs l and m | no | answered (first form) | → F17 |
+| F26–F27 | no | taken | `ToolHomeLeftovers.cs:41` and `TASKS.md:406` hold |
+| F28 sequencing with FOUNDATION1 | no | taken | `ChildLineage.cs:9` is placed in Participants (`structure.json:548`). Row n's Roles cut has nothing left to cut since mod-iv → F3. Row q misses `SpawnSkills` → F19 |
+
+No blocking finding of either read is still open or answered wrongly. The one wrong answer is the non-blocking F14's "and only those" (F2).
+
+### 1. Claims about the code
+
+These claims are wrong at `e69b58872`:
+
+1. **The stand-ins speak "Claude Code's dialects"** (design:194, :432, row b :797). `stub` has no `StructuredOutput()`: it gets the interface's null default (`Adapters.cs:1487`), and only `ClaudeCodeAdapter` maps `stream-json` (`:2212`). So `stub` is read by the plain capture (`Loop/Driver.cs:3827-3830`, `HarnessCapture.cs:55-78`). (F5)
+2. **`LimitResumes` admits "by the wire alone"** (design:302-303; §17.2 F13). It also passes `adapter.Resumes` to `Continuations.Judge` (`DriverContinuations.cs:61-62`), which refuses where that is false (`Conversations/Domain/Continuation.cs:238`). (F12)
+3. **A joined door reads its provider's home variable, own home and trust file** (design:567-569; D213 point 7). Today all three come from the door's own toolchain:
+   - home variable: `Loop/Driver.cs:3010-3014`, `ChatRunner.cs:1493-1497`, `HarnessSelection.cs:569-580`
+   - own home: `HarnessRoster.cs:1201-1212`
+   - trust file: `Loop/Driver.cs:2293-2299`
+   - `claude-code-acp` repeats the first and third for exactly this reason (`Adapters.cs:1930`, `:1938-1939`). (F2)
+4. ***Agents names Roles* holds `Acp.cs` and `Adapters.cs` for row n's `ModelAsked`** (design:347, :369, :851). mod-iv moved `ActorAsked` and `ActorValue` to `Service/Domain/ActorAsked.cs:4`, `:11` (placed in Service, `structure.json:495`). The family now lists only `AccountRotation.cs` and `HarnessCapture.cs` (`:1241-1247`). (F3)
+5. **On the native door, a refused model "passes to the next choice before any second prompt"** (row n :851; :873). Today the part ends with the account's line, the refusal is kept, and the *next* start's walk passes that account (`Loop/Driver.cs:3361-3380`). On both doors a refusal passes the account first, then the choice (`AgentOffers.cs:86-97`). (F11)
+6. **`ModelRefused` is "kept in the start plan's re-ask"** (design:404). It is also kept in the offers store on both doors (`Loop/Driver.cs:3375`, `:3787`; `ChatRunner.cs:1869`). (F10)
+7. **Citations moved by mod-iv** (design §0.2, §2.7, §5, §7, §17.3; "mod-iv not landed"). (F4)
+   - `structure.json`: the families are now at `:896`, `:927`, `:984`, `:1056`, `:1175-1264`, `:1266-1273`; placements at `:185`, `:285`, `:548`; the *Service names Agents* family and `SessionLog`'s `AccountLine` edge are gone.
+   - `Trees/SessionGroups.cs:975-983` / `:980-983` → `:754-762` / `:759-762`.
+   - `Quests/Domain/Planner.cs:1938-1947` → `:1266-1275`.
+   - `Sessions/Domain/Observation.cs:148-157`, `:564` → `:117-126`, `:533`.
+   - `Sessions/Domain/ActorRun.cs:29-50`, `:57-58`, `:82-97` → `:16-37`, `:59-60`, `:89-100`.
+   - Older off-by-ones: `Http/Program.cs:1293`, `:1324`, `:1967`; `AgentErrors.cs:281-323` and `:329-344`.
+
+Everything else §17.3 lists holds as stated. The census baseline also holds at `e69b58872`: `SessionWire.Acp|Pipe` on 55 lines in 23 files, `.Wire` on 56 lines in 26 files.
+
+### 2. The contract as round 2 states it
+
+**Events-owned readings, and the sink composed by Loop.**
+- Holds:
+  - Every payload is Events' own or lower:
+    - `DoorFailure` and `DoorWhere` move down from Agents (`AgentErrors.cs:22`, `:47`; placed in Agents at `structure.json:89`).
+    - The builder `OfPrompt(AcpRefusal)` (`:50-51`) correctly stays with the protocol transport.
+    - `OfferedOption` and `ContextUsed` replace `AcpConfigOption` and `AcpUsage`, and the windows travel as raw JSON.
+  - `IReadingSink` is Events' (7) and is implemented by Agents (9), Participants (12) and Context (13); Loop (21) composes it. No upward edge.
+  - The mapping onto D212 §4.2 (foundation:1148-1162) is right:
+    - `part.opened` is never the handshake.
+    - `turn.answered` comes only from the answer judge.
+    - a limit gives `part.limited` and `account.waits`.
+    - `child.seen` comes from the hub after Participants has placed the child.
+    - a held permission request gives `call.held`.
+    - `part.quiet` stays the watch's.
+- Gap: the sink's list of parts misses Review, Course and the offers store (F10).
+
+**`Applies` as COAGENT1 §3.3's effective configuration.**
+- Holds: eight facts, the door added on top of coagent:339-344's list. That answers "a confinement measured on another OS or set of roots", and the conformance case moves each of the eight facts in turn.
+- Gap: the roots must be compared as COAGENT1's *kind* ("the copy alone"), not as a literal path (F13).
+
+**A door's own `Identity`, and what a joined door reads.**
+- Holds for `DeclaredBy`, product and maker:
+  - The family reads the door's toolchain (`ReviewerChoice.cs:24-33`), and `Same` matches by owner or by maker (`:36-38`). So a joined door that declares maker `Acme` stays in Claude Code's family by owner.
+  - The trailer is chosen by the door's declared maker (`Adapters.cs:386-399`).
+  - Two plugins' doors on one provider each keep their own word.
+- Fails:
+  - "Only those" is wrong for the home variable, own home and trust file (F2).
+  - The commit attribution must stay a table keyed by maker, not a provider part (F9).
+  - An `accountOf` that names a door breaks the identity rules (F15).
+
+**`Spawning.Daoris` as a list; the tools' `PATH` before the program resolves.**
+- Holds against the stub (`DAORIS_STUB_CONFIG_DIR`, `Adapters.cs:1688`) and against today's order (`Adapters.cs:1638-1642`, then `HarnessSelection.cs:553-560`). s-vi's child-environment proof answers inherited leaks.
+- Fails:
+  - The map: Platform cannot apply it (F1).
+  - The list collides with a door's own declared variables (F6).
+  - "Another provider's" variables fail OPENROUTER1's own reading (F7).
+
+**`Reach` required, and row u.**
+- Holds:
+  - Required removes absent-as-everywhere.
+  - The start layer is Participants' (foundation:2344), so its read of Agents' part points down.
+  - A joined door is bound by its provider's `Reach`.
+- Open: whether `Reach` is a pass in the walk or a refusal of the start, and what it reads for a start with no repository (F8).
+
+**Offers per door, version and account.**
+- Holds:
+  - The store is keyed `<door>|<account>` with the version inside the reading (`AgentOffers.cs:33-39`), the door being `resolved.Name`.
+  - It is judged per account (`:86-97`).
+  - Native refusals are kept per account too (`Loop/Driver.cs:3375`), and the same read serves them.
+  - Row n's case covers "one account refused, another of the same door tried".
+- Gap: row n words the native pass wrongly (F11).
+
+**Fit with the map.** These all point down:
+- the readings;
+- `Adoption` (door ids only; the walk stays in Roles);
+- `IAgentFacts` (Knowledge);
+- `IReleaseSource` and `ToolSpec` (Install);
+- `ServerEntry` (Knowledge);
+- the ports Course and Help implement.
+
+Three places point up: F1 (Platform), F3 (`ModelAsked` over Service's `ActorAsked`) and F17 (row k's retry naming Course's `ResumeAsk`).
+
+### 3. The rows
+
+**Order and waits.**
+- Every row lands after mod-ix.
+- These rows name the lower cut they wait for: f (Install), l (Events), p and r (Knowledge), and u (D212 row 1q). The rows that cut *Agents names …* edges (h, l, m, n, o, q) land before mod-xxi.
+- Three ordering points:
+  - Row n's "cutting §2.7's Roles edges" has nothing left to cut since mod-iv (F3).
+  - Row k moves the retry before m supplies the port it needs (F17).
+  - Row q cuts all four *Agents names Plugins* files but has no mechanism for `SpawnSkills` (F19).
+
+**Each row against "changes what it says and nothing more", and its proof.**
+- a: The owner table lacks three cells (F2), and the door-named `accountOf` needs a held exception (F15).
+- b: Its old-versus-new proof is right, but the stub's native dialect is misnamed (F5).
+- c: The diff proof holds now that row b names the plumbing. The census cannot yet prove that the stand-in borrows nothing from another provider (F14).
+- d and q: they would change a joined door's home variable, own home and trust hold (F2).
+- h ⚖: Its table of the resolved program, the arguments and every variable is the right proof. Its placement is F1 and its ordering F6.
+- j ⚖: Its installed proof misses a Codex background task (F16).
+- l: The sink's parts (F10).
+- n: F3 and F11.
+- u ⚖: F8.
+- s-vi ⚖: F7.
+- t: Its older-build proof (the build before row a, a record naming `alt-stub`) is right. It spends an account without listing one (F18).
+- e, f, g, i, m, o, p, r, s-i to s-v, s-vii to s-ix: each lands alone and proves what it moves.
+
+**The ⚖ set** (h, j, o, p, q, u, s-v, s-vi) is right by §11's own criterion.
+
+**The census.**
+- Well specified:
+  - The desktop is read semantically and the service by syntax trees.
+  - The registration list is classified narrowly.
+  - The permanent exceptions carry their decisions.
+- Two gaps: it never checks a provider's folder naming another provider's types, and §6 misses a third service site (F14).
+
+**The conformance suite.**
+- The mandatory cases are right: applicability for each of the eight facts, refusal before a write, unread frames, and the pending files.
+- The "no other provider's credential or home" case fails OPENROUTER1 as written (F7).
+- The roots comparison needs F13.
+
+**OPENROUTER1's prerequisites** (rows d, e, f, h, i, k, l, n, u) are enough for its stated reading: Claude Code's program, its dialects by reference, a key account, its own offers, limit words and reach. Through row u it also waits on D212's row 1q. Two things block it as written:
+- Its own variables fail the conformance case (F7).
+- Its first measurement, a brainstorm voice, has no repository for `Reach` to read (F8).
+
+### 4. Findings
+
+**F1 — blocking.** Daoris's variables are applied by Platform, which makes upward edges.
+
+The design has Platform (subdomain 1) apply `Spawning.Daoris` from a `SpawnRequest` declared in `Agents/Contract/` (design:273-275, :312-316, :526-533, :330; D213 points 3 and 6). That application would name:
+- `SpawnRequest` (Agents, 9);
+- `Tools.Hand` (`Agents/Tools.cs`, placed in Install, `structure.json:109`);
+- `GitWiring.Untoken`, `GitAuthor.Hand` and `GitLongPaths.Hand` (Workplace, `:323`, `:306`, `:318`);
+- the identity variables' names that `Spawning.Roles` lists (`Adapters.cs:1659-1665`): `IntakeRoom.*` (Work orders, `Quests/IntakeRoom.cs:26`, `structure.json:442`) and `BrainstormVariables.*` (`Brainstorms/BrainstormTurns.cs:30`).
+
+Also, "the `PATH` before the recipe's program is resolved" needs the resolver, `HarnessActions.WindowsShim` (Agents, `:38`, called from `HarnessSelection.cs:553-560`), to run in stage 3, after stage 2's recipe has been made.
+
+Round 1 and the Opus reader's proposal kept the shell in Agents' transports. Codex's proposal had Platform apply values that their owners supply.
+
+Smallest change — pick one and say it in §2.5, §2.7, §4.6 and D213 points 3 and 6:
+- (a) Keep the two-step application in the transports' one shell in Agents. The executor in Loop composes the values from their owners, and the launcher only starts and contains. Or:
+- (b) Make a Platform-owned request of plain name/value layers and removals, beside `ProcessRecipe`. Move the list's names and the shim's resolution down with it.
+
+**F2 — blocking.** What a joined door reads (design:567-572, :854; D213 point 7).
+- Today a door onto another agent's accounts reads the owner's accounts directory, key and login question (`HarnessRoster.cs:1204-1209`, `:1401`; `AgentsCommand.cs:641`).
+- It reads **its own** declaration for three facts:
+  - the home variable its spawn sets (`Loop/Driver.cs:3010-3014`, `ChatRunner.cs:1493-1497`, then `HarnessSelection.cs:569-580`);
+  - own home (`HarnessRoster.cs:1201-1212`);
+  - the trust preflight (`Loop/Driver.cs:2293-2299`).
+- A manifest declares the first two (`PluginCatalog.cs:401`, `:410-411`).
+- Under "`Accounts` (… home and key variables, … trust file …) and only those", take a plugin door joined to `claude-code` that declares its own `profileVariable`, or none (today a named account is refused for it, `HarnessSelection.cs:569-574`). It would be handed `CLAUDE_CONFIG_DIR` and Claude Code's trust hold. That is a behaviour change inside rows d and q, and §4.8's own declaration fields (design:559-560) would go unread. Row a's owner facts (design:782-784) include none of the three.
+- Smallest change:
+  - Add the three facts to `provider-owner.json`.
+  - In §4.8 and D213 point 7, keep them as the door's own, as today, or make each differing cell an s-ix correction.
+  - Add to row q a plugin door joined to `claude-code` with its own `profileVariable`, and one with none.
+
+**F3 — not blocking, before row n.** mod-iv already moved `ActorAsked` to Service (`Service/Domain/ActorAsked.cs:11`, held on `SessionRecord.cs:18`). So row n's "cutting §2.7's Roles edges" cuts nothing, and §2.8 row j's "moves `ActorAsked` to `ModelAsked`" would put an Agents type on Service's record. Change:
+- Let `ModelAsked` be Service's `ActorAsked`, which `AgentRun.ApplyChoice` takes from below.
+- Drop the Roles cut and the rename.
+
+**F4 — not blocking.** The citations mod-iv moved, and the older off-by-ones (§1 item 7), are stale. Change: one note in "Read at" and §17.3 saying mod-iv is in the merge, with the lines re-cited.
+
+**F5 — not blocking, before row b.** `stub`'s native door is plain capture (`Adapters.cs:1487`, `:2212`; `Loop/Driver.cs:3827-3830`). Declaring Claude Code's native dialect on it would switch it to the structured capture and give it the native retry (§2.6), which changes behaviour in row b. Change:
+- State `stub`'s native dialect as absent (plain lines).
+- Name the by-reference dialects as `acp-stub`'s protocol ones.
+- Add `WeekFixed` (`Adapters.cs:1730`) to the facts the stub mirrors.
+
+**F6 — not blocking, before row h.** Two rules conflict whenever a declared variable is in the list: "No recipe names a variable of `Spawning.Daoris`" and "a door's own declared variables pass whatever their spelling".
+- The wiring removes `GH_TOKEN` and `GITHUB_TOKEN` (`Platform/GitWiring.cs:47`, `:96-99`), which is a plausible agent key variable.
+- Applied after the recipe, `Untoken` would strip that provider's own key. Today the key survives, because `Apply` sets the account's variables (`HarnessSelection.cs:535-538`) after the shell's `Untoken` (`Adapters.cs:1644`).
+- Change: either refuse a declared variable that is in the list at registration (D23's error naming it), or apply the removals before the recipe and only the sets after it.
+
+**F7 — not blocking, before rows s-vi and OPENROUTER1.** OPENROUTER1's own row runs Claude Code's program with `ANTHROPIC_API_KEY` empty and its key in `ANTHROPIC_AUTH_TOKEN` (`TASKS.md:188`).
+- Its recipe therefore names Claude Code's registered key variable (`Adapters.cs:2395`).
+- It needs `CLAUDE_CONFIG_DIR` (`:2368`) as its own home.
+- So it fails the conformance case "no other provider's credential or home" (design:716), and s-vi's strip would remove its home.
+- Change: define "another provider's" as registered by another provider *and not* declared by the selected one, and add a case where two providers share a variable.
+
+**F8 — not blocking, before row u.** Row u (design:866) leaves two things open:
+- Whether `Opened` is a pass in the plan's walk (D212 §2.4's one set of pass codes, foundation:439) or a refusal of the whole start. If Build's first choice is an `Opened` provider on a repository not opened to it, refusing the start loses a later choice that could have run.
+- What `Opened` reads for a start with no repository (a brainstorm voice, `Adapters.cs:1555-1564`, which is OPENROUTER1's first measurement), or for one across repositories (Ask Daoris's room).
+
+Change: name both in row u and its proof.
+
+**F9 — not blocking, before row h.** The commit trailer switches on the declared maker (`Adapters.cs:388-398`, `:414-420`), a per-maker table (survey §1). A manifest cannot declare an attribution, so row q's case "a plugin's own provider with maker `Anthropic`" keeps today's trailer only if the attribution is read from that table by the door's maker. Change:
+- Keep it a maker-keyed table, not a provider part (design:220, :845).
+- Add a plugin door that declares `OpenAI` to the cases.
+
+**F10 — not blocking, before row l.** The sink's parts (design:386-390) miss three owners:
+- Review, which keeps `TaskStarted` and `TaskEnded`: `LongCalls` is placed in Review (`structure.json:588`), and row l cuts *Agents names Review*'s `RunningTask` edges (`:1232-1238`).
+- Course, which `ConversationNamed` tells that held words went (`ChatRunner.cs:2896-2897`).
+- The offers store, which keeps `ModelRefused` (§1 item 6).
+
+Change: name these parts.
+
+**F11 — not blocking, before row n.** State the native refusal as it is today (§1 item 5) in row n's proof and in "for a person's eye", and say that on both doors a refusal passes the account before the choice.
+
+**F12 — not blocking.** Correct design:302-303 (§1 item 2): planning reads the transport-given eligibility to resume, and the open negotiates. Make the conformance fallback match.
+
+**F13 — not blocking.** COAGENT1 says "the writable roots Daoris hands it (the copy alone)", and design:250 drops "(the copy alone)". Compared as literal paths, every session's copy would be a different configuration, so no measurement would ever admit. Change: compare each fact as COAGENT1 defines it, the roots by their kind.
+
+**F14 — not blocking, before row c.**
+- §9 fails only on sites outside the providers' folders. So `alt-stub` borrowing Claude Code's types would pass, even though §12 says such an edge needs a declaration.
+- §6's "two places" in the service miss the doctrine layout's literal `claude-code` (`Core/Registry/RepositoryLayout.cs:39`).
+
+Change: add a rule, with a planted case, that a provider's folder names another provider's types only where its registration declares the reference; and name that third site under the doctrine's exception.
+
+**F15 — not blocking, before row a.** Today an `accountOf` that names a door (say `claude-code-acp`) keeps its accounts under that id. That can only be represented as a provider of that id sitting beside another provider's door of the same id, which breaks §2.2's identity rule that the conformance suite holds. Change: row a names it as a held exception until its s-ix correction.
+
+**F16 — not blocking, before row j.** `initialize`'s `jetbrains.air` asks for `nativeSubagentSessions` and `asyncTasks` (`Acp.cs:1783-1796`). §15 measures whether Codex or dsh *emit* Claude Code's keys, but not whether they *read* this. Change: add it to §15, and add a Codex background task to row j's installed proof.
+
+**F17 — not blocking, before row k.** The retry's guards and mark are `ResumeAsk`'s (`Loop/DriverContinuations.cs:1291-1297`; `ChatRunner.cs:2912-2917`), and `ResumeAsk` is Course's (`Conversations/Domain/ResumeAsk.cs:17`, `structure.json:176`). Moving the retry into Agents' native transport at row k, before m's port, adds an Agents → Course edge. Change: either give row k an Agents-owned port for the resume's state, or move the retry to row m.
+
+**F18 — not blocking.** §11 (design:756-761) and §13 (:902-906) list the spending installed proofs as rows i, j, l, m and s-v. They leave out row t's installed proof and row l's latency measurement. Change: list both, with their account and bound.
+
+**F19 — not blocking, before row q.** `SpawnSkills.cs` names `PluginCatalog` and `PluginFolders` (`structure.json:1228`) to copy plugins' skills. Row q's declarations source does not cover it. Change: name the port (or row o's `ISkillLayout` input) that cuts it.
+
+19 findings, 2 blocking (F1, F2).
+
+**Verdict: accept after named changes the steward can check without another read.**
+- Take F1 (where Daoris's variables are applied) and F2 (a joined door's home variable, own home and trust file kept as today, three cells added to row a's table) in the design and in D213 points 3, 6 and 7.
+- Take F3 and F4 now.
+- Take the rest before the row each names: F5 before b, F17 before k, F6 and F9 before h, F16 before j, F10 before l, F11 before n, F19 before q, F8 before u, F7 before s-vi and OPENROUTER1.
