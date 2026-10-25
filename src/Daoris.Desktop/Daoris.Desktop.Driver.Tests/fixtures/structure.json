@@ -1893,6 +1893,7 @@
     "RecordListTests.cs": "Store",
     "RecordLockProcessTests.cs": "Store",
     "DesktopStoreTests.cs": "Store",
-    "DesktopStoreReaderTests.cs": "Store"
+    "DesktopStoreReaderTests.cs": "Store",
+    "DesktopStoreLatencyTests.cs": "Store"
   }
 }
