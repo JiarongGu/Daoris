@@ -505,13 +505,6 @@ public sealed record DriverConfig(
     public string? IntakeAdapter { get; init; }
 
     /// <summary>
-    /// Which harness answers asks here, or null for none — the declarations tier alone. Intake's actor goes back to <i>as before</i>, so
-    /// the key this writes is what it reads (D205 §6.4, until row d writes it through <c>SET_ACTOR</c>).
-    /// </summary>
-    public DriverConfig WithIntake(string? adapter) =>
-        ActorChoices.With(this, "intake", null) with { IntakeAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
-
-    /// <summary>
     /// Each actor's order as the person set it (D205 §9.1, MODELROLE1c), by its id; an actor absent is <i>as before</i>, read from today's
     /// keys (<see cref="ActorChoices.Effective"/>). Written through <see cref="ActorChoices.With(DriverConfig, string, IReadOnlyList{ActorChoice}?)"/> alone.
     /// </summary>
@@ -574,10 +567,6 @@ public sealed record DriverConfig(
     /// <exception cref="DriverException">Less than one: no session would ever start.</exception>
     public DriverConfig WithCap(int cap) =>
         cap < 1 ? throw new DriverException(CapRefusal) : this with { Cap = cap };
-
-    /// <summary>Which harness Ask Daoris runs on here, or null for none; its actor back to <i>as before</i>, as <see cref="WithIntake"/>.</summary>
-    public DriverConfig WithHelper(string? adapter) =>
-        ActorChoices.With(this, "ask-daoris", null) with { HelperAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
 
     /// <summary>
     /// The line a repository's work grows from and lands on, as the person set it (WSR2), by
@@ -1083,7 +1072,7 @@ public sealed record DriverConfig(
             if (IntakeAdapter is not null) writer.WriteString("intakeAdapter", IntakeAdapter);
             if (HelperAdapter is not null) writer.WriteString("helperAdapter", HelperAdapter);
             // Written only when an actor is set (MODELROLE1c, D205 §9.1): absent is every actor as before.
-            ActorChoices.Write(writer, Actors);
+            ActorKey.Write(writer, Actors);
             // Written only while full (HELPMODE1a1): absent is restricted, and the CLI twin writes it the same way.
             if (HelpMode == HelpModeNames.Full) writer.WriteString("helpMode", HelpMode);
             writer.WriteBoolean("notify", Notify);
@@ -1604,7 +1593,7 @@ public sealed record DriverConfig(
         // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind
         // (CONFIGREAD1): said here, so the reader can say it with its file.
         if (root.ValueKind != JsonValueKind.Object) throw new JsonException("it holds no JSON object");
-        var (actors, actorErrors) = ActorChoices.Read(root);
+        var (actors, actorErrors) = ActorKey.Read(root);
 
         return new DriverConfig(
             Drivable: Json.Strings(root,"drivable"),
