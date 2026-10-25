@@ -287,3 +287,18 @@ Round 3 takes it as a fourth question beside the three areas, **where state is k
   an older build reading the home keeps working on what it knew, or is told to update; nothing is lost on a rollback.
 - **Kept:** the CLI's doctrine commands stay offline with no runtime dependency (they read no store); machine paths stay on the
   desktop; no record leaves the machine that does not today.
+
+**The line between JSON and SQLite (the steward's decision, the owner having left it to the steward, 2026-10-25).** SQLite holds what
+Daoris owns and more than one reader or writer reads and sets; JSON stays only where something outside Daoris owns the format, where
+the file is a repository's reviewed record, or where it is an export or a stream.
+
+- **In the desktop's store:** the Fabric's records (the participants' bindings, the appointments, the company's roles and their
+  capabilities), the actors' choices and every setting `driver.json` holds today, all machine-local state more than one process
+  writes, and every record the synthesis adds. The owner judged the Fabric, actors and roles better read, set and managed there.
+- **JSON, kept:** the formats other tools own (an agent's `settings.json`, `.mcp.json`, the harness homes); the tracked repository
+  records reviewed in git (`daoris.json`, `daoris.lock`, `daoris.gates.json`, the lanes file); the install's build manifests and the
+  few files read before the store opens (the home's pointer, the lease); the append-only streams tools read as they grow (a session's
+  events and logs, `.jsonl`); and the export and import of the configuration.
+- **`driver.json` becomes the export and import format alone:** the person exports the configuration as readable JSON to review,
+  back up or edit by hand, and imports it back through the same judges, a change of authority through the person's own press. The
+  first start of the build that moves it imports today's file once and keeps it as the backup.
