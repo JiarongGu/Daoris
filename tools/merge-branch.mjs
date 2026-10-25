@@ -1177,6 +1177,12 @@ export const REACH = Object.freeze([
     gates: ['service', 'driver'],
     why: "the service's and the driver's HistoryWordsTwinTests read the history words' table (HIST1m)",
   },
+  // FOUNDATION1c: the participant's work table sits among the service's tests, and the driver's twin and the page's identity read it too.
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work.json'],
+    gates: ['service', 'driver', 'web-unit'],
+    why: "the service's and the driver's ParticipantWorkTests and the page's identity tests read the participant's work table (FOUNDATION1c)",
+  },
   { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
   { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   {

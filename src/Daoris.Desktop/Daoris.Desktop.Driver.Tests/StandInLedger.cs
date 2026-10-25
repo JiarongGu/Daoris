@@ -567,6 +567,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                 ["updated"] = _clock.ToString("O"), ["note"] = "Which port should it listen on?", ["said"] = new JsonArray(),
             };
             if (entry is not null) parked["entry"] = entry;
+            Works(parked);
             _sessions.Add(parked);
         }
     }
@@ -582,12 +583,14 @@ internal sealed class StandInLedger : HttpMessageHandler
             var served = _quests.Single(q => q["id"]!.GetValue<string>() == quest);
             served["status"] = "Taken";
             _clock = _clock.AddSeconds(1);
-            _sessions.Add(new JsonObject
+            var driven = new JsonObject
             {
                 ["id"] = session, ["quest"] = quest, ["repository"] = served["to"]!.GetValue<string>(), ["state"] = state,
                 ["kind"] = "driven", ["adapter"] = adapter, ["profile"] = profile, ["tree"] = tree, ["created"] = _clock.ToString("O"),
                 ["updated"] = _clock.ToString("O"), ["took"] = true, ["said"] = new JsonArray(),
-            });
+            };
+            Works(driven);
+            _sessions.Add(driven);
         }
     }
 
@@ -616,6 +619,7 @@ internal sealed class StandInLedger : HttpMessageHandler
             if (serves is not null) record["serves"] = serves;
             if (serves is not null && piece is not null) record["piece"] = piece;
             if (opinion is not null) record["opinion"] = opinion;
+            Works(record);
             _sessions.Add(record);
         }
     }
@@ -688,6 +692,18 @@ internal sealed class StandInLedger : HttpMessageHandler
 
         // The access setup a driven start resolved (AUTONOMY1a), kept as the service answers it on loopback.
         if (open["access"] is JsonObject access) session["access"] = access.DeepClone();
+        Works(session);
+    }
+
+    /// <summary>
+    /// The work a record answers (FOUNDATION1c), as the service answers it on loopback: read from the record's own marks by the driver's
+    /// twin of the rule, so a test's read of it passes on what the real service would answer. A record with no work here answers none.
+    /// </summary>
+    internal static void Works(JsonObject session)
+    {
+        string? Text(string name) => session[name] is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
+        session["work"] = ParticipantWork.Of(new WorkMarks(
+            Mirror: Text("id") is { } id && id.Contains('/'), Text("kind"), Text("repository"), Text("ask"), Text("serves"), Text("piece"), Text("opinion")));
     }
 
     /// <summary>Every record, oldest first.</summary>
