@@ -1,6 +1,6 @@
-# The foundation: the participant, the course and the move, the event, and where state is kept (FOUNDATION1, 2026-10-25: Part A accepted and building; Part B in round 8, its reads' named changes taken, proposed)
+# The foundation: the participant, the course and the move, the event, and where state is kept (FOUNDATION1, 2026-10-25: Part A accepted and building; Part B accepted after round 8)
 
-**Accepted in part, 2026-10-25:** Part A (rows 1a-i, 1b, 1c, mod-0, mod-i to mod-xxi and u) is accepted by the steward under D191 after both makers' reads of round 4 and their named changes (§17, §18), D212's note of that date; Part B stays proposed, in round 8, both makers' reads of it asking accept after named changes, which §23 takes, so it is ready for the steward's acceptance.
+**Accepted, 2026-10-25:** Part A (rows 1a-i, 1b, 1c, mod-0, mod-i to mod-xxi and u) is accepted by the steward under D191 after both makers' reads of round 4 and their named changes (§17, §18), D212's note of that date. **Part B is accepted by the steward the same day** under D191, after both makers' reads of round 8, each asking accept after named changes, and those changes taken in §23, each checked by the steward against the read that named it (D212's note of Part B's acceptance). Part B's rows build in §10's order, each after the Part A moves that hold its files; the ⚖ rows have both makers' reads; the deferrals §8 records stay the steward's, for the owner to overrule.
 
 **Standing (round 8, its named changes taken):** Part A is accepted and building, its text as main has it; rows 1a-i, 1b, 1c, mod-0, mod-i,
 mod-ii and u are built. **Both makers read round 8** at `41a596671` (`docs/2026-10-25-foundation-reads.md`, *Codex, round 8* and *Opus
