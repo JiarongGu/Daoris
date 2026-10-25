@@ -1661,7 +1661,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         // Use the returned state, never the requested one: a refused move releases nothing, and a teammate supplies no machine path.
         if (root is { ValueKind: JsonValueKind.Object } changed && changed.TryGetProperty("session", out var record) && record.ValueKind == JsonValueKind.Object
             && !IsTeams(record) && Text(record, "id") == id)
-            await SessionLocks.LetGoEndedAsync(Prior(record)).ConfigureAwait(false);
+            await SessionEnds.Ended(Prior(record)).ConfigureAwait(false);
         Raise(Moved, new SessionMoved(id, (root is { } moved ? StateOf(moved) : null) ?? state));
         return root is { } answer ? Text(answer, "message") ?? "" : "";
     }
