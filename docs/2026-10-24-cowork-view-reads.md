@@ -1,6 +1,6 @@
-# COWORKVIEW1: the reads of rounds 1 to 6, the Opus foundation reader's of each and Codex's of rounds 2 to 6 (D191)
+# COWORKVIEW1: the reads of rounds 1 to 7, the Opus foundation reader's of each and Codex's of rounds 2 to 6 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17. Both read round 6 at `7341acf9f`: Codex asks another round for row a (9 findings, 3 blocking), and the Opus foundation reader accepts it (8 findings, none blocking), asking that two be written into the contract before the row is filed; round 7 answers both in the design's §18.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17. Both read round 6 at `7341acf9f`: Codex asks another round for row a (9 findings, 3 blocking), and the Opus foundation reader accepts it (8 findings, none blocking), asking that two be written into the contract before the row is filed; round 7 answers both in the design's §18. The Opus foundation reader read round 7 at `0d8e25085` and would accept row a after named changes (8 findings, none blocking), which the design's §19 places; Codex's read of round 7 is owed, its credits out.
 
 ## Opus (foundation), round 1
 
@@ -1589,3 +1589,203 @@ The changes to `Spawning` (Agents) are left out of the table (finding 7). Rows u
 8 findings, 0 blocking.
 
 **Verdict for row a: accept.** None of the eight blocks. Findings 1 and 2 are worth writing into the contract before the row is filed, and the steward can check both without another read. The rest are record corrections.
+
+## Opus (foundation), round 7
+
+The independent Opus 5.5 reader's foundation read of round 7 at `0d8e25085`, the only read of the round, verbatim, its title line (*COWORKVIEW1 round 7, row a: a foundation read*) given as this heading and its headings set one level down: 8 findings, none blocking; accept row a after named changes the steward can check without another read, findings 1, 2 and 3 to be written into the design's §3.6, §4.1 and rules 4, 15 and 20 before the row is filed. The steward ran it read-only, on main. Codex's read of round 7 stopped when its credits ran out and is owed; under D191's note of 2026-10-24 row a is not accepted on this read alone. The design's §19 places each finding.
+
+Read at `0d8e25085`. Its product code is the same as `abf03ea26`'s and `7341acf9f`'s. The only `src/` change since round 6 is FOUNDATION1 mod-0, which touched tests, fixtures, `Directory.Packages.props` and a README. Paths use the design's aliases. `Design:n` is a line of `docs/2026-10-24-cowork-view-design.md` at `0d8e25085`.
+
+### 0. Both reads of round 6
+
+**Codex, round 6**
+
+| Finding | Severity | Disposition | Why |
+|---|---|---|---|
+| 2.4 Void ends fix the finished file but not every prefix | blocking | **Taken, holds** | Round 7 marks when a record takes a process, not when it refuses one. A `start` its record never took closes nothing (Design:928-930, :946-957). I walked the race at every prefix: either `start` first in the file, either process winning, the loser's `end` landed or lost. The winner's generation always reads as its own lines say. Rule 5's prefix case proves it, including a composition held between the loser's `start` and its `end`, and so does its *Process* case (Design:2053). What is left: findings 1, 4, 7. |
+| 2.5 A hole in admitting an event of another epoch | blocking | **Taken, holds** | While the data carries no number, an event is held beside the fetch and applied after the reply. "E1 request, E2 event, E1 reply" draws E1's answer, then asks again and draws E2's. That holds for an empty query and for one remounted past `gcTime` (Design:1466-1487; rule 15). One nuance: TanStack counts `{ reading: true }` as data, so for that query an invalidation cancels the fetch rather than joining it. Rule 15's "cancelled with an event held" case covers it. What is left: finding 2. |
+| 3.1 Truthful visibility and delivery | blocking | **Answered through 2.4 and 2.5; holds for both cases** | The lost-void residue is gone. §9 now names a false *working* window instead (finding 4). |
+| 1.1 Cancelling a refetch is overstated | non-blocking | **Taken, holds** | `stateHub.ts:70-87` and `stateHub.test.tsx:190-194` are as cited. |
+| 2.6 Rule 10's proof contradicts the health contract | non-blocking | **Taken, holds** | §4.1 and rule 10 now agree on a failure whose words change. |
+| 2.1–2.3, 3.2 | non-blocking | **Answered** | Checks only; nothing owed. |
+
+**Opus (foundation), round 6** (no blocking findings)
+
+| Finding | Disposition | Why |
+|---|---|---|
+| F1 The race shows a false *lost* | **Taken through C6-2.4; holds** | Round 7 adopted F1's "write the `start` after the launcher" for a record's start. Under the taking that ordering is no longer needed, and it breaks the rule that a process's `start` comes before all its lines (finding 1). |
+| F2 Whether the first pass reads unplaced lines | **Taken, holds** | Design:900-909; rule 6's case covers parts with and without `acp` lines. |
+| F3 The verb's sentence for an absent record | **Taken in words** | It relies on a wrong claim about the pipe (finding 3) and on an un-numbered pending answer (finding 2). |
+| F4 A bridge refusal over a held answer | **Taken, holds** | TanStack keeps the data when a refetch fails. A later event's `setQueryData` clears the error. |
+| F5 Citations drifted | **Taken** | I re-checked the cited lines at `0d8e25085`; they hold except as listed in §3. |
+| F6 Stale round words | **Taken** | Design:2042 and §10. |
+| F7 §4.3 does not place `Adapters`' share | **Taken** | One gap remains: where the variable's name is declared (finding 6). |
+| F8 `unplaced` worded differently in en and zh | **Taken** | Both languages now name *it* / 它. |
+| §3 items 3 and 4 | **Taken** | `DriverContinuations.cs:1145-1168`, `:1298-1299`; `Driver.cs:3956`, `:3983-3990`. |
+
+### 1. The changed protocols
+
+**When a later `start` closes a generation (the taking)**
+
+- **The SAIDBACK1e claim holds.**
+  - A resume's move to `working` is made under the decision lock (`DriverContinuations.cs:262-277`, `AdvanceAsync` at `:272`).
+  - A refused or held move returns before any spawn (`:278-299`).
+  - The run is held with `movedFirst: true` (`:447`), which skips the advance after the spawn (`Driver.cs:3827`).
+  - The look claims the record for that one run (`Driver.cs:1071-1089`, `Runs.TryGoOn`), and the ledger refuses a move from `working` to `working`.
+  - So the duplicate resume cannot spawn. `!movedFirst` does mean a record's start (`Driver.cs:2706`; `DriverIntakes.cs:319`, `DriverHelpers.cs:987`, `DriverPartners.cs:617`, `DriverOpinions.cs:198`; a chat's `ChatRunner.cs:1458`, `:2893`).
+  - The converse does not hold: a brainstorm pass is `movedFirst: true` with no record at all (finding 5).
+- **Overlapping or refused processes, at every prefix: holds.**
+  - Rule 2 closes only taken and history generations, at the next taken `start` after them in file order.
+  - The loser's generation is untaken. It closes at its own unclean `end`, written at the refusal before `AbandonedAsync` (`Driver.cs:3834-3838`), or by rule 3.
+  - Its late lines carrying its `proc` land in its own closed generation.
+  - The mirror case (the second start wins) and the case where `start(P2)` precedes `start(P1)` in the file both hold.
+  - The `running` side effect (`SessionProcesses.cs:403-410`, `:661-668`) is covered because rule 3 also reads the record.
+- **A crash: holds as far as §9 says, with two gaps (finding 4).**
+  - A taken generation with no `end` is closed by rule 3 after the orphan sweep, then reopens at the record's next move to `working` until the next taken `start`. §9 names this.
+  - An untaken generation with no `end` is never closed by any later `start`, so it reads open through every later run of the record. §9 does not name this. It happens after a crash between the advance and its `took`, or after a lost `took`.
+- **A failed spawn: holds.** Where the record moved first, a taken `start` holding nothing is closed by rule 3 once `Continuations.PutBack` or the conclusion moves the record. For a record's start, nothing is written.
+- **Ordering the design leaves open.**
+  - A process of a record's start can write a line before its `start` lands (finding 1).
+  - A chat's own `end` is written after its record has concluded, so a go-on's taken `start` could precede it (finding 7).
+- **Proofs.** Rules 4 and 5 prove the writes and the race at every prefix. Rule 13 proves the wakes. No case proves the two orderings above.
+
+**The first fetch's fence: holds**
+
+- **Empty query or one remounted past `gcTime`:** the reply is written first, the held E2 event is never installed, and the read is asked again once the fetch settles. E2's reply then takes the new epoch.
+- **Remounted before `gcTime`:** the data carries a number, so the event is judged by the number rule at once, is not installed, and the re-ask cancels the refetch.
+- **A query holding `{ reading: true }`:** an invalidation cancels the fetch. Its held events are then written while the new fetch is out. They are taken, because the data carries no number. The new fetch's reply is then compared by the number rule. It was sent after the event arrived, so it belongs to that life or a later one.
+- **What it relies on:** a request sent after an epoch's event is answered by that epoch or a later one. That is true where one module answers at a time (`DriverModule.cs:100`).
+- **The hole:** the composition's own pending answer is a numbered landing, but the page drops its number (finding 2).
+
+**The other changes**
+
+- **`HealthMoved` when a failure's words change: holds.** Health is three facts, and rule 10's `StateSlicesTests` cases cover a repeat with the same words and with changed words. Words that change at every judgement wake the read once per judgement, a bounded cost.
+- **The first pass reads every line for identity: holds.** `ChildBindings.cs:139-160` builds the harness, roots and `agentOf` in no order; placement follows each line's `proc`. As today, a thread that an unplaced line names with no parent joins the roots (`:156`). That is identity, which is what the rule says.
+- **A query in error over a held answer is drawn stale: holds.**
+- **The verb's `waits`:** the words are right, but the mechanism is mis-cited (finding 3).
+
+### 2. The module map and decided rules
+
+**The map.** I checked against `Driver.Tests/fixtures/structure.json` at `0d8e25085`:
+
+| File | Line | Subdomain |
+|---|---|---|
+| `AcpStreams` | `:72` | Agents |
+| `Adapters` | `:75` | Agents |
+| `HarnessCapture` | `:103` | Agents |
+| `ChildLineage` | `:513` | Participants |
+| `ChildBindings` | `:520` | Participants |
+| `HomeWatch` | `:330` | Events |
+| `SessionOutput` | `:533` | Context |
+| `KnowledgeConnector` | `:497` | Knowledge |
+| `SessionsCommand` | `:580` | Work orders |
+| `ChatRunner` | `:137` | Loop |
+| `Driver` | `:264` | Loop |
+| `DriverContinuations` | `:267` | Loop |
+
+- Every edge row a adds points down. The `took` line is written by Loop into Participants, exactly as `start` and `end` are.
+- The one upward edge row a touches, `HarnessCapture → ChildLineage` (`:1391`), it cuts.
+- `Permissions.cs → ChildLineage, LineageHook` (`:1390`) stays in the census; row a does not touch it.
+- Two gaps remain (finding 6):
+  - Listing a new file in the map switches off the gate's folder check for it.
+  - The design does not say where `DAORIS_LINEAGE_PROC`'s name is declared. `Adapters` already names `IntakeRoom` upward (`:1430`) for `DAORIS_SESSION_ID`.
+
+**Decided rules.**
+- **D173 ADR-B:** holds for the race. The false *working* in §9 is a residue (finding 4).
+- **D203, D115, D167:** untouched by round 7. The parts are the strip's.
+- **D182:** point 3 holds apart from finding 2. Point 6 holds: the read and the verb use one composition. PUSHUX1 holds: *reading* by design.
+- **D185:** the verb and Ask Daoris's room are named in rule 20.
+- **Translation parity:** round 7 adds no catalogue key. The verb's two sentences are terminal output, not window chrome.
+
+**The routing half and Part B.** Nothing load-bearing. §5.1's "the waiting row's *waits on*" is still routing-half text, and row a builds none of it. Foundation §5.1 has row a wait for nothing.
+
+### 3. Claims about the code
+
+1. **The pipe does not re-ask a pending read** (Design:1371-1377).
+   - `InstancePipe.cs:1061-1080` (the loop is `:1069-1077`) is `ReadAsync`. That is the in-process read `PipeGrounds.cs:370` makes for the confirm-wait grounds.
+   - A terminal's request is classed at `:925` and run once by `RunAsync` (`:1005`, `:1422`).
+   - So a held read asked from the terminal is answered once: the held answer, or `HeldAnswers.Pending` once `Patience` passes (`HeldAnswers.cs:95`, `:104-105`).
+   - Nothing in the pipe or in `Driver/Platform/InstanceClient.cs` asks again.
+2. **A record's `start` no longer precedes all its process's lines** (Design:798, :806-807).
+   - Both "so it precedes every line that process's hook, stream or calls can write" and "so every line a process can write follows its `start`, the first process's included" are false for a record's start, whose `start` now follows `Driver.cs:3661-3663` and `ChatRunner.cs:1596-1597`.
+   - Design:830-831's "reads unplaced until it lands" is true only of a line carrying a `proc`. A line without one, before the file's first `start`, is history placed by position (Design:877).
+3. **The chat go-on's move is cited at a comment** (Design:302, :2344). `ChatRunner.cs:2892` is a comment and `:2893` the skipped advance. The go-on's move is `ChatGoOn.cs:667` (Ask Daoris's is `:756`).
+4. **The list of runs whose record is theirs before the spawn omits the brainstorm pass** (Design:296-302, :820). `DriverBrainstorms.cs:761` passes `movedFirst: true` for a pass with no record. Its session id `brainstorm-{id}-{turn}` (`:664`) passes `ChildLineage`'s shape check (`ChildLineage.cs:44`).
+5. **The gate does not fail a listed file outside its folder** (Design:1609-1614, rule 23).
+   - "Its gate fails a file added outside it" and "placed in `fixtures/structure.json`" do not match the gate.
+   - The gate places new code by its folder. It fails only a file it neither lists nor finds in a subdomain folder (`StructureCheck.cs:106-108`, `:203-219`).
+   - It checks a listed file's folder only once that subdomain has moved (`:223-227`).
+6. **The composition's own pending answer does carry a number** (Design:1129, :1409, :1434). "The pending answer … carries no number" is true of `HeldAnswers.Pending` (`HeldAnswers.cs:43`, `:105`). It is not true of the composition's own `{ pending, waits }`, which `Land` holds, numbers and tells like any other answer (`:150-176`).
+
+Every other citation round 7 adds holds at `0d8e25085`:
+- `DriverContinuations.cs:249-299`, `:447`, `:1145-1168`, `:1242`, `:1298-1299`
+- `Driver.cs:1071-1082`, `:2706`, `:3661-3666`, `:3673`, `:3681`, `:3827-3840`, `:3910`, `:3956`, `:3983-3990`
+- `SessionProcesses.cs:403-410`, `:661-668`
+- `Acp.cs:1783-1790`
+- `Adapters.cs:1539-1602`, `:1659-1665`
+- `held.ts:41-52`
+- `slices.ts:162-173`, `:240-249`
+- `stateHub.ts:70-87`
+- `D182.md:24`, `:27`
+
+### 4. Findings
+
+1. **A record's `start` written after the launcher lets the new process's first lines land as history.** Not blocking.
+   - **What is wrong:**
+     - Under the taking, an untaken `start` closes nothing. So round 7's reason for writing a record's start's `start` after the launcher (O6-F1's "a failed spawn leaves no `end`") no longer applies.
+     - Writing it there does cost something. A line the new process writes with no `proc` before that `start` lands sits before the file's first `start`. For a new record that is almost every file, and the hook's line has no `proc` wherever the token misses it, which is rule 1's open measure on the protocol door.
+     - Such a line is history placed by position (Design:877). When the `took` lands, the history generation it began closes as `unrecorded`, so a working child reads *its end was not recorded*.
+     - The window is tiny, since the harness takes far longer than that to boot. But the invariants at Design:798, :806 and :830 are now false.
+   - **Smallest change:**
+     - Write every `start` before its spawn. A record's start's `start` stays untaken until its `took`.
+     - A launcher that answers no process leaves an empty untaken generation for rule 3 once the record fails.
+     - Add a rule 4 case: a hook line with no `proc` landing just after a record start's spawn.
+2. **The composition's own pending answer loses its number on the page.** Not blocking.
+   - **What is wrong:**
+     - `{ pending: true, waits }` from the composition (O5-F9d, O6-F3) is a numbered landing. The reader writes it as `{ reading: true }`, which carries no number (Design:1129, :1409).
+     - Take a held answer at n6. The attended record then leaves the `sessions` slice, so a pending answer lands at n7. If n6 is told late (Design:1427-1430 allows this), "a delivery to data with no number is always taken" restores the old rows, against D182 point 3.
+     - The two paths also disagree. A reply carrying it is caught by `askHeld`'s `isPending` and keeps the held answer (`held.ts:31-33`), while the event path draws *reading*.
+   - **Smallest change:**
+     - The reading variant keeps `at` wherever the pending answer was a numbered landing. Only `HeldAnswers.Pending` carries no number and keeps what the query holds.
+     - Say whether a numbered pending reply draws *reading*.
+     - Add a rule 15 case: n6 drawn, pending n7, then a late n6 event; *reading* stays.
+3. **The verb's re-asking is mis-cited, and one pending answer has no `waits`.** Not blocking.
+   - **What is wrong:** §3 item 1. Nothing re-asks a held read for the terminal, so the 30-second bound and the `waits` sentences need a loop in the verb itself. That loop is also how the verb sees `waits`: `ReadAsync` would discard every pending answer and throw at the bound. A pending reply that is `HeldAnswers.Pending` (the work outlasting `Patience` with nothing held) carries no `waits`.
+   - **Smallest change:**
+     - §4.1 says the verb re-asks over the pipe itself until its bound. Each ask goes through `RunAsync` and is journaled, so an interval coarser than 100 ms may be wanted.
+     - The verb reads `waits` from the last answer, and §4.1 names what it prints when the last pending answer has none.
+     - Cite `InstancePipe.cs:925`, `:1005` and `:1403-1426`.
+4. **§9's false *working* can be narrowed, and an untaken generation can stay open for good.** Not blocking.
+   - **What is wrong:**
+     - §9 says closing the reopened window "needs the move and the word … to be one write" (Design:2345-2346). Narrowing it needs only that a moved-first run's taken `start` be written as soon as the move returns (`DriverContinuations.cs:278-285`, `ChatGoOn.cs:667-674`). Today it waits until the tree lock, the preparation and the start gate are done, which is long enough for the `sessions` push to land inside the window.
+     - §8's reason against an `end` written by the orphan sweep (Design:2213, a race with a go-on's `start`) no longer holds, since placement by `proc` puts such an `end` in its own generation wherever it lands.
+     - An untaken generation with no `end`, after a crash between the advance and its `took` or after a lost `took`, is closed by no later `start` (Design:950-951). It reopens, and stays open, through every later run of the record.
+   - **Smallest change:**
+     - Write the moved-first `start` at the move, not at the spawn.
+     - Either let a later taken `start` close an earlier untaken generation (a record is taken by a later run only after every earlier process has let it go), or name that case in §9.
+5. **The brainstorm pass is placed in neither list.** Not blocking.
+   - **What is wrong:** it is one of HoldAsync's spawns with `movedFirst: true` and no record (§3 item 4). Rule 4 does not say which `start` it writes, and rule 3 has no record to read for it. Its `start` also creates `sessions/brainstorm-…/lineage.jsonl` every time, not only when the pass calls the connector.
+   - **Smallest change:** one sentence saying what a pass writes (a taken `start`, its `end`, nothing read), and a rule 4 case.
+6. **Placement on the map is under-proved.** Not blocking.
+   - **What is wrong:**
+     - §3 item 5: rule 23's proof passes even if a new file is listed in the map outside its folder.
+     - §4.3 places `DAORIS_LINEAGE_PROC` in Agents without saying where its name is declared. If it sits on `ChildLineage` (Participants) or beside `IntakeRoom.SessionVariable` (Work orders), `Adapters` gains an upward edge the census does not list.
+   - **Smallest change:**
+     - Rule 23: write new files in their subdomains' folders and leave them unlisted, which the gate places by folder, or assert each file's folder in the proof.
+     - Declare the variable's name in Agents or lower, with the hook and the connector as its twins.
+7. **A chat's `end` follows its record's conclusion.** Not blocking.
+   - **What is wrong:**
+     - A chat concludes its record (`ChatRunner.cs:2935`, `:2954`, `:2967`) before its `finally` writes its `end` (`:2977`). On the error path that `end` also waits for the capture up to the drain's bound (Design:810-813).
+     - A go-on, which needs an ended record, can write its taken `start` in that gap. Rule 2's "first of" in file order then closes the earlier generation as `lost`, permanently. On the clean path that is a false *lost* for children that ended clean; it is very unlikely there.
+   - **Smallest change:** either write a chat's `end` before its conclusion on every path, or say that a recorded generation's own `end` closes it wherever it sits in the file (the fold already reads the whole file first).
+8. **Records.** Not blocking.
+   - **What is wrong:**
+     - §3 item 3, the cited comment.
+     - The foundation design's §5.1 COWORKVIEW1 row (`docs/2026-10-25-foundation-design.md:1180`) still says "round 5 for row a … reads of round 5 owed".
+   - **Smallest change:**
+     - Cite `ChatGoOn.cs:667`.
+     - Have FOUNDATION1's §5.1 row name round 7.
+
+8 findings, 0 blocking.
+
+**Verdict for row a: accept after named changes the steward can check without another read.** Write findings 1, 2 and 3 into §3.6, §4.1 and rules 4, 15 and 20 before the row is filed. Findings 4 to 8 are a smaller ordering and §9 records, and none of them changes row a's shape.
