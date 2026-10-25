@@ -1,7 +1,12 @@
-# The foundation: the participant, the course and the move, the event, and where state is kept (FOUNDATION1, round 4, 2026-10-25: Part A for acceptance, Part B proposed)
+# The foundation: the participant, the course and the move, the event, and where state is kept (FOUNDATION1, round 4 with its named changes, 2026-10-25: Part A's first row buildable on one read, Part B proposed)
 
 **Standing:** round 4 under D191, with D212, written from main at `e8f1aed4f`, whose `src/` is round 3's `68a396c65` but for one test
-(`BrainstormBoundsTests.cs`). **Part A is ready for both readers' check; Part B stays proposed; nothing is built.** Both makers read round 3
+(`BrainstormBoundsTests.cs`), and the named changes of its first read taken (§17). **The independent Opus reader read round 4 at `6bac9a0be`**
+(`docs/2026-10-25-foundation-reads.md`): 12 findings, 3 blocking for Part A, **Part A accept after named changes the steward can check without
+another read**, Part B's agenda (§16.3) right as far as it goes with six items to add; **Codex's read of round 4 is owed**, its credits out. Every
+finding is taken as the read names it (§17), so **Part A's named changes are taken**. By D191's note of 2026-10-24, one maker's acceptance builds
+one row and stages nothing: **the steward may accept Part A's first row, a-i, on this read and build it, staging no build that carries it until
+Codex's read of round 4 lands**; every other Part A row waits for that read; **Part B stays proposed**; nothing else is built. Both makers read round 3
 at `68a396c65` (`docs/2026-10-25-foundation-reads.md`): the independent Opus reader as a foundation, 16 findings, 2 blocking, accept after
 named changes; Codex, 17 findings, 11 blocking, another round, naming authority, cross-store delivery, effect fencing and the downgrade as
 protocol decisions rather than wording. Round 4 answers every finding by number in §16, each taken or disputed with the code line the steward
@@ -12,13 +17,17 @@ shapes (§6), and the design is split for acceptance.
 every one of them in the parts that change a protocol or rehome authority and none in the parts that only reorganise. So the design is
 accepted in two parts, each by both makers' reads:
 
-- **Part A**, accepted once both readers find nothing blocking in it: rows **a-i** (one account rule, `LineAccount`, over LIMITSWITCH1 and
-  LIMITSWITCH2 as built), **b** (a word keeps its identity wherever it is held), **c** (the participant's `work` read once), **mod-0** (the
+- **Part A**, accepted once both readers find nothing blocking in it (the Opus reader's read of round 4 finds nothing blocking once its named
+  changes are made, and they are, §17; Codex's is owed, and until it lands only a-i is built, D191's note of 2026-10-24): rows **a-i** (one
+  account rule, `LineAccount`, over LIMITSWITCH1 and LIMITSWITCH2 as built), **b** (a word keeps its identity wherever it is held), **c** (the participant's `work` read once), **mod-0** (the
   structure gate), **mod-i to mod-xxi** with their cuts (the driver's folders moved one subdomain a row, no behaviour changed; the act
   vocabulary's move, row w-0, excepted) and **u** (the names); and the text they stand on: §0, §1 as the comparison, §2.1 and §2.2, §3.2's
-  rule as LIMITSWITCH1 and LIMITSWITCH2 built it, §6, and §14 but its *Owns* column, which names Part B's tables. Each row changes no behaviour
-  or only reorganises; the one thing a person sees change is a partner drawn as a partner (row c), which D203 point 1 (accepted 2026-10-23)
-  decided and the page contradicts today (`Web/work/identity.ts:79`), so Part A asks no new decision of behaviour.
+  rule as LIMITSWITCH1 and LIMITSWITCH2 built it, §6, §14 but its *Owns* column, which names Part B's tables, and §17's named changes. Each row
+  changes no behaviour or only reorganises, but for three changes each already decided, so Part A asks no new decision of behaviour (O4-2,
+  O4-8): a partner drawn as a partner (row c), which D203 point 1 (accepted 2026-10-23) decided and the page contradicts today
+  (`Web/work/identity.ts:79`); a producer's retry after a shell restart keeping one word where today it keeps two (row b), the guarantee D137 and
+  D188 decided, so a repair; and the ten Chinese strings that say 职责 for an appointed role saying 角色 (row u), the steward's decision on the
+  name of round 4, under the UI and translation contracts.
 - **Part B**, proposed and read in rounds of its own, its rows waiting: everything that changes a protocol or rehomes authority (the move
   record and its claim and fences, §3.3 and §13.4; the open and the words' delivery and settlement across the two stores, §3.4; the journal and
   the news, §4; the desktop store and its families, above all the authority-bearing ones marked ⚖, §13; the role catalogue's authority, §2.5
@@ -29,17 +38,22 @@ accepted in two parts, each by both makers' reads:
 
 **Why each Part A row stands on nothing in Part B.** *a-i*: `LineAccount` is pure, written beside `ResumeAccount` with the roster that reads it
 (both Agents' in §14.2), and reproduces the answers LIMITSWITCH1 and LIMITSWITCH2 give as built; it reads no recorded account pick (a-ii's, on a
-binding in the store), no settled selection (a-iii's, §2.4), no move record and no store. Round 3 wrote it in Course's folder, which the roster
-cannot name (O3-8), and had a picked conversation keep its own account where LIMITSWITCH2 walks it; both are corrected. *b*: the held word's
-identity rides in `held-words.json` additively and the record path and the headless fallback pass the key, which the say door answers by its
-waiting word as today (`Core/Sessions/SessionLedger.cs:956`), never by a settlement row (§3.4, Part B). *c*: the work is read from the marks
-every record carries, by one rule twinned in the service and the driver; the `Participant` type reads its other fields from today's stores (the
-binding from `<s>.harness.json`, the role from `actor`), its `Authority` left unread until row t. Round 3's census C, which compared `actor` with
-the catalogue's revision a start kept on its store binding, leaned on rows w, x and z-iii, and moves to row x. *mod-0 to mod-xxi*: the gate and the
-folder moves change no code path, every namespace staying `Daoris.Driver` (D166 point 4); the Roles subdomain moves only the driver's own role
-files, since the appointments, the act table and the act judge are the shell's library's (O3-6), and moving the act vocabulary down is row w-0,
-Part B's; the Store subdomain moves today's file primitives, `DesktopStore` being row z-i's. *u*: the glossary gains *role* as 角色 and *actor*'s
-entry says it is a working role's staffing; no page string changes, since every shipped string already says 角色 for both shapes.
+binding in the store), no settled selection (a-iii's, §2.4), no move record and no store; it reads each caller's set of accounts for the earliest
+reset as today, behind one function that names which set it reads, the one reset over the accounts a line may take being a-iii's (O4-3); and it
+asks the walk only where today's code asks it, so it walks and counts no start that today's code does not (O4-4). Round 3 wrote it in Course's
+folder, which the roster cannot name (O3-8), and had a picked conversation keep its own account where LIMITSWITCH2 walks it; both are corrected.
+*b*: the held word's identity rides in `held-words.json` additively and the record path and the headless fallback pass the key, which the say door
+answers by its waiting word as today (`Core/Sessions/SessionLedger.cs:956`), never by a settlement row (§3.4, Part B); its proof restarts before
+the take, the case after the take being row p's (O4-8). *c*: the work is read from the marks every record carries, handed as a value Participants
+declares, by one rule twinned in the service and the driver; the `Participant` type reads its other fields from today's stores (the binding from
+`<s>.harness.json`, the role from `actor`), its `Authority` left unread until row t. Round 3's census C, which compared `actor` with the
+catalogue's revision a start kept on its store binding, leaned on rows w, x and z-iii, and moves to row x. *mod-0 to mod-xxi*: the gate and the
+folder moves change no code path, every namespace staying `Daoris.Driver` (D166 point 4); the look's executors built from `LoopContext` stay in
+Loop, only the rules §14.1 lists leaving it (O4-1); the Roles subdomain moves only the driver's own role files, since the appointments, the act
+table and the act judge are the shell's library's (O3-6), and moving the act vocabulary down is row w-0, Part B's; the Store subdomain moves
+today's file primitives, `DesktopStore` being row z-i's. *u*: the ten shipped strings that say 职责 for an appointed role say 角色, 任命的角色
+where the appointed shape must be said, and the glossary's *role* takes 角色 while *actor* points at it (O4-2); a change of chrome's words under
+the translation contract, reading no Part B record.
 
 Round 1 was the synthesis of the three sealed proposals, `docs/2026-10-25-foundation-proposal-claude.md` (Claude's),
 `docs/2026-10-25-foundation-proposal-codex.md` (Codex's) and `docs/2026-10-25-foundation-proposal-opus.md` (the independent Opus
@@ -55,11 +69,12 @@ round was committed (§5.1); carries the owner's direction that configuration an
 SQLite, with the steward's line between the two (the brief §9), as a fourth area, **where state is kept** (§13); and carries the owner's
 direction that the driver be analyzed into its subdomains (the brief §10) as the driver's module map (§14). §13 and §14 follow §12 so that
 every section number the reads cite stays where it was. It changes a foundation in every sense D191's amendment of 2026-10-20 names, and
-some of its rows grant or refuse authority and delete records, so by D191's note of 2026-10-24 no part of it is accepted on one maker's read:
-Part A is accepted on both readers' check of round 4, and Part B only after both readers find nothing blocking in it in a later round. Nothing
+some of its rows grant or refuse authority and delete records, so by D191's note of 2026-10-24 Part B is not accepted on one maker's read, and
+only after both readers find nothing blocking in it in a later round. Part A grants, refuses and deletes nothing (§8), so the same note lets it be
+accepted with the other maker's read owed, only its first row built and no build carrying it staged until that read lands (the Standing). Nothing
 here is built, spends an account, signs in, publishes or deletes.
 
-Read for it: the brief (its §8, §9 and §10 amendments included), the survey and the three proposals whole; the reads of rounds 1 to 3; D139 and its design (`docs/2026-10-03-update-when-idle-design.md`) for the update's rollback; D137, D155, D163,
+Read for it: the brief (its §8, §9 and §10 amendments included), the survey and the three proposals whole; the reads of rounds 1 to 4; D139 and its design (`docs/2026-10-03-update-when-idle-design.md`) for the update's rollback; D137, D155, D163,
 D167, D173, D182, D188, D191, D193, D197, D203, D205, D206, D208, D209 and D210 at the points this cites; D119 and D120 for the plugins,
 whose points' frames are D101's; the in-flight designs EVENTHOOK1 (`docs/2026-10-24-event-hook-design.md`), COWORKVIEW1
 (`docs/2026-10-24-cowork-view-design.md`), SWITCHCTX1 (`docs/2026-10-24-switch-context-design.md`) and AGENTERRORS1 (D210 and its
@@ -74,10 +89,11 @@ where the brief, the survey or a proposal was wrong, and §12 where round 1 was.
 survey's aliases (`Driver/`, `Modules/`, `Host/`, `Core/`, `Mcp/`, `Http/`, `Web/`), with `Chat/` for `Driver/Conversations/Chat/`,
 `Loop/` for `Driver/Loop/` and `App/` for the desktop's executable as the survey shortens them. *C* is Claude's proposal, *X* Codex's,
 *O* the Opus reader's; *O-n* and *X-n.m* are the findings of round 1's reads, *O2-n* and *X2-n.m* those of round 2's, *O3-n* and *X3-n.m*
-those of round 3's. Round 3's checks were made at `2a08bde4a`, and its lines are that commit's; LIMITSWITCH2's merge moves a few of them
-(eleven files under `src/`, `LimitMove.cs`, `ChatGoOn.cs`, `HarnessRoster.cs` and `Driver.cs` among them), and what it built is read from D137's
-LIMITSWITCH2 note. Round 4's checks of round 3's reads were made at `e8f1aed4f`, whose `src/` is `68a396c65`'s where both reads were made, and a
-line cited in a round-4 change is that commit's.
+those of round 3's, and *O4-n* those of the Opus reader's read of round 4. Round 3's checks were made at `2a08bde4a`, and its lines are that
+commit's; LIMITSWITCH2's merge moves a few of them (eleven files under `src/`, `LimitMove.cs`, `ChatGoOn.cs`, `HarnessRoster.cs` and `Driver.cs`
+among them), and what it built is read from D137's LIMITSWITCH2 note. Round 4's checks of round 3's reads were made at `e8f1aed4f`, whose `src/` is
+`68a396c65`'s where both reads were made, and a line cited in a round-4 change is that commit's. Round 4's named changes (§17) cite the read's
+lines at `6bac9a0be`, whose `src/` is `e8f1aed4f`'s but for one test (`Trees/ReviewGraphCensusTests.cs`), so the two commits' lines agree.
 
 ## 0. What this rests on
 
@@ -127,7 +143,7 @@ builds the account rule.
 | C §2.3: *the loop that holds the home's lease reads every move record at its come-up* | A shell comes up and runs its conversations before and without the lease: `ComeUpAsync` (`Modules/Loop/DriverLoop.cs:777`), whose chat take-up runs at `:1224`, comes before `HoldHomeAsync` (`:841`), and *the host, the page, the conversations* carry on while a headless loop holds it (`:838-840`). A conversation's move is the shell's chat runner's to recover | X |
 | O §4.2: the record keeps no account pick, so D206 point 5's *a pick waits for its own account* is the code's choice against the text | The record keeps no account pick (`ResumeAccount.cs:15-17`), and `choice: pick` stands for both a pick of an agent and an account and the chip's agent-only pick (the actors design §3.5(d); `START_CHAT`'s `profile` is optional, `Modules/Bridge/Routes/ConversationRoutes.cs:46-58`), so no reader can tell which was picked. The live limit move moves a picked conversation among its agent's accounts (`LimitMove.cs:85-104`, its one pick rule at `:447` refusing another agent) | O on the code; X that provenance is missing |
 | LIMITSWITCH2 as filed on LIMITSWITCH1's branch: a conversation goes on *through `BriefedMove`* on another ready account | `BriefedMove` opens on its record's own account as a pick (`Chat/BriefedMove.cs:133`), refused exactly while it cools; the ended limit move's body walks (`LimitMove.cs:237`) and writes the one durable box a move has (survey §2.5). The filed row's other half, *a pick and Ask Daoris's room keep the own account*, stands, and round 2 keeps it (O-8) | C and O on the door; the filed row on the rest |
-| Brief §4: *Fabric, actor (角色), role … already have homes* | *Role* has no glossary entry, and Settings words the appointed roles 角色 (`Web/locales/zh/settings.daoris.json:108`), the glossary's word for *actor* (`glossary.json:475`; `zh/settings.ai.json:28`). Round 1 read that as two concepts sharing one Chinese word; round 2 took the owner's direction on roles to make one word right, 角色; round 3 gave the role 职务 and left 角色 the actor's; round 4, the steward's decision on both readers' reads, says 角色 for a role in both shapes, since the role is one concept and every shipped string already says 角色 for it (§6) | O on the fact; the steward on the remedy |
+| Brief §4: *Fabric, actor (角色), role … already have homes* | *Role* has no glossary entry, and Settings words the appointed roles 角色 (`Web/locales/zh/settings.daoris.json:108`), the glossary's word for *actor* (`glossary.json:475`; `zh/settings.ai.json:28`). Round 1 read that as two concepts sharing one Chinese word; round 2 took the owner's direction on roles to make one word right, 角色; round 3 gave the role 职务 and left 角色 the actor's; round 4, the steward's decision on both readers' reads, says 角色 for a role in both shapes, since the role is one concept and seven shipped strings say 角色 for it; ten more say 职责 for the appointed role (`zh/projects.json:393`, `:398`, `:399`, `:402`, `:404`, `:413` to `:416`; `zh/settings.daoris.json:179`), which row u makes 角色 (§6; O4-2) | O on the fact; the steward on the remedy |
 | Brief §5 Q16: *line* | The glossary's *line* is the branch work lands on, 主线 (`glossary.json:530`); D167's line of work is the *session*, 会话 (`:482`) | X and O |
 | Survey §1.3 row 17: the lineage *read by nothing* | Holds; and `ChildLineage.Read` folds an unreadable file as no children (`Driver/Sessions/ChildLineage.cs:134-137`), which a reader must not take as *nobody* (COWORKVIEW1 row a's rule 9 holds it) | X |
 
@@ -166,11 +182,11 @@ cell marked *(round 2)* changed in this round, by a read's finding or by the own
 | 13 **The readers** | A table; a Confirm ungated as a wait | A table; a teammate's mirror gets nothing new | A table; a new `DAORIS.CHANGE` frame | **The three tables are one; no new frame (rejects O's)** (§4.4) |
 | 14 **Durability** | The journal durable and bounded; news told once by a durable said-set | A bounded outbox with an earliest cursor; a notice baseline is no event baseline | A change is a wake in memory; the first read a baseline | **C's journal and said-set, with X's floor and no balloon replayed; told at most once, the said-set claimed before the balloon, a cursor per teller (round 2, X-4.3, O-12); news keyed by its occurrence, the said-set's horizon one with the news a teller may tell, both kept in the desktop store (round 3, X2-4.3); one canonical identity per occurrence, a record's transition number the service keeps by trigger, read alike by the journal's path and a reconciliation's (round 4, X3-3.6)** (§4.5) |
 | 15 **Records** | One owner each; `ledger_events` new | One owner per fact; new tables for bindings, moves, receipts | One owner each; one `<s>.move.json` | **§5.2 and §13: one owner per record; the journal in the service's store; the moves, the words in transfer, the bindings, the cursors, the said-set, the role catalogue and every setting in one desktop store (round 3, the brief §9); the open's result, a word's settlement and a record's transition number in three new tables of the service's, none on the record and none on the wire (round 4, X3-3.2, X3-3.3, X3-3.6)** |
-| 16 **The names** | *role* 职务 in prose; *move* 接续; *Fabric* 协作织网 | *role* 任命职责; *move* 转接; *Fabric* 协作底座 | *role* 职务 on the page, retiring its 角色 | **The role 角色 on the page in both its shapes, 任命的角色 where the appointed one must be said, the steward's decision of round 4 on both readers' reads, withdrawing round 3's 职务, since a role is one concept in two shapes and every shipped string already says 角色 for it (O3-15; X3-5.1 on the concept); *actor* a code and prose word for a working role's staffing; the subdomain *Roles* and the configured set the *role catalogue*, *the company* D193's narrative alone (round 3); no Chinese for Fabric, participant, capability, move or event, which never reach the page; *work* for a participant's capability, D203's helper, partner and reviewer among them (round 2)** (§6) |
+| 16 **The names** | *role* 职务 in prose; *move* 接续; *Fabric* 协作织网 | *role* 任命职责; *move* 转接; *Fabric* 协作底座 | *role* 职务 on the page, retiring its 角色 | **The role 角色 on the page in both its shapes, 任命的角色 where the appointed one must be said, the steward's decision of round 4 on both readers' reads, withdrawing round 3's 职务, since a role is one concept in two shapes and seven shipped strings say 角色 for it (O3-15; X3-5.1 on the concept), the ten that say 职责 for the appointed role made 角色 by row u (O4-2); *actor* a code and prose word for a working role's staffing, its glossary entry pointing at *role*, since two terms may not share one Chinese name (O4-2); the subdomain *Roles* and the configured set the *role catalogue*, *the company* D193's narrative alone (round 3); no Chinese for Fabric, participant, capability, move or event, which never reach the page; *work* for a participant's capability, D203's helper, partner and reviewer among them (round 2)** (§6) |
 | 17 **The order** | 1a the account rule; 1b words at the say door; 1c the kind | 1 a word's identity; 2 the planner beside; 3 LIMITSWITCH | F1 the account rule; F2 and F3 the concepts named | **The account rule first, split in three (round 2, O-10), a word's identity second (X), the participant's work third (C, O); attempts and receipts before the move record (round 2, X-5.1); the role catalogue's rows after the start plan (round 2); the store and each of its families a row, the code moved subdomain by subdomain (round 3); the keyed open its own row before the words move (round 4, O3-12, X3-6.1), one subdomain a move (round 4, X3-6.2); Part A, the rows that only reorganise, accepted apart from Part B (round 4)** (§10, §13.6, §14) |
 | 18 **The owner's** | Nothing | Nothing new | D206 point 5's amendment | **Two open questions, each its own decision, neither built until answered: Ask Daoris going on elsewhere outside a limit, and a conversation carried on where its own account is signed out, refused or gone (round 2, O-1); and one reading the owner may overrule, a closed quest's cooling session within LIMITSWITCH1's decision (round 3, O2-7)** (§8) |
 | S **Where state is kept** (the brief §9; round 3) | — | Service-owned local tables for moves, bindings and receipts | — | **The steward's line: one desktop SQLite store, machine-local and never synced, owned by the driver library, holding the Fabric's records, the role catalogue, every setting, the machine-local state more than one process writes and every record this design adds; the driver and the GitDoor taking `Microsoft.Data.Sqlite`, pinned as the service's, their first package (round 4, O3-3); no older build ever reading back a revoked grant, and every family an older build acts on imported only once the start's confirmation is settled (round 4, O3-2, O3-4); the service keeps its own store; JSON kept for others' formats, tracked records, manifests and files read before the store opens, streams, and `driver.json` as export and import alone** (§13) |
-| M **The driver's subdomains** (the brief §10; round 3) | — | — | — | **Twenty-one subdomains in one order, bottom to top, each naming only those below it: Platform, Store, Settings, Service, Install, Instance, Events, Knowledge, Agents, Workplace, Roles, Participants, Context, Course, Work orders, Review, Plugins, Workflows, Setup, Help and Loop; folders, namespaces and a census in `StructureTests` rather than assemblies, the census reading every type reference rather than `using` lines (round 4, X3-4.1); the code moved one subdomain per row, bottom up, no behaviour changed, folders first and namespaces last as D166 point 4 orders (round 4, O3-10); the account rule with the roster in Agents, the attention policy and the session groups in Work orders (round 4, O3-8); the steward's decision by the owner's leave, *Roles* the owner's name** (§14) |
+| M **The driver's subdomains** (the brief §10; round 3) | — | — | — | **Twenty-one subdomains in one order, bottom to top, each naming only those below it: Platform, Store, Settings, Service, Install, Instance, Events, Knowledge, Agents, Workplace, Roles, Participants, Context, Course, Work orders, Review, Plugins, Workflows, Setup, Help and Loop; folders, namespaces and a census in `StructureTests` rather than assemblies, the census reading every type reference rather than `using` lines (round 4, X3-4.1); the code moved one subdomain per row, bottom up, no behaviour changed, folders first and namespaces last as D166 point 4 orders (round 4, O3-10); the account rule with the roster in Agents, the attention policy and the session groups in Work orders (round 4, O3-8); the look's executors built from `LoopContext` kept in Loop, the chat runner's boundary a port family Course declares, and the vocabularies that sat above their readers moved down (round 4's named changes, O4-1, O4-6); the steward's decision by the owner's leave, *Roles* the owner's name** (§14) |
 
 ### 1.1 What each choice rejects
 
@@ -219,7 +235,7 @@ cell marked *(round 2)* changed in this round, by a read's finding or by the own
 | 14 | News told exactly once (round 1's) | Daoris cannot commit its file and the system's balloon together; the said-set is claimed before the balloon, so a crash between loses one announcement, never repeats it (X-4.3) |
 | 14 | A reconciliation's news keyed by the record's `updated` (round 3's) | The journal's path keyed the same end by its position and the reconciliation's by `updated`, so after a trim a second teller could claim the second key for one end; and `updated` moves on a note-only write (`Core/Sessions/Sessions.cs:886-890`) (X3-3.6). Both paths key by the record's transition number (§4.5) |
 | 16 | 协作织网, 协作底座, 接续, 转接, 任命职责 | Fabric, participant, move and event never reach the page (D193's rejection), so they take no Chinese until one does; a move keeps each kind's own words (转交, 继续, 额度用尽); 任命职责 is a phrase where a status has five units |
-| 16 | Round 3's 职务 for the role, beside 角色 for the actor; Codex's 职务 for every role | The steward's decision of round 4, on both readers' reads (O3-15; X3-5.1 on the concept): one record, `Role`, would read under two Chinese words on two screens, round 3's reason separating two screen titles rather than two concepts; every shipped string already says 角色 for both shapes, and 职务 for every role would retire it from seven strings for no concept the page lacks (§6) |
+| 16 | Round 3's 职务 for the role, beside 角色 for the actor; Codex's 职务 for every role | The steward's decision of round 4, on both readers' reads (O3-15; X3-5.1 on the concept): one record, `Role`, would read under two Chinese words on two screens, round 3's reason separating two screen titles rather than two concepts; seven shipped strings say 角色 for a role, both screens' titles among them, and 职务 for every role would retire it from those seven as well as change the ten that say 职责 for the appointed one, which row u makes 角色 (§6; O4-2) |
 | 16 | Round 2's 角色 for every role, without the shapes | Taken back in round 4 with the shapes round 3 drew: one word for one concept in two exclusive shapes, the appointed one 任命的角色 where it must be said |
 | 16 | *Company* for the subdomain or the configured set (round 2's) | Too broad a word for a module, and D193's narrative; the subdomain is *Roles* and the set the *role catalogue* (the owner's naming, round 3) |
 | 16 | *Roster*, *Org* and *Team* for it | *Roster* is the accounts' (`HarnessRoster`); *Org* collides with the fixtures' *Org A* and *Org B* and with GitHub's organisations; *Team* is D203's word for a session's co-workers |
@@ -273,7 +289,8 @@ A page reading a host that sends no `work` falls back to today's predicates (`id
 
 ### 2.2 The work, read from the marks
 
-One rule reads it, the first that holds: a mirror is another machine's, with no work here; `opinion` is `review`; `serves` with `piece`
+One rule reads it, from the marks handed to it as a value the Participants subdomain declares, `WorkMarks`, which each caller builds from its
+own record view, so the rule names no higher subdomain's record type (O4-9); the first that holds: a mirror is another machine's, with no work here; `opinion` is `review`; `serves` with `piece`
 is `partner`; `serves` alone is `help`; `ask` is `intake`; `Repository == "daoris:help"` is `ask-daoris`; `Kind = chat` is `chat`;
 otherwise `build`. With no record: a brainstorm's scope is `brainstorm`, generator or synthesizer as its scope says
 (`Core/Sessions/BrainstormBox.cs:13`); an appointment's holder is a holder, with no work and its role's acts; a lineage child is a child,
@@ -577,9 +594,10 @@ neither calls the course nor is named *not yet moved*, as the brief §7.2 asks.
 
 The rule, stated once in `LineAccount.Decide` and read by every path through the course's account facts. **Part A takes the rule as
 LIMITSWITCH1 and LIMITSWITCH2 built it** (row a-i): steps 1, 2, 3 and 5 as today's code answers them, a pick read as LIMITSWITCH2 reads it
-(every conversation walking its agent's accounts, since the record keeps no pick), and step 5's hold as `HarnessRoster.Unready`'s refusal
-where nothing cools (`Driver/Accounts/Harnesses/HarnessRoster.cs:1762-1779` at `e8f1aed4f`), named. What the rule adds beyond them is Part
-B's: step 4's recorded account pick (row a-ii, on a binding in the desktop store) and step 6's settled selection and the person's fresh-part
+(every conversation walking its agent's accounts, since the record keeps no pick), step 5's wait read over each caller's own set as today
+(below; O4-3), and step 5's hold as `HarnessRoster.Unready`'s refusal where nothing cools (`Driver/Accounts/Harnesses/HarnessRoster.cs:1762-1779`
+at `e8f1aed4f`), named. What the rule adds beyond them is Part B's: step 4's recorded account pick (row a-ii, on a binding in the desktop store),
+step 5's one earliest reset over step 4's set (row a-iii, with §7 row 3; O4-3), and step 6's settled selection and the person's fresh-part
 exception (row a-iii, §2.4), with step 2's later choices for a conversation (`ElsewhereAsync` in the ended move, row a-iii).
 
 1. **A resume of the agent's own conversation asks for the record's own account** (D131, D137 point 8): ready or near, it resumes there.
@@ -631,6 +649,11 @@ exception (row a-iii, §2.4), with step 2's later choices for a conversation (`E
    may resume there** (O2-4), one computation (`EarliestReset`), where an account signed out, refused, not offered or outside the set adds no
    reset (X): LIMITSWITCH1 as built keeps the own account's reset as the wait where the walk finds none sooner (`HarnessRoster.cs:1026-1034`;
    `:1035-1048` at `e8f1aed4f`), and resumes there by itself, as D206 has it. Said in D206 §3.7's words on its record and its rail, woken by the look (D206 point 4).
+   **The one computation is Part B's** (row a-iii, with §7 row 3; O4-3): it reads step 4's set, which a-ii's recorded pick, a-iii's
+   `ElsewhereAsync` and LIMITRESUME1e define. Today three sets are read: the walk's states (`Unready`, `HarnessRoster.cs:1766`); the switch's walk
+   against the own reset (`:1032-1048`); and, for a limited conversation's wake, every cooling account of the agent, the walk's or not
+   (`LimitWaits.cs:157`, `:220`, through `CoolingsOf`, `HarnessRoster.cs:251-256`). Until a-iii, row a-i reads each caller's set as today, behind
+   one function that names which set it reads.
    **Where none of them has a reset**, the own account and every other signed out, refused or not offered, it is `Hold`, naming the repair (a
    sign-in, an account added, the model offered), as `HarnessRoster.Unready` keeps a non-cooling refusal today (`HarnessRoster.cs:1736-1740`;
    `:1762-1779` at `e8f1aed4f`), never a manufactured reset or a promised resumption (X-3.3).
@@ -968,7 +991,7 @@ its session kinds onto the journal lets a restart of the lease's loop re-read wh
 | Design | Becomes | Its rows |
 |---|---|---|
 | **LIMITSWITCH1** (D137's note of 2026-10-25), built for driven records of an open or taken quest, merged at `a85004bd0` | the account rule's driven half, as built | stands as built; row a-i reads its `Switched` through `LineAccount` |
-| **LIMITSWITCH2**, its remainder, built beside round 3 as its own quest in the shape of rows a-i and a-iii and merged at `db883b1cc` (D137's LIMITSWITCH2 note): a conversation and a closed quest's session whose own account cools go on elsewhere | the account rule's conversation half and the closed quest's case, as built: `switches` read for every kind, with `walkCounts`; a conversation through the ended limit move's body (`switching`); a closed quest's session through `GoOnLostAsync` with the reason `account` to the ended move; the ended move's one walk; the earliest reset of any; Ask Daoris, a signed-out, refused or gone account and another agent's accounts unchanged; every conversation walking its agent's accounts, since no pick is kept | rows a-i and a-iii absorb what it landed, each part taken as built and its proofs kept as the row's (`ResumeAccountTests`, `LimitWaitsProcessTests`, `AccountRotationTickTests`, `SessionWordsWaitingTests`). Row a-i's `LineAccount` reads `switches`, `walkCounts` and the wake's reading as one call and changes no behaviour, its proof the same answers on every case they built, the hold that names a repair where no account has a reset being `HarnessRoster.Unready`'s refusal today, given a name (round 4: Part A's); row a-iii keeps only what LIMITSWITCH2 left: the live limit move's one selection, the ended move's `ElsewhereAsync`, and the walk of the person's briefed press. Its note on D137 reads the decision as round 3 does; the amendment of point 4 for the cooling case is D137's dated note of round 3, and §7 rows 1 and 1b become conformance notes |
+| **LIMITSWITCH2**, its remainder, built beside round 3 as its own quest in the shape of rows a-i and a-iii and merged at `db883b1cc` (D137's LIMITSWITCH2 note): a conversation and a closed quest's session whose own account cools go on elsewhere | the account rule's conversation half and the closed quest's case, as built: `switches` read for every kind, with `walkCounts`; a conversation through the ended limit move's body (`switching`); a closed quest's session through `GoOnLostAsync` with the reason `account` to the ended move; the ended move's one walk; the earliest reset of any; Ask Daoris, a signed-out, refused or gone account and another agent's accounts unchanged; every conversation walking its agent's accounts, since no pick is kept | rows a-i and a-iii absorb what it landed, each part taken as built and its proofs kept as the row's (`ResumeAccountTests`, `LimitWaitsProcessTests`, `AccountRotationTickTests`, `SessionWordsWaitingTests`). Row a-i's `LineAccount` reads `switches`, `walkCounts` and the wake's reading as one call and changes no behaviour, its proof the same answers, walks and counted starts on every case they built, each caller's set for the earliest reset read as today (O4-3), the walk asked only where today's code asks it (O4-4), the hold that names a repair where no account has a reset being `HarnessRoster.Unready`'s refusal today, given a name (round 4: Part A's); row a-iii keeps only what LIMITSWITCH2 left: the live limit move's one selection, the ended move's `ElsewhereAsync`, the walk of the person's briefed press, and the one earliest reset over the accounts a line may take (§7 row 3). Its note on D137 reads the decision as round 3 does; the amendment of point 4 for the cooling case is D137's dated note of round 3, and §7 rows 1 and 1b become conformance notes |
 | **MODELROLE1l** (D205's note of 2026-10-25), filed | a configured working role, *Designer*, taking `design` (§2.7) | its code is the `design` capability and the quest's `weight`, row x; its role a seeded suggestion applied by the person's press, row y-i |
 | **EVENTHOOK1** (proposed, round 4, Codex's read owed) | the first outside projection and the first instance of the vocabulary: built first as designed, then moved onto the journal (row n): its session kinds read the retained journal, its `WorkEventGrammar` becomes `EventCodes`' outside projection, its kinds keeping their names there, its `work.landed` and `quest.parked` machine events under its own `run` and `seq`, its relay's delivery contract unchanged | none waits on the foundation; 1d's quest kinds, a later round, are designed from the journal's `quest.<op>` rather than the look's snapshot; row n waits for 1b and row k |
 | **COWORKVIEW1** (proposed, round 4, Codex's read owed) | row a: the lineage's first production reader, the participant's child half, built as designed; the routing half (rows e, b, c, d, f): re-cut to read `Participant.Of` (row c) for who is at work, the line's head (row d) for the current executor in place of its own selector over `LastRun` (its §3.1), the move records (row f) for what waits on what, and the event codes (rows k to m) in place of reading waits from end codes | row a waits for nothing here; its routing half's round is written after rows c, d and f land |
@@ -1010,9 +1033,9 @@ None of these is a new word on the page except a role's, which the person sees a
 | Fabric | *Fabric*, the three concepts together, in prose (D173) | none | never | none | — |
 | participant | *participant* in prose | none until it reaches the page | never | `Participant`, `Participant.Of`, `RuntimeBinding` | — |
 | capability | *capability* in prose; a participant's is its *work* | none: each is shown by its role's name | never as a word; a role's work shown by the default roles' names (开发, 第二意见, 助手, 搭档, …) and 设计 for `design` | `Capabilities`, `ParticipantWork`, `ParticipantWork.Of` | the connector's `SessionRole` (`Mcp/RoleFilter.cs:13-19`), which is neither a role nor a work (X), when its readers move |
-| role | *role* (the owner's direction): a configured position, one concept in two exclusive shapes, working or appointed; D205's *actor* and D208's appointed role are both roles | **角色** in both shapes, and **任命的角色** where the appointed one must be said (round 4, the steward's decision on both readers' reads) | Settings → This Daoris → *Roles* (角色, `zh/settings.daoris.json:108`, its hint's 你任命的角色, `:139`) and Settings → AI features → *Actors* (角色, `zh/settings.ai.json:28`), both reading the catalogue, already saying 角色; the two English labels stay as they are until row y-i designs the one place a role is set, under the UI and translation contracts | `Role`, `RoleCatalog` (`RoleCatalog.Judge`, `.Read`, `.RoleFor`), in the subdomain `Daoris.Driver.Roles` (§14) | 职务, round 3's word, never shipped |
+| role | *role* (the owner's direction): a configured position, one concept in two exclusive shapes, working or appointed; D205's *actor* and D208's appointed role are both roles | **角色** in both shapes, and **任命的角色** where the appointed one must be said (round 4, the steward's decision on both readers' reads) | Settings → This Daoris → *Roles* (角色, `zh/settings.daoris.json:108`, its hint's 你任命的角色, `:139`) and Settings → AI features → *Actors* (角色, `zh/settings.ai.json:28`), both reading the catalogue, already saying 角色; the ten strings of the appointing flow that say 职责 for an appointed role (`zh/projects.json:393`, `:398`, `:399`, `:402`, `:404`, `:413` to `:416`; `zh/settings.daoris.json:179`) say 角色 from row u (O4-2); the two English labels stay as they are until row y-i designs the one place a role is set, under the UI and translation contracts | `Role`, `RoleCatalog` (`RoleCatalog.Judge`, `.Read`, `.RoleFor`), in the subdomain `Daoris.Driver.Roles` (§14) | 职务, round 3's word, never shipped |
 | role catalogue | *role catalogue* in prose: the configured set of roles, the seed's per id where none is set | none until it reaches the page | the screens above | `RoleCatalog` | *the company* as a code or record name, which stays D193's narrative (the owner's naming) |
-| actor | *actor* (D205): in code and prose, a working role's staffing, its ordered choices | none of its own: the page says 角色 for the role whose staffing it is, as every shipped string does | unchanged | `ActorChoices` | the word in prose, where *role* says it |
+| actor | *actor* (D205): in code and prose, a working role's staffing, its ordered choices | none of its own: the page says 角色 for the role whose staffing it is; its glossary entry points at *role* (`use: "role"`), since `names:check` records two terms sharing one Chinese name as a malformed glossary and exits 2 (`src/Daoris.Web/scripts/names-check.mjs:118-121`, `:299-302`; O4-2) | unchanged | `ActorChoices` | the word in prose, where *role* says it; the glossary's name for it |
 | the desktop store | *the desktop store* in prose | none | never: the person sees *Export* and *Import* of the configuration (row z-ii), worded in both catalogues | `DesktopStore` (§13), in the subdomain `Daoris.Driver.Store` | — |
 | subdomain | *subdomain* in prose (the brief §10) | none | never | one namespace each under `Daoris.Driver` (§14) | — |
 | line of work | *session* on the page; *line of work* in prose wherever *line* could mean the branch | 会话 | unchanged | `Entry` (D167's key), never `Line`, since `LinesStateSlice` is the branch's | — |
@@ -1023,18 +1046,25 @@ None of these is a new word on the page except a role's, which the person sees a
 
 **The role is 角色, in both its shapes** (round 4, the steward's decision on both readers' reads; O3-15, X3-5.1). A role is one concept in two
 shapes: the design makes D205's actor and D208's appointed role one record, `Role`, read by one catalogue and one judge, and the AI screen's
-actor rows are the catalogue's working roles (§2.7). So it takes one Chinese word, and that word is the one every shipped string already says
-for it in both shapes: `zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`,
-`zh/settings.daoris.json:108` and `:139`. Where the appointed shape must be said, **任命的角色** says it, as `zh/settings.daoris.json:139`
-already does (你任命的角色); a working role needs no qualifier, being what the page has called 角色 since D205. **职务 is withdrawn**, with its
+actor rows are the catalogue's working roles (§2.7). So it takes one Chinese word, 角色, which seven shipped strings say for it, both screens'
+titles among them: `zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`,
+`zh/settings.daoris.json:108` and `:139`. **Ten more say 职责 for the appointed role** (O4-2), the supervisor's and the steward's appointing flow:
+`zh/projects.json:393`, `:398`, `:399`, `:402`, `:404`, `:413`, `:414`, `:415`, `:416` and `zh/settings.daoris.json:179`; round 4 said every
+shipped string already said 角色, which was wrong, and with either word some shipped strings change. Row u makes those ten 角色. Where the
+appointed shape must be said, **任命的角色** says it, as `zh/settings.daoris.json:139` already does (你任命的角色); a working role needs no
+qualifier, being what the page has called 角色 since D205. **职务 is withdrawn**, with its
 reason: round 3 gave the role 职务 and left 角色 the actor's so that *the configured position and the staffing screen* read apart, which
 separates two screen titles, not two concepts, and would show one record under two Chinese words on two screens; it would also retire 角色
 from all seven strings and rewrite the glossary's *actor* entry (`glossary.json:475`), whose avoid list already refuses 岗位, a word close to
 职务. Codex's read agrees that the role is one concept and would say 职务 for it; the steward keeps the word the page has. *Role* enters the
 glossary with its reasons (D116; row u): *role*, 角色, *a configured position Daoris fills: a working role takes work, with its ordered choices
 of agent, model and effort (D205's actor); an appointed role holds acts the owner appoints it to (D208, D209), 任命的角色 where that must be
-said*, its avoid list 职务, 岗位, 演员, 人设 and 执行者; and *actor*'s entry says it is a working role's staffing, keeping 角色 and its line
-*A co-worker's role names its actor* read as *A co-worker's work names the role it runs as*. No page string changes. Code names that change:
+said*, its avoid list 职务, 岗位, 演员, 人设, 执行者 and 职责, its match covering the labels *Actor*, *Actors* and *Roles*
+(`work.actor.title`, `settings.ai.actors.title`, `settings.daoris.label.roles`), where *actor*'s match covers `^Actor$` alone today. *Actor* cannot keep 角色
+beside it, since `names:check` records two terms sharing a Chinese name as a malformed glossary and exits 2
+(`src/Daoris.Web/scripts/names-check.mjs:118-121`, `:299-302`): its entry becomes `use: "role"`, as *request*'s points at *quest*, saying that
+*actor* is a code and prose word for a working role's staffing and the page says the role (O4-2). **Ten page strings change**, row u's, and no
+English one. Code names that change:
 `ResumeChoice.Waits` read through `LineAccount` (row a-i); `HoldsSlot` over the work (row c); `SessionRole` (row r); `LimitBox` read as a move
 (row f), its file moved in row v; `AttentionEvent` a projection of `DaorisEvent` (row m); and the design's own types named apart from their
 subdomains' namespaces, `LineCourse.Decide`, `Participant.Of` and `ParticipantWork.Of` (O3-9). Only in prose: Fabric, participant,
@@ -1049,7 +1079,7 @@ By the brief §7.3 each unification states which answer stands, as a dated note 
 | 1 | the own account cools: wait or move (survey §2.4 row 1) | a driven open or taken quest moves (LIMITSWITCH1), a conversation and a closed quest's session too (LIMITSWITCH2, merged beside round 3); Ask Daoris waits | go on now where an account the line may take is ready, for a driven record, a repository conversation and a closed quest's session; Ask Daoris waits for its own (§8's first question) | D137 point 7, a conformance note to its 2026-10-25 note; row a-i |
 | 1b | a closed quest's session whose own account cools (D137 point 4) | its words waited with *Start a conversation* (`Driver.cs:2367-2373`) until LIMITSWITCH2 | goes on as a conversation in its tree on a ready account, through the chat runner and the ended move, a headless host waiting (LIMITSWITCH2, built) | D137 point 4 and its design §2.2, for that cooling case alone, as the steward reads the owner's decision (§3.2 step 2, §8): D137's dated note of round 3; row a-iii a conformance note |
 | 2 | a pick (§2.4 row 5) | `choice: pick` for both an account pick and an agent pick; the live move moves both among the agent's accounts | a recorded account pick waits for its own account, a hand-over press's named account included; an agent pick walks its agent's accounts; a record with no provenance is an agent pick | D205 §3.5(d) and D206 point 5, a clarifying note; row a-ii |
-| 3 | the earliest reset (§2.4 row 11) | two computations, each one agent's | one, over exactly the accounts the line may take and the own account where it may resume, ineligible ones adding none; none with a reset, a hold naming the repair | D206 point 2; row a-i |
+| 3 | the earliest reset (§2.4 row 11) | three sets, each caller's own: the walk's states, the switch's walk against the own reset, and every cooling account of the agent for a limited conversation's wake (`HarnessRoster.cs:1766`, `:1032-1048`; `LimitWaits.cs:157`, `:220`; O4-3) | one, over exactly the accounts the line may take and the own account where it may resume, ineligible ones adding none; none with a reset, a hold naming the repair | D206 point 2; row a-iii, Part B's, since step 4's set is a-ii's, a-iii's and LIMITRESUME1e's (round 4's named changes, O4-3); row a-i reads each caller's set as today |
 | 4 | the briefed move's account (§2.4 row 13) | its own account as a pick | the walk, its own account first where ready, the person's fresh-part press the one exception to an automatic part's same-account refusal | D189 points 2 and 3; D206's same-account rejection, a clarifying note; row a-iii |
 | 5 | a carry-on's agent (§1.3 row 12) | the machine's first agent with the record's asked model | the record's role and asked choice | D205 point 1, a conformance note; row j |
 | 6 | the kind: stored or read (§1.3 row 8) | both, by 27 lines and more | the work read from the marks by one rule; `actor` D205's provenance, naming the role | D203 point 1 and D205 point 10, a note that each stands; D203 point 10's terminal field named `work`; row c |
@@ -1142,7 +1172,9 @@ Daoris work as today except where its row names a decided change, and adds its o
 mechanisms and moves no reader; a row that moves readers moves one path or channel, the old surface its adapter, the census failing on a path that
 neither moved nor is named. **Rows marked ⚖ grant or refuse authority, or delete, and are built only after both makers' reads** (D191's note of
 2026-10-24). The rows are filed in `TASKS.md` part by part: Part A's when Part A is accepted, Part B's when Part B is; until then FOUNDATION1
-points here. *Row a-i* in this design is FOUNDATION1a-i, and so on. **The order** (round 4): Part A's rows a-i, b, c, mod-0 and u, then the
+points here. Part A's first row, a-i, may be accepted on the Opus reader's read of round 4 and built before Codex's owed read lands, no build
+carrying it staged until then, and every other row waits for that read (D191's note of 2026-10-24; the Standing). *Row a-i* in this design is
+FOUNDATION1a-i, and so on. **The order** (round 4): Part A's rows a-i, b, c, mod-0 and u, then the
 driver's moves mod-i to mod-xxi (§14.6), bottom up, each when no open branch holds the files it moves, their cuts after each; Part B's rows z-i,
 z-iii, a-ii, a-iii, p, d-i, d-ii, e, f-i to f-vi, g, h, i, o, j, z-ii, z-iv, w-0, w, x, y-i, k, z-v, l-i to l-v, m-i to m-v, n, q, r, s, t, y-ii,
 v, once Part B is accepted, and any Part B row whose files a move of Part A holds waits for that move. The store's other families (z-vi to
@@ -1156,30 +1188,46 @@ rows a-i and a-iii ahead of them, merged at `db883b1cc` (§5.1).
 
 Part A is a-i, b, c, mod-0, u and the driver's moves mod-i to mod-xxi with their cuts (§14.6). Each stands on today's code and records and on
 the other Part A rows alone, never on a Part B contract (the Standing says why, row by row), and each lands behind today's tests with its own
-proof.
+proof. Three change what a person sees or gets, each already decided (the Standing; O4-2, O4-8): row b's repair, row c's partner and row u's ten
+Chinese strings.
 
 **FOUNDATION1a-i — one account rule, over LIMITSWITCH1 and LIMITSWITCH2 as built** (driver; on LIMITSWITCH1 and LIMITSWITCH2, merged; cut back
 in round 3 to the cooling rule for driven records and conversations, its earliest reset and its hold, O2-4, O2-5; in round 4 to a reorganisation
-alone, Part A's).
-- *What.* `LineAccount.Decide(own hold, trigger, constraint, line kind, the walk's answer over the accounts it may take) → Resume | Elsewhere(selection,
-  why) | Wait(earliest, accounts) | Hold(reason, repair)`, pure, beside `ResumeAccount` in `Accounts/Rotation/`, which the map places in Agents with
-  the roster that reads it (§14.2; O3-8): §3.2's rule as LIMITSWITCH1 and LIMITSWITCH2 built it. Read by `ResumeChoice` (`Waits` and LIMITSWITCH1's
-  `Switched`) and the roster's resume, whose inline twin (`HarnessRoster.cs:1014`) and `switches` and `walkCounts` parameters become one call; by the
-  chat's go-on (`ChatGoOn.cs:571-587`) and the wake (`LimitWaits.cs:186`, `:199`). Executors unchanged: a repository conversation's cooling
-  *elsewhere* goes on through the ended move's body (`switching`), among its agent's accounts, its new part continuing the old by `retry`, waiting
-  for the earliest reset of any where none of them is ready (O2-13), the brief and the waiting words handed once; a closed quest's session through
-  `GoOnLostAsync` with the reason `account`, a headless host waiting; all as LIMITSWITCH2 built it. The closed quest's hold (`Driver.cs:2367-2384`)
-  reads the rule through `LineAccount` as LIMITSWITCH2's switch does. Ask Daoris's go-on (`ChatGoOn.cs:672-688`) reads the rule and keeps its
-  wait; a picked conversation walks its agent's accounts as LIMITSWITCH2 built it, since the record keeps no pick (round 3 had it keep its own
-  account, which is a-ii's recorded pick, Part B's); a conversation's other `CannotGoOn` cases are unchanged (§8). The earliest reset one
-  computation, the own account's included where it may resume (O2-4); where none has a reset, the hold that names the repair, which is
+alone, Part A's; with round 4's named changes, each caller's earliest-reset set read as today and the walk asked only where today's code asks it,
+O4-3, O4-4; buildable on the Opus reader's read of round 4, no build carrying it staged until Codex's read lands, D191's note of 2026-10-24).
+- *What.* `LineAccount.Decide(own hold, trigger, constraint, line kind, walk) → Resume | Elsewhere(selection, why) | Wait(earliest, accounts, set) |
+  Hold(reason, repair)`, pure, beside `ResumeAccount` in `Accounts/Rotation/`, which the map places in Agents with the roster that reads it (§14.2;
+  O3-8): §3.2's rule as LIMITSWITCH1 and LIMITSWITCH2 built it. **The walk is asked only where today's code asks it** (O4-4): `walk` is a lazy
+  input, asked where the own account cools under `switches` (`HarnessRoster.cs:1030`) or in the live move's `ElsewhereAsync` (`LimitMove.cs:92`),
+  as today, and nowhere else, never handed up front, since a walk counts the start it chooses (`SelectAsync`, `HarnessRoster.cs:894-911`) and a
+  walk fed where today's code makes none would walk and count starts it does not; where a caller cannot hand a lazy walk, `Decide` runs twice,
+  the second time with the walk's answer where the first asked for it. **The constraint** is none, a handed quest's named account (first, then
+  its agent's walk, `HarnessRoster.cs:923-934`), or a hand-over press's account opened as a pick (*a pick is the one account, never moved*,
+  `:887`); no record keeps an account pick until row a-ii. Read by `ResumeChoice` (`Waits` and LIMITSWITCH1's `Switched`) and the roster's resume
+  (`HarnessRoster.ResumeAsync`, `:975`), whose inline twin (`:1022`) and `switches` and `walkCounts` parameters become one call; by the chat's
+  go-on (`ChatGoOn.SwitchableAsync`, `ChatGoOn.cs:489-492`, read at `:614-645`) and the wake (`LimitWaits.cs:156-157`, `:194-220`). Executors
+  unchanged: a repository conversation's cooling *elsewhere* goes on through the ended move's body (`switching`), among its agent's accounts, its
+  new part continuing the old by `retry`, waiting for the earliest reset of any where none of them is ready (O2-13), the brief and the waiting
+  words handed once; a closed quest's session through `GoOnLostAsync` with the reason `account`, a headless host waiting; all as LIMITSWITCH2
+  built it. The closed quest's hold (`Driver.cs:2381-2384`) reads the rule through `LineAccount` as LIMITSWITCH2's switch does. Ask Daoris's
+  go-on (`ChatGoOn.cs:723-746`, its resume at `:730-733`) reads the rule and keeps its wait; a picked conversation walks its agent's accounts as
+  LIMITSWITCH2 built it, since the record keeps no pick (round 3 had it keep its own account, which is a-ii's recorded pick, Part B's); a
+  conversation's other `CannotGoOn` cases are unchanged (§8). **The earliest reset is read as today, each caller's own set** (O4-3), behind one
+  function, `LineAccount.Earliest(set, …)`, whose `set` names which it reads: the walk's states (`Unready`, `HarnessRoster.cs:1766`); the
+  switch's walk against the own reset (`:1032-1048`), the own account's included where it may resume (O2-4); or, for a limited conversation's
+  wake, every cooling account of the agent, the walk's or not (`LimitWaits.cs:157`, `:220`, through `CoolingsOf`, `HarnessRoster.cs:251-256`).
+  The one reset over exactly the accounts a line may take, ineligible ones adding none, is row a-iii's, Part B's, with §7 row 3, since it reads
+  step 4's set, which a-ii, a-iii and LIMITRESUME1e define. Where none has a reset, the hold that names the repair, which is
   `HarnessRoster.Unready`'s refusal where nothing cools today (`:1762-1779` at `e8f1aed4f`), given a name. **It changes no behaviour**: every
-  answer is today's, read through one call. It reads no recorded pick, no settled selection, no move record and no store.
-- *Census.* Every caller of `ResumeAsync`, `CoolingOf`, `CoolingsOf` and `ResumeChoice.Waits` reads `LineAccount` or is named *not yet moved*.
-- *Proof.* `LineAccountTests`: own (ready, near, cooling, signed out, refused, missing, outside, kept, not offered) × trigger × constraint (none, a
-  pick) × others (ready on its agent, ready on another choice, none, none with a reset) × kind (driven open or taken, driven closed, conversation, Ask
-  Daoris), every case asserted in the same commit against the answer today's `ResumeChoice`, roster and `LimitWaits` give, so a difference fails
-  before anything moves; LIMITSWITCH2's proofs kept as this row's: a stand-in ended conversation whose own account cools with another ready goes on
+  answer, every walk and every counted start is today's, read through one call. It reads no recorded pick, no settled selection, no move record
+  and no store.
+- *Census.* Every caller of `ResumeAsync`, `CoolingOf`, `CoolingsOf` and `ResumeChoice.Waits` reads `LineAccount` or is named *not yet moved*,
+  and every walk it asks is one today's caller asks.
+- *Proof.* `LineAccountTests`: own (ready, near, cooling, signed out, refused, missing, outside, kept, not offered) × trigger × constraint (none,
+  a handed quest's named account, a hand-over press's account opened as a pick) × others (ready on its agent, ready on another choice, none, none
+  with a reset) × kind (driven open or taken, driven closed, conversation, Ask Daoris) × the earliest reset's set (the walk's states, the switch's
+  walk, the wake's coolings), every case asserted in the same commit against today's `ResumeChoice`, roster and `LimitWaits`: **the answer, how
+  many walks were made and how many starts counted** (O4-4), so a difference fails before anything moves; LIMITSWITCH2's proofs kept as this row's: a stand-in ended conversation whose own account cools with another ready goes on
   there in one briefed part, the words once; with none ready it waits and names the earliest reset; **its own account cooling and every other
   signed out, it waits for its own reset; a driven record whose own account and every other are signed out holds, naming the sign-in** (O2-4); a
   picked conversation walks its agent's accounts; Ask Daoris waits for its own; a closed quest's cooling session goes on through the ended move;
@@ -1188,59 +1236,93 @@ alone, Part A's).
   row in both languages unchanged. Installed: the next real cooling own account with a conversation's words still goes on within one look, its
   machine-log line `session.moved … why=retry` (`Continuations.Moved`, `Driver/Conversations/Domain/Continuation.cs:588-594`, logged at
   `Chat/LimitMove.cs:296`), its note's continue reason `account` (O3-13).
-- *Notes.* §7 rows 1 and 3, conformance notes; D137's LIMITSWITCH2 note, whose *row 1a … keeps `accountPicked` on the record* is row a-ii's
-  binding in the desktop store (§3.2 step 4), a dated line added with round 4 (O3-13).
+- *Notes.* §7 row 1, a conformance note; §7 row 3 and its D206 point 2 note are row a-iii's, Part B's (O4-3); D137's LIMITSWITCH2 note, whose
+  *row 1a … keeps `accountPicked` on the record* is row a-ii's proposed binding in the desktop store (§3.2 step 4), its dated line of round 4
+  worded as a proposal (O3-13, O4-11).
 
 **FOUNDATION1b — a word keeps its identity wherever it is held** (modules, driver; any time, a day).
 - *What.* The shell's held word carries its producer's key, level, files and display choice (`SessionWords.cs:179`, `:464`), kept in
-  `held-words.json` additively, so an older shell reads text, files and door as before (`:915-935`); the record path passes the producer's key
-  (`:701`, `:782`), and so does the headless fallback (`SessionSay.cs:197`). The display choice never becomes `SaidWord.Choice`.
+  `held-words.json` additively, so an older shell reads text, files and door as before (`:915-935`), whose reader takes each field by name
+  (`:981-996`); the record path passes the producer's key (`SayAsync(id, word.Text, word.Files, ct)` at `:701`, `:782`), and so does the headless
+  fallback (`SessionSay.cs:197`). The display choice never becomes `SaidWord.Choice`: the record path passes no `choice`, since the say door refuses
+  a choice from any author but the supervisor and then keeps nothing (`SessionLedger.cs:901-907`).
+- *The repair* (O4-8). A producer's retry after a shell restart keeps one word where today it keeps two: the guarantee D137 and D188 decided, so the
+  row asks no new decision. *Delivers once* across a restart holds while the word still waits on `said` (`SessionLedger.cs:956`); after a take it
+  is row p's settlement.
 - *Census.* Every `SayAsync` outside tests passes a key or is named as a legacy case.
 - *Proof.* A producer's retry keeps one word; a restart keeps key, level, files and display choice; an ordinary display choice never reads as the
-  supervisor's (`SessionLedger.cs:902-907`); a Process case restarts the shell while a record winds up and delivers once; `SessionWordsTerminalTests`,
+  supervisor's and the word is still kept, the record path passing no `choice` (`SessionLedger.cs:901-907`); a Process case restarts the shell
+  while a record winds up, before the take, and delivers once, the case after the take being row p's; `SessionWordsTerminalTests`,
   `SessionWordsWaitingTests`, `SessionLedgerTests` and `SessionStoreTests` whole.
 
 **FOUNDATION1c — the participant's work, read once** (service, driver, modules, web: the sessions slice is the modules', `Modules/Loop/SessionsStateSlice.cs`; O2-14).
-- *What.* `ParticipantWork` and `ParticipantWork.Of` in the service, its twin in the driver, one fixture table both suites read (§2.2); the service
-  answers `work` for every record of this machine on loopback, never on the wire; the sessions slice's allow-list gains `work` beside `kind`; `HoldsSlot`
+- *What.* `ParticipantWork` and `ParticipantWork.Of` in the service, its twin in the driver, one fixture table both suites read (§2.2); the
+  driver's `ParticipantWork.Of` takes the marks as a value declared in Participants, `WorkMarks`, which each caller builds from its record view, so
+  it names neither `PriorSession` and `SessionView` (`Quests/Domain/Planner.cs:291-408`, `:759-817`) nor `HarnessConversations`
+  (`GoOn/HarnessConversations.cs:54`) from its first commit (O4-9). The service answers `work` for every record of this machine on loopback, never
+  on the wire, which walks `session-record-fields.md`'s rows 8 (the response's loopback member and `ToSession`), 10 (the driver's read on
+  `PriorSession`), 11 (the three stand-ins) and 12 (the web's type) (O4-9); the sessions slice's allow-list gains `work` beside `kind`; `HoldsSlot`
   reads the work's table; `identity.ts` reads the pushed `work` where a host sends it and today's predicates where it does not, so a partner is drawn
-  as a partner, D203 point 1's reading and the one thing a person sees change. The `Participant` type with its census, read by nothing else yet,
-  every field read from today's stores: the role from `actor`, the binding from `<s>.harness.json` through `HarnessConversations.Read`, a holder
-  placed by the id and generation the shell hands it, `Authority` unread until row t (§2.1). It reads no catalogue, no store and no appointment.
+  as a partner, D203 point 1's reading and the one thing a person sees change, in a string of its own, `work.identity.partner` (*Partner*, 搭档, D203
+  point 9), beside today's three (`en/work.json:27-29`) (O4-9). The `Participant` type with its census, read by nothing else yet, every field read
+  from today's stores: the role from `actor`, the binding from `<s>.harness.json` through `HarnessConversations.Read`, a holder placed by the id and
+  generation the shell hands it, `Authority` unread until row t (§2.1). It reads no catalogue, no store and no appointment.
 - *Census.* A: on every fixture row `ParticipantWork.Of` agrees with `HoldsSlot`, `identity.ts`'s predicates (the page's test reads the same fixture),
   `ConnectorRoles`' reading of `serves` and `piece` and `WordsNever.IsHelp`; each disagreement listed as a decision (the partner drawn as a helper is
-  one, D203 point 1's). B: every line outside `ParticipantWork.Of` that reads `Serves`, `Opinion`, `Ask`, `Piece`, `HelpMode` or `HelpRoom.Repository`
+  one, D203 point 1's), and a disagreement other than the partner's moves no reader in row c, kept as today and left to its own row (O4-9). B: every line outside `ParticipantWork.Of` that reads `Serves`, `Opinion`, `Ask`, `Piece`, `HelpMode` or `HelpRoom.Repository`
   to tell a work is named *not yet moved* with the row that moves it; a new one fails. Round 3's census C, every record's `actor` held to a role
   taking its work by the catalogue's revision the start kept on its store binding, leans on rows w, x and z-iii and is row x's (round 4).
 - *Proof.* `SessionStoreTests` (a record from before answered its work; a mirror another machine's), `SessionsStateSliceTests` (`work` pushed,
   allow-listed, loopback only, `kind` unchanged), `PlannerTests`' CAPCOUNT1 and SESSBADGE1 cases, ASKRAIL1's rail case, the page's identity tests with a
-  partner record and with a host sending no `work`; `McpToolsTests`, `ActorChoicesTests` and `SessionLedgerTests` whole.
+  partner record and with a host sending no `work`, the field's chain (`session-record-fields.md` rows 8, 10, 11 and 12) with a mirror's and a
+  record from before reading none; `i18n:check` and `names:check -- --strict` over `work.identity.partner`; `McpToolsTests`, `ActorChoicesTests`
+  and `SessionLedgerTests` whole.
 
-**FOUNDATION1mod-0 — the structure gate** (driver tests; §14.5).
+**FOUNDATION1mod-0 — the structure gate** (driver tests, and the modules' and the service's tests that read driver sources by path; §14.5).
 - *What.* `StructureTests` and `fixtures/structure.json` hold the twenty-one subdomains in their order, each one's folder and its allowed
-  `Domain/`, and the subdomain, direction, purity, Loop and global-using rules, today's edges against the order named as *not yet cut* with the row
-  that cuts each; new code written in place from here on. The direction rule reads **every type reference**, by the declared-type table the gate
-  builds from every file's declarations, as its Loop rule reads type names today, so an ordinary, a fully qualified, an aliased and a static
-  reference all count, never a `using` line alone (X3-4.1). Every namespace stays `Daoris.Driver` (D166 point 4). It amends D166 point 1's fifteen
-  modules, Brainstorms the fifteenth by D176 point 1 (`Driver.Tests/StructureTests.cs:189-191`), by the twenty-one subdomains, a dated note on
-  each (O3-10).
+  `Domain/`, **every file of the driver placed** in one subdomain (O4-5), and the subdomain, direction, purity, Loop, mirror and global-using
+  rules, today's edges against the order named as *not yet cut*, each by its edge family and the subdomain row after which it is cut, never by a row
+  id the design does not have yet (O4-6); today's test folders listed as not yet moved, so the mirror rule (`StructureCheck.cs:183-213`) passes
+  over them, each mod row moving its subdomain's tests (O4-5); new code written in place from here on. The direction rule reads **every type
+  reference** (X3-4.1), by the declared-type table the gate builds from every file's declarations, never a `using` line alone, with two rules today's
+  scan does not have (O4-5): **a qualified chain** (`Daoris.Driver.<Name>`, `global::Daoris.Driver.<Name>`), **an alias's target** and **a
+  `using static` target** are read as references by a rule written for them, since today's identifier scan skips every name that follows a `.`
+  (`StructureCheck.cs:385`), so `Daoris.Driver.HolderKey.Taken` (`Sessions/SessionsCommand.cs:185`) and `using static Daoris.Driver.X;`
+  (`Accounts/AccountCooling.cs:5`, `Agents/Tools.cs:6`) name nothing to it today; and **a name the file declares as a member is no edge**, so
+  `DaorisHome`'s `HomeEntry` members named like higher types (`Platform/DaorisHome.cs:326`, `:352`, `:354`, `:362`, `:423-427`) count none, or the
+  tests read Roslyn's semantic model. **Edges into Loop** (O4-1): no exception names an edge into a file in `Loop/`'s folder, so today's absolute
+  rule (`StructureCheck.cs:216-217`) holds from this row on and no move takes a class out of Loop that names `LoopContext`; an edge into a file the
+  map places in Loop that still sits outside its folder (the chat runner's core and the wiring view, until mod-xxi) is a census exception named
+  with its cut, and every such cut lands before mod-xxi moves the file in, so the rule is absolute over all of Loop after it. The fourteen sites
+  that read driver sources by folder path (§14.6) are made name-based here, before the first move, as D166 point 4 orders (O4-7). Every namespace
+  stays `Daoris.Driver` (D166 point 4). It amends D166 point 1's fifteen modules, Brainstorms the fifteenth by D176 point 1
+  (`Driver.Tests/StructureTests.cs:189-191`), by the twenty-one subdomains, a dated note on each (O3-10).
 - *Proof.* The gate passes over the tree with today's exceptions listed and fails on a planted upward type named plainly, fully qualified (as
-  `Driver/Sessions/SessionsCommand.cs:185` names one today), through an alias and through a static import; a planted `Domain/` file naming
-  `ServiceClient`; a planted rule in Loop; a planted global using; `StructureTests`' fixtures for each.
+  `Driver/Sessions/SessionsCommand.cs:185` names one today), through `global::`, through an alias and through a static import; passes a planted
+  member named like a higher type; fails on a file `structure.json` does not place; fails on a planted edge into a file in `Loop/`; a planted
+  `Domain/` file naming `ServiceClient`; a planted rule in Loop; a planted global using; `StructureTests`' fixtures for each.
 
-**FOUNDATION1u — the role's name** (web's glossary; §6).
-- *What.* The glossary gains *role*, 角色, with its reasons (D116): one concept in two shapes, a working role (D205's actor) and an appointed role
-  (D208, D209), 任命的角色 where the appointed one must be said; its avoid list 职务, 岗位, 演员, 人设 and 执行者. *actor*'s entry
-  (`glossary.json:475`) keeps 角色 and says it is a working role's staffing, its line *A co-worker's role names its actor* read as *A co-worker's
-  work names the role it runs as*. **No page string changes**: the strings that say a role already say 角色 and stay as they are,
-  `zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`, `zh/settings.daoris.json:108`
-  and `:139` (你任命的角色, the appointed shape). Round 3's row retired 角色 from `:108` for 职务; round 4 withdraws 职务, and retires nothing.
-- *Proof.* `i18n:check`, `names:check -- --strict`; the glossary's own test over the new entry.
+**FOUNDATION1u — the role's name** (web: the glossary and ten Chinese strings; §6; round 4's named changes, O4-2).
+- *What.* **Ten Chinese strings that say 职责 for an appointed role say 角色**, 任命的角色 where the appointed shape must be said, under the UI and
+  translation contracts: `zh/projects.json:393`, `:398`, `:399`, `:402`, `:404`, `:413`, `:414`, `:415`, `:416` and `zh/settings.daoris.json:179`,
+  the supervisor's and the steward's appointing flow; their English strings, which say *role*, and every key are unchanged. The seven that already
+  say 角色 stay as they are: `zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`,
+  `zh/settings.daoris.json:108` and `:139` (你任命的角色, the appointed shape). The glossary gains *role*, 角色, with its reasons (D116): one
+  concept in two shapes, a working role (D205's actor) and an appointed role (D208, D209), 任命的角色 where the appointed one must be said; its
+  avoid list 职务, 岗位, 演员, 人设, 执行者 and 职责; its match covering the labels *Actor*, *Actors* and *Roles* (`work.actor.title`,
+  `settings.ai.actors.title`, `settings.daoris.label.roles`). *actor*'s entry (`glossary.json:475`) becomes `use: "role"`, code and prose only,
+  saying it is a working role's staffing, since `names:check` refuses two terms sharing one Chinese name and exits 2
+  (`src/Daoris.Web/scripts/names-check.mjs:118-121`, `:299-302`). Round 3's row retired 角色 from `:108` for 职务; round 4 withdrew 职务; round 4's
+  named changes retire 职责 from the ten.
+- *Proof.* `i18n:check`, `names:check -- --strict`; the glossary's own test over the new entry and the pointer; the appointing flow's screens
+  (This Daoris's *Roles*, the supervisor's ask and refusals, the steward's ask) read in Chinese with 角色 in each, in both themes.
 
 **FOUNDATION1mod-i to mod-xxi — the driver's folders moved, one subdomain a row** (driver; §14.6). Each moves one subdomain's files into its
-folder, its namespace unchanged, every linked consumer with it, no behaviour changed; its cuts after it, one edge family per row, a port declared
-or a type moved to its one owner, each changing no behaviour. Proof: the gates of the brief §6 whole, the GitDoor built and its tests where it
-compiles a moved file, and `StructureTests`' census shorter by the subdomain's files and edges.
+folder, its namespace unchanged, every linked consumer with it (§14.6's list, O4-7), no behaviour changed; its cuts after it, one edge family per
+row, a port declared or a type moved to its one owner, each changing no behaviour; no move takes a class that names `LoopContext` out of Loop, and
+every cut into a file the map places in Loop lands before mod-xxi (O4-1). Proof: the gates of the brief §6 whole, the GitDoor, the launcher and
+PieceStart built and the GitDoor's tests run where they compile a moved file, the modules' tests and the service's Mcp tests run, and
+`StructureTests`' census shorter by the subdomain's files and edges (O4-7).
 
 ### Part B: the rest, in order
 
@@ -1319,7 +1401,8 @@ word is kept there; z-ii, z-iv and w-0 before w, whose catalogue, grants and act
   four families is designed again in a Part B round.
 - **The map's census**: the edge counts of §14.1 are a measurement by type names with comments and strings removed, a lower bound of the
   dependencies (a type named only in a string or by reflection is missed), and one of them over-counted (`DaorisHome`'s, §14.1; O3-8); row mod-0's
-  census is the exact list.
+  census lists every named reference, its qualified, alias, static and member rules written for it (O4-5), and still misses a type named only in a
+  string or by reflection.
 - **The defects' classes** (survey §6): a judgement, which this order inherits.
 - **The checks.** A document only: `doc-links`, `doc-system`, `doc-shapes`, `doc-duplicates`, `doc-budgets` and `orient-index --check` check its
   place, its links and the index, never its claims. The code was read, not run, on main at `92ac2bd7e` and `c8eccf30e` (one `src/`), at `2a08bde4a`
@@ -1681,10 +1764,17 @@ its reason in a line. §14 is Part A's but for the *Owns* column of §14.2, whic
 - **Platform is no leaf**: it names types of fourteen folders, `DriverConfig` of nine and `DriverChoicesCommand` of ten, `NoteCodes` eight of
   Conversations'; 47 of its files name nothing outside it (`AtomicFile`, `Moments`, `MachineLog`, `Chain`, …), `DaorisHome` among them: round 3
   counted six folders' types in it, which were its `HomeEntry` members (`HomeEntry.StandingConfirmation`, `.Notices`, …), and it compiles into the
-  GitDoor with the base library alone (`Daoris.Desktop.GitDoor.csproj:20-37`), so it names none (round 4, O3-8).
+  GitDoor with the base library alone (`Daoris.Desktop.GitDoor.csproj:20-37`), so it names none (round 4, O3-8); the gate's scan as it stands
+  still reads eleven of those member names as type names of higher subdomains (`Platform/DaorisHome.cs:326`, `:352`, `:354`, `:362`,
+  `:423-427`: `DriverConfig`, `Notices`, `HelpProposals`, `OpinionGates`, `AgentOffers`, `GitIdentities`, `ConfiguredAccess`, `PluginState`,
+  `UsageHistory`, `RuleProposals`, `SessionBranches`), which mod-0's member rule removes (O4-5).
 - **Loop holds rules**: `LimitResume.NotLifted` (`Loop/LimitResume.cs:74-83`), `SupervisorQuarantine.Unhandable` (`:46`), `OpinionLook`'s
   `Concluded`, `MadeSince` and `HoldsPush` (`:19`, `:127`, `:134`), `DriverWatch.Due` (`:883`), `Driver.OnAnotherAccount` (`Loop/Driver.cs:4581`),
   `DriverHelpers.LeadWaits` and `Wait` (`:428`, `:547`), `DriverContinuations.HandedToResume` (`:966`), `ReopenTelling.BringsToSource` (`:357`).
+  **Ten `Loop/` classes are the look's executors, built from `LoopContext`** (O4-1), most of them from `Driver` too: `DriverContinuations.cs:24`,
+  `DriverHandOvers.cs:18`, `DriverHelpers.cs:28`, `DriverPartners.cs:58`, `DriverIntakes.cs:25`, `DriverBrainstorms.cs:24`, `DriverMeetings.cs:29`,
+  `DriverOpinions.cs:23`, `OpinionDeliverer.cs:22`, `OpinionGateLook.cs:11`; the gate refuses any of them outside Loop (`StructureCheck.cs:216-217`),
+  so they stay in Loop, and only the rules above leave it, as pure functions the executors call.
 - **`Domain/` does I/O through the driver's own types**, which the pure rule's tokens cannot see: `Quests/Domain/AskWords.cs:87` reads through
   `ServiceClient`, `Sessions/Domain/DrivenAccess.cs:68`, `:184` through `SessionProcesses` and `ServiceClient`, `Sessions/Domain/ActorRun.cs:169-178`
   holds a `MachineLog`, `Review/Domain/ReviewerChoice.cs:222`, `:369` walks `HarnessRoster`, `Plugins/Domain/PluginCatalog.cs:137` reads `DaorisHome`;
@@ -1692,8 +1782,10 @@ its reason in a line. §14 is Part A's but for the *Owns* column of §14.2, whic
 - **What the gates hold**: `StructureTests` (`Driver.Tests/StructureTests.cs:4-9`, its map `fixtures/structure.json`, its rules
   `StructureCheck.cs`) keeps every source in its module's folder, only `Domain` as a layer folder, a `Domain` file free of I/O tokens
   (`StructureCheck.cs:71-85`, `:140-149`), each listed test under its module's test folder (`:183-213`), and one direction alone: nothing outside
-  Loop names a type declared in Loop (`:216-217`). The map must name exactly the fifteen modules (`StructureTests.cs:185-202`). Source-scan
-  tests find files by name (`SourceFiles.Driver("DriverConfig.cs")`, `Platform/ConfigSeamTests.cs:109`), so a file's move breaks none of them.
+  Loop names a type declared in Loop (`:216-217`). The map must name exactly the fifteen modules (`StructureTests.cs:185-202`). Most source-scan
+  tests find files by name (`SourceFiles.Driver("DriverConfig.cs")`, `Platform/ConfigSeamTests.cs:109`), but fourteen sites read sources by
+  folder path, so a move breaks them unless they are made name-based first (O4-7; §14.6's list). The gate's identifier scan skips every name that
+  follows a `.` (`StructureCheck.cs:385`), so a qualified, an alias's or a static import's reference names nothing to it today (O4-5).
 - **The draft against the code.** It had no home for six parts the code holds: the settings (`DriverConfig` named in 165 files of every folder,
   22 of them `Domain/`), the terminal's and pipe's doors (53 `*Command.cs` files in thirteen folders, 18,125 lines, and the instance and lease
   group, 2,235), the local service's client (`ServiceClient`, named in 102 files of thirteen folders) with remote sync and registration
@@ -1715,29 +1807,59 @@ Round 4 moves four placements that went against the map's own order (O3-8): the 
 Work orders too, Events keeping the vocabulary, its `HelpRoom` edge cut by the work rule's `daoris:help`, which the participant's work owns
 (§2.2); and `DaorisHome`'s edges are none (§14.1).
 
+**Round 4's named changes** (§17) move more, each where the code needs it rather than where a folder sat:
+- **The Loop boundary** (O4-1). The ten `LoopContext`-built executors (§14.1) stay in Loop, and only the rules §14.1 lists leave it.
+  **The chat runner's boundary**: `ChatContext` (`Chat/ChatContext.cs:14`) and `ChatStart` (`Chat/ChatRunner.cs:8`), the types the course's
+  conversation executors share with the runner, are Course's, with the types `ChatContext` holds (`ChatRunner`'s nested `ITurnedChat` and
+  `Handing`, and `ChatPendings`). Everything else the nine Course files (`BriefedMove`, `ChatGoOn`, `ChatHandOver`, `CurveMove`, `LimitMove`,
+  `LimitWaits`, `StartWith`, `GoOn/UncertainWords`, `HandOver/HandOver`) and `Agents/Acp/Acp.cs` name of the core is one port family, **the chat
+  runner's port**, which Course declares and `ChatRunner` in Loop implements: the runner as the executors' constructors take it, `ChatHelp`,
+  `ChatTurns`; the static lines they read (`ChatTurns.LostLine`, `ChatTurns.Withdrawn`, `ChatRunner.EndedNote`, `.Recorded`,
+  `.EndedByPersonNote`) move down to their owners, each a cut the census names. **The wiring view's sizes**, `WiringSizes` and `WiringBudget`
+  (`Platform/WiringSizes.cs:10`, `:66`), go with the space code that names them (`Platform/DownloadClearing`, `SpaceCommand`, `SpaceFree`,
+  `SystemSpace`, `ToolHomeLeftovers`, `Trees/Branches/BranchTidying`) to Workplace; the rest of the wiring view stays Loop's.
+- **The vocabularies that sat above their readers move down** (O4-6): `ContinueReason`, `ContinueWhy` (`Conversations/Domain/Continuation.cs:9`,
+  `:54`) and `SwitchDecision` (`Accounts/Domain/SwitchDecision.cs:7`) into Agents with the account rule, which names them
+  (`Accounts/Rotation/ResumeAccount.cs:99-101`; `HarnessRoster.cs:2193-2212`; `Agents/Acp/Acp.cs:3401-3421`); `SessionRecord`
+  (`Trees/SessionGroups.cs:14`) and the planner's and intake's record views (`Quests/Domain/Planner.cs:4`, `:246`, `:639`, `:728`, `:752`;
+  `Intake.cs:8`, `:106`), the records `ServiceClient` returns, into Service; `PieceLauncher`, `PieceStarts` and `PieceJobs`
+  (`Conversations/Partners/`) into Platform with `AgentStarts`, whose containment names them (`Platform/AgentStarts.cs:33`;
+  `Agents/Consoles/AgentJobs.cs:77`, `:111-121`, `:139`); `MachineLog` and `HomeWrites` into Platform, since Platform, Service and Install name
+  them and they name nothing above Platform; `AttentionKind` and `AttentionEvent` split out of `Quests/Domain/Attention.cs` (`:10`, `:45`) into
+  Events, which `Notices` names; and `HarnessConversations`, which stores the binding (`Conversations/GoOn/HarnessConversations.cs:20`), into
+  Participants.
+- **Every file placed** (O4-5). The files round 4 left out, each with its concept: `Sessions/Domain/SessionEvents`, `SessionEnded` and
+  `Observation` (the session's event and end vocabulary) and `Sessions/Events/HeldPermissions` (a held call, beside `RunningCalls`) in Events;
+  `Sessions/Domain/AbandonEntry`, `AbandonPlan`, `ArchiveAnswers`, `DeleteOutcome`, `HistoryAnswers` and `HistoryPlan` in Workplace with
+  `Sessions/History/`; `Sessions/Domain/AskWork`, `GoAheads`, `PauseOutcome`, `PausedBy`, `StartRun` and `StopAnswer` and the sessions' verbs
+  `Sessions/SessionsCommand` in Work orders, the person's orders; `Sessions/Domain/SessionLanguage` and `Platform/DriverChoicesCommand` in
+  Settings, the second's edges into ten folders' types (§14.1) cut with the settings' parser's; `Sessions/LookFacts` in Participants with
+  `RunningSessions`, which holds it; `Setup/HeldFiles` in Install, which the launcher compiles with `InstallSwap`; `Chat/ChatHelperWords` in
+  Course, built from `ChatContext`. mod-0's `structure.json` places every other file the same way, and fails on one it does not place.
+
 | # | Subdomain, over the draft | Takes | Owns | Seam | Tests |
 |---|---|---|---|---|---|
-| 1 | **Platform** (the draft's) | `Platform/`'s `DaorisHome`, `HomeIdentity`, `HomeLease`, `ChildProcess`, `CommandPresence`, `ProcessStarts`, `AgentStarts` (the launcher's containment, D201), `DriverHttp`, `Downloads`, `DriverException`, `Moments`, `TextBounds`, `SafeNames`; `Agents/Consoles/`'s process job and pseudo-console | — (the home's table of entries, D172, stays its, naming paths, never another subdomain's type) | the home, the lease, a process start, the clock | `ProcessStartsCensusTests`, `NoConsoleWindowTests` |
+| 1 | **Platform** (the draft's) | `Platform/`'s `DaorisHome`, `HomeIdentity`, `HomeLease`, `ChildProcess`, `CommandPresence`, `ProcessStarts`, `AgentStarts` (the launcher's containment, D201), `DriverHttp`, `Downloads`, `DriverException`, `Moments`, `TextBounds`, `SafeNames`, `MachineLog`, `HomeWrites` (round 4's named changes, O4-6); `Agents/Consoles/`'s process job and pseudo-console; `Conversations/Partners/`'s `PieceLauncher`, `PieceStarts` and `PieceJobs`, which the containment names (O4-6) | — (the home's table of entries, D172, stays its, naming paths, never another subdomain's type) | the home, the lease, a process start, the clock | `ProcessStartsCensusTests`, `NoConsoleWindowTests` |
 | 2 | **Store** (the draft's) | `AtomicFile`, `Json`, `JsonFile`, `JsonKeeping`, `KeepLock`, `RecordList`, `RecordLock`, today's file primitives, which its Part A move takes; `DesktopStore` and its migrations (§13), row z-i's | `store_version`, `store_revisions`, `store_runs`, `imports` | `DesktopStore`, a family's transaction, its revision and wake | the store's suite (row z-i) |
-| 3 | **Settings** (new: the draft had none, and 165 files read it) | `DriverConfig`, `DriverConfigUnreadableException`, `StandingChoices`; the settings' writers' seam; the export and import | `settings` | a key's shape read through one parser; a subdomain reads its own keys, its rule types its own, so Settings names none of theirs (§14.3) | `ConfigSeamTests`, `DriverConfigKeepsTests` |
-| 4 | **Service** (new: the client of the local service is named by 102 files) | `Service/` (`ServiceClient`, the host's locator and doors, `LedgerChanges`, remote sync, registration following), `Platform/RunningAddress` | — | `ServiceClient`, the change stream's families | the service client's and sync's suites, `QuestSyncTests` |
-| 5 | **Install** (new: install, update and the managed tools, from Setup and Agents) | `Setup/`'s `InstallSwap`, `StagedBuild`, release channels and downloads, `UpdateCommand`; `Agents/ToolInstall/`, `Agents/Tools.cs` | `tools` | a tool's path, the staged build | the install's and tools' suites |
+| 3 | **Settings** (new: the draft had none, and 165 files read it) | `DriverConfig`, `DriverConfigUnreadableException`, `StandingChoices`; `Platform/DriverChoicesCommand`, the settings' verbs, and `Sessions/Domain/SessionLanguage` (O4-5); the settings' writers' seam; the export and import | `settings` | a key's shape read through one parser; a subdomain reads its own keys, its rule types its own, so Settings names none of theirs (§14.3) | `ConfigSeamTests`, `DriverConfigKeepsTests` |
+| 4 | **Service** (new: the client of the local service is named by 102 files) | `Service/` (`ServiceClient`, the host's locator and doors, `LedgerChanges`, remote sync, registration following), `Platform/RunningAddress`; the records `ServiceClient` returns, moved to their one owner: `SessionRecord` (from `Trees/SessionGroups.cs`), the planner's `QuestView`, `PriorSession`, `SaidWordView`, `RepoView` and `SessionView` and the intake's `AskView` and `LaneView` (O4-6) | — | `ServiceClient`, the change stream's families | the service client's and sync's suites, `QuestSyncTests` |
+| 5 | **Install** (new: install, update and the managed tools, from Setup and Agents) | `Setup/`'s `InstallSwap`, `StagedBuild`, `HeldFiles` (O4-5), release channels and downloads, `UpdateCommand`; `Agents/ToolInstall/`, `Agents/Tools.cs` | `tools` | a tool's path, the staged build | the install's and tools' suites |
 | 6 | **Instance** (new: the terminal's way into a running instance) | `InstanceClient`, `InstanceDoor`, `InstanceRoutes`, `PipeName`, `SentPresses`, `VerbLeases`, `ShellWord` | — | the pipe's client and a verb's lease; each verb (`*Command.cs`) stays in its own subdomain and reaches the instance through this | the pipe's census in the modules (`PipeCensusTests`) and the driver's client tests |
-| 7 | **Events** (the draft's) | `Chain`, `ChangeWatch`, `FolderWatcherSource`, `HomeWatch`, `HomeWrites`, `MachineFacts`, `MachineLog`, `MachineLogReader`, `Notices`, `NoticesRead`, `LookSaid`, `NoteCodes` (the vocabulary, the eight Conversations codes it names moved into it as codes); `Sessions/Events/SessionLog`, `RunningCalls`, `Sessions/Watch/`; the journal's readers and the hubs (§4); the attention policy is Work orders' (round 4, O3-8) | `notices`, `news_said`, `journal_cursors` | `EventCodes`, `NoteCodes`, a hub's teller, the notices' submit, the machine log | `LookSaidTests`, `NoteCodesTests`, the notices' suites |
+| 7 | **Events** (the draft's) | `Chain`, `ChangeWatch`, `FolderWatcherSource`, `HomeWatch`, `MachineFacts`, `MachineLogReader`, `Notices`, `NoticesRead`, `LookSaid`, `NoteCodes` (the vocabulary, the eight Conversations codes it names moved into it as codes); `Sessions/Events/SessionLog`, `RunningCalls`, `HeldPermissions`, `Sessions/Watch/`; `Sessions/Domain/SessionEvents`, `SessionEnded`, `Observation` (O4-5); `AttentionKind` and `AttentionEvent`, split out of `Quests/Domain/Attention.cs` (O4-6); the journal's readers and the hubs (§4); the attention policy is Work orders' (round 4, O3-8); `MachineLog` and `HomeWrites` Platform's (O4-6) | `notices`, `news_said`, `journal_cursors` | `EventCodes`, `NoteCodes`, a hub's teller, the notices' submit, the machine log | `LookSaidTests`, `NoteCodesTests`, the notices' suites |
 | 8 | **Knowledge** (the draft's *knowledge*, apart from the context engine: it answers across repositories from the index and the records, where the context engine composes one line's) | `Service/KnowledgeConnector` (the connector handed to sessions); `Agents/RepositoryKnowledge/` (the code map, indexes, standing answers); `Help/`'s `HelpFacts`, `Room/` and the room's sections, `HelpCheckouts`, `HelpCircle`; `Sessions/Trace/`, `Sessions/Domain/Trace.*`, `TracedRecords` | — | the facts a room or an agent is handed, the trace's records | `HelpCoverageTests`' facts half, the trace's suites |
-| 9 | **Agents** (the draft's *agents and accounts*, one subdomain, since an account is an agent's and the two folders depend on each other today) | `Agents/` but what Install, Knowledge and Context take; `Accounts/` but the instruction composer (to Context), the account rule with it (`Accounts/Rotation/ResumeAccount`'s `ResumeChoice` and `ResumeWords`, and row a-i's `LineAccount`), since the roster returns it (round 4, O3-8); `Sessions/SessionProcesses`, `HarnessEnding`; `Loop/TransientRetries` | the accounts' tables, `agent_offers`, `harness_wiring` | an adapter, a door's start and failure (`AgentErrors.Read`), the roster's walk and resume, cooling, usage, `LineAccount.Decide` | `AcpTransientTests`, `AccountRotationTickTests`, the adapters' suites |
-| 10 | **Workplace** (the draft's: trees, git, landing, keeping, named for the place work is done and lands) | `Trees/` but `Nodes/`, `Inventory/` and `SessionGroups`; `Platform/`'s git files (`GitAccessRules` to `LineGuesses`, 22) and keeping files (`KeepChoices` to `BrowserCaches`, 13); `Sessions/History/`; `Loop/FreshTree` | the workplace's tables, `git_identities`, `session_archive` | a session's tree, a landing, a git read, a removal's eligibility, the landing's hold | `SessionTreesTests`, the landing's and keep-size suites, the git half |
+| 9 | **Agents** (the draft's *agents and accounts*, one subdomain, since an account is an agent's and the two folders depend on each other today) | `Agents/` but what Install, Knowledge and Context take; `Accounts/` but the instruction composer (to Context), the account rule with it (`Accounts/Rotation/ResumeAccount`'s `ResumeChoice` and `ResumeWords`, and row a-i's `LineAccount`), since the roster returns it (round 4, O3-8), and the vocabulary it names, `Accounts/Domain/SwitchDecision` and `ContinueReason` and `ContinueWhy` moved out of `Conversations/Domain/Continuation.cs` (O4-6); `Sessions/SessionProcesses`, `HarnessEnding`; `Loop/TransientRetries` | the accounts' tables, `agent_offers`, `harness_wiring` | an adapter, a door's start and failure (`AgentErrors.Read`), the roster's walk and resume, cooling, usage, `LineAccount.Decide` | `AcpTransientTests`, `AccountRotationTickTests`, the adapters' suites |
+| 10 | **Workplace** (the draft's: trees, git, landing, keeping, named for the place work is done and lands) | `Trees/` but `Nodes/`, `Inventory/` and `SessionGroups`; `Platform/`'s git files (`GitAccessRules` to `LineGuesses`, 22) and keeping files (`KeepChoices` to `BrowserCaches`, 13), with the wiring view's `WiringSizes` and `WiringBudget`, which the space code names (O4-1); `Sessions/History/` and `Sessions/Domain/AbandonEntry`, `AbandonPlan`, `ArchiveAnswers`, `DeleteOutcome`, `HistoryAnswers`, `HistoryPlan` (O4-5); `Loop/FreshTree` | the workplace's tables, `git_identities`, `session_archive` | a session's tree, a landing, a git read, a removal's eligibility, the landing's hold | `SessionTreesTests`, the landing's and keep-size suites, the git half |
 | 11 | **Roles** (the owner's name; the draft's *Company*) | `Platform/ActorChoices`, `BuildWalk`; `Sessions/Questions/`'s holder proof (`SupervisorProof`), act form (`RoleActForm`), the supervisor's decisions (`SupervisorDecision`, `QuestionSupervisorDecisions`), the roles' brief (`RolesBrief`) and its two verbs (`SessionsSuperviseCommand`, `StewardCommand`); `Sessions/Domain/ActorRun`; `Loop/SupervisorQuarantine`, `OneTurnReask`; the act vocabulary once row w-0 moves it down; the capabilities, the role catalogue and the start plan (§2.4, §2.7), their rows'. The appointments, the role list, the act tables, the offered flags and the act judge are the shell's library's (`Modules/Platform/StandingConfirmation.cs`, `RoleActs.cs`; `Modules/Bridge/StewardActRows.cs`), outside the map, since the driver references no project (round 4, O3-6) | `roles`, `role_revisions`, `role_staffing` | `Capabilities`, `RoleCatalog`, `StartPlan.Resolve` | `ActorChoicesTests`, the proof's and act form's suites |
-| 12 | **Participants** (the draft's *Fabric*, renamed: the code's `FABRIC-*` and the company concept's *fabric* are the workflows and pipelines; what this holds is who takes part) | the participant read, its work rule and its census (§2.1, §2.2); `Sessions/ChildLineage`, `RunningSessions`, `Domain/ChildBindings`, the lineage hook; `Conversations/Helpers/`, `Partners/` and their `Domain/` rules, `Chat/ChatRunBinds`; `Sessions/AccessCommand`, `Domain/AccessRules`, `DrivenAccess`; `Loop/DriverHelpers`, `DriverPartners`; admission's start layer (§2.3) | `bindings`, `permissions`, `configured_access` | `Participant.Of`, the work, a binding, the start layer's judgement | `ChildLineageTests`, `HelperLookTests`, the admission's suites |
+| 12 | **Participants** (the draft's *Fabric*, renamed: the code's `FABRIC-*` and the company concept's *fabric* are the workflows and pipelines; what this holds is who takes part) | the participant read, its work rule, `WorkMarks` and its census (§2.1, §2.2; O4-9); `Sessions/ChildLineage`, `RunningSessions` with the `LookFacts` it holds (O4-5), `Domain/ChildBindings`, the lineage hook; `Conversations/Helpers/`, `Partners/` but the piece launcher (Platform's, O4-6), and their `Domain/` rules, `Chat/ChatRunBinds`; `GoOn/HarnessConversations`, which stores the binding (O4-6); `Sessions/AccessCommand`, `Domain/AccessRules`, `DrivenAccess`; the rules of `Loop/DriverHelpers` (`LeadWaits`, `Wait`), its class and `DriverPartners` staying Loop's executors (O4-1); admission's start layer (§2.3) | `bindings`, `permissions`, `configured_access` | `Participant.Of`, the work, a binding, the start layer's judgement | `ChildLineageTests`, `HelperLookTests`, the admission's suites |
 | 13 | **Context** (the draft's *context engine*) | `Sessions/Events/ContextBriefs`, `SessionEventLog`, `SessionLastWords`, `Domain/SessionOutput`; `Conversations/Domain/ContextBrief`, `TranscriptFile`; `Accounts/InstructionAccount`, `InstructionAccounting` (the instruction composer, misfiled under Accounts); `Agents/Adapters/SessionParts`; the carry's copy and read-back (SWITCHCTX1) and compaction when a row designs it | — (a session's event file stays a stream, §13.2) | a line's brief, a conversation's record, the instruction handed at a start | the briefs' and event log's suites |
-| 14 | **Course** (the draft's) | `LineCourse.Decide` and the move record (§3), their rows'; `Accounts/Domain/SwitchDecision`; `Conversations/` but the chat runner's core (to Loop), the helpers and partners (to Participants) and the context's files: `DrivenInbox`, `SaidDoor`, `GoOn/`, `HandOver/`, `Chat/`'s `LimitMove`, `CurveMove`, `LimitBox`, `LimitWaits`, `BriefedMove`, `ChatGoOn`, `ChatHandOver`, `Domain/Continuation`, `LimitHeld`, `WordsHeld`, `MessageLevel`; `Sessions/Requests/`; `Loop/DriverContinuations`, `DriverHandOvers`, `LimitResume` | `moves`, `move_words`, `go_on_marks`, `reopen_marks`, `go_on_new`, `handed_quests` | `LineCourse.Decide`, a move's protocol, the dispatchers; `ChatGoOn`'s use of the chat runner's `ChatRunner` and `ChatContext` (`Chat/ChatGoOn.cs:87-105`) a port Loop implements, named in the census (round 4, X3-4.2) | the brief §6's *how work moves* suites |
-| 15 | **Work orders** (from the draft's *Work*, split: quests, asks and the person's orders, apart from review, workflows and set-up, each with records of its own) | `Quests/`, its `Domain/Attention` (the attention policy, round 4) among it; `Trees/SessionGroups` (the service's session records as groups, round 4); `Sessions/Work/`, `Questions/QuestionFiles`; `Trees/Inventory/` (the work inventory); `Brainstorms/` (a request the person orders, its voices started as any work, too small for a subdomain); `Loop/DriverIntakes`, `DriverBrainstorms`, `DriverMeetings`, `ChannelReach`, `ReopenTelling` | — | the planner, an intake, a quest's or an ask's verbs, the attention policy, the session groups | `PlannerTests`, `AttentionTests`, the intake's and brainstorm's suites |
-| 16 | **Review** (from *Work*: a second opinion and verification) | `Review/`; `Sessions/Heavy/` (heavy gates and checks); `Loop/`'s five `Opinion*` files | `opinion_gates`, `opinion_dues` | an opinion's gate and its reviewer's choice; a check's verdict | the opinion's and heavy gates' suites |
+| 14 | **Course** (the draft's) | `LineCourse.Decide` and the move record (§3), their rows'; `Conversations/` but the chat runner's core (to Loop), the helpers and partners (to Participants), `GoOn/HarnessConversations` (to Participants) and the context's files: `DrivenInbox`, `SaidDoor`, `GoOn/`, `HandOver/`, `Chat/`'s `LimitMove`, `CurveMove`, `LimitBox`, `LimitWaits`, `BriefedMove`, `ChatGoOn`, `ChatHandOver`, `StartWith`, `ChatHelperWords`, `ChatContext` with the types it holds and `ChatStart` (O4-1), `Domain/Continuation` but `ContinueReason` and `ContinueWhy` (Agents', O4-6), `LimitHeld`, `WordsHeld`, `MessageLevel`; `Sessions/Requests/`; `Loop/LimitResume`, and the rules of `Loop/DriverContinuations` (`HandedToResume`), whose class and `DriverHandOvers` stay Loop's executors (O4-1); `SwitchDecision` Agents' (O4-6) | `moves`, `move_words`, `go_on_marks`, `reopen_marks`, `go_on_new`, `handed_quests` | `LineCourse.Decide`, a move's protocol, the dispatchers; **the chat runner's port**, declared here and implemented by `ChatRunner` in Loop, for every name the nine Course files and `Acp.cs` take of the core (`ChatGoOn.cs:87-105` among them), named in the census and cut before mod-xxi (round 4, X3-4.2; O4-1) | the brief §6's *how work moves* suites |
+| 15 | **Work orders** (from the draft's *Work*, split: quests, asks and the person's orders, apart from review, workflows and set-up, each with records of its own) | `Quests/`, its `Domain/Attention` (the attention policy, round 4) among it; `Trees/SessionGroups` (the service's session records as groups, round 4); `Sessions/Work/`, `Questions/QuestionFiles`; `Trees/Inventory/` (the work inventory); `Brainstorms/` (a request the person orders, its voices started as any work, too small for a subdomain); `Sessions/Domain/AskWork`, `GoAheads`, `PauseOutcome`, `PausedBy`, `StartRun`, `StopAnswer` and the sessions' verbs, `Sessions/SessionsCommand` (O4-5); `Loop/ChannelReach`, `ReopenTelling`, the rule `BringsToSource` among it; `DriverIntakes`, `DriverBrainstorms` and `DriverMeetings` staying Loop's executors (O4-1) | — | the planner, an intake, a quest's or an ask's verbs, the attention policy, the session groups | `PlannerTests`, `AttentionTests`, the intake's and brainstorm's suites |
+| 16 | **Review** (from *Work*: a second opinion and verification) | `Review/`; `Sessions/Heavy/` (heavy gates and checks); `Loop/OpinionLook` (its rules `Concluded`, `MadeSince`, `HoldsPush`) and `OpinionDelivery`, which name nothing of Loop; `DriverOpinions`, `OpinionDeliverer` and `OpinionGateLook` staying Loop's executors (O4-1) | `opinion_gates`, `opinion_dues` | an opinion's gate and its reviewer's choice; a check's verdict | the opinion's and heavy gates' suites |
 | 17 | **Plugins** (new: the draft placed only their wire) | `Plugins/` | `plugin_state`, `plugin_approvals` | the hook points, the catalogue, the work wire, `work/event`'s outside projection (§4) | `PluginKitTests`, the hooks' suites |
 | 18 | **Workflows** (from *Work*, with the node runtime that sat in Trees) | `Workflows/`; `Trees/Nodes/` | the workflows' tables, `chat_looks` | a run's evaluation, a node's contract | the workflow and node suites, the family rehearsal |
 | 19 | **Setup** (from *Work*: a workspace's set-up) | `Setup/` but install and update | `setup_plans` | a set-up's plan and press | the set-up suites |
 | 20 | **Help** (new: Ask Daoris, the company concept's front desk, apart from the knowledge it reads) | `Help/` but what Knowledge takes: `HelpConversations`, `HelpMode`, `ConfiguredAccess`'s judge, `HelpSwap`, `HelpWired`, `HelpProposals` and its kinds, `HelpSettings`, `HelpHousekeeping`, `Proposals/` | `help_links` | the room's start, a proposal's judge | `HelpCoverageTests` |
-| 21 | **Loop** (the draft's, now both loops) | the look (`Loop/Driver`, `DriverCommand`, `LoopContext`, `LookStages`, `PassAsks`) and the chat runner's core (`Chat/ChatRunner`, `ChatTurns`, `ChatPending`, `StartRequests`, `ChatContext`, `ChatHelp`), which execute the course's answers (§3.1); the composition root; the wiring view (`SystemWiring`, `WiringCommand`, `WiringRedact`, `WiringSizes`, `WiringVariables`), a read of what it composed | — | none: nothing names Loop, as today | the brief §6's loop suites, the rehearsals |
+| 21 | **Loop** (the draft's, now both loops) | the look (`Loop/Driver`, `DriverCommand`, `DriverWatch` but its rule `Due`, `LoopContext`, `LookStages`, `PassAsks`) and its ten executors built from `LoopContext` (`DriverContinuations`, `DriverHandOvers`, `DriverHelpers`, `DriverPartners`, `DriverIntakes`, `DriverBrainstorms`, `DriverMeetings`, `DriverOpinions`, `OpinionDeliverer`, `OpinionGateLook`), the rules §14.1 lists moved out of them (O4-1); the chat runner's core (`Chat/ChatRunner`, `ChatRunner.StartFrom`, `ChatTurns`, `ChatPending`, `StartRequests`, `ChatHelp`), implementing Course's chat runner's port, `ChatContext` and `ChatStart` being Course's (O4-1); all of which execute the course's answers (§3.1); the composition root; the wiring view (`SystemWiring`, `WiringCommand`, `WiringRedact`, `WiringVariables`), a read of what it composed, its sizes Workplace's (O4-1) | — | none: nothing names Loop, as today, an edge into a file placed in Loop but outside its folder a census exception cut before mod-xxi (O4-1) | the brief §6's loop suites, the rehearsals |
 
 Not in the map: the modules (the shell's own library, held by its own structure gate, `Modules.Tests/StructureTests.cs:66-78`, the
 appointments and the act judge among them), the host (`Daoris.Driver.Host`), the GitDoor, the launcher and the piece start, each its own
@@ -1748,12 +1870,13 @@ drives, never to a subdomain of verbs.
 ### 14.3 The rules the map keeps
 
 - **Downward only.** A file names only its own subdomain's types and those ranked below it. Where a lower subdomain calls a higher one today
-  (the landing calling a plugin's `work/land`, `NoteCodes` naming Conversations' types, `ChatGoOn` naming the chat runner's `ChatRunner` and
-  `ChatContext`, the settings' parser naming nine folders' rule types), the lower declares a port and the higher implements it, wired by Loop; or the type moves down to its one
-  owner. Settings in particular reads keys by their shape and hands each subdomain its own keys, whose rule types that subdomain owns, so
+  (the landing calling a plugin's `work/land`, `NoteCodes` naming Conversations' types, the nine Course files and `Acp.cs` naming the chat
+  runner's core, the settings' parser naming nine folders' rule types), the lower declares a port and the higher implements it, wired by Loop; or
+  the type moves down to its one owner (§14.2's round-4 changes; O4-1, O4-6). Settings in particular reads keys by their shape and hands each subdomain its own keys, whose rule types that subdomain owns, so
   `DriverConfig` names none of them; until its 165 readers move, `DriverConfig` stays the composed record, read by each through a census that
   shrinks one subdomain at a time.
-- **Loop holds no rules.** Each judgement it holds today moves to its subdomain (§14.1's list, each with its row); Loop composes and executes.
+- **Loop holds no rules.** Each judgement it holds today moves to its subdomain (§14.1's list, each with its row) as a pure function; Loop composes
+  and executes, and its executors built from `LoopContext` stay in it and call those functions (O4-1).
 - **`Domain/` stays pure, and is seen to be.** Beside today's tokens, a `Domain/` file names no type of the I/O seams (`ServiceClient`,
   `SessionProcesses`, `HarnessRoster`, `DaorisHome`, `MachineLog`, `WorkingTree`, `DesktopStore`) and holds no `async`; today's six crossings and
   nine `async` files are the census's named exceptions, each cut by its subdomain's row.
@@ -1776,38 +1899,60 @@ become an assembly in a row of its own, measured, Store and Platform the first c
 `StructureTests` reads the map from `fixtures/structure.json`, which names the twenty-one subdomains in their order, each one's folder, its
 allowed `Domain/` and, from its namespace row on, its namespace, and the census of today's exceptions; `StructureCheck` gains:
 
-1. **The subdomain rule**: a source sits in its subdomain's folder; a file added outside its subdomain fails, so new code is written in place
-   from this row on. Every namespace stays `Daoris.Driver` until the subdomain's namespace row (§14.6).
-2. **The direction rule**: a file names only its own subdomain's types and lower ones, read by **every type reference** in it (an ordinary
-   name, a fully qualified one, an alias's target and a static import's type), found by the declared-type table the gate builds from every
-   file's declarations, comments and strings removed, as `StructureCheck` reads Loop's today, and never by `using` lines alone (X3-4.1); an edge
-   against the order is allowed only where the census names it, with its row.
+1. **The subdomain rule**: every file of the driver is placed in `structure.json`, a file it does not place failing (O4-5); a source sits in its
+   subdomain's folder once its move lands; a file added outside its subdomain fails, so new code is written in place from this row on. Every
+   namespace stays `Daoris.Driver` until the subdomain's namespace row (§14.6).
+2. **The direction rule**: a file names only its own subdomain's types and lower ones, read by **every named reference** in it, found by the
+   declared-type table the gate builds from every file's declarations, comments and strings removed, and never by `using` lines alone
+   (X3-4.1). Today's identifier scan skips every name that follows a `.` (`StructureCheck.cs:385`), so the rule gains what it does not have
+   (O4-5): **a namespace-qualified chain** (`Daoris.Driver.<Name>`, `global::Daoris.Driver.<Name>`), **an alias's target** and **a `using
+   static` target** each read as a reference to the type it names; and **a name the file declares as a member is no edge**, so a member named
+   like a higher type (`DaorisHome`'s `HomeEntry` members, §14.1) counts none, or the tests read Roslyn's semantic model. An edge against the
+   order is allowed only where the census names it, **by its edge family and the subdomain row after which it is cut** (O4-6).
 3. **The purity rule** widened as §14.3 says, its exceptions named.
-4. **Loop's rule** kept (nothing names Loop) and widened: Loop declares no judgement the census does not name as moving.
-5. **No global using** of a subdomain's namespace, from the namespace rows on.
+4. **Loop's rule** kept and widened: nothing names a type in `Loop/`'s folder, with no exception, so no move takes a class that names
+   `LoopContext` out of Loop (O4-1); an edge into a file the map places in Loop that still sits outside its folder (the chat runner's core and
+   the wiring view, until mod-xxi) is a census exception named with its cut, and every such cut lands before mod-xxi moves the file in; and Loop
+   declares no judgement the census does not name as moving.
+5. **The mirror rule** (`StructureCheck.cs:183-213`) with today's test folders listed as not yet moved, each mod row moving its subdomain's
+   tests into `Driver.Tests/<Name>/` (O4-5).
+6. **No global using** of a subdomain's namespace, from the namespace rows on.
 
 Its proof: the gate run over the tree at this row's commit passes with today's exceptions listed and fails on a planted file that names an
-upward type plainly, fully qualified, through an alias and through a static import; a planted `Domain/` file naming `ServiceClient`; and a planted
-rule in Loop; `StructureTests`' own fixtures for each. It amends D166 point 1's fifteen modules (Brainstorms the fifteenth by D176 point 1,
+upward type plainly, fully qualified, through `global::`, through an alias and through a static import; passes a planted member named like a
+higher type; fails on a file `structure.json` does not place and on a planted edge into `Loop/`; a planted `Domain/` file naming
+`ServiceClient`; and a planted rule in Loop; `StructureTests`' own fixtures for each. It amends D166 point 1's fifteen modules (Brainstorms the fifteenth by D176 point 1,
 `StructureTests.cs:189-191`) by the twenty-one subdomains, and keeps D166 point 4's order and its rejection of renaming namespaces as files
 move (O3-10).
 
 ### 14.6 The order of the moves
 
 Each move is a Part A row that **changes no behaviour**: it moves one subdomain's files into its folder, **its namespace unchanged** (D166 point 4:
-namespaces last; O3-10), updates the map, moves every **linked consumer** with the files (the GitDoor's `Compile Include` paths,
-`Daoris.Desktop.GitDoor.csproj:20-37`; the driver project's embedded resources' `Include` paths, their logical names pinned; the launcher's
-compile of `StagedBuild.cs` by path) (X3-4.2), and keeps every gate of the brief §6 green, the GitDoor built and its tests run where it
-compiles a moved file; source-scan tests find files by name, so a move breaks none. It lands when no open branch holds the files it moves, since
+namespaces last; O3-10), updates the map, moves every **linked consumer** with the files (X3-4.2; the list completed by O4-7):
+- the GitDoor's `Compile Include` paths (`Daoris.Desktop.GitDoor.csproj:20-37`);
+- the launcher's nine compiled driver files (`Daoris.Desktop.Launcher.csproj:23-40`): `StagedBuild`, `InstallSwap`, `HeldFiles`, `HomeWrites`,
+  `HomeLease`, `HomeIdentity`, `DaorisHome`, `DriverException` and `AtomicFile`;
+- PieceStart's two (`Daoris.Desktop.PieceStart.csproj:21-22`): `PieceLauncher` and `ProcessJob`;
+- the driver project's embedded resources' `Include` paths, their logical names pinned;
+- **the fourteen sites that read driver sources by folder path**, made name-based first, as D166 point 4 orders, in row mod-0, before the first move:
+  `Driver.Tests/Conversations/DrivenInboxTests.cs:576`, `:579`; `Loop/DriverCommandTests.cs:138-139`, `:166`, `:184`, `:203`, `:284-285`;
+  `Platform/InstanceDoorTests.cs:831`; `Trees/GitLaunchTests.cs:200`; `Modules.Tests/Loop/DriverLoopSendsBackTests.cs:38`; and the service's
+  `Daoris.Service.Tests/Mcp/McpRoleFilterTests.cs:72` (`Conversations/Domain/PartnerPermissions.cs`) and `McpToolRegistrationTests.cs:61`
+  (`Brainstorms/Domain/BrainstormPermissions.cs`).
+
+Each move keeps every gate of the brief §6 green, builds the GitDoor, the launcher and PieceStart and runs the GitDoor's tests where they compile
+a moved file, and runs the modules' tests and the service's Mcp tests (O4-7). It lands when no open branch holds the files it moves, since
 a move under another branch's edit is its conflict. The moves go **bottom up, one subdomain a row** (X3-6.2), so each moves onto ground already in
 place: mod-i Platform; mod-ii Store (today's file primitives; `DesktopStore` is row z-i's); mod-iii Settings; mod-iv Service; mod-v Install;
 mod-vi Instance; mod-vii Events; mod-viii Knowledge; mod-ix Agents; mod-x Workplace; mod-xi Roles (the driver's own role files; the act
 vocabulary's move is row w-0's, Part B's); mod-xii Participants; mod-xiii Context; mod-xiv Course; mod-xv Work orders; mod-xvi Review; mod-xvii
 Plugins; mod-xviii Workflows; mod-xix Setup; mod-xx Help; mod-xxi Loop, the remainder. **The cuts** follow each move, one edge family per row (a
 port declared, or a type moved to its owner), each changing no behaviour and shrinking the census by its edges, each named in the census with
-its edges before it lands (the account rule's types already with the roster, §14.2; `ChatGoOn`'s port onto the chat runner; `HelpRoom.Repository`'s
-`daoris:help` moved down to the participant's work rule; the settings' parser's rule types to their subdomains); Loop's rules leave it in the
-rows that move their subdomains, each a move with its tests, never a rewrite. Foundation rows that add code (the account rule, the course, the
+its edges by family and the subdomain row after which it is cut (O4-6), before it lands (the account rule's types and its vocabulary with the
+roster, §14.2; the chat runner's port and the types `ChatContext` holds, before mod-xxi; `HelpRoom.Repository`'s `daoris:help` moved down to the
+participant's work rule; the settings' parser's rule types to their subdomains; the vocabularies §14.2 moves down); Loop's rules leave it as pure
+functions in the rows that move their subdomains, the executors built from `LoopContext` staying in Loop and calling them, each a move with its
+tests, never a rewrite (O4-1). Foundation rows that add code (the account rule, the course, the
 store, the catalogue) write it in its subdomain's folder from row mod-0 on, so no new code needs moving.
 
 **The namespace rows come last**, one per subdomain once every edge of it points down, each moving its files into `Daoris.Driver.<Name>` and adding
@@ -1820,9 +1965,9 @@ since a simple name binds to a namespace before a type of the same name, which t
 
 | Part of this design | Lands in |
 |---|---|
-| **Who acts** (§2): the participant read, the work, bindings, lineage, admission | **Participants**, with the service's twin of the work in the service |
+| **Who acts** (§2): the participant read, the work, bindings, lineage, admission | **Participants**, the binding's store `HarnessConversations` among it (O4-6), with the service's twin of the work in the service |
 | The capabilities, the role catalogue and the start plan (§2.4, §2.7) | **Roles**; the appointments, the act judge and the act door (§2.5) in the shell's library, outside the map |
-| **How work moves** (§3): `LineCourse.Decide`, the move record, the words' rules | **Course**, executed by **Loop**'s two loops; `LineAccount` in **Agents** with the roster; a move's brief and carry in **Context**; the say door's head, the keyed open and the words' settlement in the service |
+| **How work moves** (§3): `LineCourse.Decide`, the move record, the words' rules | **Course**, executed by **Loop**'s two loops, the look's executors built from `LoopContext` and the chat runner behind Course's port (O4-1); `LineAccount` in **Agents** with the roster; a move's brief and carry in **Context**; the say door's head, the keyed open and the words' settlement in the service |
 | **What is said** (§4): the vocabulary, the hubs, the journal's readers, the notices, the machine log | **Events**; the outside projection (`work/event`) in **Plugins**; the journal itself in the service's store |
 | **Where state is kept** (§13): `DesktopStore`, its migrations and imports | **Store**, each family's tables in the subdomain the §13.3 table names |
 | The settings and their export and import | **Settings** |
@@ -1914,7 +2059,7 @@ lists eleven wrong claims, each placed in a finding below.
 | 12 | — | **Taken, with X3-6.1.** The keyed open is its own row, d-i, before d-ii and every row that moves words, proven in process there and across a crash in f-i; round 4 also replaces the `opens` field with the service's `session_opens` table, so the open's answer is kept whole (X3-3.3) (§3.3, §5.2, §10) |
 | 13 | — | **Taken.** Row a-i's installed line reads `session.moved … why=retry` (`Chat/LimitMove.cs:220`, `:296`, `:317-318`; `Continuations.Moved`, `Driver/Conversations/Domain/Continuation.cs:588-594`), the note's continue reason `account` (`:60`); §3.2 step 2 no longer says the conversation's move is why `account`; D137's LIMITSWITCH2 note, whose row 1a keeps `accountPicked` on the record (`D137.md:848`), gains a dated line pointing at row a-ii's binding (§3.2, §10) |
 | 14 | — | **Taken.** Rows z-ii, z-iv and z-xi are ⚖ as rehoming authority records and z-ix as moving the records a removal follows; all four are Part B's (§8, §10, §13.6) |
-| 15 | — | **Taken, as the steward's decision on both readers' reads.** The role is 角色 in both its shapes, 任命的角色 where the appointed one must be said; 职务 is withdrawn, its reason separating two screen titles rather than two concepts; every shipped string already says 角色 (`zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`, `zh/settings.daoris.json:108`, `:139`), and row u's list gains `:139` as a string that already says the appointed shape; row u changes no page string (§6, §10; D212; the brief §8) |
+| 15 | — | **Taken, as the steward's decision on both readers' reads.** The role is 角色 in both its shapes, 任命的角色 where the appointed one must be said; 职务 is withdrawn, its reason separating two screen titles rather than two concepts; every shipped string already says 角色 (`zh/settings.ai.json:28`, `zh/work.json:2`, `zh/person.json:123`, `zh/agents.json:121`, `zh/note.json:10`, `zh/settings.daoris.json:108`, `:139`), and row u's list gains `:139` as a string that already says the appointed shape; row u changes no page string (§6, §10; D212; the brief §8). *Corrected by round 4's named changes (O4-2, §17):* those seven say 角色, and ten more say 职责 for the appointed role, which row u makes 角色, so row u changes those ten; *actor* points at *role* in the glossary, since two terms may not share 角色 |
 | 16 | — | **Taken, the four sentences.** `RoleCatalog.Read` judges shape and reads a mixed record as unreadable; an unreadable added record holds every start in its scope until it reads or is deleted; every binding writer updates its own columns by name and never replaces a row; an import never sets or raises a grant, an imported appointment dormant and its grant set by *Appoint* alone (D208 point 1); row w's proof gains the first two (§2.7, §13.3; rows w, x, z-iv) |
 
 Its verdict's last line stands as written: the acceptance it offers does not cover the steward's reading that a closed quest's session falls
@@ -1941,7 +2086,7 @@ Its §0 finds five of round 2's findings open: 1.1 (the downgrade, answered by 3
 | 3.7 | — | **Taken.** The one-use git grants (`run/git/grants`, `Driver/Platform/GitAccessRules.cs:153-183`) stay files, with the reason: the driver writes them and the GitDoor consumes each by its own rename and delete, and writes nothing in the store (§13.6's list) |
 | 4.1 | blocking | **Taken.** The direction rule reads every type reference, ordinary, fully qualified, aliased and static, by the gate's declared-type table, never `using` lines alone (a qualified reference today, `Driver/Sessions/SessionsCommand.cs:185`); row mod-0 proves each planted form refused (§14.3, §14.5; row mod-0) |
 | 4.2 | — | **Taken.** The port cuts are named in the census before their rows (`ChatGoOn` onto `ChatRunner` and `ChatContext`, `Chat/ChatGoOn.cs:87-105`, among them), and each move carries its linked consumers: the GitDoor's `Compile Include` paths (`Daoris.Desktop.GitDoor.csproj:20-37`), the embedded resources' `Include` paths and the launcher's compile by path, the GitDoor built in the move's proof (§14.2, §14.3, §14.6) |
-| 5.1 | — | **Taken in part.** One concept in two shapes takes one word on the page: taken. The word is **disputed**: the steward's decision is 角色, not 职务, since every shipped string already says 角色 for both shapes, the glossary's *actor* entry gives 角色 the meaning a working role carries and refuses 岗位, close to 职务, and 职务 would retire 角色 from seven strings for no concept the page lacks; *actor* stays a code and prose word for a working role's staffing, with no Chinese of its own (§6, §1.1 Q16) |
+| 5.1 | — | **Taken in part.** One concept in two shapes takes one word on the page: taken. The word is **disputed**: the steward's decision is 角色, not 职务, since every shipped string already says 角色 for both shapes, the glossary's *actor* entry gives 角色 the meaning a working role carries and refuses 岗位, close to 职务, and 职务 would retire 角色 from seven strings for no concept the page lacks; *actor* stays a code and prose word for a working role's staffing, with no Chinese of its own (§6, §1.1 Q16). *Corrected by round 4's named changes (O4-2, §17):* the reason's *every shipped string* was wrong, since ten strings say 职责 for the appointed role, so with either word some shipped strings change; the decision stands on the rest, and row u makes the ten 角色 |
 | 6.1 | blocking | **Taken, with O3-12.** The service's keyed open and its transfer record are row d-i, standalone, before d-ii and every row that moves words; row p stays before them (§10) |
 | 6.2 | — | **Taken.** The moves are one subdomain a row, mod-i to mod-xxi, Platform apart from Store and Service, Install and Instance apart; each with its build proof, the GitDoor's where it compiles a moved file; the two-maker gates, the ⚖ rows and SWITCHCTX1's own owed read stand (§10, §14.6) |
 
@@ -1955,3 +2100,55 @@ transition number's trigger and its use as news's one key (§4.5); the confirmat
 each authority-bearing family's choice between setting aside and writing narrowings through, file by file of z-xi by its older reader (§13.5); the
 act vocabulary's move and the grant's lowering ordered across two stores until row z-iv (§2.7; row w-0); and the GitDoor's start with SQLite,
 measured in row z-i. Part B's rows wait for that round's acceptance, and the ⚖ rows for both makers' reads of it.
+
+**Six items the Opus reader's read of round 4 adds** (O4-12), each a decision round 5 makes:
+1. **Row o's shape.** The shape a word kept for a moving record takes so that an older shell's sweep does not resume it (§3.4 rule 4): a
+   protocol decision, open since round 2, not a measurement; round 5 names the shape, or says the row waits for the rollback window and why, in
+   place of *where no such shape exists the row waits*.
+2. **The version matrix.** One table for each service protocol this design adds or changes (`opens` with `session_opens`, the `Continued`
+   refusal, the attempt's answer, `said_settled`, the journal), giving an older desktop against a newer service and a newer desktop against an
+   older service, where today each pairing is said in a different section.
+3. **The say door's head read.** `Lines.HeadOf` walks the `from` chain inside the exclusive step for every word, with no index on
+   `from_session` known (§11, *unverified*), on the hottest path; round 5 fixes row d-ii's landing limit for it, and the index if one is needed.
+4. **The settlement's horizon as a decision.** Seven days and 10,000 rows bound D137's and D188's *never sent again* for a producer's retry
+   (§3.4 rule 5): a decision note on what the guarantee is past the horizon, not only a bound row p measures.
+5. **The `delivered` window.** Between `delivered` and the take (§13.4 step 4), across a downgrade, the word still waits on `said`, marked
+   attempted, and an older build settles it as uncertain; §13.5's `delivered` row says so, with what the newer build reads of it on its return.
+6. **The chat runner's boundary** in Part B's rows (O4-1, taken in Part A's map, §14.2): rows e, f-i and h write the course's executors and the
+   move's take-up into Course, and they take `ChatContext` and the chat runner's port as §14.2 places them, settled before those rows.
+
+## 17. Round 4's named changes, and where each went
+
+The independent Opus reader read round 4 at `6bac9a0be` (`docs/2026-10-25-foundation-reads.md`, verbatim): 12 findings, 3 blocking for Part A.
+Its verdict on Part A is **accept after named changes the steward can check without another read**, and on Part B's agenda that §16.3 is right as
+far as it goes, with six items to add. **Codex's read of round 4 is owed**, its credits out. The steward checked each finding's lines at
+`6bac9a0be`, whose `src/` is `e8f1aed4f`'s but for one test: the ten strings that say 职责; `names-check.mjs:118-121` and `:299-302`;
+`StructureCheck.cs:216-217` and `:385`; the ten `Loop/` classes built from `LoopContext`; the Course files and `Acp.cs` that name the chat runner's
+core; and the space code that names `WiringSizes`. One edge the read did not name was found in the check: `ChatContext` itself holds three of the
+runner's types (`ChatRunner.ITurnedChat`, `ChatRunner.Handing` and `ChatPendings`, `Chat/ChatContext.cs:57`, `:95`, `:113`), so they move with
+it. Every finding is taken as the read names it; where the read offers two ways, the table says which was chosen.
+
+The read's other sections land in its findings. **Its §0** finds round 4's answers to round 3 holding, four in part: the Opus reader's 8 (findings 5
+and 6 here) and Codex's 4.1 (finding 5), 4.2 (findings 1 and 7) and 5.1 (finding 2). **Its §2**, the line between the parts, is findings 1, 3, 8,
+10 and 11. **Its §4's fifteen claims** are findings 1 to 9 and their lines.
+
+| # | | The read's change | Where it went |
+|---|---|---|---|
+| 1 | blocking | The kept Loop rule contradicts the map's Loop boundary. Keep the `LoopContext`-built `Driver*` and `Opinion*` classes in Loop as the look's executors, moving out only §14.1's rules; place `ChatContext` and `ChatStart` in Course, or name one port family covering the nine Course files and `Acp.cs`; place `WiringSizes` and `WiringBudget` with the space code in Workplace; state whether an edge into Loop is a census exception until its cut, or every cut lands before its move | **Taken; both of the read's ways for the chat runner.** The ten executors stay in Loop, and only §14.1's rules leave it, as pure functions they call (§14.1, §14.3, §14.2 rows 12, 14, 15, 16 and 21). `ChatContext` (with the three types it holds) and `ChatStart` are Course's. Everything else the nine Course files and `Acp.cs` name of the core is one port family, the chat runner's port: Course declares it and `ChatRunner` implements it, and its static lines move down (§14.2's round-4 changes). The wiring view's sizes are Workplace's (§14.2 row 10). **On edges into Loop, both rules hold**: nothing names a file in `Loop/`'s folder, with no exception, so today's rule stays absolute and no move takes such a class out of it; and an edge into a file the map places in Loop that still sits outside its folder is a census exception until its cut, every such cut landing before mod-xxi (§14.5 rule 4; rows mod-0 and mod-i to mod-xxi). Part B's rows e, f-i and h take this boundary (§16.3 item 6) |
+| 2 | blocking | Row u's premise and its glossary entry both fail. Row u replaces 职责 with 角色 in the ten strings (任命的角色 where the appointed shape must be said), under the UI and translation contracts, proven by `i18n:check` and `names:check -- --strict`; *role* takes 角色, its match covering the `Actor(s)` labels; *actor* becomes `use: "role"` (code and prose only); correct §0.2, §1 Q16, §6, §16.1's 15 and 5.1, D212 point 14 and the brief §8 note | **Taken.** Row u changes the ten strings and names its proof (§10). *Role*'s entry has its match over *Actor*, *Actors* and *Roles*, with 职责 added to its avoid list so the old word cannot come back; *actor*'s entry becomes `use: "role"` (§6). Corrected: the Standing, which names the change as already decided; §0.2; §1 Q16 and §1.1's Q16; §6's table and text; §16.1's 15 and §16.2's 5.1, each corrected beside round 4's words; D212's point 14 and its status; and the brief §8 note |
+| 3 | blocking | Row a-i asserts a rule change and a D206 note that lean on Part B. a-i reads each caller's set as today, behind one function that names which set it reads; §7 row 3 and its D206 point 2 note move to Part B beside a-iii; D212 point 7's sentence on the earliest reset is marked as Part B's | **Taken.** Row a-i's `LineAccount.Earliest(set, …)` reads the walk's states, the switch's walk against the own reset, or the wake's coolings, as each caller does today (§10). The one reset over step 4's set is row a-iii's (§3.2's intro and step 5; §5.1). §7 row 3 is a-iii's, with its D206 point 2 note. D212 point 7's sentence is marked Part B's, and its status names the clause |
+| 4 | — | a-i's pure function against the walk's side effects, and its axis. The walk is asked only where today's code asks it (`Decide` run twice, or the walk as a lazy input), and the proof asserts per case how many walks were made and how many starts counted; the axis's *pick* is a handed quest's named account or the hand-over press's account opened as a pick; use `e8f1aed4f`'s lines | **Taken.** `walk` is a lazy input, and `Decide` runs twice where a caller cannot hand one. The proof asserts the answer, the walks and the counted starts on every case. The constraint axis is none, a handed quest's named account, or a hand-over press's account opened as a pick. The lines are the read's (`HarnessRoster.cs:887`, `:894-911`, `:923-934`, `:975`, `:1022`, `:1030`; `ChatGoOn.cs:489-492`, `:614-645`, `:723-746`; `LimitWaits.cs:156-157`, `:194-220`; `Driver.cs:2381-2384`) (§10) |
+| 5 | — | mod-0's census is not exact as specified. Add a rule for the namespace-qualified chain (`Daoris.Driver.<Name>`, `global::`), alias targets and `using static` targets; make a name the file declares as a member no edge, with a planted member in the proof (or Roslyn's semantic model in the tests); place every file in `structure.json`; list today's test folders as not yet moved, each mod row moving its tests; in §11, *exact* becomes *every named reference* | **Taken.** §14.5 rules 1, 2 and 5; row mod-0's What and Proof; §14.1's notes on the member names and the identifier scan; §14.2's placement of every file round 4 left out; and §11 |
+| 6 | — | Several vocabularies sit above the files that name them. Move `ContinueReason`, `ContinueWhy` and `SwitchDecision` with the account rule into Agents (or `ContinueWhy` into Events); `SessionRecord` and the planner's and intake's record views into Service; `PieceLauncher`, `PieceStarts` and `PieceJobs` into Platform; `MachineLog` and `HomeWrites` into Platform; split `AttentionKind` and `AttentionEvent` into Events; move `HarnessConversations` into Participants. mod-0 names each edge by its family and the row after which it is cut | **Taken, the first of the read's ways for the continue reasons**: all three go into Agents, which names them, so `ContinueWhy` does not split from `ContinueReason`. See §14.2's round-4 changes and its rows 1, 4, 7, 9, 12 and 14; §14.5 rule 2 and row mod-0, which name each edge by family and row; and §14.6 |
+| 7 | — | The list of linked consumers is short. Name the launcher's nine files, PieceStart's two and the fourteen tests that read source by path; make those tests name-based first, as D166 point 4 orders; each move's proof builds the launcher and PieceStart and runs the modules' and the service's Mcp tests | **Taken.** §14.6's list; the fourteen made name-based in row mod-0; the proof of rows mod-i to mod-xxi; §14.1's line on the source-scan tests corrected |
+| 8 | — | Row b repairs behaviour, though the Standing says it does not. The Standing names the repair under D137 and D188, so no new decision is asked; b's Process case restarts before the take, the case after the take being row p's; the proof asserts that the record path passes no `choice` | **Taken.** The Standing's Part A bullet and §10's Part A paragraph; row b's *Repair*, What and Proof (§10) |
+| 9 | — | Row c leaves out its string, its field chain and its dependency. Add `work.identity.partner` (Partner / 搭档, D203 point 9) with `i18n:check` and `names:check`; name `session-record-fields.md`'s rows 8, 10, 11 and 12; `ParticipantWork.Of` takes the marks as a value declared in Participants; a census A disagreement other than the partner's moves no reader in c | **Taken.** Row c's What, Census and Proof (§10); `WorkMarks` in §2.2 and §14.2 row 12 |
+| 10 | — | D212's Part A covers Part B clauses. Name the clauses Part A accepts | **Taken.** D212's status names them: point 1 as the read, its binding read from `<s>.harness.json` (the binding's store home is Part B's); point 2's work read from the marks and pushed as `work` (`actor` as the seeded id, the role and revision on the binding and census C are Part B's); point 7's rule as built (the recorded pick, the settled selection and the one earliest reset are Part B's) |
+| 11 | — | A dated line on an accepted decision states a proposal as decided (`D137.md:865-868`). It should read *is proposed to be kept on the start's binding (FOUNDATION1 Part B, row 1a-ii)* | **Taken.** D137's dated line is reworded as the read names it; row a-i's notes |
+| 12 | — | §16.3 is missing six items | **Taken.** §16.3's six items |
+
+**What it leaves.** Part A's named changes are made, each checkable against the lines cited without another read, as the read's verdict asks. So
+by D191's note of 2026-10-24 the steward may accept row a-i on this read and build it, staging no build that carries it until Codex's read of
+round 4 lands with its amendments. Rows b, c, mod-0, u and the moves wait for that read. Part B stays proposed for round 5, its agenda §16.3.
+The steward's reading that a closed quest's session falls inside LIMITSWITCH1's decision stays the owner's to overrule (§8); a-i takes
+LIMITSWITCH2's case as built and adds nothing to it.

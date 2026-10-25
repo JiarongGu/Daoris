@@ -1,6 +1,6 @@
-# FOUNDATION1: the reads of rounds 1 to 3 (D191)
+# FOUNDATION1: the reads of rounds 1 to 4 (D191)
 
-The independent Opus 5.5 reader's foundation reads and Codex's reads of `docs/2026-10-25-foundation-design.md` and D212, round 1 at `c8eccf30e`, round 2 at `29a066182` and round 3 at `68a396c65`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Round 2 answers every finding of round 1 by number in the design's §12, round 3 every finding of round 2 in its §15, and round 4 every finding of round 3 in its §16.
+The independent Opus 5.5 reader's foundation reads and Codex's reads of `docs/2026-10-25-foundation-design.md` and D212, round 1 at `c8eccf30e`, round 2 at `29a066182`, round 3 at `68a396c65` and round 4 at `6bac9a0be`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one level down. Round 2 answers every finding of round 1 by number in the design's §12, round 3 every finding of round 2 in its §15, and round 4 every finding of round 3 in its §16; the Opus reader's round-4 findings are taken in the design's §17, and Codex's read of round 4 is owed, its credits out.
 
 ## Opus (foundation), round 1
 
@@ -877,3 +877,251 @@ None of those findings was wrong; none needs deferral.
 2. **Non-blocking — finish making the module rows individually landable.** F:1531 groups Platform with Store and Service with Install and Instance, despite F:1528’s one-subdomain rule; split those groups and give each cut its concrete compatibility/build proof. The whole-design two-reader gate, the marked authority/deletion rows and SWITCHCTX1’s independent outstanding read remain correctly retained (F:968, F:1002, F:852).
 
 **Verdict: another round.** The remaining authority, cross-store delivery, effect-fencing and downgrade gaps require protocol decisions; they are not bounded wording corrections.
+
+## Opus (foundation), round 4
+
+The independent Opus 5.5 reader's foundation read of round 4 at `6bac9a0be`: 12 findings, 3 blocking for Part A; Part A accept after named changes; Part B's agenda right as far as it goes, with six items added. Codex's read of round 4 is owed, its credits out.
+
+### 0. Both reads of round 3
+
+I read at HEAD `6bac9a0be`. Its `src/` is `e8f1aed4f`'s plus one test (`Trees/ReviewGraphCensusTests.cs`), so round 4's `e8f1aed4f` lines hold, and every line below is HEAD's. Paths use the design's aliases. I ran read-only git and text searches, and nothing else.
+
+#### The Opus reader's round 3 (16 findings, 2 blocking)
+
+| # | Round 3 | Round 4 | Does the answer hold? |
+|---|---|---|---|
+| 1 | blocking | Taken, in Part B (§3.3, §13.3, §13.4; f-i's three cases) | Deferred to Part B, and the reason holds. A move is taken over only from a run that `HomeLease`'s pid-and-start-time test finds dead, which closes the case. Two installs' shells and a hung executor are on §16.3. |
+| 2 | blocking | Taken, in Part B (§13.5's two classes; z-ii, z-iv and z-xi prove a revoke) | Deferred, and the reason holds. z-xi's choice file by file is on §16.3. |
+| 3 | — | Taken, in Part B (§13.2; z-i lands within its p95 limit) | Holds. |
+| 4 | — | Taken, in Part B (§13.5's *settled*) | Holds. The headless start and the silent swap are on §16.3. |
+| 5 | — | Taken, the stricter, in Part B (the settlement is the service's) | Holds. |
+| 6 | — | Taken, in Part B (bindings set aside) | Holds. |
+| 7 | — | Taken. w-0 is Part B's, and mod-xi moves only the driver's own files | Holds. |
+| 8 | — | Taken, in Part A (§14.1, §14.2) | **Partly open.** Three edges remain: the account rule's own file names Course (`ResumeAccount.cs:99-101`); `SessionGroups.cs` takes `SessionRecord` up with it; and the gate's scan still counts DaorisHome's member names. See findings 5 and 6. |
+| 9 | — | Taken | Holds. No driver type has a subdomain's name either (I checked all twenty-one). |
+| 10 | — | Taken, in Part A (§7 row 21, §14.5, §14.6, D212's amend list) | Holds. |
+| 11 | — | Taken, in Part B | Holds. |
+| 12 | — | Taken, in Part B (d-i) | Holds. |
+| 13 | — | Taken (row a-i's log line; `D137.md:865-868`) | Holds. The new dated line states a Part B proposal as decided (finding 11). |
+| 14 | — | Taken, in Part B | Holds. |
+| 15 | — | Taken, as the steward's decision | **The premise is wrong, and I made the same mistake in round 3.** Ten shipped zh strings say 职责 for an appointed role. The glossary also refuses two terms that share 角色. See finding 2. |
+| 16 | — | Taken, in Part B | Holds. |
+
+#### Codex's round 3 (17 findings, 11 blocking)
+
+| # | Round 3 | Round 4 | Does the answer hold? |
+|---|---|---|---|
+| §0: round 2's 1.1, 2.2, 3.1, 4.3, 5.1 (open) | blocking | Answered by 3.4, 2.2, 3.1, 3.6 and 6.1 | In Part B, as those rows below. |
+| 1.1 | blocking | Taken with O3-1, in Part B | Holds. |
+| 1.2 | blocking | Taken with O3-5, in Part B | Holds. |
+| 1.3 | — | Taken (§2.7, §7 row 17, D212 point 5) | Holds. |
+| 2.1 | — | Taken (§2.3) | Holds. |
+| 2.2 | blocking | Taken, in Part B (each narrowing lowers the grant; the act is checked again at its run) | Deferred, and the reason holds. The order across the two stores until z-iv is on §16.3. |
+| 3.1 | blocking | Taken with O3-1, in Part B | Holds. |
+| 3.2 | blocking | Taken, in Part B (`said_settled`) | Holds. |
+| 3.3 | blocking | Taken, in Part B (`session_opens`) | Holds. |
+| 3.4 | blocking | Taken, in Part B (the head is read before delivery; `Lines.Forward`) | Holds. The new service step is on §16.3. |
+| 3.5 | blocking | Taken, in Part B | Holds. |
+| 3.6 | blocking | Taken, in Part B (the transition number) | Holds. |
+| 3.7 | — | Taken (§13.6's list) | Holds. |
+| 4.1 | blocking | Taken, in mod-0 (Part A) | **Open in part.** The design says the gate counts every form *as its Loop rule reads type names today*. Today's scan skips every name that follows a `.` (`StructureCheck.cs:385`). So mod-0 needs a rule that does not exist yet for qualified, alias and static references (finding 5). |
+| 4.2 | — | Taken in part, in Part A | **Open in part.** Only `ChatGoOn`'s port is named. Nine Course files and `Acp.cs` name the chat runner's core. The launcher, PieceStart and fourteen tests that read source by path are linked consumers left off the list (findings 1, 7). |
+| 5.1 | — | Disputed; 角色 kept | The answer on the concept holds. Its reason, that *every shipped string already says 角色*, is wrong: ten strings say 职责 (finding 2). With either word, some shipped strings now change. |
+| 6.1 | blocking | Taken, in Part B (d-i) | Holds. |
+| 6.2 | — | Taken (mod-i to mod-xxi) | Holds. |
+
+None of the 33 findings was wrong.
+
+### 1. Part A, row by row
+
+**a-i (one account rule).** The code stands on nothing in Part B. `LineAccount` is pure, sits beside `ResumeAccount`, and is read by today's callers: `HarnessRoster.ResumeAsync` (`:975`), `ChatGoOn.SwitchableAsync` (`:489-492`), Ask Daoris's resume (`:730-733`), `LimitWaits` (`:156-157`, `:194-220`) and the closed quest's hold (`Driver.cs:2381-2384`). The LIMITSWITCH2 lines it cites hold: `LimitMove.cs:220`, `:296`, `:317-318`; `Continuation.cs:60`, `:588-594`; `HarnessRoster.cs:1030-1048`, `:1762-1779`.
+
+Its claim to change no behaviour breaks at two points:
+- **The earliest reset.** Row a-i calls it "one computation", and §7 row 3 makes it a D206 point 2 note: one reset over exactly the accounts the line may take, with ineligible accounts adding none. Today three different sets are read:
+  - the walk's states (`Unready`, `HarnessRoster.cs:1766`);
+  - the switch's walk against the own reset (`:1032-1048`);
+  - for a limited conversation's wake, every cooling account of the agent (`LimitWaits.cs:157`, `:220`, through `CoolingsOf`, `HarnessRoster.cs:251-256`).
+
+  So a single computation is a change of behaviour. It also leans on step 4's set, which a-ii, a-iii and LIMITRESUME1e define (finding 3).
+- **The walk's side effects.** `LineAccount.Decide` takes "the walk's answer". But the roster walks only where the own account cools under `switches`, or in `ElsewhereAsync`, and a walk counts the start it chooses (`HarnessRoster.cs:894-911`). If `Decide` is fed a walk up front, starts are walked and counted where none were before (finding 4).
+
+The proof (equality with the answers today's code gives, case by case) is the right proof. It must also assert, per case, how many walks were made and how many starts counted. The row lands alone, before mod-0.
+
+**b (a word keeps its identity).** It stands on nothing in Part B. The file grows additively and stays safe for an older shell, whose reader takes each field by name (`SessionWords.cs:981-996`). But the row changes behaviour.
+- The record path's `SayAsync(id, word.Text, word.Files, ct)` (`:701`, `:782`) gains the producer's key, so a producer's retry after a shell restart keeps one word where today it keeps two. That is the decided guarantee, so it is a repair, not a reorganisation (finding 8).
+- The record path must still pass no `choice`. The say door refuses a choice from any author but the supervisor and then keeps nothing (`SessionLedger.cs:901-907`). The proof's "never reads as the supervisor's" should assert that such a word is still kept.
+- "Delivers once" across a restart holds only while the word still waits on `said` (`:956`). After a take, it is row p's.
+
+**c (the participant's work, read once).** The rule matches `HoldsSlot` (`Planner.cs:872-885`). D203 point 1 decides the partner's reading, and `identity.ts:79` is today's gap. Four things are missing:
+- There is no partner string to draw with: `en/work.json:27-29` holds conversation, session and helper only.
+- The service answers `work` on loopback, which walks `session-record-fields.md`'s rows 8, 10, 11 and 12. The row names none of them.
+- The marks the rule reads sit on `PriorSession` and `SessionView` (`Planner.cs:291-408`, `:759-817`, in Work orders), and the binding comes through `HarnessConversations.Read` (`GoOn/HarnessConversations.cs:54`, in Course). So `ParticipantWork.Of`, placed in Participants, names two subdomains above it from its first commit.
+- The row does not say what happens to a census A disagreement other than the partner's.
+
+See finding 9. The row lands alone, before mod-0.
+
+**mod-0 (the structure gate).** The census, as specified, is not exact:
+- It misses the qualified, alias and static forms until a new rule is written.
+- It reads member names as type names. DaorisHome's `HomeEntry` fields make eleven false upward edges that no cut can remove.
+- It does not place every file.
+- It leaves today's test folders failing the mirror rule (`StructureCheck.cs:183-213`).
+
+See finding 5. On the graph: the order is total, so the target is acyclic by construction. The code is not. I scanned the tree with the gate's own identifier rule over the map's placements. It is rough, and false positives included. It finds about 1,100 upward type names in 254 of the 765 files it places. §14.6 names four cut families. The gate keeps the Loop rule as absolute, which conflicts with the map (finding 1).
+
+**u (the role's name).** It cannot land as written (finding 2):
+- `names:check` refuses two terms that share a Chinese name and exits 2 (`names-check.mjs:118-121`, `:299-302`), so *role* 角色 cannot sit beside *actor* 角色.
+- "No page string changes" is false: ten shipped strings say 职责 for the appointed role.
+
+**mod-i to mod-xxi (the folder moves).** Most are moves that change no behaviour. The exceptions are blocked by the kept Loop rule (finding 1):
+- the ten `LoopContext`-built `Loop/` classes the map sends down, which cannot move;
+- the chat runner's core, which cannot move into Loop while nine Course files, `Acp.cs` and six Workplace files name it.
+
+The proof also needs these builds and tests: the launcher, PieceStart, the modules' tests and the service's two Mcp tests, all of which compile or read moved files (finding 7).
+
+### 2. The line
+
+- **§7 row 3 and D212 point 7's earliest reset** ("of exactly the accounts it may take … an account that cannot run adding none") are Part B's. They read step 4's set, which needs a-ii's recorded pick, a-iii's `ElsewhereAsync` and LIMITRESUME1e, yet row a-i's notes carry them (finding 3).
+- **D212 accepts points 1 and 2 "as reads",** and both carry Part B clauses:
+  - point 1: the binding moved into the desktop store;
+  - point 2: `actor` as the seeded id, the role and revision on the binding, and the census against the catalogue.
+
+  Part A should name the clauses it accepts (finding 10).
+- **Row b's proof** of "delivers once" across a restart, after the take, stands on row p's settlement. Scope it to a word that still waits.
+- **D137's new dated line** (`D137.md:865-868`) states row a-ii's binding in the indicative (finding 11).
+- **The cuts into Loop are Part A's, not Part B's,** but Part B's rows e, f and h would write the course's executors into Course. The executors take `ChatContext` (`Chat/ChatContext.cs:14`), so finding 1 must settle first.
+
+### 3. Part B
+
+§16.3 is the right core: each item is a protocol round 4 introduced. It is missing six items:
+
+1. **Row o's shape.** The shape a word kept for a moving record takes so that an older shell's sweep does not resume it (§3.4 rule 4). This has been open since round 2, and the text still says "where no such shape exists the row waits for the rollback window". It is a protocol decision, not a measurement.
+2. **The version matrix.** A table for each service protocol (`opens`, `Continued`, the attempt's answer, `said_settled`, the journal) giving: an older desktop against a newer service, and a newer desktop against an older service. Today each is said in a different section.
+3. **The say door's head read.** `Lines.HeadOf` walks the `from` chain inside the exclusive step for every word, with no index on `from_session` (§11, *unverified*). This is the hottest path, and row d-ii's landing limit should be fixed in round 5.
+4. **The settlement's horizon.** Seven days and 10,000 rows bound D137's and D188's *never sent again* for a producer's retry. That is a decision note, not only a bound row p measures.
+5. **The `delivered` window.** Between `delivered` and the take (§13.4 step 4), across a downgrade the word still waits, marked attempted, and an older build settles it as uncertain. §13.5's `delivered` row should say so.
+6. **The chat runner's boundary** (finding 1), before rows e, f-i and h.
+
+### 4. Claims about the code
+
+1. **§0.2, §1 Q16, §6, §16.1's 15 and 5.1, D212 point 14, the brief §8 note and row u:** "every shipped string already says 角色 … no page string changes". Ten strings say 职责 for an appointed role: `zh/projects.json:393`, `:398`, `:399`, `:402`, `:404`, `:413`, `:414`, `:415`, `:416`, and `zh/settings.daoris.json:179`.
+2. **Row u:** "*actor*'s entry keeps 角色" beside *role* 角色. `src/Daoris.Web/scripts/names-check.mjs:118-121` records two terms sharing a Chinese name as malformed, and `:299-302` exits 2.
+3. **§14.5 rule 2 and row mod-0:** the direction rule reads "every type reference … as `StructureCheck` reads Loop's today, so an ordinary, a fully qualified, an aliased and a static reference all count". Today's `Identifier()` skips every name that follows a `.` (`StructureCheck.cs:385`). So `Daoris.Driver.HolderKey.Taken` (`Sessions/SessionsCommand.cs:185`) names nothing to it, and neither does any `using static Daoris.Driver.X;` (for example `Accounts/AccountCooling.cs:5`, `Agents/Tools.cs:6`).
+4. **§14.1 and §11:** DaorisHome "names none", and "row mod-0's census is the exact list". The gate's scan reads `HomeEntry` members as type names (`Platform/DaorisHome.cs:326`, `:352`, `:354`, `:362`, `:423-427`): DriverConfig, Notices, HelpProposals, OpinionGates, AgentOffers, GitIdentities, ConfiguredAccess, PluginState, UsageHistory, RuleProposals and SessionBranches, each a type of a higher subdomain.
+5. **§14.6:** "source-scan tests find files by name … so a move breaks none". Fourteen sites read driver sources by folder path:
+   - `Driver.Tests/Conversations/DrivenInboxTests.cs:576`, `:579`;
+   - `Loop/DriverCommandTests.cs:138-139`, `:166`, `:184`, `:203`, `:284-285`;
+   - `Platform/InstanceDoorTests.cs:831`;
+   - `Trees/GitLaunchTests.cs:200`;
+   - `Modules.Tests/Loop/DriverLoopSendsBackTests.cs:38`;
+   - and in the service's tests, `Daoris.Service.Tests/Mcp/McpRoleFilterTests.cs:72` (`Conversations/Domain/PartnerPermissions.cs`) and `McpToolRegistrationTests.cs:61` (`Brainstorms/Domain/BrainstormPermissions.cs`).
+6. **§14.6:** the launcher's linked consumer is "its compile of `StagedBuild.cs` by path".
+   - The launcher compiles nine driver files (`Daoris.Desktop.Launcher.csproj:23-40`): StagedBuild, InstallSwap, HeldFiles, HomeWrites, HomeLease, HomeIdentity, DaorisHome, DriverException and AtomicFile.
+   - PieceStart compiles two more: PieceLauncher and ProcessJob (`Daoris.Desktop.PieceStart.csproj:21-22`).
+7. **§14.2 and §14.6:** "Loop's rules leave it … each a move with its tests, never a rewrite", and "its cuts after it". Ten `Loop/` classes the map moves down are built from `LoopContext`, most of them from `Driver` too:
+   - `DriverContinuations.cs:24`, `DriverHandOvers.cs:18`, `DriverHelpers.cs:28`, `DriverPartners.cs:58`, `DriverIntakes.cs:25`, `DriverBrainstorms.cs:24`, `DriverMeetings.cs:29`, `DriverOpinions.cs:23`, `OpinionDeliverer.cs:22`, `OpinionGateLook.cs:11`.
+   - `StructureCheck.cs:216-217` refuses any of them outside Loop.
+8. **§14.3, the chat runner's one port** ("`ChatGoOn`'s use of … `ChatRunner` and `ChatContext`"):
+   - Nine Course files name the chat runner's core: `BriefedMove`, `ChatGoOn`, `ChatHandOver`, `CurveMove`, `LimitMove`, `LimitWaits`, `StartWith`, `GoOn/UncertainWords` and `HandOver/HandOver`. The names are `ChatContext` (`Chat/ChatContext.cs:14`), `ChatStart` (`Chat/ChatRunner.cs:8`), `ChatTurns`, `ChatHelp` and `ChatPending`.
+   - So does `Agents/Acp/Acp.cs` (`ChatTurns`).
+   - Six Workplace files name the wiring view the map puts in Loop: `Platform/DownloadClearing.cs`, `SpaceCommand.cs`, `SpaceFree.cs`, `SystemSpace.cs`, `ToolHomeLeftovers.cs` and `Trees/Branches/BranchTidying.cs`.
+9. **§14.2 row 9:** the account rule sits in Agents "since the roster returns it". But:
+   - `ResumeChoice` names Course's `ContinueReason` and `ContinueWhy` (`Accounts/Rotation/ResumeAccount.cs:99-101`; declared at `Conversations/Domain/Continuation.cs:9`, `:54`);
+   - the roster names `SwitchCandidate` (`HarnessRoster.cs:2193-2212`), declared in `Accounts/Domain/SwitchDecision.cs:7`, which row 14 sends to Course;
+   - Acp names `ContinueWhy` (`Agents/Acp/Acp.cs:3401-3421`).
+10. **§14.2 row 15:** `Trees/SessionGroups` goes to Work orders "as the service's session records as groups". Its file declares `SessionRecord` (`Trees/SessionGroups.cs:14`). The planner's file and the intake's hold the service's record views:
+    - `Quests/Domain/Planner.cs:4` (QuestView), `:246` (PriorSession), `:639` (SaidWordView), `:728` (RepoView), `:752` (SessionView);
+    - `Intake.cs:8` (AskView), `:106` (LaneView).
+
+    These are the records `ServiceClient` (Service, rank 4) returns.
+11. **§14.2 row 1 and row 12:** Platform's containment names the piece launcher, which the map places in Participants: `Platform/AgentStarts.cs:33`; `Agents/Consoles/AgentJobs.cs:77`, `:111-121`, `:139`.
+12. **§14.2 row 7:** `MachineLog` and `HomeWrites` are placed in Events. They are named by:
+    - Platform: `AgentStarts.cs:31`, `:41`, `:53`;
+    - Service: `ServiceClient.cs`, `LedgerChanges.cs`;
+    - Install: `Setup/UpdateCommand.cs`, `Agents/ToolInstall/`.
+
+    Both name nothing above Platform, since the GitDoor and the launcher compile them with the base library (`GitDoor.csproj:26`, `Launcher.csproj:30`). Separately, `Notices.cs` (Events) names `AttentionEvent` and `AttentionKind`, which are declared in `Quests/Domain/Attention.cs:10`, `:45`, the file round 4 moves whole to Work orders.
+13. **§14.2 does not place:**
+    - sixteen files of `Sessions/Domain/`, among them `SessionEnded`, `SessionEvents` and `StartRun`;
+    - `Sessions/Events/HeldPermissions.cs`, `Sessions/LookFacts.cs` and `Sessions/SessionsCommand.cs`;
+    - `Platform/DriverChoicesCommand.cs`;
+    - `Setup/HeldFiles.cs`, which the launcher compiles with InstallSwap.
+14. **Row a-i, though written in round 4, cites lines older than `e8f1aed4f`:**
+    - `HarnessRoster.cs:1014` for the inline twin, which is at `:1022`;
+    - `ChatGoOn.cs:571-587` and `:672-688` for the conversation's and Ask Daoris's go-on, which are at `:614-645` and `:723-746`.
+15. **§3.2 step 5 and row a-i:** "the earliest reset one computation" under "it changes no behaviour". Today there are three sets: `HarnessRoster.cs:1766`; `:1032-1048`; and `LimitWaits.cs:220` over `CoolingsOf`, which keeps every cooling account of the agent, the walk's or not.
+
+### 5. Findings
+
+1. **Blocking for Part A. The kept Loop rule contradicts the map's Loop boundary** (§14.2, §14.5 rule 4, §14.6; claims 7 and 8).
+   - **What is wrong.** Under the absolute `loop` rule (`StructureCheck.cs:216-217`):
+     - mod-xii, mod-xiv, mod-xv and mod-xvi cannot move the ten `LoopContext`-built classes out of Loop;
+     - mod-xxi cannot move the chat runner's core or the wiring view into Loop while lower files name them.
+
+     "Move, then cut" and "never a rewrite" cannot both hold.
+   - **Smallest change.**
+     - Keep the `LoopContext`-built `Driver*` and `Opinion*` classes in Loop, as the look's executors, and move out only the rules §14.1 lists.
+     - Place `ChatContext` and `ChatStart` in Course, or name one port family covering all nine Course files and `Acp.cs`.
+     - Place `WiringSizes` and `WiringBudget` with the space code in Workplace.
+     - State whether an edge into Loop is a census exception until its cut, or whether every cut into Loop lands before the move.
+2. **Blocking for Part A. Row u's premise and its glossary entry both fail** (§6, row u; claims 1 and 2).
+   - **What is wrong.** Today's page names the appointed role with two Chinese words: 角色 at `settings.daoris.json:108` and `:139`, and 职责 in ten strings. And `names:check` exits 2 on *role* 角色 beside *actor* 角色.
+   - **Smallest change.**
+     - Row u replaces 职责 with 角色 in the ten strings (任命的角色 where the appointed shape must be said), under the UI and translation contracts, proven by `i18n:check` and `names:check -- --strict`.
+     - *role* takes 角色, and its match covers the `Actor(s)` labels. *actor* becomes `use: "role"` (code and prose only).
+     - Correct §0.2, §1 Q16, §6, §16.1's 15 and 5.1, D212 point 14 and the brief §8 note.
+3. **Blocking for Part A. Row a-i asserts a rule change and a D206 note that lean on Part B** (§3.2 step 5, row a-i, §7 row 3; D212 point 7; claim 15).
+   - **What is wrong.** "One computation … ineligible ones adding none", over step 4's set, is not today's answer, which reads three sets. Step 4's set is a-ii's, a-iii's and LIMITRESUME1e's.
+   - **Smallest change.**
+     - a-i reads each caller's set as today, behind one function that names which set it reads.
+     - §7 row 3, with its D206 point 2 note, moves to Part B beside a-iii.
+     - D212 point 7's sentence on the earliest reset is marked as Part B's.
+4. **Not blocking. a-i's pure function against the walk's side effects, and its axis** (row a-i; claim 14).
+   - **What is wrong.** `SelectAsync` counts a chosen start (`HarnessRoster.cs:894-911`), so feeding `Decide` "the walk's answer" up front walks where today nothing does. The "constraint (none, a pick)" axis names a pick that no record keeps until a-ii. The row's lines are older than `e8f1aed4f`.
+   - **Smallest change.**
+     - The walk is asked only where today's code asks it: `Decide` runs twice, or takes the walk as a lazy input. The proof asserts, per case, how many walks were made and how many starts counted.
+     - The "pick" on the axis is a handed quest's named account, or the hand-over press's account opened as a pick (`:887`).
+     - Use `e8f1aed4f`'s lines.
+5. **Not blocking. The census of mod-0 is not exact as specified** (§14.5, §11; claims 3, 4 and 13).
+   - **Smallest change.** mod-0's specification adds:
+     - a rule for the namespace-qualified chain (`Daoris.Driver.<Name>`, `global::`), alias targets and `using static` targets;
+     - a rule that a name the file declares as a member is no edge, with a planted member named like a higher type in the proof (or Roslyn's semantic model in the tests);
+     - every file placed in `structure.json`;
+     - today's test folders listed as not yet moved, each mod row moving its tests.
+
+     In §11, replace "exact" with "every named reference".
+6. **Not blocking. Several vocabularies sit above the files that name them** (§14.2; claims 9 to 12, and row c).
+   - **What is wrong.** The upward names follow from where these types are placed, not from the code needing them there.
+   - **Smallest change.** Move each down in §14.2:
+     - `ContinueReason`, `ContinueWhy` and `SwitchDecision` with the account rule into Agents, or `ContinueWhy` into Events beside `NoteCodes`;
+     - `SessionRecord` and the planner's and intake's record views into Service;
+     - `PieceLauncher`, `PieceStarts` and `PieceJobs` into Platform, with `AgentStarts`;
+     - `MachineLog` and `HomeWrites` into Platform;
+     - `AttentionKind` and `AttentionEvent` split out into Events;
+     - `HarnessConversations`, which stores the binding, into Participants.
+
+     And mod-0 names each edge by its family and the subdomain row after which it is cut, not by a row id the design does not have yet.
+7. **Not blocking. The list of linked consumers is short** (§14.6; claims 5 and 6).
+   - **Smallest change.** Name in it the launcher's nine files, PieceStart's two and the fourteen tests that read source by path. Make those tests name-based first, as D166 point 4 orders. Each move's proof builds the launcher and PieceStart and runs the modules' and the service's Mcp tests.
+8. **Not blocking. Row b repairs behaviour, though the Standing says it does not** (the Standing, row b).
+   - **Smallest change.**
+     - The Standing names b's repair: a producer's retry after a shell restart now keeps one word, under D137 and D188, so no new decision is asked.
+     - b's Process case restarts before the take, and says the case after the take is row p's.
+     - The proof asserts that the record path passes no `choice` (`SessionLedger.cs:901-907`).
+9. **Not blocking. Row c leaves out its string, its field chain and its dependency** (row c).
+   - **Smallest change.**
+     - Add `work.identity.partner` (Partner / 搭档, D203 point 9) with `i18n:check` and `names:check`.
+     - Name `session-record-fields.md`'s rows 8, 10, 11 and 12.
+     - `ParticipantWork.Of` takes the marks as a value declared in Participants.
+     - A census A disagreement other than the partner's moves no reader in c.
+10. **Not blocking. D212's Part A covers Part B clauses** (D212, the status paragraph and points 1, 2 and 7).
+    - **Smallest change.** Name the clauses Part A accepts, or those it leaves to Part B: point 1's store, point 2's binding and census, point 7's recorded pick, settled selection and earliest reset.
+11. **Not blocking. A dated line on an accepted decision states a proposal as decided** (`D137.md:865-868`).
+    - **Smallest change.** Change "is kept on the start's binding" to "is proposed to be kept on the start's binding (FOUNDATION1 Part B, row 1a-ii)".
+12. **Not blocking. §16.3 is missing six items** (§3 items 1 to 6).
+    - **Smallest change.** Add them to round 5's agenda.
+
+12 findings, 3 blocking for Part A.
+
+**Verdict on Part A: accept after named changes the steward can check without another read.** Findings 1 to 3 are each a bounded edit against the lines cited: the Loop boundary in §14.2 and §14.5, row u's strings and its glossary entry, and §7 row 3 moved to Part B.
+
+**Verdict on Part B's agenda: §16.3 is right as far as it goes.** Add the six items in §3: row o's shape, the version matrix, the say door's head read, the settlement's horizon as a decision, the `delivered` window, and the chat runner's boundary.
