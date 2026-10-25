@@ -214,7 +214,7 @@ public sealed class LinesRoutes(DriverContext context)
         // The rule's plugin must be able to land work here, said as `daoris driver landing` says it (D100): the library's operation
         // asks it before anything is written, as the terminal's command acting alone asks it (PUSH1f2a).
         var catalog = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
-        _context.Change(config => StandingChoices.Landing(config, repository, workspace, rule, catalog));
+        _context.Change(config => LandingRules.Put(config, repository, workspace, rule, catalog));
         return DriverRoutes.State(_loop);
     }
 

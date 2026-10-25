@@ -900,7 +900,7 @@ public static class DriverChoicesCommand
     {
         var write = world.Instance.Out;
         write.WriteLine($"daoris: {world.ConfigPath}");
-        foreach (var kind in KeepChoices.Settable)
+        foreach (var kind in KeepRules.Settable)
         {
             var said = KeepRules.Said(kind.Id, choices.Keep);
             write.WriteLine(choices.Keep.IsDefault(kind.Id)
@@ -1179,7 +1179,7 @@ public static class DriverChoicesCommand
 
     /// <summary>
     /// <c>landing</c> (WSR1, D87, D100, LAND2a, PROCESS1b): a rule replaced whole, or cleared; its plugin asked by the operation
-    /// (<see cref="StandingChoices.Landing"/>). A cycle the rule holds is kept and said, judged under the rule as it now stands;
+    /// (<see cref="LandingRules.Put"/>). A cycle the rule holds is kept and said, judged under the rule as it now stands;
     /// <c>--cycle &lt;file&gt;</c> sets one, judged after this rule's landing as <see cref="DriverConfig.WithLandingCycle"/> judges it, and
     /// <c>--no-cycle</c> takes it (FABRIC-GRAPH1c): no route takes either, so the rule and its cycle are written alone (PUSH1f2b).
     /// </summary>
@@ -1291,7 +1291,7 @@ public static class DriverChoicesCommand
         {
             StandingChoices.Write(path, config =>
             {
-                var landed = StandingChoices.Landing(config, workspace is null ? name : null, workspace, rule, PluginCatalog.Load(home, AdapterSet.Built().Names));
+                var landed = LandingRules.Put(config, workspace is null ? name : null, workspace, rule, PluginCatalog.Load(home, AdapterSet.Built().Names));
                 if (!cycled) return landed;
                 return workspace is not null ? landed.WithWorkspaceLandingCycle(workspace, cycle) : landed.WithLandingCycle(name, cycle);
             });

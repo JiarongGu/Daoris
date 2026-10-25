@@ -78,24 +78,4 @@ public static class StandingChoices
         next.Save(path);
         return next;
     }
-
-    /// <summary>
-    /// A landing rule set, or cleared with null (D100): its plugin, where it names one and its shape holds, asked of the plugins
-    /// <paramref name="catalog"/> holds before anything is written, as <c>daoris driver landing</c> asks it.
-    /// </summary>
-    /// <exception cref="DriverException">The rule's shape, or its plugin cannot land work here; nothing was written.</exception>
-    public static DriverConfig Landing(DriverConfig config, string? repository, string? workspace, LandingRule? rule, PluginCatalog catalog)
-    {
-        if ((repository is null) == (workspace is null))
-        {
-            throw new DriverException("a landing rule is set for a `repository` or a `workspace` — name one of them.");
-        }
-
-        if (rule is { Plugin: { } plugin } && LandingRules.Problem(rule) is null && LandingRules.PluginProblem(plugin, catalog) is { } problem)
-        {
-            throw new DriverException($"{problem} Nothing was written.");
-        }
-
-        return workspace is not null ? config.WithWorkspaceLanding(workspace, rule) : config.WithLanding(repository!, rule);
-    }
 }

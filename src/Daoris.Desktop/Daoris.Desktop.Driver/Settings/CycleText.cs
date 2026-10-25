@@ -22,6 +22,14 @@ public static class CycleText
         return Compact(document.RootElement);
     }
 
+    /// <summary>A cycle the config keeps as JSON text, written as JSON in the file's own layout.</summary>
+    public static void Write(Utf8JsonWriter writer, string name, string cycle)
+    {
+        using var document = JsonDocument.Parse(cycle);
+        writer.WritePropertyName(name);
+        document.RootElement.WriteTo(writer);
+    }
+
     /// <summary><paramref name="element"/>'s JSON, compact.</summary>
     public static string Compact(JsonElement element)
     {

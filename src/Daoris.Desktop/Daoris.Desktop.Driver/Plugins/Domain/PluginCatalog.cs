@@ -58,7 +58,6 @@ public sealed class PluginCatalog
     /// name. <c>\z</c>, since .NET's <c>$</c> also passes a final line break the CLI's refuses (CASEFOLD1e). Its one spelling in the
     /// driver (REFAC1): a landing rule's plugin, a plugin's tool id and the log's landing line ask <see cref="IsId"/>.
     /// </summary>
-    private static readonly Regex IdShape = new(@"^[a-z0-9][a-z0-9.-]*\z", RegexOptions.CultureInvariant);
 
     /// <summary>How a manifest's text is parsed: as written by hand, a trailing comma and a comment forgiven.</summary>
     private static readonly JsonDocumentOptions Forgiving = new()
@@ -114,7 +113,7 @@ public sealed class PluginCatalog
         .ToList();
 
     /// <summary>Whether a name has a plugin id's shape: lowercase letters, digits, dots and dashes, never leading with a dot or a dash.</summary>
-    public static bool IsId(string id) => IdShape.IsMatch(id);
+    public static bool IsId(string id) => PluginIds.IsId(id);
 
     /// <summary>
     /// The harness names this build runs, which no plugin may declare (PLUGINRESERVE1, D64 rule 3): the built set's
@@ -361,7 +360,7 @@ public sealed class PluginCatalog
                 }
             }
 
-            if (!IdShape.IsMatch(id))
+            if (!PluginIds.IsId(id))
             {
                 return (PluginManifest.Empty(folderName),
                     $"`id` must be lowercase letters, digits, dots and dashes — `{id}` is not.");
@@ -437,7 +436,7 @@ public sealed class PluginCatalog
                 foreach (var row in handed.EnumerateArray())
                 {
                     var name = Text(row, "name")?.Trim();
-                    if (string.IsNullOrWhiteSpace(name) || !IdShape.IsMatch(name))
+                    if (string.IsNullOrWhiteSpace(name) || !PluginIds.IsId(name))
                     {
                         return (PluginManifest.Empty(id),
                             "a declared server needs a `name` — lowercase letters, digits, dots and dashes; it is what the agent calls it.");
