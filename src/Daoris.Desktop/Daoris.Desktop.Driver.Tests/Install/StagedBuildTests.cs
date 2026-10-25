@@ -667,11 +667,13 @@ public sealed class StagedBuildTests : IDisposable
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Started, "b1", "0.0.1", null, Start, []));
 
         var reader = new FileStream(StagedBuild.JournalOf(_install), FileMode.Open, FileAccess.Read, FileShare.Read);
-        var letGo = Task.Run(async () =>
+        // On a thread of its own, not the pool's: a loaded run's starved pool once let the reader go past the write's four seconds of
+        // retries (FLAKE1, four times by 2026-10-26), which is the pool's wait, not the journal's.
+        var letGo = Task.Factory.StartNew(() =>
         {
-            await Task.Delay(150);
+            Thread.Sleep(150);
             reader.Dispose();
-        });
+        }, TaskCreationOptions.LongRunning);
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Confirmed, "b1", "0.0.1", null, Start, [], Pid: 4242));
         letGo.Wait();
 

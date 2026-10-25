@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-26 - The swap journal's held-reader case failed under load, its reader let go by a starved pool (FLAKE1)
+
+- **Symptom:** `StagedBuildTests.A_journal_a_reader_holds_for_a_moment_is_still_written` failed with `UnauthorizedAccessException` at the
+  journal's rename in four loaded runs (FOUNDATION1 mod-i's, z-iii's and mod-v's land tests, 2026-10-25 and 26), green alone each time.
+- **Root cause:** the case holds the journal open and lets it go 150 ms later from a thread-pool task, while `StagedBuild.Replace` retries
+  the rename for about four seconds. Under the driver's whole fast half beside a full CI, the pool was starved past those four seconds,
+  so the reader stayed open longer than the case means: the test's wait, not the journal's.
+- **Fix:** the reader is let go on a thread of its own (`TaskCreationOptions.LongRunning`), so its 150 ms does not wait on the pool. The
+  product's four seconds of retries are unchanged; the launcher's read they serve is a moment.
+- **Verification:** `StagedBuildTests` passes, 45 of 45.
+
 ## 2026-10-25 - Four git tests failed inside Daoris's own sessions, and a brainstorm case under load (FLAKE1)
 
 - **Symptom:** FOUNDATION1 mod-ii's and z-i's sessions, running the driver's fast half on the install, saw `GitDoorsTests` (three cases)
