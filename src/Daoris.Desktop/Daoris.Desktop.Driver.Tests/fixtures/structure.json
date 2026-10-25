@@ -582,6 +582,7 @@
     "Sessions/Work/WorkAbandoning.cs": "Work orders",
     "Sessions/Work/WorkCommand.cs": "Work orders",
     "Sessions/Work/WorkPausing.cs": "Work orders",
+    "Settings/AccessKey.cs": "Settings",
     "Settings/AcrossDeclarations.cs": "Settings",
     "Settings/ActorKey.cs": "Settings",
     "Settings/CoolOffDefault.cs": "Settings",
@@ -590,6 +591,7 @@
     "Settings/DriverConfigUnreadableException.cs": "Settings",
     "Settings/HandOverKey.cs": "Settings",
     "Settings/HelpModeNames.cs": "Settings",
+    "Settings/HelperKey.cs": "Settings",
     "Settings/SessionLanguage.cs": "Settings",
     "Settings/StandingAnswer.cs": "Settings",
     "Settings/StandingChoices.cs": "Settings",
@@ -857,8 +859,7 @@
       "family": "Settings names Participants",
       "after": "Settings",
       "files": {
-        "Settings/DriverChoicesCommand.cs": ["HelperRules"],
-        "Settings/DriverConfig.cs": ["AccessEdit","AccessRules","AccessSetting","HelperRule","HelperRules"]
+        "Settings/DriverChoicesCommand.cs": ["HelperRules"]
       }
     },
     {
