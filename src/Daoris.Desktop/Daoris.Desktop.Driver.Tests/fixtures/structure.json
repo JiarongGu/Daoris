@@ -283,6 +283,7 @@
     "Loop/SupervisorQuarantine.cs": "Roles",
     "Loop/TransientRetries.cs": "Agents",
     "Platform/ActorChoices.cs": "Roles",
+    "Platform/ActorVerbs.cs": "Roles",
     "Platform/AgentJobs.cs": "Platform",
     "Platform/AgentStarts.cs": "Platform",
     "Platform/BesideReads.cs": "Platform",
@@ -866,13 +867,6 @@
       "after": "Settings",
       "files": {
         "Settings/DriverChoicesCommand.cs": ["CommitRules","KeepRules","KeepSet","LandingRules","LandingSource","SpaceVolumes"]
-      }
-    },
-    {
-      "family": "Settings names Roles",
-      "after": "Settings",
-      "files": {
-        "Settings/DriverChoicesCommand.cs": ["ActorChoices","ActorView"]
       }
     },
     {
