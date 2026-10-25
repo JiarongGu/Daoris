@@ -18,6 +18,13 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHandOver handOver, ChatHelp help)
 {
+    /// <summary>
+    /// The <see cref="StartedFrom.Why"/> of an ended move that left its conversation waiting for the account the person picked (PICKLOST1):
+    /// the go-on of a lost conversation reads it, so it waits there rather than going on in the brief's move, which would refuse the same
+    /// account and mark the words as unable to go on.
+    /// </summary>
+    internal const string OnPick = "on-pick";
+
     /// <summary>What each move came to, by the session it moved from: a test hears it; no person reads it.</summary>
     public event Action<string, StartedFrom>? Moved;
 
@@ -270,11 +277,14 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
             return null;
         }
 
-        // FOUNDATION1a-ii (D205 §3.5(d)): an account the person picked is never moved off. Its words wait for it, as the rule says; a
-        // conversation proven lost (`lost`) has no resume to keep, so its new part walks as it did.
-        if (lost is null && context.Conversations.PickedOn(sessionId, prior.Profile))
+        // FOUNDATION1a-ii (D205 §3.5(d)): an account the person picked is never moved off. Its words wait for it, as the rule says. A
+        // conversation proven lost (`lost`) has no resume to keep, but its account is not the resume (PICKLOST1): its new part is asked
+        // for the picked account alone, starts afresh there once it is ready and keeps the pick, and waits while it cools, so the walk
+        // below is for a conversation with no pick.
+        var onPick = context.Conversations.PickedOn(sessionId, prior.Profile);
+        if (onPick && lost is null)
         {
-            return new StartedFrom(null, false, null, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
+            return new StartedFrom(null, false, OnPick, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
         }
 
         var workspace = isHelp ? prior.Workspace : await WorkspaceOfAsync(prior.Repository, ct).ConfigureAwait(false);
@@ -282,13 +292,19 @@ internal sealed class LimitMove(ChatContext context, ChatRunner runner, ChatHand
         // asking the roster again, so a second walk neither names another account nor counts a start never made.
         // Ask Daoris's room places itself through its own walk, which counts, so this one judges only there.
         var selection = await context.Harnesses
-            .SelectAsync(agent.Name, config, workspace, null, StartKind.Conversation, ct, counts: !isHelp).ConfigureAwait(false);
+            .SelectAsync(agent.Name, config, workspace, onPick ? prior.Profile : null, StartKind.Conversation, ct, counts: !isHelp)
+            .ConfigureAwait(false);
         Elsewhere? elsewhere = null;
         if (!selection.Allowed
             || (lost is null && string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase)))
         {
             // Counted as chosen, and none chosen after all: its count is given back.
             if (selection.Allowed) context.Harnesses.Release(selection.Number);
+            if (onPick)
+            {
+                return new StartedFrom(null, false, OnPick, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
+            }
+
             // FOUNDATION1a-iii (O2-13, as the live move has it, LIMITGOON2, D205 §3.5(e)): a limit ended it and every account of its agent
             // cools, so it goes on with its actor's next choice on another agent where the person allowed one; else it waits. Never for a
             // closed quest's session, or a go-on outside a limit, whose going elsewhere is the owner's to say (the design's §8).
