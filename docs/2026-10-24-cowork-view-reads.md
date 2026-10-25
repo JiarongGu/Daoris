@@ -1,6 +1,6 @@
-# COWORKVIEW1: the reads of rounds 1 to 4, the Opus foundation reader's of each and Codex's of rounds 2 to 4 (D191)
+# COWORKVIEW1: the reads of rounds 1 to 5, the Opus foundation reader's of each and Codex's of rounds 2 to 5 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17.
 
 ## Opus (foundation), round 1
 
@@ -1221,3 +1221,192 @@ No additional D173, D203, D115, D167 or translation-placeholder violation found.
 2. **Non-blocking — coverage is substantially better, but remains a proposed proof plan.** Rules 1–3, 7–9 and 18–22 name suitable checks or measurements for their stated scope (`Design:1477`, `:1483`, `:1494`); rule 17 needs the wording clarification above. Rules 4–6 need historical and delayed-capture cases; 10–13 need input-health and root-call cases; 15–16 need immediate-failure and upstream-failure cases; 11/15 also need reversed delivery. Rule 14 needs the overflow decision, while rule 22’s installed run appropriately remains distinct from those regressions (`Design:1502`).
 
 **Verdict for row a: another round.** Historical generation attribution, delayed writers, and failure/delivery ordering still require changes to the table’s contracts before its proof can establish them.
+
+## Codex, round 5
+
+Codex's read of round 5 at `6736d2db9`: 10 findings, 4 of them blocking; another round for row a. Its §0 re-reads round 4's answers and opens none of its own: the one it leaves open in part, 2.1, is its finding 2.1 below. It was run read-only at that commit, on main. Round 6 answers it in the design's §17, beside the Opus foundation reader's read of the same round.
+
+Reviewed read-only at `6736d2db9`; nothing changed. I excluded checkout-relative `local/` and everything outside this checkout. `src/` is unchanged from `9f48860ba`.
+
+Aliases: **Design** = `docs/2026-10-24-cowork-view-design.md`; **Foundation** = `docs/2026-10-25-foundation-design.md`; **Driver/**, **Modules/** and **Web/** follow Design’s path aliases.
+
+### 0. Round-4 findings
+
+“Taken” means specified adequately in the proposal, not implemented or demonstrated.
+
+| Finding | Original severity | Disposition |
+|---|---|---|
+| 1.1 Historical process boundaries | **blocking** | **Taken.** Driven history becomes `unrecorded`; the fixture now represents the existing continuation case. `Design:1713`. |
+| 1.2 Strip versus raw state | **non-blocking** | **Taken.** The deliberate difference and its regression are explicit. `Design:1725`. |
+| 2.1 Delayed capture attribution | **blocking** | **Open in part.** Bound writers solve tagged captures; tokenless lines and lost starts still permit wrong attribution. `Design:724`, `:730`, `:1714`; §2.1 below. |
+| 2.2 Root-call wakes | **blocking** | **Taken.** Root identities and the child-to-root exception are registered and tested. `Design:1063`, `:1721`. |
+| 2.3 Immediate failures | **blocking** | **Taken.** Direct and delayed failures become values; bridge failures have `retry: false`. `Design:1168`, `:1723`. |
+| 2.4 Input-slice failures | **blocking** | **Taken.** First failure, retained-snapshot failure and recovery have health dependencies and wakes. `Design:1044`, `:1718`. |
+| 3.1 Reversed delivery | **blocking** | **Taken within one epoch.** Replies and both event outcomes are numbered; tests include late direct replies and failures after recovery. `Design:1175`, `:1723`. |
+| 3.2 Foundation placement | **non-blocking** | **Taken.** The Agents port, Participants implementation and Loop wiring respect the map. `Design:1286`, `:1731`. |
+| 3.3 Hook-only `finished` wording | **non-blocking** | **Taken.** Named bilingual mapping, exhaustive mapping test and story supplied. `Design:1424`, `:1529`, `:1727`. |
+| 4.1 Impossible retention bound | **blocking** | **Taken.** Whole-chain admission, overflow counts and overlong-chain tests replace unconditional retention. `Design:1132`, `:1722`. |
+| 4.2 Proof gaps | **non-blocking** | **Taken as a proof plan.** The named cases were added; the remaining gaps are below. `Design:2231`. |
+
+### 1. Wrong claims about existing code
+
+1. **Non-blocking — a chat does not invariably await capture before writing its end.** `Design:209` and `:219` describe the normal path as universal, but `Driver/Conversations/Chat/ChatRunner.cs:2893` can throw before the capture await at `:2896`; the catch at `:2938` reaches the unconditional end at `:2977`. Qualify the claim and cover this exceptional path in rule 4’s writer/drain test.
+
+2. **Non-blocking — first judgement does not necessarily produce `Pushed`.** `Design:1068` relies on the first judgement’s push, but an empty sessions list produces no partitions (`Modules/Loop/SessionsStateSlice.cs:102`), while `StateSlices.cs:241` marks it judged and `:248` notifies only when partitions moved. A pending read registered before that healthy empty judgement therefore waits for another wake or reconciliation; explicitly notify the not-judged-to-judged transition and test this ordering.
+
+### 2. New protocols
+
+1. **Blocking — optional process attribution still permits the original cross-spawn corruption.** The immutable token on each of the four spawns’ capture writers is sound, but `Design:724` permits tokenless hook/connector lines and `:730` treats a token whose start was lost as positional; `Driver/Sessions/ChildLineage.cs:108` silently loses failed writes. An old tokenless stop after P2’s start can close P2’s reused X, and an old start can make a working child there; rule 6’s proposed positional test actually endorses that result (`Design:1714`). Require token propagation through the explicitly handed connector environment (`Driver/Service/KnowledgeConnector.cs:83`, `:114`; `Agents/Acp/Acp.cs:1739`) and define an honest unknown-attribution outcome when the token or start is unavailable—measurement counts alone do not prevent false state.
+
+2. **Blocking — suppressing every known-id call conflicts with closed runs’ “last seen”.** `Design:768` defines that value from the child’s own last line, while `:791` lets delayed tagged lines affect their closed generation and `:1095` suppresses calls for already registered runs. After P1 closes and P2 starts, a delayed P1 call to an already drawn lost child can change its specified `lastSeen` without waking the page. Either freeze that field against suppressed calls or wake when it changes, and test the resulting projection against a fresh composition.
+
+3. **Non-blocking — epoch replacement is weaker than the stated delivery guarantee.** Same-epoch reversed deliveries are handled, but `Design:1180` accepts any different epoch: E1 → E2 → delayed E1 can restore E1. Either state and enforce that a page cannot receive deliveries spanning owner lifetimes, or bind epoch changes to the active connection/baseline; the existing slice consumer resyncs on an unfamiliar epoch instead of installing its push (`Web/bridge/state/slices.ts:249`).
+
+4. **Non-blocking — the remaining named counterexamples have adequate proposed answers.** Recorded versus driven-history generations avoid inventing historical process ends, root registration removes root-only wakes, and health transitions cover failed first judgement and unchanged recovery (`Design:1713`, `:1718`, `:1721`). Rule 14’s chain-first admission and state-counted overflow are now feasible, including forty-one working children and ancestry exceeding forty (`Design:1722`); these are specifications awaiting their stated proofs.
+
+### 3. Decided rules and foundation dependencies
+
+1. **Blocking — the attribution fallback still violates truthful partial visibility.** D173 requires unknown evidence to remain unknown (`docs/decisions/D173.md:11`, `:111`), whereas the fallback in `Design:731` can assign an old signal a definite newer process and outcome. This is the consequence of §2.1, not a separate implementation defect.
+
+2. **Non-blocking — D173’s summary missed the raw-state correction.** `docs/decisions/D173.md:5593` still says the strip supplies the state wording, and round 5’s amendment names only points 2 and 4 (`:5636`), while rule 17 deliberately chooses the record’s wording (`Design:1725`). Amend point 1 explicitly; otherwise I found no additional D203, D115, D167, D182, D185 or translation-parity violation, no new upward module edge, and no dependence on routing or FOUNDATION1 Part B (`Design:1286`; `Foundation:2036`).
+
+### 4. Row a’s proof
+
+1. **Blocking — rules 1, 4, 6 and 13 do not yet prove the attribution and wake promises together.** Their tests establish correctly tagged captures, but leave missing-token/missing-start attribution unsafe and omit a delayed known-id call that changes a closed child’s displayed moment (`Design:1709`, `:1712`, `:1714`, `:1721`). A builder must still choose those failure semantics; add explicit expected outcomes before implementation.
+
+2. **Non-blocking — the rest is a credible prospective proof plan, with measurements still owed.** Rules 2–3, 5, 7–12 and 14–21 name suitable checks for their stated scope, subject to the empty-first-judgement and epoch qualifications above (`Design:1710`–`:1729`); rule 23 covers the port placement (`:1731`). Rule 1’s real-door measurements and rule 22’s installed-window run remain separate evidence, correctly distinguished from stand-ins and stories (`Design:1709`, `:1735`).
+
+**Verdict for row a: another round.** Process attribution without a usable start/token and the interaction between delayed calls, displayed moments and suppressed wakes still require protocol decisions.
+
+## Opus (foundation), round 5
+
+The independent Opus 5.5 reader's foundation read of round 5 at `6736d2db9`, verbatim, its title line (*COWORKVIEW1 round 5, row a: a foundation read*) given as this heading and its headings set one level down: 9 findings, 2 blocking; accept row a after named changes. Round 6 places each in the design's §17, beside Codex's read of the same round.
+
+Read at `6736d2db9`. `src/` is identical at `eced2688e`, `9f48860ba` and `6736d2db9` (both diffs are empty), so every code line round 5 cites holds where it says unless noted below. Path aliases are the design's.
+
+### 0. Codex's read of round 4
+
+| Finding | Severity | Disposition | Why |
+|---|---|---|---|
+| 1.1 Historical files lack one `end` per process | blocking | **Taken, holds** | Today's fold has no `start` case (`ChildBindings.cs:184-246`). A chat writes `end` per process in `WatchAsync`'s `finally` (`ChatRunner.cs:2970-2977`), its SESSCTX1c retry included, since it returns before re-entering `RunAsync` (`:1810-1818`). A driven `RunAsync` writes one after its conclusion (`Driver.cs:3891`, `:3907`). That one `end` covers its retry (`:3867`) and its continuations (`:3876`). A parked record resumed in the same record writes another, so a driven history can hold several group `end`s. "Every driven history run reads `unrecorded`" is right for that case too. Absent `kind` is F9a. |
+| 1.2 The strip's word is not the raw state | non-blocking | **Taken in the design** | D173's round-4 note was not amended (F5). |
+| 2.1 Delayed capture lines | blocking | **Taken for the driver's writers, holds there** | The stream watcher is made per capture (`HarnessCapture.cs:123`) and `AcpSession` per process (`ChatRunner.cs:3071`, `Driver.cs:4330`), so a bound token fences an abandoned capture (`Driver.cs:4023`). The four spawns are the only agent spawns (`ContainedKind.Agent` appears only at `ChatRunner.cs:1596`, `Driver.cs:3658`, `DriverContinuations.cs:1242`, `:1299`). The hook and connector half rests on a wrong claim (F4). "Next `start` closes the previous generation" fails when processes overlap (F1). |
+| 2.2 Root calls wake | blocking | **Taken, holds** | Roots are read over the whole file before placement (`ChildBindings.cs:139-163`). A Claude Code connector call names only `toolUse`, and the hook's root call names no agent (`lineage-hook.mjs:38`), so neither names a native id. A Codex call naming a root or a new parentless thread is a root call (`:224-227`). The one case that moves the answer is named and woken. |
+| 2.3 Immediate route failures | blocking | **Taken, holds on the host** | The ask's `await flight` (`HeldAnswers.cs:105`) becomes the failed value, and `retry: false` is set. Page side: F2. |
+| 2.4 Failed input slices | blocking | **Taken, holds for a judgement that throws** (`StateSlices.cs:207-214`) | A judge answering null (no `Service` yet, `SessionsStateSlice.cs:71`, `GroupsStateSlice.cs:111`) clears the flag (`StateSlices.cs:220`), so *reading* stands while the service never came up. That is PUSHUX1's contract for the view; for the verb see F7. |
+| 3.1 Late delivery regresses | blocking | **Taken, holds on the host** | `Land` already drops a landing older than the newest (`HeldAnswers.cs:149`). `Landed` (`:150`) is set for failures and for unchanged answers too, so `begun` orders landings and a reply's number is the state it answers. Page side: F2. |
+| 3.2 Part A placement | non-blocking | **Taken, holds** | The port's shape and new-file placement are under-said (F8). |
+| 3.3 `finished` has no words | non-blocking | **Taken** | Other end words remain open (F3). |
+| 4.1 Bound vs retention | blocking | **Taken, holds** | Every child is a row, folded, or counted in `more`, exactly once. Two small gaps are in F9f. |
+| 4.2 Coverage gaps | non-blocking | **Taken** | Each named gap has a case. The proofs miss F1 and F2. |
+
+### 1. The new protocols
+
+- **`proc` and its fence.**
+  - **Holds:** an abandoned or late capture, and a delayed `started` or `ended` across a later spawn. A tokened line is placed in its own process's generation and changes that generation alone.
+  - **Holds:** a crash. With no `end`, the generation closes at the next `start` (`lost`) or by rule 3. Job containment means the agent dies with the application.
+  - **Holds:** the retry and continuation re-arming. `AgainAsync` reuses `info` (`DriverContinuations.cs:1298-1299`), so "set anew" is needed, and rule 4 tests it.
+  - **Does not hold:** rule 2 assumes a record's processes never overlap. `RunAsync` spawns (`Driver.cs:3658`) and starts its capture (`:3807-3822`) before it advances the record to working (`:3824-3837`). In the ANSWER2 race a second resume's process exists beside the live one; its `start` closes the live generation as `lost`, and the live process's later tokened lines land in that closed generation (F1).
+  - **Hook and connector:** the hook inherits Claude Code's environment, so it gets the token. Codex's connector does not (F4).
+  - **Proof:** rules 4 to 6 cover sequential spawns only.
+- **Recorded versus history.**
+  - **Holds:** the boundaries are as round 5 now says.
+  - **Rollback:** an older fold ignores `start` and `acp` lines (no case for them), so it reads new files as today. A newer build reads an older build's lines as history.
+  - **Proof:** rule 5's driven fixture is the right case.
+- **The root's ids registered.** Holds, and rule 13's hundred-root-calls test proves it. For Claude Code the registration is not even needed: no root call names an id.
+- **The numbered held read, `{epoch, n}`.**
+  - **Holds on the host:** events told in reverse, an old direct reply after a newer event, an old failure after a recovery, a pending reply with no number, and *stale* carried on a reply.
+  - **Epoch:** "another epoch replaces" would let a previous epoch's late event win. Only a re-created `HeldAnswers` with works in flight could produce one, and the window has one per module (`DriverModule.cs:100`). Acceptable.
+  - **Fails on the page:** the number's lifetime against the query's data (F2).
+- **The slices' health and its wake.**
+  - **Holds:** first failure, failure over a kept snapshot, and recovery. `HealthMoved` must follow the swap (`:239-243`), not the flag (`:220`), and the design says so.
+  - **Acceptable:** a groups judgement can fail in a tree walk (`GroupsStateSlice.cs:142-143`) and draw *stale* over entries that did not fail. That is honest.
+  - **Gap:** the never-located service is not a failure (F7).
+- **Rule 14's overflow and ancestry.** Holds. The counts stay true, and a chain longer than 40 is never drawn, its members drawn only by their own places. Tie order and parent cycles are unsaid (F9f).
+
+### 2. The module map
+
+Row a adds no upward edge, provided the port takes the pipe stream's raw line (F8a).
+
+- **The cut works:** `HarnessCapture` (Agents, 9) calls `ChildLineage.Watch` (Participants, 12) today (`HarnessCapture.cs:123`). With the port declared in Agents, handed to `AcpSession` and `HarnessCapture`, implemented in Participants and wired by Loop at `ChatRunner`, `Driver` and `DriverContinuations`, that call is gone.
+- **Every other edge row a touches points down:**
+  - Loop writes `start` and `end` into Participants.
+  - The verb (Work orders, 15) calls Participants, Workplace (`SessionEntries`), Agents (`SessionProcesses.AliveOnThisMachine`) and Service.
+  - `ForWork` (Events, 7) takes a delegate.
+  - `SessionOutput`'s moment (Context, 13) is read by the modules.
+- **Upward edges row a leaves alone:** `Permissions.cs:508` and `:573` (Agents naming `LineageHook` and `ChildLineage.Matcher`), and `HarnessCapture`'s own names of Context types (`:56`, `:68`, `:119`). "The one it touches" is accurate; the census keeps the others.
+- **Nothing of Part B is needed:** no journal, move record, store or routing contract.
+
+### 3. Decided rules
+
+- **D173:** the round-4 note's point 1 is stale (F5). ADR-B's "partial visibility said, not filled" is broken for a teammate's part (F6) and by F1's false `lost`.
+- **D203, D115:** nothing of row a touches them.
+- **D167:** round 4's "exactly as the strip lists them" reads as set and order, which is consistent with C4-1.2.
+- **D182:**
+  - Point 3's no-regression is met by the numbering on the host.
+  - Point 6 holds: one .NET composition shared by the read and the verb.
+  - PUSHUX1 holds, except the verb's unbounded wait (F7).
+  - The failures' words may name paths; the read is desktop-only, so this is fine.
+- **D185 R5:** a state-only surface needs no palette verb. The terminal twin and the Ask Daoris door are named. Holds.
+- **Translation parity:**
+  - Placeholders survive in every row a key, and `{{why}}` is passed through as a value.
+  - zh *已结束* is both `child.finished` and the panel's `stream.ended`. That is acceptable.
+  - `child.lost`'s words overstate (F9b).
+- **Leaning on the routing half:** none load-bearing. §5.1's "the waiting row's *waits on* opens it" is the routing half's text; row a builds none of it.
+
+### 4. Claims about the code that are wrong
+
+1. **§1.1 (C4-2.1) and §3.6, on the connector's environment.** The design says the connector "reads its session from the environment it inherits … where the start sets `DAORIS_SESSION_ID` (`Adapters.cs:1574`)". In fact:
+   - The connector is handed its session in its own server entry (`KnowledgeConnector.SessionScope`, `Driver/Service/KnowledgeConnector.cs:114-124`, offered at `Driver.cs:4523` and `ChatRunner.cs:3030`).
+   - "Codex hands an MCP server only its entry's own variables" (`KnowledgeConnector.cs:95-96`, CONNECTOR2).
+   - `:1574` is a quest session's line only. A chat's is `:1602`, an intake's `:1539`, a reviewer's, helper's or piece's `:1548`, a pass's `:1560`.
+2. **§3.6 rule 2, "which only a crash … leaves".** The ANSWER2 abandon path (`Driver.cs:3831-3836`) also leaves a `start` with no `end`, and its process overlaps a live one.
+3. **§3.6 *the fold*, "the end word … `completed`, `failed`, `cancelled` or `disconnected`".**
+   - The stream keeps any id-shaped `status` (`ChildBindings.cs:316`). `stopped` is one of the stream's words (`Driver.Tests/fixtures/native/claude-background-cut.stream.jsonl:14`, `Driver.Tests/Agents/NativeStreamsTests.cs:57`).
+   - `AcpStreams` defaults a missing `state` to `ended` (`AcpStreams.cs:189`).
+4. **§16, "D173's notes gain one … for its points 2 and 4".** Point 1 changed too (`D173.md:5593-5594`).
+5. **§4.3, "where none has [landed], they are where today's code has them".** Once mod-0 lands, a file added outside its subdomain's folder fails the gate (foundation §14.5 rule 1, §14.6's last paragraph).
+
+All other round-5 citations I checked hold. That covers `ChildLineage.cs`, `ChildBindings.cs`, `HarnessCapture.cs`, `Acp.cs:1668`, `AcpStreams.cs`, `Driver.cs` (3658 through 4026), `DriverContinuations.cs`, `ChatRunner.cs` (1596, 2896, 2977), `Adapters.cs:1659-1665`, `lineage-hook.mjs`, `LineageFile.cs`, `HeldAnswers.cs`, `held.ts`, `main.tsx`, `StateSlices.cs`, both slices, `PartsStrip.tsx:56`, `groups.ts:148,159`, `AskWork.tsx:111`, `work.panel.json:16-20`, `api.ts:413-415,445`, and the foundation's `:1049`, `:2014`, `:2017`, `:2018` and `:2036`.
+
+### 5. Findings
+
+1. **Blocking: a duplicate resume's `start` closes a live process's generation as `lost`.**
+   - **What happens:** `RunAsync` spawns (`Driver.cs:3658`) and starts its capture before it learns the record is already this run's (`:3824-3837`, ANSWER2: "a second resume met working → working"). The second resume's `start` closes the first, still-running generation by rule 2. The live process's later lines carry its own `proc`, so they land in that closed generation. Its children read `lost` or never *working* for the rest of the run, which is an end nobody said.
+   - **Smallest change:** the abandon path writes that process's `end` marked as never the record's run (for example `void: true`). The fold reads a void generation's `start` as no boundary, so the live generation stays open.
+   - **Test:** two resumes race, the second is abandoned, and the first's child stays *working*.
+2. **Blocking: the page's kept number outlives the query's data.**
+   - **What happens:** §4.1 has the page drop a delivery whose number is equal or older, "the query keeping what it holds". If the number is kept outside the cache, as `held.ts` keeps its `readers` (`held.ts:16`, `:29`), it survives the garbage collection of an unmounted query. A remount is then answered from held state with the same `n` (`HeldAnswers.cs:150`) and dropped. The query is left holding `undefined`, which TanStack Query fails, and with `retry: false` the view draws a false *failed*. The ask's new work then lands unchanged and tells nothing (`HeldAnswers.cs:160`), so the false *failed* stays until a wake or a focus re-fetch.
+   - **Smallest change:** the number lives in the query's data. A delivery to a query holding no data is always taken.
+   - **Test:** remount past the cache's garbage-collection time.
+3. **Non-blocking: end words outside the four have no state or key.**
+   - **What happens:** see §4 item 3. `AtWorkChild.state` and §5.4's mapping have no `stopped` and no fallback, although the panel already words `stopped` (`work.panel.json:18`). The `acp` default `ended` collides with the fold's own `ended`.
+   - **Smallest change:** add `stopped` with the panel's key. The `acp` writer writes only the wire's own word. Any other word reads `finished`.
+   - **Test:** an unknown word.
+4. **Non-blocking: the token cannot reach Codex's connector through the spawn's environment.**
+   - **What happens:** see §4 item 1. Every Codex child line, which is all Codex child evidence, will be placed by position. Rule 1's measure is already answered for Codex by CONNECTOR2.
+   - **Smallest change:** correct §1.1. §3.6 says the token reaches the hook and Claude Code's connector by inheritance. It may be put in a server entry only where that entry is composed per process (the protocol door's `session/new`), and never in one reused by a record's continuation or retry ("the files the first was handed", `DriverContinuations.cs:1285-1286`). Otherwise it would name the first run's process.
+5. **Non-blocking: D173's round-4 note still says row a words each part "as the strip words it"** (`D173.md:5593-5594`).
+   - **Smallest change:** round 5's note amends point 1 as well, to "its record's own `sessionState.*` word, never the strip's".
+6. **Non-blocking: a teammate's part is drawn as having no subagents.**
+   - **What happens:** entries group every record by `EntryKey` with no teammate filter (`Trees/SessionEntries.cs:96-98`). A teammate's id is `origin/id` (`Trees/SessionGroups.cs:132`), which the lineage's session shape refuses (`ChildLineage.cs:44`, `:127`). So the read is "none", a source not read drawn as none.
+   - **Smallest change:** such a part's children read *not visible on this machine*, never a count.
+   - **Test:** one case.
+7. **Non-blocking: the verb waits for ever while the slices are not judged.**
+   - **What happens:** with no `Service` the read stays pending (F-0, 2.4). The pipe re-asks every 100 ms with no bound (`InstancePipe.cs:1069-1077`).
+   - **Smallest change:** say the view stays *reading* there by design. Bound the verb's wait: past the bound it prints *not read yet* and exits as a tool error.
+   - **Test:** one case.
+8. **Non-blocking: §4.3 is under-said.**
+   - **(a) The port's shape.** If the port takes announcements, `HarnessCapture` must parse the stream with `ChildBindings.StreamLine` (Participants, `ChildBindings.cs:298-323`), which is the same upward edge. **Change:** say the port takes the raw stream line, parsed behind it, or that `StreamLine` moves down.
+   - **(b) New files.** **Change:** they go in their subdomain's folder once mod-0 has landed (§4 item 5).
+9. **Non-blocking: smaller points.**
+   - **(a)** `kind` is optional (`api.ts:445`): a record with none should read as driven.
+   - **(b)** `child.lost` says "lost when its session stopped" for a failed part and after a crash, where nothing stopped. "Lost when its part ended" would be accurate.
+   - **(c)** *Last seen* should take only lines that change a run. A late call that "begins nothing" wakes nothing (rule 13) and must not move it.
+   - **(d)** An attended record not yet in the `sessions` slice has no state: say the read is pending.
+   - **(e)** Rule 4's environment test should cover every target kind. `DAORIS_SESSION_ID` is set at five lines (`Adapters.cs:1539-1602`).
+   - **(f)** The bound's ties should order by `since` then id, and its chain walk must guard a parent cycle, as `DepthOf` does (`ChildBindings.cs:288`).
+
+9 findings, 2 of them blocking.
+
+**Verdict for row a: accept after named changes the steward can check without another read.** The two required changes are F1 (a void `end` for the abandoned duplicate, with its race test) and F2 (the number kept in the query's data, a delivery to an empty query taken, with the remount test). F3 to F9 are one-line contract or record corrections.
