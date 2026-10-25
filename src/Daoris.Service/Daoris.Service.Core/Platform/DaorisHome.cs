@@ -336,6 +336,8 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     public static readonly HomeEntry Abandoned = new("abandoned", HomeCategory.Data, "data/abandoned.json", "abandoned.json");
     public static readonly HomeEntry Update = new("update", HomeCategory.Data, "data/update.json", "update.json");
     public static readonly HomeEntry Knowledge = new("knowledge", HomeCategory.Data, "data/knowledge.db", "knowledge.db");
+    // FOUNDATION1 z-i (D212, the design §13.2): the desktop's own store, a database of the machine's, opened by the driver library alone; new since the layout, so its old place is its new one.
+    public static readonly HomeEntry DesktopDb = new("desktop-db", HomeCategory.Data, "data/desktop.db", "data/desktop.db");
     public static readonly HomeEntry Sessions = new("sessions", HomeCategory.Data, "data/sessions", "sessions");
     public static readonly HomeEntry Helpers = new("helpers", HomeCategory.Data, "data/helpers", "helpers");
     public static readonly HomeEntry Partners = new("partners", HomeCategory.Data, "data/partners", "partners");
@@ -415,7 +417,7 @@ public sealed record HomeEntry(string Name, HomeCategory Category, string New, s
     [
         DriverConfig, Harnesses, Accounts, Cooling, Windows, Reads, Permissions, RuleProposals, Tools, PluginState, Plugins,
         PluginApprovals, Usage,
-        Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, Sessions, Helpers, Partners, Handed, Setup,
+        Landings, SessionBranches, LinesMoved, RegistryFollowed, Abandoned, Update, Knowledge, DesktopDb, Sessions, Helpers, Partners, Handed, Setup,
         Workflows, HelpProposals, ConfiguredAccess, OpinionGates, OpinionDues, BrowserSettings, BrowserFavorites, HomeId, Brainstorms,
         UsageHistory, Keeping, Notices, GitIdentities, StandingConfirmation, AgentOffers, PipeWaiting,
         Keys, Remotes, AgentHomes, BrowserEngine, BrowserEdge, EdgeCookies, GitKeys, GitSshConfig, GitKnownHosts, GitConfig, Window, PipeSent,

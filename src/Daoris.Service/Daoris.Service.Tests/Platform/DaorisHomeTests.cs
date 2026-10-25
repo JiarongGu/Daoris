@@ -299,6 +299,19 @@ public sealed class DaorisHomeTests
     }
 
     /// <summary>
+    /// FOUNDATION1 z-i (D212, the design §13.2): the desktop's own store, a data file the service's table names as its twins do, and
+    /// never opens (the service keeps its own store), after the knowledge index.
+    /// </summary>
+    [Fact]
+    public void The_desktop_store_is_a_data_file_after_the_knowledge_index()
+    {
+        Assert.Same(HomeEntry.DesktopDb, HomeEntry.Named("desktop-db"));
+        Assert.Equal((HomeCategory.Data, "data/desktop.db"), (HomeEntry.DesktopDb.Category, HomeEntry.DesktopDb.New));
+        var table = HomeEntry.Table.ToList();
+        Assert.Equal(table.IndexOf(HomeEntry.Knowledge) + 1, table.IndexOf(HomeEntry.DesktopDb));
+    }
+
+    /// <summary>
     /// CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, a data folder the service's table
     /// names as its twins do, and never reads; kept in <c>data/</c>, never under <c>run/</c>.
     /// </summary>

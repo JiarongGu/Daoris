@@ -185,6 +185,7 @@ no Daoris home, files are refused, and links still travel.
 The service's home table (`Platform/DaorisHome.cs`, a twin of the driver's and the CLI's) names every place a home holds,
 the git identities' among them (D198): the list in `data/`, the keys, ssh files and git file under `profiles/git/`, and
 what the doors used under `run/git/`. The service reads none of them; it names them so a census of the home counts them.
+The desktop's own store, `data/desktop.db` (FOUNDATION1 z-i, D212), is another of them: the driver library alone opens it, the service keeps its own store and never opens the desktop's, and the two pin the same SQLite package versions (a twins row).
 
 **A quest can name what comes next** (D65 §4). `then` is an ordered list of steps (`to`, `title`,
 `body`, at most 5). Closing the quest `done` publishes the first step **in the same transaction**,

@@ -97,6 +97,7 @@ account, never your profile; D63), refusing with none set. A `daoris` the instal
 `DAORIS_SERVICE_URL`: it takes its install's `data/`, and the service the running Daoris holds (D171). While Daoris runs on that
 home, `agent`, `driver`, `plugin` and `tool` send what they change to it over its own pipe, where its window asks you to confirm it
 and every window shows it at once; with none running they edit the files themselves, holding the home's lease (D171's PUSH1f note).
+The CLI's table of the home's entries (`home.ts`, a twin of the driver's and the service's) names the desktop's own store, `data/desktop.db` (FOUNDATION1 z-i, D212), as it names every place a home holds, and never opens it: the driver library alone does, so these verbs reach it through `daoris-driver` as they reach the rest.
 `driver`, `tool` and most of `agent` (its rules, trust, settings, tools and accounts: D194's PUSH1f2d and PUSH1f2e notes) are run by
 Daoris's own driver program, with the same words (`daoris-driver driver …`, `daoris-driver tool …`, `daoris-driver agent …`,
 D194), `driver`'s standing choices, its workflows, its cycles and its brainstorm policy alike: the one the install carries in

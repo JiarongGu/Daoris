@@ -16,7 +16,7 @@ internal sealed record StaticRule(string File, int Line, string Member);
 
 /// <summary>
 /// What the structure gate reads of the driver's sources through Roslyn's semantic model (FOUNDATION1 mod-0, §14.5): one compilation of
-/// every source over the base library, which is all the driver references, and, in it, each name that binds to a type a source declares
+/// every source over the base library and the store's SQLite package, which are all the driver references, and, in it, each name that binds to a type a source declares
 /// as an edge from the file that names it to the file that declares the type. The binding is the compiler's, so every spelling of a
 /// reference is one (plain, namespace-qualified, <c>global::</c>-qualified, through an alias or a static import), a member's occurrence is
 /// the member's and no type's whatever it is called, and a <c>record struct</c> is a struct. A comment, a string and a <c>cref</c> are no
@@ -49,6 +49,8 @@ internal sealed class StructureAnalysis
             references.Add(MetadataReference.CreateFromFile(path));
         }
 
+        // The driver's one package, the desktop store's (FOUNDATION1 z-i): the SQLite library `DesktopStore` and its reader name.
+        references.Add(MetadataReference.CreateFromFile(typeof(Microsoft.Data.Sqlite.SqliteConnection).Assembly.Location));
         return references;
     });
 
