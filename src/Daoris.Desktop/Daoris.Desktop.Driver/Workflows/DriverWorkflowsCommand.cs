@@ -24,7 +24,7 @@ namespace Daoris.Driver;
 public static class DriverWorkflowsCommand
 {
     /// <summary>The sub-verbs that write a workflow or the choice; with <c>--plan</c> each only says what it would write.</summary>
-    public static IReadOnlySet<string> Writes { get; } = new HashSet<string>(StringComparer.Ordinal) { "new", "edit", "apply", "import", "use", "kind" };
+    public static IReadOnlySet<string> Writes { get; } = ChoiceGrammar.WorkflowWrites;
 
     /// <summary>The sub-verbs, each the CLI's.</summary>
     public static IReadOnlyList<string> Verbs { get; } = ["list", "show", "use", "kind", "new", "edit", "apply", "export", "import"];
@@ -38,8 +38,7 @@ public static class DriverWorkflowsCommand
         + "`daoris driver workflow new docs --from pull-request-no-press --plan`.";
 
     /// <summary>Whether the words (after <c>workflow</c>) write: a writing sub-verb with no <c>--plan</c>.</summary>
-    public static bool Changes(IReadOnlyList<string> args) =>
-        args.Count > 0 && Writes.Contains(args[0]) && !args.Contains("--plan");
+    public static bool Changes(IReadOnlyList<string> args) => ChoiceGrammar.WorkflowChanges(args);
 
     /// <summary>
     /// The verb's run over <paramref name="choices"/>, the <c>driver.json</c> this terminal read: said, and written where it writes. A

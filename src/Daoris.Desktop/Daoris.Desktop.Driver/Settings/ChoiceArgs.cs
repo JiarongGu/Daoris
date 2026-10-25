@@ -37,6 +37,17 @@ public static class ChoiceArgs
         }
     }
 
+    /// <summary>
+    /// A press no route takes (D171's PUSH1f note), acting alone: the choice written to <paramref name="path"/> and its words said, as
+    /// the settings' own presses are made.
+    /// </summary>
+    public static ChoicePress Alone(string verb, string path, Func<DriverConfig, DriverConfig> change, Func<int> words) =>
+        new(verb, null, null, _ =>
+        {
+            StandingChoices.Write(path, change);
+            return Task.FromResult<object?>(null);
+        }, _ => null, _ => words());
+
     /// <summary>A moment as the CLI said it: ISO 8601 to the second, in UTC.</summary>
     public static string Moment(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
 
