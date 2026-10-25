@@ -2,60 +2,63 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>D205's tagged request: an explicit tool alias `default` differs from an account default.</summary>
-public sealed record ActorValue(string Source, string? Value, bool Carried);
-public sealed record ActorAsked(string Agent, ActorValue Model, ActorValue Effort)
+/// <summary>
+/// What a start or a resume makes of the choice a session was asked to run with (<see cref="ActorAsked"/>, whose shape is the service's):
+/// the opening's default, the composer's change laid over it, the spawn's command line and the native arguments. The roles' own members of
+/// it, so every caller keeps `ActorAsked.Before`, `asked.Overlaid`, `ActorAsked.ForSpawn` and `asked.NativeArguments` as spelled.
+/// </summary>
+public static class ActorAskedChoices
 {
-    public static ActorAsked Before(string agent) => new(agent, new("account-default", null, false), new("account-default", null, false));
-
-    /// <summary>
-    /// The model its choice named, which each account's offer reading is judged for (D205 §4.1, the walk's model parameter); null for
-    /// account default, the person's own command or environment, which no reading passes.
-    /// </summary>
-    public string? NamedModel => Model is { Source: "entry" or "override", Value: { } model } ? model : null;
-
-    /// <summary>
-    /// This asked choice with the composer's <paramref name="change"/> laid over it (D205 §4.2, MODELROLE1d): what a resume and a briefed
-    /// continuation set, the person's last change after the opening's. An override's model drops the asked effort unless the override
-    /// names one, since a model change resets the effort the agent gives. Each value it names is carried, its source <c>override</c>.
-    /// </summary>
-    public ActorAsked Overlaid(ActorOverride? change) => change is null ? this : this with
+    extension(ActorAsked)
     {
-        Model = change.Model is { } model ? new("override", model, true) : Model,
-        Effort = change.Effort is { } effort ? new("override", effort, true)
-            : change.Model is not null ? new("account-default", null, false) : Effort,
-    };
+        public static ActorAsked Before(string agent) => new(agent, new("account-default", null, false), new("account-default", null, false));
 
-    public static ActorAsked ForSpawn(string agent, System.Diagnostics.ProcessStartInfo info, ActorAsked? requested = null)
-    {
-        var asked = requested ?? Before(agent);
-        ActorValue Command(string flag, ActorValue value)
+        public static ActorAsked ForSpawn(string agent, System.Diagnostics.ProcessStartInfo info, ActorAsked? requested = null)
         {
-            var words = info.ArgumentList.ToArray();
-            for (var i = 0; i < words.Length; i++)
+            var asked = requested ?? Before(agent);
+            ActorValue Command(string flag, ActorValue value)
             {
-                var named = words[i] == flag && i + 1 < words.Length ? words[i + 1]
-                    : words[i].StartsWith(flag + "=", StringComparison.Ordinal) ? words[i][(flag.Length + 1)..] : null;
-                if (named is not null) return value is { Source: "entry" or "override", Carried: true } && value.Value == named ? value : new("command", named, false);
+                var words = info.ArgumentList.ToArray();
+                for (var i = 0; i < words.Length; i++)
+                {
+                    var named = words[i] == flag && i + 1 < words.Length ? words[i + 1]
+                        : words[i].StartsWith(flag + "=", StringComparison.Ordinal) ? words[i][(flag.Length + 1)..] : null;
+                    if (named is not null) return value is { Source: "entry" or "override", Carried: true } && value.Value == named ? value : new("command", named, false);
+                }
+                return value;
             }
-            return value;
+            var model = Command("--model", asked.Model);
+            var effort = Command("--effort", asked.Effort);
+            if (model.Source == "account-default" && info.Environment.TryGetValue("ANTHROPIC_MODEL", out var ownModel) && !string.IsNullOrWhiteSpace(ownModel))
+                model = new("environment", ownModel, false);
+            if (info.Environment.TryGetValue("CLAUDE_CODE_EFFORT_LEVEL", out var ownEffort) && !string.IsNullOrWhiteSpace(ownEffort))
+                effort = new("environment", ownEffort, false);
+            return asked with { Model = model, Effort = effort };
         }
-        var model = Command("--model", asked.Model);
-        var effort = Command("--effort", asked.Effort);
-        if (model.Source == "account-default" && info.Environment.TryGetValue("ANTHROPIC_MODEL", out var ownModel) && !string.IsNullOrWhiteSpace(ownModel))
-            model = new("environment", ownModel, false);
-        if (info.Environment.TryGetValue("CLAUDE_CODE_EFFORT_LEVEL", out var ownEffort) && !string.IsNullOrWhiteSpace(ownEffort))
-            effort = new("environment", ownEffort, false);
-        return asked with { Model = model, Effort = effort };
     }
 
-    /// <summary>The native carrier, shared by first starts, resumes and chats. Existing command flags retain precedence.</summary>
-    public IEnumerable<string> NativeArguments(IReadOnlyList<string> command)
+    extension(ActorAsked asked)
     {
-        if (Model is { Source: "entry" or "override", Value: { } model, Carried: true } && !Has(command, "--model"))
-        { yield return "--model"; yield return model; }
-        if (Effort is { Source: "entry" or "override", Value: { } effort, Carried: true } && !Has(command, "--effort"))
-        { yield return "--effort"; yield return effort; }
+        /// <summary>
+        /// This asked choice with the composer's <paramref name="change"/> laid over it (D205 §4.2, MODELROLE1d): what a resume and a briefed
+        /// continuation set, the person's last change after the opening's. An override's model drops the asked effort unless the override
+        /// names one, since a model change resets the effort the agent gives. Each value it names is carried, its source <c>override</c>.
+        /// </summary>
+        public ActorAsked Overlaid(ActorOverride? change) => change is null ? asked : asked with
+        {
+            Model = change.Model is { } model ? new("override", model, true) : asked.Model,
+            Effort = change.Effort is { } effort ? new("override", effort, true)
+                : change.Model is not null ? new("account-default", null, false) : asked.Effort,
+        };
+
+        /// <summary>The native carrier, shared by first starts, resumes and chats. Existing command flags retain precedence.</summary>
+        public IEnumerable<string> NativeArguments(IReadOnlyList<string> command)
+        {
+            if (asked.Model is { Source: "entry" or "override", Value: { } model, Carried: true } && !Has(command, "--model"))
+            { yield return "--model"; yield return model; }
+            if (asked.Effort is { Source: "entry" or "override", Value: { } effort, Carried: true } && !Has(command, "--effort"))
+            { yield return "--effort"; yield return effort; }
+        }
     }
 
     private static bool Has(IEnumerable<string> command, string flag) => command.Any(word => word == flag || word.StartsWith(flag + "=", StringComparison.Ordinal));
@@ -116,9 +119,6 @@ public sealed record ActorOverride(string? Model, string? Effort)
 /// </summary>
 public sealed record OpenOffers(string? Version, string? Account, Func<ModelRefusal, Task<(ActorAsked Asked, string Choice)?>>? Refused);
 
-public sealed record ActorEntry(DateTimeOffset At, string? Acknowledged = null, string? Effort = null);
-public sealed record ActorRan(IReadOnlyList<string> Models, int More, IReadOnlyList<ActorEntry> Entries, int EntriesMore);
-
 /// <summary>Bounded provenance, independent of token attribution. No configured or opening model is a report of a turn.</summary>
 public sealed class ActorReports
 {
@@ -161,7 +161,7 @@ public sealed class ActorReports
 /// <summary>One run's event watch. Writes are ordered and drained when the run ends; a failed report never changes its behaviour.</summary>
 public sealed class ActorRun : IAsyncDisposable
 {
-    public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    public static readonly JsonSerializerOptions Json = ActorWire.Json;
     private readonly SessionEvents _events;
     private readonly string _session;
     private readonly string _actor;

@@ -2372,9 +2372,9 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         {
             writer.WriteStartObject();
             if (choice is not null) writer.WriteString("choice", choice);
-            if (asked is not null) { writer.WritePropertyName("asked"); JsonSerializer.Serialize(writer, asked, ActorRun.Json); }
-            if (ran is not null) { writer.WritePropertyName("ran"); JsonSerializer.Serialize(writer, ran, ActorRun.Json); }
-            if (changed is not null) { writer.WritePropertyName("override"); JsonSerializer.Serialize(writer, changed, ActorRun.Json); }
+            if (asked is not null) { writer.WritePropertyName("asked"); JsonSerializer.Serialize(writer, asked, ActorWire.Json); }
+            if (ran is not null) { writer.WritePropertyName("ran"); JsonSerializer.Serialize(writer, ran, ActorWire.Json); }
+            if (changed is not null) { writer.WritePropertyName("override"); JsonSerializer.Serialize(writer, changed, ActorWire.Json); }
             writer.WriteEndObject();
         });
         var (ok, status, payload, _) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/actor", body, ct).ConfigureAwait(false);
@@ -2532,7 +2532,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     internal static T? ActorRead<T>(JsonElement session, string name)
     {
         if (!session.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Object) return default;
-        try { return JsonSerializer.Deserialize<T>(value.GetRawText(), ActorRun.Json); }
+        try { return JsonSerializer.Deserialize<T>(value.GetRawText(), ActorWire.Json); }
         catch (JsonException) { return default; }
     }
 

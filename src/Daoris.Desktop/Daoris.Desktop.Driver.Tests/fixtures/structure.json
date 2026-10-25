@@ -490,6 +490,9 @@
     "Review/ServiceReviewWorld.cs": "Review",
     "Service/ConfirmationDoors.cs": "Service",
     "Service/Domain/AccountLine.cs": "Service",
+    "Service/Domain/ActorAsked.cs": "Service",
+    "Service/Domain/ActorRan.cs": "Service",
+    "Service/Domain/ActorWire.cs": "Service",
     "Service/Domain/AskWorkflowViews.cs": "Service",
     "Service/Domain/ContinuedFrom.cs": "Service",
     "Service/Domain/HistoryViews.cs": "Service",
@@ -871,13 +874,6 @@
         "Service/LedgerChanges.cs": ["ChangeTopics"],
         "Service/RegistrationFollow.cs": ["LookSaid"],
         "Service/ServiceClient.cs": ["NoteCodes","NotePart","Noted","SessionConclusion"]
-      }
-    },
-    {
-      "family": "Service names Roles",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["ActorAsked","ActorRan","ActorRun"]
       }
     },
     {
@@ -1345,8 +1341,6 @@
       "after": "Agents",
       "files": {
         "Accounts/Rotation/AccountRotation.cs": ["ActorEffective","ActorWords","BuildPass"],
-        "Agents/Acp/Acp.cs": ["ActorAsked","ActorValue"],
-        "Agents/Adapters/Adapters.cs": ["ActorAsked"],
         "Agents/Streams/HarnessCapture.cs": ["SupervisorHanded"]
       }
     },
