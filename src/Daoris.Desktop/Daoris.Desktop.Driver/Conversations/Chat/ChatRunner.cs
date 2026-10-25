@@ -673,6 +673,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         // FOUNDATION1a-ii: a start the person named an account for keeps, on its binding in the desktop store and nowhere else, that they
         // picked the account it opened on, so the account rule holds the conversation to it (§3.2 step 4). Never the walk's own choice.
         if (picked) _context.Conversations.Pick(sessionId, selection.Profile);
+        // PICKCARRY1 (the steward's call of 2026-10-26, amending row 1a-ii's and 1a-iii's reading): a pick belongs to the conversation, so a
+        // new part any move opens on the account the person picked, on the same agent, keeps it and the rule reads it there as on the part
+        // it came from. A part on another account or agent is no pick of the person's; an agent's pick and a record from before hold none.
+        else if (from is not null && _context.Conversations.PickedOn(from.Session, selection.Profile)
+            && await _service.RecordAsync(from.Session, ct).ConfigureAwait(false) is { Adapter: { Length: > 0 } pickedAgent }
+            && string.Equals(pickedAgent, resolved.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            _context.Conversations.Pick(sessionId, selection.Profile);
+        }
 
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
