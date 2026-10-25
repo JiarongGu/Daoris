@@ -70,7 +70,9 @@ public sealed class DesktopStoreTests : IDisposable
     {
         var at = DesktopStore.LocationIn(Home);
 
-        Assert.Equal(Path.Combine(Home, "data", "desktop.db"), at);
+        Assert.Equal(DaorisHome.Entry(Home, HomeEntry.DesktopDb), at);
+        Assert.Equal("desktop.db", Path.GetFileName(at));
+        Assert.Equal("data", Path.GetFileName(Path.GetDirectoryName(at)));
         var store = Open(at: at);
 
         Assert.True(File.Exists(at));
