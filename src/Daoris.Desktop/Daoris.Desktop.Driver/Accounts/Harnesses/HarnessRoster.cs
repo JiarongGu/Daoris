@@ -908,8 +908,16 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public Task<HarnessSelection> SelectAsync(
         string adapter, DriverConfig config, string? workspace, string? chosen,
         StartKind kind = StartKind.Driven, CancellationToken ct = default, string? model = null,
-        IReadOnlyCollection<string>? passed = null, long except = 0, bool counts = true) =>
-        WalkAsync(adapter, config, workspace, chosen, kind, counts, ownHome: false, ct, new OfferAsk(model, passed, except));
+        IReadOnlyCollection<string>? passed = null, long except = 0, bool counts = true)
+    {
+        Interlocked.Increment(ref _selected);
+        return WalkAsync(adapter, config, workspace, chosen, kind, counts, ownHome: false, ct, new OfferAsk(model, passed, except));
+    }
+
+    private long _selected;
+
+    /// <summary>How many walks <see cref="SelectAsync"/> was asked: a test holds how many walks the account rule asks (FOUNDATION1a-i).</summary>
+    internal long Selected => Interlocked.Read(ref _selected);
 
     /// <summary>
     /// A handed quest's start (MIXAGENT1a-ii, D163 point 1): the account the hand-over named is asked for first, as a person's pick
@@ -944,12 +952,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// shows it waiting for an account (TOOL4g), unless the person chose a new session (<paramref name="newSession"/>).
     /// <b>Unable to run there at all</b> (gone, off the list, kept for conversations, refused, signed out), or left by the
     /// person's choice, the walk picks as for any start (D130 §16.3), which passes the account by itself; where
-    /// <paramref name="walks"/> is false, as for a conversation that nothing carries on by itself, nothing is walked or
+    /// <paramref name="line"/> does not walk, as for a conversation that nothing carries on by itself, nothing is walked or
     /// counted, and the answer is a refusal saying what held it.</para>
+    /// <para><b>The rule is <see cref="LineAccount.Decide"/>'s</b> (FOUNDATION1a-i, the foundation design §3.2): this reads the own account as
+    /// it always did, hands the rule the walk to ask lazily (<see cref="LineAccount.DecideAsync"/>), asks the own account by name where the
+    /// rule says it resumes there, and says each answer in the words it always said it in.</para>
     /// </remarks>
     /// <param name="account">The account the record ran on, or null for the tool's own sign-in.</param>
     /// <param name="newSession">The person chose to go on in a new session rather than wait for a cooling account.</param>
-    /// <param name="walks">Whether an account that cannot carry the words is replaced by the walk's pick.</param>
     /// <param name="limited">
     /// The record an account's limit ended (LIMITRESUME1b, D206; the limit-resume design §3.3): its account, ready, has its maker's reading
     /// asked first as the walk asks a just-reset account, a reading still out held as cooling; and, cooling, its words never wait for it
@@ -959,29 +969,40 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// The record's asked model (D205 §3.5(a), MODELROLE1c2): an own account whose reading refuses it cannot carry the words, which go to
     /// a new record on another account of the same choice, the own account passed, as an own account signed out does.
     /// </param>
-    /// <param name="switches">
-    /// The record's line can carry its words to a new part by itself (LIMITSWITCH1, D137's note of 2026-10-25): a driven record whose quest
-    /// is open or taken, and since LIMITSWITCH2 an ended conversation and a closed quest's session, whose runner goes on in a new part of
-    /// the same line. Its words then never wait for a cooling own account while another account of the line's choices is ready
-    /// (<see cref="ResumeChoice.Switched"/>), and wait otherwise for the earliest reset of any. Ask Daoris's room never asks it (it goes
-    /// elsewhere only at a limit, D205 §3.5(e)), and a record whose own account cannot carry the words for another reason is the
-    /// person's press.
-    /// </param>
-    /// <param name="walkCounts">
-    /// Whether the switch's walk counts the start it picks as chosen (<see cref="SelectAsync"/>'s <c>counts</c>): a driven carry-on opens on
-    /// that pick, so it does; a conversation's and a closed quest's session are opened by the ended move, which walks and counts once
-    /// itself, so asking it here only judges (LIMITSWITCH2).
+    /// <param name="line">
+    /// What kind of line the resume is for (<see cref="LineKind"/>): whether an account that cannot carry the words is replaced by the walk's
+    /// pick; whether its line can carry its words to a new part by itself (LIMITSWITCH1, D137's note of 2026-10-25: a driven record whose
+    /// quest is open or taken, and since LIMITSWITCH2 an ended conversation and a closed quest's session, whose runner goes on in a new part of
+    /// the same line), so its words never wait for a cooling own account while another account of the line's choices is ready
+    /// (<see cref="ResumeChoice.Switched"/>) and wait otherwise for the earliest reset of any; and whether the switch's walk counts the start
+    /// it picks as chosen (<see cref="SelectAsync"/>'s <c>counts</c>): a driven carry-on opens on that pick, so it does; a conversation's and
+    /// a closed quest's session are opened by the ended move, which walks and counts once itself (LIMITSWITCH2). Ask Daoris's room never
+    /// switches (it goes elsewhere only at a limit, D205 §3.5(e)), and a record whose own account cannot carry the words for another reason
+    /// is the person's press. The default is a driven record that cannot switch.
     /// </param>
     public async Task<ResumeChoice> ResumeAsync(
         string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false,
-        bool walks = true, CancellationToken ct = default, bool limited = false, string? model = null, bool switches = false,
-        bool walkCounts = true)
+        LineKind line = default, CancellationToken ct = default, bool limited = false, string? model = null)
     {
         var resolved = adapters.Resolve(adapter);
+        var trigger = new LineTrigger(newSession, limited);
+        var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
+
+        // The rule asks the walk at three places, each as today's resume asked it (FOUNDATION1a-i): an adapter with no accounts walks as a
+        // start does, counted; the switch's walk, counted only where the line's carry-on opens on its pick; and the roster's own walk, with
+        // no account chosen, for an account that cannot carry the words, which passes the own account where the model is not offered there.
+        Task<HarnessSelection> Walk(LineAsk ask) => ask.Place switch
+        {
+            LineWalkPlace.NoToolchain => SelectAsync(adapter, config, workspace, chosen: null, kind, ct),
+            LineWalkPlace.Switch => SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model, counts: ask.Counts),
+            _ => SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model, ask.NotOffered && named is not null ? [named] : null),
+        };
+
         if (resolved.Toolchain is not { } toolchain)
         {
             // An adapter with no accounts has nothing to ask for: it spawns as it always did.
-            return new ResumeChoice(await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false), NextHold.Ready);
+            var spawned = await LineAccount.DecideAsync(LineOwn.Without, trigger, LineConstraint.None, line, Walk).ConfigureAwait(false);
+            return new ResumeChoice(((LineAnswer.Resume)spawned).Walked!, NextHold.Ready) { Answer = spawned };
         }
 
         // The own account's reading judged for the asked model before anything is asked of it (D205 §3.5(a)): one that refuses it is an
@@ -991,7 +1012,6 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 account.Trim(), model, Clock()) is not null;
 
         var owner = toolchain.Owner(resolved.Name);
-        var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
         // A record on a Daoris account is judged against the set a start walks (POOL1a2, the account-pool design §2.4), whatever its
         // workspace; one that began in the tool's own home is judged against no scope (F1, ResumeAccount.Judge).
         var settled = Settings.Set(owner);
@@ -1019,59 +1039,69 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             own = ResumeAccount.Judge(named, scope, kind, before, present);
         }
 
-        if (own == NextHold.Cooling && !newSession && !limited)
+        // The rule (LIMITSWITCH1, D137's note of 2026-10-25, point 7 amended): a record's words never wait for its own account while another
+        // account of the line's choices is ready where the line can carry them to a new part by itself, and wait otherwise for the earliest
+        // reset (D206 point 2); LIMITSWITCH2 gave a conversation and a closed quest's session the same, their runner opening the part.
+        var ownState = new LineOwn(own, unoffered, before.Cooling);
+        var answer = await LineAccount.DecideAsync(ownState, trigger, LineConstraint.None, line, Walk).ConfigureAwait(false);
+        if (answer is LineAnswer.Resume)
         {
-            // CONVNOTE2g: the conversation's line by code beside the hold's English, composed here, where the names it says are read.
-            var cooling = before.Cooling!;
-            // LIMITSWITCH1 (D137's note of 2026-10-25, point 7 amended): a driven record's words never wait for its own account while
-            // another account of the line's choices is ready: the walk's pick carries them now, as a limited record's. They wait only
-            // where none is, and then for the earliest reset of any (D206 point 2). LIMITSWITCH2: a conversation's and a closed quest's
-            // session's words the same, their runner opening the part (ChatGoOn, the ended move), the walk only judged there.
-            if (switches)
-            {
-                var walked = await SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model, counts: walkCounts).ConfigureAwait(false);
-                if (walked.Allowed) return new ResumeChoice(walked, own) { Switched = true };
+            // Ready before any probe: asked for by name, as a pick is; a record that began in the tool's own home goes on there, as a
+            // harness keeps a conversation in the home it began in (D175 point 3), where every new start takes a Daoris account.
+            var asked = await ChooseAsync(adapter, config, workspace, chosen: named, kind, counts: true, ct, own: named is null).ConfigureAwait(false);
+            if (asked is not { Allowed: false, NotReady: AccountReadiness.SignedOut }) return new ResumeChoice(asked, NextHold.Ready) { Answer = answer };
 
-                // The own account's reset is the earliest where the walk found none sooner: its hold says its conversation is there.
-                if (walked.Cooling is { } soonest && soonest.Until < cooling.Until)
-                {
-                    var waits = ResumeWords.LimitWaits(soonest, Zone, names);
-                    return new ResumeChoice(new HarnessSelection(waits.Note) { Cooling = soonest, RefusalNote = waits }, own)
-                    {
-                        Waiting = ResumeWords.LimitWaits(soonest, Zone, names, ResumeWords.NotYet),
-                    };
-                }
-            }
+            // What the probe learned, the rule read again: the own account is signed out.
+            answer = await LineAccount.DecideAsync(ownState with { Hold = NextHold.SignedOut }, trigger, LineConstraint.None, line, Walk)
+                .ConfigureAwait(false);
+        }
 
-            return new ResumeChoice(new HarnessSelection(ResumeWords.Waits(cooling, Zone, names)) { Cooling = cooling }, own)
+        return Said(answer);
+
+        // What the rule answered, said in the words each answer has always had. CONVNOTE2g: the conversation's line by code beside the hold's
+        // English, composed here, where the names it says are read.
+        ResumeChoice Said(LineAnswer answered) => answered switch
+        {
+            LineAnswer.Elsewhere { Switched: true } switched => new ResumeChoice(switched.Selection, switched.Why) { Switched = true, Answer = answered },
+
+            // The own account's reset is the earliest where the walk found none sooner: its hold says its conversation is there.
+            LineAnswer.Wait { Set: ResetSet.Switch, OwnFirst: false } sooner => Waiting(sooner),
+            LineAnswer.Wait { Set: ResetSet.Switch } ownWait => new ResumeChoice(
+                new HarnessSelection(ResumeWords.Waits(ownWait.Earliest, Zone, names)) { Cooling = ownWait.Earliest }, ownWait.Why)
             {
-                Waiting = ResumeWords.Waiting(cooling, Zone, names, ResumeWords.NotYet),
+                Waiting = ResumeWords.Waiting(ownWait.Earliest, Zone, names, ResumeWords.NotYet),
+                Answer = answered,
+            },
+            LineAnswer.Elsewhere elsewhere => Moved(elsewhere.Selection, elsewhere.Why, elsewhere.NotOffered, answered),
+            LineAnswer.Wait { Walked: { } walked } wait => Moved(walked, wait.Why, wait.NotOffered, answered),
+            LineAnswer.Hold { Walked: { } walked } hold => Moved(walked, hold.Why, hold.NotOffered, answered),
+
+            // Where the own account does not carry the words and the line walks none, a refusal saying what held it.
+            LineAnswer.Hold hold => Moved(
+                new HarnessSelection(hold.NotOffered
+                    ? $"Its own account `{AccountNames.Said(names, named!)}` does not offer `{model}`."
+                    : ResumeWords.Line(hold.Why, newSession)?.Note ?? "Its own account cannot carry it.") { Cooling = hold.Cooling },
+                hold.Why, hold.NotOffered, answered),
+            _ => throw new InvalidOperationException($"the account rule answered {answered} where a resume reads another."),
+        };
+
+        ResumeChoice Waiting(LineAnswer.Wait sooner)
+        {
+            var waits = ResumeWords.LimitWaits(sooner.Earliest, Zone, names);
+            return new ResumeChoice(new HarnessSelection(waits.Note) { Cooling = sooner.Earliest, RefusalNote = waits }, sooner.Why)
+            {
+                Waiting = ResumeWords.LimitWaits(sooner.Earliest, Zone, names, ResumeWords.NotYet),
+                Answer = sooner,
             };
         }
 
-        if (own != NextHold.Ready) return await ElsewhereAsync(own).ConfigureAwait(false);
-        if (unoffered) return await ElsewhereAsync(NextHold.Refused, notOffered: true).ConfigureAwait(false);
-
-        // Ready before any probe: asked for by name, as a pick is; a record that began in the tool's own home goes on there, as a
-        // harness keeps a conversation in the home it began in (D175 point 3), where every new start takes a Daoris account.
-        var asked = await ChooseAsync(adapter, config, workspace, chosen: named, kind, counts: true, ct, own: named is null).ConfigureAwait(false);
-        return asked is { Allowed: false, NotReady: AccountReadiness.SignedOut }
-            ? await ElsewhereAsync(NextHold.SignedOut).ConfigureAwait(false)
-            : new ResumeChoice(asked, NextHold.Ready);
-
         // Where the own account does not offer the model, the walk takes the same choice's other accounts with the own one passed (§3.5(a)).
-        async Task<ResumeChoice> ElsewhereAsync(NextHold held, bool notOffered = false) => new(
-            walks
-                ? await SelectAsync(adapter, config, workspace, chosen: null, kind, ct, model, notOffered && named is not null ? [named] : null)
-                    .ConfigureAwait(false)
-                : new HarnessSelection(notOffered
-                    ? $"Its own account `{AccountNames.Said(names, named!)}` does not offer `{model}`."
-                    : ResumeWords.Line(held, newSession)?.Note ?? "Its own account cannot carry it.") { Cooling = before.Cooling },
-            held)
+        ResumeChoice Moved(HarnessSelection selection, NextHold held, bool notOffered, LineAnswer answered) => new(selection, held)
         {
             NewSession = newSession && held == NextHold.Cooling,
             Limited = limited,
             NotOffered = notOffered,
+            Answer = answered,
         };
     }
 
@@ -1763,7 +1793,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         string owner, IReadOnlyList<AccountState> states, RotationScope? scope, StartKind kind, DateTimeOffset now,
         IReadOnlyDictionary<string, string> names)
     {
-        var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until);
+        var first = LineAccount.Earliest(ResetSet.Walk, states);
         // TOOL6g: the accounts passed as not signed in are facts beside the sentence, and over a list with nothing cooling
         // each is named with its sign-in, where the first account's refusal alone named only its own.
         var signedOut = RotationWords.SignedOut(states) is { Count: > 0 } passed ? SignedOutAccounts.Of(owner, passed, names) : null;

@@ -1,0 +1,294 @@
+# Cases
+row-001 Ready allowed profile=account-1 cooling=- flags= walks=0 starts=1 text=28ab3832 rule=Resume
+row-002 Cooling allowed profile=account-2 cooling=- flags=S walks=1 starts=1 text=174060e1 rule=Elsewhere.Switched
+row-003 Cooling refused profile=- cooling=account-1+2h flags=W walks=1 starts=0 text=7d2fe4e2 rule=Wait.Switch.Own
+row-004 Cooling refused profile=- cooling=account-2+1h flags=W walks=1 starts=0 text=9137b245 rule=Wait.Switch.Walked
+row-005 Cooling allowed profile=account-2 cooling=- flags=S walks=1 starts=0 text=174060e1 rule=Elsewhere.Switched
+row-006 Cooling refused profile=- cooling=account-1+2h flags=W walks=0 starts=0 text=7d2fe4e2 rule=Wait.Switch.Own
+row-007 Cooling allowed profile=account-2 cooling=- flags=N walks=1 starts=1 text=eff18278 rule=Elsewhere
+row-008 Cooling refused profile=- cooling=account-1+2h flags=N walks=1 starts=0 text=698051b3 rule=Wait.Walk
+row-009 Cooling refused profile=- cooling=account-1+2h flags=N walks=1 starts=0 text=07ea1750 rule=Wait.Walk
+row-010 Cooling refused profile=- cooling=account-2+1h flags=N walks=1 starts=0 text=9dc9df11 rule=Wait.Walk
+row-011 Cooling refused profile=- cooling=account-1+2h flags=N walks=0 starts=0 text=7fffb881 rule=Hold.None
+row-012 Cooling allowed profile=account-2 cooling=- flags=L walks=1 starts=1 text=174060e1 rule=Elsewhere
+row-013 Cooling refused profile=- cooling=account-1+2h flags=L walks=1 starts=0 text=8dc38e5f rule=Wait.Walk
+row-014 Cooling refused profile=- cooling=account-1+2h flags=L walks=1 starts=0 text=ba6387a8 rule=Wait.Walk
+row-015 Cooling refused profile=- cooling=account-2+1h flags=L walks=1 starts=0 text=a9bab78b rule=Wait.Walk
+row-016 Cooling refused profile=- cooling=account-1+2h flags=L walks=0 starts=0 text=c68a3e31 rule=Hold.None
+row-017 Cooling allowed profile=account-2 cooling=- flags=NL walks=1 starts=1 text=eff18278 rule=Elsewhere
+row-018 Cooling refused profile=- cooling=account-1+2h flags=NL walks=1 starts=0 text=698051b3 rule=Wait.Walk
+row-019 Cooling refused profile=- cooling=account-1+2h flags=NL walks=1 starts=0 text=07ea1750 rule=Wait.Walk
+row-020 Cooling refused profile=- cooling=account-2+1h flags=NL walks=1 starts=0 text=9dc9df11 rule=Wait.Walk
+row-021 Cooling refused profile=- cooling=account-1+2h flags=NL walks=0 starts=0 text=7fffb881 rule=Hold.None
+row-022 SignedOut allowed profile=account-2 cooling=- flags= walks=1 starts=1 text=fd4f8b7f rule=Elsewhere
+row-023 SignedOut refused profile=- cooling=account-2+40h flags= walks=1 starts=0 text=40f3d1af rule=Wait.Walk
+row-024 SignedOut refused profile=- cooling=- flags= walks=1 starts=0 text=be70f38a rule=Hold.SignIn
+row-025 SignedOut refused profile=- cooling=account-2+5h flags= walks=1 starts=0 text=05bbc4d0 rule=Wait.Walk
+row-026 SignedOut refused profile=- cooling=account-2+1h flags= walks=1 starts=0 text=2f8969c0 rule=Wait.Walk
+row-027 SignedOut refused profile=- cooling=- flags= walks=0 starts=0 text=587311c4 rule=Hold.SignIn
+row-028 SignedOut allowed profile=account-2 cooling=- flags=L walks=1 starts=1 text=fd4f8b7f rule=Elsewhere
+row-029 SignedOut refused profile=- cooling=account-2+40h flags=L walks=1 starts=0 text=40f3d1af rule=Wait.Walk
+row-030 SignedOut refused profile=- cooling=- flags=L walks=1 starts=0 text=be70f38a rule=Hold.SignIn
+row-031 SignedOut refused profile=- cooling=account-2+5h flags=L walks=1 starts=0 text=05bbc4d0 rule=Wait.Walk
+row-032 SignedOut refused profile=- cooling=account-2+1h flags=L walks=1 starts=0 text=2f8969c0 rule=Wait.Walk
+row-033 SignedOut refused profile=- cooling=- flags=L walks=0 starts=0 text=587311c4 rule=Hold.SignIn
+row-034 Refused allowed profile=account-2 cooling=- flags= walks=1 starts=1 text=03edd451 rule=Elsewhere
+row-035 Refused refused profile=- cooling=account-2+40h flags= walks=1 starts=0 text=fe442f0d rule=Wait.Walk
+row-036 Refused refused profile=- cooling=- flags= walks=1 starts=0 text=1c910662 rule=Hold.SignIn
+row-037 Refused refused profile=- cooling=account-2+5h flags= walks=1 starts=0 text=7e59757a rule=Wait.Walk
+row-038 Refused refused profile=- cooling=account-2+1h flags= walks=1 starts=0 text=528c6007 rule=Wait.Walk
+row-039 Refused refused profile=- cooling=- flags= walks=0 starts=0 text=51580234 rule=Hold.ClearRefusal
+row-040 Refused allowed profile=account-2 cooling=- flags=L walks=1 starts=1 text=03edd451 rule=Elsewhere
+row-041 Refused refused profile=- cooling=account-2+40h flags=L walks=1 starts=0 text=fe442f0d rule=Wait.Walk
+row-042 Refused refused profile=- cooling=- flags=L walks=1 starts=0 text=1c910662 rule=Hold.SignIn
+row-043 Refused refused profile=- cooling=account-2+5h flags=L walks=1 starts=0 text=7e59757a rule=Wait.Walk
+row-044 Refused refused profile=- cooling=account-2+1h flags=L walks=1 starts=0 text=528c6007 rule=Wait.Walk
+row-045 Refused refused profile=- cooling=- flags=L walks=0 starts=0 text=51580234 rule=Hold.ClearRefusal
+row-046 Missing allowed profile=account-1 cooling=- flags= walks=1 starts=1 text=0de1fd39 rule=Elsewhere
+row-047 Missing refused profile=- cooling=- flags= walks=0 starts=0 text=02ed7003 rule=Hold.AddAccount
+row-048 Missing allowed profile=account-1 cooling=- flags=L walks=1 starts=1 text=0de1fd39 rule=Elsewhere
+row-049 Missing refused profile=- cooling=- flags=L walks=0 starts=0 text=02ed7003 rule=Hold.AddAccount
+row-050 Missing refused profile=- cooling=account-9+2h flags= walks=0 starts=0 text=02ed7003 rule=Hold.AddAccount
+row-051 Missing refused profile=- cooling=account-9+2h flags=L walks=0 starts=0 text=02ed7003 rule=Hold.AddAccount
+row-052 Kept allowed profile=account-2 cooling=- flags= walks=1 starts=1 text=b800ea50 rule=Elsewhere
+row-053 Kept refused profile=- cooling=account-2+40h flags= walks=1 starts=0 text=2897a399 rule=Wait.Walk
+row-054 Kept refused profile=- cooling=- flags= walks=1 starts=0 text=7e9d16ea rule=Hold.SignIn
+row-055 Kept refused profile=- cooling=account-2+5h flags= walks=1 starts=0 text=fad41276 rule=Wait.Walk
+row-056 Kept refused profile=- cooling=account-2+1h flags= walks=1 starts=0 text=ec5c618d rule=Wait.Walk
+row-057 Kept refused profile=- cooling=- flags= walks=0 starts=0 text=0df5949b rule=Hold.ChangeSet
+row-058 Kept allowed profile=account-2 cooling=- flags=L walks=1 starts=1 text=b800ea50 rule=Elsewhere
+row-059 Kept refused profile=- cooling=account-2+40h flags=L walks=1 starts=0 text=2897a399 rule=Wait.Walk
+row-060 Kept refused profile=- cooling=- flags=L walks=1 starts=0 text=7e9d16ea rule=Hold.SignIn
+row-061 Kept refused profile=- cooling=account-2+5h flags=L walks=1 starts=0 text=fad41276 rule=Wait.Walk
+row-062 Kept refused profile=- cooling=account-2+1h flags=L walks=1 starts=0 text=ec5c618d rule=Wait.Walk
+row-063 Kept refused profile=- cooling=- flags=L walks=0 starts=0 text=0df5949b rule=Hold.ChangeSet
+row-064 Refused allowed profile=account-2 cooling=- flags=X walks=1 starts=1 text=76f5bb51 rule=Elsewhere
+row-065 Refused refused profile=- cooling=account-2+40h flags=X walks=1 starts=0 text=4433c533 rule=Wait.Walk
+row-066 Refused refused profile=- cooling=- flags=X walks=1 starts=0 text=4433c533 rule=Hold.OfferModel
+row-067 Refused refused profile=- cooling=account-2+5h flags=X walks=1 starts=0 text=4433c533 rule=Wait.Walk
+row-068 Refused refused profile=- cooling=account-2+1h flags=X walks=1 starts=0 text=4433c533 rule=Wait.Walk
+row-069 Refused refused profile=- cooling=- flags=X walks=0 starts=0 text=d2b8239c rule=Hold.OfferModel
+row-070 Refused allowed profile=account-2 cooling=- flags=LX walks=1 starts=1 text=76f5bb51 rule=Elsewhere
+row-071 Refused refused profile=- cooling=account-2+40h flags=LX walks=1 starts=0 text=4433c533 rule=Wait.Walk
+row-072 Refused refused profile=- cooling=- flags=LX walks=1 starts=0 text=4433c533 rule=Hold.OfferModel
+row-073 Refused refused profile=- cooling=account-2+5h flags=LX walks=1 starts=0 text=4433c533 rule=Wait.Walk
+row-074 Refused refused profile=- cooling=account-2+1h flags=LX walks=1 starts=0 text=4433c533 rule=Wait.Walk
+row-075 Refused refused profile=- cooling=- flags=LX walks=0 starts=0 text=d2b8239c rule=Hold.OfferModel
+row-076 Ready allowed profile=- cooling=- flags= walks=1 starts=0 text=2dca6397 rule=Resume.Walked
+
+Ready/None/DrivenOpen row-001
+Ready/None/DrivenClosedCarries row-001
+Ready/None/DrivenClosed row-001
+Ready/None/DrivenLimit row-001
+Ready/None/ConversationCarries row-001
+Ready/None/AskDaoris row-001
+Ready/NewSession/DrivenOpen row-001
+Ready/NewSession/DrivenClosedCarries row-001
+Ready/NewSession/DrivenClosed row-001
+Ready/NewSession/DrivenLimit row-001
+Ready/NewSession/ConversationCarries row-001
+Ready/NewSession/AskDaoris row-001
+Ready/Limited/DrivenOpen row-001
+Ready/Limited/DrivenClosedCarries row-001
+Ready/Limited/DrivenClosed row-001
+Ready/Limited/DrivenLimit row-001
+Ready/Limited/ConversationCarries row-001
+Ready/Limited/AskDaoris row-001
+Ready/Both/DrivenOpen row-001
+Ready/Both/DrivenClosedCarries row-001
+Ready/Both/DrivenClosed row-001
+Ready/Both/DrivenLimit row-001
+Ready/Both/ConversationCarries row-001
+Ready/Both/AskDaoris row-001
+Cooling/None/DrivenOpen row-002 row-003 row-003 row-003 row-004
+Cooling/None/DrivenClosedCarries row-005 row-003 row-003 row-003 row-004
+Cooling/None/DrivenClosed row-006
+Cooling/None/DrivenLimit row-006
+Cooling/None/ConversationCarries row-005 row-003 row-003 row-003 row-004
+Cooling/None/AskDaoris row-006
+Cooling/NewSession/DrivenOpen row-007 row-008 row-009 row-008 row-010
+Cooling/NewSession/DrivenClosedCarries row-007 row-008 row-009 row-008 row-010
+Cooling/NewSession/DrivenClosed row-007 row-008 row-009 row-008 row-010
+Cooling/NewSession/DrivenLimit row-011
+Cooling/NewSession/ConversationCarries row-011
+Cooling/NewSession/AskDaoris row-011
+Cooling/Limited/DrivenOpen row-012 row-013 row-014 row-013 row-015
+Cooling/Limited/DrivenClosedCarries row-012 row-013 row-014 row-013 row-015
+Cooling/Limited/DrivenClosed row-012 row-013 row-014 row-013 row-015
+Cooling/Limited/DrivenLimit row-016
+Cooling/Limited/ConversationCarries row-016
+Cooling/Limited/AskDaoris row-016
+Cooling/Both/DrivenOpen row-017 row-018 row-019 row-018 row-020
+Cooling/Both/DrivenClosedCarries row-017 row-018 row-019 row-018 row-020
+Cooling/Both/DrivenClosed row-017 row-018 row-019 row-018 row-020
+Cooling/Both/DrivenLimit row-021
+Cooling/Both/ConversationCarries row-021
+Cooling/Both/AskDaoris row-021
+SignedOut/None/DrivenOpen row-022 row-023 row-024 row-025 row-026
+SignedOut/None/DrivenClosedCarries row-022 row-023 row-024 row-025 row-026
+SignedOut/None/DrivenClosed row-022 row-023 row-024 row-025 row-026
+SignedOut/None/DrivenLimit row-027
+SignedOut/None/ConversationCarries row-027
+SignedOut/None/AskDaoris row-027
+SignedOut/NewSession/DrivenOpen row-022 row-023 row-024 row-025 row-026
+SignedOut/NewSession/DrivenClosedCarries row-022 row-023 row-024 row-025 row-026
+SignedOut/NewSession/DrivenClosed row-022 row-023 row-024 row-025 row-026
+SignedOut/NewSession/DrivenLimit row-027
+SignedOut/NewSession/ConversationCarries row-027
+SignedOut/NewSession/AskDaoris row-027
+SignedOut/Limited/DrivenOpen row-028 row-029 row-030 row-031 row-032
+SignedOut/Limited/DrivenClosedCarries row-028 row-029 row-030 row-031 row-032
+SignedOut/Limited/DrivenClosed row-028 row-029 row-030 row-031 row-032
+SignedOut/Limited/DrivenLimit row-033
+SignedOut/Limited/ConversationCarries row-033
+SignedOut/Limited/AskDaoris row-033
+SignedOut/Both/DrivenOpen row-028 row-029 row-030 row-031 row-032
+SignedOut/Both/DrivenClosedCarries row-028 row-029 row-030 row-031 row-032
+SignedOut/Both/DrivenClosed row-028 row-029 row-030 row-031 row-032
+SignedOut/Both/DrivenLimit row-033
+SignedOut/Both/ConversationCarries row-033
+SignedOut/Both/AskDaoris row-033
+Refused/None/DrivenOpen row-034 row-035 row-036 row-037 row-038
+Refused/None/DrivenClosedCarries row-034 row-035 row-036 row-037 row-038
+Refused/None/DrivenClosed row-034 row-035 row-036 row-037 row-038
+Refused/None/DrivenLimit row-039
+Refused/None/ConversationCarries row-039
+Refused/None/AskDaoris row-039
+Refused/NewSession/DrivenOpen row-034 row-035 row-036 row-037 row-038
+Refused/NewSession/DrivenClosedCarries row-034 row-035 row-036 row-037 row-038
+Refused/NewSession/DrivenClosed row-034 row-035 row-036 row-037 row-038
+Refused/NewSession/DrivenLimit row-039
+Refused/NewSession/ConversationCarries row-039
+Refused/NewSession/AskDaoris row-039
+Refused/Limited/DrivenOpen row-040 row-041 row-042 row-043 row-044
+Refused/Limited/DrivenClosedCarries row-040 row-041 row-042 row-043 row-044
+Refused/Limited/DrivenClosed row-040 row-041 row-042 row-043 row-044
+Refused/Limited/DrivenLimit row-045
+Refused/Limited/ConversationCarries row-045
+Refused/Limited/AskDaoris row-045
+Refused/Both/DrivenOpen row-040 row-041 row-042 row-043 row-044
+Refused/Both/DrivenClosedCarries row-040 row-041 row-042 row-043 row-044
+Refused/Both/DrivenClosed row-040 row-041 row-042 row-043 row-044
+Refused/Both/DrivenLimit row-045
+Refused/Both/ConversationCarries row-045
+Refused/Both/AskDaoris row-045
+Missing/None/DrivenOpen row-046
+Missing/None/DrivenClosedCarries row-046
+Missing/None/DrivenClosed row-046
+Missing/None/DrivenLimit row-047
+Missing/None/ConversationCarries row-047
+Missing/None/AskDaoris row-047
+Missing/NewSession/DrivenOpen row-046
+Missing/NewSession/DrivenClosedCarries row-046
+Missing/NewSession/DrivenClosed row-046
+Missing/NewSession/DrivenLimit row-047
+Missing/NewSession/ConversationCarries row-047
+Missing/NewSession/AskDaoris row-047
+Missing/Limited/DrivenOpen row-048
+Missing/Limited/DrivenClosedCarries row-048
+Missing/Limited/DrivenClosed row-048
+Missing/Limited/DrivenLimit row-049
+Missing/Limited/ConversationCarries row-049
+Missing/Limited/AskDaoris row-049
+Missing/Both/DrivenOpen row-048
+Missing/Both/DrivenClosedCarries row-048
+Missing/Both/DrivenClosed row-048
+Missing/Both/DrivenLimit row-049
+Missing/Both/ConversationCarries row-049
+Missing/Both/AskDaoris row-049
+MissingCooling/None/DrivenOpen row-046
+MissingCooling/None/DrivenClosedCarries row-046
+MissingCooling/None/DrivenClosed row-046
+MissingCooling/None/DrivenLimit row-050
+MissingCooling/None/ConversationCarries row-050
+MissingCooling/None/AskDaoris row-050
+MissingCooling/NewSession/DrivenOpen row-046
+MissingCooling/NewSession/DrivenClosedCarries row-046
+MissingCooling/NewSession/DrivenClosed row-046
+MissingCooling/NewSession/DrivenLimit row-050
+MissingCooling/NewSession/ConversationCarries row-050
+MissingCooling/NewSession/AskDaoris row-050
+MissingCooling/Limited/DrivenOpen row-048
+MissingCooling/Limited/DrivenClosedCarries row-048
+MissingCooling/Limited/DrivenClosed row-048
+MissingCooling/Limited/DrivenLimit row-051
+MissingCooling/Limited/ConversationCarries row-051
+MissingCooling/Limited/AskDaoris row-051
+MissingCooling/Both/DrivenOpen row-048
+MissingCooling/Both/DrivenClosedCarries row-048
+MissingCooling/Both/DrivenClosed row-048
+MissingCooling/Both/DrivenLimit row-051
+MissingCooling/Both/ConversationCarries row-051
+MissingCooling/Both/AskDaoris row-051
+Kept/None/DrivenOpen row-052 row-053 row-054 row-055 row-056
+Kept/None/DrivenClosedCarries row-052 row-053 row-054 row-055 row-056
+Kept/None/DrivenClosed row-052 row-053 row-054 row-055 row-056
+Kept/None/DrivenLimit row-057
+Kept/None/ConversationCarries row-001
+Kept/None/AskDaoris row-001
+Kept/NewSession/DrivenOpen row-052 row-053 row-054 row-055 row-056
+Kept/NewSession/DrivenClosedCarries row-052 row-053 row-054 row-055 row-056
+Kept/NewSession/DrivenClosed row-052 row-053 row-054 row-055 row-056
+Kept/NewSession/DrivenLimit row-057
+Kept/NewSession/ConversationCarries row-001
+Kept/NewSession/AskDaoris row-001
+Kept/Limited/DrivenOpen row-058 row-059 row-060 row-061 row-062
+Kept/Limited/DrivenClosedCarries row-058 row-059 row-060 row-061 row-062
+Kept/Limited/DrivenClosed row-058 row-059 row-060 row-061 row-062
+Kept/Limited/DrivenLimit row-063
+Kept/Limited/ConversationCarries row-001
+Kept/Limited/AskDaoris row-001
+Kept/Both/DrivenOpen row-058 row-059 row-060 row-061 row-062
+Kept/Both/DrivenClosedCarries row-058 row-059 row-060 row-061 row-062
+Kept/Both/DrivenClosed row-058 row-059 row-060 row-061 row-062
+Kept/Both/DrivenLimit row-063
+Kept/Both/ConversationCarries row-001
+Kept/Both/AskDaoris row-001
+NotOffered/None/DrivenOpen row-064 row-065 row-066 row-067 row-068
+NotOffered/None/DrivenClosedCarries row-064 row-065 row-066 row-067 row-068
+NotOffered/None/DrivenClosed row-064 row-065 row-066 row-067 row-068
+NotOffered/None/DrivenLimit row-069
+NotOffered/None/ConversationCarries row-069
+NotOffered/None/AskDaoris row-069
+NotOffered/NewSession/DrivenOpen row-064 row-065 row-066 row-067 row-068
+NotOffered/NewSession/DrivenClosedCarries row-064 row-065 row-066 row-067 row-068
+NotOffered/NewSession/DrivenClosed row-064 row-065 row-066 row-067 row-068
+NotOffered/NewSession/DrivenLimit row-069
+NotOffered/NewSession/ConversationCarries row-069
+NotOffered/NewSession/AskDaoris row-069
+NotOffered/Limited/DrivenOpen row-070 row-071 row-072 row-073 row-074
+NotOffered/Limited/DrivenClosedCarries row-070 row-071 row-072 row-073 row-074
+NotOffered/Limited/DrivenClosed row-070 row-071 row-072 row-073 row-074
+NotOffered/Limited/DrivenLimit row-075
+NotOffered/Limited/ConversationCarries row-075
+NotOffered/Limited/AskDaoris row-075
+NotOffered/Both/DrivenOpen row-070 row-071 row-072 row-073 row-074
+NotOffered/Both/DrivenClosedCarries row-070 row-071 row-072 row-073 row-074
+NotOffered/Both/DrivenClosed row-070 row-071 row-072 row-073 row-074
+NotOffered/Both/DrivenLimit row-075
+NotOffered/Both/ConversationCarries row-075
+NotOffered/Both/AskDaoris row-075
+NoToolchain/None/DrivenOpen row-076
+NoToolchain/None/DrivenClosedCarries row-076
+NoToolchain/None/DrivenClosed row-076
+NoToolchain/None/DrivenLimit row-076
+NoToolchain/None/ConversationCarries row-076
+NoToolchain/None/AskDaoris row-076
+NoToolchain/NewSession/DrivenOpen row-076
+NoToolchain/NewSession/DrivenClosedCarries row-076
+NoToolchain/NewSession/DrivenClosed row-076
+NoToolchain/NewSession/DrivenLimit row-076
+NoToolchain/NewSession/ConversationCarries row-076
+NoToolchain/NewSession/AskDaoris row-076
+NoToolchain/Limited/DrivenOpen row-076
+NoToolchain/Limited/DrivenClosedCarries row-076
+NoToolchain/Limited/DrivenClosed row-076
+NoToolchain/Limited/DrivenLimit row-076
+NoToolchain/Limited/ConversationCarries row-076
+NoToolchain/Limited/AskDaoris row-076
+NoToolchain/Both/DrivenOpen row-076
+NoToolchain/Both/DrivenClosedCarries row-076
+NoToolchain/Both/DrivenClosed row-076
+NoToolchain/Both/DrivenLimit row-076
+NoToolchain/Both/ConversationCarries row-076
+NoToolchain/Both/AskDaoris row-076

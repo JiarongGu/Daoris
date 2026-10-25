@@ -442,7 +442,7 @@ public sealed class ResumeAccountTests : IDisposable
         new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
         Cool("account-1");
 
-        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, switches: true);
+        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, line: LineKind.DrivenOpen);
 
         Assert.Equal((NextHold.Cooling, false, true), (resume.Own, resume.Waits, resume.Switched));
         Assert.Equal((true, "account-2"), (resume.Selection.Allowed, resume.Selection.Profile));
@@ -462,7 +462,7 @@ public sealed class ResumeAccountTests : IDisposable
         Cool("account-1", hours: 30);
         Cool("account-2", hours: 4);
 
-        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, switches: true);
+        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, line: LineKind.DrivenOpen);
 
         Assert.Equal((NextHold.Cooling, true, false, false), (resume.Own, resume.Waits, resume.Switched, resume.Selection.Allowed));
         Assert.Equal(("account-2", Seen.AddHours(4)), (resume.Selection.Cooling!.Account, resume.Selection.Cooling.Until));
@@ -486,7 +486,7 @@ public sealed class ResumeAccountTests : IDisposable
         new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
         Cool("account-1");
 
-        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Conversation, walks: false);
+        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Conversation, line: LineKind.AskDaoris);
 
         Assert.Equal((NextHold.Cooling, true, false), (resume.Own, resume.Waits, resume.Switched));
         Assert.Equal("account-1", resume.Selection.Cooling!.Account);
@@ -507,7 +507,7 @@ public sealed class ResumeAccountTests : IDisposable
         var before = roster.Mark();
 
         var resume = await roster.ResumeAsync(
-            "fake", Config, null, "account-1", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+            "fake", Config, null, "account-1", StartKind.Conversation, line: LineKind.Conversation(carries: true));
 
         Assert.Equal((NextHold.Cooling, false, true), (resume.Own, resume.Waits, resume.Switched));
         Assert.Equal((true, "account-2"), (resume.Selection.Allowed, resume.Selection.Profile));
@@ -529,7 +529,7 @@ public sealed class ResumeAccountTests : IDisposable
         Cool("account-2", hours: 4);
 
         var resume = await Roster().ResumeAsync(
-            "fake", Config, null, "account-1", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+            "fake", Config, null, "account-1", StartKind.Conversation, line: LineKind.Conversation(carries: true));
 
         Assert.Equal((NextHold.Cooling, true, false, false), (resume.Own, resume.Waits, resume.Switched, resume.Selection.Allowed));
         Assert.Equal(("account-2", Seen.AddHours(4)), (resume.Selection.Cooling!.Account, resume.Selection.Cooling.Until));
@@ -551,7 +551,7 @@ public sealed class ResumeAccountTests : IDisposable
         Cool("account-2", hours: 9);
 
         var resume = await Roster().ResumeAsync(
-            "fake", Config, null, "account-1", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+            "fake", Config, null, "account-1", StartKind.Conversation, line: LineKind.Conversation(carries: true));
 
         Assert.Equal((true, "account-1", Seen.AddHours(2)), (resume.Waits, resume.Selection.Cooling!.Account, resume.Selection.Cooling.Until));
         Assert.Equal("waits.account", resume.Waiting!.Parts[0].Code);
@@ -572,11 +572,11 @@ public sealed class ResumeAccountTests : IDisposable
         var before = roster.Mark();
 
         var refused = await roster.ResumeAsync(
-            "fake", Config, null, "account-1", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+            "fake", Config, null, "account-1", StartKind.Conversation, line: LineKind.Conversation(carries: true));
         var signedOut = await roster.ResumeAsync(
-            "fake", Config, null, "account-3", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+            "fake", Config, null, "account-3", StartKind.Conversation, line: LineKind.Conversation(carries: true));
         var gone = await roster.ResumeAsync(
-            "fake", Config, null, "account-9", StartKind.Conversation, walks: false, switches: true, walkCounts: false);
+            "fake", Config, null, "account-9", StartKind.Conversation, line: LineKind.Conversation(carries: true));
 
         Assert.Equal((NextHold.Refused, false, false), (refused.Own, refused.Switched, refused.Selection.Allowed));
         Assert.Equal("account.resume-refused", refused.Elsewhere!.Detail!.Parts.Single().Code);
@@ -614,7 +614,7 @@ public sealed class ResumeAccountTests : IDisposable
         new HarnessSettings().WithRotation("fake", ["account-1", "account-2"]).Save(Settings);
         Cool("account-1");
 
-        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, limited: true, switches: true);
+        var resume = await Roster().ResumeAsync("fake", Config, null, "account-1", StartKind.Driven, limited: true, line: LineKind.DrivenOpen);
 
         Assert.Equal((NextHold.Cooling, false, true, false), (resume.Own, resume.Waits, resume.Limited, resume.Switched));
         Assert.Equal("account-2", resume.Selection.Profile);
@@ -729,7 +729,7 @@ public sealed class ResumeAccountTests : IDisposable
         var roster = Roster();
         roster.Refuse("fake", "account-1", "its provider refused it");
 
-        var resume = await roster.ResumeAsync("fake", Config, null, "account-1", StartKind.Conversation, walks: false);
+        var resume = await roster.ResumeAsync("fake", Config, null, "account-1", StartKind.Conversation, line: LineKind.AskDaoris);
 
         Assert.Equal((NextHold.Refused, false), (resume.Own, resume.Selection.Allowed));
         Assert.Null(resume.Selection.Profile);

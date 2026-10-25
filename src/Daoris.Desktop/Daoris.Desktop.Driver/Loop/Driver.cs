@@ -1990,14 +1990,16 @@ public sealed class Driver(
                     .ResumeAsync(
                         agent, config, start.Workspace, words.Profile, StartKind.Driven, Context.NewSessions.Covers(words), ct: ct,
                         limited: limitedWords, model: words.Asked?.NamedModel,
-                        switches: carried || (Context.GoesOnLost is not null && words.Waiting.Any(word => word.Persons)), walkCounts: carried)
+                        line: carried
+                            ? LineKind.DrivenOpen
+                            : LineKind.DrivenClosed(carries: Context.GoesOnLost is not null && words.Waiting.Any(word => word.Persons)))
                     .ConfigureAwait(false);
                 selection = resume.Selection;
                 limitResume = limitedWords && resume.Own == NextHold.Ready && selection.Allowed;
             }
             else if (!start.GoesOn && limitedLine is not null && GoOns.LimitResumes(limitedLine, agent)
                      && await Context.Harnesses
-                             .ResumeAsync(agent, config, start.Workspace, limitedLine.Profile, StartKind.Driven, walks: false, ct: ct, limited: true,
+                             .ResumeAsync(agent, config, start.Workspace, limitedLine.Profile, StartKind.Driven, line: LineKind.DrivenLimit, ct: ct, limited: true,
                                  model: limitedLine.Asked?.NamedModel)
                              .ConfigureAwait(false) is { Own: NextHold.Ready, Selection.Allowed: true } own)
             {
@@ -2381,7 +2383,7 @@ public sealed class Driver(
                 // handed the brief and the person's words. Anything else, and a host with no runner, waits for the person as before.
                 // LIMITSWITCH2 (D137's note of 2026-10-25): so does one whose own account cools while another of the line's is ready, the reason
                 // `account` the roster's switch made; the runner's ended move opens it there, never the brief's move, which asks the cooling one.
-                var switched = resume is { Switched: true } && fellBack.Code == ContinueWhy.Account;
+                var switched = resume?.Answer is LineAnswer.Elsewhere { Switched: true } && fellBack.Code == ContinueWhy.Account;
                 if (!fellBack.Never && !fellBack.Holds && (fellBack.Lost || switched) && Context.GoesOnLost is { } goesOn
                     && await GoOns.GoesOnLostAsync(goesOn, quest, park, fellBack, ct).ConfigureAwait(false) is { } moved)
                 {
@@ -2683,7 +2685,8 @@ public sealed class Driver(
                 // MIXAGENT1c: the note its agent left where it asked to hand over, told as that agent's claim; the brief carries it.
                 HandedNote = handedNote,
                 // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
-                AccountChanged = elsewhere && !handedFrom && prior!.Limit && Context.Harnesses.CoolingOf(agent, prior.Profile) is not null,
+                AccountChanged = elsewhere && !handedFrom && prior!.Limit
+                    && LineAccount.OwnHold(Context.Harnesses.CoolingOf(agent, prior.Profile)) == NextHold.Cooling,
                 // A set-up step is told its environment as the rule declares it now (REVIEWENV1c, design §2.2), and its account
                 // says where that rule was set (REVIEWENV1c2).
                 SetUp = setUp,
