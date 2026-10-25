@@ -55,7 +55,11 @@ public sealed class EveryChildIsHandedTheToolsTests
         Assert.Contains("EnvironmentBlock(launch.Environment)", source);
         var block = source[source.IndexOf("static string EnvironmentBlock(", StringComparison.Ordinal)..];
         block = block[..block.IndexOf("return block", StringComparison.Ordinal)];
-        Assert.Contains("Tools.ChildEnvironment(", block);
+        // The block asks its port for the tools' share (Platform names none of the tools); the factory wires the port to Tools.
+        Assert.Contains("tools(home, variables)", block);
+        var factory = File.ReadAllText(SourceFiles.Driver("Terminals.cs"));
+        Assert.Contains("PseudoConsole.ToolsEnvironment = ChildTools", factory);
+        Assert.Contains("Tools.ChildEnvironment(", factory);
     }
 
     /// <summary>The scan, shared with the modules' twin of this test: each start, and those neither handed nor excused.</summary>

@@ -597,23 +597,11 @@ public static class Tools
     /// <summary>The variable a child's <c>PATH</c> is. Windows reads it in any case, and a start's environment there is case-blind.</summary>
     public const string PathVariable = "PATH";
 
-    /// <summary>
-    /// Where an install carries the doctrine tool's launchers, from its root (D124 §1.2, WSSETUP2): beside the
-    /// application, in <c>app/</c>. Twins: the CLI's <c>INSTALL_BIN</c>, the publish's <c>CLI_BIN</c>, which lays them
-    /// out; <c>desktop-publish.test.ts</c> reads all three.
-    /// </summary>
-    public static readonly IReadOnlyList<string> InstallBinLayout = ["app", "bin"];
+    /// <summary>Where an install carries the launchers, from its root: the home's, which owns the layout (<see cref="DaorisHome.InstallBinLayout"/>).</summary>
+    public static IReadOnlyList<string> InstallBinLayout => DaorisHome.InstallBinLayout;
 
-    /// <summary>
-    /// The launchers' folder in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>, HOMELAYOUT4), where it is a folder:
-    /// an install's <c>app/bin/</c> whichever way its home is named, and a development run's scratch root's. Null for a Daoris
-    /// folder with none, and for an <c>app/bin</c> that is not a folder.
-    /// </summary>
-    public static string? InstallBin(string home)
-    {
-        var bin = Path.Combine([DaorisHome.FolderOf(Path.GetFullPath(home)).Folder, .. InstallBinLayout]);
-        return Directory.Exists(bin) ? bin : null;
-    }
+    /// <summary>The launchers' folder beside the home, where it is a folder: the home's answer (<see cref="DaorisHome.InstallBin"/>).</summary>
+    public static string? InstallBin(string home) => DaorisHome.InstallBin(home);
 
     /// <summary>
     /// The folders one tool puts first on a child's <c>PATH</c> (§2.4): a managed version's, or a named file's; none

@@ -822,14 +822,6 @@
       }
     },
     {
-      "family": "Platform names Install",
-      "after": "Platform",
-      "files": {
-        "Platform/PieceStarts.cs": ["Tools"],
-        "Platform/PseudoConsole.cs": ["Tools"]
-      }
-    },
-    {
       "family": "Platform names Store",
       "after": "Platform",
       "files": {

@@ -28,6 +28,19 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class PseudoConsole : ITerminal
 {
+    /// <summary>
+    /// What the tools add to a shell's environment (TOOLS5, D121 §2.6), as the subdomain that owns the tools answers it: the variables
+    /// to set, from <paramref name="home"/> and the <paramref name="variables"/> the block holds so far. The port <see cref="ToolsEnvironment"/>
+    /// holds, so the terminal's start names none of the tools.
+    /// </summary>
+    public delegate IReadOnlyDictionary<string, string> ChildTools(string home, IReadOnlyDictionary<string, string> variables);
+
+    /// <summary>
+    /// The tools' share of every shell's environment, set by the terminals' factory (<c>PseudoConsoleTerminals</c>, which every
+    /// terminal is started through) when it is first used; null adds none.
+    /// </summary>
+    public static ChildTools? ToolsEnvironment { get; set; }
+
     private readonly Action<int> _exited;
     private readonly FileStream _writer;
     private readonly ProcessJob _job;
@@ -335,8 +348,10 @@ public sealed class PseudoConsole : ITerminal
             ?? DaorisHome.Resolve();
         if (home is not null)
         {
-            var paths = variables.TryGetValue(Tools.PathVariable, out var path) ? path : null;
-            foreach (var (name, value) in Tools.ChildEnvironment(Tools.Read(home), home, paths)) variables[name] = value;
+            if (ToolsEnvironment is { } tools)
+            {
+                foreach (var (name, value) in tools(home, variables)) variables[name] = value;
+            }
         }
 
         foreach (var (name, value) in added) variables[name] = value;

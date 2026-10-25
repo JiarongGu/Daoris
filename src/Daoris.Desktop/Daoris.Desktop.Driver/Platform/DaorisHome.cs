@@ -183,6 +183,24 @@ public static class DaorisHome
     }
 
     /// <summary>
+    /// Where an install carries the doctrine tool's launchers, from its root (D124 §1.2, WSSETUP2): beside the
+    /// application, in <c>app/</c>. Twins: the CLI's <c>INSTALL_BIN</c>, the publish's <c>CLI_BIN</c>, which lays them
+    /// out; <c>desktop-publish.test.ts</c> reads all three.
+    /// </summary>
+    public static readonly IReadOnlyList<string> InstallBinLayout = ["app", "bin"];
+
+    /// <summary>
+    /// The launchers' folder in the home's Daoris folder (<see cref="FolderOf"/>, HOMELAYOUT4), where it is a folder:
+    /// an install's <c>app/bin/</c> whichever way its home is named, and a development run's scratch root's. Null for a Daoris
+    /// folder with none, and for an <c>app/bin</c> that is not a folder.
+    /// </summary>
+    public static string? InstallBin(string home)
+    {
+        var bin = Path.Combine([FolderOf(Path.GetFullPath(home)).Folder, .. InstallBinLayout]);
+        return Directory.Exists(bin) ? bin : null;
+    }
+
+    /// <summary>
     /// The home a file or folder of it is in, the entry it is named (HOMELAYOUT3): undone from the entry's new place, the Daoris
     /// folder, spelled as its <c>data/</c> where that folder is an install, as every install's home has been since D63; else
     /// undone from its old place, the old home. For the readers that hold a file rather than its home (<c>DriverConfig.HomeOf</c>,

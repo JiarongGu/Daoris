@@ -50,6 +50,17 @@ public interface ITerminalFactory
 /// <summary>The machine's terminals: its shells found on the tools' PATH, each started under a Windows pseudo-console.</summary>
 public sealed class PseudoConsoleTerminals : ITerminalFactory
 {
+    // The pseudo-console's port to the tools (Platform declares it, Install owns the answer): wired as the factory is first used, which
+    // every terminal is started through.
+    static PseudoConsoleTerminals() => PseudoConsole.ToolsEnvironment = ChildTools;
+
+    /// <summary>
+    /// What the tools add to a shell's environment (TOOLS5, D121 §2.6): the install's launchers and each tool's folders first on its
+    /// <c>PATH</c> (<see cref="Tools.ChildEnvironment"/>), over the <c>PATH</c> the block holds so far, from <paramref name="home"/>'s file.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, string> ChildTools(string home, IReadOnlyDictionary<string, string> variables) =>
+        Tools.ChildEnvironment(Tools.Read(home), home, variables.TryGetValue(Tools.PathVariable, out var path) ? path : null);
+
     /// <summary>The shells as Tools answers them (TOOLS5, D121 §2.6), read from the home's file now; with no home, PATH's.</summary>
     public IReadOnlyList<TerminalShell> Shells() =>
         DaorisHome.Resolve() is { } home
