@@ -41,6 +41,22 @@ or the Ask Daoris repository, each file listed with the Part B row that moves it
 and driver), `SessionStoreTests`, `ParticipantWorkHostTests`, `SessionsStateSliceTests`, `ParticipantWorkReadersTests` (driver, modules, service),
 and the page's `identity.test.ts`, `acts.test.ts` and `WorkFrame.landed.test.tsx`, each case seen failing first where the row adds one. Detail:
 D212's note of this date.
+## FOUNDATION1mod-i — Platform moved (2026-10-25)
+
+> **FOUNDATION1mod-i — Platform moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
+> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The first of the driver's moves: every file the
+> map places in Platform sits in `Platform/`, its namespace unchanged, every linked consumer with it, the map's paths updated; then the cuts §14.6 names
+> after Platform, one edge family per commit, each a port declared or a type moved to its one owner. It changes no behaviour and adopts nothing of Part B.
+> It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. Five files moved into `Platform/` (`ProcessJob`, `PseudoConsole`, `PieceJobs`, `PieceLauncher`, `PieceStarts`), PieceStart's
+two includes with them; the GitDoor's and the launcher's linked files already sat there. `structure.json` marks Platform moved and lists its tests, which
+moved into the tests' `Platform/` folder; the gate's rule that a moved subdomain's folder holds only its own files gave way, since `Platform/` still holds
+the files of subdomains not yet moved. The five containment families came off the census (994 edges in 102 families to 984 in 97): the holder key's and
+the session marker's variable names (`ChildMarks`), `PartnerJob`, the launcher's folder (`DaorisHome.InstallBin`) with the terminal's tools as a port
+(`PseudoConsole.ChildTools`), and `AgentJobs`' types with the terminal's contract (`TerminalLaunch.cs`). `Platform names Store`, four edges, stays,
+its cut now named after Store. Detail and the readings taken: D212's note of this date.
+
 ## FOUNDATION1mod-0 — the structure gate (2026-10-25)
 
 > **FOUNDATION1mod-0 — the structure gate** (driver tests, and the modules' and the service's tests that read driver sources by path; D212's row of

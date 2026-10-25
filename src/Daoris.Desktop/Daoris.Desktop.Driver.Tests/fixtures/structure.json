@@ -816,7 +816,7 @@
   "edges": [
     {
       "family": "Platform names Store",
-      "after": "Platform",
+      "after": "Store",
       "files": {
         "Platform/DaorisHome.cs": ["AtomicFile"],
         "Platform/HomeIdentity.cs": ["AtomicFile"],
