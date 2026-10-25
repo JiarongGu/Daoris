@@ -488,6 +488,7 @@
     "Review/ReviewVerb.cs": "Review",
     "Review/ServiceReviewWorld.cs": "Review",
     "Service/ConfirmationDoors.cs": "Service",
+    "Service/Domain/AccountLine.cs": "Service",
     "Service/Domain/AskWorkflowViews.cs": "Service",
     "Service/Domain/HistoryViews.cs": "Service",
     "Service/Domain/LayoutFacts.cs": "Service",
@@ -859,13 +860,6 @@
   },
   "edges": [
     {
-      "family": "Service names Agents",
-      "after": "Service",
-      "files": {
-        "Service/ServiceClient.cs": ["AccountLine"]
-      }
-    },
-    {
       "family": "Service names Course",
       "after": "Service",
       "files": {
@@ -1125,8 +1119,7 @@
         "Platform/HomeWatch.cs": ["AccountCooling"],
         "Platform/NoteCodes.cs": ["AcpResumeRefused","CoolingEntry"],
         "Sessions/Domain/Observation.cs": ["HarnessEnding","ModelRefusal","TransientEpisode"],
-        "Sessions/Domain/SessionEvents.cs": ["TurnModels"],
-        "Sessions/Events/SessionLog.cs": ["AccountLine"]
+        "Sessions/Domain/SessionEvents.cs": ["TurnModels"]
       }
     },
     {
