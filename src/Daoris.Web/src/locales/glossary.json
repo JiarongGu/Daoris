@@ -472,7 +472,8 @@
   ],
 
   "terms": [
-    { "term": "actor", "en": "actor", "zh": "角色", "means": "A kind of work Daoris starts an agent for, with an order of agent, model and effort choices (D205). A co-worker's role names its actor.", "match": "^Actor$", "avoid": { "en": [], "zh": ["演员", "岗位", "人设", "执行者"] } },
+    { "term": "role", "en": "role", "zh": "角色", "means": "A configured position Daoris fills: a working role takes work, with its ordered choices of agent, model and effort (D205's actor); an appointed role holds acts the owner appoints it to (D208, D209), 任命的角色 where that must be said.", "why": "One concept in two shapes takes one word on the page, which the page already says for a working role; 职务 would show one record under two Chinese words on two screens, and 职责 is what a role is charged with, not the role (FOUNDATION1, D212).", "match": "\\b(actors?|roles?)\\b", "avoid": { "en": [], "zh": ["职务", "岗位", "演员", "人设", "执行者", "职责"] } },
+    { "term": "actor", "use": "role", "means": "Not a name on the window: a code and prose word for a working role's staffing, its ordered choices of agent, model and effort (D205), where the page says the role.", "avoid": { "en": [], "zh": [] } },
     { "term": "actor choice", "en": "choice", "zh": "选择", "means": "One entry in an actor's order. An option belongs to an agent's configuration; range is the design's word.", "match": "^Choice$", "avoid": { "en": [], "zh": ["备选"] } },
     { "term": "account default", "en": "account default", "zh": "账户默认", "means": "The account's own cascade when the start names no model or effort.", "match": "^account default$", "avoid": { "en": [], "zh": [] } },
     { "term": "Build actor", "en": "Build", "zh": "开发", "means": "The actor that performs engineering work; build output remains 构建.", "match": "^Build$", "avoid": { "en": [], "zh": [] } },
