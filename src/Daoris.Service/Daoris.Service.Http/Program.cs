@@ -2865,7 +2865,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // The quest a chat took (CHATTAKE1), which its line's run reads (CHATFLOW1a): this machine's, like the opinion, so answered to it only.
     TookQuest: loopback ? s.TookQuest : null,
     Actor: loopback ? s.Actor : null, Choice: loopback ? s.Choice : null,
-    Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null);
+    Asked: loopback ? s.Asked : null, Override: loopback ? s.Override : null, Ran: loopback ? s.Ran : null,
+    // The work its marks read as (FOUNDATION1c): this machine's, like the opinion, so answered to it only; a mirror reads none.
+    Work: loopback ? ParticipantWork.Of(s) : null);
 
 // A word with whose it is (XAGENT1c): `by` names the second opinion whose findings these are, and is absent for the person's.
 static SaidWordResponse ToSaid(SaidWord word) =>

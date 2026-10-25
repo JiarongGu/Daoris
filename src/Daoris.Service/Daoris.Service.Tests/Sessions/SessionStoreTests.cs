@@ -721,6 +721,42 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// FOUNDATION1c (D212; the foundation design §2.2): a record's work is read from its marks and never stored, so a host that has the
+    /// reading answers it for every record of this machine, each as its marks say, and a mirror another machine's answers none (its marks
+    /// and its actor do not travel, <c>SessionFeed</c>).
+    /// </summary>
+    [Fact]
+    public async Task A_records_work_is_read_from_its_marks_and_a_mirror_answers_none()
+    {
+        var build = await Create();
+        var chat = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        var helper = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat, serves: build.Id);
+        var partner = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat, serves: build.Id, piece: "pc000001");
+        var lone = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat, piece: "pc000001");
+
+        async Task<string?> WorkOf(string id) => ParticipantWork.Of((await _sessions.FindAsync(id))!);
+        Assert.Equal(
+            new string?[] { "build", "chat", "help", "partner", "chat" },
+            new string?[] { await WorkOf(build.Id), await WorkOf(chat.Id), await WorkOf(helper.Id), await WorkOf(partner.Id), await WorkOf(lone.Id) });
+
+        await _sessions.MirrorAsync(partner with { Id = "alice-laptop/" + partner.Id, Origin = "alice-laptop" });
+        Assert.Null(await WorkOf("alice-laptop/" + partner.Id));
+    }
+
+    /// <summary>
+    /// FOUNDATION1c: the work is on no wire. A fed record has no member for it, so what a machine feeds says none, and a teammate's mirror
+    /// is read as a teammate's session as before.
+    /// </summary>
+    [Fact]
+    public void The_work_is_on_no_wire()
+    {
+        Assert.DoesNotContain(typeof(FedSessionRecord).GetProperties(), property => property.Name.Contains("work", StringComparison.OrdinalIgnoreCase));
+        var fed = new FedSessionRecord("ab12cd34", "abc123", "Owner", "claude-code", "working", null, null, Now, Now);
+
+        Assert.DoesNotContain("\"work\"", SessionWire.Feed([fed]), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// AUTONOMY1a (D184 point 1): a driven session's record keeps the access setup it started under, each pause with its value, as the
     /// driver resolved it; a record told none keeps none. This machine's own, as the opinion is: the mirror writes none.
     /// </summary>
@@ -830,6 +866,8 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         Assert.Null(elder.Asked);
         Assert.Null(elder.Override);
         Assert.Null(elder.Ran);
+        // …and it is answered its work from its marks by a host that has the reading (FOUNDATION1c): a quest's driven session is build.
+        Assert.Equal(ParticipantWork.Build, ParticipantWork.Of(elder));
 
         var chat = await sessions.CreateAsync(
             null, "Elder", "stub", Now, workspace: null, kind: SessionKind.Chat);

@@ -1,0 +1,135 @@
+{
+  "_why": "FOUNDATION1c (D212; design §2.2; .claude/knowledge/twins.md): the participant's work read once, one table all three readers are held to, row for row. The service's ParticipantWork.Of answers `work` for every record of this machine on loopback (its ParticipantWorkTests), the driver's twin ParticipantWork.Of reads the marks as a WorkMarks value and tells the cap's slot from the work's table (its ParticipantWorkTests), and the page's identity.ts draws the work where a host sends it and by today's predicates where it sends none (its identity.test.ts). `marks` are what a record carries: mirror (another machine's record), kind (absent from a host that answers none), repository, ask, serves, piece, opinion; an empty string is no mark, as an absent one is. `work` is the one rule's answer, the first that holds: a mirror is another machine's, none here (null); opinion is review; serves with piece is partner; serves alone is help; ask is intake; the Ask Daoris repository is ask-daoris; kind chat is chat; otherwise build. `works` is the closed set with the cap's slot, the set HoldsSlot told before this row, plus design (a driven quest's session of design or decision work, built as build and read as build from its marks, so no row reaches it) and brainstorm (a pass with no record, so no row reaches it). `today` is what each reader answered before the row: holdsSlot (ActiveSessions.HoldsSlot, which is told no mirror and no piece), drawn (identity.ts for a record on no quest with no opening: intake, opinion, helper, help, conversation or session), connectorPartner (ConnectorRoles' SessionRole.Partner, serves with piece) and help (WordsNever.IsHelp, the Ask Daoris repository). `byWork` is what each reads when it reads the work; a row where a reader's two answers differ names the reader in `disagrees` with the decision that says why, and a difference not named fails every suite. A mirror's `byWork.drawn` is its marks' reading, since a host sends no work for it and the page falls back to today's predicates. Only the partner's drawing changes what a person sees (D203 point 1); every other disagreement moves no reader in this row.",
+
+  "works": {
+    "build": { "holdsSlot": true },
+    "design": { "holdsSlot": true },
+    "chat": { "holdsSlot": false },
+    "ask-daoris": { "holdsSlot": false },
+    "intake": { "holdsSlot": true },
+    "help": { "holdsSlot": true },
+    "partner": { "holdsSlot": true },
+    "review": { "holdsSlot": true },
+    "brainstorm": { "holdsSlot": false }
+  },
+
+  "decisions": {
+    "partner-drawn": "D203 point 1, accepted: a co-worker is a relation, never a work of its own, and a partner is drawn as a partner, in a string of its own (work.identity.partner, D203 point 9). Today identity.ts draws any serves as a helper. Only the drawing changes: isHelper, which keeps a helper's record to one turn with no box (WorkFrame's oneTurn) and offers it no act that takes words (acts.ts), reads serves alone and refuses a partner exactly as it does today, on a host that sends work and on one that sends none (X4-1.3, X4-2.1).",
+    "mirror-slot": "A mirror is another machine's record and holds no slot here, which is the work's table. ActiveSessions.HoldsSlot is told no mirror by its callers, who count this machine's own records, so it keeps answering as it did (O4-9: a disagreement other than the partner's moves no reader in this row)."
+  },
+
+  "rows": [
+    {
+      "name": "a driven quest's session",
+      "marks": { "mirror": false, "kind": "driven", "repository": "engine", "ask": null, "serves": null, "piece": null, "opinion": null },
+      "work": "build",
+      "today": { "holdsSlot": true, "drawn": "session", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": true, "drawn": "session", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    },
+    {
+      "name": "a record from a host that answers no kind",
+      "marks": { "mirror": false, "kind": null, "repository": "engine", "ask": null, "serves": null, "piece": null, "opinion": null },
+      "work": "build",
+      "today": { "holdsSlot": true, "drawn": "session", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": true, "drawn": "session", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    },
+    {
+      "name": "a person's conversation",
+      "marks": { "mirror": false, "kind": "chat", "repository": "engine", "ask": null, "serves": null, "piece": null, "opinion": null },
+      "work": "chat",
+      "today": { "holdsSlot": false, "drawn": "conversation", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": false, "drawn": "conversation", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    },
+    {
+      "name": "Ask Daoris's conversation",
+      "marks": { "mirror": false, "kind": "chat", "repository": "daoris:help", "ask": null, "serves": null, "piece": null, "opinion": null },
+      "work": "ask-daoris",
+      "today": { "holdsSlot": false, "drawn": "help", "connectorPartner": false, "help": true },
+      "byWork": { "holdsSlot": false, "drawn": "help", "connectorPartner": false, "help": true },
+      "disagrees": {}
+    },
+    {
+      "name": "a record of the Ask Daoris repository the host calls driven",
+      "marks": { "mirror": false, "kind": "driven", "repository": "daoris:help", "ask": null, "serves": null, "piece": null, "opinion": null },
+      "work": "ask-daoris",
+      "today": { "holdsSlot": false, "drawn": "help", "connectorPartner": false, "help": true },
+      "byWork": { "holdsSlot": false, "drawn": "help", "connectorPartner": false, "help": true },
+      "disagrees": {}
+    },
+    {
+      "name": "an ask's intake",
+      "marks": { "mirror": false, "kind": "chat", "repository": "ask #7", "ask": "7", "serves": null, "piece": null, "opinion": null },
+      "work": "intake",
+      "today": { "holdsSlot": true, "drawn": "intake", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": true, "drawn": "intake", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    },
+    {
+      "name": "a second opinion's reviewer",
+      "marks": { "mirror": false, "kind": "chat", "repository": "engine", "ask": null, "serves": null, "piece": null, "opinion": "o1" },
+      "work": "review",
+      "today": { "holdsSlot": true, "drawn": "opinion", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": true, "drawn": "opinion", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    },
+    {
+      "name": "a helper",
+      "marks": { "mirror": false, "kind": "chat", "repository": "engine", "ask": null, "serves": "a1b2c3d4", "piece": null, "opinion": null },
+      "work": "help",
+      "today": { "holdsSlot": true, "drawn": "helper", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": true, "drawn": "helper", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    },
+    {
+      "name": "a partner",
+      "marks": { "mirror": false, "kind": "chat", "repository": "engine", "ask": null, "serves": "a1b2c3d4", "piece": "p1", "opinion": null },
+      "work": "partner",
+      "today": { "holdsSlot": true, "drawn": "helper", "connectorPartner": true, "help": false },
+      "byWork": { "holdsSlot": true, "drawn": "partner", "connectorPartner": true, "help": false },
+      "disagrees": { "drawn": "partner-drawn" }
+    },
+    {
+      "name": "a piece with no lead is no partner",
+      "marks": { "mirror": false, "kind": "chat", "repository": "engine", "ask": null, "serves": null, "piece": "p1", "opinion": null },
+      "work": "chat",
+      "today": { "holdsSlot": false, "drawn": "conversation", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": false, "drawn": "conversation", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    },
+    {
+      "name": "a reviewer that also names a session it serves is a reviewer",
+      "marks": { "mirror": false, "kind": "chat", "repository": "engine", "ask": null, "serves": "a1b2c3d4", "piece": null, "opinion": "o1" },
+      "work": "review",
+      "today": { "holdsSlot": true, "drawn": "opinion", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": true, "drawn": "opinion", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    },
+    {
+      "name": "marks that are empty strings are no marks",
+      "marks": { "mirror": false, "kind": "chat", "repository": "engine", "ask": "", "serves": "", "piece": "", "opinion": "" },
+      "work": "chat",
+      "today": { "holdsSlot": false, "drawn": "conversation", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": false, "drawn": "conversation", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    },
+    {
+      "name": "another machine's driven record",
+      "marks": { "mirror": true, "kind": "driven", "repository": "engine", "ask": null, "serves": null, "piece": null, "opinion": null },
+      "work": null,
+      "today": { "holdsSlot": true, "drawn": "session", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": false, "drawn": "session", "connectorPartner": false, "help": false },
+      "disagrees": { "holdsSlot": "mirror-slot" }
+    },
+    {
+      "name": "another machine's conversation",
+      "marks": { "mirror": true, "kind": "chat", "repository": "engine", "ask": null, "serves": null, "piece": null, "opinion": null },
+      "work": null,
+      "today": { "holdsSlot": false, "drawn": "conversation", "connectorPartner": false, "help": false },
+      "byWork": { "holdsSlot": false, "drawn": "conversation", "connectorPartner": false, "help": false },
+      "disagrees": {}
+    }
+  ]
+}
