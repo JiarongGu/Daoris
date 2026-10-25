@@ -578,12 +578,15 @@ public sealed class LimitWaitsProcessTests : IDisposable
     }
 
     /// <summary>An ended conversation held by its limit, on account-1, its conversation kept; account-2 cooling for a day.</summary>
-    private ChatLedger HeldEnded(SessionEvents events, params (string Id, string Text)[] waiting)
+    private ChatLedger HeldEnded(SessionEvents events, params (string Id, string Text)[] waiting) => HeldEnded(events, keeps: true, waiting);
+
+    /// <summary>The same, its conversation <paramref name="keeps"/> kept or not: one the agent never named is proven lost at its go-on.</summary>
+    private ChatLedger HeldEnded(SessionEvents events, bool keeps, params (string Id, string Text)[] waiting)
     {
         var ledger = new ChatLedger().Register("engine", _root);
         var words = ledger.Chat("c1", "stopped", "acp-stub", _root, profile: "account-1");
         foreach (var (id, text) in waiting) words.Say(id, text);
-        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-account-1");
+        if (keeps) new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-account-1");
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Earlier answered exchange." });
         events.Append("c1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
         Refused(events, "c1", "Make the port configurable.");
@@ -663,6 +666,65 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.True(AccountCooling.End(_home, "stub", "account-2", _now));
         var goOn = await NextGoOnAsync(roster, config, "c2", "account-1");
         Assert.True(goOn is LineAnswer.Wait { OwnFirst: true }, $"the next go-on answered {goOn}");
+    }
+
+    /// <summary>
+    /// 🔴 PICKLOST1 (amending PICKCARRY1's reading (1) and row a-ii's guard in the ended move): a lost conversation has no resume to keep,
+    /// but the account the person picked is not the resume. Its words wait for that account while it cools, another ready, and its new part
+    /// opens on it once it is ready, keeping the pick, started afresh there. A lost conversation the person picked nothing for walks its
+    /// agent's accounts, off its cooling one, and keeps none, as it did.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_lost_conversation_whose_account_cools_waits_for_it_when_picked_and_walks_when_not(bool picked)
+    {
+        var events = Events;
+        var ledger = HeldEnded(events, keeps: false);
+        var conversations = new HarnessConversations(_home);
+        if (picked) conversations.Pick("c1", "account-1");
+        Cooling("account-1", _now.AddDays(4));
+        Assert.True(AccountCooling.End(_home, "stub", "account-2", _now));
+        var config = Config();
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        using var runner = Runner(client, adapters, roster, events);
+        var counted = roster.Mark();
+
+        // The person's words wait on the record; the go-on is asked here, since the runner is not told of them.
+        ledger.For("c1").Say("w1", "Also log the port.");
+        var went = await runner.GoOnAsync("c1", config);
+
+        if (!picked)
+        {
+            Assert.Equal("c2", went.SessionId);
+            await Poll.Until(() => Prompts.Any(line => IsHandedTo("account-2", line)), () => Seen(ledger, events, "c1"));
+            var walked = (await client.RecordAsync("c2"))!;
+            Assert.Equal(("account-2", "c1"), (walked.Profile, walked.From));
+            Assert.False(conversations.PickedOn("c2", "account-2"));
+            Assert.Equal(counted + 1, roster.Mark());
+            return;
+        }
+
+        // It waits: no part opened, nothing counted or sent, its words kept on it and never marked as unable to go on.
+        Assert.Null(went.SessionId);
+        Assert.Null(new GoOnMarks(_home).Read("c1"));
+        Assert.Equal((1, counted), (ledger.Count, roster.Mark()));
+        Assert.Empty(Prompts);
+        Assert.True(ledger.Said("c1").SequenceEqual(["w1"]), Seen(ledger, events, "c1"));
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        Assert.Equal((1, counted), (ledger.Count, roster.Mark()));
+
+        // Its account's reset comes: the new part opens on it, afresh, keeping the pick.
+        _now = _now.AddDays(5);
+        Assert.Single(await runner.WakeLimitsAsync(config));
+        await Poll.Until(() => ledger.Count == 2 && Prompts.Count > 0, () => Seen(ledger, events, "c1"));
+        var next = (await client.RecordAsync("c2"))!;
+        Assert.Equal(("account-1", "c1"), (next.Profile, next.From));
+        Assert.StartsWith("prompt[account-1]", Assert.Single(Prompts), StringComparison.Ordinal);
+        Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("resumed[", StringComparison.Ordinal));
+        Assert.True(conversations.PickedOn("c2", "account-1"), Seen(ledger, events, "c2"));
     }
 
     /// <summary>

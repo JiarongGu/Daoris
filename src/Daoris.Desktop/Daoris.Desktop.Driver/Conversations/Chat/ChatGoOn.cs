@@ -944,6 +944,9 @@ internal sealed class ChatGoOn
             }
 
             if (moved is { SessionId: { } limitTo }) return new(limitTo, moved.Message);
+            // PICKLOST1: its account is the person's pick and cools; the brief's move would refuse the same account and mark the words as
+            // unable to go on, where a picked conversation waits for it, its words with it, and the wake goes on there at its reset.
+            if (moved is { Why: LimitMove.OnPick }) return new(null, moved.Message);
         }
 
         if (record.Waiting.Any(word => word.Persons) && !_context.Closing)
