@@ -896,13 +896,6 @@
   },
   "edges": [
     {
-      "family": "Install names Workplace",
-      "after": "Install",
-      "files": {
-        "Install/ToolInstall.cs": ["DownloadAsked","DownloadClearing","DownloadJudge"]
-      }
-    },
-    {
       "family": "Instance names Agents",
       "after": "Instance",
       "files": {

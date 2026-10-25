@@ -284,7 +284,7 @@ public static class ToolsCommand
                 // KEEP1b: alone, no Daoris runs to say what a session was handed, so the home's process markers say whether one runs at all.
                 return new ToolPress("delete", ToolRoutes.Delete, new JsonObject { ["tool"] = tool.Id, ["version"] = version },
                     async stop => (object?)await ToolInstall.DeleteAsync(home, tool.Id, version,
-                        token => LiveSessions.ReadAsync(null, DaorisHome.Entry(home, HomeEntry.SessionPids), token), ct: stop).ConfigureAwait(false),
+                        token => ToolDownloads.Current.RunningAsync(home, token), ct: stop).ConfigureAwait(false),
                     answer => Text(answer, "folder") ?? "", Said);
             }
 
