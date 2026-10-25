@@ -1,6 +1,6 @@
-# COWORKVIEW1: the reads of rounds 1 to 9, the Opus foundation reader's of each and Codex's of rounds 2 to 9 (D191)
+# COWORKVIEW1: the reads of rounds 1 to 10, the Opus foundation reader's of each and Codex's of rounds 2 to 10 (D191)
 
-The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17. Both read round 6 at `7341acf9f`: Codex asks another round for row a (9 findings, 3 blocking), and the Opus foundation reader accepts it (8 findings, none blocking), asking that two be written into the contract before the row is filed; round 7 answers both in the design's §18. The Opus foundation reader read round 7 at `0d8e25085` and would accept row a after named changes (8 findings, none blocking), which the design's §19 places. Codex read round 7 with those named changes at `26ef34d80` and asks another round for row a (8 findings, 2 blocking, one point seen twice); round 8 answers it in the design's §20. Both read round 8 at `103fc1aa6`: Codex asks another round for row a (6 findings, 4 blocking, on two points), and the Opus foundation reader would accept it after named changes (5 findings, 1 blocking); round 9 answers both in the design's §21. Both read round 9 at `a30797bce`: Codex asks another round for row a (7 findings, 6 blocking, one point seen from five sides: a close resting on evidence that is not proof of exit), and the Opus foundation reader would accept it after named changes (7 findings, 1 blocking: a chat go-on's retry unbracketed); round 10 answers both in the design's §22.
+The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-cowork-view-design.md` and its D173 note at `ccb2e5a45`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed. The Opus foundation reader asks another round (19 findings, 10 blocking). Round 2 answers it. Codex's read of round 2 with its named changes follows the Opus reads (another round, 20 findings, 11 blocking); round 3 answers it. Round 3 was read by both: the Opus foundation reader would accept after named changes (11 findings, 3 blocking), and Codex asks another round (19 findings, 13 blocking); round 4 answers both. The Opus foundation reader read round 4 and would accept row a after named changes (12 findings, 4 blocking), which the design's §15 places; Codex read round 4 with those changes and asks another round for row a (11 findings, 7 blocking), which round 5 answers in the design's §16. Both read round 5 at `6736d2db9`: Codex asks another round for row a (10 findings, 4 blocking), and the Opus foundation reader would accept it after named changes (9 findings, 2 blocking); round 6 answers both in the design's §17. Both read round 6 at `7341acf9f`: Codex asks another round for row a (9 findings, 3 blocking), and the Opus foundation reader accepts it (8 findings, none blocking), asking that two be written into the contract before the row is filed; round 7 answers both in the design's §18. The Opus foundation reader read round 7 at `0d8e25085` and would accept row a after named changes (8 findings, none blocking), which the design's §19 places. Codex read round 7 with those named changes at `26ef34d80` and asks another round for row a (8 findings, 2 blocking, one point seen twice); round 8 answers it in the design's §20. Both read round 8 at `103fc1aa6`: Codex asks another round for row a (6 findings, 4 blocking, on two points), and the Opus foundation reader would accept it after named changes (5 findings, 1 blocking); round 9 answers both in the design's §21. Both read round 9 at `a30797bce`: Codex asks another round for row a (7 findings, 6 blocking, one point seen from five sides: a close resting on evidence that is not proof of exit), and the Opus foundation reader would accept it after named changes (7 findings, 1 blocking: a chat go-on's retry unbracketed); round 10 answers both in the design's §22. Both read round 10 at `9c7b0f72c`, and both would accept row a after named changes: Codex (6 findings, 2 blocking on one point, an unclean historical chat `end` read as proof of exit; two named changes) and the Opus foundation reader (9 findings, none blocking); the design's §23 takes every one.
 
 ## Opus (foundation), round 1
 
@@ -2208,3 +2208,198 @@ The independent Opus 5.5 reader's foundation read of round 9 at `a30797bce`, ver
 7 findings, 1 blocking.
 
 **Verdict for row a: accept after named changes the steward can check without another read.** Finding 1 must be written into §1.1, §3.6 and rule 4 before the row is filed. Findings 2 to 4 are corrections to §9, §3.6, D173's note and rule 5. Findings 5 to 7 are one-line fixes.
+
+## Codex, round 10
+
+Codex's read of round 10 at `9c7b0f72c`, verbatim: 6 findings, 2 of them blocking, on one point seen twice, an unclean historical chat `end` read as proof of its process's exit (its 2.1, and its 3.1 against D173's truthful partial visibility), and 4 not blocking, among them two status labels that say the part ended where only its agent did (its 3.2); *accept row a after named changes*, two of them. Its §0 takes round 9's findings as taken or answered but its 3.1, open with that narrower residue. It was run read-only at that commit, whose `src/` is `c5e038828`'s for the files the design cites but `fixtures/structure.json` and one line of `DriverRoutes.cs` (the Opus read's §0). Its sections are bold lines, not headings, and are kept so. It carries no link, so none is rewritten. The design's §23 takes both named changes.
+
+Reviewed read-only at HEAD `9c7b0f72c`. **Design** means `docs/2026-10-24-cowork-view-design.md`; **Driver** means `src/Daoris.Desktop/Daoris.Desktop.Driver/`.
+
+**0. My round-9 findings**
+
+| Finding | Disposition | Reason |
+|---|---|---|
+| 1.1 Record state does not prove exit | **Taken — non-blocking** | Design:1181–1185 removes record state from closure. |
+| 2.1 A taking overrides a live token | **Taken — non-blocking** | Design:1160–1174 makes takings close nothing; rule 5 at :2451 includes the false-stop/go-on ordering. |
+| 2.2 Issuer crash closes a surviving process | **Taken — non-blocking** | Design:1213–1221 requires uncertainty without an exit proof; :2451 includes the surviving-agent case. |
+| 2.3 Living foreign issuer retains false working | **Taken — non-blocking** | Design:1210–1218 permits working only from this reader’s watched token. |
+| 2.4 Prefix comparisons lack an independent oracle | **Taken — non-blocking** | Design:2451 explicitly requires the test’s independent process-liveness record at every prefix and corrects refusal ordering. |
+| 3.1 Truthful partial visibility remains breached | **Open — blocking, narrower residue** | The reported recorded-process cases are answered, but Design:1148–1151 retains an unproven historical close; see §2.1 below. |
+| 3.2 Translation, module edges and scope | **Answered with a reason that holds — non-blocking** | Design:1950–1964 and :2469 keep dependencies downward; FOUNDATION1:1270 keeps row a independent. |
+
+**1. Wrong claims about existing code**
+
+None beyond the historical-exit inference examined below. The relevant code still permits false record stops, dropped lineage writes and uncontained processes, as round 10 now acknowledges.
+
+**2. The truth rule and prefix proof**
+
+1. **Blocking — an old chat’s unclean `end` remains an exception to the rule.** Design:1148–1151 and :2834–2837 expressly trust that historical line, while rule 5 (:2451) still closes chat history by its `end`. Yet `Driver/Conversations/Chat/ChatRunner.cs:2943` merely calls the kill helper before :2977 writes the line; `Driver/Sessions/SessionProcesses.cs:252` and :272–278 permit a refused kill without observing exit, and `ChatRunner.cs:2995–2999` records that uncertainty as `clean: false`. Reading such history can therefore draw a surviving child **lost** without either permitted proof.
+
+2. **Non-blocking — the recorded-generation rule answers the remaining orderings.** Design:1198–1221 preserves harness endings, restricts working to watched local tokens, and otherwise requires uncertainty; :1010–1024 handles an unwatched token without inventing exit. I found no additional recorded-process counterexample involving refusals, sweeps, late admissions, crashes, lost writes or retries.
+
+3. **Non-blocking — rule 5 now requires the requested independent check.** Design:2451 checks every ordering and Process-case prefix against both fresh composition and the test’s own liveness record, with explicit state assertions. Rule 4 (:2450) also brackets both chat go-on retries with fresh tokens, matching the retry at `Driver/Conversations/Chat/ChatRunner.cs:1814–1815`; these are required future proofs, not tests already implemented.
+
+**3. Decided rules, module edges and scope**
+
+1. **Blocking — the historical exception contradicts D173’s truthful visibility rule.** `docs/decisions/D173.md:11–12` requires truthful partial visibility, and :5797–5806 permits lost only from proven exit. Design:1148–1151’s historical exception therefore needs correction; naming it in §9 does not satisfy that decision.
+
+2. **Non-blocking — two status labels now overstate what ended.** Design:2182–2183 says “ended with its part” and “lost when its part ended,” but :918–921 moves the first process’s end before retries and continuations while the same part continues. `Driver/Loop/Driver.cs:3870`, :3879 and :3894 confirm that distinction; word these labels around the agent’s exit in both languages.
+
+3. **Non-blocking — no upward edge, translation-parity gap or routing/Part B dependency found.** Design:1950–1964 follows the ordering in `Driver.Tests/fixtures/structure.json:11–23`, with the raw-stream port avoiding a new Participants dependency from Agents. Design:2258 and :2465 require bilingual uncertainty mapping and checks, and FOUNDATION1:1270 explicitly leaves row a independent.
+
+**Verdict for row a: accept after named changes.**
+
+1. Amend Design §3.6, §9 and rule 5: an unclean historical chat `end` alone supplies no exit proof; preserve historical segmentation but render an otherwise unended child `uncertain · last seen`. Add a rule-5 case where the old kill is refused or delayed and the old writer emits `clean: false` while the process remains alive, checked at every prefix against the independent oracle.
+2. Amend `child.ended` and `child.lost` in §5.4 and rule 19 to describe the agent’s exit rather than the part’s ending, with matching English/Chinese wording and a story showing an ended first process beside its working continuation.
+
+## Opus (foundation), round 10
+
+The independent Opus 5.5 reader's foundation read of round 10 at `9c7b0f72c`, verbatim but for its headings set one level down: 9 findings, none blocking; *accept row a after named changes the steward can check without another read*, its F1, F2 and F4 the substantive ones (§3.6, rules 4, 13 and 21, §9, §22 and D173's note) and F3 and F5 to F9 one-line corrections. Its §0 holds every answer round 10 gave both reads of round 9, with residues it names as its own findings; its §1 finds no ordering of Daoris's own that draws a live child *lost*, and names the launcher ended alone as the one case outside them. It was run read-only at that commit, beside Codex's read of it. It carries no link, so none is rewritten. The design's §23 takes every finding.
+
+### 0. Both reads of round 9
+
+Checked against the code at `9c7b0f72c`. For every file the design cites, `src/` there is the same as at `c5e038828`, with two exceptions: `fixtures/structure.json` and one line of `DriverRoutes.cs`, both changed by FOUNDATION1 mod-iii.
+
+| Read · finding | Round 10's answer | Does it hold? |
+|---|---|---|
+| Codex §0 (round 8 re-read; its 3.1 open) | Answered, as a check | **Holds.** |
+| **Codex 1.1**: a record leaving `working` is not proof of exit | Taken, by the rule: way 3 reads only this window's token, and no record state closes anything (§3.6 :1176-1191; rules 5 and 10; D173 note) | **Taken, holds.** `Orphans.cs:74-81`, `ChatRunner.cs:2943`→`:2954`/`:2967` and `SessionProcesses.cs:272` confirm the premise. |
+| **Codex 2.1**: rule 2 overrides a live token | Taken: takings close nothing (:987, way 2) | **Taken, holds.** A residue: `took` is now written and woken on, and nothing reads it (F4). |
+| **Codex 2.2**: a surviving taken process is closed after a false stop and its issuer's crash | Taken: another issuer's generation closes only at its own `end` | **Taken, holds.** |
+| **Codex 2.3**: a living foreign issuer keeps a gone child *working* | Taken: *working* only under this window's watched token | **Taken, holds.** |
+| **Codex 2.4**: rule 5 needs an independent oracle; the refusal's order | Taken: the test's record of which processes are live; the refusal reordered | **Taken, holds in substance.** The oracle as worded cannot hold across the delay before the set sees an exit, and rule 4's new cases are not held to it (F5). |
+| **Codex 3.1**: truthful partial visibility | Taken | **Holds for every ordering Codex named.** Residues F1 to F3, none of them a live child read *lost* by an ordering of Daoris's own. |
+| Codex 3.2: no upward edge | Answered | **Holds.** Rechecked below. |
+| Opus §0 and §3 items 1 to 5 | Answered; taken as F5, F2, F3a, F4 and F6(ii) | **Hold.** |
+| **Opus F1**: a chat go-on's retry is not bracketed | Taken as named (§1.1 :418-428, §3.6, §4.3's Course and Loop rows, rule 4) | **Taken, holds.** `ChatRunner.cs:1808-1819` and `:1829-1841` build a new `GoingOn` over the shared `ResumeAsk` (`ChatGoOn.cs:8`, `:683-690`). `return true` at `:2908` runs the `finally` (`:2970-2977`) before the watch completes and `AgainAsync` (`:1833`) awaits it, so the first attempt's `end` precedes the retry's `start`. The take-back and throw sub-point is taken (`:680`, `:765`). |
+| Opus F2: the sweep's other causes | Falls out; §9 names them | **Holds.** |
+| Opus F3: two false *working* cases | Falls out; the token leaves at the exit | **Holds against *working*.** The interim word it chose, `lost`, claims an unclean end that the exit does not prove (F1). |
+| Opus F4: rule 5's order is not the code's | Its second way taken: the `end` at the drain | **Holds** against `Driver.cs:3851`, `:3858`, `:3870`, `:3879`, `:3894-3906`. One case is left in round 9's order (F6). |
+| Opus F5 | Taken | **Holds:** `DriverWatch.cs:721-730`, sweep at `:723`. |
+| Opus F6 (i)-(iii) | Taken | **Holds**, except that Loop's word is never given on the loop-close path, where Loop does read the exit (F2). |
+| Opus F7 | Its premise is gone | **Holds:** `HomeLease.cs` is untouched; `Launcher.csproj:35` checked. |
+
+### 1. The rule
+
+A child's state is now the first of these that holds:
+1. its harness's end word;
+2. its generation's own `end`, written after the exit was read;
+3. this window's token gone, which draws `lost`;
+4. this window's token watched, which draws *working* or `unsaid`;
+5. otherwise `uncertain`.
+
+The inputs check out in the code:
+- Every agent spawn goes through four `AgentStarts.StartAsync` sites: `ChatRunner.cs:1596`, `Driver.cs:3661`, `DriverContinuations.cs:1242` and `:1299`.
+- The chat's place serves a first process, a go-on, the go-on's retry, and every new part, which goes through `runner.StartAsync` in `BriefedMove`, `LimitMove`, `ChatHandOver`, `ReplaceAsync` and `LostAsync`. All of them are bracketed.
+- `ProcessStarts` never throws once a start is under way, and `MachineLog` never throws. So "no process spawned" is never told of a live process.
+
+**A live child drawn *lost*.** No ordering of Daoris's own does this. One case outside them does:
+- The token's process is the launcher (`Driver.cs:3658-3659`; `AgentStarts.cs`' summary).
+- The launcher's exit proves the harness's exit only through the launcher's own job.
+- The driver keeps that job open once `JobOf` has opened it (`PieceLauncher.cs:153-154`; `SessionProcesses.cs:418-421`, `:676-678`), and the watcher opens it for every watched driven run (`Driver.cs:4113`).
+- So a launcher ended alone leaves its harness and children running until state E terminates the job (`Driver.cs:4015`, after up to 60 s). Meanwhile they read `lost` (F3).
+
+**A gone child drawn *working*.** Only for the moment before the set sees the exit, and where a harness never said a child's end inside a live process. Never for another process.
+
+***Not known* where the reading window holds a proof.** Yes, in two places:
+- **The loop-close path.** `WaitAsync` kills the tree and awaits its exit before it rethrows (`Driver.cs:4081-4083`; the continuation's wait at `:1272` and the retry's at `:1312` take the same path). Rule 4 writes no `end` there, and an unwatched token is never told.
+- **A capture fault.** A fault rethrown at `:4011` or `:4022` skips the drain's `end`.
+
+In both, the issuing window read the exit and dropped the proof. Every later reader, the restarted window included, draws *not known* for good (F2).
+
+**A state the design itself later contradicts.**
+- Way 3 draws `lost` from the exit seen, and a clean `end` then turns it *ended with its part*; rule 5 states this flip as an expected case.
+- So until the `end` lands, these read `lost` in `--warn`:
+  - every Codex child of a cleanly exiting process (Codex says no end);
+  - any Claude child whose stop the hook missed.
+- On a chat's ordinary path that lasts for as long as a stray holds the capture, with no bound (`ChatRunner.cs:2895-2896`).
+- The exit proves the exit, not that it was unclean (F1).
+
+**The person's loss.**
+- It is stated honestly in substance, and it is the right product answer for runs another process started. Drawing *working* there was a guess. *Not known · last seen*, moved by the agent's later calls, is what the reader actually holds.
+- The window is single-instance per install (`App/Program.cs:11`). So the real other readers are a `--share` loop or headless host, the verb run with no window, and the window after a restart. A person with one window loses nothing while it runs.
+- It is understated for restarts. A normal close leaves every driven run's open children *not known* for good, not only a crash. §9 gives a wrong reason for this (F2).
+
+**Rule 5.** It proves the rule in structure:
+- *lost* or *ended* follows only from an `end` written after the exit was read, or from a token that left at a seen exit or because nothing was spawned;
+- *working* follows only from a watched token.
+
+Its oracle wording and coverage need fixing (F5), and one of its cases is in round 9's order (F6).
+
+### 2. The module map and decided rules
+
+**Placements**, rechecked in `fixtures/structure.json` at `9c7b0f72c`:
+- ChatRunner is in Loop (:135); ChatGoOn in Course (:127).
+- SessionProcesses is in Agents (:582); ChildLineage and ChildBindings in Participants (:517, :524).
+- ChildMarks is in Platform (:296); HomeWatch in Events (:328); SessionOutput in Context (:536).
+- SessionsCommand is in Work orders (:583); SessionEntries in Workplace (:750).
+- The token rides `GoingOn` (Course) into ChatRunner (Loop), which is downward.
+- The composition takes plain values, so §14.3's purity rule for `Domain/` holds (`SessionProcesses` is a listed seam).
+- **No upward edge.** `HomeLease.cs` and the launcher's compile list are untouched.
+
+**D173's truthful partial visibility** holds, except for F1 to F3.
+
+**D182**: point 6 holds, since one function serves both and the window and the verb differ only in the tokens held. Point 3 is unchanged.
+
+**Translation parity**: no key is added, and en and zh match. `child.lost` and `child.ended` are now drawn where the part did not end (F7).
+
+**Routing half and Part B**: row a leans on neither, and FOUNDATION1 §5.1 names round 10. One point for Part B's row c, not row a: FOUNDATION1 §2.6 reads a child's "state" from the fold, but round 10 makes that state depend on the reading process. So `Participant.Of` must take the reader's token readings, or it will read every open child as `uncertain`.
+
+### 3. Claims about the code
+
+**Wrong:**
+1. §3.6 :1021-1023 ("its wait throwing as its loop closes … needs no word of Loop's") and §9 :2846 ("ends without Loop reading its exit (its wait throwing as its loop closes …)") are wrong. `Driver.cs:4081-4083` kills the process and awaits its exit before rethrowing. Only throws that come before the wait leave the reaper's kill unread: `:3673` (its catch lets the cancellation through) and `:3681`.
+2. Rule 5 (:2451) has "the crash between a driven first process's drain and its `end` (… its record `completed` with `ended.awaits`)". Under round 10's own move, the conclusion (`Driver.cs:3894-3906`) comes after the `end`, so the record there is `working`.
+3. §3.6 :1023-1024, "a token gone says its process has exited": the process is the launcher, and its exit proves the harness's exit only through a job the driver may hold open (`PieceLauncher.cs:153-154`; `SessionProcesses.cs:418-421`).
+4. `fixtures/structure.json` lines in §4.3 (:1955, :1957, :1958) and §22: `:126`, `:291`, `:325`, `:510`, `:576` are now `:127`, `:296`, `:327`, `:517`, `:582` at `9c7b0f72c`, moved by mod-iii. They were right at `c5e038828`, as §22 says.
+
+**Verified as cited:**
+- `ChatRunner.cs:1596`, `:1808-1819`, `:1814-1815`, `:1829-1841`, `:1833-1835`, `:2893`, `:2895-2896`, `:2902-2909`, `:2916`, `:2935`, `:2943`, `:2948`, `:2954`, `:2963`, `:2967`, `:2970-2977`
+- `ChatGoOn.cs:667`, `:678-715`, `:680`, `:683-690`, `:756`, `:765`
+- `Driver.cs:3661-3667`, `:3673`, `:3681`, `:3831-3840`, `:3845`, `:3851`, `:3858`, `:3870`, `:3879`, `:3894-3906`, `:3910`, `:3956`, `:3971-3990`
+- `DriverContinuations.cs:249-299`, `:1242`, `:1261`, `:1272-1275`, `:1299-1302`, `:1312-1315`
+- `SessionProcesses.cs:231`, `:241`, `:272`, `:403-411`, `:455-459`, `:493-525`, `:661-678`
+- `SessionMoves.cs:26-30`; `Orphans.cs:70-81`; `DriverWatch.cs:721-730`
+- `ChildLineage.cs:44`, `:108-111`, `:118-122`, `:125-139`, `:145-152`
+- `AgentJobs.cs:56`, `:278-282`; `Launcher.csproj:35`
+
+### 4. Findings
+
+1. **Way 3's `lost` claims an unclean end that the exit does not prove. Not blocking.**
+   - Where: §3.6 :1176-1183 and :1208; rule 5 (:2451) "the clean `end` landing turns it *ended with its part*"; the claim "no window draws a state that is false" at :1233 and §22 :3662.
+   - Codex children and missed-stop children of a clean exit read `lost` in `--warn` until the `end` lands. On a chat's ordinary path that has no bound (`ChatRunner.cs:2895-2896`).
+   - Smallest change: give way 3's interim close a word that claims no cleanliness, such as a neutral *its process ended · last seen {time}*, in en and zh, in the mapping table and with a story. Alternatively, have the set keep the exit code and Loop's stop flag so way 3 judges clean as `End` does. Correct the sentence either way.
+2. **No `end` is written on paths where the issuing window has read the exit. Not blocking.**
+   - The loop-close path (`Driver.cs:4081-4083`, and the waits at `:1272` and `:1312`); a capture fault rethrown at `:4011` or `:4022`.
+   - Rule 4 (:2450) specifies "writes no `end`" for the loop-close case.
+   - So a normal close (`DriverLoop.cs:1414-1422`) leaves every driven run's open children *not known* for good after the restart. Chats get their `end` through `StopAll` (`ChatRunner.cs:2059-2069`).
+   - Smallest change:
+     - write the unclean `end` wherever the exit has been read, the close and a faulted drain included;
+     - tell the set the exit there;
+     - reverse rule 4's case;
+     - correct §3.6 :1021-1023, §9 :2846 and §22's loss paragraph.
+3. **A launcher ended alone. Not blocking; outside Daoris's own orderings, and rare.**
+   - The token reads gone while the harness lives on, until state E (`PieceLauncher.cs:153-154`; `SessionProcesses.cs:418-421`; `Driver.cs:4015`, `:4113`).
+   - Smallest change: name it in §9 and at §3.6 :1024, or read the token gone only once the launcher's own job (`PieceLauncher.OwnJobOf`) holds no process.
+4. **`took` has no reader. Not blocking.**
+   - Taken and untaken generations "differ in nothing row a draws" (:1196) and takings "close nothing" (:987). Yet rule 4 writes `took`, rule 13 wakes on it (:2459), rule 21 adds it to the twin row (:2467), and §4.3's Loop row places it.
+   - Each such wake composes an unchanged answer, and the field leaves closing evidence in the file for a later round to misuse.
+   - Smallest change: withdraw the `took: true` flag, the `took` line, its wake, its twin-row entry and its tests from row a, or name what reads the order of runs.
+5. **Rule 5's proof: the oracle's wording and its coverage. Not blocking.**
+   - Where: :2451, "At no prefix does a child read *working* unless its process is alive and this window's token watches it".
+   - This cannot hold between a stand-in's end and the moment the set sees it.
+   - Smallest change:
+     - state the oracle as no *working* once the set has seen the exit or where this window does not watch the process, and no close, *lost* or *ended* while the test's record says the process is live;
+     - await the set after each stand-in ends;
+     - hold rule 4's go-on retry, unwatched-token and loop-close cases to the same double check.
+6. **Rule 5's crash case is still in round 9's order. Not blocking.** "Its record `completed` with `ended.awaits`" between the drain and the `end` cannot happen at :2451, since the conclusion follows the `end`. Smallest change: write "its record `working`", or drop the case, since the nine-states case covers it.
+7. **`child.lost` and `child.ended` say "its part ended" where the part goes on. Not blocking.**
+   - Where: §5.4 :2183, rule 19 :2465.
+   - Cases: a go-on's first attempt before its retry; a driven first process before its native retry or a continuation; any close by way 3.
+   - Smallest change: *lost when its agent ended* / 其智能体结束时丢失, and *ended with its agent* / 随其智能体结束. This matches `subagentsNote`'s "inside this session's own agent".
+8. **Inputs that are no longer read are listed as causes of *not known*. Not blocking.** D173.md:5802-5803, §3.6 :1215-1216 and §22's rule list name "a later taking followed" and "a record a sweep stopped". In the issuing window, such a run reads *working* (rule 5's false-stop case). Smallest change: drop both from the lists, or qualify each with "where the reader holds no watched token of it".
+9. **`structure.json` citations are stale at `9c7b0f72c`. Not blocking.** See §3 item 4. Smallest change: re-cite at the commit row a is filed from.
+
+9 findings, 0 blocking.
+
+**Verdict for row a: accept after named changes the steward can check without another read.** The substantive changes are F1, F2 and F4 (§3.6, rules 4, 13 and 21, §9, §22 and D173's note). F3 and F5 to F9 are one-line corrections.
