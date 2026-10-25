@@ -1,5 +1,7 @@
 # The foundation: the participant, the course and the move, the event, and where state is kept (FOUNDATION1, round 4 with both reads' named changes, 2026-10-25: Part A ready for the steward's acceptance, Part B proposed)
 
+**Accepted in part, 2026-10-25:** Part A (rows 1a-i, 1b, 1c, mod-0, mod-i to mod-xxi and u) is accepted by the steward under D191 after both makers' reads of round 4 and their named changes (§17, §18), D212's note of that date; Part B stays proposed for round 5.
+
 **Standing:** round 4 under D191, with D212, written from main at `e8f1aed4f`, whose `src/` is round 3's `68a396c65` but for one test
 (`BrainstormBoundsTests.cs`), and the named changes of both its reads taken (§17, §18). **Both makers read round 4**
 (`docs/2026-10-25-foundation-reads.md`), and **both accept Part A after named changes the steward can check without another read**: the

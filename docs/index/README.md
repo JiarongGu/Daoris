@@ -367,7 +367,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-24-supervisor-reads.md` | 156 | 1491 |
 | `docs/2026-10-24-switch-context-design.md` | 194 | 1454 |
 | `docs/2026-10-24-switch-context-reads.md` | 157 | 1604 |
-| `docs/2026-10-25-foundation-design.md` | 378 | 2300 |
+| `docs/2026-10-25-foundation-design.md` | 378 | 2302 |
 | `docs/2026-10-25-foundation-proposal-claude.md` | 70 | 664 |
 | `docs/2026-10-25-foundation-proposal-codex.md` | 53 | 523 |
 | `docs/2026-10-25-foundation-proposal-opus.md` | 63 | 654 |
