@@ -181,6 +181,37 @@ public sealed class PartnerLookTests : IDisposable
     }
 
     /// <summary>
+    /// FOUNDATION1 row p (the design §3.4 rule 5): a hand the host answers settled (the piece's word was kept by an earlier hand, whose answer was
+    /// lost, and taken) marks the piece handed, its receipt taken naming the record the word left, and records nothing: no note on the lead, no
+    /// event for its conversation to hear, nothing kept.
+    /// </summary>
+    [Fact]
+    public async Task A_hand_the_host_answers_settled_marks_the_piece_handed_and_records_nothing()
+    {
+        Ask("p1", paths: ["src"]);
+        var host = Host().Session(Partner, "completed", tree: "trees/default/reports/p-p1", adapter: "codex-acp", kind: "chat");
+        host.Set(Partner, "serves", "s1");
+        host.Set(Partner, "piece", "p1");
+        host.SettledHands[Partner] = "s1";
+        var driver = Driver(host, new Pass(Files) { LastWords = "Changed the window." });
+
+        await Look(driver);
+        await Until(() => Files.ReadState("p1") is { State: PartnerStates.Answered });
+        host.Move("s1", "completed");
+        var (_, events) = await Look(driver);
+        await Until(() => Files.ReadState("p1") is { State: PartnerStates.Handed });
+
+        Assert.Empty(host.PartnerHands);
+        var receipt = Files.ReadReceipt("p1")!;
+        Assert.Equal(("s1", PartnerDelivery.Taken), (receipt.To, receipt.Outcome));
+        Assert.Contains(events, line => line.Contains("is settled"));
+        var kept = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions));
+        var lead = kept.After("s1", 0).Events;
+        Assert.DoesNotContain(lead, e => e.Kind == SessionEventKind.User);
+        Assert.DoesNotContain(lead.Where(e => e.Kind == SessionEventKind.Note).SelectMany(note => NoteAssert.Codes(note.Parts!)), code => code is "partner.answered" or "partner.beyond");
+    }
+
+    /// <summary>
     /// 🔴 A hand a restart cut (its receipt attempted, the state still `answered`) may have reached the lead: it is uncertain, waits for
     /// the person, and nothing hands it again by itself.
     /// </summary>

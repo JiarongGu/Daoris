@@ -509,6 +509,36 @@ public sealed class HelperLookTests : IDisposable
         Assert.Empty(events);
     }
 
+    /// <summary>
+    /// FOUNDATION1 row p (the design §3.4 rule 5): a hand the host answers settled (its key's word was kept by an earlier hand, whose answer was
+    /// lost, and taken) marks the ask handed and dispatches nothing: no word is kept or sent, no `User` event and no note is recorded on the
+    /// asker, and the ask is never handed again.
+    /// </summary>
+    [Fact]
+    public async Task A_hand_the_host_answers_settled_dispatches_and_records_nothing_and_is_marked_handed()
+    {
+        Ask("a1");
+        var host = Host();
+        host.SettledHands[Helper] = "s1";
+        var pass = new Pass(Files) { Answer = "The window is exclusive at src/report.ts:42." };
+
+        await Look(Driver(host, pass));
+        await Until(() => Files.ReadState("a1") is { State: HelperStates.Answered, Handed: not null });
+
+        var state = Files.ReadState("a1")!;
+        Assert.Equal("settled", state.Handed);
+        Assert.Null(state.Attempted);
+        Assert.Empty(host.HelperHands);
+        Assert.Empty(host.Said("s1"));
+        var asker = new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events;
+        Assert.DoesNotContain(asker, e => e.Kind == SessionEventKind.User);
+        Assert.DoesNotContain(asker.Where(e => e.Kind == SessionEventKind.Note).SelectMany(note => NoteAssert.Codes(note.Parts!)), code => code == "helper.answered");
+
+        // Handed, so a later look hands it again no more.
+        await Look(Driver(host, pass: null));
+        Assert.Equal(1, host.HelperHandsAsked);
+    }
+
     /// <summary>The helper never used its tool: its last words, bounded, stand as the answer, marked with a `lastWords` mark.</summary>
     [Fact]
     public async Task A_helper_that_used_no_tool_has_its_last_words_stand_as_the_answer_with_a_mark()
