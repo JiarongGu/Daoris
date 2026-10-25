@@ -603,50 +603,6 @@ public sealed record DriverConfig(
         this with { WorkspaceLandings = Set(WorkspaceLandings, workspace, rule) };
 
     /// <summary>
-    /// Set the cycle on a repository's own landing rule (FABRIC-GRAPH1, §C2), or clear it with null to take the default, today's. The
-    /// cycle rides its rule (D164's amendment), so a repository with no rule of its own is refused, and so is a cycle whose graph does
-    /// not hold under its rule, naming the first problem.
-    /// </summary>
-    public DriverConfig WithLandingCycle(string repository, string? cycle) =>
-        this with { Landings = SetCycle(Landings, repository, cycle, "repository") };
-
-    /// <summary>Set the cycle on a workspace's landing rule, or clear it with null.</summary>
-    public DriverConfig WithWorkspaceLandingCycle(string workspace, string? cycle) =>
-        this with { WorkspaceLandings = SetCycle(WorkspaceLandings, workspace, cycle, "workspace") };
-
-    private static IReadOnlyDictionary<string, LandingRule> SetCycle(IReadOnlyDictionary<string, LandingRule> map, string key, string? cycle, string what)
-    {
-        if (!map.TryGetValue(key.Trim(), out var rule))
-        {
-            throw new DriverException($"`{key.Trim()}` has no landing rule of its own, and a cycle rides its {what}'s rule (D164): set the rule first, then its cycle.");
-        }
-
-        var next = new Dictionary<string, LandingRule>(map, StringComparer.OrdinalIgnoreCase);
-        if (cycle is null)
-        {
-            next[key.Trim()] = rule with { Cycle = null };
-            return next;
-        }
-
-        var kept = rule with { Cycle = CompactOrRefuse(cycle) };
-        if (NodeGraphHomes.OfLanding(kept, what).Problems is [var first, ..]) throw new DriverException(first.Words);
-        next[key.Trim()] = kept;
-        return next;
-    }
-
-    private static string CompactOrRefuse(string json)
-    {
-        try
-        {
-            return NodeGraphHomes.Compact(json);
-        }
-        catch (JsonException error)
-        {
-            throw new DriverException($"the cycle is not JSON: {error.Message}");
-        }
-    }
-
-    /// <summary>
     /// The cycles of the kinds of work that do not land (FABRIC-GRAPH1; §D7's <c>workCycles</c>): by repository, then by unit kind
     /// (<see cref="NodeGraphHomes.WorkCycleKinds"/>), each a whole graph's JSON text, compact. Absent is none, today's.
     /// </summary>
@@ -656,43 +612,6 @@ public sealed record DriverConfig(
     /// <summary>A workspace's work cycles (§D7's <c>workspaceWorkCycles</c>), by kind, for each repository in it naming none of that kind.</summary>
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkspaceWorkCycles { get; init; } =
         new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// Set a repository's cycle for a kind of work, or clear it with null to take its workspace's. A kind with no work cycle is refused,
-    /// a branch's included (its cycle is its landing rule's, §D7), and so is a graph that does not hold, naming the first problem.
-    /// </summary>
-    public DriverConfig WithWorkCycle(string repository, string kind, string? graph) =>
-        this with { WorkCycles = SetWorkCycle(WorkCycles, repository, kind, graph) };
-
-    /// <summary>Set a workspace's cycle for a kind of work, or clear it with null.</summary>
-    public DriverConfig WithWorkspaceWorkCycle(string workspace, string kind, string? graph) =>
-        this with { WorkspaceWorkCycles = SetWorkCycle(WorkspaceWorkCycles, workspace, kind, graph) };
-
-    private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> SetWorkCycle(
-        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> map, string key, string kind, string? graph)
-    {
-        if (!NodeGraphHomes.WorkCycleKinds.Contains(kind))
-        {
-            throw new DriverException(kind == WorkUnitKind.Branch
-                ? "a branch's cycle is its landing rule's `cycle`, so that a repository's landing and its end move together (D164); no kind has two homes."
-                : $"`{kind}` is no kind of work with a cycle of its own here — {string.Join(" or ", NodeGraphHomes.WorkCycleKinds.Select(each => $"`{each}`"))}.");
-        }
-
-        var kinds = new Dictionary<string, string>(map.GetValueOrDefault(key.Trim()) ?? new Dictionary<string, string>(), StringComparer.Ordinal);
-        if (graph is null) kinds.Remove(kind);
-        else
-        {
-            var kept = CompactOrRefuse(graph);
-            if (NodeGraphs.Read(kept).Problems is [var first, ..]) throw new DriverException(first.Words);
-            kinds[kind] = kept;
-        }
-
-        var next = new Dictionary<string, IReadOnlyDictionary<string, string>>(map, StringComparer.OrdinalIgnoreCase);
-        var spelled = next.Keys.FirstOrDefault(name => string.Equals(name, key.Trim(), StringComparison.OrdinalIgnoreCase)) ?? key.Trim();
-        next.Remove(spelled);
-        if (kinds.Count > 0) next[spelled] = kinds;
-        return next;
-    }
 
     /// <summary>
     /// The work cycles under <paramref name="name"/>: each repository's or workspace's kinds of work, every kind kept as written, compact, null
@@ -711,7 +630,7 @@ public sealed record DriverConfig(
             var kinds = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var kind in owner.Value.EnumerateObject())
             {
-                if (kind.Value.ValueKind != JsonValueKind.Null) kinds.TryAdd(kind.Name, NodeGraphHomes.Compact(kind.Value));
+                if (kind.Value.ValueKind != JsonValueKind.Null) kinds.TryAdd(kind.Name, CycleText.Compact(kind.Value));
             }
 
             if (kinds.Count > 0) map[owner.Name] = kinds;
@@ -1124,8 +1043,8 @@ public sealed record DriverConfig(
             CommitRules.WriteMap(writer, "commits", Commits);
             CommitRules.WriteMap(writer, "workspaceCommits", WorkspaceCommits);
             // Written only when set (WORKFLOW1e), as the CLI writes them: absent is Current, today's behaviour.
-            WorkflowSelection.WriteMap(writer, "workflows", Workflows, workspace: false);
-            WorkflowSelection.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
+            WorkflowKey.WriteMap(writer, "workflows", Workflows, workspace: false);
+            WorkflowKey.WriteMap(writer, "workspaceWorkflows", WorkspaceWorkflows, workspace: true);
             // Written only when set (AUTONOMY1a), as the CLI writes them: absent is today's behaviour, and nothing loosens by itself.
             AccessKey.WriteMap(writer, "access", Access);
             AccessKey.WriteMap(writer, "workspaceAccess", WorkspaceAccess);
@@ -1501,7 +1420,7 @@ public sealed record DriverConfig(
         if (rule.Key is not null && LandingRules.Problem(rule) is not null) rule = rule with { Key = null };
         // FABRIC-GRAPH1: the cycle is kept as written whether or not it is a graph that holds, said where it is read, so a mistyped end
         // never changes how the work lands; only null is none (the review's finding 2: `[]` was dropped).
-        if (value.TryGetProperty("cycle", out var cycle) && cycle.ValueKind != JsonValueKind.Null) rule = rule with { Cycle = NodeGraphHomes.Compact(cycle) };
+        if (value.TryGetProperty("cycle", out var cycle) && cycle.ValueKind != JsonValueKind.Null) rule = rule with { Cycle = CycleText.Compact(cycle) };
         if (LandingRules.Problem(rule) is not { } problem) return rule;
         unread = rule.Form.Length == 0 ? "it names no `form`, `merge` or `branch`." : problem;
         return null;
@@ -1655,8 +1574,8 @@ public sealed record DriverConfig(
             Commits =CommitRules.Map(root, "commits"),
             WorkspaceCommits = CommitRules.Map(root, "workspaceCommits"),
             // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
-            Workflows = WorkflowSelection.Map(root, "workflows", workspace: false),
-            WorkspaceWorkflows = WorkflowSelection.Map(root, "workspaceWorkflows", workspace: true),
+            Workflows = WorkflowKey.Map(root, "workflows", workspace: false),
+            WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
             // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.
             Access = AccessKey.Map(root, "access"),
             WorkspaceAccess = AccessKey.Map(root, "workspaceAccess"),
