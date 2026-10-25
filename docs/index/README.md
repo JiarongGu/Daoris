@@ -375,10 +375,10 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-25-foundation-proposal-opus.md` | 63 | 654 |
 | `docs/2026-10-25-foundation-reads.md` | 278 | 2284 |
 | `docs/2026-10-25-foundation-survey.md` | 103 | 597 |
-| `docs/2026-10-26-agent-provider-design.md` | 111 | 801 |
+| `docs/2026-10-26-agent-provider-design.md` | 173 | 1097 |
 | `docs/2026-10-26-agent-provider-proposal-codex.md` | 49 | 464 |
 | `docs/2026-10-26-agent-provider-proposal-opus.md` | 83 | 654 |
 | `docs/2026-10-26-agent-provider-survey.md` | 79 | 632 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
-| `docs/README.md` | 55 | 273 |
+| `docs/README.md` | 56 | 274 |
 | `src/Daoris.Desktop/README.md` | 179 | 832 |
