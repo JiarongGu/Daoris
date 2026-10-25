@@ -1,6 +1,6 @@
 # The foundation: the participant, the course and the move, the event (FOUNDATION1, proposed, round 2, 2026-10-25)
 
-**Standing:** proposed with D212, round 2 under D191, written from main at `c8eccf30e`. Round 1 was the synthesis of the three
+**Standing:** proposed with D212, round 2 under D191, written from main at `943b3848c`. Round 1 was the synthesis of the three
 sealed proposals, `docs/2026-10-25-foundation-proposal-claude.md` (Claude's), `docs/2026-10-25-foundation-proposal-codex.md` (Codex's)
 and `docs/2026-10-25-foundation-proposal-opus.md` (the independent Opus reader's), each written from the brief
 `docs/2026-10-25-foundation-brief.md` and the survey `docs/2026-10-25-foundation-survey.md` alone, each difference settled in §1. Both
@@ -19,7 +19,9 @@ notes); the precedent of this shape, `docs/2026-10-23-actors-design.md` with D20
 `compatible-builds.md`, `session-words.md`, `session-record-fields.md`, `pushed-slices.md`, `person-waits.md`, `twins.md` and
 `translation-parity.md`; the glossary. Round 1's claims about the code were checked on main at `92ac2bd7e`; `c8eccf30e`'s `src/` is
 that commit's unchanged, so its lines hold, and round 2's checks of the reads' findings were made there. LIMITSWITCH1's build was read
-on its session branch, at `3fdc6bbeb` in round 1 and at `adacd5fdc` in round 2, not yet on main when this was written. §0.2 lists
+on its session branch, at `3fdc6bbeb` in round 1 and at `adacd5fdc` in round 2, and merged into main at `a85004bd0` as round 2 was
+written; its merge moves a few lines this cites by up to ten (`ResumeChoice.Waits` now `ResumeAccount.cs:87`, the roster's twin
+`HarnessRoster.cs:1014`, the closed quest's hold `Driver.cs:2368`), and the citations stay `c8eccf30e`'s. §0.2 lists
 where the brief, the survey or a proposal was wrong, and §12 where round 1 was. `Dnn` is `docs/decisions/Dnn.md`; paths use the
 survey's aliases (`Driver/`, `Modules/`, `Host/`, `Core/`, `Mcp/`, `Http/`, `Web/`), with `Chat/` for `Driver/Conversations/Chat/`,
 `Loop/` for `Driver/Loop/` and `App/` for the desktop's executable as the survey shortens them. *C* is Claude's proposal, *X* Codex's,
@@ -35,7 +37,7 @@ as the foundation the rest stands on, designed under D191 and never built as a b
 the 273 fix-log entries of 2026-10-15 to 2026-10-25 came from two mechanisms answering one question differently (survey §0, a
 judgement this design inherits and has not recounted). The quest's case, a finished record's words waiting days for its own
 account while others ran work, is decided (LIMITSWITCH1, D137's note of 2026-10-25) and built for driven records of an open or
-taken quest on a session branch; its remainder, LIMITSWITCH2, is a conversation's go-on.
+taken quest, merged at `a85004bd0`; its remainder, LIMITSWITCH2 in `TASKS.md`, is a conversation's go-on.
 
 The owner's second direction of the same day, taken from round 2 (the brief §8): actors and roles are not hard-coded; each role can
 be configured and set up into the company, D193's picture of a development company run by agents. The cut: **capabilities in code,
@@ -700,7 +702,7 @@ its session kinds onto the journal lets a restart of the lease's loop re-read wh
 
 | Design | Becomes | Its rows |
 |---|---|---|
-| **LIMITSWITCH1** (D137's note of 2026-10-25), built for driven records of an open or taken quest on its session branch | the account rule's driven half, as built | lands as built; row a-i waits for it on main and reads its `Switched` through `LineAccount` |
+| **LIMITSWITCH1** (D137's note of 2026-10-25), built for driven records of an open or taken quest, merged at `a85004bd0` | the account rule's driven half, as built | stands as built; row a-i reads its `Switched` through `LineAccount` |
 | **LIMITSWITCH2**, its remainder | row a-i, re-cut: through the ended limit move's body, not `BriefedMove` (§0.2); a pick and Ask Daoris's room keep the own account, as filed; a closed quest's session joins it by the steward's reading of the owner's decision (§3.2 step 2) | moves into row a-i once D212 is accepted; until then it stays filed, not built |
 | **MODELROLE1l** (D205's note of 2026-10-25), filed | a configured role, *Designer*, taking `design` (§2.7) | its code is the `design` capability and the quest's mark, row x; its role a seeded suggestion applied by the person's press, row y-i |
 | **EVENTHOOK1** (proposed, round 4, Codex's read owed) | the first outside projection and the first instance of the vocabulary: built first as designed, then moved onto the journal (row n): its session kinds read the retained journal, its `WorkEventGrammar` becomes `EventCodes`' outside projection, its kinds keeping their names there, its `work.landed` and `quest.parked` machine events under its own `run` and `seq`, its relay's delivery contract unchanged | none waits on the foundation; 1d's quest kinds, a later round, are designed from the journal's `quest.<op>` rather than the look's snapshot; row n waits for 1b and row k |
@@ -838,12 +840,12 @@ mechanisms and moves no reader; a row that moves readers moves one path or chann
 neither moved nor is named. **Rows marked ⚖ grant or refuse authority, or delete, and are built only after both makers' reads** (D191's note of
 2026-10-24). The rows are filed in `TASKS.md` when D212 is accepted; until then FOUNDATION1 points here. *Row a-i* in this design is
 FOUNDATION1a-i, and so on. **The order** (round 2): a-i, b, c, a-ii, a-iii, d, p, e, f, g, h, i, o, j, w, x, y-i, k, l-i to l-v, m-i to m-v, n, q,
-r, s, t, y-ii, u, v. Row a-i lands only after LIMITSWITCH1 merges onto a main that has moved under its branch (43 files differ, AGENTERRORS1b's
-`ChatRetry` among them, O's §4).
+r, s, t, y-ii, u, v. The Opus reader's precondition for row a-i, that LIMITSWITCH1 merge onto a main that had moved under its branch (O's §4),
+is met: it merged at `a85004bd0`.
 
 ### The first three
 
-**FOUNDATION1a-i — one account rule, the cooling go-on inside it** (driver, web; after LIMITSWITCH1 lands on main).
+**FOUNDATION1a-i — one account rule, the cooling go-on inside it** (driver, web; on LIMITSWITCH1, merged).
 - *What.* `LineAccount.Decide(own hold, trigger, constraint, line kind, the walk's answer over the accounts it may take) → Resume | Elsewhere(selection,
   why) | Wait(earliest, accounts) | Hold(reason, repair)`, pure, in `Accounts/Rotation/` beside `ResumeAccount`: §3.2's rule. Read by `ResumeChoice`
   (`Waits` and LIMITSWITCH1's `Switched`) and the roster's resume, whose inline twin (`HarnessRoster.cs:1008`) and `switches` parameter become one
@@ -945,7 +947,7 @@ proof can stand on acknowledged attempts and receipts; 1o after 1h and 1i so the
 - **The defects' classes** (survey §6): a judgement, which this order inherits.
 - **The checks.** A document only: `doc-links`, `doc-system`, `doc-shapes`, `doc-duplicates`, `doc-budgets` and `orient-index --check` check its
   place, its links and the index, never its claims. The code was read, not run, on main at `92ac2bd7e` and `c8eccf30e` (one `src/`), and LIMITSWITCH1
-  on its branch at `3fdc6bbeb` and `adacd5fdc`; EVENTHOOK1, COWORKVIEW1's routing half and SWITCHCTX1's carry are proposed, not built, and what this
+  on its branch at `3fdc6bbeb` and `adacd5fdc`, merged at `a85004bd0` and not read again there; EVENTHOOK1, COWORKVIEW1's routing half and SWITCHCTX1's carry are proposed, not built, and what this
   says of them is read from their documents at that commit.
 
 ## 12. Round 2: the reads of round 1 answered

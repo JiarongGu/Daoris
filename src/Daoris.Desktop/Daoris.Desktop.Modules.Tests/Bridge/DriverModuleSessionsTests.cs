@@ -367,7 +367,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var until = new DateTimeOffset(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
         loop.Look.Record(
             [new Consideration(new QuestView("q4", "game", "engine", "The work of #q4", "A body.", "Done"), StartVerdict.Blocked, "its account is cooling until 12:00.")],
-            [new AccountWait("claude-code", "Claude Code", "work", "aurora", until, Stated: true, "its account is cooling until 12:00.") { Quests = ["q4"] }]);
+            [new AccountWait("claude-code", "Claude Code", "work", "aurora", until, Stated: true, "its account is cooling until 12:00.") { Quests = ["q4"], Name = "Work" }]);
 
         var row = (await AnswerAsync(new DriverModule(Bus, loop), "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
 
@@ -375,6 +375,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         var holds = row.GetProperty("holds");
         Assert.Equal(WordsHold.Cooling, holds.GetProperty("why").GetString());
         Assert.Equal(until, holds.GetProperty("until").GetDateTimeOffset());
+        // LIMITSWITCH1: the account that resets first, by its id and the name the person gave it, which the page says the wait on.
+        Assert.Equal(("work", "Work"), (holds.GetProperty("account").GetString(), holds.GetProperty("accountName").GetString()));
         Assert.Equal("its account is cooling until 12:00.", holds.GetProperty("reason").GetString());
     }
 

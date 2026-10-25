@@ -317,11 +317,18 @@ export function placedFact(
   // What holds the person's words on a record that resumes later (MSG1f2, D137 §3.2): said from the facts where the page
   // has words for them, and in the planner's own sentence for anything else.
   if (grouping.holds) {
-    const { why, reason, repository, until } = grouping.holds;
+    const { why, reason, repository, until, account, accountName } = grouping.holds;
     const tip = 'work.rail.wordsHeldTip';
     if (why === 'hold' && repository) return { line: 'work.rail.wordsHeld.hold', values: { repository }, tip };
     if (why === 'cap') return { line: 'work.rail.wordsHeld.cap', tip };
-    if (why === 'cooling' && until) return { line: 'work.rail.wordsHeld.cooling', values: { time: moment(until) }, tip };
+    if (why === 'cooling' && until) {
+      // LIMITSWITCH1 (D137's note of 2026-10-25): words held for an account's limit say the wait as D206 §3.7 does, its time and the account
+      // that resets first, never only that the session ended. An agent's own sign-in has no id; a host older than the account says a time.
+      const time = moment(until);
+      if (typeof account === 'string') return { line: 'work.limit.waits', values: { time, account: accountName || account }, tip };
+      if (account === null) return { line: 'work.rail.wordsHeld.limitWaitsOwn', values: { time }, tip };
+      return { line: 'work.rail.wordsHeld.cooling', values: { time }, tip };
+    }
     return { line: 'work.rail.wordsHeld.waits', values: { why: reason.replace(/\.$/, '') }, tip };
   }
   if (shown === 'parked') {

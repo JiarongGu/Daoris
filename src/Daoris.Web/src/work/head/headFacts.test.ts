@@ -177,6 +177,26 @@ describe('a session’s facts line', () => {
     expect(facts).not.toContain('account-1');
   });
 
+  /**
+   * LIMITSWITCH1 (D137's note of 2026-10-25): the page's head says a held record's wait in D206 §3.7's words, its time and the account
+   * that resets first, in both languages, where it said only that the record completed.
+   */
+  it('says a held record’s wait as a limit’s wait, its account and time, in both languages', async () => {
+    const held = { why: 'cooling', reason: 'cooling.', until: '2026-10-05T16:02:00Z', account: 'account-2', accountName: 'Work' };
+    const facts = () => sessionFacts(t, {
+      session: session({ state: 'completed', profile: 'account-1' }), shown: 'completed',
+      grouping: grouping({ group: 'later', shown: 'completed', holds: held } as never),
+    });
+    expect(facts().some((fact) => /^Waiting for a limit to reset: it resumes by itself at .+, on Work\.$/.test(fact))).toBe(true);
+
+    await i18n.changeLanguage('zh');
+    try {
+      expect(facts().some((fact) => /^正在等待额度重置：将于 .+ 在 Work 上自动继续。$/.test(fact))).toBe(true);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('says a running chat how long ago it began', () => {
     expect(sessionFacts(t, { session: session({ kind: 'chat', quest: null, profile: 'account-1' }), shown: 'working' }))
       .toEqual(['engine', 'started 2m ago']);

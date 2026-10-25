@@ -55,9 +55,13 @@ export type SessionGrouping = {
    * What holds the person's words on an ended record that resumes later (MSG1f2, D137 §3.2), by the planner's verdict: the
    * work's pause (`paused`), the person's hold on its repository (`hold`), the cap (`cap`), its account cooling until
    * `until` (`cooling`), a session in its way (`busy`), or anything else (`waits`), with the planner's sentence. Its row
-   * says so. Absent where nothing holds words, and on a host older than the fact.
+   * says so. Absent where nothing holds words, and on a host older than the fact. A `cooling` hold names the account that resets
+   * first at `until` (LIMITSWITCH1): `account` its id, null for the agent's own sign-in, absent on a host older than the fact, and
+   * `accountName` the name the person gave it, where it has one.
    */
-  holds?: { why: string; reason: string; repository?: string | null; until?: string | null } | null;
+  holds?: {
+    why: string; reason: string; repository?: string | null; until?: string | null; account?: string | null; accountName?: string | null;
+  } | null;
   /**
    * Whether *Delete…* would be taken (SESSUX1f, D126 §5.4): a conversation that served no quest, whose record the ledger
    * would delete and whose tree and landing this machine no longer holds. Offered only where true, D95's way. Absent on a

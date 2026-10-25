@@ -450,12 +450,42 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText(/goes on with your words once engine is no longer held/)).toBeInTheDocument();
     held({ why: 'cap', reason: 'the concurrency cap (2) is spent — it frees as sessions finish.' });
     expect(screen.getByText(/goes on with your words when a running session here ends/)).toBeInTheDocument();
+    // A host older than the account says the time alone, and no longer that the words wait for the session's own account.
     held({ why: 'cooling', reason: 'its account is cooling.', until: '2026-10-04T12:30:00Z' });
-    const reset = `goes on with your words once its account cools, at ${moment('2026-10-04T12:30:00Z')}`;
+    const reset = `your words go on by themselves once an account is ready again, at ${moment('2026-10-04T12:30:00Z')}`;
     expect(screen.getByText((said) => said.includes(reset))).toBeInTheDocument();
     held({ why: 'busy', reason: 'session `s9` is active in the tree `#7a82cc` goes back into — one session per tree.' });
     expect(screen.getByText(/your words wait: session `s9` is active in the tree/)).toBeInTheDocument();
     expect(screen.getByTitle(/You wrote to this session/)).toBeInTheDocument();
+  });
+
+  /**
+   * LIMITSWITCH1 (D137's note of 2026-10-25): words held for an account's limit say the wait as D206 §3.7 does, its time and the account
+   * that resets first, in both languages, never only that the record completed; an agent's own sign-in has no id and says so.
+   */
+  it('says a held record’s wait as a limit’s wait, its account and time, in both languages', async () => {
+    const ended = session({ state: 'completed', quest: '7a82cc' });
+    const until = '2026-10-04T12:30:00Z';
+    const held = (holds: SessionGrouping['holds']) =>
+      <SessionRow session={ended} grouping={placed({ group: 'later', shown: 'completed', holds })} />;
+    const named = { why: 'cooling', reason: 'its account is cooling.', until, account: 'account-2', accountName: 'Work' };
+    const { rerender } = render(held(named));
+    expect(screen.getByText((said) => said.includes(`Waiting for a limit to reset: it resumes by itself at ${moment(until)}, on Work.`))).toBeInTheDocument();
+    // Named by no one, the account's id says it.
+    rerender(held({ ...named, accountName: null }));
+    expect(screen.getByText((said) => said.includes(`at ${moment(until)}, on account-2.`))).toBeInTheDocument();
+    rerender(held({ why: 'cooling', reason: 'its account is cooling.', until, account: null }));
+    expect(screen.getByText((said) => said.includes(`at ${moment(until)}, on this machine's own sign-in.`))).toBeInTheDocument();
+
+    await i18n.changeLanguage('zh');
+    try {
+      rerender(held(named));
+      expect(screen.getByText((said) => said.includes(`正在等待额度重置：将于 ${moment(until)} 在 Work 上自动继续。`))).toBeInTheDocument();
+      rerender(held({ why: 'cooling', reason: 'its account is cooling.', until, account: null }));
+      expect(screen.getByText((said) => said.includes(`正在等待额度重置：将于 ${moment(until)} 在本机自己的登录上自动继续。`))).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /** A pause's line names whose pause, as before; what holds the words adds nothing beside it. */
