@@ -239,16 +239,21 @@ public sealed class ReviewGraphCensusTests : IDisposable
         // A node the flow makes once an answer arrives is made by a continuation on the thread pool, so "a moment" is the pool's own lag
         // as it is now, measured by a round trip and kept at its worst: a fixed 40 ms closed a round early under a loaded run, and its
         // node read a round past its depth (FLAKE1, the CIs of 2026-10-24 and the stage on e8f1aed).
+        // The moment and the bound are both kept in time, not in polls: counted in polls, one spike of the pool's lag asked for more
+        // polls than the bound allowed, and a graph that had gone quiet read as one that never did (FLAKE1, most loaded runs of
+        // 2026-10-25 and 26).
         var lag = TimeSpan.Zero;
-        var quietFor = 0;
-        for (var waited = 0; quietFor < Math.Max(4, (int)Math.Ceiling(lag.TotalMilliseconds / 2)) && !(read.IsCompleted && held.IsEmpty); waited++)
+        var bound = System.Diagnostics.Stopwatch.StartNew();
+        System.Diagnostics.Stopwatch? quiet = null;
+        while (!(read.IsCompleted && held.IsEmpty))
         {
-            Assert.True(waited < 2_000, $"the graph never went quiet on {world}");
+            Assert.True(bound.Elapsed < TimeSpan.FromSeconds(120), $"the graph never went quiet on {world}");
             var probe = System.Diagnostics.Stopwatch.StartNew();
             await Task.Run(() => { });
             if (probe.Elapsed > lag) lag = probe.Elapsed;
             await Task.Delay(10);
-            quietFor = Quiet() ? quietFor + 1 : 0;
+            if (!Quiet()) quiet = null;
+            else if ((quiet ??= System.Diagnostics.Stopwatch.StartNew()).Elapsed >= TimeSpan.FromMilliseconds(Math.Max(40, 2 * lag.TotalMilliseconds))) break;
         }
     }
 

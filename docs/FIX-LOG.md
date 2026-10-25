@@ -5,6 +5,19 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-26 - The review graph census read a graph that had gone quiet as one that never did (FLAKE1)
+
+- **Symptom:** `ReviewGraphCensusTests.Every_combination_of_the_range_starts_each_node_at_its_depth_and_answers_as_today` failed with
+  *the graph never went quiet* in most loaded runs of 2026-10-25 and 26 (the land tests of FOUNDATION1 rows u, mod-iii, a-iii, mod-v and
+  PICKCARRY1, and the CI on `1221a79`), a different combination each time, green alone.
+- **Root cause:** its quiet wait asked for a run of quiet polls as long as half the worst thread-pool lag it had seen, in milliseconds,
+  and bounded the whole wait at 2,000 polls. Under load one spike of the lag asked for more quiet polls than the bound left, each poll
+  itself slowed by that lag, so a graph that had gone quiet ran out the bound first.
+- **Fix:** the moment and the bound are both kept in time: quiet for twice the worst lag seen (at least 40 ms), the wait bounded at 120
+  seconds of wall time.
+- **Verification:** the class passes, 189 of 189, and passed inside the driver's whole fast half beside two install sessions and a
+  design writer (one unrelated failure there, `ReadShareAccountTests`, a held file, left to FLAKE1).
+
 ## 2026-10-26 - The swap journal's held-reader case failed under load, its reader let go by a starved pool (FLAKE1)
 
 - **Symptom:** `StagedBuildTests.A_journal_a_reader_holds_for_a_moment_is_still_written` failed with `UnauthorizedAccessException` at the
