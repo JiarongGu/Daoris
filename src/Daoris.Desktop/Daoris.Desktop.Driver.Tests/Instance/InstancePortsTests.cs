@@ -114,4 +114,19 @@ public sealed class InstancePortsTests
         Assert.Null(git.Verbs);
         Assert.Null(git.Isolated);
     }
+
+    [Fact]
+    public void The_role_terminal_mark_and_refusal_the_door_reads_are_the_instances_and_the_roles_write_the_mark()
+    {
+        // The mark itself is never set here: the entry's take is the roles' (SessionsCommandRoleTerminalTests holds it), and a case that
+        // flipped it would be seen by every door running beside it.
+        Assert.Equal(TerminalRole.Held, HolderKey.RoleTerminal);
+        Assert.Equal(TerminalRole.Held, new InstanceWorld { Home = null }.RoleTerminal());
+
+        Assert.Equal("role-terminal", TerminalRole.Code);
+        Assert.Equal(TerminalRole.Code, RoleTerminal.Code);
+        Assert.Equal(TerminalRole.Sentence, RoleTerminal.Sentence);
+        Assert.Equal($"trees: {TerminalRole.Sentence} (role-terminal)", TerminalRole.Refusal("trees"));
+        Assert.Equal(TerminalRole.Refusal("trees"), RoleTerminal.Refusal("trees"));
+    }
 }

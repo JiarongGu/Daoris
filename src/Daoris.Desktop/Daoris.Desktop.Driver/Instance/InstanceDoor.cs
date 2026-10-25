@@ -85,10 +85,10 @@ public sealed class InstanceWorld : IToolTerminal
     public Func<int?, bool>? ServedBy { get; init; }
 
     /// <summary>
-    /// Whether this verb runs in a role's terminal (STEWARDROLE1a-i, D209 §3.3): the entry's marker, <see cref="HolderKey.RoleTerminal"/>,
-    /// unless a test names its own. Such a verb sends no person's press and acts nothing alone (<see cref="RoleTerminal"/>).
+    /// Whether this verb runs in a role's terminal (STEWARDROLE1a-i, D209 §3.3): the entry's marker, <see cref="TerminalRole.Held"/>,
+    /// unless a test names its own. Such a verb sends no person's press and acts nothing alone (<see cref="TerminalRole"/>).
     /// </summary>
-    public Func<bool> RoleTerminal { get; init; } = () => HolderKey.RoleTerminal;
+    public Func<bool> RoleTerminal { get; init; } = () => TerminalRole.Held;
 
     /// <summary>A person's press sent through <see cref="InstanceDoor.PressAsync"/> from this terminal.</summary>
     public Task<int> PressAsync(InstanceRoute route, object? payload, Func<Task<int>> alone, Func<JsonElement, int> words, CancellationToken ct) =>
@@ -524,7 +524,7 @@ public static class InstanceDoor
     /// <summary>A role's terminal's verb refused (STEWARDROLE1a-i, D209 §3.3), before it connects or instead of acting alone: exit 2.</summary>
     public static async Task<int> RoleRefusedAsync(InstanceWorld world)
     {
-        await world.Error.WriteLineAsync(RoleTerminal.Refusal(world.Verb)).ConfigureAwait(false);
+        await world.Error.WriteLineAsync(TerminalRole.Refusal(world.Verb)).ConfigureAwait(false);
         return 2;
     }
 

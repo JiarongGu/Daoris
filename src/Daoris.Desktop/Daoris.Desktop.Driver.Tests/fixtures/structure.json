@@ -907,13 +907,6 @@
       }
     },
     {
-      "family": "Instance names Roles",
-      "after": "Instance",
-      "files": {
-        "Instance/InstanceDoor.cs": ["HolderKey","RoleTerminal"]
-      }
-    },
-    {
       "family": "Events names Agents",
       "after": "Events",
       "files": {

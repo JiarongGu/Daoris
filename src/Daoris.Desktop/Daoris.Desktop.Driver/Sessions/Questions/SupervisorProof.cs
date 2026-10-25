@@ -26,7 +26,6 @@ public static class HolderKey
     public const int Bytes = 32;
 
     private static string? _taken;
-    private static bool _roleTerminal;
 
     /// <summary>A new key, in hex: drawn at each appointment and never reused.</summary>
     public static string Draw() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(Bytes));
@@ -55,7 +54,7 @@ public static class HolderKey
     {
         _taken = Environment.GetEnvironmentVariable(Variable);
         // STEWARDROLE1a-i (D209 §2.2): present at the entry, whatever its value and whether or not it is a key.
-        _roleTerminal = _taken is not null;
+        TerminalRole.Held = _taken is not null;
         Strip();
     }
 
@@ -67,13 +66,13 @@ public static class HolderKey
     /// value, so this process started in a role's terminal. Every guard reads this, never the environment after the entry, which
     /// <see cref="Take"/> has already emptied.
     /// </summary>
-    public static bool RoleTerminal => _roleTerminal;
+    public static bool RoleTerminal => TerminalRole.Held;
 
     /// <summary>A test's own entry undone, so the marker does not outlive the case that took it.</summary>
     internal static void Forget()
     {
         _taken = null;
-        _roleTerminal = false;
+        TerminalRole.Held = false;
     }
 }
 
@@ -84,11 +83,11 @@ public static class HolderKey
 /// </summary>
 public static class RoleTerminal
 {
-    /// <summary>The refusal's code.</summary>
-    public const string Code = "role-terminal";
+    /// <summary>The refusal's code, which the instance's door says it by.</summary>
+    public const string Code = TerminalRole.Code;
 
     /// <summary>What the refusal says.</summary>
-    public const string Sentence = "this terminal holds a role: act as the role, or press from another terminal";
+    public const string Sentence = TerminalRole.Sentence;
 
     /// <summary>
     /// The verbs a role's terminal runs at all (§2.2's start line, each by its exact prefix): the roles' verbs and the open reads the
@@ -106,7 +105,7 @@ public static class RoleTerminal
     };
 
     /// <summary>The refusal as a verb says it, naming its code.</summary>
-    public static string Refusal(string verb) => $"{verb}: {Sentence} ({Code})";
+    public static string Refusal(string verb) => TerminalRole.Refusal(verb);
 
     /// <summary>
     /// The host's entry, after <see cref="HolderKey.Take"/>: in a role's terminal, a verb it does not run is refused here, said on
