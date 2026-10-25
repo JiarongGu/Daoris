@@ -8,6 +8,9 @@ with the version and date at release.
 - A conversation you picked an account for keeps that pick even when its own conversation is lost (PICKLOST1, D212). Where its limit has
   ended it and the account you picked is cooling, Daoris now waits for that account instead of going on with another, and goes on there
   afresh once it is ready, still on the account you picked. A lost conversation you picked nothing for goes on with another account as before.
+- A running session stays stoppable, and stays marked as running to other Daoris windows on this machine, when a second start of the same
+  record ends beside it (SESSPROC1). A refused or abandoned run used to take the live process out of the running list and delete its
+  marker as it ended, so *Stop* found nothing and another window could mark the record stopped while it ran.
 - A conversation you picked an account for keeps that pick when Daoris moves it to a new part (PICKCARRY1, D212). Going on with Daoris's brief,
   a part opened after the conversation was lost, and a hand-over or limit move that lands on the same account of the same agent each carry the pick
   to the new part, so it too waits for that account while it cools instead of going on with another. A hand-over to another agent, and a
