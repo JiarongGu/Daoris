@@ -1,4 +1,4 @@
-# EVENTHOOK1: the reads (D191): the Opus foundation reader's of rounds 1 to 4, and Codex's of rounds 2 and 3 (its read of round 4 owed)
+# EVENTHOOK1: the reads (D191): the Opus foundation reader's of rounds 1 to 4, and Codex's of rounds 2 to 4
 
 The independent Opus 5.5 reader's foundation read of `docs/2026-10-24-event-hook-design.md` and its D173, D119 and D120 notes at `71e08c3c0`, verbatim but for its headings set one level down. The steward ran it from outside the install, read-only, on main. Codex's read stopped when its credits ran out and is owed; under D191's note of 2026-10-24 this design, which sends Daoris's events outside it, is not accepted on one maker's read. The Opus foundation reader asks another round (16 findings, 7 blocking). Round 2 answers it.
 
@@ -1035,3 +1035,65 @@ What does not hold:
 - the conversation rule uses the record's kind, which drops the driver's own intakes', helpers' and reviewers' parks, so it should use `ActiveSessions.HoldsSlot` (finding 2).
 
 Findings 3-10 are line-level corrections. Of them, 3 (the re-arm runs unprompted, measured in M5) and 5 (the steward's procedure for each line) decide whether the steward actually stops polling unattended. If the steward would rather change the agents' job's descriptor (finding 1's option b), that touches D201's judge and should have its own read.
+
+## Codex, round 4
+
+Codex's read of round 4, with the Opus foundation reader's named changes taken in its §16, at `eced2688e`: 10 findings in its §1 to §5, 4 of them marked blocking, of which §3.1 and §5.2 are one hole seen from delivery and from row 1b, so three blocking holes; accept after named changes. Its §0 judges round 4's answers to its read of round 3. It was run read-only on main, and its links are already repository-relative; its `Design:N` lines are the design's at `eced2688e`, unchanged until the design's §17, which places each finding.
+
+Reviewed HEAD `eced2688e`, read-only; no probes run or files changed. No content under checkout `local/` or outside the checkout was read. **Design** means `docs/2026-10-24-event-hook-design.md`; code prefixes follow Design:76–78.
+
+### 0. Round-3 findings
+
+Severity below is the original severity.
+
+| Finding | Severity | Round-4 standing |
+|---|---|---|
+| K1.1 — holder-key reader | **non-blocking** | **Taken.** `steward` is now named alongside `sessions supervise`; Design:244, `Host/Program.cs:660`. |
+| K1.2 — installed bin location | **non-blocking** | **Taken.** New and legacy locations are distinguished; Design:269, `Driver/Platform/DaorisHome.cs:265`. |
+| K2.1 — unchecked first line | **blocking** | **Taken.** Closed hello schema and fixed diagnostics precede interpolation; Design:742, :787. |
+| K2.2 — incomplete bundle identity | **blocking** | **Taken.** Every bundled file contributes to the hash, with dependency-only changes tested; Design:701, :979–980. |
+| K2.3 — authority and handshake paths | **non-blocking** | **Answered with a reason that holds.** The path-free promise explicitly concerns event frames; the existing handshake carries paths; Design:546, `Driver/Plugins/Hooks.cs:149`. |
+| K3.1 — final rejected event disappears | **blocking** | **Taken.** Its replacement `events.missed` carries its own sequence; Design:528, :979 proof 9. |
+| K3.2 — failed/pending admission stranded | **blocking** | **Taken.** Reconciliation, freed-slot reconsideration and the no-client bound cover those cases; Design:630, :829. |
+| K3.3 — connected recovery coherent | **non-blocking** | **Answered with a reason that holds** for an established source. Hello reconciliation and closing watermarks remain coherent; Design:807, :820; startup has the separate gap below. |
+| K4.1 — watcher without reconciliation | **blocking** | **Taken.** Five-minute reconciliation and a suppressed-callback proof are explicit; Design:630, :980. |
+| K5.1 — measurement gate | **non-blocking** | **Taken.** M5 includes silent termination, killing, compaction and `/clear`; Design:910, :919. |
+| K5.2 — 1b’s final-rejection behavior | **blocking** | **Taken.** Behavior and proof are assigned; Design:979. |
+| K5.3 — 1c’s unresolved protocol choices | **blocking** | **Taken** for the previously named omissions. Hello validation, admission recovery, watcher reconciliation and bundle identity are specified and tested; Design:980. |
+
+### 1. Wrong claims about existing code
+
+None beyond the integration omissions below; those concern how the proposed behavior reaches existing entry and observation paths.
+
+### 2. What leaves Daoris, and what a subscriber can do
+
+1. **Non-blocking — the principal boundary now holds as a design contract.** Names, paths and authored words leave the event grammar before plugin delivery; existing handshake paths are explicitly acknowledged (Design:538–548; `Driver/Plugins/Hooks.cs:149`). The relay gains no action authority, the role terminal remains closed, and the copied executable avoids the launcher’s actual `app/` process check (Design:692, :695–738; `Driver/Sessions/Questions/SupervisorProof.cs:97`; `Daoris.Desktop.Launcher/Program.cs:72`).
+
+2. **Blocking — `--where`’s fixed-output rule misses the host’s earlier lease printers.** Design:717 requires fixed sentences except its successful path line, but generic lease handling prints `leaseRefused` or `error.Message` before the proposed early routes (`Host/Program.cs:400–420`). A refusal includes the home and `LeaseHolder.Named`; its `What` comes unchecked from the lease file (`Driver/Platform/HomeLease.cs:210`, :417). Assign fixed-output handling across entry, home resolution and lease acquisition, and test a lease timeout containing authored `what` text on both streams.
+
+3. **Non-blocking — the output bound needs coalescing rules.** Each gapped frame adds a gap line, while repeats produce stderr diagnostics, so the 53-line batch bound does not bound all returned output (Design:813, :816–822). Specify one gap indication per batch and bounded diagnostic tallies; test many gapped and repeated frames together.
+
+### 3. Delivery
+
+1. **Blocking — the first hello can reconcile before the source’s baseline exists.** Hooks start at `Driver/Loop/Driver.cs:888`, before the session snapshot at :924, while `AttentionWatch.Observe` discards the entire first observation at `Driver/Quests/Domain/Attention.cs:224`. A relay can receive the new-run hello, reread sessions, then miss a park incorporated into that first baseline; no sequence is minted, the connection remains healthy, and the no-client bound never applies (Design:481, :807, :829). Require a sequenced reconciliation signal after baseline establishment and prove this ordering without any later event or disconnect.
+
+2. **Non-blocking — subsequent restart and relay-end recovery is coherent.** Changed runs, advanced hello watermarks, connection closure and the final watermark trigger reconciliation; an absent receiving session gets reconciliation on its next subscription rather than replay (Design:807–841). Source enqueue order and relay-side filtering also remain consistent with wakes rather than durable messages (Design:564–591).
+
+3. **Non-blocking — the unconditional loss promise exceeds M5’s fallback.** Design:843 says no loss remains unsaid, but :932 explicitly permits a killed relay whose termination does not wake the session, leaving recovery until a later independently started relay. Qualify the guarantee with that measured limitation, or make a successful kill-wake measurement mandatory.
+
+### 4. Places it breaks a decided rule
+
+1. **Non-blocking — D119 retains the superseded grant explanation.** `docs/decisions/D119.md:255–257` still makes switching the plugin on the scope grant, while Design:549–555 and `docs/decisions/D173.md:5460` expressly stop resting scope on that switch. Append the corresponding D119 amendment, preserving its historical note; otherwise the watcher, authority and role-terminal changes respect their decided rules.
+
+### 5. Rows 1a, 1b and 1c
+
+1. **Non-blocking — 1a is buildable first.** Its measurements and adapter-specific gates are usable, including real-session lifetime and permission behavior (Design:910–933, :978). The record must distinguish failures that block progress from explicitly accepted limitations.
+
+2. **Blocking — 1b lacks startup coverage.** Its concurrency and final-rejection proofs do not cover a subscriber reconciling before the first observation establishes its baseline (Design:979; `Driver/Loop/Driver.cs:888`, :924; `Driver/Quests/Domain/Attention.cs:224`). Add the post-baseline signal and the exact ordering proof described in §3.1.
+
+3. **Blocking — 1c lacks the complete entry-output proof.** Its own catch cannot contain output already printed by generic lease handling (Design:980; `Host/Program.cs:407`, :413). **The 1a → 1b → 1c order holds**, but stopping the poll also requires those two corrections and the real installed proof already assigned to 1h (Design:985).
+
+**Verdict: accept after named changes:**
+
+- Emit one sequenced `events.missed` after the first attention baseline is established, including an empty baseline; prove an earlier subscriber reconciliation is followed by that wake without later activity.
+- Put all `events relay --where` entry, home and lease failures under fixed-output handling; prove timeout and error paths echo neither lease-authored text nor paths, while retaining the required lease behavior.
