@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - Compound WorkFrame interactions exhausted the test bound (FRAMEBOUNDS1)
+
+- **Symptom:** the whole nightly web gate on `93f49d4` timed out the driven-send and production-go-ahead/question cases at their existing 20-second limit, with 9,710 other cases passing.
+- **Root cause:** `59280f1ade` kept three driven-send outcomes in one case. The authorization sequence from `3df41bd0d7`, expanded in `cb1e39da66`, combined selected and free Send/Enter refusals, full-phrase typing and approval. Each typed character updates the frame's draft and renders the frame; the shared helper already removes inter-key waits. A diagnostic run observed about 14.5 seconds across the three sends and 9.3 seconds entering the phrase within a 16-second authorization case. Both cases passed in that run: these measurements identify fixture work, not a timing guarantee or the sole scheduling cause of the nightly failures.
+- **Fix:** the independent taken-at-once outcome has its own case. Held-to-idle stays together so the preceding hold's notification cannot leak into the next send, and all original words are typed through the menu. The authorization case pastes the unchanged full phrase through user-event's real clipboard/input behavior, retaining selected/free Send-and-Enter refusals, approval payload, retained park and empty-box checks. Additional request and no-cancellation assertions cover each driven send. The timeout, production code and shared user-event timing defaults are unchanged.
+- **Verify:** the naturally failing nightly cases remain recorded. The three repaired focused scenarios pass, both affected files pass **117 cases** (formerly 116), and web typechecking passes. No retry, artificial load, shorter phrase, raw value assignment or suppressed assertion was used. FRAMEACT1 retains the emitted React act warnings. Full web and parent integration proof remain owed; FRAMEBOUNDS1 stays open until then.
+
 ## 2026-10-27 - A dropped merge candidate returned as an incomplete green record (QUEUEDROP1)
 
 - **Symptom:** dropping the foundation candidate removed its request, but its checks continued. A real scratch-repository reproduction then recreated the candidate as only `{ state: "green" }`; the runner failed while reading its missing base.

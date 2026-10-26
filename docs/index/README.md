@@ -55,9 +55,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/projects/setup/RepositorySetup.test.tsx` | 47 | 820 |
 | `src/Daoris.Web/src/quests/QuestPage.tsx` | 59 | 1069 |
 | `src/Daoris.Web/src/quests/QuestsView.test.tsx` | 75 | 1464 |
-| `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 60 | 1168 |
+| `src/Daoris.Web/src/work/WorkFrame.conversation.test.tsx` | 61 | 1191 |
 | `src/Daoris.Web/src/work/WorkFrame.landed.test.tsx` | 113 | 1964 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 97 | 1790 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 97 | 1794 |
 | `src/Daoris.Web/src/work/WorkFrame.tsx` | 161 | 2777 |
 | `src/Daoris.Web/src/work/WorkFrame.words.test.tsx` | 52 | 953 |
 | `src/Daoris.Web/src/work/attention/AttentionBand.test.tsx` | 51 | 829 |

@@ -1644,7 +1644,11 @@ describe('a park\'s question', () => {
 
     // Words alone, by *Send* and by Enter: refused, the words kept.
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear choice' }));
-    await userEvent.type(screen.getByLabelText('Message'), 'only the menu entry, not the report');
+    // FRAMEBOUNDS1: a real paste keeps the complete phrase and input event in this authorization sequence,
+    // avoiding a whole-frame render for each character; Enter and the following approval remain real interactions.
+    const user = userEvent.setup();
+    await user.click(screen.getByLabelText('Message'));
+    await user.paste('only the menu entry, not the report');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
     await userEvent.type(screen.getByLabelText('Message'), '{Enter}');
     expect(screen.getByRole('alert')).toHaveTextContent('Answer its go-aheads above first: then this answer sends it on with them.');
