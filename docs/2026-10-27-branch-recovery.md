@@ -89,6 +89,12 @@ behavior, public serialized shapes and exact instruction output. The census is 3
 Context's 25 and Course's 16 left for Agents. Each checkpoint's focused proof is in the branch's D212 notes; the complete
 mod-ix row and its integration proof remain open.
 
+Context was then committed on the cumulative branch as `acea4d5c4`, with test-only follow-up `c75302ca2`. Its 25 tuples are cut,
+leaving 365 edges in 39 families and only Course's 16 for Agents. The corrected 776-case focused selection includes the
+original asynchronous transcript behavior; CONTEXTVISIBILITY1 retains its fixture correction through integration.
+Course has started under the same conversation, with message acknowledgment and recovery behavior kept as the review
+boundary. Nothing here marks the full mod-ix row, its quest or its parent integration complete.
+
 A combined focused run also exposed AGENTPORTISOLATION1: temporary test wiring reached an unrelated prompt consumer.
 The four new replacing fixtures were isolated, and a 494-case combined selection passed. The follow-up audit includes
 three earlier fixtures with the same shared-state hazard, inferred from their code rather than additional observed
