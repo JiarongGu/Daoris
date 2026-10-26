@@ -474,6 +474,13 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void Agents_reads_review_background_data_below_the_review_operation()
+    {
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && (edge.Type == "ReviewDesk" || edge.Type == "RunningTask" && edge.DeclaredIn.Any(path => !path.StartsWith("Agents/", StringComparison.Ordinal)))));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

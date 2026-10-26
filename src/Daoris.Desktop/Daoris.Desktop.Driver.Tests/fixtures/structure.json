@@ -998,15 +998,6 @@
       }
     },
     {
-      "family": "Agents names Review",
-      "after": "Agents",
-      "files": {
-        "Agents/Acp.cs": ["RunningTask"],
-        "Agents/AcpBackground.cs": ["RunningTask"],
-        "Agents/Adapters.cs": ["ReviewDesk"]
-      }
-    },
-    {
       "family": "Agents names Roles",
       "after": "Agents",
       "files": {

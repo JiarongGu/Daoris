@@ -1171,7 +1171,7 @@ public static class TargetPrompt
             // REVIEWENV1d (design §2.3 steps 1–4): the tab the driver opened before this session, by the title it gave it, and
             // what Daoris does with the folder once the session ends. The service's `review_serve` answers for the moment itself.
             .Append(local
-                ? $"- Daoris opened a tab of its browser for you, titled `{ReviewDesk.TabTitle(target.QuestId)}` until you navigate it. "
+                ? $"- Daoris opened a tab of its browser for you, titled `{ReviewTabNames.Title(target.QuestId)}` until you navigate it. "
                   + "Find it among the browser's tabs and work in it: the person sees it, and a tab you open yourself has no window.\n"
                   + "- Build the work as the procedure says, then ask Daoris to serve that build to that tab with your connector's "
                   + $"`review_serve`: the build's folder in this tree, and `{environment.Address}`. Where it answers that nothing is "

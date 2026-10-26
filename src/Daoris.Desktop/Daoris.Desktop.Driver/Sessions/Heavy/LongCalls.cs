@@ -1,8 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>A piece of background work a session's harness says it runs, with when this process heard it announced (FABRIC-PIPELINE1c).</summary>
-public sealed record RunningTask(string Id, string Name, DateTimeOffset Since);
-
 /// <summary>
 /// A long call said (FABRIC-PIPELINE1c, D192 point 5's fourth layer; the pipeline design §3.2): a running call or a background task of a
 /// driven session whose run's checks are <c>light</c>, past its pipeline's <c>callMinutes</c>, is told to the session once, at urgent level,
