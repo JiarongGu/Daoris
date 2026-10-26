@@ -43,4 +43,7 @@ public sealed record ServiceReply(int Status, string Payload)
     /// (BRAINSTORM1a), which says which tier found its sources; null where the door carries no such header.
     /// </summary>
     public string? Tier { get; init; }
+
+    /// <summary>The service host's process run; absent on a host before FOUNDATION1 d-i.</summary>
+    public string? Run { get; init; }
 }

@@ -620,10 +620,10 @@ public sealed record AnswerSessionRequest(string? Answer);
 public sealed record OpenSessionRequest(
     string Quest, string Adapter, string? HarnessVersion, string? Profile, string? Tree,
     string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null,
-    Dictionary<string, string>? Access = null, string? Actor = null);
+    Dictionary<string, string>? Access = null, string? Actor = null, string? Opens = null);
 public sealed record OpenChatRequest(
     string Repository, string? Adapter, string? HarnessVersion, string? Profile, string? Tree,
-    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null, string? Actor = null);
+    string? BaseCommit = null, string? From = null, string? FromWhy = null, string? FromBy = null, string? Actor = null, string? Opens = null);
 // An intake (D65 §1b): the ask it answers and the room it runs in — the driver's, which is the half
 // that is about to run a process there. The circle comes from the ask, never from the caller.
 public sealed record OpenIntakeRequest(
@@ -680,6 +680,8 @@ public sealed record AdvanceSessionRequest(
 // SUPERVISOR1a-i (D208): a park the driver took up put back, less the supervisor's words it admitted and never handed.
 public sealed record RestoreParkRequest(IReadOnlyList<string>? TakeBack, string? Note, JsonElement? NoteParts = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
+public sealed record SessionOpenResponse(SessionResponse? Session, string Message, string Opens,
+    IReadOnlyList<OpenTransfer> Transfer, string? Head = null, string? Error = null, string? Code = null);
 // `FirstLine` and `LastLine` (ORIENT2e): the lines of its file an entry is, as `/api/entries` answers them, taken
 // only where they can be its body's; a feed that names none is read as before.
 public sealed record FeedEntryRecord(
@@ -854,6 +856,7 @@ public sealed record ChangesResponse(string Since, IReadOnlyList<string> Moved);
 [JsonSerializable(typeof(HelpModeRequest))]
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
+[JsonSerializable(typeof(SessionOpenResponse))]
 [JsonSerializable(typeof(SessionDeletionResponse))]
 [JsonSerializable(typeof(SayRequest))]
 [JsonSerializable(typeof(SaidResponse))]

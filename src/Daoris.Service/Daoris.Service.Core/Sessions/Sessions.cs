@@ -459,12 +459,22 @@ public sealed class SessionStore
     /// <summary>The connection's gate: every command here runs inside it (SQLITETX1).</summary>
     private readonly ConnectionGate _db;
 
-    private SessionStore(SqliteConnection connection) => _db = ConnectionGate.For(connection);
+    private SessionStore(SqliteConnection connection)
+    {
+        _db = ConnectionGate.For(connection);
+        Opens = new SessionOpens(_db);
+    }
+
+    public SessionOpens Opens { get; }
 
     public static async Task<SessionStore> OpenAsync(SqliteConnection connection, CancellationToken ct = default)
     {
         var store = new SessionStore(connection);
-        await store._db.RunAsync(() => store.EnsureSchemaAsync(ct), ct).ConfigureAwait(false);
+        await store._db.RunAsync(async () =>
+        {
+            await store.EnsureSchemaAsync(ct).ConfigureAwait(false);
+            await store.Opens.EnsureAsync(ct).ConfigureAwait(false);
+        }, ct).ConfigureAwait(false);
         return store;
     }
 
@@ -1037,7 +1047,7 @@ public sealed class SessionStore
     public Task<Session?> ContinuedByAsync(string id, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
         await using var command = _db.Command();
-        command.CommandText = "SELECT * FROM sessions WHERE from_session = $id AND origin IS NULL ORDER BY created DESC LIMIT 1";
+        command.CommandText = "SELECT * FROM sessions WHERE from_session = $id AND origin IS NULL ORDER BY created DESC, rowid DESC LIMIT 1";
         command.Parameters.AddWithValue("$id", id);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;

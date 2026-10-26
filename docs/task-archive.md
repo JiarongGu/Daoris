@@ -51,6 +51,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 **Outcome.** The census uses `tools/fsx.mjs:repositoryFiles`, whose inventory excludes ignored build output before any traversal. The focused census and helper tests (14), CLI typecheck and the complete `npm run verify` pass. Root cause and evidence are in the fix log.
 
+## FOUNDATION1d-i — the keyed open and its record (2026-10-27)
+
+> **FOUNDATION1d-i — the keyed open and its record** (service, driver; D212, Part B accepted 2026-10-25). Build `docs/2026-10-25-foundation-design.md` §10's row 1d-i, §3.3's destination and §19.5 and §19.12's protocol marks, with §13.6's row; no word moves until d-ii. Proof: the row's replay, head, deletion, resume exclusion and replaced-host cases, `SessionLedgerTests` whole, and the sessions write's p95 within a tenth of before; across a crash, f-i's case.
+
+**Outcome.** The ledger keeps keyed opens in `session_opens` in the open's exclusive step, replays before validation, and excludes resuming a predecessor whose destination stands. The client negotiates host runs and holds uncertain retries. Transfers stay empty. Detail, proof and landing measurement: D212's dated note. FOUNDATION1's backlog row stays unchanged.
+
 ## PICKLOST1 — a lost conversation whose account the person picked walks off that account (2026-10-26)
 
 > **PICKLOST1 — a lost conversation whose account the person picked walks off that account** (driver; found by reading PICKCARRY1's landing, 2026-10-26). The ended limit move lets a conversation proven lost walk its agent's accounts even where the person picked its account (`Conversations/Chat/LimitMove.cs:275`, *a conversation proven lost has no resume to keep*), so a lost conversation whose picked account cools opens on another and keeps no pick; that conflates the resume with the account, and FOUNDATION1 row 1a-ii's rule is that a recorded pick waits. A lost, picked conversation's new part waits for its picked account as any picked conversation does, and opens on it, keeping its pick (PICKCARRY1). Proof, seen failing first: a lost conversation picked on a cooling account waits and opens on it once it is ready; an unpicked lost conversation walks as today.
@@ -21256,3 +21262,21 @@ waiting on a limited record still go on within the line's agent (D137 point 7's 
 (Quest `#85a38274ff45`, asked by `#95c248`.)
 
 **Outcome** 2026-10-26. **Found:** the asked model is carried in `Loop/Driver.cs` `RunAsync` at three places that read the continuation's record (`start.Resumes.Asked`): the model each account is judged for (`SelectHandedAsync` and `CarriedOnAsync`) and the choice the spawn is handed (`target.Asked`, `carried.Asked`), since a handed quest's carry-on goes by `handedQuest.Agent` and keeps its record's asked whichever agent that was. The press only writes the hand-over (`HandedQuests`); nothing in the move asks the named agent's own choice. **Built:** a continuation of a handed quest whose record asked its choice of another agent (read from `asked.agent`, so a line the old build already moved and the refusal holds is read too) asks the named agent's own choice (`ActorChoices.Effective(handed:)`): Build's first entry for it where the role lists one, else its default with no model, the record's choice `handed`; and a model that agent refuses at the open is re-asked on the role's later entries for it, then its default, on the same account (`ReaskHandedAsync`), instead of ending `choice-not-offered` (a handed quest's first start, which had no part before, takes the same re-ask). **Proved** by `PressModelTickTests` (real ticks on the protocol door, each case seen failing first with the install's symptom, the second agent asked `sonnet`, refusing it and the line held on the account's refusal: the install's case opening on the second agent's default and running; a role listing it later asking that choice's model and effort; a refused model re-asked on the next choice and on the default; the held line going on at the next look with no press); `WalkAgentTickTests`, `HandOverTests`, `HandOverLookTests`, `AccountRotationTickTests`, `LimitResumeTickTests`, `ResumeAccountTests` and `LineAccountTests` still pass. **Not done:** the install's two quests are freed at the next look of an installed build with this change; that is not proved on the install. Detail: the fix-log entry of 2026-10-26 and D163's and D205's notes of the same day.
+
+## OPENANSWER1 — unreadable committed destination answers stay held (2026-10-27, D212)
+
+> - [ ] **OPENANSWER1 — unreadable committed destination answers stay held** (FOUNDATION1 1d-i review, 2026-10-27). `SessionOpenDoors` accepts missing destinations or throws on valid JSON with wrong field kinds, losing its lost-answer recovery path. Hold those answers, retain the retry key and renegotiate before replay; prove an unmarked host is never opened twice and malformed diagnostic candidates cannot release the hold.
+
+**Outcome** 2026-10-27: Validate successful destination answers before adoption and keep unreadable answers in lost-open recovery. Nine regressions failed first; all 17 door cases now pass, including unmarked-host no-replay and malformed diagnostic candidates. Root cause and proof: the OPENANSWER1 fix-log entry.
+
+## BEATWRITE1 — containment heartbeat survives a killed write (2026-10-27)
+
+> - [ ] **BEATWRITE1 — containment heartbeat survives a killed write** (integration, 2026-10-27). `HeavyRunProcessTests` reported a zero heartbeat in the suite and passed alone; its Node producer truncates the live timestamp before writing it. Reproduce a kill between truncate and write, then publish only complete timestamps so a stopped writer leaves valid evidence without masking a live descendant.
+
+**Outcome** 2026-10-27: The fixture publishes each complete beat by rename. A writer stopped at its next write preserves the previous timestamp; the regression failed first and both affected classes pass, 21 tests. Existing containment assertions are unchanged; mechanism and limits are in the BEATWRITE1 fix-log entry.
+
+## HANDOVERPATIENCE1 — hand-over fixture uses the shared failure patience (2026-10-27)
+
+> - [ ] **HANDOVERPATIENCE1 — hand-over fixture uses the shared failure patience** (integration, 2026-10-27). `HandOverLookTests` times out a driver tick after ten seconds without asserting an elapsed-time contract. Use the test project's `Poll.Patience` as required by held-clocks, run the class and the full fast gate, and retain the loaded-run sighting under FLAKE1.
+
+**Outcome** 2026-10-27: Tick answers use shared failure patience, keeping every behavioral assertion. Both affected classes pass, 21 tests, and the whole branch fast suite passes, 14,938 tests. The original queue sighting and its unproven scheduling cause remain in the fix-log entry under FLAKE1; the integrated candidate's gates are still owed.

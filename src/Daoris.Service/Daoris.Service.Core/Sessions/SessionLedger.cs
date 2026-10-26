@@ -8,6 +8,10 @@ public enum SessionOpenRefusal
 {
     None,
 
+    Gone,
+
+    Superseded,
+
     /// <summary>No quest under that id.</summary>
     QuestNotFound,
 
@@ -50,7 +54,12 @@ public enum SessionOpenRefusal
 /// <param name="Refusal"><see cref="SessionOpenRefusal.None"/> when a session was queued.</param>
 /// <param name="Message">The full answer, phrased once here so no two doors can drift apart on it.</param>
 /// <param name="Session">The queued session, when there is one.</param>
-public sealed record SessionOpenOutcome(SessionOpenRefusal Refusal, string Message, Session? Session);
+public sealed record SessionOpenOutcome(SessionOpenRefusal Refusal, string Message, Session? Session)
+{
+    public string? Opens { get; init; }
+    public IReadOnlyList<OpenTransfer> Transfer { get; init; } = [];
+    public string? Head { get; init; }
+}
 
 /// <summary>Why a session did not move — or <see cref="None"/> when it did.</summary>
 public enum SessionAdvanceRefusal
@@ -661,8 +670,14 @@ public sealed class SessionLedger(
         string repository, string adapter, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
-        string? from = null, string? fromWhy = null, string? fromBy = null, string? actor = null)
+        string? from = null, string? fromWhy = null, string? fromBy = null, string? actor = null, string? opens = null)
     {
+        if (opens is not null)
+            return await KeyedOpenAsync(opens, from, inside => OpenChatAsync(repository, adapter, now,
+                harnessVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, actor), ct).ConfigureAwait(false);
+
+        if (string.IsNullOrWhiteSpace(repository)) throw new ArgumentException("repository is required");
+
         var known = registry is null
             ? null
             : (await registry.RegistryAsync(ct: ct).ConfigureAwait(false))
@@ -712,6 +727,35 @@ public sealed class SessionLedger(
                 session);
         }, ct).ConfigureAwait(false);
     }
+
+    private Task<SessionOpenOutcome> KeyedOpenAsync(
+        string key, string? left, Func<CancellationToken, Task<SessionOpenOutcome>> open, CancellationToken ct) =>
+        sessions.ExclusiveAsync(async inside =>
+        {
+            // Replay precedes even the record-left and request checks: the committed result owns the key.
+            if (await sessions.Opens.FindAsync(key, inside).ConfigureAwait(false) is { } kept)
+            {
+                var record = kept.Gone ? null : await sessions.FindAsync(kept.Opened, inside).ConfigureAwait(false);
+                return record is null
+                    ? new SessionOpenOutcome(SessionOpenRefusal.Gone, $"The destination `{kept.Opened}` is gone.", null) { Opens = key }
+                    : new SessionOpenOutcome(SessionOpenRefusal.None, $"Session `{record.Id}` was opened.", record)
+                        { Opens = key, Transfer = kept.Transfer };
+            }
+
+            var before = left is null ? null : await sessions.FindAsync(left, inside).ConfigureAwait(false);
+            if (before is null)
+                return new SessionOpenOutcome(SessionOpenRefusal.Gone, $"The record left `{left}` is gone.", null) { Opens = key };
+            var head = await Lines.HeadOf(sessions, before, inside).ConfigureAwait(false);
+            if (before.Origin is not null || before.Active || head?.Id != before.Id)
+                return new SessionOpenOutcome(SessionOpenRefusal.Superseded,
+                    $"Session `{before.Id}` cannot be left; its head is `{head?.Id ?? "unplaced"}` and its state is {before.StateName}.", null)
+                    { Opens = key, Head = head?.Id };
+
+            var result = await open(inside).ConfigureAwait(false);
+            if (result.Session is { } opened && result.Refusal == SessionOpenRefusal.None)
+                await sessions.Opens.KeepAsync(key, before.Id, opened.Id, inside).ConfigureAwait(false);
+            return result with { Opens = key };
+        }, ct);
 
     /// <summary>
     /// The record with the entry's key it answers (SESSONE1a, D167 point 3): the one stored, else the rule's over the facts held now.
@@ -1544,8 +1588,15 @@ public sealed class SessionLedger(
         string? harnessVersion = null, string? profile = null, string? tree = null,
         string? baseCommit = null, CancellationToken ct = default,
         string? from = null, string? fromWhy = null, string? fromBy = null,
-        IReadOnlyDictionary<string, string>? access = null, string? actor = null)
+        IReadOnlyDictionary<string, string>? access = null, string? actor = null, string? opens = null)
     {
+        if (opens is not null)
+            return await KeyedOpenAsync(opens, from, inside => OpenAsync(questId, adapter, now,
+                harnessVersion, profile, tree, baseCommit, inside, from, fromWhy, fromBy, access, actor), ct).ConfigureAwait(false);
+
+        if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(adapter))
+            throw new ArgumentException("quest and adapter are required");
+
         // The caller's mistake is said before anything is read or held.
         var setup = SessionAccess.Judged(access);
         var quest = await quests.FindAsync(questId.TrimStart('#'), ct).ConfigureAwait(false);
@@ -1740,6 +1791,11 @@ public sealed class SessionLedger(
             {
                 return new SessionAdvanceOutcome(SessionAdvanceRefusal.NotFound, $"No session `{id}`.", Session: null);
             }
+
+            if ((!session.Active || session.State == SessionState.AwaitingPerson) && target != session.State
+                && await sessions.Opens.LeftForAsync(id, inside).ConfigureAwait(false) is { } destination)
+                return new SessionAdvanceOutcome(SessionAdvanceRefusal.Terminal,
+                    $"Session `{id}` continued in `{destination}`; its old record does not move.", Session: null);
 
             if (target == SessionState.Working && Admits(session, expect) is { } changed) return changed;
 

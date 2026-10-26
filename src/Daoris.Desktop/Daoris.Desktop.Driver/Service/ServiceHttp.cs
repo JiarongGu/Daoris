@@ -77,6 +77,7 @@ public sealed class ServiceHttp : IServiceDoors
         return new ServiceReply((int)response.StatusCode, await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false))
         {
             Tier = response.Headers.TryGetValues("x-daoris-tier", out var tier) ? tier.FirstOrDefault() : null,
+            Run = response.Headers.TryGetValues("x-daoris-run", out var run) ? run.FirstOrDefault() : null,
         };
     }
 

@@ -228,6 +228,12 @@ if (origins.Count > 0)
 }
 
 var app = builder.Build();
+var hostRun = Guid.NewGuid().ToString("N");
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["x-daoris-run"] = hostRun;
+    await next(context);
+});
 
 // FABRIC-EVENT3b (the fabric events design §A4.2): which ledger families moved, heard on an observer connection of its own, so
 // the driver wakes on a quest an agent published rather than at its pace. A local host's alone: a shared host serves no machine's
@@ -469,8 +475,7 @@ app.MapGet("/api/status", (ComposedService s, string? prove) => new StatusRespon
 // start, so a host replaced under one client is told from its predecessor; `marks` are the protocol versions it keeps, each a version: `settled` 1
 // is the settlement (a key the line settled answered `Settled` to a say or hand that asks with `settled: true`). A host before this answers none,
 // and a client keeps no mark for it.
-var hostRun = Guid.NewGuid().ToString("N");
-app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1 }));
+app.MapGet("/api/protocol", () => new ProtocolResponse(hostRun, new Dictionary<string, int> { ["settled"] = 1, ["opens"] = 1 }));
 
 // Every cross-repository answer below takes `workspace` — the unit of sharing (D48 §4). Absent spans
 // every circle this deployment holds, which for a shared host is one by construction and for a local
@@ -1927,7 +1932,7 @@ app.MapGet("/api/sessions", async (
 app.MapPost("/api/sessions", async (
     ComposedService s, HttpContext http, OpenSessionRequest body, CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(body.Quest) || string.IsNullOrWhiteSpace(body.Adapter))
+    if (body.Opens is null && (string.IsNullOrWhiteSpace(body.Quest) || string.IsNullOrWhiteSpace(body.Adapter)))
     {
         return Results.BadRequest(new ErrorResponse("quest and adapter are required"));
     }
@@ -1941,13 +1946,14 @@ app.MapPost("/api/sessions", async (
     {
         outcome = await s.Ledger.OpenAsync(
             body.Quest, body.Adapter, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree,
-            body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy, body.Access, actor: body.Actor);
+            body.BaseCommit, ct, body.From, body.FromWhy, body.FromBy, body.Access, actor: body.Actor, opens: body.Opens);
     }
     catch (ArgumentException refused)
     {
-        return Results.BadRequest(new ErrorResponse(refused.Message));
+        return MalformedOpen(body.Opens, refused.Message);
     }
 
+    if (body.Opens is not null) return await OpenAnswerAsync(s, outcome, http);
     return outcome.Refusal switch
     {
         SessionOpenRefusal.None => Results.Ok(
@@ -1967,19 +1973,28 @@ app.MapPost("/api/sessions", async (
 app.MapPost("/api/sessions/chat", async (
     ComposedService s, HttpContext http, OpenChatRequest body, CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(body.Repository))
+    if (body.Opens is null && string.IsNullOrWhiteSpace(body.Repository))
     {
         return Results.BadRequest(new ErrorResponse("repository is required"));
     }
 
-    var outcome = await s.Ledger.OpenChatAsync(
-        body.Repository,
-        // The adapter is the harness, never a model (D24). Silence takes the supported one.
-        string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
-        DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, body.BaseCommit, ct,
-        // The conversation a hand-over goes on from (MIXAGENT1a-iii), as the driver says it.
-        body.From, body.FromWhy, body.FromBy, actor: body.Actor);
+    SessionOpenOutcome outcome;
+    try
+    {
+        outcome = await s.Ledger.OpenChatAsync(
+            body.Repository,
+            // The adapter is the harness, never a model (D24). Silence takes the supported one.
+            string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
+            DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, body.Tree, body.BaseCommit, ct,
+            // The conversation a hand-over goes on from (MIXAGENT1a-iii), as the driver says it.
+            body.From, body.FromWhy, body.FromBy, actor: body.Actor, opens: body.Opens);
+    }
+    catch (ArgumentException refused)
+    {
+        return MalformedOpen(body.Opens, refused.Message);
+    }
 
+    if (body.Opens is not null) return await OpenAnswerAsync(s, outcome, http);
     return outcome.Refusal switch
     {
         SessionOpenRefusal.None => Results.Ok(
@@ -1990,6 +2005,20 @@ app.MapPost("/api/sessions/chat", async (
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
+
+IResult MalformedOpen(string? key, string message) => key is null
+    ? Results.BadRequest(new ErrorResponse(message))
+    : Results.BadRequest(new SessionOpenResponse(null, message, key, [], Error: message, Code: "malformed"));
+
+async Task<IResult> OpenAnswerAsync(ComposedService service, SessionOpenOutcome outcome, HttpContext http)
+{
+    var ok = outcome.Refusal == SessionOpenRefusal.None;
+    return Results.Json(new SessionOpenResponse(
+        outcome.Session is { } record ? await ToSessionAsync(service, record, MachineLocal(http)) : null,
+        outcome.Message, outcome.Opens!, outcome.Transfer, outcome.Head, ok ? null : outcome.Message,
+        ok ? null : outcome.Refusal.ToString().ToLowerInvariant()),
+        statusCode: ok ? 200 : outcome.Refusal == SessionOpenRefusal.Gone ? 404 : 409);
+}
 
 app.MapPost("/api/sessions/{id}/state", async (
     ComposedService s, HttpContext http, string id, AdvanceSessionRequest body, CancellationToken ct) =>

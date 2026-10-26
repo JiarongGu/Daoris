@@ -108,6 +108,27 @@ repository.
   after the first held instead of moving, and now moves with that choice's model and effort on its wire. `HandOverLookTests`;
   `LimitResumeTickTests`, `AccountRotationTickTests`, `ResumeAccountTests`, `LineAccountTests`, `AccountRotationWalkTests` pass.
 
+## 2026-10-27 - A hand-over fixture bounded an answer by a private ten-second patience (HANDOVERPATIENCE1, FLAKE1)
+
+- **Symptom:** the integrated driver's fast suite timed out `HandOverLookTests.A_box_naming_an_agent_this_build_does_not_have_is_refused` at its ten-second `WaitAsync`; the queue handed the candidate back, and its diagnostic whole run did not reproduce the signature.
+- **Root cause:** the fixture used a private ten-second failure bound while asserting no elapsed-time contract. That violates the shared failure-patience rule in `.claude/knowledge/held-clocks.md`; the original loaded run's physical scheduling cause remains unproven and retained as a FLAKE1 sighting.
+- **Fix:** all tick answers in this class use the driver's `Poll.Patience`. No product wait or assertion changed, and this is not a fix to an elapsed-time window.
+- **Verify:** both affected classes pass, 21 tests; the branch's whole fast driver suite passes, 14,938 tests. A fresh integrated candidate still owes its queue gates.
+
+## 2026-10-27 - Killing a containment fixture's writer could erase its heartbeat (BEATWRITE1)
+
+- **Symptom:** the full Process suite read a zero heartbeat in `HeavyRunProcessTests`' two-run containment case; the case passed alone.
+- **Root cause:** the Node fixture truncated the published timestamp before writing its next value. A deterministic interruption at that open reproduces an empty file after a previously valid beat. This proves the mechanism, not the exact scheduling of the original sighting.
+- **Fix:** write the next timestamp to a sibling file and rename it into place only when complete. Killing the child during a write retains its last complete beat; the existing descendant-liveness and no-overlap assertions remain intact.
+- **Verify:** the interruption regression reached the writer and failed with an empty timestamp before the fix. Both `HeavyRunProcessTests` and `HandOverLookTests` pass afterward, 21 tests, including the existing real-process containment cases.
+
+## 2026-10-27 - Valid JSON could escape a committed open's lost-answer hold (OPENANSWER1)
+
+- **Symptom:** review of FOUNDATION1 row 1d-i reproduced eight unreadable successful replies that either threw or returned no destination without holding; a ninth case threw while reading diagnostic candidates.
+- **Root cause:** candidate `d8c85e58f` caught JSON syntax errors but trusted successful reply shapes. `TryGetProperty` and `EnumerateArray` throw on wrong kinds, a missing destination silently returned null, and a missing keyed transfer became an empty list. The candidates read also assumed an array.
+- **Fix:** `SessionOpenDoors` validates the root, nonblank destination and keyed transfer list before accepting a successful open. Shape failures enter the existing lost-answer hold, retaining the key and requiring fresh protocol negotiation before retry. Unreadable candidate lists leave the hold intact with no candidates.
+- **Verify:** all nine new regressions failed before the fix; all 17 `SessionOpenDoorsTests` pass afterward. Coverage includes missing and wrongly typed data, successful key-preserving replay after negotiation, and no second POST to an unmarked host. The candidate's focused service/ledger 129 and HTTP 9 checks also pass.
+
 ## 2026-10-26 - The page's refusal-code twin read a moved class's constants from the file it left (FOUNDATION1 mod-vii)
 
 - **Symptom:** `src/locales/say.test.ts` failed two cases in FOUNDATION1 row p's land test: *`HandOverAskWhy.QuestClosed` is not a literal in
