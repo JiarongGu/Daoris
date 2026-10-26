@@ -67,6 +67,11 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 **Preview repair.** Candidate `a34bb83` failed three driver fast tests and was not promoted. The marker inventory now recognizes the connector's exact lower-owner alias, keeping every writer and rationale; its eight focused cases pass. The shared participant reader table places the moved reads and keeps both repository aliases visible in all three scans, retaining reader classifications and row obligations; driver 3, modules 2 and service 2 focused cases pass, plus 5 merge selection/source-parser cases. The cleanup race is repaired as GITSEEDWAIT1 below. D212 records the red and green proof. The parent's full integration proof and landing remain owed; the quest stays Taken.
 
+**Integration outcome.** The repaired branch landed as `85fd557`. All 21 whole nightly gates ran without reused verdicts:
+twenty passed and the modules Process gate passed with a recorded fixture-disposal flake, HOSTCLEAN1. The exact historical
+opinion-resume case passed and its CI finding cleared normally. D212 and the branch recovery report retain the qualified
+receipt; the full FOUNDATION1 refactor remains open.
+
 ## GITSEEDWAIT1 — seed cleanup's held-file release follows an actual refusal (2026-10-27)
 
 > Make the test coordinate the actual attempted removal and explicit release rather than relying on the pool timer winning a wall-clock race.
@@ -21300,3 +21305,12 @@ waiting on a limited record still go on within the line's agent (D137 point 7's 
 > - [ ] **HANDOVERPATIENCE1 — hand-over fixture uses the shared failure patience** (integration, 2026-10-27). `HandOverLookTests` times out a driver tick after ten seconds without asserting an elapsed-time contract. Use the test project's `Poll.Patience` as required by held-clocks, run the class and the full fast gate, and retain the loaded-run sighting under FLAKE1.
 
 **Outcome** 2026-10-27: Tick answers use shared failure patience, keeping every behavioral assertion. Both affected classes pass, 21 tests, and the whole branch fast suite passes, 14,938 tests. The original queue sighting and its unproven scheduling cause remain in the fix-log entry under FLAKE1; the integrated candidate's gates are still owed.
+
+## CILEDGER1 — surviving opinion-resume finding reconciled (2026-10-27)
+
+> - [ ] **CILEDGER1 — reconcile the surviving opinion-resume finding** (CI audit, 2026-10-27). CI still reports the historical `OpinionResumeTickTests` failure at `75131f4d`, while later process verdicts are green. Recheck the exact case on a descendant and determine whether the defect or clearance bookkeeping remains; preserve evidence until an authoritative pass clears it.
+
+**Outcome** 2026-10-27: The exact case and all five class cases passed in the whole nightly driver Process run on
+`85fd557`. CI cleared the historical finding at 19:49:10 UTC under its normal descendant-pass rule. The earlier standalone
+pass did not clear it; no ledger was edited by hand and no bookkeeping defect was established. The qualified full-run
+receipt, including the separate HOSTCLEAN1 fixture flake, is in `docs/2026-10-27-branch-recovery.md`.

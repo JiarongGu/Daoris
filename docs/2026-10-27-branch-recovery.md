@@ -65,6 +65,15 @@ and service checks two each, merge/source-parser checks five, CLI record checks 
 checks two. The structure census remains 431 edges in 48 families. Requeue, full integration and
 landing remain owed; the quest remains Taken.
 
+The repaired Knowledge branch subsequently landed as `85fd557`. Its whole nightly run exercised all 21 gates with no
+verdicts reused: CI finished green under the declared policy, with twenty passes and one Process flake. The full driver
+and Git halves, family rehearsal, deployment rehearsal and browser checks passed. The modules Process flake passed alone;
+its original failure was a busy-directory exception in fixture disposal, recorded as HOSTCLEAN1, not a failed host-kill
+assertion. This is qualified integration proof, not a claim that the fixture defect was repaired.
+
+That nightly run also passed the exact historical opinion-resume case and authoritatively cleared its finding on
+`85fd557`. CILEDGER1 is archived; no clearance was fabricated or written by hand.
+
 ## Recovery order and preservation
 
 1. Finish mod-viii in its saved conversation and tree, then the remaining foundation rows in D212's
@@ -141,3 +150,8 @@ A fresh one-off Codex chat reproduced the empty tool inventory. The pinned nativ
 explicitly omitted `daoris-knowledge` as a pending optional server at its initial catalog capture;
 the MCP host independently logged its start. CODEXTOOLS1 now requires proving readiness before that
 capture, followed by actual knowledge reads and quest completion. Host startup alone is not that proof.
+
+The unchanged live conversation's next turn exposed 51 Daoris tools, successfully searched knowledge and took its quest.
+This contrast retains CODEXTOOLS1 as a first-catalog readiness defect rather than a failed-host diagnosis. Its six live
+MCP calls also supplied the Codex measurement for FABRIC-ACP1: D173 records why the current normalized lineage still does
+not meet C2a's root contract. The two enforcement branches remain preserved until that staging prerequisite is met.
