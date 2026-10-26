@@ -52,6 +52,17 @@ public sealed partial class SessionMarkerTests
         Assert.Contains("DAORIS_KEPT=kept", block);
     }
 
-    [GeneratedRegex(@"\[(?:IntakeRoom\.)?SessionVariable\]\s*=")]
+    /// <summary>The original intake spelling and its lower owner both hand the same marker; reads and other variables do not.</summary>
+    [Theory]
+    [InlineData("[SessionVariable] = session", 1)]
+    [InlineData("[IntakeRoom.SessionVariable] = session", 1)]
+    [InlineData("[ChildMarks.SessionVariable] = session", 1)]
+    [InlineData("variables.Remove(ChildMarks.SessionVariable)", 0)]
+    [InlineData("[ChildMarks.RoleKeyVariable] = key", 0)]
+    [InlineData("[Other.SessionVariable] = session", 0)]
+    public void Only_the_known_marker_writes_are_counted(string source, int count) =>
+        Assert.Equal(count, Handed().Matches(source).Count);
+
+    [GeneratedRegex(@"\[(?:(?:IntakeRoom|ChildMarks)\.)?SessionVariable\]\s*=")]
     private static partial Regex Handed();
 }
