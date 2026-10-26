@@ -481,6 +481,13 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void Agents_keeps_account_shapes_below_actor_composition_and_author_aliases()
+    {
+        string[] higher = ["ActorEffective", "ActorWords", "BuildPass", "SupervisorHanded"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal) && higher.Contains(edge.Type)));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

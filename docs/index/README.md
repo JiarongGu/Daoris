@@ -150,7 +150,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/WireEvaluationTests.cs` | 53 | 1028 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowGateTests.cs` | 61 | 942 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WorkflowRunTests.cs` | 72 | 1114 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AccountRotation.cs` | 75 | 1230 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AccountRotation.cs` | 74 | 1200 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Acp.cs` | 188 | 3648 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Adapters.cs` | 150 | 2581 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/AgentAccountsCommand.cs` | 48 | 907 |
@@ -389,4 +389,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 60 | 282 |
 | `docs/development.md` | 40 | 495 |
-| `src/Daoris.Desktop/README.md` | 186 | 885 |
+| `src/Daoris.Desktop/README.md` | 186 | 886 |

@@ -998,14 +998,6 @@
       }
     },
     {
-      "family": "Agents names Roles",
-      "after": "Agents",
-      "files": {
-        "Agents/AccountRotation.cs": ["ActorEffective","ActorWords","BuildPass"],
-        "Agents/HarnessCapture.cs": ["SupervisorHanded"]
-      }
-    },
-    {
       "family": "Agents names Work orders",
       "after": "Agents",
       "files": {
@@ -1462,6 +1454,7 @@
   ],
   "testFolders": ["Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
   "tests": {
+    "ActorOpeningTests.cs": "Roles",
     "AccountIdentityTests.cs": "Agents",
     "AccountCoolingTests.cs": "Agents",
     "AccountFileNodesTests.cs": "Agents",
