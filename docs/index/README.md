@@ -272,8 +272,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 840 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 75 | 1281 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 81 | 1378 |
-| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 474 | 7058 |
-| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 51 | 789 |
+| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 477 | 7109 |
+| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 54 | 852 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 55 | 1029 |
 
 ### Tools (`tools`)
@@ -285,7 +285,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 54 | 1090 |
 | `tools/family-rehearsal.mjs` | 359 | 6239 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 397 | 6794 |
+| `tools/merge-branch.mjs` | 398 | 6817 |
 | `tools/orient-index.mjs` | 66 | 1425 |
 | `tools/process-reach.mjs` | 43 | 906 |
 | `tools/rehearsal-kit.mjs` | 55 | 1071 |

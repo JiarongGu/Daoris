@@ -79,7 +79,8 @@ test('the hook logger appends the input it was handed and decides nothing', () =
   const log = join(scratch, 'hooks.log');
   const input = { hook_event_name: 'PreToolUse', tool_name: 'mcp__probe__probe_read', tool_use_id: 'toolu_1', agent_id: 'a1', agent_type: 'general-purpose' };
   const ran = spawnSync(process.execPath, [HOOK, log], { input: JSON.stringify(input), encoding: 'utf8', windowsHide: true });
-  assert.equal(ran.status, 0);
+  assert.equal(ran.status, 0,
+    `hook logger: status=${ran.status}, signal=${ran.signal ?? 'none'}, error=${ran.error?.message ?? 'none'}\n${ran.stderr}`);
   assert.equal(ran.stdout, '', 'no decision on stdout');
   assert.deepEqual(lines(log)[0].input, input);
 });

@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - A dropped merge candidate returned as an incomplete green record (QUEUEDROP1)
+
+- **Symptom:** dropping the foundation candidate removed its request, but its checks continued. A real scratch-repository reproduction then recreated the candidate as only `{ state: "green" }`; the runner failed while reading its missing base.
+- **Root cause:** `9671deccfb` added the asynchronous candidate runner whose outcome writer updated the current record without checking that its frozen candidate and enqueue occurrences still matched. A drop could set the candidate to null while the gate run was awaited.
+- **Fix:** `sameCandidate` compares the base, candidate tip and ordered frozen member identities, including each request. `changeCandidate` checks this inside the queue lock before every candidate-state write. A completed run whose candidate is already gone is recorded as ended and skips obsolete failure diagnosis. Dropping still permits an active check to finish; immediate process-tree cancellation remains QUEUEDRAIN1.
+- **Verify:** the end-to-end held-gate test failed first with the recreated green record, then passed without changing main, stop or dropped-request history. Pure tests reject late green, stopped, held, split and red updates after a drop, replacement, base move or same-tip re-enqueue. The full tooling suite passes **382 tests**, and CLI types pass. Full candidate integration remains owed.
+
+## 2026-10-27 - Gate preparation rebuilt its glob matchers for every path (SCOPEPLAN1)
+
+- **Symptom:** the foundation candidate spent about nine minutes of Node CPU in preparation before gate execution. A single read of 421 changed paths took hundreds of milliseconds, repeated while judging the historical verdict ledger.
+- **Root cause:** the per-path rule lookup from `12f87a6364` called `laneMatcher` for every rule it visited. Selection, path checks and verdict reach repeated those regular-expression compilations for each path.
+- **Fix:** a lazy rule reader retains matchers within one selection or reach read. A later read prepares them afresh, so changed rule and lane inputs remain visible; first-match precedence, exclusions, unknown-path conservatism and gate policy are unchanged.
+- **Verify:** the operation-count regression failed first with 322 direct-pattern reads and 121 lane-pattern reads for 161 paths. Bounded preparation and fresh-input regressions pass; all **21** gate reach lists agree with the previous algorithm on the same 421 paths and tables. Sample old reads took 0.30–0.41 seconds versus 0.005–0.006 seconds after the change; the updated 649-entry ledger probe completed in 32.5 seconds with no unread trees. These are local observations, not a performance bound. The full tooling suite passes **382 tests**, and CLI types pass; full integration remains owed.
+
 ## 2026-10-27 - Context's new transcript fixture bypassed queued live visibility
 
 - **Symptom:** the new Context fixture's immediate shared-read assertion failed during development. Parent review required a condition wait for live visibility; the explicit Flush in `acea4d5c4` bypassed the asynchronous behavior instead.
@@ -7235,6 +7249,11 @@ The second sighting was its trigger.
   the rehearsal's removal now waits them out (`maxRetries`). Alone, straight after, it passed 70/70. So it is not the
   test runner's: the common factor is a Node process on Windows ending while its children are killed, as the
   sibling's reproducer says.
+- 2026-10-27, during foundation integration's `npm run verify`: `fabric-probe.test.mjs`'s hook-logger child exited
+  `3221226505`; the helper selection passed 179 cases and failed this one. The same case passed alone afterward.
+  Its assertion now reports the child's status, signal, spawn error and stderr for the next capture. No retry, timeout
+  change or native-runtime fix was made; the abort's cause remains unproved. The full baseline subsequently passed,
+  including all 180 helper cases; that green run does not close TEST1.
 
 **A family sibling documents the same abort** at about 1.5% of e2e runs, with a standing reproducer (spawn a server,
 poll it, kill it: about 1 in 300 rounds, 4-way concurrent). The row used to say *capture the Playwright HTML report*,

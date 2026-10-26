@@ -40,6 +40,8 @@ const q = await import(
   enqueue: (queue: Queue, request: { branch: string; tip: string; message: string | null; at: string; requeue?: boolean }) => { queue?: Queue; entry?: Member; refused?: string };
   messageOf: (entry: Member) => string;
   dropQueued: (queue: Queue, branches: string[], at?: string) => { queue: Queue; dropped: string[] };
+  sameCandidate: (current: Candidate | null, expected: Candidate) => boolean;
+  changeCandidate: (queue: Queue, expected: Candidate, change: (queue: Queue) => { queue: Queue }) => { queue?: Queue; obsolete?: boolean };
   nextMembers: (queued: Member[], options?: { max?: number; oneAtATime?: boolean }) => { members: Member[]; rest: Member[] };
   formCandidate: (input: { base: string; members: Member[]; merge: (member: Member, onto: string) => Promise<{ commit?: string; conflict?: string[] }>; at: string }) => Promise<{ candidate: Candidate | null; setAside: Member[] }>;
   recordsOnly: (paths: string[], ruleOf: (path: string) => Rule | null) => boolean;
@@ -154,6 +156,33 @@ describe('the queue: a frozen request, read before it is queued', () => {
     assert.equal(dropped.queue.candidate, null);
     assert.deepEqual(dropped.dropped, ['b1', 'b2']);
     assert.deepEqual(dropped.queue.handedBack.map((each) => each.handedBack?.how), ['dropped', 'dropped']);
+  });
+
+  test('QUEUEDROP1: every late outcome is refused for a dropped or replaced enqueue, including the same tip', () => {
+    const expected: Candidate = {
+      base: 'm', tip: 'c', members: [{ branch: 'b1', tip: 'b', commit: 'c', request: 'first' }],
+      state: 'running', reforms: 0, recordsOnly: false,
+    };
+    const replacement: Candidate = { ...expected, members: [{ ...expected.members[0]!, request: 'second' }] };
+    for (const current of [null, replacement, { ...expected, base: 'new-base' }, { ...expected, tip: 'new-tip' }]) {
+      for (const state of ['green', 'stopped', 'held', 'split', 'red']) {
+        const queue = { ...q.emptyQueue(), candidate: current };
+        let called = false;
+        const result = q.changeCandidate(queue, expected, (record) => {
+          called = true;
+          return { queue: { ...record, candidate: { ...expected, state }, stop: state === 'stopped' ? 'late stop' : null } };
+        });
+        assert.deepEqual(result, { obsolete: true });
+        assert.equal(called, false, `${state} must not enter the write callback`);
+        assert.equal(queue.candidate, current);
+        assert.equal(queue.stop, null);
+      }
+    }
+    const current = { ...expected, members: expected.members.map((member) => ({ ...member })), state: 'bisecting' };
+    assert.equal(q.sameCandidate(current, expected), true, 'state changes do not change the frozen request');
+    const result = q.changeCandidate({ ...q.emptyQueue(), candidate: current }, expected,
+      (queue) => ({ queue: { ...queue, candidate: { ...current, state: 'green' } } }));
+    assert.equal(result.queue!.candidate!.state, 'green');
   });
 
   test('the record survives a write and a read', () => {
@@ -654,6 +683,40 @@ function queueScratch(name: string) {
 }
 
 describe('the queue, end to end in a scratch repository', { concurrency: true }, () => {
+  test('QUEUEDROP1: a dropped candidate cannot return when its held gate completes', async () => {
+    const repo = queueScratch('drop-late');
+    const hold = join(repo.root, 'local', 'release');
+    const started = `${hold}.started`;
+    try {
+      const gate = [
+        "import { existsSync, writeFileSync } from 'node:fs';",
+        'const hold = process.env.QUEUE_DROP_HOLD;',
+        "if (process.argv[2] === 'check' && hold) {",
+        "  writeFileSync(`${hold}.started`, 'started');",
+        '  while (!existsSync(hold)) await new Promise((done) => setTimeout(done, 25));',
+        '}',
+        'console.log(`${process.argv[2]} ran`);',
+      ].join('\n');
+      repo.branch('b1', { 'a.txt': 'a\n', 'qgate.mjs': gate });
+      const before = sh(repo.root, 'rev-parse', 'main');
+      assert.equal((await repo.run(['b1', '--preview'])).status, 0);
+      const waiting = repo.run(['b1', '--message', 'local/b1.msg'], { QUEUE_DROP_HOLD: hold });
+      await repo.until(() => existsSync(started));
+      assert.ok(existsSync(started), repo.log());
+      assert.equal((await repo.run(['--drop-batch', 'b1'])).status, 0);
+      writeFileSync(hold, 'release');
+      assert.equal((await waiting).status, 1);
+      await repo.until(() => !repo.queue()?.runner);
+      assert.equal(repo.queue()?.candidate, null, repo.log());
+      assert.equal(repo.queue()?.stop, null, repo.log());
+      assert.equal(sh(repo.root, 'rev-parse', 'main'), before);
+      assert.deepEqual(repo.queue()!.handedBack.map((entry) => entry.handedBack?.how), ['dropped']);
+    } finally {
+      writeFileSync(hold, 'release');
+      await repo.cleanup();
+    }
+  });
+
   test('QUEUEWAIT1: requeueing an unchanged rejected tip waits for its new promotion after a base repair', async () => {
     const repo = queueScratch('requeue-same-tip');
     try {
