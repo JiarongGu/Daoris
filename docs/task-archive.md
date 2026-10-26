@@ -21200,3 +21200,5 @@ earliest reset and resuming its own conversation at it; a role listing the secon
 `LimitResumeTickTests`, LIMITSWITCH's `AccountRotationTickTests` and the account rule's `ResumeAccountTests`, `LineAccountTests` and `AccountRotationWalkTests` still pass. **Not done:** the person's own words
 waiting on a limited record still go on within the line's agent (D137 point 7's switch), not across choices; a refused own resume's briefed part stays within it too. Detail: the fix-log entry of
 2026-10-26 and D206's note of the same day.
+
+**Corrected on landing** (the steward, 2026-10-26): the install's `adapter` key was `claude-code-acp`, in step with Build, so the defect fixed here, real and latent where the key and Build disagree, did not move the install's two lines: its machine log records each move as `session.moved` with `why: press`, a person's *Go on now with…* press choosing Codex while the lines waited for the Claude Code account's reset, and that press asked the last part's `sonnet` there. That defect is PRESSMODEL1's; the FIX-LOG's entry says the same.

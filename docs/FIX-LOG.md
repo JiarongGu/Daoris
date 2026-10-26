@@ -18,6 +18,10 @@ repository.
   written another way does not, and reading does not reconcile them (`DriverConfig.Read`): the install's key must have pointed at Codex
   (its `driver.json` was not read here). The same agent was asked at D206's step 1, whose judge compares the record's agent, so the own
   conversation was never resumed either. D206 point 6 (the walk of a driven line's choices) was recorded and never built (row 1e's).
+  **Corrected by the steward on landing, 2026-10-26:** the install's `adapter` key was `claude-code-acp`, in step with Build, so the defect
+  fixed here, real and latent where the key and Build disagree, is not what moved the install's two lines. Its machine log records each move
+  as `session.moved` with `why: press`: a person's *Go on now with…* press chose Codex while the lines waited for the Claude Code account's
+  reset (D206 point 7), and that press asked the last part's `sonnet` there. That defect is PRESSMODEL1's.
 - **Fix:** a limited line with no hand-over takes its agent from Build's effective order, its own where the role lists it, else the first, and
   never from `adapter`. Where the role lists more than one choice, or its one choice is another agent than the line ran on, the carry-on walks
   the order as a new start does (`WalkBuildPassesAsync`), carrying the chosen entry's own model, effort and choice; where none can run it holds
