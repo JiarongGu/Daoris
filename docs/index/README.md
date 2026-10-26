@@ -114,7 +114,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolInstallTests.cs` | 41 | 724 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Install/ToolResourcesTests.cs` | 40 | 568 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Instance/InstanceDoorTests.cs` | 40 | 911 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/HelpFactsTests.cs` | 63 | 1203 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/HelpFactsTests.cs` | 64 | 1219 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/TraceTests.cs` | 56 | 926 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/empty.md` | 50 | 368 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Knowledge/golden/help-room/full-access.md` | 54 | 409 |
