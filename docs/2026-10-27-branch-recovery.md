@@ -71,6 +71,10 @@ and Git halves, family rehearsal, deployment rehearsal and browser checks passed
 its original failure was a busy-directory exception in fixture disposal, recorded as HOSTCLEAN1, not a failed host-kill
 assertion. This is qualified integration proof, not a claim that the fixture defect was repaired.
 
+Quest `c8f5e116b346` is Done through the owner's supported completion door, with that qualified receipt; it had no
+requirements to answer individually. Session `69874b96` remains parked until the window confirms its finish. Its clean,
+merged tree is preserved while that request waits; no live-session guard or lock was bypassed for cleanup.
+
 That nightly run also passed the exact historical opinion-resume case and authoritatively cleared its finding on
 `85fd557`. CILEDGER1 is archived; no clearance was fabricated or written by hand.
 
