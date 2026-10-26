@@ -78,6 +78,24 @@ a file an older build writes after the import is imported at the next look or th
 its set-aside file. Every proof the row states is a case seen failing first, in `BindingsTests` and `BindingsLookTests`. Detail and the readings taken (the store opened for each use with
 one run for the process, the look as the import's place, a re-found file whose SHA-256 a receipt holds only set aside): D212's note of 2026-10-26.
 
+## FOUNDATION1mod-vii — Events moved (2026-10-26)
+
+> **FOUNDATION1mod-vii — Events moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
+> `docs/2026-10-25-foundation-design.md` §10's row *mod-i to mod-xxi*, §14.2, §14.5, §14.6, §17, §18). The seventh of the driver's moves: every file the map
+> places in Events (the chain, the watches, the machine facts and log reader, the notices, the note codes' vocabulary, the session log and its watch, the
+> session's event and end vocabulary) sits in `Events/`, its namespace unchanged, every linked consumer with it, the map's paths updated; then the cuts the
+> census lists after Events, one edge family per commit, each a port declared or a type moved to its one owner, each changing no behaviour, nothing of what is
+> recorded or said. It adopts nothing of Part B. It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
+
+**Outcome.** Built as the row names it. The nineteen files the map places in Events moved from `Platform/` and `Sessions/` into `Events/` (three pure ones in
+`Events/Domain/`), with the seventeen test classes that mirror them; the GitDoor, the launcher and PieceStart compile none of them, so no include moved;
+`structure.json` marks Events moved. The eight families listed after Events (23 edges), the attention vocabulary's family (2) and the Loop rule
+`DriverWatch.Due` came off the census, 617 → 584 edges and 67 → 58 families with the eight edges of other families the same cuts took: the vocabularies the
+notes and the record carry (`AttentionEvent`, `HandOverWhy`, `HandOverAskWhy`, `HelperWhy`, `PartnerWhy`, `SetupSwap`, `CoolingEntry`, `ModelRefusal`,
+`TurnModels`, the instruction account) moved down to Events, the session's event record, a run's ending, a transient episode and a refused resume became ports
+the events declare and the context's and agents' own types answer, where a home topic's files are became a registry the five owners answer when the driver's
+assembly loads (`HomeTopics`), and the look's deadline is the events' pure rule. Detail, the cuts one by one and the readings taken: D212's note of this date.
+
 ## FOUNDATION1mod-vi — Instance moved (2026-10-26)
 
 > **FOUNDATION1mod-vi — Instance moved** (driver; D212's row of Part A, accepted by the steward 2026-10-25; the design
