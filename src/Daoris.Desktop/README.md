@@ -29,6 +29,12 @@ explains captures and shutdown; [Installing it](#installing-it-2026-09-22) expla
 | `Daoris.Desktop.PieceStart` | The partner's launcher (COAGENT1b, D199's note on the strict start): one console program, `daoris-piece-start.exe`, laid out in the install's `app/bin/` beside the git doors and started by the driver for a partner alone, as `--job <a piece's job> -- <the harness> [its arguments]`. It joins the piece's named job, which the driver made empty and holds, then starts the harness as its child with the stdio it was handed, so nothing of the harness's runs outside the job; where the job cannot be joined it exits 125 with one line and starts nothing. Framework-dependent, referencing nothing: the driver's `PieceLauncher` and `ProcessJob` are compiled in |
 | `Daoris.Desktop.Launcher` | `Daoris.exe`, the one thing at an install's root (D93): it starts `app/Daoris.Desktop.exe` with its arguments and exits, its process carrying Daoris's taskbar id (D108). Framework-dependent, single-file, referencing nothing. It is also the one program that replaces the application (UPDATE1, D139): while nothing runs from `app/`, a build in `update/staged/` is checked and swapped in with a journal (`update/swap.json`), started, and rolled back when it does not confirm — asked for by the application as `--update --after <pid>`, or on a start finding a build staged. The check and the swap are the driver library's own Setup files (`StagedBuild.cs` and `InstallSwap.cs`), compiled in |
 
+The driver's `Knowledge/` owns the connector, trace, room sections and rendered room facts (FOUNDATION1 mod-viii, D212).
+Help keeps source descriptions and workspace projection; its source record answers the lower room interface directly.
+Work orders and Workplace answer the room's reads through ports declared in Knowledge, installed from their own mapped
+folders. The modules consume those fact interfaces while their group and sweep readers retain the original judged records.
+D212's dated cut notes name the initializers that mod-xxi's wiring view must include; `StructureTests` holds their direction.
+
 The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
 concluded from its exit code and its quest, never from what it said. A driven turn that ends on its own background work waits

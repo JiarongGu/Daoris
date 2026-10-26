@@ -378,6 +378,10 @@ vitests, which build nothing, and `test:web:e2e`, the bundle, the host and Playw
 family. Note the second rebuilds the host, so stop a locally running instance first, or the build
 fails on the locked DLL.
 
+The landing-life and trace twins read the driver's declarations through `test/driverSource.ts`: `AutoLandingCode.cs` and
+`WorkplaceFacts.cs` in Knowledge hold their moved vocabulary. The Sweep twin still reads `Landing.cs`. MOD9e's rule in
+`tools/merge-branch.mjs` and its source-read census keep changes to each declaration routed to the page's unit gate.
+
 Set `DAORIS_EMBED_MODEL` to turn the semantic tier on; without it the UI says so and convergence finds
 copies and restatements only.
 
