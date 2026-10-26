@@ -220,6 +220,22 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 WALKAGENT1: a limit's move onto another agent is the limit's move whatever the two accounts are named, since an account belongs to
+    /// its agent; the same agent on the same account is still Daoris's carry-on, and an agent left unsaid compares accounts alone.
+    /// </summary>
+    [Fact]
+    public void A_limit_s_move_to_another_agent_is_the_limit_s_move_though_both_accounts_are_named_alike()
+    {
+        var cut = new PriorSession("s1", null, "failed") { Limit = true, Profile = "work", Adapter = "claude-code-acp" };
+
+        Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, cut, "work", agent: "codex-acp"));
+        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, cut, "work", agent: "claude-code-acp"));
+        Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, cut, "work"));
+        Assert.True(Daoris.Driver.Driver.OnAnotherAccount(cut, "work", "codex-acp"));
+        Assert.False(Daoris.Driver.Driver.OnAnotherAccount(cut, "work", "CLAUDE-CODE-ACP"));
+    }
+
+    /// <summary>
     /// 🔴 SESSCTX1b (D189 point 4, D131 point 3): a driven record whose resume was refused goes on in a new part named `retry`; one the
     /// person released with *Try again* or brought forward is their press, `person`; a hand-over and a move onto another account
     /// keep their own why, whichever way it went on.
