@@ -44,9 +44,13 @@ public sealed class HeavyRunProcessTests : IDisposable
             setTimeout(() => process.exit(9), 120000);
             """);
         File.WriteAllText(_fixture.At("beat.mjs"), """
-            import { writeFileSync } from 'node:fs';
+            import { renameSync, writeFileSync } from 'node:fs';
             const at = process.argv[2];
-            const beat = () => writeFileSync(at, String(Date.now()));
+            // A job may kill this child during a write: publish a complete beat, retaining the last one until then.
+            const beat = () => {
+              writeFileSync(`${at}.next`, String(Date.now()));
+              renameSync(`${at}.next`, at);
+            };
             beat();
             setInterval(beat, 20);
             setTimeout(() => process.exit(0), 120000);
@@ -114,6 +118,49 @@ public sealed class HeavyRunProcessTests : IDisposable
         Assert.Contains($"`engine`'s heavy-run slot is held by process {Environment.ProcessId}, running hold for", waited);
         Assert.Contains(_fixture.Checkout, waited);
         Assert.Contains("run-heavy: 1 heavy gate passed", secondSaid.Text);
+    }
+
+    /// <summary>A child killed after opening its next beat cannot erase the last complete containment evidence.</summary>
+    [Fact]
+    public async Task A_writer_killed_during_its_next_beat_keeps_the_last_complete_timestamp()
+    {
+        var at = _fixture.At("beat-interrupted.txt");
+        var ready = _fixture.At("beat-write-opened.txt");
+        const string previous = "1790000000000";
+        File.WriteAllText(at, previous);
+        var hook = _fixture.At("interrupt-beat.mjs");
+        File.WriteAllText(hook, """
+            import fs from 'node:fs';
+            import { syncBuiltinESMExports } from 'node:module';
+            const write = fs.writeFileSync;
+            fs.writeFileSync = (path) => {
+              fs.openSync(path, 'w');
+              write(process.env.DAORIS_BEAT_READY, 'opened');
+              Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0);
+            };
+            syncBuiltinESMExports();
+            """);
+        var info = new ProcessStartInfo("node")
+        {
+            WorkingDirectory = _fixture.Folder,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        info.ArgumentList.Add("--import");
+        info.ArgumentList.Add(new Uri(hook).AbsoluteUri);
+        info.ArgumentList.Add(_fixture.At("beat.mjs"));
+        info.ArgumentList.Add(at);
+        info.Environment["DAORIS_BEAT_READY"] = ready;
+        var writer = new Process { StartInfo = info };
+        writer.Start();
+        _hosts.Add(writer);
+        await Poll.Until(() => File.Exists(ready) || writer.HasExited, () => "the heartbeat writer did not open its next write");
+        Assert.True(File.Exists(ready), writer.HasExited ? await writer.StandardError.ReadToEndAsync() : "the write was not reached");
+        writer.Kill(entireProcessTree: true);
+        await writer.WaitForExitAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(previous, await Heartbeat.ReadAsync(at));
     }
 
     /// <summary>

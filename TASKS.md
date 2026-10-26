@@ -1,6 +1,12 @@
 # Daoris (道衍) — open work
 
 Open work only; move finished rows to `docs/task-archive.md`. Release changes belong in `CHANGELOG.md`.
+
+Owner priority, 2026-10-27: complete the ongoing FOUNDATION1 refactor first. Provider infrastructure and new role-based approval capabilities follow it; permission recovery needed to continue the refactor uses the existing person's door.
+
+- [ ] **CODEXPERM1 — Codex permission modes match their work boundary** (installed, 2026-10-27; D184, after FOUNDATION1). Asking still selects `read-only`, requiring approval for ordinary edits; codex-acp 2.1.1 separately offers user-reviewed `workspace-write`. Review that mapping and diagnose Auto's refused edit and misleading park. Prove workspace boundaries, preserved edits and honest cancellation; role approval remains ROLEPERM1.
+- [ ] **ROLEPERM1 — permission answers through appointed actors** (owner direction, 2026-10-27; after FOUNDATION1). Design supervisor approval as scoped, audited acts under an owner appointment, retaining the person's approval door. D208's question authority and D209's exclusion of widening grant no tool-approval authority today; review the explicit amendment and prove scope, revocation and authorship before activation.
+
 This handover keeps every outstanding identifier. Detailed acceptance criteria, owner quotations and
 earlier evidence remain at `38065d97:TASKS.md` in Git and in each section's contract; read the matching
 row before implementation. The earlier condensation's supporting record is `a3b20973:TASKS.md`.

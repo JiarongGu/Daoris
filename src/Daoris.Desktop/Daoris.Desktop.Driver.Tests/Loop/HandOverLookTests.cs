@@ -11,7 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>In-process: the service is the stand-in ledger and each start's run a stand-in. The fast half; the same over a real node harness is the Process half.</remarks>
 public sealed class HandOverLookTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    // A missing tick answer fails the test; this bound makes no claim about elapsed product time.
+    private static readonly TimeSpan Bound = Poll.Patience;
 
     private static readonly DateTimeOffset T0 = new(2026, 10, 12, 9, 0, 0, TimeSpan.Zero);
 

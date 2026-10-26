@@ -21176,3 +21176,15 @@ terminal's list (`SessionsCommandTests`), the wire's hold (`DriverModuleSessions
 > - [ ] **OPENANSWER1 — unreadable committed destination answers stay held** (FOUNDATION1 1d-i review, 2026-10-27). `SessionOpenDoors` accepts missing destinations or throws on valid JSON with wrong field kinds, losing its lost-answer recovery path. Hold those answers, retain the retry key and renegotiate before replay; prove an unmarked host is never opened twice and malformed diagnostic candidates cannot release the hold.
 
 **Outcome** 2026-10-27: Validate successful destination answers before adoption and keep unreadable answers in lost-open recovery. Nine regressions failed first; all 17 door cases now pass, including unmarked-host no-replay and malformed diagnostic candidates. Root cause and proof: the OPENANSWER1 fix-log entry.
+
+## BEATWRITE1 — containment heartbeat survives a killed write (2026-10-27)
+
+> - [ ] **BEATWRITE1 — containment heartbeat survives a killed write** (integration, 2026-10-27). `HeavyRunProcessTests` reported a zero heartbeat in the suite and passed alone; its Node producer truncates the live timestamp before writing it. Reproduce a kill between truncate and write, then publish only complete timestamps so a stopped writer leaves valid evidence without masking a live descendant.
+
+**Outcome** 2026-10-27: The fixture publishes each complete beat by rename. A writer stopped at its next write preserves the previous timestamp; the regression failed first and both affected classes pass, 21 tests. Existing containment assertions are unchanged; mechanism and limits are in the BEATWRITE1 fix-log entry.
+
+## HANDOVERPATIENCE1 — hand-over fixture uses the shared failure patience (2026-10-27)
+
+> - [ ] **HANDOVERPATIENCE1 — hand-over fixture uses the shared failure patience** (integration, 2026-10-27). `HandOverLookTests` times out a driver tick after ten seconds without asserting an elapsed-time contract. Use the test project's `Poll.Patience` as required by held-clocks, run the class and the full fast gate, and retain the loaded-run sighting under FLAKE1.
+
+**Outcome** 2026-10-27: Tick answers use shared failure patience, keeping every behavioral assertion. Both affected classes pass, 21 tests, and the whole branch fast suite passes, 14,938 tests. The original queue sighting and its unproven scheduling cause remain in the fix-log entry under FLAKE1; the integrated candidate's gates are still owed.
