@@ -299,14 +299,14 @@ public sealed record SessionTarget(
     /// whose work goes through review knows not to merge or push it. Null says nothing of it; a merge says
     /// where it goes only beside <see cref="Commits"/> (PROCESS1d-i).
     /// </summary>
-    public LandingPlan? LandsOn { get; init; }
+    public IStartLanding? LandsOn { get; init; }
 
     /// <summary>
     /// The commit rule standing for this session's repository and where it was set (PROCESS1d-i, D164's amendment point 4), set
     /// beside <see cref="LandsOn"/> only for a session in a tree of its own: <see cref="ProcessWords"/> says it, with the landing,
     /// in the instruction's landing section on every form. Null says nothing of it, and the instruction reads as it did.
     /// </summary>
-    public ResolvedCommits? Commits { get; init; }
+    public IStartCommits? Commits { get; init; }
 
     /// <summary>
     /// The other checkouts this session may read (D107), the declared write targets among them. Empty — as
@@ -1200,7 +1200,7 @@ public static class TargetPrompt
     /// (<see cref="ProcessWords"/>). Under a rule that accepts automatically (LAND2b), that its quest's done lands it, so its work
     /// is committed by then.
     /// </summary>
-    private static string Landing(SessionTarget target) => ProcessWords.Said(target.Commits, target.LandsOn) ?? "";
+    private static string Landing(SessionTarget target) => AgentWorkplace.Current.ProcessWords(target.Commits, target.LandsOn) ?? "";
 
     /// <summary>
     /// What the asker gave beside their words, said plainly — each link, each file where it lies, and a
@@ -1649,14 +1649,7 @@ internal static class Spawning
         // that PATH (HarnessProbe.Apply), so an agent npm put under a managed node is found the same way. The tools are the
         // home's the start was handed (ENVSEAM1), this process's where it was handed none.
         Tools.Hand(info, home);
-        // GITAUTH1b (the git-auth design §4.1): a session's gh or az acts with no token the desktop inherited.
-        GitWiring.Untoken(info.Environment);
-        // GITAUTH1c (the git-auth design §3.6): a session's commits carry origin's identity's author where its repository names none,
-        // read at the start. Off the caller's thread: a home where no identity commits as anyone starts no git for it.
-        GitAuthor.Hand(info.Environment, Task.Run(() => GitAuthor.OfAsync(home ?? DaorisHome.Resolve(), root, CancellationToken.None)).GetAwaiter().GetResult());
-        // TREELONG1: a session's own git reads its tree with long paths, as Daoris's own calls always do (D109). Handed always, with no
-        // read of the person's configuration: that read started a git at every start, which a help start must never (HelpStartReadTests).
-        GitLongPaths.Hand(info.Environment, true);
+        AgentWorkplace.Current.HandGit(info.Environment, home, root);
 
         return info;
     }

@@ -111,8 +111,12 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
 /// Whether the rule accepts automatically (LAND2b, D145): the quest's done lands the work, with no press, and the session's
 /// instruction says so.
 /// </param>
-public sealed record LandingPlan(string Form, string Target, string Source, string? Plugin = null, string? Problem = null, bool AutoAccept = false)
+public sealed record LandingPlan(string Form, string Target, string Source, string? Plugin = null, string? Problem = null, bool AutoAccept = false) : IStartLanding
 {
+    object? IStartLanding.LeftOut => LeftOut;
+    object? IStartLanding.Lands => Lands;
+    object? IStartLanding.Conflict => Conflict;
+
     /// <summary>
     /// The target is the branch the session's own agent made in its tree (TREEFOLLOW1, D164 point 4), which lands as it stands:
     /// no branch is made, the rule's pattern does not name it, and a name entered has nowhere to go. False for a tree still on its

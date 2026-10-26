@@ -503,6 +503,14 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void Agents_reads_workplace_facts_below_plans_locks_and_git_operations()
+    {
+        string[] higher = ["TreeLock", "GitAuthor", "GitLongPaths", "GitWiring", "LandingPlan", "ResolvedCommits", "ProcessWords", "TreeGuard"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && (higher.Contains(edge.Type) || edge.Type == "TreeGuardHook" && edge.DeclaredIn.Any(path => !path.StartsWith("Agents/", StringComparison.Ordinal)))));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

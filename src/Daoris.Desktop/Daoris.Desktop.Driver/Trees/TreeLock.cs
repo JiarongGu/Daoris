@@ -64,8 +64,7 @@ public sealed class TreeLock : IDisposable
 
     /// <summary>What a start says when a replay holds its repository: held now, carried on at the next look.</summary>
     public static string Replaying(string repository) =>
-        $"`{repository}`'s branches are being brought up to date right now, so a session does not start in one of its "
-        + "trees until that is done; it starts at the next look.";
+        HeldWords.ReplayingWhy(repository);
 
     /// <summary>What a replay says of each branch it left because a session was starting in the repository.</summary>
     public static string Starting(string repository) =>

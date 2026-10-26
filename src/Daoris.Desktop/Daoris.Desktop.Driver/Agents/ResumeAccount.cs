@@ -135,9 +135,14 @@ public static class HeldWords
     /// <summary>A replay holds the repository's trees.</summary>
     public static (string Why, Noted Line) Replaying(string repository)
     {
-        var why = TreeLock.Replaying(repository);
+        var why = ReplayingWhy(repository);
         return (why, Whole(NoteCodes.HeldReplaying, why, ("repository", repository)));
     }
+
+    /// <summary>The shared start sentence while Workplace holds the repository for replay.</summary>
+    public static string ReplayingWhy(string repository) =>
+        $"`{repository}`'s branches are being brought up to date right now, so a session does not start in one of its "
+        + "trees until that is done; it starts at the next look.";
 
     /// <summary>Ask Daoris is answering in another conversation of its room.</summary>
     public static (string Why, Noted Line) Answering(string session)

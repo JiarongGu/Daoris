@@ -616,6 +616,7 @@
     "Sessions/AccessLease.cs": "Participants",
     "Sessions/ChildLineage.cs": "Participants",
     "Sessions/LineageWiring.cs": "Participants",
+    "Trees/AgentWorkplaceWiring.cs": "Workplace",
     "Sessions/Domain/AbandonEntry.cs": "Workplace",
     "Sessions/Domain/AbandonPlan.cs": "Workplace",
     "Sessions/Domain/AccessRules.cs": "Participants",
@@ -985,15 +986,6 @@
       "files": {
         "Agents/Adapters.cs": ["AskWords","AskWordsText","BrainstormVariables","ChannelHeld","ChannelText","GoAheadsText","IntakeRoom"],
         "Agents/TransientRetries.cs": ["QuestResults"]
-      }
-    },
-    {
-      "family": "Agents names Workplace",
-      "after": "Agents",
-      "files": {
-        "Agents/ResumeAccount.cs": ["TreeLock"],
-        "Agents/Adapters.cs": ["GitAuthor","GitLongPaths","GitWiring","LandingPlan","ProcessWords","ResolvedCommits"],
-        "Agents/Permissions.cs": ["TreeGuard","TreeGuardHook"]
       }
     },
     {
@@ -1439,6 +1431,7 @@
     "ActorOpeningTests.cs": "Roles",
     "ParticipantPortsTests.cs": "Agents",
     "AgentPluginPortsTests.cs": "Agents",
+    "AgentWorkplacePortsTests.cs": "Agents",
     "AccountIdentityTests.cs": "Agents",
     "AccountCoolingTests.cs": "Agents",
     "AccountFileNodesTests.cs": "Agents",

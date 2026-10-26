@@ -46,6 +46,11 @@ Plugins supplies adapters, account declarations and skill composition through `I
 joining, provenance reading, skill handing and cleanup. `Plugins/AgentPluginWiring.cs` installs the required catalogue
 reader for both account discovery and terminal construction. Knowledge's `SkillFiles` validates every copied skill.
 
+Workplace retains landing plans, their replay graph, process wording and git preparation. Agents reads the start's
+landing and commit facts through lower contracts; `Trees/AgentWorkplaceWiring.cs` installs its required operations.
+Tools are handed before Workplace removes inherited tokens, resolves the author and hands long paths. The installed
+tree-guard carrier and matcher belong to Agents; the actual resource, installer and guard remain Workplace's.
+
 The driver's `Knowledge/` owns the connector, trace, room sections and rendered room facts (FOUNDATION1 mod-viii, D212).
 Help keeps source descriptions and workspace projection; its source record answers the lower room interface directly.
 Work orders and Workplace answer the room's reads through ports declared in Knowledge, installed from their own mapped

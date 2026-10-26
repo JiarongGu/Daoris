@@ -173,7 +173,7 @@ public static class PermissionRules
             [],
             "A session writes files only inside its own tree: an edit or a write anywhere else is refused, "
             + "through links as well. A change needed elsewhere is a quest.",
-            Hook: TreeGuard.Matcher),
+            Hook: TreeGuardHook.Matcher),
     ];
 
     /// <summary>
@@ -545,7 +545,7 @@ public static class SpawnSettings
             {
                 before.Add(new JsonObject
                 {
-                    ["matcher"] = TreeGuard.Matcher,
+                    ["matcher"] = TreeGuardHook.Matcher,
                     ["hooks"] = new JsonArray(new JsonObject
                     {
                         ["type"] = "command",
