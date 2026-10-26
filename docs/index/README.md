@@ -381,7 +381,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-26-agent-provider-proposal-opus.md` | 83 | 654 |
 | `docs/2026-10-26-agent-provider-reads.md` | 122 | 1270 |
 | `docs/2026-10-26-agent-provider-survey.md` | 79 | 632 |
-| `docs/2026-10-26-tree-pool-design.md` | 99 | 921 |
+| `docs/2026-10-26-tree-pool-design.md` | 170 | 1310 |
 | `docs/2026-10-26-tree-pool-proposal-codex.md` | 53 | 606 |
 | `docs/2026-10-26-tree-pool-proposal-opus.md` | 52 | 601 |
 | `docs/2026-10-26-tree-pool-survey.md` | 47 | 562 |
