@@ -46,6 +46,25 @@ valid, and the family and deployment rehearsals remain owed before a stage. The 
 still retains an older opinion-resume finding; CILEDGER1 requires checking that exact case and its
 clearance rather than treating the green summary as evidence that every historical finding closed.
 
+The exact opinion-resume class subsequently passed five tests on `0046e5f3d`. This standalone result
+does not clear the background ledger; a recorded integration pass is still owed under CILEDGER1.
+
+## Knowledge integration checkpoint
+
+Candidate `a34bb83` was handed back without promotion: fourteen gates passed, including all three
+Process checks, while the driver's fast suite passed 14,956 tests and failed three. The queue pinned
+the marker-writer and participant-reader inventories to the Knowledge change. The older held-file
+fixture failure did not reproduce with its signature in the whole-candidate diagnostic; no failure
+was waived.
+
+The clean repair tip is `2ef73c9f9`. It preserves the connector's marker writer under its lower-owner
+alias, keeps both repository-identity spellings visible in the shared reader scans, and updates the
+exact moved-reader inventory. GITSEEDWAIT1 replaces the fixture's timer race with release after an
+actual refused deletion, retaining the cleanup bound. Focused driver checks passed 42 tests, modules
+and service checks two each, merge/source-parser checks five, CLI record checks 51, and vocabulary
+checks two. The structure census remains 431 edges in 48 families. Requeue, full integration and
+landing remain owed; the quest remains Taken.
+
 ## Recovery order and preservation
 
 1. Finish mod-viii in its saved conversation and tree, then the remaining foundation rows in D212's
@@ -85,6 +104,24 @@ Tag creation and branch removal were one Git transaction verifying main and the 
 the removed branch then answered missing (exit 2), with no worktree using it. Its implementation was
 already landed by squash; the old mis-signed history was not merged into main.
 
+The three uncommitted files in `daoris/s-544641a6` were then proved byte-for-byte identical to accepted
+main ancestor `9b489edc5`. Its nested integration probe held no additional source implementation:
+resolved sources matched its incoming parent, and the remaining conflict was historical backlog text.
+After rechecking all 21 saved working-file hashes, the probe's merge was aborted and its clean
+registered worktree removed through Git. Only the three proven duplicate outer files were restored
+to that branch's own HEAD.
+
+Unforced Daoris removal protected twelve unique ignored outputs. No forced deletion followed.
+Daoris's background tidy independently moved the settled tree aside; its active path, branch and
+registration were then absent. Its retained fixture output was copied into the private recovery
+backup, with nine flake logs hash-verified. The moved-aside folder remains under retention.
+
+The obsolete detached review tree was also removed through normal Git worktree removal after its
+tip's ancestry, clean state, containment, absence of reparse points and named live processes were
+checked. Its private scratch was copied first. Four local branches and four registered worktrees
+remain at this checkpoint: main, Knowledge and the two Fabric attempts; the registered trees are
+main, the active Knowledge tree, and the two integration trees. Neither Fabric attempt was discarded.
+
 ## Permission recovery
 
 Asking mode restored a person-answer path after an Auto refusal, but selects Codex's `read-only`
@@ -95,3 +132,7 @@ The owner subsequently authorized unattended continuation and had already author
 controls. The repository's existing permission setting was set to `unrestricted`, leaving its other
 pauses as configured. Daoris applies this at a turn boundary; it is not an appointed role's authority
 or an approval forged for a held call. ROLEPERM1 remains a later reviewed extension of D208/D209.
+
+The next saved-session turn confirmed effective unrestricted access and completed its ordinary edits
+without permission refusals. It still reported missing knowledge tools; CODEXTOOLS1 requires an actual
+inventory and fresh-session comparison before assigning that observation a transport cause.

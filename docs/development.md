@@ -154,7 +154,8 @@ node tools/merge-branch.mjs --ci --watch
 node tools/merge-branch.mjs --ci --stop
 ```
 
-The last form runs the full set on the current checkout, including the long gates. The gates that
+`--full` runs the full set on the current checkout, including the long gates; `--ci --night` runs
+the whole set in the gate tree. The gates that
 start no real process run beside the Process lane, one Process gate at a time (GATELANES1), up to three at once but never
 two that build one .NET component (GATELANES2), and a Process half starts only
 once the heavy light gates (the CLI, .NET and web suites) have ended, so its timing tests run with no
