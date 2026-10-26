@@ -1365,7 +1365,7 @@ const BACKLOG_MERGES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/
  * The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. Each by its
  * name, at whatever depth of the driver's folder it is tracked (STRUCT1, D166).
  */
-const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLanding.cs', 'Landing.cs'];
+const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'Landing.cs'];
 const DRIVER_FOLDER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
 const PAGE_PARSED = PAGE_PARSED_NAMES
   .map((name) => trackedFiles().find((path) => path.startsWith(DRIVER_FOLDER) && posix.basename(path) === name) ?? `${DRIVER_FOLDER}${name}`);

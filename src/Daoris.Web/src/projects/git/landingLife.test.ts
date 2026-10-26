@@ -39,7 +39,7 @@ function constants(text: string, name: string, others: Record<string, Record<str
   return found;
 }
 
-const autoLanding = driverSource('AutoLanding.cs');
+const autoLanding = driverSource('AutoLandingCode.cs');
 const cleanups = driverSource('LandedCleanups.cs');
 const landedKind = constants(cleanups, 'LandedKind');
 
