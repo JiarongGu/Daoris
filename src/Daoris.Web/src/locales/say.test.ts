@@ -11,6 +11,15 @@ import { en, zh } from '.';
  * itself is coded already (CONVNOTE2g/2g2); what this holds is the page's refusals beside it.
  */
 
+/**
+ * The file that declares each class an alias may name, read by name: `ContinueWhy` stays in `Continuation.cs`, and FOUNDATION1's
+ * mod-vii moved `HandOverAskWhy` into Events, its own file.
+ */
+const ALIASED: Record<string, () => string> = {
+  ContinueWhy: () => driverSource('Continuation.cs'),
+  HandOverAskWhy: () => driverSource('HandOverAskWhy.cs'),
+};
+
 /** The `public const string` codes of one static class, one per line as the driver writes them; an alias is resolved through its target. */
 function codesOf(file: string, className: string): string[] {
   const text = driverSource(file);
@@ -18,9 +27,11 @@ function codesOf(file: string, className: string): string[] {
   return [...block.matchAll(/public const string \w+ = (?:"(?<code>[^"]+)"|(?<alias>\w+)\.(?<name>\w+));/g)].map((match) => {
     const { code, alias, name } = match.groups as { code?: string; alias?: string; name?: string };
     if (code) return code;
-    // An alias (`WordsNever.Teammate = ContinueWhy.Teammate`) names another class's constant: read that one.
-    const target = new RegExp(`public const string ${name} = "([^"]+)";`).exec(driverSource('Continuation.cs'));
-    expect(target, `\`${alias}.${name}\` is not a literal in Continuation.cs`).toBeTruthy();
+    // An alias (`WordsNever.Teammate = ContinueWhy.Teammate`) names another class's constant: read that one where it is declared.
+    const source = ALIASED[alias!];
+    expect(source, `\`${alias}\` is no class an alias here is read from: add the file that declares it`).toBeTruthy();
+    const target = new RegExp(`public const string ${name} = "([^"]+)";`).exec(source!());
+    expect(target, `\`${alias}.${name}\` is not a literal in the file that declares ${alias}`).toBeTruthy();
     return (target as RegExpExecArray)[1];
   });
 }

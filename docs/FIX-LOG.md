@@ -5,6 +5,18 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-26 - The page's refusal-code twin read a moved class's constants from the file it left (FOUNDATION1 mod-vii)
+
+- **Symptom:** `src/locales/say.test.ts` failed two cases in FOUNDATION1 row p's land test: *`HandOverAskWhy.QuestClosed` is not a literal in
+  Continuation.cs*. Main had been red there since mod-vii landed; row p's landing ran it because row p changed the file.
+- **Root cause:** the twin resolves an alias (`HandOver.QuestClosed = HandOverAskWhy.QuestClosed`) by reading `Continuation.cs` for every
+  alias, and mod-vii moved `HandOverAskWhy` into Events as `Events/Domain/HandOverAskWhy.cs`. The names census passed, since
+  `Continuation.cs` still exists, and mod-vii's land test ran only the web tests it changed.
+- **Fix:** the twin reads each alias's constants from the file that declares its class, `ContinueWhy` from `Continuation.cs` and
+  `HandOverAskWhy` from `HandOverAskWhy.cs`, both read by name so the census holds them, and an alias of any other class fails naming it.
+- **Verification:** `say.test.ts` passes, 8 of 8; every web test that reads a driver source, 193 of 193 in 9 files; `driver-names.test.ts`,
+  5 of 5.
+
 ## 2026-10-26 - The brainstorm's stop case read the pass's deadline where the person's stop (FLAKE1)
 
 - **Symptom:** `BrainstormBoundsTests.The_person_s_stop_ends_every_pass_and_keeps_what_answered` read `failed`/`deadline` where
