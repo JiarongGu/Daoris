@@ -14,8 +14,10 @@ repository.
   `Continuation.cs` still exists, and mod-vii's land test ran only the web tests it changed.
 - **Fix:** the twin reads each alias's constants from the file that declares its class, `ContinueWhy` from `Continuation.cs` and
   `HandOverAskWhy` from `HandOverAskWhy.cs`, both read by name so the census holds them, and an alias of any other class fails naming it.
+  The merge tool's MOD9e lane rule names `HandOverAskWhy.cs` beside `HandOver.cs`, so a change to it reaches the web gate; without it the
+  merge tool's SESSDEL1c case failed on main, which WALKAGENT1's session found, since this fix ran the names census and not that test.
 - **Verification:** `say.test.ts` passes, 8 of 8; every web test that reads a driver source, 193 of 193 in 9 files; `driver-names.test.ts`,
-  5 of 5.
+  5 of 5; `merge-branch.test.ts`, 182 of 182.
 
 ## 2026-10-26 - The brainstorm's stop case read the pass's deadline where the person's stop (FLAKE1)
 
