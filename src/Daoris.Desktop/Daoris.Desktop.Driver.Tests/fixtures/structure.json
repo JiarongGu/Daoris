@@ -44,7 +44,8 @@
     "Agents/OneSetWords.cs": "Agents",
     "Agents/PoolReceipts.cs": "Agents",
     "Agents/RotationUse.cs": "Agents",
-    "Accounts/InstructionAccount.cs": "Context",
+    "Events/Domain/HandedCodes.cs": "Events",
+    "Accounts/AgentContextWiring.cs": "Context",
     "Accounts/InstructionAccounting.cs": "Context",
     "Agents/AccountRotation.cs": "Agents",
     "Agents/LineAccount.cs": "Agents",
@@ -76,7 +77,7 @@
     "Agents/DshProfile.cs": "Agents",
     "Agents/InAppBrowserHost.cs": "Agents",
     "Agents/InAppBrowserServers.cs": "Agents",
-    "Agents/Adapters/SessionParts.cs": "Context",
+    "Accounts/SessionPartsText.cs": "Context",
     "Agents/AgentAccountsCommand.cs": "Agents",
     "Agents/AgentListCommand.cs": "Agents",
     "Agents/AgentLoginCommand.cs": "Agents",
@@ -953,23 +954,6 @@
   },
   "edges": [
     {
-      "family": "Agents names Context",
-      "after": "Agents",
-      "files": {
-        "Agents/AccountRotation.cs": ["SessionEvents"],
-        "Agents/UsageTurns.cs": ["SessionEvents"],
-        "Agents/Acp.cs": ["SessionStreams"],
-        "Agents/AcpStreams.cs": ["SessionStream","SessionStreamKind","SessionStreams"],
-        "Agents/Adapters.cs": ["ComposedBrief","ComposedInstruction","HandedSections","InstructionAccounting","SessionParts","SessionPartsText"],
-        "Agents/BatchRelay.cs": ["SessionEvents"],
-        "Agents/ConsoleRelay.cs": ["ConsoleLine","SessionOutput"],
-        "Agents/ClaudeStreams.cs": ["SessionStream","SessionStreamKind","SessionStreams"],
-        "Agents/HarnessCapture.cs": ["SessionEvents","SessionOutput","SessionStreams","TranscriptFile"],
-        "Agents/StructuredOutput.cs": ["SessionStreams"],
-        "Agents/TransientRetries.cs": ["SessionEvents","SessionOutput"]
-      }
-    },
-    {
       "family": "Agents names Course",
       "after": "Agents",
       "files": {
@@ -1426,6 +1410,7 @@
     "AgentPluginPortsTests.cs": "Agents",
     "AgentWorkplacePortsTests.cs": "Agents",
     "AgentWorkOrdersPortsTests.cs": "Agents",
+    "AgentContextPortsTests.cs": "Agents",
     "AccountIdentityTests.cs": "Agents",
     "AccountCoolingTests.cs": "Agents",
     "AccountFileNodesTests.cs": "Agents",

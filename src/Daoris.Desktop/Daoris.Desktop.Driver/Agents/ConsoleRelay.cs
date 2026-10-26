@@ -24,7 +24,7 @@ public sealed class ConsoleRelay : IDisposable
     /// <param name="emit">What a batch becomes — an IPC event in the shell, a list in a test.</param>
     /// <param name="window">How long to accumulate. The default reads as live to a person.</param>
     public ConsoleRelay(
-        SessionOutput output, Func<string, IReadOnlyList<ConsoleLine>, Task> emit, TimeSpan? window = null) =>
+        ISessionOutput output, Func<string, IReadOnlyList<ConsoleLine>, Task> emit, TimeSpan? window = null) =>
         _relay = new BatchRelay<ConsoleLine>(
             handler => output.Lined += handler, handler => output.Lined -= handler, emit, window ?? DefaultWindow);
 

@@ -53,7 +53,7 @@ internal static class HarnessCapture
     /// door's form of the protocol door's first transcript lines.
     /// </param>
     internal static Task CaptureAsync(
-        Process process, string transcript, string sessionId, SessionOutput? output, CancellationToken ct,
+        Process process, string transcript, string sessionId, ISessionOutput? output, CancellationToken ct,
         string? preamble = null) =>
         CaptureAsync(process.StandardOutput, process.StandardError, transcript, sessionId, output, ct, preamble);
 
@@ -62,10 +62,10 @@ internal static class HarnessCapture
     /// on either reaches the transcript and the console.
     /// </summary>
     internal static async Task CaptureAsync(
-        TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
+        TextReader stdout, TextReader stderr, string transcript, string sessionId, ISessionOutput? output,
         CancellationToken ct, string? preamble = null)
     {
-        await using var file = TranscriptFile.Open(transcript, append: false);
+        await using var file = AgentContext.Current.OpenTranscript(transcript, append: false);
         if (preamble is { Length: > 0 })
         {
             lock (file) file.WriteLine(preamble);
@@ -112,8 +112,8 @@ internal static class HarnessCapture
     /// <see cref="ChildLineage.Watch"/>); null tells none.
     /// </param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
-        TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
-        SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
+        TextReader stdout, TextReader stderr, string transcript, string sessionId, ISessionOutput? output,
+        ISessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
         Action<SessionEvent>? observed = null, string? personSaid = null,
         IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null,
         Action<string>? named = null, InstructionAccount? account = null, HarnessWords? own = null, string? lineageHome = null,
@@ -121,7 +121,7 @@ internal static class HarnessCapture
     {
         own?.Begin();
         var lineage = lineageHome is null ? null : LineageStreams.Current.Watch(lineageHome, sessionId);
-        await using var file = TranscriptFile.Open(transcript, append);
+        await using var file = AgentContext.Current.OpenTranscript(transcript, append);
         // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
         // before it ends, as the protocol door keeps `session/new`'s id.
         var told = false;
@@ -145,7 +145,7 @@ internal static class HarnessCapture
         var errors = PumpAsync(stderr, file, sessionId, output, ct, also: own is null ? null : own.Said);
         // What it runs beside itself, each its own console stream (CONSOLE3c), kept wherever the
         // session's own console is; a line that is a stream's never reaches the session's reader.
-        var beside = output is null ? null : mapper.Beside(new SessionStreams(output, sessionId), Line);
+        var beside = output is null ? null : mapper.Beside(output.ForSession(sessionId), Line);
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
             // Before the streams beside take it: a subagent's start is theirs too, and its lineage is the part's (FABRIC-C1a). And the
@@ -208,7 +208,7 @@ internal static class HarnessCapture
     /// </summary>
     /// <param name="also">Told each line too, after both: the native door's stderr is its harness's own words (AGT3c).</param>
     internal static async Task PumpAsync(
-        TextReader reader, TextWriter file, string sessionId, SessionOutput? output, CancellationToken ct,
+        TextReader reader, TextWriter file, string sessionId, ISessionOutput? output, CancellationToken ct,
         Action<string>? also = null)
     {
         while (await reader.ReadLineAsync(ct).ConfigureAwait(false) is { } line)

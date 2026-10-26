@@ -117,7 +117,7 @@ public sealed class BatchRelay<T> : IDisposable
 /// console's relay, for the record's events.
 /// </summary>
 public sealed class EventRelay(
-    SessionEvents events, Func<string, IReadOnlyList<SessionEvent>, Task> emit, TimeSpan? window = null)
+    ISessionEvents events, Func<string, IReadOnlyList<SessionEvent>, Task> emit, TimeSpan? window = null)
     : IDisposable
 {
     private readonly BatchRelay<SessionEvent> _relay = new(

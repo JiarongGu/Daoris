@@ -59,7 +59,7 @@ public static class UsageTurns
     /// <summary>How many sessions' bindings, and asks in flight, each home's watch remembers.</summary>
     private const int Remembered = 4096;
 
-    private static readonly ConditionalWeakTable<SessionEvents, Watch> Watches = new();
+    private static readonly ConditionalWeakTable<ISessionEvents, Watch> Watches = new();
 
     private static readonly object Gate = new();
 
@@ -71,7 +71,7 @@ public static class UsageTurns
     /// Watch a sessions' record for its turns, once whoever asks (the loop's context, the chat runner): the record handed back.
     /// </summary>
     /// <param name="clock">When a turn is written; the system's but in a test. The first watch's stands.</param>
-    public static SessionEvents Watched(string home, SessionEvents events, Func<DateTimeOffset>? clock = null)
+    public static T Watched<T>(string home, T events, Func<DateTimeOffset>? clock = null) where T : class, ISessionEvents
     {
         _ = Watches.GetValue(events, each => new Watch(home, each, clock ?? (() => DateTimeOffset.UtcNow)));
         return events;
@@ -82,7 +82,7 @@ public static class UsageTurns
     /// start): its turns are kept under it from now on. A later start of the same session (an account moved, a conversation
     /// going on) replaces it.
     /// </summary>
-    public static void Bound(string home, SessionEvents events, string session, TurnBinding binding)
+    public static void Bound(string home, ISessionEvents events, string session, TurnBinding binding)
     {
         Watched(home, events);
         lock (Gate)
@@ -99,7 +99,7 @@ public static class UsageTurns
         }
     }
 
-    public static void ActorBound(string home, SessionEvents events, string session, string actor)
+    public static void ActorBound(string home, ISessionEvents events, string session, string actor)
     {
         if (BindingOf(home, session) is { } binding) Bound(home, events, session, binding with { Actor = actor });
     }
@@ -121,7 +121,7 @@ public static class UsageTurns
         private readonly Func<DateTimeOffset> _clock;
         private readonly Dictionary<string, DateTimeOffset> _asked = new(StringComparer.Ordinal);
 
-        public Watch(string home, SessionEvents events, Func<DateTimeOffset> clock)
+        public Watch(string home, ISessionEvents events, Func<DateTimeOffset> clock)
         {
             _home = home;
             _clock = clock;

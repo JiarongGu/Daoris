@@ -61,7 +61,7 @@ public interface IStreamMapper
     /// </summary>
     /// <param name="streams">The session's streams.</param>
     /// <param name="say">The session's own console, for a line saying one started or ended.</param>
-    IStreamsReader? Beside(SessionStreams streams, Action<string> say) => null;
+    IStreamsReader? Beside(ISessionStreams streams, Action<string> say) => null;
 }
 
 /// <summary>
@@ -134,7 +134,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
     public string? Conversation { get; private set; }
 
     /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, and tasks on <c>system</c> lines (CONSOLE3c).</summary>
-    public IStreamsReader? Beside(SessionStreams streams, Action<string> say) => new ClaudeStreams(streams, say);
+    public IStreamsReader? Beside(ISessionStreams streams, Action<string> say) => new ClaudeStreams(streams, say);
 
     public StreamMapped Read(string line)
     {

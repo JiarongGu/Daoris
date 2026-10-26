@@ -1,13 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>One line a session said, and where it sits in that session's stream.</summary>
-/// <param name="Sequence">
-/// Monotonic within a session, starting at 1. It is how a reader asks for "what I have not seen"
-/// without the buffer having to remember who is reading — and how a subscriber that joined mid-stream
-/// discovers it missed something.
-/// </param>
-public sealed record ConsoleLine(long Sequence, string Text);
-
 /// <param name="Lines">The lines newer than what was asked for, oldest first.</param>
 /// <param name="Sequence">The newest sequence this session has produced — what to ask after next.</param>
 /// <param name="Live">Whether more is coming. False once the session's process has ended.</param>
@@ -18,39 +10,11 @@ public sealed record ConsoleLine(long Sequence, string Text);
 public sealed record ConsoleTail(
     IReadOnlyList<ConsoleLine> Lines, long Sequence, bool Live, long Dropped);
 
-/// <summary>The kinds a <see cref="SessionStream"/> can be (CONSOLE2).</summary>
-public static class SessionStreamKind
-{
-    /// <summary>A sub-session the harness spawned, streaming as a session of its own.</summary>
-    public const string Subagent = "subagent";
-
-    /// <summary>Background work the session started, such as a dev server, whose output is a file.</summary>
-    public const string Task = "task";
-}
-
-/// <summary>
-/// Something a session is running beside itself (CONSOLE2): a subagent, or background work.
-/// </summary>
-/// <param name="Id">Unique within its session: <c>subagent/&lt;id&gt;</c> or <c>task/&lt;id&gt;</c>, the wire's id.</param>
-/// <param name="Kind">A <see cref="SessionStreamKind"/>.</param>
-/// <param name="Name">What the harness called it.</param>
-/// <param name="CanStop">
-/// Whether its harness said it can be stopped (CONSOLE3a) — a task's <c>canStop</c>, in the wire's word.
-/// </param>
-public sealed record SessionStream(string Id, string Kind, string Name, bool CanStop = false)
-{
-    /// <summary>
-    /// How a stream ended when its session ended first: the harness never said, and nothing it
-    /// started outlives the session (ORPHAN1's job object).
-    /// </summary>
-    public const string SessionEnded = "session-ended";
-}
-
 /// <summary>
 /// One session's streams, kept under that session (CONSOLE2) — what a door hands the wire so a
 /// subagent's lines and a task's output land beside the session rather than in it.
 /// </summary>
-public sealed class SessionStreams(SessionOutput output, string sessionId)
+public sealed class SessionStreams(SessionOutput output, string sessionId) : ISessionStreams
 {
     public void Open(SessionStream stream) => output.Open(sessionId, stream);
 
@@ -87,8 +51,10 @@ public sealed record StreamState(string Key, string Kind, string Name, bool Live
 /// session. They ride with their session: they are not counted as sessions retained, they leave
 /// when it is evicted, and its end is theirs.</para>
 /// </remarks>
-public sealed class SessionOutput
+public sealed class SessionOutput : ISessionOutput
 {
+    ISessionStreams ISessionOutput.ForSession(string sessionId) => new SessionStreams(this, sessionId);
+
     /// <summary>Lines kept per session. Enough to read a screen's worth of history, not a log file.</summary>
     public const int LinesPerSession = 500;
 

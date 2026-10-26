@@ -519,6 +519,16 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void Agents_reads_lower_context_shapes_and_supplied_or_required_operations()
+    {
+        string[] context = ["SessionEvents", "SessionOutput", "SessionStreams", "SessionStream", "SessionStreamKind", "ConsoleLine",
+            "TranscriptFile", "ComposedBrief", "ComposedInstruction", "HandedSections", "InstructionAccounting", "SessionParts", "SessionPartsText"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && context.Contains(edge.Type) && edge.DeclaredIn.Any(path => Tree.Value.Map.Files.TryGetValue(path, out var owner)
+                ? owner == "Context" : path.StartsWith("Context/", StringComparison.Ordinal))));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

@@ -24,7 +24,7 @@ namespace Daoris.Driver;
 /// And the harness ends its own background work when its turn ends, so what is still open when the
 /// output ends is ended with the session, and says so.</para>
 /// </remarks>
-internal sealed class ClaudeStreams(SessionStreams streams, Action<string> say, TimeSpan? tailEvery = null) : IStreamsReader
+internal sealed class ClaudeStreams(ISessionStreams streams, Action<string> say, TimeSpan? tailEvery = null) : IStreamsReader
 {
     private sealed class Child(string streamId, string name)
     {

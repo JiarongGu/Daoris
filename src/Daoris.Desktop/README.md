@@ -36,7 +36,7 @@ policy and sentences. Its public constants forward to Events, and a refused door
 The required protocol-posture marker belongs to Agents (`AgentPostures.Required`); Help forwards the same `!` value.
 Agents also owns the shared `RunningTask` data and pure review-tab title; Review retains the watch and browser-serving operations.
 Roles composes actor opening notes through a higher extension over `RotatedOpening` and Events' existing `ISessionEvents` contract.
-The instruction accounting sources in `Accounts/` and session parts in `Agents/Adapters/` belong to Context until its move.
+Context owns instruction accounting and session-part composition in `Accounts/`, and supplies the required `AgentContext` operations. Agents owns the composed brief and part carriers; Events owns handed codes and stream shapes. Event history, console output and streams are supplied through lower interfaces while Context retains storage, buffering and lifecycle.
 
 Participants judges `DrivenAccess` and supplies Agents with the `IAgentAccess` start contract. Agents owns the installed
 `LineageHook` data and required `LineageStreams` operation port; Participants installs the actual per-run watcher from

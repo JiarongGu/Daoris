@@ -14,8 +14,8 @@ internal static class TransientRetries
     /// </param>
     /// <param name="profile">The account the run is on, for the machine log; null for the tool's own sign-in.</param>
     internal static TransientRetry For(
-        AdapterSet adapters, ISessionAdapter adapter, HarnessRoster harnesses, ServiceClient service, SessionEvents events,
-        SessionOutput? output, SessionWatch watch, MachineLog? log, string sessionId, string questId, string? profile, TimeProvider clock,
+        AdapterSet adapters, ISessionAdapter adapter, HarnessRoster harnesses, ServiceClient service, ISessionEvents events,
+        ISessionOutput? output, SessionWatch watch, MachineLog? log, string sessionId, string questId, string? profile, TimeProvider clock,
         Func<CancellationToken, Task<bool>> wanted)
     {
         var door = new SaidDoor(service, sessionId);

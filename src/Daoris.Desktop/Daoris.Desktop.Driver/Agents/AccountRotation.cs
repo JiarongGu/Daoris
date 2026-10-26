@@ -598,7 +598,7 @@ public static class RotatedOpening
     /// record's failure costs its line, never the start.
     /// </summary>
     internal static void Say(
-        ServiceClient service, SessionEvents events, string sessionId, string adapter, HarnessSelection selection, Carried? carried)
+        ServiceClient service, ISessionEvents events, string sessionId, string adapter, HarnessSelection selection, Carried? carried)
     {
         if (selection.Profile is not { } to || Line(selection, carried) is not { } line) return;
 
@@ -677,13 +677,13 @@ public static class RotatedOpening
     /// A session's context at its high-water (D125 §3.6): what this machine's usage record kept of it, else the highest its
     /// own record's usage reports reached; null where neither says, never zero (TOOL3).
     /// </summary>
-    internal static long? ContextOf(SessionUsage? usage, SessionEvents events, string session)
+    internal static long? ContextOf(SessionUsage? usage, ISessionEventHistory events, string session)
     {
         if (usage?.Of(session) is { } kept) return kept.Used;
         if (!SessionEventText.IsId(session)) return null;
         try
         {
-            return events.After(session, 0).Events.Where(e => e.Kind == SessionEventKind.Usage).Max(e => e.Used);
+            return events.ReadAll(session).Where(e => e.Kind == SessionEventKind.Usage).Max(e => e.Used);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
         {

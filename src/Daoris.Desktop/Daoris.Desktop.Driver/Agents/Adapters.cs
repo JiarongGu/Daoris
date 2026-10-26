@@ -458,12 +458,12 @@ public static class TargetPrompt
     /// </summary>
     public static ComposedInstruction Composed(SessionTarget target)
     {
-        if (target.Prompt is { } prompt) return InstructionAccounting.Intake(target, prompt);
+        if (target.Prompt is { } prompt) return AgentContext.Current.Intake(target, prompt);
 
         var pieces = target.Answered is { } answered ? ResumingPieces(target, answered)
             : target.CutOff is { } cutOff ? CarryingOnPieces(target, cutOff)
             : ClaimingPieces(target);
-        return InstructionAccounting.Account(target, pieces);
+        return AgentContext.Current.Account(target, pieces);
     }
 
     /// <summary>A piece of an instruction: the section it belongs to, and its words.</summary>
@@ -531,7 +531,7 @@ public static class TargetPrompt
         .. Beneath(target),
         new(HandedSections.WrittenTo, WrittenTo(target)),
         // A further part of a session is told the parts before it (SESSONE1d), counted as what the sessions before it left.
-        new(HandedSections.CarryOn, SessionPartsText.Of(target)),
+        new(HandedSections.CarryOn, AgentContext.Current.Parts(target)),
         .. RetriedPieces(target),
         .. Tail(target, target.Retried is not null
             ? $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then finish its work from there rather\n"

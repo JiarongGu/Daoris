@@ -24,7 +24,7 @@ namespace Daoris.Driver;
 /// object), so whatever is still open when it ends is ended with it, and says so.</para>
 /// </remarks>
 internal sealed class AcpStreams(
-    SessionStreams streams, AcpConsole root, Action<SessionEvent> emit, TimeSpan quiet, TimeSpan? tailEvery = null)
+    ISessionStreams streams, AcpConsole root, Action<SessionEvent> emit, TimeSpan quiet, TimeSpan? tailEvery = null)
 {
     /// <summary>
     /// How long a task's ending waits for a later word before it is said. The adapter says

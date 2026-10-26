@@ -6,11 +6,11 @@ import { HANDED_CUTS } from './handed';
 /**
  * An instruction's account carries codes the driver declares and this page words (CONTEXT1, D143 point 1), with no code
  * shared: a twin, as a note's codes are (LANG1a, `.claude/knowledge/twins.md`). This side parses the driver's declarations
- * in `InstructionAccount.cs` and holds both catalogues to them both ways, and the page's map of each cut's values to the
+ * in Events' `HandedCodes.cs` and holds both catalogues to them both ways, and the page's map of each cut's values to the
  * driver's. The driver's `HandedCodesTests` reads the catalogues from its side.
  */
 
-const source = driverSource('InstructionAccount.cs');
+const source = driverSource('HandedCodes.cs');
 
 /** A class's codes as the driver declares them: each `const string`, by its name and value. */
 function declared(holder: string): Map<string, string> {

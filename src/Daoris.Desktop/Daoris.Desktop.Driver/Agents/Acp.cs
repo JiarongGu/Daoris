@@ -294,7 +294,7 @@ public sealed class AcpSession(
     object? meta = null,
     Action<SessionEvent>? onEvent = null,
     TimeSpan? quiet = null,
-    SessionStreams? streams = null,
+    ISessionStreams? streams = null,
     Action<IReadOnlyList<AcpConfigOption>>? onOptions = null,
     Action<string>? onConversation = null,
     TimeSpan? wakeQuiet = null)
