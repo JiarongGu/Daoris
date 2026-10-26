@@ -738,7 +738,7 @@ public sealed class AcpSteerTests
         await first.Task.WaitAsync(Poll.Patience);
 
         var unnamed = new ChatMessage("put PINEAPPLE after the words", []) { Id = "k1", Kept = true, Attempting = () => Task.FromResult<IReadOnlyList<string>>([]) };
-        await Assert.ThrowsAsync<AcpWordsUnmarked>(() => session.SayAsync(unnamed, CancellationToken.None));
+        await Assert.ThrowsAsync<AcpWordsUnmarked>(() => session.SayAsync(unnamed, CancellationToken.None).WaitAsync(Poll.Patience));
         Assert.Equal(1, agent.Methods.Count(method => method == "session/prompt"));
 
         var named = new ChatMessage("and the readme", []) { Id = "k2", Kept = true, Attempting = () => Task.FromResult<IReadOnlyList<string>>(["k2"]) };
