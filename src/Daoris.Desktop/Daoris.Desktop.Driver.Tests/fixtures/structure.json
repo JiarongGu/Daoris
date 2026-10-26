@@ -319,6 +319,7 @@
     "Knowledge/StandingAnswer.cs": "Knowledge",
     "Knowledge/Trace.cs": "Knowledge",
     "Knowledge/TraceCommand.cs": "Knowledge",
+    "Knowledge/TraceEventFiles.cs": "Knowledge",
     "Knowledge/TraceReads.cs": "Knowledge",
     "Loop/ChannelReach.cs": "Work orders",
     "Loop/Driver.cs": "Loop",
@@ -613,6 +614,7 @@
     "Sessions/Domain/StopAnswer.cs": "Work orders",
     "Sessions/Events/ContextBriefs.cs": "Context",
     "Sessions/Events/SessionEventLog.cs": "Context",
+    "Sessions/Events/SessionEventReads.cs": "Context",
     "Sessions/Events/SessionLastWords.cs": "Context",
     "Sessions/HarnessEnding.cs": "Agents",
     "Sessions/HarnessWords.cs": "Agents",
@@ -932,13 +934,6 @@
         "Knowledge/KnowledgeConnector.cs": ["AcpMcpServer"],
         "Knowledge/Room/HelpRoomAgents.cs": ["LoginState","StrayFolder"],
         "Knowledge/Room/HelpRoomMayDo.cs": ["AcrossRules","SpawnSkills"]
-      }
-    },
-    {
-      "family": "Knowledge names Context",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/TraceReads.cs": ["SessionEvents"]
       }
     },
     {
@@ -1701,6 +1696,7 @@
     "HelpRoomPlacesTests.cs": "Knowledge",
     "HelpRoomWindowTests.cs": "Knowledge",
     "HelpRoomWorkTests.cs": "Knowledge",
-    "HelpRoomWorkspacesTests.cs": "Knowledge"
+    "HelpRoomWorkspacesTests.cs": "Knowledge",
+    "KnowledgePortsTests.cs": "Knowledge"
   }
 }

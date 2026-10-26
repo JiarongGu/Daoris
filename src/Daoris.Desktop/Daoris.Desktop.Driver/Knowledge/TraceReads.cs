@@ -13,11 +13,10 @@ internal static class TraceReads
 
     private static TraceEventsRead Events(string home, string sessionId)
     {
-        var events = new SessionEvents(DaorisHome.Entry(home, HomeEntry.Sessions));
         try
         {
-            return File.Exists(events.PathOf(sessionId))
-                ? new TraceEventsRead(events.After(sessionId, 0).Events)
+            return TraceEventFiles.Current.Read(DaorisHome.Entry(home, HomeEntry.Sessions), sessionId) is { } events
+                ? new TraceEventsRead(events)
                 : new TraceEventsRead(null, TraceEventGaps.NoneHere);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
