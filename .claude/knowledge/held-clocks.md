@@ -74,6 +74,11 @@ product being flaky. A wider window only moves the load at which it fails, and m
 
 ## The exemplar
 
+For a synchronous bounded retry, `GitSeedTests` controls `GitSeed.Remove`'s retry wait per call. The control runs only after
+a real deletion refusal: the test keeps the exclusive handle through two attempts, then releases it there. Another case
+keeps it held through exhaustion and checks the exact retry count. This avoids a pool timer competing with synchronous
+waits while leaving the default cleanup bound intact (GITSEEDWAIT1, `docs/FIX-LOG.md`).
+
 `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsSayCommandTests.cs`: `Late` and `HeldClock` near the top;
 `A_loop_that_took_the_words_and_answers_after_the_wait_is_waited_for` (a late loop that answers), `…went_away_unanswered_is_said_at_once`
 and `…never_answers_is_said_after_its_bound` (a late loop that does not), and

@@ -13,7 +13,17 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 **Continuation outcome.** Work orders (`1a44002fb`), Workplace (`cab2487f2`) and Help (`5779f3891`) complete the cuts, with linked-consumer follow-ups recorded in D212. The inherited move and all cuts leave 431 edges in 48 families, against 584 in 58; no family cut after Knowledge remains. D212's final proof receipt records the passing focused checks and the full integration proof still owed. The quest and FOUNDATION1 row remain open for that proof; no user-visible change.
 
-**Preview repair.** Candidate `a34bb83` failed three driver fast tests and was not promoted. The marker inventory now recognizes the connector's exact lower-owner alias, keeping every writer and rationale; its eight focused cases pass. The shared participant reader table places the moved reads and keeps both repository aliases visible in all three scans, retaining reader classifications and row obligations; driver 3, modules 2 and service 2 focused cases pass, plus 5 merge selection/source-parser cases. D212 records the red and green proof. Cleanup repair and the parent's integration proof remain owed.
+**Preview repair.** Candidate `a34bb83` failed three driver fast tests and was not promoted. The marker inventory now recognizes the connector's exact lower-owner alias, keeping every writer and rationale; its eight focused cases pass. The shared participant reader table places the moved reads and keeps both repository aliases visible in all three scans, retaining reader classifications and row obligations; driver 3, modules 2 and service 2 focused cases pass, plus 5 merge selection/source-parser cases. The cleanup race is repaired as GITSEEDWAIT1 below. D212 records the red and green proof. The parent's full integration proof and landing remain owed; the quest stays Taken.
+
+## GITSEEDWAIT1 — seed cleanup's held-file release follows an actual refusal (2026-10-27)
+
+> Make the test coordinate the actual attempted removal and explicit release rather than relying on the pool timer winning a wall-clock race.
+
+**Outcome.** The pre-existing fixture raced a fire-and-forget delayed release against twelve synchronous removal attempts.
+A held continuation reproduced the integration's exception before repair. The retry wait now has a per-call synchronous
+control in the test helper; the test releases the file after two actual refusals, while another keeps it held through the
+unchanged twelve-attempt bound. All 10 `GitSeedTests` cases pass. Root cause, originating commit and proof: FIX-LOG's
+GITSEEDWAIT1 entry. No product cleanup behavior or reparse containment changed.
 
 ## PICKLOST1 — a lost conversation whose account the person picked walks off that account (2026-10-26)
 

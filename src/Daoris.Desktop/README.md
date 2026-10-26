@@ -39,6 +39,10 @@ The driver and modules' `ParticipantWorkReadersTests` share the service tests' `
 Their exact file and line census follows both `HelpRoom.Repository` and its lower owner `KnowledgeRoomIdentity.Repository`;
 a source projection moved across the ports keeps its reader classification and Part B row in that table.
 
+Scratch cleanup uses the driver tests' `GitSeed.Remove`. Tests of its bounded retries can control the wait after an actual
+refusal per call, so a held file is released at an observed attempt instead of by a competing pool timer. The default
+cleanup still makes twelve attempts with quarter-second waits and excludes reparse points from its attribute walk.
+
 The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
 concluded from its exit code and its quest, never from what it said. A driven turn that ends on its own background work waits
