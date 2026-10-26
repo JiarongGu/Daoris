@@ -2518,7 +2518,7 @@ public sealed class AdapterSet(
 
     /// <summary>The plugin a harness came from (D64), or null for one this build carries.</summary>
     public string? DeclaredBy(string name) =>
-        adapters.TryGetValue(name, out var adapter) && adapter is DeclaredAcpAdapter declared
+        adapters.TryGetValue(name, out var adapter) && adapter is IPluginAdapter declared
             ? declared.Plugin
             : null;
 
@@ -2527,22 +2527,15 @@ public sealed class AdapterSet(
     /// catalogue has already refused any name this set carries, so nothing here can be replaced —
     /// a plugin adds, and the built-in set is exactly what it was.
     /// </summary>
-    public AdapterSet WithPlugins(PluginCatalog catalog)
+    public AdapterSet WithPlugins(IAgentPlugins catalog)
     {
         var joined = new Dictionary<string, ISessionAdapter>(adapters, StringComparer.OrdinalIgnoreCase);
-        foreach (var plugin in catalog.Contributing)
+        foreach (var adapter in catalog.Adapters)
         {
-            foreach (var harness in plugin.Manifest.Harnesses)
-            {
-                joined.TryAdd(harness.Name, new DeclaredAcpAdapter(harness, plugin.Manifest.Id));
-            }
+            joined.TryAdd(adapter.Name, adapter);
         }
 
-        var named = catalog.Plugins.SelectMany(plugin => plugin.Manifest.Harnesses)
-            .SelectMany(harness => new[] { harness.Name, harness.AccountOf })
-            .OfType<string>()
-            .Where(name => name.Trim().Length > 0);
-        return new AdapterSet(joined, holders, [.. (declared ?? []).Concat(named).Distinct(StringComparer.OrdinalIgnoreCase)]);
+        return new AdapterSet(joined, holders, [.. (declared ?? []).Concat(catalog.DeclaredAgents).Distinct(StringComparer.OrdinalIgnoreCase)]);
     }
 
     public ISessionAdapter Resolve(string name)

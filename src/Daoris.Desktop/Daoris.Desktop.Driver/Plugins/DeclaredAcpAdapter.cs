@@ -15,10 +15,10 @@ namespace Daoris.Driver;
 /// binary is the command's first word, so "is it installed" is asked of the thing that will run.</para>
 ///
 /// <para><b>It starts nothing and reads nothing</b> (STRUCT3a): it says how the agents' door
-/// (<see cref="ISessionAdapter"/>) runs what a plugin declares. The adapter set (Agents) builds one per declared harness,
-/// and reaches Plugins through it.</para>
+/// (<see cref="ISessionAdapter"/>) runs what a plugin declares. The catalogue supplies one per declared harness through
+/// Agents' lower contract, including its provenance.</para>
 /// </remarks>
-public sealed class DeclaredAcpAdapter(PluginHarness harness, string plugin) : ISessionAdapter
+public sealed class DeclaredAcpAdapter(PluginHarness harness, string plugin) : IPluginAdapter
 {
     public string Name => harness.Name;
 

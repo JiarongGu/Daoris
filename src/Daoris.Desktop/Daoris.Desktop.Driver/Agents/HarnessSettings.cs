@@ -345,7 +345,7 @@ public sealed record HarnessSettings(
     public static IReadOnlyList<string> AgentsKnown(string home)
     {
         var built = AdapterSet.Built();
-        return built.WithPlugins(PluginCatalog.Load(home, built.Names)).Agents;
+        return built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names)).Agents;
     }
 
     /// <summary>

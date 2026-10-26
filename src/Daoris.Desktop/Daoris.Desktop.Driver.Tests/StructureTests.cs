@@ -496,6 +496,13 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void Agents_consumes_plugin_contracts_below_catalogue_and_copy_operations()
+    {
+        string[] higher = ["PluginCatalog", "DeclaredAcpAdapter", "PluginFolders"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal) && higher.Contains(edge.Type)));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

@@ -980,16 +980,6 @@
       }
     },
     {
-      "family": "Agents names Plugins",
-      "after": "Agents",
-      "files": {
-        "Agents/HarnessSettings.cs": ["PluginCatalog"],
-        "Agents/Adapters.cs": ["DeclaredAcpAdapter","PluginCatalog"],
-        "Agents/AgentsCommand.cs": ["PluginCatalog"],
-        "Agents/SpawnSkills.cs": ["PluginCatalog","PluginFolders"]
-      }
-    },
-    {
       "family": "Agents names Work orders",
       "after": "Agents",
       "files": {
@@ -1448,6 +1438,7 @@
   "tests": {
     "ActorOpeningTests.cs": "Roles",
     "ParticipantPortsTests.cs": "Agents",
+    "AgentPluginPortsTests.cs": "Agents",
     "AccountIdentityTests.cs": "Agents",
     "AccountCoolingTests.cs": "Agents",
     "AccountFileNodesTests.cs": "Agents",

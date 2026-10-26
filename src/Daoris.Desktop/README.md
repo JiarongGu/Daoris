@@ -42,6 +42,10 @@ Participants judges `DrivenAccess` and supplies Agents with the `IAgentAccess` s
 `LineageHook` data and required `LineageStreams` operation port; Participants installs the actual per-run watcher from
 `Sessions/LineageWiring.cs`. Script installation and the part's lineage end remain Participants' operations.
 
+Plugins supplies adapters, account declarations and skill composition through `IAgentPlugins`; Agents keeps adapter-set
+joining, provenance reading, skill handing and cleanup. `Plugins/AgentPluginWiring.cs` installs the required catalogue
+reader for both account discovery and terminal construction. Knowledge's `SkillFiles` validates every copied skill.
+
 The driver's `Knowledge/` owns the connector, trace, room sections and rendered room facts (FOUNDATION1 mod-viii, D212).
 Help keeps source descriptions and workspace projection; its source record answers the lower room interface directly.
 Work orders and Workplace answer the room's reads through ports declared in Knowledge, installed from their own mapped

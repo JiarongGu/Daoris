@@ -30,8 +30,19 @@ namespace Daoris.Driver;
 /// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin, and the steps
 /// with their resources (<see cref="PluginSteps"/>, FABRIC-UNIT1d), whose problems do.</para>
 /// </remarks>
-public sealed class PluginCatalog : IKnowledgePlugins
+public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins
 {
+    IEnumerable<ISessionAdapter> IAgentPlugins.Adapters => Contributing.SelectMany(plugin =>
+        plugin.Manifest.Harnesses.Select(harness => (ISessionAdapter)new DeclaredAcpAdapter(harness, plugin.Manifest.Id)));
+
+    IEnumerable<string> IAgentPlugins.DeclaredAgents => Plugins.SelectMany(plugin => plugin.Manifest.Harnesses)
+        .SelectMany(harness => new[] { harness.Name, harness.AccountOf })
+        .OfType<string>()
+        .Where(name => name.Trim().Length > 0);
+
+    (string? Folder, IReadOnlyList<string> Plugins) IAgentPlugins.WriteSkills(string home, string sessionId, string to) =>
+        PluginAgentSkills.Write(home, sessionId, this, to);
+
     IReadOnlyList<string> IKnowledgePlugins.LandingPlugins() =>
         [.. Plugins.Select(plugin => plugin.Manifest.Id)
             .Where(id => LandingRules.PluginProblem(id, this) is null)
