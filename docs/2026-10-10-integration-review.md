@@ -1,5 +1,19 @@
 # Integration and review — 2026-10-10
 
+## Continuation, 2026-10-27: foundation landing
+
+The owner directed continued development after the startup recovery and provider design. Candidate `d8c85e58f` completes
+FOUNDATION1 row 1d-i on a clean session branch: keyed destination receipts, old-writer deletion triggers, host-run negotiation
+and lost-answer holds. Executor adoption and moved words remain later rows under D212 §19.5/§19.12. Review the source and
+focused regressions, compare its reported gate failures with current main, then integrate through the merge queue. The
+module-cut session remains unfinished with its edits preserved; resume its existing record without overriding model choices.
+No candidate is declared merged or installed by this checkpoint.
+
+Review found OPENANSWER1 in the candidate: valid JSON with missing destination data or wrongly typed transfer fields bypasses
+its lost-answer hold. Eight regressions failed first, including an older host's successful reply without a destination. Fix
+and recheck that path before landing. Current main's two SESSDEL1c checks pass, so the older branch's gate-mapping failure is
+not a current blocker. The existing module-cut record resumed successfully on its configured agent and model choices.
+
 ## Scope and outcome
 
 Owner request: recover unfinished branches, retain only `main`, review the code with UI/UX priority,
