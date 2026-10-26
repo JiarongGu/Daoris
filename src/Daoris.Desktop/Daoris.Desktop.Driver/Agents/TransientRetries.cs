@@ -18,7 +18,7 @@ internal static class TransientRetries
         ISessionOutput? output, SessionWatch watch, MachineLog? log, string sessionId, string questId, string? profile, TimeProvider clock,
         Func<CancellationToken, Task<bool>> wanted)
     {
-        var door = new SaidDoor(service, sessionId);
+        var keepGoOn = AgentCourse.Current.RetryGoOn(service, sessionId);
         return new TransientRetry
         {
             Clock = clock,
@@ -31,17 +31,7 @@ internal static class TransientRetries
                 return read;
             },
             Wanted = wanted,
-            KeepGoOn = async (episode, text, ct) =>
-            {
-                var key = DaorisKeys.TransientRetry(sessionId, episode.Began);
-                var said = await service.SayAsync(sessionId, text, ct: ct, from: DaorisWords.From, key: key, running: true).ConfigureAwait(false);
-                if (said is not { Kept: true, Word.Id: { } id }) return null;
-                // COWORK1c (D188 point 6; the design §5.1, R3-O5): through the run's one dispatcher, attempted before the wire and taken
-                // off by its id once written; the conclusion's take-off by key is the fallback.
-                return SaidDoor.Dispatched(
-                    new ChatMessage(text, []) { Id = id, Kept = true, Daoris = new DaorisWord(key) }, door,
-                    went => { _ = TakeOffAsync(door, id); });
-            },
+            KeepGoOn = keepGoOn,
             Began = (episode, next) =>
             {
                 var noted = TransientRetry.Retrying(adapter.Name, episode.Words, next);
@@ -100,36 +90,10 @@ internal static class TransientRetries
         };
     }
 
-    /// <summary>The go-on off its record by its id once written; one that fails is taken off by its key at the conclusion.</summary>
-    private static async Task TakeOffAsync(ISaidDoor door, string id)
-    {
-        try
-        {
-            await door.TakeOffAsync([id], CancellationToken.None).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
-                                          or ObjectDisposedException or System.Text.Json.JsonException)
-        {
-            // The conclusion's fallback takes it off.
-        }
-    }
-
     /// <summary>
     /// The fallback at both conclusions (§5.1, R3-O5): Daoris's go-on, where its take-off did not land, comes off the record by its key, so
     /// none waits on a record the run then parked and none reaches a new part. Never faults.
     /// </summary>
-    internal static async Task GoOnOffAsync(ServiceClient service, string sessionId, CancellationToken ct)
-    {
-        try
-        {
-            if (await service.RecordAsync(sessionId, ct).ConfigureAwait(false) is not { } record) return;
-            List<string> ids = [.. (record.Said ?? []).Where(word => DaorisKeys.IsTransientRetry(word.Key)).Select(word => word.Id).OfType<string>()];
-            if (ids.Count > 0) await service.TakenAsync(sessionId, ids, by: null, ct).ConfigureAwait(false);
-        }
-        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException
-                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
-        {
-            // Left waiting, it is a word of Daoris's, which the hold's word rule never reads as a release.
-        }
-    }
+    internal static Task GoOnOffAsync(ServiceClient service, string sessionId, CancellationToken ct) =>
+        AgentCourse.Current.GoOnOffAsync(service, sessionId, ct);
 }

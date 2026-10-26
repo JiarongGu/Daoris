@@ -29,8 +29,18 @@ namespace Daoris.Driver;
 /// may still act on it, so there it stops nothing either.</para>
 /// </remarks>
 /// <param name="changed">Where it stands, each time that changes — the page shows what is waiting.</param>
-public sealed class DrivenInbox(Action<ChatQueue> changed) : IEpisodeWords
+public sealed class DrivenInbox(Action<ChatQueue> changed) : IAgentInbox
 {
+    void IAgentInbox.Attach(Func<Task>? interrupt, Func<IAgentWord, Task<string>>? deliver, Func<IAgentWord, Task<string>>? steer) =>
+        Attach(interrupt, deliver is null ? null : word => deliver(word), steer is null ? null : word => steer(word));
+    bool IAgentInbox.HandBack(IAgentWord word) => HandBack(ChatMessage.FromAgent(word));
+    AgentNext? IAgentInbox.NextOrClose() => NextOrClose() is { } next
+        ? new(next.Held, next.Answer) { Waits = next.Waits } : null;
+    IReadOnlyList<IAgentWord> IAgentInbox.Close() => Close();
+    void IAgentInbox.OnClosing(Action closing, Func<bool> personStopped, Action<IReadOnlyList<IAgentWord>> left) =>
+        OnClosing(closing, personStopped, words => left(words));
+    IReadOnlyList<IAgentWord> IEpisodeWords.TakeHeld() => TakeHeld();
+
     private readonly object _gate = new();
     private readonly List<ChatMessage> _held = [];
     private readonly Queue<Task<string>> _sent = new();

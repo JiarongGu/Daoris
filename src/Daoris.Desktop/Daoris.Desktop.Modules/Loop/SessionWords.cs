@@ -124,10 +124,11 @@ public sealed class SessionWords : IDisposable
     /// shell is shutting down. Shown again under the ids they were shown by, as waiting for the session to go on (the reach
     /// <c>resume</c>), so the page never says they were lost; and the loop is nudged, so a look goes on with them.
     /// </summary>
-    private void OnKeptLeft(string id, IReadOnlyList<ChatMessage> words)
+    private void OnKeptLeft(string id, IReadOnlyList<IAgentWord> words)
     {
-        foreach (var word in words)
+        foreach (var delivered in words)
         {
+            var word = ChatMessage.FromAgent(delivered);
             var daoris = word.Daoris is not null;
             _loop.Output.Append(id, $"— the session ended before it took {(daoris ? "Daoris's words" : "what the person added")}, which wait for it to go on: {word.Text}");
             _loop.Events.Keep(id, new SessionEvent

@@ -110,19 +110,19 @@ public sealed class SessionProcesses(string? markers = null)
         if (!_running.TryGetValue(sessionId, out var held)) return null;
         return held.FindLast(entry => entry.StopRequested) ?? Answered(held);
     }
-    private readonly Dictionary<string, DrivenInbox> _inboxes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, IAgentInbox> _inboxes = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Where a driven session's held words stand, each time that changes (SESS3) — the page shows them.</summary>
-    public event Action<string, ChatQueue>? HeldChanged;
+    public event Action<string, IAgentQueue>? HeldChanged;
 
     /// <summary>
     /// Open a driven session's inbox (SESS3): what the person tells it while it works, held for the
     /// protocol door to hand over. Here, beside the processes, because a session outlives the tick whose
     /// driver started it, and the page's routes reach this registry.
     /// </summary>
-    public DrivenInbox OpenInbox(string sessionId)
+    public IAgentInbox OpenWordInbox(string sessionId)
     {
-        var inbox = new DrivenInbox(queue => HeldChanged?.Invoke(sessionId, queue));
+        var inbox = AgentCourse.Current.OpenInbox(queue => HeldChanged?.Invoke(sessionId, queue));
         inbox.OnClosing(
             () =>
             {
@@ -144,10 +144,10 @@ public sealed class SessionProcesses(string? markers = null)
     /// failed, or the shell shut down. They wait on the ended record for the session's go-on, and whoever shows the conversation
     /// says so under their ids.
     /// </summary>
-    public event Action<string, IReadOnlyList<ChatMessage>>? KeptLeft;
+    public event Action<string, IReadOnlyList<IAgentWord>>? KeptLeft;
 
     /// <summary>A running driven session's inbox, or null: one on the pipe door, a conversation, or none.</summary>
-    public DrivenInbox? InboxOf(string sessionId)
+    public IAgentInbox? WordInboxOf(string sessionId)
     {
         lock (_gate) return _inboxes.GetValueOrDefault(sessionId);
     }

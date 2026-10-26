@@ -4514,8 +4514,9 @@ public sealed class Driver(
                     cwd, prompt, ct, offered, inbox,
                     // The same words as the turn's ask where the session took them (SESS3, STEER1): recorded before
                     // anything the agent did with them, so the answer never sits above the question.
-                    asked: message =>
+                    asked: delivered =>
                     {
+                        var message = ChatMessage.FromAgent(delivered);
                         Line(message.Channel is { Person: false } claim
                             ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
                             : message.Helped is { Helper: var helper }
@@ -4548,7 +4549,7 @@ public sealed class Driver(
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
             // ACCESSSWAP1b: the words a changed setup handed back, kept on the record once it concluded, to go on under the new one.
-            return (outcome, null, session.HandedBack);
+            return (outcome, null, session.HandedBack.Select(ChatMessage.FromAgent).ToArray());
         }
         catch (AcpResumeRefused refused) when (resume is not null)
         {
@@ -4574,7 +4575,7 @@ public sealed class Driver(
             // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
             // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
             // finally below says nothing of them.
-            return (null, error.Message, [.. session?.Unreached ?? [], .. session?.HandedBack ?? [], .. inbox?.Close() ?? []]);
+            return (null, error.Message, [.. (session?.Unreached ?? []).Select(ChatMessage.FromAgent), .. (session?.HandedBack ?? []).Select(ChatMessage.FromAgent), .. inbox?.Close() ?? []]);
         }
         finally
         {

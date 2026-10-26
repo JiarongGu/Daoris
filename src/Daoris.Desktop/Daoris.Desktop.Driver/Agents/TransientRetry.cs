@@ -44,7 +44,7 @@ public sealed class TransientRetry
     /// read, R3-O5): answers the word as its dispatcher hands it, marked attempted before the wire and taken off by its id once written,
     /// or null where it was kept nowhere and goes in this process alone.
     /// </summary>
-    public Func<TransientEpisode, string, CancellationToken, Task<ChatMessage?>>? KeepGoOn { get; init; }
+    public Func<TransientEpisode, string, CancellationToken, Task<IAgentWord?>>? KeepGoOn { get; init; }
 
     /// <summary>Told at an episode's first failure, with when its first try goes: the one line the conversation gains (<c>agent.transient-retrying</c>).</summary>
     public Action<TransientEpisode, DateTimeOffset>? Began { get; init; }
@@ -93,10 +93,10 @@ public sealed class TransientRetry
     /// whoever answers the limit, the conversation's record holding them as the refused turn's words (<c>LimitHeld</c>), so the wake or the
     /// move receives them once. Null keeps the words uncertain, as a driven run's are (its limit's conclusion takes its own words off).
     /// </summary>
-    public Action<IReadOnlyList<ChatMessage>>? LimitRefused { get; init; }
+    public Action<IReadOnlyList<IAgentWord>>? LimitRefused { get; init; }
 
     private readonly Lock _gate = new();
-    private readonly List<ChatMessage> _uncertain = [];
+    private readonly List<IAgentWord> _uncertain = [];
 
     /// <summary>Whether an episode opened in this run: a run with none keeps today's judgement of its words, TURNFAIL1's included (§5.1).</summary>
     public bool Opened { get; private set; }
@@ -111,7 +111,7 @@ public sealed class TransientRetry
     /// The person's words on the wire whose prompt met the error before any update of its turn (§5.1): D188's COWORK1c uncertain words,
     /// said by the <c>lost</c> note under their ids and never sent again.
     /// </summary>
-    public IReadOnlyList<ChatMessage> Uncertain
+    public IReadOnlyList<IAgentWord> Uncertain
     {
         get { lock (_gate) return [.. _uncertain]; }
     }
@@ -140,7 +140,7 @@ public sealed class TransientRetry
         lock (_gate) Last = read;
     }
 
-    internal void Unacknowledged(IEnumerable<ChatMessage> words)
+    internal void Unacknowledged(IEnumerable<IAgentWord> words)
     {
         lock (_gate) _uncertain.AddRange(words);
     }
@@ -165,7 +165,7 @@ public sealed class TransientRetry
 /// (<see cref="DrivenInbox"/>) or a conversation's turns (<see cref="ChatTurns"/>). The episode is the session's own, so the one seat
 /// serves both; what differs is where the person's words wait.
 /// </summary>
-internal interface IEpisodeWords
+public interface IEpisodeWords
 {
     /// <summary>From the episode's first failure and each try's: every word is held, none goes alone, so the turns to settle are only those already written.</summary>
     void Settling();
@@ -180,7 +180,7 @@ internal interface IEpisodeWords
     Task<string>? TakeSent();
 
     /// <summary>Every held word a try carries, in the order said, each dispatched as its door dispatches one.</summary>
-    IReadOnlyList<ChatMessage> TakeHeld();
+    IReadOnlyList<IAgentWord> TakeHeld();
 }
 
 /// <summary>

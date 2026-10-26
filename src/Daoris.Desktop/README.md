@@ -55,6 +55,12 @@ Work orders supplies ask, go-ahead and channel instruction sections through the 
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and
 Work orders share; the retry still applies its start-intent checks in their original order.
+Course keeps ChatMessage, its dispatcher and Daoris word judgement. Agents reads delivery facts and callbacks through
+`IAgentWord`, answered by the original message, while typed Course entry points recover that same object. SessionProcesses
+keeps the inbox registry and its gate; `Conversations/AgentCourseWiring.cs` supplies the actual inbox factory, retry say/key
+binding and hand-over text through the required `AgentCourse` port. Queue and word views serialize their owner's runtime
+shape. The later chat-runner, pending and ConversationWalk boundary remains Course's separate foundation row.
+
 Tests replacing the process-wide agent ports run in the nonparallel `agent operation ports` collection and restore each
 operation in `finally`, so unrelated prompt and spawn tests keep the installed implementation.
 

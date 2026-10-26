@@ -529,6 +529,14 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void Agents_has_no_remaining_upward_Course_dependency()
+    {
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => Tree.Value.Map.Files.TryGetValue(path, out var owner)
+                ? owner == "Course" : path.StartsWith("Course/", StringComparison.Ordinal))));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

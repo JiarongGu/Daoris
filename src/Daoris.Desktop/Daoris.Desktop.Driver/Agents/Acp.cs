@@ -337,7 +337,7 @@ public sealed class AcpSession(
     /// The words held for the turn's end that the run handed back unprompted because its setup changed (ACCESSSWAP1b), in the order
     /// said: the driver keeps them on the record for the run that goes on under the new setup. Empty otherwise.
     /// </summary>
-    public IReadOnlyList<ChatMessage> HandedBack { get; private set; } = [];
+    public IReadOnlyList<IAgentWord> HandedBack { get; private set; } = [];
 
     /// <summary>
     /// How often a session that waits on its own background work reads its quest again (DONEEND1, D83's note): once it no longer
@@ -395,13 +395,13 @@ public sealed class AcpSession(
     public const string CutStatus = "cut";
 
     /// <summary>Told each of the person's words as the session takes them (SESS3, STEER1); a run's.</summary>
-    private Action<ChatMessage>? _asked;
+    private Action<IAgentWord>? _asked;
 
     /// <summary>
     /// A driven run's inbox (COWORK1d, the message-urgency design §2.3): told on the reader's thread the moment the answer to the last
     /// prompt open is read, so it refuses another agent's claim from then on, before the run judges its next step.
     /// </summary>
-    private DrivenInbox? _inbox;
+    private IAgentInbox? _inbox;
 
     /// <summary>
     /// A conversation's words (AGENTERRORS1b, the design §7), read by the transient episode where a run has no inbox: its turns' queue.
@@ -415,15 +415,15 @@ public sealed class AcpSession(
     /// <summary>
     /// One prompt on the wire: the person's words, or null for the driver's own — and whether the session has taken them.
     /// </summary>
-    private sealed class OpenPrompt(ChatMessage? words, IReadOnlyList<ChatMessage>? together = null)
+    private sealed class OpenPrompt(IAgentWord? words, IReadOnlyList<IAgentWord>? together = null)
     {
-        public ChatMessage? Words { get; } = words;
+        public IAgentWord? Words { get; } = words;
 
         /// <summary>The words a transient try carries after <see cref="Words"/> in the same prompt (AGENTERRORS1a, §5.1), in the order said.</summary>
-        public IReadOnlyList<ChatMessage> Together { get; } = together ?? [];
+        public IReadOnlyList<IAgentWord> Together { get; } = together ?? [];
 
         /// <summary>Every word this prompt carries, <see cref="Words"/> first.</summary>
-        public IEnumerable<ChatMessage> All => Words is null ? Together : [Words, .. Together];
+        public IEnumerable<IAgentWord> All => Words is null ? Together : [Words, .. Together];
 
         public bool Taken { get; set; }
 
@@ -792,7 +792,7 @@ public sealed class AcpSession(
     /// <exception cref="DriverException">The agent's stream ended while the session waited for its background work.</exception>
     public async Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
-        DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null,
+        IAgentInbox? inbox = null, Action<IAgentWord>? asked = null, string? resume = null,
         IReadOnlyList<string>? blocks = null, Action? prompted = null, IReadOnlyList<KeptFile>? files = null,
         Func<CancellationToken, Task<bool>>? waitsOnBackground = null,
         Func<Task<(IReadOnlyList<string> Blocks, IReadOnlyList<KeptFile>? Files)?>>? attempting = null, TransientRetry? retry = null)
@@ -886,9 +886,9 @@ public sealed class AcpSession(
 
                     // COWORK1b (the message-urgency design §4.3): Daoris's word held for the turn's end is judged again by its key;
                     // one whose fact a later submission answered is dropped, said so, and never prompted late.
-                    if (!await DaorisWords.GoesAsync(held, ct).ConfigureAwait(false))
+                    if (!await held.GoesAsync(ct).ConfigureAwait(false))
                     {
-                        Emit(DaorisWords.Dropped(held));
+                        Emit(held.Dropped());
                         // COWORK1c: settled without the wire, so off its record too.
                         held.Went?.Invoke();
                         continue;
@@ -965,7 +965,7 @@ public sealed class AcpSession(
     }
 
     /// <summary>Whether the person's words are held for the turn's end: those go before anything else.</summary>
-    private static bool Holds(DrivenInbox? inbox) => inbox?.Holds == true;
+    private static bool Holds(IAgentInbox? inbox) => inbox?.Holds == true;
 
     /// <summary>
     /// A turn that ended while the session's own background work runs (BGWAIT1): not a question. Where the driver says its
@@ -1219,7 +1219,7 @@ public sealed class AcpSession(
     /// </summary>
     private void SayUncertain()
     {
-        List<ChatMessage> words;
+        List<IAgentWord> words;
         lock (_promptsGate)
         {
             words = [.. _unacknowledged];
@@ -1237,9 +1237,9 @@ public sealed class AcpSession(
     /// The person's words a limit-refused try carried (AGENTERRORS1b2): taken off the unacknowledged and handed to the retry's owner, which
     /// holds them for the limit's wake or move. A listener's failure costs a line, never the episode.
     /// </summary>
-    private void HandRefused(Action<IReadOnlyList<ChatMessage>> hand)
+    private void HandRefused(Action<IReadOnlyList<IAgentWord>> hand)
     {
-        List<ChatMessage> words;
+        List<IAgentWord> words;
         lock (_promptsGate)
         {
             words = [.. _unacknowledged];
@@ -1487,7 +1487,7 @@ public sealed class AcpSession(
         var retry = _retry!;
         var held = EpisodeWords?.TakeHeld() ?? [];
         var text = TransientRetry.GoOnText(episode.Words);
-        ChatMessage? goOn = null;
+        IAgentWord? goOn = null;
         if (episode.Tries == 1 && retry.KeepGoOn is { } keep)
         {
             try
@@ -1506,7 +1506,7 @@ public sealed class AcpSession(
         // dispatcher's mark fails open, and a word written unmarked whose take-off then failed would read as never sent at a restart. One
         // of the person's that the record would not mark is not written: it waits on its record for the next run, which sends it once. The
         // go-on unmarked is settled without the wire, its kept copy off the record, and goes as the try's plain block.
-        List<ChatMessage> going = [];
+        List<IAgentWord> going = [];
         foreach (var word in held)
         {
             if (await MarkedAsync(word).ConfigureAwait(false)) going.Add(word);
@@ -1519,7 +1519,7 @@ public sealed class AcpSession(
             goOn = null;
         }
 
-        List<ChatMessage> words = [.. going, .. goOn is null ? [] : new[] { goOn }];
+        List<IAgentWord> words = [.. going, .. goOn is null ? [] : new[] { goOn }];
         List<string> texts = [.. going.Select(word => word.Prompt), text];
         var prompt = Blocks(texts, [.. going.SelectMany(word => word.Files)]);
 
@@ -1558,7 +1558,7 @@ public sealed class AcpSession(
     /// A try's word marked attempted on its record before the wire (finding 4): a kept word's mark as its record answered it, and every
     /// other word, kept nowhere, marked as any is, after the attempts asked before it.
     /// </summary>
-    private async Task<bool> MarkedAsync(ChatMessage word)
+    private async Task<bool> MarkedAsync(IAgentWord word)
     {
         return await Attempted(word).ConfigureAwait(false);
     }
@@ -1594,7 +1594,7 @@ public sealed class AcpSession(
     /// The person's words this run sent and the session never took, once the run has ended (TURNFAIL1): on the wire behind a
     /// turn that ended first, a failed one included. The driver keeps them waiting where the door failed; empty until then.
     /// </summary>
-    public IReadOnlyList<ChatMessage> Unreached { get; private set; } = [];
+    public IReadOnlyList<IAgentWord> Unreached { get; private set; } = [];
 
     /// <summary>How many of the person's words are on the wire and not yet taken, forgotten as they are counted and kept as <see cref="Unreached"/>.</summary>
     /// <remarks>
@@ -1605,13 +1605,13 @@ public sealed class AcpSession(
     /// </remarks>
     private int Untaken()
     {
-        List<ChatMessage> uncertain;
+        List<IAgentWord> uncertain;
         lock (_promptsGate)
         {
             var left = _prompts.Where(open => open.Words is not null && !open.Taken).ToList();
             var written = _retry?.Opened == true ? left.Where(open => open.Written).ToList() : [];
             Unreached = [.. left.Except(written).Select(open => open.Words!)];
-            uncertain = [.. written.SelectMany(open => open.All).Where(word => word.Daoris is null)];
+            uncertain = [.. written.SelectMany(open => open.All).Where(word => !word.IsDaoris)];
             _prompts.Clear();
         }
 
@@ -1841,7 +1841,7 @@ public sealed class AcpSession(
     /// Told each of the person's words as the session takes them (MSG1c): a conversation's, whose words said during a turn
     /// are taken when the turn before them is handed off, so the record keeps them there as the person's ask.
     /// </summary>
-    public void OnTaken(Action<ChatMessage> taken) => _asked = taken;
+    public void OnTaken(Action<IAgentWord> taken) => _asked = taken;
 
     /// <summary>
     /// The person's words to a conversation whose turn is running, sent at once as a prompt of the same session (MSG1c,
@@ -1852,7 +1852,7 @@ public sealed class AcpSession(
     /// The agent did not say it takes a prompt during a turn: a second prompt would reset <c>codex-acp</c>'s running turn
     /// (STEER1 §5), so nothing is sent.
     /// </exception>
-    public Task<string> SayAsync(ChatMessage words, CancellationToken ct) =>
+    public Task<string> SayAsync(IAgentWord words, CancellationToken ct) =>
         _takesWordsMidTurn
             ? MidTurnAsync(words, ct)
             : throw new DriverException("this agent did not say it takes words during a turn — they wait for the turn to end.");
@@ -1893,7 +1893,7 @@ public sealed class AcpSession(
     /// <returns>The adapter's outcome: <c>injected</c>, or <c>promptRequired</c> where no turn was running after all.</returns>
     /// <exception cref="AcpRefusal">The agent refused the steer, in its words.</exception>
     /// <exception cref="DriverException">The agent never said it steers, or the session is not open: nothing is sent.</exception>
-    public async Task<string> SteerAsync(ChatMessage words, CancellationToken ct)
+    public async Task<string> SteerAsync(IAgentWord words, CancellationToken ct)
     {
         if (!_steersNow)
         {
@@ -1935,7 +1935,7 @@ public sealed class AcpSession(
     /// where they are finally taken, so nothing is noted when it did.
     /// </param>
     internal async Task<string> SteeredAsync(
-        ChatMessage words, CancellationToken ct, string who = "session", Func<ChatMessage, bool>? handBack = null)
+        IAgentWord words, CancellationToken ct, string who = "session", Func<IAgentWord, bool>? handBack = null)
     {
         try
         {
@@ -1961,7 +1961,7 @@ public sealed class AcpSession(
         $"the agent answered the steer `{outcome}`, so no running turn took them.";
 
     /// <summary>The driver's sentence about the person's words, by its code and with their id, so the page settles the words (MSG1f).</summary>
-    private void NoteWords(Noted noted, ChatMessage words)
+    private void NoteWords(Noted noted, IAgentWord words)
     {
         _console.End();
         onLine(noted.Note);
@@ -2035,12 +2035,12 @@ public sealed class AcpSession(
     /// them is answered otherwise (STEER1) — the moment <c>claude-agent-acp</c> hands the running turn off to them.
     /// </summary>
     private Task<string> SendPromptAsync(
-        string text, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, ChatMessage? words) =>
+        string text, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, IAgentWord? words) =>
         SendPromptAsync([text], files, ct, sent, words);
 
     /// <summary>One prompt of one or more text blocks, each its own (MSG1b), then the files as links.</summary>
     private async Task<string> SendPromptAsync(
-        IReadOnlyList<string> texts, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, ChatMessage? words)
+        IReadOnlyList<string> texts, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, IAgentWord? words)
     {
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
 
@@ -2093,7 +2093,7 @@ public sealed class AcpSession(
     /// nowhere, and for the driver's own prompts. True where the word may be written: nothing marks it, or the record named it marked (FOUNDATION1
     /// row p, the design §3.4 rule 5). Never faults.
     /// </summary>
-    private Task<bool> Attempted(ChatMessage? words)
+    private Task<bool> Attempted(IAgentWord? words)
     {
         if (words?.Attempting is not { } attempting) return Task.FromResult(true);
         lock (_attemptsGate)
@@ -2103,7 +2103,7 @@ public sealed class AcpSession(
             return acknowledged;
         }
 
-        static async Task<bool> AfterAsync(Task before, ChatMessage words, Func<Task<IReadOnlyList<string>>> attempting)
+        static async Task<bool> AfterAsync(Task before, IAgentWord words, Func<Task<IReadOnlyList<string>>> attempting)
         {
             await before.ConfigureAwait(false);
             var marked = await attempting().ConfigureAwait(false);
@@ -2123,7 +2123,7 @@ public sealed class AcpSession(
     /// <c>sent</c>, and their dispatcher, which takes a kept word off its record. <i>Sent</i> is the write's return, never the
     /// prompt's answer, which comes with the turn's end.
     /// </summary>
-    private Action? Wrote(Action? sent, ChatMessage? words)
+    private Action? Wrote(Action? sent, IAgentWord? words)
     {
         if (words?.Id is not { } id) return sent;
         return () =>
@@ -2225,7 +2225,7 @@ public sealed class AcpSession(
             // with an error before any update of its turn, it may or may not be in the agent's conversation: unacknowledged.
             if (_retry is not null && !answered && !open.Heard)
             {
-                _unacknowledged.AddRange(open.All.Where(word => word.Daoris is null));
+                _unacknowledged.AddRange(open.All.Where(word => !word.IsDaoris));
                 // The opening prompt's blocks (a resume's words) carry no message here: the conclusion takes their disposition from this.
                 if (open.Opening) _retry.OpeningUnacknowledged = true;
             }
@@ -2295,7 +2295,7 @@ public sealed class AcpSession(
     /// The person's words whose prompt an error answered before any update of its turn (AGENTERRORS1a, §5.1), gathered as each failure is
     /// read, under <see cref="_promptsGate"/>: read by the episode, and said by the <c>lost</c> note.
     /// </summary>
-    private readonly List<ChatMessage> _unacknowledged = [];
+    private readonly List<IAgentWord> _unacknowledged = [];
 
     /// <summary>An error answered the prompt before a word, which waits for the agent's next update to be taken (USERSHOWN1).</summary>
     private bool _afterError;
@@ -2304,15 +2304,15 @@ public sealed class AcpSession(
     /// The person's words sent during a turn whose own prompt an error answered after they were taken (AGENTERRORS1a2, shape 2), under
     /// <see cref="_promptsGate"/>: each read once by <see cref="MidTurnAsync"/>, by reference.
     /// </summary>
-    private readonly HashSet<ChatMessage> _refusedTaken = new(ReferenceEqualityComparer.Instance);
+    private readonly HashSet<IAgentWord> _refusedTaken = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>
-    /// A word sent during a running turn (STEER1), as <see cref="SendPromptAsync(string, IReadOnlyList{KeptFile}?, CancellationToken, Action?, ChatMessage?)"/>
+    /// A word sent during a running turn (STEER1), as <see cref="SendPromptAsync(string, IReadOnlyList{KeptFile}?, CancellationToken, Action?, IAgentWord?)"/>
     /// sends it. 🔴 AGENTERRORS1a2, shape 2 (the design §0, §4.2): where the run was handed a retry and the word's prompt was refused after
     /// the word was taken (the turn before it answered, handing the turn to it), the refusal is thrown as <see cref="AcpWordTurnFailed"/>:
     /// the turn that failed is the one the word opened, never that word's own refusal. Refused before it was taken, it is the word's, as today.
     /// </summary>
-    private async Task<string> MidTurnAsync(ChatMessage words, CancellationToken ct)
+    private async Task<string> MidTurnAsync(IAgentWord words, CancellationToken ct)
     {
         try
         {
@@ -2325,13 +2325,13 @@ public sealed class AcpSession(
     }
 
     /// <summary>Whether this word's prompt was refused after it was taken (shape 2), read once.</summary>
-    private bool RefusedTaken(ChatMessage words)
+    private bool RefusedTaken(IAgentWord words)
     {
         lock (_promptsGate) return _refusedTaken.Remove(words);
     }
 
     /// <summary>Tell the run's listener the session took the person's words; its failure costs a line, never the turn.</summary>
-    private void Asked(ChatMessage words)
+    private void Asked(IAgentWord words)
     {
         try
         {

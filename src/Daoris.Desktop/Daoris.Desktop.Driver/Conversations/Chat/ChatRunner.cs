@@ -3129,8 +3129,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         // Its background work stoppable from its tab for as long as the conversation lasts (CONSOLE3a).
         using var stops = _output is null ? null : _processes.OpenTaskStops(sessionId, session.StopTaskAsync);
         // The person's words said during a turn, as the record keeps them where the session took them (MSG1c, D136 §3).
-        session.OnTaken(words =>
+        session.OnTaken(delivered =>
         {
+            var words = ChatMessage.FromAgent(delivered);
             // Daoris's own go-on (AGENTERRORS1b), told beside the person's words a transient try carries, is Daoris's, never the person's.
             Line(words.Daoris is not null
                 ? $"— the conversation was told: {words.Text}"
@@ -3369,7 +3370,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
             },
             // Daoris's go-on is shown once, as the conversation's own word beside the person's (the first try's alone); it is kept on no
             // record: a conversation's process is gone with a restart, and nothing of an episode outlives it.
-            KeepGoOn = (episode, text, _) => Task.FromResult<ChatMessage?>(
+            KeepGoOn = (episode, text, _) => Task.FromResult<IAgentWord?>(
                 new ChatMessage(text, []) { Daoris = new DaorisWord(DaorisKeys.TransientRetry(retry.Session, episode.Began)) }),
             Began = (episode, next) =>
             {
@@ -3388,9 +3389,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
             // never the failed turn's own, recorded before the episode's first event, nor Daoris's go-on.
             LimitRefused = words =>
             {
-                foreach (var word in words.Where(word => word.Daoris is null))
+                foreach (var word in words.Where(word => !word.IsDaoris))
                 {
-                    _record(ChatMessage.Words(word));
+                    _record(ChatMessage.Words(ChatMessage.FromAgent(word)));
                 }
             },
         };
@@ -3403,7 +3404,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
 
         void IEpisodeWords.Waited() => Turns.Waited();
 
-        IReadOnlyList<ChatMessage> IEpisodeWords.TakeHeld() => Turns.TakeHeld();
+        IReadOnlyList<IAgentWord> IEpisodeWords.TakeHeld() => Turns.TakeHeld();
 
         Task<string>? IEpisodeWords.TakeSent()
         {
@@ -3464,7 +3465,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
             if (Told(words) is { } told) _record(told);
             _line($"— the person sent now, which the conversation takes at once: {words.Text}");
             _record(ChatMessage.Words(words) with { Reaches = SendNowWhy.Spelled(TurnReach.Steered), Level = MessageLevels.Now });
-            return session.SteeredAsync(words, CancellationToken.None, "conversation", handBack: back => Turns.HandBack(back with { Said = true }));
+            return session.SteeredAsync(words, CancellationToken.None, "conversation", handBack: back => Turns.HandBack(ChatMessage.FromAgent(back) with { Said = true }));
         }
 
         /// <summary>A word handed to the turn on the wire under the record's id where it was kept there (COWORK1c), or a fresh one of its own.</summary>

@@ -642,7 +642,7 @@ public sealed class DrivenInboxTests
     public void The_registry_hands_a_sessions_inbox_to_the_page_and_forgets_it_when_it_closes()
     {
         var processes = new SessionProcesses();
-        var changes = new List<(string Session, ChatQueue Queue)>();
+        var changes = new List<(string Session, IAgentQueue Queue)>();
         processes.HeldChanged += (session, queue) => changes.Add((session, queue));
 
         var inbox = processes.OpenInbox("s1a2b3c4");

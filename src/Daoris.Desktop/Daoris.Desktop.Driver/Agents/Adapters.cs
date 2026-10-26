@@ -916,7 +916,7 @@ public static class TargetPrompt
     /// own section); nothing for any other start.
     /// </summary>
     private static string HandedNote(SessionTarget target) =>
-        target.HandedOver is not null && HandOverNote.Said(target.HandedNote) is { } said ? "\n\n" + said : "";
+        target.HandedOver is not null && AgentCourse.Current.HandOverText(target.HandedNote) is { } said ? "\n\n" + said : "";
 
     /// <summary>
     /// After an account's limit (TOOL4f, D125 §3.5): the session before ran on another account, which is cooling, so

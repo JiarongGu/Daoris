@@ -167,6 +167,7 @@
     "Conversations/Domain/StartedFrom.cs": "Course",
     "Conversations/Domain/WordsHeld.cs": "Course",
     "Conversations/DrivenInbox.cs": "Course",
+    "Conversations/AgentCourseWiring.cs": "Course",
     "Conversations/GoOn/AnswersAloneHold.cs": "Course",
     "Conversations/GoOn/ContinuationJudge.cs": "Course",
     "Conversations/GoOn/GoOnFiles.cs": "Course",
@@ -954,18 +955,6 @@
   },
   "edges": [
     {
-      "family": "Agents names Course",
-      "after": "Agents",
-      "files": {
-        "Agents/Acp.cs": ["ChatMessage","DaorisWords","DrivenInbox","KeptFile"],
-        "Agents/TransientRetry.cs": ["ChatMessage"],
-        "Agents/Adapters.cs": ["HandOverNote"],
-        "Agents/HarnessCapture.cs": ["DaorisWords"],
-        "Agents/TransientRetries.cs": ["ChatMessage","DaorisKeys","DaorisWord","DaorisWords","ISaidDoor","SaidDoor"],
-        "Agents/SessionProcesses.cs": ["ChatMessage","ChatQueue","DrivenInbox"]
-      }
-    },
-    {
       "family": "Workplace names Context",
       "after": "Workplace",
       "files": {
@@ -1411,6 +1400,7 @@
     "AgentWorkplacePortsTests.cs": "Agents",
     "AgentWorkOrdersPortsTests.cs": "Agents",
     "AgentContextPortsTests.cs": "Agents",
+    "AgentCoursePortsTests.cs": "Agents",
     "AccountIdentityTests.cs": "Agents",
     "AccountCoolingTests.cs": "Agents",
     "AccountFileNodesTests.cs": "Agents",
