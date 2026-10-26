@@ -113,7 +113,7 @@ public sealed class HelpStartReadTests : IDisposable
         var site = new RepoView("site", Adopted: true, Root: "checkouts/site");
         HelpFacts.Keep(facts, new HelpFactJudges(
             Machine: _ => Task.FromResult<HelpMachineWhole?>(new(new Snapshot([], [engine, site], []), [], [])),
-            Sessions: _ => Task.FromResult<SessionLook?>(new SessionLook([], [], [])),
+            Sessions: _ => Task.FromResult<IKnowledgeSessionLook?>(new SessionLook([], [], [])),
             History: _ => Task.FromResult<IReadOnlyList<HistoryReading>?>([]),
             Work: (_, _) => Task.FromResult<HelpWork?>(new HelpWork([], [], [])))
         {
@@ -167,7 +167,7 @@ public sealed class HelpStartReadTests : IDisposable
         var site = new RepoView("site", Adopted: true, Root: "checkouts/site", Workspace: "beta");
         HelpFacts.Keep(facts, new HelpFactJudges(
             Machine: _ => Task.FromResult<HelpMachineWhole?>(new(new Snapshot([], [engine, site], []), [], [])),
-            Sessions: _ => Task.FromResult<SessionLook?>(new SessionLook([], [], [])),
+            Sessions: _ => Task.FromResult<IKnowledgeSessionLook?>(new SessionLook([], [], [])),
             History: _ => Task.FromResult<IReadOnlyList<HistoryReading>?>([]),
             Work: (_, _) => Task.FromResult<HelpWork?>(new HelpWork([], [], [])))
         {

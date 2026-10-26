@@ -4,48 +4,6 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>
-/// What one session's own tree holds that no branch of the person's does, by D88's proof: its unlanded commits and its
-/// uncommitted paths. Null in either is git unable to say.
-/// </summary>
-public sealed record TreeWork(int? Commits, int? Uncommitted)
-{
-    /// <summary>
-    /// Whether there is work nobody has accepted yet. Only a proven zero is none: a count git could not give is kept, as
-    /// the clean-up keeps what it cannot clear (D88). Commits the line holds by content, a squash's or a landing's replay, are
-    /// landed (REVIEWLANDED1): none, where an unforced discard of the tree would go; a tree that stays for what no commit holds
-    /// is still the person's to review.
-    /// </summary>
-    public bool Holds => (Commits != 0 && !Landed) || Uncommitted != 0;
-
-    /// <summary>The commits counted are on a form of the line by content and the tree would go unforced (REVIEWLANDED1).</summary>
-    public bool Landed => Held is { Held.OnLine: true, Keeps: not null };
-
-    /// <summary>
-    /// Where the commits D88 counted are held by content (SQUASHTIDY1b): a squash merge or a cherry-pick put them elsewhere, so
-    /// nothing offers to land them again. Null where they are held nowhere, or nothing was counted.
-    /// </summary>
-    public HeldWork? Held { get; init; }
-
-    /// <summary>
-    /// The branch the tree is on where its agent moved it onto one of its own (TREEFOLLOW1), as the repository's rules ask; null
-    /// where it is on the session branch the layout names (or detached). The commits counted are those that branch holds beyond
-    /// every other branch of the person's, so a landing of it is that branch as it stands.
-    /// </summary>
-    public string? Branch { get; init; }
-}
-
-/// <summary>
-/// A tree whose commits no branch of the person's holds by ancestry, found held by content (SQUASHTIDY1b, SQUASHTIDY1's proof
-/// with SQUASHTIDY1c's guarantees), and what an unforced discard of it would do now.
-/// </summary>
-/// <param name="Held">Where its work is, and how it was found: the clause Discard says (<see cref="ContentHold.Said"/>).</param>
-/// <param name="Keeps">
-/// The ref an unforced discard would keep its commits at (SQUASHTIDY1c), named as the discard numbers it; null where the
-/// discard would not go now.
-/// </param>
-/// <param name="Stays">Why the discard would not go now: what the tree holds that no commit does, in a clause; null where it would.</param>
-public sealed record HeldWork(ContentHold Held, string? Keeps, string? Stays);
 
 /// <summary>
 /// What an ended session's own tree offers to land (LAND4): the commits on it no branch of the person's holds, by D88's
@@ -389,8 +347,11 @@ public sealed record QuestPark(string Quest, string Repository)
 /// last session here and its strikes as the planner's own readers derive them, the trees' judgement and the marks.
 /// </summary>
 public sealed record SessionLook(
-    IReadOnlyList<SessionRecord> Records, IReadOnlyList<QuestView> Quests, IReadOnlyList<Consideration> Considered)
+    IReadOnlyList<SessionRecord> Records, IReadOnlyList<QuestView> Quests, IReadOnlyList<Consideration> Considered) : IKnowledgeSessionLook
 {
+    public IKnowledgeSessionLook WithTrees(IReadOnlyDictionary<string, TreeWork> trees) => this with { Trees = trees };
+    public IKnowledgeSessionLook WithRecords(IReadOnlyList<SessionRecord> records) => this with { Records = records };
+
     /// <summary>The session this machine last ran on each quest (D79): <see cref="ServiceClient.ReadLastRun"/>, the planner's own reading.</summary>
     public IReadOnlyDictionary<string, PriorSession> LastRun { get; init; } =
         new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
@@ -514,6 +475,12 @@ public sealed record SessionLook(
 /// </remarks>
 public static class SessionGroups
 {
+    public static IReadOnlyList<SessionGrouping> Read(IKnowledgeSessionLook look, IReadOnlyCollection<string>? only = null) =>
+        Read((SessionLook)look, only);
+
+    public static IReadOnlyList<string> TreesToJudge(IKnowledgeSessionLook look, Func<string, bool> held, IReadOnlyCollection<string>? only = null) =>
+        TreesToJudge((SessionLook)look, held, only);
+
     /// <summary>The entries over the rows <see cref="Read"/> answers (SESSONE1b): <see cref="SessionEntries.Read"/>.</summary>
     public static IReadOnlyList<SessionEntry> ReadEntries(SessionLook look, IReadOnlyCollection<string>? only = null) =>
         SessionEntries.Read(look, only);

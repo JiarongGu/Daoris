@@ -98,16 +98,33 @@ public sealed class GitSeedTests : IDisposable
     {
         var folder = Path.Combine(_scratch, "held");
         Directory.CreateDirectory(folder);
-        var held = new FileStream(Path.Combine(folder, "held.txt"), FileMode.Create, FileAccess.ReadWrite, FileShare.None);
-        _ = Task.Run(async () =>
+        using var held = new FileStream(Path.Combine(folder, "held.txt"), FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+        var refusals = new List<int>();
+        GitSeed.Remove(folder, attempt =>
         {
-            await Task.Delay(400);
-            held.Dispose();
+            // The real delete has met the held file. Keep it held for another attempt, then explicitly release it.
+            refusals.Add(attempt);
+            Assert.True(File.Exists(Path.Combine(folder, "held.txt")));
+            if (attempt == 2) held.Dispose();
         });
 
-        GitSeed.Remove(folder);
-
+        Assert.Equal([1, 2], refusals);
         Assert.False(Directory.Exists(folder));
+    }
+
+    /// <summary>A file never released exhausts exactly twelve attempts; the control replaces waits, never the cleanup bound.</summary>
+    [Fact]
+    public void A_file_held_for_every_attempt_is_refused_after_twelve_attempts()
+    {
+        var folder = Path.Combine(_scratch, "held-through-bound");
+        Directory.CreateDirectory(folder);
+        using var held = new FileStream(Path.Combine(folder, "held.txt"), FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+        var refusals = new List<int>();
+
+        Assert.Throws<IOException>(() => GitSeed.Remove(folder, refusals.Add));
+
+        Assert.Equal(Enumerable.Range(1, 11), refusals);
+        Assert.True(Directory.Exists(folder));
     }
 
     /// <summary>SCRATCHLEAK1: <c>Discard</c> is the cleanup a test's <c>Dispose</c> calls: it gives up quietly on a file that stays held.</summary>

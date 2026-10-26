@@ -140,7 +140,7 @@ public static class GroupsStateSlice
         if (only is null) loop.SessionsLooked.Keep(look, at);
         if (walked) return look;
         var trees = new SessionTrees(loop.Home);
-        return await HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: ct).ConfigureAwait(false);
+        return (SessionLook)await HelpFacts.WithTreesAsync(loop.Facts, look, trees.Holds, trees.WorkAsync, only, ct: ct).ConfigureAwait(false);
     }
 
     /// <summary>

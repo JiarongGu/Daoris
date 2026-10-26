@@ -1,0 +1,234 @@
+using System.Text;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// This machine, now (HELP1a): the agents quests, asks and the helper run on, what waits on the person, the
+/// quests its strikes parked (HELP10) and the person's stop holds (SESSUX1b), what is paused (PAUSE1f-b), what each workspace
+/// keeps of finished work (HIST1f-b), the plugins installed here (PLUG9) and the branches landings made (WSR5b) — each by name
+/// and state, so a proposal names one this machine holds.
+/// </summary>
+internal sealed class HelpRoomMachineNow : IHelpRoomSection
+{
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
+
+    /// <summary>
+    /// The most ended sessions the room lists by id (SESSUX1h3): enough to name one to archive or delete from the newest, short
+    /// enough that the room stays short for a machine with hundreds; the count says how many more.
+    /// </summary>
+    internal const int EndedListed = 10;
+
+    public string Render(HelpMachine machine)
+    {
+        var text = new StringBuilder();
+        text.Append("## This machine, now\n\n");
+        // PARALLEL1a (D181 point 1): the room is written at once from the facts as last judged, so a part may not be read yet.
+        if (machine.NotReadYet.Any)
+        {
+            text.Append("- Not read yet: some of this machine was not read when this room was written. Where a line here says *not read "
+                + "yet*, say so rather than guess; this room is written again as each part is read.\n");
+        }
+
+        text.Append(machine.Adapter is { Length: > 0 } adapter
+            ? $"- The driver: quests run on `{adapter}`, up to {machine.Cap} sessions at once. The cap counts what the driver starts (a quest's "
+              + "session, an intake, a helper, a second opinion, a brainstorm's pass) and never a conversation the person holds, so an Ask Daoris "
+              + "conversation or a chat takes no slot, idle or not.\n"
+            : "- The driver: no agent is set for quests.\n");
+        text.Append(machine.Intake is { Length: > 0 } intake
+            ? $"- The intake: asks are answered on `{intake}`.\n"
+            : "- The intake: no agent answers asks, so an ask the declarations do not settle waits for the person.\n");
+        if (machine.Helper is { Length: > 0 } helper) text.Append($"- Ask Daoris: you, on `{helper}`.\n");
+        // ASKSCOPE1b: a workspace's room counts its own, and says so where it counts.
+        text.Append($"- {In(machine)}{Count(machine.Waiting.Count, "session waits", "sessions wait")} on the person; "
+            + $"{Count(machine.Asks, "ask waits", "asks wait")} for an answer.\n");
+        // ENTRY1f2: by id and where each runs, so a go names one it was shown.
+        text.Append("- Sessions waiting on the person: "
+            + (machine.Waiting.Count > 0 ? string.Join(", ", machine.Waiting.Select(WaitingLine)) : "none")
+            + ".\n");
+        // SESSUX1h3: the Sessions list's groups, and the ended by id, so an archive or a delete names one it was shown.
+        if (machine.Sessions is { } sessions)
+        {
+            text.Append($"- {Whose(machine)} sessions by the Sessions list's groups, archived ones and Ask Daoris's own not counted: "
+                + $"{sessions.You} waiting on you, {sessions.Review} to review, {sessions.Working} working, "
+                + $"{sessions.Later} resuming later, {sessions.Ended} ended.\n");
+            var more = sessions.Ended - sessions.Listed.Count;
+            text.Append("- Ended sessions, newest first: "
+                + (sessions.Listed.Count > 0
+                    ? string.Join(", ", sessions.Listed.Select(ended => $"`{ended.Id}` (in `{ended.Repository}`)")) + (more > 0 ? $", and {more} more" : "")
+                    : "none")
+                + ".\n");
+        }
+        else
+        {
+            text.Append($"- {Whose(machine)} sessions by the Sessions list's groups: {NotRead(machine.NotReadYet.Sessions)}.\n");
+        }
+
+        // HELP10: by id and repository, so a retry names one the quest's page would offer Try again on.
+        text.Append("- Quests parked by their failed sessions, at the driver's last look: "
+            + (machine.Parked.Count > 0
+                ? string.Join(", ", machine.Parked.Select(parked => $"`#{parked.Quest}` (to `{parked.Repository}`)"))
+                : "none")
+            + ".\n");
+        // SESSUX1b: and with the session stopped, so a retry names a stop Try again would release.
+        text.Append("- Quests held by the person's stop, at the driver's last look: "
+            + (machine.Held.Count > 0
+                ? string.Join(", ", machine.Held.Select(held => $"`#{held.Quest}` (to `{held.Repository}`, session `{held.Session}` stopped)"))
+                : "none")
+            + ".\n");
+        // PAUSE1f-b (D132 §7.4): by scope and id, so a resume names a pause this machine keeps.
+        text.Append($"- Paused {(machine.Workspace is { } workspace ? $"in workspace `{workspace}`" : "on this machine")} until resumed: "
+            + (machine.Paused.Count > 0 ? string.Join(", ", machine.Paused.Select(paused => $"{paused.Word} `#{paused.Id}`")) : "none")
+            + ".\n");
+        // HIST1f-b (design §2.4, §6.4): what each workspace keeps, so a clear names one that keeps something.
+        text.Append(HistoryLines(machine.History, machine.NotReadYet.History));
+        // HELP10: as its two files hold it, so a browser proposal names a favorite kept; only where the desktop read them.
+        if (machine.Browser is { } browser)
+        {
+            text.Append($"- Daoris's browser: {(browser.Browser == "edge" ? "your Edge" : "Daoris's own")}; links on the page open in "
+                + $"{(browser.Links == "daoris" ? "Daoris's browser" : "the system's browser")}; other software's extensions "
+                + $"{(browser.Extensions == "refuse" ? "refused" : "offered")}; favorites "
+                + (browser.Favorites.Count > 0 ? string.Join(", ", browser.Favorites) : "none") + ".\n");
+        }
+
+        // PLUG9: by id and state, so a switch names one the catalogue holds.
+        text.Append(machine.Plugins.Count > 0
+            ? $"- Plugins: {string.Join(", ", machine.Plugins.Select(PluginLine))}.\n"
+            : "- Plugins: none installed.\n");
+        // WSR5b: by name and session, so a hand-off names one the record holds.
+        text.Append(machine.Landed.Count > 0
+            ? $"- Landed branches: {string.Join(", ", machine.Landed.Select(LandedLine))}.\n\n"
+            : "- Landed branches: none recorded.\n\n");
+        return text.ToString();
+    }
+
+    // An intake runs for its ask, whose record names it as its repository (D65 §1b).
+    private static string WaitingLine(HelpWaitingSession session) =>
+        session.Ask is { } ask ? $"`{session.Id}` (answering ask `#{ask}`)" : $"`{session.Id}` (in `{session.Repository}`)";
+
+    // PLUGHOOK1c: with what its plugin last answered about its pull request, and when, so the helper reads it rather than guess
+    // or ask; asking again is the person's own `trees state`.
+    // ACCESSWORDS1b (D184's AUTONOMY1c2 note): a landing the access setup accepted says so, in the review's note's and the trace's words.
+    private static string LandedLine(HelpLanded landed) =>
+        $"`{landed.Branch}` in `{landed.Repository}` (session `{landed.Session}`, "
+        + (landed.Access is { } access ? $"accepted by the access setup ({access}), " : "")
+        + (landed.Pushed ? "pushed" + (landed.PullRequest is { } pr ? $", pull request {pr}" : "") : "not pushed")
+        + KnowledgeWorkplace.Current.PullRequestRow(landed.State, landed.AskFailed) + ")";
+
+    private static string PluginLine(HelpPlugin plugin)
+    {
+        // PLUG9 (c): whether an update has anything to read — its kind, never the path.
+        var from = plugin.Source switch
+        {
+            "offer" => ", installed from this install's offer",
+            "folder" => ", added from a folder",
+            // PLUGDIST1a: an update refuses it, and says a newer package takes its place.
+            "package" => ", installed from a package",
+            _ => ", no record of where it came from",
+        };
+        if (!plugin.Enabled) return $"`{plugin.Id}` (off{from})";
+        if (plugin.Problem is { } problem) return $"`{plugin.Id}` (on, contributes nothing: {problem}{from})";
+        return plugin.Points.Count > 0
+            ? $"`{plugin.Id}` (on, speaks on {string.Join(", ", plugin.Points.Select(point => $"`{point}`"))}{from})"
+            : $"`{plugin.Id}` (on{from})";
+    }
+
+    private static string Count(int count, string one, string many) => $"{count} {(count == 1 ? one : many)}";
+
+    /// <summary>Where a workspace's room counts (ASKSCOPE1b): its workspace, named; nothing in the machine's room.</summary>
+    private static string In(HelpMachine machine) => machine.Workspace is { } workspace ? $"In workspace `{workspace}`: " : "";
+
+    /// <summary>Whose sessions a room counts (ASKSCOPE1b): its workspace's, or this machine's.</summary>
+    private static string Whose(HelpMachine machine) => machine.Workspace is { } workspace ? $"Workspace `{workspace}`'s" : "This machine's";
+
+    /// <summary>A part with nothing read: not judged yet by the facts (PARALLEL1a), or not read at all.</summary>
+    internal static string NotRead(bool yet) => yet ? "not read yet" : "not read";
+
+    /// <summary>
+    /// What each workspace keeps of finished work (HIST1f-b), in the terminal's words (<c>daoris-driver history</c>): its closed
+    /// work and sessions with their size, what a clear would take now, and how many units stay by the word that keeps them; the
+    /// home's left-over files once, since every workspace's clear takes them.
+    /// </summary>
+    private static string HistoryLines(IReadOnlyList<HistoryReading>? readings, bool notReadYet)
+    {
+        const string Head = "- Finished history this machine keeps, by workspace";
+        if (readings is null) return $"{Head}: {NotRead(notReadYet)}.\n";
+        if (readings.Count == 0) return $"{Head}: none.\n";
+
+        var text = new StringBuilder($"{Head}:\n");
+        foreach (var reading in readings) text.Append($"  - `{reading.Workspace}`: {Keeps(reading)}.\n");
+        if (readings.FirstOrDefault(reading => reading.LeftOver > 0) is { } home)
+        {
+            text.Append($"  - Left over from records already gone: {KnowledgeWorkplace.Current.HistoryCount(home.LeftOver, "file")}, "
+                + $"{KnowledgeWorkplace.Current.HistorySize(home.LeftOverBytes)}, which a workspace's clear takes.\n");
+        }
+
+        return text.ToString();
+    }
+
+    private static string Keeps(HistoryReading reading)
+    {
+        if (reading.Quests + reading.Asks + reading.Sessions + reading.Teammates == 0) return "none";
+        var work = KnowledgeWorkplace.Current.HistoryJoin([KnowledgeWorkplace.Current.HistoryCount(reading.Quests, "closed quest"), KnowledgeWorkplace.Current.HistoryCount(reading.Asks, "ask")]);
+        var sessions = KnowledgeWorkplace.Current.HistoryJoin([KnowledgeWorkplace.Current.HistoryCount(reading.Sessions, "session"), KnowledgeWorkplace.Current.HistoryCopies(reading.Teammates)]);
+        var takes = KnowledgeWorkplace.Current.HistoryJoin(
+        [
+            KnowledgeWorkplace.Current.HistoryCount(reading.Takes.Quests, "quest"), KnowledgeWorkplace.Current.HistoryCount(reading.Takes.Asks, "ask"),
+            KnowledgeWorkplace.Current.HistoryCount(reading.Takes.Sessions, "session"), KnowledgeWorkplace.Current.HistoryCopies(reading.Takes.Teammates),
+        ]);
+        var kept = reading.KeptBy.Values.Sum();
+        return $"{(work.Length == 0 ? "no closed quest or ask" : work)}, with {(sessions.Length == 0 ? "no session" : sessions)}, "
+            + $"{KnowledgeWorkplace.Current.HistorySize(reading.Bytes.Total + reading.Intake)}; "
+            + (takes.Length > 0 ? $"a clear would take {takes}, {KnowledgeWorkplace.Current.HistorySize(reading.Takes.Bytes)}"
+                : reading.Takes.Bytes > 0 ? $"a clear would take files alone, {KnowledgeWorkplace.Current.HistorySize(reading.Takes.Bytes)}"
+                : "a clear would take nothing now")
+            + (kept == 0 ? "" : $", and keep {kept}: " + string.Join(", ", reading.KeptBy
+                .OrderByDescending(each => each.Value).ThenBy(each => each.Key, StringComparer.Ordinal)
+                .Select(each => $"{each.Value} `{each.Key}`")));
+    }
+}
+
+/// <summary>A plugin installed here, as the room lists it (PLUG9): by id and state, so a switch names one the catalogue holds.</summary>
+/// <param name="Points">The points it speaks on; empty where it speaks on none, or is refused.</param>
+public sealed record HelpPlugin(string Id, bool Enabled, IReadOnlyList<string> Points)
+{
+    /// <summary>Why it contributes nothing, in the catalogue's words; null when sound.</summary>
+    public string? Problem { get; init; }
+
+    /// <summary>Where it came from (PLUG9 c, PLUGDIST1a): `folder`, `offer`, `package`, or null for none recorded — never the path itself.</summary>
+    public string? Source { get; init; }
+}
+
+/// <summary>A branch a landing made here, as the room lists it (WSR5b): by name and session, so a hand-off names one the record holds.</summary>
+public sealed record HelpLanded(string Repository, string Branch, string Session, bool Pushed, string? PullRequest)
+{
+    /// <summary>What its plugin last answered about its pull request, with when (PLUGHOOK1c, D148 point 6); null where none is kept.</summary>
+    public PullRequestState? State { get; init; }
+
+    /// <summary>The latest ask about it that failed since that answer; null where none did.</summary>
+    public PullRequestAskFailed? AskFailed { get; init; }
+
+    /// <summary>
+    /// Where the access setup that accepted it was set (ACCESSWORDS1b, <see cref="LandedRule.Access"/>), as recorded; null where the
+    /// rule's own switch or the person's press accepted it, and in a record from before.
+    /// </summary>
+    public string? Access { get; init; }
+}
+
+/// <summary>A session waiting on the person, as the room lists it (ENTRY1f2): by id and where it runs, so a go names one it was shown.</summary>
+/// <param name="Repository">Where it runs, as its record says: a repository's name, or <c>ask #id</c> for an intake.</param>
+public sealed record HelpWaitingSession(string Id, string Repository)
+{
+    /// <summary>The ask an intake answers (D65 §1b), or null for every other session.</summary>
+    public string? Ask { get; init; }
+}
+
+/// <summary>This machine's sessions counted by the Sessions list's groups (SESSUX1h3), archived ones and Ask Daoris's own aside.</summary>
+/// <param name="Ended">Every ended session counted, listed or not.</param>
+/// <param name="Listed">The newest ended ones, at most <see cref="HelpRoomMachineNow.EndedListed"/>, by id and where each ran.</param>
+public sealed record HelpSessions(int You, int Review, int Working, int Later, int Ended, IReadOnlyList<HelpEndedSession> Listed);
+
+/// <summary>An ended session, as the room lists it (SESSUX1h3): by id and repository, so an archive or a delete names one it was shown.</summary>
+public sealed record HelpEndedSession(string Id, string Repository);
+
+/// <summary>Daoris's browser as the room says it (HELP10): which one, where links open, extensions, and the pages it keeps.</summary>
+public sealed record HelpBrowser(string Browser, string Links, string Extensions, IReadOnlyList<string> Favorites);

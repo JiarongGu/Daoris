@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 public static class SpawnServers
 {
     /// <summary>The folder under the home that holds the per-session files.</summary>
-    public const string Folder = "spawn";
+    public const string Folder = TraceSpawnFiles.Folder;
 
     /// <summary>Write the file for one session, or answer null when there is nothing to hand.</summary>
     public static string? Write(string home, string sessionId, IReadOnlyList<AcpMcpServer> servers)

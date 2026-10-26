@@ -24,35 +24,14 @@ namespace Daoris.Driver;
 public static class SpawnSkills
 {
     /// <summary>The file a skill's folder holds, which the harness reads.</summary>
-    public const string SkillFile = "SKILL.md";
+    public const string SkillFile = SkillFiles.SkillFile;
 
     /// <summary>The harness plugin's manifest, inside each composed plugin.</summary>
     private static readonly string[] HarnessManifest = [".claude-plugin", "plugin.json"];
 
-    /// <summary>Why a declared skill is not handed, or null where it is: its file is there, and it allows itself no tool.</summary>
+    /// <summary>Why a declared skill is not handed, or null where it is: its file is there, and it allows itself no tool (<see cref="SkillFiles.Judge"/>).</summary>
     /// <param name="pluginFolder">The plugin's install folder.</param>
-    public static string? Judge(string pluginFolder, string skill)
-    {
-        var file = Path.Combine(pluginFolder, "skills", skill, SkillFile);
-        if (!File.Exists(file)) return $"its folder holds no `skills/{skill}/{SkillFile}`, so it is not handed.";
-        return AllowsItselfTools(File.ReadAllText(file)) // read-shares: a plugin's own SKILL.md, laid with its folder
-            ? $"its `{SkillFile}` declares `allowed-tools`, which would let it run tools nobody allowed, so Daoris hands it nowhere (D170)."
-            : null;
-    }
-
-    /// <summary>Whether a skill's front matter, the lines between its opening <c>---</c> and the next, declares <c>allowed-tools</c>.</summary>
-    private static bool AllowsItselfTools(string text)
-    {
-        var lines = text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
-        if (lines.Length == 0 || lines[0].Trim() != "---") return false;
-        foreach (var line in lines.Skip(1))
-        {
-            if (line.Trim() == "---") return false;
-            if (line.TrimStart().StartsWith("allowed-tools", StringComparison.OrdinalIgnoreCase)) return true;
-        }
-
-        return false;
-    }
+    public static string? Judge(string pluginFolder, string skill) => SkillFiles.Judge(pluginFolder, skill);
 
     /// <summary>
     /// Compose one session's plugins for <paramref name="to"/>: the folder under the home, and each plugin in it, in catalogue

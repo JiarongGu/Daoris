@@ -125,6 +125,3 @@ public static class WorkInventories
             || string.Equals(unit.Branch, TreeFollows.SessionPrefix + named, StringComparison.Ordinal)
             || unit.Entries.Any(entry => entry.Kind is InventoryKind.LandingBranch or InventoryKind.SessionBranch && entry.Resource == named))];
 }
-
-/// <summary>What one repository's part of the inventory could not read (FACTSPLIT1a): the repository, as data, and the clause `work state` says.</summary>
-public sealed record InventoryUnread(string Repository, string Said);

@@ -50,18 +50,6 @@ public sealed record AgentFamily(string Agent, string Owner, string? Product, st
     private static string? Declared(string? text) => text?.Trim() is { Length: > 0 } trimmed ? trimmed : null;
 }
 
-/// <summary>How a reviewer stands to the work's families (§3.4): what every opinion carries on its face.</summary>
-public static class ReviewerLabels
-{
-    /// <summary>Its maker is declared, and is not the maker of any family that wrote the work: tried first.</summary>
-    public const string AnotherMaker = "another-maker";
-
-    /// <summary>Not of the work's families by owner, and its maker not declared: never taken as another maker's agent.</summary>
-    public const string MakerNotDeclared = "maker-not-declared";
-
-    /// <summary>One of the work's families: the same agent, fresh, taken only when listed and no other can run.</summary>
-    public const string SameAgent = "same-agent";
-}
 
 /// <summary>
 /// Why no other maker's agent could read the work (§3.3), the code a choice carries wherever another maker's agent did not

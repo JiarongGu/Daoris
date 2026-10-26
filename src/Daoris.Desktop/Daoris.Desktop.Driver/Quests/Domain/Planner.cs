@@ -243,8 +243,11 @@ public sealed record Snapshot(
     IReadOnlyList<QuestView> Quests,
     IReadOnlyList<RepoView> Repositories,
     IReadOnlyList<SessionView> Active,
-    IReadOnlyDictionary<string, int>? Strikes = null)
+    IReadOnlyDictionary<string, int>? Strikes = null) : IKnowledgeSnapshot
 {
+    public IKnowledgeSnapshot Within(IReadOnlyList<QuestView> quests, IReadOnlyList<RepoView> repositories, IReadOnlyList<SessionView> active) =>
+        this with { Quests = quests, Repositories = repositories, Active = active };
+
     public IReadOnlyDictionary<string, int> Strikes { get; init; } =
         Strikes ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 

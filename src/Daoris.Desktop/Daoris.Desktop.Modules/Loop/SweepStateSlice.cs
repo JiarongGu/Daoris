@@ -97,14 +97,14 @@ public static class SweepStateSlice
     /// <param name="parts">The facts' parts (<see cref="HelpFacts.SweepParts"/>), each as last judged or null.</param>
     /// <param name="look">The sessions' look as the facts hold it; once judged whole, none reads no record, as the door's records that do not read.</param>
     /// <param name="partly">Whether a part never judged is left out rather than leaving the slice not judged: once one judgement was whole.</param>
-    public static IReadOnlyList<SliceJudged>? Judge(IReadOnlyList<(string Part, SweepPlan? Plan)>? parts, SessionLook? look, bool partly)
+    public static IReadOnlyList<SliceJudged>? Judge(IReadOnlyList<(string Part, IKnowledgeSweep? Plan)>? parts, SessionLook? look, bool partly)
     {
         if (parts is null || (!partly && (look is null || parts.Any(part => part.Plan is null)))) return null;
         var records = look?.Records ?? [];
         return
         [
             .. parts.Where(part => part.Plan is not null)
-                .Select(part => new SliceJudged(part.Part, Allowed(LinesRoutes.SweepAnswer(part.Plan!, records), "part"))),
+                .Select(part => new SliceJudged(part.Part, Allowed(LinesRoutes.SweepAnswer((SweepPlan)part.Plan!, records), "part"))),
         ];
     }
 

@@ -5,13 +5,13 @@ namespace Daoris.Driver;
 /// How many sessions have failed on it here in all, as the records count them (<see cref="Consideration.Failures"/>), which a
 /// retry marks it at (RETRY1b); null where the verdict carried none.
 /// </param>
-public sealed record ParkedQuest(string Quest, string Repository, int? Failures = null);
+public sealed record ParkedQuest(string Quest, string Repository, int? Failures = null) : IKnowledgeParkedQuest;
 
 /// <summary>
 /// A quest the loop's last look held by the person's stop (SESSUX1b, D126 §3.3): its id, the repository it is addressed
 /// to, and the session they stopped, which a release names.
 /// </summary>
-public sealed record HeldQuest(string Quest, string Repository, string Session)
+public sealed record HeldQuest(string Quest, string Repository, string Session) : IKnowledgeHeldQuest
 {
     /// <summary>
     /// The quests these considerations hold by the person's stop, in their order; none for none. Read from the loop's last

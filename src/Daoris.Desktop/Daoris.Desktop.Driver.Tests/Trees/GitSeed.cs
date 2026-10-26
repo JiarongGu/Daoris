@@ -149,7 +149,9 @@ internal static class GitSeed
     /// process a test started, a scanner) is waited for, 12 tries a quarter second apart (SCRATCHLEAK1, as the landing fixtures
     /// already waited); the last refusal is thrown, as <c>Directory.Delete</c> throws it.
     /// </summary>
-    public static void Remove(string folder)
+    /// <param name="folder">The scratch folder to remove.</param>
+    /// <param name="retry">A test's synchronous control at a refused attempt before the next one; otherwise wait a quarter second.</param>
+    public static void Remove(string folder, Action<int>? retry = null)
     {
         for (var attempt = 1; Directory.Exists(folder); attempt++)
         {
@@ -166,7 +168,8 @@ internal static class GitSeed
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
                 if (attempt >= 12) throw;
-                Thread.Sleep(250);
+                if (retry is null) Thread.Sleep(250);
+                else retry(attempt);
             }
         }
     }

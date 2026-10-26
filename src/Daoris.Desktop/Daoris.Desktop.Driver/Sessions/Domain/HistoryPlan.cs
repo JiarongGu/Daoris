@@ -206,56 +206,6 @@ public sealed record HistoryUnitPlan(string Kind, string Id, string? Workspace)
     public HistoryUnitName Name => new(Kind, Id);
 }
 
-/// <summary>What a clear would take now (the design §2.4).</summary>
-public sealed record HistoryTakes(int Quests, int Asks, int Sessions, int Teammates, long Bytes)
-{
-    public static HistoryTakes None { get; } = new(0, 0, 0, 0, 0);
-}
-
-/// <summary>
-/// What the home keeps of one workspace's finished work, and what a clear would free (the design §2.4). Counts and bytes only:
-/// never a path or a title.
-/// </summary>
-public sealed record HistoryReading(string Workspace)
-{
-    /// <summary>Its closed quests held here.</summary>
-    public int Quests { get; init; }
-
-    /// <summary>Its asks closed, or whose work closed.</summary>
-    public int Asks { get; init; }
-
-    /// <summary>This machine's session records of that work.</summary>
-    public int Sessions { get; init; }
-
-    /// <summary>This machine's copies of a teammate's records of that work.</summary>
-    public int Teammates { get; init; }
-
-    /// <summary>What that work holds on the disk, by kind.</summary>
-    public HistoryBytes Bytes { get; init; } = HistoryBytes.None;
-
-    /// <summary>The intake's room, in bytes.</summary>
-    public long Intake { get; init; }
-
-    /// <summary>What a clear would take now, the left-over files and an intake's room it frees included.</summary>
-    public HistoryTakes Takes { get; init; } = HistoryTakes.None;
-
-    /// <summary>How many units are kept, by the word that keeps each.</summary>
-    public IReadOnlyDictionary<string, int> KeptBy { get; init; } = new Dictionary<string, int>(StringComparer.Ordinal);
-
-    /// <summary>This machine's conversations in it that served no quest, which only *Delete…* takes (D126 §5.4).</summary>
-    public int Conversations { get; init; }
-
-    public long ConversationBytes { get; init; }
-
-    /// <summary>For the whole home: files of records no store has any more (§2.3), which every workspace's clear takes.</summary>
-    public int LeftOver { get; init; }
-
-    public long LeftOverBytes { get; init; }
-
-    /// <summary>For the whole home: the machine log's size, which a clear never touches (§7).</summary>
-    public long Log { get; init; }
-}
-
 /// <summary>The first press's answer: every unit, and for a workspace, the reading.</summary>
 public sealed record HistoryPlan(HistoryScope Scope, string Id, IReadOnlyList<HistoryUnitPlan> Units)
 {

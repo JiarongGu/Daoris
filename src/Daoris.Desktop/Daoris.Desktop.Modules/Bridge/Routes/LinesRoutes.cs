@@ -601,7 +601,7 @@ public sealed class LinesRoutes(DriverContext context)
     /// One unit's milestone as <c>WORK_STATE</c> answers it and the work slice pushes it (PUSH1c2a): one builder, two doors, so the pull
     /// and the push cannot drift. A field added here is pushed only once <see cref="WorkStateSlice.Fields"/> names it.
     /// </summary>
-    public static object WorkUnit(WorkMilestone unit) => new
+    public static object WorkUnit(IKnowledgeMilestone unit) => new
     {
         unit.Unit, unit.Repository, unit.Branch, unit.Session,
         End = new { unit.End.State, unit.End.By, unit.End.On, unit.End.Revision, unit.End.At, unit.End.Said },

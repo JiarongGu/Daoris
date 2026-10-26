@@ -31,50 +31,7 @@ public static class MergeHow
     public static readonly IReadOnlyList<string> All = [Merge, Squash, Rebase, RebaseMerge];
 }
 
-/// <summary>
-/// A plugin's answer at <see cref="HookPoints.State"/> (PLUGHOOK1a, D148 point 3), and, kept on the landing entry as
-/// <c>pullRequestState</c>, the plugin that gave it and when it was asked (D143).
-/// </summary>
-/// <param name="State">One of <see cref="PullRequestStates"/>.</param>
-public sealed record PullRequestState(string State)
-{
-    /// <summary>The pull request it answered for, as an absolute web address, or null.</summary>
-    public string? PullRequest { get; init; }
 
-    /// <summary>The full id of the commit the completion put on its target; set for every completed answer.</summary>
-    public string? MergeCommit { get; init; }
-
-    /// <summary>The full id of the source commit the completion merged; set for every completed answer.</summary>
-    public string? SourceCommit { get; init; }
-
-    /// <summary>The branch it merged into, without <c>refs/heads/</c>, or null.</summary>
-    public string? Target { get; init; }
-
-    /// <summary>One of <see cref="MergeHow"/>, or null.</summary>
-    public string? How { get; init; }
-
-    /// <summary>When it completed or was abandoned, or null.</summary>
-    public DateTimeOffset? At { get; init; }
-
-    /// <summary>The plugin's own sentence, kept to <see cref="PullRequestAnswers.MessageLimit"/> characters, or null.</summary>
-    public string? Message { get; init; }
-
-    /// <summary>The plugin that answered.</summary>
-    public string? Plugin { get; init; }
-
-    /// <summary>When Daoris asked; <see cref="DateTimeOffset.MinValue"/> where a record did not keep it.</summary>
-    public DateTimeOffset AskedAt { get; init; }
-}
-
-/// <summary>
-/// The latest ask that failed (design §2.4), kept as <c>pullRequestAskFailed</c> while no answer is newer: one of
-/// <see cref="PluginEvents"/>' failure kinds, the plugin, and when. A failure never overwrites an answer.
-/// </summary>
-public sealed record PullRequestAskFailed(string Code, string Plugin, DateTimeOffset At);
-
-/// <summary>A session branch removed on a completed answer (design §2.5): its tip, when, and which occasion removed it.</summary>
-/// <param name="By"><see cref="CarriedBy.Tidy"/> or <see cref="CarriedBy.CleanUp"/>.</param>
-public sealed record CarriedBranch(string Branch, string Tip, DateTimeOffset At, string By);
 
 /// <summary>Which occasion removed a session branch on a pull request's answer.</summary>
 public static class CarriedBy

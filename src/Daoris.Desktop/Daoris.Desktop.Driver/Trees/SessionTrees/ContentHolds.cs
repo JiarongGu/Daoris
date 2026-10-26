@@ -4,51 +4,6 @@ using static Daoris.Driver.TreeWorktrees;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where a session branch's work is held by content though no branch of the person's holds its commits (SQUASHTIDY1): a squash
-/// merge makes one new commit on the line from the branch's content, and a cherry-pick copies a change onto another branch
-/// under a commit of its own, so ancestry (D88) sees neither.
-/// </summary>
-/// <param name="Where">What holds it, as git names it: a form of the line (<c>main</c>, <c>origin/main</c>), or a branch of the person's.</param>
-/// <param name="Squash">Its whole tree is the tree of a commit on the line since it left it: what a squash merge of it leaves.</param>
-public sealed record ContentHold(string Where, bool Squash)
-{
-    /// <summary>
-    /// A squash on the line carried it with other work (SQUASHSEEN1, <see cref="SquashCarries"/>): merging it into the line as it stands
-    /// adds nothing. Never set with <see cref="Squash"/>.
-    /// </summary>
-    public bool Carried { get; init; }
-
-    /// <summary>
-    /// A landing replayed it (REVIEWLANDED1, <see cref="ReplayHolds"/>): each of its commits is on the line under an id of its own, as a
-    /// landing reads them. Never set with <see cref="Squash"/> or <see cref="Carried"/>.
-    /// </summary>
-    public bool Replayed { get; init; }
-
-    /// <summary>
-    /// <see cref="Where"/> is a form of the line, not a branch of the person's (REVIEWLANDED1): the work landed, so the session leaves the
-    /// review (<see cref="TreeWork.Holds"/>).
-    /// </summary>
-    public bool OnLine { get; init; }
-
-    /// <summary>How its work was found held: the clause a removal's sentence and the clean-up's row in the terminal say.</summary>
-    public string Said => Squash
-        ? $"its work is on `{Where}` by content (a squash merge)"
-        : Carried
-            ? $"its work is on `{Where}` by content (a squash carried it: merging it there adds nothing)"
-            : Replayed
-                ? $"its work is on `{Where}` by content (a landing replayed each of its commits there)"
-                : $"its work is on `{Where}` by content (each file it changed reads the same there)";
-
-    /// <summary>
-    /// Where the commits a content-held removal deleted are kept (SQUASHTIDY1c), and the two things a person may do with them:
-    /// bring the branch back, or let them go. A content proof compares files, so a commit's message, an empty commit and
-    /// history the final tree does not show are held by this ref alone.
-    /// </summary>
-    public static string KeptAt(string branch, string reference) =>
-        $"Its commits stay at `{reference}` until you delete that ref; `git branch {branch} {reference}` brings the branch back.";
-}
-
-/// <summary>
 /// What the content proof found (PROOF-UNREAD1): the work held (<see cref="Hold"/>), not held, or unread (<see cref="Unread"/>, git's
 /// failure in a clause) where a read it needs failed. Unread is never held and never "not held": a caller keeps what it would keep
 /// for either, and says it could not read.

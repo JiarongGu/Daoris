@@ -30,8 +30,21 @@ namespace Daoris.Driver;
 /// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin, and the steps
 /// with their resources (<see cref="PluginSteps"/>, FABRIC-UNIT1d), whose problems do.</para>
 /// </remarks>
-public sealed class PluginCatalog
+public sealed class PluginCatalog : IKnowledgePlugins
 {
+    IReadOnlyList<string> IKnowledgePlugins.LandingPlugins() =>
+        [.. Plugins.Select(plugin => plugin.Manifest.Id)
+            .Where(id => LandingRules.PluginProblem(id, this) is null)
+            .Order(StringComparer.Ordinal)];
+
+    string? IKnowledgePlugins.SourceKind(string folder) => PluginSource.Read(folder).Source switch
+    {
+        null => null,
+        { Package: not null } => "package",
+        { Offer: not null } => "offer",
+        _ => "folder",
+    };
+
     /// <summary>The plugin API this build speaks. Raised only when a plugin written for the new shape cannot work on the old one.</summary>
     public const int ApiVersion = 1;
 

@@ -143,6 +143,23 @@ repository.
 - **Verification:** `say.test.ts` passes, 8 of 8; every web test that reads a driver source, 193 of 193 in 9 files; `driver-names.test.ts`,
   5 of 5; `merge-branch.test.ts`, 182 of 182.
 
+## 2026-10-27 - A seed cleanup test raced its held-file release against synchronous retries (GITSEEDWAIT1)
+
+- **Symptom:** candidate `a34bb83` failed `GitSeedTests.A_folder_a_file_in_it_holds_for_a_moment_is_removed_once_it_is_let_go`
+  with `IOException` on `held.txt` in the driver's fast run; nothing was promoted.
+- **Root cause:** the fixture introduced in `7969bbe66` releases its exclusive file handle from a fire-and-forget pool task
+  after `Task.Delay(400)`, while `GitSeed.Remove` synchronously exhausts twelve attempts, a quarter second apart. A late
+  pool continuation can leave the handle held for the entire bound. This predates the Knowledge cuts; those cuts changed
+  neither the fixture nor removal. Holding that continuation behind an explicit release reproduced the same exception
+  deterministically on the original removal, with the release awaited in `finally` so the red left no task running.
+- **Fix:** `GitSeed.Remove` accepts a per-call synchronous retry control after an actual refusal, replacing only its wait.
+  The fixture explicitly releases the handle after the second refused attempt, without a pool task or timer. A second
+  case keeps the handle held and checks eleven retry callbacks followed by the twelfth refusal. Default quarter-second
+  waits, the twelve-attempt bound, final exception, writable-attribute clearing and reparse-point exclusion are unchanged.
+- **Verify:** the deterministic late-release case failed first with the integration's `IOException`; the repaired
+  `GitSeedTests` class passes all 10 fast cases, including explicit release, exact exhaustion and quiet `Discard`.
+- **Commit:** `bdcf72870`.
+
 ## 2026-10-26 - The brainstorm's stop case read the pass's deadline where the person's stop (FLAKE1)
 
 - **Symptom:** `BrainstormBoundsTests.The_person_s_stop_ends_every_pass_and_keeps_what_answered` read `failed`/`deadline` where

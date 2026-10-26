@@ -60,7 +60,7 @@ note has the measure that chose it.
 ## A fact judged per repository, before its slice
 
 A slice partitioned per repository is only as cheap as the fact beneath it: one repository's `refs` wake must judge that
-repository alone (D181 points 2-3). `Driver/Help/HelpFacts.cs` holds four such topics, the lines (PUSH1b1), the work
+repository alone (D181 points 2-3). `Driver/Knowledge/HelpFacts.cs` holds four such topics, the lines (PUSH1b1), the work
 inventory (FACTSPLIT1a), the sessions' trees (FACTSPLIT1b, both D181's notes) and the clean-up's list (`HelpFacts.Sweep`,
 PUSH1c4a), and PUSH1c's slices follow their shape.
 

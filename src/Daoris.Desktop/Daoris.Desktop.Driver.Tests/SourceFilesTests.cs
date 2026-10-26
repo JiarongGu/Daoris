@@ -43,7 +43,7 @@ public sealed class SourceFilesTests
         Assert.Equal(Path.Combine(SourceFiles.Project("Daoris.Desktop.Modules"), "Loop", "DriverLoop.cs"), SourceFiles.Find("Daoris.Desktop.Modules", "DriverLoop.cs"));
 
         var all = SourceFiles.All(SourceFiles.DriverProject, "*.cs").ToList();
-        Assert.Contains(Path.Combine(driver, "Help", "Room", "HelpRoomAsks.cs"), all);
+        Assert.Contains(Path.Combine(driver, "Knowledge", "Room", "HelpRoomAsks.cs"), all);
         // The build writes sources of its own under obj/ (the assembly's attributes, the global usings): never a reader's.
         Assert.True(Directory.Exists(Path.Combine(driver, "obj")), "the driver is built before its tests run");
         Assert.DoesNotContain(all, path => Path.GetRelativePath(driver, path).Split(Path.DirectorySeparatorChar)[0] is "bin" or "obj");

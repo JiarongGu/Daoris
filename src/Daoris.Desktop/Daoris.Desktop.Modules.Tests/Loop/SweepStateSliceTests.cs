@@ -135,12 +135,12 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
         var client = new ServiceClient("http://stand-in", null, new HttpClient(service));
         HelpFacts.Keep(loop.Facts, new HelpFactJudges(
             async ct => new HelpMachineWhole(await client.SnapshotAsync(ct), [], []),
-            _ => Task.FromResult<SessionLook?>(Look("engine")),
+            _ => Task.FromResult<IKnowledgeSessionLook?>(Look("engine")),
             _ => Task.FromResult<IReadOnlyList<HistoryReading>?>(null),
             (_, _) => Task.FromResult<HelpWork?>(null))
         {
             Guess = (_, _) => Task.FromResult<string?>("main"),
-            Sweep = (part, _) => Task.FromResult<SweepPlan?>(Plan(part.Repository)),
+            Sweep = (part, _) => Task.FromResult<IKnowledgeSweep?>(Plan(part.Repository)),
         });
         await loop.ComeUpAsync(client);
         var slice = loop.Slices.Find(SweepStateSlice.Name)!;
@@ -352,7 +352,7 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
         var whole = new HelpMachineWhole(new Snapshot([], [new RepoView("alpha", true, Root("alpha"), "w1"), new RepoView("beta", true, Root("beta"), "w1")], []), [], []);
         HelpFacts.Keep(loop.Facts, new HelpFactJudges(
             _ => Task.FromResult<HelpMachineWhole?>(whole),
-            _ => Task.FromResult<SessionLook?>(Look()),
+            _ => Task.FromResult<IKnowledgeSessionLook?>(Look()),
             _ => Task.FromResult<IReadOnlyList<HistoryReading>?>(null),
             (_, _) => Task.FromResult<HelpWork?>(null))
         {
@@ -360,7 +360,7 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
             Sweep = (part, _) =>
             {
                 lock (judged) judged[part.Repository] = judged.GetValueOrDefault(part.Repository) + 1;
-                return Task.FromResult<SweepPlan?>(Plan(part.Repository));
+                return Task.FromResult<IKnowledgeSweep?>(Plan(part.Repository));
             },
         });
         await loop.ComeUpAsync(client);
@@ -463,7 +463,7 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
     private sealed class Stand : IDisposable
     {
         private readonly Dictionary<string, SweepPlan> _plans = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, TaskCompletionSource<SweepPlan?>> _holding = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TaskCompletionSource<IKnowledgeSweep?>> _holding = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, int> _judged = new(StringComparer.OrdinalIgnoreCase);
         private HelpMachineWhole _whole = null!;
 
@@ -473,7 +473,7 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
             Facts = new MachineFacts(Clock.Now);
             HelpFacts.Keep(Facts, new HelpFactJudges(
                 _ => Task.FromResult<HelpMachineWhole?>(Volatile.Read(ref _whole)),
-                _ => Task.FromResult<SessionLook?>(Look(repositories)),
+                _ => Task.FromResult<IKnowledgeSessionLook?>(Look(repositories)),
                 _ => Task.FromResult<IReadOnlyList<HistoryReading>?>(null),
                 (_, _) => Task.FromResult<HelpWork?>(null))
             {
@@ -485,7 +485,7 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
                         _judged[part.Repository] = _judged.GetValueOrDefault(part.Repository) + 1;
                         return _holding.Remove(part.Repository, out var held)
                             ? held.Task
-                            : Task.FromResult<SweepPlan?>(_plans.GetValueOrDefault(part.Repository) ?? Plan(part.Repository));
+                            : Task.FromResult<IKnowledgeSweep?>(_plans.GetValueOrDefault(part.Repository) ?? Plan(part.Repository));
                     }
                 },
             });
@@ -503,9 +503,9 @@ public sealed partial class SweepStateSliceTests : DriverModuleBridge
             new Snapshot([], [.. repositories.Select(repository => new RepoView(repository, Adopted: true, Root: Root(repository), "w1"))], []), [], []));
 
         /// <summary>The part's next judgement waits for the test's answer.</summary>
-        public TaskCompletionSource<SweepPlan?> Hold(string repository)
+        public TaskCompletionSource<IKnowledgeSweep?> Hold(string repository)
         {
-            var held = new TaskCompletionSource<SweepPlan?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var held = new TaskCompletionSource<IKnowledgeSweep?>(TaskCreationOptions.RunContinuationsAsynchronously);
             lock (_plans) _holding[repository] = held;
             return held;
         }

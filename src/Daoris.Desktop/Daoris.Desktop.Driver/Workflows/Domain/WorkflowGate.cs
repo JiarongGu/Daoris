@@ -37,14 +37,6 @@ public static class WorkflowGateStates
 /// <param name="Cannot">Why the look cannot start (§3.7), a sentence naming the Setup row that declares what it needs; else null.</param>
 public sealed record WorkflowLook(string? Environment, string? Cannot);
 
-/// <summary>
-/// The named workflow a landing went by (WORKFLOW1f, the workflow design §5.5): its id, the version its run kept, the level of §4.1
-/// that chose it, and the task's kind. Kept on the landing record beside the review and the opinion; absent under Current.
-/// </summary>
-public sealed record LandingWorkflow(string Workflow, int Version, string Level)
-{
-    public string? Kind { get; init; }
-}
 
 /// <summary>
 /// The process a chain's work in a repository follows at its gate (WORKFLOW1f, D157 points 4 and 6; the workflow design §2.3,

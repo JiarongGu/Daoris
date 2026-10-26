@@ -3,26 +3,6 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>Where a landing rule came from, for the screen and the sentences that name it.</summary>
-public static class LandingSource
-{
-    public const string Repository = "repository";
-    public const string Workspace = "workspace";
-    public const string Default = "default";
-}
-
-/// <summary>A repository's landing rule and what said so.</summary>
-public sealed record Landing(LandingRule Rule, string Source)
-{
-    /// <summary>
-    /// Where the repository's access setup said <c>landing: rule</c> (AUTONOMY1c2, D184 point 3), one of <see cref="AccessRules.FromRepository"/>
-    /// and the rest, where it changes how this rule lands: a branch rule whose own switch is off, which it accepts automatically
-    /// (<see cref="LandingRules.Effective"/>), or a merge rule, which it cannot (D51 rule 6). Null where the setup is the person's, or the
-    /// rule accepts by its own switch.
-    /// </summary>
-    public string? Access { get; init; }
-}
-
 /// <summary>The session a press lands: its id, and its quest and that quest's title where it has one.</summary>
 public sealed record LandingSubject(string Session, string? Quest, string? Title)
 {

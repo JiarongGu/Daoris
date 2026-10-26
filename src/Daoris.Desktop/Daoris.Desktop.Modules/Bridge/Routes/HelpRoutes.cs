@@ -197,7 +197,7 @@ public sealed class HelpRoutes(DriverContext context)
         // its own by (ASKSCOPE1b).
         var asks = HelpRoom.AsksWaiting(whole.Standing);
         // This machine's sessions as the Sessions list places them (SESSUX1h3), with what holds them as the loop's last look says.
-        var sessions = read.Sessions is { } look ? look with { Waits = _loop.Look.Waits } : null;
+        var sessions = read.Sessions is SessionLook look ? look with { Waits = _loop.Look.Waits } : null;
         // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
         var plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names);
         return HelpRoom.Describe(
@@ -239,7 +239,7 @@ public sealed class HelpRoutes(DriverContext context)
     /// (<see cref="TreesAsync"/>): the records, the quests, the verdicts and the marks, with no git. The look this shell took last is
     /// read where it is recent (HELPSTART1). Null where the look cannot be taken, and the room says so.
     /// </summary>
-    private async Task<SessionLook?> SessionsAsync(CancellationToken cancellationToken)
+    private async Task<IKnowledgeSessionLook?> SessionsAsync(CancellationToken cancellationToken)
     {
         if (_loop.Service is not { } service) return null;
         var config = DriverConfig.Load(_loop.ConfigPath);
@@ -328,7 +328,7 @@ public sealed class HelpRoutes(DriverContext context)
     /// judged with git by the pull-request answers the landing record keeps, asking no plugin (D148 point 2), as the pushed <c>sweep</c>
     /// slice reads them. Its checkout, workspace and trees in use are the service's answers the facts hold (<see cref="HelpFacts.SweepPartOf"/>).
     /// </summary>
-    private async Task<SweepPlan?> SweepPartAsync(HelpSweepPart part, CancellationToken cancellationToken) =>
+    private async Task<IKnowledgeSweep?> SweepPartAsync(HelpSweepPart part, CancellationToken cancellationToken) =>
         await HelpFacts.ReadSweepAsync(_loop.Home, part, cancellationToken).ConfigureAwait(false);
 
     /// <summary>

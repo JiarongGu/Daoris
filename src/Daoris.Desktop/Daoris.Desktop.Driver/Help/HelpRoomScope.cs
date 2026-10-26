@@ -33,12 +33,7 @@ internal static class HelpRoomScope
         {
             Workspace = workspace,
             Registry = registry,
-            Snapshot = whole.Snapshot with
-            {
-                Repositories = repositories,
-                Quests = quests,
-                Active = [.. whole.Snapshot.Active.Where(session => Ours(session.Workspace))],
-            },
+            Snapshot = whole.Snapshot.Within(quests, repositories, [.. whole.Snapshot.Active.Where(session => Ours(session.Workspace))]),
             Lines = [.. whole.Lines.Where(line => Ours(line.Workspace))],
             Standing = standing,
             // Counted from its own asks, as the module counts the machine's.
@@ -56,7 +51,7 @@ internal static class HelpRoomScope
                     .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
             },
             // The Sessions list's groups are read from its records, so its own alone are counted and listed.
-            Sessions = whole.Sessions is { } look ? look with { Records = [.. look.Records.Where(record => Ours(record.Workspace))] } : null,
+            Sessions = whole.Sessions is { } look ? look.WithRecords([.. look.Records.Where(record => Ours(record.Workspace))]) : null,
             History = whole.History is { } history ? [.. history.Where(reading => Ours(reading.Workspace))] : null,
             Work = whole.Work is { } units ? [.. units.Where(unit => own.Contains(unit.Repository))] : null,
             // What the inventory could not read names its repository as data (FACTSPLIT1a): another workspace's is that workspace's,
