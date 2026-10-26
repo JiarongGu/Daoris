@@ -61,6 +61,8 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
     /// <summary>A brainstorm's minute, and a meeting's (AGENTROOM1a): a minute, unless a test shortens it.</summary>
     internal TimeSpan Minute => _context.BrainstormMinute ?? TimeSpan.FromMinutes(1);
 
+    private TimeProvider Clock => _context.BrainstormClock;
+
     /// <summary>How often a waiting pass asks for a slot again, and a running brainstorm looks for the person's stop.</summary>
     private TimeSpan Tick => TimeSpan.FromMilliseconds(Math.Clamp(Minute.TotalMilliseconds / 60, 20, 1000));
 
@@ -384,7 +386,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
         try
         {
             var minutes = rule.Minutes;
-            var started = DateTimeOffset.UtcNow;
+            var started = Clock.GetUtcNow();
             var deadline = started + minutes.Request * Minute;
             var generatorsEnd = started + minutes.Generators * Minute;
             var sources = packet.Sources.Select(source => source.Id).ToHashSet(StringComparer.Ordinal);
@@ -486,7 +488,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
                     return;
                 }
 
-                await Task.Delay(Tick, done).ConfigureAwait(false);
+                await Task.Delay(Tick, Clock, done).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -558,11 +560,11 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             ct.ThrowIfCancellationRequested();
             if (stop.IsCancellationRequested) return Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], 0);
             // The deadline first: a slot let go at the deadline starts nothing.
-            if (DateTimeOffset.UtcNow >= until) return Ended(BrainstormPassRecord.Unavailable, [CapFull], 0);
+            if (Clock.GetUtcNow() >= until) return Ended(BrainstormPassRecord.Unavailable, [CapFull], 0);
             if (TrySlot()) break;
             try
             {
-                await Task.Delay(Tick, stop).ConfigureAwait(false);
+                await Task.Delay(Tick, Clock, stop).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested)
             {
@@ -572,7 +574,7 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
 
         try
         {
-            var ownEnd = DateTimeOffset.UtcNow + own;
+            var ownEnd = Clock.GetUtcNow() + own;
             var end = ownEnd < until ? ownEnd : until;
             var cutCode = until < ownEnd ? Deadline : TimedOut;
             IReadOnlyList<string> codes = [];
@@ -581,15 +583,15 @@ internal sealed class DriverBrainstorms(LoopContext context, Driver driver)
             {
                 ct.ThrowIfCancellationRequested();
                 if (stop.IsCancellationRequested) return Ended(BrainstormPassRecord.Stopped, [BrainstormStates.Stopped], turns - 1);
-                var left = end - DateTimeOffset.UtcNow;
+                var left = end - Clock.GetUtcNow();
                 if (left <= TimeSpan.Zero) return Ended(BrainstormPassRecord.Failed, [.. codes, cutCode], turns - 1);
 
                 var turn = turns == 1 ? pass : $"{pass}r";
                 var said = turns == 1 || restart ? instruction : BrainstormInstruction.Repair(instruction, codes);
                 Ended(BrainstormPassRecord.Running, [], turns);
                 var room = files.OpenRoom(id, turn, packet, said, proposals);
-                using var window = CancellationTokenSource.CreateLinkedTokenSource(stop);
-                window.CancelAfter(left);
+                using var limit = new CancellationTokenSource(left, Clock);
+                using var window = CancellationTokenSource.CreateLinkedTokenSource(stop, limit.Token);
                 BrainstormTurnRun ran;
                 var cut = false;
                 try

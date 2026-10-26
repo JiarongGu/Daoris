@@ -741,6 +741,8 @@ not, as its driven sessions do (`daoris-driver chat` writes none, as it writes n
 
 ## The dev loop — `tools/desktop.mjs` (2026-09-21)
 
+Brainstorm deadline tests hand the runner a `TimeProvider` through its internal `BrainstormClock` seam (BRAINBOUNDCLOCK1). Deadlines and cancellation timers share that clock; production uses `TimeProvider.System`. The pass-timeout regression moves its clock only after the hanging turn starts, preserving the synthesis reserve without relaxing its assertions.
+
 Everything else here has a loop that can see it. The shell had none: Playwright cannot reach it (the
 bridge is absent in a browser, by construction) and the vitest suite drives a *mock* of this machine,
 so the only way to look at the real window was to open it by hand. `npm run desktop -- <command>` is

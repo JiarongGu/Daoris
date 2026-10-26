@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-26 - A timed-out generator's test spent the synthesis reserve on machine load (BRAINBOUNDCLOCK1)
+
+- **Symptom:** the pass-timeout case of `BrainstormBoundsTests` failed its ranking assertion in the first local fast run and again in the second scoped queue run, though the generator's timeout, cancellation and no-repair assertions passed.
+- **Root cause:** a test minute is 100 ms; the six-second real-time request budget included test scheduling and filesystem work, which could consume the synthesis reserve under load. The runner correctly produced an unranked partial document when that deadline had passed, but the test expected synthesis to finish. Both deadline arithmetic and cancellation were tied to the machine's clock.
+- **Fix:** hand the runner a `TimeProvider` through `LoopContext` and the driver's internal facade, defaulting to `TimeProvider.System`. Its deadlines, slot polling, stop polling and cancellation timers read that same clock. The existing moved clock advances only after the hanging generator starts and its own timer is armed, then holds the remaining reserve while synthesis completes. All original assertions and production budgets remain.
+- **Verify:** the revised case failed before the runner used the supplied clock (no own timer armed), then passed. Brainstorm/meeting cases pass (29), structure checks pass (21), the case passes 12 repeats and five simultaneous runs during a full module rebuild; service and module rebuilds pass. Shared read and partial-class censuses pass.
+
 ## 2026-10-26 - The review-resume stand-in did not acknowledge durable word attempts (OPINIONATTEMPT1)
 
 - **Symptom:** the protocol-door case of `OpinionResumeTickTests` failed in the scoped driver-process half and again alone: its resumed turn sent no review findings because the word's attempt was not acknowledged.

@@ -436,6 +436,13 @@ public sealed class Driver(
         init => Context.BrainstormMinute = value;
     }
 
+    /// <summary>The clock for brainstorm deadlines and cancellation timers; the system's unless a test holds it.</summary>
+    internal TimeProvider BrainstormClock
+    {
+        get => Context.BrainstormClock;
+        init => Context.BrainstormClock = value;
+    }
+
     private DriverBrainstorms? _brainstorms;
 
     private DriverBrainstorms Brainstorms => LazyInitializer.EnsureInitialized(ref _brainstorms, () => new DriverBrainstorms(Context, this));

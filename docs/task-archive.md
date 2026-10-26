@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## BRAINBOUNDCLOCK1 — a pass-timeout test spends the later synthesis's reserve on machine load (2026-10-26)
+
+> **BRAINBOUNDCLOCK1 — a pass-timeout test spends the later synthesis's reserve on machine load** (STARTLOG1/PRESSMODEL1 verification, 2026-10-26). `BrainstormBoundsTests.A_pass_late_past_its_minutes_is_stopped_and_the_document_says_who_did_not_answer` twice recorded the expected generator timeout but failed its ranking assertion when the six-second real-time request budget expired under load. Hand the brainstorm deadlines and cancellation timers a `TimeProvider` that defaults to the system clock; drive the existing case with the moved clock so it spends the generator's own limit while preserving the synthesis reserve and every existing assertion.
+
+**Outcome.** Deadlines, polling and cancellation timers use the internal `BrainstormClock`, defaulting to `TimeProvider.System`. The existing moved clock spends the hanging generator's limit after its timer is armed and then holds the synthesis reserve; no assertion or policy bound was relaxed. The test failed with the clock unwired, then passed in 29 focused brainstorm/meeting cases, 12 repeats, and five concurrent cases during a full module rebuild; the structure checks pass (21). D176's note and the fix log hold the detail.
+
 ## OPINIONATTEMPT1 — the review-resume fixture has no durable attempt door (2026-10-26)
 
 > **OPINIONATTEMPT1 — the review-resume fixture has no durable attempt door** (scoped process verification, 2026-10-26). `OpinionResumeTickTests.Findings_go_on_in_the_session_s_own_conversation_on_the_protocol_door_and_are_answered` fails both in the suite and alone because its stand-in omits `POST /api/sessions/{id}/attempt`; the driver's guard correctly sends no word without that acknowledgement. Model the real endpoint in the fixture, including unknown word ids and the retained attempt stamp, and verify the real-process review-resume class without weakening delivery guards.

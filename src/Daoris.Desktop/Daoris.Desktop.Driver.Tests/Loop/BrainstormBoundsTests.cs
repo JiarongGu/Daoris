@@ -124,7 +124,7 @@ public sealed class BrainstormBoundsTests : IDisposable
     private static BrainstormRule Rule(int pass = 10, int synthesis = 10, int challenge = 10, int request = 30, params string[] agents) =>
         new(BrainstormRules.Ask, agents, new BrainstormMinutes(pass, synthesis, challenge, request));
 
-    private (Daoris.Driver.Driver Driver, Script Script) Start(int cap = 3, BrainstormRule? rule = null)
+    private (Daoris.Driver.Driver Driver, Script Script) Start(int cap = 3, BrainstormRule? rule = null, TimeProvider? clock = null)
     {
         var script = new Script();
         var driver = new Daoris.Driver.Driver(
@@ -133,6 +133,7 @@ public sealed class BrainstormBoundsTests : IDisposable
         {
             BrainstormTurns = script.RunAsync,
             BrainstormMinute = Minute,
+            BrainstormClock = clock ?? TimeProvider.System,
         };
         return (driver, script);
     }
@@ -140,7 +141,7 @@ public sealed class BrainstormBoundsTests : IDisposable
     private static async Task LookAsync(Daoris.Driver.Driver driver, params SessionView[] active)
     {
         await driver.BrainstormsAsync(new Snapshot([], [], active), 0, [], CancellationToken.None);
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
     }
 
     /// <summary>A request frozen at a look and sent by the person, ready to run at the next.</summary>
@@ -201,16 +202,26 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_pass_late_past_its_minutes_is_stopped_and_the_document_says_who_did_not_answer()
     {
-        // A test minute is 100 ms: the answering pass gets a second, and the request's 6 seconds leave the generators 4 more
-        // than the pass's own minutes, so the hang is cut by its minutes, never by the deadline (a merge's load, 2026-10-19).
-        var (driver, script) = Start(rule: Rule(pass: 10, request: 60));
+        var clock = new MovedClock();
+        var (driver, script) = Start(rule: Rule(pass: 10, request: 60), clock: clock);
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Answers["g1"] = Give("Make the window inclusive");
-        script.Behaviours["g2"] = Hang;
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        script.Behaviours["g2"] = (turn, ct) =>
+        {
+            entered.TrySetResult();
+            return Hang(turn, ct);
+        };
         script.Answers["s1"] = Synthesize("P1");
 
-        await LookAsync(driver);
+        var look = LookAsync(driver);
+        await entered.Task.WaitAsync(Poll.Patience);
+        // BRAINBOUNDCLOCK1: spend the hanging generator's own limit, then hold the later stages' reserve through any machine load.
+        var armed = clock.Pending.Contains(clock.GetUtcNow() + 10 * Minute);
+        clock.Advance(10 * Minute);
+        await look.WaitAsync(Poll.Patience);
 
+        Assert.True(armed, "the pass must arm its own cancellation on the clock before its turn runs");
         Assert.Equal(("failed", "timed-out", 1), Of(Pass(id, "g2")));
         Assert.Contains("g2", script.Cancelled);
         Assert.DoesNotContain("g2r", script.Started);
