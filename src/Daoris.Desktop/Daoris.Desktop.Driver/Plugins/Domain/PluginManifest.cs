@@ -89,21 +89,6 @@ public sealed record PluginSkill(string Name)
     public bool HandedTo(string to) => To.Contains(to, StringComparer.Ordinal);
 }
 
-/// <summary>
-/// Who a plugin's server is handed to (HELPPLUG1a, D170 point 3), as a manifest's <c>to</c> spells it. Twin: the CLI's
-/// <c>SERVER_TO</c>.
-/// </summary>
-public static class PluginServerTo
-{
-    /// <summary>Every session in a repository: driven, a conversation, an intake (INT1).</summary>
-    public const string Sessions = "sessions";
-
-    /// <summary>Ask Daoris, in its room (D170 point 3).</summary>
-    public const string Help = "help";
-
-    /// <summary>Each destination a manifest may name, in its order.</summary>
-    public static readonly IReadOnlyList<string> All = [Sessions, Help];
-}
 
 /// <summary>A plugin's manifest, as read — with everything a refused plugin would have contributed already removed.</summary>
 /// <param name="Icon">

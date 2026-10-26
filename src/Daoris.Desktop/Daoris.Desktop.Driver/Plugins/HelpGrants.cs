@@ -30,10 +30,10 @@ public static class HelpGrants
     public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.PluginApprovals);
 
     /// <summary>The person approved its exact tools: it is handed, its reads and accepted writes allowed.</summary>
-    public const string Approved = "approved";
+    public const string Approved = HelpGrantStates.Approved;
 
     /// <summary>Not approved, or changed since: handed nothing until the person approves it.</summary>
-    public const string Waits = "waits";
+    public const string Waits = HelpGrantStates.Waits;
 
     /// <summary>It names a generic execution tool, so it is never handed to Ask Daoris.</summary>
     public const string Refused = "refused";

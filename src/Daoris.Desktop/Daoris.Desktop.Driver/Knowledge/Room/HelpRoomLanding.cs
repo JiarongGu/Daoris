@@ -16,10 +16,7 @@ internal sealed class HelpRoomLanding : IHelpRoomSection
     /// The plugins a branch rule may name on this machine (HELP8): each one the landing route itself
     /// would take, so the room never lists one a proposal would then be refused for.
     /// </summary>
-    internal static IReadOnlyList<string> LandingPluginsOf(PluginCatalog catalog) =>
-        [.. catalog.Plugins.Select(plugin => plugin.Manifest.Id)
-            .Where(id => LandingRules.PluginProblem(id, catalog) is null)
-            .Order(StringComparer.Ordinal)];
+    internal static IReadOnlyList<string> LandingPluginsOf(IKnowledgePlugins catalog) => catalog.LandingPlugins();
 
     public string Render(HelpMachine machine)
     {

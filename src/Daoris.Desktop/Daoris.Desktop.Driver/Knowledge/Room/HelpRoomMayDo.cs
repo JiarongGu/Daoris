@@ -59,10 +59,10 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             Reads = [.. AcrossReads.Readable(sources.Config, readable)
                 .Select(checkout => new HelpRead(checkout.Repository, sources.Workspace ?? workspaceOf[checkout.Repository], checkout.Path))],
             // HELPPLUG1a: the servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
-            PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrants.Approved)
+            PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrantStates.Approved)
                 .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow) { Writes = grant.Accepted })],
             // HELPPLUG1c: what each would bring, reads and writes apart, and one an update changed since its approval.
-            PluginServersWaiting = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrants.Waits)
+            PluginServersWaiting = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrantStates.Waits)
                 .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow)
                 {
                     Writes = grant.Server.Writes, Changed = grant.Changed,

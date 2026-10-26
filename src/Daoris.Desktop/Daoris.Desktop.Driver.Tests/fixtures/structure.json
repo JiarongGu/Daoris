@@ -295,6 +295,7 @@
     "Knowledge/ConfiguredAccess.cs": "Knowledge",
     "Knowledge/Domain/Trace.Chain.cs": "Knowledge",
     "Knowledge/Domain/ReviewFacts.cs": "Knowledge",
+    "Knowledge/Domain/PluginVocabulary.cs": "Knowledge",
     "Knowledge/Domain/WorkflowFacts.cs": "Knowledge",
     "Knowledge/Domain/Trace.Words.cs": "Knowledge",
     "Knowledge/Domain/TracedRecords.cs": "Knowledge",
@@ -306,6 +307,7 @@
     "Knowledge/HelpRoomSections.cs": "Knowledge",
     "Knowledge/KnowledgeConnector.cs": "Knowledge",
     "Knowledge/KnowledgeReviews.cs": "Knowledge",
+    "Knowledge/IKnowledgePlugins.cs": "Knowledge",
     "Knowledge/KnowledgeWorkflows.cs": "Knowledge",
     "Knowledge/RepositoryIndexes.cs": "Knowledge",
     "Knowledge/Room/HelpRoomAgents.cs": "Knowledge",
@@ -961,17 +963,6 @@
       }
     },
     {
-      "family": "Knowledge names Plugins",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/Room/HelpRoomLanding.cs": ["HookPoints","PluginCatalog"],
-        "Knowledge/Room/HelpRoomMachineNow.cs": ["PluginSource"],
-        "Knowledge/Room/HelpRoomMakingAPlugin.cs": ["HookPoints"],
-        "Knowledge/Room/HelpRoomMayDo.cs": ["HelpGrants","PluginServerTo"],
-        "Knowledge/Room/HelpRoomOwnPlugins.cs": ["PluginServerTo"]
-      }
-    },
-    {
       "family": "Knowledge names Work orders",
       "after": "Knowledge",
       "files": {
@@ -992,7 +983,6 @@
         "Knowledge/Domain/TracedRecords.cs": ["AutoLanding","LandedBranch"],
         "Knowledge/HelpCheckouts.cs": ["WorkingTree"],
         "Knowledge/HelpFacts.cs": ["CanonicalLine","HistoryReading","LineGuesses","LookTimes","RepositoryLine","SessionTrees","SweepPlan","TreeFolders","TreeReadMemo"],
-        "Knowledge/Room/HelpRoomLanding.cs": ["LandingRules"],
         "Knowledge/Room/HelpRoomMachineNow.cs": ["AcceptedBy","HistoryCommand","HistoryReading","PullRequestAskFailed","PullRequestState","PullRequestWords"],
         "Knowledge/Room/HelpRoomWorkspaces.cs": ["Landing","LandingRules","LandingSource","Line","LineSource"],
         "Knowledge/Trace.cs": ["AutoLandings","LandedBranches"]
@@ -1159,9 +1149,9 @@
         "Sessions/History/HistoryCommand.cs": ["PluginEvents"],
         "Trees/ChatLandCommand.cs": ["PluginCatalog"],
         "Trees/Landing/AutoLanding.cs": ["PluginCatalog"],
-        "Trees/Landing/Landing.cs": ["HookPoints","PluginCatalog"],
-        "Trees/Landing/LandingPlugins.cs": ["HookChannels","HookFrames","HookPoints","HookProcess","IHookChannel","PluginCatalog","PluginEntry","PluginEvents","PluginFailures","PluginHealth","PluginKit","PluginLog"],
-        "Trees/PullRequestStates.cs": ["HookPoints","PluginCatalog"]
+        "Trees/Landing/Landing.cs": ["PluginCatalog"],
+        "Trees/Landing/LandingPlugins.cs": ["HookChannels","HookFrames","HookProcess","IHookChannel","PluginCatalog","PluginEntry","PluginEvents","PluginFailures","PluginHealth","PluginKit","PluginLog"],
+        "Trees/PullRequestStates.cs": ["PluginCatalog"]
       }
     },
     {

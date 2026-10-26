@@ -30,13 +30,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             {
                 Problem = entry.Problem,
                 // Its kind only: the folder it came from is a path on this machine, which the room never names.
-                Source = PluginSource.Read(entry.Folder).Source switch
-                {
-                    null => null,
-                    { Package: not null } => "package",
-                    { Offer: not null } => "offer",
-                    _ => "folder",
-                },
+                Source = ((IKnowledgePlugins)sources.Plugins).SourceKind(entry.Folder),
             })],
         Landed = [.. sources.Landed.Select(entry => new HelpLanded(entry.Repository, entry.Branch, entry.Session, entry.Pushed, entry.PullRequest)
         {
