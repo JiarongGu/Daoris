@@ -568,10 +568,16 @@ public sealed class SessionsSayCommandTests : IDisposable
         var room = Ended();
         using var service = room.Client();
         var events = new SessionEvents(Sessions);
+        var clock = new HeldClock();
+        // SAYWAITCLOCK1: keep the loop later than the wait even on a quiet run; count only once its verdict exists.
+        var world = World(service, wait: TimeSpan.FromMilliseconds(300)) with { Clock = clock };
         await using var loop = Loop(new SessionProcesses(Pids), service, events, nudge: () =>
-            events.Append("d0ne0000", Continuations.Cannot(["w1"], ContinueWhy.Of(ContinueWhy.Gone))));
+        {
+            events.Append("d0ne0000", Continuations.Cannot(["w1"], ContinueWhy.Of(ContinueWhy.Gone)));
+            clock.Run();
+        }, every: Late(world));
 
-        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"]);
+        var (exit, said) = await SayAsync(room, ["d0ne0000", "also the changelog"], world).WaitAsync(Poll.Patience);
 
         Assert.Equal(1, exit);
         Assert.Contains("sessions: kept, but it cannot go on in this session, because the agent no longer has its conversation.", said);

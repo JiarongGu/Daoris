@@ -18,7 +18,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class AnswerGoesOnOnceTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    // ANSWERWAIT1: these are waits for signals and completed calls, not windows measuring the driver's timing.
+    private static readonly TimeSpan Bound = Poll.Patience;
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-answer2-" + Guid.NewGuid().ToString("N")[..8]);
 

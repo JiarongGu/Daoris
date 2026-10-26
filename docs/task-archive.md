@@ -5,6 +5,14 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SAYWAITCLOCK1 and ANSWERWAIT1 — deterministic refusal and signal waits (2026-10-26)
+
+> **SAYWAITCLOCK1 — the refusal test can expire before its loop takes the words** (STARTLOG1/PRESSMODEL1 scoped verification, 2026-10-26). `SessionsSayCommandTests.Words_it_cannot_go_on_with_are_kept_and_said_with_why` returned held (0) instead of refused (1) under load: its five-second real-clock wait outran the loop that appends the refusal. Use the existing held clock and keep the loop late in every run; prove the same case fails on the machine's clock and passes when its clock starts at the loop's verdict.
+
+> **ANSWERWAIT1 — a completion signal is bounded by ten seconds of machine load** (same scoped run, 2026-10-26). `AnswerGoesOnOnceTests.Words_said_after_the_run_ended_go_on_again_in_one_run` timed out waiting for its resumed run's signal; this class uses a ten-second `Bound` for its positive waits. Use the shared `Poll.Patience` signal bound, preserving all once-only and transition assertions, and run the whole class.
+
+**Outcome.** The refusal test now always runs its loop after its wait would expire on the machine's clock, and starts the existing held clock only after appending the verdict. That shape failed before the clock was handed in. Positive waits use the shared signal bound. Both full classes pass, 79 cases, with the semantic assertions unchanged; the fix log records the scoped run's failures.
+
 ## CENSUSRACE1 — the terminology census walks build output before excluding it (2026-10-26)
 
 > **CENSUSRACE1 — the terminology census walks build output before excluding it** (found during STARTLOG1 verification, 2026-10-26). `one-word.test.ts` failed with `ENOENT` reading a disappearing test-unit folder inside the driver's `bin/` while the fast suite ran beside it. It now uses the repository's shared Git inventory before filtering source files, as the tooling contract requires; verify the baseline and archive the fix.

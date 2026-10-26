@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-26 - A refusal test outran its loop, and a completion wait measured machine load (SAYWAITCLOCK1, ANSWERWAIT1)
+
+- **Symptom:** the PRESSMODEL1/STARTLOG1 scoped driver fast run passed 14924 cases and failed two: `SessionsSayCommandTests.Words_it_cannot_go_on_with_are_kept_and_said_with_why` returned held (0) instead of refused (1), and `AnswerGoesOnOnceTests.Words_said_after_the_run_ended_go_on_again_in_one_run` timed out at a positive-call wait.
+- **Root cause:** the first test's five-second machine-clock wait started before its real watch took the words and appended the refusal. It could return the fallback before observing the verdict. The other class bounded calls and completion signals by ten seconds rather than the shared signal patience, though none of those waits measures a timing guarantee.
+- **Fix:** mirror the existing held-clock cases: the refusal test always runs its watch later than its 300 ms wait and starts the held clock only after appending its verdict. Use `Poll.Patience` for the other class's positive waits, keeping its transition and single-run assertions.
+- **Verify:** the deliberately late refusal test failed on the machine's clock with the original 0-versus-1 result, then passed with the held clock. Both complete classes pass, 79 cases. The scoped queue must rerun on this tree; its earlier failure is retained.
+
 ## 2026-10-26 - The terminology census raced a test deleting build output (CENSUSRACE1)
 
 - **Symptom:** `npm run verify` failed with `ENOENT` while enumerating a temporary test-unit folder below the driver's `bin/` beside the driver fast suite.
@@ -18,7 +25,7 @@ repository.
 - **Root cause:** the current and legacy log folders both held files, the latter a connector's start event. HOMELAYOUT2 (`1cf6053fe`) made both `MachineLog` constructors resolve the log entry before their guarded writes; D172's intentional refusal therefore escaped before exception watching started. A legacy connector binary predating the layout migration remained installed at the stable `bin/` path, and an older saved MCP configuration still named it.
 - **Fix:** both independent log writers disable logging on an ambiguous or unreadable location, leaving both places untouched and keeping the resolver's refusal for explicit reads. D94's STARTLOG1 note records the limit. The install's duplicate evidence was preserved under a different name, which restored its window and HTTP host; refreshing the stable legacy connector and staging the verified patch remain part of the recovery.
 - **Verify:** all five new cases failed before the fix; the driver log suite (25) and service log suite (15) pass afterward. Service (2782), HTTP (339), modules fast (2677) and `npm run verify` pass. Driver fast passed 14925 of 14926, with the unrelated `BrainstormBoundsTests.A_pass_late_past_its_minutes_is_stopped_and_the_document_says_who_did_not_answer` failing under load; its whole class then passed (14). The recovered install has a responding native window and `/api/status` answers normally; the staged-update proof is still pending.
-- **Commit:** pending.
+- **Commit:** `75131f4d8`.
 
 ## 2026-10-26 - A driven line at a limit was carried on to an agent its role does not list, asking the part before's model (WALKAGENT1)
 
