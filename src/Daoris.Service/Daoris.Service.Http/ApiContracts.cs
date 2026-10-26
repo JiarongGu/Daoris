@@ -484,9 +484,18 @@ public sealed record SaidWordResponse(
 // text, the service composing the words from the choice; any other author naming one is refused `from`.
 public sealed record SayRequest(
     string? Text, IReadOnlyList<string>? Files = null, string? Channel = null, string? From = null, string? Key = null,
-    string? Level = null, bool? Running = null, string? Decision = null, string? Question = null, string? Choice = null);
+    string? Level = null, bool? Running = null, string? Decision = null, string? Question = null, string? Choice = null,
+    // FOUNDATION1 row p (the design §3.4 rule 5): that the caller reads a settled answer, which its keyed say may be given where the key's
+    // word left a record of its line. A say without it, an older client's, is answered by the door as it was; a host before the row reads none.
+    bool? Settled = null);
 // The session as it stands, the ledger's sentence, and the word as kept (to this machine only).
 public sealed record SaidResponse(SessionResponse Session, string Message, SaidWordResponse? Said);
+// A keyed say or hand answered settled (row p): a success that names the record the key's word left, with no session, no `said` and no word at
+// all, so a reader that reads a word finds none. Sent only to a request that asked with `settled`.
+public sealed record SettledResponse(string Message, string Settled);
+// The host's protocol (row p, the design §19.12): `run`, an id the host draws at its start, and the marks it keeps, each a version
+// (`settled` 1: a key the line has settled answered `Settled` to a request that asks).
+public sealed record ProtocolResponse(string Run, IReadOnlyDictionary<string, int> Marks);
 // A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
 // `stood-down`, `running`, XAGENT1c's `opinion`, a reviewer's record, and COWORK1b's `from`, an author this service does not
 // know), which a reader acts on instead of the sentence, and
@@ -537,12 +546,12 @@ public sealed record HelperOpenRequest(string? Asker, string? Adapter, string? T
 // piece's id: its lead, its agent, its own clone, the account and version it runs on, and the ask's base commit.
 public sealed record PartnerOpenRequest(
     string? Lead, string? Piece, string? Adapter, string? Tree, string? Account = null, string? HarnessVersion = null, string? BaseCommit = null);
-public sealed record HelperHandRequest(string? Text, bool? Running = null, string? Level = null);
+public sealed record HelperHandRequest(string? Text, bool? Running = null, string? Level = null, bool? Settled = null);
 // CHATFLOW1e (the chat-flow design §6.1 (a), (e)): a first pass's findings handed to a chat run's record the driver names, the line's newest
 // in its tree, live between turns or ended; none for the working session itself, as before.
 public sealed record OpinionHandRequest(string? To = null);
 // A helper door's answer: the desk's sentence, the helper's record a pass opened or the asker the answer went to, and the word.
-public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null);
+public sealed record HelperActionResponse(string Message, SessionResponse? Session = null, SaidWordResponse? Said = null, string? Settled = null);
 // BRAINSTORM1a3 (D176 points 1, 2 and 8): a person's question for a brainstorm, every part nullable so one left out is refused by
 // the desk naming which. `Repository` is the one whose knowledge the packet is frozen from, none for the question alone.
 public sealed record BrainstormAskRequest(string? Question, string? Repository = null, IReadOnlyList<string?>? Agents = null);

@@ -439,6 +439,9 @@ public sealed class DrivenInbox(Action<ChatQueue> changed) : IEpisodeWords
                 }
 
                 var said = await door.KeepAsync(message, ct).ConfigureAwait(false);
+                // FOUNDATION1 row p (the design §3.4 rule 5): the record answered the retry settled, so its word is held or went already:
+                // answered as a retry of a word held, with nothing held, sent, steered, attempted or taken, and no word to read an id from.
+                if (said.Settled is not null) return new InboxKept(InboxKeep.Held, said);
                 if (!said.Kept || said.Word?.Id is not { } id) return new InboxKept(InboxKeep.Refused, said);
 
                 lock (_gate)
@@ -596,7 +599,7 @@ public sealed class DrivenInbox(Action<ChatQueue> changed) : IEpisodeWords
         {
             if (_closed) return false;
             // Off the record once steered (COWORK1c): held again in this process alone.
-            _held.Insert(0, message with { Kept = false, Attempting = null, Marking = null, Went = null });
+            _held.Insert(0, message with { Kept = false, Attempting = null, Went = null });
             Publish();
             return true;
         }

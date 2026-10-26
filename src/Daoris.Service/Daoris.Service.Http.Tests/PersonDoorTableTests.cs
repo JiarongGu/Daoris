@@ -25,6 +25,7 @@ public sealed class PersonDoorTableTests
     private static readonly (string Method, string Pattern, DoorClass Class)[] Routes =
     [
         ("GET", "/api/status", Open),
+        ("GET", "/api/protocol", Open),
         ("GET", "/api/repositories", Open),
         ("GET", "/api/search", Open),
         ("GET", "/api/entry", Open),
@@ -177,8 +178,8 @@ public sealed class PersonDoorTableTests
         // channel message, the driver's (COWORK1d), and a quest's own kind and workflow, the person's (WORKFLOW1e2), and the downloaded
         // versions a start of a record was handed, the driver's (KEEP1b), and what waits for confirmation held until it moves, a read
         // (NOTIFY2j), and a machine's retirement at a workspace's remote, the person's (FABRIC-CLOSE1i2), and a park the driver could
-        // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b).
-        Assert.Equal(29, Routes.Count(route => route.Class == Open));
+        // not hand put back, the driver's (SUPERVISOR1a-i), and a finished tree's record and its age, the driver's (KEEPSIZE1b), and the host's protocol, a read (FOUNDATION1 row p).
+        Assert.Equal(30, Routes.Count(route => route.Class == Open));
         Assert.Equal(4, Routes.Count(route => route.Class == Agent));
         Assert.Equal(30, Routes.Count(route => route.Class == Driver));
         Assert.Equal(33, Routes.Count(route => route.Class == Person));

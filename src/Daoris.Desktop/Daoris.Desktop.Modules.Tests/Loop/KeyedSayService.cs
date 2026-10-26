@@ -19,6 +19,19 @@ internal sealed class KeyedSayService : HttpMessageHandler
 
     public Func<string, bool> Winding { get; init; } = _ => false;
 
+    private readonly Dictionary<string, string> _settled = [];
+
+    /// <summary>
+    /// A producer's key whose word left <paramref name="record"/> (FOUNDATION1 row p, the design §3.4 rule 5): a say that sends <c>settled</c>
+    /// under it, to any record where no word waits under it, is answered settled, naming <paramref name="record"/>, before any refusal and
+    /// with nothing kept, as the say door answers.
+    /// </summary>
+    public KeyedSayService Settle(string record, string key)
+    {
+        lock (_gate) _settled[key] = record;
+        return this;
+    }
+
     /// <summary>Every say to a record, in order, and whether it was refused as <c>running</c>.</summary>
     public IReadOnlyList<(string Body, bool Refused)> Said(string session)
     {
@@ -42,10 +55,25 @@ internal sealed class KeyedSayService : HttpMessageHandler
             ("POST", ["api", "sessions", var id, "state"]) => (HttpStatusCode.OK,
                 $$"""{"session":{"id":"{{Uri.UnescapeDataString(id)}}","state":"{{JsonDocument.Parse(body).RootElement.GetProperty("state").GetString()}}"},"message":"Moved."}"""),
             ("POST", ["api", "sessions", var id, "say"]) => Say(Uri.UnescapeDataString(id), body),
+            ("POST", ["api", "sessions", var id, "added"]) => Added(Uri.UnescapeDataString(id)),
             ("POST", _) => (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}"""),
             _ => (HttpStatusCode.NotFound, ""),
         };
         return new HttpResponseMessage(status) { Content = new StringContent(answer, Encoding.UTF8, "application/json") };
+    }
+
+    private readonly List<string> _added = [];
+
+    /// <summary>The sessions whose person's words were kept on their ask (<c>POST /api/sessions/{id}/added</c>), in order: what <c>WordsOnAsk</c> asks.</summary>
+    public IReadOnlyList<string> Added()
+    {
+        lock (_gate) return [.. _added];
+    }
+
+    private (HttpStatusCode, string) Added(string session)
+    {
+        lock (_gate) _added.Add(session);
+        return (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}""");
     }
 
     private (HttpStatusCode, string) Say(string session, string body)
@@ -56,6 +84,14 @@ internal sealed class KeyedSayService : HttpMessageHandler
         var running = said.RootElement.TryGetProperty("running", out var flag) && flag.GetBoolean();
         lock (_gate)
         {
+            var asksSettled = said.RootElement.TryGetProperty("settled", out var settledFlag) && settledFlag.ValueKind == JsonValueKind.True;
+            if (asksSettled && key is not null && _settled.TryGetValue(key, out var left)
+                && !(_kept.TryGetValue(session, out var waiting) && waiting.Any(each => each.Key == key)))
+            {
+                _said.Add((session, body, false));
+                return (HttpStatusCode.OK, $$"""{"message":"Already settled.","settled":"{{left}}"}""");
+            }
+
             var refused = Winding(session) && !running;
             _said.Add((session, body, refused));
             if (refused) return (HttpStatusCode.Conflict, $$"""{"error":"Session `{{session}}` is working.","refusal":"running"}""");

@@ -1764,6 +1764,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                 },
             };
             chat.Turns.Closing = () => _context.Closing;
+            chat.Turns.Unsent = count => Unsent(sessionId, count);
             _context.Turned[sessionId] = chat;
         }
         else if (mapper is not null)
@@ -1778,6 +1779,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                     if (goOn.Sent(named: true)) _ = _goOn.WentOnAsync(sessionId, goOn, resolved.Name);
                 });
             native.Turns.Closing = () => _context.Closing;
+            native.Turns.Unsent = count => Unsent(sessionId, count);
             _context.Turned[sessionId] = native;
         }
 
@@ -2114,6 +2116,17 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
 
     private bool Spoken(string session) => _events.After(session, 0).Events.Any(e => e.Kind == SessionEventKind.User && e.Reaches is null);
 
+    /// <summary>
+    /// Words a turn left waiting on their record, said (FOUNDATION1 row p, the design §3.4 rule 5): the record did not name them marked
+    /// attempted, so nothing was written for them. They wait there for the conversation's next go-on, which sends each once, and are never
+    /// sent by anything else.
+    /// </summary>
+    private void Unsent(string session, int count)
+    {
+        var note = WordsNotes.Unreached(count, "were not sent", UnreachedWhy.Unmarked);
+        _context.Record(session, new SessionEvent { Kind = SessionEventKind.Note, Text = note.Note, Parts = note.Parts.Count > 0 ? note.Parts : null });
+    }
+
     private void KeepRestart(string session, string build)
     {
         try
@@ -2296,6 +2309,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         return kept switch
         {
             null => null,
+            { Settled: true } => new ChatSaid(null, null) { Settled = true },
             { Now: { } now } => new ChatSaid(now.Reaches, kept.Word) { Now = now },
             _ => new ChatSaid(Spelled(kept.Reach), kept.Word),
         };

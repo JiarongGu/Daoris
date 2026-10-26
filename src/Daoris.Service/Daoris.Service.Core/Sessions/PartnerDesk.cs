@@ -98,7 +98,7 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
     /// never into a step in flight, so the driver hands it then; a record that stood down takes nothing.
     /// </summary>
     /// <param name="text">The words as Daoris composed them around the partner's claim (the driver's <c>PartnerWords</c>).</param>
-    public async Task<HelperOutcome> HandAsync(string partnerId, string text, DateTimeOffset now, CancellationToken ct = default)
+    public async Task<HelperOutcome> HandAsync(string partnerId, string text, DateTimeOffset now, CancellationToken ct = default, bool settled = false)
     {
         if (!local) return new(HelperRefusal.Shared, Shared);
         if (string.IsNullOrWhiteSpace(text)) return Refused(HelperRefusal.BadShape, "The words handed are blank");
@@ -117,6 +117,22 @@ public sealed class PartnerDesk(SessionStore sessions, PartnerBox? box = null, b
             {
                 if (await sessions.ContinuedByAsync(to.Id, inside).ConfigureAwait(false) is not { } next) break;
                 to = next;
+            }
+
+            // Row p (D212, the design §3.4 rule 5): asked before any refusal but the record's absence, over the record the hand reaches and its
+            // predecessors back along `from`, so a retry after the take is answered as kept whatever the lead is doing now. A word still
+            // waiting on that record is answered as it is below.
+            var pieceKey = KeyOf(piece);
+            if (settled && to is { Origin: null }
+                && !to.Said.Any(word => string.Equals(word.Key, pieceKey, StringComparison.Ordinal))
+                && await SaidKeys.SettledOnLineAsync(sessions, to, pieceKey, now, inside).ConfigureAwait(false) is { } held)
+            {
+                return new HelperOutcome(
+                    HelperRefusal.None,
+                    $"Piece `{piece}`'s answer is already settled: its word left session `{held.Record}` and nothing more was kept.")
+                {
+                    SettledOn = held.Record,
+                };
             }
 
             string? cannot = to switch

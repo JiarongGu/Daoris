@@ -16,9 +16,11 @@ public interface ISaidDoor
     Task<bool> TakeOffAsync(IReadOnlyList<string> ids, CancellationToken ct);
 
     /// <summary>
-    /// Mark these words attempted on the record, before the wire (COWORK1c, the design §6): the first moment kept. False where it did not.
+    /// Mark these words attempted on the record, before the wire (COWORK1c, the design §6): the first moment kept. The ids the record named
+    /// marked (FOUNDATION1 row p, the design §3.4 rule 5): a word it does not name is not attempted and does not go; none where it did not
+    /// acknowledge the mark at all.
     /// </summary>
-    Task<bool> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct);
+    Task<IReadOnlyList<string>> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct);
 }
 
 /// <summary>
@@ -40,26 +42,54 @@ public sealed class SaidDoor(ServiceClient service, string session) : ISaidDoor
     public async Task<bool> TakeOffAsync(IReadOnlyList<string> ids, CancellationToken ct) =>
         (await service.TakenAsync(session, ids, by: null, ct).ConfigureAwait(false)).Ok;
 
-    public async Task<bool> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct) =>
-        (await service.AttemptAsync(session, ids, ct).ConfigureAwait(false)).Ok;
+    public async Task<IReadOnlyList<string>> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct) =>
+        (await service.AttemptAsync(session, ids, ct).ConfigureAwait(false)).Marked;
 
     /// <summary>
     /// The words a go-on carries from a record that ended or parked (COWORK1c, the message-urgency design §6), marked attempted before
-    /// the resumed run writes them, so a shell cut off under that run never sends them again. Never faults: unmarked, they still go.
+    /// the resumed run writes them, so a shell cut off under that run never sends them again. The ids the record named marked
+    /// (FOUNDATION1 row p, the design §3.4 rule 5): a word it does not name does not go, and none where the record did not acknowledge
+    /// the mark, which is a refusal, a host without the door, an answer that did not come (its commit may have landed: the word then
+    /// waits marked, settled uncertain at the next come-up and never sent again by itself) or one that does not read. Never faults.
     /// </summary>
-    internal static async Task AttemptedAsync(ServiceClient service, string session, IReadOnlyList<SaidWordView> words)
+    internal static async Task<IReadOnlyList<string>> AttemptedAsync(ServiceClient service, string session, IReadOnlyList<SaidWordView> words)
     {
         List<string> ids = [.. words.Select(word => word.Id).OfType<string>()];
-        if (ids.Count == 0) return;
+        if (ids.Count == 0) return [];
         try
         {
-            await service.AttemptAsync(session, ids).ConfigureAwait(false);
+            return (await service.AttemptAsync(session, ids).ConfigureAwait(false)).Marked;
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
                                           or ObjectDisposedException or System.Text.Json.JsonException)
         {
-            // Unmarked, the words still go (above).
+            return [];
         }
+    }
+
+    /// <summary>
+    /// A message as it goes once the record named its words marked (FOUNDATION1 row p, the design §3.4 rule 5): itself where nothing marks it
+    /// (a word kept nowhere) or <see cref="ChatMessage.Attempting"/> names its id; a go-on carrying words under their ids narrowed to the words
+    /// named, so an answer naming fewer than asked sends only those; and null where nothing it carries was named. A null message is not
+    /// written, its words wait on their record, and <paramref name="unsent"/> is told how many of them it left there.
+    /// </summary>
+    internal static async Task<ChatMessage?> AcknowledgedAsync(ChatMessage message, Action<int> unsent)
+    {
+        if (message.Attempting is not { } attempting) return message;
+        var marked = await attempting().ConfigureAwait(false);
+        if (message.GoesOn is { } ask)
+        {
+            var asked = ask.Ids.Count;
+            ask.Narrow(marked);
+            if (ask.Ids.Count < asked) unsent(asked - ask.Ids.Count);
+            // Nothing it carries was named: the go-on's own first line and appendix go for no word, so none goes.
+            if (asked > 0 && ask.Ids.Count == 0) return null;
+            return ask.Ids.Count == asked ? message : message with { Text = ask.Prompt };
+        }
+
+        if (message.Id is not { } id || marked.Contains(id, StringComparer.Ordinal)) return message;
+        unsent(1);
+        return null;
     }
 
     /// <summary>
@@ -69,24 +99,22 @@ public sealed class SaidDoor(ServiceClient service, string session) : ISaidDoor
     internal static ChatMessage Dispatched(ChatMessage word, ISaidDoor? door, Action<ChatMessage> went)
     {
         if (!word.Kept || word.Id is not { } id || door is null) return word;
-        Func<Task<bool>> marking = async () =>
-        {
-            try
-            {
-                return await door.AttemptAsync([id], CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
-                                              or ObjectDisposedException or System.Text.Json.JsonException)
-            {
-                return false;
-            }
-        };
         return word with
         {
-            // Unmarked, the word still goes: a shell cut off before its take-off may send it again, the rare cost of a record that did not
-            // answer, against a word never sent. Not so a transient episode's try, which reads the mark (Codex's finding 4).
-            Attempting = async () => await marking().ConfigureAwait(false),
-            Marking = marking,
+            // Acknowledged before the wire (row p, the design §3.4 rule 5): a word the record did not name marked is not written, and waits
+            // on its record. Once the mark failed open, the rare cost of a record that did not answer, against a word never sent.
+            Attempting = async () =>
+            {
+                try
+                {
+                    return await door.AttemptAsync([id], CancellationToken.None).ConfigureAwait(false);
+                }
+                catch (Exception error) when (error is HttpRequestException or DriverException or OperationCanceledException
+                                                  or ObjectDisposedException or System.Text.Json.JsonException)
+                {
+                    return [];
+                }
+            },
             Went = () => went(word),
         };
     }
@@ -112,6 +140,13 @@ public enum InboxKeep
 /// <param name="Said">The say door's answer; null where nothing was asked of it.</param>
 public sealed record InboxKept(InboxKeep Outcome, SayAnswer? Said = null)
 {
+    /// <summary>
+    /// The record answered the say <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5): a retry of a word held already, which left a
+    /// record of the line. The outcome reads <see cref="InboxKeep.Held"/>, so a caller that asks only whether the word is held reads it so,
+    /// and nothing was kept, held, sent, steered, attempted or taken now.
+    /// </summary>
+    public bool Settled => Said?.Settled is not null;
+
     /// <summary>Where a held word reaches the session; null until the door is known, and for any other outcome.</summary>
     public DrivenReach? Reach { get; init; }
 

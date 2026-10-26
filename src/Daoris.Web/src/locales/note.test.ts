@@ -178,7 +178,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   /** CONVNOTE2d1: why the person's words never reached the session is a reason of its own family, held key for key. */
   it('words every reason the person’s words never reached the session', () => {
     const unreached = reasons('Unreached');
-    expect(unreached.length).toBe(2);
+    expect(unreached.length).toBe(3);
     const page = Object.values(UNREACHED_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
     expect(page.sort(byKey)).toEqual([...unreached].sort(byKey));

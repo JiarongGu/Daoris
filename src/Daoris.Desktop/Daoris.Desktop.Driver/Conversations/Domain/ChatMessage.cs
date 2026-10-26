@@ -56,14 +56,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// to a door: the door awaits it before it writes the word, so a shell that comes up again never sends it twice. Null for a word
     /// kept nowhere, which needs none. Never faults.
     /// </summary>
-    internal Func<Task>? Attempting { get; init; }
-
-    /// <summary>
-    /// The same mark as <see cref="Attempting"/>, answering whether the record acknowledged it (Codex's owed read of D210, finding 4): a
-    /// transient episode's try writes a kept word only once its attempt is durable, where <see cref="Attempting"/> fails open. Null where
-    /// <see cref="Attempting"/> is. Never faults: an unanswered record is no acknowledgement.
-    /// </summary>
-    internal Func<Task<bool>>? Marking { get; init; }
+    /// <remarks>
+    /// <b>The attempt is acknowledged before the wire</b> (FOUNDATION1 row p, the design §3.4 rule 5): it answers the ids the record named
+    /// marked, none where the record did not answer, refused, or the answer was lost. A door writes only a word whose id is named, and
+    /// one it does not name is left waiting on its record and said (<see cref="SaidDoor.AcknowledgedAsync"/>). The mark once failed open here, and a
+    /// transient try alone read its answer (Codex's owed read of D210, finding 4).
+    /// </remarks>
+    internal Func<Task<IReadOnlyList<string>>>? Attempting { get; init; }
 
     /// <summary>
     /// Told once the door wrote this kept word to the wire, or settled it without the wire (a word of Daoris's dropped): its dispatcher

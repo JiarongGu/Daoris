@@ -33,6 +33,13 @@ public sealed record HelperOutcome(HelperRefusal Refusal, string Message)
 
     /// <summary>The word the answer waits in on the asker's record, when it was handed.</summary>
     public SaidWord? Word { get; init; }
+
+    /// <summary>
+    /// The hand was answered <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5): its key's word left a record of the asker's line within the
+    /// horizon, and this names that record. Its own terminal kind, never a word: nothing was kept now, and <see cref="Session"/> and
+    /// <see cref="Word"/> are null. Only a hand that asked for it (<c>settled</c>) is answered so.
+    /// </summary>
+    public string? SettledOn { get; init; }
 }
 
 /// <summary>What the driver names for a helper's record: it is the driver's to say where it reads, as which agent and account.</summary>
@@ -124,7 +131,7 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
     /// </param>
     /// <param name="level">The ask's level, kept beside the word (COWORK1d): <c>urgent</c> where the ask was; none for an ordinary ask.</param>
     public async Task<HelperOutcome> HandAsync(
-        string helperId, string text, DateTimeOffset now, CancellationToken ct = default, bool running = false, string? level = null)
+        string helperId, string text, DateTimeOffset now, CancellationToken ct = default, bool running = false, string? level = null, bool settled = false)
     {
         if (!local) return new(HelperRefusal.Shared, Shared);
         if (string.IsNullOrWhiteSpace(text)) return Refused(HelperRefusal.BadShape, "The words handed are blank");
@@ -140,6 +147,7 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             // HELPERWAIT1 (D189 point 6): the newest live record of the asker's line, as a partner's piece is handed (PartnerDesk): a hand-over,
             // a move or a carry-on takes the asker's helpers with it, and a left conversation is never reopened.
             var asker = await sessions.FindAsync(served, inside).ConfigureAwait(false);
+            var pastBound = false;
             for (var hops = 0; asker is { Origin: null } && hops <= LineBound; hops++)
             {
                 if (await sessions.ContinuedByAsync(asker.Id, inside).ConfigureAwait(false) is not { } next) break;
@@ -147,11 +155,32 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 // never handed to the record where the bound stopped, which the line has left; the helper's conversation keeps the answer.
                 if (hops == LineBound)
                 {
-                    return Refused(HelperRefusal.CannotTake,
-                        $"Session `{served}`'s line runs past sixteen links, so its newest part is not read and no part it left takes the answer");
+                    pastBound = true;
+                    break;
                 }
 
                 asker = next;
+            }
+
+            // Row p (D212, the design §3.4 rule 5): asked before any refusal but the record's absence, over the record the hand reaches and
+            // its predecessors back along `from`, so a retry after the take is answered as kept whatever the asker is doing now. A word
+            // still waiting on that record is the desk's own below; one waiting on a record the line has left keeps once on the newest.
+            if (settled && asker is { Origin: null } && KeyOf(helper.Id) is var key
+                && !asker.Said.Any(word => string.Equals(word.Key, key, StringComparison.Ordinal))
+                && await SaidKeys.SettledOnLineAsync(sessions, asker, key, now, inside).ConfigureAwait(false) is { } held)
+            {
+                return new HelperOutcome(
+                    HelperRefusal.None,
+                    $"Helper `{helper.Id}`'s answer is already settled: its word left session `{held.Record}` and nothing more was kept.")
+                {
+                    SettledOn = held.Record,
+                };
+            }
+
+            if (pastBound)
+            {
+                return Refused(HelperRefusal.CannotTake,
+                    $"Session `{served}`'s line runs past sixteen links, so its newest part is not read and no part it left takes the answer");
             }
 
             string? cannot = asker switch

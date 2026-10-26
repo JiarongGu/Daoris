@@ -166,6 +166,7 @@ public static class NoteCodes
     [
         new(UnreachedWhy.EndedFirst, [], "note.words.why.ended-first"),
         new(UnreachedWhy.Unkept, [], "note.words.why.unkept"),
+        new(UnreachedWhy.Unmarked, [], "note.words.why.unmarked"),
     ]);
 
     // ——— A session's end (Observation, the driver's own ends).
@@ -855,11 +856,18 @@ public static class UnreachedWhy
     /// <summary>Daoris kept no id for the conversation, so there was nothing to resume.</summary>
     public const string Unkept = "unkept";
 
+    /// <summary>
+    /// The record did not name them marked attempted (FOUNDATION1 row p, the design §3.4 rule 5): a word is written only once its attempt is
+    /// acknowledged, so these were not written, and wait on their record.
+    /// </summary>
+    public const string Unmarked = "unmarked";
+
     /// <summary>The English a reason says, as a site writes it.</summary>
     public static string English(string why) => why switch
     {
         EndedFirst => "it ended first",
         Unkept => "Daoris kept no id for its conversation",
+        Unmarked => "its record did not mark them attempted, so they wait there for the session's next go-on",
         _ => throw new ArgumentOutOfRangeException(nameof(why), why, "an unreached reason NoteCodes.Unreached does not declare"),
     };
 }

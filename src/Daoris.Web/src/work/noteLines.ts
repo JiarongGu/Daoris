@@ -466,6 +466,8 @@ export const RESUMED_REASONS: Readonly<Record<string, { key: string; values: rea
 export const UNREACHED_REASONS: Readonly<Record<string, { key: string; values: readonly string[] }>> = {
   'ended-first': { key: 'note.words.why.ended-first', values: [] },
   unkept: { key: 'note.words.why.unkept', values: [] },
+  // The record did not name them marked attempted, so they were not written (FOUNDATION1 row p, the design §3.4 rule 5).
+  unmarked: { key: 'note.words.why.unmarked', values: [] },
 };
 
 /**

@@ -820,6 +820,11 @@ describe('noteLines', () => {
         .toBe('Messages you sent while it worked never reached it (1,200 in all): Daoris kept no id for its conversation.');
       expect(noteLines(zh, { parts: [unreached('ended-first')] }, 'zh')[0].text)
         .toBe('你在它工作时发送的 2 条消息没有送达：它先结束了。');
+      // FOUNDATION1 row p: words left waiting because their record did not name them marked attempted, in both languages.
+      expect(noteLines(t, { parts: [unreached('unmarked', 1)] }, 'en')[0].text)
+        .toBe('Messages you sent while it worked never reached it (1 in all): its record did not mark them attempted, so they wait there for the session\'s next go-on.');
+      expect(noteLines(zh, { parts: [unreached('unmarked', 1)] }, 'zh')[0].text)
+        .toBe('你在它工作时发送的 1 条消息没有送达：它的记录没有将它们标记为已尝试，因此它们留在记录里，等会话下次继续时再发送。');
       // A reason this build does not know, or a count that is no number, leaves the line as recorded.
       expect(noteLines(zh, { parts: [unreached('moved-on')] }, 'zh')[0].kind).toBe('recorded');
       expect(noteLines(zh, { parts: [unreached('ended-first', 'two')] }, 'zh')[0].kind).toBe('recorded');

@@ -669,6 +669,18 @@ internal sealed class ChatLedger : HttpMessageHandler
     private readonly Dictionary<string, List<string>> _moves = new(StringComparer.Ordinal);
     private int _kept;
 
+    private readonly Dictionary<string, string> _settled = [];
+
+    /// <summary>
+    /// A producer's key whose word left <paramref name="record"/> (FOUNDATION1 row p, the design §3.4 rule 5): a keyed say that asks
+    /// <c>settled</c> under it is answered settled, naming the record, with nothing kept, as the service's say door answers a client that asks.
+    /// </summary>
+    public ChatLedger Settle(string key, string record)
+    {
+        lock (_gate) _settled[key] = record;
+        return this;
+    }
+
     /// <summary>Where set, the ledger refuses the move out of an ended state with this sentence (D51's tree, held by another).</summary>
     public string? Busy { get; set; }
 
@@ -1035,6 +1047,15 @@ internal sealed class ChatLedger : HttpMessageHandler
                     if (running && asked["running"]?.GetValue<bool>() != true)
                     {
                         return (HttpStatusCode.Conflict, """{"error":"words to a running session reach it through the driver that runs it.","refusal":"running"}""");
+                    }
+
+                    // FOUNDATION1 row p: a keyed say that asks `settled`, under a key the line settled and no word waits under, is answered settled
+                    // before anything else but the record's absence, naming the record the word left, and keeps nothing.
+                    if (asked["settled"]?.GetValue<bool>() == true && asked["key"]?.GetValue<string>() is { Length: > 0 } settledKey
+                        && _settled.TryGetValue(settledKey, out var left)
+                        && !session["said"]!.AsArray().Any(each => each!["key"]?.GetValue<string>() == settledKey))
+                    {
+                        return (HttpStatusCode.OK, new JsonObject { ["message"] = "Already settled.", ["settled"] = left }.ToJsonString());
                     }
 
                     // A say under a key a waiting word holds is answered with that word (COWORK1b).

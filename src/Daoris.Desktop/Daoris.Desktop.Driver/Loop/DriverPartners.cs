@@ -469,11 +469,21 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
         // 🔴 Attempted before the door: a restart between the two finds it so, and never hands it twice.
         files.WriteReceipt(PartnerDelivery.Attempt(receipt, now));
-        var (handed, message, word, to) = await _context.Service.Partners.HandAsync(partner, text, ct).ConfigureAwait(false);
+        var (handed, message, word, to, settled) = await _context.Service.Partners.HandAsync(partner, text, ct).ConfigureAwait(false);
         if (!handed)
         {
             files.WriteReceipt(PartnerDelivery.Refused(files.ReadReceipt(ask.Id) ?? receipt, DateTimeOffset.UtcNow));
             return Line(LookClass.Retry, $"partner  piece `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}'s line: {message}");
+        }
+
+        // FOUNDATION1 row p (the design §3.4 rule 5): the host answered the hand settled, the piece's word left a record of the lead's line and
+        // was kept by an earlier hand whose answer was lost. It is marked handed and never handed again, with no event recorded, no note
+        // written and nothing for the lead's conversation to hear.
+        if (settled is not null)
+        {
+            files.WriteReceipt(PartnerDelivery.Took(receipt, settled, DateTimeOffset.UtcNow));
+            files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
+            return Line(LookClass.Progress, $"partner  piece `{ask.Id}`'s answer was handed to session {settled}'s line already: its word is settled, and it is not handed again.");
         }
 
         var destination = to ?? ask.Asker;

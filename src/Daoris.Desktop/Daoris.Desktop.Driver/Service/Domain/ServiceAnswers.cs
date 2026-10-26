@@ -14,9 +14,27 @@ public sealed record SayAnswer(bool Kept, string Message)
     /// </summary>
     public string? Refusal { get; init; }
 
-    /// <summary>The word as kept: its id, which the record's events say again where the session took it. Null when refused.</summary>
+    /// <summary>The word as kept: its id, which the record's events say again where the session took it. Null when refused, and when settled.</summary>
     public SaidWordView? Word { get; init; }
+
+    /// <summary>
+    /// The record the key's word left, where the host answered the say <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5): the word was
+    /// kept by an earlier say under this key, left a record of the line and is not to be kept or sent again. Its own terminal kind: <see cref="Kept"/>
+    /// reads true, so a caller that only asks whether the words are on the line reads it as kept, and <see cref="Word"/> is null, so no reader
+    /// finds a word to queue, steer, attempt, take or show. Only a keyed say asks for it; null from a host before the row and for any other answer.
+    /// </summary>
+    public string? Settled { get; init; }
 }
+
+/// <summary>
+/// What the service said of marking words attempted before the wire (COWORK1c's attempt door; FOUNDATION1 row p, the design §3.4 rule 5): whether
+/// the mark was acknowledged and which of the words asked it names marked. A word it does not name is not attempted and does not go.
+/// </summary>
+/// <param name="Ok">The record acknowledged the mark: it answered, and not with a refusal.</param>
+/// <param name="Message">The service's sentence, or why there was none.</param>
+/// <param name="Marked">The words asked that the answer marked, in the order asked: none where the mark was not acknowledged.</param>
+/// <param name="Unmarked">The words asked that no longer wait on the record, or all of them where the mark was not acknowledged.</param>
+public sealed record AttemptAnswer(bool Ok, string Message, IReadOnlyList<string> Marked, IReadOnlyList<string> Unmarked);
 
 /// <summary>
 /// What the service said of one word waiting on a record that the person took back or reworded (SAIDBACK1a's take-back door,

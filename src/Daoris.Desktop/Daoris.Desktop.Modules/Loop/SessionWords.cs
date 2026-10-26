@@ -404,6 +404,9 @@ public sealed class SessionWords : IDisposable
                     _loop.Service is { } service ? new SaidDoor(service, id) : null,
                     new ChatMessage(text, []) { Level = level, Key = key ?? PressKey() }, ct)
                 .ConfigureAwait(false);
+            // FOUNDATION1 row p (the design §3.4 rule 5): a retry the record answered settled is a word held or gone already: nothing is held,
+            // told or kept on the ask again, and no word is shown.
+            if (forRun is { Outcome: InboxKeep.Held, Settled: true }) return new(true, null, null);
             switch (forRun)
             {
                 case { Outcome: InboxKeep.Held, Now: { } sentNow }:
@@ -431,6 +434,8 @@ public sealed class SessionWords : IDisposable
             // COWORK1c: kept on its record first, under the press's key, and its turns are their one dispatcher.
             if (await chat.SayKeptAsync(id, text, files, preface, level, key ?? PressKey(), ct).ConfigureAwait(false) is { } chatSaid)
             {
+                // Row p: settled, a retry of a word held or gone already: not running, so nothing is kept on the ask again.
+                if (chatSaid.Settled) return new(true, null, null);
                 return chatSaid.Now is { } sentNow
                     ? new(true, sentNow.Reaches, sentNow.Why) { Running = true, Now = sentNow.Now, Word = chatSaid.Word }
                     : new(true, chatSaid.Reaches, null) { Running = true, Word = chatSaid.Word };
@@ -710,6 +715,12 @@ public sealed class SessionWords : IDisposable
                 throw new DriverException($"the service did not answer for session `{id}`, so your words were not kept: {error.Message}");
             }
 
+            if (said.Settled is not null)
+            {
+                // Row p: the record answered the retry settled, its word left a record of the line: nothing to show and no word.
+                return new(true, "resume", null);
+            }
+
             if (said.Kept)
             {
                 Show(id, said, word);
@@ -794,6 +805,9 @@ public sealed class SessionWords : IDisposable
                         if (said.Refusal == "running") break;
                         // Off the file before it is shown: the record has it now, and a restart must not say it twice.
                         Taken(waiting);
+                        // Row p (the design §3.4 rule 5): settled, a retry of a word whose first say was kept and taken, its answer lost: off the
+                        // file, and nothing shown, since no word came back and the conversation shows it already.
+                        if (said.Settled is not null) continue;
                         if (said.Kept) Show(id, said, word);
                         else Lost(id, said);
                     }

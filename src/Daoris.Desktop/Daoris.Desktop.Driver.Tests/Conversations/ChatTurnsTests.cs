@@ -37,7 +37,7 @@ public sealed class ChatTurnsTests
             ready: () => { opening.TrySetResult(); return ready.Task; },
             take: (_, _) => { took = true; return Task.CompletedTask; },
             interrupt: () => Task.CompletedTask, changed: _ => { });
-        turns.Say(new ChatMessage("held", []) { Attempting = () => { attempted = true; return Task.CompletedTask; } });
+        turns.Say(new ChatMessage("held", []) { Attempting = () => { attempted = true; return Task.FromResult<IReadOnlyList<string>>([]); } });
         await opening.Task.WaitAsync(Poll.Patience);
         turns.HoldForClose();
         ready.TrySetResult(true);

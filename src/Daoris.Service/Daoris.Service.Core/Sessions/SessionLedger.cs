@@ -202,6 +202,14 @@ public sealed record SessionSayOutcome(SessionSayRefusal Refusal, string Message
     public bool Again { get; init; }
 
     /// <summary>
+    /// The say was answered <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5): the key's word left a record of the line within the
+    /// horizon, and this names that record. Its own terminal kind, never a word: <see cref="Refusal"/> is none, <see cref="Session"/> and
+    /// <see cref="Word"/> are null, and nothing was kept now, queued, steered, attempted or taken. Only a say that asked for it
+    /// (<c>settled</c>) is answered so.
+    /// </summary>
+    public string? SettledOn { get; init; }
+
+    /// <summary>
     /// The words answered a park (ANSWER1b), which its door keeps on the ask at once. False for words to an ended record, which are
     /// kept there once taken, and for words kept for a running record's run (COWORK1c), which its run keeps there as it takes them.
     /// </summary>
@@ -891,7 +899,7 @@ public sealed class SessionLedger(
     public async Task<SessionSayOutcome> SayAsync(
         string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, CancellationToken ct = default, string? channel = null,
         string? from = null, string? key = null, string? level = null, bool running = false,
-        string? decision = null, string? question = null, string? choice = null)
+        string? decision = null, string? question = null, string? choice = null, bool settled = false)
     {
         if (from == SaidFrom.Supervisor)
         {
@@ -938,6 +946,15 @@ public sealed class SessionLedger(
                 return new SessionSayOutcome(SessionSayRefusal.NotFound, $"No session `{id}`.", Session: null);
             }
 
+            // Row p (D212, the design §3.4 rule 5): asked first, before any refusal but the record's absence, so a retry after the take is
+            // answered as kept whatever the record is doing now (a re-say at the head, a record running again). A word still waiting on the
+            // record named is answered by the door as it stands, below: only a key that left a record of the line is settled.
+            if (settled && key is not null && !session.Said.Any(each => string.Equals(each.Key, key, StringComparison.Ordinal))
+                && await SaidKeys.SettledOnLineAsync(sessions, session, key, now, inside).ConfigureAwait(false) is { } held)
+            {
+                return SettledAnswer(key, held);
+            }
+
             if (Never(session) is { } never) return never;
 
             var parked = session.State == SessionState.AwaitingPerson;
@@ -972,6 +989,12 @@ public sealed class SessionLedger(
             };
         }, ct).ConfigureAwait(false);
     }
+
+    /// <summary>The answer to a say whose key's word left a record of the line (row p): a success naming that record, with no word and nothing kept.</summary>
+    internal static SessionSayOutcome SettledAnswer(string key, SettledWord held) => new(
+        SessionSayRefusal.None,
+        $"Already settled under key `{key}`: its word left session `{held.Record}` and nothing more was kept.",
+        Session: null) { SettledOn = held.Record };
 
     /// <summary>
     /// Keep the supervisor's answer on a park, the release's one conditional step (SUPERVISOR1a-i, D208; the supervisor design §3.4):

@@ -86,6 +86,8 @@ public sealed class HelperDoors
             writer.WriteString("text", text);
             if (running) writer.WriteBoolean("running", true);
             if (level is { Length: > 0 }) writer.WriteString("level", level);
+            // FOUNDATION1 row p (the design §3.4 rule 5): the hand reads a settled answer, a key its line settled. A host before the row ignores it.
+            writer.WriteBoolean("settled", true);
             writer.WriteEndObject();
         }
 
@@ -115,6 +117,9 @@ public sealed class HelperDoors
             return (refused ? HelperHanded.Refused : HelperHanded.Uncertain, Text(answer, "error") ?? payload, null);
         }
 
+        // Settled before a word (row p): the key's word left a record of the asker's line, so nothing was kept and there is no word.
+        if (Text(answer, "settled") is { Length: > 0 }) return (HelperHanded.Settled, Text(answer, "message") ?? "", null);
+
         var word = answer.TryGetProperty("said", out var said) ? Text(said, "id") : null;
         return (HelperHanded.Kept, Text(answer, "message") ?? "", word);
     }
@@ -125,6 +130,12 @@ public enum HelperHanded
 {
     Kept,
     Refused,
+
+    /// <summary>
+    /// The host answered the hand settled (row p): its key's word left a record of the asker's line and is not kept or dispatched again. The ask is
+    /// handed, with no word to dispatch and nothing to record.
+    /// </summary>
+    Settled,
 
     /// <summary>No answer that says either way: the word may wait on the asker's line, which the next look reads back.</summary>
     Uncertain,

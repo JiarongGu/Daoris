@@ -113,6 +113,12 @@ public enum TurnReach
 /// <param name="Word">The id its record kept it under; null where the record would not keep it, and it waits here alone as before.</param>
 public sealed record TurnKept(TurnReach Reach, string? Word)
 {
+    /// <summary>
+    /// The record answered the say <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5): the word's key left a record of the line, so this
+    /// is a retry of a word held already, and nothing was kept, queued, steered, attempted or taken. <see cref="Word"/> is null.
+    /// </summary>
+    public bool Settled { get; init; }
+
     /// <summary>A word at <c>now</c>: what the door did with it (<c>ChatTurns.TakeNowAsync</c>).</summary>
     public SentNow? Now { get; init; }
 }
@@ -122,6 +128,9 @@ public sealed record TurnKept(TurnReach Reach, string? Word)
 /// <param name="Word">The id the record kept them under; null where nothing kept them (a text-only door, a record that would not).</param>
 public sealed record ChatSaid(string? Reaches, string? Word)
 {
+    /// <summary>The say was answered settled (row p): a retry of a word held already, nothing kept, queued, steered, attempted or taken.</summary>
+    public bool Settled { get; init; }
+
     /// <summary>The person's *Send now*: what the door did with it.</summary>
     public SentNow? Now { get; init; }
 }

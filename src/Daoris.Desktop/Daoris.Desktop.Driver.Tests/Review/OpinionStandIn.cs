@@ -53,6 +53,13 @@ internal sealed class OpinionStandIn : HttpMessageHandler
     /// <summary>Each piece's answer handed, by the partner's session, with the record it went to and the words (COAGENT1b).</summary>
     public List<(string Partner, string To, string Text)> PartnerHands { get; } = [];
 
+    /// <summary>
+    /// A helper's or a partner's session whose hand the host answers <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5), with the record its
+    /// word left: its key's word was kept by an earlier hand, whose answer was lost, and taken. Nothing is kept, and the answer names no word.
+    /// Asked only of a hand that sends <c>settled</c>, as the service's desks answer.
+    /// </summary>
+    public Dictionary<string, string> SettledHands { get; } = new(StringComparer.Ordinal);
+
     /// <summary>Each move asked of a record's state door (HELPERWAIT1), in order: the record, the state, its note's first code.</summary>
     public List<(string Session, string State, string? Code)> Moves { get; } = [];
 
@@ -323,6 +330,11 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                 {
                     var id = Uri.UnescapeDataString(path["/api/helpers/".Length..^"/hand".Length]);
                     HelperHandsAsked++;
+                    if (SettledHands.TryGetValue(id, out var settledOn) && JsonNode.Parse(body!)!["settled"]?.GetValue<bool>() == true)
+                    {
+                        return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Settled.", ["settled"] = settledOn });
+                    }
+
                     if (HelperHandRefusal is { } refusal) return Refuse(HttpStatusCode.Conflict, refusal);
                     var helper = Find(id);
                     if (helper?["serves"]?.GetValue<string>() is not { } served) return Refuse(HttpStatusCode.NotFound, $"There is no helper session `{id}`");
@@ -362,6 +374,11 @@ internal sealed class OpinionStandIn : HttpMessageHandler
                 case ("POST", _) when path.StartsWith("/api/partners/", StringComparison.Ordinal) && path.EndsWith("/hand", StringComparison.Ordinal):
                 {
                     var id = Uri.UnescapeDataString(path["/api/partners/".Length..^"/hand".Length]);
+                    if (SettledHands.TryGetValue(id, out var settledOn) && JsonNode.Parse(body!)!["settled"]?.GetValue<bool>() == true)
+                    {
+                        return Answer(HttpStatusCode.OK, new JsonObject { ["message"] = "Settled.", ["settled"] = settledOn });
+                    }
+
                     var partner = Find(id);
                     if (partner?["serves"]?.GetValue<string>() is not { } served || partner["piece"]?.GetValue<string>() is not { } piece)
                     {

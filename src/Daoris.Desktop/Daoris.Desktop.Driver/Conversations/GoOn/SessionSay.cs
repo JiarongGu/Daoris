@@ -176,6 +176,9 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
                 .ConfigureAwait(false);
             switch (kept)
             {
+                // FOUNDATION1 row p (the design §3.4 rule 5): a retry the record answered settled is a word held or gone already: not kept on the ask again.
+                case { Outcome: InboxKeep.Held, Settled: true }:
+                    return new WordsHeld(true, null, null);
                 case { Outcome: InboxKeep.Held, Now: { } sentNow }:
                     _ = WordsOnAsk.Keep(service(), id, text);
                     return new WordsHeld(true, sentNow.Reaches, sentNow.Why) { Now = sentNow.Now, Word = kept.Said?.Word?.Id };
@@ -197,6 +200,9 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
 
         // FOUNDATION1b: under the request's key as the inbox's is, so a request read again keeps one word on the record.
         var said = await client.SayAsync(id, text, request.Files, ct, key: SessionRequests.WordKey(request)).ConfigureAwait(false);
+        // FOUNDATION1 row p (the design §3.4 rule 5): a retry the record answered settled is a word kept and gone already: nothing is shown,
+        // nudged or kept on the ask again.
+        if (said.Settled is not null) return new WordsHeld(true, "resume", null);
         if (said.Kept)
         {
             if (said.Word is { } kept) Events?.Keep(id, Shown(kept, request.By), null);

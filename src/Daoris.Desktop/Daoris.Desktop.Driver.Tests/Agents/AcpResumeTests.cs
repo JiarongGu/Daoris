@@ -252,6 +252,56 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
+    /// FOUNDATION1 row p (the design §3.4 rule 5): the resumed first prompt is written only once the record names its words marked attempted,
+    /// and carries the words it names, each its own block: an answer naming fewer than asked sends only those. The blocks are read again after
+    /// the mark, so a word the person took back in the moment between the look and the mark never goes.
+    /// </summary>
+    [Fact]
+    public async Task The_resumed_first_prompt_carries_only_the_words_the_record_names_marked()
+    {
+        var agent = Answering(Both);
+        var resume = new ResumeAsk(
+            "0b5e7c1a",
+            [
+                new SaidWordView("a1", "Port 8080.", DateTimeOffset.UnixEpoch, [], Reopens: true),
+                new SaidWordView("b2", "No, 9090.", DateTimeOffset.UnixEpoch, [], Reopens: true),
+                new SaidWordView("c3", "And log it.", DateTimeOffset.UnixEpoch, [], Reopens: true),
+            ],
+            "the person said:");
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync(
+                "D:/trees/s-1", resume.Prompt, CancellationToken.None, resume: resume.Conversation, blocks: resume.Blocks,
+                attempting: () =>
+                {
+                    // The answer names two of the three words asked: the second no longer waits.
+                    resume.Narrow(["a1", "c3"]);
+                    return Task.FromResult<(IReadOnlyList<string> Blocks, IReadOnlyList<KeptFile>? Files)?>((resume.Blocks, resume.Files));
+                });
+
+        var prompt = agent.Params("session/prompt").GetProperty("prompt");
+        Assert.Equal(["Port 8080.", "And log it."], prompt.EnumerateArray().Select(block => block.GetProperty("text").GetString()));
+        Assert.Equal(["a1", "c3"], resume.Ids);
+    }
+
+    /// <summary>
+    /// A resumed first prompt whose record names none of its words marked is not written at all: <see cref="AcpWordsUnmarked"/> before the wire,
+    /// the agent never sent a prompt, and the words wait on their record.
+    /// </summary>
+    [Fact]
+    public async Task A_resumed_first_prompt_whose_record_names_no_word_marked_is_never_written()
+    {
+        var agent = Answering(Both);
+
+        await Assert.ThrowsAsync<AcpWordsUnmarked>(() => new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync(
+                "D:/trees/s-1", "Port 8080.", CancellationToken.None, resume: "0b5e7c1a", blocks: ["Port 8080."],
+                attempting: () => Task.FromResult<(IReadOnlyList<string> Blocks, IReadOnlyList<KeptFile>? Files)?>(null)));
+
+        Assert.DoesNotContain("session/prompt", agent.Methods);
+    }
+
+    /// <summary>
     /// XAGENT1e (D155 point 7, design §6.3): another agent's findings, waiting on an ended record beside the person's words,
     /// go on in the session's own conversation as their own text block, in Daoris's fixed words exactly as the host composed
     /// them: quotes, backticks and line breaks unchanged, and after the person's word in the order they were kept.

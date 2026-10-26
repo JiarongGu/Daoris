@@ -166,6 +166,16 @@ public sealed class AcpChoiceNotOffered(ModelRefusal refusal)
 }
 
 /// <summary>
+/// A word a run was to write whose attempt its record did not acknowledge (FOUNDATION1 row p, the design §3.4 rule 5): it is not written, and
+/// waits on its record for the session's next go-on, which sends it once. Thrown before the wire, never after a write.
+/// </summary>
+public sealed class AcpWordsUnmarked(string message) : DriverException(message)
+{
+    /// <summary>The sentence a word left waiting by an unacknowledged mark is said with, and a resumed run's failure carries.</summary>
+    public const string Sentence = "the session's record did not mark the words attempted, so none was written: they wait on it for the session's next go-on";
+}
+
+/// <summary>
 /// The agent's refusal of a call: a JSON-RPC error, said as a sentence, with what its <c>data</c> carried kept beside
 /// it (ACPDATA1, D125 §1.2).
 /// </summary>
@@ -807,7 +817,8 @@ public sealed class AcpSession(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
         DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null,
         IReadOnlyList<string>? blocks = null, Action? prompted = null, IReadOnlyList<KeptFile>? files = null,
-        Func<CancellationToken, Task<bool>>? waitsOnBackground = null, Func<Task>? attempting = null, TransientRetry? retry = null)
+        Func<CancellationToken, Task<bool>>? waitsOnBackground = null,
+        Func<Task<(IReadOnlyList<string> Blocks, IReadOnlyList<KeptFile>? Files)?>>? attempting = null, TransientRetry? retry = null)
     {
         _asked = asked;
         _inbox = inbox;
@@ -845,7 +856,15 @@ public sealed class AcpSession(
                 };
             // COWORK1c (the message-urgency design §6): the words a resumed run carries are marked attempted on its record once the agent
             // took the conversation back and before the prompt carrying them is written.
-            if (attempting is not null) await attempting().ConfigureAwait(false);
+            // FOUNDATION1 row p (the design §3.4 rule 5): acknowledged, and the blocks and files read again from the words it names, so an
+            // answer naming fewer than asked sends only those; none named, nothing is prompted and the words wait on their record.
+            if (attempting is not null)
+            {
+                if (await attempting().ConfigureAwait(false) is not { } named) throw new AcpWordsUnmarked(AcpWordsUnmarked.Sentence);
+                blocks = named.Blocks;
+                files = named.Files;
+            }
+
             // AGENTERRORS1a (§5.1): each prompt site of a run handed a retry reads its failure, and a transient one opens the episode here.
             var stopReason = await PromptingAsync(
                     () => blocks is { Count: > 0 }
@@ -898,8 +917,17 @@ public sealed class AcpSession(
                         continue;
                     }
 
-                    stopReason = await PromptingAsync(() => SendPromptAsync(held.Prompt, held.Files, ct, sent: null, held), ct)
-                        .ConfigureAwait(false);
+                    try
+                    {
+                        stopReason = await PromptingAsync(() => SendPromptAsync(held.Prompt, held.Files, ct, sent: null, held), ct)
+                            .ConfigureAwait(false);
+                    }
+                    catch (AcpWordsUnmarked)
+                    {
+                        // Row p: the record did not name it marked, so it was not written: it waits on its record, said, never the session's work.
+                        Note(WordsNotes.Unreached(1, "were not sent", UnreachedWhy.Unmarked));
+                    }
+
                     continue;
                 }
 
@@ -917,6 +945,11 @@ public sealed class AcpSession(
                 {
                     // A word the agent would not take costs that word, said in its own words, never the session's work.
                     Note(WordsNotes.Refused(refused.Words));
+                }
+                catch (AcpWordsUnmarked)
+                {
+                    // Row p: a word the record did not name marked was not written: it waits on its record, said, never the session's work.
+                    Note(WordsNotes.Unreached(1, "were not sent", UnreachedWhy.Unmarked));
                 }
             }
 
@@ -1550,9 +1583,7 @@ public sealed class AcpSession(
     /// </summary>
     private async Task<bool> MarkedAsync(ChatMessage word)
     {
-        if (word.Marking is { } marking) return await marking().ConfigureAwait(false);
-        await Attempted(word).ConfigureAwait(false);
-        return true;
+        return await Attempted(word).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1895,8 +1926,9 @@ public sealed class AcpSession(
 
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be steered into it.");
 
-        // COWORK1c: a kept word is marked attempted on its record before the wire, in the order asked for.
-        await Attempted(words).ConfigureAwait(false);
+        // COWORK1c: a kept word is marked attempted on its record before the wire, in the order asked for, and written only once the record
+        // named it marked (FOUNDATION1 row p): its steer says it never reached, and it waits on its record.
+        if (!await Attempted(words).ConfigureAwait(false)) throw new AcpWordsUnmarked(AcpWordsUnmarked.Sentence);
 
         // The adapter's own parameters (claude-agent-acp 0.84.0, `parseSteerRequest`, acp-agent.js:215-238): the session, the
         // prompt's content blocks as `session/prompt` carries them, and the steering `_meta`. The priority is the adapter's.
@@ -2037,8 +2069,9 @@ public sealed class AcpSession(
 
         var prompt = Blocks(texts, files);
         // COWORK1c (the message-urgency design §6): a kept word is marked attempted on its record before the wire, in the order the
-        // prompts were asked for, so a shell that comes up again never sends it twice.
-        await Attempted(words).ConfigureAwait(false);
+        // prompts were asked for, so a shell that comes up again never sends it twice. Acknowledged (FOUNDATION1 row p): written only once the
+        // record named it marked, else it waits on its record and is said.
+        if (!await Attempted(words).ConfigureAwait(false)) throw new AcpWordsUnmarked(AcpWordsUnmarked.Sentence);
 
         var open = new OpenPrompt(words) { Opening = Interlocked.Increment(ref _promptCount) == 1 };
         lock (_promptsGate)
@@ -2080,21 +2113,24 @@ public sealed class AcpSession(
     /// <summary>
     /// A kept word's attempt, marked on its record before the wire (COWORK1c, the message-urgency design §6), after every attempt asked
     /// for before it, so two words said at once are written in the order their dispatcher handed them. Completed at once for words kept
-    /// nowhere, and for the driver's own prompts. Never faults.
+    /// nowhere, and for the driver's own prompts. True where the word may be written: nothing marks it, or the record named it marked (FOUNDATION1
+    /// row p, the design §3.4 rule 5). Never faults.
     /// </summary>
-    private Task Attempted(ChatMessage? words)
+    private Task<bool> Attempted(ChatMessage? words)
     {
-        if (words?.Attempting is not { } attempting) return Task.CompletedTask;
+        if (words?.Attempting is not { } attempting) return Task.FromResult(true);
         lock (_attemptsGate)
         {
-            _attempts = AfterAsync(_attempts, attempting);
-            return _attempts;
+            var acknowledged = AfterAsync(_attempts, words, attempting);
+            _attempts = acknowledged;
+            return acknowledged;
         }
 
-        static async Task AfterAsync(Task before, Func<Task> attempting)
+        static async Task<bool> AfterAsync(Task before, ChatMessage words, Func<Task<IReadOnlyList<string>>> attempting)
         {
             await before.ConfigureAwait(false);
-            await attempting().ConfigureAwait(false);
+            var marked = await attempting().ConfigureAwait(false);
+            return words.Id is not { } id || marked.Contains(id, StringComparer.Ordinal);
         }
     }
 

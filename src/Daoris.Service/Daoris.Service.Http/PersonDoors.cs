@@ -184,6 +184,8 @@ public static class PersonDoors
     [
         // Open: reads (design §3.2, 18), and the second opinion's two (D155's XAGENT1c note), answered to loopback only.
         new("GET", "/api/status", DoorClass.Open),
+        // The host's run and the marks it keeps (FOUNDATION1 row p, the design §19.12): a read of what this host does, no person's key.
+        new("GET", "/api/protocol", DoorClass.Open),
         new("GET", "/api/repositories", DoorClass.Open),
         new("GET", "/api/search", DoorClass.Open),
         new("GET", "/api/entry", DoorClass.Open),
