@@ -7,6 +7,7 @@ with the version and date at release.
 
 - A keyed destination open can be retried without creating a second session, even after its waiting words are taken (FOUNDATION1 row d-i, D212).
   A deleted destination answers `gone`; its predecessor cannot resume while that destination stands.
+  Unreadable successful replies stay held for recovery, including valid JSON with missing destination or transfer data (OPENANSWER1).
 - A conversation you picked an account for keeps that pick even when its own conversation is lost (PICKLOST1, D212). Where its limit has
   ended it and the account you picked is cooling, Daoris now waits for that account instead of going on with another, and goes on there
   afresh once it is ready, still on the account you picked. A lost conversation you picked nothing for goes on with another account as before.

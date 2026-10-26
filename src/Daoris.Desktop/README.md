@@ -226,6 +226,10 @@ layout's rules (`LayoutReader`) are its `Domain`, pure, and the git read of a li
 each is one type at the module's top (FLAT1b-iii-a). `RemoteSync`, `RegistrationWorld` and `ServiceHostLocator` sit there too,
 composed by the loop and the hosts alone.
 
+`ServiceClient.Opens` negotiates keyed destination opens by host run (D212 row 1d-i). A successful reply must name a
+destination and, when it echoes the key, carry its transfer list. An unreadable reply stays held with the same key until
+protocol negotiation permits replay; an unmarked host is never opened twice. Candidate records are diagnostics alone.
+
 `Setup/` keeps the onion for its model and rules alone (STRUCT3e, flattened by FLAT1a): its records and rules in `Domain/`, pure
 (the presses' plans and the brief, `SetupPressRules` and `WorkspaceSetupRules`, a repository's description read through three
 questions, the release channel's names and refusals); its use cases (`SetupPress`, `WorkspaceSetup` and the three commands),

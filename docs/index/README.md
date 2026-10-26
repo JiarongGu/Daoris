@@ -387,4 +387,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-26-tree-pool-survey.md` | 47 | 562 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 59 | 280 |
-| `src/Daoris.Desktop/README.md` | 183 | 855 |
+| `src/Daoris.Desktop/README.md` | 183 | 859 |

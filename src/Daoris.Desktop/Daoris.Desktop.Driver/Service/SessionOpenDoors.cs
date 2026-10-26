@@ -71,6 +71,7 @@ public sealed class SessionOpenDoors
                 reply = await _service.SendAsync(ServiceVerb.Post, path, request, ct).ConfigureAwait(false);
                 using var answer = JsonDocument.Parse(reply.Payload);
                 var root = answer.RootElement;
+                if (root.ValueKind != JsonValueKind.Object) throw new JsonException("The open's answer is not an object.");
                 var echo = Text(root, "opens");
                 if (retry && echo != key) return await HoldAsync(left, ct).ConfigureAwait(false);
                 var message = Text(root, "message") ?? Text(root, "error") ?? reply.Payload;
@@ -80,8 +81,14 @@ public sealed class SessionOpenDoors
                     return new(null, message, echo, Gone: Text(root, "code") == "gone");
                 }
                 var id = root.TryGetProperty("session", out var record) ? Text(record, "id") : null;
-                var transfer = echo == key && root.TryGetProperty("transfer", out var words)
-                    ? words.EnumerateArray().Select(word => word.Clone()).ToArray() : [];
+                if (string.IsNullOrWhiteSpace(id)) throw new JsonException("The open's answer names no destination.");
+                IReadOnlyList<JsonElement> transfer = [];
+                if (echo == key)
+                {
+                    if (!root.TryGetProperty("transfer", out var words) || words.ValueKind != JsonValueKind.Array)
+                        throw new JsonException("The keyed open's answer has no transfer list.");
+                    transfer = words.EnumerateArray().Select(word => word.Clone()).ToArray();
+                }
                 _lost.Remove(key);
                 return new(id, message, echo, transfer);
             }
@@ -105,8 +112,9 @@ public sealed class SessionOpenDoors
             if (reply.Ok)
             {
                 using var json = JsonDocument.Parse(reply.Payload);
-                foreach (var record in json.RootElement.EnumerateArray())
-                    if (Text(record, "from") == left && Text(record, "id") is { } id) candidates.Add(id);
+                if (json.RootElement.ValueKind == JsonValueKind.Array)
+                    foreach (var record in json.RootElement.EnumerateArray())
+                        if (Text(record, "from") == left && Text(record, "id") is { } id) candidates.Add(id);
             }
         }
         catch (Exception error) when (error is HttpRequestException or IOException or OperationCanceledException or JsonException) { }

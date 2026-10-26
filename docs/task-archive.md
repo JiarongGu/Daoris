@@ -21170,3 +21170,9 @@ head and Attention, which already said it. A rebase word whose commit the line h
 waits for its own account. **Proved** by `AccountRotationTickTests` (real ticks), `ReopenTellingTests`, `LimitWaitsProcessTests` and `SessionWordsWaitingTests`, each seen failing first, with the
 terminal's list (`SessionsCommandTests`), the wire's hold (`DriverModuleSessionsTests`) and the web's Attention beside them; LIMITSWITCH1's and LIMITSWITCH2's classes stay green.
 **Reading:** this amends the message-urgency design's §4.1 *never starts a new session* for Daoris's fact words in the cooling case alone. Detail: D137's LIMITSWITCH3 note, the FIX-LOG entry of this date.
+
+## OPENANSWER1 — unreadable committed destination answers stay held (2026-10-27, D212)
+
+> - [ ] **OPENANSWER1 — unreadable committed destination answers stay held** (FOUNDATION1 1d-i review, 2026-10-27). `SessionOpenDoors` accepts missing destinations or throws on valid JSON with wrong field kinds, losing its lost-answer recovery path. Hold those answers, retain the retry key and renegotiate before replay; prove an unmarked host is never opened twice and malformed diagnostic candidates cannot release the hold.
+
+**Outcome** 2026-10-27: Validate successful destination answers before adoption and keep unreadable answers in lost-open recovery. Nine regressions failed first; all 17 door cases now pass, including unmarked-host no-replay and malformed diagnostic candidates. Root cause and proof: the OPENANSWER1 fix-log entry.

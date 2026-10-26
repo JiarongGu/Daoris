@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - Valid JSON could escape a committed open's lost-answer hold (OPENANSWER1)
+
+- **Symptom:** review of FOUNDATION1 row 1d-i reproduced eight unreadable successful replies that either threw or returned no destination without holding; a ninth case threw while reading diagnostic candidates.
+- **Root cause:** candidate `d8c85e58f` caught JSON syntax errors but trusted successful reply shapes. `TryGetProperty` and `EnumerateArray` throw on wrong kinds, a missing destination silently returned null, and a missing keyed transfer became an empty list. The candidates read also assumed an array.
+- **Fix:** `SessionOpenDoors` validates the root, nonblank destination and keyed transfer list before accepting a successful open. Shape failures enter the existing lost-answer hold, retaining the key and requiring fresh protocol negotiation before retry. Unreadable candidate lists leave the hold intact with no candidates.
+- **Verify:** all nine new regressions failed before the fix; all 17 `SessionOpenDoorsTests` pass afterward. Coverage includes missing and wrongly typed data, successful key-preserving replay after negotiation, and no second POST to an unmarked host. The candidate's focused service/ledger 129 and HTTP 9 checks also pass.
+
 ## 2026-10-26 - The page's refusal-code twin read a moved class's constants from the file it left (FOUNDATION1 mod-vii)
 
 - **Symptom:** `src/locales/say.test.ts` failed two cases in FOUNDATION1 row p's land test: *`HandOverAskWhy.QuestClosed` is not a literal in

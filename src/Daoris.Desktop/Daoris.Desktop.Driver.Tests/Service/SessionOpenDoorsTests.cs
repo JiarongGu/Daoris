@@ -16,6 +16,8 @@ public sealed class SessionOpenDoorsTests
         public bool Lose { get; set; }
         public bool Echo { get; set; } = true;
         public bool BrokenAnswer { get; set; }
+        public string? RawAnswer { get; set; }
+        public string? RawCandidates { get; set; }
         public string? AnswerRun { get; set; } = "first";
         public Task<string> GetAsync(string path, CancellationToken ct) => throw new NotSupportedException();
         public Task<string> PostAsync(string path, string json, CancellationToken ct) => throw new NotSupportedException();
@@ -24,9 +26,10 @@ public sealed class SessionOpenDoorsTests
             Heard.Add((path, json));
             if (path == "/api/protocol") return Task.FromResult(Run is null
                 ? new ServiceReply(404, "") : new ServiceReply(200, JsonSerializer.Serialize(new { run = Run, marks = new { opens = Mark } })) { Run = Run });
-            if (verb == ServiceVerb.Get) return Task.FromResult(new ServiceReply(200, """[{"id":"candidate","from":"left"},{"id":"other","from":"elsewhere"}]""") { Run = AnswerRun });
+            if (verb == ServiceVerb.Get) return Task.FromResult(new ServiceReply(200, RawCandidates ?? """[{"id":"candidate","from":"left"},{"id":"other","from":"elsewhere"}]""") { Run = AnswerRun });
             if (Lose) throw new HttpRequestException("answer lost");
             if (BrokenAnswer) return Task.FromResult(new ServiceReply(200, "{"));
+            if (RawAnswer is not null) return Task.FromResult(new ServiceReply(200, RawAnswer) { Run = AnswerRun });
             using var document = JsonDocument.Parse(json!);
             var key = Echo && document.RootElement.TryGetProperty("opens", out var opens) ? opens.GetString() : null;
             return Task.FromResult(new ServiceReply(200, JsonSerializer.Serialize(new
@@ -136,5 +139,51 @@ public sealed class SessionOpenDoorsTests
         var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
         Assert.Equal("opened", answer.SessionId);
         Assert.False(answer.Held);
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("{}")]
+    [InlineData("""{"session":null,"opens":"key","transfer":[]}""")]
+    [InlineData("""{"session":{"id":""},"opens":"key","transfer":[]}""")]
+    [InlineData("""{"session":{"id":"opened"},"opens":"key","transfer":null}""")]
+    [InlineData("""{"session":{"id":"opened"},"opens":"key","transfer":{}}""")]
+    [InlineData("""{"session":{"id":"opened"},"opens":"key"}""")]
+    public async Task A_committed_answer_with_an_unreadable_shape_is_held_and_renegotiated(string payload)
+    {
+        using var host = new Host { RawAnswer = payload };
+        using var client = new ServiceClient(host);
+        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        Assert.True(answer.Held);
+        Assert.Null(answer.SessionId);
+        Assert.Equal(["candidate"], answer.Candidates);
+        var retryAt = host.Heard.Count;
+        host.RawAnswer = null;
+        var replay = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        Assert.Equal("/api/protocol", host.Heard[retryAt].Path);
+        Assert.Equal("opened", replay.SessionId);
+        Assert.False(replay.Held);
+    }
+
+    [Fact]
+    public async Task An_unmarked_answer_without_a_destination_is_held_and_never_reopened()
+    {
+        using var host = new Host { Run = null, AnswerRun = null, RawAnswer = "{}" };
+        using var client = new ServiceClient(host);
+        Assert.True((await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left")).Held);
+        host.RawAnswer = null;
+        Assert.True((await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left")).Held);
+        Assert.Single(host.Heard.Where(call => call.Body is not null));
+    }
+
+    [Fact]
+    public async Task An_unreadable_candidates_list_does_not_release_a_lost_open()
+    {
+        using var host = new Host { BrokenAnswer = true, RawCandidates = "{}" };
+        using var client = new ServiceClient(host);
+        var answer = await client.Opens.OpenAsync("/api/sessions/chat", Body, "key", "left");
+        Assert.True(answer.Held);
+        Assert.Null(answer.SessionId);
+        Assert.Empty(answer.Candidates!);
     }
 }
