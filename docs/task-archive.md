@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## FOUNDATION1mod-viii — Agents, Review, Workflows and Plugins cuts (2026-10-27)
+
+> One edge family per commit, each a port declared or a type moved to its one owner, each changing no behaviour and taking its family's edges off the census.
+
+**Outcome.** Four families committed (`689549276`, `0300b1158`, `b2c8ce14d`, `8199452cb`), reducing the census from 579 edges in 55 families to 535 in 51. Details and verification: D212's mod-viii continuation note. This archives those cuts only: the row remains open for Help, Work orders and Workplace and its complete proof; the FOUNDATION1 backlog row is unchanged.
+
 ## PICKLOST1 — a lost conversation whose account the person picked walks off that account (2026-10-26)
 
 > **PICKLOST1 — a lost conversation whose account the person picked walks off that account** (driver; found by reading PICKCARRY1's landing, 2026-10-26). The ended limit move lets a conversation proven lost walk its agent's accounts even where the person picked its account (`Conversations/Chat/LimitMove.cs:275`, *a conversation proven lost has no resume to keep*), so a lost conversation whose picked account cools opens on another and keeps no pick; that conflates the resume with the account, and FOUNDATION1 row 1a-ii's rule is that a recorded pick waits. A lost, picked conversation's new part waits for its picked account as any picked conversation does, and opens on it, keeping its pick (PICKCARRY1). Proof, seen failing first: a lost conversation picked on a cooling account waits and opens on it once it is ready; an unpicked lost conversation walks as today.

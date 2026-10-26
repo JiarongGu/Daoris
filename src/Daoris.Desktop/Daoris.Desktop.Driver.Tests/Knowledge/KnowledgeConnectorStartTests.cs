@@ -37,6 +37,7 @@ public sealed class KnowledgeConnectorStartTests : IDisposable
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
+            CreateNoWindow = true,
             WorkingDirectory = WorkspaceRoot.Folder,
         };
         info.Environment.Clear();
