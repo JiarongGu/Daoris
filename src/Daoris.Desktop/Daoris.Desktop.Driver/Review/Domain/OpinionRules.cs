@@ -12,8 +12,6 @@ public static class OpinionSource
     public const string Workspace = "workspace";
 }
 
-/// <summary>A rule as it resolves for a repository, and where it was set (<see cref="OpinionSource"/>).</summary>
-public sealed record ResolvedOpinion(OpinionRule Rule, string Source);
 
 /// <summary>
 /// What a set changes, as the terminal's flags, the screen's form and the shared table spell it, before it is judged: each

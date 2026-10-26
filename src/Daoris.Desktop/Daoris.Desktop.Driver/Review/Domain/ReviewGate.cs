@@ -136,23 +136,6 @@ public sealed record ReviewDecision(string Level, string? Environment)
     public string? SkippedAt { get; init; }
 }
 
-/// <summary>
-/// What the landing record keeps of the review that let the work go (REVIEWENV1c, design §3.5): <c>reviewed</c>, with the
-/// environment, the set-up's commit and when; or <c>skipped</c>, with the person's words.
-/// </summary>
-/// <param name="Said"><c>reviewed</c> or <c>skipped</c>.</param>
-/// <param name="Quest">The quest the verdict was given on: the set-up step, or the quest a skip was given on.</param>
-public sealed record LandingReview(string Said, string? Environment, string? Quest)
-{
-    /// <summary>The commit of the set-up the person reviewed; null for a skip.</summary>
-    public string? Commit { get; init; }
-
-    /// <summary>When the verdict was given, as the service kept it; null where it kept none.</summary>
-    public DateTimeOffset? At { get; init; }
-
-    /// <summary>The person's words with it, where they gave any.</summary>
-    public string? Words { get; init; }
-}
 
 /// <summary>
 /// Where a chain's work in a repository stands at its gate (REVIEWENV1c, D154 point 7; design §3.1–§3.2): the level's decision,
@@ -199,13 +182,6 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
     };
 }
 
-/// <summary>The verdicts a person gives a review, as the service spells them (REVIEWENV1b).</summary>
-public static class ReviewVerdicts
-{
-    public const string Reviewed = "reviewed";
-    public const string NotYet = "not-yet";
-    public const string Skipped = "skipped";
-}
 
 /// <summary>What the gate reads of the service: every quest, closed ones included, and an ask. A seam, so its tests stand in.</summary>
 public interface IReviewWorld

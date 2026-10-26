@@ -30,9 +30,9 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                 // KNOWUSE1b: what the person says holds for every session there, in their words.
                 Standing = config.StandingFor(known.Repository)?.Says,
                 // REVIEWENV1a: where its work is shown to the person before it lands, and where that was set.
-                Review = ReviewRules.Resolve(config, known.Repository, known.Workspace),
+                Review = KnowledgeReviews.Current.Review(config, known.Repository, known.Workspace),
                 // XAGENT1a: which other agent reads its work before it lands, and where that was set.
-                Opinion = OpinionRules.Resolve(config, known.Repository, known.Workspace),
+                Opinion = KnowledgeReviews.Current.Opinion(config, known.Repository, known.Workspace),
                 // WORKFLOW1h-b (design §8.4): the workflow its new work follows, and what chose it.
                 Workflow = Followed(config, sources.Workflows, known.Repository, known.Workspace),
             })],
@@ -98,7 +98,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             {
                 var line = repository.LineNotReadYet ? "not read yet" : LineOf(repository.Line);
                 text.Append($"| `{repository.Name}` | {Driven(repository)} | {line} | {Lands(repository.Landing)} | "
-                    + $"{ReviewRules.RoomCell(repository.Review)} | {OpinionRules.RoomCell(repository.Opinion)} | {Follows(repository.Workflow)} |\n");
+                    + $"{KnowledgeReviews.Current.ReviewCell(repository.Review)} | {KnowledgeReviews.Current.OpinionCell(repository.Opinion)} | {Follows(repository.Workflow)} |\n");
             }
 
             text.Append('\n');

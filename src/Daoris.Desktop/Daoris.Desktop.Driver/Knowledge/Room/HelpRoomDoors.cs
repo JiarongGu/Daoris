@@ -101,7 +101,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "they are tried, another maker's agent by your naming, each reading in a copy of its own that nothing is taken back "
             + "from, at landing or each step, whether work waits for you when none can, whether it may run what is declared safe, "
             + "and how long a pass may take (never on unless you name a reviewer). Each door then says what the gate does: "
-            + $"{OpinionRules.Waiting} {OpinionRules.StepWaiting} {OpinionRules.SafeNotHanded}",
+            + KnowledgeReviews.Current.GateWords,
             Setup + "Line and landing → Second opinion before landing; a workspace's, Repositories → the workspace's page → Setup → Defaults",
             "`daoris driver opinion <repository> --reviewers <adapter,adapter> [--on landing,steps] [--required|--not-required] "
             + "[--verify|--no-verify] [--minutes <n>] [--recheck|--no-recheck]` (`--workspace <name>` for a whole workspace), "

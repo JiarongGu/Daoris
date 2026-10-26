@@ -12,8 +12,6 @@ public static class ReviewSource
     public const string Workspace = "workspace";
 }
 
-/// <summary>A rule as it resolves for a repository, and where it was set (<see cref="ReviewSource"/>).</summary>
-public sealed record ResolvedReview(ReviewRule Rule, string Source);
 
 /// <summary>
 /// One change to a review rule, as every door makes it (design §1.7): for a <see cref="Repository"/> or a

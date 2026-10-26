@@ -294,6 +294,7 @@
     "Knowledge/CodeMapFile.cs": "Knowledge",
     "Knowledge/ConfiguredAccess.cs": "Knowledge",
     "Knowledge/Domain/Trace.Chain.cs": "Knowledge",
+    "Knowledge/Domain/ReviewFacts.cs": "Knowledge",
     "Knowledge/Domain/Trace.Words.cs": "Knowledge",
     "Knowledge/Domain/TracedRecords.cs": "Knowledge",
     "Knowledge/HarnessReports.cs": "Knowledge",
@@ -303,6 +304,7 @@
     "Knowledge/HelpRoomScope.cs": "Knowledge",
     "Knowledge/HelpRoomSections.cs": "Knowledge",
     "Knowledge/KnowledgeConnector.cs": "Knowledge",
+    "Knowledge/KnowledgeReviews.cs": "Knowledge",
     "Knowledge/RepositoryIndexes.cs": "Knowledge",
     "Knowledge/Room/HelpRoomAgents.cs": "Knowledge",
     "Knowledge/Room/HelpRoomAsks.cs": "Knowledge",
@@ -505,6 +507,7 @@
     "Quests/SyncForwardCommand.cs": "Work orders",
     "Review/ChatLooks.cs": "Review",
     "Review/ChatSendBacks.cs": "Review",
+    "Review/KnowledgeReviewReads.cs": "Review",
     "Review/Domain/LastOpinions.cs": "Review",
     "Review/Domain/OpinionAsk.cs": "Review",
     "Review/Domain/OpinionDelivery.cs": "Review",
@@ -966,16 +969,6 @@
       }
     },
     {
-      "family": "Knowledge names Review",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/Domain/Trace.Chain.cs": ["LandingOpinion","LandingReview"],
-        "Knowledge/Domain/Trace.Words.cs": ["LandingOpinion","OpinionGateStates","ReviewVerdicts","ReviewerLabels"],
-        "Knowledge/Room/HelpRoomDoors.cs": ["OpinionRules"],
-        "Knowledge/Room/HelpRoomWorkspaces.cs": ["OpinionRules","ResolvedOpinion","ResolvedReview","ReviewRules"]
-      }
-    },
-    {
       "family": "Knowledge names Work orders",
       "after": "Knowledge",
       "files": {
@@ -1184,16 +1177,15 @@
         "Sessions/History/SessionHomeFiles.cs": ["SessionChecks"],
         "Trees/Branches/BranchTidying.cs": ["ReviewDesk","ReviewServed"],
         "Trees/ChatLandCommand.cs": ["LandingGateWords","OpinionPresses","ReviewDoors","ServiceReviewWorld"],
-        "Trees/LandedBranches.cs": ["LandingOpinion","LandingReview"],
         "Trees/Landing/AutoLander.cs": ["IReviewWorld","LandingGate","LandingGateWords","OpinionDue","OpinionDueClosed","OpinionDues","OpinionRules","OpinionView","ReviewDoors"],
-        "Trees/Landing/ChatPresses.cs": ["ChatLookSkip","ChatLooks","LandingGate","OpinionDue","OpinionDues","OpinionGate","OpinionGateStates","OpinionRules","ReviewGit","ReviewStates"],
+        "Trees/Landing/ChatPresses.cs": ["ChatLookSkip","ChatLooks","LandingGate","OpinionDue","OpinionDues","OpinionGate","OpinionRules","ReviewGit","ReviewStates"],
         "Trees/Landing/CommitRules.cs": ["OpinionSource"],
         "Trees/SessionTrees/EntryAccepts.cs": ["LandingGateWords","OpinionPresses","ServiceReviewWorld"],
         "Trees/SessionTrees/EntryLands.cs": ["LandingGate"],
         "Trees/SessionTrees/GeneratedWriters.cs": ["HeavyStep"],
         "Trees/SessionTrees/PassLeftovers.cs": ["OpinionTree"],
         "Trees/SessionTrees/SessionTrees.cs": ["IReviewWorld","LandingGate","OpinionGateState","ReviewGate","ReviewGateState"],
-        "Trees/SessionTrees/TreeGates.cs": ["IReviewWorld","LandingGate","OpinionDeliveries","OpinionDues","OpinionGate","OpinionGateFacts","OpinionGateState","OpinionGateStates","OpinionGates","OpinionReads","OpinionRules","OpinionView","ReviewGate","ReviewGateState","ReviewGit"],
+        "Trees/SessionTrees/TreeGates.cs": ["IReviewWorld","LandingGate","OpinionDeliveries","OpinionDues","OpinionGate","OpinionGateFacts","OpinionGateState","OpinionGates","OpinionReads","OpinionRules","OpinionView","ReviewGate","ReviewGateState","ReviewGit"],
         "Trees/SessionTrees/TreeLands.cs": ["LandingGate"],
         "Trees/SessionTrees/TreeStrays.cs": ["OpinionTree"],
         "Trees/TreesPlanWords.cs": ["LandingGate","LandingGateWords"]
@@ -1466,7 +1458,7 @@
         "Quests/AskReviewCommand.cs": ["ReviewRules"],
         "Quests/Domain/Planner.cs": ["ReviewSetUps"],
         "Quests/Domain/TickReport.cs": ["OpinionJudged"],
-        "Quests/QuestReviewCommand.cs": ["ReviewDoors","ReviewLines","ReviewRules","ReviewVerdicts"]
+        "Quests/QuestReviewCommand.cs": ["ReviewDoors","ReviewLines","ReviewRules"]
       }
     },
     {
@@ -1689,6 +1681,7 @@
     "HelpRoomWindowTests.cs": "Knowledge",
     "HelpRoomWorkTests.cs": "Knowledge",
     "HelpRoomWorkspacesTests.cs": "Knowledge",
-    "KnowledgePortsTests.cs": "Knowledge"
+    "KnowledgePortsTests.cs": "Knowledge",
+    "KnowledgeReviewPortsTests.cs": "Knowledge"
   }
 }
