@@ -14,6 +14,11 @@ its lost-answer hold. Eight regressions failed first, including an older host's 
 and recheck that path before landing. Current main's two SESSDEL1c checks pass, so the older branch's gate-mapping failure is
 not a current blocker. The existing module-cut record resumed successfully on its configured agent and model choices.
 
+**Landing receipt, 2026-10-27.** The corrected candidate landed as `bb20937bc` after its scoped gates passed,
+including 14,943 fast driver tests. OPENANSWER1 has nine red-first regressions; the two fixture corrections
+and the wider branch-recovery authorization are recorded in `2026-10-27-branch-recovery.md`. Remaining foundation
+work and installed proof stay open; the earlier candidate checkpoint above is historical.
+
 ## Scope and outcome
 
 Owner request: recover unfinished branches, retain only `main`, review the code with UI/UX priority,

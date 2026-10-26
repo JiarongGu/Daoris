@@ -269,6 +269,7 @@ Read records by identifier; do not read a whole log to find one entry.
 | `2026-10-01-naming-audit.md` | NAME1 bilingual naming ledger |
 | `2026-10-01-frame-audit.md` | FRAME1 layout ledger |
 | `2026-10-10-integration-review.md` | Recovery, review and gate receipts |
+| `2026-10-27-branch-recovery.md` | Current branch audit, foundation landing receipts and preservation order; BRANCHRECOVER1 |
 | `2026-10-10-documentation-review.md` | DOCSYS1/DOCSYS2 plans, drift findings and verification |
 | `2026-10-10-code-and-docs-review.md` | MAINT1 review, refactoring findings and verification |
 | `adoption/` | Local mechanics draft; adoption has not run |
