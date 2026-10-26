@@ -1980,6 +1980,31 @@ public sealed class Driver(
         // B1): the same look would plan the carry-on, and its walk land briefed on the account just freed. A hand-over made from it is the
         // person's press and decides the start instead (step 0).
         var limitedLine = LimitResume.Line(start, handedFrom);
+        // 🔴 WALKAGENT1 (D206 point 6, D205 §3.5): a driven line an account's limit cut off takes its agent from Build's own order, never
+        // from the machine's legacy `adapter` key, which a stored order does not keep in step and which carried a line on to an agent the
+        // role does not list, asking the part before's model there. Its own agent where the role lists it (step 1 resumes there), else the
+        // role's first; and where the role lists more than one choice, or its one choice is another agent than the line ran on, the carry-on
+        // walks the choices as a new start does (below), each asking its own model and effort. A handed quest and an actor as before keep
+        // their agent and wait, as D206 point 6 has them.
+        var limitWalks = false;
+        if (limitedLine is { Limit: true } cut && handedQuest is null)
+        {
+            try
+            {
+                var role = ActorChoices.Effective("build", config);
+                if (role.Count > 0)
+                {
+                    agent = role.FirstOrDefault(entry => string.Equals(entry.Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase))?.Agent
+                            ?? role[0].Agent;
+                    limitWalks = role.Count > 1 || !string.Equals(role[0].Agent, cut.Adapter, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch (DriverException error)
+            {
+                return AgentGone() ?? Hold(error.Message);
+            }
+        }
+
         // AGENTERRORS1a2: a released transient record's words go on by MSG1b's GoOn, their words alone and no go-on of Daoris's, on an
         // account no limit cools (the design §5.1, R3-O4, R3-O8); only Try again's start with no word waiting takes step 1's go-on.
         var limitedWords = limitedLine is not null && !Planner.EndedTransient(limitedLine);
@@ -2024,6 +2049,15 @@ public sealed class Driver(
             {
                 // A new quest's first start walks Build's order, choice by choice, each choice's accounts before the next (MODELROLE1c,
                 // D205 §4.1): its agent is the entry the walk took.
+                var walked = await WalkBuildPassesAsync(start, registry, ct).ConfigureAwait(false);
+                (selection, chosen, buildPasses) = (walked.Selection, walked.Chosen, walked.Passes);
+                agent = chosen?.Agent ?? agent;
+            }
+            else if (limitWalks)
+            {
+                // WALKAGENT1: a line at a limit walks Build's order the same way, choice by choice, each choice's accounts before the next,
+                // asking each its own model and effort. Where none can run it waits for the earliest reset of any account of any choice
+                // (D206 point 2): the walk's `Cooling` is that soonest, and the hold below says it.
                 var walked = await WalkBuildPassesAsync(start, registry, ct).ConfigureAwait(false);
                 (selection, chosen, buildPasses) = (walked.Selection, walked.Chosen, walked.Passes);
                 agent = chosen?.Agent ?? agent;
@@ -2480,7 +2514,8 @@ public sealed class Driver(
         var continues = ContinuesFrom(
             handedQuest, carryingOn ? start.Resumes : null, selection.Profile, selection.Steps?.FirstOrDefault()?.Why,
             retried: fellBack is not null,
-            pressed: start.BroughtForward is not null || (start.Resumes?.PersonStopped == true && !handedFrom));
+            pressed: start.BroughtForward is not null || (start.Resumes?.PersonStopped == true && !handedFrom),
+            agent: limitWalks ? agent : null);
 
         // The ledger judges the open — the same door any other client would use. A refusal here is
         // an answer (someone else got there first), not an error. Once asked, the ledger may hold the
@@ -2582,7 +2617,7 @@ public sealed class Driver(
                     service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
                     config: config, tree: workTree, ct: ct).ConfigureAwait(false);
             if (prior is not null && continues is not null && brief is not null) SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, brief);
-            var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
+            var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
             // machine's config.
@@ -2780,7 +2815,7 @@ public sealed class Driver(
                 // its named agent's accounts alone (§3.5(a), (d)), so their record ends.
                 offers: new OpenOffers(
                     selection.Version, selection.Profile,
-                    chosen is { } walkedEntry && handedQuest is null && start.Resumes is null
+                    chosen is { } walkedEntry && handedQuest is null && (start.Resumes is null || limitWalks)
                         ? _ => ReaskAsync(start, registry, walkedEntry, selection, ct)
                         : _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
                 // AGENTERRORS1a (D210 §5.1, §5.5): a driven quest session is tried again in the same conversation on a transient failure,
@@ -4614,10 +4649,13 @@ public sealed class Driver(
 
     /// <summary>
     /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account
-    /// against the selection's, compared as the wiring compares names, null being the tool's own home.
+    /// against the selection's, compared as the wiring compares names, null being the tool's own home. A start on another
+    /// <paramref name="agent"/> than the record ran on is on another account whatever the two are named (WALKAGENT1): an account
+    /// belongs to its agent, and two agents may each have one of that name.
     /// </summary>
-    internal static bool OnAnotherAccount(PriorSession prior, string? profile) =>
-        !string.Equals(prior.Profile ?? "", profile ?? "", StringComparison.OrdinalIgnoreCase);
+    internal static bool OnAnotherAccount(PriorSession prior, string? profile, string? agent = null) =>
+        !string.Equals(prior.Profile ?? "", profile ?? "", StringComparison.OrdinalIgnoreCase)
+        || (agent is { Length: > 0 } && prior.Adapter is { Length: > 0 } ran && !string.Equals(ran, agent, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// A driven move to a new part said as it happens (SESSCTX1c, D189 point 8; the session-context design §7): a coded line on the
@@ -4653,17 +4691,19 @@ public sealed class Driver(
     /// <param name="handed">The quest's hand-over as held, or null.</param>
     /// <param name="carried">The record it carries on, where it carries one on, or null.</param>
     /// <param name="profile">The account it opens on.</param>
+    /// <param name="agent">The agent it opens on, where a limit's move may have gone to another one (WALKAGENT1); null compares accounts alone.</param>
     /// <param name="walked">
     /// The reason of the walk's first step, where the walk chose the account (<see cref="StepSaid.Why"/>). An account over its
     /// curve passed, or the most room under it, is the usage curve's move (SWITCH1c-iii, the switch design §4); a cooling or
     /// refused account passed, a limit reached and the rest are not.
     /// </param>
     internal static ContinuedFrom? ContinuesFrom(
-        HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null, bool retried = false, bool pressed = false) =>
+        HandedQuest? handed, PriorSession? carried, string? profile, string? walked = null, bool retried = false, bool pressed = false,
+        string? agent = null) =>
         carried is null ? null
         : handed is not null && string.Equals(carried.Session, handed.From, StringComparison.Ordinal)
             ? new ContinuedFrom(carried.Session, handed.Why, handed.AskedBy)
-        : carried.Limit && OnAnotherAccount(carried, profile)
+        : carried.Limit && OnAnotherAccount(carried, profile, agent)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
         : walked is OpeningWhy.OverCurve or OpeningWhy.MostRoom && OnAnotherAccount(carried, profile)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Curve, HandOverBy.Daoris)
