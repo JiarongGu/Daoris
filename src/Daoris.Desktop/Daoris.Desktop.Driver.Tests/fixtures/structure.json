@@ -773,7 +773,7 @@
     "Trees/GitReads/ReviewGraph.cs": "Workplace",
     "Trees/GitReads/ReviewGraphReads.cs": "Workplace",
     "Trees/GitReads/SessionReviews.cs": "Workplace",
-    "Trees/HeldFact.cs": "Workplace",
+    "Knowledge/Domain/HeldFact.cs": "Knowledge",
     "Trees/InstallWiring.cs": "Workplace",
     "Trees/Inventory/WorkInventories.cs": "Work orders",
     "Trees/Inventory/WorkInventory.cs": "Work orders",
