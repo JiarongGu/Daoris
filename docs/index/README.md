@@ -32,7 +32,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/README.md` | 44 | 393 |
+| `src/Daoris.Web/README.md` | 44 | 397 |
 | `src/Daoris.Web/e2e/platform.spec.ts` | 56 | 967 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 49 | 896 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 117 | 2251 |
@@ -168,9 +168,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Events/NoteCodes.cs` | 88 | 1238 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Help/Proposals/HelpSettingProposals.cs` | 55 | 971 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Instance/InstanceDoor.cs` | 44 | 780 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Domain/Trace.Chain.cs` | 65 | 1420 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Domain/Trace.Words.cs` | 41 | 760 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/HelpFacts.cs` | 56 | 939 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Domain/Trace.Chain.cs` | 65 | 1415 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/Domain/Trace.Words.cs` | 42 | 760 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Knowledge/HelpFacts.cs` | 56 | 936 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/Driver.cs` | 300 | 4666 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverBrainstorms.cs` | 44 | 785 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Loop/DriverContinuations.cs` | 90 | 1386 |
@@ -180,7 +180,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SpaceFree.cs` | 50 | 1007 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Platform/SystemWiring.cs` | 51 | 1072 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Plugins/Hooks.cs` | 62 | 1216 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 102 | 1595 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Quests/Domain/Planner.cs` | 102 | 1598 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Review/Domain/OpinionGate.cs` | 40 | 687 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Service/ServiceClient.cs` | 169 | 2982 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Questions/QuestionSupervisorDecisions.cs` | 48 | 861 |
@@ -189,17 +189,17 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 49 | 843 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverConfig.cs` | 96 | 1637 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Branches/BranchTidying.cs` | 56 | 1005 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Inventory/WorkInventory.cs` | 50 | 835 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 56 | 989 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Inventory/WorkInventory.cs` | 42 | 690 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/LandedBranches.cs` | 40 | 703 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/AutoLander.cs` | 55 | 816 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 51 | 878 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Landing/Landing.cs` | 50 | 858 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 52 | 900 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 116 | 1765 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/QuestCloser.cs` | 61 | 955 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WireEvaluation.cs` | 49 | 773 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WorkPerformer.cs` | 66 | 1083 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 68 | 1173 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/ContentHolds.cs` | 43 | 662 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 66 | 1140 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/ContentHolds.cs` | 40 | 617 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/LandedCleanups.cs` | 46 | 753 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/SessionTrees.cs` | 59 | 950 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionTrees/TreeLands.cs` | 87 | 1310 |
@@ -387,4 +387,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-26-tree-pool-survey.md` | 47 | 562 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 59 | 280 |
-| `src/Daoris.Desktop/README.md` | 183 | 855 |
+| `src/Daoris.Desktop/README.md` | 183 | 861 |

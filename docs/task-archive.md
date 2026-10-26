@@ -5,11 +5,13 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
-## FOUNDATION1mod-viii — Agents, Review, Workflows and Plugins cuts (2026-10-27)
+## FOUNDATION1mod-viii — Knowledge move and cuts (2026-10-27)
 
 > One edge family per commit, each a port declared or a type moved to its one owner, each changing no behaviour and taking its family's edges off the census.
 
-**Outcome.** Four families committed (`689549276`, `0300b1158`, `b2c8ce14d`, `8199452cb`), reducing the census from 579 edges in 55 families to 535 in 51. Details and verification: D212's mod-viii continuation note. This archives those cuts only: the row remains open for Help, Work orders and Workplace and its complete proof; the FOUNDATION1 backlog row is unchanged.
+**Initial outcome.** Four families committed (`689549276`, `0300b1158`, `b2c8ce14d`, `8199452cb`), reducing the census from 579 edges in 55 families to 535 in 51. Details and verification: D212's mod-viii continuation note. This archives those cuts only: the row remains open for Help, Work orders and Workplace and its complete proof; the FOUNDATION1 backlog row is unchanged.
+
+**Continuation outcome.** Work orders (`1a44002fb`), Workplace (`cab2487f2`) and Help (`5779f3891`) complete the cuts, with linked-consumer follow-ups recorded in D212. The inherited move and all cuts leave 431 edges in 48 families, against 584 in 58; no family cut after Knowledge remains. D212's final proof receipt records the passing focused checks and the full integration proof still owed. The quest and FOUNDATION1 row remain open for that proof; no user-visible change.
 
 ## PICKLOST1 — a lost conversation whose account the person picked walks off that account (2026-10-26)
 
