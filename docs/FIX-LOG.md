@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-26 - The review-resume stand-in did not acknowledge durable word attempts (OPINIONATTEMPT1)
+
+- **Symptom:** the protocol-door case of `OpinionResumeTickTests` failed in the scoped driver-process half and again alone: its resumed turn sent no review findings because the word's attempt was not acknowledged.
+- **Root cause:** FOUNDATION1 row p (`0e2be2bd6`) requires each word's attempt to be acknowledged before the wire. The test's independent HTTP stand-in modeled taking words but omitted the attempt endpoint, so it answered 404 and the new guard correctly refused delivery.
+- **Fix:** model the attempt endpoint in `OpinionTickStandIn`, following `StandInLedger` and the real HTTP host: stamp waiting words once, answer unknown ids as unmarked, and return the updated session. Assert the review word was acknowledged in the existing protocol case. No production guard was weakened.
+- **Verify:** all five real-process `OpinionResumeTickTests` pass with the fixture repaired; the original case failed twice before the change.
+
 ## 2026-10-26 - A refusal test outran its loop, and a completion wait measured machine load (SAYWAITCLOCK1, ANSWERWAIT1)
 
 - **Symptom:** the PRESSMODEL1/STARTLOG1 scoped driver fast run passed 14924 cases and failed two: `SessionsSayCommandTests.Words_it_cannot_go_on_with_are_kept_and_said_with_why` returned held (0) instead of refused (1), and `AnswerGoesOnOnceTests.Words_said_after_the_run_ended_go_on_again_in_one_run` timed out at a positive-call wait.

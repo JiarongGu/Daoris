@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## OPINIONATTEMPT1 — the review-resume fixture has no durable attempt door (2026-10-26)
+
+> **OPINIONATTEMPT1 — the review-resume fixture has no durable attempt door** (scoped process verification, 2026-10-26). `OpinionResumeTickTests.Findings_go_on_in_the_session_s_own_conversation_on_the_protocol_door_and_are_answered` fails both in the suite and alone because its stand-in omits `POST /api/sessions/{id}/attempt`; the driver's guard correctly sends no word without that acknowledgement. Model the real endpoint in the fixture, including unknown word ids and the retained attempt stamp, and verify the real-process review-resume class without weakening delivery guards.
+
+**Outcome.** The stand-in now models the attempt endpoint, stamps waiting words and answers missing ids as unmarked; the protocol case asserts acknowledgement of its review word. All five real-process review-resume cases pass. The production guard is unchanged; the fix log identifies the contract change that exposed the incomplete fixture.
+
 ## SAYWAITCLOCK1 and ANSWERWAIT1 — deterministic refusal and signal waits (2026-10-26)
 
 > **SAYWAITCLOCK1 — the refusal test can expire before its loop takes the words** (STARTLOG1/PRESSMODEL1 scoped verification, 2026-10-26). `SessionsSayCommandTests.Words_it_cannot_go_on_with_are_kept_and_said_with_why` returned held (0) instead of refused (1) under load: its five-second real-clock wait outran the loop that appends the refusal. Use the existing held clock and keep the loop late in every run; prove the same case fails on the machine's clock and passes when its clock starts at the loop's verdict.

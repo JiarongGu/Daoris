@@ -78,6 +78,7 @@ public sealed class OpinionResumeTickTests : IDisposable
         Assert.True(service.SessionCount == 1, seen);
         Assert.True(service.State("s1") == "completed", seen);
         Assert.True(service.Said("s1").Count == 0, seen);
+        Assert.Contains("op-w1", service.Attempted);
         var prompt = Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt");
         Assert.Equal([Findings], prompt["blocks"]!.AsArray().Select(block => block!.GetValue<string>()));
         Assert.True(prompt["resumed"]!.GetValue<bool>());
@@ -447,6 +448,8 @@ public sealed class OpinionResumeTickTests : IDisposable
         /// <summary>Each take of words: the session, the ids joined, and the session that took them where it was another.</summary>
         public List<(string Session, string Ids, string? By)> Taken { get; } = [];
 
+        public List<string> Attempted { get; } = [];
+
         private OpinionTickStandIn(HttpListener listener, string url, string root)
         {
             _listener = listener;
@@ -655,6 +658,27 @@ public sealed class OpinionResumeTickTests : IDisposable
                         session["state"] = to;
                         if (to == "awaiting-person") session["said"] = new JsonArray();
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "moved" }.ToJsonString());
+                    }
+
+                    // OPINIONATTEMPT1: the real ledger records the attempt before the protocol door writes the word.
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
+                    {
+                        var session = Find(IdOf(path, "/attempt"));
+                        var ids = Body()["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToList();
+                        var unmarked = new JsonArray();
+                        foreach (var id in ids)
+                        {
+                            var word = session["said"]!.AsArray().OfType<JsonObject>()
+                                .FirstOrDefault(word => word["id"]!.GetValue<string>() == id);
+                            if (word is null) unmarked.Add(id);
+                            else
+                            {
+                                word["attempt"] ??= DateTimeOffset.UtcNow.ToString("O");
+                                Attempted.Add(id);
+                            }
+                        }
+
+                        return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "marked", ["unmarked"] = unmarked }.ToJsonString());
                     }
 
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):
