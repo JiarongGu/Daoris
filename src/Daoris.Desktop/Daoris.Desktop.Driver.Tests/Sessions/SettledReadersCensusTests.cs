@@ -38,7 +38,7 @@ public sealed partial class SettledReadersCensusTests
         ["LimitMove.cs"] = "the ended move's composed message, said again at each come-up: nothing read of an answer",
         ["LimitWaits.cs"] = "the live wake's limit word: kept without a word, it goes in this process alone as a word a host before the door would not keep",
         ["DriverContinuations.cs"] = "the limit word of a cool-off: kept with no word, so no word id is handed on and the line goes on as the carry-on it was planned",
-        ["TransientRetries.cs"] = "the episode's go-on: no word to keep, so the try's go-on is the plain block",
+        ["AgentCourseWiring.cs"] = "the episode's go-on: no word to keep, so the try's go-on is the plain block",
         ["WordsLeft.cs"] = "a word kept again on the record: kept, with no view to show",
         ["ReopenTelling.cs"] = "Daoris's reopen and go-on words: kept, the mark written",
         ["AutoLander.cs"] = "the landing's word to a session: kept",

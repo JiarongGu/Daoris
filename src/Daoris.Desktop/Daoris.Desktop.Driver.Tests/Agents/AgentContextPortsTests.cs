@@ -38,7 +38,7 @@ public sealed class AgentContextPortsTests
             Assert.Equal(1, stand.Subscriptions);
             Assert.Equal(456, RotatedOpening.ContextOf(null, stand, "s1"));
         }
-        finally { Directory.Delete(home, recursive: true); }
+        finally { GitSeed.Remove(home); }
     }
 
     [Fact]
