@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// its text, rendered in its place.
 /// </summary>
 /// <remarks>
-/// A section is a class in a file of its own under <c>Help/Room/</c>, registered in
+/// A section is a class in a file of its own under <c>Knowledge/Room/</c>, registered in
 /// <see cref="HelpRoomSections.All"/> by one line; its file also declares on <see cref="HelpMachine"/> the facts
 /// it says, so a new section edits no other section's file.
 /// </remarks>
@@ -19,7 +19,7 @@ internal interface IHelpRoomSection
 }
 
 /// <summary>
-/// The room's sections, in the order it renders them (MOD6). A new section is a file under <c>Help/Room/</c>
+/// The room's sections, in the order it renders them (MOD6). A new section is a file under <c>Knowledge/Room/</c>
 /// and a line here, where the helper should read it.
 /// </summary>
 internal static class HelpRoomSections

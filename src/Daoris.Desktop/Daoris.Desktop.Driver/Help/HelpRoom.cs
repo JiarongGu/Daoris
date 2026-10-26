@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// terminal; a proposal is a card the person confirms (HELP1c, HELP6).</para>
 ///
 /// <para><b>By section (MOD6).</b> What it says is <see cref="HelpRoomSections.All"/>, in order: each section a
-/// file of its own under <c>Help/Room/</c> that says one thing and describes the facts it says, so a new
+/// file of its own under <c>Knowledge/Room/</c> that says one thing and describes the facts it says, so a new
 /// section is a file and a line there.</para>
 ///
 /// <para><b>A room per workspace</b> (ASKSCOPE1b, D158's ASKSCOPE1 note point 4). A conversation runs in the room of the

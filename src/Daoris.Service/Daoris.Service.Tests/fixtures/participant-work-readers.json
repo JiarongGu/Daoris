@@ -149,18 +149,6 @@
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
-    "Help/HelpCheckouts.cs": {
-      "lines": 1,
-      "reads": "tells",
-      "row": "1q",
-      "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
-    },
-    "Help/HelpCircle.cs": {
-      "lines": 1,
-      "reads": "tells",
-      "row": "1q",
-      "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
-    },
     "Help/HelpCommand.cs": {
       "lines": 1,
       "reads": "tells",
@@ -218,13 +206,35 @@
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
-    "Help/Room/HelpRoomMachineNow.cs": {
+    "Knowledge/Domain/Trace.Chain.cs": {
+      "lines": 3,
+      "reads": "other",
+      "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
+    },
+    "Knowledge/Domain/Trace.Words.cs": {
+      "lines": 3,
+      "reads": "tells",
+      "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
+    },
+    "Knowledge/HelpCheckouts.cs": {
+      "lines": 1,
+      "reads": "tells",
+      "row": "1q",
+      "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
+    },
+    "Knowledge/HelpCircle.cs": {
+      "lines": 1,
+      "reads": "tells",
+      "row": "1q",
+      "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
+    },
+    "Knowledge/Room/HelpRoomMachineNow.cs": {
       "lines": 3,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
-    "Help/Room/HelpRoomWorkspaces.cs": {
+    "Knowledge/Room/HelpRoomWorkspaces.cs": {
       "lines": 3,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
@@ -321,16 +331,6 @@
       "lines": 3,
       "reads": "other",
       "note": "parses the marks off the service's answer into the record view (moved from Trees/SessionGroups.cs, FOUNDATION1 mod-iv); it tells no work"
-    },
-    "Sessions/Domain/Trace.Chain.cs": {
-      "lines": 3,
-      "reads": "other",
-      "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
-    },
-    "Sessions/Domain/Trace.Words.cs": {
-      "lines": 3,
-      "reads": "tells",
-      "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
     },
     "Sessions/History/HistoryClearing.cs": {
       "lines": 1,

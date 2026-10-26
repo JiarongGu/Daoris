@@ -191,7 +191,7 @@ public sealed class HelpRoomGoldenTests
     }
 
     internal static string GoldenPath(string file) =>
-        Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "Help", "golden", "help-room", file);
+        Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "Knowledge", "golden", "help-room", file);
 
     /// <summary>GOLDEN1: set to 1, the tests write each golden from the render instead of comparing; unset, they compare.</summary>
     internal const string WriteSwitch = "DAORIS_GOLDEN_WRITE";

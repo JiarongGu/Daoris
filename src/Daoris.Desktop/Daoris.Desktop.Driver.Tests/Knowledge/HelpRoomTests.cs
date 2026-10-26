@@ -11,7 +11,7 @@ namespace Daoris.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// What the room is and what it allows. Each section's own sentences are held beside it under
-/// <c>Help/Room/</c>, and the room whole by <see cref="HelpRoomGoldenTests"/> (MOD6).
+/// <c>Knowledge/Room/</c>, and the room whole by <see cref="HelpRoomGoldenTests"/> (MOD6).
 /// </remarks>
 public sealed class HelpRoomTests : IDisposable
 {
@@ -370,7 +370,7 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
-    /// MOD6: every section is a class in a file of its own under <c>Help/Room/</c>, named after it, so a new
+    /// MOD6: every section is a class in a file of its own under <c>Knowledge/Room/</c>, named after it, so a new
     /// section is a file and one registry line, and no section hides inside another's file.
     /// </summary>
     [Fact]
