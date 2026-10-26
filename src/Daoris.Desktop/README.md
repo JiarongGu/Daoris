@@ -29,6 +29,10 @@ explains captures and shutdown; [Installing it](#installing-it-2026-09-22) expla
 | `Daoris.Desktop.PieceStart` | The partner's launcher (COAGENT1b, D199's note on the strict start): one console program, `daoris-piece-start.exe`, laid out in the install's `app/bin/` beside the git doors and started by the driver for a partner alone, as `--job <a piece's job> -- <the harness> [its arguments]`. It joins the piece's named job, which the driver made empty and holds, then starts the harness as its child with the stdio it was handed, so nothing of the harness's runs outside the job; where the job cannot be joined it exits 125 with one line and starts nothing. Framework-dependent, referencing nothing: the driver's `PieceLauncher` and `ProcessJob` are compiled in |
 | `Daoris.Desktop.Launcher` | `Daoris.exe`, the one thing at an install's root (D93): it starts `app/Daoris.Desktop.exe` with its arguments and exits, its process carrying Daoris's taskbar id (D108). Framework-dependent, single-file, referencing nothing. It is also the one program that replaces the application (UPDATE1, D139): while nothing runs from `app/`, a build in `update/staged/` is checked and swapped in with a journal (`update/swap.json`), started, and rolled back when it does not confirm — asked for by the application as `--update --after <pid>`, or on a start finding a build staged. The check and the swap are the driver library's own Setup files (`StagedBuild.cs` and `InstallSwap.cs`), compiled in |
 
+The driver's `Agents/` owns adapters, accounts, usage, retries and session processes, with pure account rules in `Agents/Domain/`
+and tests mirrored under `Driver.Tests/Agents/`. Namespaces remain `Daoris.Driver`; D212 records the remaining upward cuts.
+The instruction accounting sources in `Accounts/` and session parts in `Agents/Adapters/` belong to Context until its move.
+
 The driver's `Knowledge/` owns the connector, trace, room sections and rendered room facts (FOUNDATION1 mod-viii, D212).
 Help keeps source descriptions and workspace projection; its source record answers the lower room interface directly.
 Work orders and Workplace answer the room's reads through ports declared in Knowledge, installed from their own mapped
@@ -47,14 +51,14 @@ The adapters are the stub, `acp-stub` (the protocol door with no model in it), `
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
 concluded from its exit code and its quest, never from what it said. A driven turn that ends on its own background work waits
 for that work and then for the turn its harness wakes by itself, whose autonomous `usage_update` is its end; Daoris's go-on
-goes only where none woke (`Agents/Acp/AcpWake.cs`, D83's BGWAIT2 note). A turn that ends after its work ended unseen, after
+goes only where none woke (`Agents/AcpWake.cs`, D83's BGWAIT2 note). A turn that ends after its work ended unseen, after
 its agent's last step, waits for that wake too (D83's BGWAIT3 note). While it waits its quest is read again every fourth
 tick, and once the quest no longer waits on that work and no turn runs, the session ends and the work ends with it; an agent
 that does not exit within ten seconds with that work still running has its tree ended (D83's DONEEND1 note). A timeout is said
 to the door before the kill, and a run that brought its quest to done before it concludes completed (`Observation.AfterTimeout`).
 
 A driven session's prompt that its provider fails for a moment is tried again inside its run, on the same session (D210's AGENTERRORS1a
-note): `AgentErrors.Read` (`Agents/Errors/`) reads the door's failure by the adapter's `ErrorWords` and its owner's, and the protocol
+note): `AgentErrors.Read` (`Agents/AgentErrors.cs`) reads the door's failure by the adapter's `ErrorWords` and its owner's, and the protocol
 door's `TransientRetry` waits 1, 2, 4, 8 and 16 minutes on the driver's `RetryClock`. Past five tries the record ends `ended.transient`,
 no strike, and the planner holds its quest for the person's word. Since AGENTERRORS1a2 the same holds for a mid-turn word's prompt
 refused after the word was taken (shape 2) and for the open, whose raw `session/new` or `session/resume` is repeated; each wait and
@@ -73,7 +77,7 @@ The accounts are one set per agent (D197): `HarnessSettings` folds the wiring to
 adapters and plugin harnesses name are folded (`HarnessSettings.AgentsKnown`, POOLSTRAY1). A stray folder under the agent homes is
 said once in the machine log and never read as an agent, and a stray entry already in the wiring is dropped at the next fold.
 
-An account's use is measured against a curve by `Accounts/Domain/UsageCurves.cs` (D165, SWITCH1b-i): the share of a window
+An account's use is measured against a curve by `Agents/Domain/UsageCurves.cs` (D165, SWITCH1b-i): the share of a window
 passed at a given moment, the person's or the smart curve's value there, and each account's room in points on its tightest
 window (none where no window is read). It is pure, the first file in an onion layer folder. A start's walk ranks by it
 (SWITCH1b-ii): an account over its curve goes last, the least over first; among the rest, within a week's last day, the most
@@ -109,7 +113,7 @@ repository's holder. The same rule over a record's fields is what the Sessions b
 A judgement reads a checkout's refs and working trees once (`RefSnapshot`, PROC1d-ii and -iii) and asks its git each question of
 commits by their ids once (PROC1d-iv), every write in its flow dropping both; a landing's planning keeps its facts in `GitFacts`
 (LANDGIT1). D88's notes say what each keeps.
-Beside it, `Accounts/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a running session moves at its turn's end: it stays
+Beside it, `Agents/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a running session moves at its turn's end: it stays
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
 to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes
 `curve`, and `HandOverNotes.Moved` and `MovedFrom` (`chat.moved`, `chat.moved-from`) say a move at both ends, naming the

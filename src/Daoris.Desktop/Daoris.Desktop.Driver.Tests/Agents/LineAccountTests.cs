@@ -340,7 +340,7 @@ public sealed class LineAccountTests : IDisposable
     // ——— The proof: each case against what today's callers answered, in the table beside this file.
 
     private static string TablePath => Path.Combine(
-        WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "Accounts", "line-account-cases.txt");
+        WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "Agents", "line-account-cases.txt");
 
     /// <summary>
     /// The table: the distinct rows, each named, then a line for each own state, trigger and kind naming the row of each of the others'

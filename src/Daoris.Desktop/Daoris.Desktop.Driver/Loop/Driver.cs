@@ -2673,7 +2673,7 @@ public sealed class Driver(
                     service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
                     config: config, tree: workTree, ct: ct).ConfigureAwait(false);
             if (prior is not null && continues is not null && brief is not null) SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, brief);
-            var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
+            var elsewhere = prior is not null && AccountIdentity.OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
             // machine's config.
@@ -4707,16 +4707,6 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account
-    /// against the selection's, compared as the wiring compares names, null being the tool's own home. A start on another
-    /// <paramref name="agent"/> than the record ran on is on another account whatever the two are named (WALKAGENT1): an account
-    /// belongs to its agent, and two agents may each have one of that name.
-    /// </summary>
-    internal static bool OnAnotherAccount(PriorSession prior, string? profile, string? agent = null) =>
-        !string.Equals(prior.Profile ?? "", profile ?? "", StringComparison.OrdinalIgnoreCase)
-        || (agent is { Length: > 0 } && prior.Adapter is { Length: > 0 } ran && !string.Equals(ran, agent, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>
     /// A driven move to a new part said as it happens (SESSCTX1c, D189 point 8; the session-context design §7): a coded line on the
     /// part it left and on the new part, each on its console too, with the context the part it left stood at (its high-water, H)
     /// and the brief's characters (B); and <c>session.moved</c> in the machine log. Every driven start that continues another says it,
@@ -4762,9 +4752,9 @@ public sealed class Driver(
         carried is null ? null
         : handed is not null && string.Equals(carried.Session, handed.From, StringComparison.Ordinal)
             ? new ContinuedFrom(carried.Session, handed.Why, handed.AskedBy)
-        : carried.Limit && OnAnotherAccount(carried, profile, agent)
+        : carried.Limit && AccountIdentity.OnAnotherAccount(carried, profile, agent)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
-        : walked is OpeningWhy.OverCurve or OpeningWhy.MostRoom && OnAnotherAccount(carried, profile)
+        : walked is OpeningWhy.OverCurve or OpeningWhy.MostRoom && AccountIdentity.OnAnotherAccount(carried, profile)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Curve, HandOverBy.Daoris)
         : retried
             ? new ContinuedFrom(carried.Session, HandOverWhy.Retry, HandOverBy.Daoris)

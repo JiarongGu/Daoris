@@ -8,18 +8,18 @@
     "1r": "the connector by work, failing closed: `SessionRole` becomes the work (§2.3)"
   },
   "driver": {
-    "Accounts/Harnesses/HarnessRoster.cs": {
+    "Agents/HarnessRoster.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Agents/Adapters/Adapters.cs": {
+    "Agents/Adapters.cs": {
       "lines": 4,
       "reads": "tells",
       "row": "1j",
       "note": "reads the start target's marks to tell a one-turn start (an intake, a reviewer, a helper, a partner, a brainstorm); the start plan's (§2.4); one more line names a type"
     },
-    "Agents/Permissions/RuleProposals.cs": {
+    "Agents/RuleProposals.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"

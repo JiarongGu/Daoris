@@ -194,7 +194,7 @@ public sealed class CarryOnHandedTests : IDisposable
     [InlineData("account-1", null, true)]
     public void Another_account_is_the_record_s_account_against_the_start_s(string? ran, string? runs, bool another)
     {
-        Assert.Equal(another, Daoris.Driver.Driver.OnAnotherAccount(new PriorSession("s1", null, "failed") { Profile = ran }, runs));
+        Assert.Equal(another, AccountIdentity.OnAnotherAccount(new PriorSession("s1", null, "failed") { Profile = ran }, runs));
     }
 
     // ——— The record's account and its limit, read with the last run.
