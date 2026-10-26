@@ -18,8 +18,9 @@ public sealed class AgentContextPortsTests
             await using (var writer = AgentContext.Current.OpenTranscript(path, false))
             {
                 writer.WriteLine("first 道");
-                writer.Flush();
-                Assert.Contains("first 道", StubFile.Text(path));
+                await Poll.Until(
+                    () => StubFile.Text(path).Contains("first 道", StringComparison.Ordinal),
+                    () => $"the open transcript held {StubFile.Text(path).Length} character(s)");
             }
             await using (var writer = AgentContext.Current.OpenTranscript(path, true)) writer.WriteLine("second");
             Assert.Equal($"first 道{Environment.NewLine}second{Environment.NewLine}", File.ReadAllText(path));

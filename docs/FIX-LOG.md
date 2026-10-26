@@ -5,6 +5,13 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - Context's new transcript fixture bypassed queued live visibility
+
+- **Symptom:** the new Context fixture's immediate shared-read assertion failed during development. Parent review required a condition wait for live visibility; the explicit Flush in `acea4d5c4` bypassed the asynchronous behavior instead.
+- **Root cause:** StubFile.Text shares the open file but does not wait for TranscriptFile's pool-queued flush. Immediate visibility is a scheduling assumption; forcing the flush removes the behavior being checked.
+- **Fix:** AgentContextPortsTests awaits Poll.Until on the shared-read visibility condition while the writer remains open, using default Poll.Patience as failure patience. Production flushing, locks and disposal are unchanged; the test introduces no fixed staging sleep or latency claim.
+- **Verify:** the corrected fixture and the combined Context/ports/prompt/adapter/account/event/structure focused fast selection pass **776 cases**; test-map passes at **1,892 units**. No Process or whole suite ran. D212 amends the earlier explicit-flush checkpoint.
+
 ## 2026-10-27 - An agent-port fixture's temporary renderer crossed into an unrelated prompt test (AGENTPORTISOLATION1)
 
 - **Symptom:** the final FOUNDATION1 mod-ix focused run passed 151 cases and failed `AskWordsHandedTests.An_ask_from_before_its_words_were_kept_says_from_when_they_are`: its instruction did not contain the original kept-since sentence. An immediate port/ask selection passed 56, showing the scheduling dependency.
