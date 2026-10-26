@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - An agent-port fixture's temporary renderer crossed into an unrelated prompt test (AGENTPORTISOLATION1)
+
+- **Symptom:** the final FOUNDATION1 mod-ix focused run passed 151 cases and failed `AskWordsHandedTests.An_ask_from_before_its_words_were_kept_says_from_when_they_are`: its instruction did not contain the original kept-since sentence. An immediate port/ask selection passed 56, showing the scheduling dependency.
+- **Root cause:** Driver fast classes run concurrently. The pre-commit Work orders fixture temporarily replaced the process-global `AgentWorkWords.Current` while an unrelated prompt consumer could read it. A `finally` restores the port after a test, but does not isolate concurrent readers. The same risk applies to the new Participants, Plugins and Workplace port fixtures, including Workplace's replacement of `ChildGit.Current`.
+- **Fix:** `58bfc98ee` put all four replacing classes in the nonparallel `agent operation ports` collection, following `KnowledgeReviewPortsTests`, while retaining every `finally` restoration. A follow-up reflection regression checks all four memberships and the definition's `DisableParallelization`; earlier new account-identity and actor-opening tests replace no shared port. Product code and assembly-wide parallelism are unchanged.
+- **Verify:** the original renderer crossover was observed before isolation; the corrected combined port/prompt/structure selection passed 163. The separate follow-up combined selection passes 494: all four replacing classes, instruction goldens, ask/go-ahead/channel consumers, adapters, driven/configured/help access, help start, permissions, lineage, earlier account/actor/review/Events contracts and structure. The guard checks every replacing class, including the ChildGit case, and the collection's nonparallel definition. Only focused fast checks ran; Context/Course and product behavior remain untouched.
+- **Commit:** `58bfc98ee` applies collection isolation; this test-only follow-up adds its membership guard and record.
+
 ## 2026-10-26 - Failure isolation duplicated a filter, and a new enqueue read an old outcome (QUEUEFILTER1, QUEUEWAIT1)
 
 - **Symptom:** scoped verification could not classify fast-test failures because `dotnet test` refused two `--filter` arguments. Requeueing the unchanged PRESSMODEL1 tip after a base repair started a new candidate but immediately returned its previous hand-back and exit 1, even though the new candidate later promoted.

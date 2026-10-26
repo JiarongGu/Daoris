@@ -13,6 +13,24 @@ public sealed class AgentWorkOrdersPortsTests
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-01T02:26:00Z");
 
     [Fact]
+    public void Every_mod_ix_test_replacing_a_shared_port_runs_with_no_unrelated_consumer_beside_it()
+    {
+        var definition = Assert.Single(typeof(AgentOperationPortsCollection)
+            .GetCustomAttributes(typeof(CollectionDefinitionAttribute), inherit: false).Cast<CollectionDefinitionAttribute>());
+        Assert.True(definition.DisableParallelization);
+        var name = Assert.Single(typeof(AgentOperationPortsCollection).CustomAttributes
+            .Where(attribute => attribute.AttributeType == typeof(CollectionDefinitionAttribute))).ConstructorArguments[0].Value;
+        // Workplace replaces ChildGit as well as AgentWorkplace; both need the same isolation.
+        Type[] replacements = [typeof(ParticipantPortsTests), typeof(AgentPluginPortsTests),
+            typeof(AgentWorkplacePortsTests), typeof(AgentWorkOrdersPortsTests)];
+        foreach (var type in replacements)
+        {
+            var collection = Assert.Single(type.CustomAttributes.Where(attribute => attribute.AttributeType == typeof(CollectionAttribute)));
+            Assert.Equal(name, collection.ConstructorArguments[0].Value);
+        }
+    }
+
+    [Fact]
     public void The_actual_port_reads_unrelated_ask_facts_and_keeps_quoting_bounds_and_serialized_properties()
     {
         Assert.IsType<WorkOrderAgentWords>(AgentWorkWords.Current);
