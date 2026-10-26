@@ -68,6 +68,31 @@ public sealed class SaidDoor(ServiceClient service, string session) : ISaidDoor
     }
 
     /// <summary>
+    /// A message as it goes once the record named its words marked (FOUNDATION1 row p, the design §3.4 rule 5): itself where nothing marks it
+    /// (a word kept nowhere) or <see cref="ChatMessage.Attempting"/> names its id; a go-on carrying words under their ids narrowed to the words
+    /// named, so an answer naming fewer than asked sends only those; and null where nothing it carries was named. A null message is not
+    /// written, its words wait on their record, and <paramref name="unsent"/> is told how many of them it left there.
+    /// </summary>
+    internal static async Task<ChatMessage?> AcknowledgedAsync(ChatMessage message, Action<int> unsent)
+    {
+        if (message.Attempting is not { } attempting) return message;
+        var marked = await attempting().ConfigureAwait(false);
+        if (message.GoesOn is { } ask)
+        {
+            var asked = ask.Ids.Count;
+            ask.Narrow(marked);
+            if (ask.Ids.Count < asked) unsent(asked - ask.Ids.Count);
+            // Nothing it carries was named: the go-on's own first line and appendix go for no word, so none goes.
+            if (asked > 0 && ask.Ids.Count == 0) return null;
+            return ask.Ids.Count == asked ? message : message with { Text = ask.Prompt };
+        }
+
+        if (message.Id is not { } id || marked.Contains(id, StringComparer.Ordinal)) return message;
+        unsent(1);
+        return null;
+    }
+
+    /// <summary>
     /// A kept word as its dispatcher hands it to a door (COWORK1c): marked attempted through <paramref name="door"/> before the wire,
     /// and told <paramref name="went"/> once written. A word kept nowhere, or with no door yet, is handed as it is.
     /// </summary>

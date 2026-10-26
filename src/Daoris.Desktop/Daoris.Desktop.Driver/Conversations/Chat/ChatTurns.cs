@@ -1234,7 +1234,7 @@ internal sealed class ChatTurns(
                 // COWORK1c: a kept word's attempt is marked on its record before its turn is on the wire, and acknowledged there
                 // (FOUNDATION1 row p, the design §3.4 rule 5): a word the record does not name marked is not written and waits on its record,
                 // said; a go-on carries only the words it names.
-                if (await Dispatched(message).AcknowledgedAsync(count => Unsent?.Invoke(count)).ConfigureAwait(false) is { } going)
+                if (await SaidDoor.AcknowledgedAsync(Dispatched(message), count => Unsent?.Invoke(count)).ConfigureAwait(false) is { } going)
                 {
                     message = message with { Text = going.Text };
                     await take(message, () =>
