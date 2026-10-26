@@ -78,6 +78,26 @@ merged tree is preserved while that request waits; no live-session guard or lock
 That nightly run also passed the exact historical opinion-resume case and authoritatively cleared its finding on
 `85fd557`. CILEDGER1 is archived; no clearance was fabricated or written by hand.
 
+## Agents continuation
+
+The accepted Knowledge prerequisite allowed a fresh Codex conversation to continue mod-ix on `daoris/s-0db6cee1`.
+The configured Build actor's choices were unavailable; the supported one-off chat selected Codex without changing those
+standing choices. Its native first-turn trace reports `gpt-6.1-sol` at medium effort. Its quest remains Taken.
+
+Reviewed checkpoints through `58bfc98ee` move the Agents sources/tests and cut eight dependency families, preserving
+behavior, public serialized shapes and exact instruction output. The census is 390 edges in 40 families, with only
+Context's 25 and Course's 16 left for Agents. Each checkpoint's focused proof is in the branch's D212 notes; the complete
+mod-ix row and its integration proof remain open.
+
+A combined focused run also exposed AGENTPORTISOLATION1: temporary test wiring reached an unrelated prompt consumer.
+The four new replacing fixtures were isolated, and a 494-case combined selection passed. The follow-up audit includes
+three earlier fixtures with the same shared-state hazard, inferred from their code rather than additional observed
+crossovers. Product behavior and assembly-wide parallelism are unchanged; the repair must land with the refactor.
+
+At this checkpoint there are five local branches and five registered trees, including the new active Agents tree and
+the still-preserved Knowledge tree. Both remote tracking tips have no commits outside main. The saved credit-refusal
+stash and superseded provenance tags remain preserved; neither is treated as disposable unfinished code.
+
 ## Recovery order and preservation
 
 1. Finish mod-viii in its saved conversation and tree, then the remaining foundation rows in D212's
