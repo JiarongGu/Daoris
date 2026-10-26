@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- Merge-queue failure isolation preserves a .NET gate's existing filter, and requeueing an unchanged tip waits for its new result while retaining its previous hand-back (QUEUEFILTER1, QUEUEWAIT1).
 - Conflicting current and legacy log folders no longer crash the desktop, browser, driver or service while their logger is being created (STARTLOG1). Logging is disabled for that process without choosing, writing or pruning either folder; other home-entry conflicts still report their normal refusal.
 - Going on now with another agent, from a session waiting for an account's limit to reset, now asks that agent for its own choice (PRESSMODEL1,
   D163). The press carried the model of the part before to the new agent, which could refuse it, so the part ended before it began and
@@ -12,8 +13,8 @@ with the version and date at release.
   again on its next choice and on its default; and a quest the old behaviour left held goes on by itself at the next look.
 
 - A session cut off by an account's limit is no longer carried on by an agent its role does not list (WALKAGENT1, D206). The carry-on of
-  such a quest took the machine's older single-agent setting instead of Build's choices, so on one install two of them went on with Codex
-  asking Claude's model, which Codex refused, and sat. The carry-on now follows Build: it goes on with Build's first choice that can run,
+  such a quest took the machine's older single-agent setting instead of Build's choices, which could carry it to an agent outside its role
+  with the prior agent's model. The carry-on now follows Build: it goes on with Build's first choice that can run,
   asking that choice's own model and effort, and where none can it waits for the earliest reset and resumes its own conversation then.
 
 - A session held for an account's reset no longer reads *completed* (LIMITSWITCH3b, D137). Where Daoris holds a finished session's words

@@ -181,6 +181,7 @@ const tool = await import(
   readPlan: (root: string) => Gate[];
   flakeDecision: (output: string, isProcess?: (test: string) => boolean) => { rerun: string[]; reason?: string };
   rerunCommand: (run: string, test: string) => string;
+  prefixCommand: (gate: { run: string }, failure: { names: string; unit?: string; test?: string }) => string;
   rerunPassed: (output: string) => boolean;
   processExit: (code: number) => boolean;
   rehearsalDecision: (log: string, code: number, command?: string) => { rerun: boolean; reason: string };
@@ -4284,6 +4285,26 @@ test('the slowest classes are read from a trx: each class\'s tests summed, slowe
     + `<UnitTest id="m${i}"><TestMethod className="N.C${i}Tests" name="T" /></UnitTest>`).join('\n');
   assert.equal(tool.slowestClasses(many).length, 10);
   assert.equal(tool.slowestClasses(many)[0]!.name, 'C12Tests');
+});
+
+test('QUEUEFILTER1: prefix isolation combines an existing filter with its class in one argument', () => {
+  const failure = { names: 'test', unit: 'SessionTests' };
+  const command = 'dotnet test src/Driver.Tests --filter Category!=Process';
+  const narrowed = tool.prefixCommand({ run: command }, failure);
+  assert.equal(narrowed.match(/--filter\b/g)?.length, 1, narrowed);
+  assert.match(narrowed, /--filter "\(Category!=Process\)&\(FullyQualifiedName~SessionTests\)"$/);
+  for (const filter of ['"Category!=Process|Priority=1"', "'Category!=Process'", '=Category!=Process']) {
+    const run = `dotnet test src/Driver.Tests --filter${filter.startsWith('=') ? '' : ' '}${filter} --no-restore`;
+    const selected = tool.prefixCommand({ run }, failure);
+    assert.equal(selected.match(/--filter\b/g)?.length, 1, selected);
+    assert.ok(selected.endsWith(' --no-restore'), selected);
+    assert.ok(selected.includes(`(${filter.replace(/^["'=]|["']$/g, '')})&(FullyQualifiedName~SessionTests)`), selected);
+  }
+  const process = 'dotnet test src/Driver.Tests --settings process.runsettings';
+  assert.equal(tool.prefixCommand({ run: process }, failure), `${process} --filter "FullyQualifiedName~SessionTests"`);
+  assert.equal(tool.prefixCommand({ run: 'dotnet test src/Driver.Tests --filter ""' }, failure),
+    'dotnet test src/Driver.Tests --filter "FullyQualifiedName~SessionTests"');
+  assert.equal(tool.prefixCommand({ run: command }, { names: 'gate' }), command);
 });
 
 test('a Process gate writes its trx beside its log, and the slowest classes are printed after its line', async () => {

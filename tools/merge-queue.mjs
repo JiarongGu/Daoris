@@ -17,7 +17,8 @@
  * - **What the parent hands it.** A branch is previewed first (`--preview`: the merge made in the scope tree's spare index
  *   against main's tip, its diff and gates printed, nothing committed), after the records commit on the branch; then queued with
  *   its message file (`--message <file>`). The request is frozen at enqueue: the branch's tip and the message's bytes. A tip that
- *   differs from the branch's last preview, and a branch with no message, are refused (`enqueue`).
+ *   differs from the branch's last preview, and a branch with no message, are refused (`enqueue`). Each enqueue has its own
+ *   request id, retained through re-forms and outcomes, so a new wait never reads an older result for the same tip.
  * - **The candidate.** The runner merges every queued branch, in arrival order, at most `CANDIDATE_MAX`, one merge commit each
  *   on main's tip; a branch whose merge the resolvers cannot make is set aside and handed back (`formCandidate`). One member at a
  *   time where `--one-at-a-time` asked it, or where an unresolved failure split a candidate.
@@ -55,6 +56,7 @@
  *
  * Exit codes: 0 · 2 a tool error. `node tools/merge-queue.mjs` prints the queue and the admission record.
  */
+import { randomUUID } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { isMain, writeAtomic } from './fsx.mjs';
@@ -138,7 +140,7 @@ export function enqueue(queue, { branch, tip, message, at, requeue = false }) {
   if (queue.queued.some((each) => each.branch === branch) || queue.candidate?.members.some((each) => each.branch === branch && !each.handedBack)) {
     return { refused: `${branch} is queued already: --drop-batch ${branch} takes it off, then queue it again` };
   }
-  const entry = { branch, tip, message: Buffer.from(message, 'utf8').toString('base64'), at, ...(requeue ? { requeue } : {}) };
+  const entry = { branch, tip, request: randomUUID(), message: Buffer.from(message, 'utf8').toString('base64'), at, ...(requeue ? { requeue } : {}) };
   return { queue: { ...queue, queued: [...queue.queued, entry] }, entry };
 }
 

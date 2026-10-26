@@ -5,6 +5,26 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## QUEUEFILTER1 and QUEUEWAIT1 — failure isolation and enqueue outcomes (2026-10-26)
+
+> **QUEUEFILTER1 — bisecting a fast .NET failure supplies two filter flags** (scoped verification, 2026-10-26). `tools/merge-branch.mjs:prefixRunner` appends a class filter to a gate that already has `--filter Category!=Process`, so `dotnet test` refuses the command before running any test and the queue reports a base failure as unresolved. Combine the existing filter with the selected class in one argument; prove a fast gate with an existing category filter runs its selected class and preserves the category, alongside the unfiltered Process-gate case.
+
+> **QUEUEWAIT1 — requeueing the same tip immediately reports its previous hand-back** (scoped verification, 2026-10-26). After a repaired base and fresh preview, enqueue accepted a new candidate and started its runner, but its CLI returned exit 1 with the old hand-back for the same branch and tip while that new candidate was still running. Bind the wait to the new enqueue occurrence or retire superseded hand-backs; prove a rejected tip requeued on a repaired base waits for that new run and reports its outcome, retaining historical evidence.
+
+**Outcome.** Class isolation intersects the existing filter in one argument. Each enqueue has a UUID retained through candidates and outcomes, so its wait ignores earlier results for the same branch and tip without deleting history. Three regressions failed first, then passed; both merge-tool files pass, 242 tests, and the combined filter runs all 25 log tests through the real .NET runner. The fix log and contributor guide hold the contract and verification.
+
+## CODEXDRIVE1 — audit Codex driving against the installed failures (2026-10-26)
+
+> **CODEXDRIVE1 — audit Codex driving against the installed failures** (owner, 2026-10-26). Inspect open quests and Codex sessions, check their actual turn, resume, model and permission failures against the adapter contracts, and file confirmed defects as separate rows with evidence and regression criteria. Resume authorized unfinished work through Daoris and take up repository backlog work; PRESSMODEL1 already owns the observed cross-agent model refusal.
+
+**Outcome.** Inspected 15 stored Codex sessions and their failure evidence. The six failures were three workspace-credit refusals, two cross-agent model refusals and the duplicate-log crash; the credit-refused quests were already completed later. STARTLOG1 and PRESSMODEL1 are fixed and installed, the latter quest closed with its integration evidence; both held Foundation quests then resumed automatically on Codex and are actively working in their existing trees. CODEXCREDITS1, LEGACYHOST1 and LOGCOLLECTION1 retain the remaining confirmed defects and their proof criteria. The two queue defects encountered during integration were also repaired; private recovery notes keep machine evidence.
+
+## STARTLOG1 — the local install exits before opening a window (2026-10-26)
+
+> **STARTLOG1 — the local install exits before opening a window** (owner, 2026-10-26). Windows records `HomeEntryTwiceException` while opening the desktop log: both current and legacy log folders hold files, the legacy one containing a connector start. Recovery preserved the legacy evidence and restored the window and service; five regression cases reproduce the constructor failure across all log sources, and both writers now disable logging when its location cannot be resolved. Verify the fix, refresh the legacy connector, and republish through the staged-update gates.
+
+**Outcome.** Fixed in `75131f4d8` and republished in gated build `349e2c5d7`, confirmed installed with a responding native window and matching service version. The stable legacy connector matches that build. An isolated clone of the published app opens with both log locations populated and preserves their old evidence; the fix log holds verification. Both held Foundation handovers then started automatically on Codex in their existing trees.
+
 ## BRAINBOUNDCLOCK1 — a pass-timeout test spends the later synthesis's reserve on machine load (2026-10-26)
 
 > **BRAINBOUNDCLOCK1 — a pass-timeout test spends the later synthesis's reserve on machine load** (STARTLOG1/PRESSMODEL1 verification, 2026-10-26). `BrainstormBoundsTests.A_pass_late_past_its_minutes_is_stopped_and_the_document_says_who_did_not_answer` twice recorded the expected generator timeout but failed its ranking assertion when the six-second real-time request budget expired under load. Hand the brainstorm deadlines and cancellation timers a `TimeProvider` that defaults to the system clock; drive the existing case with the moved clock so it spends the generator's own limit while preserving the synthesis reserve and every existing assertion.

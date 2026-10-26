@@ -246,7 +246,8 @@ place (learned 2026-10-23 and 24, LIMITGOON1, LIMITRESUME1d and REVIEWLANDED1):
 
 The invocation starts the queue's runner where none runs (`node tools/merge-branch.mjs --queue-run`, detached, its log
 `local/merge-queue.log`, its acknowledgement waited for thirty seconds), then waits and ends with *in main* (0) or *handed
-back* with why (1). Ending the wait leaves the request queued. The runner forms a **candidate** in `local/scope-tree`, a
+back* with why (1). Each enqueue has its own request id, retained through re-forms and outcomes; requeueing the same tip waits
+for that occurrence while the earlier hand-back stays in history. Ending the wait leaves the request queued. The runner forms a **candidate** in `local/scope-tree`, a
 worktree of its own with warm builds: every queued branch, up to eight in arrival order, each merged on the last with
 `--no-ff` and its own message. A branch the resolvers cannot merge is set aside and handed back. On the candidate it runs the
 **scoped set**: the blocking checks always; each gate the candidate's paths reach, a .NET fast half whole; the `Process` halves
@@ -261,7 +262,8 @@ On red, each failure is judged by its signature (`tools/test-failures.mjs`). A f
 candidate's base is inherited and filed as known red. If its known red has expired, the queue stops instead. A failing gate that
 names no test (a check, a build, discovery, a host) and fails on the base **stops the queue**. Every merge then waits until a
 direct commit moves main, `--queue --recheck`, or the runner's own recheck an hour on lifts it. Otherwise the failure's
-selection runs on every prefix of the candidate. The member at the last transition into the signature is handed back, with
+selection runs on every prefix of the candidate. A .NET class selection intersects the gate's existing filter in one
+`--filter` argument, preserving its category and other options. The member at the last transition into the signature is handed back, with
 any members it needs, earlier transitions named as interacting. The prefixes either side of it run once more, and a
 disagreement makes the failure unresolved. So does a prefix that cannot run the selection, or a whole candidate that does not
 fail again. An unresolved candidate of several runs its members one at a time. One of one is handed back as unresolved, filed

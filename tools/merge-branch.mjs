@@ -6275,6 +6275,18 @@ const withTrx = (gate, dir) => (/^dotnet test\b/.test(gate.run.trim()) && !isPro
   ? { ...gate, scopedTrx: join(dir, `${gate.name}.scoped.trx`), run: trxCommand(gate.run, join(dir, `${gate.name}.scoped.trx`)) }
   : gate);
 
+/** The failure's class selected on a prefix, with every other gate option kept. */
+export function prefixCommand(gate, failure) {
+  if (failure.names !== 'test' || !/^dotnet test\b/.test(gate.run.trim())) return gate.run;
+  const selected = `FullyQualifiedName~${failure.unit ?? testClass(failure.test)}`;
+  const filter = /(^|\s)--filter(?:\s+|=)(?:"([^"]*)"|'([^']*)'|(\S+))/;
+  const found = filter.exec(gate.run);
+  if (!found) return `${gate.run.trim()} --filter "${selected}"`;
+  const existing = found[2] ?? found[3] ?? found[4];
+  const combined = existing ? `(${existing})&(${selected})` : selected;
+  return gate.run.replace(filter, () => `${found[1]}--filter "${combined}"`);
+}
+
 /**
  * One failure's selection run on a prefix in the scope tree (§4.1 point 4): the failing test's class, or the failing gate's own
  * command, at the base plus the first `k` members; answers whether it fails with the signature, another way, or cannot run.
@@ -6287,9 +6299,7 @@ function prefixRunner(tree, candidate, plan, dir) {
     const gate = plan.find((each) => each.name === failure.gate);
     if (!gate) return { result: 'cannot', signature: { gate: failure.gate, step: 'run', message: 'the gate is not in this prefix\'s plan' } };
     n += 1;
-    const narrowed = failure.names === 'test' && /^dotnet test\b/.test(gate.run.trim())
-      ? `${gate.run.trim()} --filter "FullyQualifiedName~${failure.unit ?? testClass(failure.test)}"`
-      : gate.run;
+    const narrowed = prefixCommand(gate, failure);
     const trx = /^dotnet test\b/.test(gate.run.trim()) ? join(dir, `${slug(failure.gate)}.prefix-${n}.trx`) : null;
     const probe = { ...gate, name: `${gate.name}.prefix-${n}`, run: trx ? trxCommand(narrowed, trx) : narrowed };
     const result = await runGate(tree, probe, dir, {});
@@ -6473,7 +6483,7 @@ async function queueStep(home) {
   const candidate = queue.candidate;
   const action = resumeCandidate(candidate, { mainTip, isAncestor: isAncestorIn(home) });
   if (action === 'promoted') {
-    withQueue(home, (q) => ({ queue: { ...q, candidate: null, landed: [...(q.landed ?? []), ...candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, commit: each.commit, at }))].slice(-200) } }));
+    withQueue(home, (q) => ({ queue: { ...q, candidate: null, landed: [...(q.landed ?? []), ...candidate.members.map((each) => ({ branch: each.branch, tip: each.tip, request: each.request, commit: each.commit, at }))].slice(-200) } }));
     console.log(`${at} promoted ${candidate.tip.slice(0, 7)}: ${candidate.members.map((each) => each.branch).join(', ')}`);
     return 'next';
   }
@@ -6678,25 +6688,25 @@ async function enqueueVerb(root, options) {
     if (queued.refused) return queued;
     const last = queued.queue.queued.at(-1);
     if (options.oneAtATime) last.oneAtATime = true;
-    return { queue: queued.queue, place: queued.queue.queued.length, ahead: queue.candidate ? queue.candidate.members.length : 0 };
+    return { queue: queued.queue, request: queued.entry.request, place: queued.queue.queued.length, ahead: queue.candidate ? queue.candidate.members.length : 0 };
   });
   if (out.refused) throw new Refusal(out.refused);
   console.log(`queued ${branch} at ${tip.slice(0, 7)}: place ${out.place}${out.ahead ? `, behind a candidate of ${out.ahead} in flight` : ''}. Ending this wait leaves it queued; --queue says where it stands.`);
   await ensureRunner(home);
-  return waitOutcome(home, branch, tip);
+  return waitOutcome(home, branch, tip, out.request);
 }
 
 /** The queued request's outcome, waited for: promoted (0), or handed back (1); a hold or a stop said as it changes. */
-async function waitOutcome(home, branch, tip) {
+async function waitOutcome(home, branch, tip, request) {
   let said = null;
   for (;;) {
     const queue = readQueue(home);
-    const landed = (queue.landed ?? []).find((each) => each.branch === branch && each.tip === tip);
+    const landed = (queue.landed ?? []).find((each) => each.branch === branch && each.tip === tip && each.request === request);
     if (landed) {
       console.log(`merge-branch: ${branch} is in ${MAIN} (${landed.commit.slice(0, 7)}), promoted with its candidate. The background run gates the tip.`);
       return 0;
     }
-    const back = (queue.handedBack ?? []).find((each) => each.branch === branch && each.tip === tip);
+    const back = (queue.handedBack ?? []).find((each) => each.branch === branch && each.tip === tip && each.request === request);
     if (back) {
       const how = back.handedBack;
       console.log(`merge-branch: ${branch} is handed back (${how.how}${how.failure ? `: ${how.failure}` : ''}${how.paths ? `: a conflict in ${how.paths.join(', ')}` : ''}${how.with?.length ? `, with ${how.with.join(', ')}` : ''}${how.interacting?.length ? `; interacting: ${how.interacting.join(', ')}` : ''}${how.why ? `; ${how.why}` : ''}).`);

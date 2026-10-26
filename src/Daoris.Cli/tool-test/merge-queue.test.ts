@@ -16,10 +16,10 @@ import { makeFixture } from '../test/_fixture.ts';
 interface Signature { test?: string; exception?: string; location?: { method: string; text: string; ordinal: number }; message?: string; gate?: string; step?: string; errors?: string[] }
 type Outcome = { result: 'pass' } | { result: 'fail'; signature: Signature } | { result: 'cannot'; signature: Signature };
 interface Failure { unit?: string; test?: string | undefined; gate: string; signature: Signature; names: 'test' | 'gate' }
-interface Member { branch: string; tip: string; message?: string; commit?: string; handedBack?: { how: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
+interface Member { branch: string; tip: string; request?: string; message?: string; commit?: string; handedBack?: { how: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
 interface Judged { outcome: string; member?: number; with?: number[]; interacting?: number[]; why?: string; said?: string; runs: unknown[] }
 interface Candidate { base: string; tip: string; members: Member[]; state: string; reforms: number; recordsOnly: boolean; held?: { on: string; why: string }; run?: { pid: number } }
-interface Queue { schema: number; queued: Member[]; previews: Record<string, { tip: string }>; candidate: Candidate | null; stop: unknown; handedBack: Member[] }
+interface Queue { schema: number; queued: Member[]; previews: Record<string, { tip: string }>; candidate: Candidate | null; stop: unknown; handedBack: Member[]; landed?: Member[] }
 interface Reservation { runner: string; gate: string; needGb: number; job: string }
 interface Admission { schema: number; reservations: Reservation[]; scopedTier: { state: string; since: string } | null; waiting: unknown[] }
 interface Job { state: string; workingGb?: number; committedGb?: number; why?: string }
@@ -121,6 +121,17 @@ describe('the queue: a frozen request, read before it is queued', () => {
 
   test('a branch never previewed is refused', () => {
     assert.match(q.enqueue(q.emptyQueue(), { branch: 'b1', tip: 'a'.repeat(40), message: 'x', at: AT }).refused ?? '', /--preview/);
+  });
+
+  test('QUEUEWAIT1: two enqueue occurrences of one tip in the same clock tick have different identities', () => {
+    const preview = q.notePreview(q.emptyQueue(), { branch: 'b1', tip: 'a'.repeat(40), base: 'm', at: AT });
+    const first = q.enqueue(preview, { branch: 'b1', tip: 'a'.repeat(40), message: 'm', at: AT }).entry!;
+    const history = { ...preview, handedBack: [{ ...first, handedBack: { how: 'unresolved' } }] };
+    const next = q.enqueue(history, { branch: 'b1', tip: first.tip, message: 'm', at: AT });
+    assert.ok(first.request);
+    assert.ok(next.entry!.request);
+    assert.notEqual(next.entry!.request, first.request);
+    assert.deepEqual(next.queue!.handedBack, history.handedBack, 'the historical evidence is retained');
   });
 
   test('a branch and its message file changed while queued: the frozen request is what merges, and --queue says the branch moved', () => {
@@ -643,6 +654,33 @@ function queueScratch(name: string) {
 }
 
 describe('the queue, end to end in a scratch repository', { concurrency: true }, () => {
+  test('QUEUEWAIT1: requeueing an unchanged rejected tip waits for its new promotion after a base repair', async () => {
+    const repo = queueScratch('requeue-same-tip');
+    try {
+      repo.branch('b1', { 'break-check': 'x\n' });
+      assert.equal((await repo.run(['b1', '--preview'])).status, 0);
+      const rejected = await repo.run(['b1', '--message', 'local/b1.msg']);
+      assert.equal(rejected.status, 1, rejected.out);
+      await repo.until(() => !repo.queue()?.runner);
+      const previous = repo.queue()!.handedBack[0]!;
+      writeFileSync(join(repo.root, 'qgate.mjs'), 'console.log("the repaired check passed");\n');
+      sh(repo.root, 'add', 'qgate.mjs');
+      sh(repo.root, 'commit', '--quiet', '-m', `repair the base${TRAILER}`);
+      assert.equal((await repo.run(['b1', '--preview'])).status, 0);
+      const retried = await repo.run(['b1', '--message', 'local/b1.msg']);
+      await repo.until(() => !repo.queue()?.runner);
+      assert.equal(retried.status, 0, `${retried.out}\n${repo.log()}`);
+      assert.match(retried.out, /b1 is in main/);
+      assert.deepEqual(repo.queue()!.handedBack, [previous]);
+      const landed = repo.queue()!.landed!.at(-1)!;
+      assert.equal(landed.tip, previous.tip);
+      assert.ok(landed.request);
+      assert.notEqual(landed.request, previous.request);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
   test('preview, then queue with a message: the detached runner forms the candidate in the scope tree, runs it, and fast-forwards main', async () => {
     const repo = queueScratch('green');
     try {
