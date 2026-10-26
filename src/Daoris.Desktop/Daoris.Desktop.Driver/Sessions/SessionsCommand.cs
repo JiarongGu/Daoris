@@ -814,6 +814,8 @@ public static class SessionsCommand
         "stood-down" => "stood down",
         ShownState.AwaitingReply => "awaiting reply",
         ShownState.GoingOn => "going on",
+        // LIMITSWITCH3b: D206 §3.7's wait; the time and the account are on the line's held fact.
+        ShownState.LimitWaits => "waiting for a limit to reset",
         _ => shown,
     };
 

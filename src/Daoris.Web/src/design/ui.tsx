@@ -289,6 +289,8 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'awaiting-helper': 'neutral',
   // Ended by an account's limit, its line going on by itself (LIMITRESUME1a): quiet, never the failure's red.
   'limited': 'neutral',
+  // An ended record held for an account's reset, going on by itself (LIMITSWITCH3b): quiet, as *limited* is.
+  'limit-waits': 'neutral',
   // Ended before anything ran, its agent refusing the choice (MODELROLE1c3, D205 §3.5(c)): quiet, never the failure's red.
   'not-started': 'neutral',
 };
@@ -302,7 +304,8 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
  * goes on from at the driver's next look (ANSWER1c, D131); **going-on**, a record going on with the person's
  * words, its run opening (MSG1f, D137 §3.2); and **awaiting-helper**, a session that ended its turn on its own helper's
  * ask and goes on with its answer (HELPERWAIT1); and **limited**, a `failed` record whose failure an account's limit made, its
- * `limit` flag (LIMITRESUME1a, D206 point 1); and **not-started**, a `failed` record its agent's refusal of the choice ended before
+ * `limit` flag (LIMITRESUME1a, D206 point 1); and **limit-waits**, an ended record held for an account's reset, which the list's reader
+ * derives from the hold (LIMITSWITCH3b), so it never reads *completed* where Daoris waits to go on; and **not-started**, a `failed` record its agent's refusal of the choice ended before
  * anything ran, its note's code `ended.choice-not-offered` (MODELROLE1c3, D205 §3.5(c)). None is a record state: no new session
  * state (D126 §2).
  *
@@ -310,7 +313,7 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
  * is the driver's to say.
  */
 export type ShownState =
-  | SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on' | 'awaiting-helper' | 'limited' | 'not-started';
+  | SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on' | 'awaiting-helper' | 'limited' | 'limit-waits' | 'not-started';
 
 /**
  * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's derived
@@ -323,6 +326,7 @@ export function shownKey(shown: ShownState): string {
   if (shown === 'going-on') return 'work.shown.goingOn';
   if (shown === 'awaiting-helper') return 'work.shown.awaitingHelper';
   if (shown === 'limited') return 'work.limit.word';
+  if (shown === 'limit-waits') return 'work.shown.limitWaits';
   if (shown === 'not-started') return 'work.notStarted.word';
   return `sessionState.${shown}`;
 }
@@ -416,6 +420,8 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'awaiting-helper': 'idle',
   // Ended by an account's limit (LIMITRESUME1a): an ended record, as failed is.
   'limited': 'ended',
+  // Held for an account's reset (LIMITSWITCH3b): its words go on by itself, so nothing is over, as answered's and going on's are.
+  'limit-waits': 'idle',
   // Ended choice-not-offered (MODELROLE1c3): an ended record, as failed is.
   'not-started': 'ended',
 };

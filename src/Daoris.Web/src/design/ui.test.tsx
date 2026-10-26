@@ -723,7 +723,7 @@ describe('the session tone map', () => {
   // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), the two words the
   // session list's reader derives from the session's quest (D126 §2.2), the park the person answered (ANSWER1c), a
   // record going on with their words (MSG1f), and a session waiting on its own helper (HELPERWAIT1).
-  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limited', 'not-started'];
+  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limited', 'limit-waits', 'not-started'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
@@ -833,6 +833,17 @@ describe('the session tone map', () => {
     expect(SESSION_TONE.limited).toBe('neutral');
     expect(SESSION_DOT.limited).toBe('ended');
     expect(shownKey('limited')).toBe('work.limit.word');
+  });
+
+  /**
+   * LIMITSWITCH3b (D137's note of 2026-10-26): a record held for an account's reset shows the reader's *limit-waits*, quiet and idle, since
+   * it goes on by itself; the record's own state alone never says it, so it is the reader's word and no state of the ledger.
+   */
+  it('shows an ended record held for an account’s reset as its wait, quietly', () => {
+    expect(SESSION_TONE['limit-waits']).toBe('neutral');
+    expect(SESSION_DOT['limit-waits']).toBe('idle');
+    expect(shownKey('limit-waits')).toBe('work.shown.limitWaits');
+    expect(shownState({ kind: 'driven', state: 'completed' }, undefined)).toBe('completed');
   });
 
   /**

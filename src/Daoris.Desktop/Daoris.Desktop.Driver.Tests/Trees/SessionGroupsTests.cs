@@ -394,11 +394,18 @@ public sealed class SessionGroupsTests
             {
                 Also = row => Assert.Equal((WordsHold.Hold, "engine"), (row.Holds!.Why, row.Holds.Repository)),
             },
-        ["words a cooling account holds resume later, until its reset"] =
+        ["words a cooling account holds resume later waiting for the limit, until its reset"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Blocked)], waits: [Cooling("q1")]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Later, ShownState.LimitWaits)
             {
                 Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset), (row.Holds!.Why, row.Holds.Until)),
+            },
+        // LIMITSWITCH3b: a record a limit ended says so already, so the wait is not laid over it.
+        ["words a cooling account holds on a record a limit ended keep its own word"] =
+            new(Look([Record("s1", "failed", "q1", limit: true, said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Blocked)], waits: [Cooling("q1")]),
+                "s1", SessionGroup.Later, ShownState.Limited)
+            {
+                Also = row => Assert.Equal(WordsHold.Cooling, row.Holds!.Why),
             },
         ["words another hold at the spawn holds resume later, in its words"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Blocked)], waits: [Cooling("q9")]),
@@ -519,7 +526,7 @@ public sealed class SessionGroupsTests
             },
         ["a chat its account's cool-off held resumes later, until the reset"] =
             new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])], chats: ["s1"], held: [("s1", OwnCooling)]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Later, ShownState.LimitWaits)
             {
                 Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset), (row.Holds!.Why, row.Holds.Until)),
             },
@@ -538,7 +545,7 @@ public sealed class SessionGroupsTests
         // planner's own holds still come first, and the loop's look says its own.
         ["words whose own account cools resume later where no loop has looked, until its reset"] =
             new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [GoesOn(Done)], held: [("s1", OwnCooling)]),
-                "s1", SessionGroup.Later, "completed")
+                "s1", SessionGroup.Later, ShownState.LimitWaits)
             {
                 Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset, "work is cooling until 11:00."),
                     (row.Holds!.Why, row.Holds.Until, row.Holds.Reason)),

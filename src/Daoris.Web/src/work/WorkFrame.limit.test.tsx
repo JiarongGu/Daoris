@@ -8,7 +8,7 @@ vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).
 import i18n from '../locales/i18n';
 import { moment } from '../locales/format';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
-import { CHAT, DRIVER_STATE, QUESTS, REGISTRY, ROSTER, show, userEvent } from '../test/workFrameKit';
+import { CHAT, DRIVEN, DRIVER_STATE, QUESTS, REGISTRY, ROSTER, show, userEvent } from '../test/workFrameKit';
 
 let SESSIONS: unknown[] = [];
 
@@ -113,5 +113,63 @@ describe('a conversation its limit holds', () => {
     const [line] = await screen.findAllByRole('group', { name: '等待额度' });
     expect(line!).toHaveTextContent(`正在等待额度重置：将于 ${moment(until)} 在 personal 上自动继续。它将在原对话中继续。`);
     expect(within(line!).getByRole('button', { name: '停止等待' })).toBeInTheDocument();
+  });
+});
+
+/**
+ * LIMITSWITCH3b (D137's note of 2026-10-26): a closed quest's finished session whose words are held for a cooling account reads the wait
+ * as its state label on its rail row and its page's head, in both languages, never *completed*; with nothing held it still reads completed.
+ */
+describe('a closed quest’s session held for an account’s reset', () => {
+  const until = '2026-10-28T12:30:00Z';
+  const HELD = {
+    session: 's1a2b3c4', group: 'later', shown: 'limit-waits', archived: false, teammate: false,
+    holds: { why: 'cooling', reason: 'every account is cooling.', until, account: 'account-2', accountName: 'Work' },
+  };
+  const FREE = { session: 's1a2b3c4', group: 'ended', shown: 'completed', archived: false, teammate: false };
+  // The session's page head, the banner that holds its title (the window's own bars are banners too).
+  const pageHead = () => screen.getAllByRole('banner').find((bar) => within(bar).queryByRole('heading', { level: 1 }))!;
+  const answering = (row: unknown) =>
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GROUPS' ? { sessions: [row] } : DRIVER_STATE));
+
+  beforeEach(() => {
+    SESSIONS = [{ ...DRIVEN, state: 'completed' }];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(async () => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+    await i18n.changeLanguage('en');
+  });
+
+  it('wears the wait on its row and its head, in English and 中文', async () => {
+    answering(HELD);
+    show('s1a2b3c4');
+
+    await waitFor(() => expect(pageHead()).toBeDefined());
+    const header = pageHead();
+    await waitFor(() => expect(within(header).getByText('waiting for a limit to reset')).toBeInTheDocument());
+    expect(within(header).queryByText('completed')).toBeNull();
+    // The rail's row beside it, which says the same word and still the time and the account on its line.
+    expect(screen.getAllByText('waiting for a limit to reset').length).toBeGreaterThan(1);
+    expect(screen.queryByText('completed')).toBeNull();
+    expect(screen.getAllByText((said) => said.includes(`it resumes by itself at ${moment(until)}, on Work.`)).length).toBeGreaterThan(0);
+
+    await i18n.changeLanguage('zh');
+    await waitFor(() => expect(within(pageHead()).getByText('正在等待额度重置')).toBeInTheDocument());
+    expect(screen.getAllByText('正在等待额度重置').length).toBeGreaterThan(1);
+    expect(screen.queryByText('已完成')).toBeNull();
+  });
+
+  it('reads completed where nothing is held', async () => {
+    answering(FREE);
+    show('s1a2b3c4');
+
+    await waitFor(() => expect(pageHead()).toBeDefined());
+    const header = pageHead();
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    expect(within(header).getByText('completed')).toBeInTheDocument();
+    expect(screen.queryByText('waiting for a limit to reset')).toBeNull();
   });
 });

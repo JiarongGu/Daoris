@@ -377,6 +377,17 @@ describe('a row as the list shows it', () => {
   });
 
   /**
+   * LIMITSWITCH3b (D137's note of 2026-10-26): an ended record held for an account's reset shows *limit-waits* by the reader's word, in
+   * place of the state it ended in; with no word from the reader (a host older than it) the record's own state stands.
+   */
+  it('shows a record held for an account’s reset as its wait, by the reader’s word', () => {
+    const ended = session({ id: 'e2', state: 'completed' });
+    expect(shownOf(ended, grouping({ session: 'e2', group: 'later', shown: 'limit-waits' }), undefined)).toBe('limit-waits');
+    expect(shownOf(ended, grouping({ session: 'e2', group: 'ended', shown: 'completed' }), undefined)).toBe('completed');
+    expect(shownOf(ended, null, undefined)).toBe('completed');
+  });
+
+  /**
    * HELPERWAIT1: a session that ended its turn on its own helper's ask shows *awaiting helper* by the reader's word, resuming later, and
    * nothing about it waits on the person.
    */

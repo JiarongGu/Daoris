@@ -254,6 +254,34 @@ describe('the delete’s ask', () => {
 });
 
 /**
+ * LIMITSWITCH3b (D137's note of 2026-10-26): the head of a closed quest's finished session whose words are held for a cooling account
+ * wears the wait as its word, with its time and account on the facts line, in both languages, never *completed*.
+ */
+describe('the head of a record held for an account’s reset, in its stories', () => {
+  const composed = composeStories(stories);
+
+  it('wears the wait as its word, and its time and account beside it, in English and 中文', () => {
+    const english = render(<Tooltip.Provider><composed.HeldForALimit /></Tooltip.Provider>);
+    const header = within(english.container).getByRole('banner');
+    expect(within(header).getByText('waiting for a limit to reset')).toBeInTheDocument();
+    expect(within(header).queryByText('completed')).toBeNull();
+    expect(header).toHaveTextContent(/Waiting for a limit to reset: it resumes by itself at .+, on Work\./);
+    english.unmount();
+
+    const chinese = render(<Tooltip.Provider><composed.HeldForALimitInChinese /></Tooltip.Provider>);
+    const zh = within(chinese.container).getByRole('banner');
+    expect(within(zh).getByText('正在等待额度重置')).toBeInTheDocument();
+    expect(within(zh).queryByText('已完成')).toBeNull();
+    expect(zh).toHaveTextContent(/正在等待额度重置：将于 .+ 在 Work 上自动继续。/);
+  });
+
+  it('reads completed where nothing is held', () => {
+    head({ session: session({ state: 'completed' }), shown: 'completed' });
+    expect(within(screen.getByRole('banner')).getByText('completed')).toBeInTheDocument();
+  });
+});
+
+/**
  * MODELROLE1c3 (D205 §4.6 item 2, §7.1): the head's choice chip is drawn at the frame's three widths in both languages, each story
  * wearing its word on the facts line and at its width, so a reviewer sees it where the page puts it.
  */

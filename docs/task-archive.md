@@ -21164,3 +21164,20 @@ head and Attention, which already said it. A rebase word whose commit the line h
 waits for its own account. **Proved** by `AccountRotationTickTests` (real ticks), `ReopenTellingTests`, `LimitWaitsProcessTests` and `SessionWordsWaitingTests`, each seen failing first, with the
 terminal's list (`SessionsCommandTests`), the wire's hold (`DriverModuleSessionsTests`) and the web's Attention beside them; LIMITSWITCH1's and LIMITSWITCH2's classes stay green.
 **Reading:** this amends the message-urgency design's §4.1 *never starts a new session* for Daoris's fact words in the cooling case alone. Detail: D137's LIMITSWITCH3 note, the FIX-LOG entry of this date.
+
+## LIMITSWITCH3b — a session held for an account's reset reads that wait, never *completed* (2026-10-26, D137)
+
+> **LIMITSWITCH3b — a session held for an account's reset still shows *completed* as its state label** (web, modules, driver; the owner's report, 2026-10-26; LIMITSWITCH3's own reading). LIMITSWITCH3 makes every word waiting on an ended record go on now on a ready account or by itself at the earliest reset, and says that wait on the row's line, the page's head facts and Attention; but a closed quest's held record keeps *completed* as its state label on the rail row and the page's head, and the terminal's sessions list prints `completed` beside its hold under *Resumes later*, so a person reads a finished, stuck session where Daoris waits to go on. Wherever a record is held for an account's reset its label is that wait, D206 §3.7's words en and zh, its stored state unchanged for older builds. Proof, seen failing first: the held record's label on the rail row, the head and the terminal's list; a completed record with nothing held still *completed*.
+
+(Quest `#eb72cc8d1f2f`, asked by `#daf60e`.)
+
+**Outcome** 2026-10-26. **Built:** the list's reader (`SessionGroups.PlaceInGroup`) derives one more word, `limit-waits`, for an ended record whose words are held for an account's reset
+(`SessionGrouping.HeldBy`: a `cooling` hold with its reset), in place of the state it ended in; a record a limit ended keeps its own *limited*. The word is derived and never written back, so the
+record's state is what an older build and the service read. The page reads it as it reads the reader's other words (`work.shown.limitWaits`, *waiting for a limit to reset* / 正在等待额度重置,
+D206 §3.7's words), on the rail row, its strip mark, the page's head and the conversation's tiles; the line beside it still says the time and the account. The terminal's `sessions` list prints
+*waiting for a limit to reset* in the state's place. A hold for the person's repository hold, the cap, a busy tree or a planner's sentence, and a record with nothing held, still read their state.
+**Proved** by `SessionGroupsTests` (the three cooling cases and a limited record's), `SessionsCommandTests` (the terminal's list for the person's words and for Daoris's own rebase word) and
+`DriverModuleSessionsTests` (the wire's word), and on the web by `groups.test.ts`, `SessionRow.test.tsx`, `SessionPageHead.test.tsx` and `WorkFrame.limit.test.tsx` (the rail row and the head of a
+closed quest's completed record, en and zh, and a record with nothing held reading *completed*), with the stories `SessionRow` *HeldForALimit* and `SessionPageHead` *HeldForALimit* in both languages;
+each case was seen failing before its change. **Reading:** a host older than the word still says *completed* with the hold's line, as before; the page takes the word from the reader and derives none of its own.
+Detail: D137's LIMITSWITCH3b note.

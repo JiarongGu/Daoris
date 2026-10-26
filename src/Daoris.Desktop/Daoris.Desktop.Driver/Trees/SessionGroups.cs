@@ -185,6 +185,13 @@ public static class ShownState
     public const string Limited = "limited";
 
     /// <summary>
+    /// An ended record whose words are held for an account's reset (LIMITSWITCH3b, D137's note of 2026-10-26): the wait D206 §3.7 words, in
+    /// place of the state it ended in, which read as a finished session that is stuck. Derived from the hold and never written back, so the
+    /// record's state is what an older build and the service read.
+    /// </summary>
+    public const string LimitWaits = "limit-waits";
+
+    /// <summary>
     /// A record's state as every reader says it (D206 §3.1): <see cref="Limited"/> for a <c>failed</c> one an account's limit ended,
     /// else its ledger state. The list, the terminal's <c>sessions</c> and Ask Daoris's session tools read this one rule.
     /// </summary>
@@ -327,6 +334,17 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// says. Null otherwise, and for one that goes on (<see cref="ShownState.GoingOn"/>).
     /// </summary>
     public WordsHold? Holds { get; init; }
+
+    /// <summary>
+    /// This row held by <paramref name="holds"/> (LIMITSWITCH3b): where its words wait for an account's reset it is
+    /// <see cref="ShownState.LimitWaits"/> in place of the state it ended in, whatever that was; a record a limit ended keeps its own
+    /// <see cref="ShownState.Limited"/>, which says it already.
+    /// </summary>
+    public SessionGrouping HeldBy(WordsHold holds) => this with
+    {
+        Holds = holds,
+        Shown = holds is { Why: WordsHold.Cooling, Until: not null } && Shown != ShownState.Limited ? ShownState.LimitWaits : Shown,
+    };
 
     /// <summary>
     /// Whether *Delete…* would be taken (SESSUX1f, D126 §5.4): the ledger would delete its record, and this machine holds
@@ -1003,7 +1021,7 @@ public static class SessionGroups
             if (_look.ChatsWaiting.Contains(record.Id))
             {
                 return _look.Held.TryGetValue(record.Id, out var chat)
-                    ? Rest(row with { Group = SessionGroup.Later, Holds = chat })
+                    ? Rest(row.HeldBy(chat) with { Group = SessionGroup.Later })
                     : row with { Group = SessionGroup.Working, Shown = ShownState.GoingOn };
             }
 
@@ -1026,7 +1044,7 @@ public static class SessionGroups
                     return row with { Group = SessionGroup.Working, Shown = ShownState.GoingOn };
                 }
 
-                return Rest(row with { Group = SessionGroup.Later, Holds = holds, PausedBy = words.PausedBy });
+                return Rest(row.HeldBy(holds) with { Group = SessionGroup.Later, PausedBy = words.PausedBy });
             }
 
             if (verdict?.Verdict == StartVerdict.Exhausted)

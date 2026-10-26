@@ -141,6 +141,7 @@
   "work.shown.answered": "已回答",
   "work.shown.goingOn": "继续中",
   "work.shown.awaitingHelper": "等助手",
+  "work.shown.limitWaits": "正在等待额度重置",
   "work.limit.word": "额度用尽",
   "work.notStarted.word": "未启动",
   "work.notStarted.here": "未启动：{{agent}} 在 {{account}} 上不提供 {{model}}。",
