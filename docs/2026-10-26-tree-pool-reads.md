@@ -1,10 +1,12 @@
-# TREEPOOL1: the reads of round 1 (D191)
+# TREEPOOL1: the reads of rounds 1 and 2 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-26-tree-pool-design.md` and D214, round 1, both at
 `3f55eb1e5`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one
 level down. Neither carries a link, so none is rewritten; the paths both cite are code spans, in each read's own aliases. Round 2 answers every
 finding of both, one row each, and each changed passage of the design and D214 is marked *(C1-n.m)* for Codex's §n item m or *(O1-Fn)* for
 the Opus reader's finding n.
+
+Both makers' reads of round 2, at `d595cabd6`, follow in the same way. Round 3 answers every finding of both, one row each, and each changed passage of the design and D214 is marked *(C2-n.m)* for Codex's §n item m or *(O2-Fn)* for the Opus reader's finding n.
 
 ## Codex, round 1
 
@@ -362,3 +364,339 @@ The ⚖ marking is right: every row that switches, removes or re-keys a read is 
 **Verdict: another round.** The central choice of moving the slot to the line's path holds at the code, and I would keep it. But all four blocking findings sit in its own mechanics: the claim's key, the order of move and switch, what may cross a move, and the re-read after the switch. They reshape §2.3's crash table and row b's proofs, which both makers are asked to weigh first.
 
 Scope the round to §2.3–§2.4, §5.2–§5.3, §11, §14 and row b. The rest can carry over with the non-blocking changes above.
+
+## Codex, round 2
+
+Codex's read of round 2 at `d595cabd6`: another round. Its §0 checks its round-1 findings; it then finds two wrong claims, not blocking (the last guard's lock reading, and carried outputs that run), six on the design blocking (a placed slot's links across a crash, the record's open identified before it opens, a dead executor taken for quiet git children, a finish's facts captured before its branch goes, a link's owner, and row i's working snapshot), the served build's admission dropped (blocking), the rows sound with e's installed proof too early, and the build folders a move drops put to the owner as a deletion (blocking).
+
+Reviewed HEAD `d595cabd6`, read-only. No files changed or tests run; no checkout-relative `local/` content or files outside this checkout inspected. `Design` below is `docs/2026-10-26-tree-pool-design.md`; code paths use the inputs’ aliases.
+
+### 0. Your round-1 findings
+
+| Finding | Assessment | Basis in round 2 |
+|---|---|---|
+| 1.1 Interrupted move is not an interrupted opening | **Taken** | Parking and the claim’s distinct lock replace that assumption: Design:273, :312. |
+| 1.2 Last guards do not establish link ownership | **Open** | The whole walk is added, but location is still treated as provenance: Design:496. |
+| 1.3 Manifest-free retirement gets no slim | **Taken** | Retirement writes the slim’s manifest: Design:705. |
+| 1.4 Other path-dependent dependency contents | **Taken** | The named caches are dropped: Design:769. Broader relocation proof remains necessary. |
+| 2.1 Another branch temporarily occupies the returning path | **Taken** | Switching now precedes placement: Design:543, :556. The junction crash window below remains. |
+| 2.2 Durable intent, outcomes and surviving git children | **Open** | More intent is stored, but open reconciliation and positive child quiescence remain incomplete: Design:246, :283, :295. |
+| 2.3 Finished-record inputs and retry identity | **Open** | The outbox exists, but complete finish inputs are still composed after deletion: Design:733–739. |
+| 2.4 Check the destination after switching | **Taken** | Both checks and conservative failure handling are specified: Design:550, :564. |
+| 2.5 Terminal admission | **Taken** | Cross-process admission precedes launch and lasts through the terminal job: Design:247, :650. |
+| 2.6 Preserve distinct staged and working states | **Open** | Two snapshots help, but the working snapshot still misses force-added ignored files: Design:597. |
+| 2.7 Detached no-output continuation | **Taken** | No-output slots retain their branch; finished slots leave the path: Design:630, :729. |
+| 2.8 Relocation needs correctness proof | **Taken** | Old-path sentinels and read/write isolation are now required: Design:790. |
+| 3.1 Occupation-lease rejection overstated | **Taken** | Economy replaces impossibility; reservation and final verification return: Design:165. |
+| 3.2 Live default’s lowering consequence | **Taken** | Clamp, retirement and disclosure are explicit: Design:677–682. |
+| 4.1 Production reuse enabled too early | **Taken** | Count doors wait until f: Design:959. |
+| 4.2 `wwwroot` changes legacy removal policy | **Taken** | Legacy removal classification remains unchanged: Design:381. |
+| 4.3 Dangerous crash boundaries and older-build proof | **Taken** | Boundary tests and a pinned pre-pool build are named: Design:898, :1000. |
+| 4.4 Startup clock and default-flip criteria | **Taken** | Admission-to-first-turn and explicit criteria replace the earlier measurement: Design:1079–1087. |
+
+### 1. Wrong claims about the existing code
+
+1. **Non-blocking — the existing last guard rejects every lock.** Design:493 describes calling `LastLookAsync` first, but `Driver/Trees/SessionTrees/TreeSetAside.cs:84–87` rejects a pool’s free or claimed lock too. Specify a pool-aware guard accepting only the exact owned reason, with unknown locks still refusing; otherwise every ordinary take fails its own judgement.
+
+2. **Non-blocking — carried outputs are executable.** Design:771 calls `dist` and its companions outputs “no tool resolves code from,” but `src/Daoris.Cli/bin/daoris.mjs:12–15` prefers retained `dist/cli.js`, and `tools/desktop-publish.mjs:1261` explicitly records this stale-output hazard. Withdraw that claim and include the normal CLI entry in row b’s retained-output proof.
+
+### 2. The design
+
+1. **Blocking — placement still exposes unsafe junctions across a crash.** Design:556 places the slot before :560 repairs its links, and :889–892 explicitly permits an older build to resume through those old targets; `Driver/Trees/SessionTrees/TreeReturns.cs:58` accepts the listed tree without checking them. Repair links to their final targets before publishing the directory, or provide exclusion already honored by shipped builds; a later takeover cannot undo another line’s reads or writes.
+
+2. **Blocking — the record-open outcome is not durably identifiable before opening.** `tree_claims.record` stays empty until the answer arrives (Design:246, :567), while takeover recognizes an unrecorded open only through an **active** record (Design:295). An open whose answer is lost, followed by orphan settlement before takeover, falls into the rollback case; persist a keyed open identity beforehand and reconcile its historical outcome independently of current liveness, following FOUNDATION1:2013–2021.
+
+3. **Blocking — executor death is still substituted for child quiescence.** Design:283 assumes the Windows job has ended its git processes and accepts lock-file absence elsewhere, but `Driver/Platform/ProcessJob.cs:18` supplies no containment elsewhere; its strict recovery primitive explicitly terminates and waits for emptiness. Record recoverable containment identity and establish emptiness before takeover, or disable pooling wherever that proof is unavailable; an instant without `index.lock` or `HEAD.lock` does not prove a surviving child has finished.
+
+4. **Blocking — finish facts must survive before branch deletion.** Design:733 deletes first and :735 captures provenance, landing and hold facts afterwards; `line_ends` contains only part of those inputs. Today `Driver/Trees/SessionTrees/TreeSweeps.cs:221–230` snapshots them **before** removal, and `Driver/Trees/Branches/SessionBranches.cs:180–202` can subsequently forget their source. Persist a complete finish snapshot and fixed identity before deletion, and specify a branch-keyed finish claim for a line whose former slot now serves somebody else.
+
+5. **Blocking — link location does not establish ownership.** Design:496–499 admits any internal link under an eligible `node_modules`, including one the person created; `Driver/Trees/SessionTrees/TreeDependencies.cs:279–285` establishes target containment, not authorship. Record the links Daoris creates or prove them against the package’s workspace declarations, and hold unexplained links rather than retargeting them.
+
+6. **Blocking, row i — the working snapshot still loses a valid working version.** At Design:597–598, force-add an ignored file with content X, then edit it to Y: `I` preserves X, but a private index seeded from HEAD makes `add -A` ignore Y. The subsequent reset can remove Y with no snapshot holding it; seed the working snapshot from the real index’s tracked set and prove this case alongside staged deletions and interrupted restoration.
+
+7. **Non-blocking — the count and module placement are sound, but one opening sentence overclaims.** The count interpretation is explicitly the owner’s, overflow preserves today’s admission, and Design:325–337 introduces no upward edge. However, `started.tree-past-kept` at Design:919 also occurs when slots are stuck or retiring, so say that no reusable kept tree was available rather than that every tree was in use.
+
+### 3. Where it chose between the proposals
+
+1. **Non-blocking — the central choice remains reasonable, conditionally.** Preserving each line’s path retains the existing path groupers and Claude trust lookup (`Driver/Accounts/SignIns/ClaudeTrust.cs:114–120`) while avoiding the second session family. The step claim, existing record route, Settings-owned count and conservative first release have sound reasons; row b’s measurement gate correctly leaves the Windows rename and cold-build cost unresolved before activation.
+
+2. **Blocking — X’s served-build admission was dropped.** X explicitly required registration before serving, but Design:654 supplies only a hold until verdict and :398 adds a historical timestamp check. `Driver/Review/ReviewDesk.cs:226–236` permits *Show it again* without acquiring equipment, while a headless allocator’s `Driver/Trees/Branches/BranchTidying.cs:736–741` sees neither another shell’s serving table nor an answered setup as waiting; it can move that served tree. Restore cross-process admission lasting until serving stops, through a downward Workplace seam.
+
+### 4. The rows a to j
+
+1. **Non-blocking — a–c have appropriate boundaries; b’s proof needs the counterexamples above.** Row a establishes unused shapes, b implements the unwired lifecycle, and c moves the identified readers after mod-x, with legacy behavior explicitly preserved (Design:963–1029). Add the force-added ignored file, ordinary CLI entry, served-build admission race, and complete pre-delete snapshot to their respective proofs.
+
+2. **Non-blocking — d–f fix activation order, but e’s installed proof comes too early.** Design:959 keeps production activation unavailable until f, yet Design:1058 requires a real installed pooled session as e’s proof. Move that installed proof after f and before g’s measurement; keep e’s landing proof confined to its test seam.
+
+3. **Non-blocking — g–j have suitable gates, with one default-path omission.** The admission clock and h’s criteria are now explicit, i and j remain separate owner-gated changes, and the ⚖ markings on b–j are appropriate (Design:1073–1115). But h enables repositories without passing the count-setting door, so submodule refusal must also run on effective default activation and subsequent takes, with a default-on submodule fixture—not only row f’s door test.
+
+### 5. What is the owner’s
+
+1. **Blocking — the newly destructive relocation policy needs an explicit direction decision.** Design:779 treats deleting `.venv`, `obj`, `target` and other named folders as already authorized, but `docs/decisions/D195.md:23–32` authorizes only narrowly judged package folders early and expressly leaves `obj` for later evidence. The brief promises ignored dependency/build folders retained; either preserve these folders without exposing them to the next line, or put their expanded deletion policy to the owner with its concrete scope. The existing count, install opt-in, optional preservation, scratch and bounded-account questions are otherwise correctly assigned.
+
+**Verdict: another round.**
+
+## Opus (foundation), round 2
+
+The independent Opus 5.5 reader's foundation read of round 2 at `d595cabd6`: 15 findings, 1 blocking (F1, `build`, `out` and `bin` carried across a move without proof, each able to read the old path); accept after named changes the steward can check without another read, F2, F3, F4, F5, F7 and F11 before row b. It finds no case in which the pool loses work, and every round-1 finding taken, O1-F3 with C1-2.8 open in part.
+
+Read at `d595cabd6` with `git show` and `git grep`. Nothing was run. Paths use the survey's aliases. FOUNDATION1 row p merged at `600a03056`, after the `f92e95415` that round 2 cites, so some service lines have moved (finding 12).
+
+### 0. Both reads of round 1
+
+**Codex, round 1**
+
+| Finding | Round 2 | Verdict |
+|---|---|---|
+| 1.1 (blocking) an interrupted move is no interrupted opening | §5.3 park first, then switch; the pool's own lock reason; OPENCUT1 only at first making | Taken. It holds: `TreeStrays.cs:183`, `:188-190` never read `k-` or the pool's reason as an opening |
+| 1.2 (blocking) the last guards do not judge every link or repository | §5.2 step 3, a whole walk | Taken. But a finished line's nested repository is *carried*, not let go (finding 6) |
+| 1.3 a retirement without a manifest is never slimmed | §9 writes a schema-1 manifest | Taken. It holds (`SlimManifest.cs:13-14`, `:17-20`) |
+| 1.4 caches in `node_modules` | §11 drops `.cache`, `.vite`, `.vite-temp` | Taken (`TreeDependencies.cs:45`) |
+| 2.1 (blocking) the path invariant during a return | Park, switch, check, place, all under the exclusive hold | Taken. It holds for starts and the tidy (`Driver.cs:2110-2111`; `TreeStrays.cs:115`). A landing does not take that hold (finding 2) |
+| 2.2 (blocking) durable intent; git child processes | Phases, a takeover that reads the disk, a job | Taken. A refusal at placement is not specified (finding 3). A parked slot has no recorded tip (finding 4) |
+| 2.3 (blocking) the finished record | `line_ends` and `line_records` | Taken. `Left` is attributed wrongly (finding 6) |
+| 2.4 (blocking) a clean source is no clean destination | Checks at §5.3 steps 7 and 11 | Taken. It holds |
+| 2.5 (blocking) a terminal needs admission | `tree_visits` | Taken. It now also holds back the line's own claim in place (finding 7) |
+| 2.6 (blocking, row i) the index and the working tree | Separate `I` and `W` trees | Taken. It holds |
+| 2.7 (blocking) a detached no-output slot | The no-output slot stays on its branch; a finished slot is parked | Taken. It holds. §10's opening contradicts it (finding 5) |
+| 2.8 isolation as well as timing | The sentinel proof in row b | Taken in part. The proof covers only builds that rewrite their outputs (finding 1) |
+| 3.1 the lease rejection is overstated | Restated as economy; the reservation kept | Taken |
+| 3.2 the live default's consequences | The clamp; a lowered cap retires slots | Taken. The cap verb's sentence needs an upward edge (finding 8) |
+| 4.1 (blocking) row d before row e | No door before row f | Taken. Row d's rehearsal needs a seam that real processes read (finding 13) |
+| 4.2 `wwwroot` changes removals | `TreeScratch` kept byte for byte | Taken |
+| 4.3 (blocking) the crash and compatibility proofs | Every boundary stopped; a pinned pre-pool build | Taken. How the pinned build is obtained is not said (finding 13) |
+| 4.4 (blocking) row g's clock | Measured from admission; what permits row h | Taken |
+| Closing note on row a | Row a settles shapes only | Taken |
+| §5 nothing more for the owner | — | Agreed |
+
+**Opus (foundation), round 1**
+
+| Finding | Round 2 | Verdict |
+|---|---|---|
+| F1 (blocking) the destination | A unique `to`; the destination must not exist; git must list the slot at exactly `to` | Taken. It holds |
+| F2 (blocking) move before switch | Rename to the park first, detach there, place last | Taken. It holds. While the slot is parked on A's branch, a TREEGONE1 for A is refused (`TreeReturns.cs:81-85`) |
+| F3 (blocking) folders that name the old path | `.venv`, `obj` and caches dropped | Taken in part. It is **open** for `build`, `out` and `bin` (finding 1) |
+| F4 (blocking) no re-read after the switch | Steps 7 and 11 | Taken |
+| F5 the crash at `moving`; the relink's phase | `worktree repair`; the `relinked` phase; `before` | Taken |
+| F6 OPENCUT1 during a return | The pool's own reason | Taken |
+| F7 the pending record | `line_records`; `Left` and `Whole` said | Taken (see finding 6) |
+| F8 the slim at retirement | The slim's manifest | Taken |
+| F9 a finished line goes on detached | Parked at the finish | Taken |
+| F10 who runs the end | The look, idempotently; phases | Taken |
+| F11 three holders | A visit; the boxes; how long words wait | Taken |
+| F12 *Show it again* | `kept_trees.since` | Taken |
+| F13 row 12 misreads X | Restated | Taken |
+| F14 the race between builds | Named and bounded; rehearsal from row d | Taken (see findings 13 and 15e) |
+| F15 nits | Each taken | Taken |
+| §3 rows d and later wait on row b's note | Yes | Taken |
+
+None was wrong, and none was answered rather than taken. One is still open in part: O1-F3 with C1-2.8.
+
+### 1. Claims about the code
+
+- **Stale lines at `d595cabd6`.** Row p shifted these:
+  - `Core/Sessions/SessionLedger.cs`: `:320-324` is now `:328-332`, `:1602-1616` is `:1625-1639`, `:1604-1607` is `:1627-1630`, and `:1833` is `:1856`.
+  - `Core/Sessions/Sessions.cs`: `:1147-1161` is now `:1189-1203`.
+  - `Service/ServiceClient.cs`: `:2245` is now `:2265`, and `:2222-2249` is `:2242-2269`.
+  - `Http/Program.cs`: `:1435-1439` is now `:1442-1446`, and the route at `:1439` is `:1446`.
+
+  *Read at* says every other file is unchanged since `f8fbb1bb7`. That is no longer true (finding 12).
+- **§11 says `bin`, `dist`, `build`, `out`, `coverage`, `wwwroot` and `__pycache__` are "outputs no tool resolves code from".** This is wrong for `build` and `out`: CMake's build trees, including VS's `out/build/<preset>`, name the source and build directories absolutely. It is also wrong for .NET `bin` in this repository. `Daoris.Service.Http` is a Web SDK project, and its tests use `Microsoft.AspNetCore.Mvc.Testing` (`Daoris.Service.Http.Tests.csproj:16`), whose content-root attribute is compiled into the test assembly in `bin`. That is how the reader understands these SDKs; it was not run here (finding 1).
+- **§0.3 and §2.5 say no port is added.** But the cap's verb, which must name "how many retire" (§8), and the count's door, which must refuse "a repository with submodules", are both in `Settings/DriverChoicesCommand.cs:427-436`. That is Settings, rank 3, and it cannot read Workplace's `kept_trees` (finding 8).
+- **§14 says "D139's rollback cannot" reach pooled lines, "since pooled lines exist only once a build that knows them has confirmed".** Nothing gates a take on the start's confirmation. Once row h flips the default, a build's first look pools before it confirms (finding 15e).
+- **§2.3 says every rename's exclusive hold is honoured "by every build's start and tidy".** That is true. But a landing honours neither the rename's hold nor any holder in §7: it takes `LandingHolds` (`TreeLands.cs:420`) and the in-process `RepositoryHolds` (`:435`), not `TreeLock` (finding 2).
+
+Everything else that round 2 adds or re-cites holds at `d595cabd6`. I checked these:
+- `TreeLock.cs:50-63`
+- `Driver.cs:2105-2137`, `:2184-2185`, `:2192-2221`, `:2902-2910`
+- `ChatRunner.cs:630-651`
+- `TreeStrays.cs:70`, `:77`, `:115`, `:147-160`, `:181-201`, `:227-245`
+- `TreeFollows.cs:91-126`, `:132-161`
+- `SessionLocks.cs:28`, `:42-73`, `:88-134`
+- `TreeOpenings.cs:15-45`, `:108`
+- `TreeReturns.cs:48-110`
+- `TreeSetAside.cs:18-36`, `:70-135`, `:190-270`, `:313-341`
+- `SlimManifest.cs:11-29`; `SetAsideKeeping.cs:87-90`; `TreeSlims.cs:3-24`
+- `TreeScratch.cs:15-19`; `TreeDependencies.cs:24-45`
+- `ContentHolds.cs:102-106`, `:379-384`, `:432-433`, `:456-475`, `:565-574`, `:588-594`
+- `TreeSweeps.cs:191-230`
+- `HomeLease.cs:66-68`, `:165-173`; `ProcessJob.cs:15-26`
+- `TerminalModule.cs:202-218`; `LimitBox.cs:24`; `HandOver.cs:15`
+- `DesktopStore.cs:73-129`; `DriverConfig.cs:71-75`, `:549-553`
+- `ReviewDesk.cs:226-229`; `TreeRemovals.cs:220-222`; `AutoTidies.cs:190`; `TreeContext.cs:40`
+- the foundation design's `:1970-2001`, `:1987`, `:2042-2066`, `:2342`
+- every suite §17 names exists.
+
+### 2. The design as round 2 states it
+
+**A claim's destination; two processes racing a take or a return.**
+- These hold:
+  - The primary key keeps two claims off one slot, and the unique index on `to` keeps two claims off one destination.
+  - A return waits while its line's own slot is under another claim, and a take passes over a slot whose line has a claim naming its path.
+  - A dead `placed` claim still occupies `to`, so a second return of that line is refused by the index.
+- Two gaps:
+  - **An Accept in the line's own free slot takes no claim (§3.3) and is no holder (§7, §5.2 step 1).** So a choice-3 take, whose candidates are exactly unlanded lines, can rename the slot away between the landing's git steps (finding 2).
+  - **A visit refuses every claim (§2.3), including choice 1's in-place claim.** So a terminal open in A's own tree holds A's own resume, which today goes on beside it. The choice then falls to a parked slot, whose switch to A's branch is refused (A's branch is checked out in A's slot). Each free slot is marked `stuck` in turn before today's remake runs (finding 7).
+
+**The order of detach, move, switch and rename.**
+- This holds. Rename-then-detach leaves A's path empty while A's branch is at `k-<n>`, and both builds' TREEGONE1 refuse then (`TreeReturns.cs:81-85`).
+- Detaching while the hold is still held would close even that window; it costs nothing.
+- `git switch` runs `post-checkout` at the park. A hook that installs or records its directory writes output tied to the park's path. The checks at steps 7 and 11 turn that into `stuck`, so such a repository sticks every slot it takes (finding 9).
+
+**A refusal mid-protocol.** Step 2's refused rename is specified. Step 8's is not, nor is step 11's rename back. In that state B's new branch, or R's branch, is checked out at the park:
+- B's retry on another slot fails `switch -c`, because the branch exists.
+- R's retry fails, because the branch is checked out at `k-<n>`.
+- TREEGONE1 refuses R's remake (`:81-85`).
+
+R cannot come back until a person acts (finding 3).
+
+**A crash at every phase.**
+- `judged` and `parking`: the claim is dropped. This holds.
+- A rename that outran its `gitdir` write: repaired. If an older build's TREEGONE1 reaches it first, it force-removes the registration (`TreeReturns.cs:94-98`), and the folder becomes the pool's stray. Nothing is lost.
+- `parked` to `checked-park`: detach, then `update-ref -d <start>`. This holds. Two gaps:
+  - **The drop and the npm replacement leave an untracked folder if a crash interrupts the delete**, and that folder holds the slot until the person presses twice (finding 15a).
+  - **Step 6 and §5.4 compare a parked slot's HEAD with "its recorded tip", but no column records it.** `kept_trees` has no tip, `line` is `''` when parked, `line_ends` has no slot number, and the claim's `expect` dies with the claim (finding 4).
+- `placing` to `checked`: the takeover moves the slot back to the park. But between the crash and the takeover, nothing says a pool-aware start of that line is *held* rather than falling through to `EnsureAsync`. `EnsureAsync` answers *stands* (`TreeReturns.cs:58`) for an unchecked slot whose links may still lead into the former path, which another line's tree may now occupy (finding 11).
+- `opened`: the ledger holds the slot. This holds.
+- `finish`, `end` and `retire`: each resumes at its phase. This holds.
+- Choice 4's first making (today's open under OPENCUT1's lock, which `worktree move` refuses) has no row in the phase table (finding 15b).
+
+**What may cross a move.**
+- `.venv`, `obj` (NuGet's props), `target`, `.angular`, `.next`, `.gradle` and the top-level `node_modules` caches are dropped. This holds.
+- **`build` and `out` are carried without proof.** A CMake or Ninja tree moved with the slot compiles the sources at the old path, which is another line's tree within the hour, and regenerates into it.
+- **`bin` is carried.** With `obj` dropped, every build rebuilds `bin` anyway, so it saves little. But a run without a rebuild reads the old content root, e.g. `dotnet test --no-build` through Mvc.Testing's attribute.
+- Row b proves only builds that rewrite their outputs (finding 1).
+
+**The check after the switch.** This holds. It catches a late write, a path ignored only on the old branch, hook output and a placed slot whose links lead outside `to`. A failed check opens no record.
+
+**A terminal's hold across processes.**
+- This holds, through the transaction on `tree_visits`.
+- It holds too much (choice 1, finding 7).
+- Off Windows the job is a no-op (`ProcessJob.cs:15-18`), so a dead shell's terminal child can outlive the visit the look takes over. This is minor and goes with §20's off-Windows item.
+
+**An older build on the same home racing a take.**
+- This needs `--share` or a verb beside the instance (`HomeLease.cs:57-60`, `:181-191`).
+- These hold:
+  - Its TREEGONE1 check runs under the shared hold (`Driver.cs:2110-2116`), which the rename's exclusive hold refuses.
+  - The window from `:2117` to `:2184` is bounded by holders it can read: words waiting (both builds read the service), boxes, and the ledger after the open.
+  - A start that loses the race spawns into a missing directory. Spawn files go to the home (`SpawnServers.cs:28`), not the tree, so it fails rather than running elsewhere.
+- The "rollback cannot" claim does not hold after row h (finding 15e).
+
+**The finished record in the store.**
+- `line_ends` captures the tree's facts at each let-go and each take, and `line_records` keeps the first identity. This holds.
+- Two problems:
+  - **§10's opening reads "the line's free slot as no tree of the line's".** Under `GoesByItself` (`TreeSetAside.cs:27-30`: with no tree, it goes), that finishes a no-output line while its slot is still the conversation's place (finding 5).
+  - **A finished line's carried scratch is named again in the next line's `left`, grows without bound until row j, and contradicts the D51 note's rule 4 (§13)** (finding 6).
+
+**A finished line coming back.**
+- A landed line takes a slot from its landing (`Driver.cs:2119-2127`), and a no-output line regrows its branch under `line_ends`' licence. Neither goes on detached. This holds.
+- An older build is held or grows a tree fresh, and loses nothing. This holds.
+
+**FOUNDATION1's map.**
+- The holders arrive as delegates Loop composes. Course and Review call Workplace downward, and the terminal (Modules) calls Workplace downward. `SystemSpace` and `BranchTidying` are Workplace's. This holds.
+- One upward edge: the Settings verb's sentences (finding 8).
+
+**Work lost.** I found no case in which the pool loses committed or uncommitted work. Every gap above ends in `stuck`, held, or a refused Accept.
+
+### 3. The rows, their proofs, the ⚖ rows, the owner's questions and the order
+
+- **Row a.** Right as a shapes row. Its claim takeover over `store_runs` is the one D212's note on z-iii assigns first to Part B's row f-i ("row f-i's claims are the first to read it"). The two should share one implementation (finding 14).
+- **Row b.** It lacks these proofs:
+  - placement refused at the park (finding 3)
+  - an Accept racing a take (finding 2)
+  - a run of the carried outputs without a rebuild, and a CMake tree (finding 1)
+  - a `post-checkout` hook (finding 9)
+  - a pool-aware start of the line in each crash state (finding 11)
+  - an interrupted drop (finding 15a)
+  - a parked slot's HEAD moved (finding 4)
+- **Row c.** Right. The opened moment should be `kept_trees.since` (finding 15d).
+- **Row d.** Its pinned-build rehearsal has no named source: `tools/deployment-rehearsal.mjs` publishes this checkout only. It also has no named seam that real processes read, while §17 allows only a test's seam (finding 13).
+- **Row e.** Right. Its installed proof is bounded by §18 item 5.
+- **Row f.** Right, apart from the cap verb's edge (finding 8).
+- **Row g.** It should count starts held behind another start's exclusive hold (finding 10). In this repository, tests write `_fixtures/` (e.g. `LandingHoldsTests.cs:28`), so most slots cannot be taken while their line may return, and choice 3 will rarely run (finding 6). Row g's numbers will mostly measure choice 2.
+- **Row h.** It turns the pool on for stacks never measured, so it rests on finding 1.
+- **Rows i and j.** Correctly the owner's. Row j's question narrows if finding 6's first option is taken.
+- **The ⚖ marks** are right: rows b to j each reset, remove, or change which tree a read reaches, and row a does none of these.
+- **The owner's questions.** All five are well formed: what it is, what a yes does, where to look. Item 1's *no* implies a waiting design that this round does not specify, so a *no* means another round; it should say so. Nothing that needs the owner is missing.
+- **The order.** Every row comes after mod-x, which has not landed: D212 records mod-i to mod-vii built, plus row p. Two Part B dependencies are not named:
+  - the dead-run takeover over `store_runs` (row f-i)
+  - the boxes, which row f-i stops being written (foundation §13.3's course row says "imported and no longer written"). So the standing-move holder must read both the boxes and `moves` from row d on, not switch over at f-i (finding 14).
+
+  DEV6 is named.
+
+### 4. Findings
+
+1. **Blocking. The carried kinds are not proved, and `build`, `out` and `bin` read the old path.**
+   - **Where:** §11 *What crosses a move*; §0's standing; D214 point 11; row b's proof; `TreeScratch.cs:17`.
+   - **What goes wrong:**
+     - A CMake or Ninja `build/` (and VS's `out/build/<preset>`) names the source and build directories absolutely. Moved, it compiles the former path's sources, which another line's tree may now hold, and regenerates into it.
+     - .NET `bin` holds assemblies and manifests that name content roots absolutely, which `--no-build` runs read. This repository's own `Daoris.Service.Http.Tests` uses Mvc.Testing.
+     - With `obj` dropped, carrying `bin` saves almost nothing.
+     - This is O1-F3's hazard, and the design's own rule, "only folders proved to read and write their own path are carried", is not applied to the carried subset.
+   - **Smallest change:** `build` and `out` join the dropped kinds. Every carried kind other than `node_modules` is carried only once row b's isolation proof names it, and that proof adds a run of the carried outputs without a rebuild (`dotnet test --no-build` against the sentinel tree) and a CMake tree. Until then a kind is dropped, as `obj` is. D195's "`bin/` never" concerns the slim of a set-aside folder, not a move.
+2. **Not blocking. A landing in progress holds nothing.**
+   - **Where:** §3.3's landing row; §7; §5.2 step 1; `TreeLands.cs:420`, `:435`; `Trees/Landing/LandingHolds.cs:61` (LANDRACE1's per-tree hold, a file shared across processes).
+   - **What goes wrong:** a choice-3 take can rename the slot between an Accept's git steps. Nothing wrong lands, because of the path invariant, but the Accept fails after landing: LANDSYNC1's step and the Tidy rule run against a gone path.
+   - **Smallest change:** read `LandingHolds` as a holder, in §7 and in §5.2 step 1, under the exclusive hold. Row b adds an Accept racing a take.
+3. **Not blocking. A refused placement, or a refused rename back, is unspecified.**
+   - **Where:** §5.3 steps 8 and 11; §5.4's "the slot stays where it is, free".
+   - **What goes wrong:** B's new branch, or R's branch, is left checked out at the park. B's retry and R's retry both fail, and TREEGONE1 refuses R (`TreeReturns.cs:81-85`).
+   - **Smallest change:** an in-process refusal at step 8 or step 11 runs the takeover's park path at once: detach at the park, `update-ref -d` on B's branch at its `start`, record the slot parked, try again at the next look. Row b plants a held handle at the park.
+4. **Not blocking. A parked or stuck slot has no recorded tip.**
+   - **Where:** §2.3's tables (`kept_trees` has no tip; `line` is `''` when parked; `line_ends` has no slot number); §5.2 step 6; §5.4's "its recorded tip".
+   - **What goes wrong:** X's HEAD pin cannot be judged for choice 2.
+   - **Smallest change:** `kept_trees` gains `tip`, written at `parked` and at a failed check, and step 6 compares a parked slot's HEAD with it.
+5. **Not blocking. §10's opening contradicts §6.**
+   - **Where:** §10's first paragraph versus §6, §10's own *GoesByItself* paragraph and D214 point 6; `TreeSetAside.cs:27-30`.
+   - **What goes wrong:** reading "the line's free slot as no tree of the line's" lets the tidy finish a no-output line (an empty branch is removable) while its slot still stands at its path.
+   - **Smallest change:** read a free slot at its line's path as that line's tree (`Holds` and `Worked`, as today).
+6. **Not blocking. A finished line's carried scratch.**
+   - **Where:** §5.2 step 5; §10 *What `Left` and `Whole` mean*; §13's D51 note; §15's `started.tree-kept`; §6's `line_ends.left`; `.gitignore:3`, `:8`, `:14`, `:16` (`local/`, `_fixtures/`, `publish/`, `*.log`).
+   - **What goes wrong:**
+     - It contradicts rule 4 as the D51 note restates it: "what it holds untracked is the kept dependency and build folders".
+     - It is not said when the tree is handed over.
+     - The next line's `left` names it again.
+     - It grows without bound until row j.
+     - It hands the next agent another line's `local/`, and any agent-local settings the repository ignores.
+     - Any line that wrote scratch cannot have its slot taken while it may come back.
+   - **Smallest change:** at the finish, move the line's scratch outside the list aside with its record, as KEEPSIZE1b moves a finished tree's (it goes an hour after the record; today's decided rule), so row j narrows to clearing at a take. At the least: the D51 note and `started.tree-kept` name carried scratch, `left` excludes names carried in, and §8's *what it does not bound* names it.
+7. **Not blocking. A visit refuses the line's own claim in place.**
+   - **Where:** §2.3 ("no claim and no visit", for every kind); §7's visit row; §5.1 choice 1; §5.3 step 8 ("a folder left at R's path is moved aside").
+   - **What goes wrong:** a person's terminal holds the line's own resume, words and Accept, which today go on beside it. The choice falls to other slots and marks each `stuck` before today's remake runs.
+   - **Smallest change:** a visit refuses only claims that move the slot. A return is chosen only where the line's path holds no tree git lists, and step 8 moves aside only a folder git does not list.
+8. **Not blocking. An upward edge from Settings to Workplace.**
+   - **Where:** §8 (the cap verb names "how many retire"; the count's door refuses submodules); `Settings/DriverChoicesCommand.cs:427-436`; foundation §14.2 row 3; §0.3's "no port".
+   - **Smallest change:** a port that Settings declares and Workplace answers by module initializer, within D212's three bounds, or compose those sentences above Settings. §0.3 and §2.5 say so.
+9. **Not blocking. Git hooks at the park.**
+   - **Where:** §5.3 step 4; §12; §5.4 (a stuck slot is freed only by a clean judgement).
+   - **What goes wrong:** `git switch` runs `post-checkout` in `k-<n>`. An install hook (husky, lefthook) writes junctions or a venv tied to the park's path, the checks fail, and every take in that repository sticks a slot for good.
+   - **Smallest change:** say how hooks run in the pool's git steps: either the park's switch runs with hooks off and the opening says the hook did not run, or such a repository is refused at the count's door as submodules are. Row b proves it.
+10. **Not blocking. Contention on the exclusive hold.**
+    - **Where:** §2.3 (every rename, the whole walk re-judged, the relink and the last status, all under `TreeLock` alone); `Driver.cs:2110-2111`, `:2184-2185`; `ChatRunner.cs:636-637`; `TreeLock.cs:22-25`.
+    - **What goes wrong:** two starts in one pooled repository now take turns, one per look, and the person's new conversation is refused while any take holds the lock.
+    - **Smallest change:** a conversation that cannot get the lock in row b's bounded moment opens a tree of its own (choice 5). Re-judge under the lock only what a rename makes stale (status, HEAD, lock, git's list). Row g counts starts held this way.
+11. **Not blocking. A pooled line's start while a claim names its path.**
+    - **Where:** §3.2's TREEGONE1 row; §3.3; §2.3's takeover; `TreeReturns.cs:56-58`, `:94-98`.
+    - **What goes wrong:** nothing says the start is held rather than falling to `EnsureAsync`. `EnsureAsync` answers *stands* for an unchecked `placed` slot, and it force-removes a registration that a rename outran.
+    - **Smallest change:** a pooled line's start is held while any claim names its path or its slot, and the look runs takeovers before it plans starts. Row b runs a pool-aware start of the line in each crash state.
+12. **Not blocking. Lines stale at `d595cabd6`, from row p.**
+    - **Where:** *Read at*; the four files listed in §1 above.
+    - **Smallest change:** re-cite them, or add row p to *Read at*.
+13. **Not blocking. Row d's rehearsal cannot be built as written.**
+    - **Where:** §14 *Proof*; rows d and e; `tools/deployment-rehearsal.mjs` (it publishes this checkout only).
+    - **What is missing:** where the pinned pre-pool artefact comes from, and how real processes switch the pool on when §17 allows only a test's seam.
+    - **Smallest change:** publish the last release's commit into `_fixtures/` with no network, and name the seam (e.g. an environment variable read nowhere else).
+14. **Not blocking. Part B dependencies the order does not name.**
+    - **Where:** §17; §2.3's dead-run takeover; D212's note on z-iii; foundation §13.3's course row.
+    - **Smallest change:** row a builds §13.4's takeover over `store_runs` once, for both TREEPOOL and f-i, or waits on f-i. §7's standing-move holder reads the boxes *and* `moves` from row d on.
+15. **Not blocking. Nits.**
+    - (a) The drop and the npm replacement should use a named Daoris prefix, which the takeover finishes deleting. They should drop only folders git reports ignored whole, as `TreeSlims.cs:19-22` reads them; this repository *tracks* `src/Daoris.Cli/bin` (`.gitignore`, the .NET block).
+    - (b) Choice 4's making needs its own phases in §2.3, including how the takeover lifts OPENCUT1's lock before a move.
+    - (c) A repository that gains a submodule after it opts in has slots holding a gitlink that can be neither moved nor parked, so their finish retries every look. Say that such a slot leaves the pool and its line finishes by today's set-aside.
+    - (d) `ContentHolds`' *opened* for a slot should be `kept_trees.since`, not `GrownBranch.At`. Otherwise another line's writes under a shared ignored folder read as the returning line's own (`ContentHolds.cs:588-594`).
+    - (e) Gate a take on the start's confirmation, as §13.5 gates migrations that raise the stamp, or drop §14's "D139's rollback cannot".
+    - (f) `tree.kept-stuck`'s Chinese "无法带到主线" says *main line* where a return goes to a line's own branch.
+
+**15 findings, 1 of them blocking.**
+
+**Verdict: accept after named changes the steward can check without another read.** The blocking change is finding 1's list and proof. Findings 2, 3, 4, 5, 7 and 11 are mechanics contracts that should land in the design before row b. Every other finding can be taken in the row it names. The central mechanics hold at the code: the park, switch, check and place order, the unique and absent destination, the disk-first takeover and the finish into the store. I found no case in which they lose work.
