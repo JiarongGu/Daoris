@@ -1039,16 +1039,6 @@
       }
     },
     {
-      "family": "the account rule's vocabulary, which moves down to Agents (O4-6)",
-      "after": "Agents",
-      "files": {
-        "Agents/ResumeAccount.cs": ["ContinueReason","ContinueWhy"],
-        "Agents/Acp.cs": ["ContinueWhy"],
-        "Agents/AcpResumeRefused.cs": ["ContinueReason"],
-        "Events/NoteCodes.cs": ["ContinueReason","ContinueWhy"]
-      }
-    },
-    {
       "family": "Workplace names Context",
       "after": "Workplace",
       "files": {

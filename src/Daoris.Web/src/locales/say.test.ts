@@ -12,13 +12,26 @@ import { en, zh } from '.';
  */
 
 /**
- * The file that declares each class an alias may name, read by name: `ContinueWhy` stays in `Continuation.cs`, and FOUNDATION1's
- * mod-vii moved `HandOverAskWhy` into Events, its own file.
+ * The file that declares each class an alias may name, read by name: Agents' `ContinueWhy` forwards Events' `ContinueCodes`
+ * (FOUNDATION1 mod-ix), and `HandOverAskWhy` is the Events-owned hand-over vocabulary.
  */
 const ALIASED: Record<string, () => string> = {
-  ContinueWhy: () => driverSource('Continuation.cs'),
+  ContinueWhy: () => driverSource('ContinueReason.cs'),
+  ContinueCodes: () => driverSource('ContinueCodes.cs'),
   HandOverAskWhy: () => driverSource('HandOverAskWhy.cs'),
 };
+
+/** Follow a forwarded constant to its literal owner; a missing target or cycle fails the twin instead of dropping a code. */
+function literalOf(alias: string, name: string, seen: string[] = []): string {
+  const key = `${alias}.${name}`;
+  expect(seen, `constant alias cycle at \`${key}\``).not.toContain(key);
+  const source = ALIASED[alias];
+  expect(source, `\`${alias}\` is no class an alias here is read from: add the file that declares it`).toBeTruthy();
+  const block = new RegExp(`static class ${alias}\\b\\s*\\{([\\s\\S]*?)\\n\\}`).exec(source!())?.[1] ?? '';
+  const target = new RegExp(`public const string ${name} = (?:"([^"]+)"|(\\w+)\\.(\\w+));`).exec(block);
+  expect(target, `\`${key}\` is no constant in the file that declares ${alias}`).toBeTruthy();
+  return target![1] ?? literalOf(target![2]!, target![3]!, [...seen, key]);
+}
 
 /** The `public const string` codes of one static class, one per line as the driver writes them; an alias is resolved through its target. */
 function codesOf(file: string, className: string): string[] {
@@ -27,12 +40,8 @@ function codesOf(file: string, className: string): string[] {
   return [...block.matchAll(/public const string \w+ = (?:"(?<code>[^"]+)"|(?<alias>\w+)\.(?<name>\w+));/g)].map((match) => {
     const { code, alias, name } = match.groups as { code?: string; alias?: string; name?: string };
     if (code) return code;
-    // An alias (`WordsNever.Teammate = ContinueWhy.Teammate`) names another class's constant: read that one where it is declared.
-    const source = ALIASED[alias!];
-    expect(source, `\`${alias}\` is no class an alias here is read from: add the file that declares it`).toBeTruthy();
-    const target = new RegExp(`public const string ${name} = "([^"]+)";`).exec(source!());
-    expect(target, `\`${alias}.${name}\` is not a literal in the file that declares ${alias}`).toBeTruthy();
-    return (target as RegExpExecArray)[1];
+    // WordsNever.Teammate -> ContinueWhy.Teammate -> ContinueCodes.Teammate, each read where it is declared.
+    return literalOf(alias!, name!);
   });
 }
 
@@ -57,6 +66,13 @@ const tables = [
 ];
 
 describe('the refusal codes the driver declares, held to the page’s tables', () => {
+  it('reads every account-rule code through its forwarding constant in declaration order', () => {
+    expect(codesOf('ContinueReason.cs', 'ContinueWhy')).toEqual([
+      'account', 'adapter', 'unkept', 'tree', 'unable', 'offered', 'gone', 'exited', 'refused', 'ended',
+      'elsewhere', 'teammate', 'intake', 'stood-down', 'started', 'resumed',
+    ]);
+  });
+
   it('reads the driver’s declarations', () => {
     // A scan that matched nothing would pass on a moved or renamed class: it has to see them.
     expect(codesOf('GoOnNew.cs', 'GoOnNew').sort()).toEqual(['closed', 'conversation', 'no-words', 'not-cooling', 'running']);

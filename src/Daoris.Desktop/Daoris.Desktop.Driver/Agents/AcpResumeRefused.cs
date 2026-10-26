@@ -14,6 +14,8 @@ public sealed class AcpResumeRefused(ContinueReason why, string? words)
     /// <summary>Why, by a code the log writes and a line the note says, which never quotes the agent.</summary>
     public ContinueReason Why { get; } = why;
 
+    IContinueReason IResumeRefused.Why => Why;
+
     /// <summary>The agent's own words, where it refused in any: for the record's conversation on this machine, never a note.</summary>
     public string? Words { get; } = words;
 }

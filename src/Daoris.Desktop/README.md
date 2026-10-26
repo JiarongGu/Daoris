@@ -31,6 +31,8 @@ explains captures and shutdown; [Installing it](#installing-it-2026-09-22) expla
 
 The driver's `Agents/` owns adapters, accounts, usage, retries and session processes, with pure account rules in `Agents/Domain/`
 and tests mirrored under `Driver.Tests/Agents/`. Namespaces remain `Daoris.Driver`; D212 records the remaining upward cuts.
+Events owns resume reason codes and the `IContinueReason` reading contract; Agents owns `ContinueReason` and `ContinueWhy`'s
+policy and sentences. Its public constants forward to Events, and a refused door exposes the same reason through the lower port.
 The instruction accounting sources in `Accounts/` and session parts in `Agents/Adapters/` belong to Context until its move.
 
 The driver's `Knowledge/` owns the connector, trace, room sections and rendered room facts (FOUNDATION1 mod-viii, D212).

@@ -1226,7 +1226,7 @@ export const REACH = Object.freeze([
     paths: [
       'NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'Landing.cs',
       // MSG1g3: the page's say twin holds its refusal tables to these codes.
-      'GoOnNew.cs', 'SessionSay.cs', 'Continuation.cs', 'ChatRunner.StartFrom.cs',
+      'GoOnNew.cs', 'SessionSay.cs', 'Continuation.cs', 'ContinueReason.cs', 'ContinueCodes.cs', 'ChatRunner.StartFrom.cs',
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes; FOUNDATION1 mod-vii moved the codes it aliases
       // into Events, so the twin reads their literals there.
       'HandOver.cs', 'HandOverAskWhy.cs',
