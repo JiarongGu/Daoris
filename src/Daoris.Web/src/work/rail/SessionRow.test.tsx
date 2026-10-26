@@ -488,6 +488,38 @@ describe("a row as the list's reader places it", () => {
     }
   });
 
+  /**
+   * LIMITSWITCH3b (D137's note of 2026-10-26): a closed quest's completed record whose words are held for a cooling account reads the wait
+   * as its state label, D206 §3.7's word, in both languages, in place of *completed*; its stored state is still completed, and a record
+   * held for anything else, or for nothing, still reads completed.
+   */
+  it('reads a record held for an account’s reset as that wait, never completed, in both languages', async () => {
+    const ended = session({ state: 'completed', quest: '7a82cc' });
+    const until = '2026-10-04T12:30:00Z';
+    const held = { why: 'cooling', reason: 'its account is cooling.', until, account: 'account-2', accountName: 'Work' };
+    const { rerender } = render(<SessionRow session={ended} grouping={placed({ group: 'later', shown: 'limit-waits', holds: held })} />);
+    expect(screen.getByText('waiting for a limit to reset')).toBeInTheDocument();
+    expect(screen.queryByText('completed')).toBeNull();
+    // The line beside it still says when and on which account.
+    expect(screen.getByText((said) => said.includes(`it resumes by itself at ${moment(until)}, on Work.`))).toBeInTheDocument();
+
+    await i18n.changeLanguage('zh');
+    try {
+      rerender(<SessionRow session={ended} grouping={placed({ group: 'later', shown: 'limit-waits', holds: held })} />);
+      expect(screen.getByText('正在等待额度重置')).toBeInTheDocument();
+      expect(screen.queryByText('已完成')).toBeNull();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+
+    // Held for the person's hold, or for nothing, a completed record still reads completed.
+    rerender(<SessionRow session={ended} grouping={placed({ group: 'later', shown: 'completed', holds: { why: 'hold', reason: 'held.', repository: 'engine' } })} />);
+    expect(screen.getByText('completed')).toBeInTheDocument();
+    rerender(<SessionRow session={ended} grouping={placed({ group: 'ended', shown: 'completed' })} />);
+    expect(screen.getByText('completed')).toBeInTheDocument();
+    expect(screen.queryByText('waiting for a limit to reset')).toBeNull();
+  });
+
   /** A pause's line names whose pause, as before; what holds the words adds nothing beside it. */
   it('lets a pause name itself where the words wait on it', () => {
     render(

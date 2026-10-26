@@ -371,7 +371,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         var row = (await AnswerAsync(new DriverModule(Bus, loop), "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
 
-        Assert.Equal(("later", "completed"), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
+        Assert.Equal(("later", ShownState.LimitWaits), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
         var holds = row.GetProperty("holds");
         Assert.Equal(WordsHold.Cooling, holds.GetProperty("why").GetString());
         Assert.Equal(until, holds.GetProperty("until").GetDateTimeOffset());
@@ -400,7 +400,7 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         var row = (await AnswerAsync(new DriverModule(Bus, loop), "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
 
-        Assert.Equal(("later", "completed"), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
+        Assert.Equal(("later", ShownState.LimitWaits), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
         var holds = row.GetProperty("holds");
         Assert.Equal(WordsHold.Cooling, holds.GetProperty("why").GetString());
         Assert.Equal(until, holds.GetProperty("until").GetDateTimeOffset());

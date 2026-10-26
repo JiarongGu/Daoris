@@ -333,7 +333,9 @@ public sealed class SessionsCommandTests : IDisposable
         var (exit, said) = await RunAsync(ledger, [], world: world);
 
         Assert.Equal(0, exit);
-        Assert.Contains("Resumes later (1)\n  c00l1ng0  completed  engine — Trim the readme", said);
+        // LIMITSWITCH3b: the wait is the word, never the state the record ended in; the hold's line beside it says the reset.
+        Assert.Contains("Resumes later (1)\n  c00l1ng0  waiting for a limit to reset  engine — Trim the readme", said);
+        Assert.DoesNotContain("completed", said);
         Assert.Contains("held: it waits: the `claude` account `work` is cooling until", said);
         Assert.Contains("`daoris-driver sessions go-on-new c00l1ng0`.", said);
         Assert.DoesNotContain("going on", said);
@@ -369,7 +371,8 @@ public sealed class SessionsCommandTests : IDisposable
         var (_, said) = await RunAsync(ledger, [], world: Cooling((adapter, profile) =>
             adapter != "claude-code" ? null : profile == "work" ? own : profile == "home" ? other : null));
 
-        Assert.Contains("Resumes later (1)\n  r3base00  completed  engine — Trim the readme", said);
+        Assert.Contains("Resumes later (1)\n  r3base00  waiting for a limit to reset  engine — Trim the readme", said);
+        Assert.DoesNotContain("completed", said);
         Assert.Contains("held: it waits: Every account it may run on is at its limit", said);
         Assert.Contains("Every account it may run on is at its limit: it goes on by itself once the `claude` account `home` is ready again", said);
         Assert.DoesNotContain("so your words wait to go on in it then", said);

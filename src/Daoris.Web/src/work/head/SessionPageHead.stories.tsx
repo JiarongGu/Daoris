@@ -91,6 +91,28 @@ export const TryingAgain: Story = { render: (args) => <TryingAgainHead {...args}
 /** The same in 中文: 将于 … 重试. */
 export const TryingAgainInChinese: Story = { ...TryingAgain, decorators: [sessionWidths.half, chinese] };
 
+/** The head of a closed quest's finished session whose words are held for a cooling account, its facts as the frame reads them. */
+function HeldForALimitHead(args: ComponentProps<typeof SessionPageHead>) {
+  const { t } = useTranslation();
+  const grouping = {
+    session: SESSION.id, group: 'later', shown: 'limit-waits', archived: false, teammate: false,
+    holds: { why: 'cooling', reason: 'its account is cooling.', until: '2026-10-26T12:30:00Z', account: 'account-2', accountName: 'Work' },
+  } as const;
+  return <Page><SessionPageHead {...args} facts={sessionFacts(t, { session: args.session, shown: args.shown, grouping })} /></Page>;
+}
+
+/**
+ * LIMITSWITCH3b (D137's note of 2026-10-26): a closed quest's finished session whose words wait for an account's reset reads the wait as its
+ * word, D206 §3.7's *Waiting for a limit to reset*, with its time and account on the line, never *completed*.
+ */
+export const HeldForALimit: Story = {
+  args: { session: { ...SESSION, state: 'completed' }, shown: 'limit-waits', acts: ['review', 'openFolder', 'terminal', 'detach', 'archive', 'copy'] },
+  render: (args) => <HeldForALimitHead {...args} />,
+};
+
+/** The same in 中文: 正在等待额度重置. */
+export const HeldForALimitInChinese: Story = { ...HeldForALimit, decorators: [sessionWidths.half, chinese] };
+
 /** Past its transient bound (AGENTERRORS1a2): *Try again* leads, releasing that end alone, in the same conversation. */
 export const PastItsTransientBound: Story = {
   args: {

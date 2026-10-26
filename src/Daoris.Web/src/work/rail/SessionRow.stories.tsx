@@ -429,6 +429,23 @@ export const Helper: Story = {
 export const HelperChinese: Story = { ...Helper, decorators: [chinese] };
 export const HelperDark: Story = { ...Helper, decorators: [dark] };
 
+/**
+ * LIMITSWITCH3b (D137's note of 2026-10-26): a closed quest's finished session whose words wait for an account's reset reads the wait as its
+ * word, never *completed*, and its line says when it goes on by itself and on which account.
+ */
+export const HeldForALimit: Story = {
+  args: {
+    session: { ...SESSION, state: 'completed', created: at(300), updated: at(120) },
+    grouping: placed({
+      group: 'later', shown: 'limit-waits',
+      holds: { why: 'cooling', reason: 'its account is cooling.', until: '2026-10-28T12:30:00Z', account: 'account-2', accountName: 'Work' },
+    }),
+    place: 'engine',
+  },
+};
+export const HeldForALimitChinese: Story = { ...HeldForALimit, decorators: [chinese] };
+export const HeldForALimitDark: Story = { ...HeldForALimit, decorators: [dark] };
+
 /** A person's stop that holds its quest (SESSUX1b): its line says so, and its ⋯ offers *Try again*. */
 export const StoppedHoldingItsQuest: Story = {
   args: {

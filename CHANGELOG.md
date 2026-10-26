@@ -5,6 +5,10 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session held for an account's reset no longer reads *completed* (LIMITSWITCH3b, D137). Where Daoris holds a finished session's words
+  for a cooling account, its rail row, its page's head and the terminal's `sessions` list say *waiting for a limit to reset* (正在等待额度重置)
+  in place of the state it ended in, with its time and account on the line beside it; the record itself is unchanged, and a finished session
+  with nothing held still reads completed.
 - A conversation you picked an account for keeps that pick even when its own conversation is lost (PICKLOST1, D212). Where its limit has
   ended it and the account you picked is cooling, Daoris now waits for that account instead of going on with another, and goes on there
   afresh once it is ready, still on the account you picked. A lost conversation you picked nothing for goes on with another account as before.
