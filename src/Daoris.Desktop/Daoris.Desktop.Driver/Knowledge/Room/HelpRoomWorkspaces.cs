@@ -48,22 +48,22 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
     /// The workflow a repository's work follows with no task's kind (design §4.1, rows 3, 5 and 6), Current where nothing chooses
     /// one, its newest version where it is saved here, and a repository's own kinds.
     /// </summary>
-    private static HelpWorkflowFollowed Followed(DriverConfig config, IReadOnlyList<WorkflowFileFound>? saved, string repository, string workspace)
+    private static HelpWorkflowFollowed Followed(DriverConfig config, IReadOnlyList<IKnowledgeWorkflowFile>? saved, string repository, string workspace)
     {
-        var selected = WorkflowSelection.Resolve(config, repository, workspace, null);
+        var selected = KnowledgeWorkflows.Current.Select(config, repository, workspace);
         var own = config.Workflows.FirstOrDefault(pair => string.Equals(pair.Key, repository, StringComparison.OrdinalIgnoreCase)).Value;
         var followed = new HelpWorkflowFollowed(selected.Workflow, selected.Level)
         {
             Kinds = [.. own?.Kinds.Select(kind => (kind.Key, kind.Value.Workflow)) ?? []],
         };
-        if (selected.Workflow == WorkflowSelection.Current || saved is null) return followed;
+        if (selected.Workflow == WorkflowLevels.Current || saved is null) return followed;
 
         var found = saved.FirstOrDefault(each => each.Id == selected.Workflow);
         return found switch
         {
             null => followed with { Problem = "not saved here" },
-            { Read.Problem: not null } => followed with { Problem = "which cannot be read here" },
-            _ => followed with { Name = found.Read.Name, Version = found.Read.Versions[^1].Version },
+            { Problem: not null } => followed with { Problem = "which cannot be read here" },
+            _ => followed with { Name = found.Name, Version = found.NewestVersion },
         };
     }
 
@@ -141,7 +141,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             WorkflowLevels.Workspace => "its workspace's",
             _ => "the default",
         };
-        var what = followed.Workflow == WorkflowSelection.Current ? "Current"
+        var what = followed.Workflow == WorkflowLevels.Current ? "Current"
             : followed.Problem is { } problem ? $"`{followed.Workflow}`, {problem}"
             : followed.Version is { } version ? $"`{followed.Workflow}` v{version}, {followed.Name}"
             : $"`{followed.Workflow}`";
@@ -154,7 +154,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
     private static string Mapped(string? workflow, string none) => workflow switch
     {
         null => none,
-        WorkflowSelection.Current => "Current",
+        WorkflowLevels.Current => "Current",
         _ => $"`{workflow}`",
     };
 

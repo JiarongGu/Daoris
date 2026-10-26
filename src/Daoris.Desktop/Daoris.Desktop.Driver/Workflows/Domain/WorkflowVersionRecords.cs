@@ -20,4 +20,9 @@ public sealed record WorkflowVersionAdded(string Id, string? Name, string Door, 
 public sealed record WorkflowAddPlan(JsonObject? Result, int? Version, string? Problem);
 
 /// <summary>A workflow's file as found under the home: the file as parsed (null where absent or not JSON) and what it reads as.</summary>
-public sealed record WorkflowFileFound(string Id, JsonNode? File, NamedWorkflowRead Read);
+public sealed record WorkflowFileFound(string Id, JsonNode? File, NamedWorkflowRead Read) : IKnowledgeWorkflowFile
+{
+    string? IKnowledgeWorkflowFile.Problem => Read.Problem;
+    string? IKnowledgeWorkflowFile.Name => Read.Name;
+    int IKnowledgeWorkflowFile.NewestVersion => Read.Versions[^1].Version;
+}

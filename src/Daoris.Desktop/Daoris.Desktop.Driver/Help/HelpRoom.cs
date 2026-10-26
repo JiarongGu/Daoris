@@ -535,7 +535,7 @@ internal sealed record HelpMachineSources(
     public IReadOnlyList<HistoryReading>? History { get; init; }
 
     /// <summary>The named workflows under the home (WORKFLOW1h-b, the workflow design §8.4); null where none were read.</summary>
-    public IReadOnlyList<WorkflowFileFound>? Workflows { get; init; }
+    public IReadOnlyList<IKnowledgeWorkflowFile>? Workflows { get; init; }
 
     /// <summary>The person's approvals of what plugins hand Ask Daoris (HELPPLUG1a's tightening); null where none were read.</summary>
     public HelpGrantSet? Grants { get; init; }

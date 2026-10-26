@@ -295,6 +295,7 @@
     "Knowledge/ConfiguredAccess.cs": "Knowledge",
     "Knowledge/Domain/Trace.Chain.cs": "Knowledge",
     "Knowledge/Domain/ReviewFacts.cs": "Knowledge",
+    "Knowledge/Domain/WorkflowFacts.cs": "Knowledge",
     "Knowledge/Domain/Trace.Words.cs": "Knowledge",
     "Knowledge/Domain/TracedRecords.cs": "Knowledge",
     "Knowledge/HarnessReports.cs": "Knowledge",
@@ -305,6 +306,7 @@
     "Knowledge/HelpRoomSections.cs": "Knowledge",
     "Knowledge/KnowledgeConnector.cs": "Knowledge",
     "Knowledge/KnowledgeReviews.cs": "Knowledge",
+    "Knowledge/KnowledgeWorkflows.cs": "Knowledge",
     "Knowledge/RepositoryIndexes.cs": "Knowledge",
     "Knowledge/Room/HelpRoomAgents.cs": "Knowledge",
     "Knowledge/Room/HelpRoomAsks.cs": "Knowledge",
@@ -908,6 +910,7 @@
     "Workflows/Domain/WorkflowRunGraph.cs": "Workflows",
     "Workflows/Domain/WorkflowRunWords.cs": "Workflows",
     "Workflows/Domain/WorkflowSelection.cs": "Workflows",
+    "Workflows/KnowledgeWorkflowReads.cs": "Workflows",
     "Workflows/Domain/WorkflowStart.cs": "Workflows",
     "Workflows/Domain/WorkflowVersionRecords.cs": "Workflows",
     "Workflows/Domain/WorkflowWords.cs": "Workflows",
@@ -978,15 +981,6 @@
         "Knowledge/KnowledgeConnector.cs": ["IntakeRoom"],
         "Knowledge/Room/HelpRoomMachineNow.cs": ["PausedBy","SessionGroup","SessionGroups","SessionLook","WorkScope"],
         "Knowledge/Room/HelpRoomWork.cs": ["InventoryEntry","InventoryKind","WorkMilestone","WorkWords"]
-      }
-    },
-    {
-      "family": "Knowledge names Workflows",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/Domain/Trace.Chain.cs": ["LandingWorkflow"],
-        "Knowledge/Domain/Trace.Words.cs": ["LandingWorkflow","WorkflowLevels"],
-        "Knowledge/Room/HelpRoomWorkspaces.cs": ["WorkflowFileFound","WorkflowLevels","WorkflowSelection"]
       }
     },
     {
@@ -1235,9 +1229,8 @@
         "Sessions/History/HistoryHome.cs": ["ChatRuns","WorkflowRunBindings"],
         "Sessions/History/SessionHomeFiles.cs": ["ChatRuns","WorkflowRunBindings"],
         "Trees/ChatLandCommand.cs": ["ChatRuns","WorkflowCurrent"],
-        "Trees/LandedBranches.cs": ["LandingWorkflow"],
         "Trees/Landing/AutoLander.cs": ["WorkflowProcess","WorkflowProcesses"],
-        "Trees/SessionTrees/EndJudgement.cs": ["LandingWorkflow","WorkflowProcess"],
+        "Trees/SessionTrees/EndJudgement.cs": ["WorkflowProcess"],
         "Trees/SessionTrees/EntryLands.cs": ["WorkflowProcess"],
         "Trees/SessionTrees/GeneratedWriters.cs": ["LandedGates","WorkflowSelection"],
         "Trees/SessionTrees/SessionTrees.cs": ["WorkflowGateState","WorkflowProcess"],
@@ -1682,6 +1675,7 @@
     "HelpRoomWorkTests.cs": "Knowledge",
     "HelpRoomWorkspacesTests.cs": "Knowledge",
     "KnowledgePortsTests.cs": "Knowledge",
-    "KnowledgeReviewPortsTests.cs": "Knowledge"
+    "KnowledgeReviewPortsTests.cs": "Knowledge",
+    "KnowledgeWorkflowPortsTests.cs": "Knowledge"
   }
 }
