@@ -23,7 +23,7 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
     /// The sender a quest an ask asked carries, chain steps included (D65 §4). A twin of the service's
     /// <c>AskDesk.SenderOf</c>, duplicated deliberately: the driver and the service share no code.
     /// </summary>
-    private const string SenderPrefix = "ask #";
+    private const string SenderPrefix = AskSender.Prefix;
 
     /// <summary>Words the service did not answer: unreachable, refused, unparsable, an ask it does not hold, or a host from before them.</summary>
     public static AskWords Unread(string ask) => new(ask, null);
@@ -32,10 +32,7 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
     /// The ask a quest was asked by, read from its sender — the reverse of the service's <c>AskDesk.SenderOf</c> and a twin
     /// of its <c>AskOf</c>: null for a quest a repository asked, which is on no ask.
     /// </summary>
-    public static string? AskOf(string? sender) =>
-        sender is not null && sender.Length > SenderPrefix.Length && sender.StartsWith(SenderPrefix, StringComparison.Ordinal)
-            ? sender[SenderPrefix.Length..]
-            : null;
+    public static string? AskOf(string? sender) => AskSender.AskOf(sender);
 
     /// <summary>What an ask the service answered holds: its words, or unread where a host answered none.</summary>
     public static AskWords Of(AskView ask) =>

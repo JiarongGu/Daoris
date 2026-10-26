@@ -287,13 +287,13 @@ public static class HelpRoom
     /// (<see cref="HelpRoomScope"/>); <c>default</c> or none is the whole machine, as before.
     /// </param>
     public static HelpMachine Describe(
-        DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
+        DriverConfig config, IKnowledgeSnapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
         IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
         IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
-        IReadOnlyList<HeldQuest>? held = null, SessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
+        IReadOnlyList<HeldQuest>? held = null, IKnowledgeSessionLook? sessions = null, IReadOnlyList<HistoryReading>? history = null,
         IReadOnlyList<WorkflowFileFound>? workflows = null, HelpGrantSet? grants = null,
-        IReadOnlyList<WorkMilestone>? work = null, IReadOnlyList<InventoryUnread>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null,
+        IReadOnlyList<IKnowledgeMilestone>? work = null, IReadOnlyList<InventoryUnread>? workUnread = null, IReadOnlyList<InventoryEntry>? workRecovery = null,
         HelpNotReadYet? notReadYet = null, string? workspace = null)
     {
         var sources = new HelpMachineSources(
@@ -487,7 +487,7 @@ public sealed record HelpMachine
     // The work section's.
 
     /// <summary>Each unit of work's milestone as the records say it (FABRIC-MILESTONE1b); null where none was read.</summary>
-    public IReadOnlyList<WorkMilestone>? Work { get; init; }
+    public IReadOnlyList<IKnowledgeMilestone>? Work { get; init; }
 
     /// <summary>What the milestones could not read, each in a clause (a repository with no checkout here).</summary>
     public IReadOnlyList<string> WorkUnread { get; init; } = [];
@@ -520,7 +520,7 @@ public sealed record HelpMachine
 /// <param name="Parked">The quests the loop's last tick parked by their failed sessions (HELP10).</param>
 /// <param name="Browser">What Daoris's browser's files hold (HELP10), or null where the desktop read none.</param>
 internal sealed record HelpMachineSources(
-    DriverConfig Config, Snapshot Snapshot, IReadOnlyList<RepositoryLine> Lines, IReadOnlyList<HarnessReport> Roster,
+    DriverConfig Config, IKnowledgeSnapshot Snapshot, IReadOnlyList<RepositoryLine> Lines, IReadOnlyList<HarnessReport> Roster,
     Func<string, string?> Product, int Asks, IReadOnlyList<AskView> Standing, PluginCatalog Plugins,
     IReadOnlyList<LandedBranch> Landed, IReadOnlyList<PluginOffer> Offers, IReadOnlyList<ParkedQuest> Parked,
     HelpBrowserFacts? Browser)
@@ -529,7 +529,7 @@ internal sealed record HelpMachineSources(
     public IReadOnlyList<HeldQuest> Held { get; init; } = [];
 
     /// <summary>One look at the sessions as the Sessions list takes it (SESSUX1h3); null where none was read.</summary>
-    public SessionLook? Sessions { get; init; }
+    public IKnowledgeSessionLook? Sessions { get; init; }
 
     /// <summary>What each workspace keeps of finished work (HIST1f-b, design §2.4); null where none was read.</summary>
     public IReadOnlyList<HistoryReading>? History { get; init; }
@@ -541,7 +541,7 @@ internal sealed record HelpMachineSources(
     public HelpGrantSet? Grants { get; init; }
 
     /// <summary>Each unit of work's milestone (FABRIC-MILESTONE1b); null where none was read.</summary>
-    public IReadOnlyList<WorkMilestone>? Work { get; init; }
+    public IReadOnlyList<IKnowledgeMilestone>? Work { get; init; }
 
     /// <summary>What the milestones could not read, each by its repository (FACTSPLIT1a), which a workspace's room keeps by.</summary>
     public IReadOnlyList<InventoryUnread> WorkUnread { get; init; } = [];

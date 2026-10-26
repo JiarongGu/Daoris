@@ -117,7 +117,7 @@ public static class KnowledgeConnector
         var carried = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             [RulesHomeVariable] = home,
-            [IntakeRoom.SessionVariable] = sessionId,
+            [ChildMarks.SessionVariable] = sessionId,
         };
         foreach (var (name, value) in scope ?? new Dictionary<string, string>()) carried[name] = value;
         return carried;

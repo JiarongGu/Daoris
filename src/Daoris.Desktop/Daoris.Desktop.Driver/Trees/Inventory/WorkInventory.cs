@@ -3,153 +3,8 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>What an inventory entry is for (the fabric events design §D3): the roles the milestone reads by.</summary>
-public static class InventoryRole
-{
-    /// <summary>Made for the work and Daoris's to clean at its end.</summary>
-    public const string Temporary = "temporary";
 
-    /// <summary>What the work made and what stays.</summary>
-    public const string Result = "result";
 
-    /// <summary>History, never the end's to remove.</summary>
-    public const string Evidence = "evidence";
-
-    /// <summary>What a removal keeps, to undo it: a moved-aside folder, a recovery ref.</summary>
-    public const string Recovery = "recovery";
-}
-
-/// <summary>What became of an entry (§D3): every entry has one, and an unknown owner is <see cref="Blocked"/>, never a guess.</summary>
-public static class InventoryDisposition
-{
-    /// <summary>A result or evidence that stays.</summary>
-    public const string Kept = "kept";
-
-    /// <summary>A recovery kept until a date, or by its own rule.</summary>
-    public const string Retained = "retained";
-
-    /// <summary>Gone, with the proof where one was kept.</summary>
-    public const string Removed = "removed";
-
-    /// <summary>Cannot go, and says what blocks it.</summary>
-    public const string Blocked = "blocked";
-
-    /// <summary>Not yet: what waits is in the entry's detail.</summary>
-    public const string Pending = "pending";
-}
-
-/// <summary>The kinds of resource the branch adapter's inventory reads (§D3's table), as the terminal and the page name them.</summary>
-public static class InventoryKind
-{
-    public const string Tree = "tree";
-    public const string SessionBranch = "session-branch";
-    public const string LandingBranch = "landing-branch";
-    public const string Line = "line";
-    public const string MovedAside = "moved-aside";
-    public const string RecoveryRef = "recovery-ref";
-    public const string AutoLanding = "auto-landing";
-    public const string History = "history";
-    public const string End = "end";
-
-    /// <summary>A quest's own record, the service's (FABRIC-UNIT1a): its evidence pointer.</summary>
-    public const string Quest = "quest";
-
-    /// <summary>An ask's own record, the service's (FABRIC-UNIT1a): its evidence pointer.</summary>
-    public const string Ask = "ask";
-
-    /// <summary>A file a quest or an ask carries, by its name: the service keeps its bytes.</summary>
-    public const string Attachment = "attachment";
-
-    /// <summary>What a plugin's attempt created (FABRIC-PERFORM1d, §D3), by its receipt: only its plugin removes it, through <c>work/cleanup</c>.</summary>
-    public const string PluginResource = "plugin-resource";
-
-    /// <summary>A dispatched attempt whose outcome is not settled (FABRIC-PERFORM1d, §D3): no unit retires while one is.</summary>
-    public const string Attempt = "attempt";
-}
-
-/// <summary>
-/// Why a blocked entry is blocked, as a code the page words in its reader's language with the entry's <see cref="InventoryEntry.Facts"/>
-/// (OVERVIEWNOISE1b): the <see cref="InventoryEntry.Detail"/> stays the driver's sentence, which the terminal says and a page that has
-/// no words for a code shows as recorded.
-/// </summary>
-public static class InventoryCode
-{
-    /// <summary>The look's tidy kept a line-held branch (FABRIC-END4a): facts <c>why</c>, the guard's code, and <c>at</c>, when.</summary>
-    public const string Kept = "kept";
-
-    /// <summary>A tree its session recorded that no branch record follows, so only the clean-up's press takes it: fact <c>branch</c>.</summary>
-    public const string Unfollowed = "unfollowed";
-
-    /// <summary>A tree of a known unit whose branch git could not read.</summary>
-    public const string Unread = "unread";
-
-    /// <summary>An unknown owner: a folder no repository is linked to.</summary>
-    public const string UnknownFolder = "unknown-folder";
-
-    /// <summary>An unknown owner: a tree whose branch git could not read.</summary>
-    public const string UnknownUnread = "unknown-unread";
-
-    /// <summary>An unknown owner: a tree on a branch no record and no session names: fact <c>branch</c>.</summary>
-    public const string UnknownBranch = "unknown-branch";
-
-    /// <summary>An unknown owner: a standing <c>daoris/*</c> branch Daoris did not record (FABRIC-UNKNOWN1): fact <c>branch</c>.</summary>
-    public const string Unrecorded = "unrecorded";
-
-    /// <summary>A plugin's resource of a schema its manifest does not declare (FABRIC-PERFORM1d): facts <c>plugin</c> and <c>schema</c>.</summary>
-    public const string Undeclared = "undeclared-resource";
-
-    /// <summary>A plugin's resource whose cleanup has failed for seven days (FABRIC-PERFORM1d, §D3): facts <c>plugin</c> and <c>tries</c>.</summary>
-    public const string CleanupBlocked = "cleanup-blocked";
-
-    /// <summary>A dispatched attempt held for the person (FABRIC-PERFORM1d): fact <c>node</c>.</summary>
-    public const string AttemptHeld = "attempt-held";
-}
-
-/// <summary>A tree a session's record names (D51): the join from a tree to the session that recorded it (OVERVIEWNOISE1b).</summary>
-public sealed record RecordedTree(string Session, string Tree);
-
-/// <summary>One resource a unit's work made, with its role and what became of it (FABRIC-MILESTONE1a, the design's §D3).</summary>
-/// <param name="Unit">The unit it belongs to (<see cref="WorkMilestone.Unit"/>).</param>
-/// <param name="Kind">One of <see cref="InventoryKind"/>.</param>
-/// <param name="Resource">What it is, by name: a branch, a folder, a ref, a session's history.</param>
-/// <param name="Role">One of <see cref="InventoryRole"/>.</param>
-/// <param name="Disposition">One of <see cref="InventoryDisposition"/>.</param>
-/// <param name="Detail">Why, in a clause: what waits, what blocks, what the proof was.</param>
-public sealed record InventoryEntry(string Unit, string Kind, string Resource, string Role, string Disposition, string Detail)
-{
-    /// <summary>A recovery's purge date: retained until then.</summary>
-    public DateTimeOffset? Until { get; init; }
-
-    /// <summary>The repository a recovery belongs to (RECOVERYVIEW1), so a workspace's page lists its own; null for an entry that is no recovery.</summary>
-    public string? Repository { get; init; }
-
-    /// <summary>The commit a recovery ref names (RECOVERYDROP1), which the person's delete is verified against; null for an entry that is no recovery ref.</summary>
-    public string? Commit { get; init; }
-
-    /// <summary>A removal's proof, where its record kept one.</summary>
-    public string? Proof { get; init; }
-
-    /// <summary>Why a blocked entry is blocked (<see cref="InventoryCode"/>), which the page words; null where it says only its detail.</summary>
-    public string? Code { get; init; }
-
-    /// <summary>The values its code is worded with, by name; null where it has no code.</summary>
-    public IReadOnlyDictionary<string, string>? Facts { get; init; }
-}
-
-/// <summary>Whether the unit's end was reached, and on what evidence.</summary>
-/// <param name="State"><c>ended</c> (the line holds it, from the kept fact), <c>handed</c>, <c>not-ended</c>, or <c>unknown</c> (no record names its unit).</param>
-/// <param name="By">The proof's code (<see cref="EndBy"/>) where ended.</param>
-/// <param name="On">Where the proof held.</param>
-/// <param name="Revision">The commit judged.</param>
-/// <param name="At">When it was first held at that commit.</param>
-/// <param name="Said">The state in a sentence.</param>
-public sealed record MilestoneEnd(string State, string? By, string? On, string? Revision, DateTimeOffset? At, string Said);
-
-/// <summary>Whether the unit's cleanup is pending, and what waits, or completed, and what went.</summary>
-/// <param name="State"><c>pending</c> or <c>completed</c>.</param>
-/// <param name="Waits">What waits, each entry saying why.</param>
-/// <param name="Gone">What was removed.</param>
-public sealed record MilestoneCleanup(string State, IReadOnlyList<InventoryEntry> Waits, IReadOnlyList<InventoryEntry> Gone);
 
 /// <summary>
 /// The milestone the person sees for one unit (the design's §D0): end reached, result kept, cleanup, recovery retained; and the
@@ -160,7 +15,7 @@ public sealed record MilestoneCleanup(string State, IReadOnlyList<InventoryEntry
 /// <param name="Branch">A branch unit's branch; null for every other kind.</param>
 public sealed record WorkMilestone(
     string Unit, string Repository, string? Branch, string? Session, MilestoneEnd End, IReadOnlyList<InventoryEntry> Result,
-    MilestoneCleanup Cleanup, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<InventoryEntry> Entries)
+    MilestoneCleanup Cleanup, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<InventoryEntry> Entries) : IKnowledgeMilestone
 {
     /// <summary>
     /// The unit's milestone (FABRIC-UNIT1a reads MILESTONE1a's through the projection): the cleanup waits on every temporary entry

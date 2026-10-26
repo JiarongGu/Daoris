@@ -295,6 +295,11 @@
     "Knowledge/ConfiguredAccess.cs": "Knowledge",
     "Knowledge/Domain/Trace.Chain.cs": "Knowledge",
     "Knowledge/Domain/ReviewFacts.cs": "Knowledge",
+    "Knowledge/Domain/WorkFacts.cs": "Knowledge",
+    "Knowledge/Domain/AskSender.cs": "Knowledge",
+    "Knowledge/Domain/KnowledgeRoomIdentity.cs": "Knowledge",
+    "Knowledge/KnowledgeWorkOrders.cs": "Knowledge",
+    "Trees/Inventory/KnowledgeWorkOrderReads.cs": "Work orders",
     "Knowledge/Domain/PluginVocabulary.cs": "Knowledge",
     "Knowledge/Domain/WorkflowFacts.cs": "Knowledge",
     "Knowledge/Domain/Trace.Words.cs": "Knowledge",
@@ -963,18 +968,6 @@
       }
     },
     {
-      "family": "Knowledge names Work orders",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/Domain/Trace.Chain.cs": ["AskWords"],
-        "Knowledge/Domain/Trace.Words.cs": ["EvidenceWords"],
-        "Knowledge/HelpFacts.cs": ["InventoryEntry","InventoryUnread","RecordedTree","SessionGroups","SessionLook","Snapshot","TreeWork","WorkInventories","WorkMilestone"],
-        "Knowledge/KnowledgeConnector.cs": ["IntakeRoom"],
-        "Knowledge/Room/HelpRoomMachineNow.cs": ["PausedBy","SessionGroup","SessionGroups","SessionLook","WorkScope"],
-        "Knowledge/Room/HelpRoomWork.cs": ["InventoryEntry","InventoryKind","WorkMilestone","WorkWords"]
-      }
-    },
-    {
       "family": "Knowledge names Workplace",
       "after": "Knowledge",
       "files": {
@@ -1188,14 +1181,12 @@
       "after": "Workplace",
       "files": {
         "Platform/ToolHomeLeftovers.cs": ["IntakeRoom"],
-        "Sessions/Domain/AbandonPlan.cs": ["WorkPlan","WorkQuest","WorkScope","WorkSession","WorkStop","WorkTree"],
-        "Sessions/History/HistoryCommand.cs": ["WorkScope"],
+        "Sessions/Domain/AbandonPlan.cs": ["WorkPlan","WorkQuest","WorkSession","WorkStop","WorkTree"],
         "Sessions/History/HistoryHome.cs": ["AbandonRecord","IntakeRoom"],
         "Sessions/History/SessionArchive.cs": ["SessionGroup","SessionGrouping"],
         "Sessions/History/SessionHomeFiles.cs": ["QuestionFiles"],
         "Trees/Branches/SessionBranches.cs": ["WorkObligations"],
-        "Trees/Branches/TidyEffect.cs": ["InventoryDisposition","InventoryFacts","InventoryKind","InventoryRole","WorkInventory"],
-        "Trees/Domain/IWorkTrees.cs": ["TreeWork"],
+        "Trees/Branches/TidyEffect.cs": ["InventoryFacts","WorkInventory"],
         "Trees/GitReads/ReviewGraphReads.cs": ["LandOffer"],
         "Trees/GitReads/SessionReviews.cs": ["LandOffer"],
         "Trees/Landing/AutoLander.cs": ["QuestResults","SessionGroups"],
@@ -1205,10 +1196,9 @@
         "Trees/SessionTrees/PressedResults.cs": ["QuestResults"],
         "Trees/SessionTrees/RecoveryRetention.cs": ["RecoveryRef","StandingBranch"],
         "Trees/SessionTrees/SessionBranchDoors.cs": ["SessionGroups"],
-        "Trees/SessionTrees/SessionTrees.cs": ["DiscardOffer","TreeWork"],
+        "Trees/SessionTrees/SessionTrees.cs": ["DiscardOffer"],
         "Trees/SessionTrees/TreeLands.cs": ["DiscardOffer"],
-        "Trees/SessionTrees/TreeReadMemo.cs": ["TreeWork"],
-        "Trees/SessionTrees/TreeWorkReads.cs": ["DiscardOffer","HeldWork","TreeWork"]
+        "Trees/SessionTrees/TreeWorkReads.cs": ["DiscardOffer"]
       }
     },
     {
@@ -1666,6 +1656,7 @@
     "HelpRoomWorkspacesTests.cs": "Knowledge",
     "KnowledgePortsTests.cs": "Knowledge",
     "KnowledgeReviewPortsTests.cs": "Knowledge",
-    "KnowledgeWorkflowPortsTests.cs": "Knowledge"
+    "KnowledgeWorkflowPortsTests.cs": "Knowledge",
+    "KnowledgeWorkOrderPortsTests.cs": "Knowledge"
   }
 }

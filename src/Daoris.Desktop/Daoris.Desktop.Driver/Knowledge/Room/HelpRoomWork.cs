@@ -19,7 +19,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
         machine with { Work = sources.Work, WorkUnread = [.. sources.WorkUnread.Select(unread => unread.Said)], WorkRecovery = sources.WorkRecovery };
 
     /// <summary>A unit the person has something to ask about: its cleanup waits, its owner is unknown, or a recovery is kept.</summary>
-    private static bool Open(WorkMilestone unit) =>
+    private static bool Open(IKnowledgeMilestone unit) =>
         unit.Cleanup.State != "completed" || unit.End.State == "unknown" || unit.Recovery.Count > 0;
 
     public string Render(HelpMachine machine)
@@ -56,7 +56,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
             {
                 if (!first) text.Append('\n');
                 first = false;
-                foreach (var line in WorkWords.Milestone(unit)) text.Append(line).Append('\n');
+                foreach (var line in KnowledgeWorkOrders.Current.Milestone(unit)) text.Append(line).Append('\n');
             }
 
             text.Append("```\n");

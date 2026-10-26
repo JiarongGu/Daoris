@@ -277,7 +277,7 @@ public sealed class HelpFactsTests : IDisposable
         using var facts = new MachineFacts(clock.Now);
         HelpFacts.Keep(facts, Judges(Whole(Engine, Site, Docs)) with
         {
-            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Sessions = _ => Task.FromResult<IKnowledgeSessionLook?>(look),
             Work = (part, _) =>
             {
                 var subject = part.Repository ?? HelpFacts.NoCheckout;
@@ -383,7 +383,7 @@ public sealed class HelpFactsTests : IDisposable
             Sessions = _ =>
             {
                 Interlocked.Increment(ref looked);
-                return Task.FromResult<SessionLook?>(new SessionLook([], [], []));
+                return Task.FromResult<IKnowledgeSessionLook?>(new SessionLook([], [], []));
             },
             Trees = (part, _) =>
             {
@@ -424,7 +424,7 @@ public sealed class HelpFactsTests : IDisposable
         using var facts = new MachineFacts(clock.Now);
         HelpFacts.Keep(facts, Judges(Whole(Engine, Site, Docs)) with
         {
-            Sessions = _ => Task.FromResult<SessionLook?>(new SessionLook([], [], [])),
+            Sessions = _ => Task.FromResult<IKnowledgeSessionLook?>(new SessionLook([], [], [])),
             Trees = (part, _) =>
             {
                 var subject = part.Repository ?? HelpFacts.NoCheckout;
@@ -610,7 +610,7 @@ public sealed class HelpFactsTests : IDisposable
         HelpFacts.Keep(facts, Judges(null) with
         {
             Machine = _ => Task.FromResult<HelpMachineWhole?>(Volatile.Read(ref whole)),
-            Sessions = _ => Task.FromResult<SessionLook?>(new SessionLook([], [], [])),
+            Sessions = _ => Task.FromResult<IKnowledgeSessionLook?>(new SessionLook([], [], [])),
         });
         facts.Start();
         foreach (var part in (string[])["engine", "site", HelpFacts.NoCheckout])
@@ -640,7 +640,7 @@ public sealed class HelpFactsTests : IDisposable
         using var facts = new MachineFacts(new Clock().Now);
         HelpFacts.Keep(facts, Judges(Whole(Engine, Site)) with
         {
-            Sessions = _ => Task.FromResult<SessionLook?>(Volatile.Read(ref look)),
+            Sessions = _ => Task.FromResult<IKnowledgeSessionLook?>(Volatile.Read(ref look)),
             Trees = (part, _) =>
             {
                 var subject = part.Repository ?? HelpFacts.NoCheckout;
@@ -701,7 +701,7 @@ public sealed class HelpFactsTests : IDisposable
         using var facts = new MachineFacts();
         HelpFacts.Keep(facts, Judges(Whole(Engine, Site, Docs)) with
         {
-            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Sessions = _ => Task.FromResult<IKnowledgeSessionLook?>(look),
             Trees = async (part, ct) => await HelpFacts.ReadTreesAsync(_home, part, ct),
         });
         using (ProcessStarts.Within(info =>
@@ -746,7 +746,7 @@ public sealed class HelpFactsTests : IDisposable
         using var facts = new MachineFacts();
         HelpFacts.Keep(facts, Judges(Whole(Engine, Site)) with
         {
-            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Sessions = _ => Task.FromResult<IKnowledgeSessionLook?>(look),
             Trees = async (part, ct) => await HelpFacts.ReadTreesAsync(part, _ => true, StandIn(work), ct),
         });
         facts.Start();
@@ -787,7 +787,7 @@ public sealed class HelpFactsTests : IDisposable
             Sessions = _ =>
             {
                 Interlocked.Increment(ref looks);
-                return Task.FromResult<SessionLook?>(Volatile.Read(ref look));
+                return Task.FromResult<IKnowledgeSessionLook?>(Volatile.Read(ref look));
             },
             Trees = async (part, ct) => await HelpFacts.ReadTreesAsync(part, _ => true, StandIn(NoTrees.Trees), ct),
         });
@@ -825,7 +825,7 @@ public sealed class HelpFactsTests : IDisposable
         using var facts = new MachineFacts();
         HelpFacts.Keep(facts, Judges(Whole(Engine)) with
         {
-            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Sessions = _ => Task.FromResult<IKnowledgeSessionLook?>(look),
             Trees = async (part, ct) =>
             {
                 await answer.Task.WaitAsync(ct);
@@ -858,7 +858,7 @@ public sealed class HelpFactsTests : IDisposable
         using var facts = new MachineFacts();
         HelpFacts.Keep(facts, Judges(Whole(Engine)) with
         {
-            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Sessions = _ => Task.FromResult<IKnowledgeSessionLook?>(look),
             Trees = (_, _) => new TaskCompletionSource<HelpTrees?>().Task,
         });
         facts.Start();
@@ -895,7 +895,7 @@ public sealed class HelpFactsTests : IDisposable
         using var facts = new MachineFacts();
         HelpFacts.Keep(facts, Judges(Whole(Engine, Site)) with
         {
-            Sessions = _ => Task.FromResult<SessionLook?>(look),
+            Sessions = _ => Task.FromResult<IKnowledgeSessionLook?>(look),
             Trees = async (part, ct) => await HelpFacts.ReadTreesAsync(_home, part, ct),
         });
         using (ProcessStarts.Within(_ => null)) facts.Start();
@@ -995,7 +995,7 @@ public sealed class HelpFactsTests : IDisposable
         }
 
         clock.Pass(HelpFacts.WorkRules.Rest + TimeSpan.FromSeconds(1));
-        Volatile.Write(ref whole, whole with { Snapshot = whole.Snapshot with { Active = [] } });
+        Volatile.Write(ref whole, whole with { Snapshot = whole.Snapshot.Within(whole.Snapshot.Quests, whole.Snapshot.Repositories, []) });
         await facts.JudgedAsync(HelpFacts.Machine, HelpFacts.Whole, CancellationToken.None).WaitAsync(Within);
         await Poll.Until(() => Judged(judged, "engine") == 2, within: Within);
         await facts.Settled().WaitAsync(Within);
@@ -1144,7 +1144,7 @@ public sealed class HelpFactsTests : IDisposable
     /// <summary>Stand-in judges: the machine as given, each checkout's line `main`, every other topic read as nothing.</summary>
     private static HelpFactJudges Judges(HelpMachineWhole? whole) => new(
         Machine: _ => Task.FromResult(whole),
-        Sessions: _ => Task.FromResult<SessionLook?>(null),
+        Sessions: _ => Task.FromResult<IKnowledgeSessionLook?>(null),
         History: _ => Task.FromResult<IReadOnlyList<HistoryReading>?>(null),
         Work: (_, _) => Task.FromResult<HelpWork?>(null))
     {

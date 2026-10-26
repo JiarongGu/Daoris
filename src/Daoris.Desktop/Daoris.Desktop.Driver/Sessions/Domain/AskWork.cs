@@ -1,15 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>Whose work is read (D132 §1): an ask's, or one quest's.</summary>
-public enum WorkScope
-{
-    /// <summary>An ask's: every quest it asked, chain steps included, and the ask's intake.</summary>
-    Ask,
-
-    /// <summary>One quest's: that quest alone where an ask's starts from what it asked, and no intake.</summary>
-    Quest,
-}
-
 /// <summary>How a quest joined the work (design §1).</summary>
 public enum WorkJoin
 {

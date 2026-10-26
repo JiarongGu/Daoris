@@ -21,7 +21,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         // ENTRY1f2 (D161's ENTRY1f note): by the Sessions list's own rule, so the count and the list name the same sessions,
         // less Ask Daoris's own conversation, which opens here; a teammate's never reached the snapshot.
         Waiting = [.. sources.Snapshot.Active
-            .Where(session => SessionGroups.WaitsOnYou(session.Id, session.State, session.Answer) && session.Repository != HelpRoom.Repository)
+            .Where(session => KnowledgeWorkOrders.Current.WaitsOnYou(session.Id, session.State, session.Answer) && session.Repository != HelpRoom.Repository)
             .Select(session => new HelpWaitingSession(session.Id, session.Repository) { Ask = session.Ask })],
         Sessions = sources.Sessions is { } look ? Placed(look) : null,
         Asks = sources.Asks,
@@ -64,18 +64,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
     /// Daoris's own conversations and a teammate's, which this machine does not act on; archived ones are in the list's own
     /// group, so in no count here. The ended come newest first, as the list orders them.
     /// </summary>
-    private static HelpSessions Placed(SessionLook look)
-    {
-        var records = look.Records.GroupBy(record => record.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
-        var rows = SessionGroups.Read(look)
-            .Where(row => !row.Teammate && records.TryGetValue(row.Session, out var record) && record.Repository != HelpRoom.Repository)
-            .ToList();
-        int In(string group) => rows.Count(row => row.Group == group);
-        var ended = rows.Where(row => row.Group == SessionGroup.Ended).ToList();
-        return new HelpSessions(
-            In(SessionGroup.You), In(SessionGroup.Review), In(SessionGroup.Working), In(SessionGroup.Later), ended.Count,
-            [.. ended.Take(EndedListed).Select(row => new HelpEndedSession(row.Session, records[row.Session].Repository))]);
-    }
+    private static HelpSessions Placed(IKnowledgeSessionLook look) => KnowledgeWorkOrders.Current.Placed(look);
 
     public string Render(HelpMachine machine)
     {

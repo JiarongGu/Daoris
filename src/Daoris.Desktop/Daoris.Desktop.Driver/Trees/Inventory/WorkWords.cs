@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 public static class WorkWords
 {
     /// <summary>One unit's milestone: its end, its result, its cleanup and its recovery, one line each.</summary>
-    public static IEnumerable<string> Milestone(WorkMilestone unit, bool entries = false)
+    public static IEnumerable<string> Milestone(IKnowledgeMilestone unit, bool entries = false)
     {
         yield return $"{unit.Unit}  {unit.Repository}" + (unit.Branch is { } branch ? $"  {branch}" : "");
         yield return unit.End.State switch

@@ -38,7 +38,7 @@ public static class HelpFacts
     public const string Lines = "help.lines";
 
     /// <summary>
-    /// The sessions as the Sessions list looks at them (<see cref="SessionLook"/>), one subject, without their trees' judgement since
+    /// The sessions as the Sessions list looks at them (<see cref="IKnowledgeSessionLook"/>), one subject, without their trees' judgement since
     /// FACTSPLIT1b: the records, the quests, the verdicts and the marks, which hold no git.
     /// </summary>
     public const string Sessions = "help.sessions";
@@ -208,14 +208,14 @@ public static class HelpFacts
         // the newer made. A look dropped (a judge that could not read it) keeps the last one to compare the next with.
         var gate = new object();
         HelpMachineWhole? seen = null;
-        SessionLook? looked = null;
+        IKnowledgeSessionLook? looked = null;
         facts.Changed += _ =>
         {
             lock (gate)
             {
                 var current = facts.Current;
                 if (current.Value<HelpMachineWhole>(Machine, Whole) is not { } whole) return;
-                var look = current.Value<SessionLook>(Sessions, Whole) ?? looked;
+                var look = current.Value<IKnowledgeSessionLook>(Sessions, Whole) ?? looked;
                 if (ReferenceEquals(seen, whole) && ReferenceEquals(looked, look)) return;
                 var (before, lookedBefore) = (seen, looked);
                 (seen, looked) = (whole, look);
@@ -236,7 +236,7 @@ public static class HelpFacts
     /// before its ending put its tree among those to judge, and the room would say its work nothing to review until the rest ended.
     /// It happens once a look at most, which rests in turn.
     /// </remarks>
-    private static void TreesKnown(MachineFacts facts, HelpMachineWhole before, SessionLook? lookedBefore, HelpMachineWhole whole, SessionLook look)
+    private static void TreesKnown(MachineFacts facts, HelpMachineWhole before, IKnowledgeSessionLook? lookedBefore, HelpMachineWhole whole, IKnowledgeSessionLook look)
     {
         var checkouts = Checkouts(whole);
         foreach (var part in Parts(whole))
@@ -253,7 +253,7 @@ public static class HelpFacts
     /// The parts of the work whose sessions' recorded trees moved in the look (OVERVIEWNOISE1b), each judged again, so a tree joins the
     /// session that recorded it once the look names it: the ledger's wake may judge a part before the look it woke lands.
     /// </summary>
-    private static void RecordedKnown(MachineFacts facts, HelpMachineWhole whole, SessionLook? lookedBefore, SessionLook look)
+    private static void RecordedKnown(MachineFacts facts, HelpMachineWhole whole, IKnowledgeSessionLook? lookedBefore, IKnowledgeSessionLook look)
     {
         foreach (var part in Parts(whole))
         {
@@ -262,7 +262,7 @@ public static class HelpFacts
     }
 
     /// <summary>The trees <paramref name="part"/>'s sessions recorded in <paramref name="look"/>, as one string; none without a look.</summary>
-    private static string RecordedBasis(HelpMachineWhole whole, SessionLook? look, string part) =>
+    private static string RecordedBasis(HelpMachineWhole whole, IKnowledgeSessionLook? look, string part) =>
         look is not null && PartOf(whole, part, look) is { } of ? string.Join('\n', of.Recorded.Select(each => $"{each.Session}\t{each.Tree}")) : "";
 
     /// <summary>
@@ -326,7 +326,7 @@ public static class HelpFacts
     /// repository's by its records' name, the rest's those of every repository with no checkout here. Null for a repository the
     /// answers do not name with a checkout here.
     /// </summary>
-    public static HelpTreesPart? TreesPartOf(HelpMachineWhole whole, SessionLook look, string subject)
+    public static HelpTreesPart? TreesPartOf(HelpMachineWhole whole, IKnowledgeSessionLook look, string subject)
     {
         var checkouts = Checkouts(whole);
         if (subject == NoCheckout) return new HelpTreesPart(null, checkouts, look);
@@ -338,11 +338,11 @@ public static class HelpFacts
 
     /// <summary>
     /// Which trees <paramref name="part"/> judges from <paramref name="look"/>: those its sessions would put to review or offer to
-    /// land (<see cref="SessionGroups.TreesToJudge"/>), whether or not this home holds them, which the judge asks. A part is judged
+    /// land (<see cref="KnowledgeWorkOrders.Current.TreesToJudge"/>), whether or not this home holds them, which the judge asks. A part is judged
     /// again where they move.
     /// </summary>
-    private static string TreesBasis(HelpMachineWhole whole, SessionLook look, string part) => TreesPartOf(whole, look, part) is { } of
-        ? string.Join('\n', SessionGroups.TreesToJudge(look, _ => true, of.Sessions).Select(SessionGroups.Normal).Order(StringComparer.OrdinalIgnoreCase))
+    private static string TreesBasis(HelpMachineWhole whole, IKnowledgeSessionLook look, string part) => TreesPartOf(whole, look, part) is { } of
+        ? string.Join('\n', KnowledgeWorkOrders.Current.TreesToJudge(look, _ => true, of.Sessions).Select(KnowledgeWorkOrders.Current.Normal).Order(StringComparer.OrdinalIgnoreCase))
         : "";
 
     /// <summary>
@@ -353,7 +353,7 @@ public static class HelpFacts
         MachineFacts facts, string subject, Func<HelpTreesPart, CancellationToken, Task<HelpTrees?>> trees, CancellationToken ct)
     {
         var current = facts.Current;
-        if (current.Value<HelpMachineWhole>(Machine, Whole) is not { } whole || current.Value<SessionLook>(Sessions, Whole) is not { } look
+        if (current.Value<HelpMachineWhole>(Machine, Whole) is not { } whole || current.Value<IKnowledgeSessionLook>(Sessions, Whole) is not { } look
             || TreesPartOf(whole, look, subject) is not { } part)
         {
             return null;
@@ -364,7 +364,7 @@ public static class HelpFacts
 
     /// <summary>
     /// One part of the trees read from <paramref name="home"/> (FACTSPLIT1b), as the module's judge reads it: each of the part's
-    /// sessions' trees that would be put to review or offered to land judged once with git (<see cref="SessionGroups.JudgeAsync"/>),
+    /// sessions' trees that would be put to review or offered to land judged once with git (<see cref="KnowledgeWorkOrders.Current.JudgeAsync"/>),
     /// and no other tree. <paramref name="times"/> takes the walk's time and how many trees it asked, where a caller says them.
     /// </summary>
     /// <remarks>
@@ -401,13 +401,13 @@ public static class HelpFacts
         LookTimes? times = null, int atOnce = 1, Func<string, bool>? walkable = null)
     {
         // The part's own trees alone: a look kept with every tree judged carries none of them in.
-        var look = part.Look with { Trees = HelpTrees.None.Trees };
+        var look = part.Look.WithTrees(HelpTrees.None.Trees);
         times ??= new LookTimes();
-        var asked = SessionGroups.TreesToJudge(look, held, part.Sessions);
+        var asked = KnowledgeWorkOrders.Current.TreesToJudge(look, held, part.Sessions);
         var walked = walkable is null ? held : tree => held(tree) && walkable(tree);
         times.Trees = walkable is null ? asked.Count : asked.Count(walkable);
-        var judged = await times.TimeAsync("trees", () => SessionGroups.JudgeAsync(look, walked, judge, part.Sessions, ct, atOnce)).ConfigureAwait(false);
-        return new HelpTrees(judged.Trees) { Asked = asked.Select(SessionGroups.Normal).ToHashSet(StringComparer.OrdinalIgnoreCase) };
+        var judged = await times.TimeAsync("trees", () => KnowledgeWorkOrders.Current.JudgeAsync(look, walked, judge, part.Sessions, ct, atOnce)).ConfigureAwait(false);
+        return new HelpTrees(judged.Trees) { Asked = asked.Select(KnowledgeWorkOrders.Current.Normal).ToHashSet(StringComparer.OrdinalIgnoreCase) };
     }
 
     /// <summary>
@@ -439,11 +439,11 @@ public static class HelpFacts
     /// <param name="walk"><see cref="SessionTrees.WorkAsync"/>, git's walk of one tree; a test hands its own.</param>
     /// <param name="only">The sessions asked about: their trees alone.</param>
     /// <param name="first">The wait for the parts' first judgement; <see cref="TreesFirst"/> unless a test says another.</param>
-    public static async Task<SessionLook> WithTreesAsync(
-        MachineFacts facts, SessionLook look, Func<string, bool> held, Func<string, CancellationToken, Task<TreeWork?>> walk,
+    public static async Task<IKnowledgeSessionLook> WithTreesAsync(
+        MachineFacts facts, IKnowledgeSessionLook look, Func<string, bool> held, Func<string, CancellationToken, Task<TreeWork?>> walk,
         IReadOnlyCollection<string>? only = null, TimeSpan? first = null, CancellationToken ct = default)
     {
-        var asked = SessionGroups.TreesToJudge(look, held, only);
+        var asked = KnowledgeWorkOrders.Current.TreesToJudge(look, held, only);
         var read = TreesJudged(facts.Current, asked);
         if (read.NotJudged.Count > 0 && facts.Started)
         {
@@ -458,15 +458,15 @@ public static class HelpFacts
         foreach (var (tree, work) in read.Trees) trees[tree] = work;
         foreach (var tree in read.NotJudged)
         {
-            if (await walk(tree, ct).ConfigureAwait(false) is { } work) trees[SessionGroups.Normal(tree)] = work;
+            if (await walk(tree, ct).ConfigureAwait(false) is { } work) trees[KnowledgeWorkOrders.Current.Normal(tree)] = work;
         }
 
-        return look with { Trees = trees };
+        return look.WithTrees(trees);
     }
 
     /// <summary>
     /// Each of <paramref name="asked"/> as the parts judged it (PUSH1c1): the work of a tree a part asked, keyed by
-    /// <see cref="SessionGroups.Normal"/>, none for one it asked and git could not speak for, and the trees no part asked.
+    /// <see cref="KnowledgeWorkOrders.Current.Normal"/>, none for one it asked and git could not speak for, and the trees no part asked.
     /// </summary>
     public static HelpTreesJudged TreesJudged(MachineFactsSnapshot facts, IReadOnlyList<string> asked)
     {
@@ -475,7 +475,7 @@ public static class HelpFacts
         var notJudged = new List<string>();
         foreach (var tree in asked)
         {
-            var key = SessionGroups.Normal(tree);
+            var key = KnowledgeWorkOrders.Current.Normal(tree);
             if (parts.FirstOrDefault(part => part.Asked.Contains(key)) is not { } part) notJudged.Add(tree);
             else if (part.Trees.TryGetValue(key, out var work)) trees[key] = work;
         }
@@ -518,9 +518,9 @@ public static class HelpFacts
     /// </summary>
     private static bool Behind(MachineFactsSnapshot facts, Func<string, bool> held, IReadOnlyList<string> notJudged)
     {
-        if (!TreesRead(facts) || facts.Value<SessionLook>(Sessions, Whole) is not { } look) return false;
-        var named = SessionGroups.TreesToJudge(look, held).Select(SessionGroups.Normal).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        return notJudged.Any(tree => !named.Contains(SessionGroups.Normal(tree)));
+        if (!TreesRead(facts) || facts.Value<IKnowledgeSessionLook>(Sessions, Whole) is not { } look) return false;
+        var named = KnowledgeWorkOrders.Current.TreesToJudge(look, held).Select(KnowledgeWorkOrders.Current.Normal).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return notJudged.Any(tree => !named.Contains(KnowledgeWorkOrders.Current.Normal(tree)));
     }
 
     /// <summary>
@@ -529,7 +529,7 @@ public static class HelpFacts
     /// <c>/api/sessions</c> answered them, as the module read them afresh before. Null for a repository not named with a checkout.
     /// With the sessions' look, the trees its repositories' sessions recorded (OVERVIEWNOISE1b), each of which joins its session.
     /// </summary>
-    public static HelpWorkPart? PartOf(HelpMachineWhole whole, string subject, SessionLook? look = null)
+    public static HelpWorkPart? PartOf(HelpMachineWhole whole, string subject, IKnowledgeSessionLook? look = null)
     {
         var checkouts = Checkouts(whole);
         var inUse = whole.Snapshot.Active.Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
@@ -547,7 +547,7 @@ public static class HelpFacts
         }
 
         return part is not null && look is not null
-            ? part with { Recorded = WorkInventories.RecordedOf(look.Records.Where(record => part.Holds(record.Repository))) }
+            ? part with { Recorded = KnowledgeWorkOrders.Current.RecordedOf(look.Records.Where(record => part.Holds(record.Repository))) }
             : part;
     }
 
@@ -579,7 +579,7 @@ public static class HelpFacts
     {
         var current = facts.Current;
         if (current.Value<HelpMachineWhole>(Machine, Whole) is not { } whole
-            || PartOf(whole, subject, current.Value<SessionLook>(Sessions, Whole)) is not { } part)
+            || PartOf(whole, subject, current.Value<IKnowledgeSessionLook>(Sessions, Whole)) is not { } part)
         {
             return null;
         }
@@ -594,8 +594,7 @@ public static class HelpFacts
     /// </summary>
     public static async Task<HelpWork> ReadWorkAsync(string home, HelpWorkPart part, CancellationToken ct)
     {
-        var (units, recovery, unread) = await WorkInventories.ReadPartAsync(home, part.Roots, part.InUse, part.Holds, ct, part.Recorded).ConfigureAwait(false);
-        return new HelpWork(units, unread, recovery);
+        return await KnowledgeWorkOrders.Current.ReadWorkAsync(home, part, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -726,13 +725,13 @@ public static class HelpFacts
 
     /// <summary>
     /// The sessions as the room reads them (FACTSPLIT1b), the look as the Sessions list takes it: the look without trees, with each
-    /// part's trees merged in by their path (<see cref="SessionGroups.Normal"/>). Null while the look or any part the service's
+    /// part's trees merged in by their path (<see cref="KnowledgeWorkOrders.Current.Normal"/>). Null while the look or any part the service's
     /// answers name was never judged, which the room says not read yet, as it said the whole: a tree not judged would read as
     /// holding nothing to review.
     /// </summary>
-    private static SessionLook? SessionsOf(MachineFactsSnapshot facts, HelpMachineWhole whole)
+    private static IKnowledgeSessionLook? SessionsOf(MachineFactsSnapshot facts, HelpMachineWhole whole)
     {
-        if (facts.Value<SessionLook>(Sessions, Whole) is not { } look) return null;
+        if (facts.Value<IKnowledgeSessionLook>(Sessions, Whole) is not { } look) return null;
         var trees = new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase);
         foreach (var subject in Parts(whole))
         {
@@ -740,7 +739,7 @@ public static class HelpFacts
             foreach (var (tree, work) in part.Trees) trees[tree] = work;
         }
 
-        return look with { Trees = trees };
+        return look.WithTrees(trees);
     }
 
     /// <summary>
@@ -756,7 +755,7 @@ public static class HelpFacts
 /// <param name="Snapshot">The registry, the quests and the active sessions.</param>
 /// <param name="Standing">The asks the host answered.</param>
 /// <param name="Roster">The harnesses as the roster reports them.</param>
-public sealed record HelpMachineWhole(Snapshot Snapshot, IReadOnlyList<AskView> Standing, IReadOnlyList<HarnessReport> Roster);
+public sealed record HelpMachineWhole(IKnowledgeSnapshot Snapshot, IReadOnlyList<AskView> Standing, IReadOnlyList<HarnessReport> Roster);
 
 /// <summary>A checkout's guess at its line as git said it (<see cref="LineGuesses"/>); null where git names none.</summary>
 public sealed record HelpLineGuess(string? Branch);
@@ -765,7 +764,7 @@ public sealed record HelpLineGuess(string? Branch);
 /// Where each unit of work has got to (FABRIC-MILESTONE1b), what could not be read, each by its repository (FACTSPLIT1a), and
 /// Daoris's own recoveries no unit names: one repository's part, or the parts merged.
 /// </summary>
-public sealed record HelpWork(IReadOnlyList<WorkMilestone> Units, IReadOnlyList<InventoryUnread> Unread, IReadOnlyList<InventoryEntry> Recovery);
+public sealed record HelpWork(IReadOnlyList<IKnowledgeMilestone> Units, IReadOnlyList<InventoryUnread> Unread, IReadOnlyList<InventoryEntry> Recovery);
 
 /// <summary>What one part of the work reads (FACTSPLIT1a, <see cref="HelpFacts.PartOf"/>), from the service's answers.</summary>
 /// <param name="Repository">The repository whose part it is; null for the rest's (<see cref="HelpFacts.NoCheckout"/>).</param>
@@ -792,8 +791,8 @@ public sealed record HelpWorkPart(
 public sealed record HelpSweepPart(string Repository, string Workspace, string Root, IReadOnlySet<string> InUse);
 
 /// <summary>
-/// What one part's sessions' trees hold (FACTSPLIT1b): each tree judged, by <see cref="SessionGroups.Normal"/>, as
-/// <see cref="SessionLook.Trees"/> keys them. A tree not here holds nothing to review.
+/// What one part's sessions' trees hold (FACTSPLIT1b): each tree judged, by <see cref="KnowledgeWorkOrders.Current.Normal"/>, as
+/// <see cref="IKnowledgeSessionLook.Trees"/> keys them. A tree not here holds nothing to review.
 /// </summary>
 public sealed record HelpTrees(IReadOnlyDictionary<string, TreeWork> Trees)
 {
@@ -801,14 +800,14 @@ public sealed record HelpTrees(IReadOnlyDictionary<string, TreeWork> Trees)
     public static HelpTrees None { get; } = new(new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase));
 
     /// <summary>
-    /// The trees this part asked (PUSH1c1), by <see cref="SessionGroups.Normal"/>: one asked and not in <see cref="Trees"/> holds nothing
+    /// The trees this part asked (PUSH1c1), by <see cref="KnowledgeWorkOrders.Current.Normal"/>: one asked and not in <see cref="Trees"/> holds nothing
     /// to review, one not asked was never judged here, which a door reading the parts walks itself (<see cref="HelpFacts.WithTreesAsync"/>).
     /// </summary>
     public IReadOnlySet<string> Asked { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>A door's trees as the parts judged them (<see cref="HelpFacts.TreesJudged"/>, PUSH1c1).</summary>
-/// <param name="Trees">The work of each tree a part asked and git spoke for, by <see cref="SessionGroups.Normal"/>.</param>
+/// <param name="Trees">The work of each tree a part asked and git spoke for, by <see cref="KnowledgeWorkOrders.Current.Normal"/>.</param>
 /// <param name="NotJudged">The trees no part asked, as the door named them.</param>
 public sealed record HelpTreesJudged(IReadOnlyDictionary<string, TreeWork> Trees, IReadOnlyList<string> NotJudged);
 
@@ -816,7 +815,7 @@ public sealed record HelpTreesJudged(IReadOnlyDictionary<string, TreeWork> Trees
 /// <param name="Repository">The repository whose part it is; null for the rest's (<see cref="HelpFacts.NoCheckout"/>).</param>
 /// <param name="Checkouts">Every repository with a checkout here, which the rest's holds none of.</param>
 /// <param name="Look">The sessions' look without trees, as the facts hold it.</param>
-public sealed record HelpTreesPart(string? Repository, IReadOnlySet<string> Checkouts, SessionLook Look)
+public sealed record HelpTreesPart(string? Repository, IReadOnlySet<string> Checkouts, IKnowledgeSessionLook Look)
 {
     /// <summary>Whether a repository a record names is this part's, by its registry name, without case.</summary>
     public bool Holds(string repository) => Repository is { } own
@@ -849,7 +848,7 @@ public sealed record HelpNotReadYet(IReadOnlyList<string> Repositories)
 
 /// <summary>The room's reading of the facts (<see cref="HelpFacts.Read"/>): each part as last judged, null where never.</summary>
 public sealed record HelpFactsRead(
-    HelpMachineWhole Whole, IReadOnlyList<RepositoryLine> Lines, SessionLook? Sessions, IReadOnlyList<HistoryReading>? History,
+    HelpMachineWhole Whole, IReadOnlyList<RepositoryLine> Lines, IKnowledgeSessionLook? Sessions, IReadOnlyList<HistoryReading>? History,
     HelpWork? Work, HelpNotReadYet NotReadYet);
 
 /// <summary>
@@ -858,7 +857,7 @@ public sealed record HelpFactsRead(
 /// </summary>
 public sealed record HelpFactJudges(
     Func<CancellationToken, Task<HelpMachineWhole?>> Machine,
-    Func<CancellationToken, Task<SessionLook?>> Sessions,
+    Func<CancellationToken, Task<IKnowledgeSessionLook?>> Sessions,
     Func<CancellationToken, Task<IReadOnlyList<HistoryReading>?>> History,
     Func<HelpWorkPart, CancellationToken, Task<HelpWork?>> Work)
 {

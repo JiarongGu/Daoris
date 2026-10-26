@@ -932,7 +932,7 @@ internal static partial class TraceChains
     /// <summary>The asks the chain names, in the order it reaches them: each quest's sender's, then an intake's own.</summary>
     internal static IReadOnlyList<string> AsksNamed(TraceFound found, TraceFacts facts) =>
     [
-        .. found.Quests.Select(id => QuestOf(facts, id)).OfType<TracedQuest>().Select(quest => AskWords.AskOf(quest.From))
+        .. found.Quests.Select(id => QuestOf(facts, id)).OfType<TracedQuest>().Select(quest => AskSender.AskOf(quest.From))
             .Concat(found.Sessions.Where(session => session.Quest is null).Select(session => session.Ask))
             .OfType<string>()
             .Distinct(StringComparer.OrdinalIgnoreCase),
@@ -947,7 +947,7 @@ internal static partial class TraceChains
         foreach (var questId in found.Quests)
         {
             var quest = QuestOf(facts, questId);
-            var askId = quest is null ? null : AskWords.AskOf(quest.From);
+            var askId = quest is null ? null : AskSender.AskOf(quest.From);
             if (askId is not null && reached.Add(askId))
             {
                 links.Add(new TraceLink(TraceLink.AskKind) { Ask = Ask(asks[askId], new TraceNamedBy(TraceNamers.Quest, quest!.Id), facts) });
