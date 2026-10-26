@@ -708,7 +708,7 @@ public sealed class DriverWatch(
                 counted = nudged;
                 // Taken after the count, so a plain nudge the count missed still makes this look whole, and is looked at again.
                 var everything = Interlocked.Exchange(ref _everything, 0) == 1;
-                var part = by is "start" or "pace" || everything || Due(whole, config) ? LookPart.Look : LookPart.Plan;
+                var part = by is "start" or "pace" || everything || LookDeadline.Due(Stopwatch.GetElapsedTime(whole), config) ? LookPart.Look : LookPart.Plan;
                 var failed = false;
                 var began = Stopwatch.GetTimestamp();
                 try
@@ -838,7 +838,7 @@ public sealed class DriverWatch(
                     await Running.NextAsync(left > TimeSpan.Zero ? left : TimeSpan.Zero, wait.Token, endings: !failed).ConfigureAwait(false);
                     woke = Volatile.Read(ref _nudges) != nudged ? Volatile.Read(ref _woke) : null;
                     by = Volatile.Read(ref _nudges) != nudged ? "nudge"
-                        : failed || Due(whole, config) ? "pace"
+                        : failed || LookDeadline.Due(Stopwatch.GetElapsedTime(whole), config) ? "pace"
                         : "ended";
                     // A session ending may free the tree a refused tidy waits on (FABRIC-END4a, canary 17).
                     if (by == "ended") refs.Unblocked(ChainEvents.Ledger);
@@ -873,15 +873,8 @@ public sealed class DriverWatch(
         }
     }
 
-    /// <summary>How much sooner than its pace a wait may end and still be the pace's: a timer's own granularity.</summary>
-    private static readonly TimeSpan Early = TimeSpan.FromMilliseconds(50);
-
     /// <summary>What link 5 hears as the <c>look</c> topic's deadline: <c>timer(look)</c>, the whole look.</summary>
     private static readonly string Whole = ChainEvents.TimerOf(ChangeTopics.Look);
-
-    /// <summary>Whether the <c>look</c> topic's deadline has come: <c>pollSeconds</c> since the last whole look ended, a timer's granularity allowed.</summary>
-    private static bool Due(long whole, DriverConfig config) =>
-        Stopwatch.GetElapsedTime(whole) >= TimeSpan.FromSeconds(config.PollSeconds) - Early;
 
     /// <summary>
     /// A look's cause on the loop's chain (FABRIC-EVENT3a): the <c>look</c> topic's <c>timer</c> for a whole look; otherwise a

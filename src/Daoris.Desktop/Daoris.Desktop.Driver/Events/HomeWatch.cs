@@ -15,23 +15,6 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
     /// </summary>
     public Func<IEnumerable<string>>? ByName { get; init; }
 
-    /// <summary>
-    /// The workflows (FABRIC-END7, FABRIC-END7b): each version's file by its stamp, and of the runs' bindings under <c>runs/</c>, kept one
-    /// per run for good, only those <paramref name="runs"/> names, by name: the runs a due entry's gate read, which alone can release a
-    /// landing. Every <c>*.json</c> under the folder is heard, and its judge reads the same.
-    /// </summary>
-    public static HomePart Workflows(string folder, Func<IEnumerable<string>> runs)
-    {
-        var full = Path.GetFullPath(folder);
-        return Records(full, subfolders: true) with
-        {
-            Stamps = () => Directory.Exists(full)
-                ? Directory.EnumerateFiles(full, "*.json", SearchOption.TopDirectoryOnly).Select(file => KeyValuePair.Create(file, HomeWrites.Stamp(file)))
-                : [],
-            ByName = () => runs().Where(WorkflowRunBindings.IsRunId).Select(run => Path.Combine(full, WorkflowRunBindings.Folder, run + ".json")),
-        };
-    }
-
     /// <summary>One file of a folder, heard by its final name alone: a writer's temporary and its neighbours are not it.</summary>
     public static HomePart File(string path)
     {
@@ -126,29 +109,6 @@ public sealed record HomePart(string Folder, bool Subfolders, Func<string, Chang
             (moved, _) => names.Contains(moved, StringComparer.OrdinalIgnoreCase) || ways.Contains(moved, StringComparer.OrdinalIgnoreCase),
             () => names.Select(name => KeyValuePair.Create(Path.Combine(full, name), HomeWrites.Stamp(Path.Combine(full, name)))));
     }
-
-    /// <summary>
-    /// The plugins folder: a plugin arriving or leaving (a folder made, renamed or removed under it) and its manifest changing, never the
-    /// <see cref="PluginCatalog.DataFolder"/> its plugins keep their own state in, nor any folder named with a dot.
-    /// </summary>
-    public static HomePart Plugins(string folder)
-    {
-        var full = Path.GetFullPath(folder);
-        return new(
-            full,
-            Subfolders: true,
-            (moved, _) =>
-            {
-                var parts = moved.Split('/');
-                return !parts[0].StartsWith('.')
-                    && (parts.Length == 1 || (parts.Length == 2 && string.Equals(parts[1], PluginCatalog.ManifestName, StringComparison.OrdinalIgnoreCase)));
-            },
-            () => Directory.Exists(full)
-                ? Directory.EnumerateDirectories(full)
-                    .Where(dir => !Path.GetFileName(dir).StartsWith('.'))
-                    .Select(dir => KeyValuePair.Create(dir, HomeWrites.Stamp(Path.Combine(dir, PluginCatalog.ManifestName))))
-                : []);
-    }
 }
 
 /// <summary>
@@ -198,30 +158,23 @@ public sealed class HomeWatch : IAsyncDisposable
     {
         var watch = new HomeWatch(wake, every, source) { Log = log };
         watch.Topic(ChangeTopics.Config, Path.GetFileName(configPath), HomePart.File(configPath));
-        watch.Topic(ChangeTopics.Plugins, ChangeTopics.Plugins, HomePart.Plugins(DaorisHome.Entry(home, HomeEntry.Plugins)));
+        watch.Topic(ChangeTopics.Plugins, ChangeTopics.Plugins, HomeTopics.Of(ChangeTopics.Plugins, home));
         var lines = DaorisHome.Entry(home, HomeEntry.LinesMoved);
         watch.Topic(ChangeTopics.Lines, Path.GetFileName(lines), HomePart.File(lines));
-        var words = HeldWordsFile.PathOf(home);
-        watch.Topic(ChangeTopics.Words, Path.GetFileName(words), HomePart.File(words));
+        watch.Topic(ChangeTopics.Words, HomeTopics.SubjectOf(ChangeTopics.Words), HomeTopics.Of(ChangeTopics.Words, home));
         // The landing gate's files (FABRIC-END7): what releases a second opinion's or a workflow's hold when another process writes it.
         watch.Topic(ChangeTopics.Gates, ChangeTopics.Gates, GateParts(home));
         // LIMITRESUME1c: what a held conversation's wait is computed from, so an account freed early wakes the look's limits stage.
-        watch.Topic(
-            ChangeTopics.Accounts, ChangeTopics.Accounts,
-            HomePart.File(AccountCooling.PathOf(home)), HomePart.File(DaorisHome.Entry(home, HomeEntry.Harnesses)));
+        watch.Topic(ChangeTopics.Accounts, ChangeTopics.Accounts, HomeTopics.Of(ChangeTopics.Accounts, home));
         return watch;
     }
 
     /// <summary>
-    /// The <c>gates</c> topic's places (FABRIC-END7): the second opinions' records and the workflows, whose runs are listed by the names
-    /// the due entries' gates read (FABRIC-END7b, <see cref="LandingJudged.Runs"/>), so the deadline's listing grows with the due list,
-    /// never with every run there ever was.
+    /// The <c>gates</c> topic's places (FABRIC-END7), as the workflows answered them (<see cref="HomeTopics"/>): the second opinions' records
+    /// and the workflows, whose runs are listed by the names the due entries' gates read (FABRIC-END7b), so the deadline's listing grows
+    /// with the due list, never with every run there ever was.
     /// </summary>
-    internal static HomePart[] GateParts(string home) =>
-    [
-        HomePart.Records(DaorisHome.Entry(home, HomeEntry.OpinionGates), subfolders: false),
-        HomePart.Workflows(WorkflowStore.FolderOf(home), () => LandingJudged.Runs(home)),
-    ];
+    internal static HomePart[] GateParts(string home) => HomeTopics.Of(ChangeTopics.Gates, home);
 
     /// <summary>What a topic's judge lists of <paramref name="parts"/>, each file's full path with its stamp, which a test counts.</summary>
     internal static IReadOnlyDictionary<string, string> Listed(IEnumerable<HomePart> parts) => Read(parts).Stamps;
@@ -235,7 +188,7 @@ public sealed class HomeWatch : IAsyncDisposable
         string home, Action<string, string> wake, TimeSpan? every = null, IChangeSource? source = null, MachineLog? log = null)
     {
         var watch = new HomeWatch(wake, every, source) { Log = log };
-        watch.Topic(ChangeTopics.Help, "proposals", HomePart.Named(HelpProposals.FolderOf(home)));
+        watch.Topic(ChangeTopics.Help, "proposals", HomeTopics.Of(ChangeTopics.Help, home));
         return watch;
     }
 

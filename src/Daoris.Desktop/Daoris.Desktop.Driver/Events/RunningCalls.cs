@@ -68,7 +68,7 @@ public sealed class RunningCalls
     /// <summary>How many sessions' open calls one record's watch holds.</summary>
     private const int Remembered = 1024;
 
-    private static readonly ConditionalWeakTable<SessionEvents, RunningCalls> Watches = new();
+    private static readonly ConditionalWeakTable<ISessionEvents, RunningCalls> Watches = new();
 
     private readonly object _gate = new();
 
@@ -85,7 +85,7 @@ public sealed class RunningCalls
 
     private readonly int _remembered;
 
-    private RunningCalls(SessionEvents events, int remembered)
+    private RunningCalls(ISessionEvents events, int remembered)
     {
         _remembered = remembered;
         _held = HeldPermissions.Of(events);
@@ -107,17 +107,18 @@ public sealed class RunningCalls
     public event Action<string>? Changed;
 
     /// <summary>Watch a record for its calls, once whoever asks: the record handed back, as <see cref="UsageTurns.Watched"/> does.</summary>
-    public static SessionEvents Watched(SessionEvents events)
+    public static T Watched<T>(T events)
+        where T : class, ISessionEvents
     {
         _ = Of(events);
         return events;
     }
 
     /// <summary>The record's watch, begun now where nothing began it: it hears only what is appended from now on.</summary>
-    public static RunningCalls Of(SessionEvents events) => Of(events, Remembered);
+    public static RunningCalls Of(ISessionEvents events) => Of(events, Remembered);
 
     /// <summary>The record's watch, bounded at <paramref name="remembered"/> sessions where nothing began it: the bound's own test.</summary>
-    internal static RunningCalls Of(SessionEvents events, int remembered) =>
+    internal static RunningCalls Of(ISessionEvents events, int remembered) =>
         Watches.GetValue(events, each => new RunningCalls(each, remembered));
 
     /// <summary>The call the session's agent is inside, or null where none is open or none open was named.</summary>

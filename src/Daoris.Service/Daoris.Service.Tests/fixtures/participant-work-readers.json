@@ -144,6 +144,11 @@
       "row": "1q",
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
+    "Events/Domain/AttentionEvent.cs": {
+      "lines": 1,
+      "reads": "other",
+      "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
+    },
     "Help/HelpCheckouts.cs": {
       "lines": 1,
       "reads": "tells",
@@ -278,11 +283,6 @@
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
     "Quests/ChannelCommand.cs": {
-      "lines": 1,
-      "reads": "other",
-      "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
-    },
-    "Quests/Domain/Attention.cs": {
       "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"

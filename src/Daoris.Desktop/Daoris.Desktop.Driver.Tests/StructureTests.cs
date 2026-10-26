@@ -440,9 +440,9 @@ public sealed class StructureTests
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // The moves that have landed, bottom up, one row each (FOUNDATION1 mod-i: Platform; mod-ii: Store; mod-iii: Settings; mod-iv: Service; mod-v: Install; mod-vi: Instance); no namespace row: every namespace stays
+        // The moves that have landed, bottom up, one row each (FOUNDATION1 mod-i: Platform; mod-ii: Store; mod-iii: Settings; mod-iv: Service; mod-v: Install; mod-vi: Instance; mod-vii: Events); no namespace row: every namespace stays
         // Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);

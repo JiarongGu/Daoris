@@ -187,7 +187,7 @@ internal interface IEpisodeWords
 /// One transient episode (§5.1): from its first failure to a try that answers, another kind, the owner's no, or the bound. Named by when
 /// its first failure was read.
 /// </summary>
-public sealed class TransientEpisode(DateTimeOffset began, AgentError first)
+public sealed class TransientEpisode(DateTimeOffset began, AgentError first) : ITransientEpisode
 {
     /// <summary>When its first failure was read: its name (<c>DaorisKeys.TransientRetry</c>).</summary>
     public DateTimeOffset Began { get; } = began;

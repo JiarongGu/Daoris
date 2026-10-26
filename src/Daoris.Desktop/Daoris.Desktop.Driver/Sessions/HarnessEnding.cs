@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 /// only the exit, which the harness sets, tells a failure (<see cref="Transcript"/>). None on the protocol door, whose failure
 /// is its door's.
 /// </param>
-public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<string> Lines)
+public sealed record HarnessEnding(int? Exit, string? Failure, IReadOnlyList<string> Lines) : IHarnessEnding
 {
     /// <summary>How many of the harness's last lines are kept: where a tool says why it gave up.</summary>
     public const int LinesKept = 40;

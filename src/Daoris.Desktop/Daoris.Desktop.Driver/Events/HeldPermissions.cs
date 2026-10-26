@@ -96,7 +96,7 @@ public sealed class HeldPermissions
     /// </summary>
     public static readonly TimeSpan Bound = TimeSpan.FromMinutes(15);
 
-    private static readonly ConditionalWeakTable<SessionEvents, HeldPermissions> Registries = new();
+    private static readonly ConditionalWeakTable<ISessionEvents, HeldPermissions> Registries = new();
 
     private readonly object _gate = new();
     private readonly Dictionary<(string Session, string Request), Entry> _held = new();
@@ -105,7 +105,7 @@ public sealed class HeldPermissions
     public event Action<string>? Changed;
 
     /// <summary>The registry of the sessions writing to <paramref name="events"/>: the driver's and the page's, one per process.</summary>
-    public static HeldPermissions Of(SessionEvents events) => Registries.GetValue(events, _ => new HeldPermissions());
+    public static HeldPermissions Of(ISessionEvents events) => Registries.GetValue(events, _ => new HeldPermissions());
 
     /// <summary>The door one protocol session holds its requests through, each released at <paramref name="bound"/> (<see cref="Bound"/>).</summary>
     public PermissionHolds For(string session, TimeSpan? bound = null) => new(this, session, bound ?? Bound);

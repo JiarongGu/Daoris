@@ -249,6 +249,17 @@ mark and refusal (`TerminalRole`, which `HolderKey.Take` writes). It names no ty
 is a port the instance declares (`VerbLeaseReading`, through `VerbLeases.Answer`) and the owner answers when the driver's assembly loads (`AgentsLease`, `AccessLease`, `PluginLease`,
 `HeavyLease`, `NodeLease`, `GitLease`, each beside its command); a verb nobody answers is unclassed and holds the lease. The GitDoor, the launcher and PieceStart compile none of it.
 
+What is said sits in `Events/` (FOUNDATION1 mod-vii, D212): the chain and the change watches (`Chain`, `ChangeWatch`, `FolderWatcherSource`, `HomeWatch`), the machine's facts and its log's reader
+(`MachineFacts`, `MachineLogReader`), the notices (`Notices`, `NoticesRead`, `LookSaid`), the note codes' vocabulary (`NoteCodes`), the session log and its watch (`SessionLog`, `SessionWatch`,
+`RunningCalls`, `HeldPermissions`, `HeardReader`, `QuietClock`) and, in `Events/Domain/`, the vocabularies the notes and the record carry: the session's events and end (`SessionEvents`,
+`SessionEnded`, `Observation`), the attention kinds (`AttentionEvent`), the reasons a hand-over, a helper and a partner are refused or moved by (`HandOverWhy`, `HandOverAskWhy`, `HelperWhy`,
+`PartnerWhy`), `SetupSwap`, `CoolingEntry`, `ModelRefusal`, `TurnModels`, the instruction account an event carries (`InstructionAccount`, `HandedSection`, `HandedCut`) and the look's deadline
+(`LookDeadline`). It names no type of a subdomain above it. What a lower reading needs of a higher type is a port the events declare and the higher type answers by being it
+(`ISessionEvents`, which the context's `SessionEvents` is; `IHarnessEnding`, `ITransientEpisode` and `IResumeRefused`, which the agents' `HarnessEnding`, `TransientEpisode` and
+`AcpResumeRefused` are); where a home topic's files are is a registry the owners answer when the driver's assembly loads (`HomeTopics`, answered by `HelpHomeTopic`, `PluginHomeTopic`,
+`WorkflowHomeTopic`, `WordsHomeTopic` in the workplace's folder and `AccountsHomeTopic` in the agents'), a topic nobody answers throwing where a watch asks for it. The GitDoor, the launcher
+and PieceStart compile none of it.
+
 `Quests/` keeps the onion for its model and rules alone (STRUCT3f, flattened by FLAT1a, folded by FLAT1b-ii): the plan and its
 records (`Planner`, `QuestView`, the considerations), the evidence's records, the attention events, the ask's words (`AskWords`,
 which reads the service in `ReadAsync`), the ask's channel as an entry reads it and how it is written to a session (`ChannelWords`,
@@ -262,12 +273,11 @@ check, the intake's kinds, the park reader, the git read of a done's evidence (w
 
 The extension blocks, forwards and ports the layering needed are folded back in all six modules and in Sessions (FLAT1b).
 
-`Sessions/` keeps the onion for its model and rules alone (STRUCT3g-i, D166's STRUCT3g-i note); its `Domain/` holds the session events' records
-and rules (`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cuts), the trace's records and chain (`Trace.Chain.cs`,
-which reads its stores through `TraceHere`'s values), the pause, abandon, delete, archive and history plans and words, and the
-observation rules. Its stores and use cases sit in scope folders (SCOPE1d): `Work/` (pause, abandon and their records), `Requests/`
+`Sessions/` keeps the onion for its model and rules alone (STRUCT3g-i, D166's STRUCT3g-i note); its `Domain/` holds the trace's records and chain (`Trace.Chain.cs`,
+which reads its stores through `TraceHere`'s values) and the pause, abandon, delete, archive and history plans and words; the session events' records and rules
+(`SessionEvents.cs`, with `SessionEventText`'s bounds, id rule and cuts) and the observation rules are the events' now (`Events/Domain/`, FOUNDATION1 mod-vii). Its stores and use cases sit in scope folders (SCOPE1d): `Work/` (pause, abandon and their records), `Requests/`
 (the session requests, their watch and the moves), `History/` (clearing, its bytes and home files, archive and deletion), `Trace/`
-(the trace, its command and reads), `Events/` (the event log, the session log and last words) and `Heavy/` (below); `RunningSessions`,
+(the trace, its command and reads), `Events/` (the event log and last words; the session log and its watch are in the top-level `Events/`) and `Heavy/` (below); `RunningSessions`,
 `SessionProcesses`, `SessionsCommand` and `HarnessEnding` (the loop's too) stay at the top. Review, with fifteen files at its top, stays flat.
 
 A session's heavy checks run through `daoris-driver run-heavy [--gate <name> | --look]` (HEAVYRUN1a, D180's HEAVYRUN1 notes), in

@@ -62,43 +62,43 @@ public static class HandOver
     public const string NotConversation = "not-conversation";
 
     /// <summary>A quest's session whose quest is not open or taken any more (MIXAGENT1a-ii): no work is left to hand over.</summary>
-    public const string QuestClosed = "quest-closed";
+    public const string QuestClosed = HandOverAskWhy.QuestClosed;
 
     /// <summary>A quest's session whose quest is not this machine's to carry on: taken elsewhere, or the session stood down.</summary>
-    public const string QuestElsewhere = "quest-elsewhere";
+    public const string QuestElsewhere = HandOverAskWhy.QuestElsewhere;
 
     /// <summary>A quest's session whose take was lost to the person's own reopen of the work its step grew from (FABRIC-CLOSE1c20).</summary>
-    public const string QuestReopened = "quest-reopened";
+    public const string QuestReopened = HandOverAskWhy.QuestReopened;
 
     /// <summary>A quest's session that is not the quest's last run on this machine, which a later session here carries.</summary>
-    public const string NotLastRun = "not-last-run";
+    public const string NotLastRun = HandOverAskWhy.NotLastRun;
 
     /// <summary>A quest's session parked on the person, who answers it instead.</summary>
     public const string Parked = "parked";
 
     /// <summary>The named agent's door cannot drive the quest's repository: a pipe-door agent where Daoris is not adopted.</summary>
-    public const string NoDoor = "no-door";
+    public const string NoDoor = HandOverAskWhy.NoDoor;
 
     /// <summary>The roster has no such agent.</summary>
-    public const string UnknownAgent = "unknown-agent";
+    public const string UnknownAgent = HandOverAskWhy.UnknownAgent;
 
     /// <summary>The account is not one of that agent's.</summary>
     public const string NotItsAccount = "not-its-account";
 
     /// <summary>It already runs on that agent and account.</summary>
-    public const string SameAgent = "same-agent";
+    public const string SameAgent = HandOverAskWhy.SameAgent;
 
     /// <summary>It runs in another Daoris process, which this one cannot end (the chat runner's own refusal).</summary>
-    public const string Running = "running";
+    public const string Running = HandOverAskWhy.Running;
 
     /// <summary>The new conversation opened, but Daoris's briefing did not reach its agent (an answer of the take, not a refusal).</summary>
     public const string Unbriefed = "unbriefed";
 
     /// <summary>Another hand-over of it waits.</summary>
-    public const string Waiting = "waiting";
+    public const string Waiting = HandOverAskWhy.Waiting;
 
     /// <summary>The tree it ran in no longer exists, so the new conversation has nowhere to go on.</summary>
-    public const string TreeGone = "tree-gone";
+    public const string TreeGone = HandOverAskWhy.TreeGone;
 
     /// <summary>Judge and keep the box for a conversation of this machine's.</summary>
     /// <param name="accountsOf">The accounts the roster holds for an agent, or null where it has no such agent.</param>

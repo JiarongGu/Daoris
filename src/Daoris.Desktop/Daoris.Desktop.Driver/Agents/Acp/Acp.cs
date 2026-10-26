@@ -157,13 +157,6 @@ public sealed record AcpOutcome(
     public ModelRefusal? NotOffered { get; init; }
 }
 
-/// <summary>
-/// The agent's refusal of a choice at an open (D205 §3.3, MODELROLE1c2): the category and the value asked, and how,
-/// <see cref="AgentOffers.NotOffered"/> where the open's list lacks it, <see cref="AgentOffers.RefusedCode"/> where the set was refused
-/// or answered with another value the list offers.
-/// </summary>
-public sealed record ModelRefusal(string Category, string Value, string Code);
-
 /// <summary>A choice refused at the open with nothing else to set on the same session (D205 §3.3): the open ends before its prompt.</summary>
 public sealed class AcpChoiceNotOffered(ModelRefusal refusal)
     : DriverException($"the agent did not offer the {refusal.Category} `{refusal.Value}` asked ({refusal.Code}): nothing was prompted.")
