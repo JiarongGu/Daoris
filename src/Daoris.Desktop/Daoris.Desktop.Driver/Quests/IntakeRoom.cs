@@ -26,7 +26,7 @@ namespace Daoris.Driver;
 public static class IntakeRoom
 {
     /// <summary>Which ask an intake answers — on its spawn, and on the connector it is offered.</summary>
-    public const string AskVariable = "DAORIS_ASK_ID";
+    public const string AskVariable = AgentWorkVariables.Ask;
 
     /// <summary>Which session is answering — what the ask checks before it says a harness decided.</summary>
     public const string SessionVariable = ChildMarks.SessionVariable;

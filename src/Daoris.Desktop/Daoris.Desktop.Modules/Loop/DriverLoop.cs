@@ -1172,7 +1172,7 @@ public sealed class DriverLoop(
             {
                 Session = session,
                 // Each with the id it is taken back or reworded by (QUEUEEDIT1a).
-                Queued = queue.Queued.Select(ConversationRoutes.Said).ToArray(),
+                Queued = queue.Queued.Select(ChatMessage.FromAgent).Select(ConversationRoutes.Said).ToArray(),
                 queue.Taking,
                 // An open inbox always has a turn in hand; a closed one tells Idle.
                 Listening = queue.Taking,

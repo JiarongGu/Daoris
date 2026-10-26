@@ -43,8 +43,10 @@ public enum QueueEdit
 /// that press to answer, landed or refused, not for a turn. The page says so.
 /// </param>
 public sealed record ChatQueue(
-    bool Taking, IReadOnlyList<ChatMessage> Queued, DateTimeOffset? LastTurnEnded = null, bool Opening = false, bool Pressing = false)
+    bool Taking, IReadOnlyList<ChatMessage> Queued, DateTimeOffset? LastTurnEnded = null, bool Opening = false, bool Pressing = false) : IAgentQueue
 {
+    IReadOnlyList<IAgentWord> IAgentQueue.Queued => Queued;
+
     /// <summary>Nothing running and nothing waiting — a conversation between turns, or none at all.</summary>
     public static readonly ChatQueue Idle = new(false, []);
 }

@@ -159,6 +159,22 @@ export function dropQueued(queue, branches, at = new Date().toISOString()) {
   };
 }
 
+/** Whether an awaited result still belongs to this frozen candidate, including each enqueue occurrence (QUEUEDROP1). */
+export function sameCandidate(current, expected) {
+  return Boolean(current && expected && current.base === expected.base && current.tip === expected.tip
+    && Array.isArray(current.members) && Array.isArray(expected.members) && current.members.length === expected.members.length
+    && current.members.every((member, i) => {
+      const wanted = expected.members[i];
+      return member.branch === wanted.branch && member.tip === wanted.tip && member.request === wanted.request
+        && member.commit === wanted.commit;
+    }));
+}
+
+/** Called under the queue lock: a dropped or replaced candidate's late result writes nothing. */
+export function changeCandidate(queue, expected, change) {
+  return sameCandidate(queue.candidate, expected) ? change(queue) : { obsolete: true };
+}
+
 /**
  * The next candidate's members: the queued requests in arrival order, at most `max`, one where `oneAtATime`. Answers the members
  * and the requests left queued.

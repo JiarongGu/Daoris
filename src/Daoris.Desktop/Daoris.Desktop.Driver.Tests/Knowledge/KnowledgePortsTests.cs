@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// session's events, answered by the context. Each answer is installed when the driver's assembly loads, so the host's terminal, the
 /// shell's route and every test read what they always read; a test may put another in and puts it back.
 /// </summary>
+[Collection("agent operation ports")]
 public sealed class KnowledgePortsTests : IDisposable
 {
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "knowledge-ports", Guid.NewGuid().ToString("N")[..8]);

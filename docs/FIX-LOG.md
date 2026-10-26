@@ -5,6 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - A dropped merge candidate returned as an incomplete green record (QUEUEDROP1)
+
+- **Symptom:** dropping the foundation candidate removed its request, but its checks continued. A real scratch-repository reproduction then recreated the candidate as only `{ state: "green" }`; the runner failed while reading its missing base.
+- **Root cause:** `9671deccfb` added the asynchronous candidate runner whose outcome writer updated the current record without checking that its frozen candidate and enqueue occurrences still matched. A drop could set the candidate to null while the gate run was awaited.
+- **Fix:** `sameCandidate` compares the base, candidate tip and ordered frozen member identities, including each request. `changeCandidate` checks this inside the queue lock before every candidate-state write. A completed run whose candidate is already gone is recorded as ended and skips obsolete failure diagnosis. Dropping still permits an active check to finish; immediate process-tree cancellation remains QUEUEDRAIN1.
+- **Verify:** the end-to-end held-gate test failed first with the recreated green record, then passed without changing main, stop or dropped-request history. Pure tests reject late green, stopped, held, split and red updates after a drop, replacement, base move or same-tip re-enqueue. The full tooling suite passes **382 tests**, and CLI types pass. Full candidate integration remains owed.
+
+## 2026-10-27 - Gate preparation rebuilt its glob matchers for every path (SCOPEPLAN1)
+
+- **Symptom:** the foundation candidate spent about nine minutes of Node CPU in preparation before gate execution. A single read of 421 changed paths took hundreds of milliseconds, repeated while judging the historical verdict ledger.
+- **Root cause:** the per-path rule lookup from `12f87a6364` called `laneMatcher` for every rule it visited. Selection, path checks and verdict reach repeated those regular-expression compilations for each path.
+- **Fix:** a lazy rule reader retains matchers within one selection or reach read. A later read prepares them afresh, so changed rule and lane inputs remain visible; first-match precedence, exclusions, unknown-path conservatism and gate policy are unchanged.
+- **Verify:** the operation-count regression failed first with 322 direct-pattern reads and 121 lane-pattern reads for 161 paths. Bounded preparation and fresh-input regressions pass; all **21** gate reach lists agree with the previous algorithm on the same 421 paths and tables. Sample old reads took 0.30–0.41 seconds versus 0.005–0.006 seconds after the change; the updated 649-entry ledger probe completed in 32.5 seconds with no unread trees. These are local observations, not a performance bound. The full tooling suite passes **382 tests**, and CLI types pass; full integration remains owed.
+
+## 2026-10-27 - Context's new transcript fixture bypassed queued live visibility
+
+- **Symptom:** the new Context fixture's immediate shared-read assertion failed during development. Parent review required a condition wait for live visibility; the explicit Flush in `acea4d5c4` bypassed the asynchronous behavior instead.
+- **Root cause:** StubFile.Text shares the open file but does not wait for TranscriptFile's pool-queued flush. Immediate visibility is a scheduling assumption; forcing the flush removes the behavior being checked.
+- **Fix:** AgentContextPortsTests awaits Poll.Until on the shared-read visibility condition while the writer remains open, using default Poll.Patience as failure patience. Production flushing, locks and disposal are unchanged; the test introduces no fixed staging sleep or latency claim.
+- **Verify:** the corrected fixture and the combined Context/ports/prompt/adapter/account/event/structure focused fast selection pass **776 cases**; test-map passes at **1,892 units**. No Process or whole suite ran. D212 amends the earlier explicit-flush checkpoint.
+
+## 2026-10-27 - An agent-port fixture's temporary renderer crossed into an unrelated prompt test (AGENTPORTISOLATION1)
+
+- **Symptom:** the final FOUNDATION1 mod-ix focused run passed 151 cases and failed `AskWordsHandedTests.An_ask_from_before_its_words_were_kept_says_from_when_they_are`: its instruction did not contain the original kept-since sentence. An immediate port/ask selection passed 56, showing the scheduling dependency.
+- **Root cause:** Driver fast classes run concurrently. The pre-commit Work orders fixture temporarily replaced the process-global `AgentWorkWords.Current` while an unrelated prompt consumer could read it. A `finally` restores the port after a test, but does not isolate concurrent readers. The same risk applies to the new Participants, Plugins and Workplace port fixtures, including Workplace's replacement of `ChildGit.Current`.
+- **Fix:** `58bfc98ee` put all four replacing classes in the nonparallel `agent operation ports` collection, following `KnowledgeReviewPortsTests`, while retaining every `finally` restoration. A follow-up reflection regression checks all four memberships and the definition's `DisableParallelization`; earlier new account-identity and actor-opening tests replace no shared port. Product code and assembly-wide parallelism are unchanged.
+- **Verify:** the original renderer crossover was observed before isolation; the corrected combined port/prompt/structure selection passed 163. The separate follow-up combined selection passes 494: all four replacing classes, instruction goldens, ask/go-ahead/channel consumers, adapters, driven/configured/help access, help start, permissions, lineage, earlier account/actor/review/Events contracts and structure. The guard checks every replacing class, including the ChildGit case, and the collection's nonparallel definition. Only focused fast checks ran; Context/Course and product behavior remain untouched.
+- **Commit:** `58bfc98ee` applies collection isolation; this test-only follow-up adds its membership guard and record.
+
+**Amendment, 2026-10-27 (parent's prerequisite-port audit).** ServicePortsTests also replaces CheckoutReads.Current and SessionEnds.Ended, InstallPortsTests replaces ChildGit.Current and ToolDownloads.Current, and KnowledgePortsTests replaces TraceEventFiles.Current. These are plain process-global fields/properties, not AsyncLocal: the confirmed code-level hazard warrants the same isolation. They are not attributed to the observed Work orders renderer failure. All three now join the same nonparallel collection and seven-class membership regression; their existing finally restoration remains unchanged. Other Knowledge port classes already use the nonparallel knowledge review collection; ProtocolChatTests' equality comparison is no mutation. The expanded guard failed before these three collection annotations. The combined relevant fast selection passes **618 cases**, including all seven fixtures, existing Knowledge port collections and unrelated prompt, adapter, access, help-start, tools/install, trace and service-closure consumers plus structure. No Process or whole suite ran.
+
 ## 2026-10-26 - Failure isolation duplicated a filter, and a new enqueue read an old outcome (QUEUEFILTER1, QUEUEWAIT1)
 
 - **Symptom:** scoped verification could not classify fast-test failures because `dotnet test` refused two `--filter` arguments. Requeueing the unchanged PRESSMODEL1 tip after a base repair started a new candidate but immediately returned its previous hand-back and exit 1, even though the new candidate later promoted.
@@ -7218,6 +7249,11 @@ The second sighting was its trigger.
   the rehearsal's removal now waits them out (`maxRetries`). Alone, straight after, it passed 70/70. So it is not the
   test runner's: the common factor is a Node process on Windows ending while its children are killed, as the
   sibling's reproducer says.
+- 2026-10-27, during foundation integration's `npm run verify`: `fabric-probe.test.mjs`'s hook-logger child exited
+  `3221226505`; the helper selection passed 179 cases and failed this one. The same case passed alone afterward.
+  Its assertion now reports the child's status, signal, spawn error and stderr for the next capture. No retry, timeout
+  change or native-runtime fix was made; the abort's cause remains unproved. The full baseline subsequently passed,
+  including all 180 helper cases; that green run does not close TEST1.
 
 **A family sibling documents the same abort** at about 1.5% of e2e runs, with a standing reproducer (spawn a server,
 poll it, kill it: about 1 in 300 rounds, 4-way concurrent). The row used to say *capture the Playwright HTML report*,

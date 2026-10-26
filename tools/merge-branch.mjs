@@ -434,7 +434,7 @@ import { endOrphans, endStranded } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
   MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget,
-  judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits, promotion, queueLines, readAdmission, readQueue,
+  changeCandidate, judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits, promotion, queueLines, readAdmission, readQueue, sameCandidate,
   recheckDue, recordsOnly, reformCount, resumeCandidate, scopedSet, scopedTier, writeAdmission, writeQueue,
 } from './merge-queue.mjs';
 
@@ -1028,7 +1028,8 @@ const pathCheckOf = (gate, pathChecks = PATH_CHECKS) => pathChecks.find((check) 
 /** Of `paths`, the ones that reach a path check (MERGETSC1): its own, and those the lane table sends to every gate. */
 const pathCheckPaths = (check, paths, reach, lanes) => {
   const own = laneMatcher(check.paths);
-  return paths.filter((path) => own(path) || ruleFor(path, reach, lanes)?.gates === '*');
+  const readRule = ruleReader(reach, lanes);
+  return paths.filter((path) => own(path) || readRule(path)?.gates === '*');
 };
 
 // The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
@@ -1224,9 +1225,9 @@ export const REACH = Object.freeze([
   // driver's folder, since the driver's files move into module folders one module per branch.
   {
     paths: [
-      'NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'Landing.cs',
+      'NoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'Trace.Chain.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'Landing.cs',
       // MSG1g3: the page's say twin holds its refusal tables to these codes.
-      'GoOnNew.cs', 'SessionSay.cs', 'Continuation.cs', 'ChatRunner.StartFrom.cs',
+      'GoOnNew.cs', 'SessionSay.cs', 'Continuation.cs', 'ContinueReason.cs', 'ContinueCodes.cs', 'ChatRunner.StartFrom.cs',
       // MIXAGENT1b-i: the say twin holds the hand-over's refusal table to its codes; FOUNDATION1 mod-vii moved the codes it aliases
       // into Events, so the twin reads their literals there.
       'HandOver.cs', 'HandOverAskWhy.cs',
@@ -1663,10 +1664,19 @@ function refreshKnowledgeServer(root) {
 
 /** The first rule that places a path, or null: by glob, or by a lane whose paths own it. */
 export function ruleFor(path, rules, lanes) {
-  return rules.find((rule) => {
-    if (rule.paths) return laneMatcher(rule.paths)(path);
-    const lane = lanes.find((candidate) => candidate.id === rule.lane);
-    return lane ? laneMatcher(lane.paths)(path) : false;
+  return ruleReader(rules, lanes)(path);
+}
+
+/** Compile a reached rule once within this read; a later read sees the configuration afresh (SCOPEPLAN1). */
+function ruleReader(rules, lanes) {
+  const matchers = new Map();
+  return (path) => rules.find((rule) => {
+    if (!matchers.has(rule)) {
+      const paths = rule.paths;
+      const lane = paths ? null : lanes.find((candidate) => candidate.id === rule.lane);
+      matchers.set(rule, paths ? laneMatcher(paths) : lane ? laneMatcher(lane.paths) : () => false);
+    }
+    return matchers.get(rule)(path);
   }) ?? null;
 }
 
@@ -1687,8 +1697,9 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
   const named = namedGates(reach);
   const reachedBy = new Map();
   const unplaced = [];
+  const readRule = ruleReader(reach, lanes);
   for (const path of changed) {
-    const rule = ruleFor(path, reach, lanes);
+    const rule = readRule(path);
     if (!rule) {
       unplaced.push(path);
       continue;
@@ -1737,8 +1748,9 @@ export function pathsReaching(gate, paths, { lanes = [], reach = REACH, pathChec
   const check = pathCheckOf(gate, pathChecks);
   if (check) return pathCheckPaths(check, paths, reach, lanes);
   if (BASELINE.includes(gate) || !namedGates(reach).has(gate)) return [...paths];
+  const readRule = ruleReader(reach, lanes);
   return paths.filter((path) => {
-    const rule = ruleFor(path, reach, lanes);
+    const rule = readRule(path);
     return !rule || rule.gates === '*' || rule.gates.includes(gate);
   });
 }
@@ -6383,6 +6395,10 @@ async function runCandidate(home, candidate) {
     ran: results.map((result) => ({ gate: result.gate.name, verdict: verdictShown(result), ms: result.ms ?? null })),
     kept: set.kept.map((each) => each.name), deferred: [...set.deferred, ...deferredClasses.map((name) => ({ name, why: "past the git half's budget" }))],
   };
+  if (!sameCandidate(readQueue(home).candidate, candidate)) {
+    appendScopeRun(home, { ...run, state: 'ended', why: 'the candidate was dropped or replaced' });
+    return { action: 'obsolete' };
+  }
   // §4.1 point 4: a death of memory is the machine's. MEMGATE1 ran it again once already; a second death holds the candidate.
   if (memory.length) {
     const step = memoryStep([{ died: true }, { died: true }]);
@@ -6546,31 +6562,38 @@ async function formNext(home, members, base, { reforms = 0, recordsOnly: onlyRec
 /** What the queue does with a run's outcome: promote next, hold, stop, hand back, split, or judge the kept members again. */
 async function judged(home, candidate, outcome) {
   const at = nowIso();
+  const change = (update) => withQueue(home, (queue) => changeCandidate(queue, candidate, update));
+  const obsolete = () => {
+    console.log(`${nowIso()} ignored the late result of ${candidate.tip.slice(0, 7)}: its frozen request is no longer current`);
+    return 'next';
+  };
+  if (outcome.action === 'obsolete') return obsolete();
   if (outcome.action === 'green') {
-    withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'green' } } }));
+    if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'green' } } })).obsolete) return obsolete();
     return 'next';
   }
   if (outcome.action === 'hold') {
+    if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'memory', why: outcome.why } } } })).obsolete) return obsolete();
     console.log(`${at} held as memory: ${outcome.why}`);
-    withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'memory', why: outcome.why } } } }));
     // Run again once the machine's memory admits the gates that died (MEMGATE1's wait), on the next step.
     const wait = memoryGate();
     for (const name of outcome.gates) await wait({ name, run: '', kind: 'suite' }, { again: true });
     return 'next';
   }
   if (outcome.action === 'stop') {
+    if (change((q) => ({ queue: { ...q, stop: { at, base: candidate.base, why: outcome.why, said: outcome.said, failure: { gate: outcome.failure.gate, test: outcome.failure.test, unit: outcome.failure.unit ?? null, names: outcome.failure.names, signature: outcome.failure.signature }, rechecks: [] }, candidate: { ...q.candidate, state: 'stopped' } } })).obsolete) return obsolete();
     console.log(`${at} the queue stops: ${outcome.said}`);
-    withQueue(home, (q) => ({ queue: { ...q, stop: { at, base: candidate.base, why: outcome.why, said: outcome.said, failure: { gate: outcome.failure.gate, test: outcome.failure.test, unit: outcome.failure.unit ?? null, names: outcome.failure.names, signature: outcome.failure.signature }, rechecks: [] }, candidate: { ...q.candidate, state: 'stopped' } } }));
     return 'next';
   }
   const back = (outcome.handedBack ?? []).map((each) => ({ ...each, handedBack: { ...each.handedBack, at } }));
-  for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
   if (outcome.action === 'split') {
+    if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...outcome.retain.map(({ commit, ...request }) => ({ ...request, oneAtATime: true })), ...q.queued] } })).obsolete) return obsolete();
+    for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
     console.log(`${at} unresolved: ${outcome.retain.map((each) => each.branch).join(', ')} run one at a time`);
-    withQueue(home, (q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100), queued: [...outcome.retain.map(({ commit, ...request }) => ({ ...request, oneAtATime: true })), ...q.queued] } }));
     return 'next';
   }
-  withQueue(home, (q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100) } }));
+  if (change((q) => ({ queue: { ...q, candidate: null, handedBack: [...(q.handedBack ?? []), ...back].slice(-100) } })).obsolete) return obsolete();
+  for (const each of back) console.log(`${at} handed back: ${each.branch} (${each.handedBack.how}: ${each.handedBack.failure})`);
   // The retained candidate is judged again: the members kept, formed anew on the base, run on their own tree.
   if (outcome.retain?.length) await formNext(home, outcome.retain.map(({ commit, ...request }) => request), candidate.base, {});
   return 'next';

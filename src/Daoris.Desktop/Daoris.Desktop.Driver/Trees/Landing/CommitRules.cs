@@ -5,7 +5,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>Where a repository's commit rule was set: <see cref="CommitRules.DefaultSource"/> where nothing was.</summary>
-public sealed record ResolvedCommits(CommitRule Rule, string Source);
+public sealed record ResolvedCommits(CommitRule Rule, string Source) : IStartCommits;
 
 /// <summary>What a set changes, before it is judged: a field not given is null with its flag off; a convention that is no string is kept as <c>false</c>, to be refused.</summary>
 public sealed record CommitSet

@@ -440,9 +440,9 @@ public sealed class StructureTests
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // The moves that have landed, bottom up, one row each (FOUNDATION1 mod-i: Platform; mod-ii: Store; mod-iii: Settings; mod-iv: Service; mod-v: Install; mod-vi: Instance; mod-vii: Events; mod-viii: Knowledge); no namespace row: every namespace stays
+        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-ix: Platform through Agents); no namespace row: every namespace stays
         // Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
@@ -466,6 +466,75 @@ public sealed class StructureTests
         var analysis = StructureAnalysis.Of(sources);
         return (map, sources, tests, analysis, clock.Elapsed);
     });
+
+    [Fact]
+    public void Agents_reads_no_Help_type_for_its_required_posture_marker()
+    {
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal) && edge.Type == "HelpModes"));
+    }
+
+    [Fact]
+    public void Agents_reads_review_background_data_below_the_review_operation()
+    {
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && (edge.Type == "ReviewDesk" || edge.Type == "RunningTask" && edge.DeclaredIn.Any(path => !path.StartsWith("Agents/", StringComparison.Ordinal)))));
+    }
+
+    [Fact]
+    public void Agents_keeps_account_shapes_below_actor_composition_and_author_aliases()
+    {
+        string[] higher = ["ActorEffective", "ActorWords", "BuildPass", "SupervisorHanded"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal) && higher.Contains(edge.Type)));
+    }
+
+    [Fact]
+    public void Agents_receives_participant_start_facts_and_uses_a_lower_lineage_port()
+    {
+        string[] higher = ["DrivenAccess", "ChildLineage"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && (higher.Contains(edge.Type) || edge.Type == "LineageHook" && edge.DeclaredIn.Any(path => !path.StartsWith("Agents/", StringComparison.Ordinal)))));
+    }
+
+    [Fact]
+    public void Agents_consumes_plugin_contracts_below_catalogue_and_copy_operations()
+    {
+        string[] higher = ["PluginCatalog", "DeclaredAcpAdapter", "PluginFolders"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal) && higher.Contains(edge.Type)));
+    }
+
+    [Fact]
+    public void Agents_reads_workplace_facts_below_plans_locks_and_git_operations()
+    {
+        string[] higher = ["TreeLock", "GitAuthor", "GitLongPaths", "GitWiring", "LandingPlan", "ResolvedCommits", "ProcessWords", "TreeGuard"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && (higher.Contains(edge.Type) || edge.Type == "TreeGuardHook" && edge.DeclaredIn.Any(path => !path.StartsWith("Agents/", StringComparison.Ordinal)))));
+    }
+
+    [Fact]
+    public void Agents_reads_work_order_inputs_below_instruction_and_quest_judgements()
+    {
+        string[] higher = ["AskWords", "AskWordsText", "BrainstormVariables", "ChannelText", "GoAheadsText", "IntakeRoom", "QuestResults"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && (higher.Contains(edge.Type) || edge.Type == "ChannelHeld" && edge.DeclaredIn.Any(path => !path.StartsWith("Agents/", StringComparison.Ordinal)))));
+    }
+
+    [Fact]
+    public void Agents_reads_lower_context_shapes_and_supplied_or_required_operations()
+    {
+        string[] context = ["SessionEvents", "SessionOutput", "SessionStreams", "SessionStream", "SessionStreamKind", "ConsoleLine",
+            "TranscriptFile", "ComposedBrief", "ComposedInstruction", "HandedSections", "InstructionAccounting", "SessionParts", "SessionPartsText"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && context.Contains(edge.Type) && edge.DeclaredIn.Any(path => Tree.Value.Map.Files.TryGetValue(path, out var owner)
+                ? owner == "Context" : path.StartsWith("Context/", StringComparison.Ordinal))));
+    }
+
+    [Fact]
+    public void Agents_has_no_remaining_upward_Course_dependency()
+    {
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => Tree.Value.Map.Files.TryGetValue(path, out var owner)
+                ? owner == "Course" : path.StartsWith("Course/", StringComparison.Ordinal))));
+    }
 
     [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
@@ -496,7 +565,7 @@ public sealed class StructureTests
 
         // A qualified reference (the design §14.5, X4-1.4), and a static import's target, which an identifier after a dot or in a `using` skipped.
         Assert.Contains(("Sessions/SessionsCommand.cs", "HolderKey"), edges);
-        Assert.Contains(("Accounts/AccountCooling.cs", "AccountFileNodes"), edges);
+        Assert.Contains(("Agents/AccountCooling.cs", "AccountFileNodes"), edges);
         Assert.Contains(("Install/Tools.cs", "Json"), edges);
 
         // DaorisHome's HomeEntry members, named like higher subdomains' types, count none: a member's occurrence is told by its symbol, never by its spelling.

@@ -80,7 +80,7 @@ public sealed class AskWordsHandedTests
         {
             CutOff = prior.Note,
             PersonSaid = prior.Answer,
-            AccountChanged = prior.Limit && Daoris.Driver.Driver.OnAnotherAccount(prior, "account-2"),
+            AccountChanged = prior.Limit && AccountIdentity.OnAnotherAccount(prior, "account-2"),
         };
 
         var handed = TargetPrompt.Compose(await Daoris.Driver.Driver.WithAskWordsAsync(carryOn, service, CancellationToken.None));

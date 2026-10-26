@@ -232,8 +232,8 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Equal(new ContinuedFrom("s1", "limit", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, cut, "work", agent: "codex-acp"));
         Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, cut, "work", agent: "claude-code-acp"));
         Assert.Equal(new ContinuedFrom("s1", "carry-on", "daoris"), Daoris.Driver.Driver.ContinuesFrom(null, cut, "work"));
-        Assert.True(Daoris.Driver.Driver.OnAnotherAccount(cut, "work", "codex-acp"));
-        Assert.False(Daoris.Driver.Driver.OnAnotherAccount(cut, "work", "CLAUDE-CODE-ACP"));
+        Assert.True(AccountIdentity.OnAnotherAccount(cut, "work", "codex-acp"));
+        Assert.False(AccountIdentity.OnAnotherAccount(cut, "work", "CLAUDE-CODE-ACP"));
     }
 
     /// <summary>

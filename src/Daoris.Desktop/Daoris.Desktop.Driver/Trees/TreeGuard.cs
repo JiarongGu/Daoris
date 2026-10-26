@@ -1,23 +1,5 @@
 namespace Daoris.Driver;
 
-/// <summary>What one session's tree guard is: the script the hook runs, and the tree it guards.</summary>
-/// <param name="Script">The script, written under the Daoris home by <see cref="TreeGuard.Install"/>.</param>
-/// <param name="Tree">The session's own working tree — the executor's, never re-derived by the hook.</param>
-public sealed record TreeGuardHook(string Script, string Tree)
-{
-    /// <summary>
-    /// The checkouts the person declared this session's repository may also write into (D107), each one more
-    /// argument after the tree. Empty — the default — is the tree alone.
-    /// </summary>
-    public IReadOnlyList<string> Also { get; init; } = [];
-
-    /// <summary>
-    /// The node the harness starts the script with (TOOLS5, D121 §2.4): the file Tools resolves, by its whole path, so
-    /// the guard runs on the node the person chose. The bare name only where the system's node is on no PATH, as before.
-    /// </summary>
-    public string Node { get; init; } = "node";
-}
-
 /// <summary>
 /// The tree guard (PERM3): a PreToolUse hook Daoris ships, refusing a file write outside the session's
 /// own tree — the one boundary a permission rule cannot say (design §3).
@@ -47,7 +29,7 @@ public static class TreeGuard
     public const string ScriptName = "tree-guard.mjs";
 
     /// <summary>The tools it judges — exact alternatives, the harness's own matcher shape.</summary>
-    public const string Matcher = "Edit|Write|MultiEdit|NotebookEdit";
+    public const string Matcher = TreeGuardHook.Matcher;
 
     /// <summary>The script as shipped, from the assembly, with LF line endings.</summary>
     public static string Source { get; } = ReadSource();

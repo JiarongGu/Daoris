@@ -2673,7 +2673,7 @@ public sealed class Driver(
                     service, Context.Events, home, prior.Session, continues?.Why ?? HandOverWhy.CarryOn, conversation: false, note: handedNote,
                     config: config, tree: workTree, ct: ct).ConfigureAwait(false);
             if (prior is not null && continues is not null && brief is not null) SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, brief);
-            var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
+            var elsewhere = prior is not null && AccountIdentity.OnAnotherAccount(prior, selection.Profile, limitWalks ? agent : null);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
             // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
             // machine's config.
@@ -4049,7 +4049,7 @@ public sealed class Driver(
     /// What a running driven session's permission prompts changed to (ACCESSSWAP1b), read from the driver's file now; null where they did
     /// not, or the file does not read: a write torn half-way is read again at the next turn's end, never taken for a change.
     /// </summary>
-    private static SetupSwap? SetupNow(DrivenAccess started, ISessionAdapter adapter, string configPath)
+    private static SetupSwap? SetupNow(IAgentAccess started, ISessionAdapter adapter, string configPath)
     {
         try
         {
@@ -4514,8 +4514,9 @@ public sealed class Driver(
                     cwd, prompt, ct, offered, inbox,
                     // The same words as the turn's ask where the session took them (SESS3, STEER1): recorded before
                     // anything the agent did with them, so the answer never sits above the question.
-                    asked: message =>
+                    asked: delivered =>
                     {
+                        var message = ChatMessage.FromAgent(delivered);
                         Line(message.Channel is { Person: false } claim
                             ? $"— the session took another session's message `{claim.Id}` on the ask's channel"
                             : message.Helped is { Helper: var helper }
@@ -4548,7 +4549,7 @@ public sealed class Driver(
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
             // ACCESSSWAP1b: the words a changed setup handed back, kept on the record once it concluded, to go on under the new one.
-            return (outcome, null, session.HandedBack);
+            return (outcome, null, session.HandedBack.Select(ChatMessage.FromAgent).ToArray());
         }
         catch (AcpResumeRefused refused) when (resume is not null)
         {
@@ -4574,7 +4575,7 @@ public sealed class Driver(
             // 🔴 The person's words it never took (TURNFAIL1, USERSHOWN1): sent behind the failed turn, or held for its end. They
             // go back to the run, which keeps them on the record once it ended, to go again (WordsLeft); closed here, so the
             // finally below says nothing of them.
-            return (null, error.Message, [.. session?.Unreached ?? [], .. session?.HandedBack ?? [], .. inbox?.Close() ?? []]);
+            return (null, error.Message, [.. (session?.Unreached ?? []).Select(ChatMessage.FromAgent), .. (session?.HandedBack ?? []).Select(ChatMessage.FromAgent), .. inbox?.Close() ?? []]);
         }
         finally
         {
@@ -4707,16 +4708,6 @@ public sealed class Driver(
     }
 
     /// <summary>
-    /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account
-    /// against the selection's, compared as the wiring compares names, null being the tool's own home. A start on another
-    /// <paramref name="agent"/> than the record ran on is on another account whatever the two are named (WALKAGENT1): an account
-    /// belongs to its agent, and two agents may each have one of that name.
-    /// </summary>
-    internal static bool OnAnotherAccount(PriorSession prior, string? profile, string? agent = null) =>
-        !string.Equals(prior.Profile ?? "", profile ?? "", StringComparison.OrdinalIgnoreCase)
-        || (agent is { Length: > 0 } && prior.Adapter is { Length: > 0 } ran && !string.Equals(ran, agent, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>
     /// A driven move to a new part said as it happens (SESSCTX1c, D189 point 8; the session-context design §7): a coded line on the
     /// part it left and on the new part, each on its console too, with the context the part it left stood at (its high-water, H)
     /// and the brief's characters (B); and <c>session.moved</c> in the machine log. Every driven start that continues another says it,
@@ -4762,9 +4753,9 @@ public sealed class Driver(
         carried is null ? null
         : handed is not null && string.Equals(carried.Session, handed.From, StringComparison.Ordinal)
             ? new ContinuedFrom(carried.Session, handed.Why, handed.AskedBy)
-        : carried.Limit && OnAnotherAccount(carried, profile, agent)
+        : carried.Limit && AccountIdentity.OnAnotherAccount(carried, profile, agent)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Limit, HandOverBy.Daoris)
-        : walked is OpeningWhy.OverCurve or OpeningWhy.MostRoom && OnAnotherAccount(carried, profile)
+        : walked is OpeningWhy.OverCurve or OpeningWhy.MostRoom && AccountIdentity.OnAnotherAccount(carried, profile)
             ? new ContinuedFrom(carried.Session, HandOverWhy.Curve, HandOverBy.Daoris)
         : retried
             ? new ContinuedFrom(carried.Session, HandOverWhy.Retry, HandOverBy.Daoris)

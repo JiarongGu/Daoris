@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 /// <param name="Ask">The ask's id.</param>
 /// <param name="Said">Its words, oldest first, the ask's own sentence first; null where they could not be read.</param>
 /// <param name="KeptFrom">For an ask from before its words were kept (DRIFT1a): from when they are, since nothing is back-filled.</param>
-public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, DateTimeOffset? KeptFrom = null)
+public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, DateTimeOffset? KeptFrom = null) : IAgentAskWords
 {
     /// <summary>
     /// The go-aheads its sessions asked the person for (KNOWUSE1a, D135 §2), oldest first, read in the same answer as the
@@ -94,7 +94,7 @@ public static class AskWordsText
     /// The words beneath a quest (DRIFT1b): a heading, then each word, the older left out past the bound said as one line;
     /// or the unread line. Empty for a session on no ask, so its instruction reads exactly as it did.
     /// </summary>
-    internal static string Beneath(AskWords? words, string questId)
+    internal static string Beneath(IAgentAskWords? words, string questId)
     {
         if (words is null) return "";
         if (words.Said is not { } said) return "\n" + UnreadSentence(words.Ask) + "\n";
@@ -127,7 +127,7 @@ public static class AskWordsText
     /// Whether a word with these exact words is among those an instruction quotes, after the bound — so a carry-on's
     /// answer is quoted once, and pointed to only where it is there to point to.
     /// </summary>
-    internal static bool Quotes(AskWords? words, string text) =>
+    internal static bool Quotes(IAgentAskWords? words, string text) =>
         words?.Said is { } said && Bounded(said).Shown.Any(word => word.Kind == AskWordView.Answered && word.Text == text.Trim());
 
     /// <summary>

@@ -1366,7 +1366,7 @@ const BACKLOG_MERGES = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/
  * The driver's sources whose declarations the page's twin vitests parse (MOD9e): SESSDEL1c's scan found them. Each by its
  * name, at whatever depth of the driver's folder it is tracked (STRUCT1, D166).
  */
-const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'SessionEvents.cs', 'InstructionAccount.cs', 'Trace.Chain.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'Landing.cs'];
+const PAGE_PARSED_NAMES = ['NoteCodes.cs', 'SessionEvents.cs', 'HandedCodes.cs', 'Trace.Chain.cs', 'AutoLandingCode.cs', 'WorkplaceFacts.cs', 'Landing.cs'];
 const DRIVER_FOLDER = 'src/Daoris.Desktop/Daoris.Desktop.Driver/';
 const PAGE_PARSED = PAGE_PARSED_NAMES
   .map((name) => trackedFiles().find((path) => path.startsWith(DRIVER_FOLDER) && posix.basename(path) === name) ?? `${DRIVER_FOLDER}${name}`);
@@ -4098,6 +4098,57 @@ test('the stage counts a gate passed on this tree, or on one that differs from i
 
 // ---------------------------------------------------------------------------------------------------
 // GATE6: a verdict stays good until a path its gate reaches changes
+
+test('SCOPEPLAN1: gate reach and selection prepare each rule a bounded number of times per read', () => {
+  let directReads = 0;
+  let laneReads = 0;
+  const lane: Lane = {
+    id: 'service', title: 'Service', summary: 'The service', steward: false,
+    get paths() { laneReads += 1; return ['service/**', '!service/private/**']; },
+  };
+  const reach: Rule[] = [
+    { get paths() { directReads += 1; return ['web/**']; }, gates: ['web'], why: 'the page' },
+    { lane: 'service', gates: ['service'], why: 'the service' },
+    { paths: ['policy.json'], gates: '*', why: 'every gate' },
+  ];
+  const paths = Array.from({ length: 40 }, (_, i) => [
+    `web/${i}.ts`, `service/${i}.cs`, `service/private/${i}.cs`, `other/${i}.txt`,
+  ]).flat().concat('policy.json');
+  const web = paths.filter((path) => !/^service\/\d+\.cs$/.test(path));
+  assert.deepEqual(tool.pathsReaching('web', paths, { lanes: [lane], reach }), web,
+    'a lane exclusion remains unplaced, which conservatively reaches every gate');
+  assert.ok(directReads <= 2 && laneReads <= 1, `one reach read prepared direct=${directReads}, lane=${laneReads}`);
+
+  directReads = laneReads = 0;
+  assert.deepEqual(tool.pathsReaching('web-types', paths, { lanes: [lane], reach }), ['policy.json']);
+  assert.ok(directReads <= 2 && laneReads <= 1, `one path-check read prepared direct=${directReads}, lane=${laneReads}`);
+
+  directReads = laneReads = 0;
+  const selection = tool.selectGates(repoPlan, paths, { lanes: [lane], reach, gated: true });
+  assert.deepEqual(selection.unplaced, paths.filter((path) => path.startsWith('service/private/') || path.startsWith('other/')));
+  assert.ok(selection.gates.every((entry) => entry.reached), 'the global rule still reaches the path checks as well');
+  const reads = 1 + tool.PATH_CHECKS.length;
+  assert.ok(directReads <= 2 * reads && laneReads <= reads,
+    `a selection prepared direct=${directReads}, lane=${laneReads}, across ${reads} readers`);
+});
+
+test('SCOPEPLAN1: later reads see changed rule and lane paths, preserving first-match precedence', () => {
+  const lane: Lane = { id: 'service', title: 'Service', summary: 'The service', steward: false, paths: ['service/**'] };
+  const reach: Rule[] = [
+    { paths: ['web/**'], gates: ['web'], why: 'the page' },
+    { lane: 'service', gates: ['service'], why: 'the service' },
+    { paths: ['**'], gates: ['driver'], why: 'the remainder' },
+  ];
+  const paths = ['web/a.ts', 'service/b.cs', 'other/c.txt'];
+  assert.deepEqual(tool.pathsReaching('web', paths, { lanes: [lane], reach }), ['web/a.ts']);
+  reach[0]!.paths![0] = 'other/**';
+  lane.paths[0] = 'web/**';
+  assert.deepEqual(tool.pathsReaching('web', paths, { lanes: [lane], reach }), ['other/c.txt']);
+  assert.deepEqual(tool.pathsReaching('service', paths, { lanes: [lane], reach }), ['web/a.ts']);
+  reach.unshift({ paths: ['other/**'], gates: ['service'], why: 'a narrower rule first' });
+  assert.deepEqual(tool.pathsReaching('web', paths, { lanes: [lane], reach }), []);
+  assert.deepEqual(tool.pathsReaching('service', paths, { lanes: [lane], reach }), ['web/a.ts', 'other/c.txt']);
+});
 
 test('a path reaches a gate as a merge reads the table: the baseline and an unnamed gate by every path, any gate by an unplaced one', () => {
   const reach: Rule[] = [

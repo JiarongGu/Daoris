@@ -23,7 +23,7 @@ public sealed record AgentsWorld
     public Func<string, AdapterSet> Adapters { get; init; } = home =>
     {
         var built = AdapterSet.Built();
-        return built.WithPlugins(PluginCatalog.Load(home, built.Names));
+        return built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names));
     };
 
     /// <summary>The moment the person's answer to a proposal is settled at.</summary>

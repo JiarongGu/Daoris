@@ -13,7 +13,59 @@ public sealed class EventsPortsTests
 
     private sealed record Episode(int Tries, TimeSpan Waited, string? Words) : ITransientEpisode;
 
-    private sealed record Refusal(ContinueReason Why, string? Words) : IResumeRefused;
+    private sealed record Reason(string Code, string Sentence) : IContinueReason
+    {
+        public IReadOnlyList<(string Name, string Value)> Values { get; init; } = [];
+    }
+
+    private sealed record Refusal(IContinueReason Why, string? Words) : IResumeRefused;
+
+    [Fact]
+    public void A_resume_refusals_reason_is_a_reading_contract_without_the_agents_policy()
+    {
+        var reason = typeof(IResumeRefused).GetProperty(nameof(IResumeRefused.Why))!.PropertyType;
+
+        Assert.True(reason.IsInterface, "Events must read a reason through its own contract, rather than the Agents rule");
+        Assert.Equal(["Code", "Sentence", "Values"], reason.GetProperties().Select(property => property.Name).Order(StringComparer.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("gone", "its conversation is open in another client of its agent", "agent words")]
+    [InlineData("elsewhere", "a stand-in's own refusal", null)]
+    [InlineData("elsewhere", "a stand-in's own refusal", "")]
+    public void A_resume_note_keeps_the_supplied_sentence_and_words_independently_of_the_code(
+        string code, string sentence, string? words)
+    {
+        var reason = new Reason(code, sentence);
+        var refusal = new Refusal(reason, words);
+
+        var noted = DoorNotes.ResumeRefused(refusal, "codex-acp");
+
+        Assert.Equal($"— {sentence}{(string.IsNullOrEmpty(words) ? "" : ": " + words)}.", noted.Note);
+        Assert.Equal(sentence, noted.Parts[0].Text);
+        Assert.Equal(code, noted.Parts[0].Value("why"));
+        Assert.Equal(code == "elsewhere" ? "codex-acp" : null, noted.Parts[0].Value("agent"));
+        NoteAssert.Holds(noted);
+    }
+
+    [Fact]
+    public void A_reason_preserves_value_order_and_only_fills_an_absent_elsewhere_agent()
+    {
+        var reason = new Reason("elsewhere", "held") { Values = [("to", "one"), ("from", "two")] };
+
+        Assert.Equal(
+            new (string, object?)[] { ("why", "elsewhere"), ("to", "one"), ("from", "two"), ("agent", "fallback") },
+            NoteCodes.Reason(reason, "fallback"));
+        Assert.Equal(
+            new (string, object?)[] { ("why", "elsewhere"), ("agent", "supplied"), ("from", "two") },
+            NoteCodes.Reason(reason with { Values = [("agent", "supplied"), ("from", "two")] }, "fallback"));
+        Assert.Equal(
+            new (string, object?)[] { ("why", "Elsewhere"), ("to", "one"), ("from", "two") },
+            NoteCodes.Reason(reason with { Code = "Elsewhere" }, "fallback"));
+        Assert.Equal(
+            new (string, object?)[] { ("why", "elsewhere"), ("to", "one"), ("from", "two"), ("agent", null) },
+            NoteCodes.Reason(reason));
+    }
 
     private sealed class Events : ISessionEvents
     {
@@ -60,16 +112,26 @@ public sealed class EventsPortsTests
         Assert.DoesNotContain("overloaded", Observation.Transient(new Episode(1, TimeSpan.Zero, null)).Note, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void A_refused_resume_is_noted_from_a_refusal_that_answers_the_port_as_the_doors_failure_is()
+    [Theory]
+    [InlineData("offered", null)]
+    [InlineData("gone", "")]
+    [InlineData("refused", "no such conversation")]
+    [InlineData("elsewhere", "thread held by another client")]
+    public void A_refused_resume_is_noted_from_a_refusal_that_answers_the_port_as_the_doors_failure_is(string code, string? words)
     {
-        var reason = ContinueWhy.Of(ContinueWhy.Refused);
+        var reason = ContinueWhy.Of(code);
+        var refusal = new Refusal(new Reason(reason.Code, reason.Sentence) { Values = reason.Values }, words);
+        var door = new AcpResumeRefused(reason, words);
 
-        var viaPort = DoorNotes.ResumeRefused(new Refusal(reason, "no such conversation"), ranOn: "codex-acp");
-        var viaDoor = DoorNotes.ResumeRefused(new AcpResumeRefused(reason, "no such conversation"), ranOn: "codex-acp");
+        Assert.Same(reason, ((IResumeRefused)door).Why);
+        foreach (var note in new Func<IResumeRefused, string?, Noted>[] { DoorNotes.ResumeRefused, DoorNotes.AnswerCarriedOn })
+        {
+            var viaPort = note(refusal, "codex-acp");
+            var viaDoor = note(door, "codex-acp");
 
-        Assert.Equal(viaDoor.Note, viaPort.Note);
-        Assert.Equal(viaDoor.Parts!.Select(part => part.Code), viaPort.Parts!.Select(part => part.Code));
+            Assert.Equal(System.Text.Json.JsonSerializer.Serialize(viaDoor), System.Text.Json.JsonSerializer.Serialize(viaPort));
+            NoteAssert.Holds(viaPort);
+        }
     }
 
     [Fact]
@@ -93,5 +155,6 @@ public sealed class EventsPortsTests
         Assert.True(typeof(IHarnessEnding).IsAssignableFrom(typeof(HarnessEnding)));
         Assert.True(typeof(ITransientEpisode).IsAssignableFrom(typeof(TransientEpisode)));
         Assert.True(typeof(IResumeRefused).IsAssignableFrom(typeof(AcpResumeRefused)));
+        Assert.True(typeof(IContinueReason).IsAssignableFrom(typeof(ContinueReason)));
     }
 }

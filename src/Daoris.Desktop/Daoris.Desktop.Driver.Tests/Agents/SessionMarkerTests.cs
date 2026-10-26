@@ -13,7 +13,7 @@ public sealed partial class SessionMarkerTests
     /// <summary>Each source that hands a started process the marker, and how many times: the sessions and their connectors alone.</summary>
     private static readonly IReadOnlyDictionary<string, (int Count, string Why)> Starts = new Dictionary<string, (int, string)>(StringComparer.Ordinal)
     {
-        ["Daoris.Desktop.Driver/Agents/Adapters/Adapters.cs"] =
+        ["Daoris.Desktop.Driver/Agents/Adapters.cs"] =
             (5, "a driven session, an intake, a reviewer, a helper or brainstorm pass, and a conversation, where the session has a record"),
         ["Daoris.Desktop.Driver/Quests/IntakeRoom.cs"] = (1, "an intake's connector, the room its tools answer"),
         ["Daoris.Desktop.Driver/Knowledge/KnowledgeConnector.cs"] = (1, "a session's knowledge connector"),

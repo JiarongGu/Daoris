@@ -61,7 +61,7 @@ public sealed class ReviewDesk(IReviewTabs tabs)
     /// A set-up step's tab's title before its session navigates it, which its instruction names so the session finds it among
     /// the browser's tabs (design §2.2): one spelling for both.
     /// </summary>
-    public static string TabTitle(string quest) => $"Review #{quest.TrimStart('#')}";
+    public static string TabTitle(string quest) => ReviewTabNames.Title(quest);
 
     /// <summary>
     /// The set-ups waiting for the person here as the last look read them, each with whether its tab is served now: the strip's

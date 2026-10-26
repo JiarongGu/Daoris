@@ -33,6 +33,45 @@ public sealed class ReviewShowingTests : IDisposable
     }
 
     [Fact]
+    public void A_review_title_removes_only_leading_hashes_and_preserves_the_rest()
+    {
+        foreach (var (quest, title) in new[] { ("", "Review #"), ("#", "Review #"), ("##q2", "Review #q2"), (" #q2", "Review # #q2"), ("q#2", "Review #q#2") })
+        {
+            Assert.Equal(title, ReviewDesk.TabTitle(quest));
+            Assert.Equal(title, ReviewTabNames.Title(quest));
+        }
+    }
+
+    [Fact]
+    public async Task A_cancelled_browser_open_keeps_the_callers_cancellation_and_opens_nothing()
+    {
+        using var closing = new CancellationTokenSource();
+        closing.Cancel();
+        var tabs = new CancelledTabs();
+
+        var error = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            new ReviewDesk(tabs).OpenForStepAsync(ReviewStandIn.Step(), Local, closing.Token));
+
+        Assert.Equal(closing.Token, error.CancellationToken);
+        Assert.Equal(closing.Token, tabs.Heard);
+        Assert.Empty(tabs.Serving);
+    }
+
+    private sealed class CancelledTabs : IReviewTabs
+    {
+        public CancellationToken Heard { get; private set; }
+        public IReadOnlyList<ReviewServe> Serving => [];
+        public Task OpenAsync(string quest, string title, CancellationToken ct = default)
+        {
+            Heard = ct;
+            ct.ThrowIfCancellationRequested();
+            throw new InvalidOperationException("the test must supply its cancelled token");
+        }
+        public Task ServeAsync(ReviewServe serve, CancellationToken ct = default) => throw new InvalidOperationException("nothing is served");
+        public void Stop(string quest) => throw new InvalidOperationException("nothing is stopped");
+    }
+
+    [Fact]
     public async Task A_local_set_up_step_s_tab_is_opened_before_its_session_titled_for_its_quest()
     {
         var held = await _desk.OpenForStepAsync(ReviewStandIn.Step(), Local, CancellationToken.None);

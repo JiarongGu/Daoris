@@ -145,8 +145,9 @@ public sealed class AcpSteerTests
             if (line is not null) lock (_lines) _lines.Add(line);
         }
 
-        public void Asked(ChatMessage message)
+        public void Asked(IAgentWord delivered)
         {
+            var message = ChatMessage.FromAgent(delivered);
             lock (_lines) _lines.Add($"taken:{message.Id}:{message.Text}");
         }
 

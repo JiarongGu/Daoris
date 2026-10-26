@@ -145,7 +145,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
             home, id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase), (id, note) => processes.Stop(id, note: note),
             service, clock)
     {
-        _hears = id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) || processes.InboxOf(id) is not null;
+        _hears = id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) || processes.WordInboxOf(id) is not null;
         _aliveHere = processes.AliveOnThisMachine;
         var words = new LoopWords(processes, service);
         Say = words.HoldAsync;

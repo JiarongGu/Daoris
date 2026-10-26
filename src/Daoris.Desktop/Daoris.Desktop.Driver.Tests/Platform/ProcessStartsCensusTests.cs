@@ -70,8 +70,8 @@ public sealed class ProcessStartsCensusTests
     [InlineData("Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Plugins/HookProcess.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Platform/AgentStarts.cs", "ProcessStarts.Shared.StartAsync(info, whose, ct)")]
-    [InlineData("Daoris.Desktop.Driver/Accounts/Harnesses/HarnessActions.cs", "ProcessStarts.Shared.StartAsync(")]
-    [InlineData("Daoris.Desktop.Driver/Accounts/Usage/CodexUsage.cs", "ProcessStarts.Shared.StartAsync(")]
+    [InlineData("Daoris.Desktop.Driver/Agents/HarnessActions.cs", "ProcessStarts.Shared.StartAsync(")]
+    [InlineData("Daoris.Desktop.Driver/Agents/CodexUsage.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs", "AgentStarts.StartAsync(")]
     [InlineData("Daoris.Desktop.Modules/Loop/HostSupervisor.cs", "ProcessStarts.Shared.StartAsync(")]
     [InlineData("Daoris.Desktop.App/EngineBrowserHost.cs", "ProcessStarts.Shared.StartAsync(")]
@@ -99,14 +99,14 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Trees/WorkingTree.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Loop/Driver.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = StartClass.Background,
-        ["Daoris.Desktop.Driver/Accounts/Usage/CodexUsage.cs"] = StartClass.Background,
+        ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = StartClass.Background,
         // A git identity's key made, or its host's keys read and its test run, at the person's own verb (GITAUTH1c).
         ["Daoris.Desktop.Driver/Platform/GitIdentityActs.cs"] = StartClass.Person,
         // A conversation's agent, a session going on with the person's words, a press, a terminal, and the host the window
         // waits on.
         ["Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Loop/DriverContinuations.cs"] = StartClass.Person,
-        ["Daoris.Desktop.Driver/Accounts/Harnesses/HarnessActions.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = StartClass.Person,
         ["Daoris.Desktop.Driver/Plugins/PluginTrialProcess.cs"] = StartClass.Person,
         ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] = StartClass.Person,
         ["Daoris.Desktop.App/EngineBrowserHost.cs"] = StartClass.Person,
@@ -172,8 +172,8 @@ public sealed class ProcessStartsCensusTests
         ["Daoris.Desktop.Driver/Trees/WorkingTree.cs"] = "git's own runs in the trees, Daoris's acts: routed, each run in the look would cost a launcher's start (§3.4)",
         ["Daoris.Desktop.Driver/Platform/ChildProcess.cs"] = "the one runner of Daoris's own questions read to their end: git, and the harness probes' --version",
         ["Daoris.Desktop.Driver/Platform/GitIdentityActs.cs"] = "a git identity's key made, or its host's keys read, at the person's own verb: ssh-keygen and ssh",
-        ["Daoris.Desktop.Driver/Accounts/Harnesses/HarnessActions.cs"] = "an agent's install or sign-in at the person's press: Daoris's start of the agent's own tool, never a session (§3.4)",
-        ["Daoris.Desktop.Driver/Accounts/Usage/CodexUsage.cs"] = "a usage read: Daoris's own probe of an account (§3.4)",
+        ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = "an agent's install or sign-in at the person's press: Daoris's start of the agent's own tool, never a session (§3.4)",
+        ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = "a usage read: Daoris's own probe of an account (§3.4)",
         ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] = "the HTTP host the window waits on",
         ["Daoris.Desktop.App/EngineBrowserHost.cs"] = "Daoris's own browser",
         ["Daoris.Desktop.Modules/Update/UpdateLauncher.cs"] = "the update's launcher, which outlives this process by design",

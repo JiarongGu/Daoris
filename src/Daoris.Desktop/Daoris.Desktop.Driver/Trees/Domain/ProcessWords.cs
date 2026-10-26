@@ -19,6 +19,10 @@ public static class ProcessWords
     /// handed without a rule is told the default, as a tree with none set is; a merge with none says nothing, as it always has.
     /// </summary>
     public static string? Said(ResolvedCommits? commits, LandingPlan? plan)
+        => Said((IStartCommits?)commits, plan);
+
+    /// <summary>The same instruction from lower start reading contracts, with no landing graph moved.</summary>
+    public static string? Said(IStartCommits? commits, IStartLanding? plan)
     {
         var branch = plan is { Form: LandingForm.Branch };
         if (commits is null && !branch) return null;
@@ -49,7 +53,7 @@ public static class ProcessWords
     /// from named as the repository's rule names it (PROCESS1b-i), or the tree's own branch (TREEFOLLOW1); or the line a merge goes
     /// into. Null with no plan. A named workflow's landing that cannot start has no branch (WORKFLOW1f), and none is named.
     /// </summary>
-    private static string? Lead(LandingPlan? plan) => plan switch
+    private static string? Lead(IStartLanding? plan) => plan switch
     {
         { Form: LandingForm.Branch } => (plan.AutoAccept ? "This work is accepted automatically." : "This work goes through review.")
             + (plan.Target.Length == 0 ? "" : $" {Lands(plan)} {Named(plan)}"),
@@ -57,7 +61,7 @@ public static class ProcessWords
         _ => null,
     };
 
-    private static string Named(LandingPlan plan) => plan.Own
+    private static string Named(IStartLanding plan) => plan.Own
         ? $"This tree is on `{plan.Target}`, which lands as it stands; you do not merge it, push it, or open a pull request yourself."
         : $"The branch the pull request comes from is named `{plan.Target}` by this repository's rule; you do not name it, and you do not "
           + "merge it, push it, or open a pull request yourself.";
@@ -66,7 +70,7 @@ public static class ProcessWords
     /// Who takes the branch on from there: the person, or the plugin the rule names (D100) once the person accepts it; or, under
     /// a rule that accepts automatically (LAND2b, D145), the quest's done, with no press.
     /// </summary>
-    private static string Lands(LandingPlan plan) => (plan.AutoAccept, plan.Plugin) switch
+    private static string Lands(IStartLanding plan) => (plan.AutoAccept, plan.Plugin) switch
     {
         (true, null) => $"When you close the quest done, this tree's branch is put on `{plan.Target}`, for the person to push and open a pull request from.",
         (true, _) => $"When you close the quest done, this tree's branch is put on `{plan.Target}`, pushed, and a pull request opened from it, where the work is judged.",

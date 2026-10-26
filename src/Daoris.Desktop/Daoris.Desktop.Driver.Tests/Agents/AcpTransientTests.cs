@@ -1009,7 +1009,7 @@ public sealed class AcpTransientTests
             Clock = clock,
             Began = (_, _) => told.Add("began"),
             Waits = waiting => told.Add(waiting ? "wait" : "waited"),
-            KeepGoOn = (_, text, _) => Task.FromResult<ChatMessage?>(SaidDoor.Dispatched(
+            KeepGoOn = (_, text, _) => Task.FromResult<IAgentWord?>(SaidDoor.Dispatched(
                 new ChatMessage(text, []) { Id = "g1", Kept = true, Daoris = new DaorisWord("transient/s1") }, door,
                 went => { lock (settled) settled.Add(went.Id!); })),
         };

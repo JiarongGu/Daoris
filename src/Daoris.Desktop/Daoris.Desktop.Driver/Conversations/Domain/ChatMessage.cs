@@ -4,12 +4,19 @@ namespace Daoris.Driver;
 /// <param name="Name">The name it was given, which is not yet safe to keep — <see cref="ChatFiles.SafeName"/> is.</param>
 public sealed record ChatUpload(string Name, byte[] Content);
 
-/// <summary>An attached file as kept for its session: the person's name for it, and where it lies.</summary>
-public sealed record KeptFile(string Name, string Path);
-
 /// <summary>One message of a conversation: the person's words and the files they attached (CONV4c).</summary>
-public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
+public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files) : IAgentWord
 {
+    bool IAgentWord.IsDaoris => Daoris is not null;
+    Func<Task<IReadOnlyList<string>>>? IAgentWord.Attempting => Attempting;
+    Action? IAgentWord.Went => Went;
+    Task<bool> IAgentWord.GoesAsync(CancellationToken ct) => DaorisWords.GoesAsync(this, ct);
+    SessionEvent IAgentWord.Dropped() => DaorisWords.Dropped(this);
+
+    /// <summary>Recover the original Course word at a higher boundary, never a reconstructed message.</summary>
+    public static ChatMessage FromAgent(IAgentWord word) => word as ChatMessage
+        ?? throw new InvalidOperationException("this Course operation requires its original conversation word");
+
     /// <summary>The most a preface carries: a few lines of where the person is, never a document.</summary>
     public const int PrefaceLimit = 1200;
 

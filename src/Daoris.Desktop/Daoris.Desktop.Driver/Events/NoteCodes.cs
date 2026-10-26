@@ -76,27 +76,27 @@ public sealed record NoteReasons(IReadOnlyList<NoteReason> All)
 /// </remarks>
 public static class NoteCodes
 {
-    /// <summary>MSG1f's reasons (<see cref="ContinueWhy"/>), each with its own values, as the page words them (<c>work.say.why.*</c>).</summary>
+    /// <summary>MSG1f's reason codes (<see cref="ContinueCodes"/>), each with its own values, as the page words them (<c>work.say.why.*</c>).</summary>
     public static readonly NoteReasons Continue = new(
     [
-        new(ContinueWhy.Account, [], "work.say.why.account"),
-        new(ContinueWhy.Adapter, ["from", "to"], "work.say.why.adapter"),
-        new(ContinueWhy.Unkept, [], "work.say.why.unkept"),
-        new(ContinueWhy.Tree, [], "work.say.why.tree"),
-        new(ContinueWhy.Unable, ["adapter"], "work.say.why.unable"),
-        new(ContinueWhy.Offered, [], "work.say.why.offered"),
-        new(ContinueWhy.Gone, [], "work.say.why.gone"),
-        new(ContinueWhy.Refused, [], "work.say.why.refused"),
-        new(ContinueWhy.Ended, [], "work.say.why.ended"),
-        new(ContinueWhy.Elsewhere, ["agent"], "work.say.why.elsewhere"),
-        new(ContinueWhy.Teammate, [], "work.say.why.teammate"),
-        new(ContinueWhy.Intake, [], "work.say.why.intake"),
-        new(ContinueWhy.StoodDown, [], "work.say.why.stoodDown"),
-        new(ContinueWhy.Started, [], "work.say.why.started"),
+        new(ContinueCodes.Account, [], "work.say.why.account"),
+        new(ContinueCodes.Adapter, ["from", "to"], "work.say.why.adapter"),
+        new(ContinueCodes.Unkept, [], "work.say.why.unkept"),
+        new(ContinueCodes.Tree, [], "work.say.why.tree"),
+        new(ContinueCodes.Unable, ["adapter"], "work.say.why.unable"),
+        new(ContinueCodes.Offered, [], "work.say.why.offered"),
+        new(ContinueCodes.Gone, [], "work.say.why.gone"),
+        new(ContinueCodes.Refused, [], "work.say.why.refused"),
+        new(ContinueCodes.Ended, [], "work.say.why.ended"),
+        new(ContinueCodes.Elsewhere, ["agent"], "work.say.why.elsewhere"),
+        new(ContinueCodes.Teammate, [], "work.say.why.teammate"),
+        new(ContinueCodes.Intake, [], "work.say.why.intake"),
+        new(ContinueCodes.StoodDown, [], "work.say.why.stoodDown"),
+        new(ContinueCodes.Started, [], "work.say.why.started"),
         // SESSCTX1c: the native door's failed exit apart from `gone`, added after the rest (a reason is additive).
-        new(ContinueWhy.Exited, [], "work.say.why.exited"),
+        new(ContinueCodes.Exited, [], "work.say.why.exited"),
         // SAYHELD1: a resume opened a new session once the question its quest waited on was answered, and took the asker's words.
-        new(ContinueWhy.Resumed, [], "work.say.why.resumed"),
+        new(ContinueCodes.Resumed, [], "work.say.why.resumed"),
     ]);
 
     /// <summary>Why a cool-off lasts until then, as the page words it (<c>harness.cooling.why.*</c>).</summary>
@@ -834,11 +834,11 @@ public static class NoteCodes
     /// the adapter the record ran on, which the page may say by its product's name.
     /// </summary>
     /// <param name="ranOn">The adapter the record ran on, or null where it names none.</param>
-    public static (string Name, object? Value)[] Reason(ContinueReason why, string? ranOn = null)
+    public static (string Name, object? Value)[] Reason(IContinueReason why, string? ranOn = null)
     {
         var values = new List<(string Name, object? Value)> { ("why", why.Code) };
         values.AddRange(why.Values.Select(value => (value.Name, (object?)value.Value)));
-        if (why.Code == ContinueWhy.Elsewhere && why.Values.All(value => value.Name != "agent")) values.Add(("agent", ranOn));
+        if (why.Code == ContinueCodes.Elsewhere && why.Values.All(value => value.Name != "agent")) values.Add(("agent", ranOn));
         return [.. values];
     }
 
@@ -999,7 +999,7 @@ public static class BackgroundState
 public interface IResumeRefused
 {
     /// <summary>Why, by a code the log writes and a line the note says, which never quotes the agent.</summary>
-    ContinueReason Why { get; }
+    IContinueReason Why { get; }
 
     /// <summary>The agent's own words, where it refused in any: for the record's conversation on this machine, never a note.</summary>
     string? Words { get; }
