@@ -54,6 +54,23 @@ fix-log entries retain the mechanism and the unproven scheduling cause; neither 
 5. Remove only settled branches and disposable trees through their owning lifecycle. Keep live work,
    private output and required evidence. Ref removal verifies the exact refs its proof read.
 
+## Cleanup receipt
+
+The completed `daoris/s-e57d9ada` was removed through Daoris's own `trees remove` on 2026-10-27.
+Immediately before removal its tracked tree was clean, its only ignored entries were dependency
+directories, its session was completed, and its tip was proved ancestral to `0d4bb4b78`. Afterward
+the directory was absent and `git show-ref --exists` answered missing (exit 2) for the branch. The
+session record and its history remain in Daoris. No unfinished worktree was removed.
+
+The landed d-i branch and its worktree were also absent at the later preservation read: the branch
+answered missing (exit 2), its directory and Git worktree entry were absent, and `61b10d4dc` remains
+in main's history. The two settled trees are gone; the unfinished trees remain.
+
+A private Git bundle was verified as complete history, containing 27 refs at its read. The old test
+worktree's three modified files and the nested merge's 21 working files were copied with matching
+hashes, alongside their binary diffs and six raw Git metadata files including the index and merge
+heads. These preserve authored state; no unfinished merge was aborted or discarded.
+
 ## Permission recovery
 
 Asking mode restored a person-answer path after an Auto refusal, but selects Codex's `read-only`
