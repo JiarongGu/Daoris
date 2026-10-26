@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,11 +11,16 @@ import { fileURLToPath } from 'node:url';
 const cliRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = dirname(dirname(cliRoot));
 
+const { repositoryFiles } = await import(
+  // @ts-expect-error — untyped workspace tooling, as in packed-readme.test.ts
+  '../../../tools/fsx.mjs') as { repositoryFiles: (root: string) => string[] };
+const files = repositoryFiles(repoRoot);
+
 /** Source files whose string literals a person or an agent reads: never tests, never build output. */
 function sources(folder: string, extension: string): string[] {
-  return (readdirSync(folder, { recursive: true, withFileTypes: true }))
-    .filter((entry) => entry.isFile() && entry.name.endsWith(extension))
-    .map((entry) => join(entry.parentPath, entry.name))
+  const prefix = relative(repoRoot, folder).replace(/\\/g, '/') + '/';
+  return files.filter((path) => path.startsWith(prefix) && path.endsWith(extension))
+    .map((path) => join(repoRoot, path))
     .filter((path) => !/[\\/](bin|obj|test|[^\\/]*Tests)[\\/]/.test(path));
 }
 

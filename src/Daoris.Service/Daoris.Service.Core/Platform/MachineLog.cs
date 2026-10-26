@@ -62,7 +62,16 @@ public sealed class MachineLog : IDisposable
     public MachineLog(string? home, string source, Func<DateTimeOffset>? clock = null, long cap = CapBytes)
     {
         _home = string.IsNullOrEmpty(home) ? null : home;
-        _folder = _home is null ? null : DaorisHome.Entry(_home, HomeEntry.Logs);
+        try
+        {
+            _folder = _home is null ? null : DaorisHome.Entry(_home, HomeEntry.Logs);
+        }
+        catch (Exception error) when (error is HomeEntryTwiceException or IOException or UnauthorizedAccessException)
+        {
+            // STARTLOG1: resolving a log's folder can fail before the write's guard. D94 keeps logging optional;
+            // D172 still refuses ambiguous entries, so write and prune neither place rather than choosing one.
+            _folder = null;
+        }
         _source = source;
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         _cap = cap;

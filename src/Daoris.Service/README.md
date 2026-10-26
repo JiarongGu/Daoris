@@ -454,6 +454,8 @@ writes nothing. The driver binds each child to the session's part from these lin
 
 ## Running it
 
+Machine logging is optional even when its folder cannot be resolved (STARTLOG1, D94). A host with files in both the current and legacy log folders runs with logging disabled, leaving both folders untouched. This does not relax D172's refusal for any other home entry.
+
 **Local — the default, and no daemon.** The MCP host is spawned by each agent session and exits with
 it; the **database** is what persists. Every session in every repository on this machine spawns over
 the same file (`knowledge.db` under the Daoris home — `DAORIS_HOME`, which the installed desktop sets

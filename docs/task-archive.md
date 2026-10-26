@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CENSUSRACE1 — the terminology census walks build output before excluding it (2026-10-26)
+
+> **CENSUSRACE1 — the terminology census walks build output before excluding it** (found during STARTLOG1 verification, 2026-10-26). `one-word.test.ts` failed with `ENOENT` reading a disappearing test-unit folder inside the driver's `bin/` while the fast suite ran beside it. It now uses the repository's shared Git inventory before filtering source files, as the tooling contract requires; verify the baseline and archive the fix.
+
+**Outcome.** The census uses `tools/fsx.mjs:repositoryFiles`, whose inventory excludes ignored build output before any traversal. The focused census and helper tests (14), CLI typecheck and the complete `npm run verify` pass. Root cause and evidence are in the fix log.
+
 ## PICKLOST1 — a lost conversation whose account the person picked walks off that account (2026-10-26)
 
 > **PICKLOST1 — a lost conversation whose account the person picked walks off that account** (driver; found by reading PICKCARRY1's landing, 2026-10-26). The ended limit move lets a conversation proven lost walk its agent's accounts even where the person picked its account (`Conversations/Chat/LimitMove.cs:275`, *a conversation proven lost has no resume to keep*), so a lost conversation whose picked account cools opens on another and keeps no pick; that conflates the resume with the account, and FOUNDATION1 row 1a-ii's rule is that a recorded pick waits. A lost, picked conversation's new part waits for its picked account as any picked conversation does, and opens on it, keeping its pick (PICKCARRY1). Proof, seen failing first: a lost conversation picked on a cooling account waits and opens on it once it is ready; an unpicked lost conversation walks as today.

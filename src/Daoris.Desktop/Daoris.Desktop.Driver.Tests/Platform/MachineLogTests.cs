@@ -126,6 +126,36 @@ public sealed class MachineLogTests : IDisposable
         Assert.False(log.Writing);
     }
 
+    [Theory]
+    [InlineData("desktop")]
+    [InlineData("browser")]
+    [InlineData("driver")]
+    public void Conflicting_log_places_disable_logging_without_changing_either_place(string source)
+    {
+        File.WriteAllText(Path.Combine(_home, DaorisHome.InstallMarker), "installed");
+        var home = Path.Combine(_home, DaorisHome.InstallData);
+        Directory.CreateDirectory(home);
+        var places = DaorisHome.Places(home, HomeEntry.Logs);
+        foreach (var place in places)
+        {
+            Directory.CreateDirectory(place);
+            File.WriteAllText(Path.Combine(place, "2026-08-30.mcp.jsonl"), place);
+        }
+
+        using var log = new MachineLog(home, source, () => _now);
+        log.Info("app.started");
+        log.Prune();
+
+        Assert.False(log.Writing);
+        Assert.Null(log.Location);
+        Assert.Throws<HomeEntryTwiceException>(() => DaorisHome.Entry(home, HomeEntry.Logs));
+        foreach (var place in places)
+        {
+            Assert.Equal("2026-08-30.mcp.jsonl", Path.GetFileName(Assert.Single(Directory.GetFiles(place))));
+            Assert.Equal(place, File.ReadAllText(Path.Combine(place, "2026-08-30.mcp.jsonl")));
+        }
+    }
+
     /// <summary>A write that fails is dropped, never thrown: here the logs folder cannot be made.</summary>
     [Fact]
     public void A_write_that_fails_is_dropped_not_thrown()

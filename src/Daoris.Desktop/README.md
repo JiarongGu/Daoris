@@ -624,6 +624,8 @@ repository. Built on the family's desktop runtime sibling, consumed at a release
 
 ## Installing it (2026-09-22)
 
+Machine logging is optional even when its folder cannot be resolved (STARTLOG1, D94). If both the current and legacy log folders hold files, the process disables its logger and leaves both folders untouched; D172's refusal still applies to tools that explicitly read that entry. Preserve and resolve the duplicate before using those tools.
+
 `npm run publish:desktop -- --to <folder> --service` publishes the application (D93): `Daoris.exe`, a
 small launcher, at the folder's root; the application in `app/` beside its Chromium (its files listed in
 `app/shell-files.txt`, which the next publish removes before placing its own), which is Daoris's

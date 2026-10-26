@@ -5,6 +5,8 @@ with the version and date at release.
 
 ## Unreleased
 
+- Conflicting current and legacy log folders no longer crash the desktop, browser, driver or service while their logger is being created (STARTLOG1). Logging is disabled for that process without choosing, writing or pruning either folder; other home-entry conflicts still report their normal refusal.
+
 - A session cut off by an account's limit is no longer carried on by an agent its role does not list (WALKAGENT1, D206). The carry-on of
   such a quest took the machine's older single-agent setting instead of Build's choices, so on one install two of them went on with Codex
   asking Claude's model, which Codex refused, and sat. The carry-on now follows Build: it goes on with Build's first choice that can run,
