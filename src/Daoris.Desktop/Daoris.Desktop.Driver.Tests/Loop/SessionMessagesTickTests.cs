@@ -1311,6 +1311,29 @@ public sealed class SessionMessagesTickTests : IDisposable
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "kept", ["said"] = word.DeepClone() }.ToJsonString());
                     }
 
+                    // COWORK1c: a word marked attempted on the record before the wire, and (FOUNDATION1 row p) the answer names the words that no
+                    // longer wait as `unmarked`, as the service's attempt door does: a word it does not name as marked does not go.
+                    case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
+                    {
+                        var id = IdOf(path, "/attempt");
+                        var asked = Body()["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToList();
+                        var waiting = Find(id)["said"]!.AsArray();
+                        var unmarked = new JsonArray();
+                        foreach (var name in asked)
+                        {
+                            if (waiting.FirstOrDefault(word => word!["id"]!.GetValue<string>() == name) is { } found)
+                            {
+                                found["attempt"] ??= DateTimeOffset.UtcNow.ToString("O");
+                            }
+                            else
+                            {
+                                unmarked.Add(name);
+                            }
+                        }
+
+                        return (200, new JsonObject { ["session"] = Wire(Find(id)), ["message"] = "attempted", ["unmarked"] = unmarked }.ToJsonString());
+                    }
+
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):
                     {
                         var id = IdOf(path, "/taken");
