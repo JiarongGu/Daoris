@@ -41,6 +41,11 @@ fixture beats by rename. The interrupted-write regression failed first, both aff
 21 tests, and the branch's whole fast suite passed 14,938 tests. HANDOVERPATIENCE1 and BEATWRITE1's
 fix-log entries retain the mechanism and the unproven scheduling cause; neither old failure was waived.
 
+Background CI on `0d4bb4b78` then finished green: ten gates ran and passed, nine verdicts remained
+valid, and the family and deployment rehearsals remain owed before a stage. The known-red ledger
+still retains an older opinion-resume finding; CILEDGER1 requires checking that exact case and its
+clearance rather than treating the green summary as evidence that every historical finding closed.
+
 ## Recovery order and preservation
 
 1. Finish mod-viii in its saved conversation and tree, then the remaining foundation rows in D212's
@@ -64,12 +69,21 @@ session record and its history remain in Daoris. No unfinished worktree was remo
 
 The landed d-i branch and its worktree were also absent at the later preservation read: the branch
 answered missing (exit 2), its directory and Git worktree entry were absent, and `61b10d4dc` remains
-in main's history. The two settled trees are gone; the unfinished trees remain.
+in main's history. A subsequent `trees list` read shows that Daoris retained this tree in its moved-aside
+area under the configured 14-day policy. Its active path and registration are gone; reclaiming that
+retained folder remains part of cleanup. The unfinished trees remain.
 
 A private Git bundle was verified as complete history, containing 27 refs at its read. The old test
 worktree's three modified files and the nested merge's 21 working files were copied with matching
 hashes, alongside their binary diffs and six raw Git metadata files including the index and merge
 heads. These preserve authored state; no unfinished merge was aborted or discarded.
+
+`limitgoon1-build` was retired after comparing all eleven paths of its original commit with the
+accepted squash: production agrees, while the squash adds documentation and stronger answered-exchange
+coverage. The original tip remains at `superseded/limitgoon1-build-5a2cd2a1f` and in the verified bundle.
+Tag creation and branch removal were one Git transaction verifying main and the old branch tip;
+the removed branch then answered missing (exit 2), with no worktree using it. Its implementation was
+already landed by squash; the old mis-signed history was not merged into main.
 
 ## Permission recovery
 
