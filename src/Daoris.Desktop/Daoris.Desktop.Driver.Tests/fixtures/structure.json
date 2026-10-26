@@ -647,7 +647,7 @@
     "Sessions/Heavy/LongCalls.cs": "Review",
     "Sessions/Heavy/SessionChecks.cs": "Review",
     "Sessions/Heavy/SessionChecksCommand.cs": "Review",
-    "Sessions/History/HistoryBytes.cs": "Workplace",
+    "Knowledge/HistoryBytes.cs": "Knowledge",
     "Sessions/History/HistoryClearing.cs": "Workplace",
     "Sessions/History/HistoryCommand.cs": "Workplace",
     "Sessions/History/HistoryHome.cs": "Workplace",
@@ -790,7 +790,11 @@
     "Trees/Landing/LandingWakes.cs": "Workplace",
     "Trees/Landing/RebaseTelling.cs": "Workplace",
     "Trees/LayoutGit.cs": "Workplace",
-    "Trees/LookTimes.cs": "Workplace",
+    "Knowledge/LookTimes.cs": "Knowledge",
+    "Knowledge/Domain/WorkplaceFacts.cs": "Knowledge",
+    "Knowledge/Domain/AutoLandingCode.cs": "Knowledge",
+    "Knowledge/KnowledgeWorkplace.cs": "Knowledge",
+    "Trees/KnowledgeWorkplaceReads.cs": "Workplace",
     "Trees/Nodes/BuiltInNodes.cs": "Workflows",
     "Trees/Nodes/GoAheadNode.cs": "Workflows",
     "Trees/Nodes/GraphEnds.cs": "Workflows",
@@ -965,20 +969,6 @@
         "Knowledge/Room/HelpRoomWindow.cs": ["HelpMachine"],
         "Knowledge/Room/HelpRoomWork.cs": ["HelpMachine","HelpMachineSources"],
         "Knowledge/Room/HelpRoomWorkspaces.cs": ["HelpMachine","HelpMachineSources"]
-      }
-    },
-    {
-      "family": "Knowledge names Workplace",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/Domain/Trace.Chain.cs": ["LandedBranch","LandingRules","PullRequestAskFailed","PullRequestState","TreeGuard","TreeHand"],
-        "Knowledge/Domain/Trace.Words.cs": ["AcceptedBy","AutoLandings","LandedBranches","PullRequestWords"],
-        "Knowledge/Domain/TracedRecords.cs": ["AutoLanding","LandedBranch"],
-        "Knowledge/HelpCheckouts.cs": ["WorkingTree"],
-        "Knowledge/HelpFacts.cs": ["CanonicalLine","HistoryReading","LineGuesses","LookTimes","RepositoryLine","SessionTrees","SweepPlan","TreeFolders","TreeReadMemo"],
-        "Knowledge/Room/HelpRoomMachineNow.cs": ["AcceptedBy","HistoryCommand","HistoryReading","PullRequestAskFailed","PullRequestState","PullRequestWords"],
-        "Knowledge/Room/HelpRoomWorkspaces.cs": ["Landing","LandingRules","LandingSource","Line","LineSource"],
-        "Knowledge/Trace.cs": ["AutoLandings","LandedBranches"]
       }
     },
     {
@@ -1657,6 +1647,7 @@
     "KnowledgePortsTests.cs": "Knowledge",
     "KnowledgeReviewPortsTests.cs": "Knowledge",
     "KnowledgeWorkflowPortsTests.cs": "Knowledge",
-    "KnowledgeWorkOrderPortsTests.cs": "Knowledge"
+    "KnowledgeWorkOrderPortsTests.cs": "Knowledge",
+    "KnowledgeWorkplacePortsTests.cs": "Knowledge"
   }
 }

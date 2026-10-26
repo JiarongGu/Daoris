@@ -250,7 +250,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
     private static async Task<CheckoutAnswer> GitAsync(
         string operation, string repository, string root, IReadOnlyList<string> arguments, string command, CancellationToken ct)
     {
-        var (code, stdout, stderr) = await WorkingTree.GitAsync(root, arguments, environment: null, Patience, ct).ConfigureAwait(false);
+        var (code, stdout, stderr) = await KnowledgeWorkplace.Current.GitAsync(root, arguments, Patience, ct).ConfigureAwait(false);
         if (code != 0)
         {
             var why = stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? $"it ended with {code}";
@@ -279,7 +279,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
     private static async Task<HashSet<string>?> IgnoredAsync(string root, IReadOnlyList<string> paths, CancellationToken ct)
     {
         var input = string.Concat(paths.Select(path => path + "\0"));
-        var (code, stdout, _) = await WorkingTree.GitAsync(root, ["check-ignore", "-z", "--stdin"], input, ct).ConfigureAwait(false);
+        var (code, stdout, _) = await KnowledgeWorkplace.Current.GitAsync(root, ["check-ignore", "-z", "--stdin"], input, ct).ConfigureAwait(false);
         // 0 where any is ignored, 1 where none is; anything else is git failing to say.
         return code is 0 or 1
             ? stdout.Split('\0', StringSplitOptions.RemoveEmptyEntries).Select(path => path.TrimEnd('/')).ToHashSet(StringComparer.OrdinalIgnoreCase)

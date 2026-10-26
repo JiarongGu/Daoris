@@ -107,7 +107,7 @@ public sealed record LandedResult(LandedItem Item, bool Removed, string Message)
 }
 
 /// <summary>The clean-up's whole list (D88, WSR5): the session branches, then the branches landings made.</summary>
-public sealed record SweepPlan(IReadOnlyList<SweepItem> Sessions, IReadOnlyList<LandedItem> Landed);
+public sealed record SweepPlan(IReadOnlyList<SweepItem> Sessions, IReadOnlyList<LandedItem> Landed) : IKnowledgeSweep;
 
 /// <summary>What one press of the clean-up did, both groups.</summary>
 /// <param name="Folders">The empty folders trees left behind, each removed or still held, in a sentence.</param>

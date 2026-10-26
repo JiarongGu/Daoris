@@ -1,19 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Where a repository's line came from, for the screen and the sentences that name it.</summary>
-public static class LineSource
-{
-    public const string Repository = "repository";
-    public const string Workspace = "workspace";
-    public const string Checkout = "checkout";
-    public const string None = "none";
-}
 
-/// <summary>A repository's line and what said so. <see cref="Branch"/> is null only where nothing names one.</summary>
-public sealed record Line(string? Branch, string Source);
-
-/// <summary>One repository's line as the screen shows it: which, in which circle, and what said so.</summary>
-public sealed record RepositoryLine(string Repository, string Workspace, string? Branch, string Source);
 
 /// <summary>
 /// Which line a repository's work grows from and lands on (WSR2), read from one place by every door:

@@ -21,6 +21,7 @@ public interface IKnowledgeMilestone
     string Unit { get; }
     string Repository { get; }
     string? Branch { get; }
+    string? Session { get; }
     MilestoneEnd End { get; }
     IReadOnlyList<InventoryEntry> Result { get; }
     MilestoneCleanup Cleanup { get; }

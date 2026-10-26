@@ -160,7 +160,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         $"`{landed.Branch}` in `{landed.Repository}` (session `{landed.Session}`, "
         + (landed.Access is { } access ? $"accepted by the access setup ({access}), " : "")
         + (landed.Pushed ? "pushed" + (landed.PullRequest is { } pr ? $", pull request {pr}" : "") : "not pushed")
-        + PullRequestWords.Row(landed.State, null, landed.AskFailed, null) + ")";
+        + KnowledgeWorkplace.Current.PullRequestRow(landed.State, landed.AskFailed) + ")";
 
     private static string PluginLine(HelpPlugin plugin)
     {
@@ -206,8 +206,8 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         foreach (var reading in readings) text.Append($"  - `{reading.Workspace}`: {Keeps(reading)}.\n");
         if (readings.FirstOrDefault(reading => reading.LeftOver > 0) is { } home)
         {
-            text.Append($"  - Left over from records already gone: {HistoryCommand.Count(home.LeftOver, "file")}, "
-                + $"{HistoryCommand.Size(home.LeftOverBytes)}, which a workspace's clear takes.\n");
+            text.Append($"  - Left over from records already gone: {KnowledgeWorkplace.Current.HistoryCount(home.LeftOver, "file")}, "
+                + $"{KnowledgeWorkplace.Current.HistorySize(home.LeftOverBytes)}, which a workspace's clear takes.\n");
         }
 
         return text.ToString();
@@ -216,18 +216,18 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
     private static string Keeps(HistoryReading reading)
     {
         if (reading.Quests + reading.Asks + reading.Sessions + reading.Teammates == 0) return "none";
-        var work = HistoryCommand.Join([HistoryCommand.Count(reading.Quests, "closed quest"), HistoryCommand.Count(reading.Asks, "ask")]);
-        var sessions = HistoryCommand.Join([HistoryCommand.Count(reading.Sessions, "session"), HistoryCommand.Copies(reading.Teammates)]);
-        var takes = HistoryCommand.Join(
+        var work = KnowledgeWorkplace.Current.HistoryJoin([KnowledgeWorkplace.Current.HistoryCount(reading.Quests, "closed quest"), KnowledgeWorkplace.Current.HistoryCount(reading.Asks, "ask")]);
+        var sessions = KnowledgeWorkplace.Current.HistoryJoin([KnowledgeWorkplace.Current.HistoryCount(reading.Sessions, "session"), KnowledgeWorkplace.Current.HistoryCopies(reading.Teammates)]);
+        var takes = KnowledgeWorkplace.Current.HistoryJoin(
         [
-            HistoryCommand.Count(reading.Takes.Quests, "quest"), HistoryCommand.Count(reading.Takes.Asks, "ask"),
-            HistoryCommand.Count(reading.Takes.Sessions, "session"), HistoryCommand.Copies(reading.Takes.Teammates),
+            KnowledgeWorkplace.Current.HistoryCount(reading.Takes.Quests, "quest"), KnowledgeWorkplace.Current.HistoryCount(reading.Takes.Asks, "ask"),
+            KnowledgeWorkplace.Current.HistoryCount(reading.Takes.Sessions, "session"), KnowledgeWorkplace.Current.HistoryCopies(reading.Takes.Teammates),
         ]);
         var kept = reading.KeptBy.Values.Sum();
         return $"{(work.Length == 0 ? "no closed quest or ask" : work)}, with {(sessions.Length == 0 ? "no session" : sessions)}, "
-            + $"{HistoryCommand.Size(reading.Bytes.Total + reading.Intake)}; "
-            + (takes.Length > 0 ? $"a clear would take {takes}, {HistoryCommand.Size(reading.Takes.Bytes)}"
-                : reading.Takes.Bytes > 0 ? $"a clear would take files alone, {HistoryCommand.Size(reading.Takes.Bytes)}"
+            + $"{KnowledgeWorkplace.Current.HistorySize(reading.Bytes.Total + reading.Intake)}; "
+            + (takes.Length > 0 ? $"a clear would take {takes}, {KnowledgeWorkplace.Current.HistorySize(reading.Takes.Bytes)}"
+                : reading.Takes.Bytes > 0 ? $"a clear would take files alone, {KnowledgeWorkplace.Current.HistorySize(reading.Takes.Bytes)}"
                 : "a clear would take nothing now")
             + (kept == 0 ? "" : $", and keep {kept}: " + string.Join(", ", reading.KeptBy
                 .OrderByDescending(each => each.Value).ThenBy(each => each.Key, StringComparer.Ordinal)

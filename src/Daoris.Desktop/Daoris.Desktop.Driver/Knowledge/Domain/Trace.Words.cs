@@ -31,7 +31,7 @@ internal static class TraceWords
         {
             TraceStores.Sessions => $"the service's session records could not be read: {store.Problem}",
             TraceStores.Quests => $"the service's quests could not be read: {store.Problem}",
-            _ => $"{LandedBranches.FileName} under the home does not read, so no landing is read from it: {store.Problem}",
+            _ => $"{KnowledgeWorkplace.Current.LandingsFileName} under the home does not read, so no landing is read from it: {store.Problem}",
         }),
     ];
 
@@ -495,7 +495,7 @@ internal static class TraceWords
         text.Append(landing.Missing switch
         {
             null => "",
-            TraceLandingGaps.Unread => $"  landing: {LandedBranches.FileName} does not read, so no branch landing of it is read\n",
+            TraceLandingGaps.Unread => $"  landing: {KnowledgeWorkplace.Current.LandingsFileName} does not read, so no branch landing of it is read\n",
             TraceLandingGaps.Unknown => "  landing: no branch landing on this machine names it, and no record of it here could say whether its work was accepted\n",
             TraceLandingGaps.None => "  landing: none: no branch landing on this machine names it, and its record keeps no acceptance of its work\n",
             _ => "  landing: no branch landing on this machine names it; its record keeps the acceptance above, which is all a "
@@ -522,7 +522,7 @@ internal static class TraceWords
         }
 
         // What its plugin last answered about its pull request, read as kept and never asked (PLUGHOOK1c, D148 point 6).
-        said.Append(PullRequestWords.Row(landing.PullRequestState, null, landing.PullRequestAskFailed, null));
+        said.Append(KnowledgeWorkplace.Current.PullRequestRow(landing.PullRequestState, landing.PullRequestAskFailed));
 
         if (landing.Gone is { } gone)
         {
@@ -630,7 +630,7 @@ internal static class TraceWords
     /// </summary>
     private static void DueToLand(StringBuilder text, TraceDue due)
     {
-        text.Append($"  due to land automatically since {When(due.Since)} ({AutoLandings.FileName}, this machine's)")
+        text.Append($"  due to land automatically since {When(due.Since)} ({KnowledgeWorkplace.Current.AutoLandingsFileName}, this machine's)")
             .Append(due.Closed is { } closed ? $", closed {When(closed)}\n" : ", still waiting\n");
         if (due.Tries.Count == 0) text.Append("    not tried yet\n");
         foreach (var tried in due.Tries)

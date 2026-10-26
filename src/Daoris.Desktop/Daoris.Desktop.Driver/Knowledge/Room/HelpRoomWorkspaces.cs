@@ -26,7 +26,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                 Line = lineOf.TryGetValue(known.Repository, out var line) ? new Line(line.Branch, line.Source) : new Line(null, LineSource.None),
                 // PARALLEL1a: a checkout whose line the facts have not judged yet, said so rather than as none git can name.
                 LineNotReadYet = Named(sources.NotReadYet.Repositories, known.Repository),
-                Landing = LandingRules.Choose(config, known.Repository, known.Workspace),
+                Landing = KnowledgeWorkplace.Current.ChooseLanding(config, known.Repository, known.Workspace),
                 // KNOWUSE1b: what the person says holds for every session there, in their words.
                 Standing = config.StandingFor(known.Repository)?.Says,
                 // REVIEWENV1a: where its work is shown to the person before it lands, and where that was set.

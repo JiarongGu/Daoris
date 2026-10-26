@@ -480,7 +480,7 @@ public sealed class HelpFactsTests : IDisposable
                     parts.Add(part);
                 }
 
-                return Task.FromResult<SweepPlan?>(new SweepPlan([], []));
+                return Task.FromResult<IKnowledgeSweep?>(new SweepPlan([], []));
             },
         });
         facts.Start();
@@ -524,7 +524,7 @@ public sealed class HelpFactsTests : IDisposable
             Sweep = (part, _) =>
             {
                 lock (judged) judged[part.Repository] = judged.GetValueOrDefault(part.Repository) + 1;
-                return Task.FromResult<SweepPlan?>(new SweepPlan([], []));
+                return Task.FromResult<IKnowledgeSweep?>(new SweepPlan([], []));
             },
         });
         facts.Start();

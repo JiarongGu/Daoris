@@ -69,7 +69,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
         var client = new ServiceClient("http://stand-in", null, new HttpClient(_service));
         HelpFacts.Keep(loop.Facts, new HelpFactJudges(
             async ct => new HelpMachineWhole(await client.SnapshotAsync(ct), [], []),
-            _ => Task.FromResult<SessionLook?>(null),
+            _ => Task.FromResult<IKnowledgeSessionLook?>(null),
             _ => Task.FromResult<IReadOnlyList<HistoryReading>?>(null),
             async (part, ct) => await HelpFacts.ReadWorkAsync(Home, part, ct))
         {
@@ -550,7 +550,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
             Facts = new MachineFacts(Clock.Now);
             HelpFacts.Keep(Facts, new HelpFactJudges(
                 _ => Task.FromResult<HelpMachineWhole?>(Volatile.Read(ref _whole)),
-                _ => Task.FromResult<SessionLook?>(null),
+                _ => Task.FromResult<IKnowledgeSessionLook?>(null),
                 _ => Task.FromResult<IReadOnlyList<HistoryReading>?>(null),
                 (part, _) =>
                 {

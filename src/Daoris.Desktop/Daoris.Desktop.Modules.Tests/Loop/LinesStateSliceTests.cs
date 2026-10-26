@@ -56,7 +56,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
         var client = new ServiceClient("http://stand-in", null, new HttpClient(_service));
         HelpFacts.Keep(loop.Facts, new HelpFactJudges(
             async ct => new HelpMachineWhole(await client.SnapshotAsync(ct), [], []),
-            _ => Task.FromResult<SessionLook?>(null),
+            _ => Task.FromResult<IKnowledgeSessionLook?>(null),
             _ => Task.FromResult<IReadOnlyList<HistoryReading>?>(null),
             (_, _) => Task.FromResult<HelpWork?>(null))
         {

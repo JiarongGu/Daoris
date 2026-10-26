@@ -153,10 +153,10 @@ public static class Trace
             questsUnread = error.Message;
         }
 
-        var landed = new LandedBranches(sources.Home);
-        return new TraceFacts(sessions, sessionsUnread, quests, questsUnread, landed.Entries(), LandingsProblem(landed.FilePath))
+        var landed = KnowledgeWorkplace.Current.Landings(sources.Home);
+        return new TraceFacts(sessions, sessionsUnread, quests, questsUnread, landed.Entries, LandingsProblem(landed.Path))
         {
-            AutoLandings = new AutoLandings(sources.Home).All(),
+            AutoLandings = KnowledgeWorkplace.Current.Due(sources.Home),
         };
     }
 

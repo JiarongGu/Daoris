@@ -379,9 +379,7 @@ public static class HelpFacts
     /// </remarks>
     public static async Task<HelpTrees> ReadTreesAsync(string home, HelpTreesPart part, CancellationToken ct, LookTimes? times = null)
     {
-        var trees = new SessionTrees(home);
-        var pass = TreeReadMemo.Of(home).Begin(trees);
-        return await ReadTreesAsync(part, trees.Holds, pass.WorkAsync, ct, times, TreesAtOnce, TreeFolders.Walkable).ConfigureAwait(false);
+        return await KnowledgeWorkplace.Current.ReadTreesAsync(home, part, ct, times).ConfigureAwait(false);
     }
 
     /// <summary>How many of a part's trees are read at once (TREELOOK1): each start still passes the background's places (PARALLEL1d).</summary>
@@ -622,7 +620,7 @@ public static class HelpFacts
     /// (<see cref="SweepPartOf"/>): null before the answers, or where they no longer name the repository with a checkout here.
     /// </summary>
     private static async Task<object?> JudgeSweepAsync(
-        MachineFacts facts, string subject, Func<HelpSweepPart, CancellationToken, Task<SweepPlan?>> sweep, CancellationToken ct)
+        MachineFacts facts, string subject, Func<HelpSweepPart, CancellationToken, Task<IKnowledgeSweep?>> sweep, CancellationToken ct)
     {
         if (facts.Current.Value<HelpMachineWhole>(Machine, Whole) is not { } whole || SweepPartOf(whole, subject) is not { } part) return null;
         return await sweep(part, ct).ConfigureAwait(false);
@@ -633,8 +631,8 @@ public static class HelpFacts
     /// session branches and landings' branches judged by the answers the landing record keeps (<see cref="SessionTrees.SweepPartAsync"/>),
     /// asking no plugin and changing nothing.
     /// </summary>
-    public static Task<SweepPlan> ReadSweepAsync(string home, HelpSweepPart part, CancellationToken ct) =>
-        new SessionTrees(home).SweepPartAsync(part.Repository, part.Workspace, part.Root, part.InUse, ct);
+    public static Task<IKnowledgeSweep> ReadSweepAsync(string home, HelpSweepPart part, CancellationToken ct) =>
+        KnowledgeWorkplace.Current.ReadSweepAsync(home, part, ct);
 
     /// <summary>
     /// One repository's line as its checkout guesses it, through <paramref name="guess"/>: null where the service's answers do not
@@ -663,7 +661,7 @@ public static class HelpFacts
         foreach (var known in whole.Snapshot.Repositories.OrderBy(known => known.Repository, StringComparer.Ordinal))
         {
             // What is set first, the checkout's guess as judged only where nothing is: the lines slice reads it alike (PUSH1b1).
-            if (CanonicalLine.Judged(config, known.Repository, known.Workspace, known.Root, facts.Value<HelpLineGuess>(Lines, known.Repository))
+            if (KnowledgeWorkplace.Current.JudgedLine(config, known.Repository, known.Workspace, known.Root, facts.Value<HelpLineGuess>(Lines, known.Repository))
                 is not { } line)
             {
                 unread.Add(known.Repository);
@@ -718,9 +716,9 @@ public static class HelpFacts
     /// here by name, with its plan as last judged, or null where it never was, so a part never judged differs from one judged empty.
     /// Null where the service's answers were never judged.
     /// </summary>
-    public static IReadOnlyList<(string Part, SweepPlan? Plan)>? SweepParts(MachineFactsSnapshot facts) =>
+    public static IReadOnlyList<(string Part, IKnowledgeSweep? Plan)>? SweepParts(MachineFactsSnapshot facts) =>
         facts.Value<HelpMachineWhole>(Machine, Whole) is { } whole
-            ? [.. SweepSubjects(whole).Select(subject => (subject, facts.Value<SweepPlan>(Sweep, subject)))]
+            ? [.. SweepSubjects(whole).Select(subject => (subject, facts.Value<IKnowledgeSweep>(Sweep, subject)))]
             : null;
 
     /// <summary>
@@ -862,7 +860,7 @@ public sealed record HelpFactJudges(
     Func<HelpWorkPart, CancellationToken, Task<HelpWork?>> Work)
 {
     /// <summary>A checkout's guess at its line, by its root: git's, asked once while its files stand, unless a test hands its own.</summary>
-    public Func<string, CancellationToken, Task<string?>> Guess { get; init; } = LineGuesses.Shared.GuessAsync;
+    public Func<string, CancellationToken, Task<string?>> Guess { get; init; } = KnowledgeWorkplace.Current.GuessAsync;
 
     /// <summary>
     /// One part of the sessions' trees (FACTSPLIT1b): the module hands git's judgement of its home's trees
@@ -875,7 +873,7 @@ public sealed record HelpFactJudges(
     /// (<see cref="HelpFacts.ReadSweepAsync"/>). None kept where a test hands none, so a slice over it stays not judged rather than
     /// say there is nothing to clean up.
     /// </summary>
-    public Func<HelpSweepPart, CancellationToken, Task<SweepPlan?>> Sweep { get; init; } = (_, _) => Task.FromResult<SweepPlan?>(null);
+    public Func<HelpSweepPart, CancellationToken, Task<IKnowledgeSweep?>> Sweep { get; init; } = (_, _) => Task.FromResult<IKnowledgeSweep?>(null);
 }
 
 /// <summary>

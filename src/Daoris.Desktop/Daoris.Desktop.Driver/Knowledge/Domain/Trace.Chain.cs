@@ -671,7 +671,7 @@ public sealed record TraceRules
         && hooks.TryGetProperty("PreToolUse", out var before) && before.ValueKind == System.Text.Json.JsonValueKind.Array
         && before.EnumerateArray().Any(entry => entry.ValueKind == System.Text.Json.JsonValueKind.Object
             && entry.TryGetProperty("matcher", out var matcher) && matcher.ValueKind == System.Text.Json.JsonValueKind.String
-            && matcher.GetString() == TreeGuard.Matcher);
+            && matcher.GetString() == KnowledgeWorkplace.Current.TreeGuardMatcher);
 }
 
 /// <summary>Where a session's work landed (WSR5): each branch a landing made of it, or why none is named.</summary>
@@ -912,12 +912,7 @@ internal static partial class TraceChains
     /// What a landing keeps in the session's record (D100), read from the writer itself so a reworded note is read the same: the
     /// person's acceptance, a merge into the line's included, an acceptance at the quest's done (LAND2b), and a hand-off after it.
     /// </summary>
-    private static readonly string[] Acceptances =
-    [
-        LandingRules.PersonAccepted,
-        LandingRules.AutoAccepted,
-        LandingRules.HandNote(new TreeHand(true, "")).Text!,
-    ];
+    private static readonly IReadOnlyList<string> Acceptances = KnowledgeWorkplace.Current.AcceptanceNotes;
 
     /// <summary>Each store that did not answer, once: its links are then said not read.</summary>
     internal static IReadOnlyList<TraceUnread> Unread(TraceFacts facts)
