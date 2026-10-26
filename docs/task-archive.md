@@ -15,6 +15,27 @@ the per-task record. Entries preserve their original wording so the archive stay
 > **SESSPROC1 — a second process's end takes the session's live process out of `running`** (driver; found by COWORKVIEW1 round 8's read, 2026-10-25). `SessionProcesses` keeps one entry per session: `Track` replaces it (`Sessions/SessionProcesses.cs:408`) and its `Untrack` removes whatever entry the session has (`:668`) and deletes its marker, so a second start of one record (a refused or abandoned run beside the live one) leaves the live process out of `running` and unmarked once it ends: the window's stop finds no entry, and another Daoris's orphan sweep may stop the record while it runs. An `Untrack` removes only its own entry and marker, the live one kept. Proof, seen failing first: two tracks of one session, the second disposed, the first still running, stoppable and marked.
 
 **Outcome.** Built as the quest asked: an entry per process, a handle's end removing only its own entry and, where no other process runs, the marker (else rewriting it for the one that does); a process that has exited is replaced as before, one still running is kept beside the new one, and the newest one running answers. Nothing of how a process is started, stopped or swept changed. Proved by `SessionProcessesProcessTests`, each case seen failing on the old registry except the two that guard today's behaviour; the choice of which entry answers, and why, is in the fix-log entry of 2026-10-26.
+## FOUNDATION1p — attempts acknowledged, dispositions and settlement (2026-10-26)
+
+> **FOUNDATION1p — attempts acknowledged, dispositions and settlement** (service, driver, modules, web catalogue; D212's row of Part B, accepted by the steward 2026-10-25 after both
+> makers' reads of round 8; the design `docs/2026-10-25-foundation-design.md` §10's row *1p*, §3.4 rule 5, §7's row 8, §19.2 and §19.12, round 8's *C7-1.1*, *O7-F12* and *O8-F1*). The
+> service's `said_settled`, written by a trigger in the statement that takes a word, one row per record left, word id and producer key, with no disposition; `SaidKeys.Settled` read by
+> key over the record the say names and its predecessors back along `from`, inside the say door's, the helper desk's and the partner desk's own steps, each asking it before any refusal but
+> the record's absence; a key the line holds elsewhere answered `Settled`, its own terminal kind with no word, to a say or hand that sends `settled: true`; every reader of a keyed answer
+> handling it before a word, the census naming each; the supervisor's door left as today; the horizon seven days for a retry, trimmed by time alone, none for the attempt; `GET /api/protocol`
+> with the host's run and its `settled` mark; the attempt acknowledged before the wire. It was a row of the FOUNDATION1 backlog entry, which stays open for the rows after it.
+
+**Outcome** 2026-10-26. **Built** as the row names it, and nothing of rows d-i and d-ii: the head walk's forward records and the moved-word cases are d-ii's. The trigger `said_settled_left` writes a row
+for each word a statement leaves off `said`, by every writer, an older connector's own take statement included; the say door, the helper desk and the partner desk read it first, over the line's records
+back along `from`, and answer `Settled` (a success naming the record, no `said`) to a request that sends `settled`, an older client's answered by today's door; a key whose word waits on a record the line
+has left is kept at the record named as today. The client reads `Settled` before a word, in the dispatchers (`ChatTurns`, `DrivenInbox`), the shell's pump, record path, inbox and chat, the headless door, the
+helper pass and the partner's hand, and `SettledReadersCensusTests` names every reader. An attempt's answer names each word it marked and a word is written only once the record names it: the conversation's
+turn, a word sent mid-turn or held, the resumed first prompt (narrowed to the words named, in place) and the native go-on's batch; one unnamed waits on its record and is said (`words.unreached`, `unmarked`,
+en and zh). **Proved** by `SaidSettledTests` (20), `SaidSettledHostTests`, `SettledAnswerTests`, `SettledReadersCensusTests`, `AttemptsAcknowledgedTests`, `SessionWordsSettledTests`, the added cases of
+`AcpResumeTests`, `AcpSteerTests`, `HelperLookTests`, `PartnerLookTests`, `noteLines.test.ts`, and the Process half's `SettledServiceProcessTests` against the service's own host and
+`ChatWordsRestartProcessTests`, each seen failing first by breaking the guard it holds. **Measured** on a scratch service at 60,000 settlements a week (never the install): paired, the say door's pooled
+p95 0.95 of before, the `sessions` write's pooled p95 1.02 of before, a word taken, the write the trigger fires on, +4.3 % to +7.1 %; the table 6,156 KiB, 105 bytes a row. Detail, the readings taken and the
+numbers: D212's note of 2026-10-26 (row 1p built); D188's and D137's notes of this date say the two sentences of theirs it changes.
 
 ## PICKCARRY1 — a pick belongs to the conversation, so a new part keeps it (2026-10-26)
 
