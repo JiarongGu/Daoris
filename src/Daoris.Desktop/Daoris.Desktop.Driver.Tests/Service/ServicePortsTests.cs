@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// lock let go when a session's record ends. The workplace installs both when the driver's assembly loads, so a sync and a client read and
 /// release as they always did; a test may put another in and puts it back.
 /// </summary>
+[Collection("agent operation ports")]
 public sealed class ServicePortsTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "service-ports", Guid.NewGuid().ToString("N")[..8]);
