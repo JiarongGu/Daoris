@@ -41,7 +41,7 @@ public sealed class SaidSettledMeasureTests : IDisposable
 
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Path.Combine(_root, "service.db"), Path.Combine(_root, "after.db"), Path.Combine(_root, "before.db"));
         try
         {
             Directory.Delete(_root, recursive: true);
@@ -325,7 +325,7 @@ public sealed class SaidSettledMeasureTests : IDisposable
             CultureInfo.InvariantCulture,
             $"the settlement table at {settled} rows (a week's takes): {(withBytes - withoutBytes) / 1024} KiB with its moment's index, {(withBytes - withoutBytes) / (double)settled:F0} bytes a row; the database {withBytes / 1024} KiB against {withoutBytes / 1024} KiB without it"));
         await seedConnection.DisposeAsync();
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(path);
         var beforePath = Path.Combine(_root, "before.db");
         File.Copy(path, beforePath);
         var (beforeConnection, beforeSessions, beforeLedger) = await OpenAsync(beforePath);

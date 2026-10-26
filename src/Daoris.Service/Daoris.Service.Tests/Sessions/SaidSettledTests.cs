@@ -30,7 +30,7 @@ public sealed class SaidSettledTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _connection.DisposeAsync();
-        SqliteConnection.ClearAllPools();
+        SqlitePools.Release(Path.Combine(_root, "service.db"));
         try
         {
             Directory.Delete(_root, recursive: true);
