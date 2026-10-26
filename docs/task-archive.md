@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## FOUNDATION1d-i — the keyed open and its record (2026-10-27)
+
+> **FOUNDATION1d-i — the keyed open and its record** (service, driver; D212, Part B accepted 2026-10-25). Build `docs/2026-10-25-foundation-design.md` §10's row 1d-i, §3.3's destination and §19.5 and §19.12's protocol marks, with §13.6's row; no word moves until d-ii. Proof: the row's replay, head, deletion, resume exclusion and replaced-host cases, `SessionLedgerTests` whole, and the sessions write's p95 within a tenth of before; across a crash, f-i's case.
+
+**Outcome.** The ledger keeps keyed opens in `session_opens` in the open's exclusive step, replays before validation, and excludes resuming a predecessor whose destination stands. The client negotiates host runs and holds uncertain retries. Transfers stay empty. Detail, proof and landing measurement: D212's dated note. FOUNDATION1's backlog row stays unchanged.
+
 ## PICKLOST1 — a lost conversation whose account the person picked walks off that account (2026-10-26)
 
 > **PICKLOST1 — a lost conversation whose account the person picked walks off that account** (driver; found by reading PICKCARRY1's landing, 2026-10-26). The ended limit move lets a conversation proven lost walk its agent's accounts even where the person picked its account (`Conversations/Chat/LimitMove.cs:275`, *a conversation proven lost has no resume to keep*), so a lost conversation whose picked account cools opens on another and keeps no pick; that conflates the resume with the account, and FOUNDATION1 row 1a-ii's rule is that a recorded pick waits. A lost, picked conversation's new part waits for its picked account as any picked conversation does, and opens on it, keeping its pick (PICKCARRY1). Proof, seen failing first: a lost conversation picked on a cooling account waits and opens on it once it is ready; an unpicked lost conversation walks as today.

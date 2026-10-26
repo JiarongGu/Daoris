@@ -29,6 +29,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         _doors = doors;
         _base = doors.BaseUrl;
         Confirmations = new ConfirmationDoors(this);
+        Opens = new SessionOpenDoors(this);
     }
 
     /// <summary>A client over HTTP to the host at <paramref name="baseUrl"/>, with its key; a test may hand its own HTTP client.</summary>
@@ -40,9 +41,15 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>The local host's confirmation doors, read for the windows (NOTIFY2j), over this client.</summary>
     public ConfirmationDoors Confirmations { get; }
 
+    public SessionOpenDoors Opens { get; }
+
     /// <summary>A door class's request whose every answer comes back, a refusal's included (<see cref="IServiceDoors.SendAsync"/>).</summary>
-    internal Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct) =>
-        _doors.SendAsync(verb, path, json, ct);
+    internal async Task<ServiceReply> SendAsync(ServiceVerb verb, string path, string? json, CancellationToken ct)
+    {
+        var answer = await _doors.SendAsync(verb, path, json, ct).ConfigureAwait(false);
+        Opens.Observe(answer);
+        return answer;
+    }
 
     /// <summary>A record a door class opened, told to <see cref="Opened"/>'s watchers as this client's own doors tell them (LOG1b).</summary>
     internal void RecordOpened(SessionOpened opened) => Raise(Opened, opened);
@@ -2510,7 +2517,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     internal async Task<(bool Ok, int Status, string Payload, JsonElement? Root)> PostJsonAsync(
         string path, string body, CancellationToken ct)
     {
-        var answer = await _doors.SendAsync(ServiceVerb.Post, path, body, ct).ConfigureAwait(false);
+        var answer = await SendAsync(ServiceVerb.Post, path, body, ct).ConfigureAwait(false);
         var payload = answer.Payload;
 
         JsonElement? root = null;

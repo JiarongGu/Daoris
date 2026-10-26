@@ -29,8 +29,9 @@ public sealed class SaidSettledHostTests(LocalHost host) : IClassFixture<LocalHo
         Assert.Matches("^[0-9a-f]{32}$", run!);
         Assert.Equal(run, second.Json.GetProperty("run").GetString());
         Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("settled").GetInt32());
-        // Only the marks this host keeps: none of the later rows' (the open, the head, the journal).
-        Assert.Equal(["settled"], first.Json.GetProperty("marks").EnumerateObject().Select(mark => mark.Name).ToArray());
+        // Row d-i adds replay alone; head and word transfer are d-ii's.
+        Assert.Equal(["settled", "opens"], first.Json.GetProperty("marks").EnumerateObject().Select(mark => mark.Name).ToArray());
+        Assert.Equal(1, first.Json.GetProperty("marks").GetProperty("opens").GetInt32());
     }
 
     /// <summary>

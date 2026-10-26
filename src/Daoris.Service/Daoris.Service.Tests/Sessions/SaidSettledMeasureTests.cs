@@ -271,6 +271,9 @@ public sealed class SaidSettledMeasureTests : IDisposable
     {
         if (Environment.GetEnvironmentVariable(Variable) is null) return;
 
+        // d-i uses p's paired seed and keeps p's settlement on both copies. Only d-i's schema differs.
+        var opens = Environment.GetEnvironmentVariable(Variable) == "opens";
+
         var records = Setting("DAORIS_MEASURE_SESSIONS", 5_000);
         var settled = Setting("DAORIS_MEASURE_SETTLED", 60_000);
         var samples = Setting("DAORIS_MEASURE_PAIRS", 1_200);
@@ -333,7 +336,9 @@ public sealed class SaidSettledMeasureTests : IDisposable
         await using (var drop = beforeConnection.CreateCommand())
         {
             // The service before the row: nothing settles a word as it leaves.
-            drop.CommandText = "DROP TRIGGER said_settled_left";
+            drop.CommandText = opens
+                ? "DROP TRIGGER session_opens_deleted; DROP TABLE session_opens; DROP INDEX sessions_from; DROP INDEX sessions_quest;"
+                : "DROP TRIGGER said_settled_left";
             await drop.ExecuteNonQueryAsync();
         }
 
@@ -361,7 +366,7 @@ public sealed class SaidSettledMeasureTests : IDisposable
             into[names[0]].Add(await TimeAsync(async () => kept = await ledger.SayAsync(id, $"words {each}", null, now, key: key, from: SaidFrom.Daoris)));
             into[names[1]].Add(await TimeAsync(() => ledger.SayAsync(id, $"words {each}", null, now, key: key, from: SaidFrom.Daoris)));
             into[names[5]].Add(await TimeAsync(() => sessions.TakeSaidAsync(id, [kept!.Word!.Id])));
-            into[names[2]].Add(await TimeAsync(() => ledger.SayAsync(id, $"words {each}", null, now, key: key, from: SaidFrom.Daoris, settled: row)));
+            into[names[2]].Add(await TimeAsync(() => ledger.SayAsync(id, $"words {each}", null, now, key: key, from: SaidFrom.Daoris, settled: row || opens)));
             into[names[3]].Add(await TimeAsync(() => sessions.SetStateAsync(id, each % 2 == 0 ? SessionState.Working : SessionState.Completed, null, null, null, now)));
             await sessions.SetStateAsync(id, SessionState.Completed, null, null, null, now);
             var word = new SaidWord(Guid.NewGuid().ToString("N")[..8], "kept", now, [], Key: $"write:{each}");
@@ -406,6 +411,12 @@ public sealed class SaidSettledMeasureTests : IDisposable
         foreach (var name in names) Ratio(name, before[name], after[name]);
         Ratio("say door pooled", [.. before[names[0]], .. before[names[1]], .. before[names[2]]], [.. after[names[0]], .. after[names[1]], .. after[names[2]]]);
         Ratio("sessions write pooled", [.. before[names[3]], .. before[names[4]], .. before[names[5]]], [.. after[names[3]], .. after[names[4]], .. after[names[5]]]);
+        if (opens)
+        {
+            var was = before[names[3]].Concat(before[names[4]]).Concat(before[names[5]]).Order().ToArray();
+            var current = after[names[3]].Concat(after[names[4]]).Concat(after[names[5]]).Order().ToArray();
+            Assert.True(Percentile(current, 0.95) <= Percentile(was, 0.95) * 1.1, "d-i exceeds the sessions write's tenth limit");
+        }
         var afterKiB = await ScalarAsync(afterConnection, "PRAGMA page_count") * await ScalarAsync(afterConnection, "PRAGMA page_size") / 1024;
         var beforeKiB = await ScalarAsync(beforeConnection, "PRAGMA page_count") * await ScalarAsync(beforeConnection, "PRAGMA page_size") / 1024;
         _said.WriteLine($"settlement rows at the end: {await ScalarAsync(afterConnection, "SELECT COUNT(*) FROM said_settled")}; database {afterKiB} KiB against {beforeKiB} KiB");
