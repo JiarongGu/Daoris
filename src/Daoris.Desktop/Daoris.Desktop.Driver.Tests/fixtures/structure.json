@@ -979,13 +979,6 @@
       }
     },
     {
-      "family": "Agents names Help",
-      "after": "Agents",
-      "files": {
-        "Agents/Acp.cs": ["HelpModes"]
-      }
-    },
-    {
       "family": "Agents names Participants",
       "after": "Agents",
       "files": {

@@ -310,7 +310,7 @@ public sealed class AcpSession(
     public Func<string, string, string>? Unoffered { get; init; }
 
     /// <summary>
-    /// The mark a posture carries after <see cref="HelpModes.Required"/> where the person answers its permission requests (AUTONOMY1b3a,
+    /// The mark a posture carries after <see cref="AgentPostures.Required"/> where the person answers its permission requests (AUTONOMY1b3a,
     /// D184 point 3): a driven start's asking permission prompts on the protocol door (<see cref="DrivenAccess"/>). Never set on the wire.
     /// </summary>
     public const char PersonAnswers = '?';
@@ -2934,7 +2934,7 @@ public sealed class AcpSession(
     /// future harness's right.</para>
     ///
     /// <para>🔴 <b>A posture marked required is set, or the session does not open</b> (HELPMODE1a1, D183 point 3): Ask Daoris's
-    /// full access, <see cref="HelpModes.Required"/> before the adapter's <see cref="ISessionAdapter.FullPosture"/>, and a driven
+    /// full access, <see cref="AgentPostures.Required"/> before the adapter's <see cref="ISessionAdapter.FullPosture"/>, and a driven
     /// session's asking or unrestricted permission prompts (AUTONOMY1b, <see cref="DrivenAccess"/>). Left alone, an agent that does
     /// not offer it would run in its own mode under that label; it fails plainly instead, naming what the agent offers and the
     /// person's two ways on (<see cref="Unoffered"/>'s words where a driven start gave them). Every other posture keeps the leniency
@@ -2998,15 +2998,15 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// A posture's marks and the modes it names: <see cref="HelpModes.Required"/> (set, or the session does not open) and
+    /// A posture's marks and the modes it names: <see cref="AgentPostures.Required"/> (set, or the session does not open) and
     /// <see cref="PersonAnswers"/> (its permission requests held for the person), in either order, before the modes.
     /// </summary>
     private static (bool Required, bool PersonAnswers, string Named) Marks(string? posture)
     {
         var (required, held, at) = (false, false, 0);
-        while (posture is not null && at < posture.Length && posture[at] is HelpModes.Required or PersonAnswers)
+        while (posture is not null && at < posture.Length && posture[at] is AgentPostures.Required or PersonAnswers)
         {
-            required |= posture[at] == HelpModes.Required;
+            required |= posture[at] == AgentPostures.Required;
             held |= posture[at] == PersonAnswers;
             at++;
         }

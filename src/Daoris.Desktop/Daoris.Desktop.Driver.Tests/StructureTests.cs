@@ -468,6 +468,12 @@ public sealed class StructureTests
     });
 
     [Fact]
+    public void Agents_reads_no_Help_type_for_its_required_posture_marker()
+    {
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal) && edge.Type == "HelpModes"));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

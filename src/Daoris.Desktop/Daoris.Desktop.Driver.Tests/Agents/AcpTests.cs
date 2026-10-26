@@ -354,8 +354,10 @@ public sealed class AcpTests
     /// after it are still read, and the person's choice of an option the agent offered is the answer, by its id. The record says it
     /// was held and that the person allowed it, by code.
     /// </summary>
-    [Fact]
-    public async Task Under_asking_a_request_is_held_off_the_loop_until_the_person_answers_with_an_offered_option()
+    [Theory]
+    [InlineData("!?")]
+    [InlineData("?!")]
+    public async Task Under_asking_a_request_is_held_off_the_loop_until_the_person_answers_with_an_offered_option(string marks)
     {
         var answers = new ConcurrentQueue<JsonElement>();
         var events = new ConcurrentQueue<SessionEvent>();
@@ -363,7 +365,8 @@ public sealed class AcpTests
         var registry = new HeldPermissions();
         var agent = AskingAgent(Choices, answers);
         var asking = Asking();
-        var session = new AcpSession(agent.Incoming, agent.Outgoing, lines.Enqueue, closeTimeout: null, asking.Posture, onEvent: events.Enqueue)
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, lines.Enqueue, closeTimeout: null,
+            $"{marks}{asking.Posture!.TrimStart('!', '?')}", onEvent: events.Enqueue)
         {
             Unoffered = asking.Unoffered,
             Permissions = registry.For("d1"),
@@ -1620,16 +1623,21 @@ public sealed class AcpTests
     /// HELPMODE1a1 (D183 points 1, 3): a posture marked required, Ask Daoris's full access, is set by name where the agent offers it:
     /// Claude Code's mode that asks nothing, which no other posture ever reaches.
     /// </summary>
-    [Fact]
-    public async Task A_required_posture_is_set_where_the_agent_offers_it()
+    [Theory]
+    [InlineData("!")]
+    [InlineData("!?")]
+    [InlineData("?!")]
+    public async Task A_required_posture_is_set_where_the_agent_offers_it(string marks)
     {
+        Assert.Equal('!', AgentPostures.Required);
+        Assert.Equal(AgentPostures.Required, HelpModes.Required);
         var agent = PostureAgent("""
             {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
             {"id":"auto","name":"Auto"},{"id":"bypassPermissions","name":"Bypass"}
             """);
         var full = AdapterSet.Built().Resolve("claude-code-acp").FullPosture;
 
-        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, $"{HelpModes.Required}{full}")
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, $"{marks}{full}")
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
 
         Assert.Equal("bypassPermissions", ModeSet(agent));
