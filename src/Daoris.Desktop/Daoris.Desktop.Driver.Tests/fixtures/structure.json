@@ -989,13 +989,6 @@
       }
     },
     {
-      "family": "Knowledge names Roles",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/Room/HelpRoomMachineNow.cs": ["ActorChoices","ActorUnreadableException"]
-      }
-    },
-    {
       "family": "Knowledge names Work orders",
       "after": "Knowledge",
       "files": {

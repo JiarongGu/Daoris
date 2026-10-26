@@ -223,6 +223,37 @@ public sealed class ActorChoicesTests
         Assert.Equal("off", ActorView.Of("ask-daoris", off).State);
     }
 
+    /// <summary>
+    /// FOUNDATION1 mod-viii: the room's facts read the first agent of an order through the settings' <c>ActorKey.FirstAgent</c>, which the
+    /// actors' own reading answers through, so the two are one rule: the same agent for every actor in each state an order is in (stored, off,
+    /// as before, as before with no key), and where an entry does not read the settings' is none where the actors' holds the start.
+    /// </summary>
+    [Fact]
+    public void The_settings_first_agent_is_what_the_actors_read_for_every_actor_in_every_state()
+    {
+        var states = new[]
+        {
+            DriverConfig.Empty,
+            DriverConfig.Empty with { Adapter = "claude-code", IntakeAdapter = "codex-acp", HelperAdapter = "dsh" },
+            ActorChoices.With(DriverConfig.Empty with { Adapter = "claude-code" }, "build", [Codex, Opus]),
+            ActorChoices.With(ActorChoices.With(DriverConfig.Empty with { IntakeAdapter = "codex-acp" }, "intake", []), "ask-daoris", [Sonnet]),
+        };
+
+        foreach (var config in states)
+        {
+            foreach (var actor in ActorKey.Ids)
+            {
+                Assert.Equal(ActorChoices.Effective(actor, config).FirstOrDefault()?.Agent, ActorKey.FirstAgent(actor, config));
+                Assert.Equal(ActorChoices.FirstAgent(actor, config), ActorKey.FirstAgent(actor, config));
+            }
+        }
+
+        var unreadable = DriverConfig.Parse("""{ "adapter": "claude-code", "actors": { "build": [{ "model": "opus" }] } }""");
+        Assert.Throws<ActorUnreadableException>(() => ActorChoices.FirstAgent("build", unreadable));
+        Assert.Null(ActorKey.FirstAgent("build", unreadable));
+        Assert.Equal("claude-code", ActorKey.FirstAgent("chat", unreadable));
+    }
+
     [Fact]
     public void The_drain_turns_a_set_intake_off_in_what_effective_reads()
     {

@@ -26,6 +26,30 @@ public static class ActorKey
     public static bool MayBeOff(string actor) => actor is "intake" or "ask-daoris";
 
     /// <summary>
+    /// The agent an <i>as before</i> order of <paramref name="actor"/> starts as (§4.0): today's keys at account default, <c>adapter</c> for
+    /// Build, Chat and Brainstorm, <c>intakeAdapter</c> for Intake and <c>helperAdapter</c> for Ask Daoris; null for any other actor.
+    /// </summary>
+    public static string? Before(string actor, DriverConfig config) => actor switch
+    {
+        "build" or "chat" or "brainstorm" => config.Adapter,
+        "intake" => config.IntakeAdapter,
+        "ask-daoris" => config.HelperAdapter,
+        _ => null,
+    };
+
+    /// <summary>
+    /// The agent a start of <paramref name="actor"/> runs where nothing picks, hands or fences it: its first stored entry's, or, <i>as
+    /// before</i>, <see cref="Before"/>'s; null where it is off or has none. Null too where its stored entry does not read
+    /// (<c>ActorErrors</c>), which the actors' own reading (<see cref="ActorChoices.FirstAgent"/>) holds the start for with a sentence.
+    /// </summary>
+    public static string? FirstAgent(string actor, DriverConfig config)
+    {
+        if (config.ActorErrors.ContainsKey(actor)) return null;
+        if (config.Actors.TryGetValue(actor, out var stored)) return stored.FirstOrDefault()?.Agent;
+        return Before(actor, config) is { Length: > 0 } legacy ? legacy : null;
+    }
+
+    /// <summary>
     /// Whether <paramref name="choices"/> may be <paramref name="actor"/>'s order: null (back to <i>as before</i>) always; otherwise the
     /// refusal's sentence, or null where it may.
     /// </summary>

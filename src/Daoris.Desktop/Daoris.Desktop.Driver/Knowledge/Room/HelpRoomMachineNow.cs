@@ -57,17 +57,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         NotReadYet = sources.NotReadYet,
     };
 
-    private static string? First(string actor, DriverConfig config)
-    {
-        try
-        {
-            return ActorChoices.FirstAgent(actor, config);
-        }
-        catch (ActorUnreadableException)
-        {
-            return null;
-        }
-    }
+    private static string? First(string actor, DriverConfig config) => ActorKey.FirstAgent(actor, config);
 
     /// <summary>
     /// The most ended sessions the room lists by id (SESSUX1h3): enough to name one to archive or delete from the newest, short

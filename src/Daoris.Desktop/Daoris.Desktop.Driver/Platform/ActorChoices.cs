@@ -92,19 +92,16 @@ public static class ActorChoices
                 choice.Agent, choice.Model, choice.Effort, (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)))];
         }
 
-        string? before = actor switch
-        {
-            "build" or "chat" or "brainstorm" => config.Adapter,
-            "intake" => config.IntakeAdapter,
-            "ask-daoris" => config.HelperAdapter,
-            _ => null,
-        };
-        return before is { Length: > 0 } legacy ? [new ActorEffective(legacy, null, null, "before")] : [];
+        return ActorKey.Before(actor, config) is { Length: > 0 } legacy ? [new ActorEffective(legacy, null, null, "before")] : [];
     }
 
     /// <summary>The agent a start of <paramref name="actor"/> runs where nothing walks its order: its first entry's, or null where it is off.</summary>
     /// <exception cref="ActorUnreadableException">The actor's stored entry does not read.</exception>
-    public static string? FirstAgent(string actor, DriverConfig config) => Effective(actor, config).FirstOrDefault()?.Agent;
+    public static string? FirstAgent(string actor, DriverConfig config)
+    {
+        if (config.ActorErrors.TryGetValue(actor, out var error)) throw new ActorUnreadableException(actor, error);
+        return ActorKey.FirstAgent(actor, config);
+    }
 
     /// <summary>
     /// <paramref name="config"/> with <paramref name="actor"/>'s order set (or, null, back to <i>as before</i>), judged first, and written
