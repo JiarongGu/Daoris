@@ -20,7 +20,7 @@ repository.
   waits, the twelve-attempt bound, final exception, writable-attribute clearing and reparse-point exclusion are unchanged.
 - **Verify:** the deterministic late-release case failed first with the integration's `IOException`; the repaired
   `GitSeedTests` class passes all 10 fast cases, including explicit release, exact exhaustion and quiet `Discard`.
-- **Commit:** pending.
+- **Commit:** `bdcf72870`.
 
 ## 2026-10-26 - The brainstorm's stop case read the pass's deadline where the person's stop (FLAKE1)
 

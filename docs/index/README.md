@@ -261,7 +261,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Tests/Remote/QuestSyncTests.cs` | 107 | 2111 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionLedgerTests.cs` | 110 | 2087 |
 | `src/Daoris.Service/Daoris.Service.Tests/Sessions/SessionStoreTests.cs` | 47 | 918 |
-| `src/Daoris.Service/README.md` | 115 | 824 |
+| `src/Daoris.Service/README.md` | 115 | 828 |
 
 ### CLI (`cli`)
 
@@ -387,4 +387,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-26-tree-pool-survey.md` | 47 | 562 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 59 | 280 |
-| `src/Daoris.Desktop/README.md` | 183 | 861 |
+| `src/Daoris.Desktop/README.md` | 184 | 869 |
