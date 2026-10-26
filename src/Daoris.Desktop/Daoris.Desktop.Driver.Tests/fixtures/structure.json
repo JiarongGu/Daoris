@@ -615,6 +615,7 @@
     "Sessions/AccessCommand.cs": "Participants",
     "Sessions/AccessLease.cs": "Participants",
     "Sessions/ChildLineage.cs": "Participants",
+    "Sessions/LineageWiring.cs": "Participants",
     "Sessions/Domain/AbandonEntry.cs": "Workplace",
     "Sessions/Domain/AbandonPlan.cs": "Workplace",
     "Sessions/Domain/AccessRules.cs": "Participants",
@@ -976,15 +977,6 @@
         "Agents/HarnessCapture.cs": ["DaorisWords"],
         "Agents/TransientRetries.cs": ["ChatMessage","DaorisKeys","DaorisWord","DaorisWords","ISaidDoor","SaidDoor"],
         "Agents/SessionProcesses.cs": ["ChatMessage","ChatQueue","DrivenInbox"]
-      }
-    },
-    {
-      "family": "Agents names Participants",
-      "after": "Agents",
-      "files": {
-        "Agents/Adapters.cs": ["DrivenAccess"],
-        "Agents/Permissions.cs": ["ChildLineage","LineageHook"],
-        "Agents/HarnessCapture.cs": ["ChildLineage"]
       }
     },
     {
@@ -1455,6 +1447,7 @@
   "testFolders": ["Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
   "tests": {
     "ActorOpeningTests.cs": "Roles",
+    "ParticipantPortsTests.cs": "Agents",
     "AccountIdentityTests.cs": "Agents",
     "AccountCoolingTests.cs": "Agents",
     "AccountFileNodesTests.cs": "Agents",

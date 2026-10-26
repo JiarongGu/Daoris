@@ -38,6 +38,10 @@ Agents also owns the shared `RunningTask` data and pure review-tab title; Review
 Roles composes actor opening notes through a higher extension over `RotatedOpening` and Events' existing `ISessionEvents` contract.
 The instruction accounting sources in `Accounts/` and session parts in `Agents/Adapters/` belong to Context until its move.
 
+Participants judges `DrivenAccess` and supplies Agents with the `IAgentAccess` start contract. Agents owns the installed
+`LineageHook` data and required `LineageStreams` operation port; Participants installs the actual per-run watcher from
+`Sessions/LineageWiring.cs`. Script installation and the part's lineage end remain Participants' operations.
+
 The driver's `Knowledge/` owns the connector, trace, room sections and rendered room facts (FOUNDATION1 mod-viii, D212).
 Help keeps source descriptions and workspace projection; its source record answers the lower room interface directly.
 Work orders and Workplace answer the room's reads through ports declared in Knowledge, installed from their own mapped

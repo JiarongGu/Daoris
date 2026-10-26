@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// </remarks>
 /// <param name="Permissions">The value it runs under, one of the permission prompts' (<see cref="AccessRules.Permissions"/>).</param>
 /// <param name="Said">What its start note says of the mode it got, the harness's own word for it, in one line.</param>
-public sealed record DrivenAccess(string Permissions, string Said)
+public sealed record DrivenAccess(string Permissions, string Said) : IAgentAccess
 {
     /// <summary>
     /// The protocol door's posture: null keeps the adapter's own (auto), the asking or unrestricted mode marked required, and the asking
@@ -49,13 +49,12 @@ public sealed record DrivenAccess(string Permissions, string Said)
     /// <param name="now">The driver's file as it reads now, not as the look that started the session read it.</param>
     public DrivenAccess? ChangedIn(DriverConfig now, ISessionAdapter adapter)
     {
-        var got = For(AccessRules.Resolve(now, Repository, Workspace), Repository, adapter) with { Workspace = Workspace };
-        return got.Permissions == Permissions ? null : got;
+        return DrivenAccessChanges.ChangedIn(this, now, adapter);
     }
 
     /// <summary>The same change as a swap from what it started under (ACCESSSWAP1b); null where <paramref name="now"/> names the same.</summary>
     public SetupSwap? SwapIn(DriverConfig now, ISessionAdapter adapter) =>
-        ChangedIn(now, adapter) is { } got ? new SetupSwap(Permissions, got.Permissions) : null;
+        DrivenAccessChanges.SwapIn(this, now, adapter);
 
     /// <summary>
     /// Tell the console of each driven session running here whose permission prompts a change of the driver's file moves (ACCESSSWAP1b,
@@ -206,4 +205,21 @@ public sealed record DrivenAccess(string Permissions, string Said)
     /// </summary>
     public static string? GoingOnNote(PriorSession prior, DrivenAccess got) =>
         ChangedSince(prior, got.Permissions) is { } changed ? $"{changed} {got.Said}" : null;
+}
+
+/// <summary>Participants judges a later setup from the same facts a start handed Agents.</summary>
+public static class DrivenAccessChanges
+{
+    extension(IAgentAccess started)
+    {
+        public DrivenAccess? ChangedIn(DriverConfig now, ISessionAdapter adapter)
+        {
+            var got = DrivenAccess.For(AccessRules.Resolve(now, started.Repository, started.Workspace), started.Repository, adapter)
+                with { Workspace = started.Workspace };
+            return got.Permissions == started.Permissions ? null : got;
+        }
+
+        public SetupSwap? SwapIn(DriverConfig now, ISessionAdapter adapter) =>
+            started.ChangedIn(now, adapter) is { } got ? new SetupSwap(started.Permissions, got.Permissions) : null;
+    }
 }

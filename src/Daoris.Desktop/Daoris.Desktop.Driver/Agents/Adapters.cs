@@ -89,7 +89,7 @@ public sealed record SessionTarget(
     /// the permission mode its native door names, as its repository's setup resolved at this start or resume. Null keeps the adapter's
     /// own, as an intake, a reviewer, a helper and a brainstorm have.
     /// </summary>
-    public DrivenAccess? Access { get; init; }
+    public IAgentAccess? Access { get; init; }
 
     /// <summary>
     /// The brainstorm this turn is a pass of (BRAINSTORM1a, D176 point 1): one turn in a room holding the packet and its instruction,

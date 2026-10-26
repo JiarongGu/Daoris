@@ -488,6 +488,14 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void Agents_receives_participant_start_facts_and_uses_a_lower_lineage_port()
+    {
+        string[] higher = ["DrivenAccess", "ChildLineage"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && (higher.Contains(edge.Type) || edge.Type == "LineageHook" && edge.DeclaredIn.Any(path => !path.StartsWith("Agents/", StringComparison.Ordinal)))));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

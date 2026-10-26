@@ -120,7 +120,7 @@ internal static class HarnessCapture
         IReadOnlyList<SaidWordView>? handed = null)
     {
         own?.Begin();
-        var lineage = lineageHome is null ? null : ChildLineage.Watch(lineageHome, sessionId);
+        var lineage = lineageHome is null ? null : LineageStreams.Current.Watch(lineageHome, sessionId);
         await using var file = TranscriptFile.Open(transcript, append);
         // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
         // before it ends, as the protocol door keeps `session/new`'s id.

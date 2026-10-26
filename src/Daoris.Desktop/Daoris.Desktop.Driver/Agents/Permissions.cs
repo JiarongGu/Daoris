@@ -570,7 +570,7 @@ public static class SpawnSettings
                     ["args"] = new JsonArray(lineage.Script, lineage.File),
                     ["timeout"] = 10,
                 });
-                before.Add(new JsonObject { ["matcher"] = ChildLineage.Matcher, ["hooks"] = Lineage() });
+                before.Add(new JsonObject { ["matcher"] = LineageHook.Matcher, ["hooks"] = Lineage() });
                 hooks["PreToolUse"] = before;
                 hooks["SubagentStart"] = new JsonArray(new JsonObject { ["hooks"] = Lineage() });
                 hooks["SubagentStop"] = new JsonArray(new JsonObject { ["hooks"] = Lineage() });

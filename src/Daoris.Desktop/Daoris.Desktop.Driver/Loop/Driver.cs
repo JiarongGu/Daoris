@@ -4049,7 +4049,7 @@ public sealed class Driver(
     /// What a running driven session's permission prompts changed to (ACCESSSWAP1b), read from the driver's file now; null where they did
     /// not, or the file does not read: a write torn half-way is read again at the next turn's end, never taken for a change.
     /// </summary>
-    private static SetupSwap? SetupNow(DrivenAccess started, ISessionAdapter adapter, string configPath)
+    private static SetupSwap? SetupNow(IAgentAccess started, ISessionAdapter adapter, string configPath)
     {
         try
         {

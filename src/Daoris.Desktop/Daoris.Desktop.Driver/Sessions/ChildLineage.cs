@@ -3,15 +3,6 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>One session's lineage hook: the script Claude Code runs, the file it appends to, and the node it runs on.</summary>
-/// <param name="Script">The script, written under the Daoris home by <see cref="ChildLineage.Install"/>.</param>
-/// <param name="File">The session's lineage file (<see cref="ChildLineage.PathOf"/>).</param>
-public sealed record LineageHook(string Script, string File)
-{
-    /// <summary>The node the harness starts the script with: the file Tools resolves (TOOLS5), as the tree guard's.</summary>
-    public string Node { get; init; } = "node";
-}
-
 /// <summary>
 /// A session's lineage file, where its native children are bound to its part (FABRIC-C1a, D173): the connector writes a line
 /// per call with the lineage its harness carried, the hook this driver hands Claude Code writes what it says of each agent, and
@@ -38,7 +29,7 @@ public static class ChildLineage
     public const string ScriptName = "lineage-hook.mjs";
 
     /// <summary>The connector's tools, in the harness's own matcher shape: the calls whose agent the hook names.</summary>
-    public const string Matcher = "mcp__" + KnowledgeConnector.ServerName + "__.*";
+    public const string Matcher = LineageHook.Matcher;
 
     /// <summary>🔴 The connector's session shape, copied: only a session's own id names a folder here.</summary>
     private static readonly Regex SessionShape = new("^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$", RegexOptions.CultureInvariant);
