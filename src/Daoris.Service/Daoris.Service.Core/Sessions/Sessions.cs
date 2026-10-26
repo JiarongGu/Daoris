@@ -694,14 +694,15 @@ public sealed class SessionStore
         await using (var settled = _db.Command())
         {
             settled.CommandText = $"""
+                -- One row per record left, word id and producer key (the unique identity); stored in the order of the key and the record, which is
+                -- the read's index (the design's said_settled_key), so the table is one tree beside the moment's index, not three beside a rowid's.
                 CREATE TABLE IF NOT EXISTS said_settled (
+                  key     TEXT NOT NULL,
                   session TEXT NOT NULL,
                   word    TEXT NOT NULL,
-                  key     TEXT NOT NULL,
                   at      INTEGER NOT NULL,
-                  PRIMARY KEY (session, word, key)
-                );
-                CREATE INDEX IF NOT EXISTS said_settled_key ON said_settled (key, session);
+                  PRIMARY KEY (key, session, word)
+                ) WITHOUT ROWID;
                 CREATE INDEX IF NOT EXISTS said_settled_at ON said_settled (at);
 
                 CREATE TRIGGER IF NOT EXISTS said_settled_left AFTER UPDATE OF said ON sessions

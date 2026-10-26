@@ -16,6 +16,13 @@ with the version and date at release.
   at once as a new part on the ready account, handed Daoris's brief and said as Daoris's words, not yours; when every account of its
   agent is at its limit it waits for the first of them and its row says which. A rebase request whose commit the line already holds,
   because the work landed another way, is dropped instead of waiting.
+- A word you or Daoris says to a conversation or a session is written to its agent only once its record has confirmed it was marked as tried
+  (FOUNDATION1 row p, D212). Where the record cannot confirm, because it was refused, would not answer or lost its answer, the word is no
+  longer sent anyway: it waits on its record, and the conversation says so (*Messages you sent … never reached it … its record did not mark
+  them attempted, so they wait there for the session's next go-on*, in English and Chinese), and it goes at the next go-on, once. A go-on
+  that carries several words goes with only the ones the record names, so a word you took back in the moment it started no longer goes. And
+  an answer a helper or a partner already handed, or a message Daoris already said, that its sender says again after it was taken is
+  answered as already kept, so it no longer arrives a second time, for a week after it left.
 - A conversation you picked an account for keeps that pick when Daoris moves it to a new part (PICKCARRY1, D212). Going on with Daoris's brief,
   a part opened after the conversation was lost, and a hand-over or limit move that lands on the same account of the same agent each carry the pick
   to the new part, so it too waits for that account while it cools instead of going on with another. A hand-over to another agent, and a

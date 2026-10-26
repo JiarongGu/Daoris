@@ -258,4 +258,166 @@ public sealed class SaidSettledMeasureTests : IDisposable
         Assert.NotEmpty(lines);
         Assert.True(keep.Max() < 5000 && again.Max() < 5000 && retry.Max() < 5000 && state.Max() < 5000, "a call took seconds");
     }
+
+    /// <summary>
+    /// The landing limit, measured paired (row p, O5-F8): the same records and the same words on two copies of one seeded database file, alternated
+    /// call by call so the disk's and the machine's load fall on both alike. The first copy is the service before the row, with the table's
+    /// trigger dropped and the say door asked as an older client asks (no <c>settled</c>); the second is the row, its trigger firing and its retry
+    /// after a take read from a week's settlements. A run on a loaded developer's disk moves unpaired figures by half, which a tenth cannot
+    /// stand beside; the paired ratios are the measure. Held to <c>DAORIS_MEASURE_SAID</c>, as the unpaired run is.
+    /// </summary>
+    [Fact]
+    public async Task The_say_door_and_the_sessions_write_are_measured_paired_with_and_without_the_row()
+    {
+        if (Environment.GetEnvironmentVariable(Variable) is null) return;
+
+        var records = Setting("DAORIS_MEASURE_SESSIONS", 5_000);
+        var settled = Setting("DAORIS_MEASURE_SETTLED", 60_000);
+        var samples = Setting("DAORIS_MEASURE_PAIRS", 1_200);
+        var now = DateTimeOffset.UtcNow;
+        var path = Path.Combine(_root, "after.db");
+        var (seedConnection, seedSessions, _) = await OpenAsync(path);
+        var ids = new List<string>();
+        for (var batch = 0; batch < records; batch += 500)
+        {
+            await seedSessions.ExclusiveAsync(async inside =>
+            {
+                for (var each = batch; each < Math.Min(records, batch + 500); each++)
+                {
+                    var session = await seedSessions.CreateAsync(
+                        quest: null, "Owner", "stub", now.AddMinutes(-each), kind: SessionKind.Chat, ownEntry: true, ct: inside);
+                    await seedSessions.SetStateAsync(session.Id, SessionState.Completed, null, null, null, now.AddMinutes(-each), inside);
+                    ids.Add(session.Id);
+                }
+
+                return true;
+            });
+        }
+
+        var random = new Random(20261025);
+        var withoutBytes = await ScalarAsync(seedConnection, "PRAGMA page_count") * await ScalarAsync(seedConnection, "PRAGMA page_size");
+        await using (var seed = seedConnection.CreateCommand())
+        {
+            seed.CommandText = "BEGIN";
+            await seed.ExecuteNonQueryAsync();
+            await using var insert = seedConnection.CreateCommand();
+            insert.CommandText = "INSERT OR REPLACE INTO said_settled (session, word, key, at) VALUES ($session, $word, $key, $at)";
+            var pSession = insert.Parameters.Add("$session", SqliteType.Text);
+            var pWord = insert.Parameters.Add("$word", SqliteType.Text);
+            var pKey = insert.Parameters.Add("$key", SqliteType.Text);
+            var pAt = insert.Parameters.Add("$at", SqliteType.Integer);
+            var week = 7L * 24 * 3600;
+            for (var each = 0; each < settled; each++)
+            {
+                pSession.Value = ids[random.Next(ids.Count)];
+                pWord.Value = random.Next().ToString("x8", CultureInfo.InvariantCulture);
+                pKey.Value = $"seed:{random.Next():x8}:{each}";
+                pAt.Value = now.ToUnixTimeSeconds() - (long)(random.NextDouble() * (week - 600));
+                await insert.ExecuteNonQueryAsync();
+            }
+
+            seed.CommandText = "COMMIT";
+            await seed.ExecuteNonQueryAsync();
+        }
+
+        var withBytes = await ScalarAsync(seedConnection, "PRAGMA page_count") * await ScalarAsync(seedConnection, "PRAGMA page_size");
+        _said.WriteLine(string.Create(
+            CultureInfo.InvariantCulture,
+            $"the settlement table at {settled} rows (a week's takes): {(withBytes - withoutBytes) / 1024} KiB with its moment's index, {(withBytes - withoutBytes) / (double)settled:F0} bytes a row; the database {withBytes / 1024} KiB against {withoutBytes / 1024} KiB without it"));
+        await seedConnection.DisposeAsync();
+        SqliteConnection.ClearAllPools();
+        var beforePath = Path.Combine(_root, "before.db");
+        File.Copy(path, beforePath);
+        var (beforeConnection, beforeSessions, beforeLedger) = await OpenAsync(beforePath);
+        await using var ownedBefore = beforeConnection;
+        await using (var drop = beforeConnection.CreateCommand())
+        {
+            // The service before the row: nothing settles a word as it leaves.
+            drop.CommandText = "DROP TRIGGER said_settled_left";
+            await drop.ExecuteNonQueryAsync();
+        }
+
+        var (afterConnection, afterSessions, afterLedger) = await OpenAsync(path);
+        await using var ownedAfter = afterConnection;
+        string[] names = ["say: a new word", "say: the same key while it waits", "say: the retry after the take", "write: a state move", "write: a word kept", "write: a word taken"];
+        Dictionary<string, List<double>> Fresh() => names.ToDictionary(name => name, _ => new List<double>());
+        var before = Fresh();
+        var after = Fresh();
+        var pick = new Random(7);
+
+        async Task<double> TimeAsync(Func<Task> work)
+        {
+            var clock = Stopwatch.StartNew();
+            await work();
+            return clock.Elapsed.TotalMilliseconds;
+        }
+
+        async Task RoundAsync(bool row, string id, int each, Dictionary<string, List<double>> into)
+        {
+            var ledger = row ? afterLedger : beforeLedger;
+            var sessions = row ? afterSessions : beforeSessions;
+            var key = $"pair:{each}";
+            SessionSayOutcome? kept = null;
+            into[names[0]].Add(await TimeAsync(async () => kept = await ledger.SayAsync(id, $"words {each}", null, now, key: key, from: SaidFrom.Daoris)));
+            into[names[1]].Add(await TimeAsync(() => ledger.SayAsync(id, $"words {each}", null, now, key: key, from: SaidFrom.Daoris)));
+            into[names[5]].Add(await TimeAsync(() => sessions.TakeSaidAsync(id, [kept!.Word!.Id])));
+            into[names[2]].Add(await TimeAsync(() => ledger.SayAsync(id, $"words {each}", null, now, key: key, from: SaidFrom.Daoris, settled: row)));
+            into[names[3]].Add(await TimeAsync(() => sessions.SetStateAsync(id, each % 2 == 0 ? SessionState.Working : SessionState.Completed, null, null, null, now)));
+            await sessions.SetStateAsync(id, SessionState.Completed, null, null, null, now);
+            var word = new SaidWord(Guid.NewGuid().ToString("N")[..8], "kept", now, [], Key: $"write:{each}");
+            into[names[4]].Add(await TimeAsync(() => sessions.KeepSaidAsync(id, word)));
+            await sessions.TakeSaidAsync(id, [word.Id]);
+        }
+
+        // Warm both copies' pages and statements, unmeasured.
+        for (var each = 0; each < 60; each++)
+        {
+            var id = ids[pick.Next(ids.Count)];
+            await RoundAsync(false, id, -1 - each, Fresh());
+            await RoundAsync(true, id, -1 - each, Fresh());
+        }
+
+        for (var each = 0; each < samples; each++)
+        {
+            var id = ids[pick.Next(ids.Count)];
+            if (each % 2 == 0)
+            {
+                await RoundAsync(false, id, each, before);
+                await RoundAsync(true, id, each, after);
+            }
+            else
+            {
+                await RoundAsync(true, id, each, after);
+                await RoundAsync(false, id, each, before);
+            }
+        }
+
+        string Ratio(string label, IReadOnlyList<double> was, IReadOnlyList<double> now_)
+        {
+            var a = was.Order().ToArray();
+            var b = now_.Order().ToArray();
+            var line = string.Create(
+                CultureInfo.InvariantCulture,
+                $"{label}: {a.Length} pairs; before p50 {Percentile(a, 0.5):F2} p95 {Percentile(a, 0.95):F2} ms, after p50 {Percentile(b, 0.5):F2} p95 {Percentile(b, 0.95):F2} ms; p95 ratio {Percentile(b, 0.95) / Percentile(a, 0.95):F3}, p50 ratio {Percentile(b, 0.5) / Percentile(a, 0.5):F3}");
+            _said.WriteLine(line);
+            return line;
+        }
+
+        foreach (var name in names) Ratio(name, before[name], after[name]);
+        Ratio("say door pooled", [.. before[names[0]], .. before[names[1]], .. before[names[2]]], [.. after[names[0]], .. after[names[1]], .. after[names[2]]]);
+        Ratio("sessions write pooled", [.. before[names[3]], .. before[names[4]], .. before[names[5]]], [.. after[names[3]], .. after[names[4]], .. after[names[5]]]);
+        var afterKiB = await ScalarAsync(afterConnection, "PRAGMA page_count") * await ScalarAsync(afterConnection, "PRAGMA page_size") / 1024;
+        var beforeKiB = await ScalarAsync(beforeConnection, "PRAGMA page_count") * await ScalarAsync(beforeConnection, "PRAGMA page_size") / 1024;
+        _said.WriteLine($"settlement rows at the end: {await ScalarAsync(afterConnection, "SELECT COUNT(*) FROM said_settled")}; database {afterKiB} KiB against {beforeKiB} KiB");
+        try
+        {
+            var table = await ScalarAsync(afterConnection, "SELECT SUM(pgsize) FROM dbstat WHERE name = 'said_settled'");
+            var indexes = await ScalarAsync(afterConnection, "SELECT SUM(pgsize) FROM dbstat WHERE name LIKE 'said_settled%' OR name LIKE 'sqlite_autoindex_said_settled%'");
+            _said.WriteLine($"settlement table {table / 1024} KiB, with its indexes {indexes / 1024} KiB, for {await ScalarAsync(afterConnection, "SELECT COUNT(*) FROM said_settled")} rows");
+        }
+        catch (SqliteException)
+        {
+            _said.WriteLine("settlement table's own size: no dbstat in this build of SQLite");
+        }
+    }
 }
