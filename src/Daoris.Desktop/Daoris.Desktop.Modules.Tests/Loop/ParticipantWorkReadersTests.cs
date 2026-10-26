@@ -18,7 +18,7 @@ public sealed class ParticipantWorkReadersTests
         new(@"(IsNullOrEmpty|IsNullOrWhiteSpace)\([^)]*\.(Serves|Opinion|Piece)"),
         new(@"\.Ask\b[^;]*(is (not )?null|is \{|is not \{|== null|!= null)"),
         new(@"\{\s*(Serves|Opinion|Ask|Piece|HelpMode)\s*:"),
-        new(@"HelpRoom\.Repository"),
+        new(@"(?:HelpRoom|KnowledgeRoomIdentity)\.Repository\b"),
         new(@"\bHelpRepository\b"),
         new(@"\bIsHelp\("),
     ];
@@ -60,7 +60,8 @@ public sealed class ParticipantWorkReadersTests
     [Fact]
     public void Every_reader_of_a_mark_in_the_modules_is_listed_file_for_file_and_line_for_line()
     {
-        Assert.Empty(Differences(Scan(), Listed()));
+        var differences = Differences(Scan(), Listed());
+        Assert.True(differences.Count == 0, string.Join('\n', differences));
     }
 
     /// <summary>The census fails on a reader it does not list: a planted line in a listed file, and a planted file, each read as a difference.</summary>
@@ -75,6 +76,7 @@ public sealed class ParticipantWorkReadersTests
         Assert.Equal(1, Counted("if (record.Serves is not null) { }"));
         Assert.Equal(1, Counted("if (session.Repository == HelpRoom.Repository) { }\n// record.Opinion is null\nvar quiet = 1; // record.Serves is not null"));
         Assert.Equal(0, Counted("var seen = record.Serves;"));
+        Assert.Equal(1, Counted("if (record.Repository == KnowledgeRoomIdentity.Repository) { }"));
         Assert.Equal([$"{known} reads {scanned[known] + 1} line(s) and the table lists {scanned[known]}"],
             Differences(new SortedDictionary<string, int>(scanned) { [known] = scanned[known] + 1 }, listed));
         Assert.Equal(["Loop/Planted.cs reads 1 line(s) and is not listed"],

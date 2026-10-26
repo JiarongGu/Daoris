@@ -10,6 +10,10 @@ session — or another machine's `connect` — finds waiting. Its tests are the 
 `Daoris.Service.Http.Tests` for the HTTP host's own doors, started in-process with no port bound
 (HTTP1). Gate logs carry the counts; dated integration reviews record the combined verification.
 
+`Daoris.Service.Tests/fixtures/participant-work-readers.json` is the shared exact reader census for the service, driver
+and desktop modules. Each project's `ParticipantWorkReadersTests` checks its own sources and retains the table's reader
+classification and Part B row when a source moves. Both room-repository identity aliases are counted by all three scans.
+
 Start with [the contributor guide](../../docs/development.md) for checkout setup and
 [the document router](../../docs/README.md) for the current contracts. This is a component reference:
 read the registry, quest or host section needed. `docs/index/routes.md` locates route handlers;

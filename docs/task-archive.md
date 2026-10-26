@@ -13,7 +13,7 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 **Continuation outcome.** Work orders (`1a44002fb`), Workplace (`cab2487f2`) and Help (`5779f3891`) complete the cuts, with linked-consumer follow-ups recorded in D212. The inherited move and all cuts leave 431 edges in 48 families, against 584 in 58; no family cut after Knowledge remains. D212's final proof receipt records the passing focused checks and the full integration proof still owed. The quest and FOUNDATION1 row remain open for that proof; no user-visible change.
 
-**Preview repair.** Candidate `a34bb83` failed three driver fast tests and was not promoted. The marker inventory now recognizes the connector's exact lower-owner alias, keeping every writer and rationale; its eight focused cases pass. D212 records the red and green proof. Reader-census and cleanup repairs and the parent's integration proof remain owed.
+**Preview repair.** Candidate `a34bb83` failed three driver fast tests and was not promoted. The marker inventory now recognizes the connector's exact lower-owner alias, keeping every writer and rationale; its eight focused cases pass. The shared participant reader table places the moved reads and keeps both repository aliases visible in all three scans, retaining reader classifications and row obligations; driver 3, modules 2 and service 2 focused cases pass, plus 5 merge selection/source-parser cases. D212 records the red and green proof. Cleanup repair and the parent's integration proof remain owed.
 
 ## PICKLOST1 — a lost conversation whose account the person picked walks off that account (2026-10-26)
 

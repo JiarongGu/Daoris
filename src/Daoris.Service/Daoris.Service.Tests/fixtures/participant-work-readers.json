@@ -175,7 +175,13 @@
     "Help/HelpRoom.cs": {
       "lines": 1,
       "reads": "other",
-      "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
+      "note": "forwards the room repository's identity from KnowledgeRoomIdentity; no record's mark tells a work"
+    },
+    "Help/HelpRoomDescriptions.cs": {
+      "lines": 2,
+      "reads": "tells",
+      "row": "1q",
+      "note": "the waiting-session projection moved from Knowledge/Room/HelpRoomMachineNow.cs still excludes Ask Daoris's own conversation; the other line constructs the repository view moved from HelpRoomWorkspaces.cs; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Help/HelpSettings.cs": {
       "lines": 1,
@@ -228,14 +234,19 @@
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
+    "Knowledge/HelpMachine.cs": {
+      "lines": 1,
+      "reads": "other",
+      "note": "the repository view's type moved from Help/HelpRoom.cs; no record's mark tells a work"
+    },
     "Knowledge/Room/HelpRoomMachineNow.cs": {
-      "lines": 3,
+      "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "tells Ask Daoris's own conversation by its repository for its gates and its room's reads; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Knowledge/Room/HelpRoomWorkspaces.cs": {
-      "lines": 3,
+      "lines": 2,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
@@ -361,6 +372,12 @@
       "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
+    },
+    "Trees/Inventory/KnowledgeWorkOrderReads.cs": {
+      "lines": 1,
+      "reads": "tells",
+      "row": "1q",
+      "note": "the session-group projection moved from Knowledge/Room/HelpRoomMachineNow.cs still excludes Ask Daoris's own conversation by the same repository identity; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
     "Trees/LandedBranches.cs": {
       "lines": 3,

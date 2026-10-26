@@ -35,6 +35,10 @@ Work orders and Workplace answer the room's reads through ports declared in Know
 folders. The modules consume those fact interfaces while their group and sweep readers retain the original judged records.
 D212's dated cut notes name the initializers that mod-xxi's wiring view must include; `StructureTests` holds their direction.
 
+The driver and modules' `ParticipantWorkReadersTests` share the service tests' `fixtures/participant-work-readers.json`.
+Their exact file and line census follows both `HelpRoom.Repository` and its lower owner `KnowledgeRoomIdentity.Repository`;
+a source projection moved across the ports keeps its reader classification and Part B row in that table.
+
 The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
 concluded from its exit code and its quest, never from what it said. A driven turn that ends on its own background work waits
