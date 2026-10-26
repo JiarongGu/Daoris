@@ -55,7 +55,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(30);
 
     /// <summary>Judge one request and read where it holds; a refusal is an answer, never thrown.</summary>
-    public async Task<CheckoutAnswer> AnswerAsync(SessionRequest request, CancellationToken ct)
+    public async Task<CheckoutAnswer> AnswerAsync(ICheckoutAsk request, CancellationToken ct)
     {
         var operation = request.Operation ?? "";
         if (!Operations.Contains(operation))

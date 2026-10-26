@@ -287,6 +287,8 @@
     "Instance/ShellWord.cs": "Instance",
     "Instance/SyncPass.cs": "Instance",
     "Instance/VerbLeases.cs": "Instance",
+    "Knowledge/CheckoutAnswer.cs": "Knowledge",
+    "Knowledge/CheckoutAsk.cs": "Knowledge",
     "Knowledge/CodeMapFile.cs": "Knowledge",
     "Knowledge/ConfiguredAccess.cs": "Knowledge",
     "Knowledge/Domain/Trace.Chain.cs": "Knowledge",
@@ -937,13 +939,6 @@
       "after": "Knowledge",
       "files": {
         "Knowledge/TraceReads.cs": ["SessionEvents"]
-      }
-    },
-    {
-      "family": "Knowledge names Course",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/HelpCheckouts.cs": ["CheckoutAnswer","SessionRequest"]
       }
     },
     {
