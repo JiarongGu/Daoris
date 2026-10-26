@@ -308,7 +308,11 @@
     "Knowledge/HelpCheckouts.cs": "Knowledge",
     "Knowledge/HelpCircle.cs": "Knowledge",
     "Knowledge/HelpFacts.cs": "Knowledge",
-    "Knowledge/HelpRoomScope.cs": "Knowledge",
+    "Help/HelpRoomScope.cs": "Help",
+    "Knowledge/HelpMachine.cs": "Knowledge",
+    "Knowledge/KnowledgeHelp.cs": "Knowledge",
+    "Help/KnowledgeHelpReads.cs": "Help",
+    "Help/HelpRoomDescriptions.cs": "Help",
     "Knowledge/HelpRoomSections.cs": "Knowledge",
     "Knowledge/KnowledgeConnector.cs": "Knowledge",
     "Knowledge/KnowledgeReviews.cs": "Knowledge",
@@ -946,32 +950,6 @@
   },
   "edges": [
     {
-      "family": "Knowledge names Help",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/HelpCheckouts.cs": ["HelpRoom","HelpWired"],
-        "Knowledge/HelpCircle.cs": ["HelpRoom"],
-        "Knowledge/HelpFacts.cs": ["HelpMachine","HelpRoom"],
-        "Knowledge/HelpRoomScope.cs": ["HelpMachineSources","HelpRoom"],
-        "Knowledge/HelpRoomSections.cs": ["HelpMachine","HelpMachineSources"],
-        "Knowledge/Room/HelpRoomAgents.cs": ["HelpMachine","HelpMachineSources"],
-        "Knowledge/Room/HelpRoomAsks.cs": ["HelpMachine","HelpMachineSources"],
-        "Knowledge/Room/HelpRoomDoors.cs": ["HelpMachine"],
-        "Knowledge/Room/HelpRoomIntro.cs": ["HelpMachine","HelpMachineSources","HelpModes"],
-        "Knowledge/Room/HelpRoomLanding.cs": ["HelpMachine","HelpMachineSources"],
-        "Knowledge/Room/HelpRoomMachineNow.cs": ["HelpMachine","HelpMachineSources","HelpRoom"],
-        "Knowledge/Room/HelpRoomMakingAPlugin.cs": ["HelpMachine"],
-        "Knowledge/Room/HelpRoomMayDo.cs": ["HelpMachine","HelpMachineSources","HelpModes"],
-        "Knowledge/Room/HelpRoomMayPropose.cs": ["HelpMachine"],
-        "Knowledge/Room/HelpRoomOwed.cs": ["HelpMachine"],
-        "Knowledge/Room/HelpRoomOwnPlugins.cs": ["HelpMachine","HelpMachineSources"],
-        "Knowledge/Room/HelpRoomPlaces.cs": ["HelpMachine","HelpPlaces"],
-        "Knowledge/Room/HelpRoomWindow.cs": ["HelpMachine"],
-        "Knowledge/Room/HelpRoomWork.cs": ["HelpMachine","HelpMachineSources"],
-        "Knowledge/Room/HelpRoomWorkspaces.cs": ["HelpMachine","HelpMachineSources"]
-      }
-    },
-    {
       "family": "Agents names Context",
       "after": "Agents",
       "files": {
@@ -1345,7 +1323,7 @@
       "family": "Course names Help",
       "after": "Course",
       "files": {
-        "Conversations/Chat/BriefedMove.cs": ["HelpConversations","HelpMachine","HelpRoom"],
+        "Conversations/Chat/BriefedMove.cs": ["HelpConversations","HelpRoom"],
         "Conversations/Chat/ChatGoOn.cs": ["HelpRoom"],
         "Conversations/Chat/CurveMove.cs": ["HelpRoom"],
         "Conversations/Chat/LimitMove.cs": ["HelpConversations","HelpRoom"],
@@ -1648,6 +1626,7 @@
     "KnowledgeReviewPortsTests.cs": "Knowledge",
     "KnowledgeWorkflowPortsTests.cs": "Knowledge",
     "KnowledgeWorkOrderPortsTests.cs": "Knowledge",
-    "KnowledgeWorkplacePortsTests.cs": "Knowledge"
+    "KnowledgeWorkplacePortsTests.cs": "Knowledge",
+    "KnowledgeHelpPortsTests.cs": "Knowledge"
   }
 }

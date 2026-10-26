@@ -9,16 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class HelpRoomOwnPlugins : IHelpRoomSection
 {
-    public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) => machine with
-    {
-        Offers = [.. sources.Offers.Where(offer => !offer.Installed && offer.Problem is null).Select(offer =>
-            new HelpOffer(offer.Id, offer.Manifest.Name, offer.Manifest.Version, offer.Manifest.Hooks?.Points ?? [], offer.Needs)
-            {
-                Harnesses = [.. offer.Manifest.Harnesses.Select(harness => harness.Name)],
-                Servers = [.. offer.Manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Sessions)).Select(server => server.Name)],
-                HelpServers = [.. offer.Manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).Select(server => server.Name)],
-            })],
-    };
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     public string Render(HelpMachine machine)
     {

@@ -894,7 +894,7 @@ public sealed class HelpRoomCatchUp(string home, Func<HelpMachine?> describe, Ma
     /// <summary>A fact landed: each room written last saying something not read yet is written again, off the caller's thread.</summary>
     public void Landed()
     {
-        if (!HelpRoom.SaidNotReadYet(home)) return;
+        if (!KnowledgeHelp.Current.SaidNotReadYet(home)) return;
         Interlocked.Exchange(ref _again, 1);
         if (Interlocked.CompareExchange(ref _writing, 1, 0) != 0) return;
         _ = Task.Run(Write);
@@ -904,14 +904,14 @@ public sealed class HelpRoomCatchUp(string home, Func<HelpMachine?> describe, Ma
     {
         try
         {
-            while (Interlocked.Exchange(ref _again, 0) == 1 && HelpRoom.Unread(home) is { Count: > 0 } rooms)
+            while (Interlocked.Exchange(ref _again, 0) == 1 && KnowledgeHelp.Current.Unread(home) is { Count: > 0 } rooms)
             {
                 if (describe() is not { } machine) continue;
                 foreach (var workspace in rooms)
                 {
                     try
                     {
-                        HelpRoom.Prepare(home, machine.Within(workspace));
+                        KnowledgeHelp.Current.Prepare(home, machine.Within(workspace));
                     }
                     catch (Exception error)
                     {

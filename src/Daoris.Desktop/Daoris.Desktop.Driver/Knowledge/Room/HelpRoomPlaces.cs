@@ -17,11 +17,11 @@ internal sealed class HelpRoomPlaces : IHelpRoomSection
         text.Append("view, for Settings its domain, and a part where the place has one.\n\n");
         static string Listed(IEnumerable<(string Id, string Name)> places) =>
             string.Join(", ", places.Select(place => $"`{place.Id}` ({place.Name})"));
-        text.Append($"- Views: {Listed(HelpPlaces.Views)}.\n");
-        text.Append($"- Settings domains: {Listed(HelpPlaces.Domains)}.\n");
-        foreach (var within in HelpPlaces.Parts.Select(part => part.Within).Distinct())
+        text.Append($"- Views: {Listed(KnowledgeHelp.Current.Views)}.\n");
+        text.Append($"- Settings domains: {Listed(KnowledgeHelp.Current.Domains)}.\n");
+        foreach (var within in KnowledgeHelp.Current.Parts.Select(part => part.Within).Distinct())
         {
-            var parts = HelpPlaces.Parts.Where(part => part.Within == within).Select(part => (part.Id, part.Name));
+            var parts = KnowledgeHelp.Current.Parts.Where(part => part.Within == within).Select(part => (part.Id, part.Name));
             text.Append(within == "start"
                 ? $"- Parts of `start`, the setup guide's steps: {Listed(parts)}.\n"
                 : $"- Parts of `{within}`: {Listed(parts)}.\n");
@@ -48,8 +48,8 @@ internal sealed class HelpRoomPlaces : IHelpRoomSection
         text.Append("A part of `sessions` or `quests` brings that group of its list into view and names no session or quest in it:\n");
         text.Append("the person opens the one they mean there. To open one session, quest, ask or plugin, name it as the go's item on its view, with no part:\n");
         text.Append("on `sessions` a session by its id, one this room lists as waiting on the person or another the person names,\n");
-        text.Append($"never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `{HelpPlaces.AskItem}<id>`, each one this room lists;\n");
-        text.Append($"on `plugins` an installed plugin by its id, or one of Daoris's own not installed as `{HelpPlaces.OfferItem}<id>`, by the ids this room lists.\n");
+        text.Append($"never Ask Daoris's own conversation; on `quests` a quest by its id, an ask as `{KnowledgeHelp.Current.AskItem}<id>`, each one this room lists;\n");
+        text.Append($"on `plugins` an installed plugin by its id, or one of Daoris's own not installed as `{KnowledgeHelp.Current.OfferItem}<id>`, by the ids this room lists.\n");
         text.Append("`overview` has no part: what waits on the person leads it.\n");
         // UX6i2a: Knowledge opens in the mode it was left in (UX6i), so a go meaning one names it.
         text.Append("`knowledge` alone opens Knowledge as the person left it; name its part for Search or Convergence.\n");

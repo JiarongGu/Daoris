@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 internal interface IHelpRoomSection
 {
     /// <summary>The facts it says, read from what the driver holds; a section that says none leaves the machine as it is.</summary>
-    HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) => machine;
+    HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     /// <summary>Its text, whole paragraphs with their blank lines; empty where it has nothing to say.</summary>
     string Render(HelpMachine machine);

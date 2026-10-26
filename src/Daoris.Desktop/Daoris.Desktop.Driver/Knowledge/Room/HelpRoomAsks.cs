@@ -8,12 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class HelpRoomAsks : IHelpRoomSection
 {
-    public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) => machine with
-    {
-        OpenAsks = [.. sources.Standing
-            .Where(ask => !string.Equals(ask.State, "Closed", StringComparison.OrdinalIgnoreCase))
-            .Select(ask => new HelpAsk(ask.Id, ask.Sentence, ask.Workspace, ask.State, ask.Quests))],
-    };
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     public string Render(HelpMachine machine)
     {

@@ -10,13 +10,13 @@ namespace Daoris.Driver;
 internal sealed class HelpRoomIntro : IHelpRoomSection
 {
     /// <summary>The mode, from the driver's file as the room is written (<see cref="DriverConfig.HelpMode"/>).</summary>
-    public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) => machine with { Mode = sources.Config.HelpMode };
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     public string Render(HelpMachine machine)
     {
         var text = new StringBuilder();
         text.Append("# Ask Daoris\n\n");
-        if (machine.Mode == HelpModes.Full)
+        if (machine.Mode == HelpModeNames.Full)
         {
             // D183 point 5: the doctrine still speaks in full access. Words, not a gate; the mode is the gate.
             text.Append("This conversation runs with full access, as the person chose: you may act on this machine yourself, with\n");
@@ -33,7 +33,7 @@ internal sealed class HelpRoomIntro : IHelpRoomSection
         text.Append("this machine: how to set up a workspace, what a screen means, why a start was refused, how to drive\n");
         text.Append("a repository, write a rule, or start a task. Written by Daoris each time the conversation opens; an\n");
         text.Append("edit here is overwritten.\n\n");
-        if (machine.Workspace is { } workspace) text.Append(Scope(workspace)).Append(Bound(workspace, machine.Mode == HelpModes.Full));
+        if (machine.Workspace is { } workspace) text.Append(Scope(workspace)).Append(Bound(workspace, machine.Mode == HelpModeNames.Full));
         return text.ToString();
     }
 

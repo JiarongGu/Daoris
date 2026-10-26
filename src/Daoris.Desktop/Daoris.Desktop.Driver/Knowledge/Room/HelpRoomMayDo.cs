@@ -14,93 +14,11 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class HelpRoomMayDo : IHelpRoomSection
 {
-    /// <summary>
-    /// The checkouts it may read: every readable one here, from the driver's own setting, in every workspace in <c>default</c>'s room.
-    /// A workspace's room (ASKSCOPE1c, D158's ASKSCOPE1 note point 5) reads its own workspace's alone, of those reading across already
-    /// allows (D107): they are what its spawn is granted, so the room lists what its rules allow.
-    /// </summary>
-    public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources)
-    {
-        var registry = sources.Registry ?? sources.Snapshot.Repositories;
-        var workspaceOf = registry
-            .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(named => named.Key, named => named.First().Workspace, StringComparer.OrdinalIgnoreCase);
-        var described = Restricted(machine, sources, registry, workspaceOf);
-        return machine.Mode == HelpModes.Full ? Full(described, sources) : described;
-    }
-
-    /// <summary>
-    /// HELPMODE1a1 (D170 as D183 amends it): in full access its spawn is handed every server the plugins here declare, for it or for
-    /// sessions, approved or not (<c>ChatRunner.HandServersAsync</c>), each once by name; so none waits, and none is offered.
-    /// </summary>
-    private static HelpMachine Full(HelpMachine machine, HelpMachineSources sources)
-    {
-        var named = new HashSet<string>(StringComparer.Ordinal);
-        return machine with
-        {
-            PluginServers = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Servers
-                .Where(server => named.Add(server.Name))
-                .Select(server => new HelpPluginServer(plugin.Manifest.Id, server.Name, server.Allow) { Writes = server.Writes }))],
-            PluginServersWaiting = [],
-            PluginServersOffered = [],
-        };
-    }
-
-    private static HelpMachine Restricted(
-        HelpMachine machine, HelpMachineSources sources, IReadOnlyList<RepoView> registry, Dictionary<string, string> workspaceOf)
-    {
-        // ASKSCOPE1c: the grants intersect, its workspace's checkouts and those reading across allows; the whole registry stays the
-        // one each checkout's workspace is named from.
-        var readable = sources.Workspace is { } circle
-            ? registry.Where(known => string.Equals(RemoteTarget.Workspace(known.Workspace), circle, StringComparison.OrdinalIgnoreCase))
-            : registry;
-        return machine with
-        {
-            Reads = [.. AcrossReads.Readable(sources.Config, readable)
-                .Select(checkout => new HelpRead(checkout.Repository, sources.Workspace ?? workspaceOf[checkout.Repository], checkout.Path))],
-            // HELPPLUG1a: the servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
-            PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrantStates.Approved)
-                .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow) { Writes = grant.Accepted })],
-            // HELPPLUG1c: what each would bring, reads and writes apart, and one an update changed since its approval.
-            PluginServersWaiting = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrantStates.Waits)
-                .Select(grant => new HelpPluginServer(grant.Plugin, grant.Server.Name, grant.Server.Allow)
-                {
-                    Writes = grant.Server.Writes, Changed = grant.Changed,
-                })],
-            PluginServersOffered = [.. Offered(sources)],
-            // HELPPLUG1b: the skills its spawn is handed (SpawnSkills.Write), as the harness names them.
-            PluginSkills = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Skills
-                .Where(skill => skill.HandedTo(PluginServerTo.Help) && SkillFiles.Judge(plugin.Folder, skill.Name) is null)
-                .Select(skill => $"{plugin.Manifest.Id}:{skill.Name}"))],
-        };
-    }
-
-    /// <summary>
-    /// HELPPLUG1c: each server an installed plugin's newer copy in the install would offer Ask Daoris and the installed copy does
-    /// not, as an installed in-app browser 1.0.0 is beside the shipped 1.1.0: said with its update first, so it is not missing
-    /// in silence.
-    /// </summary>
-    private static IEnumerable<HelpPluginServerOffered> Offered(HelpMachineSources sources)
-    {
-        foreach (var offer in sources.Offers.Where(offer => offer.Installed && offer.Problem is null))
-        {
-            if (sources.Plugins.Plugins.FirstOrDefault(entry => string.Equals(entry.Manifest.Id, offer.Id, StringComparison.OrdinalIgnoreCase))
-                is not { } installed)
-            {
-                continue;
-            }
-
-            foreach (var server in offer.Manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)
-                && !installed.Manifest.Servers.Any(each => each.Name == server.Name && each.HandedTo(PluginServerTo.Help))))
-            {
-                yield return new HelpPluginServerOffered(installed.Manifest.Id, server.Name, installed.Manifest.Version, offer.Manifest.Version);
-            }
-        }
-    }
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     public string Render(HelpMachine machine)
     {
-        if (machine.Mode == HelpModes.Full) return RenderFull(machine);
+        if (machine.Mode == HelpModeNames.Full) return RenderFull(machine);
 
         var text = new StringBuilder();
         text.Append("## What you may do\n\n");

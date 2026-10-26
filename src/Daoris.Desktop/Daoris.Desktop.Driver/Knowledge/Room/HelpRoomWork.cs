@@ -15,8 +15,7 @@ internal sealed class HelpRoomWork : IHelpRoomSection
     /// <summary>The most recoveries no unit names that the room lists, the rest counted (RECOVERYASK1).</summary>
     internal const int RecoveriesListed = 5;
 
-    public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) =>
-        machine with { Work = sources.Work, WorkUnread = [.. sources.WorkUnread.Select(unread => unread.Said)], WorkRecovery = sources.WorkRecovery };
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     /// <summary>A unit the person has something to ask about: its cleanup waits, its owner is unknown, or a recovery is kept.</summary>
     private static bool Open(IKnowledgeMilestone unit) =>

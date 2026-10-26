@@ -113,7 +113,7 @@ public sealed class HelpCheckoutsGitTests : IAsyncLifetime
             return;
         }
 
-        var info = new System.Diagnostics.ProcessStartInfo("cmd.exe") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+        var info = new System.Diagnostics.ProcessStartInfo("cmd.exe") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in new[] { "/c", "mklink", "/J", link, target }) info.ArgumentList.Add(argument);
         using var process = System.Diagnostics.Process.Start(info)!;
         var output = process.StandardOutput.ReadToEndAsync();

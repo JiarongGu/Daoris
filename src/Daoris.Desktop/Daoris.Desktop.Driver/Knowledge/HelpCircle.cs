@@ -23,14 +23,14 @@ public static class HelpCircle
     /// room's (<see cref="HelpRoom.GoesOnIn"/>), so one going on in <c>help</c>, where it started before each workspace had a room,
     /// reads the whole machine as its room does. Null for the whole machine.
     /// </summary>
-    public static string? Of(string home, string room, string? workspace) => HelpRoom.GoesOnIn(home, workspace, room);
+    public static string? Of(string home, string room, string? workspace) => KnowledgeHelp.Current.GoesOnIn(home, workspace, room);
 
     /// <summary>
     /// The workspace a conversation's record binds what it proposes to (<see cref="HelpProposalScope"/>): Ask Daoris's, its room's,
     /// the record's tree being the room it ran in. Null for any other record, for none, and for the whole machine's room.
     /// </summary>
     public static string? OfRecord(string home, SessionRecord? record) =>
-        record is { Repository: HelpRoom.Repository } ? HelpRoom.GoesOnIn(home, record.Workspace, record.Tree) : null;
+        record is { Repository: KnowledgeRoomIdentity.Repository } ? KnowledgeHelp.Current.GoesOnIn(home, record.Workspace, record.Tree) : null;
 
     /// <summary>What a connector bound to <paramref name="circle"/> carries beyond the session's own; null for none.</summary>
     public static IReadOnlyDictionary<string, string>? Scope(string? circle) =>

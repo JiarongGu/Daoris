@@ -10,61 +10,13 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class HelpRoomMachineNow : IHelpRoomSection
 {
-    public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) => machine with
-    {
-        Adapter = sources.Config.Adapter,
-        // MODELROLE1d (D205 §6.4): Intake's and Ask Daoris's first agent, as their actors read; an order that does not read is said by
-        // the actors' own line, and its key stands here.
-        Intake = First("intake", sources.Config) ?? sources.Config.IntakeAdapter,
-        Helper = First("ask-daoris", sources.Config) ?? sources.Config.HelperAdapter,
-        Cap = sources.Config.Cap,
-        // ENTRY1f2 (D161's ENTRY1f note): by the Sessions list's own rule, so the count and the list name the same sessions,
-        // less Ask Daoris's own conversation, which opens here; a teammate's never reached the snapshot.
-        Waiting = [.. sources.Snapshot.Active
-            .Where(session => KnowledgeWorkOrders.Current.WaitsOnYou(session.Id, session.State, session.Answer) && session.Repository != HelpRoom.Repository)
-            .Select(session => new HelpWaitingSession(session.Id, session.Repository) { Ask = session.Ask })],
-        Sessions = sources.Sessions is { } look ? Placed(look) : null,
-        Asks = sources.Asks,
-        Plugins = [.. sources.Plugins.Plugins.Select(entry =>
-            new HelpPlugin(entry.Manifest.Id, entry.Enabled, entry.Manifest.Hooks?.Points ?? [])
-            {
-                Problem = entry.Problem,
-                // Its kind only: the folder it came from is a path on this machine, which the room never names.
-                Source = ((IKnowledgePlugins)sources.Plugins).SourceKind(entry.Folder),
-            })],
-        Landed = [.. sources.Landed.Select(entry => new HelpLanded(entry.Repository, entry.Branch, entry.Session, entry.Pushed, entry.PullRequest)
-        {
-            State = entry.PullRequestState,
-            AskFailed = entry.PullRequestAskFailed,
-            // ACCESSWORDS1b: only where the rule's switch accepted it, as the review's note reads it: a press under the setup keeps
-            // the level on its record too, and the setup accepted nothing there.
-            Access = entry.AcceptedBy == AcceptedBy.Auto ? entry.Rule?.Access : null,
-        })],
-        Parked = sources.Parked,
-        Held = sources.Held,
-        // PAUSE1f-b: the pauses the pause and the resume write (design §2.5), asks first, each in its ids' order.
-        Paused = [.. sources.Config.PausedAsks.Keys.Order(StringComparer.Ordinal).Select(ask => new PausedBy(WorkScope.Ask, ask)),
-            .. sources.Config.PausedQuests.Keys.Order(StringComparer.Ordinal).Select(quest => new PausedBy(WorkScope.Quest, quest))],
-        Browser = sources.Browser is { } files ? new HelpBrowser(files.Browser, files.Links, files.Extensions, files.Favorites) : null,
-        History = sources.History,
-        // PARALLEL1a: what the judges' facts had not read yet, which each section says where it says its part.
-        NotReadYet = sources.NotReadYet,
-    };
-
-    private static string? First(string actor, DriverConfig config) => ActorKey.FirstAgent(actor, config);
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     /// <summary>
     /// The most ended sessions the room lists by id (SESSUX1h3): enough to name one to archive or delete from the newest, short
     /// enough that the room stays short for a machine with hundreds; the count says how many more.
     /// </summary>
     internal const int EndedListed = 10;
-
-    /// <summary>
-    /// This machine's sessions as the Sessions list places them (SESSUX1h3): one rule, <see cref="SessionGroups.Read"/>, less Ask
-    /// Daoris's own conversations and a teammate's, which this machine does not act on; archived ones are in the list's own
-    /// group, so in no count here. The ended come newest first, as the list orders them.
-    /// </summary>
-    private static HelpSessions Placed(IKnowledgeSessionLook look) => KnowledgeWorkOrders.Current.Placed(look);
 
     public string Render(HelpMachine machine)
     {

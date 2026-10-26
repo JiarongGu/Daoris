@@ -70,7 +70,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
 
         var record = (await ledger.SessionRecordsAsync(ct).ConfigureAwait(false))
             .FirstOrDefault(each => string.Equals(each.Id, request.Session, StringComparison.Ordinal));
-        if (record is not { Repository: HelpRoom.Repository })
+        if (record is not { Repository: KnowledgeRoomIdentity.Repository })
         {
             return CheckoutAnswer.Refusal(operation, CheckoutAnswer.NotHelp,
                 $"Reading the checkouts through this tool is Ask Daoris's alone, and session `{request.Session}` is no Ask Daoris conversation of this machine's.");
@@ -150,7 +150,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
                 + "you would read, and that they turn it on there.");
         }
 
-        var handed = new HelpWired(home).Read(session).FirstOrDefault()?.Checkouts ?? [];
+        var handed = KnowledgeHelp.Current.HandedCheckouts(home, session);
         return handed.Any(read => string.Equals(read.Name, row.Repository, StringComparison.OrdinalIgnoreCase))
             ? null
             : CheckoutAnswer.Refusal(operation, CheckoutAnswer.NotHanded,

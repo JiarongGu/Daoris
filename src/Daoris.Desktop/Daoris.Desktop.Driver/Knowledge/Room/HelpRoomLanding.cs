@@ -9,8 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class HelpRoomLanding : IHelpRoomSection
 {
-    public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources) =>
-        machine with { LandingPlugins = LandingPluginsOf(sources.Plugins) };
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     /// <summary>
     /// The plugins a branch rule may name on this machine (HELP8): each one the landing route itself

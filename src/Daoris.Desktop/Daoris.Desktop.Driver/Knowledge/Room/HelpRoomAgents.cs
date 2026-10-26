@@ -8,21 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class HelpRoomAgents : IHelpRoomSection
 {
-    public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources)
-    {
-        static string Spell(LoginState login) => login.ToString().ToLowerInvariant();
-        return machine with
-        {
-            Agents = [.. sources.Roster.Select(report => new HelpAgent(report.Adapter)
-            {
-                Product = sources.Product(report.Adapter),
-                Present = report.Present,
-                Version = report.Version,
-                Accounts = [.. report.Profiles.Select(profile => new HelpAccount(profile.Name, Spell(profile.Login)))],
-                Strays = report.Strays,
-            })],
-        };
-    }
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     public string Render(HelpMachine machine)
     {

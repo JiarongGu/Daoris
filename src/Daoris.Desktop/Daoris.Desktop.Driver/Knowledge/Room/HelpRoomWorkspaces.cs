@@ -9,63 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class HelpRoomWorkspaces : IHelpRoomSection
 {
-    public HelpMachine Describe(HelpMachine machine, HelpMachineSources sources)
-    {
-        var config = sources.Config;
-        var lineOf = sources.Lines.ToDictionary(line => line.Repository, StringComparer.OrdinalIgnoreCase);
-        bool Named(IReadOnlyList<string> list, string repository) => list.Contains(repository, StringComparer.OrdinalIgnoreCase);
-
-        return machine with
-        {
-            Repositories = [.. sources.Snapshot.Repositories.Select(known => new HelpRepository(known.Repository, known.Workspace)
-            {
-                Checkout = known.Root is { Length: > 0 },
-                Drivable = Named(config.Drivable, known.Repository),
-                Held = Named(config.Holds, known.Repository),
-                OwnTree = config.OpensOwnTree(known.Repository),
-                Line = lineOf.TryGetValue(known.Repository, out var line) ? new Line(line.Branch, line.Source) : new Line(null, LineSource.None),
-                // PARALLEL1a: a checkout whose line the facts have not judged yet, said so rather than as none git can name.
-                LineNotReadYet = Named(sources.NotReadYet.Repositories, known.Repository),
-                Landing = KnowledgeWorkplace.Current.ChooseLanding(config, known.Repository, known.Workspace),
-                // KNOWUSE1b: what the person says holds for every session there, in their words.
-                Standing = config.StandingFor(known.Repository)?.Says,
-                // REVIEWENV1a: where its work is shown to the person before it lands, and where that was set.
-                Review = KnowledgeReviews.Current.Review(config, known.Repository, known.Workspace),
-                // XAGENT1a: which other agent reads its work before it lands, and where that was set.
-                Opinion = KnowledgeReviews.Current.Opinion(config, known.Repository, known.Workspace),
-                // WORKFLOW1h-b (design §8.4): the workflow its new work follows, and what chose it.
-                Workflow = Followed(config, sources.Workflows, known.Repository, known.Workspace),
-            })],
-            WorkflowKinds =
-            [
-                .. config.WorkspaceWorkflows.OrderBy(pair => pair.Key, StringComparer.Ordinal).SelectMany(pair => pair.Value.Kinds
-                    .Select(kind => new HelpWorkflowKind(pair.Key, kind.Key, kind.Value.Label, kind.Value.Paths, kind.Value.Workflow))),
-            ],
-        };
-    }
-
-    /// <summary>
-    /// The workflow a repository's work follows with no task's kind (design §4.1, rows 3, 5 and 6), Current where nothing chooses
-    /// one, its newest version where it is saved here, and a repository's own kinds.
-    /// </summary>
-    private static HelpWorkflowFollowed Followed(DriverConfig config, IReadOnlyList<IKnowledgeWorkflowFile>? saved, string repository, string workspace)
-    {
-        var selected = KnowledgeWorkflows.Current.Select(config, repository, workspace);
-        var own = config.Workflows.FirstOrDefault(pair => string.Equals(pair.Key, repository, StringComparison.OrdinalIgnoreCase)).Value;
-        var followed = new HelpWorkflowFollowed(selected.Workflow, selected.Level)
-        {
-            Kinds = [.. own?.Kinds.Select(kind => (kind.Key, kind.Value.Workflow)) ?? []],
-        };
-        if (selected.Workflow == WorkflowLevels.Current || saved is null) return followed;
-
-        var found = saved.FirstOrDefault(each => each.Id == selected.Workflow);
-        return found switch
-        {
-            null => followed with { Problem = "not saved here" },
-            { Problem: not null } => followed with { Problem = "which cannot be read here" },
-            _ => followed with { Name = found.Name, Version = found.NewestVersion },
-        };
-    }
+    public HelpMachine Describe(HelpMachine machine, IHelpMachineSources sources) => sources.Describe(this, machine);
 
     public string Render(HelpMachine machine)
     {
