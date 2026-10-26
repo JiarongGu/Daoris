@@ -41,6 +41,38 @@ repository.
 - **Verify:** all five new cases failed before the fix; the driver log suite (25) and service log suite (15) pass afterward. Service (2782), HTTP (339), modules fast (2677) and `npm run verify` pass. Driver fast passed 14925 of 14926, with the unrelated `BrainstormBoundsTests.A_pass_late_past_its_minutes_is_stopped_and_the_document_says_who_did_not_answer` failing under load; its whole class then passed (14). The recovered install has a responding native window and `/api/status` answers normally; the staged-update proof is still pending.
 - **Commit:** `75131f4d8`.
 
+## 2026-10-26 - The person's press to go on now with another agent asked the last part's model there (PRESSMODEL1)
+
+- **Symptom:** on the install, two driven quests waited for a Claude Code account's reset. A person's *Go on now with…* press (D206 point 7)
+  moved each to Codex (`session.moved`, `why: press`, `claude-code-acp` to `codex-acp`, briefed); each new part asked Codex for `sonnet`,
+  the model the last part ran on under Build's first choice. Codex refused it (`Invalid params`), so each part ended `choice-not-offered`
+  before any prompt and ran nothing, and the line, held on Codex by the hand-over, stayed held while the refusal passed that account.
+- **Reproduced first:** `PressModelTickTests`, real ticks on the protocol door: a driven line held for a stub account's reset (every account
+  of the first agent at its limit), Build listing that agent alone, a second agent's account ready whose door offers `codex-mini` and
+  refuses any other model with `Invalid params`, and the person's press (`HandOverBox`, why `press`) to go on with the second agent. Each
+  of the five cases failed on the unfixed code the install's way: the second agent heard `session/set_config_option model=sonnet`, refused
+  it, and the look held with *the account does not offer the model asked*.
+- **Root cause, where the asked model is carried:** `Loop/Driver.cs` `RunAsync`. A press writes the hand-over (`HandedQuests`, the agent
+  and why) and nothing else; the carry-on's start then goes by `handedQuest.Agent` and read the part before's asked choice in three
+  places: the model each account is judged for (`SelectHandedAsync`'s `model`, `chosen?.Model ?? start.Resumes?.Asked?.NamedModel`, and
+  `CarriedOnAsync`'s), and the choice the spawn is handed (`Asked = chosen?.Asked ?? carried.Asked`). `chosen`, the agent's own entry
+  (`Effective(handed:)`), was set only where the hand-over had no part before (`start.Resumes is null`), so a press, which always has one,
+  never reached it. The record the refused part left kept that same `asked`, whose agent was the first agent's, and the quest's last run
+  stays the part before it (a `choice-not-offered` record ran nothing), so every later look asked `sonnet` of Codex again: the held line.
+  Its open also never re-asked: the re-ask was tied to a quest that is not handed (`handedQuest is null`).
+- **Fix:** a continuation of a handed quest whose record's `asked.agent` is another agent than the one it goes on with takes that agent's own
+  choice (`ActorChoices.Effective("build", handed: agent)`): Build's first entry for it where the role lists one, else its default with no
+  model asked, the record's choice `handed`, and no model of the record's reaches an account's judge or the spawn. Reading it off the
+  record's asked agent frees a line the old build already moved and the refusal holds, at the next look, with no press. A model that agent
+  refuses at the open is re-asked (`ReaskHandedAsync`) on the role's other entries for it, then its default, taking the first the same account
+  offers; models already refused in the start are never asked again.
+- **Verification:** `PressModelTickTests`, each seen failing first: the install's case (Build lists the first agent alone) opening on the
+  second agent's default and running; a role listing the second agent later asking that choice's model and effort and never `sonnet` or
+  `low`; a refused model re-asked on the next choice, and, with none after it, on the default; a line the press moved and the refusal holds
+  (the hand-over, the refused record seeded as the old build left it and the account's refusal kept) going on at the next look. And
+  `WalkAgentTickTests`, `HandOverTests`, `HandOverLookTests`, `AccountRotationTickTests`, `LimitResumeTickTests`, `ResumeAccountTests`,
+  `LineAccountTests`, `HandOverAskTickTests`, `ModelRefusalTickTests` pass.
+
 ## 2026-10-26 - A driven line at a limit was carried on to an agent its role does not list, asking the part before's model (WALKAGENT1)
 
 - **Symptom:** on the install, two driven quests ran on a Claude Code account when its limit came; each carry-on opened on a Codex account by

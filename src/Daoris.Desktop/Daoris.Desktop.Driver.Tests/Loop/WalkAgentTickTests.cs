@@ -283,7 +283,7 @@ public sealed class WalkAgentTickTests : IDisposable
     /// A door onto another tool's accounts (the way Codex's protocol door is onto Codex's): <see cref="AcpStubAdapter"/>'s own, as the
     /// agent <c>other</c>, so its accounts and its cool-offs are kept apart from the stub's.
     /// </summary>
-    private sealed class AcpOtherAdapter : ISessionAdapter
+    internal sealed class AcpOtherAdapter : ISessionAdapter
     {
         public string Name => "acp-other";
 

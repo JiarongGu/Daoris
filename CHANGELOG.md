@@ -6,6 +6,10 @@ with the version and date at release.
 ## Unreleased
 
 - Conflicting current and legacy log folders no longer crash the desktop, browser, driver or service while their logger is being created (STARTLOG1). Logging is disabled for that process without choosing, writing or pruning either folder; other home-entry conflicts still report their normal refusal.
+- Going on now with another agent, from a session waiting for an account's limit to reset, now asks that agent for its own choice (PRESSMODEL1,
+  D163). The press carried the model of the part before to the new agent, which could refuse it, so the part ended before it began and
+  the quest stayed held. It now asks the model Build lists for that agent, else the agent's own default; a model the agent refuses is asked
+  again on its next choice and on its default; and a quest the old behaviour left held goes on by itself at the next look.
 
 - A session cut off by an account's limit is no longer carried on by an agent its role does not list (WALKAGENT1, D206). The carry-on of
   such a quest took the machine's older single-agent setting instead of Build's choices, so on one install two of them went on with Codex

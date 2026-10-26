@@ -814,6 +814,41 @@ public sealed class Driver(
     }
 
     /// <summary>
+    /// The re-ask of a handed quest's start whose agent refused the model it asked at the open (PRESSMODEL1, D205 §3.3): Build's later
+    /// entries for the handed <paramref name="agent"/> in order, then its own default with no model asked, the first that the same account
+    /// offers, set on the same session. Models already refused here (<paramref name="refused"/>) are never asked again, so the re-ask ends.
+    /// Null where none can run on the account, and the opened record ends <c>choice-not-offered</c>.
+    /// </summary>
+    internal async Task<(ActorAsked Asked, string Choice)?> ReaskHandedAsync(
+        Consideration start, string agent, HarnessSelection selection, ModelRefusal refusal, HashSet<string> refused, CancellationToken ct)
+    {
+        refused.Add(refusal.Value);
+        (ActorAsked Asked, string Choice)? answer = null;
+        try
+        {
+            var candidates = ActorChoices.Effective("build", config, fence: [agent]).ToList();
+            if (!candidates.Any(entry => entry.Model is null)) candidates.Add(new ActorEffective(agent, null, null, "rule-default"));
+            foreach (var entry in candidates)
+            {
+                if (entry.Model is { } model && refused.Contains(model)) continue;
+                var (picked, _) = await Context.Harnesses
+                    .SelectHandedAsync(agent, config, start.Workspace, selection.Profile, StartKind.Driven, ct, entry.Model, null, selection.Number, counts: false)
+                    .ConfigureAwait(false);
+                if (!picked.Allowed || !string.Equals(picked.Profile, selection.Profile, StringComparison.OrdinalIgnoreCase)) continue;
+                answer = (entry.Asked, entry.From);
+                break;
+            }
+        }
+        catch (DriverException)
+        {
+            return null;
+        }
+
+        Log?.Write("info", "actor.reasked", [("actor", "build"), ("quest", start.Quest.Id), ("refused", refusal.Value), ("answer", answer?.Choice), ("same", answer is not null)]);
+        return answer;
+    }
+
+    /// <summary>
     /// One look: the sync, the plan, and every planned start begun. Returns once each start has opened its
     /// session record or come to nothing, never waiting for a session to end (DEV3, D115 §3.1): the sessions
     /// run on, and what ended since the last look joins this one's report.
@@ -2017,8 +2052,22 @@ public sealed class Driver(
         var limitedWords = limitedLine is not null && !Planner.EndedTransient(limitedLine);
         // Whether this start resumes that record's own conversation on its own account: the limit's intent, separate from any words waiting.
         var limitResume = false;
+        // 🔴 PRESSMODEL1 (D163 point 1, D205 §3.5(a), §4.0): a continuation of a quest held on another agent whose record asked its choice of
+        // an agent other than this one (the person's press to go on now with it, D206 point 7, or any hand-over) asks THIS agent's own
+        // choice: the role's first entry for it where the role lists one, else its own default with no model asked. The part before's
+        // model, `sonnet` under Build's first choice, is that agent's to refuse; carried there, Codex refused it and the part ended before
+        // any prompt. Read from the record's asked agent, so a line a press already moved and the refusal holds goes on at the next look.
+        ActorEffective? movedTo = null;
+        var refusedHanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        string? CarriedModel(PriorSession? record) => movedTo is { } movedEntry ? movedEntry.Model : record?.Asked?.NamedModel;
         try
         {
+            if (handedQuest is not null && start.Resumes?.Asked is { } wasAsked
+                && !string.Equals(wasAsked.Agent, agent, StringComparison.OrdinalIgnoreCase))
+            {
+                chosen = movedTo = ActorChoices.Effective("build", config, handed: agent)[0];
+            }
+
             if (GoOns.ResumesOwn(start, agent) is { } words)
             {
                 // A resume asks for its record's own account (MSG1g, D137 §2.2): its conversation lives in that account's
@@ -2032,7 +2081,7 @@ public sealed class Driver(
                 resume = await Context.Harnesses
                     .ResumeAsync(
                         agent, config, start.Workspace, words.Profile, StartKind.Driven, Context.NewSessions.Covers(words), ct: ct,
-                        limited: limitedWords, model: words.Asked?.NamedModel,
+                        limited: limitedWords, model: CarriedModel(words),
                         line: carried
                             ? LineKind.DrivenOpen
                             : LineKind.DrivenClosed(carries: Context.GoesOnLost is not null && words.Waiting.Any(DaorisWords.NewPartCarries)))
@@ -2043,7 +2092,7 @@ public sealed class Driver(
             else if (!start.GoesOn && limitedLine is not null && GoOns.LimitResumes(limitedLine, agent)
                      && await Context.Harnesses
                              .ResumeAsync(agent, config, start.Workspace, limitedLine.Profile, StartKind.Driven, line: LineKind.DrivenLimit, ct: ct, limited: true,
-                                 model: limitedLine.Asked?.NamedModel)
+                                 model: CarriedModel(limitedLine))
                              .ConfigureAwait(false) is { Own: NextHold.Ready, Selection.Allowed: true } own)
             {
                 // Step 1: its own account ready, its maker's reading asked, the judge passing and a door known to fail closed, so its
@@ -2076,7 +2125,7 @@ public sealed class Driver(
                 // Build's entry for that agent (D205 §4.0, `handed`). A carry-on keeps its record's asked choice (§3.5(a)).
                 // Each account judged by its reading for the model: the carry-on's record's asked, a handed quest's Build entry (§3.5(a), (d)).
                 if (handedQuest is not null && start.Resumes is null) chosen = ActorChoices.Effective("build", config, handed: agent)[0];
-                var model = chosen?.Model ?? start.Resumes?.Asked?.NamedModel;
+                var model = chosen is not null ? chosen.Model : CarriedModel(start.Resumes);
                 (selection, passedAccount) = await Context.Harnesses
                     .SelectHandedAsync(agent, config, start.Workspace, handedQuest?.Account, StartKind.Driven, ct, model)
                     .ConfigureAwait(false);
@@ -2479,7 +2528,7 @@ public sealed class Driver(
                 try
                 {
                     (selection, var passed) = await Context.Harnesses
-                        .CarriedOnAsync(resume, agent, config, start.Workspace, handedQuest?.Account, ct, start.Resumes?.Asked?.NamedModel)
+                        .CarriedOnAsync(resume, agent, config, start.Workspace, handedQuest?.Account, ct, CarriedModel(start.Resumes))
                         .ConfigureAwait(false);
                     passedAccount ??= passed;
                 }
@@ -2818,13 +2867,16 @@ public sealed class Driver(
                 // a question. Read from the quest as the conclusion reads it, by the conclusion's own rule.
                 waitsOnBackground: WaitsOnBackground(service, quest, sessionId, resumed: start.Resumes is not null),
                 // MODELROLE1c2 (D205 §3.3): its agent's refusal of the entry's model at the open is re-asked; a new start's walk may answer a
-                // later entry on the same agent and account, set on this session. A continuation keeps its asked choice and a handed quest walks
-                // its named agent's accounts alone (§3.5(a), (d)), so their record ends.
+                // later entry on the same agent and account, set on this session. A continuation keeps its asked choice, so its record ends.
+                // PRESSMODEL1: a handed quest's start asks its named agent's own choice (Build's entry for it, else its default), so a
+                // refusal of that entry's model is re-asked on that agent's later entries and its default, on the same account.
                 offers: new OpenOffers(
                     selection.Version, selection.Profile,
                     chosen is { } walkedEntry && handedQuest is null && (start.Resumes is null || limitWalks)
                         ? _ => ReaskAsync(start, registry, walkedEntry, selection, ct)
-                        : _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
+                        : chosen is not null && handedQuest is not null
+                            ? refusal => ReaskHandedAsync(start, agent, selection, refusal, refusedHanded, ct)
+                            : _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
                 // AGENTERRORS1a (D210 §5.1, §5.5): a driven quest session is tried again in the same conversation on a transient failure,
                 // asking before each try whether its quest still wants a turn, against the quest as this start was planned (finding 5).
                 transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, quest.Status, quest.Awaits, retryCt),
