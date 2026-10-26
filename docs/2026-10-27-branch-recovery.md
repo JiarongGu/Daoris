@@ -136,3 +136,8 @@ or an approval forged for a held call. ROLEPERM1 remains a later reviewed extens
 The next saved-session turn confirmed effective unrestricted access and completed its ordinary edits
 without permission refusals. It still reported missing knowledge tools; CODEXTOOLS1 requires an actual
 inventory and fresh-session comparison before assigning that observation a transport cause.
+
+A fresh one-off Codex chat reproduced the empty tool inventory. The pinned native runtime's trace
+explicitly omitted `daoris-knowledge` as a pending optional server at its initial catalog capture;
+the MCP host independently logged its start. CODEXTOOLS1 now requires proving readiness before that
+capture, followed by actual knowledge reads and quest completion. Host startup alone is not that proof.
