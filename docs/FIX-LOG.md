@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-26 - A driven line at a limit was carried on to an agent its role does not list, asking the part before's model (WALKAGENT1)
+
+- **Symptom:** on the install, two driven quests ran on a Claude Code account when its limit came; each carry-on opened on a Codex account by
+  `codex-acp`, handed over by the limit, though Build lists only `claude-code-acp` with `sonnet` then `opus`. It asked `sonnet` there, which
+  Codex refused (`Invalid params`), so each part ended `choice-not-offered` before any prompt and the quest sat.
+- **Root cause:** which walk reached Codex's account: **none of the three the row named.** Not the rotation's walk over every agent's accounts
+  (the walk is per agent, `HarnessSettings.Set(owner)`), and not an agent followed from the account chosen. `RunAsync` took the carry-on's agent
+  from `config.Adapter`, the machine's legacy `adapter` key (`handedQuest?.Agent ?? config.Adapter`), and walked that agent's accounts alone
+  (`SelectHandedAsync`), asking the model of the record's last part (`start.Resumes.Asked`). A new quest's first start walks Build's order and so
+  ran on Claude; the carry-on never read the order. `ActorChoices.With` keeps `adapter` in step with Build's first entry, but a file
+  written another way does not, and reading does not reconcile them (`DriverConfig.Read`): the install's key must have pointed at Codex
+  (its `driver.json` was not read here). The same agent was asked at D206's step 1, whose judge compares the record's agent, so the own
+  conversation was never resumed either. D206 point 6 (the walk of a driven line's choices) was recorded and never built (row 1e's).
+- **Fix:** a limited line with no hand-over takes its agent from Build's effective order, its own where the role lists it, else the first, and
+  never from `adapter`. Where the role lists more than one choice, or its one choice is another agent than the line ran on, the carry-on walks
+  the order as a new start does (`WalkBuildPassesAsync`), carrying the chosen entry's own model, effort and choice; where none can run it holds
+  on the earliest reset of any account of any choice. A refusal of the entry's model at the open is re-asked as a new start's is. A move
+  to another agent is the limit's whatever the accounts are named (`OnAnotherAccount`, `ContinuesFrom` take the agent). A handed quest and an
+  actor as before keep their agent and wait.
+- **Verification:** `WalkAgentTickTests`, real ticks, each seen failing first: with the key on the second agent the carry-on opened a new
+  session there (the install's case); in step with Build it already waited, kept as the case's second row; a role listing the second agent
+  after the first held instead of moving, and now moves with that choice's model and effort on its wire. `HandOverLookTests`;
+  `LimitResumeTickTests`, `AccountRotationTickTests`, `ResumeAccountTests`, `LineAccountTests`, `AccountRotationWalkTests` pass.
+
 ## 2026-10-26 - The page's refusal-code twin read a moved class's constants from the file it left (FOUNDATION1 mod-vii)
 
 - **Symptom:** `src/locales/say.test.ts` failed two cases in FOUNDATION1 row p's land test: *`HandOverAskWhy.QuestClosed` is not a literal in

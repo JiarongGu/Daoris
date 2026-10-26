@@ -5,6 +5,11 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session cut off by an account's limit is no longer carried on by an agent its role does not list (WALKAGENT1, D206). The carry-on of
+  such a quest took the machine's older single-agent setting instead of Build's choices, so on one install two of them went on with Codex
+  asking Claude's model, which Codex refused, and sat. The carry-on now follows Build: it goes on with Build's first choice that can run,
+  asking that choice's own model and effort, and where none can it waits for the earliest reset and resumes its own conversation then.
+
 - A session held for an account's reset no longer reads *completed* (LIMITSWITCH3b, D137). Where Daoris holds a finished session's words
   for a cooling account, its rail row, its page's head and the terminal's `sessions` list say *waiting for a limit to reset* (正在等待额度重置)
   in place of the state it ended in, with its time and account on the line beside it; the record itself is unchanged, and a finished session
