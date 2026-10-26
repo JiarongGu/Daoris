@@ -1,10 +1,10 @@
 # Providers across local and remote infrastructure
 
-**Status: proposed amendment to D213 (AGENTINFRA1, 2026-10-27).** The owner confirmed the full boundary: local agent programs,
+**Status: accepted amendment to D213 (AGENTINFRA1, 2026-10-27; scoped owner exception under D191).** The owner confirmed the full boundary: local agent programs,
 ACP and native transports, remote APIs and hosted runtimes, with their accounts, capabilities, usage and error dialects.
 This extends the accepted [provider design](2026-10-26-agent-provider-design.md); its accepted migration remains the base.
-It changes D125/D206's treatment of some limits and D213's process-only run preparation. Both makers' foundation reads under
-[D191](decisions/D191.md) are required before these changes are accepted or activated. No new runtime behavior is shipped here.
+It changes D125/D206's treatment of some limits and D213's process-only run preparation. The owner waived the unavailable Opus
+read for this amendment; §11 records settlement and its limits under [D191](decisions/D191.md). No new runtime behavior is shipped here.
 
 ## 1. What the existing design already provides, and what is missing
 
@@ -286,12 +286,12 @@ alone does not prove this. No code in the initial delivery may turn on shared-ho
 ## 8. Build sequence and acceptance
 
 The dependency remains FOUNDATION1's Agents move, mod-ix. Reuse AGENTPROVIDER1's registry, census, stand-in and part-by-part cuts.
-Rows that merely preserve the accepted contract can proceed; changes to recovery, remote admission or persistent semantics wait
-for this amendment's reads. Each behavioral change has its own failing regression and installed proof before publication.
+The amendment is settled in §11. Changes to recovery, remote admission and persistent semantics follow the stages below;
+each behavioral change has its own failing regression and installed proof before publication.
 
 | Stage | Concrete result | Required proof |
 |---|---|---|
-| A: settle this amendment | D213's accepted base plus a reviewed extension, initial isolation fixed and shared-home support unavailable | Independent Codex and Opus reads, findings checked at code lines; isolated old-client refusals specified |
+| A: settle this amendment | D213's accepted base plus a reviewed extension, initial isolation fixed and shared-home support unavailable | Two Codex rounds with findings checked at code lines; owner exception for the unavailable Opus read in §11; isolated old-client refusals specified |
 | B: normalize availability | Provider dialect decoders and the shared restriction reducer, exercised in the isolated home | Exact Codex refusal; Claude limit; same status/different provider; concurrent restrictions; owner refill; unknown reset; stale report; shared pool |
 | C: decouple execution | Process recipes and remote plans implement the same admitted run boundary | Local native/ACP parity, alternative-dialect stand-in, unsupported inference-only execution refused before send |
 | D: prove remote infrastructure | Fake HTTP inference executor and hosted agent with admitted broker, no keys or real spend | Accepted work then limit, lost creation acknowledgement, duplicate call/receipt, stale callback, revocation, SDK replay refusal, cancellation not confirmed, crash/restart reconciliation |
@@ -322,9 +322,9 @@ Read 2026-10-27, primary documentation only; these are source claims, not live-p
 
 No remote provider, real key, hosted cancellation, shared billing relationship or migration has been exercised by this document.
 The installed codex-acp source and existing D213 design supplied the local dialect facts. Document gates check routing and shape,
-not the proposed semantics. Both Codex rounds are recorded in §10; the Opus read is owed after its weekly-limit refusal.
+not the proposed semantics. Both Codex rounds are recorded in §10; the Opus read was refused by a weekly limit, then waived in §11.
 All managed Claude accounts were also held by recorded limits at that inspection. No early-ready override or repeated retry was made.
-The proposal does not supersede accepted behavior until both reads and their amendments are settled.
+These were the review limits before the owner's exception and settlement in §11; existing runtime behavior remains unchanged.
 
 ## 10. Round 1 review and the proposed corrections
 
@@ -347,4 +347,16 @@ proposed corrections when sent for the next read, not implementation proof.
 **Round 2, the same independent Codex reader:** all six findings resolved at the design level for the initial isolated scope;
 no remaining concrete blocker or new blocking inconsistency identified. It reused its prior source evidence, with no further
 source reads or executable checks. This is a satisfactory Codex read of the corrected design obligations, not proof they are
-implemented, and not acceptance of the amendment on one maker's read. The independent Opus read and steward settlement remain owed.
+implemented. At that point the independent Opus read and steward settlement remained owed; §11 records the subsequent exception.
+
+## 11. Settlement, 2026-10-27
+
+The owner explicitly authorized lifting the unavailable review control after both blockers were identified. For this amendment
+only, the required Opus foundation read is waived. No Opus model processed the proposal, and neither Codex round is counted as
+another maker's read. This is the scoped exception recorded under D191, not evidence that the normal review requirement passed.
+
+The steward accepts the amended design on the two completed Codex rounds and the source checks recorded in §10: all six
+identified blockers are addressed for initial isolated operation. Implementation may proceed after mod-ix through the existing
+AGENTPROVIDER1 sequence. Shared-home remote activation remains unavailable because old clients can replay work; accepting this
+document does not resolve that technical incompatibility. Conformance, regression tests, installed proof and publication gates
+remain required. No account restriction, command-review policy or provider permission is changed by this exception.
