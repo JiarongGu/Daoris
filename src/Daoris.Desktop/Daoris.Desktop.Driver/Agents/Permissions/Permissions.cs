@@ -491,7 +491,7 @@ public static class PermissionRules
 public static class SpawnSettings
 {
     /// <summary>The harness's own hard denials, kept by naming them in the list (UNBLOCK4).</summary>
-    public const string HarnessDefaults = "$defaults";
+    public const string HarnessDefaults = TraceSpawnFiles.HarnessDefaults;
 
     /// <summary>Write the file for one session, or answer null when there is nothing to hand.</summary>
     /// <param name="hardDeny">

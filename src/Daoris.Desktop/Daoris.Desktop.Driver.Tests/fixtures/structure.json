@@ -287,6 +287,8 @@
     "Instance/ShellWord.cs": "Instance",
     "Instance/SyncPass.cs": "Instance",
     "Instance/VerbLeases.cs": "Instance",
+    "Knowledge/AcpMcpServer.cs": "Knowledge",
+    "Knowledge/AcrossReads.cs": "Knowledge",
     "Knowledge/CheckoutAnswer.cs": "Knowledge",
     "Knowledge/CheckoutAsk.cs": "Knowledge",
     "Knowledge/CodeMapFile.cs": "Knowledge",
@@ -294,6 +296,7 @@
     "Knowledge/Domain/Trace.Chain.cs": "Knowledge",
     "Knowledge/Domain/Trace.Words.cs": "Knowledge",
     "Knowledge/Domain/TracedRecords.cs": "Knowledge",
+    "Knowledge/HarnessReports.cs": "Knowledge",
     "Knowledge/HelpCheckouts.cs": "Knowledge",
     "Knowledge/HelpCircle.cs": "Knowledge",
     "Knowledge/HelpFacts.cs": "Knowledge",
@@ -316,11 +319,13 @@
     "Knowledge/Room/HelpRoomWindow.cs": "Knowledge",
     "Knowledge/Room/HelpRoomWork.cs": "Knowledge",
     "Knowledge/Room/HelpRoomWorkspaces.cs": "Knowledge",
+    "Knowledge/SkillFiles.cs": "Knowledge",
     "Knowledge/StandingAnswer.cs": "Knowledge",
     "Knowledge/Trace.cs": "Knowledge",
     "Knowledge/TraceCommand.cs": "Knowledge",
     "Knowledge/TraceEventFiles.cs": "Knowledge",
     "Knowledge/TraceReads.cs": "Knowledge",
+    "Knowledge/TraceSpawnFiles.cs": "Knowledge",
     "Loop/ChannelReach.cs": "Work orders",
     "Loop/Driver.cs": "Loop",
     "Loop/DriverBrainstorms.cs": "Loop",
@@ -923,19 +928,6 @@
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Knowledge names Agents",
-      "after": "Knowledge",
-      "files": {
-        "Knowledge/Domain/Trace.Chain.cs": ["SpawnSettings"],
-        "Knowledge/Domain/Trace.Words.cs": ["SpawnServers"],
-        "Knowledge/HelpCheckouts.cs": ["AcrossRules"],
-        "Knowledge/HelpFacts.cs": ["HarnessReport"],
-        "Knowledge/KnowledgeConnector.cs": ["AcpMcpServer"],
-        "Knowledge/Room/HelpRoomAgents.cs": ["LoginState","StrayFolder"],
-        "Knowledge/Room/HelpRoomMayDo.cs": ["AcrossRules","SpawnSkills"]
-      }
-    },
     {
       "family": "Knowledge names Help",
       "after": "Knowledge",

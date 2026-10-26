@@ -1236,7 +1236,7 @@ internal static partial class TraceChains
                     : 0;
             var hard = root.TryGetProperty("autoMode", out var auto) && auto.TryGetProperty("hard_deny", out var denials)
                        && denials.ValueKind == System.Text.Json.JsonValueKind.Array
-                ? denials.EnumerateArray().Count(entry => entry.ValueKind == System.Text.Json.JsonValueKind.String && entry.GetString() != SpawnSettings.HarnessDefaults)
+                ? denials.EnumerateArray().Count(entry => entry.ValueKind == System.Text.Json.JsonValueKind.String && entry.GetString() != TraceSpawnFiles.HarnessDefaults)
                 : 0;
             return new TraceRules
             {

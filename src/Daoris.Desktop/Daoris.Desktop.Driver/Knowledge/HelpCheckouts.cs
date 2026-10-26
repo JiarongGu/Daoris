@@ -136,7 +136,7 @@ public sealed class HelpCheckouts(string home, Func<ServiceClient?> service)
     /// </summary>
     private CheckoutAnswer? Granted(string operation, RepoView row, string session)
     {
-        if (!AcrossRules.Reading(DriverConfig.Load(DriverConfig.ResolvePath(home)), row.Repository, row.Workspace).Read)
+        if (!AcrossReads.Reading(DriverConfig.Load(DriverConfig.ResolvePath(home)), row.Repository, row.Workspace).Read)
         {
             return CheckoutAnswer.Refusal(operation, CheckoutAnswer.NotReadable,
                 $"`{row.Repository}` lets no agent outside it read its checkout. The person turns that on under Repositories → the repository's "
@@ -355,7 +355,7 @@ internal static class CheckoutPath
                 .OrderByDescending(each => string.Equals(each.Name, name, StringComparison.Ordinal)).FirstOrDefault();
             if (found is null) return (null, walked, null);
             if (string.Equals(found.Name, ".git", StringComparison.OrdinalIgnoreCase)) return (null, walked, "is git's own folder, which is never read");
-            if (found.LinkTarget is not null && (Real(found) is not { } target || !(AcrossRules.Holds(top, target) || AcrossRules.Holds(real, target))))
+            if (found.LinkTarget is not null && (Real(found) is not { } target || !(AcrossReads.Holds(top, target) || AcrossReads.Holds(real, target))))
             {
                 return (null, walked, "leads out of the checkout through a link, which is never followed out");
             }

@@ -56,7 +56,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             : registry;
         return machine with
         {
-            Reads = [.. AcrossRules.Readable(sources.Config, readable)
+            Reads = [.. AcrossReads.Readable(sources.Config, readable)
                 .Select(checkout => new HelpRead(checkout.Repository, sources.Workspace ?? workspaceOf[checkout.Repository], checkout.Path))],
             // HELPPLUG1a: the servers the person approved for it, as its spawn is handed them (HelpGrants), and those waiting.
             PluginServers = [.. (sources.Grants?.All ?? []).Where(grant => grant.State == HelpGrants.Approved)
@@ -70,7 +70,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
             PluginServersOffered = [.. Offered(sources)],
             // HELPPLUG1b: the skills its spawn is handed (SpawnSkills.Write), as the harness names them.
             PluginSkills = [.. sources.Plugins.Contributing.SelectMany(plugin => plugin.Manifest.Skills
-                .Where(skill => skill.HandedTo(PluginServerTo.Help) && SpawnSkills.Judge(plugin.Folder, skill.Name) is null)
+                .Where(skill => skill.HandedTo(PluginServerTo.Help) && SkillFiles.Judge(plugin.Folder, skill.Name) is null)
                 .Select(skill => $"{plugin.Manifest.Id}:{skill.Name}"))],
         };
     }

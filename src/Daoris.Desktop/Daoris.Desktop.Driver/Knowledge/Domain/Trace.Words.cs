@@ -477,7 +477,7 @@ internal static class TraceWords
                 return;
         }
 
-        text.Append($"  rules handed ({SpawnServers.Folder}/{session.Id}.settings.json, kept while it runs): ")
+        text.Append($"  rules handed ({TraceSpawnFiles.Folder}/{session.Id}.settings.json, kept while it runs): ")
             .Append($"{rules.Allowed} allowed, {rules.Asked} asked, {rules.Denied} denied")
             .Append(rules.Hard == 0 ? "" : $"; {rules.Hard} hard denial{(rules.Hard == 1 ? "" : "s")} beside the harness's own")
             .Append(rules.Guarded ? "; the tree guard holds it to its tree" : "")
