@@ -75,6 +75,13 @@ Quest `c8f5e116b346` is Done through the owner's supported completion door, with
 requirements to answer individually. Session `69874b96` remains parked until the window confirms its finish. Its clean,
 merged tree is preserved while that request waits; no live-session guard or lock was bypassed for cleanup.
 
+The pending finish subsequently completed through the supported request result. The service now records session
+`69874b96` as completed. Daoris independently moved its tree aside under retention; the active folder and Git
+registration are absent, and its branch answers missing (exit 2). The merged tip remains in main. Four local branches
+and four registered worktrees remain at this read: main, the active Agents branch and the two held Fabric branches;
+the registered trees are main, Agents and the two integration trees. Retention preserves the Knowledge output;
+this is retirement of its active tree, not reclamation of its retained disk space.
+
 That nightly run also passed the exact historical opinion-resume case and authoritatively cleared its finding on
 `85fd557`. CILEDGER1 is archived; no clearance was fabricated or written by hand.
 
