@@ -192,3 +192,42 @@ The unchanged live conversation's next turn exposed 51 Daoris tools, successfull
 This contrast retains CODEXTOOLS1 as a first-catalog readiness defect rather than a failed-host diagnosis. Its six live
 MCP calls also supplied the Codex measurement for FABRIC-ACP1: D173 records why the current normalized lineage still does
 not meet C2a's root contract. The two enforcement branches remain preserved until that staging prerequisite is met.
+
+## Agents integration and tooling checkpoint
+
+The Agents branch's repaired cumulative tip `a9bdbba9e` landed as `93f49d4` through the supported queue. D212's scoped
+integration receipt names its passed checks and remaining whole-product and installed proof; the full nightly run is
+in progress on that exact commit. This advances FOUNDATION1 mod-ix without closing the complete refactor or activating
+either held Fabric enforcement attempt.
+
+Integration exposed a Git configuration problem: with worktree-specific configuration enabled, a shared `core.worktree`
+bound linked trees to the main checkout. Their files were intact. The shared value was backed up and migrated to main's
+own worktree configuration through Git; each linked tree then reported its correct root and clean state without source
+restoration. The actor that wrote the shared value is not established. GITWORKTREECONFIG1 retains the product/tooling
+guard against acting on a mismatched root.
+
+SCOPEPLAN1 and QUEUEDROP1's implemented repairs also landed in `93f49d4`; their root causes and qualified regressions
+are recorded in the fix log and D207. The separate QUEUEDRAIN1 task still owes immediate cancellation of dropped gates.
+The old, explicitly dropped runner was ended after verifying its identity and checking its owned descendants; no installed
+session or unrelated process was ended to make a build pass.
+
+At this checkpoint four local branches and five registered worktrees remain. The Agents branch is fully held by main
+and stays active while its terminal chat is needed for proof. Both unique Fabric attempts and the credit-refusal stash
+remain preserved. The extra clean managed `scope-planning` checkout contains no authored changes from this recovery;
+its owning manager twice refused archival as belonging to another task, including after the Git configuration repair.
+It remains attached and was not removed through another mechanism. This ownership refusal is distinct from the
+original scratch deletions rejected by automatic command review. Neither blocked cleanup is reported as completed.
+
+## Terminal chat live-status defect
+
+CLITURN1 was reproduced on installed build `349e2c5d7` during a read-only knowledge-tool turn. The terminal's user event
+at 23:23:06 UTC and turn-end event at 23:24:02 UTC on 2026-10-26 bracket the native screenshot at 23:23:17 UTC; its actual
+MCP calls occurred within that turn, while the desktop head and rail showed idle. The service record still said working.
+The transcript had refreshed to the preceding completed turn, so this observation does not establish lost transcript data.
+Private event and native-capture evidence is retained separately; the marker and knowledge reads completed normally.
+
+The terminal creates its own SessionProcesses and ChatRunner. The window's ConversationRoutes.QueueAnswer reads its own
+loop's queues, and ChatRunner.Queue returns ChatQueue.Idle for an id its process does not hold. This explains an idle answer
+without establishing that the external process is between turns. The frontend's turn contract explicitly distinguishes an
+unknown answer from not taking. CLITURN1 retains the ownership-aware read/routing repair and an installed cross-process
+regression; cancellation and message delivery from that window to the external chat were not tested in this reproduction.
