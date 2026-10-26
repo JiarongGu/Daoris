@@ -88,7 +88,7 @@ internal static class TransientRetries
         var quest = await service.FindQuestAsync(questId, ct).ConfigureAwait(false);
         if (quest is null) return false;
         if (startedOn is not ("Open" or "Taken")) return true;
-        if (QuestResults.Submitted(quest)) return false;
+        if (QuestSubmissions.Current(quest)) return false;
         if (quest.Awaits is { Length: > 0 } awaits && !string.Equals(awaits, awaitsBefore, StringComparison.Ordinal)) return false;
         // A quest Taken as the run started is the run's to carry on, a D79 resume's new session included, which holds no take of its own
         // (the conclusion's `Parks` reads `resumed` so); one taken since the start is this session's only where it took it.

@@ -206,7 +206,7 @@ public sealed record SessionTarget(
     /// last, beneath the quest, on a first start, a resume and a carry-on alike, so what the person said outlives the hops
     /// a quest makes across cut-offs and accounts. Null for a quest no ask asked, and the instruction reads as it did.
     /// </summary>
-    public AskWords? Words { get; init; }
+    public IAgentAskWords? Words { get; init; }
 
     /// <summary>
     /// What waited on the ask's channel for this part's line of work (SESSONE2b, D167 point 7), read for this start: the person's
@@ -488,7 +488,7 @@ public static class TargetPrompt
         new(HandedSections.Standing, Standing(target)),
         // What waited on the ask's channel for this line of work (SESSONE2b), counted with what the sessions before it left, as the
         // parts before it are (SESSONE1d), so no page catalogue changed.
-        new(HandedSections.CarryOn, ChannelText.Beneath(target.Channel)),
+        new(HandedSections.CarryOn, AgentWorkWords.Current.Channel(target.Channel)),
     ];
 
     /// <summary>
@@ -719,7 +719,7 @@ public static class TargetPrompt
     /// words were kept, or words that could not be read, is quoted here as it always was.
     /// </remarks>
     private static string Before(SessionTarget target, string record) => target.PersonSaid is { } said
-        ? (AskWordsText.Quotes(target.Words, said)
+        ? (AgentWorkWords.Current.Quotes(target.Words, said)
             ? "An earlier session on this quest stopped to ask the person, and they answered: their answer is quoted among "
               + $"their words above.\n\nIts record reads: {record}"
             : $"An earlier session on this quest stopped to ask the person, and they answered:\n\n"
@@ -738,13 +738,13 @@ public static class TargetPrompt
     /// The person's words on the ask the quest was asked by, beneath the quest (DRIFT1b, D133 §2), or that they could not be
     /// read; nothing for a quest no ask asked.
     /// </summary>
-    private static string Words(SessionTarget target) => AskWordsText.Beneath(target.Words, target.QuestId);
+    private static string Words(SessionTarget target) => AgentWorkWords.Current.AskWords(target.Words, target.QuestId);
 
     /// <summary>
     /// The go-aheads its sessions asked on the ask (KNOWUSE1a, D135 §2), beneath the person's words: what was approved, what
     /// was refused and what still waits, each by its number. Nothing where the ask holds none, or for a quest no ask asked.
     /// </summary>
-    private static string GoAheads(SessionTarget target) => GoAheadsText.Beneath(target.Words);
+    private static string GoAheads(SessionTarget target) => AgentWorkWords.Current.GoAheads(target.Words);
 
     /// <summary>
     /// The person's standing answer for this repository (KNOWUSE1b, D135 §3), beneath the quest and beside what was said on
@@ -1022,7 +1022,7 @@ public static class TargetPrompt
     /// request for an act already asked joins the first and is told its answer. Nothing for a quest no ask asked, which has
     /// no ask to hold one, so its instruction reads as it did.
     /// </summary>
-    private static string OnceOnTheAsk(SessionTarget target) => AskWords.AskOf(target.Asker) is null
+    private static string OnceOnTheAsk(SessionTarget target) => AskSender.AskOf(target.Asker) is null
         ? ""
         : " A go-ahead is asked once, on the ask: where your connector offers `go_ahead_ask`, ask it there, naming the act's "
           + "kind, where it lands and what it touches, before you stop for it; an act already asked joins the first and tells "
@@ -1544,8 +1544,8 @@ internal static class Spawning
         // variables absent rather than blank — the chat rule, for the same reason.
         if (target.Ask is { } ask)
         {
-            info.Environment[IntakeRoom.AskVariable] = ask;
-            if (target.Session is { } session) info.Environment[IntakeRoom.SessionVariable] = session;
+            info.Environment[AgentWorkVariables.Ask] = ask;
+            if (target.Session is { } session) info.Environment[ChildMarks.SessionVariable] = session;
             info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
             return info;
         }
@@ -1554,7 +1554,7 @@ internal static class Spawning
         // that session, and its instruction; the quest variables absent, as an intake's are.
         if (target.Opinion is not null || target.Helper is not null || target.Piece is not null)
         {
-            if (target.Session is { } reviewer) info.Environment[IntakeRoom.SessionVariable] = reviewer;
+            if (target.Session is { } reviewer) info.Environment[ChildMarks.SessionVariable] = reviewer;
             info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
             return info;
         }
@@ -1563,10 +1563,10 @@ internal static class Spawning
         // result tool writes, and its instruction; the quest variables absent, and no repository named.
         if (target.Brainstorm is { } brainstorm)
         {
-            info.Environment[BrainstormVariables.Id] = brainstorm;
-            if (target.BrainstormTurn is { } turn) info.Environment[BrainstormVariables.Turn] = turn;
-            if (target.BrainstormAnswer is { } answer) info.Environment[BrainstormVariables.Answer] = answer;
-            if (target.Session is { } pass) info.Environment[IntakeRoom.SessionVariable] = pass;
+            info.Environment[AgentWorkVariables.Brainstorm] = brainstorm;
+            if (target.BrainstormTurn is { } turn) info.Environment[AgentWorkVariables.Turn] = turn;
+            if (target.BrainstormAnswer is { } answer) info.Environment[AgentWorkVariables.Answer] = answer;
+            if (target.Session is { } pass) info.Environment[ChildMarks.SessionVariable] = pass;
             info.Environment.Remove("DAORIS_REPOSITORY");
             info.Environment.Remove("DAORIS_SERVICE_URL");
             info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
@@ -1580,7 +1580,7 @@ internal static class Spawning
         info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
         // Its own record, as an intake's is named (SESS1): a connector the harness starts itself on the
         // pipe door inherits it, and says which session published a quest.
-        if (target.Session is { } own) info.Environment[IntakeRoom.SessionVariable] = own;
+        if (target.Session is { } own) info.Environment[ChildMarks.SessionVariable] = own;
 
         // The quest's files (D65 §2), when this machine holds any — absent rather than empty when it
         // does not, because a blank directory would read to a session as one that was emptied.
@@ -1608,7 +1608,7 @@ internal static class Spawning
         info.RedirectStandardInput = true;
         // Its own record, as a driven session's is named (CHATTAKE1b): a connector its harness starts on the pipe door from the
         // repository's own server list inherits it, so a take there marks this conversation's record.
-        if (target.Session is { } session) info.Environment[IntakeRoom.SessionVariable] = session;
+        if (target.Session is { } session) info.Environment[ChildMarks.SessionVariable] = session;
         return info;
     }
 
@@ -1661,8 +1661,8 @@ internal static class Spawning
     internal static readonly IReadOnlyList<string> Roles =
     [
         "DAORIS_QUEST_ID", "DAORIS_QUEST_TITLE", "DAORIS_QUEST_BODY", "DAORIS_QUEST_ASKER", "DAORIS_QUEST_ATTACHMENTS",
-        "DAORIS_TARGET", IntakeRoom.AskVariable, IntakeRoom.SessionVariable,
-        BrainstormVariables.Id, BrainstormVariables.Turn, BrainstormVariables.Answer, BrainstormVariables.Room,
+        "DAORIS_TARGET", AgentWorkVariables.Ask, ChildMarks.SessionVariable,
+        AgentWorkVariables.Brainstorm, AgentWorkVariables.Turn, AgentWorkVariables.Answer, AgentWorkVariables.Room,
         "DAORIS_REPOSITORY", "DAORIS_SERVICE_URL",
     ];
 

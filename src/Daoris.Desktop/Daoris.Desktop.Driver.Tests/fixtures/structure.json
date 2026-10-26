@@ -617,6 +617,7 @@
     "Sessions/ChildLineage.cs": "Participants",
     "Sessions/LineageWiring.cs": "Participants",
     "Trees/AgentWorkplaceWiring.cs": "Workplace",
+    "Quests/AgentWorkWordsWiring.cs": "Work orders",
     "Sessions/Domain/AbandonEntry.cs": "Workplace",
     "Sessions/Domain/AbandonPlan.cs": "Workplace",
     "Sessions/Domain/AccessRules.cs": "Participants",
@@ -978,14 +979,6 @@
         "Agents/HarnessCapture.cs": ["DaorisWords"],
         "Agents/TransientRetries.cs": ["ChatMessage","DaorisKeys","DaorisWord","DaorisWords","ISaidDoor","SaidDoor"],
         "Agents/SessionProcesses.cs": ["ChatMessage","ChatQueue","DrivenInbox"]
-      }
-    },
-    {
-      "family": "Agents names Work orders",
-      "after": "Agents",
-      "files": {
-        "Agents/Adapters.cs": ["AskWords","AskWordsText","BrainstormVariables","ChannelHeld","ChannelText","GoAheadsText","IntakeRoom"],
-        "Agents/TransientRetries.cs": ["QuestResults"]
       }
     },
     {
@@ -1432,6 +1425,7 @@
     "ParticipantPortsTests.cs": "Agents",
     "AgentPluginPortsTests.cs": "Agents",
     "AgentWorkplacePortsTests.cs": "Agents",
+    "AgentWorkOrdersPortsTests.cs": "Agents",
     "AccountIdentityTests.cs": "Agents",
     "AccountCoolingTests.cs": "Agents",
     "AccountFileNodesTests.cs": "Agents",

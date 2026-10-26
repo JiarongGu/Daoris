@@ -29,12 +29,12 @@ public sealed record BrainstormTurnRun(bool Ran, string? Account, string? Code, 
 /// <remarks>A twin of the service's <c>BrainstormScope</c>: the names are duplicated deliberately, never imported across.</remarks>
 public static class BrainstormVariables
 {
-    public const string Id = "DAORIS_BRAINSTORM_ID";
-    public const string Turn = "DAORIS_BRAINSTORM_TURN";
-    public const string Answer = "DAORIS_BRAINSTORM_ANSWER";
+    public const string Id = AgentWorkVariables.Brainstorm;
+    public const string Turn = AgentWorkVariables.Turn;
+    public const string Answer = AgentWorkVariables.Answer;
 
     /// <summary>The turn's room, on its connector alone: what <c>brainstorm_give</c> and <c>brainstorm_synthesize</c> judge against.</summary>
-    public const string Room = "DAORIS_BRAINSTORM_ROOM";
+    public const string Room = AgentWorkVariables.Room;
 
     /// <summary>What a turn's connector carries beyond a session's (<see cref="KnowledgeConnector.SessionScope"/>): its brainstorm whole.</summary>
     public static IReadOnlyDictionary<string, string> Scope(BrainstormTurn turn) => new Dictionary<string, string>(StringComparer.Ordinal)
@@ -45,4 +45,3 @@ public static class BrainstormVariables
         [Room] = turn.Room,
     };
 }
-

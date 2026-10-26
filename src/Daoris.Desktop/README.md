@@ -51,6 +51,13 @@ landing and commit facts through lower contracts; `Trees/AgentWorkplaceWiring.cs
 Tools are handed before Workplace removes inherited tokens, resolves the author and hands long paths. The installed
 tree-guard carrier and matcher belong to Agents; the actual resource, installer and guard remain Workplace's.
 
+Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
+installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
+Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and
+Work orders share; the retry still applies its start-intent checks in their original order.
+Tests replacing the process-wide agent ports run in the nonparallel `agent operation ports` collection and restore each
+operation in `finally`, so unrelated prompt and spawn tests keep the installed implementation.
+
 The driver's `Knowledge/` owns the connector, trace, room sections and rendered room facts (FOUNDATION1 mod-viii, D212).
 Help keeps source descriptions and workspace projection; its source record answers the lower room interface directly.
 Work orders and Workplace answer the room's reads through ports declared in Knowledge, installed from their own mapped

@@ -511,6 +511,14 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void Agents_reads_work_order_inputs_below_instruction_and_quest_judgements()
+    {
+        string[] higher = ["AskWords", "AskWordsText", "BrainstormVariables", "ChannelText", "GoAheadsText", "IntakeRoom", "QuestResults"];
+        Assert.Empty(Tree.Value.Analysis.Edges.Where(edge => edge.File.StartsWith("Agents/", StringComparison.Ordinal)
+            && (higher.Contains(edge.Type) || edge.Type == "ChannelHeld" && edge.DeclaredIn.Any(path => !path.StartsWith("Agents/", StringComparison.Ordinal)))));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

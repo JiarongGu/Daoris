@@ -15,7 +15,7 @@ namespace Daoris.Driver;
 public static class QuestResults
 {
     /// <summary>Whether a quest a closure graph holds stands at its submission: taken, bound, with a current submission, held or not.</summary>
-    public static bool Submitted([NotNullWhen(true)] QuestView? quest) => quest is { Status: "Taken", Closure: not null, Submission: not null };
+    public static bool Submitted([NotNullWhen(true)] QuestView? quest) => QuestSubmissions.Current(quest);
 
     /// <summary>Whether its result is in: closed done, or at a closure graph's submission. Held or not: the hold is read beside it.</summary>
     public static bool Judged([NotNullWhen(true)] QuestView? quest) => quest is { Status: "Done" } || Submitted(quest);

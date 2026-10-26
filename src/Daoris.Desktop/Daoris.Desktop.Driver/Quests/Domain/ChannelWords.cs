@@ -85,16 +85,6 @@ public sealed record ChannelEntry(string Key, string Ask, string Repository)
 }
 
 /// <summary>
-/// What a part of an entry is handed from the ask's channel when it starts (SESSONE2b, design §2.3): the messages for its entry
-/// it has not acknowledged (COWORK1d), the newest within the bounds, each acknowledged once the part has started.
-/// </summary>
-/// <param name="Ask">The ask the channel is.</param>
-/// <param name="Entry">The entry's key, whose acknowledgments are written.</param>
-/// <param name="Messages">The messages for the entry it has not had, oldest first; bounded where they are written.</param>
-/// <param name="Session">The starting part's session, which writes the acknowledgments.</param>
-public sealed record ChannelHeld(string Ask, string Entry, IReadOnlyList<ChannelItemView> Messages, string? Session);
-
-/// <summary>
 /// How the ask's channel is written to a session (SESSONE2b, D167 point 7, design §2.3): the person's messages as their own
 /// words, another session's as that agent's claim, never the person's (D155; <c>SaidWord.Persons</c>'s rule), each with who
 /// wrote it, to whom and when, and bounded as the person's words are (<see cref="AskWordsText"/>'s reason).

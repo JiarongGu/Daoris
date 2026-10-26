@@ -4,6 +4,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
+[Collection("agent operation ports")]
 public sealed class AgentWorkplacePortsTests : IDisposable
 {
     private readonly string _home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", "agent-workplace", Guid.NewGuid().ToString("N")[..8]);

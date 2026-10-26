@@ -56,7 +56,7 @@ public static class GoAheadsText
     /// The go-aheads beneath a quest: a heading saying not to ask any again and what each state means, then each by its
     /// number. Empty where the ask holds none or the service answered none, so the instruction reads as it did.
     /// </summary>
-    internal static string Beneath(AskWords? words)
+    internal static string Beneath(IAgentAskWords? words)
     {
         if (words?.GoAheads is not { Count: > 0 } held) return "";
 
