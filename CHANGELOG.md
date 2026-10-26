@@ -11,6 +11,11 @@ with the version and date at release.
 - A running session stays stoppable, and stays marked as running to other Daoris windows on this machine, when a second start of the same
   record ends beside it (SESSPROC1). A refused or abandoned run used to take the live process out of the running list and delete its
   marker as it ended, so *Stop* found nothing and another window could mark the record stopped while it ran.
+- A word Daoris itself said to a finished session no longer waits days for that session's cooling account while another account is
+  ready (LIMITSWITCH3, D137). A rebase request after a landing conflicted, on a session whose quest is closed or still open, goes on
+  at once as a new part on the ready account, handed Daoris's brief and said as Daoris's words, not yours; when every account of its
+  agent is at its limit it waits for the first of them and its row says which. A rebase request whose commit the line already holds,
+  because the work landed another way, is dropped instead of waiting.
 - A conversation you picked an account for keeps that pick when Daoris moves it to a new part (PICKCARRY1, D212). Going on with Daoris's brief,
   a part opened after the conversation was lost, and a hand-over or limit move that lands on the same account of the same agent each carry the pick
   to the new part, so it too waits for that account while it cools instead of going on with another. A hand-over to another agent, and a

@@ -34,11 +34,22 @@ public interface IReopenDoors
     /// Daoris's words in this process alone, as before.
     /// </summary>
     ISaidDoor? SaidOf(string session) => null;
+
+    /// <summary>
+    /// Whether the repository's line holds a commit (LIMITSWITCH3), asked in its checkout: true where it landed by any path, false where it
+    /// did not, null where nothing can say, which keeps the word. The default says nothing.
+    /// </summary>
+    Task<bool?> LineHoldsAsync(RepoView repository, string commit, CancellationToken ct) => Task.FromResult<bool?>(null);
 }
 
 /// <summary>The reopen's doors through the loop's service, its sessions' inboxes and its records of what each session did.</summary>
-public sealed class ServiceReopenDoors(ServiceClient service, SessionProcesses processes, SessionEvents events) : IReopenDoors
+public sealed class ServiceReopenDoors(ServiceClient service, SessionProcesses processes, SessionEvents events, SessionTrees? trees = null) : IReopenDoors
 {
+    public async Task<bool?> LineHoldsAsync(RepoView repository, string commit, CancellationToken ct) =>
+        trees is null || repository.Root is not { Length: > 0 } root
+            ? null
+            : await trees.LineHoldsAsync(root, repository.Repository, repository.Workspace, commit, ct).ConfigureAwait(false);
+
     public Task<PriorSession?> RecordAsync(string session, CancellationToken ct) => service.RecordAsync(session, ct);
 
     public Task<SayAnswer> SayAsync(string session, string text, string key, CancellationToken ct) =>
@@ -118,10 +129,12 @@ public sealed class ReopenTelling(ReopenMarks marks)
     /// </summary>
     /// <param name="said">The look's classing; none classes and keeps nothing.</param>
     /// <exception cref="OperationCanceledException">The loop is closing.</exception>
-    public async Task<IReadOnlyList<string>> LookAsync(IReopenDoors doors, Snapshot snapshot, CancellationToken ct, LookSaid? said = null)
+    /// <param name="taken">Told each record's words this look took off it, by their ids, so the look's own plan never meets them (LIMITSWITCH3).</param>
+    public async Task<IReadOnlyList<string>> LookAsync(
+        IReopenDoors doors, Snapshot snapshot, CancellationToken ct, LookSaid? said = null, Action<string, IReadOnlyList<string>>? taken = null)
     {
         var lines = new LookLines(said ?? LookSaid.None, "reopen");
-        await DropAnsweredAsync(doors, snapshot, lines, ct).ConfigureAwait(false);
+        await DropAnsweredAsync(doors, snapshot, lines, taken, ct).ConfigureAwait(false);
         foreach (var quest in snapshot.Quests)
         {
             if (quest is not { Status: "Taken", Reopened: { Session: { Length: > 0 } session } reopen } || session.Contains('/')) continue;
@@ -295,7 +308,13 @@ public sealed class ReopenTelling(ReopenMarks marks)
     /// quests this look read, before the go-on that would deliver them: those whose fact no longer holds are taken off and said once.
     /// A word whose quest this look did not read, or whose key names no fact of Daoris's, waits as it is.
     /// </summary>
-    private async Task DropAnsweredAsync(IReopenDoors doors, Snapshot snapshot, LookLines lines, CancellationToken ct)
+    /// <remarks>
+    /// LIMITSWITCH3: a rebase word's fact is that its session's commit is not on the line, so one the line holds since, landed by whatever
+    /// path, is settled the same way and no longer held for the weekly reset of an account. A commit git cannot place in the repository's
+    /// checkout settles nothing.
+    /// </remarks>
+    private async Task DropAnsweredAsync(
+        IReopenDoors doors, Snapshot snapshot, LookLines lines, Action<string, IReadOnlyList<string>>? taken, CancellationToken ct)
     {
         var records = snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)
             .Where(record => !record.Teammate && record.WordsWaiting)
@@ -308,12 +327,18 @@ public sealed class ReopenTelling(ReopenMarks marks)
                                && snapshot.Quests.FirstOrDefault(quest => string.Equals(quest.Id, fact.Quest, StringComparison.OrdinalIgnoreCase)) is { } quest
                                && !DaorisKeys.Stands(fact, quest))
                 .ToList();
+            foreach (var word in record.Waiting.Where(word => word is { Daoris: true, Id: { } id } && !_settled.ContainsKey(Dropping(record.Session, id))))
+            {
+                if (await LandedAsync(doors, snapshot, record, word, ct).ConfigureAwait(false)) answered.Add(word);
+            }
+
             if (answered.Count == 0) continue;
 
             try
             {
                 await doors.DropAsync(record.Session, answered, ct).ConfigureAwait(false);
                 foreach (var word in answered) _settled[Dropping(record.Session, word.Id!)] = true;
+                taken?.Invoke(record.Session, [.. answered.Select(word => word.Id!)]);
                 lines.Progress(
                     $"reopen  session {record.Session}'s words from Daoris were taken off its record, since what they said no longer holds: "
                     + string.Join(", ", answered.Select(word => word.Key)));
@@ -327,6 +352,45 @@ public sealed class ReopenTelling(ReopenMarks marks)
     }
 
     private static string Dropping(string session, string word) => $"{session}\n{word}\ndropped";
+
+    /// <summary>
+    /// The look's snapshot without the words a look took off their records (LIMITSWITCH3), so the plan it makes next never holds a start for,
+    /// or hands on, a word the record no longer carries. The snapshot as it was where none were taken.
+    /// </summary>
+    public static Snapshot Without(Snapshot snapshot, IReadOnlyDictionary<string, IReadOnlyList<string>> taken)
+    {
+        if (taken.Count == 0) return snapshot;
+
+        IReadOnlyDictionary<string, PriorSession> Cut(IReadOnlyDictionary<string, PriorSession> records) =>
+            new Dictionary<string, PriorSession>(
+                records.Select(each => new KeyValuePair<string, PriorSession>(
+                    each.Key,
+                    taken.TryGetValue(each.Value.Session, out var ids) && each.Value.Said is { } said
+                        ? each.Value with { Said = [.. said.Where(word => word.Id is null || !ids.Contains(word.Id, StringComparer.Ordinal))] }
+                        : each.Value)),
+                StringComparer.OrdinalIgnoreCase);
+
+        return snapshot with { LastRun = Cut(snapshot.LastRun), NamedByReopen = Cut(snapshot.NamedByReopen) };
+    }
+
+    /// <summary>Whether a rebase word's commit is on its repository's line now (LIMITSWITCH3); false for any other word, and where git cannot say.</summary>
+    private static async Task<bool> LandedAsync(IReopenDoors doors, Snapshot snapshot, PriorSession record, SaidWordView word, CancellationToken ct)
+    {
+        if (DaorisKeys.RebaseTipOf(word.Key) is not { } tip
+            || snapshot.Repositories.FirstOrDefault(known => string.Equals(known.Repository, record.Repository, StringComparison.OrdinalIgnoreCase)) is not { } repository)
+        {
+            return false;
+        }
+
+        try
+        {
+            return await doors.LineHoldsAsync(repository, tip, ct).ConfigureAwait(false) == true;
+        }
+        catch (Exception error) when (error is DriverException or IOException or InvalidOperationException)
+        {
+            return false;
+        }
+    }
 
     /// <summary>Whether a reopen not told is said now: once, and never asked again in this run.</summary>
     private bool Settles(string key) => _settled.TryAdd(key, false);

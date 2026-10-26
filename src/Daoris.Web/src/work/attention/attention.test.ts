@@ -563,6 +563,25 @@ describe('work to review, worded', () => {
     expect(words(row('review', 'r3v13w00', null, { where: '', placed }))).toMatchObject({ title: '#r3v13w00', where: '' });
   });
 
+  /**
+   * LIMITSWITCH3 (D137's note of 2026-10-26): a record whose words an account's limit holds is worded in What needs you as D206 §3.7 words
+   * the wait, its time and the account that resets first, in both languages, never only that it completed.
+   */
+  it('says a held record’s wait as a limit’s wait, in both languages', async () => {
+    const held: SessionGrouping = {
+      ...placed, group: 'later', holds: { why: 'cooling', reason: 'every account is cooling.', until: '2026-10-05T16:02:00Z', account: 'account-2', accountName: 'Work' },
+    };
+    const detail = () => words(row('review', 'r3v13w00', '2026-09-21T11:00:00Z', { where: 'engine', placed: held })).detail;
+    expect(detail()).toMatch(/^Waiting for a limit to reset: it resumes by itself at .+, on Work\.$/);
+
+    await i18n.changeLanguage('zh');
+    try {
+      expect(detail()).toMatch(/^正在等待额度重置：将于 .+ 在 Work 上自动继续。$/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('comes last: it holds nothing and waits on nobody', () => {
     expect(keyed([row('review', 'r3v13w00', '2026-09-21T08:00:00Z'), row('parked', 'parked', '2026-09-21T12:00:00Z')]))
       .toEqual(['parked:parked', 'review:r3v13w00']);

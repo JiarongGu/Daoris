@@ -839,7 +839,10 @@ internal sealed class ChatLedger : HttpMessageHandler
         /// <summary>A helper's answer (MIXAGENT2a-iii), as the hand door keeps it: marked with the helper's session, never the person's.</summary>
         public Words Helped(string word, string text, string helper = "h1") => Said(word, text, helper, []);
 
-        private Words Said(string word, string text, string? helper, string[] files)
+        /// <summary>Daoris's own word (COWORK1b), as the say door keeps it: marked as Daoris's under its fact's key, never the person's.</summary>
+        public Words Daoris(string word, string text, string key) => Said(word, text, null, [], key);
+
+        private Words Said(string word, string text, string? helper, string[] files, string? key = null)
         {
             lock (ledger._gate)
             {
@@ -847,7 +850,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                 {
                     ["id"] = word, ["text"] = text, ["at"] = "2026-10-03T09:00:00Z",
                     ["files"] = new JsonArray([.. files.Select(name => (JsonNode)JsonValue.Create(name))]), ["reopens"] = true,
-                    ["helper"] = helper,
+                    ["helper"] = helper, ["from"] = key is null ? null : DaorisWords.From, ["key"] = key,
                 });
             }
 

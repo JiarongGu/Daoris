@@ -567,6 +567,178 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal(["w1"], service.Said("s1"));
     }
 
+    /// <summary>The tip a rebase word names: a commit this repository does not hold, so the line never holds it.</summary>
+    private const string RebaseTip = "0123456789abcdef0123456789abcdef01234567";
+
+    private const string RebaseWords = "Daoris: your branch conflicts with the line; rebase it in your own tree and say ready again.";
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): the install's case. A closed quest's completed driven record holds Daoris's own rebase
+    /// word (said as Daoris's, keyed <c>rebase/session/tip</c>, when its landing conflicted) while its account cools for days and another is
+    /// ready. LIMITSWITCH2 handed a closed quest's session to the runner only where the person's words waited, so the word waited for the
+    /// weekly reset. It goes on at once through the runner, as the person's words do, the reason <c>account</c>, holding nothing.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_rebase_word_to_a_closed_quests_session_whose_account_cools_goes_on_through_the_runner_on_the_ready_account()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var handed = new List<(string Session, string Why)>();
+        Task<StartedFrom> GoesOn(string session, ContinueReason why, CancellationToken _)
+        {
+            lock (handed) handed.Add((session, why.Code));
+            return Task.FromResult(new StartedFrom("c9", true, null, $"`{session}` went on in conversation `c9` on the next account."));
+        }
+
+        var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster)
+        {
+            GoesOnLost = GoesOn,
+        };
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Done", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until.AddDays(4), true, "weekly", Seen, "s0"), Seen);
+        await service.SayAsync("s1", RebaseWords, DaorisWords.From, DaorisKeys.Rebase("s1", RebaseTip));
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        lock (handed) Assert.Equal([("s1", ContinueWhy.Account)], handed);
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.Empty(look.Waits);
+        Assert.Null(new GoOnMarks(_home).Read("s1"));
+        Assert.DoesNotContain(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet:", StringComparison.Ordinal) == true);
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH3: with every account cooling, Daoris's rebase word on a closed quest's session waits for the earliest reset of any
+    /// account, <c>account-2</c>'s, never the own account's alone, said as a limit's wait; nothing is handed to the runner while none is
+    /// ready, and the word is not marked as one that cannot go on.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_rebase_word_to_a_closed_quests_session_with_every_account_cooling_waits_for_the_earliest_reset_of_any()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var handed = new List<string>();
+        Task<StartedFrom> GoesOn(string session, ContinueReason why, CancellationToken _)
+        {
+            lock (handed) handed.Add(session);
+            return Task.FromResult(new StartedFrom("c9", true, null, "went on"));
+        }
+
+        var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster)
+        {
+            GoesOnLost = GoesOn,
+        };
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until.AddDays(4), true, "weekly", Seen, "s0"), Seen);
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-2", Until, true, "weekly", Seen, "s0"), Seen);
+        await service.SayAsync("s1", RebaseWords, DaorisWords.From, DaorisKeys.Rebase("s1", RebaseTip));
+
+        var held = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", held.Events)}\nafter: {service.Record("s1")}";
+        var verdict = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
+        Assert.True(verdict.Verdict == StartVerdict.Blocked, seen);
+        Assert.Contains("Every account it may run on is at its limit: it goes on by itself once", verdict.Reason);
+        Assert.Contains("`account-2`", verdict.Reason);
+        Assert.DoesNotContain("Oct 7", verdict.Reason);
+        var wait = Assert.Single(held.Waits);
+        Assert.Equal(("account-2", Until), (wait.Account, wait.Until));
+        // The row, the page's head and Attention say it from this hold: the limit's wait on account-2, never the own account's reset.
+        var holds = WordsHold.Of(verdict, wait)!;
+        Assert.Equal((WordsHold.Cooling, "account-2", (DateTimeOffset?)Until), (holds.Why, holds.Account, holds.Until));
+        lock (handed) Assert.Empty(handed);
+        Assert.Equal(1, service.SessionCount);
+        Assert.Null(new GoOnMarks(_home).Read("s1"));
+        Assert.Single(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet:", StringComparison.Ordinal) == true);
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH3: the same for a record of an open or taken quest. Daoris's word alone was marked as one that cannot go on (a message of
+    /// Daoris's starts no new session, COWORK1b) the moment the switch left its own account; it goes on at once in one briefed part on
+    /// <c>account-2</c>, said as Daoris's words and not the person's, taken off the old record once and handed to the new part once.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_rebase_word_to_an_ended_session_whose_account_cools_goes_on_at_once_briefed_on_the_ready_account()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var driver = new Daoris.Driver.Driver(client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("failed", "Taken", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until.AddDays(4), true, "weekly", Seen, "s0"), Seen);
+        var word = await service.SayAsync("s1", RebaseWords, DaorisWords.From, DaorisKeys.Rebase("s1", RebaseTip));
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.Empty(look.Waits);
+        Assert.Equal(("completed", "account-2"), (service.State("s2"), Profile(service, "s2")));
+        Assert.Equal([("s1", word, "s2")], service.Taken);
+        Assert.Null(new GoOnMarks(_home).Read("s1"));
+        Assert.DoesNotContain(Frames(), frame => frame["method"]!.GetValue<string>() == "session/resume");
+        var carrying = Frames().Last(frame => frame["method"]!.GetValue<string>() == "session/prompt");
+        Assert.Equal("account-2", carrying["account"]!.GetValue<string>());
+        var prompt = carrying["prompt"]!.GetValue<string>();
+        Assert.Equal(1, prompt.Split(RebaseWords).Length - 1);
+        Assert.Contains("Daoris told that session what follows", prompt);
+        Assert.Equal(ContinueWhy.Account, Assert.Single(Events("s1"), e => e.To == "s2").Why);
+    }
+
+    /// <summary>
+    /// 🔴 LIMITSWITCH3: a rebase word whose commit the line already holds, landed by another path, is settled at the look, through the real
+    /// line and git: taken off the record once, so it is held for no account's reset though every account of the agent cools, and nothing
+    /// is handed to the runner for it.
+    /// </summary>
+    [Fact]
+    public async Task Daoris_s_rebase_word_whose_commit_the_line_holds_is_settled_and_not_held_for_any_reset()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var handed = new List<string>();
+        Task<StartedFrom> GoesOn(string session, ContinueReason why, CancellationToken _)
+        {
+            lock (handed) handed.Add(session);
+            return Task.FromResult(new StartedFrom("c9", true, null, "went on"));
+        }
+
+        var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster)
+        {
+            GoesOnLost = GoesOn,
+        };
+
+        await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until.AddDays(4), true, "weekly", Seen, "s0"), Seen);
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-2", Until.AddDays(5), true, "weekly", Seen, "s0"), Seen);
+        // The line holds this commit (the starting point); the other is one it does not.
+        var onTheLine = GitOut("rev-parse", "HEAD");
+        var settled = await service.SayAsync("s1", RebaseWords, DaorisWords.From, DaorisKeys.Rebase("s1", onTheLine));
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.Empty(service.Said("s1"));
+        Assert.Contains(look.Events, line => line.Contains("were taken off its record, since what they said no longer holds", StringComparison.Ordinal));
+        Assert.Contains(service.Taken, taken => taken.Session == "s1" && taken.Ids == settled);
+        Assert.Empty(look.Waits);
+        lock (handed) Assert.Empty(handed);
+        Assert.True(service.SessionCount == 1, seen);
+    }
+
     /// <summary>
     /// 🔴 Its own account cooling with every other cooling too and its own the earliest, the words wait for its reset: the look holds the
     /// start with the account's cool-off, so the
@@ -928,12 +1100,15 @@ public sealed class AccountRotationTickTests : IDisposable
         return script;
     }
 
-    private void Git(params string[] arguments)
+    private void Git(params string[] arguments) => GitOut(arguments);
+
+    private string GitOut(params string[] arguments)
     {
         var info = new ProcessStartInfo("git") { WorkingDirectory = _repository, UseShellExecute = false, RedirectStandardOutput = true };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         using var process = Process.Start(TestGit.Past(info))!;
-        process.StandardOutput.ReadToEnd();
+        var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
+        return output.Trim();
     }
 }

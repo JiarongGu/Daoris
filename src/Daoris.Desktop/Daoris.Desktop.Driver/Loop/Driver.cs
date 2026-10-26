@@ -979,9 +979,14 @@ public sealed class Driver(
         // A source's reopen (FABRIC-CLOSE1c8, §E5): the session that said the reopened ready is told once, with the person's words,
         // and the planner's go-on resumes it at the next look; a running one this loop runs at its next step, through its inbox
         // (COWORK1b). Read from the quests this look read: nothing more where none is reopened.
+        // LIMITSWITCH3: and the words it took off a record because what they said no longer holds are off the snapshot the plan reads too.
+        var takenOff = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         events.AddRange(await Stages.TimeAsync("reopens", () => Context.Reopens
-                .LookAsync(new ServiceReopenDoors(service, Context.Processes, Context.Events), looked, ct, Lines))
+                .LookAsync(
+                    new ServiceReopenDoors(service, Context.Processes, Context.Events, Context.Trees), looked, ct, Lines,
+                    taken: (session, ids) => takenOff[session] = takenOff.TryGetValue(session, out var before) ? [.. before, .. ids] : ids))
             .ConfigureAwait(false));
+        snapshot = ReopenTelling.Without(snapshot, takenOff);
 
         // The set-ups waiting for the person here, and each set-up step's tab let go once they answered it (REVIEWENV1d, design
         // §2.3): kept served from look to look until then. A miss is said and tried again at the next look.
@@ -1989,7 +1994,8 @@ public sealed class Driver(
                 // words go where its line goes, never waiting on its cooling account while another could take them (step 2). So do an
                 // ended record's of a line the driver carries on (LIMITSWITCH1, D137's note of 2026-10-25): an open or taken quest's. And a
                 // closed quest's session's (LIMITSWITCH2): the shell's chat runner goes on in a new part of it, so where it has one and the
-                // person's words wait, they go on at once too, the runner's ended move walking and counting the start itself.
+                // person's words wait, they go on at once too, the runner's ended move walking and counting the start itself. LIMITSWITCH3:
+                // and Daoris's own word that states a fact (a rebase), which the same move carries said as Daoris's.
                 var carried = quest.Status is "Open" or "Taken";
                 resume = await Context.Harnesses
                     .ResumeAsync(
@@ -1997,7 +2003,7 @@ public sealed class Driver(
                         limited: limitedWords, model: words.Asked?.NamedModel,
                         line: carried
                             ? LineKind.DrivenOpen
-                            : LineKind.DrivenClosed(carries: Context.GoesOnLost is not null && words.Waiting.Any(word => word.Persons)))
+                            : LineKind.DrivenClosed(carries: Context.GoesOnLost is not null && words.Waiting.Any(DaorisWords.NewPartCarries)))
                     .ConfigureAwait(false);
                 selection = resume.Selection;
                 limitResume = limitedWords && resume.Own == NextHold.Ready && selection.Allowed;
@@ -2333,6 +2339,8 @@ public sealed class Driver(
         }
 
         var written = start.Resumes;
+        // Whether the roster's switch moved the words off a cooling own account to a new part (LIMITSWITCH1, LIMITSWITCH2, LIMITSWITCH3).
+        var switched = false;
         if (start.Resumes is { } park
             && (start.GoesOn || park is { State: "completed", Answer: not null, Said: null })
             && !resuming)
@@ -2380,6 +2388,11 @@ public sealed class Driver(
             // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f). 🔴 SESSCTX1c
             // (D189's amendment): nor where another client holds its conversation (`elsewhere`), since a second writer in its tree could
             // redo its work; every other refusal carries a driven record on below, handed the brief, `from` why `retry`.
+            // LIMITSWITCH3 (D137's note of 2026-10-26): where the roster's switch moved its words off a cooling own account, Daoris's own words
+            // that state a fact go on in the new part with the person's, said as Daoris's (a go-on in another home, not a message that starts
+            // a session: the planner went on with this record already). Every other fall-back carries the person's alone.
+            switched = resume?.Answer is LineAnswer.Elsewhere { Switched: true } && fellBack!.Code == ContinueWhy.Account;
+            bool Goes(SaidWordView word) => switched ? DaorisWords.NewPartCarries(word) : word.Persons;
             if (fellBack!.Never || fellBack.Holds || quest.Status is not ("Open" or "Taken"))
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
@@ -2388,7 +2401,6 @@ public sealed class Driver(
                 // handed the brief and the person's words. Anything else, and a host with no runner, waits for the person as before.
                 // LIMITSWITCH2 (D137's note of 2026-10-25): so does one whose own account cools while another of the line's is ready, the reason
                 // `account` the roster's switch made; the runner's ended move opens it there, never the brief's move, which asks the cooling one.
-                var switched = resume?.Answer is LineAnswer.Elsewhere { Switched: true } && fellBack.Code == ContinueWhy.Account;
                 if (!fellBack.Never && !fellBack.Holds && (fellBack.Lost || switched) && Context.GoesOnLost is { } goesOn
                     && await GoOns.GoesOnLostAsync(goesOn, quest, park, fellBack, ct).ConfigureAwait(false) is { } moved)
                 {
@@ -2401,8 +2413,9 @@ public sealed class Driver(
             // Another agent's findings go on only in their own session (XAGENT1e, design §6.7): where they are all that waits,
             // nothing is carried on, and they go to the person. The person's words beside them are carried on as ever.
             // A helper's answer is the same (MIXAGENT2a-ii): another agent's claim, never carried to a new session as the person's.
-            // So are Daoris's own words (COWORK1b): a message of Daoris's never starts a new session (the message-urgency design §4.1).
-            if (park.Waiting.Any(word => !word.Persons) && !park.Waiting.Any(word => word.Persons))
+            // So are Daoris's own words (COWORK1b): a message of Daoris's never starts a new session (the message-urgency design §4.1),
+            // bar the go-on a cooling account's switch makes (LIMITSWITCH3), which carries them.
+            if (park.Waiting.Any(word => !Goes(word)) && !park.Waiting.Any(Goes))
             {
                 await fresh.LetGoAsync().ConfigureAwait(false);
                 return await CannotGoOnAsync(quest, park, fellBack, ct).ConfigureAwait(false);
@@ -2546,7 +2559,7 @@ public sealed class Driver(
             // The words a session could not go on with went to this one (MSG1b, D137 §2.2): off that record by their ids, kept
             // on the ask by the service, so this start's instruction reads them among the person's words; and said in that
             // session's conversation, where the person wrote them.
-            if (fellBack is not null) await GoOns.HandedOnAsync(written!, sessionId, fellBack, ct).ConfigureAwait(false);
+            if (fellBack is not null) await GoOns.HandedOnAsync(written!, sessionId, fellBack, ct, switched: switched).ConfigureAwait(false);
             // SAYHELD1 (A): and those said to the session that asked while its quest waited go to its resume, the same way.
             else if (handsOn is not null)
             {
@@ -2680,7 +2693,10 @@ public sealed class Driver(
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
                 // SAYHELD1 (A): a resume's, the words said to the session that asked while it waited, each under its id.
-                Handed = handsOn is null ? [] : [.. handsOn.Waiting.Where(DriverContinuations.HandedToResume)],
+                // LIMITSWITCH3: and a carry-on a cooling account's switch made, Daoris's own words it carries (the person's come by the ask).
+                Handed = handsOn is not null
+                    ? [.. handsOn.Waiting.Where(DriverContinuations.HandedToResume)]
+                    : switched ? [.. written!.Waiting.Where(word => word.Daoris && DaorisWords.NewPartCarries(word))] : [],
                 // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
                 Released = carryingOn && start.Resumes!.PersonStopped && !handedFrom,
                 // The quest was handed over from that session (MIXAGENT1a-ii): told so, with the agent it ran on.

@@ -502,6 +502,22 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Fu
         return countCode == 0 && int.TryParse(count.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var ahead) ? ahead : null;
     }
 
+    /// <summary>
+    /// Whether the repository's line holds a commit (LIMITSWITCH3): <c>merge-base --is-ancestor</c> in its checkout against the line as a landing
+    /// reads it, so work that landed by any path settles the words that asked its session to rebase. Null where git cannot say: no line it can
+    /// name, a commit this checkout does not have, or git failing, which establishes nothing.
+    /// </summary>
+    public async Task<bool?> LineHoldsAsync(string root, string repository, string workspace, string commit, CancellationToken ct = default)
+    {
+        if (!Directory.Exists(root)) return null;
+        var line = (await _context.LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
+        if (against is null) return null;
+        // `--is-ancestor` answers 0 for yes and 1 for no; anything else is git failing to answer.
+        var (code, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", commit, against], ct).ConfigureAwait(false);
+        return code switch { 0 => true, 1 => false, _ => null };
+    }
+
     /// <summary>A tree's workspace and repository, read from the layout this home chose (<c>trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>).</summary>
     public (string Workspace, string Repository) Owner(string tree) => _context.OwnerOf(Path.GetFullPath(tree));
 

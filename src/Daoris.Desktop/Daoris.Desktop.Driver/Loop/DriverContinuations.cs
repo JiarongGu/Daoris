@@ -1051,7 +1051,11 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         Func<string, ContinueReason, CancellationToken, Task<StartedFrom>> goesOn, QuestView quest, PriorSession record, ContinueReason why,
         CancellationToken ct)
     {
-        if (!record.Waiting.Any(word => word.Persons)) return null;
+        // The reason `account` (LIMITSWITCH3): Daoris's own words that state a fact go with the person's; a lost conversation's part is handed
+        // the person's alone.
+        var switching = why.Code == ContinueWhy.Account;
+        bool Carried(SaidWordView word) => switching ? DaorisWords.NewPartCarries(word) : word.Persons;
+        if (!record.Waiting.Any(Carried)) return null;
         StartedFrom moved;
         try
         {
@@ -1067,9 +1071,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
         // A choice of a new session is spent with the words it named, which went now (MSG1g).
         _context.NewSessions.Clear(record.Session);
-        if (record.Waiting.Any(word => !word.Persons))
+        if (record.Waiting.Any(word => !Carried(word)))
         {
-            _context.Marks.Mark(record.Session, record.Waiting.Where(word => !word.Persons).Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
+            _context.Marks.Mark(record.Session, record.Waiting.Where(word => !Carried(word)).Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
             _driver.Deliverer.FindingsToPerson(record, why);
         }
 
@@ -1085,12 +1089,17 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// <param name="resumed">
     /// A resume's (SAYHELD1): the session opened anyway, so Daoris's own words go on in it too (<see cref="HandedToResume"/>).
     /// </param>
-    internal async Task HandedOnAsync(PriorSession record, string to, ContinueReason why, CancellationToken ct, bool resumed = false)
+    /// <param name="switched">
+    /// A carry-on the roster's switch made off a cooling own account (LIMITSWITCH3): Daoris's own words that state a fact go on in it too
+    /// (<see cref="DaorisWords.NewPartCarries"/>), as the planner went on with their record already.
+    /// </param>
+    internal async Task HandedOnAsync(
+        PriorSession record, string to, ContinueReason why, CancellationToken ct, bool resumed = false, bool switched = false)
     {
         if (!record.WordsWaiting) return;
 
         var output = _context.Output;
-        bool Handed(SaidWordView word) => resumed ? HandedToResume(word) : word.Persons;
+        bool Handed(SaidWordView word) => switched ? DaorisWords.NewPartCarries(word) : resumed ? HandedToResume(word) : word.Persons;
         // A choice of a new session is spent with the words it named, which went now (MSG1g).
         _context.NewSessions.Clear(record.Session);
         // 🔴 Only the person's words go on in a new session (XAGENT1e, design §6.7): another agent's findings would reach it as the

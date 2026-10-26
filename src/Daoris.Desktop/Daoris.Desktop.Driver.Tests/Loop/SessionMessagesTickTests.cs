@@ -1027,11 +1027,17 @@ public sealed class SessionMessagesTickTests : IDisposable
         }
 
         /// <summary>What the person says to a session, through the say door as the page's box will (MSG1d): the word's id.</summary>
-        public async Task<string> SayAsync(string id, string text)
+        public Task<string> SayAsync(string id, string text) => SayAsync(id, text, null, null);
+
+        /// <summary>Daoris's own word, as its producer says it through the say door: marked as Daoris's under its fact's key (COWORK1b).</summary>
+        public async Task<string> SayAsync(string id, string text, string? from, string? key)
         {
             using var http = new HttpClient();
+            var said = new JsonObject { ["text"] = text };
+            if (from is not null) said["from"] = from;
+            if (key is not null) said["key"] = key;
             using var response = await http.PostAsync(
-                $"{Url}/api/sessions/{id}/say", new StringContent(new JsonObject { ["text"] = text }.ToJsonString(), Encoding.UTF8, "application/json"));
+                $"{Url}/api/sessions/{id}/say", new StringContent(said.ToJsonString(), Encoding.UTF8, "application/json"));
             var body = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
             Assert.True(response.IsSuccessStatusCode, body.ToJsonString());
             return body["said"]!["id"]!.GetValue<string>();

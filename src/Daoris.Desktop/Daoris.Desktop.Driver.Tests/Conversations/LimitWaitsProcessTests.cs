@@ -577,6 +577,48 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.DoesNotContain(StubFile.Lines(Heard), line => line.StartsWith("resumed[", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): the same move carries Daoris's own words that state a fact, said as Daoris's and after the
+    /// person's, never as theirs: a rebase word goes in the new part's first message once and leaves the old record once; Daoris's resume
+    /// word (a limit's) does not, since it asks for the old conversation. A session holding only a rebase word goes on too.
+    /// </summary>
+    [Fact]
+    public async Task A_closed_quests_session_carries_Daoris_s_rebase_word_to_the_new_part_said_as_Daoris_s()
+    {
+        var ledger = new ChatLedger().Register("engine", _root).Quest("q1", "Done").Quest("q2", "Done");
+        ledger.Chat("s1", "completed", "acp-stub", _root, kind: "driven", quest: "q1", profile: "account-1")
+            .Say("w1", "Also log the port.").Daoris("w2", "Daoris: rebase your branch.", DaorisKeys.Rebase("s1", "0123abc"))
+            .Daoris("w3", "Daoris: limit reset.", DaorisKeys.LimitReset("s1", "2026-10-03T11-00-00Z"));
+        ledger.Chat("s2", "completed", "acp-stub", _root, kind: "driven", quest: "q2", profile: "account-1")
+            .Daoris("w4", "Daoris: rebase alone.", DaorisKeys.Rebase("s2", "4567def"));
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = AdapterSet.Built();
+        var roster = Roster(adapters);
+        Cooling("account-1", _now.AddDays(4));
+        using var runner = Runner(client, adapters, roster, events);
+        var held = ContinueWhy.Of(ContinueWhy.Account);
+
+        var first = await runner.GoOnLostAsync("s1", held, config);
+
+        Assert.Equal((true, true), (first.SessionId is not null, first.Sent));
+        await Poll.Until(() => Prompts.Any(line => IsHandedTo("account-2", line)), () => Seen(ledger, events, first.SessionId!));
+        var handed = Prompts.Single(line => IsHandedTo("account-2", line));
+        Assert.Equal((1, 1, 0), (Count(handed, "Also log the port."), Count(handed, "Daoris: rebase your branch."), Count(handed, "Daoris: limit reset.")));
+        Assert.True(
+            handed.IndexOf("Also log the port.", StringComparison.Ordinal) < handed.IndexOf("Daoris told that session what follows", StringComparison.Ordinal),
+            handed);
+        await Poll.Until(() => ledger.Said("s1").Count == 1, () => Seen(ledger, events, "s1"));
+        Assert.Equal(["w3"], ledger.Said("s1"));
+
+        var second = await runner.GoOnLostAsync("s2", held, config);
+
+        Assert.Equal((true, true), (second.SessionId is not null, second.Sent));
+        await Poll.Until(() => Prompts.Any(line => line.Contains("Daoris: rebase alone.", StringComparison.Ordinal)), () => Seen(ledger, events, second.SessionId!));
+        await Poll.Until(() => ledger.Said("s2").Count == 0, () => Seen(ledger, events, "s2"));
+    }
+
     /// <summary>An ended conversation held by its limit, on account-1, its conversation kept; account-2 cooling for a day.</summary>
     private ChatLedger HeldEnded(SessionEvents events, params (string Id, string Text)[] waiting) => HeldEnded(events, keeps: true, waiting);
 
