@@ -1,5 +1,5 @@
 {
-  "chars": 5647,
+  "chars": 5799,
   "sections": [
     {
       "name": "quest",
@@ -17,8 +17,8 @@
     {
       "name": "landing",
       "source": "landing",
-      "said": "how it lands: 860 characters, its branch put on `feature/T-9-add-the-note-field` for the person to push, its commit rule `ask` with the person's convention, set for its workspace on this machine",
-      "chars": 860,
+      "said": "how it lands: 1,012 characters, its branch put on `feature/T-9-add-the-note-field` for the person to push, its commit rule `ask` with the person's convention, set for its workspace on this machine",
+      "chars": 1012,
       "from": "feature/T-9-add-the-note-field"
     },
     {

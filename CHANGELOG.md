@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A session in a tree of its own is now told that git's stash is shared with the repository's checkout and every other tree, so it sets work aside with a commit on its tree's branch and never uses `git stash`; a session in the repository's own checkout is told nothing of it (STASHSHARE1).
 - The usage report gains a *Driven sessions* section: each driven session's repository, adapter, models, turns, minutes, calls, tokens read anew, read from the cache, written and written out, and peak context, newest first, rolled up by repository and by adapter and model with the cache read per call; a session with no `turn.ended` is said so, never as zero (USAGECOST1).
 - Empty-tree cleanup skips directory links at every scan level, preserving links and empty folders outside its managed tree home (TREELEFTLINK1).
 - Managed doctrine now requires documents and skills to have a portable source in their repository or their coordinator's managed store. Daoris includes a repository-owned Codex troubleshooting procedure.
