@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -33,7 +34,13 @@ public sealed class BuildWalkTests : IDisposable
         new HarnessSettings().WithDefault("cool", "account-1").WithDefault("fine", "account-1").WithDefault("piped", "account-1").Save(Settings);
     }
 
-    public void Dispose() => GitSeed.Discard(_home);
+    public void Dispose()
+    {
+        _log?.Dispose();
+        GitSeed.Discard(_home);
+    }
+
+    private MachineLog? _log;
 
     private string Settings => DaorisHome.Entry(_home, HomeEntry.Harnesses);
 
@@ -61,7 +68,17 @@ public sealed class BuildWalkTests : IDisposable
         });
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => Now, Zone = Zone };
         var config = ActorChoices.With(DriverConfig.Empty with { Adapter = "cool", Drivable = ["engine"] }, "build", build);
-        return new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), config, adapters, _home, harnesses: roster);
+        return new Daoris.Driver.Driver(new ServiceClient("http://127.0.0.1:9", null), config, adapters, _home, harnesses: roster) { Log = _log };
+    }
+
+    private static string Said(JsonElement line) => $"{line.GetProperty("choice").GetString()}:{line.GetProperty("agent").GetString()}:{line.GetProperty("code").GetString()}";
+
+    /// <summary>The machine log's lines of one event so far, each as the data its line holds.</summary>
+    private List<JsonElement> Logged(string @event)
+    {
+        var lines = StubFile.Lines(Path.Combine(DaorisHome.Entry(_home, HomeEntry.Logs), "2026-10-24.driver.jsonl"));
+        return [.. lines.Select(line => JsonDocument.Parse(line).RootElement).Where(line => line.GetProperty("event").GetString() == @event)
+            .Select(line => line.GetProperty("data"))];
     }
 
     private static Consideration Start => new(new QuestView("q1", "platform", "engine", "Split the loader", "Two jobs.", "Open"), StartVerdict.Start, "", Workspace: "default");
@@ -192,6 +209,67 @@ public sealed class BuildWalkTests : IDisposable
 
         TwoAccounts();
         Assert.Null(await driver.ReaskAsync(Start, [new RepoView("engine", true, null)], first, onOne, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// LOGCOLLECTION1: a quest held at every look is told once, then again only when what was passed or why changes: the install wrote
+    /// 10,488 `actor.passed` lines in a day for one held quest. The passes the walk took are `actor.chose`'s words, not its sentences.
+    /// </summary>
+    [Fact]
+    public async Task A_pass_is_logged_when_it_is_new_or_changes_and_not_at_every_unchanged_look()
+    {
+        _log = new MachineLog(_home, "driver", () => Now);
+        Cooling("cool");
+        Cooling("fine");
+        var driver = Driver(new("gone"), new("cool", "opus"), new("fine"));
+        var registry = new[] { new RepoView("engine", true, null) };
+        var other = Start with { Quest = new QuestView("q2", "platform", "engine", "Split the loader", "Two jobs.", "Open") };
+
+        async Task<int> Look(Consideration start) =>
+            (await driver.WalkBuildPassesAsync(start, registry, CancellationToken.None)).Passes.Count;
+
+        Assert.Equal(3, await Look(Start));
+        Assert.Equal(["1:gone:unavailable", "2:cool:cooling", "3:fine:cooling"], Logged("actor.passed").Select(line => Said(line)));
+        Assert.Equal(3, await Look(Start));
+        Assert.Equal(3, await Look(Start));
+        Assert.Equal(3, Logged("actor.passed").Count);
+
+        // Another quest held the same way is its own first look.
+        Assert.Equal(3, await Look(other));
+        Assert.Equal(6, Logged("actor.passed").Count);
+
+        // The cool-offs lift: `cool` is taken, `gone` still passed as before, and the line for it says the walk's words.
+        File.Delete(AccountCooling.PathOf(_home));
+        Assert.Equal(1, await Look(Start));
+        Assert.Equal(6, Logged("actor.passed").Count);
+        var chose = Assert.Single(Logged("actor.chose"));
+        Assert.Equal(["1:gone:unavailable"], chose.GetProperty("passed").EnumerateArray().Select(word => word.GetString()));
+
+        // `cool` and `fine` cool again: those two are new against the look before, `gone` is not.
+        Cooling("cool");
+        Cooling("fine");
+        Assert.Equal(3, await Look(Start));
+        Assert.Equal(["2:cool:cooling", "3:fine:cooling"], Logged("actor.passed").Skip(6).Select(line => Said(line)));
+        Assert.Equal(3, await Look(Start));
+        Assert.Equal(8, Logged("actor.passed").Count);
+    }
+
+    /// <summary>A re-ask at an open takes no count of its own, so it writes no pass and leaves the quest's last look as it was.</summary>
+    [Fact]
+    public async Task A_re_ask_writes_no_pass_and_does_not_change_what_the_last_look_remembers()
+    {
+        _log = new MachineLog(_home, "driver", () => Now);
+        Cooling("cool");
+        var driver = Driver(new("cool", "opus"), new("cool", "sonnet"), new("fine"));
+        var registry = new[] { new RepoView("engine", true, null) };
+        await driver.WalkBuildPassesAsync(Start, registry, CancellationToken.None);
+        var written = Logged("actor.passed").Count;
+        Assert.Equal(2, written);
+
+        await driver.ReaskAsync(Start, registry, new ActorEffective("fine", null, null, "3"), new HarnessSelection(null, "account-1"), CancellationToken.None);
+        await driver.WalkBuildPassesAsync(Start, registry, CancellationToken.None);
+
+        Assert.Equal(written, Logged("actor.passed").Count);
     }
 
     [Fact]

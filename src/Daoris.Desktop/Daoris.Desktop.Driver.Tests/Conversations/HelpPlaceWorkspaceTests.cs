@@ -312,4 +312,28 @@ public sealed class HelpPlaceWorkspaceTests : IDisposable
         Assert.Equal([new ActorEffective("door", "sonnet", "high", "pick")], ActorChoices.Effective("chat", config, pick: "door"));
         Assert.Equal(["--model", "sonnet"], new ActorEffective("door", "sonnet", null, "pick").Asked.NativeArguments([]));
     }
+
+    /// <summary>
+    /// LOGCOLLECTION1: Chat's walk says a pass the first time and not at the looks that pass the same choice for the same reason, and
+    /// its `actor.chose` carries the passes as names in an array, never the walk's sentence.
+    /// </summary>
+    [Fact]
+    public async Task Chat_s_walk_logs_a_pass_once_while_it_stands()
+    {
+        var runner = Runner(new ChatLedger());
+        var config = ActorChoices.With(Config, "chat", [new ActorChoice("mute"), new ActorChoice("door", "sonnet", "high")]);
+        var order = ActorChoices.Effective("chat", config);
+
+        for (var look = 0; look < 3; look++) await runner.WalkAsync("chat", order, config, null, null, CancellationToken.None);
+        await runner.WalkAsync("chat", order, config, "alpha", null, CancellationToken.None);
+
+        var lines = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl").SelectMany(StubFile.Lines)
+            .Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement).ToList();
+        // Once for the place asked first, once for the workspace's: a pass is said per place asked.
+        Assert.Equal(2, lines.Count(line => line.GetProperty("event").GetString() == "actor.passed"));
+        var chose = lines.Where(line => line.GetProperty("event").GetString() == "actor.chose").ToList();
+        Assert.Equal(4, chose.Count);
+        Assert.All(chose, line => Assert.Equal(["1:mute:unavailable"],
+            line.GetProperty("data").GetProperty("passed").EnumerateArray().Select(word => word.GetString())));
+    }
 }

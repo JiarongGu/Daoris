@@ -77,6 +77,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
 
     private readonly string _home;
 
+    // What each conversation order's walk last passed, so `actor.passed` is written when a pass is new (LOGCOLLECTION1).
+    private readonly PassMemory _passed = new();
+
     private readonly SessionProcesses _processes;
 
     private readonly SessionOutput? _output;
@@ -979,6 +982,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     {
         var passes = new List<BuildPass>();
         using var log = new MachineLog(_home, "driver");
+        // A conversation has no record yet while it is walked, and what its walk passes is fixed by the actor's order and the place it
+        // is asked in, so those name the subject whose passes are not said again while they stand (LOGCOLLECTION1).
+        using var look = _passed.Walk($"conversation:{actor}:{workspace}:{profile}", counts);
         foreach (var entry in order)
         {
             string? code = null;
@@ -1006,7 +1012,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                     if (counts)
                     {
                         log.Write("info", "actor.chose", [("actor", actor), ("choice", entry.From), ("agent", entry.Agent), ("model", entry.Model),
-                            ("passed", passes.Select(pass => pass.Said).ToList())]);
+                            ("passed", passes.Select(pass => pass.Word).ToList())]);
                     }
 
                     return new(resolved, selection, entry, passes, null);
@@ -1016,8 +1022,9 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
                     : selection.Cooling is not null ? "cooling" : selection.SignedOut is not null ? "signed-out" : "held", selection.Refusal);
             }
 
-            passes.Add(new BuildPass(entry, code, why));
-            if (counts) log.Write("info", "actor.passed", [("actor", actor), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
+            var thisPass = new BuildPass(entry, code, why);
+            passes.Add(thisPass);
+            if (look.Fresh(thisPass)) log.Write("info", "actor.passed", [("actor", actor), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
         }
 
         return new(null, null, null, passes,

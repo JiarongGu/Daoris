@@ -106,6 +106,9 @@ public sealed class Driver(
         init => Context.Log = value;
     }
 
+    /// <summary>What each quest's and ask's walk last passed, so <c>actor.passed</c> is written when a pass is new, not at every look (LOGCOLLECTION1).</summary>
+    internal PassMemory Passed { get; } = new();
+
     /// <summary>Told after a look's news is kept as a notice (NOTIFY2h): <see cref="LoopContext.Noticed"/>.</summary>
     public Action? Noticed
     {
@@ -735,6 +738,7 @@ public sealed class Driver(
         var passes = new List<BuildPass>();
         HarnessSelection? held = null;
         CoolingEntry? soonest = null;
+        using var walk = Passed.Walk($"quest:{quest.Id}", counts);
         foreach (var entry in order)
         {
             string? code = null;
@@ -763,7 +767,7 @@ public sealed class Driver(
                     if (counts)
                     {
                         Log?.Write("info", "actor.chose", [("actor", "build"), ("quest", quest.Id), ("choice", entry.From), ("agent", entry.Agent),
-                            ("model", entry.Model), ("passed", passes.Select(pass => pass.Said).ToList())]);
+                            ("model", entry.Model), ("passed", passes.Select(pass => pass.Word).ToList())]);
                     }
 
                     return new BuildWalk(selection, entry, passes);
@@ -776,8 +780,9 @@ public sealed class Driver(
                     : selection.Cooling is not null ? "cooling" : selection.SignedOut is not null ? "signed-out" : "held", selection.Refusal);
             }
 
-            passes.Add(new BuildPass(entry, code, why));
-            if (counts) Log?.Write("info", "actor.passed", [("actor", "build"), ("quest", quest.Id), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
+            var thisPass = new BuildPass(entry, code, why);
+            passes.Add(thisPass);
+            if (walk.Fresh(thisPass)) Log?.Write("info", "actor.passed", [("actor", "build"), ("quest", quest.Id), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
         }
 
         // The wait's sentence (D205 §4.5): judged again at every look, the first choice that can run, in order, taken.

@@ -78,6 +78,9 @@ public sealed class ActorRunTests : IDisposable
         var line = Directory.GetFiles(DaorisHome.Entry(_home, HomeEntry.Logs), "*.jsonl").SelectMany(File.ReadAllLines).Single();
         Assert.Contains("actor.ran", line);
         Assert.Contains("build", line);
+        // LOGCOLLECTION1: the models the run reported are names in an array, not the collection's type.
+        Assert.Contains("\"models\":[\"reported\"]", line);
+        Assert.DoesNotContain("System.", line);
     }
 
     /// <summary>Row b reports alone: a service that refuses the provenance write costs the record it, never the start or the press.</summary>

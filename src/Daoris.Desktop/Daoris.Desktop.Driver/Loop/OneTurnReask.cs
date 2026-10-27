@@ -32,7 +32,7 @@ internal sealed class OneTurnReask
         RotatedOpening.SayActor(events, sessionId, actor, ran, passed);
         // The machine log's line (§4.6): the choice and each passed one with its code, as every actor's start writes them.
         log?.Write("info", "actor.chose", [("actor", actor), ("session", sessionId), ("choice", ran.From), ("agent", ran.Agent), ("model", ran.Model),
-            ("passed", passed.Select(pass => pass.Said).ToList())]);
+            ("passed", passed.Select(pass => pass.Word).ToList())]);
     }
 
     /// <summary>The choice that runs now: the first, or the one a refusal at the open moved it to.</summary>

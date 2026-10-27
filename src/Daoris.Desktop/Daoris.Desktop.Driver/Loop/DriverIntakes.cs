@@ -125,6 +125,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         var counts = refused is null;
         HarnessSelection? held = null;
         CoolingEntry? soonest = null;
+        using var look = _driver.Passed.Walk($"ask:{ask.Id}", counts);
         foreach (var entry in order)
         {
             string code;
@@ -144,7 +145,7 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                 {
                     if (!counts) return (adapter, selection, entry);
                     _driver.Log?.Write("info", "actor.chose", [("actor", "intake"), ("ask", ask.Id), ("choice", entry.From), ("agent", entry.Agent),
-                        ("model", entry.Model), ("passed", passes.Select(pass => pass.Said).ToList())]);
+                        ("model", entry.Model), ("passed", passes.Select(pass => pass.Word).ToList())]);
                     return (adapter, selection, entry);
                 }
 
@@ -154,8 +155,9 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
                     : selection.Cooling is not null ? "cooling" : selection.SignedOut is not null ? "signed-out" : "held", selection.Refusal);
             }
 
-            passes.Add(new BuildPass(entry, code, why));
-            if (counts) _driver.Log?.Write("info", "actor.passed", [("actor", "intake"), ("ask", ask.Id), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
+            var thisPass = new BuildPass(entry, code, why);
+            passes.Add(thisPass);
+            if (look.Fresh(thisPass)) _driver.Log?.Write("info", "actor.passed", [("actor", "intake"), ("ask", ask.Id), ("choice", entry.From), ("agent", entry.Agent), ("code", code)]);
         }
 
         // The wait's sentence (D205 §4.5): judged again at every look, the first choice that can run, in order, taken.
