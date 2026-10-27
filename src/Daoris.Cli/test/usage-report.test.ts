@@ -47,6 +47,10 @@ type Report = {
   };
   proposals: { waiting: number; byWeek: { week: string; made: number; byState: Counted[] }[] };
   setups: { started: number; byState: Counted[]; sessions: SetupCost[]; total: Omit<SetupCost, 'session' | 'repository' | 'workspace' | 'state' | 'parked'> & { sessions: number } };
+  driven: {
+    started: number; measured: number; unstarted: number; sessions: DrivenCost[];
+    byRepository: DrivenGroup[]; byAdapterAndModel: DrivenGroup[];
+  };
   parks: { parked: number; byKind: Counted[]; byWeek: { week: string; parked: number; started: number; byWorkspace: { name: string; parked: number; started: number }[] }[] };
   refused: { code: string; count: number; requests: Counted[] }[];
   harness: HarnessRow[];
@@ -65,6 +69,22 @@ type SetupCost = {
   seconds: number | null; calls: number | null;
   input: number | null; cacheRead: number | null; cacheWrite: number | null; output: number | null;
   used: number | null; size: number | null;
+};
+
+/** One driven session's cost (USAGECOST1): absent is null, never zero. */
+type DrivenCost = {
+  session: string; started: string; repository: string; workspace: string; adapter: string; models: string[]; turns: number;
+  ms: number | null; calls: number | null;
+  input: number | null; cacheRead: number | null; cacheWrite: number | null; output: number | null;
+  used: number | null; size: number | null;
+};
+
+/** A roll-up row of driven sessions, by repository or by adapter and model. */
+type DrivenGroup = {
+  label: string; adapter?: string; models?: string[]; sessions: number; measured: number; turns: number; timed: number;
+  medianMs: number | null; slowestMs: number | null; slowestSession: string | null;
+  input: number | null; cacheRead: number | null; cacheWrite: number | null; output: number | null; calls: number | null;
+  cacheReadPerCall: number | null; used: number | null; size: number | null;
 };
 
 /** Asks per session, spread: the sessions counted, their asks, and the statistics over them. */
@@ -734,6 +754,160 @@ test('the text report says each set-up\'s cost and the parks by week, and none w
   const empty: string = render(summarise([], { from: since, to: NOW, skipped: 0 }), 'logs');
   assert.match(empty, /^Set-ups\n {2}none$/m);
   assert.match(empty, /^Parks\n {2}none$/m);
+});
+
+/**
+ * USAGECOST1: what each driven session cost. Three driven sessions (one with two turns and two models, one whose turn
+ * has no turn time and whose models the log wrote as a CLR type name, one with no turn.ended at all), a set-up and a
+ * conversation beside them that are no driven session's, and a turn of a session the period never saw start.
+ */
+const DRIVEN_LINES: [time: string, event: string, data: Record<string, unknown>][] = [
+  ['2026-09-29T09:00:00.000Z', 'session.started', { session: 'd1', kind: 'driven', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
+  ['2026-09-29T09:00:05.000Z', 'actor.ran', { session: 'd1', actor: 'build', models: ['sonnet'], more: 0 }],
+  ['2026-09-29T09:01:00.000Z', 'turn.ended', {
+    session: 'd1', stopReason: 'end_turn', turnMs: 60000, input: 10, cacheRead: 1000000, cacheWrite: 100, output: 50, calls: 10, used: 100000, size: 1000000,
+  }],
+  ['2026-09-29T09:02:00.000Z', 'actor.ran', { session: 'd1', actor: 'build', models: 'fable-5', more: 0 }],
+  ['2026-09-29T09:05:00.000Z', 'turn.ended', {
+    session: 'd1', stopReason: 'end_turn', turnMs: 120000, input: 5, cacheRead: 500000, cacheWrite: 50, output: 25, calls: 5, used: 150000, size: 1000000,
+  }],
+  ['2026-09-29T10:00:00.000Z', 'session.started', { session: 'd2', kind: 'driven', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
+  ['2026-09-29T10:00:05.000Z', 'actor.ran', { session: 'd2', actor: 'chat', models: 'System.String[]', more: 0 }],
+  ['2026-09-29T10:01:00.000Z', 'turn.ended', {
+    session: 'd2', stopReason: 'end_turn', turnMs: null, input: 4, cacheRead: 227462, cacheWrite: 1864, output: 199, calls: 0, used: 229529, size: 1000000,
+  }],
+  ['2026-09-29T11:00:00.000Z', 'session.started', { session: 'd3', kind: 'driven', adapter: 'codex', repository: 'Yaorin', workspace: 'games' }],
+  ['2026-09-29T11:00:05.000Z', 'actor.ran', { session: 'd3', actor: 'build', models: ['gpt-x'], more: 0 }],
+  ['2026-09-29T11:10:00.000Z', 'session.started', { session: 'u1', kind: 'driven', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games', setup: true }],
+  ['2026-09-29T11:11:00.000Z', 'turn.ended', { session: 'u1', stopReason: 'end_turn', turnMs: 1000, input: 1, calls: 1 }],
+  ['2026-09-29T11:20:00.000Z', 'session.started', { session: 'c1', kind: 'chat', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
+  ['2026-09-29T11:21:00.000Z', 'turn.ended', { session: 'c1', stopReason: 'end_turn', turnMs: 1000, input: 1, calls: 1 }],
+  ['2026-09-29T11:30:00.000Z', 'turn.ended', { session: 'ghost', stopReason: 'end_turn', turnMs: 1000, input: 1, calls: 1 }],
+];
+
+const drivenReport = (extra: [string, string, Record<string, unknown>][] = []) =>
+  summarise([...DRIVEN_LINES, ...extra].map(([time, event, data]) =>
+    parseLine(line(time, 'desktop', 'info', event, data))), { from: since, to: NOW }) as Report;
+const drivenOf = (extra: [string, string, Record<string, unknown>][] = []) => drivenReport(extra).driven;
+
+test('each driven session\'s cost: its models, turns, minutes, calls, tokens and peak context, newest first', () => {
+  const driven = drivenOf();
+  assert.equal(driven.started, 3);
+  assert.equal(driven.measured, 2);
+  // The set-up and the conversation are no driven session's; the turn of a session never seen start is counted apart.
+  assert.equal(driven.unstarted, 1);
+  assert.deepEqual(driven.sessions.map((cost) => cost.session), ['d3', 'd2', 'd1']);
+  assert.deepEqual(driven.sessions[2], {
+    session: 'd1', started: '2026-09-29T09:00:00.000Z', repository: 'Daoris', workspace: 'games', adapter: 'claude-code-acp',
+    models: ['fable-5', 'sonnet'], turns: 2, ms: 180000, calls: 15, input: 15, cacheRead: 1500000, cacheWrite: 150, output: 75,
+    used: 150000, size: 1000000,
+  });
+  // A turn with no turn time says none; a CLR type name names no model; a count of zero calls stays zero.
+  assert.deepEqual(driven.sessions[1], {
+    session: 'd2', started: '2026-09-29T10:00:00.000Z', repository: 'Daoris', workspace: 'games', adapter: 'claude-code-acp',
+    models: [], turns: 1, ms: null, calls: 0, input: 4, cacheRead: 227462, cacheWrite: 1864, output: 199, used: 229529, size: 1000000,
+  });
+  // A session with no turn.ended is said so: every figure null, never zero.
+  assert.deepEqual(driven.sessions[0], {
+    session: 'd3', started: '2026-09-29T11:00:00.000Z', repository: 'Yaorin', workspace: 'games', adapter: 'codex',
+    models: ['gpt-x'], turns: 0, ms: null, calls: null, input: null, cacheRead: null, cacheWrite: null, output: null, used: null, size: null,
+  });
+});
+
+test('driven sessions rolled up by repository and by adapter and model, with the cache read per call', () => {
+  const { byRepository, byAdapterAndModel } = drivenOf();
+  const pick = (group: Record<string, unknown>, ...fields: string[]) => Object.fromEntries(fields.map((field) => [field, group[field]]));
+
+  assert.deepEqual(byRepository.map((group) => group.label), ['Daoris', 'Yaorin']);
+  // The cache read per call is over the sessions that measured both: d2 made no call, so only d1 counts (1.5M over 15).
+  assert.deepEqual(pick(byRepository[0]!, 'sessions', 'measured', 'turns', 'timed', 'medianMs', 'slowestMs', 'slowestSession', 'input',
+    'cacheRead', 'cacheWrite', 'output', 'calls', 'cacheReadPerCall', 'used'), {
+    sessions: 2, measured: 2, turns: 3, timed: 1, medianMs: 180000, slowestMs: 180000, slowestSession: 'd1', input: 19,
+    cacheRead: 1727462, cacheWrite: 2014, output: 274, calls: 15, cacheReadPerCall: 100000, used: 229529,
+  });
+  assert.deepEqual(pick(byRepository[1]!, 'sessions', 'measured', 'medianMs', 'slowestMs', 'cacheRead', 'cacheReadPerCall', 'used'), {
+    sessions: 1, measured: 0, medianMs: null, slowestMs: null, cacheRead: null, cacheReadPerCall: null, used: null,
+  });
+
+  assert.deepEqual(byAdapterAndModel.map((group) => group.label), [
+    'claude-code-acp · (model not logged)', 'claude-code-acp · fable-5 + sonnet', 'codex · gpt-x',
+  ]);
+  assert.deepEqual(pick(byAdapterAndModel[1]!, 'adapter', 'models', 'sessions', 'cacheReadPerCall'), {
+    adapter: 'claude-code-acp', models: ['fable-5', 'sonnet'], sessions: 1, cacheReadPerCall: 100000,
+  });
+});
+
+test('the median and the slowest of a roll-up are over the sessions that were timed', () => {
+  const { byRepository } = drivenOf([
+    ['2026-09-29T12:00:00.000Z', 'session.started', { session: 'd4', kind: 'driven', adapter: 'claude-code-acp', repository: 'Daoris', workspace: 'games' }],
+    ['2026-09-29T12:01:00.000Z', 'turn.ended', { session: 'd4', stopReason: 'end_turn', turnMs: 600000, calls: 4, cacheRead: 40 }],
+  ]);
+  const daoris = byRepository[0]!;
+  assert.equal(daoris.sessions, 3);
+  assert.deepEqual([daoris.timed, daoris.medianMs, daoris.slowestMs, daoris.slowestSession], [2, 390000, 600000, 'd4']);
+  // (1.5M + 40) over (15 + 4) calls, rounded.
+  assert.equal(daoris.cacheReadPerCall, 78949);
+});
+
+test('the text report lists the driven sessions, then the roll-ups, and says a session with no turn.ended so', () => {
+  const text: string = render(drivenReport(), 'logs');
+
+  assert.match(text, /^Driven sessions$/m);
+  assert.match(text, /started\s+3 — 2 with a turn\.ended, 1 with none read/);
+  assert.match(text, /unstarted\s+1 turn from sessions that did not start in this period/);
+  assert.match(text, /09-29 11:00 {2}d3 {2}Yaorin \(games\) · codex · gpt-x\n {4}no turn\.ended read\n/);
+  assert.match(text, /09-29 10:00 {2}d2 {2}Daoris \(games\) · claude-code-acp · \(model not logged\)\n {4}1 turn · 0 calls · in 4 · cache read 227\.5K · cache write 1\.9K · out 199 · peak 229\.5K\n/);
+  assert.match(text, /09-29 09:00 {2}d1 {2}Daoris \(games\) · claude-code-acp · fable-5 \+ sonnet\n {4}2 turns · 3m 0s · 15 calls · in 15 · cache read 1\.5M · cache write 150 · out 75 · peak 150K\n/);
+  assert.match(text, /by repository\n {4}Daoris\n {6}2 sessions · median 3m 0s · slowest 3m 0s · cache read 100K\/call · peak 229\.5K\n {4}Yaorin\n {6}1 session · 1 with no turn\.ended · cache read\/call not measured\n/);
+  assert.match(text, /by adapter and model\n {4}claude-code-acp · \(model not logged\)\n {6}1 session · cache read\/call not measured · peak 229\.5K\n/);
+  assert.match(text, /codex · gpt-x\n {6}1 session · 1 with no turn\.ended/);
+  // The set-up is its own section's, unchanged by the driven one.
+  assert.match(text, /^Set-ups\n {2}started\s+1 — not ended 1\n/m);
+
+  assert.match(render(summarise([], { from: since, to: NOW, skipped: 0 }), 'logs'), /^Driven sessions\n {2}none$/m);
+});
+
+test('the text lists the newest driven sessions to a terminal\'s width and counts the rest; --json carries them all', async () => {
+  const many: [string, string, Record<string, unknown>][] = [];
+  for (let at = 0; at < 13; at++) {
+    const minute = String(at).padStart(2, '0');
+    many.push(
+      [`2026-09-30T08:${minute}:00.000Z`, 'session.started', {
+        session: `m${minute}`, kind: 'driven', adapter: 'claude-code-acp', repository: 'a-repository-with-a-very-long-name-'.repeat(2), workspace: 'a-long-workspace',
+      }],
+      [`2026-09-30T08:${minute}:30.000Z`, 'actor.ran', { session: `m${minute}`, models: ['a-model-with-a-long-name', 'another-model-with-a-long-name'] }],
+      [`2026-09-30T08:${minute}:40.000Z`, 'turn.ended', {
+        session: `m${minute}`, stopReason: 'end_turn', turnMs: 1000, input: 4000000, cacheRead: 99000000, cacheWrite: 5000000, output: 3000000, calls: 999, used: 999000, size: 1000000,
+      }],
+    );
+  }
+  const driven = drivenOf(many);
+  const text: string = render(drivenReport(many), 'logs');
+  const section = text.split('\n\n').find((part) => part.startsWith('Driven sessions'))!.split('\n');
+
+  assert.ok(section.every((each) => each.length <= 120), 'no line is wider than the terminal');
+  assert.equal(section.filter((each) => /^ {2}09-\d\d \d\d:\d\d {2}\w+ /.test(each)).length, 10);
+  assert.match(text, /… and 6 older \(all in --json\)/);
+  assert.match(text, /09-30 08:12 {2}m12 /);
+  assert.doesNotMatch(text, /09-30 08:02 {2}m02 /);
+  assert.equal(driven.sessions.length, 16);
+
+  const home = mkdtempSync(join(tmpdir(), 'daoris-driven-'));
+  try {
+    const logs = homeEntry(home, 'logs');
+    mkdirSync(logs);
+    writeFileSync(join(logs, '2026-09-29.desktop.jsonl'), `${DRIVEN_LINES.filter(([time]) => time.startsWith('2026-09-29'))
+      .map(([time, event, data]) => line(time, 'desktop', 'info', event, data)).join('\n')}\n`);
+    writeFileSync(join(logs, '2026-09-30.desktop.jsonl'), `${many.map(([time, event, data]) => line(time, 'desktop', 'info', event, data)).join('\n')}\n`);
+    const out: string[] = [];
+    assert.equal(await main(['--home', home, '--json'], { now: NOW, out: (printed: string) => out.push(printed), err: () => {} }), 0);
+    const printed = JSON.parse(out.join('\n')) as Report;
+    assert.equal(printed.driven.sessions.length, 16);
+    assert.deepEqual(printed.driven.byRepository.map((group) => group.sessions), [13, 2, 1]);
+    assert.equal(printed.driven.sessions[0]!.session, 'm12');
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
 });
 
 test('the arguments: a home, or an install\'s data folder, a number of days, JSON, and the local host', () => {

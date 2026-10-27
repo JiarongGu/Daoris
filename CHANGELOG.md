@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- The usage report gains a *Driven sessions* section: each driven session's repository, adapter, models, turns, minutes, calls, tokens read anew, read from the cache, written and written out, and peak context, newest first, rolled up by repository and by adapter and model with the cache read per call; a session with no `turn.ended` is said so, never as zero (USAGECOST1).
 - Empty-tree cleanup skips directory links at every scan level, preserving links and empty folders outside its managed tree home (TREELEFTLINK1).
 - Managed doctrine now requires documents and skills to have a portable source in their repository or their coordinator's managed store. Daoris includes a repository-owned Codex troubleshooting procedure.
 - Merge-queue failure isolation preserves a .NET gate's existing filter, and requeueing an unchanged tip waits for its new result while retaining its previous hand-back (QUEUEFILTER1, QUEUEWAIT1).
