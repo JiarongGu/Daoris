@@ -11,7 +11,7 @@ repository.
 - **Root cause:** `e8335f5aa` introduced this real-loop case. `HeldClock` starts at 2026-10-20T09:00Z, while this route test's ordinary `DriverLoop`, its notices slice and its final reads use the system clock. The unchanged seven-day `Notices.Young` rule excludes those fixture notices from 2026-10-27T09:00Z onward. This is a fixture clock mismatch, not a notice-retention defect or evidence of machine-load timing.
 - **Fix:** only this real-loop case stamps its three seeded notices with one system-clock sample. The global held clock, other held-clock cases, product retention, permissions and every read/dismiss/workspace assertion remain unchanged; no sleep, retry, wider window or production change.
 - **Verify:** whole Modules fast passed 2,677/2,677, zero skipped, using `dotnet test` with `Category!=Process`, below-normal foreground priority and build-server reuse disabled. The original candidate and base-probe red evidence remain under `local/scratch/scope-4143737/`; green proof is `local/scratch/notices-clock/notices-clock-whole.trx`. The actual diff changes only this fixture's timestamp inputs and explanatory comment, with no production or assertion change.
-- **Commit:** pending.
+- **Commit:** `f5e2ded703166ee11d26d09fbb94a097054691ec`.
 
 ## 2026-10-27 - Empty-tree cleanup traversed directory links (TREELEFTLINK1)
 
