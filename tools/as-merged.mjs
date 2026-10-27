@@ -104,7 +104,7 @@ export function prepare(cwd) {
   const heads = mergeHeads(gitDir);
   if (heads.length === 0) return null;
 
-  const unmerged = lines(git(top, ['diff', '--name-only', '--diff-filter=U']));
+  const unmerged = lines(git(top, ['--no-optional-locks', 'diff', '--name-only', '--diff-filter=U']));
   if (unmerged.length) {
     const named = `${unmerged.slice(0, 5).join(', ')}${unmerged.length > 5 ? ` and ${unmerged.length - 5} more` : ''}`;
     throw new AsMergedError(`the merge has unmerged paths, so there is no commit to judge yet: ${named}. Resolve and add them first.`);

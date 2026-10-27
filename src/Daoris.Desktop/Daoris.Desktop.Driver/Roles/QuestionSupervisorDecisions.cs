@@ -747,7 +747,7 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
             using var document = JsonDocument.Parse(text);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("question", out var asked)) return null;
-            var question = QuestionFiles.Parsed(asked.GetRawText(), session, () => DateTimeOffset.MinValue);
+            var question = ParkQuestions.Parsed(asked.GetRawText(), session, () => DateTimeOffset.MinValue);
             // An answer names its choice; a defer (SUPERVISOR1b) its bound, and no choice.
             var bound = Json.Text(root, "bound");
             if (question is null || (Json.Text(root, "choice") ?? (bound is null ? null : "")) is not { } choice) return null;

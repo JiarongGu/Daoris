@@ -162,7 +162,7 @@ public sealed class ActorReports
 public sealed class ActorRun : IAsyncDisposable
 {
     public static readonly JsonSerializerOptions Json = ActorWire.Json;
-    private readonly SessionEvents _events;
+    private readonly ISessionEvents _events;
     private readonly string _session;
     private readonly string _actor;
     private readonly Func<ActorRan, Task> _keep;
@@ -171,7 +171,7 @@ public sealed class ActorRun : IAsyncDisposable
     private readonly object _gate = new();
     private Task _tail = Task.CompletedTask;
 
-    public ActorRun(SessionEvents events, string session, string actor, ActorRan? prior, Func<ActorRan, Task> keep, MachineLog? log = null)
+    public ActorRun(ISessionEvents events, string session, string actor, ActorRan? prior, Func<ActorRan, Task> keep, MachineLog? log = null)
     {
         if (actor is not ("build" or "intake" or "opinion" or "helper" or "partner" or "brainstorm" or "ask-daoris" or "chat"))
             throw new ArgumentException("unknown actor", nameof(actor));

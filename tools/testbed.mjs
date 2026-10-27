@@ -128,7 +128,7 @@ const WRITTEN = new Set(['.mcp.json', '.claude/settings.json', 'daoris.json']);
 
 /** Every path the working tree currently differs in, tracked or not — the set a run compares. */
 const dirty = (where) => new Set(
-  git(where, ['status', '--porcelain', '--untracked-files=all']).split('\n')
+  git(where, ['--no-optional-locks', 'status', '--porcelain', '--untracked-files=all']).split('\n')
     .filter(Boolean).map((line) => line.slice(3).replace(/^"(.*)"$/, '$1')));
 
 /**

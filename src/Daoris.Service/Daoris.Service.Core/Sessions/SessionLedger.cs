@@ -385,7 +385,7 @@ public sealed class SessionLedger(
         }
 
         // As it stands, the way the desk reads it (USE1c, D95): an ask whose every quest was deleted is a
-        // proposal again, and the loop, which reads the desk, would otherwise ask for it on every tick.
+        // proposal again — an intake's to answer, but never a named ask's (QUESTDELETE1).
         var ask = AskDesk.Standing(
             stored, await quests.FromAsync(AskDesk.SenderOf(stored.Id), ct: ct).ConfigureAwait(false));
 
@@ -395,6 +395,9 @@ public sealed class SessionLedger(
             {
                 AskState.Published or AskState.Done => $"it already became {string.Join(", ", ask.Quests.Select(q => $"`#{q}`"))}",
                 AskState.Closed => $"it is closed ({ask.Note})",
+                // QUESTDELETE1: the person named its receiver and that quest was deleted — an intake would route it by its proposal.
+                AskState.Proposed when ask.Tier == AskDesk.ByName =>
+                    "the person named its receiver, and the quest it became was deleted: no intake routes an ask by its proposal after that",
                 _ => null,
             };
         if (served is not null)

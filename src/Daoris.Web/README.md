@@ -381,6 +381,11 @@ vitests, which build nothing, and `test:web:e2e`, the bundle, the host and Playw
 family. Note the second rebuilds the host, so stop a locally running instance first, or the build
 fails on the locked DLL.
 
+A vitest settles what it starts inside `act`: a native `focus()` goes through the work-frame kit's `focus`
+(`test/workFrameKit.tsx`), since a focused trigger opens its tooltip outside `act` otherwise, and a fixture's update
+waits for what it renders. An agent's run of vitest prints no console output of a passing test, so a run looking for
+an `act` warning passes `--reporter=default` (FRAMEACT1, `docs/development.md`).
+
 The landing-life and trace twins read the driver's declarations through `test/driverSource.ts`: `AutoLandingCode.cs` and
 `WorkplaceFacts.cs` in Knowledge hold their moved vocabulary. The Sweep twin still reads `Landing.cs`. MOD9e's rule in
 `tools/merge-branch.mjs` and its source-read census keep changes to each declaration routed to the page's unit gate.

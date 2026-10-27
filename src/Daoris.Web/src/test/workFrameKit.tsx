@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import realUserEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -20,6 +20,15 @@ export const userEvent = {
   type: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['type']>) => realUserEvent.setup({ delay: null }).type(...args),
   keyboard: (...args: Parameters<ReturnType<typeof realUserEvent.setup>['keyboard']>) => realUserEvent.setup({ delay: null }).keyboard(...args),
 };
+
+/**
+ * Puts the keyboard focus on an element the way a person's Tab does. A native `focus()` called from a test runs outside
+ * `act`, and a focused trigger opens its `Tip` (Radix opens a tooltip on focus), whose state update React then reports as
+ * unwrapped (FRAMEACT1): the focus and what it renders settle together here.
+ */
+export function focus(element: HTMLElement) {
+  act(() => { element.focus(); });
+}
 
 export const DRIVER_STATE = { drivable: ['engine'], holds: [], trees: [], running: ['s1a2b3c4'] };
 

@@ -103,7 +103,7 @@ public static class ReviewerHeld
 /// <param name="Label">How it stands to the work's families (<see cref="ReviewerLabels"/>).</param>
 /// <param name="Held">What held it (<see cref="ReviewerHeld"/>).</param>
 /// <param name="Refusal">The account walk's own sentence, which names the fix. Machine-local: it may name an account.</param>
-public sealed record ReviewerTried(string Reviewer, string Label, string Held, string Refusal)
+public sealed record ReviewerTried(string Reviewer, string Label, string Held, string Refusal) : IActorTried
 {
     /// <summary>The cool-off that holds it, when that is why.</summary>
     public CoolingEntry? Cooling { get; init; }
@@ -116,7 +116,10 @@ public sealed record ReviewerTried(string Reviewer, string Label, string Held, s
 /// One (entry, account) a one-turn owner already passed in its own call (D205 §3.5(f), MODELROLE1e): the account refused the entry's model at
 /// the open, so the walk asks for it again with that account left out. Never a cool-off, never stored, gone when the owner's call ends.
 /// </summary>
-public sealed record ReviewerPassed(ActorEffective Entry, string? Account);
+public sealed record ReviewerPassed(ActorEffective Entry, string? Account) : IActorPassed<ReviewerPassed>
+{
+    static ReviewerPassed IActorPassed<ReviewerPassed>.Of(ActorEffective entry, string? account) => new(entry, account);
+}
 
 /// <summary>
 /// The reviewer chosen for a second opinion (XAGENT1b, D155 point 4, the second-agent design §3), or why none could be: the walk
@@ -138,7 +141,7 @@ public sealed record ReviewerPassed(ActorEffective Entry, string? Account);
 /// <param name="Label">How it stands to the work's families (<see cref="ReviewerLabels"/>), or null when none can.</param>
 /// <param name="Code">Why no other maker's agent read it (<see cref="ReviewerUnavailable"/>); null when one did.</param>
 /// <param name="Sentence">What a person reads: who reads it and how it stands, or that none can, and why. Machine-local.</param>
-public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Code, string Sentence)
+public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Code, string Sentence) : IActorChoice<ReviewerChoice>
 {
     /// <summary>Whether a reviewer was chosen.</summary>
     public bool Chosen => Reviewer is not null;
@@ -160,6 +163,10 @@ public sealed record ReviewerChoice(string? Reviewer, string? Label, string? Cod
 
     /// <summary>Each reviewer tried and passed, in the order tried.</summary>
     public IReadOnlyList<ReviewerTried> Tried { get; init; } = [];
+
+    IReadOnlyList<IActorTried> IActorChoice<ReviewerChoice>.Tried => Tried;
+
+    ReviewerChoice IActorChoice<ReviewerChoice>.WithSelection(HarnessSelection? selection) => this with { Selection = selection };
 
     /// <summary>
     /// The first reset among the reviewers passed for a cool-off, wherever another maker's agent did not read the work: when

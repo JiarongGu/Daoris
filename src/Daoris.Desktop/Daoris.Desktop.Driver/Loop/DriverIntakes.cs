@@ -88,8 +88,10 @@ internal sealed class DriverIntakes(LoopContext context, Driver driver)
         // service's newest-first order puts last.
         // A paused ask's intake does not start (PAUSE1b, D132 §2.1): nothing of a paused ask starts, and the next ask in its
         // circle is due in its place. Said by the ask's page, never a line each look.
+        // QUESTDELETE1: never an ask whose receiver the person named — its quest deleted leaves it standing with none, and an
+        // intake would route it by its proposal to repositories nobody named. The service's own refusal says the same.
         var due = asks
-            .Where(ask => ask.State == "Proposed" && ask.Intake is null && config.PausedAsk(ask.Id) is null)
+            .Where(ask => ask.State == "Proposed" && ask.Intake is null && IntakePrompt.Answers(ask) && config.PausedAsk(ask.Id) is null)
             .GroupBy(ask => ask.Workspace, StringComparer.OrdinalIgnoreCase)
             .Select(circle => circle.Last())
             .ToList();

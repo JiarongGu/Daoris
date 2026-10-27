@@ -429,6 +429,7 @@ import {
 } from './ci-background.mjs';
 import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
+import { indexLockNote, mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
@@ -1624,7 +1625,7 @@ function setApartJoins(root) {
   const folders = records(root).filter((record) => record.kind === 'decisions').map((record) => record.file.slice(0, -'/*.md'.length));
   const union = unionRecords(root).map(attributePattern);
   // What the merge brought, the parent's resolutions with it; a deleted file has nothing to set apart.
-  const changed = zPaths(git(root, ['diff', '-z', '--name-only', '--no-renames', '--diff-filter=d', 'HEAD']).out);
+  const changed = zPaths(git(root, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', '--diff-filter=d', 'HEAD']).out);
   const side = (commit, path) => git(root, ['show', `${commit}:${path}`], { allowFail: true });
   for (const path of changed) {
     const decision = folders.some((folder) => path.startsWith(`${folder}/`) && /^[^/]+\.md$/.test(path.slice(folder.length + 1)));
@@ -1953,7 +1954,7 @@ export function contentTree(root) {
 function treeDrift(root, from, to) {
   if (!from || !to) return null;
   if (from === to) return [];
-  const diff = git(root, ['diff', '--name-only', '--no-renames', from, to], { allowFail: true });
+  const diff = git(root, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', from, to], { allowFail: true });
   return diff.status === 0 ? lines(diff.out) : null;
 }
 
@@ -2713,7 +2714,7 @@ function locate(cwd) {
   return root;
 }
 const mergeInProgress = (root) => existsSync(join(gitDirs.get(root), 'MERGE_HEAD'));
-const unmergedPaths = (root) => lines(git(root, ['diff', '--name-only', '--diff-filter=U']).out);
+const unmergedPaths = (root) => lines(git(root, ['--no-optional-locks', 'diff', '--name-only', '--diff-filter=U']).out);
 
 /**
  * `git status --porcelain=v2 --branch`, read: the current branch ('' when detached) and each changed or
@@ -2754,7 +2755,7 @@ export function startRefusal({ branch, merging, changed, ignored }) {
   return null;
 }
 
-const treeState = (root) => parseStatus(git(root, ['status', '--porcelain=v2', '--branch']).out);
+const treeState = (root) => parseStatus(git(root, ['--no-optional-locks', 'status', '--porcelain=v2', '--branch']).out);
 
 function requireMain(root) {
   const refusal = startRefusal({ branch: treeState(root).branch, merging: false, changed: [], ignored: true });
@@ -2850,7 +2851,7 @@ function commitProblems(root, branch, commits) {
   const problems = commitAttributionProblems(commits);
   const tree = worktreeFor(git(root, ['worktree', 'list', '--porcelain']).out, branch);
   if (tree && existsSync(tree)) {
-    const left = lines(git(tree, ['status', '--porcelain']).out);
+    const left = lines(git(tree, ['--no-optional-locks', 'status', '--porcelain']).out);
     if (left.length) {
       problems.push(`its worktree holds uncommitted work, which the merge would leave out:\n${left.slice(0, 12).map((line) => `    ${line}`).join('\n')}`);
     }
@@ -3125,6 +3126,22 @@ function listProcesses() {
     return { processes: parseProcesses(result.stdout, process.platform).filter((one) => one.pid !== process.pid) };
   } catch (error) {
     return { error: `${what} answered what could not be read: ${error?.message ?? error}` };
+  }
+}
+
+/**
+ * QUEUELOCK1: what to add to a refused fast-forward in the checkout `home` when git's words name an `index.lock`: the lock's
+ * age and whether a git process is running (`indexLockNote`), or '' for any other refusal or a lock gone since. Only reads:
+ * the queue never removes the lock. The process list (`processes`, the machine's by default) is asked only here, the one place
+ * it is wanted.
+ */
+export function indexLockSaid(home, said, processes = listProcesses) {
+  if (!mentionsIndexLock(said)) return '';
+  try {
+    const lock = readIndexLock(gitDirs.get(home) ?? join(home, '.git'));
+    return lock ? `; ${indexLockNote(lock, processes())}` : '';
+  } catch (error) {
+    return `; the lock could not be looked at: ${error?.message ?? error}`;
   }
 }
 
@@ -4101,7 +4118,7 @@ function clearLogs(dir) {
 const laneLabel = (lane) => `${pad(lane.id, 14)}${lane.title}`;
 
 function laneReport(root, branch) {
-  const changed = lines(git(root, ['diff', '--name-only', `HEAD...${branch}`]).out);
+  const changed = lines(git(root, ['--no-optional-locks', 'diff', '--name-only', `HEAD...${branch}`]).out);
   const map = readLanes(root);
   const out = [`lanes: ${branch} changes ${count(changed.length, 'file')}`];
   if (!map || map.lanes.length === 0) {
@@ -4136,13 +4153,13 @@ const zPaths = (text) => text.split('\0').map((path) => path.trim()).filter(Bool
 
 /** What the merge in place changes on main: tracked paths against HEAD, the parent's fixes included, and new files. */
 function mergeChanges(root) {
-  const tracked = zPaths(git(root, ['diff', '-z', '--name-only', '--no-renames', 'HEAD']).out);
+  const tracked = zPaths(git(root, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', 'HEAD']).out);
   const untracked = zPaths(git(root, ['ls-files', '-z', '--others', '--exclude-standard']).out);
   return [...new Set([...tracked, ...untracked])];
 }
 
 /** What a branch changes since it left main: a plan's question, asked before anything is merged. */
-const branchChanges = (root, branch) => zPaths(git(root, ['diff', '-z', '--name-only', '--no-renames', `HEAD...${branch}`]).out);
+const branchChanges = (root, branch) => zPaths(git(root, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', `HEAD...${branch}`]).out);
 
 /**
  * The gates the merge in place runs, and every gate of the plan with why it runs or is skipped. Checks and
@@ -5853,7 +5870,7 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     const record = readCiRecord(home);
     const since = { commit: record.lastGreen?.commit ?? null, at: record.lastGreen?.at ?? null, paths: null };
     if (since.commit) {
-      const diff = git(tree, ['diff', '--name-only', '--no-renames', since.commit, commit], { allowFail: true });
+      const diff = git(tree, ['--no-optional-locks', 'diff', '--name-only', '--no-renames', since.commit, commit], { allowFail: true });
       if (diff.status === 0) since.paths = lines(diff.out).length;
     }
     const light = process.env.MERGE_BRANCH_MEMORY === 'off'
@@ -6345,7 +6362,7 @@ async function runCandidate(home, candidate) {
   const treeId = contentTree(tree);
   const standing = standingFor(tree, treeId);
   const lanes = readLanes(tree)?.lanes ?? [];
-  const changed = zPaths(git(tree, ['diff', '-z', '--name-only', '--no-renames', candidate.base, candidate.tip]).out);
+  const changed = zPaths(git(tree, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', candidate.base, candidate.tip]).out);
   const selection = selectGates(plan, changed, { lanes, gated: true });
   const reached = new Set(selection.gates.filter((entry) => entry.run || entry.reached).map((entry) => entry.gate.name));
   const verdicts = readVerdicts(home).verdicts;
@@ -6504,7 +6521,7 @@ async function queueStep(home) {
     return 'next';
   }
   if (action === 'reform') {
-    const paths = zPaths(git(home, ['diff', '-z', '--name-only', '--no-renames', candidate.base, mainTip]).out);
+    const paths = zPaths(git(home, ['--no-optional-locks', 'diff', '-z', '--name-only', '--no-renames', candidate.base, mainTip]).out);
     const lanes = readLanes(home)?.lanes ?? [];
     const counted = reformCount(candidate, { recordsOnlyMove: recordsOnly(paths, (path) => ruleFor(path, REACH, lanes)) });
     console.log(`${at} main moved to ${mainTip.slice(0, 7)} by a direct commit${counted.recordsOnly ? ', records only' : ''}: the candidate is formed again${counted.heldByDirect ? `, re-formed ${counted.reforms} times running: held by direct commits` : ''}`);
@@ -6512,7 +6529,7 @@ async function queueStep(home) {
     return 'next';
   }
   if (action === 'promote') {
-    const clean = !mergeInProgress(home) && lines(git(home, ['status', '--porcelain', '--untracked-files=no']).out).length === 0 && treeState(home).branch === MAIN;
+    const clean = !mergeInProgress(home) && lines(git(home, ['--no-optional-locks', 'status', '--porcelain', '--untracked-files=no']).out).length === 0 && treeState(home).branch === MAIN;
     const decided = promotion(candidate, { mainTip, clean });
     if (decided.action === 'held') {
       if (candidate.state !== 'held') console.log(`${at} ${candidate.tip.slice(0, 7)} is green; ${decided.why}`);
@@ -6522,7 +6539,10 @@ async function queueStep(home) {
     withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'promoting', held: null } } }));
     const moved = git(home, ['merge', '--ff-only', '--quiet', candidate.tip], { allowFail: true });
     if (moved.status !== 0) {
-      withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'checkout', why: `the fast-forward was refused: ${(moved.err || moved.out).trim().split('\n')[0]}` } } } }));
+      const refused = (moved.err || moved.out).trim();
+      const why = `the fast-forward was refused: ${refused.split('\n')[0]}${indexLockSaid(home, refused)}`;
+      if (candidate.state !== 'held' && mentionsIndexLock(refused)) console.log(`${at} ${candidate.tip.slice(0, 7)} is green; ${why}`);
+      withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'checkout', why } } } }));
       return 'wait';
     }
     withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'promoted' } } }));
@@ -6670,9 +6690,9 @@ function previewVerb(root, options) {
   const generated = readGenerated(home);
   const blocking = conflicted.filter((path) => !union.includes(path) && !isGenerated(path, generated) && path !== backlogPath(home));
   console.log(`preview: ${branch} at ${tip.slice(0, 7)} merged onto ${MAIN} at ${base.slice(0, 7)}; nothing is committed, and the queue takes this tip only`);
-  console.log(git(home, ['diff', '--stat', base, tree]).out.trimEnd());
+  console.log(git(home, ['--no-optional-locks', 'diff', '--stat', base, tree]).out.trimEnd());
   console.log('');
-  console.log(git(home, ['diff', base, tree]).out.trimEnd());
+  console.log(git(home, ['--no-optional-locks', 'diff', base, tree]).out.trimEnd());
   console.log('');
   if (conflicted.length) {
     console.log(`conflicts: ${conflicted.join(', ')}`);

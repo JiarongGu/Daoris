@@ -2729,7 +2729,12 @@ public sealed class QuestExchange(
     /// circle's remote answers, as a take claims by push (D69); any other simply goes. The files this
     /// machine kept for it go with it.
     /// </summary>
-    public async Task<QuestDeleteOutcome> DeleteAsync(string id, DateTimeOffset now, CancellationToken ct = default)
+    /// <param name="askGoesToo">
+    /// The ask that asked it is being deleted with it (D95), so its answer says nothing of what stands of the ask.
+    /// Otherwise a delete that leaves its ask with no quest says what the ask now is (QUESTDELETE1).
+    /// </param>
+    public async Task<QuestDeleteOutcome> DeleteAsync(
+        string id, DateTimeOffset now, CancellationToken ct = default, bool askGoesToo = false)
     {
         var quest = await quests.FindAsync(id.TrimStart('#'), ct).ConfigureAwait(false);
         if (quest is null)
@@ -2757,9 +2762,10 @@ public sealed class QuestExchange(
             files?.Forget(quest.Id);
             return new(
                 QuestDeleteRefusal.None,
-                deletion.Tombstoned
+                (deletion.Tombstoned
                     ? $"Deleted quest `#{quest.Id}`. It had reached a remote, so the delete stays in its history, where a sync can carry it."
-                    : $"Deleted quest `#{quest.Id}` — it never left this machine, so nothing else holds a copy.",
+                    : $"Deleted quest `#{quest.Id}` — it never left this machine, so nothing else holds a copy.")
+                + await AskLeftAsync(quest, askGoesToo, ct).ConfigureAwait(false),
                 quest);
         }
 
@@ -2781,16 +2787,31 @@ public sealed class QuestExchange(
             ?.Number is not null;
         return new(
             QuestDeleteRefusal.None,
-            confirmed
+            (confirmed
                 ? $"Deleted quest `#{quest.Id}` — the remote confirmed it, and every machine drops it on its next sync."
                 : $"Deleted quest `#{quest.Id}` here, UNCONFIRMED: "
                   + (pass.Problem ?? pass.Refused.FirstOrDefault(r => r.Quest == quest.Id)?.Reason
                       ?? "the remote has not taken the delete yet")
-                  + ". It travels on the next sync — and if another machine takes the quest first, it comes back, taken.",
+                  + ". It travels on the next sync — and if another machine takes the quest first, it comes back, taken.")
+            + await AskLeftAsync(quest, askGoesToo, ct).ConfigureAwait(false),
             quest)
         {
             Unconfirmed = !confirmed,
         };
+    }
+
+    /// <summary>
+    /// What the ask that asked a deleted quest now stands as, when this was its last quest (QUESTDELETE1): its own sentence
+    /// after a blank line, so a person who deleted the quest is told, not left to find the ask changed. Empty for a quest no
+    /// ask asked, an ask that goes too, one still carrying another quest, and a closed one, which was already ended.
+    /// </summary>
+    private async Task<string> AskLeftAsync(Quest deleted, bool askGoesToo, CancellationToken ct)
+    {
+        if (askGoesToo || asks is null || AskDesk.AskOf(deleted.From) is not { } askId) return "";
+        if (await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { State: AskState.Published } held) return "";
+        return (await quests.FromAsync(AskDesk.SenderOf(held.Id), ct: ct).ConfigureAwait(false)).Count == 0
+            ? $"\n\n{AskDesk.NoQuestLeft(held)}"
+            : "";
     }
 
     /// <summary>
