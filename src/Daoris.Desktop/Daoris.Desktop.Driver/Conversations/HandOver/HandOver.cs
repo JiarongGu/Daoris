@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class HandOverBox(string home)
 {
-    public const string Suffix = ".hand-over.json";
+    public const string Suffix = SessionHomeFiles.HandOverBoxSuffix;
 
     /// <summary>Where a session's box is kept.</summary>
     public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);

@@ -133,24 +133,19 @@ public static class DaorisKeys
     /// <summary>A step's go-on's key: the step and the submission it grew from.</summary>
     public static string GoneOn(string step, QuestSubmissionRef grew) => $"{GoneOnKind}/{step}/{grew.Machine}/{grew.Sequence}";
 
-    public const string RebaseKind = "rebase";
+    public const string RebaseKind = RebaseKeys.Kind;
 
     /// <summary>
     /// The rebase words' key (LANDREBASE1): the session an automatic landing refused for a conflict, and the tip that conflicted, so a
     /// look that tries the same tip again keeps one word. No quest's fact: <see cref="Read"/> names none, so the word waits as it is.
     /// </summary>
-    public static string Rebase(string session, string tip) => $"{RebaseKind}/{session}/{tip}";
+    public static string Rebase(string session, string tip) => RebaseKeys.Of(session, tip);
 
     /// <summary>
     /// The commit a rebase word's key names (<see cref="Rebase"/>), which the line may hold since (LIMITSWITCH3); null for any other key.
     /// Read from the end, since a session's name may hold a slash (a teammate's).
     /// </summary>
-    public static string? RebaseTipOf(string? key)
-    {
-        if (key is null || !key.StartsWith(RebaseKind + "/", StringComparison.Ordinal)) return null;
-        var tip = key[(key.LastIndexOf('/') + 1)..];
-        return key.IndexOf('/') < key.LastIndexOf('/') && tip.Length > 0 ? tip : null;
-    }
+    public static string? RebaseTipOf(string? key) => RebaseKeys.TipOf(key);
 
     public const string LimitResetKind = "limit-reset";
     public const string TransientRetryKind = "transient-retry";

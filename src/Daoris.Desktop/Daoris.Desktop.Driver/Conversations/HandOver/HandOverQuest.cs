@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 ///
 /// <para>What is kept is this store's; the files and their format are <see cref="HandOverFiles"/>' (STRUCT3h, D166's note).</para>
 /// </remarks>
-public sealed class HandedQuests(string home)
+public sealed class HandedQuests(string home) : IWorkplaceHandedQuests
 {
     /// <summary>Where a quest's file is kept, or null for an id that is no quest's name (never a path out of the folder).</summary>
     public string? PathOf(string quest) => Named(quest) ? DaorisHome.Entry(home, HomeEntry.Handed, quest + ".json") : null;
@@ -43,6 +43,8 @@ public sealed class HandedQuests(string home)
 
         return all;
     }
+
+    IEnumerable<string> IWorkplaceHandedQuests.Readable() => All().Keys;
 
     /// <summary>Let the quest go back to the machine's agent: it left this machine, or was cleared. Nothing to clear is no failure.</summary>
     public void Clear(string quest)
