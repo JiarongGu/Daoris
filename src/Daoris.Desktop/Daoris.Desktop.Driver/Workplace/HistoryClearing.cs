@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 public sealed record HistoryWorld(ServiceClient Service, string Home, string ConfigPath, SessionProcesses Processes)
 {
     /// <summary>The loop's record of conversations, so it forgets a cleared one's numbering; null removes the files alone.</summary>
-    public SessionEvents? Events { get; init; }
+    public ISessionEventRemoval? Events { get; init; }
 
     /// <summary>Where <c>history.cleared</c> goes; null writes none.</summary>
     public MachineLog? Log { get; init; }

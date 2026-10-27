@@ -19,7 +19,7 @@ namespace Daoris.Driver;
 /// <param name="log">The machine log a held gate writes to; none where the surface keeps none.</param>
 /// <param name="door">The door a held gate is logged at (<see cref="ReviewDoors"/>).</param>
 public sealed class EntryAccepts(
-    ServiceClient service, string home, SessionTrees trees, SessionEvents events, Action<string, string> say,
+    ServiceClient service, string home, SessionTrees trees, IWorkplaceEventHistory events, Action<string, string> say,
     Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, MachineLog? log, string door)
 {
     /// <summary>The parts of <paramref name="entry"/> whose tree offers work to land, in the entry's order: what its Accept lands.</summary>

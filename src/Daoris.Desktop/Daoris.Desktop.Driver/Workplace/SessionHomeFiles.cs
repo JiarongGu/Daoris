@@ -209,7 +209,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// once.
     /// </summary>
     /// <param name="events">The loop's record of conversations, so it forgets their numbering too; null removes the files alone.</param>
-    public SessionFilesRemoved Remove(IReadOnlyCollection<string> ids, SessionEvents? events)
+    public SessionFilesRemoved Remove(IReadOnlyCollection<string> ids, ISessionEventRemoval? events)
     {
         var removed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var stayed = new Dictionary<string, List<string>>(StringComparer.Ordinal);

@@ -115,7 +115,7 @@ public sealed record AutoChosen(IReadOnlyList<AutoChoice> Chosen, IReadOnlyList<
 /// </remarks>
 /// <param name="log">Where a try's <c>landing.auto</c> line goes (D94): the service client's watchers, which write the machine log.</param>
 public sealed class AutoLander(
-    string home, IAutoLandingWorld world, SessionTrees trees, SessionEvents events, Action<LandingLine>? log = null,
+    string home, IAutoLandingWorld world, SessionTrees trees, IWorkplaceEventHistory events, Action<LandingLine>? log = null,
     Func<DateTimeOffset>? clock = null)
 {
     /// <summary>The due list this lander works.</summary>
@@ -766,7 +766,7 @@ public sealed class AutoLander(
     /// </param>
     /// <returns>The verdict acted on (<see cref="AutoConcluded"/>), or null.</returns>
     public static string? Concluded(
-        string home, DriverConfig config, SessionEvents events, string session, QuestView quest, string? status, string state,
+        string home, DriverConfig config, ISessionEvents events, string session, QuestView quest, string? status, string state,
         string tree, string? workspace, DateTimeOffset? at = null, WorkflowProcess? process = null)
     {
         try

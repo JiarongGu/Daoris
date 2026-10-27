@@ -53,6 +53,11 @@ landing and commit facts through lower contracts; `Workplace/AgentWorkplaceWirin
 Tools are handed before Workplace removes inherited tokens, resolves the author and hands long paths. The installed
 tree-guard carrier and matcher belong to Agents; the actual resource, installer and guard remain Workplace's.
 
+Workplace reads and removes conversations through the supplied `IWorkplaceEventHistory` and `ISessionEventRemoval`
+facets. Context's `Sessions/Events/SessionEventLog.cs` answers them on the original record, retaining its numbering,
+lock and subscriptions. `Context/WorkplaceEventRecordsWiring.cs` installs the required factory for standalone landing;
+it constructs a record only at that command's original construction point.
+
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and

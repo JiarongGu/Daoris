@@ -48,7 +48,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
     /// <param name="log">Where <c>session.deleted</c> is written; null writes nothing.</param>
     /// <param name="events">The loop's record of conversations, so it forgets the session too; null removes the file alone.</param>
     public async Task<DeleteOutcome> DeleteAsync(
-        ServiceClient service, string id, string door, MachineLog? log, SessionEvents? events = null, CancellationToken ct = default)
+        ServiceClient service, string id, string door, MachineLog? log, ISessionEventRemoval? events = null, CancellationToken ct = default)
     {
         var record = (await service.SessionRecordsAsync(ct).ConfigureAwait(false))
             .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));

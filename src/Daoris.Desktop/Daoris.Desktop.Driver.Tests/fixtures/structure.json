@@ -24,6 +24,9 @@
   ],
   "seams": ["ServiceClient","SessionProcesses","HarnessRoster","DaorisHome","MachineLog","WorkingTree","DesktopStore"],
   "files": {
+    "Workplace/IWorkplaceEventHistory.cs": "Workplace",
+    "Workplace/WorkplaceEventRecords.cs": "Workplace",
+    "Context/WorkplaceEventRecordsWiring.cs": "Context",
     "Agents/AccountCooling.cs": "Agents",
     "Agents/AccountFileNodes.cs": "Agents",
     "Agents/AccountNames.cs": "Agents",
@@ -955,20 +958,6 @@
   },
   "edges": [
     {
-      "family": "Workplace names Context",
-      "after": "Workplace",
-      "files": {
-        "Workplace/HistoryClearing.cs": ["SessionEvents"],
-        "Workplace/SessionDeletion.cs": ["SessionEvents"],
-        "Workplace/SessionHomeFiles.cs": ["SessionEvents"],
-        "Workplace/BranchTidying.cs": ["SessionEvents"],
-        "Workplace/ChatLandCommand.cs": ["SessionEvents"],
-        "Workplace/AutoLander.cs": ["SessionEvents"],
-        "Workplace/ChatPresses.cs": ["SessionEvents"],
-        "Workplace/EntryAccepts.cs": ["SessionEvents"]
-      }
-    },
-    {
       "family": "Workplace names Course",
       "after": "Workplace",
       "files": {
@@ -1394,6 +1383,7 @@
   ],
   "testFolders": ["Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
   "tests": {
+    "WorkplaceContextPortsTests.cs": "Workplace",
     "AutoLandingLookTests.cs": "Workplace",
     "AutoLandingPressTests.cs": "Workplace",
     "AutoLandingPushHeldTests.cs": "Workplace",

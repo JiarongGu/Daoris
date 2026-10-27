@@ -157,14 +157,14 @@ public static class ChatPresses
     /// kept word once by its id, plus <paramref name="waiting"/>, the words waiting or being kept. It only rises: a word leaves the queue for
     /// the history once its turn is on the wire.
     /// </summary>
-    public static int TurnsOf(SessionEvents events, IEnumerable<string> line, int waiting = 0)
+    public static int TurnsOf(IWorkplaceEventHistory events, IEnumerable<string> line, int waiting = 0)
     {
         var count = waiting;
         foreach (var record in line)
         {
-            if (!File.Exists(events.PathOf(record))) continue;
+            if (!events.Exists(record)) continue;
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var said in events.After(record, 0).Events)
+            foreach (var said in events.ReadAll(record))
             {
                 if (said.Kind != SessionEventKind.User || said.Origin != "person" || said.From is not null) continue;
                 if (said.Id is null || seen.Add(said.Id)) count++;
