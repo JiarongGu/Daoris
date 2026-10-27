@@ -73,6 +73,17 @@ Course installs both from `Sessions/Requests/WorkplacePressTellingWiring.cs` and
 `Conversations/HandOver/WorkplaceHandedQuestsWiring.cs`. `SessionHomeFiles` owns the go-on, reopen, new-session,
 hand-over and limit-move suffixes in its cleanup inventory; Course's public suffix constants alias those names.
 
+Workplace names no Participants type. Deletion's binding forget and the tool-home leftovers' kept-conversation read go through
+`IWorkplaceHarnessBindings`, which `HarnessConversations` implements directly, opened by the required
+`IWorkplaceHarnessBindingStores` that `Conversations/GoOn/WorkplaceHarnessBindingsWiring.cs` installs; `SessionHomeFiles` owns
+the `.harness.json` and `.imported` suffixes, which the Participants constants alias. The landing's effective rule and the merges
+note read the access setup through `IWorkplaceAccessSetup` and the `IWorkplaceResolvedAccess` that `ResolvedAccess` implements,
+installed from `Sessions/WorkplaceAccessSetupWiring.cs`: the rule itself stays Participants', where the foundation design's
+placement table puts `Domain/AccessRules`. What holds a tree for a helper's wait is Workplace's pure `HelperWaitTrees`, which
+`HelperWaits` delegates to. The piece keeper takes the piece's id and base commit rather than the ask, and the keeper's three
+state words and the reading of the piece's ref are Workplace's pure `PieceKeptStates`, which `PartnerStates` and
+`PartnerReconcile.AfterRef` alias and delegate to.
+
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and
