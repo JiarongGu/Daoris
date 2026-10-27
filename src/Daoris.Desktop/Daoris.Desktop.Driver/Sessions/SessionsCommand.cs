@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <c>take-back</c>, <c>reword</c>, <c>go-on-new</c> or <c>start-from</c>; COAGENT1b's <c>partner</c>, <c>partner-list</c> and
 /// <c>partner-stop</c>.
 /// </param>
-public sealed record SessionsAsk(string Verb)
+public sealed record SessionsAsk(string Verb) : ISupervisorAsk
 {
     /// <summary>The code a finish under the standing confirmation answers where a process for the session runs here (TERMTRUST1a).</summary>
     public const string RunningHere = "running-here";
@@ -85,7 +85,7 @@ public sealed record SessionsAsk(string Verb)
 /// </summary>
 /// <param name="Door">The configured agent's wire, which the planner's verdicts are read by (D70).</param>
 /// <param name="Log">Where the archive's and the delete's lines go, as the terminal's door; null writes none.</param>
-public sealed record SessionsWorld(ServiceClient Service, string Home, DriverConfig Config, SessionWire Door, MachineLog? Log)
+public sealed record SessionsWorld(ServiceClient Service, string Home, DriverConfig Config, SessionWire Door, MachineLog? Log) : ISupervisorWorld
 {
     /// <summary>The markers every driver on the home leaves for a live process: whether something here runs a session.</summary>
     public SessionProcesses Processes { get; init; } = new(DaorisHome.Entry(Home, HomeEntry.SessionPids));
@@ -345,7 +345,7 @@ public static class SessionsCommand
             case ["helper", ..]:
                 return SessionsHelperCommand.Read(args, out problem);
             case ["supervise", ..]:
-                return SessionsSuperviseCommand.Read(args, out problem);
+                return SessionsSuperviseCommand.Read(args, out problem, (verb, ids, draft) => new SessionsAsk(verb) { Ids = ids, Supervised = draft });
             case ["partner", ..]:
                 return SessionsPartnerCommand.Read(args, out problem);
         }

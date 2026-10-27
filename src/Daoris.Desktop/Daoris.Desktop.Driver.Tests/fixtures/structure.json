@@ -57,6 +57,7 @@
     "Workplace/InventoryFacts.cs": "Workplace",
     "Workplace/IntakeRoomPaths.cs": "Workplace",
     "Sessions/Work/WorkplaceWorkOrdersWiring.cs": "Work orders",
+    "Sessions/Work/RolesWorkOrdersWiring.cs": "Work orders",
     "Sessions/Work/AbandonWorkPlan.cs": "Work orders",
     "Trees/SessionEntryReader.cs": "Work orders",
     "Agents/AccountCooling.cs": "Agents",
@@ -1026,31 +1027,6 @@
       }
     },
     {
-      "family": "Roles names Context",
-      "after": "Roles",
-      "files": {
-        "Roles/OneTurnReask.cs": ["SessionEvents"],
-        "Roles/Domain/ActorRun.cs": ["SessionEvents"]
-      }
-    },
-    {
-      "family": "Roles names Review",
-      "after": "Roles",
-      "files": {
-        "Roles/OneTurnReask.cs": ["ReviewerChoice","ReviewerPassed"]
-      }
-    },
-    {
-      "family": "Roles names Work orders",
-      "after": "Roles",
-      "files": {
-        "Roles/SupervisorQuarantine.cs": ["Snapshot"],
-        "Roles/QuestionSupervisorDecisions.cs": ["ParkQuestion","QuestionFiles"],
-        "Roles/SessionsSuperviseCommand.cs": ["AskWords","AskWordsText","QuestionFiles","SessionsAsk","SessionsWorld"],
-        "Roles/SupervisorDecision.cs": ["ParkQuestion"]
-      }
-    },
-    {
       "family": "HelpRoom.Repository's daoris:help, which moves down to the participant's work rule (O4-6)",
       "after": "Participants",
       "files": {
@@ -1535,6 +1511,7 @@
     "RefusingHttpHost.cs": "Workplace",
     "HistoryStandIn.cs": "Workplace",
     "ActorOpeningTests.cs": "Roles",
+    "RolesBoundaryTests.cs": "Roles",
     "ActorChoicesTests.cs": "Roles",
     "ActorRunTests.cs": "Roles",
     "BuildWalkTests.cs": "Roles",

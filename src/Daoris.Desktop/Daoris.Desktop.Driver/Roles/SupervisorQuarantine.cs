@@ -15,11 +15,12 @@ internal static class SupervisorQuarantine
     /// or a released one whose word is gone, <c>superseded</c>; a released one on a record no longer parked, <c>stale</c>), then the
     /// release of each whose <c>goesOnAt</c> came, a lost response repeated under its receipt first, D188's bound asked again by
     /// <paramref name="bound"/> (SUPERVISOR1b) before anything is said. Returns the snapshot with the
-    /// sessions a held decision holds (<see cref="Snapshot.SupervisorHeld"/>).
+    /// sessions a held decision holds (<see cref="ISupervisorLook{TLook}.WithSupervisor"/>).
     /// </summary>
-    public static async Task<Snapshot> DecideAsync(
-        Snapshot snapshot, QuestionSupervisorDecisions decisions, SupervisorSay say, SupervisorTakeBack takeBack, DateTimeOffset now,
+    public static async Task<TLook> DecideAsync<TLook>(
+        TLook snapshot, QuestionSupervisorDecisions decisions, SupervisorSay say, SupervisorTakeBack takeBack, DateTimeOffset now,
         CancellationToken ct, SupervisorBound? bound = null)
+        where TLook : ISupervisorLook<TLook>
     {
         var records = snapshot.LastRun.Values.Concat(snapshot.NamedByReopen.Values)
             .Where(record => !record.Teammate && decisions.Moving(record.Session))
@@ -39,7 +40,7 @@ internal static class SupervisorQuarantine
             .SelectMany(record => decisions.LiveOf(record.Session).Where(each => each.State == SupervisorState.Released))
             .DistinctBy(each => each.Session, StringComparer.Ordinal)
             .ToDictionary(each => each.Session, each => each.Choice, StringComparer.Ordinal);
-        return snapshot with { SupervisorHeld = new HashSet<string>(held, StringComparer.Ordinal), SupervisorChose = chose };
+        return snapshot.WithSupervisor(new HashSet<string>(held, StringComparer.Ordinal), chose);
     }
 
     /// <summary>The waiting words of <paramref name="record"/> that claim the supervisor and are not handable now.</summary>
@@ -51,8 +52,9 @@ internal static class SupervisorQuarantine
     /// Take back every unhandable supervisor's word on this machine's records the look read, and leave each out of what it plans from:
     /// a running record's word only out of the plan. Returns the snapshot the look plans from.
     /// </summary>
-    public static async Task<Snapshot> LookAsync(
-        Snapshot snapshot, QuestionSupervisorDecisions decisions, SupervisorTakeBack takeBack, MachineLog? log, CancellationToken ct)
+    public static async Task<TLook> LookAsync<TLook>(
+        TLook snapshot, QuestionSupervisorDecisions decisions, SupervisorTakeBack takeBack, MachineLog? log, CancellationToken ct)
+        where TLook : ISupervisorLook<TLook>
     {
         async Task<IReadOnlyDictionary<string, PriorSession>> Cleared(IReadOnlyDictionary<string, PriorSession> records)
         {
@@ -76,6 +78,6 @@ internal static class SupervisorQuarantine
             return changed ?? records;
         }
 
-        return snapshot with { LastRun = await Cleared(snapshot.LastRun).ConfigureAwait(false), NamedByReopen = await Cleared(snapshot.NamedByReopen).ConfigureAwait(false) };
+        return snapshot.WithRecords(await Cleared(snapshot.LastRun).ConfigureAwait(false), await Cleared(snapshot.NamedByReopen).ConfigureAwait(false));
     }
 }

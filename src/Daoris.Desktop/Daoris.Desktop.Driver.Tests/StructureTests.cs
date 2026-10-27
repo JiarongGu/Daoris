@@ -625,6 +625,19 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Roles_uses_lower_vocabulary_facets_and_ports_and_no_Context_Review_or_Work_orders_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        string[] owners = ["Context", "Review", "Work orders"];
+        string[] folders = ["Context/", "Review/", "WorkOrders/", "Quests/"];
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Roles/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+        Assert.True(edges.Count == 0, $"Roles names Context, Review or Work orders in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;
