@@ -46,7 +46,7 @@ public static class ChatLandCommand
         var service = world.Service;
         var landing = world.Trees;
         var (workspace, repository) = landing.Owner(tree);
-        var events = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
+        var events = WorkplaceEventRecords.Current.Open(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
         var reviewWorld = new ServiceReviewWorld(service);
         var presses = new OpinionPresses(world.Home, service);
         var quests = new PressQuests(service.FindQuestAsync);

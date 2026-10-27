@@ -22,7 +22,7 @@ public sealed class AccountNamesSaidTests : IDisposable
 
     private static readonly DateTimeOffset Until = new(2026, 10, 3, 16, 2, 0, TimeSpan.FromMinutes(345));
 
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan Bound = Poll.Patience;
 
     /// <summary>A fresh id the person named (ACCT2), an old <c>account-N</c> they named, and a fresh one they never named.</summary>
     private const string Work = "acct-3f9c1a2b";

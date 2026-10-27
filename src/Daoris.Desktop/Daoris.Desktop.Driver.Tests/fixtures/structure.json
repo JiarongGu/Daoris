@@ -24,6 +24,12 @@
   ],
   "seams": ["ServiceClient","SessionProcesses","HarnessRoster","DaorisHome","MachineLog","WorkingTree","DesktopStore"],
   "files": {
+    "Knowledge/KnowledgeRoomPaths.cs": "Knowledge",
+    "Workplace/IToolHomeWorld.cs": "Workplace",
+    "Install/InstallRoot.cs": "Install",
+    "Workplace/IWorkplaceEventHistory.cs": "Workplace",
+    "Workplace/WorkplaceEventRecords.cs": "Workplace",
+    "Context/WorkplaceEventRecordsWiring.cs": "Context",
     "Agents/AccountCooling.cs": "Agents",
     "Agents/AccountFileNodes.cs": "Agents",
     "Agents/AccountNames.cs": "Agents",
@@ -955,20 +961,6 @@
   },
   "edges": [
     {
-      "family": "Workplace names Context",
-      "after": "Workplace",
-      "files": {
-        "Workplace/HistoryClearing.cs": ["SessionEvents"],
-        "Workplace/SessionDeletion.cs": ["SessionEvents"],
-        "Workplace/SessionHomeFiles.cs": ["SessionEvents"],
-        "Workplace/BranchTidying.cs": ["SessionEvents"],
-        "Workplace/ChatLandCommand.cs": ["SessionEvents"],
-        "Workplace/AutoLander.cs": ["SessionEvents"],
-        "Workplace/ChatPresses.cs": ["SessionEvents"],
-        "Workplace/EntryAccepts.cs": ["SessionEvents"]
-      }
-    },
-    {
       "family": "Workplace names Course",
       "after": "Workplace",
       "files": {
@@ -978,22 +970,6 @@
         "Workplace/AutoLander.cs": ["DaorisWords"],
         "Workplace/ChatPresses.cs": ["PressHold"],
         "Workplace/RebaseTelling.cs": ["DaorisKeys"]
-      }
-    },
-    {
-      "family": "Workplace names Help",
-      "after": "Workplace",
-      "files": {
-        "Workplace/ToolHomeLeftovers.cs": ["HelpRoom"],
-        "Workplace/SessionDeletion.cs": ["HelpRoom"],
-        "Workplace/SessionHomeFiles.cs": ["HelpConversations","HelpPublished","HelpWired"]
-      }
-    },
-    {
-      "family": "Workplace names Loop",
-      "after": "Workplace",
-      "files": {
-        "Workplace/ToolHomeLeftovers.cs": ["SystemWiring","WiringWorld"]
       }
     },
     {
@@ -1040,14 +1016,6 @@
         "Workplace/TreeLands.cs": ["LandingGate"],
         "Workplace/TreeStrays.cs": ["OpinionTree"],
         "Workplace/TreesPlanWords.cs": ["LandingGate","LandingGateWords"]
-      }
-    },
-    {
-      "family": "Workplace names Roles",
-      "after": "Workplace",
-      "files": {
-        "Workplace/GitWiring.cs": ["HolderKey"],
-        "Workplace/SessionHomeFiles.cs": ["QuestionSupervisorDecisions"]
       }
     },
     {
@@ -1394,6 +1362,10 @@
   ],
   "testFolders": ["Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
   "tests": {
+    "WorkplaceHelpBoundaryTests.cs": "Workplace",
+    "WorkplaceRolesBoundaryTests.cs": "Workplace",
+    "WorkplaceLoopBoundaryTests.cs": "Workplace",
+    "WorkplaceContextPortsTests.cs": "Workplace",
     "AutoLandingLookTests.cs": "Workplace",
     "AutoLandingPressTests.cs": "Workplace",
     "AutoLandingPushHeldTests.cs": "Workplace",

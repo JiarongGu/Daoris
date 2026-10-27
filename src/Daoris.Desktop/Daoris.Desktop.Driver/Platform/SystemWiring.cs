@@ -113,7 +113,7 @@ public sealed record WindowWiring
 /// What the wiring read is handed (WIRING1b): every fact of the program that asks, each injectable, so a test reads no
 /// machine's environment, account or home but its own.
 /// </summary>
-public sealed record WiringWorld
+public sealed record WiringWorld : IToolHomeWorld
 {
     /// <summary>The home this program runs on; null where it has none.</summary>
     public string? Home { get; init; }
@@ -145,7 +145,7 @@ public sealed record WiringWorld
     /// <summary>The sizes measured, kept for the process.</summary>
     public WiringSizes Sizes { get; init; } = WiringSizes.Shared;
 
-    /// <summary>The person's own tool home (OWNSPACE2); null where none is named: a world made by hand reads no machine's, a test names its scratch one, and the real worlds are handed <see cref="ToolHomeLeftovers.OwnHome(WiringWorld)"/>.</summary>
+    /// <summary>The person's own tool home (OWNSPACE2); null where none is named: a world made by hand reads no machine's, a test names its scratch one, and the real worlds are handed <see cref="ToolHomeLeftovers.OwnHome(IToolHomeWorld)"/>.</summary>
     public string? ToolHome { get; init; }
 
     /// <summary>Where <see cref="ToolHome"/> was read from: <c>process</c>, <c>account</c> or <c>default</c> as the environment gave it, <c>named</c> where a caller named it.</summary>
@@ -290,19 +290,10 @@ public static class SystemWiring
     public static string Json(JsonObject wiring) => JsonFile.Serialize(wiring);
 
     /// <summary>The Daoris folder a home is in, as it runs: an install whose <c>data/</c> it is, or one it is the root of; null for any other.</summary>
-    public static string? InstallOf(string? home)
-    {
-        if (home is null) return null;
-        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home));
-        if (File.Exists(Path.Combine(full, DaorisHome.InstallMarker))) return full;
-        return string.Equals(Path.GetFileName(full), DaorisHome.InstallData, StringComparison.OrdinalIgnoreCase)
-            && Path.GetDirectoryName(full) is { } parent && File.Exists(Path.Combine(parent, DaorisHome.InstallMarker))
-                ? parent
-                : null;
-    }
+    public static string? InstallOf(string? home) => InstallRoot.InstallOf(home);
 
     /// <summary>The root a home's top folders are beside: its install's, or the home itself.</summary>
-    public static string? RootOf(string? home) => InstallOf(home) ?? home;
+    public static string? RootOf(string? home) => InstallRoot.RootOf(home);
 
     /// <summary>An assembly's informational version, as the release workflow stamped it.</summary>
     public static string? VersionOf(Assembly? assembly) =>

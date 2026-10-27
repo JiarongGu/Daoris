@@ -22,9 +22,11 @@ namespace Daoris.Driver;
 /// <para><b>Bounded per line.</b> A tool that printed a megabyte would make the record unreadable a
 /// page at a time, so large fields are cut, and the cut says how long the original was.</para>
 /// </remarks>
-public sealed class SessionEvents(string directory) : ISessionEventHistory
+public sealed class SessionEvents(string directory) : IWorkplaceEventHistory
 {
     IReadOnlyList<SessionEvent> ISessionEventHistory.ReadAll(string sessionId) => After(sessionId, 0).Events;
+
+    bool IWorkplaceEventHistory.Exists(string sessionId) => File.Exists(PathOf(sessionId));
 
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 

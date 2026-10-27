@@ -48,7 +48,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
     /// <param name="log">Where <c>session.deleted</c> is written; null writes nothing.</param>
     /// <param name="events">The loop's record of conversations, so it forgets the session too; null removes the file alone.</param>
     public async Task<DeleteOutcome> DeleteAsync(
-        ServiceClient service, string id, string door, MachineLog? log, SessionEvents? events = null, CancellationToken ct = default)
+        ServiceClient service, string id, string door, MachineLog? log, ISessionEventRemoval? events = null, CancellationToken ct = default)
     {
         var record = (await service.SessionRecordsAsync(ct).ConfigureAwait(false))
             .FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
@@ -162,7 +162,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
 
     /// <summary>The kind its open is logged by (LOG1b): Ask Daoris and an intake by their door, else the record's.</summary>
     private static string KindOf(SessionRecord record) =>
-        record.Repository == HelpRoom.Repository ? SessionOpened.Help
+        record.Repository == KnowledgeRoomIdentity.Repository ? SessionOpened.Help
         : record.Ask is not null ? SessionOpened.Intake
         : record.Kind;
 

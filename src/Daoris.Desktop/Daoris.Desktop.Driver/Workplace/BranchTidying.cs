@@ -213,7 +213,7 @@ public sealed class BranchTidying(string home)
     public SessionProcesses? Processes { get; init; }
 
     /// <summary>The loop's record of conversations, so history's daily clear forgets a cleared one's numbering (KEEP1g); null removes the files alone.</summary>
-    public SessionEvents? Events { get; init; }
+    public ISessionEventRemoval? Events { get; init; }
 
     /// <summary>
     /// The shell's browser host, which says whether Daoris's own browser runs and holds its start through a clear of its caches (KEEP1f's

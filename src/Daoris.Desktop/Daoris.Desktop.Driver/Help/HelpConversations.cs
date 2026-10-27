@@ -112,7 +112,7 @@ public sealed record HelpListing(IReadOnlyList<HelpConversation> Conversations, 
 /// </remarks>
 public sealed class HelpConversations(string home)
 {
-    public const string Suffix = ".help.json";
+    public const string Suffix = SessionHomeFiles.HelpConversationsSuffix;
 
     /// <summary>What a conversation started from an earlier one is handed: that one's words, both sides, as kept here.</summary>
     public const string Transcript = "transcript";

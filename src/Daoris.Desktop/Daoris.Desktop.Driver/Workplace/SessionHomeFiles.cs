@@ -99,6 +99,13 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// </summary>
     private sealed record SessionFile(string Name, Place Place, string Suffix, bool Folder, Func<long, HistoryBytes> Counts);
 
+    internal const string HelpConversationsSuffix = ".help.json";
+    internal const string HelpWiredSuffix = ".wired.json";
+    internal const string HelpPublishedSuffix = ".published.json";
+
+    internal const string SupervisorDecisionsSuffix = ".decisions";
+    internal const string SupervisorPointerSuffix = ".supervisor.json";
+
     /// <summary>
     /// The inventory (§2.2), in the order the files go, written once (HIST1j): what a reading measures, what a clear and a delete
     /// remove, and what a left-over file is read by. A per-session file a later change adds is named here, and every door takes it.
@@ -122,8 +129,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Mark, Place.Sessions, QuestionFiles.Suffix, false, Beside),
         // SUPERVISOR1a-i: the supervisor's decisions on its questions and the current one's pointer (QuestionSupervisorDecisions),
         // kept for its history as long as its record, and going with it, never before.
-        new(Mark, Place.Sessions, QuestionSupervisorDecisions.DecisionsSuffix, true, Beside),
-        new(Mark, Place.Sessions, QuestionSupervisorDecisions.PointerSuffix, false, Beside),
+        new(Mark, Place.Sessions, SupervisorDecisionsSuffix, true, Beside),
+        new(Mark, Place.Sessions, SupervisorPointerSuffix, false, Beside),
         new(Choice, Place.Sessions, NewSessionChoices.Suffix, false, Beside),
         new(HandOver, Place.Sessions, HandOverBox.Suffix, false, Beside),
         // SESSFILES1: the agent's ask to hand its session over and the driver's state of it (MIXAGENT1c, HandOverAskFiles), and an ended
@@ -136,11 +143,11 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.
         new(Spawn, Place.Spawn, SessionChecks.Suffix, false, Beside),
-        new(Help, Place.Sessions, HelpConversations.Suffix, false, Beside),
+        new(Help, Place.Sessions, HelpConversationsSuffix, false, Beside),
         // HELPWIRED1: what each of its starts handed, Ask Daoris's too, so it goes under the same name.
-        new(Help, Place.Sessions, HelpWired.Suffix, false, Beside),
+        new(Help, Place.Sessions, HelpWiredSuffix, false, Beside),
         // ASKQUESTS1: the asks and quests its Applies published, Ask Daoris's too.
-        new(Help, Place.Sessions, HelpPublished.Suffix, false, Beside),
+        new(Help, Place.Sessions, HelpPublishedSuffix, false, Beside),
         // CHATFLOW1c (the chat-flow design §4.3): a chat run's three files, which go with the record its key names, the line's first
         // in its tree; a later record of the line names none of them.
         new(Run, Place.Runs, ".json", false, Beside),
@@ -209,7 +216,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// once.
     /// </summary>
     /// <param name="events">The loop's record of conversations, so it forgets their numbering too; null removes the files alone.</param>
-    public SessionFilesRemoved Remove(IReadOnlyCollection<string> ids, SessionEvents? events)
+    public SessionFilesRemoved Remove(IReadOnlyCollection<string> ids, ISessionEventRemoval? events)
     {
         var removed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var stayed = new Dictionary<string, List<string>>(StringComparer.Ordinal);

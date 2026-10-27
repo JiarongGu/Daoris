@@ -23,7 +23,8 @@ public sealed class AgentWorkOrdersPortsTests
         // Workplace replaces ChildGit as well as AgentWorkplace; both need the same isolation.
         Type[] replacements = [typeof(ParticipantPortsTests), typeof(AgentPluginPortsTests),
             typeof(AgentWorkplacePortsTests), typeof(AgentWorkOrdersPortsTests),
-            typeof(ServicePortsTests), typeof(InstallPortsTests), typeof(KnowledgePortsTests), typeof(AgentContextPortsTests), typeof(AgentCoursePortsTests)];
+            typeof(ServicePortsTests), typeof(InstallPortsTests), typeof(KnowledgePortsTests), typeof(AgentContextPortsTests), typeof(AgentCoursePortsTests),
+            typeof(WorkplaceContextPortsTests)];
         foreach (var type in replacements)
         {
             var collection = Assert.Single(type.CustomAttributes.Where(attribute => attribute.AttributeType == typeof(CollectionAttribute)));

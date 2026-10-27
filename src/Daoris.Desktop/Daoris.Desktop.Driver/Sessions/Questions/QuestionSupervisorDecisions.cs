@@ -40,8 +40,8 @@ public sealed class QuestionSupervisorDecisions(string home, IDecisionAdmission 
     public static TimeSpan WindowOf(DecisionAdmitted admitted) =>
         admitted.Window is { } set && set >= ShortestWindow && set <= LongestWindow ? set : Window;
 
-    public const string DecisionsSuffix = ".decisions";
-    public const string PointerSuffix = ".supervisor.json";
+    public const string DecisionsSuffix = SessionHomeFiles.SupervisorDecisionsSuffix;
+    public const string PointerSuffix = SessionHomeFiles.SupervisorPointerSuffix;
 
     /// <summary>A reason's bounds, and how many (§3.1): 1 to 5, each <c>says</c> 1-300 and <c>source</c> 1-200.</summary>
     public const int MostReasons = 5, MaxSays = 300, MaxSource = 200;

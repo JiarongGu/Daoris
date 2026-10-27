@@ -53,6 +53,19 @@ landing and commit facts through lower contracts; `Workplace/AgentWorkplaceWirin
 Tools are handed before Workplace removes inherited tokens, resolves the author and hands long paths. The installed
 tree-guard carrier and matcher belong to Agents; the actual resource, installer and guard remain Workplace's.
 
+Workplace reads and removes conversations through the supplied `IWorkplaceEventHistory` and `ISessionEventRemoval`
+facets. Context's `Sessions/Events/SessionEventLog.cs` answers them on the original record, retaining its numbering,
+lock and subscriptions. `Context/WorkplaceEventRecordsWiring.cs` installs the required factory for standalone landing;
+it constructs a record only at that command's original construction point.
+
+`ToolHomeLeftovers` reads `IToolHomeWorld`, which the Loop's `WiringWorld` answers directly with its supplied facts.
+`Install/InstallRoot.cs` owns the marked-root-or-immediate-data-child rule shared with `SystemWiring`; an unmarked
+home keeps its supplied spelling as the root. This rule differs from finding an install by a program's directory.
+
+Child starts strip the holder-key variable named by Platform's `ChildMarks`. `SessionHomeFiles` owns the supervisor
+decision-directory and pointer suffixes in its cleanup inventory; Roles' public suffix constants alias those names.
+Roles retains the proof, decision memory and persistence operations.
+
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and
@@ -75,6 +88,10 @@ D212's dated cut notes name the initializers that mod-xxi's wiring view must inc
 The driver and modules' `ParticipantWorkReadersTests` share the service tests' `fixtures/participant-work-readers.json`.
 Their exact file and line census follows both `HelpRoom.Repository` and its lower owner `KnowledgeRoomIdentity.Repository`;
 a source projection moved across the ports keeps its reader classification and Part B row in that table.
+
+Knowledge's `KnowledgeRoomPaths` owns Ask Daoris room placement and workspace folder encoding; Help's existing path APIs
+delegate to it. Help retains room preparation, access and persistence. `SessionHomeFiles` owns the historical Help-file
+suffixes used by its inventory, with Help's public suffix constants aliasing them.
 
 Scratch cleanup uses the driver tests' `GitSeed.Remove`. Tests of its bounded retries can control the wait after an actual
 refusal per call, so a held file is released at an observed attempt instead of by a competing pool timer. The default

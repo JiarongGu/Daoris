@@ -13,6 +13,14 @@ repository.
 - **Verify:** before the production change, all four new link cases failed and the two original cases passed. The focused `TreeLeftoversTests|TreeLinksTests|StructureTests` selection then passed all 47 cases, with no skips; integration is separate and TREECLEANFREE1 remains open.
 - **Commit:** `a2e3ad5bb`.
 
+## 2026-10-27 - Three fixture completion waits used private ten-second patience (TESTPATIENCE5, open)
+
+- **Symptom:** candidate `01b2e7e`'s actual whole Driver artifact, `local/scratch/scope-01b2e7e/driver.scoped.trx` in the primary checkout, reports 15,100 passed / 3 failed / 15,103 total. All three TimeoutExceptions are at TickAsync().WaitAsync(Bound): GoAheadsGoOnTests' park-answer case (line 103), AccountLimitHoldTests' cooling carry-on case (line 337), and AccountNamesSaidTests' named-account wait case (line 312).
+- **Confirmed mismatch:** these private ten-second bounds wait only for completion/state readiness; held-clocks and TESTPATIENCE1 require Poll.Patience for such failure-only patience. The delayed tick stage and scheduler/timer/continuation cause remain unknown; machine load is not proved the sole cause, and no production defect or runtime fix is claimed.
+- **Repair:** only the three private Bound declaration RHS expressions change from TimeSpan.FromSeconds(10) to Poll.Patience. Every operation, assertion, account/state/park/permission expectation, cancellation source and product deadline remains unchanged. No sleeps, retries or implementation-mirror tests are added.
+- **Verify:** the existing GoAheadsGoOnTests, AccountLimitHoldTests and AccountNamesSaidTests selection, with Category!=Process, passed 49/49, zero skipped. The foreground below-normal command used --no-restore --disable-build-servers -nr:false -p:UseSharedCompilation=false and MSBUILDDISABLENODEREUSE=1; its TRX is local/scratch/testpatience5/testpatience5-focused.trx. Post-feature confirms exactly three declaration replacements and unchanged assertions/product bodies; document and generated-index checks pass. This follow-up remains open until the parent's later whole validation; the natural red is not waived. Context remains unmerged, Loop/Roles remain held, and no Process or whole suite ran here.
+- **Commit:** `d4d1f91ec867bbb92cf089d668094dbd67b30022` (focused repair; parent whole validation remains open).
+
 ## 2026-10-27 - Compound WorkFrame interactions exhausted the test bound (FRAMEBOUNDS1)
 
 - **Symptom:** the whole nightly web gate on `93f49d4` timed out the driven-send and production-go-ahead/question cases at their existing 20-second limit, with 9,710 other cases passing.
