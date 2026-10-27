@@ -239,14 +239,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 84 | 1527 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks/Asks.cs` | 86 | 1555 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/Channel.cs` | 70 | 1219 |
 | `src/Daoris.Service/Daoris.Service.Core/Asks/History.cs` | 42 | 842 |
 | `src/Daoris.Service/Daoris.Service.Core/Knowledge/KnowledgeService.cs` | 57 | 1129 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 162 | 2846 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests/QuestExchange.cs` | 164 | 2867 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/QuestLog.cs` | 54 | 847 |
 | `src/Daoris.Service/Daoris.Service.Core/Quests/Quests.cs` | 270 | 4592 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 132 | 2353 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions/SessionLedger.cs` | 132 | 2356 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions/Sessions.cs` | 114 | 1890 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/ConfirmationTests.cs` | 57 | 1016 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 163 | 2670 |
