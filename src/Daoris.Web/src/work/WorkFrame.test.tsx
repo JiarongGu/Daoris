@@ -14,7 +14,7 @@ vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).
 import { watchScreen } from '../test/onScreen';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
 import {
-  CHAT, DRIVEN, DRIVER_STATE, Hub, PARKED, QUESTS, REGISTRY, carried, going, show, userEvent,
+  CHAT, DRIVEN, DRIVER_STATE, Hub, PARKED, QUESTS, REGISTRY, carried, focus, going, show, userEvent,
 } from '../test/workFrameKit';
 import { WorkFrame } from './WorkFrame';
 
@@ -64,7 +64,7 @@ describe('the Work frame', () => {
     expect(await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' })).toBeInTheDocument();
 
     const user = userEvent.setup();
-    within(list).getByRole('button', { name: 'More actions' }).focus();
+    focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     expect(screen.getByRole('group', { name: 'Group by' })).toBeInTheDocument();
     expect(screen.getByRole('menuitemradio', { name: 'State' })).toHaveAttribute('aria-checked', 'true');
@@ -73,7 +73,7 @@ describe('the Work frame', () => {
     expect(await within(list).findByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem('daoris.list.sessions.filters')!)).toEqual({ group: 'repository' });
 
-    within(list).getByRole('button', { name: 'More actions' }).focus();
+    focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitemradio', { name: 'State' }));
     expect(await within(list).findByRole('heading', { level: 3, name: 'Working (1)' })).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe('the Work frame', () => {
     const user = userEvent.setup();
     let list = await screen.findByRole('complementary', { name: 'Sessions' });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
-    within(list).getByRole('button', { name: 'More actions' }).focus();
+    focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     expect(screen.queryByRole('menuitemradio', { name: 'Ask' })).toBeNull();
     await user.keyboard('{Escape}');
@@ -108,7 +108,7 @@ describe('the Work frame', () => {
     show();
     list = await screen.findByRole('complementary', { name: 'Sessions' });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
-    within(list).getByRole('button', { name: 'More actions' }).focus();
+    focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitemradio', { name: 'Ask' }));
 
@@ -183,7 +183,7 @@ describe('the Work frame', () => {
     expect(JSON.parse(window.localStorage.getItem('daoris.list.sessions.filters')!)).toEqual({ group: 'repository' });
 
     const user = userEvent.setup();
-    within(list).getByRole('button', { name: 'More actions' }).focus();
+    focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     expect(screen.getByRole('menuitemradio', { name: 'State' })).toHaveAttribute('aria-checked', 'true');
     await user.click(screen.getByRole('menuitemradio', { name: 'Repository' }));
@@ -202,7 +202,7 @@ describe('the Work frame', () => {
     await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
 
     const user = userEvent.setup();
-    within(list).getByRole('button', { name: 'More actions' }).focus();
+    focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     expect(screen.getByRole('menuitemcheckbox', { name: 'Show archived' })).toHaveAttribute('aria-checked', 'false');
     await user.click(screen.getByRole('menuitemcheckbox', { name: 'Show archived' }));
@@ -211,7 +211,7 @@ describe('the Work frame', () => {
     expect(within(list).getByText('Nothing archived')).toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem('daoris.list.sessions.filters')!)).toEqual({ archived: true });
 
-    within(list).getByRole('button', { name: 'More actions' }).focus();
+    focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     expect(screen.getByRole('menuitemcheckbox', { name: 'Show archived' })).toHaveAttribute('aria-checked', 'true');
     await user.click(screen.getByRole('menuitemcheckbox', { name: 'Show archived' }));
@@ -226,7 +226,7 @@ describe('the Work frame', () => {
     await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
 
     const user = userEvent.setup();
-    within(list).getByRole('button', { name: 'More actions' }).focus();
+    focus(within(list).getByRole('button', { name: 'More actions' }));
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitem', { name: 'Archive what ended…' }));
 
@@ -303,7 +303,7 @@ describe('the Work frame', () => {
     expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!)).toEqual({ ask: 'panel' });
 
     // Back again from the panel's own list, and nothing is left to remember.
-    screen.getByRole('button', { name: 'views in the panel' }).focus();
+    focus(screen.getByRole('button', { name: 'views in the panel' }));
     await userEvent.keyboard('{Enter}');
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Move Ask Daoris to the right side bar' }));
     expect(screen.queryByRole('tablist', { name: 'views in the panel' })).toBeNull();
@@ -597,7 +597,7 @@ describe('the Work frame', () => {
       expect(frame).toHaveClass('isolate');
       expect(side.className).toMatch(/\bz-20\b/);
 
-      within(await screen.findByRole('main')).getByRole('button', { name: /^Tree:/ }).focus();
+      focus(within(await screen.findByRole('main')).getByRole('button', { name: /^Tree:/ }));
       await userEvent.keyboard('{Enter}');
       const menu = await screen.findByRole('menu');
       // Drawn at the page's root, outside the frame's own layers.
@@ -606,6 +606,12 @@ describe('the Work frame', () => {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
     }
   });
+
+  /**
+   * The frame is told a beat after a drag starts and after it ends (Chromium drops a drag the page changes under): a
+   * timer of its own, which settles here, inside `act`, rather than after the test has read the page (FRAMEACT1).
+   */
+  const dragBeat = () => act(async () => { await new Promise((done) => setTimeout(done, 0)); });
 
   /** DOCK1e: dragging a tab to the other region is the same move as the menu's, by the pointer. */
   it('moves a view dragged by its tab to the panel', async () => {
@@ -621,10 +627,12 @@ describe('the Work frame', () => {
 
     const drag = carried();
     fireEvent.dragStart(await screen.findByRole('tab', { name: 'Ask Daoris' }), { dataTransfer: drag });
+    await dragBeat();
     const panel = screen.getByRole('region', { name: 'the panel' });
     fireEvent.dragEnter(panel, { dataTransfer: drag });
     fireEvent.dragOver(panel, { dataTransfer: drag });
     fireEvent.drop(panel, { dataTransfer: drag });
+    await dragBeat();
 
     expect(within(screen.getByRole('tablist', { name: 'views in the panel' })).getByRole('tab', { name: 'Ask Daoris', selected: true }))
       .toBeInTheDocument();
@@ -646,11 +654,11 @@ describe('the Work frame', () => {
 
     const drag = carried();
     fireEvent.dragStart(tab, { dataTransfer: drag });
-    // The frame is told a beat after the drag starts (Chromium drops a drag the page changes under).
-    await act(async () => { await new Promise((done) => setTimeout(done, 0)); });
+    await dragBeat();
     const side = screen.getByRole('complementary', { name: 'right side bar' });
     fireEvent.dragEnter(side, { dataTransfer: drag });
     fireEvent.drop(side, { dataTransfer: drag });
+    await dragBeat();
 
     expect(within(screen.getByRole('tablist', { name: 'right side bar' })).getByRole('tab', { name: 'Console', selected: true }))
       .toBeInTheDocument();
@@ -680,7 +688,7 @@ describe('the Work frame', () => {
     window.localStorage.setItem('daoris.dockClosed', '0');
     show('s1a2b3c4');
 
-    screen.getByRole('button', { name: 'views in the panel' }).focus();
+    focus(screen.getByRole('button', { name: 'views in the panel' }));
     await userEvent.keyboard('{Enter}');
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Move Console to the right side bar' }));
 
@@ -689,7 +697,7 @@ describe('the Work frame', () => {
       .toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /the panel$/ })).toBeNull();
 
-    screen.getByRole('button', { name: 'views in the right side bar' }).focus();
+    focus(screen.getByRole('button', { name: 'views in the right side bar' }));
     await userEvent.keyboard('{Enter}');
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Reset view locations' }));
 
@@ -810,7 +818,7 @@ describe('the Work frame', () => {
     await vi.waitFor(() => expect(screen.getAllByText('Cap the hydration per frame')).toHaveLength(2));
 
     const user = userEvent.setup();
-    screen.getByRole('button', { name: 'more for Cap the hydration per frame' }).focus();
+    focus(screen.getByRole('button', { name: 'more for Cap the hydration per frame' }));
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitem', { name: 'Review' }));
     expect(onSelect).toHaveBeenCalledWith('c0ffee11');
@@ -1066,7 +1074,7 @@ describe('the Work frame', () => {
     const handle = await screen.findByRole('separator', { name: 'panel height' });
     const before = Number(handle.getAttribute('aria-valuenow'));
     // A resize that needs a mouse is a resize some people do not have.
-    handle.focus();
+    focus(handle);
     await userEvent.keyboard('{ArrowUp}');
 
     const grown = screen.getByRole('separator', { name: 'panel height' });

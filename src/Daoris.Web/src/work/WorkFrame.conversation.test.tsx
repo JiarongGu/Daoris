@@ -14,7 +14,7 @@ import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { eventHandlers, invoke } from '../test/workFrameBridge';
 import {
-  CHAT, DRIVEN, DRIVER_STATE, Hub, REGISTRY, ROSTER, STRUCTURED_ROSTER, QUESTS, UNANSWERED, show, timedOut, userEvent,
+  CHAT, DRIVEN, DRIVER_STATE, Hub, REGISTRY, ROSTER, STRUCTURED_ROSTER, QUESTS, UNANSWERED, focus, show, timedOut, userEvent,
 } from '../test/workFrameKit';
 import { WorkFrame } from './WorkFrame';
 
@@ -269,7 +269,7 @@ describe('starting and holding a conversation', () => {
     show(null);
     const box = await promptBox();
     const pick = async (chip: RegExp, row: RegExp) => {
-      (await screen.findByRole('button', { name: chip })).focus();
+      focus(await screen.findByRole('button', { name: chip }));
       await userEvent.keyboard('{Enter}');
       await userEvent.click(await screen.findByRole('menuitemradio', { name: row }));
     };
@@ -651,7 +651,7 @@ describe('starting and holding a conversation', () => {
     expect(model).toHaveTextContent('Default (recommended)');
     expect(screen.getByRole('combobox', { name: "this conversation's Effort" })).toHaveTextContent('High');
 
-    model.focus();
+    focus(model);
     await userEvent.keyboard('{Enter}');
     await userEvent.click(await screen.findByRole('option', { name: 'Sonnet' }));
 
@@ -720,7 +720,8 @@ describe('starting and holding a conversation', () => {
       await waitFor(() => expect(notify).toHaveBeenCalledWith(
         '已请智能体停止这一轮；对话仍然开着。1 条等待中的消息已退回输入框，未发送。'));
     } finally {
-      await i18n.changeLanguage('en');
+      // The language change re-renders every translated component of the still-mounted frame: inside act.
+      await act(async () => { await i18n.changeLanguage('en'); });
     }
   });
 
@@ -1005,7 +1006,7 @@ describe('starting and holding a conversation', () => {
   /** A Radix menu opens on the keyboard, as the other pages' tests open theirs. */
   const openMenu = async (name: string) => {
     const user = userEvent.setup();
-    (await screen.findByRole('button', { name })).focus();
+    focus(await screen.findByRole('button', { name }));
     await user.keyboard('{Enter}');
   };
 
