@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class ReopenMarks(string home)
 {
-    public const string Suffix = ".reopened.json";
+    public const string Suffix = SessionHomeFiles.ReopenMarkSuffix;
 
     /// <summary>Where a session's marks are kept.</summary>
     public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);

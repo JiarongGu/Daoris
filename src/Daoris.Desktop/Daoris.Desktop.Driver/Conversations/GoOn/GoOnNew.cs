@@ -17,7 +17,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class NewSessionChoices(string home)
 {
-    public const string Suffix = ".new-session.json";
+    public const string Suffix = SessionHomeFiles.NewSessionChoiceSuffix;
 
     /// <summary>Where a session's choice is kept.</summary>
     public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);

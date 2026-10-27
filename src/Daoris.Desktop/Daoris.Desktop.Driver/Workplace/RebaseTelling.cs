@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The rebase words said to the session itself where its landing's replay onto the line conflicts (LANDREBASE1, D87's note point 3):
-/// through the say door as Daoris's words, keyed by the session and the tip that conflicted (<see cref="DaorisKeys.Rebase"/>), so its
+/// through the say door as Daoris's words, keyed by the session and the tip that conflicted (<see cref="RebaseKeys.Of"/>), so its
 /// own conversation goes on with them in its own tree, where the context to resolve the conflict is. The automatic landing says them
 /// at the tip it judged; a terminal's <c>trees land</c> says them at its tree's tip (LANDREBASE2), since a terminal has no second press
 /// for the window's <i>Ask it to rebase</i>.
@@ -18,7 +18,7 @@ public static class RebaseTelling
         if (tip is null) return null;
         try
         {
-            return await say(session, conflict.Words, DaorisKeys.Rebase(session, tip), ct).ConfigureAwait(false);
+            return await say(session, conflict.Words, RebaseKeys.Of(session, tip), ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {

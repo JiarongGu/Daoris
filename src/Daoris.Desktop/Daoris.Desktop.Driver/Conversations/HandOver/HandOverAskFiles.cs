@@ -15,9 +15,9 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class HandOverAskFiles(string home)
 {
-    public const string AskSuffix = ".hand-over-ask.json";
+    public const string AskSuffix = SessionHomeFiles.HandOverAskSuffix;
 
-    public const string StateSuffix = ".hand-over-state.json";
+    public const string StateSuffix = SessionHomeFiles.HandOverStateSuffix;
 
     private string PathOf(string session, string suffix) => DaorisHome.Entry(home, HomeEntry.Sessions, session + suffix);
 

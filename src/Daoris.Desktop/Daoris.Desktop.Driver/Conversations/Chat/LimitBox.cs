@@ -21,7 +21,7 @@ public sealed record LimitMoveBox(string Why, int Before, int Through, IReadOnly
 /// </summary>
 public sealed class LimitBoxes(string home)
 {
-    public const string Suffix = ".limit-move.json";
+    public const string Suffix = SessionHomeFiles.LimitMoveSuffix;
 
     /// <summary>Where a session's box is kept.</summary>
     public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);

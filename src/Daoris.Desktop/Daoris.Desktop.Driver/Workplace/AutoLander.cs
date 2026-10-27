@@ -61,7 +61,7 @@ public sealed class ServiceAutoLandingWorld(ServiceClient service) : IAutoLandin
     public IAutoLandingWorld Again() => new ServiceAutoLandingWorld(service);
 
     public async Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) =>
-        await service.SayAsync(session, text, null, ct, from: DaorisWords.From, key: key).ConfigureAwait(false);
+        await service.SayAsync(session, text, null, ct, from: SaidFrom.Daoris, key: key).ConfigureAwait(false);
 }
 
 /// <summary>A due session the look chose to try, with what it read of it there: its quest, and its tree's tip and status.</summary>

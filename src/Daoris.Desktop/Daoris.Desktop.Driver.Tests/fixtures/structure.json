@@ -30,6 +30,11 @@
     "Workplace/IWorkplaceEventHistory.cs": "Workplace",
     "Workplace/WorkplaceEventRecords.cs": "Workplace",
     "Context/WorkplaceEventRecordsWiring.cs": "Context",
+    "Workplace/Domain/RebaseKeys.cs": "Workplace",
+    "Workplace/WorkplaceHandedQuests.cs": "Workplace",
+    "Conversations/HandOver/WorkplaceHandedQuestsWiring.cs": "Course",
+    "Workplace/WorkplacePressTelling.cs": "Workplace",
+    "Sessions/Requests/WorkplacePressTellingWiring.cs": "Course",
     "Agents/AccountCooling.cs": "Agents",
     "Agents/AccountFileNodes.cs": "Agents",
     "Agents/AccountNames.cs": "Agents",
@@ -961,18 +966,6 @@
   },
   "edges": [
     {
-      "family": "Workplace names Course",
-      "after": "Workplace",
-      "files": {
-        "Workplace/HistoryHome.cs": ["HandedQuests"],
-        "Workplace/SessionHomeFiles.cs": ["GoOnMarks","HandOverAskFiles","HandOverBox","LimitBoxes","NewSessionChoices","ReopenMarks"],
-        "Workplace/ChatLandCommand.cs": ["PressTold","PressesTold"],
-        "Workplace/AutoLander.cs": ["DaorisWords"],
-        "Workplace/ChatPresses.cs": ["PressHold"],
-        "Workplace/RebaseTelling.cs": ["DaorisKeys"]
-      }
-    },
-    {
       "family": "Workplace names Participants",
       "after": "Workplace",
       "files": {
@@ -1362,6 +1355,8 @@
   ],
   "testFolders": ["Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
   "tests": {
+    "WorkplaceCourseBoundaryTests.cs": "Workplace",
+    "WorkplaceCoursePortsTests.cs": "Workplace",
     "WorkplaceHelpBoundaryTests.cs": "Workplace",
     "WorkplaceRolesBoundaryTests.cs": "Workplace",
     "WorkplaceLoopBoundaryTests.cs": "Workplace",

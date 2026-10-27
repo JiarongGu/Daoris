@@ -67,7 +67,7 @@ public static class ChatLandCommand
             },
             () => ChatPresses.TurnsOf(events, line), ct).ConfigureAwait(false);
 
-        new PressesTold(world.Home).Tell(new PressTold(withoutLook is null ? PressesTold.Land : PressesTold.LandWithoutLook, session, DateTimeOffset.UtcNow));
+        WorkplacePressTelling.Current.Tell(world.Home, withoutLook is null ? TreesMarks.Land : TreesMarks.LandWithoutLook, session, DateTimeOffset.UtcNow);
         var said = TreesWords.Land(pressed.Landed, []);
         said.Print(world.Output, world.Error);
         if (world.Log is { } log && pressed.Gate is { } judged

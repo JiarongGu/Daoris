@@ -26,8 +26,8 @@ public sealed record SessionFilesRemoved(
 /// </summary>
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
-/// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<see cref="ReopenMarks"/>), its park's question (<see cref="QuestionFiles"/>) and the supervisor's decisions on it (<see cref="QuestionSupervisorDecisions"/>), each named <c>mark</c>, its choice of a new
-/// session, its hand-over boxes (<see cref="HandOverBox"/>, its agent's ask and that ask's state, and a limit's move), the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
+/// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<c>ReopenMarks</c>), its park's question (<see cref="QuestionFiles"/>) and the supervisor's decisions on it (<see cref="QuestionSupervisorDecisions"/>), each named <c>mark</c>, its choice of a new
+/// session, its hand-over boxes (<c>HandOverBox</c>, its agent's ask and that ask's state, and a limit's move), the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
 /// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
 ///
@@ -49,7 +49,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Mark = "mark";
     public const string Choice = "choice";
 
-    /// <summary>A conversation's ask to go on with another agent (MIXAGENT1a-i, <see cref="HandOverBox"/>).</summary>
+    /// <summary>A conversation's ask to go on with another agent (MIXAGENT1a-i, <c>HandOverBox</c>).</summary>
     public const string HandOver = "hand-over";
     public const string Spawn = "spawn";
 
@@ -99,6 +99,14 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// </summary>
     private sealed record SessionFile(string Name, Place Place, string Suffix, bool Folder, Func<long, HistoryBytes> Counts);
 
+    internal const string GoOnMarkSuffix = ".cannot.json";
+    internal const string ReopenMarkSuffix = ".reopened.json";
+    internal const string NewSessionChoiceSuffix = ".new-session.json";
+    internal const string HandOverBoxSuffix = ".hand-over.json";
+    internal const string HandOverAskSuffix = ".hand-over-ask.json";
+    internal const string HandOverStateSuffix = ".hand-over-state.json";
+    internal const string LimitMoveSuffix = ".limit-move.json";
+
     internal const string HelpConversationsSuffix = ".help.json";
     internal const string HelpWiredSuffix = ".wired.json";
     internal const string HelpPublishedSuffix = ".published.json";
@@ -122,23 +130,23 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         // FOUNDATION1 z-iii: the file once its conversation is imported into the store, set aside beside it; the binding itself goes below.
         new(Harness, Place.Sessions, HarnessConversations.Suffix + HarnessConversations.SetAsideSuffix, false, Beside),
         new(Marker, Place.Pids, ".pid", false, Beside),
-        new(Mark, Place.Sessions, GoOnMarks.Suffix, false, Beside),
+        new(Mark, Place.Sessions, GoOnMarkSuffix, false, Beside),
         // FABRIC-CLOSE1c8: the reopens it was told of, a mark too, which goes with its record.
-        new(Mark, Place.Sessions, ReopenMarks.Suffix, false, Beside),
+        new(Mark, Place.Sessions, ReopenMarkSuffix, false, Beside),
         // PARKVIEW1: the question its park asked (QuestionFiles), a mark of the park as the others are, which goes with its record.
         new(Mark, Place.Sessions, QuestionFiles.Suffix, false, Beside),
         // SUPERVISOR1a-i: the supervisor's decisions on its questions and the current one's pointer (QuestionSupervisorDecisions),
         // kept for its history as long as its record, and going with it, never before.
         new(Mark, Place.Sessions, SupervisorDecisionsSuffix, true, Beside),
         new(Mark, Place.Sessions, SupervisorPointerSuffix, false, Beside),
-        new(Choice, Place.Sessions, NewSessionChoices.Suffix, false, Beside),
-        new(HandOver, Place.Sessions, HandOverBox.Suffix, false, Beside),
+        new(Choice, Place.Sessions, NewSessionChoiceSuffix, false, Beside),
+        new(HandOver, Place.Sessions, HandOverBoxSuffix, false, Beside),
         // SESSFILES1: the agent's ask to hand its session over and the driver's state of it (MIXAGENT1c, HandOverAskFiles), and an ended
         // conversation's move at its limit's wake (LIMITRESUME1c, LimitBoxes): each a box of a record that goes with it, under the name
         // its sibling box has, since each is a hand-over's file and the page says no new word for it.
-        new(HandOver, Place.Sessions, HandOverAskFiles.AskSuffix, false, Beside),
-        new(HandOver, Place.Sessions, HandOverAskFiles.StateSuffix, false, Beside),
-        new(HandOver, Place.Sessions, LimitBoxes.Suffix, false, Beside),
+        new(HandOver, Place.Sessions, HandOverAskSuffix, false, Beside),
+        new(HandOver, Place.Sessions, HandOverStateSuffix, false, Beside),
+        new(HandOver, Place.Sessions, LimitMoveSuffix, false, Beside),
         new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.

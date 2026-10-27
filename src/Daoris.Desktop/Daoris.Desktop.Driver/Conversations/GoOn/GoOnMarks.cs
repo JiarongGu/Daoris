@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class GoOnMarks(string home)
 {
-    public const string Suffix = ".cannot.json";
+    public const string Suffix = SessionHomeFiles.GoOnMarkSuffix;
 
     /// <summary>Where a session's mark is kept.</summary>
     public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);

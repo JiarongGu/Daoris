@@ -306,11 +306,11 @@ internal static class HistoryHome
         var quests = cleared.Where(unit => unit.Kind != HistoryKinds.Failed).SelectMany(unit => unit.Quests).ToList();
         var asks = cleared.SelectMany(unit => unit.Asks).ToList();
         // A quest held on another agent (MIXAGENT1a-ii) is held by a store of its own, which goes with the quest's work.
-        var handed = new HandedQuests(world.Home);
+        var handed = WorkplaceHandedQuests.Current.Open(world.Home);
         if (scope == HistoryScope.Workspace && after is not null)
         {
             var held = after.Quests.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            quests.AddRange(handed.All().Keys.Where(quest => !held.Contains(quest)));
+            quests.AddRange(handed.Readable().Where(quest => !held.Contains(quest)));
             quests.AddRange(config.Forgiven.Keys.Concat(config.Released.Keys).Concat(config.PausedQuests.Keys).Where(quest => !held.Contains(quest)));
             var standing = after.Asks.Select(ask => ask.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
             asks.AddRange(config.PausedAsks.Keys.Where(ask => !standing.Contains(ask)));
