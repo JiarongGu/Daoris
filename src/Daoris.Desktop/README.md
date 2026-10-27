@@ -106,6 +106,18 @@ evidence at a lost session's end. The archive's judgement and an entry's Accept 
 the abandon plan's records over the work's pieces are Work orders', while `PartBegan` and the entry records stay in
 `Workplace/SessionEntries.cs`, the file the page's parts flow reads its words from.
 
+Workplace names no Workflows type. Where a run's files lie and how its id reads are Workplace's `WorkplaceRunFiles` (the runs and
+looks folders, the opinion gates' folder, the chat key and its record), which `WorkflowRunBindings` and `ChatRuns` answer through, so
+the history, its clearing and a session's inventory name no workflow. The trees, the auto-lander and the end judgement read the
+process a run follows through `IWorkplaceProcess`, which `WorkflowProcess` implements: whether a named workflow governs the work,
+the landing it lands by, why its run or landing cannot start, the version that decided and the second-opinion rule. The rest is
+asked of Workflows through two required holders it installs from `Workflows/WorkplaceWorkflowsWiring.cs`: `IWorkplaceWorkflows`
+(the landed route's accepted declaration, a quest's process read from the chain the service answers, a chat run's bind and its press)
+and `IWorkplaceGateWorkflows`, which assembles the landing gate (the run's process, its workflow part and its graph's, then the
+review and the second opinion over that one process, in `Workflows/TreeGateWorkflows.cs`) while `TreeGates` keeps the second opinion
+and the git reads it uses. `trees.WorkflowAsync` is Workflows' extension of `SessionTrees`, and `WorkflowProcesses.ConcludedAsync`
+reads a concluded run's process for the second opinion owed beside the landing.
+
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and
