@@ -11,7 +11,7 @@ repository.
 - **Confirmed mismatch:** these private ten-second bounds wait only for completion/state readiness; held-clocks and TESTPATIENCE1 require Poll.Patience for such failure-only patience. The delayed tick stage and scheduler/timer/continuation cause remain unknown; machine load is not proved the sole cause, and no production defect or runtime fix is claimed.
 - **Repair:** only the three private Bound declaration RHS expressions change from TimeSpan.FromSeconds(10) to Poll.Patience. Every operation, assertion, account/state/park/permission expectation, cancellation source and product deadline remains unchanged. No sleeps, retries or implementation-mirror tests are added.
 - **Verify:** the existing GoAheadsGoOnTests, AccountLimitHoldTests and AccountNamesSaidTests selection, with Category!=Process, passed 49/49, zero skipped. The foreground below-normal command used --no-restore --disable-build-servers -nr:false -p:UseSharedCompilation=false and MSBUILDDISABLENODEREUSE=1; its TRX is local/scratch/testpatience5/testpatience5-focused.trx. Post-feature confirms exactly three declaration replacements and unchanged assertions/product bodies; document and generated-index checks pass. This follow-up remains open until the parent's later whole validation; the natural red is not waived. Context remains unmerged, Loop/Roles remain held, and no Process or whole suite ran here.
-- **Commit:** pending local focused proof.
+- **Commit:** `d4d1f91ec867bbb92cf089d668094dbd67b30022` (focused repair; parent whole validation remains open).
 
 ## 2026-10-27 - Compound WorkFrame interactions exhausted the test bound (FRAMEBOUNDS1)
 
