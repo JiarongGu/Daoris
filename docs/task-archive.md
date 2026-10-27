@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Retired Fabric attempts (2026-10-27)
+
+Completed at the owner's request: retired the unmerged branch names `quest/fabric-c2a-1ce2a0cd9ebb` and `worktree-agent-ac4bd4973eec96ec9`, with no checked-out worktree on either. Their exact tips remain recoverable as `refs/daoris/retired/fabric-c2a-quest-20261027` (`9b3ac2762cffb4d957490f22358e21676aad08c8`) and `refs/daoris/retired/fabric-c2a-agent-20261027` (`8d266a3c2d7904f7f980d5e86a03c1be1b9a7c36`). The existing local recovery bundle was verified to contain both tips and complete history before retirement; deletion verified both recovery refs and original tips in one Git transaction, with worktree checks before and after and absence confirmed by Git's exit 2. FABRIC-C2a remains open for rework and actual ACP lineage proof; no implementation from these attempts was merged or declared complete.
+
 ## Real-loop notice fixture clock (2026-10-27)
 
 > **NOTICESCLOCK1 — keep the real-loop notice fixture on its own clock** (integration, 2026-10-27). The Modules fast gate loses all seeded notices once its fixed held-clock date is seven days behind the real loop; preserve the retention and read/dismiss assertions while aligning fixture timestamps with the loop. Require whole Modules proof; diagnosis and natural red are in FIX-LOG.
