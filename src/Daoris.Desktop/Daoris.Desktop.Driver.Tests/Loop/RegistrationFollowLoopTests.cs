@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class RegistrationFollowLoopTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan Bound = Poll.Patience;
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-follow-loop-" + Guid.NewGuid().ToString("N")[..8]);
 

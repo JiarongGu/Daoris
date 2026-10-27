@@ -12,6 +12,24 @@ repository.
 - **Fix:** the independent taken-at-once outcome has its own case. Held-to-idle stays together so the preceding hold's notification cannot leak into the next send, and all original words are typed through the menu. The authorization case pastes the unchanged full phrase through user-event's real clipboard/input behavior, retaining selected/free Send-and-Enter refusals, approval payload, retained park and empty-box checks. Additional request and no-cancellation assertions cover each driven send. The timeout, production code and shared user-event timing defaults are unchanged.
 - **Verify:** the naturally failing nightly cases remain recorded. The three repaired focused scenarios pass, both affected files pass **117 cases** (formerly 116), and web typechecking passes. No retry, artificial load, shorter phrase, raw value assignment or suppressed assertion was used. FRAMEACT1 retains the emitted React act warnings. Full web and parent integration proof remain owed; FRAMEBOUNDS1 stays open until then.
 
+## 2026-10-27 - Two fast fixtures retained ten-second signal patience (TESTPATIENCE4)
+
+- **Symptom:** candidate `7958f3b`'s full Driver run passed 15,059 and failed two, reporting TimeoutException in MachineFactsTests' late-judge case at line 162,
+  awaiting JudgedAsync after FirstAsync had completed, and RegistrationFollowLoopTests' moved-line case at line 48,
+  awaiting its first whole TickAsync. The finalized natural red evidence is `local/scratch/scope-7958f3b/driver.log` and
+  `driver.scoped.trx` beside it; the earlier live `.partial` file was renamed away.
+- **Confirmed fixture defect:** both outer waits use local ten-second signal-patience constants, contrary to TESTPATIENCE1/2/3
+  and held-clocks. The constants originated in `930de553f` (PARALLEL1a) and `c81088cea` (WSSETUP5), respectively.
+  The final log and TRX do not establish whether scheduling, timer delivery, continuations or other work delayed
+  completion, nor locate the whole tick's delay. A production clock or registration defect is not established.
+- **Repair:** only the RHS expressions of MachineFactsTests.Within and RegistrationFollowLoopTests.Bound change to Poll.Patience. The 200 ms and
+  30 s behavior bounds, assertions, clocks, cancellation, lifetime and test identities are unchanged. No production fix is claimed.
+- **Verification:** after the parent released checks, the foreground `Category!=Process` selection of only the two affected classes
+  passed 16/16 (MachineFacts 13, RegistrationFollowLoop 3), with no skips, below normal priority and no build-server reuse.
+  The TRX is `local/scratch/testpatience4/testpatience4-focused.trx`. No constant-value tests were added. Parent reports that
+  base/candidate probes passed but both queue failures remain unresolved, with neither waived. This is focused fixture proof,
+  not full integration or a production fix; the scheduler cause remains unknown. D212 records the exact command and reached checks.
+
 ## 2026-10-27 - Night exposed a room fixture sharing violation and repeated structure-analysis work
 
 - **Symptom:** the Driver fast Night on `93f49d4` passed 15,054 cases and failed two: HelpFactsTests' live room poll threw IOException,
