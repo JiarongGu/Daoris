@@ -84,6 +84,15 @@ placement table puts `Domain/AccessRules`. What holds a tree for a helper's wait
 state words and the reading of the piece's ref are Workplace's pure `PieceKeptStates`, which `PartnerStates` and
 `PartnerReconcile.AfterRef` alias and delegate to.
 
+Workplace names no Plugins type. The trees speak the landing's plugin wire through `IWorkplacePluginWire` (a land, a hand-on,
+an occasion's state asks, the moment they reckon by, and why a plugin cannot be spoken to), which `LandingPlugins` implements
+directly from `Plugins/`; a session's trees take it, and `SessionTrees` makes its default through the required
+`IWorkplacePluginOperations`, which `Plugins/WorkplacePluginsWiring.cs` installs, as it loads the catalogue for a chat's land.
+The landing and pull-request refusals and a workflow's reading of the plugins use `IWorkplacePluginCatalog` and the
+`IWorkplacePluginEntry` it answers, which `PluginCatalog` and `PluginEntry` implement. The plugin id's shape is `PluginIds`'
+alone, and the landing's patience and the door words are Workplace's pure `LandingPatience` and `WorkplaceDoors`, which
+`LandingPlugins.DefaultPatience` and `PluginEvents` alias.
+
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and

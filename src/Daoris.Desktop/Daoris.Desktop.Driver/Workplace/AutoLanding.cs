@@ -394,7 +394,7 @@ public static class LandingLines
                 ("session", session), ("repository", repository), ("workspace", workspace), ("code", code), ("commits", commits),
                 ("uncommitted", uncommitted),
                 // The shape is asked of its one owner (REFAC1); the line adds only its bound.
-                ("plugin", plugin is { Length: <= PluginIdLimit } && PluginCatalog.IsId(plugin) ? plugin : null),
+                ("plugin", plugin is { Length: <= PluginIdLimit } && PluginIds.IsId(plugin) ? plugin : null),
                 ("pushed", pushed),
             ]);
     }

@@ -89,9 +89,9 @@ public static class PluginEvents
     public const string NotPushed = "not-pushed";
 
     /// <summary>Which door a trial or a test run came from.</summary>
-    public const string Screen = "screen";
+    public const string Screen = WorkplaceDoors.Screen;
 
-    public const string Terminal = "terminal";
+    public const string Terminal = WorkplaceDoors.Terminal;
 }
 
 /// <summary>

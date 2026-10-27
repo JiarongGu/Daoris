@@ -202,9 +202,10 @@ public sealed class PullRequestOccasionTests
                 {
                     var lineStart = source.LastIndexOf('\n', call.Index) + 1;
                     var line = source[lineStart..(source.IndexOf('\n', call.Index) is var end and >= 0 ? end : source.Length)];
-                    // A declaration, or a comment or a doc reference, is not a call.
-                    if (Regex.IsMatch(line, @"^\s*(?:public|private|internal|protected)\b") || line.TrimStart().StartsWith("//", StringComparison.Ordinal)
-                        || line.TrimStart().StartsWith("///", StringComparison.Ordinal))
+                    // A declaration (an interface's member has no modifier: a return type, the name and its parameters, ended by `;`), or a
+                    // comment or a doc reference, is not a call.
+                    if (Regex.IsMatch(line, @"^\s*(?:public|private|internal|protected)\b") || Regex.IsMatch(line, @"^\s*Task(?:<.*>)?\s+\w+\s*\(.*\)\s*;\s*$")
+                        || line.TrimStart().StartsWith("//", StringComparison.Ordinal) || line.TrimStart().StartsWith("///", StringComparison.Ordinal))
                     {
                         continue;
                     }

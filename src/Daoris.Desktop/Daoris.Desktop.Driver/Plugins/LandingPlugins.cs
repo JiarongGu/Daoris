@@ -40,7 +40,7 @@ public sealed class LandingPlugins(
     // What an occasion's asks reckon their bound by (PLUGHOOK1a); the clock by default.
     Func<DateTimeOffset>? clock = null,
     // How long one ask waits, its handshake inside the first (PLUGHOOK1a); StatePatience by default.
-    TimeSpan? statePatience = null)
+    TimeSpan? statePatience = null) : IWorkplacePluginWire
 {
     private readonly PluginLog _log = pluginLog ?? new(log, health);
     private readonly Func<DateTimeOffset> _clock = clock ?? (() => DateTimeOffset.UtcNow);
@@ -57,9 +57,10 @@ public sealed class LandingPlugins(
 
     /// <summary>
     /// How long a plugin has to push and open the pull request. Longer than a decision's ten seconds: a
-    /// push and a platform's API are network round trips, and the person pressed and is waiting.
+    /// push and a platform's API are network round trips, and the person pressed and is waiting. The workplace's
+    /// <see cref="LandingPatience.Plugin"/> holds it, which the landing's hold is reckoned past.
     /// </summary>
-    public static readonly TimeSpan DefaultPatience = TimeSpan.FromMinutes(2);
+    public static readonly TimeSpan DefaultPatience = LandingPatience.Plugin;
 
     // A start a test handed in serves the asks too; the driver's own waits StatePatience there rather than a landing's two minutes.
     private readonly bool _injected = start is not null;

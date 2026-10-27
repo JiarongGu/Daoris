@@ -61,7 +61,7 @@ namespace Daoris.Driver;
 internal static class LandingHolds
 {
     /// <summary>How long a door waits for another holding the same tree or branch: past a plugin's own patience, and a tidy.</summary>
-    public static readonly TimeSpan Wait = LandingPlugins.DefaultPatience + TimeSpan.FromMinutes(3);
+    public static readonly TimeSpan Wait = LandingPatience.Plugin + TimeSpan.FromMinutes(3);
 
     private static readonly TimeSpan Poll = TimeSpan.FromMilliseconds(50);
 

@@ -97,10 +97,10 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
 /// shell and the terminal hand one that says the plugin's lines where each says things.
 /// </param>
 /// <param name="variable">The environment the trees read (ENVSEAM1): this process's by default, a test's own where it hands one.</param>
-public sealed class SessionTrees(string home, LandingPlugins? plugins = null, Func<string, string?>? variable = null) : IWorkTrees
+public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = null, Func<string, string?>? variable = null) : IWorkTrees
 {
     /// <summary>What the parts share (PART10i): the home, the plugin wire, the seams.</summary>
-    private readonly TreeContext _context = new(home, plugins ?? new LandingPlugins(home), variable);
+    private readonly TreeContext _context = new(home, plugins ?? WorkplacePlugins.Current.Wire(home), variable);
 
     /// <summary>The shared context, for Review's graph (GITAPP1a-ii), which reads what <see cref="ReviewRanges"/> and <see cref="LandedReviews"/> read.</summary>
     internal TreeContext Context => _context;

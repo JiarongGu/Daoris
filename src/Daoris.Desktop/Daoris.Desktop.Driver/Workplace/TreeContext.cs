@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 internal sealed class TreeContext
 {
-    internal TreeContext(string home, LandingPlugins plugins, Func<string, string?>? variable = null)
+    internal TreeContext(string home, IWorkplacePluginWire plugins, Func<string, string?>? variable = null)
     {
         Home = home;
         Plugins = plugins;
@@ -25,7 +25,7 @@ internal sealed class TreeContext
     internal string Home { get; }
 
     /// <summary>The plugin wire a branch rule's landing speaks (WSR4, D100).</summary>
-    internal LandingPlugins Plugins { get; }
+    internal IWorkplacePluginWire Plugins { get; }
 
     /// <summary>
     /// The environment the trees read their variables from (ENVSEAM1, D63's seam): this process's, unless a test hands in its own,

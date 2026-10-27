@@ -41,6 +41,12 @@
     "Conversations/GoOn/WorkplaceHarnessBindingsWiring.cs": "Participants",
     "Workplace/WorkplaceAccessSetup.cs": "Workplace",
     "Sessions/WorkplaceAccessSetupWiring.cs": "Participants",
+    "Workplace/WorkplacePluginWire.cs": "Workplace",
+    "Workplace/WorkplacePlugins.cs": "Workplace",
+    "Workplace/Domain/LandingPatience.cs": "Workplace",
+    "Workplace/Domain/WorkplaceDoors.cs": "Workplace",
+    "Plugins/WorkplacePluginsWiring.cs": "Plugins",
+    "Plugins/LandingPlugins.cs": "Plugins",
     "Agents/AccountCooling.cs": "Agents",
     "Agents/AccountFileNodes.cs": "Agents",
     "Agents/AccountNames.cs": "Agents",
@@ -812,7 +818,6 @@
     "Workplace/Landing.cs": "Workplace",
     "Workplace/LandingHoldNotice.cs": "Workplace",
     "Workplace/LandingHolds.cs": "Workplace",
-    "Workplace/LandingPlugins.cs": "Workplace",
     "Workplace/LandingWakes.cs": "Workplace",
     "Workplace/RebaseTelling.cs": "Workplace",
     "Workplace/LayoutGit.cs": "Workplace",
@@ -971,18 +976,6 @@
     "Workflows/WorkflowVerb.cs": "Workflows"
   },
   "edges": [
-    {
-      "family": "Workplace names Plugins",
-      "after": "Workplace",
-      "files": {
-        "Workplace/HistoryCommand.cs": ["PluginEvents"],
-        "Workplace/ChatLandCommand.cs": ["PluginCatalog"],
-        "Workplace/AutoLanding.cs": ["PluginCatalog"],
-        "Workplace/Landing.cs": ["PluginCatalog"],
-        "Workplace/LandingPlugins.cs": ["HookChannels","HookFrames","HookProcess","IHookChannel","PluginCatalog","PluginEntry","PluginEvents","PluginFailures","PluginHealth","PluginKit","PluginLog"],
-        "Workplace/PullRequestStates.cs": ["PluginCatalog"]
-      }
-    },
     {
       "family": "Workplace names Review",
       "after": "Workplace",
@@ -1352,6 +1345,8 @@
     "WorkplaceCoursePortsTests.cs": "Workplace",
     "WorkplaceParticipantsBoundaryTests.cs": "Workplace",
     "WorkplaceParticipantsPortsTests.cs": "Workplace",
+    "WorkplacePluginsBoundaryTests.cs": "Workplace",
+    "WorkplacePluginsPortsTests.cs": "Workplace",
     "WorkplaceHelpBoundaryTests.cs": "Workplace",
     "WorkplaceRolesBoundaryTests.cs": "Workplace",
     "WorkplaceLoopBoundaryTests.cs": "Workplace",
@@ -1448,8 +1443,8 @@
     "LandingAutoAcceptTests.cs": "Workplace",
     "LandingChainTests.cs": "Workplace",
     "LandingHoldsTests.cs": "Workplace",
-    "LandingPluginPatienceTests.cs": "Workplace",
-    "LandingPluginTests.cs": "Workplace",
+    "LandingPluginPatienceTests.cs": "Plugins",
+    "LandingPluginTests.cs": "Plugins",
     "LandingSquashTests.cs": "Workplace",
     "LandingTests.cs": "Workplace",
     "LandingTidyTests.cs": "Workplace",
@@ -1545,7 +1540,7 @@
     "BranchTidyingFixture.cs": "Workplace",
     "KeepSizeFixture.cs": "Workplace",
     "LandedFixture.cs": "Workplace",
-    "LandingPluginFixture.cs": "Workplace",
+    "LandingPluginFixture.cs": "Plugins",
     "TreeSyncFixture.cs": "Workplace",
     "GitHttpBackendHost.cs": "Workplace",
     "RefusingHttpHost.cs": "Workplace",
