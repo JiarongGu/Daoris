@@ -5,6 +5,38 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - Review graph census can close a frontier before a producer registers its child (GRAPHQUIET1)
+
+- **Natural red:** the parent's candidate `3c57df7` Driver run passed 15,060 and failed one. The finalized
+  `local/scratch/scope-3c57df7/driver.log` and `driver.scoped.trx` report K′ starting in round four with depth two
+  for line=set, record=grown-held, bases=both, incomparable=false. The scheduler cause is not established.
+- **Fixture diagnosis:** QuietAsync examines only nodes already registered. A tracked producer can have received its
+  parent answer but not yet registered its child; a pool probe and elapsed quiet interval do not acknowledge that producer.
+  The elapsed heuristic was retained through `825d5f734` and `24c8a25d5`; those FLAKE1 repairs addressed different timing
+  symptoms and did not establish producer closure. Separately, copying the held queue and then clearing it can discard
+  an enqueue between those operations. Neither mechanism establishes the queue failure's particular scheduler cause.
+- **Deterministic red:** the same scripted producer first completes ungated, then is positively held after E answers and
+  before K′ registration. The held run requires acknowledgement that its missing child start is being awaited, then permits
+  registration and awaits the actual child start. Finally releases every gate and awaits the tracked producer and settlement.
+  After release, the adapter over original QuietAsync failed once at Assert.Same: QuietAsync had completed while the waiting
+  acknowledgement was still pending. `local/scratch/graphquiet1/frontier-old-red.trx` retains that intended failure.
+- **Repair:** a settled same-World graph supplies topology completeness, alongside the independent chain and named-depth
+  goldens. Injective DAG matching compares name, budget, program/speculation flags and dependency identities with multiplicity;
+  creation order is not identity. The frontier records actual observed rounds and awaits starts, stand-in arrivals, released
+  nodes' Answered signals and final completion. One Poll.Patience deadline bounds each whole frontier, never renewed by progress
+  and cancelled on exit; missing or secretly serialized starts fail at that bound. Exact
+  acknowledged entries are dequeued, preserving late arrivals. Reference command multisets also match; original actual-round
+  equality, no-two-Π, chain result and command/waste assertions remain. Production scheduling and sources are unchanged.
+- **Implementation finding:** an intermediate class run reported an early failure and later timed out, and was stopped without
+  a completed TRX. The helper needed a consistent observed-start snapshot and Answered notifications for acknowledged reads
+  still finishing after dequeue. The deterministic completion-only case now holds that path: it must wake without another arrival.
+- **Focused proof:** the repaired census passed 203 cases before the completion-only regression was added; the next combined
+  selection passed 254/254, including all original 189 census cases and 15 new fixture cases. The command-multiset follow-up
+  also passed 254/254; the final whole-frontier deadline audit passed the same 254/254 with zero skipped, retained in
+  `local/scratch/graphquiet1/frontier-focused-deadline.trx`. D212 records the command and reached checks.
+  This is fixture proof, not full Driver/stage/installed integration; parent owns
+  those gates and GRAPHQUIET1's backlog record. No production defect or full integration completion is claimed.
+
 ## 2026-10-27 - Two fast fixtures retained ten-second signal patience (TESTPATIENCE4)
 
 - **Symptom:** candidate `7958f3b`'s full Driver run passed 15,059 and failed two, reporting TimeoutException in MachineFactsTests' late-judge case at line 162,

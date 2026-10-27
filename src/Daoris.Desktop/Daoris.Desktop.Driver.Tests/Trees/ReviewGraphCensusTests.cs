@@ -99,7 +99,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
     /// <summary>The stand-in: each git answered from the world, held until released where <paramref name="held"/> is given.</summary>
     private Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<ChildRun>> Stand(
-        World world, ConcurrentQueue<(IReadOnlyList<string> Arguments, TaskCompletionSource Release)>? held) =>
+        World world, HeldReads? held) =>
         async (arguments, _, ct) =>
         {
             if (held is not null)
@@ -166,7 +166,29 @@ public sealed class ReviewGraphCensusTests : IDisposable
             WorkingTree.Runs.Value = null;
         }
 
-        var held = new ConcurrentQueue<(IReadOnlyList<string> Arguments, TaskCompletionSource Release)>();
+        // The settled replay supplies completeness, not the answer/depth oracle: those assertions remain below.
+        var reference = new ReviewGraph();
+        string[] referenceCommands;
+        WorkingTree.Runs.Value = Stand(world, null);
+        try
+        {
+            using var count = GitLaunch.Count();
+            using (GitLaunch.Within(GitBudget.Review))
+            {
+                Assert.Equal(chain, await OutcomeAsync(() => ReviewGraphReads.ReadAsync(
+                    reference, Session, _tree, baseCommit, Trees(world), NoCheckout, CancellationToken.None)));
+            }
+
+            await reference.SettledAsync().WaitAsync(Poll.Patience);
+            referenceCommands = [.. count.Starts.Select(start => string.Join(' ', start.Arguments))];
+        }
+        finally
+        {
+            WorkingTree.Runs.Value = null;
+        }
+
+        trees = Trees(world);
+        var held = new HeldReads();
         var graph = new ReviewGraph();
         var rounds = new Dictionary<ReviewNode, int>();
         Task<string> read;
@@ -183,20 +205,19 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
                 for (var round = 1; ; round++)
                 {
-                    await QuietAsync(graph, held, read, world);
-                    foreach (var node in graph.Nodes.Where(node => node.Order >= 0 && !rounds.ContainsKey(node))) rounds[node] = round;
-                    var running = held.ToArray();
+                    var running = await FrontierAsync(graph, held, read, world, reference.Nodes, round, rounds: rounds);
                     // Π: one chain, one read at a time.
                     Assert.True(
                         graph.Nodes.Count(node => node.Program && node.Order >= 0 && !node.Answered.IsCompleted) <= 1,
                         $"two program-capable reads ran together on {world}");
                     if (running.Length == 0) break;
-                    held.Clear();
+                    held.Acknowledge(running);
                     foreach (var (_, release) in running) release.TrySetResult();
                     Assert.True(round < 64, $"the graph did not end on {world}");
                 }
 
                 Assert.Equal(chain, await read);
+                Assert.NotNull(MatchTopology(graph.Nodes, reference.Nodes, complete: true));
             }
         }
         finally
@@ -211,6 +232,8 @@ public sealed class ReviewGraphCensusTests : IDisposable
         }
 
         // The commands: the chain's, but the shared --show-toplevel; the graph's extras are its wasted speculative starts.
+        Assert.Equal(referenceCommands.Order(StringComparer.Ordinal),
+            graphCount.Starts.Select(start => string.Join(' ', start.Arguments)).Order(StringComparer.Ordinal));
         var left = graphCount.Starts.Select(start => string.Join(' ', start.Arguments)).ToList();
         var shared = 0;
         foreach (var command in chainCommands)
@@ -225,35 +248,420 @@ public sealed class ReviewGraphCensusTests : IDisposable
         return graph;
     }
 
-    /// <summary>
-    /// Quiet: every node started and not answered holds one git in the stand-in, every node not started waits on a need not answered,
-    /// and it stays so a moment, for a flow that makes its next node once an answer arrives. Bounded, so a graph that hangs fails.
-    /// </summary>
-    private static async Task QuietAsync(
-        ReviewGraph graph, ConcurrentQueue<(IReadOnlyList<string> Arguments, TaskCompletionSource Release)> held, Task read, World world)
+    private sealed class HeldReads
     {
-        bool Quiet() =>
-            graph.Nodes.Count(node => node.Order >= 0 && !node.Answered.IsCompleted) == held.Count
-            && graph.Nodes.All(node => node.Order >= 0 || node.Needs.Any(need => !need.Answered.IsCompleted));
+        private readonly Lock _gate = new();
+        private readonly Queue<(IReadOnlyList<string> Arguments, TaskCompletionSource Release)> _held = [];
+        private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        // A node the flow makes once an answer arrives is made by a continuation on the thread pool, so "a moment" is the pool's own lag
-        // as it is now, measured by a round trip and kept at its worst: a fixed 40 ms closed a round early under a loaded run, and its
-        // node read a round past its depth (FLAKE1, the CIs of 2026-10-24 and the stage on e8f1aed).
-        // The moment and the bound are both kept in time, not in polls: counted in polls, one spike of the pool's lag asked for more
-        // polls than the bound allowed, and a graph that had gone quiet read as one that never did (FLAKE1, most loaded runs of
-        // 2026-10-25 and 26).
-        var lag = TimeSpan.Zero;
-        var bound = System.Diagnostics.Stopwatch.StartNew();
-        System.Diagnostics.Stopwatch? quiet = null;
-        while (!(read.IsCompleted && held.IsEmpty))
+        public Task Changed { get { lock (_gate) return _changed.Task; } }
+
+        public void Enqueue((IReadOnlyList<string> Arguments, TaskCompletionSource Release) read)
         {
-            Assert.True(bound.Elapsed < TimeSpan.FromSeconds(120), $"the graph never went quiet on {world}");
-            var probe = System.Diagnostics.Stopwatch.StartNew();
-            await Task.Run(() => { });
-            if (probe.Elapsed > lag) lag = probe.Elapsed;
-            await Task.Delay(10);
-            if (!Quiet()) quiet = null;
-            else if ((quiet ??= System.Diagnostics.Stopwatch.StartNew()).Elapsed >= TimeSpan.FromMilliseconds(Math.Max(40, 2 * lag.TotalMilliseconds))) break;
+            lock (_gate)
+            {
+                _held.Enqueue(read);
+                var changed = _changed;
+                _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                changed.TrySetResult();
+            }
+        }
+
+        public (IReadOnlyList<string> Arguments, TaskCompletionSource Release)[] Snapshot()
+        {
+            lock (_gate) return [.. _held];
+        }
+
+        public void Acknowledge((IReadOnlyList<string> Arguments, TaskCompletionSource Release)[] reads)
+        {
+            lock (_gate)
+            {
+                foreach (var read in reads) Assert.Same(read.Release, _held.Dequeue().Release);
+            }
+        }
+    }
+
+    // An injective DAG match, extended by backtracking through indistinguishable peers. Needs refer to mapped node identities,
+    // not recursive strings: two U nodes with the same label/needs remain two nodes, and shared versus separate parents differ.
+    private static Dictionary<ReviewNode, ReviewNode>? MatchTopology(
+        IReadOnlyList<ReviewNode> actual, IReadOnlyList<ReviewNode> reference, bool complete = false)
+    {
+        if (actual.Count > reference.Count || (complete && actual.Count != reference.Count)) return null;
+        var heights = new Dictionary<ReviewNode, int>();
+        int Height(ReviewNode node) => heights.TryGetValue(node, out var height) ? height
+            : heights[node] = 1 + node.Needs.Select(Height).DefaultIfEmpty(0).Max();
+        // Only traversal is topological; neither creation order nor Start.Order is used as identity.
+        var nodes = actual.OrderBy(Height).ToArray();
+        var map = new Dictionary<ReviewNode, ReviewNode>();
+        var taken = new HashSet<ReviewNode>();
+        bool Match(int at)
+        {
+            if (at == nodes.Length) return true;
+            var node = nodes[at];
+            foreach (var candidate in reference)
+            {
+                if (taken.Contains(candidate) || node.Name != candidate.Name || node.Budget != candidate.Budget
+                    || node.Program != candidate.Program || node.Speculative != candidate.Speculative
+                    || node.Needs.Count != candidate.Needs.Count
+                    || !node.Needs.GroupBy(need => map[need]).All(group =>
+                        candidate.Needs.Count(need => ReferenceEquals(need, group.Key)) == group.Count())) continue;
+                map.Add(node, candidate);
+                taken.Add(candidate);
+                if (Match(at + 1)) return true;
+                taken.Remove(candidate);
+                map.Remove(node);
+            }
+
+            return false;
+        }
+
+        return Match(0) ? map : null;
+    }
+
+    // Completeness comes from the settled scripted topology, never an elapsed quiet interval. Each started node in this census
+    // makes one held git call. Wait for those arrivals as well as starts; Order is published before the stand-in is entered.
+    private static async Task<(IReadOnlyList<string> Arguments, TaskCompletionSource Release)[]> FrontierAsync(
+        ReviewGraph graph, HeldReads held, Task read, World world, IReadOnlyList<ReviewNode> reference, int round,
+        Action? waitingForStarts = null, Dictionary<ReviewNode, int>? rounds = null, TimeProvider? clock = null)
+    {
+        using var stop = new CancellationTokenSource();
+        var expired = Task.Delay(Poll.Patience, clock ?? TimeProvider.System, stop.Token);
+        try
+        {
+            while (true)
+            {
+                if (expired.IsCompleted)
+                    throw new TimeoutException($"frontier round {round} did not arrive on {world}; nodes: "
+                        + string.Join(", ", graph.Nodes.Select(node => $"{node.Name}: start={node.Order}, depth={node.Depth}, answered={node.Answered.IsCompleted}")));
+                // Subscribe before observing state, so an arrival between observation and await cannot be lost.
+                var changed = held.Changed;
+                var finished = read.IsCompleted;
+                var nodes = graph.Nodes;
+                // A released stand-in can still be returning through StartAsync's finally. Its Answered signal matters too:
+                // when it is the last lagging completion, no further arrival need occur to wake this frontier.
+                var answers = nodes.Select(node => node.Answered).Where(answer => !answer.IsCompleted).ToArray();
+                var map = MatchTopology(nodes, reference);
+                Assert.True(map is not null, $"unexpected graph topology on {world}");
+                var observed = nodes.Where(node => node.Order >= 0).ToArray();
+                foreach (var node in observed) rounds?.TryAdd(node, round);
+                var running = held.Snapshot();
+                var started = observed.Select(node => map[node]).ToHashSet();
+                var complete = reference.Where(node => node.Depth <= round).All(started.Contains);
+                if (finished)
+                {
+                    Assert.True(MatchTopology(nodes, reference, complete: true) is not null && started.Count == reference.Count,
+                        $"the read ended with missing reference nodes on {world}");
+                    Assert.Empty(running);
+                    return running;
+                }
+
+                if (complete && running.Length > 0
+                    && nodes.Count(node => node.Order >= 0 && !node.Answered.IsCompleted) == running.Length) return running;
+                waitingForStarts?.Invoke();
+                // One bound for the whole frontier, not renewed by each arrival or completion.
+                await Task.WhenAny([changed, read, .. answers, expired]);
+            }
+        }
+        finally
+        {
+            stop.Cancel();
+        }
+    }
+
+    [Fact]
+    public async Task A_frontier_waits_for_a_producer_paused_after_its_parent_answer_before_registering_its_child()
+    {
+        static TaskCompletionSource Signal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // Both runs use the same producer. Only the test's registration and answer gates differ.
+        static (ReviewGraph Graph, Task Read) Script(
+            Task parentRelease, Task registration, Task childRelease,
+            TaskCompletionSource producerPaused, TaskCompletionSource childStarted,
+            HeldReads held,
+            TaskCompletionSource release)
+        {
+            var graph = new ReviewGraph();
+            var (parent, answer) = graph.Run("E", [], async () => { await parentRelease; return true; });
+            async Task ProduceAsync()
+            {
+                await answer;
+                producerPaused.TrySetResult();
+                await registration;
+                var (_, child) = graph.Run("K′", [parent], async () =>
+                {
+                    held.Enqueue((new[] { "merge-base", "--is-ancestor", Grown, "HEAD" }, release));
+                    childStarted.TrySetResult();
+                    await childRelease;
+                    return true;
+                });
+                await child;
+            }
+
+            return (graph, graph.Track(ProduceAsync()));
+        }
+
+        var reference = Script(Task.CompletedTask, Task.CompletedTask, Task.CompletedTask,
+            Signal(), Signal(), new(), Signal());
+        await reference.Read.WaitAsync(Poll.Patience);
+        await reference.Graph.SettledAsync().WaitAsync(Poll.Patience);
+
+        var parentRelease = Signal();
+        var registration = Signal();
+        var childRelease = Signal();
+        var producerPaused = Signal();
+        var childStarted = Signal();
+        var waiting = Signal();
+        var held = new HeldReads();
+        var actual = Script(parentRelease.Task, registration.Task, childRelease.Task,
+            producerPaused, childStarted, held, childRelease);
+        var rounds = new Dictionary<ReviewNode, int> { [actual.Graph.Nodes[0]] = 1 };
+        Task? frontier = null;
+        try
+        {
+            parentRelease.TrySetResult();
+            await producerPaused.Task.WaitAsync(Poll.Patience);
+            Assert.Single(actual.Graph.Nodes);
+            Assert.True(actual.Graph.Nodes[0].Answered.IsCompleted);
+
+            frontier = FrontierAsync(actual.Graph, held, actual.Read, new World(), reference.Graph.Nodes,
+                round: 2, waitingForStarts: () => waiting.TrySetResult(), rounds: rounds);
+            var first = await Task.WhenAny(waiting.Task, frontier).WaitAsync(Poll.Patience);
+            Assert.Same(waiting.Task, first);
+            Assert.False(frontier.IsCompleted);
+
+            registration.TrySetResult();
+            await childStarted.Task.WaitAsync(Poll.Patience);
+            await frontier.WaitAsync(Poll.Patience);
+            Assert.Equal(new[] { "E", "K′" }, actual.Graph.Nodes.Select(node => node.Name));
+            Assert.Equal(2, rounds[actual.Graph.Nodes[1]]);
+            Assert.Equal(2, actual.Graph.Nodes[1].Depth);
+            Assert.Single(held.Snapshot());
+            Assert.False(actual.Read.IsCompleted);
+        }
+        finally
+        {
+            parentRelease.TrySetResult();
+            registration.TrySetResult();
+            childRelease.TrySetResult();
+            await actual.Read.WaitAsync(Poll.Patience);
+            await actual.Graph.SettledAsync().WaitAsync(Poll.Patience);
+            if (frontier is not null) await frontier.WaitAsync(Poll.Patience);
+        }
+    }
+
+    [Fact]
+    public void Topology_matching_keeps_duplicate_identities_and_sharing_without_creation_order()
+    {
+        static ReviewNode Node(string name, params ReviewNode[] needs) => new(name, needs, false, false, GitBudget.Review);
+        var a = Node("U");
+        var b = Node("U");
+        var x = Node("X", a);
+        var y = Node("Y", b);
+        ReviewNode[] reference = [a, b, x, y];
+        var first = Node("U");
+        var second = Node("U");
+        var otherX = Node("X", second);
+        var otherY = Node("Y", first);
+        var map = MatchTopology([otherY, first, otherX, second], reference, complete: true);
+        Assert.NotNull(map);
+        Assert.Same(a, map[second]);
+        Assert.Same(b, map[first]);
+        Assert.Null(MatchTopology([first, otherX, second, Node("Y", second)], reference, complete: true));
+        Assert.Null(MatchTopology([a, x, y], reference, complete: true));
+        Assert.Null(MatchTopology([a, b, x, y, Node("U")], reference));
+        Assert.Null(MatchTopology([first, second, Node("X", first, first)], [a, b, Node("X", a, b)], complete: true));
+    }
+
+    [Theory]
+    [InlineData("name")]
+    [InlineData("budget")]
+    [InlineData("program")]
+    [InlineData("speculation")]
+    [InlineData("needs")]
+    public void Topology_matching_rejects_changed_node_contracts(string change)
+    {
+        var parent = new ReviewNode("E", [], false, false, GitBudget.Review);
+        var reference = new ReviewNode("K′", [parent], false, true, GitBudget.Review);
+        var changed = new ReviewNode(change == "name" ? "K" : "K′", change == "needs" ? [] : [parent],
+            change == "program", change != "speculation", change == "budget" ? GitBudget.Untracked : GitBudget.Review);
+        Assert.Null(MatchTopology([parent, changed], [parent, reference], complete: true));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Missing_or_hidden_serialized_peer_starts_fail_at_the_signal_bound(bool serialized)
+    {
+        var reference = new ReviewGraph();
+        reference.Run("U", [], () => Task.FromResult(true));
+        reference.Run("U", [], () => Task.FromResult(true));
+        await reference.SettledAsync().WaitAsync(Poll.Patience);
+
+        var held = new HeldReads();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var actual = new ReviewGraph();
+        Task<bool> Hold()
+        {
+            held.Enqueue((new[] { "diff" }, release));
+            return HeldAsync();
+        }
+
+        async Task<bool> HeldAsync() { await release.Task; return true; }
+        var (_, one) = actual.Run("U", [], Hold);
+        async Task ProduceAsync()
+        {
+            await one;
+            if (serialized) await actual.Run("U", [], Hold).Answer;
+        }
+
+        var producer = actual.Track(ProduceAsync());
+        // Keep the overall read open in the missing case too; only the fixture's bound may end this wait.
+        var read = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var clock = new MovedClock();
+        var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var frontier = FrontierAsync(actual, held, read.Task, new World(), reference.Nodes, 1,
+            () => waiting.TrySetResult(), clock: clock);
+        try
+        {
+            await waiting.Task.WaitAsync(Poll.Patience);
+            await clock.Timed.WaitAsync(Poll.Patience);
+            Assert.False(frontier.IsCompleted);
+            Assert.Single(actual.Nodes);
+            Assert.Single(held.Snapshot());
+            clock.Advance(Poll.Patience);
+            await Assert.ThrowsAsync<TimeoutException>(() => frontier);
+        }
+        finally
+        {
+            release.TrySetResult();
+            read.TrySetResult();
+            await producer.WaitAsync(Poll.Patience);
+            await actual.SettledAsync().WaitAsync(Poll.Patience);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_finished_read_rejects_missing_or_unexpected_topology(bool unexpected)
+    {
+        var reference = new ReviewGraph();
+        reference.Run("E", [], () => Task.FromResult(true));
+        var actual = new ReviewGraph();
+        if (unexpected) actual.Run("K′", [], () => Task.FromResult(true));
+        await reference.SettledAsync().WaitAsync(Poll.Patience);
+        await actual.SettledAsync().WaitAsync(Poll.Patience);
+        var error = await Record.ExceptionAsync(() => FrontierAsync(actual, new HeldReads(), Task.CompletedTask,
+            new World(), reference.Nodes, 1));
+        Assert.NotNull(error);
+        Assert.Contains(unexpected ? "unexpected graph topology" : "missing reference nodes", error.Message);
+    }
+
+    [Fact]
+    public void Acknowledging_a_snapshot_leaves_a_late_arrival_held_and_signalled()
+    {
+        var held = new HeldReads();
+        var first = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var late = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        held.Enqueue((new[] { "first" }, first));
+        var acknowledged = held.Snapshot();
+        var changed = held.Changed;
+        held.Enqueue((new[] { "late" }, late));
+        held.Acknowledge(acknowledged);
+        foreach (var (_, release) in acknowledged) release.TrySetResult();
+        Assert.True(changed.IsCompletedSuccessfully);
+        Assert.True(first.Task.IsCompletedSuccessfully);
+        Assert.False(late.Task.IsCompleted);
+        Assert.Same(late, Assert.Single(held.Snapshot()).Release);
+        held.Acknowledge(held.Snapshot());
+        late.TrySetResult();
+        Assert.Empty(held.Snapshot());
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    public async Task Observed_starts_keep_the_actual_open_round_even_when_it_violates_the_named_depth(int round)
+    {
+        var reference = new ReviewGraph();
+        var (referenceParent, _) = reference.Run("E", [], () => Task.FromResult(true));
+        reference.Run("K′", [referenceParent], () => Task.FromResult(true));
+        await reference.SettledAsync().WaitAsync(Poll.Patience);
+        var actual = new ReviewGraph();
+        var (parent, _) = actual.Run("E", [], () => Task.FromResult(true));
+        var held = new HeldReads();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (child, answer) = actual.Run("K′", [parent], async () =>
+        {
+            held.Enqueue((new[] { "merge-base" }, release));
+            await release.Task;
+            return true;
+        });
+        var rounds = new Dictionary<ReviewNode, int>();
+        try
+        {
+            await FrontierAsync(actual, held, answer, new World(), reference.Nodes, round, rounds: rounds);
+            Assert.Equal(2, child.Depth);
+            Assert.Equal(round, rounds[child]);
+            Assert.NotEqual(child.Depth, rounds[child]);
+        }
+        finally
+        {
+            release.TrySetResult();
+            await answer.WaitAsync(Poll.Patience);
+            await actual.SettledAsync().WaitAsync(Poll.Patience);
+        }
+    }
+
+    [Fact]
+    public async Task An_acknowledged_read_finishing_without_another_arrival_wakes_the_frontier()
+    {
+        var reference = new ReviewGraph();
+        reference.Run("E", [], () => Task.FromResult(true));
+        reference.Run("K", [], () => Task.FromResult(true));
+        await reference.SettledAsync().WaitAsync(Poll.Patience);
+        var held = new HeldReads();
+        var actual = new ReviewGraph();
+        var first = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var other = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (_, answer) = actual.Run("E", [], async () =>
+        {
+            held.Enqueue((new[] { "first" }, first));
+            await first.Task;
+            await finish.Task;
+            return true;
+        });
+        var acknowledged = held.Snapshot();
+        held.Acknowledge(acknowledged);
+        first.TrySetResult();
+        var (_, remaining) = actual.Run("K", [], async () =>
+        {
+            held.Enqueue((new[] { "other" }, other));
+            await other.Task;
+            return true;
+        });
+        var read = Task.WhenAll(answer, remaining);
+        var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var frontier = FrontierAsync(actual, held, read, new World(), reference.Nodes, 2, () => waiting.TrySetResult());
+        try
+        {
+            await waiting.Task.WaitAsync(Poll.Patience);
+            Assert.False(frontier.IsCompleted);
+            var changed = held.Changed;
+            finish.TrySetResult();
+            var running = await frontier.WaitAsync(Poll.Patience);
+            Assert.False(changed.IsCompleted);
+            Assert.Same(other, Assert.Single(running).Release);
+            Assert.False(read.IsCompleted);
+        }
+        finally
+        {
+            first.TrySetResult();
+            finish.TrySetResult();
+            other.TrySetResult();
+            await read.WaitAsync(Poll.Patience);
+            await actual.SettledAsync().WaitAsync(Poll.Patience);
         }
     }
 
