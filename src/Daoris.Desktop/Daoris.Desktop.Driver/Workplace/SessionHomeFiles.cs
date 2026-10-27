@@ -204,9 +204,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     private IReadOnlyList<string> PathsOf(SessionFile file, string id) => file.Place switch
     {
         Place.Spawn => [Path.Combine(SpawnFolder, id + file.Suffix)],
-        Place.Runs => [Path.Combine(WorkflowRunBindings.FolderOf(home), ChatRuns.Prefix + id + file.Suffix)],
-        Place.Gates => [Path.Combine(ChatRuns.GatesFolder(home), ChatRuns.Prefix + id + file.Suffix)],
-        Place.Looks => [Path.Combine(ChatRuns.LooksFolder(home), ChatRuns.Prefix + id + file.Suffix)],
+        Place.Runs => [Path.Combine(WorkplaceRunFiles.RunsFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
+        Place.Gates => [Path.Combine(WorkplaceRunFiles.GatesFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
+        Place.Looks => [Path.Combine(WorkplaceRunFiles.LooksFolder(home), WorkplaceRunFiles.ChatPrefix + id + file.Suffix)],
         Place.Files => [.. new[] { DaorisHome.Places(home, HomeEntry.SessionFiles, id)[0], Path.Combine(Sessions, id) }
             .DistinctBy(path => Path.GetFullPath(path), StringComparer.OrdinalIgnoreCase)],
         // And beside its records, where a tracker handed the sessions' folder for its markers kept it.

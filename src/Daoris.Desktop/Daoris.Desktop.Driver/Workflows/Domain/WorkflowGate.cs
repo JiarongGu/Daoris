@@ -47,7 +47,7 @@ public sealed record WorkflowLook(string? Environment, string? Cannot);
 /// <param name="Landing">The landing rule the work lands by: the declared rule, or the version's landing step over it.</param>
 /// <param name="Review">The review rule as declared: its environments, which the chain's and the ask's <c>on</c> reads (§2.3).</param>
 /// <param name="Opinion">The second-opinion rule the gate reads; null where none is set, or the version has no opinion step.</param>
-public sealed record WorkflowProcess(string Repository, Landing Landing, ResolvedReview? Review, ResolvedOpinion? Opinion)
+public sealed record WorkflowProcess(string Repository, Landing Landing, ResolvedReview? Review, ResolvedOpinion? Opinion) : IWorkplaceProcess
 {
     /// <summary>The run it was read for: the chain's first quest in the repository; null where none was named.</summary>
     public string? Run { get; init; }
@@ -100,6 +100,15 @@ public sealed record WorkflowProcess(string Repository, Landing Landing, Resolve
     public LandingWorkflow? Record => Binding is { IsCurrent: false, Version: { } version } named && Problem is null && Unread is null
         ? new LandingWorkflow(named.Workflow, version, named.Level) { Kind = named.Kind }
         : null;
+
+    /// <inheritdoc/>
+    public string? BoundRun => Binding?.Run;
+
+    /// <inheritdoc/>
+    public string Decided => Binding is { } binding ? WorkflowRunBinding.Why(binding) : "since nothing names a workflow";
+
+    /// <inheritdoc/>
+    public string LandingSays => WorkflowGate.LandingSays(this);
 
     /// <summary>
     /// The rules as they stand, read live as every gate reads them today: Current, and work with no binding here. Its landing is the rule

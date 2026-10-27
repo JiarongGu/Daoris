@@ -49,7 +49,7 @@ internal sealed class TreeLands(
     /// The run's process the door read with its gate (WORKFLOW1f): under a named workflow, its version's landing step over the
     /// declared rule. Null reads the rule live, as before.
     /// </param>
-    internal async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, WorkflowProcess? process = null)
+    internal async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, IWorkplaceProcess? process = null)
     {
         var plan = await PlanRuleAsync(path, subject, ct, process).ConfigureAwait(false);
         if (process?.LandingCannot is not null || plan.Target.Length == 0) return plan;
@@ -108,7 +108,7 @@ internal sealed class TreeLands(
     }
 
     /// <summary>What a press would do under the rule, before LANDSYNC1's judgement of what the line holds; an entry's Accept names its branch by it.</summary>
-    internal async Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, WorkflowProcess? process)
+    internal async Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, IWorkplaceProcess? process)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
@@ -118,7 +118,7 @@ internal sealed class TreeLands(
         // A named workflow's landing that cannot start says so before the press, as the press would be refused (design §3.7).
         if (process?.LandingCannot is not null)
         {
-            return new(landing.Rule.Form, "", landing.Source, landing.Rule.Plugin, WorkflowGate.LandingSays(process), landing.Rule.AutoAccept);
+            return new(landing.Rule.Form, "", landing.Source, landing.Rule.Plugin, process.LandingSays, landing.Rule.AutoAccept);
         }
 
         if (landing.Rule.Form == LandingForm.Branch)
@@ -775,7 +775,7 @@ internal sealed class TreeLands(
         // sentence a tidy takes out: a merge keeps no landing record, and its conversation's note is its record.
         if (landed.Landed && named is not null)
         {
-            var decided = $" It landed as {named.Name} says, {WorkflowRunBinding.Why(named.Binding!)}.";
+            var decided = $" It landed as {named.Name} says, {named.Decided}.";
             landed = landed with
             {
                 Message = landed.Message.EndsWith(TreeStays, StringComparison.Ordinal)

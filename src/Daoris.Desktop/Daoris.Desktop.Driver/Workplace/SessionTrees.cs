@@ -164,7 +164,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     private LandedReviews Reviews => _reviews ??= new(_context);
 
     /// <summary>The landing gate's parts for a tree (XAGENT1f, WORKFLOW1f).</summary>
-    private TreeGates Gates => _gates ??= new(_context);
+    internal TreeGates Gates => _gates ??= new(_context);
 
     /// <summary>What the look's own tidy takes by itself, its last guards, and its set-aside (AUTOTIDY1).</summary>
     private TreeSetAside SetAsides => _setAside ??= new(_context);
@@ -622,11 +622,11 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     public Task<TreeMerge> MergeAsync(string path, CancellationToken ct = default) => Lands.MergeAsync(path, ct);
 
     /// <inheritdoc cref="TreeLands.PlanAsync"/>
-    public Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, WorkflowProcess? process = null) =>
+    public Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, IWorkplaceProcess? process = null) =>
         Lands.PlanAsync(path, subject, ct, process);
 
     /// <inheritdoc cref="TreeLands.PlanRuleAsync"/>
-    internal Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, WorkflowProcess? process) =>
+    internal Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, IWorkplaceProcess? process) =>
         Lands.PlanRuleAsync(path, subject, ct, process);
 
     /// <inheritdoc cref="TreeLands.LandAsync"/>
@@ -639,7 +639,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
 
     /// <inheritdoc cref="EntryLands.JoinAsync"/>
     public Task<LandingSubject> JoinEntryAsync(
-        string path, string session, LandingSubject entry, CancellationToken ct = default, WorkflowProcess? process = null) =>
+        string path, string session, LandingSubject entry, CancellationToken ct = default, IWorkplaceProcess? process = null) =>
         Entries.JoinAsync(path, session, entry, ct, process);
 
     /// <summary>
@@ -658,7 +658,7 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
     /// <param name="process">The run's process the door's gate read (WORKFLOW1f), whose landing step names the entry's branch.</param>
     public async Task<LandingSubject> OwnSubjectAsync(
         string path, string session, string? quest, IReadOnlyList<SessionRecord> records, Func<string, Task<QuestView?>> find,
-        Func<string, string?> opening, WorkflowProcess? process, CancellationToken ct = default)
+        Func<string, string?> opening, IWorkplaceProcess? process, CancellationToken ct = default)
     {
         var lead = EntryAccepts.EntryLead(records, session);
         var named = lead?.Id ?? session;
@@ -861,24 +861,20 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
 
     /// <inheritdoc cref="TreeGates.GateAsync"/>
     public Task<LandingGate> GateAsync(
-        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, WorkflowProcess? process = null,
+        string path, string? quest, IOpinionWorld world, string? session = null, CancellationToken ct = default, IWorkplaceProcess? process = null,
         string? tip = null, string? run = null) =>
         Gates.GateAsync(path, quest, world, session, ct, process, tip, run);
 
     /// <inheritdoc cref="TreeGates.ProcessAsync"/>
-    public Task<WorkflowProcess> ProcessAsync(
+    public Task<IWorkplaceProcess> ProcessAsync(
         DriverConfig config, string repository, string? workspace, string? quest, IReviewWorld world, CancellationToken ct = default,
         string? run = null) =>
         Gates.ProcessAsync(config, repository, workspace, quest, world, ct, run);
 
-    /// <inheritdoc cref="TreeGates.WorkflowAsync"/>
-    public Task<WorkflowGateState> WorkflowAsync(string tree, WorkflowProcess process, string? session, CancellationToken ct = default) =>
-        Gates.WorkflowAsync(tree, process, session, ct);
-
     /// <inheritdoc cref="TreeGates.OpinionAsync"/>
     public Task<OpinionGateState> OpinionAsync(
         string tree, string repository, string workspace, string? quest, string? session, IOpinionWorld world, ReviewGateState? review,
-        string occasion, CancellationToken ct = default, WorkflowProcess? process = null, string? at = null, string? run = null) =>
+        string occasion, CancellationToken ct = default, IWorkplaceProcess? process = null, string? at = null, string? run = null) =>
         Gates.OpinionAsync(tree, repository, workspace, quest, session, world, review, occasion, ct, process, at, run);
 
     /// <inheritdoc cref="TreeGates.ForkPointAsync"/>

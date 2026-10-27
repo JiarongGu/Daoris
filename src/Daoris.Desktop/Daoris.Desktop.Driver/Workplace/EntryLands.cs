@@ -301,7 +301,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     /// </summary>
     /// <param name="session">The part pressed: its landing records its own session.</param>
     /// <param name="entry">What the entry is named for: its first part's subject, as <see cref="PlanAsync"/> is handed it.</param>
-    internal async Task<LandingSubject> JoinAsync(string tree, string session, LandingSubject entry, CancellationToken ct, WorkflowProcess? process)
+    internal async Task<LandingSubject> JoinAsync(string tree, string session, LandingSubject entry, CancellationToken ct, IWorkplaceProcess? process)
     {
         var branch = await BranchAsync(tree, process, entry, ct).ConfigureAwait(false);
         return Joining(entry, session, branch is null ? LandingForm.Merge : LandingForm.Branch, branch ?? "");
@@ -324,7 +324,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     /// where that branch's pull request was merged or closed, the first of its successors (<see cref="EntryLandings.Candidate"/>) that
     /// is free or stands open. Null under a merge rule, which makes no branch.
     /// </summary>
-    private async Task<string?> BranchAsync(string tree, WorkflowProcess? process, LandingSubject subject, CancellationToken ct)
+    private async Task<string?> BranchAsync(string tree, IWorkplaceProcess? process, LandingSubject subject, CancellationToken ct)
     {
         var full = Path.GetFullPath(tree);
         var (workspace, repository) = context.OwnerOf(full);

@@ -29,13 +29,13 @@ public sealed record ChatRunBound(WorkflowRunBinding? Binding, string? Graph = n
 public static class ChatRuns
 {
     /// <summary>What a chat run's id begins with, apart from a quest's 12 hex digits by its spelling.</summary>
-    public const string Prefix = "chat-";
+    public const string Prefix = WorkplaceRunFiles.ChatPrefix;
 
     /// <summary>Whether a run's id is a chat run's.</summary>
-    public static bool IsChatRun(string? run) => run is not null && run.StartsWith(Prefix, StringComparison.Ordinal) && run.Length > Prefix.Length;
+    public static bool IsChatRun(string? run) => WorkplaceRunFiles.IsChatRun(run);
 
     /// <summary>The record a chat run's id names, its line's first in its tree; null for a run that is not a chat's.</summary>
-    public static string? RecordOf(string run) => IsChatRun(run) ? run[Prefix.Length..] : null;
+    public static string? RecordOf(string run) => WorkplaceRunFiles.RecordOf(run);
 
     /// <summary>
     /// The chat run a record is one of (§4.2), as the view classifies it, or null: a chat in a tree this home opened that continues no
@@ -199,10 +199,10 @@ public static class ChatRuns
             : [];
 
     /// <summary>The folder of the opinion gates' files, by chain or by chat run.</summary>
-    public static string GatesFolder(string home) => DaorisHome.Entry(home, HomeEntry.OpinionGates);
+    public static string GatesFolder(string home) => WorkplaceRunFiles.GatesFolder(home);
 
     /// <summary>The folder of a chat run's look files (§5.3), apart from a quest's, which lives on its quest.</summary>
-    public static string LooksFolder(string home) => Path.Combine(WorkflowStore.FolderOf(home), "looks");
+    public static string LooksFolder(string home) => WorkplaceRunFiles.LooksFolder(home);
 
     private static bool Same(string? left, string? right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
