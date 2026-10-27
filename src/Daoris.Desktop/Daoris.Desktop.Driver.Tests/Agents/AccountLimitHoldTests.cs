@@ -16,7 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class AccountLimitHoldTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan Bound = Poll.Patience;
 
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
 

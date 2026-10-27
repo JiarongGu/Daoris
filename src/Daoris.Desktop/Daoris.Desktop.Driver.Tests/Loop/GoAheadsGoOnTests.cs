@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class GoAheadsGoOnTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan Bound = Poll.Patience;
 
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-goahead2-" + Guid.NewGuid().ToString("N")[..8]);
 
