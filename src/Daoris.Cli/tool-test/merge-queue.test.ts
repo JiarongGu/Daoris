@@ -4,7 +4,7 @@ import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PATIENCE_MS, makeFixture } from '../test/_fixture.ts';
+import { makeFixture } from '../test/_fixture.ts';
 
 /**
  * CISCOPE1e (D207, design §4 and §5.1, §8 row 5): the merge queue and its candidates, the frozen request, the judgement of a red
@@ -634,8 +634,16 @@ function sh(cwd: string, ...args: string[]): string {
 
 const pause = (ms: number) => new Promise((done) => { setTimeout(done, ms); });
 
-/** Waits for the condition, at most `ms`: a bound that elapses only on failure, so it reads the shared patience. */
-async function until(holds: () => boolean, ms = PATIENCE_MS) {
+/**
+ * How long one scratch run of the merge tool, or one wait on its queue, may take before the test calls it hung
+ * (TOOLTESTHANG1): a guard against the hang, never a pace, so it elapses only on failure. A scratch queue gates real git
+ * under whatever else the machine runs, and a healthy run took longer than the two-minute shared patience under load
+ * (2026-10-28, the bound ended a run still promoting), so the guard is ten minutes; the hang it catches lasted ninety.
+ */
+const HANG_MS = 600_000;
+
+/** Waits for the condition, at most `ms`: a bound that elapses only on failure. */
+async function until(holds: () => boolean, ms = HANG_MS) {
   for (const end = Date.now() + ms; !holds() && Date.now() < end;) await pause(100);
 }
 
@@ -685,7 +693,7 @@ function queueScratch(name: string) {
       writeFileSync(join(root, 'local', `${branchName}.msg`), `Merge ${branchName}: its words${TRAILER}\n`);
     },
     /** One invocation of the tool, bounded: one that has given no verdict by `ms` is ended with its tree, and answers `status: null`. */
-    run(args: string[], extra: Record<string, string> = {}, ms = PATIENCE_MS): Promise<{ status: number | null; out: string }> {
+    run(args: string[], extra: Record<string, string> = {}, ms = HANG_MS): Promise<{ status: number | null; out: string }> {
       const child = spawn(process.execPath, [TOOL, ...args], { cwd: root, env: { ...process.env, ...env, ...extra } });
       started.add(child);
       let out = '';
