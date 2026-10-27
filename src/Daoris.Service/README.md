@@ -327,7 +327,11 @@ asked by it, or not at all. A quest that may have left the machine is **tombston
 operation the sync carries so no fetch brings it back, and on a shared quest the delete is pushed
 before the answer returns. A quest that never left simply goes. The `deletable` field on the quests and
 asks a local host lists (and on a quest a publish, a response or a dismissal answers with) is the same
-judgement, so a page offers the verb only where the door would take it.
+judgement, so a page offers the verb only where the door would take it. A published ask whose last quest is
+deleted is a proposal again, and only an intake may route it by what the declarations propose: one whose
+receiver the person named stands with no quest and says so in its note, and no intake serves it, so it is
+never published again to a repository nobody named (QUESTDELETE1, D95's note). The delete's answer says
+what the ask now stands as (`AskDesk.NoQuestLeft`).
 
 **A number the store has issued is never issued again** (HIST1a, D153 point 4). An operation's sequence
 is one past the larger of the log's highest for this machine and `quest_machine.sequence`, and a session

@@ -294,8 +294,10 @@ public sealed class QuestDeleteTests : IAsyncLifetime
     private async Task<(AskDesk Desk, QuestExchange Exchange, QuestFiles Files)> DeskAsync()
     {
         var files = new QuestFiles(_root + "-home");
-        var exchange = Exchange(files: files);
-        return (new AskDesk(_service, await AskStore.OpenAsync(_connection), exchange, files), exchange, files);
+        // The asks too, as the host composes the exchange: a delete says what its ask stands as (QUESTDELETE1).
+        var asks = await AskStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, remotes: null, files, _sessions, asks);
+        return (new AskDesk(_service, asks, exchange, files), exchange, files);
     }
 
     /// <summary>An ask none of whose quests was taken goes, and every quest asked by it goes with it.</summary>
@@ -362,20 +364,128 @@ public sealed class QuestDeleteTests : IAsyncLifetime
 
     /// <summary>
     /// A quest deleted from an ask leaves the ask as if it had never become that quest: derived, so a
-    /// delete synced in from another machine counts too. With none left it is a proposal again.
+    /// delete synced in from another machine counts too. With none left an ask the person did not name a
+    /// receiver for is a proposal again — for an intake, or a person, to route.
     /// </summary>
     [Fact]
-    public async Task An_ask_whose_only_quest_was_deleted_is_a_proposal_again()
+    public async Task An_unnamed_ask_whose_only_quest_was_deleted_is_a_proposal_again()
     {
         var (desk, exchange, _) = await DeskAsync();
-        var asked = (await desk.AskAsync(new AskRequest(Workspaces.Default, "Asked of the wrong one") { To = "Homebody" }, Now)).Ask!;
+        var asked = (await desk.AskAsync(new AskRequest(Workspaces.Default, "Asked of the wrong one"), Now)).Ask!;
+        var published = (await desk.PublishAsync(asked.Id, "Homebody", Now.AddMinutes(1))).Quest!;
 
-        await exchange.DeleteAsync(asked.Quests[0], Now.AddMinutes(1));
+        var deleted = await exchange.DeleteAsync(published.Id, Now.AddMinutes(2));
 
         var standing = (await desk.FindAsync(asked.Id))!;
         Assert.Equal(AskState.Proposed, standing.State);
         Assert.Empty(standing.Quests);
+        Assert.Null(standing.Note);
         Assert.Single(await desk.ListAsync());
+        Assert.Contains($"Ask `#{asked.Id}` has no quest left and is a proposal again", deleted.Message);
+    }
+
+    /// <summary>
+    /// 🔴 QUESTDELETE1: deleting the quest an ask NAMED a receiver for leaves the ask standing with no quest, and says so — in the
+    /// delete's answer and on the ask's own note. It is never an ask an intake routes. Found on the installed build: the driver
+    /// re-published such an ask a minute after the delete, to the three repositories of its routing proposal, two of which it
+    /// never named.
+    /// </summary>
+    [Fact]
+    public async Task A_named_asks_deleted_quest_leaves_the_ask_standing_with_none_and_says_so()
+    {
+        var (desk, exchange, _) = await DeskAsync();
+        var asked = (await desk.AskAsync(new AskRequest(Workspaces.Default, "Asked of the one the person named") { To = "Homebody" }, Now)).Ask!;
+        Assert.Equal(AskDesk.ByName, asked.Tier);
+
+        var deleted = await exchange.DeleteAsync(asked.Quests[0], Now.AddMinutes(1));
+
+        Assert.Equal(QuestDeleteRefusal.None, deleted.Refusal);
+        Assert.Contains("never left this machine", deleted.Message);
+        Assert.Contains($"Ask `#{asked.Id}` stands with no quest: you named its receiver", deleted.Message);
+        Assert.Contains("no intake routes it by its proposal", deleted.Message);
+        var standing = (await desk.FindAsync(asked.Id))!;
+        Assert.Equal(AskState.Proposed, standing.State);
+        Assert.Equal(AskDesk.ByName, standing.Tier);
+        Assert.Empty(standing.Quests);
+        Assert.Contains("stands with no quest", standing.Note);
+        // The listing the driver's look reads says the same.
+        var listed = Assert.Single(await desk.ListAsync());
+        Assert.Equal(standing.Note, listed.Note);
+    }
+
+    /// <summary>
+    /// 🔴 QUESTDELETE1, the regression: over several looks — every read the driver's look and the ledger make — a named ask with no
+    /// quest publishes nothing, to the repository it named or to any the declarations tier proposed, and no intake opens for it.
+    /// </summary>
+    [Fact]
+    public async Task A_named_ask_with_no_quest_is_published_to_nobody_over_several_looks()
+    {
+        var (desk, exchange, _) = await DeskAsync();
+        var asked = (await desk.AskAsync(
+            new AskRequest(Workspaces.Default, "Homebody and Federated and Asker all own its area") { To = "Homebody" }, Now)).Ask!;
+        await exchange.DeleteAsync(asked.Quests[0], Now.AddMinutes(1));
+        var ledger = new SessionLedger(_quests, _sessions, _service, await AskStore.OpenAsync(_connection));
+
+        for (var look = 0; look < 4; look++)
+        {
+            var at = Now.AddMinutes(2 + look);
+            var opened = await ledger.OpenIntakeAsync(asked.Id, "stub", Path.Combine(_root, "room"), at);
+            Assert.Equal(SessionOpenRefusal.AskAnswered, opened.Refusal);
+            Assert.Contains("no intake routes an ask by its proposal", opened.Message);
+            Assert.Equal(AskState.Proposed, (await desk.ListAsync()).Single().State);
+            Assert.Empty(await _quests.FromAsync(AskDesk.SenderOf(asked.Id)));
+        }
+
+        Assert.Null((await desk.FindAsync(asked.Id))!.Intake);
+        // Only the person's own word publishes it again — to a receiver they name, as for any ask.
+        var again = await desk.PublishAsync(asked.Id, "Federated", Now.AddMinutes(10));
+        Assert.Equal(AskRefusal.None, again.Refusal);
+        Assert.Equal(AskState.Published, (await desk.FindAsync(asked.Id))!.State);
+    }
+
+    /// <summary>
+    /// QUESTDELETE1: an intake-routed ask is unchanged — with its quest deleted it is a proposal again with no note, its intake
+    /// already served it, so nothing routes it a second time, and the delete's answer says that.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_routed_asks_deleted_quest_leaves_it_as_it_was_and_the_answer_says_so()
+    {
+        var (desk, exchange, _) = await DeskAsync();
+        var asked = (await desk.AskAsync(new AskRequest(Workspaces.Default, "Routed by an intake"), Now)).Ask!;
+        var ledger = new SessionLedger(_quests, _sessions, _service, await AskStore.OpenAsync(_connection));
+        var intake = (await ledger.OpenIntakeAsync(asked.Id, "stub", Path.Combine(_root, "room"), Now.AddMinutes(1))).Session!;
+        var published = (await desk.PublishAsync(asked.Id, "Homebody", Now.AddMinutes(2), session: intake.Id)).Quest!;
+        Assert.Equal(AskDesk.ByIntake, (await desk.FindAsync(asked.Id))!.Tier);
+
+        var deleted = await exchange.DeleteAsync(published.Id, Now.AddMinutes(3));
+
+        var standing = (await desk.FindAsync(asked.Id))!;
+        Assert.Equal(AskState.Proposed, standing.State);
+        Assert.Equal(intake.Id, standing.Intake);
+        Assert.Null(standing.Note);
+        Assert.Contains("its intake session already served it, so nothing routes it again", deleted.Message);
+        var refused = await ledger.OpenIntakeAsync(asked.Id, "stub", Path.Combine(_root, "room"), Now.AddMinutes(4));
+        Assert.Equal(SessionOpenRefusal.AskAnswered, refused.Refusal);
+        Assert.Contains("already served it", refused.Message);
+    }
+
+    /// <summary>A quest deleted with its ask says nothing of an ask that is going too, and a quest with another beside it says nothing either.</summary>
+    [Fact]
+    public async Task A_delete_says_nothing_of_an_ask_that_goes_too_or_still_has_a_quest()
+    {
+        var (desk, exchange, _) = await DeskAsync();
+        var going = (await desk.AskAsync(new AskRequest(Workspaces.Default, "To go whole") { To = "Homebody" }, Now)).Ask!;
+        var kept = (await desk.AskAsync(new AskRequest(Workspaces.Default, "To keep one") { To = "Homebody" }, Now)).Ask!;
+        var second = (await desk.PublishAsync(kept.Id, "Federated", Now.AddMinutes(1))).Quest!;
+
+        var one = await exchange.DeleteAsync(second.Id, Now.AddMinutes(2));
+        var all = await desk.DeleteAsync(going.Id, Now.AddMinutes(3));
+
+        Assert.DoesNotContain("stands with no quest", one.Message);
+        Assert.DoesNotContain("no quest left", one.Message);
+        Assert.Equal(AskState.Published, (await desk.FindAsync(kept.Id))!.State);
+        Assert.Equal(AskRefusal.None, all.Refusal);
+        Assert.DoesNotContain("stands with no quest", all.Message);
     }
 
     /// <summary>Each ask says whether it may go — the desk's own judgement, so no page re-derives the rule.</summary>
@@ -401,16 +511,17 @@ public sealed class QuestDeleteTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The ledger reads an ask's standing as the desk does: an ask whose every quest was deleted is a
+    /// The ledger reads an ask's standing as the desk does: an unnamed ask whose every quest was deleted is a
     /// proposal again, so an intake may answer it — or the driver's loop would ask, and be refused, on
-    /// every tick.
+    /// every tick. A named ask is not (QUESTDELETE1).
     /// </summary>
     [Fact]
-    public async Task An_intake_may_open_for_an_ask_whose_quests_were_all_deleted()
+    public async Task An_intake_may_open_for_an_unnamed_ask_whose_quests_were_all_deleted()
     {
         var (desk, exchange, _) = await DeskAsync();
-        var asked = (await desk.AskAsync(new AskRequest(Workspaces.Default, "Asked of the wrong one") { To = "Homebody" }, Now)).Ask!;
-        await exchange.DeleteAsync(asked.Quests[0], Now.AddMinutes(1));
+        var asked = (await desk.AskAsync(new AskRequest(Workspaces.Default, "Asked of the wrong one"), Now)).Ask!;
+        var published = (await desk.PublishAsync(asked.Id, "Homebody", Now.AddSeconds(30))).Quest!;
+        await exchange.DeleteAsync(published.Id, Now.AddMinutes(1));
         var ledger = new SessionLedger(_quests, _sessions, _service, await AskStore.OpenAsync(_connection));
 
         var opened = await ledger.OpenIntakeAsync(asked.Id, "stub", Path.Combine(_root, "room"), Now.AddMinutes(2));

@@ -17,6 +17,12 @@ Completed 2026-10-28: 20 statuses and diffs in `merge-branch.mjs`, `as-merged.mj
 
 Completed 2026-10-28: the two files (`WorkFrame.test.tsx`, `WorkFrame.conversation.test.tsx`) emitted 49 warnings, and now emit none in three consecutive runs of 117 cases with vitest's `default` reporter. Three callbacks ran outside `act`: a native `focus()` on a `Tip` trigger (Radix opens a tooltip on focus, setting `Tip`'s state), the frame's `setTimeout(…, 0)` that sets `dragging` after a drag starts and ends (`WorkFrame.tsx`'s `onDrag`), and `i18n.changeLanguage('en')` restoring the language under a still-mounted frame (every translated component, `ClampedTitle` among them). The kit's `focus` helper wraps the first, the drag tests flush their beat inside `act`, and the language restore is wrapped as `App.test.tsx` does. No interaction or assertion was removed, nothing is mocked or suppressed, and no production code changed. FIX-LOG holds the measurements and the reporter trap that hid the warnings.
 
+## QUESTDELETE1 — deleting a named ask's quest never publishes the ask again (2026-10-28)
+
+> **QUESTDELETE1** (quest `#16c890c212da`, asked 2026-10-27): deleting the quest a named ask published must never re-publish the ask, and never to a repository the ask did not name. On the installed build, deleting such a quest made the driver re-publish the ask a minute later as three quests to the repositories of its routing proposal, two of which it never named.
+
+Completed 2026-10-28: a named ask whose quest is deleted stands with no quest and says so, and is never routed by its proposal: the ledger refuses an intake for it, the driver's look does not list it, and the delete's answer says what the ask now stands as. Unnamed and intake-routed asks read as before. Proof over the service's own host and the driver's look run four times; D95 carries the amendment and FIX-LOG the cause and what was not run.
+
 ## USAGECOST1 — what each driven session cost (2026-10-27)
 
 > **USAGECOST1 — the usage report says what each driven session cost** (owner's direction, 2026-10-27: learn where development's tokens go). The report read `turn.ended` only for set-ups; the driven sessions' counts were logged and reported nowhere.
