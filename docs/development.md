@@ -126,7 +126,7 @@ change can reach before handing it back:
 | adds a driver test that roots scratch under `_fixtures` | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~GitSeedTests.No_test_deletes` (remove scratch with `GitSeed.Remove` or `GitSeed.Discard`, never `Directory.Delete`, and find the root with `GitSeed.RepoRoot()`) |
 | asks git for a `status` or a `diff` in the driver | `node tools/optional-locks.mjs` (pass `--no-optional-locks` before the command, so a read takes no `index.lock` in a session's tree) |
 | names an agent's command, a login, or a driver config's `commands` in a test | `node tools/live-logins.mjs` (a script or a stub at a path, never the agent's binary from PATH) |
-| adds a `tools/*.test.mjs` or a test under `src/Daoris.Cli/tool-test/` | `node tools/tool-test-census.mjs` (name the `.mjs` file in the root `verify` script's `node --test` list; a `tool-test/` file is run by the `tool-tests` gate's glob; each file is in exactly one gate) |
+| adds a `tools/*.test.mjs` or a test under `src/Daoris.Cli/tool-test/` | `node tools/tool-test-census.mjs` (name the `.mjs` file in the root `verify` script's `node --test` list, or, for a slow test of the merge tool, in `src/Daoris.Cli`'s `tooltests` script as `../../tools/<file>`, as `as-merged.test.mjs` is; a `tool-test/` file is run by the `tool-tests` gate's glob; each file is in exactly one gate) |
 
 `node --test` alone is not the workspace's done command. The root `npm test` delegates to the CLI
 workspace; `npm run verify` also runs types, doctrine and document/tooling checks. Installed proof

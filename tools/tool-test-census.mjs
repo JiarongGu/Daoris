@@ -10,7 +10,7 @@
  * and nothing says so. This census names each file no gate runs, each run by two gates, and each listed file that is gone.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
 
@@ -52,7 +52,8 @@ export function coverage(pieces) {
   const listed = new Set();
   const globs = [];
   for (const { base, text } of pieces) {
-    const at = (path) => (base ? `${base}/${path}` : path);
+    // A script run in the CLI package may name a root file through `..` (`../../tools/x.test.mjs`): read it as the root's.
+    const at = (path) => posix.normalize(base ? `${base}/${path}` : path);
     for (const m of text.matchAll(/(?<![\w./-])((?:[\w.*-]+\/)+[\w.*-]+\.(?:mjs|ts))\b/g)) {
       if (m[1].includes('*')) globs.push(globPattern(at(m[1])));
       else listed.add(at(m[1]));

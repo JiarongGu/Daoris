@@ -3,9 +3,11 @@
  *
  *   node --test tools/as-merged.test.mjs
  *
- * Run by `npm run verify`'s `node --test` list (TOOLTESTCENSUS1: it sat outside every gate and rotted unseen). The
- * cases build scratch repositories in a gitignored folder of this one; one runs the merge tool in its own, and the
- * last builds and runs the devkit's docs gate, so it needs `dotnet`.
+ * Run by the `tool-tests` gate, beside the merge tool's other tests (`src/Daoris.Cli`'s `tooltests` script names it;
+ * TOOLTESTCENSUS1: it sat outside every gate and rotted unseen). It is there rather than in `npm run verify` because it
+ * takes minutes and gates the merge tool, which only reaches `tool-tests`. The cases build scratch repositories in a
+ * gitignored folder of this one; one runs the merge tool in its own, and the last builds and runs the devkit's docs
+ * gate, so it needs `dotnet`.
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';

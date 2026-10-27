@@ -21,7 +21,7 @@ after(() => rmSync(scratch, { recursive: true, force: true }));
 
 let n = 0;
 /** A fresh tree with `tools` test files and `tool-test` test files on disk and `verify` listing `listed`; returns its root. */
-function tree({ tools = [], toolTests = [], listed = [], extraGate = '' }) {
+function tree({ tools = [], toolTests = [], listed = [], extraGate = '', cliListed = [] }) {
   const dir = join(scratch, `t${n++}`);
   const put = (rel, text) => {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
@@ -33,7 +33,10 @@ function tree({ tools = [], toolTests = [], listed = [], extraGate = '' }) {
     verify: `node x.mjs && node --test ${listed.join(' ')}`,
     tooltests: 'npm run tooltests -w daoris',
   } }));
-  put('src/Daoris.Cli/package.json', JSON.stringify({ scripts: { tooltests: 'node --test "tool-test/**/*.ts"', test: 'node --test "test/**/*.ts"' } }));
+  put('src/Daoris.Cli/package.json', JSON.stringify({ scripts: {
+    tooltests: ['node --test "tool-test/**/*.ts"', ...cliListed].join(' '),
+    test: 'node --test "test/**/*.ts"',
+  } }));
   put('daoris.gates.json', JSON.stringify({ gates: [
     { name: 'cli', run: 'npm run verify' },
     { name: 'tool-tests', run: 'npm run tooltests' },
@@ -49,6 +52,11 @@ test('the tree passes', () => {
 test('a file listed by verify and a file the tool-tests glob reaches are each owned once', () => {
   const dir = tree({ tools: ['a.test.mjs'], toolTests: ['b.test.ts', 'deep/c.test.ts'], listed: ['tools/a.test.mjs'] });
   assert.deepEqual(checkToolTests(dir), { problems: [], count: 3 });
+});
+
+test('a tools test the CLI package names through .. is owned by the tool-tests gate', () => {
+  const dir = tree({ tools: ['slow.test.mjs'], toolTests: ['b.test.ts'], cliListed: ['../../tools/slow.test.mjs'] });
+  assert.deepEqual(checkToolTests(dir), { problems: [], count: 2 });
 });
 
 test('a tools test no list names is an orphan, named', () => {
