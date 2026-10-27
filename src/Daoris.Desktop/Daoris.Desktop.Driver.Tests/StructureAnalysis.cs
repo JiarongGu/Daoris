@@ -55,6 +55,16 @@ internal sealed class StructureAnalysis
     });
 
     private readonly CSharpCompilation _compilation;
+    private sealed record TypeDescription(string Name, IReadOnlyList<string> Files);
+    private readonly ConcurrentDictionary<INamedTypeSymbol, Lazy<TypeDescription>> _descriptions = new(SymbolEqualityComparer.Default);
+
+    private int _typeDescriptionsRead;
+    private int _symbolQueries;
+
+    /// <summary>Materializations of a bound type's declaring files and nested name, counted independently of elapsed time.</summary>
+    internal int TypeDescriptionsRead => _typeDescriptionsRead;
+
+    internal int SymbolQueries => _symbolQueries;
 
     private StructureAnalysis(CSharpCompilation compilation)
     {
@@ -102,15 +112,25 @@ internal sealed class StructureAnalysis
             BaseLibrary.Value,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable, allowUnsafe: true));
         var analysis = new StructureAnalysis(compilation);
-        analysis.Read(trees);
+        analysis.Read(trees, reuse: true);
         return analysis;
     }
 
-    private void Read(List<SyntaxTree> trees)
+    /// <summary>The original repeated work over the very same compilation, retained as an equivalence oracle.</summary>
+    internal StructureAnalysis WithoutReuse()
+    {
+        var analysis = new StructureAnalysis(_compilation);
+        analysis.Read(_compilation.SyntaxTrees.Where(tree => tree.FilePath != "<implicit usings>").ToList(), reuse: false);
+        return analysis;
+    }
+
+    private void Read(List<SyntaxTree> trees, bool reuse)
     {
         // A name can only bind to a type that has its name, or an alias, or an attribute written without its suffix: so only those
         // names are asked of the compiler, which leaves what it binds untouched and the walk to a fraction of every name.
         var named = new HashSet<string>(StringComparer.Ordinal);
+        var declarations = new Dictionary<string, int>(StringComparer.Ordinal);
+        var aliases = new HashSet<string>(StringComparer.Ordinal);
         var declared = new HashSet<string>(StringComparer.Ordinal);
         foreach (var tree in trees)
         {
@@ -120,21 +140,26 @@ internal sealed class StructureAnalysis
                 switch (node)
                 {
                     case BaseTypeDeclarationSyntax type:
-                        Add(named, type.Identifier.ValueText);
+                        Add(named, declarations, type.Identifier.ValueText);
                         if (type.Parent is BaseNamespaceDeclarationSyntax or CompilationUnitSyntax) declared.Add(type.Identifier.ValueText);
                         break;
                     case DelegateDeclarationSyntax delegateType:
-                        Add(named, delegateType.Identifier.ValueText);
+                        Add(named, declarations, delegateType.Identifier.ValueText);
                         if (delegateType.Parent is BaseNamespaceDeclarationSyntax or CompilationUnitSyntax) declared.Add(delegateType.Identifier.ValueText);
                         break;
                     case UsingDirectiveSyntax { Alias: { } alias }:
                         named.Add(alias.Name.Identifier.ValueText);
+                        aliases.Add(alias.Name.Identifier.ValueText);
                         break;
                 }
             }
         }
 
         DeclaredTypes = declared;
+        // Once a unique, unaliased source spelling has actually bound to a cross-file type, its later occurrences in that
+        // file can add no edge. Ambiguous spellings (including attribute shorthand), aliases, failed and self-file bindings
+        // still ask Roslyn. No conclusion about a member's spelling is made before a type has bound and its edge is kept.
+        var unique = declarations.Where(each => each.Value == 1 && !aliases.Contains(each.Key)).Select(each => each.Key).ToHashSet(StringComparer.Ordinal);
         var edges = new ConcurrentBag<TypeEdge>();
         var rules = new ConcurrentBag<StaticRule>();
         var asyncFiles = new ConcurrentBag<string>();
@@ -144,12 +169,14 @@ internal sealed class StructureAnalysis
             var model = _compilation.GetSemanticModel(tree);
             var root = tree.GetRoot();
             var seen = new HashSet<string>(StringComparer.Ordinal);
+            var satisfied = new HashSet<string>(StringComparer.Ordinal);
             foreach (var node in root.DescendantNodes())
             {
                 switch (node)
                 {
-                    case SimpleNameSyntax name when named.Contains(name.Identifier.ValueText) && !(name is IdentifierNameSyntax { IsVar: true }):
-                        Bind(model, tree, name, seen, edges);
+                    case SimpleNameSyntax name when named.Contains(name.Identifier.ValueText) && !(name is IdentifierNameSyntax { IsVar: true })
+                        && (!reuse || !satisfied.Contains(name.Identifier.ValueText)):
+                        if (Bind(model, tree, name, seen, edges, reuse) && unique.Contains(name.Identifier.ValueText)) satisfied.Add(name.Identifier.ValueText);
                         break;
                     case MethodDeclarationSyntax method when method.Modifiers.Any(SyntaxKind.StaticKeyword)
                         && !method.Modifiers.Any(SyntaxKind.AsyncKeyword)
@@ -171,10 +198,16 @@ internal sealed class StructureAnalysis
         GlobalUsings = globals.OrderBy(use => use.File, StringComparer.Ordinal).ThenBy(use => use.Line).ToList();
     }
 
-    private static void Add(HashSet<string> names, string name)
+    private static void Add(HashSet<string> names, Dictionary<string, int> declarations, string name)
     {
         names.Add(name);
-        if (name.EndsWith("Attribute", StringComparison.Ordinal)) names.Add(name[..^"Attribute".Length]);
+        declarations[name] = declarations.GetValueOrDefault(name) + 1;
+        if (name.EndsWith("Attribute", StringComparison.Ordinal))
+        {
+            var shorthand = name[..^"Attribute".Length];
+            names.Add(shorthand);
+            declarations[shorthand] = declarations.GetValueOrDefault(shorthand) + 1;
+        }
     }
 
     private static int Line(SyntaxTree tree, SyntaxNode node) => tree.GetLineSpan(node.Span).StartLinePosition.Line + 1;
@@ -183,8 +216,9 @@ internal sealed class StructureAnalysis
         node.Ancestors().OfType<BaseTypeDeclarationSyntax>().FirstOrDefault()?.Identifier.ValueText ?? "";
 
     /// <summary>Takes the type a name binds to, when it is one a source declares in another file, as an edge.</summary>
-    private static void Bind(SemanticModel model, SyntaxTree tree, SimpleNameSyntax name, HashSet<string> seen, ConcurrentBag<TypeEdge> edges)
+    private bool Bind(SemanticModel model, SyntaxTree tree, SimpleNameSyntax name, HashSet<string> seen, ConcurrentBag<TypeEdge> edges, bool reuse)
     {
+        Interlocked.Increment(ref _symbolQueries);
         var symbol = model.GetSymbolInfo(name).Symbol;
         // An attribute's name binds to its constructor: the type is its container's.
         if (symbol is IMethodSymbol { MethodKind: MethodKind.Constructor } constructor && name.Ancestors().OfType<AttributeSyntax>().Any())
@@ -192,14 +226,23 @@ internal sealed class StructureAnalysis
             symbol = constructor.ContainingType;
         }
 
-        if (symbol is not INamedTypeSymbol type) return;
+        if (symbol is not INamedTypeSymbol type) return false;
         var original = type.OriginalDefinition;
+        var description = reuse
+            ? _descriptions.GetOrAdd(original, static (symbol, analysis) => new(() => analysis.Describe(symbol)), this).Value
+            : Describe(original);
+        if (description.Files.Count == 0 || description.Files.Contains(tree.FilePath, StringComparer.Ordinal)) return false;
+        if (seen.Add(description.Name)) edges.Add(new(tree.FilePath, Line(tree, name), description.Name, description.Files));
+        return true;
+    }
+
+    private TypeDescription Describe(INamedTypeSymbol original)
+    {
+        Interlocked.Increment(ref _typeDescriptionsRead);
         var files = original.DeclaringSyntaxReferences.Select(reference => reference.SyntaxTree.FilePath)
             .Where(path => path != "<implicit usings>").Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
-        if (files.Count == 0 || files.Contains(tree.FilePath, StringComparer.Ordinal)) return;
         var parts = new Stack<string>();
         for (var at = original; at is not null; at = at.ContainingType) parts.Push(at.Name);
-        var spelled = string.Join('.', parts);
-        if (seen.Add(spelled)) edges.Add(new(tree.FilePath, Line(tree, name), spelled, files));
+        return new(string.Join('.', parts), files);
     }
 }

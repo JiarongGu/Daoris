@@ -10,7 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// row after which it is cut; a <c>Domain</c> file does no I/O; and nothing outside Loop's folder names a type declared in it. The rules are
 /// held here on sources made in memory, one case each, and then run over the driver's own tree.
 /// </summary>
-public sealed class StructureTests
+public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
 {
     private static readonly StructureMap Map = new(
         [
@@ -586,4 +586,101 @@ public sealed class StructureTests
 
     private static string MapFile() =>
         Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "structure.json");
+
+    [Fact]
+    public void Repeated_bound_generic_types_materialize_their_declaration_once_without_losing_the_first_edge()
+    {
+        var repeated = string.Join('\n', Enumerable.Range(0, 256).Select(index => $"Outer<int> field{index};"));
+        var analysis = StructureAnalysis.Of([
+            Src("Course/Outer.cs", "public class Outer<T> { }"),
+            Src("Platform/Reads.cs", "class Reads {\n" + repeated + "\n}"),
+        ]);
+
+        var edge = Assert.Single(analysis.Edges);
+        Assert.Equal(("Platform/Reads.cs", 3, "Outer"), (edge.File, edge.Line, edge.Type));
+        Assert.Equal(["Course/Outer.cs"], edge.DeclaredIn);
+        Assert.Equal(1, analysis.SymbolQueries);
+        Assert.Equal(1, analysis.TypeDescriptionsRead);
+    }
+
+    [Fact]
+    public void Type_description_reuse_preserves_the_complete_driver_analysis_and_census()
+    {
+        var (map, sources, tests, reused, took) = Tree.Value;
+        var repeated = reused.WithoutReuse();
+        static IEnumerable<string> Edges(StructureAnalysis analysis) => analysis.Edges.Select(edge =>
+            $"{edge.File}:{edge.Line}:{edge.Type}:{string.Join('|', edge.DeclaredIn)}");
+
+        Assert.Equal(Edges(repeated), Edges(reused));
+        Assert.Equal(repeated.Rules, reused.Rules);
+        Assert.Equal(repeated.GlobalUsings, reused.GlobalUsings);
+        Assert.Equal(repeated.AsyncFiles.Order(), reused.AsyncFiles.Order());
+        Assert.Equal(repeated.DeclaredTypes.Order(), reused.DeclaredTypes.Order());
+        Assert.Equal(StructureCheck.Check(map, sources, tests, repeated), StructureCheck.Check(map, sources, tests, reused));
+        output.WriteLine($"Symbol queries: {reused.SymbolQueries} reused, {repeated.SymbolQueries} repeated. Type descriptions: {reused.TypeDescriptionsRead} reused, {repeated.TypeDescriptionsRead} repeated; original compile/walk {took.TotalSeconds:F2}s.");
+        Assert.True(reused.SymbolQueries < repeated.SymbolQueries);
+        Assert.True(reused.TypeDescriptionsRead * 2 < repeated.TypeDescriptionsRead,
+            $"reuse materialized {reused.TypeDescriptionsRead} descriptions versus {repeated.TypeDescriptionsRead} repeated descriptions");
+    }
+
+    [Fact]
+    public void Ambiguous_spellings_still_bind_each_occurrence_but_share_the_original_type_description()
+    {
+        var repeated = string.Join('\n', Enumerable.Range(0, 256).Select(index => $"Outer<int> field{index};"));
+        var analysis = StructureAnalysis.Of([
+            Src("Course/Outer.cs", "public class Outer<T> { }"),
+            ("Course/Other.cs", "namespace Other; public class Outer<T> { }"),
+            Src("Platform/Reads.cs", "class Reads {\n" + repeated + "\n}"),
+        ]);
+
+        Assert.Equal("Outer", Assert.Single(analysis.Edges).Type);
+        Assert.Equal(256, analysis.SymbolQueries);
+        Assert.Equal(1, analysis.TypeDescriptionsRead);
+    }
+
+    [Fact]
+    public void Reuse_keeps_alias_shadowing_attribute_shorthand_partial_types_and_same_named_members()
+    {
+        var analysis = StructureAnalysis.Of([
+            ("Course/First.cs", """
+                namespace First;
+                public class Same { }
+                public class Unique { }
+                public class MarkAttribute : System.Attribute { }
+                public partial class Part { }
+                public class Outer<T> { public class Inner { } }
+                """),
+            ("Course/Second.cs", "namespace Second { public class Same { } public class Mark { } public class Aliased { } } namespace First { public partial class Part { } }"),
+            ("Platform/Aliases.cs", "global using Unique = Second.Aliased;"),
+            ("Platform/OtherReads.cs", "class OtherReads { Second.Same field; }"),
+            ("Platform/Reads.cs", """
+                using Inner = First.Outer<int>.Inner;
+                class Reads {
+                    static int Same;
+                    static int Before() => Same;
+                    First.Same first;
+                    Second.Same second;
+                    First.Unique original;
+                    Unique alias;
+                    First.Part part;
+                    Inner nested;
+                    [First.Mark] void Marked() { }
+                    Second.Mark plain;
+                }
+                """),
+        ]);
+        var repeated = analysis.WithoutReuse();
+        static IEnumerable<string> Edges(StructureAnalysis found) => found.Edges.Select(edge =>
+            $"{edge.File}:{edge.Line}:{edge.Type}:{string.Join('|', edge.DeclaredIn)}");
+        Assert.Equal(Edges(repeated), Edges(analysis));
+        Assert.Equal(2, analysis.Edges.Single(edge => edge.Type == "Part").DeclaredIn.Count);
+        Assert.Contains(analysis.Edges, edge => edge.Type == "Outer.Inner");
+        Assert.Contains(analysis.Edges, edge => edge.Type == "MarkAttribute");
+        Assert.Contains(analysis.Edges, edge => edge.Type == "Mark");
+        // The existing edge key is the nested type spelling within each file: its first binding stays the one recorded.
+        Assert.Contains(analysis.Edges, edge => edge.File == "Platform/Reads.cs" && edge.Type == "Same" && edge.DeclaredIn.SequenceEqual(["Course/First.cs"]));
+        Assert.Contains(analysis.Edges, edge => edge.File == "Platform/OtherReads.cs" && edge.Type == "Same" && edge.DeclaredIn.SequenceEqual(["Course/Second.cs"]));
+        Assert.Contains(analysis.Edges, edge => edge.Type == "Unique");
+        Assert.Contains(analysis.Edges, edge => edge.File == "Platform/Reads.cs" && edge.Type == "Aliased");
+    }
 }

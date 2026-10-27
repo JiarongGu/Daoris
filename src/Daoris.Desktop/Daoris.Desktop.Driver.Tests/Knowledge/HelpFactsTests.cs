@@ -1131,7 +1131,7 @@ public sealed class HelpFactsTests : IDisposable
         });
 
         catchUp.Landed();
-        await Poll.Until(() => File.ReadAllText(agents).Contains("| `site` | not driven | `main` (the checkout's own) |", StringComparison.Ordinal), within: Within);
+        await Poll.Until(() => RoomHasCheckoutLine(agents), within: Within);
 
         // Written from the facts that leave nothing to catch up on, a landing writes nothing more.
         await Poll.Until(() => !catchUp.Writing, within: Within);
@@ -1139,6 +1139,22 @@ public sealed class HelpFactsTests : IDisposable
         catchUp.Landed();
         await Task.Delay(100);
         Assert.Equal(before, Volatile.Read(ref described));
+    }
+
+    private static bool RoomHasCheckoutLine(string agents) =>
+        AtomicFile.ReadText(agents).Contains("| `site` | not driven | `main` (the checkout's own) |", StringComparison.Ordinal);
+
+    [Fact]
+    public void The_room_visibility_condition_reads_while_the_atomic_move_still_holds_the_file()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var agents = Path.Combine(HelpRoom.PathOf(_home), "AGENTS.md");
+        Directory.CreateDirectory(Path.GetDirectoryName(agents)!);
+        AtomicFile.WriteText(agents, "| `site` | not driven | `main` (the checkout's own) |");
+
+        using var hold = MoveHold.Take(agents);
+        Assert.Throws<IOException>(() => File.ReadAllText(agents));
+        Assert.True(RoomHasCheckoutLine(agents));
     }
 
     /// <summary>Stand-in judges: the machine as given, each checkout's line `main`, every other topic read as nothing.</summary>

@@ -12,6 +12,28 @@ repository.
 - **Fix:** the independent taken-at-once outcome has its own case. Held-to-idle stays together so the preceding hold's notification cannot leak into the next send, and all original words are typed through the menu. The authorization case pastes the unchanged full phrase through user-event's real clipboard/input behavior, retaining selected/free Send-and-Enter refusals, approval payload, retained park and empty-box checks. Additional request and no-cancellation assertions cover each driven send. The timeout, production code and shared user-event timing defaults are unchanged.
 - **Verify:** the naturally failing nightly cases remain recorded. The three repaired focused scenarios pass, both affected files pass **117 cases** (formerly 116), and web typechecking passes. No retry, artificial load, shorter phrase, raw value assignment or suppressed assertion was used. FRAMEACT1 retains the emitted React act warnings. Full web and parent integration proof remain owed; FRAMEBOUNDS1 stays open until then.
 
+## 2026-10-27 - Night exposed a room fixture sharing violation and repeated structure-analysis work
+
+- **Symptom:** the Driver fast Night on `93f49d4` passed 15,054 cases and failed two: HelpFactsTests' live room poll threw IOException,
+  and StructureTests reported a 65-second compile/walk against its one-minute bound. The latter assertion itself took 26 ms.
+- **Root cause:** PARALLEL1a (`f586c772b`) introduced the room poll's plain read beside an atomic rename, the same Windows deletion-sharing
+  omission already recorded for HelpRoomScopeTests and READSHARE1. The structure fixture's stopwatch surrounds its shared Lazy's earlier
+  StructureAnalysis.Of call, not the later assertion. The original analyzer (`55d5441f1`) repeatedly queried already-established unique
+  source edges and rebuilt immutable original-type descriptions; the deterministic baseline materialized 40,737 descriptions on this tree.
+  The Night log alone does not apportion its elapsed time between that work and concurrent load.
+- **Fix:** the visibility predicate reads through AtomicFile.ReadText, retaining the live catch-up writer and original assertions/waits.
+  The analyzer reuses descriptions by Roslyn original symbol. A repeated spelling skips binding only after a cross-file edge actually bound,
+  with exactly one source declaration (attribute shorthand included) and no alias anywhere. Ambiguous names, aliases, failed/self-file
+  bindings and first occurrences keep semantic binding. Compilation inputs/options, graph ordering, all structure rules and the bound stay.
+- **Verification:** the held-move predicate failed naturally with IOException; 256 generic references performed 256 queries and descriptions;
+  the complete-tree work-reduction regression also failed before implementation (three red regressions). The final bounded fast selection
+  passes 123/123, including both original failing cases and all StructureTests. The same-compilation unreduced oracle matches every edge's
+  file, line, type and declaring files, plus rules, globals, async files, declared types and census results. Queries fall from 55,801 to
+  34,461 and descriptions from 40,737 to 2,837; the timed compile/walk is 29.45 seconds with the original one-minute assertion intact.
+  One intermediate synthetic assertion expected the second same-named type's declaration rather than the original per-file first edge;
+  its oracle comparison already matched, and the corrected fixture explicitly checks each declaration from separate reader files.
+  D212 records the focused command and artifact limits. No product, gate policy, Process/whole suite or quest transition changed.
+
 ## 2026-10-27 - A dropped merge candidate returned as an incomplete green record (QUEUEDROP1)
 
 - **Symptom:** dropping the foundation candidate removed its request, but its checks continued. A real scratch-repository reproduction then recreated the candidate as only `{ state: "green" }`; the runner failed while reading its missing base.
