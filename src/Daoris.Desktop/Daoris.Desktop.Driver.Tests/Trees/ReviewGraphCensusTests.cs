@@ -99,11 +99,13 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
     /// <summary>The stand-in: each git answered from the world, held until released where <paramref name="held"/> is given.</summary>
     private Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<ChildRun>> Stand(
-        World world, HeldReads? held) =>
+        World world, HeldReads? held, ReviewGraph? graph = null) =>
         async (arguments, _, ct) =>
         {
             if (held is not null)
             {
+                Assert.NotNull(graph);
+                held.RecordCall(graph, arguments, GitLaunch.Budget);
                 var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 held.Enqueue((arguments, release));
                 await release.Task.WaitAsync(ct);
@@ -188,12 +190,13 @@ public sealed class ReviewGraphCensusTests : IDisposable
         }
 
         trees = Trees(world);
-        var held = new HeldReads();
         var graph = new ReviewGraph();
+        var held = new HeldReads();
         var rounds = new Dictionary<ReviewNode, int>();
-        Task<string> read;
+        Task<string>? read = null;
+        Exception? failed = null;
         GitCount graphCount;
-        WorkingTree.Runs.Value = Stand(world, held);
+        WorkingTree.Runs.Value = Stand(world, held, graph);
         try
         {
             using (graphCount = GitLaunch.Count())
@@ -218,11 +221,28 @@ public sealed class ReviewGraphCensusTests : IDisposable
 
                 Assert.Equal(chain, await read);
                 Assert.NotNull(MatchTopology(graph.Nodes, reference.Nodes, complete: true));
+                held.AssertEveryNodeCalledOnce(graph);
             }
+        }
+        catch (Exception error)
+        {
+            failed = error;
+            throw;
         }
         finally
         {
-            WorkingTree.Runs.Value = null;
+            try
+            {
+                await SettleOwnedAsync(held, graph, read);
+            }
+            catch (Exception teardownError) when (failed is not null)
+            {
+                throw new AggregateException("the census failed and its owned reads failed during teardown", failed, teardownError);
+            }
+            finally
+            {
+                WorkingTree.Runs.Value = null;
+            }
         }
 
         // Each of the review's nodes started in the round its depth names: none before its needs answered, none after.
@@ -252,6 +272,8 @@ public sealed class ReviewGraphCensusTests : IDisposable
     {
         private readonly Lock _gate = new();
         private readonly Queue<(IReadOnlyList<string> Arguments, TaskCompletionSource Release)> _held = [];
+        private readonly Dictionary<ReviewNode, GitBudget> _calls = [];
+        private bool _settling;
         private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task Changed { get { lock (_gate) return _changed.Task; } }
@@ -260,7 +282,8 @@ public sealed class ReviewGraphCensusTests : IDisposable
         {
             lock (_gate)
             {
-                _held.Enqueue(read);
+                if (_settling) read.Release.TrySetResult();
+                else _held.Enqueue(read);
                 var changed = _changed;
                 _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 changed.TrySetResult();
@@ -278,6 +301,54 @@ public sealed class ReviewGraphCensusTests : IDisposable
             {
                 foreach (var read in reads) Assert.Same(read.Release, _held.Dequeue().Release);
             }
+        }
+
+        public void RecordCall(ReviewGraph graph, IReadOnlyList<string> arguments, GitBudget budget)
+        {
+            static string CommandName(ReviewNode node) => node.Name switch { "K′" => "K", "N↑" => "N1", "N↓" => "N2", _ => node.Name };
+            lock (_gate)
+            {
+                // After an assertion fails, teardown runs the scripted reads freely; it no longer measures a held frontier.
+                if (_settling) return;
+                var name = GitLaunch.NodeOf(arguments, budget);
+                // In these Worlds, repeated N reads occur in different frontiers and U runs at w=1. Require a unique,
+                // live, not-yet-called owner; do not choose among duplicate names by creation/start order.
+                var owner = Assert.Single(graph.Nodes, node => node.Order >= 0 && !node.Answered.IsCompleted
+                    && node.Budget == budget && CommandName(node) == name && !_calls.ContainsKey(node));
+                _calls.Add(owner, budget);
+            }
+        }
+
+        public void AssertEveryNodeCalledOnce(ReviewGraph graph)
+        {
+            lock (_gate)
+            {
+                Assert.Equal(graph.Nodes.Count, _calls.Count);
+                foreach (var node in graph.Nodes) Assert.Equal(node.Budget, _calls[node]);
+            }
+        }
+
+        public void ReleaseAllAndFuture()
+        {
+            lock (_gate)
+            {
+                _settling = true;
+                while (_held.TryDequeue(out var read)) read.Release.TrySetResult();
+            }
+        }
+    }
+
+    private static async Task SettleOwnedAsync(HeldReads held, ReviewGraph graph, Task? read)
+    {
+        // Keep releasing late registrations too: settling a parent can create another child after the first drain.
+        held.ReleaseAllAndFuture();
+        try
+        {
+            if (read is not null) await read.WaitAsync(Poll.Patience);
+        }
+        finally
+        {
+            await graph.SettledAsync().WaitAsync(Poll.Patience);
         }
     }
 
@@ -618,13 +689,16 @@ public sealed class ReviewGraphCensusTests : IDisposable
     {
         var reference = new ReviewGraph();
         reference.Run("E", [], () => Task.FromResult(true));
-        reference.Run("K", [], () => Task.FromResult(true));
+        var (referenceParent, _) = reference.Run("P", [], () => Task.FromResult(true));
+        reference.Run("K", [referenceParent], () => Task.FromResult(true));
         await reference.SettledAsync().WaitAsync(Poll.Patience);
         var held = new HeldReads();
         var actual = new ReviewGraph();
         var first = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var other = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var registration = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var childStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var (_, answer) = actual.Run("E", [], async () =>
         {
             held.Enqueue((new[] { "first" }, first));
@@ -635,19 +709,40 @@ public sealed class ReviewGraphCensusTests : IDisposable
         var acknowledged = held.Snapshot();
         held.Acknowledge(acknowledged);
         first.TrySetResult();
-        var (_, remaining) = actual.Run("K", [], async () =>
+        var (parent, _) = actual.Run("P", [], () => Task.FromResult(true));
+        async Task ProduceAsync()
         {
-            held.Enqueue((new[] { "other" }, other));
-            await other.Task;
-            return true;
-        });
+            await registration.Task;
+            var (_, child) = actual.Run("K", [parent], async () =>
+            {
+                held.Enqueue((new[] { "other" }, other));
+                childStarted.TrySetResult();
+                await other.Task;
+                return true;
+            });
+            await child;
+        }
+
+        var remaining = actual.Track(ProduceAsync());
         var read = Task.WhenAll(answer, remaining);
         var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var frontier = FrontierAsync(actual, held, read, new World(), reference.Nodes, 2, () => waiting.TrySetResult());
+        var waitingAfterArrival = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var frontier = FrontierAsync(actual, held, read, new World(), reference.Nodes, 2, () =>
+        {
+            waiting.TrySetResult();
+            // Enqueue publishes its wake before the stand-in sets childStarted. Observe the held entry itself so an early
+            // awakened waiter cannot miss this acknowledgement and leave the test waiting on a later signal that never comes.
+            if (held.Snapshot().Any(entry => ReferenceEquals(entry.Release, other))) waitingAfterArrival.TrySetResult();
+        });
         try
         {
             await waiting.Task.WaitAsync(Poll.Patience);
             Assert.False(frontier.IsCompleted);
+            registration.TrySetResult();
+            await childStarted.Task.WaitAsync(Poll.Patience);
+            await waitingAfterArrival.Task.WaitAsync(Poll.Patience);
+            Assert.False(frontier.IsCompleted);
+            Assert.False(answer.IsCompleted);
             var changed = held.Changed;
             finish.TrySetResult();
             var running = await frontier.WaitAsync(Poll.Patience);
@@ -660,8 +755,83 @@ public sealed class ReviewGraphCensusTests : IDisposable
             first.TrySetResult();
             finish.TrySetResult();
             other.TrySetResult();
-            await read.WaitAsync(Poll.Patience);
-            await actual.SettledAsync().WaitAsync(Poll.Patience);
+            registration.TrySetResult();
+            await SettleOwnedAsync(held, actual, read);
+        }
+    }
+
+    [Fact]
+    public async Task A_failed_frontier_assertion_settles_held_reads_and_children_registered_during_teardown()
+    {
+        var held = new HeldReads();
+        var graph = new ReviewGraph();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (parent, answer) = graph.Run("E", [], async () =>
+        {
+            held.Enqueue((new[] { "parent" }, release));
+            await release.Task;
+            return true;
+        });
+        async Task ProduceAsync()
+        {
+            await answer;
+            var late = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var (_, child) = graph.Run("K′", [parent], async () =>
+            {
+                held.Enqueue((new[] { "late child" }, late));
+                await late.Task;
+                return true;
+            });
+            await child;
+        }
+
+        var read = graph.Track(ProduceAsync());
+        async Task FailAsync()
+        {
+            try
+            {
+                await FrontierAsync(graph, held, read, new World(), [], 1);
+            }
+            finally
+            {
+                await SettleOwnedAsync(held, graph, read);
+            }
+        }
+
+        var error = await Record.ExceptionAsync(FailAsync);
+        Assert.NotNull(error);
+        Assert.Contains("unexpected graph topology", error.Message);
+        Assert.True(read.IsCompletedSuccessfully);
+        Assert.Equal(new[] { "E", "K′" }, graph.Nodes.Select(node => node.Name));
+        Assert.All(graph.Nodes, node => Assert.True(node.Answered.IsCompletedSuccessfully));
+        Assert.Empty(held.Snapshot());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Node_call_accounting_rejects_a_missing_or_second_git_call(bool twice)
+    {
+        var graph = new ReviewGraph();
+        var held = new HeldReads();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (node, answer) = graph.Run("E", [], async () => { await release.Task; return true; });
+        try
+        {
+            Exception? error;
+            if (twice)
+            {
+                held.RecordCall(graph, ["rev-parse", "--abbrev-ref", "HEAD"], GitBudget.Review);
+                error = Record.Exception(() => held.RecordCall(graph, ["rev-parse", "--abbrev-ref", "HEAD"], GitBudget.Review));
+            }
+            else error = Record.Exception(() => held.AssertEveryNodeCalledOnce(graph));
+            Assert.IsAssignableFrom<Xunit.Sdk.XunitException>(error);
+            Assert.False(node.Answered.IsCompleted);
+        }
+        finally
+        {
+            release.TrySetResult();
+            await SettleOwnedAsync(held, graph, answer);
         }
     }
 

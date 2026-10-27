@@ -36,6 +36,22 @@ repository.
   `local/scratch/graphquiet1/frontier-focused-deadline.trx`. D212 records the command and reached checks.
   This is fixture proof, not full Driver/stage/installed integration; parent owns
   those gates and GRAPHQUIET1's backlog record. No production defect or full integration completion is claimed.
+- **Parent source-review follow-up:** this was a readiness/teardown concern, not a new failing run. Commit `6959cb117`
+  already captured outstanding Answered tasks before readiness observation and awaited them. The completion-only test is
+  strengthened to let an independent next-round arrival wake the already-waiting helper while a released terminal leaf remains
+  unfinished, then require that leaf's answer alone to wake the ready frontier. Runtime call accounting now requires one unique
+  live uncalled node per held git, matching command classification and budget, and verifies every node was called once on all
+  census paths. Missing/second-call negative cases guard the assumption. It is specific to these Worlds (Review/Untracked,
+  repeated N reads in different frontiers, U at w=1), not every graph or budget in the product.
+- **Failure cleanup:** the census now drains held and future registrations in finally, awaits the read and graph settlement,
+  and restores its stand-in afterward. Cleanup faults retain the primary failure alongside them. The assertion path remains
+  failed; teardown runs the scripted answers freely rather than measuring more frontiers. A deterministic unexpected-topology
+  assertion proves that both its held parent and a child registered during draining settle. The first combined follow-up
+  selection passed 257/257. Final source review makes the arrival acknowledgement observe the held entry itself, since its
+  enqueue wake can precede the stand-in's separate child-start signal; this was inferred, not an observed new failure.
+  The final four-class selection passed 257/257, zero skipped, retained in
+  `local/scratch/graphquiet1/frontier-review-handshake.trx`. D212 records final review proof and regenerated index reach.
+  Production remains unchanged.
 
 ## 2026-10-27 - Two fast fixtures retained ten-second signal patience (TESTPATIENCE4)
 
