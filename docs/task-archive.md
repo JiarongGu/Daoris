@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## WorkFrame fixture act warnings (2026-10-28)
+
+> **FRAMEACT1 — settle WorkFrame fixture updates within their test lifecycle** (focused foundation validation, 2026-10-27; under TEST1). All 117 affected-file cases passed, but the run emitted React act warnings from Tip, WorkFrame and ClampedTitle. Identify the callbacks and required awaits or teardown, retain real interactions and assertions, and prove deterministic lifecycle completion without suppressing the warnings.
+
+Completed 2026-10-28: the two files (`WorkFrame.test.tsx`, `WorkFrame.conversation.test.tsx`) emitted 49 warnings, and now emit none in three consecutive runs of 117 cases with vitest's `default` reporter. Three callbacks ran outside `act`: a native `focus()` on a `Tip` trigger (Radix opens a tooltip on focus, setting `Tip`'s state), the frame's `setTimeout(…, 0)` that sets `dragging` after a drag starts and ends (`WorkFrame.tsx`'s `onDrag`), and `i18n.changeLanguage('en')` restoring the language under a still-mounted frame (every translated component, `ClampedTitle` among them). The kit's `focus` helper wraps the first, the drag tests flush their beat inside `act`, and the language restore is wrapped as `App.test.tsx` does. No interaction or assertion was removed, nothing is mocked or suppressed, and no production code changed. FIX-LOG holds the measurements and the reporter trap that hid the warnings.
+
 ## USAGECOST1 — what each driven session cost (2026-10-27)
 
 > **USAGECOST1 — the usage report says what each driven session cost** (owner's direction, 2026-10-27: learn where development's tokens go). The report read `turn.ended` only for set-ups; the driven sessions' counts were logged and reported nowhere.

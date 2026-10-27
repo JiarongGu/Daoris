@@ -127,6 +127,11 @@ change can reach before handing it back:
 | asks git for a `status` or a `diff` in the driver | `node tools/optional-locks.mjs` (pass `--no-optional-locks` before the command, so a read takes no `index.lock` in a session's tree) |
 | names an agent's command, a login, or a driver config's `commands` in a test | `node tools/live-logins.mjs` (a script or a stub at a path, never the agent's binary from PATH) |
 
+A focused vitest run for a React warning (an `act` warning, a console error) passes `--reporter=default`: vitest 5 picks a
+quiet reporter for an agent's run, which prints no console output of a passing test, so the warning is there and unseen
+(FRAMEACT1). Count `not wrapped in act` in the output, and wrap the native `focus()`, timer or language change that
+caused one in `act`, never the warning in a filter.
+
 `node --test` alone is not the workspace's done command. The root `npm test` delegates to the CLI
 workspace; `npm run verify` also runs types, doctrine and document/tooling checks. Installed proof
 is not supplied by a mocked bridge, Storybook or a browser-only end-to-end test.
