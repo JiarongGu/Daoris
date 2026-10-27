@@ -15,7 +15,10 @@
  * they ended), the asks (UNBLOCK5: the permissions each session's harness would have asked a person for,
  * refused because nobody was at the prompt, per session by adapter and repository), the rule proposals
  * (UNBLOCK5: what waits for the person, and those made in the period by week and state), the set-ups
- * (WSSETUP11: each set-up session's minutes, tool calls, tokens and context), the parks (WSSETUP11: the
+ * (WSSETUP11: each set-up session's minutes, tool calls, tokens and context), the driven sessions' cost
+ * (USAGECOST1: each one's repository, adapter, models, turns, minutes, calls, tokens read anew, read from the cache,
+ * written to it and written out, and peak context, newest first, then rolled up by repository and by adapter and
+ * model with the cache read per call; a session with no `turn.ended` is said so, never zero), the parks (WSSETUP11: the
  * sessions that stopped to ask the person, per week by workspace, beside the sessions started there), the
  * agent actions (SIGNIN1: each sign-in, install or pin by agent and action, how it ended and each phase's time),
  * what was refused (by code, most first, a harness action's by its action), what failed (exceptions, the page's errors, error-level log lines,
@@ -511,6 +514,120 @@ function setupsOf(lines) {
   };
 }
 
+/**
+ * The models an `actor.ran` line names (USAGECOST1): a list of names, or one name. The log once wrote a collection as
+ * its CLR type name (`System.String[]`, LOGCOLLECTION1), which names no model and is read as none, never as a model.
+ */
+function modelsOf(value) {
+  const names = Array.isArray(value) ? value : [value];
+  return names.map(named).filter((name) => name !== null && !/^System\.|\[\]$/.test(name));
+}
+
+/** What a driven session's cost is rolled up under when no line named its models. */
+const NO_MODEL = '(model not logged)';
+
+/** The most driven sessions the text lists (the rest are counted), and the columns a line of it may take. */
+export const DRIVEN_LISTED = 10;
+export const DRIVEN_WIDTH = 120;
+
+/**
+ * A rolled-up row of driven sessions' cost (USAGECOST1): how many, how many had a `turn.ended` at all, the median and
+ * slowest of their turn time, the tokens summed, and the cache read per call — the cache read over the calls of the
+ * sessions that measured both, which is the figure a smaller starting context or fewer steps would move. What no
+ * line said is null, never zero.
+ */
+function drivenGroupOf(costs) {
+  const timed = costs.filter((cost) => cost.ms !== null);
+  const slowest = timed.reduce((most, cost) => (!most || cost.ms > most.ms ? cost : most), null);
+  const paired = costs.filter((cost) => cost.cacheRead !== null && cost.calls !== null && cost.calls > 0);
+  const callsPaired = paired.reduce((sum, cost) => sum + cost.calls, 0);
+  const widest = costs.filter((cost) => cost.used !== null).reduce((most, cost) => (!most || cost.used > most.used ? cost : most), null);
+  return {
+    sessions: costs.length,
+    measured: costs.filter((cost) => cost.turns > 0).length,
+    turns: costs.reduce((sum, cost) => sum + cost.turns, 0),
+    timed: timed.length,
+    medianMs: median(timed.map((cost) => cost.ms)),
+    slowestMs: slowest ? slowest.ms : null,
+    slowestSession: slowest ? slowest.session : null,
+    ...Object.fromEntries(TURN_COUNTS.map((field) => [field, sumOf(costs.map((cost) => cost[field]))])),
+    cacheReadPerCall: callsPaired > 0 ? Math.round(paired.reduce((sum, cost) => sum + cost.cacheRead, 0) / callsPaired) : null,
+    used: widest ? widest.used : null,
+    size: widest ? widest.size : null,
+  };
+}
+
+/**
+ * What each driven session cost (USAGECOST1): every session started in the period whose start says `driven` and not
+ * `setup` (a set-up has its own section), newest first, with its repository and workspace, adapter, the models the
+ * `actor.ran` lines named, its turns, its turn time, and its turns summed — the calls, the tokens read anew, read from
+ * the cache, written to it and written out — and its context at the largest. Then the same rolled up by repository and
+ * by adapter and model. A session with no `turn.ended` is said so (`turns` 0, every figure null), never zero (D57,
+ * D143 point 3); a turn of a session whose start the period does not hold is counted apart. Counts and times only.
+ */
+function drivenOf(lines) {
+  const known = new Set();
+  const sessions = new Map();
+  for (const line of lines) {
+    if (line.event !== 'session.started') continue;
+    const session = named(line.data.session);
+    if (!session) continue;
+    known.add(session);
+    if (line.data.kind !== 'driven' || line.data.setup === true) continue;
+    sessions.set(session, {
+      session, time: line.time, started: line.stamp, adapter: named(line.data.adapter) ?? '(unnamed)',
+      repository: named(line.data.repository) ?? '(unnamed)', workspace: named(line.data.workspace) ?? '(unnamed)',
+      models: new Set(), turns: [],
+    });
+  }
+
+  let unstarted = 0;
+  for (const line of lines) {
+    if (line.event !== 'turn.ended' && line.event !== 'actor.ran') continue;
+    const session = named(line.data.session);
+    const entry = sessions.get(session);
+    if (!entry) {
+      if (line.event === 'turn.ended' && !known.has(session)) unstarted++;
+    } else if (line.event === 'turn.ended') {
+      entry.turns.push(line.data);
+    } else {
+      for (const model of modelsOf(line.data.models)) entry.models.add(model);
+    }
+  }
+
+  const costs = [...sessions.values()].reverse().sort((a, b) => b.time - a.time).map((entry) => {
+    const widest = entry.turns
+      .filter((turn) => countOf(turn.used) !== null)
+      .reduce((most, turn) => (!most || turn.used > most.used ? turn : most), null);
+    return {
+      session: entry.session, started: entry.started, repository: entry.repository, workspace: entry.workspace,
+      adapter: entry.adapter, models: [...entry.models].sort(), turns: entry.turns.length,
+      ms: sumOf(entry.turns.map((turn) => countOf(turn.turnMs))),
+      ...Object.fromEntries(TURN_COUNTS.map((field) => [field, sumOf(entry.turns.map((turn) => countOf(turn[field])))])),
+      used: widest ? widest.used : null, size: widest ? countOf(widest.size) : null,
+    };
+  });
+
+  const groups = (key) => {
+    const rows = new Map();
+    for (const cost of costs) rows.set(key(cost), [...(rows.get(key(cost)) ?? []), cost]);
+    return rows;
+  };
+  const ordered = (rows) => rows.sort((a, b) => b.sessions - a.sessions || a.label.localeCompare(b.label));
+  return {
+    started: costs.length,
+    measured: costs.filter((cost) => cost.turns > 0).length,
+    unstarted,
+    sessions: costs,
+    byRepository: ordered([...groups((cost) => cost.repository)]
+      .map(([repository, members]) => ({ label: repository, repository, ...drivenGroupOf(members) }))),
+    byAdapterAndModel: ordered([...groups((cost) => `${cost.adapter}\u0000${cost.models.join(' + ')}`)].map(([, members]) => {
+      const { adapter, models } = members[0];
+      return { label: `${adapter} · ${models.join(' + ') || NO_MODEL}`, adapter, models, ...drivenGroupOf(members) };
+    })),
+  };
+}
+
 /** The doors whose sessions can park (D83, D65): a driven session and an intake. A conversation never does. */
 const PARKING_KINDS = ['driven', 'intake'];
 
@@ -943,6 +1060,7 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [], record
     asks: asksOf(lines),
     proposals: proposalsOf(proposals, { from, to }),
     setups: setupsOf(lines),
+    driven: drivenOf(lines),
     parks: parksOf(lines),
     outcomes: outcomesOf(records, lines, { from, to }),
     refused: [...refused.values()]
@@ -1034,6 +1152,32 @@ function costOf(cost, { largest = false } = {}) {
     parts.push(`${largest ? 'largest context' : 'context'} ${compact(cost.used)}${cost.size !== null ? ` of ${compact(cost.size)}` : ''}`);
   }
   return parts.length > 0 ? parts : ['not measured'];
+}
+
+/**
+ * A driven session's cost as a line reads it (USAGECOST1): turns, turn time, calls, the four token counts and the peak
+ * context, each only where a line said it. A session with no `turn.ended` says so; it is never a row of zeros.
+ */
+function drivenParts(cost) {
+  if (cost.turns === 0) return ['no turn.ended read'];
+  const parts = [plural(cost.turns, 'turn', 'turns')];
+  if (cost.ms !== null) parts.push(duration(cost.ms));
+  if (cost.calls !== null) parts.push(plural(cost.calls, 'call', 'calls'));
+  for (const [label, field] of [['in', 'input'], ['cache read', 'cacheRead'], ['cache write', 'cacheWrite'], ['out', 'output']]) {
+    if (cost[field] !== null) parts.push(`${label} ${compact(cost[field])}`);
+  }
+  if (cost.used !== null) parts.push(`peak ${compact(cost.used)}`);
+  return parts;
+}
+
+/** A rolled-up row as a line reads it: sessions, the median and slowest turn time, and the cache read per call. */
+function drivenGroupParts(group) {
+  const parts = [plural(group.sessions, 'session', 'sessions')];
+  if (group.measured < group.sessions) parts.push(`${group.sessions - group.measured} with no turn.ended`);
+  if (group.timed > 0) parts.push(`median ${duration(group.medianMs)}`, `slowest ${duration(group.slowestMs)}`);
+  parts.push(group.cacheReadPerCall !== null ? `cache read ${compact(group.cacheReadPerCall)}/call` : 'cache read/call not measured');
+  if (group.used !== null) parts.push(`peak ${compact(group.used)}`);
+  return parts;
 }
 
 const plural = (count, one, other) => `${count} ${count === 1 ? one : other}`;
@@ -1197,6 +1341,37 @@ export function render(report, folder) {
       out.push(`  ${cost.session.padEnd(sessionWidth)} ${`${cost.repository} (${cost.workspace})`.padEnd(24)} ${how.join(' · ')}`);
     }
     out.push(`  ${'total'.padEnd(15)}${[plural(setups.total.sessions, 'session', 'sessions'), ...costOf(setups.total, { largest: true })].join(' · ')}`);
+  }
+
+  const { driven } = report;
+  out.push('', 'Driven sessions');
+  if (driven.started + driven.unstarted === 0) {
+    out.push('  none');
+  } else {
+    const narrow = (text) => (text.length > DRIVEN_WIDTH ? `${text.slice(0, DRIVEN_WIDTH - 1)}…` : text);
+    const without = driven.started - driven.measured;
+    out.push(narrow(`  ${'started'.padEnd(15)}${driven.started}${driven.started > 0
+      ? ` — ${driven.measured} with a turn.ended${without > 0 ? `, ${without} with none read` : ''}` : ''}`));
+    if (driven.unstarted > 0) {
+      out.push(`  ${'unstarted'.padEnd(15)}${plural(driven.unstarted, 'turn', 'turns')} from sessions that did not start in this period`);
+    }
+    for (const cost of driven.sessions.slice(0, DRIVEN_LISTED)) {
+      const models = cost.models.join(' + ') || NO_MODEL;
+      out.push(narrow(`  ${cost.started.slice(5, 16).replace('T', ' ')}  ${cost.session}  ${cost.repository} (${cost.workspace}) · ${cost.adapter} · ${models}`));
+      out.push(narrow(`    ${drivenParts(cost).join(' · ')}`));
+    }
+    if (driven.sessions.length > DRIVEN_LISTED) {
+      out.push(`  … and ${driven.sessions.length - DRIVEN_LISTED} older (all in --json)`);
+    }
+    const rows = (label, groups) => {
+      out.push(`  ${label}`);
+      for (const group of groups) {
+        out.push(narrow(`    ${group.label}`));
+        out.push(narrow(`      ${drivenGroupParts(group).join(' · ')}`));
+      }
+    };
+    rows('by repository', driven.byRepository);
+    rows('by adapter and model', driven.byAdapterAndModel);
   }
 
   out.push('', 'Parks');

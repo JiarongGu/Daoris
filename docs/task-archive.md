@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## USAGECOST1 — what each driven session cost (2026-10-27)
+
+> **USAGECOST1 — the usage report says what each driven session cost** (owner's direction, 2026-10-27: learn where development's tokens go). The report read `turn.ended` only for set-ups; the driven sessions' counts were logged and reported nowhere.
+
+Completed 2026-10-27: `tools/usage-report.mjs` gains a *Driven sessions* section beside *Set-ups* (`driven` in `--json`): each session started in the period as `driven` and not a set-up, newest first, with its repository and workspace, adapter, the models its `actor.ran` lines named, turns, turn time, calls, the four token counts and peak context; then rolled up by repository and by adapter and model with sessions, the median and slowest turn time, and the cache read per call. A session with no `turn.ended` says so and carries null figures, never zero; the text lists ten rows within 120 columns and counts the rest. Counts and times only. Tests in `usage-report.test.ts` cover several sessions and turns, a session with no `turn.ended`, a set-up beside them, the roll-ups, the width bound and `--json`. Gaps, not producers added: `actor.ran` writes `models` as the CLR type name `System.String[]` until LOGCOLLECTION1 lands (so every roll-up reads *model not logged* on today's install, and the report reads a name list or a plain name once the log carries one), and the context at a session's first call is not logged.
+
 ## Retired Fabric attempts (2026-10-27)
 
 Completed at the owner's request: retired the unmerged branch names `quest/fabric-c2a-1ce2a0cd9ebb` and `worktree-agent-ac4bd4973eec96ec9`, with no checked-out worktree on either. Their exact tips remain recoverable as `refs/daoris/retired/fabric-c2a-quest-20261027` (`9b3ac2762cffb4d957490f22358e21676aad08c8`) and `refs/daoris/retired/fabric-c2a-agent-20261027` (`8d266a3c2d7904f7f980d5e86a03c1be1b9a7c36`). The existing local recovery bundle was verified to contain both tips and complete history before retirement; deletion verified both recovery refs and original tips in one Git transaction, with worktree checks before and after and absence confirmed by Git's exit 2. FABRIC-C2a remains open for rework and actual ACP lineage proof; no implementation from these attempts was merged or declared complete.
