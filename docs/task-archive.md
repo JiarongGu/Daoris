@@ -21367,3 +21367,11 @@ waiting on a limited record still go on within the line's agent (D137 point 7's 
 `85fd557`. CI cleared the historical finding at 19:49:10 UTC under its normal descendant-pass rule. The earlier standalone
 pass did not clear it; no ledger was edited by hand and no bookkeeping defect was established. The qualified full-run
 receipt, including the separate HOSTCLEAN1 fixture flake, is in `docs/2026-10-27-branch-recovery.md`.
+
+## CONNARGS1 — a connector tool called without a required argument is refused in plain words (2026-10-27)
+
+> **CONNARGS1 — a connector tool called without a required argument is refused in plain words, not logged as an unhandled exception.** On the install a session called `quest_respond` with the wrong parameter names four times, and each time the MCP server logged `error` "threw an unhandled exception" with `System.ArgumentException` "missing a value for the required parameter id" from the argument marshaller (machine log source `mcp`), which the usage report listed under Failed. A missing or misnamed argument is the caller's mistake: answer it as the tool's error result naming the parameter that is missing and the ones the tool takes, and log it as a refusal rather than an error, without masking an `ArgumentException` a tool's own code throws.
+
+(Quest `#8b4ae06acd49`, asked by `#799d58`.)
+
+**Outcome** 2026-10-27. `Daoris.Service.Mcp/ArgumentFilter.cs` holds each call to the required parameters its tool advertises, before the tool is built, and answers a miss as an error result naming what is missing, what was given that the tool does not take, and what it takes; the machine log keeps an information `tool.refused` line of names only. A tool's own `ArgumentException` is untouched. Proof and detail: `ArgumentFilterTests` and the FIX-LOG entry of the same date; the log event is catalogued in `docs/2026-09-30-machine-log-design.md` §4.
