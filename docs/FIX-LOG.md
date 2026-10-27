@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-28 - Four tool test files ran in no gate, and the one that rotted said nothing (TOOLTESTCENSUS1)
+
+- **Symptom:** QUEUELOCK1's worker found `tools/as-merged.test.mjs` "the merge tool, gating a merge it has not committed…" failing on main `ed059a0f7`: the merge tool's commit check refused the test's own scratch commit ("no allowed maker in its Co-Authored-By line"). Nothing had noticed.
+- **Root cause:** the root `verify` script names its `node --test` files one by one, and `as-merged`, `knowledge-bench`, `question-bench` and `ux-count` test files were in no list, in no gate of `daoris.gates.json` and outside the `tool-tests` gate's `tool-test/**/*.ts` glob; each header said it was "outside `npm run verify`" for a lane split that no longer exists. Two later changes then broke the unrun file: MAKERTRAIL1 made the commit check want an allowed maker's name (the fixture's trailer was `Fixture`), and GATESLIM1 made a merge block on the universal gates alone, skipping the fixture's `bare` gate "in the CI beside" unless `--gated`.
+- **Fix:** `tools/tool-test-census.mjs` (run by `verify`, with its test): every `tools/*.test.mjs` and every `*.test.ts` under `src/Daoris.Cli/tool-test/` must be run by exactly one gate, reading each gate's command through its `npm run` scripts; it names an orphan, a file in two gates and a listed file that is gone. The four files are in the `verify` list; their "outside verify" headers say so no longer. `as-merged.test.mjs`'s scratch trailer is `Claude Fixture (Anthropic) <…>`, as `merge-branch.test.ts`'s fixtures carry, and its merge-tool case passes `--gated`.
+- **Verify:** red first: the case failed on the commit check, then, with the trailer mended, on the missing `PASS bare`. Green by `node --test` alone: `tools/as-merged.test.mjs` (8 cases), `knowledge-bench` (24), `question-bench` (20), `ux-count` (19) and `tool-test-census` (7); `node tools/tool-test-census.mjs` names the four before the change and is clean after (29 files). `npm run verify` was not run (this machine's rule).
+- **Commit:** this change.
+
 ## 2026-10-27 - Machine log wrote collections as type names and a held pass at every look (LOGCOLLECTION1)
 
 - **Symptom:** the installed log showed `actor.ran` with `models` as `System.String[]` and `actor.chose` with `passed` as a list type's name, so the usage report's per-model roll-up read every model as not logged. The same day's log held 10,488 `actor.passed` lines, nearly all for one held quest whose build choice was passed with code `cooling`.

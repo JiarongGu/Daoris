@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Tool test census (2026-10-28)
+
+> **TOOLTESTCENSUS1 — every tool test file runs in some gate, and the one that rotted unrun is repaired** (QUEUELOCK1's worker, 2026-10-28). `tools/as-merged.test.mjs` failed on main `ed059a0f7` and nothing noticed: the root `verify` runs a fixed list of `tools/*.test.mjs`, and neither it, `daoris.gates.json` nor the `tool-tests` gate named the file. Add a census run where `verify` runs, repair the file, put it in the right gate's list.
+
+Completed 2026-10-28: `tools/tool-test-census.mjs` (and its test) holds each `tools/*.test.mjs` and `tool-test/` test to exactly one gate and is a step of `verify`. It found four orphans, now in `verify`'s list: `as-merged` (repaired: an allowed maker's trailer, and `--gated` for the merge tool's GATESLIM1 plan), `knowledge-bench`, `question-bench` and `ux-count` (green as they were). FIX-LOG has the cause.
+
 ## USAGECOST1 — what each driven session cost (2026-10-27)
 
 > **USAGECOST1 — the usage report says what each driven session cost** (owner's direction, 2026-10-27: learn where development's tokens go). The report read `turn.ended` only for set-ups; the driven sessions' counts were logged and reported nowhere.

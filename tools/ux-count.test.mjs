@@ -3,7 +3,7 @@
  *
  *   node --test tools/ux-count.test.mjs
  *
- * Outside `npm run verify`, whose tests are the CLI package's, as the benches' are. The counting runs in
+ * Run by `npm run verify`'s `node --test` list, as the benches' are (TOOLTESTCENSUS1). The counting runs in
  * Playwright's chromium, the web's own (`src/Daoris.Web`, installed by its `npm ci`), over the fixed pages in
  * `ux-count-fixtures/`, whose counts are known by hand. Where that browser is not installed here, the cases that
  * need it are skipped and say why. Nothing here starts Storybook or the window: the runner is driven against a
