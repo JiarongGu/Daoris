@@ -262,13 +262,15 @@ public static class PieceKeeper
 {
     /// <param name="root">The repository's registered root, its own trusted configuration: every git here runs there.</param>
     /// <param name="copy">The partner's copy, read as files only.</param>
+    /// <param name="pieceId">The piece's id: what its ref is named by.</param>
+    /// <param name="baseCommit">The exact commit the piece grows from: the ask's base.</param>
     /// <param name="index">A temporary index file under the home, removed after.</param>
     /// <param name="kept">The keeper's moment, written before keeping.</param>
     public static async Task<PieceKept> KeepAsync(
-        string root, string copy, PartnerAsk ask, string index, DateTimeOffset kept, string message, CancellationToken ct)
+        string root, string copy, string pieceId, string baseCommit, string index, DateTimeOffset kept, string message, CancellationToken ct)
     {
-        var (lsCode, listing, lsError) = await WorkingTree.GitAsync(root, ["ls-tree", "-r", "-z", "--full-tree", ask.Base], ct).ConfigureAwait(false);
-        if (lsCode != 0) return new(PartnerStates.Uncertain, null, PartnerWhy.BaseMissing, null, lsError.Trim());
+        var (lsCode, listing, lsError) = await WorkingTree.GitAsync(root, ["ls-tree", "-r", "-z", "--full-tree", baseCommit], ct).ConfigureAwait(false);
+        if (lsCode != 0) return new(PieceKeptStates.Uncertain, null, PartnerWhy.BaseMissing, null, lsError.Trim());
         var @base = BaseFiles(listing);
 
         var found = PieceWalk.Of(copy);
@@ -277,7 +279,7 @@ public static class PieceKeeper
         var judged = PieceImport.Judge(found, @base, entry => PieceImport.BlobId(File.ReadAllBytes(entry.Full!)), ignored.Contains);
         if (judged.Refused || (judged.Empty && judged.LeftOut.Count > 0))
         {
-            return new(PartnerStates.Held, null, PartnerWhy.ImportRefused, judged, null);
+            return new(PieceKeptStates.Held, null, PartnerWhy.ImportRefused, judged, null);
         }
 
         if (judged.Empty) return new(null, null, PartnerWhy.NoWork, judged, null);
@@ -290,9 +292,9 @@ public static class PieceKeeper
         };
         try
         {
-            if (await GitAsync(root, ["read-tree", ask.Base], environment, ct).ConfigureAwait(false) is { Code: not 0 } read)
+            if (await GitAsync(root, ["read-tree", baseCommit], environment, ct).ConfigureAwait(false) is { Code: not 0 } read)
             {
-                return new(PartnerStates.Uncertain, null, PartnerWhy.BaseMissing, judged, read.Stderr.Trim());
+                return new(PieceKeptStates.Uncertain, null, PartnerWhy.BaseMissing, judged, read.Stderr.Trim());
             }
 
             // Each kept file's bytes into the repository's objects with no filters; the copy's attributes and configuration play no part.
@@ -300,26 +302,26 @@ public static class PieceKeeper
             foreach (var (entry, mode) in judged.Changed)
             {
                 var (code, id, error) = await WorkingTree.GitAsync(root, ["hash-object", "-w", "--no-filters", "--", entry.Full!], ct).ConfigureAwait(false);
-                if (code != 0) return new(PartnerStates.Uncertain, null, PartnerWhy.ImportRefused, judged, error.Trim());
+                if (code != 0) return new(PieceKeptStates.Uncertain, null, PartnerWhy.ImportRefused, judged, error.Trim());
                 lines.Append(mode).Append(' ').Append(id.Trim()).Append('\t').Append(entry.Path).Append('\0');
             }
 
             foreach (var path in judged.Deleted) lines.Append("0 ").Append(new string('0', 40)).Append('\t').Append(path).Append('\0');
             var (infoCode, _, infoError) = await WorkingTree.GitAsync(
                 root, ["update-index", "-z", "--index-info"], environment, lines.ToString(), ct).ConfigureAwait(false);
-            if (infoCode != 0) return new(PartnerStates.Uncertain, null, PartnerWhy.ImportRefused, judged, infoError.Trim());
+            if (infoCode != 0) return new(PieceKeptStates.Uncertain, null, PartnerWhy.ImportRefused, judged, infoError.Trim());
 
             var tree = await GitAsync(root, ["write-tree"], environment, ct).ConfigureAwait(false);
-            if (tree.Code != 0) return new(PartnerStates.Uncertain, null, PartnerWhy.ImportRefused, judged, tree.Stderr.Trim());
+            if (tree.Code != 0) return new(PieceKeptStates.Uncertain, null, PartnerWhy.ImportRefused, judged, tree.Stderr.Trim());
 
             var commit = await GitAsync(
-                root, ["commit-tree", "--no-gpg-sign", tree.Stdout.Trim(), "-p", ask.Base, "-m", message], environment, ct).ConfigureAwait(false);
-            if (commit.Code != 0) return new(PartnerStates.Uncertain, null, PartnerWhy.ImportRefused, judged, commit.Stderr.Trim());
+                root, ["commit-tree", "--no-gpg-sign", tree.Stdout.Trim(), "-p", baseCommit, "-m", message], environment, ct).ConfigureAwait(false);
+            if (commit.Code != 0) return new(PieceKeptStates.Uncertain, null, PartnerWhy.ImportRefused, judged, commit.Stderr.Trim());
             var made = commit.Stdout.Trim();
 
-            return await FreezeAsync(root, ask.Id, made, ct).ConfigureAwait(false) switch
+            return await FreezeAsync(root, pieceId, made, ct).ConfigureAwait(false) switch
             {
-                PartnerStates.Imported => new(PartnerStates.Imported, made, null, judged, null),
+                PieceKeptStates.Imported => new(PieceKeptStates.Imported, made, null, judged, null),
                 var other => new(other, made, PartnerWhy.RefMoved, judged, null),
             };
         }
@@ -337,11 +339,11 @@ public static class PieceKeeper
     {
         var name = PieceRefs.Of(id);
         var (_, stands, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", name + "^{commit}"], ct).ConfigureAwait(false);
-        if (PartnerReconcile.AfterRef(stands.Trim() is { Length: > 0 } at ? at : null, commit) is { } already) return already;
+        if (PieceKeptStates.AfterRef(stands.Trim() is { Length: > 0 } at ? at : null, commit) is { } already) return already;
         var (code, _, _) = await WorkingTree.GitAsync(root, ["update-ref", "-m", $"daoris: piece {id}", name, commit, ""], ct).ConfigureAwait(false);
-        if (code == 0) return PartnerStates.Imported;
+        if (code == 0) return PieceKeptStates.Imported;
         var (_, now, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", name + "^{commit}"], ct).ConfigureAwait(false);
-        return PartnerReconcile.AfterRef(now.Trim() is { Length: > 0 } after ? after : null, commit) ?? PartnerStates.Uncertain;
+        return PieceKeptStates.AfterRef(now.Trim() is { Length: > 0 } after ? after : null, commit) ?? PieceKeptStates.Uncertain;
     }
 
     private static Dictionary<string, PieceImport.BaseFile> BaseFiles(string listing)

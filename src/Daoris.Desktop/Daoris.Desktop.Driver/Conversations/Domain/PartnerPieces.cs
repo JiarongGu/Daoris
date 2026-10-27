@@ -26,10 +26,10 @@ public static class PartnerStates
     public const string Ending = "ending";
 
     /// <summary>The import was refused: the copy is kept for the person's look and <i>Discard…</i>.</summary>
-    public const string Held = "held";
+    public const string Held = PieceKeptStates.Held;
 
     /// <summary>The keeper's commit is in the repository, frozen as <see cref="PieceRefs.Of"/>.</summary>
-    public const string Imported = "imported";
+    public const string Imported = PieceKeptStates.Imported;
 
     /// <summary>The answer's and the facts' files are written.</summary>
     public const string Answered = "answered";
@@ -50,7 +50,7 @@ public static class PartnerStates
     public const string Refused = "refused";
 
     /// <summary>Daoris cannot know what happened (a restart with the job unknown, an unreadable state): the copy is kept untouched for the person.</summary>
-    public const string Uncertain = "uncertain";
+    public const string Uncertain = PieceKeptStates.Uncertain;
 
     public static readonly IReadOnlyList<string> All =
     [
@@ -342,8 +342,5 @@ public static class PartnerReconcile
     /// How the create-only import reads the piece's ref (the design §7.2's import row): absent, it is created; at the keeper's
     /// commit, the import already happened and is <see cref="PartnerStates.Imported"/>; at another commit, <see cref="PartnerStates.Uncertain"/>.
     /// </summary>
-    public static string? AfterRef(string? refCommit, string kept) =>
-        refCommit is null ? null
-        : string.Equals(refCommit, kept, StringComparison.OrdinalIgnoreCase) ? PartnerStates.Imported
-        : PartnerStates.Uncertain;
+    public static string? AfterRef(string? refCommit, string kept) => PieceKeptStates.AfterRef(refCommit, kept);
 }

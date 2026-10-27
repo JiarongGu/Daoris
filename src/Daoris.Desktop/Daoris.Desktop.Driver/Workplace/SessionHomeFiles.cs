@@ -99,6 +99,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// </summary>
     private sealed record SessionFile(string Name, Place Place, string Suffix, bool Folder, Func<long, HistoryBytes> Counts);
 
+    internal const string HarnessSuffix = ".harness.json";
+    internal const string HarnessSetAsideSuffix = ".imported";
+
     internal const string GoOnMarkSuffix = ".cannot.json";
     internal const string ReopenMarkSuffix = ".reopened.json";
     internal const string NewSessionChoiceSuffix = ".new-session.json";
@@ -126,9 +129,9 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Conversation, Place.Sessions, ".events.jsonl", false, bytes => HistoryBytes.None with { Conversations = bytes }),
         new(Transcript, Place.Sessions, ".log", false, bytes => HistoryBytes.None with { Transcripts = bytes }),
         new(Files, Place.Files, "", true, bytes => HistoryBytes.None with { Files = bytes }),
-        new(Harness, Place.Sessions, HarnessConversations.Suffix, false, Beside),
+        new(Harness, Place.Sessions, HarnessSuffix, false, Beside),
         // FOUNDATION1 z-iii: the file once its conversation is imported into the store, set aside beside it; the binding itself goes below.
-        new(Harness, Place.Sessions, HarnessConversations.Suffix + HarnessConversations.SetAsideSuffix, false, Beside),
+        new(Harness, Place.Sessions, HarnessSuffix + HarnessSetAsideSuffix, false, Beside),
         new(Marker, Place.Pids, ".pid", false, Beside),
         new(Mark, Place.Sessions, GoOnMarkSuffix, false, Beside),
         // FABRIC-CLOSE1c8: the reopens it was told of, a mark too, which goes with its record.
@@ -263,7 +266,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
 
             // FOUNDATION1 z-iii: the binding in the desktop store goes with its record, under the name its file went by. A store that
             // will not take the delete (busy, or written by a newer Daoris) leaves the binding, named as a file the disk would not let go.
-            var bindings = new HarnessConversations(home);
+            var bindings = WorkplaceHarnessBindings.Current.Open(home);
             try
             {
                 foreach (var id in bindings.ForgetBindings(sessions))

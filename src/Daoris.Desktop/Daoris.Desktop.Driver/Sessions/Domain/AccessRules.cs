@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 public sealed record ResolvedPause(string Pause, string Value, string Source);
 
 /// <summary>A repository's access setup as it resolves (D184 point 1), pause by pause in <see cref="AccessRules.Pauses"/>' order.</summary>
-public sealed record ResolvedAccess(IReadOnlyList<ResolvedPause> Pauses)
+public sealed record ResolvedAccess(IReadOnlyList<ResolvedPause> Pauses) : IWorkplaceResolvedAccess
 {
     /// <summary>The value <paramref name="pause"/> resolves to.</summary>
     public string Value(string pause) => Pauses.First(each => each.Pause == pause).Value;

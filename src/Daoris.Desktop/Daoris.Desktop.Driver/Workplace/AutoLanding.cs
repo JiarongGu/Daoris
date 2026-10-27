@@ -367,9 +367,9 @@ public static class AutoLandingNotes
     {
         var said = concluded == AutoConcluded.Merges
             ? Noted.Of(NoteCodes.LandingMerges,
-                $"its quest was done, and {(access is null ? "its" : AccessRules.Whose(access) + "'s")} access setup lands work by its rule, "
+                $"its quest was done, and {(access is null ? "its" : WorkplaceAccessSetup.Current.Whose(access) + "'s")} access setup lands work by its rule, "
                 + "but the rule merges into the line, and a merge never lands by itself: its work waits for your Accept.",
-                ("access", access ?? AccessRules.DefaultSource))
+                ("access", access ?? WorkplaceAccessSetup.Current.DefaultSource))
             : concluded == AutoConcluded.NoTree
             ? Noted.Of(NoteCodes.LandingNoTree,
                 "its quest was done, and it worked in the repository's own checkout, so its work is already there: nothing lands automatically.")

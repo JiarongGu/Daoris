@@ -26,12 +26,12 @@ namespace Daoris.Driver;
 ///
 /// <para>What is kept is this store's; the file and its format are <see cref="GoOnFiles"/>' (STRUCT3h, D166's note).</para>
 /// </remarks>
-public sealed class HarnessConversations(string home, Func<StoreSettled>? settled = null)
+public sealed class HarnessConversations(string home, Func<StoreSettled>? settled = null) : IWorkplaceHarnessBindings
 {
-    public const string Suffix = ".harness.json";
+    public const string Suffix = SessionHomeFiles.HarnessSuffix;
 
     /// <summary>What a binding file's name gains when its conversation is imported into the store and it is set aside.</summary>
-    public const string SetAsideSuffix = BindingStore.SetAsideSuffix;
+    public const string SetAsideSuffix = SessionHomeFiles.HarnessSetAsideSuffix;
 
     private readonly BindingStore _bindings = new(home, settled, ReadFile);
 

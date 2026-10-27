@@ -852,9 +852,9 @@ public static class LandingRules
     public static Landing Effective(DriverConfig config, string repository, string? workspace)
     {
         var chosen = Choose(config, repository, workspace);
-        var access = AccessRules.Resolve(config, repository, workspace);
-        if (access.Value(AccessRules.Landing) != AccessRules.Rule || chosen.Rule is { Form: LandingForm.Branch, AutoAccept: true }) return chosen;
-        var source = access.Source(AccessRules.Landing);
+        var access = WorkplaceAccessSetup.Current.Resolve(config, repository, workspace);
+        if (access.Value(AccessKey.Landing) != AccessKey.Rule || chosen.Rule is { Form: LandingForm.Branch, AutoAccept: true }) return chosen;
+        var source = access.Source(AccessKey.Landing);
         return chosen.Rule.Form == LandingForm.Branch
             ? chosen with { Rule = chosen.Rule with { AutoAccept = true }, Access = source }
             : chosen with { Access = source };

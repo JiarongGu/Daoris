@@ -66,6 +66,10 @@ public sealed class PieceKeepProcessTests : IDisposable
     private static PartnerAsk Ask(string @base, params string[] paths) =>
         new("p1", "lead", "Make the window seven days.", paths, "stub-b", @base, [], PartnerAsk.ByPerson, Kept);
 
+    private static Task<PieceKept> KeepAsync(
+        string root, string copy, PartnerAsk ask, string index, DateTimeOffset kept, string message, CancellationToken ct) =>
+        PieceKeeper.KeepAsync(root, copy, ask.Id, ask.Base, index, kept, message, ct);
+
     private string Index() => Path.Combine(_scratch, "index-" + Guid.NewGuid().ToString("N")[..6]);
 
     [Fact]
@@ -91,7 +95,7 @@ public sealed class PieceKeepProcessTests : IDisposable
         await GitAsync(copy, "config", "user.name", "Impostor");
         var partnerHead = (await GitAsync(copy, "rev-parse", "HEAD")).Trim();
 
-        var kept = await PieceKeeper.KeepAsync(root, copy, Ask(@base, "src"), Index(), Kept, "piece p1", CancellationToken.None);
+        var kept = await KeepAsync(root, copy, Ask(@base, "src"), Index(), Kept, "piece p1", CancellationToken.None);
 
         Assert.Equal(PartnerStates.Imported, kept.State);
         var commit = kept.Commit!;
@@ -120,14 +124,14 @@ public sealed class PieceKeepProcessTests : IDisposable
         var copy = await CopyAsync(root, @base);
         await File.WriteAllTextAsync(Path.Combine(copy, "src", "report.ts"), "export const days = 7;\n");
 
-        var first = await PieceKeeper.KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
+        var first = await KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
         // A restart between the ref and the state: keeping again finds its own commit standing, and is imported.
-        var again = await PieceKeeper.KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
+        var again = await KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
         Assert.Equal((PartnerStates.Imported, first.Commit), (again.State, again.Commit));
 
         // A ref at another commit is never moved: the piece is uncertain.
         await File.WriteAllTextAsync(Path.Combine(copy, "src", "report.ts"), "export const days = 8;\n");
-        var moved = await PieceKeeper.KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
+        var moved = await KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
         Assert.Equal((PartnerStates.Uncertain, PartnerWhy.RefMoved), (moved.State, moved.Code));
         Assert.Equal(first.Commit, (await GitAsync(root, "rev-parse", PieceRefs.Of("p1"))).Trim());
     }
@@ -138,13 +142,13 @@ public sealed class PieceKeepProcessTests : IDisposable
         var (root, @base) = await RepositoryAsync();
         var copy = await CopyAsync(root, @base);
 
-        var none = await PieceKeeper.KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
+        var none = await KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
         Assert.Equal((null, PartnerWhy.NoWork), (none.State, none.Code));
 
         Directory.CreateDirectory(Path.Combine(copy, "nested"));
         await GitAsync(Path.Combine(copy, "nested"), "init", "--quiet");
         await File.WriteAllTextAsync(Path.Combine(copy, "nested", "x.txt"), "x\n");
-        var held = await PieceKeeper.KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
+        var held = await KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
         Assert.Equal((PartnerStates.Held, PartnerWhy.ImportRefused), (held.State, held.Code));
         Assert.Equal([new PieceLeftOut("nested", PieceImport.WhyRepository)], held.Judged!.LeftOut);
         Assert.Equal("", (await GitAsync(root, "for-each-ref", PieceRefs.Prefix)).Trim());
@@ -158,7 +162,7 @@ public sealed class PieceKeepProcessTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(copy, "src", "report.ts"), "export const days = 7;\n");
         await GitAsync(root, "branch", "daoris/lead", @base);
         await GitAsync(root, "checkout", "--quiet", "--detach");
-        await PieceKeeper.KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
+        await KeepAsync(root, copy, Ask(@base), Index(), Kept, "piece p1", CancellationToken.None);
         await GitAsync(root, "branch", "-D", "main");
 
         var holders = await ContentHolds.HoldersAsync(root, @base, "daoris/lead", CancellationToken.None);

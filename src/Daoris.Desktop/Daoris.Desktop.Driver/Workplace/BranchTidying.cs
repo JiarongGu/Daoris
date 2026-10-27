@@ -163,7 +163,7 @@ public sealed class BranchTidying(string home)
     public static async Task<IEnumerable<string>> WaitingOnHelpersAsync(ServiceClient service, CancellationToken ct)
     {
         var waiting = (await service.RecordsAsync(ct).ConfigureAwait(false))
-            .Where(record => HelperWaits.HoldsTree(record) && record.Tree is { Length: > 0 } && record.Quest is { Length: > 0 })
+            .Where(record => HelperWaitTrees.HoldsTree(record) && record.Tree is { Length: > 0 } && record.Quest is { Length: > 0 })
             .ToList();
         if (waiting.Count == 0) return [];
         var taken = (await service.EveryQuestAsync(ct).ConfigureAwait(false))

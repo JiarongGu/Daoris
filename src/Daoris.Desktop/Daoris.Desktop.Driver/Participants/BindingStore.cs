@@ -43,7 +43,7 @@ public sealed class BindingStore(string home, Func<StoreSettled>? settled, Func<
     public const string Family = "bindings";
 
     /// <summary>What an imported file's name gains when it is set aside.</summary>
-    public const string SetAsideSuffix = ".imported";
+    public const string SetAsideSuffix = SessionHomeFiles.HarnessSetAsideSuffix;
 
     /// <summary>This process's run, drawn once: what every open of the store here is recorded under.</summary>
     public static string Run { get; } = Guid.NewGuid().ToString("N");
