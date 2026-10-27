@@ -24,6 +24,8 @@
   ],
   "seams": ["ServiceClient","SessionProcesses","HarnessRoster","DaorisHome","MachineLog","WorkingTree","DesktopStore"],
   "files": {
+    "Workplace/IToolHomeWorld.cs": "Workplace",
+    "Install/InstallRoot.cs": "Install",
     "Workplace/IWorkplaceEventHistory.cs": "Workplace",
     "Workplace/WorkplaceEventRecords.cs": "Workplace",
     "Context/WorkplaceEventRecordsWiring.cs": "Context",
@@ -979,13 +981,6 @@
       }
     },
     {
-      "family": "Workplace names Loop",
-      "after": "Workplace",
-      "files": {
-        "Workplace/ToolHomeLeftovers.cs": ["SystemWiring","WiringWorld"]
-      }
-    },
-    {
       "family": "Workplace names Participants",
       "after": "Workplace",
       "files": {
@@ -1383,6 +1378,7 @@
   ],
   "testFolders": ["Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
   "tests": {
+    "WorkplaceLoopBoundaryTests.cs": "Workplace",
     "WorkplaceContextPortsTests.cs": "Workplace",
     "AutoLandingLookTests.cs": "Workplace",
     "AutoLandingPressTests.cs": "Workplace",

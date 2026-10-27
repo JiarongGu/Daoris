@@ -58,6 +58,10 @@ facets. Context's `Sessions/Events/SessionEventLog.cs` answers them on the origi
 lock and subscriptions. `Context/WorkplaceEventRecordsWiring.cs` installs the required factory for standalone landing;
 it constructs a record only at that command's original construction point.
 
+`ToolHomeLeftovers` reads `IToolHomeWorld`, which the Loop's `WiringWorld` answers directly with its supplied facts.
+`Install/InstallRoot.cs` owns the marked-root-or-immediate-data-child rule shared with `SystemWiring`; an unmarked
+home keeps its supplied spelling as the root. This rule differs from finding an install by a program's directory.
+
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and

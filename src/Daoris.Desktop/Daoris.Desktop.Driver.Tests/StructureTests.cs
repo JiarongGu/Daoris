@@ -548,6 +548,17 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Workplace_uses_lower_tool_home_data_and_no_Loop_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owner == "Loop" : path.StartsWith("Loop/", StringComparison.Ordinal))).ToList();
+        Assert.True(edges.Count == 0, $"Workplace names Loop in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;

@@ -73,7 +73,7 @@ public static class ToolHomeLeftovers
             var named = set.Trim();
             if (!System.IO.Path.IsPathFullyQualified(named)) return (null, from, "relative");
             var full = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(named));
-            foreach (var daoris in new[] { daorisHome, SystemWiring.RootOf(daorisHome) }.Where(each => each is not null).Distinct())
+            foreach (var daoris in new[] { daorisHome, InstallRoot.RootOf(daorisHome) }.Where(each => each is not null).Distinct())
             {
                 var top = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(daoris!));
                 if (string.Equals(full, top, StringComparison.OrdinalIgnoreCase) || IsUnder(full, top, StringComparer.OrdinalIgnoreCase)) return (null, from, "inside-daoris");
@@ -86,17 +86,17 @@ public static class ToolHomeLeftovers
     }
 
     /// <summary>The own home as a real program reads it: this process's environment, the account's, the user profile.</summary>
-    public static (string? Path, string From, string? Why) OwnHome(WiringWorld world) =>
+    public static (string? Path, string From, string? Why) OwnHome(IToolHomeWorld world) =>
         OwnHome(world.Process, world.Account, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), world.Home);
 
     /// <summary>
     /// The tool home a world reads: the one it was handed, or none. 🔴 A world made by hand names none, so a test that builds one
-    /// reads no machine's tool home; the window's and the terminal's worlds are handed theirs (<see cref="OwnHome(WiringWorld)"/>).
+    /// reads no machine's tool home; the window's and the terminal's worlds are handed theirs (<see cref="OwnHome(IToolHomeWorld)"/>).
     /// </summary>
-    public static (string? Path, string From, string? Why) ToolHomeOf(WiringWorld world) => (world.ToolHome, world.ToolHomeFrom, world.ToolHomeWhy);
+    public static (string? Path, string From, string? Why) ToolHomeOf(IToolHomeWorld world) => (world.ToolHome, world.ToolHomeFrom, world.ToolHomeWhy);
 
     /// <summary>The folder Claude Code keeps its projects in, in the person's tool home.</summary>
-    public static string? ProjectsOf(WiringWorld world) => world.ToolHome is { } tool ? System.IO.Path.Combine(tool, "projects") : null;
+    public static string? ProjectsOf(IToolHomeWorld world) => world.ToolHome is { } tool ? System.IO.Path.Combine(tool, "projects") : null;
 
     // ---------------------------------------------------------------------------------------------------------------------
     // Provenance
@@ -170,7 +170,7 @@ public static class ToolHomeLeftovers
     /// folder is a link, nothing is, and <c>Why</c> is <c>linked</c>. Where the records were not read there is no claim, and
     /// <c>Why</c> is <c>records-unread</c>.
     /// </summary>
-    public static ToolListing List(WiringWorld world)
+    public static ToolListing List(IToolHomeWorld world)
     {
         if (world.Home is not { } home) return new ToolListing([], "no-home", false, 0, 0);
         if (world.ToolHome is not { } tool) return new ToolListing([], world.ToolHomeWhy ?? "no-tool-home", false, 0, 0);
