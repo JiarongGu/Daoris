@@ -52,6 +52,16 @@ repository.
   The final four-class selection passed 257/257, zero skipped, retained in
   `local/scratch/graphquiet1/frontier-review-handshake.trx`. D212 records final review proof and regenerated index reach.
   Production remains unchanged.
+- **Complete-usage/cancellation audit:** complete topology matching now compares final Used as well as metadata and dependency
+  identities; partial matching leaves undecided usage alone. The equal-waste swapped-usage regression failed against the old
+  comparer (Assert.Null received an E/K mapping), retained as `local/scratch/graphquiet1/frontier-used-red.trx`.
+  Building on the existing drain/settlement cleanup, the actual census now owns a cancellation source and cancels it only on
+  failure, before releasing and settling its reads. Cleanup acknowledges cancellation only for that cancelled owned token;
+  the primary assertion and unrelated failures still propagate. No new normal-run deadline or production code changes.
+  A real scripted ReviewGraphReads regression waits for a held arrival, fails the frontier, then verifies the original assertion,
+  cancelled read, empty hold queue and every node answered. Final focused proof passes 259/259, zero skipped (209 census,
+  including all original 189); `local/scratch/graphquiet1/frontier-used-owned-green.trx` retains it. Parent's verified 203-case
+  interim artifact is separate from this cumulative follow-up; no final integration acceptance is inferred.
 
 ## 2026-10-27 - Two fast fixtures retained ten-second signal patience (TESTPATIENCE4)
 

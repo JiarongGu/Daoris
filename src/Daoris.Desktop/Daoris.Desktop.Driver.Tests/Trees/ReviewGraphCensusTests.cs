@@ -193,6 +193,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         var graph = new ReviewGraph();
         var held = new HeldReads();
         var rounds = new Dictionary<ReviewNode, int>();
+        using var owned = new CancellationTokenSource();
         Task<string>? read = null;
         Exception? failed = null;
         GitCount graphCount;
@@ -203,7 +204,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
             {
                 using (GitLaunch.Within(GitBudget.Review))
                 {
-                    read = OutcomeAsync(() => ReviewGraphReads.ReadAsync(graph, Session, _tree, baseCommit, trees, NoCheckout, CancellationToken.None));
+                    read = OutcomeAsync(() => ReviewGraphReads.ReadAsync(graph, Session, _tree, baseCommit, trees, NoCheckout, owned.Token));
                 }
 
                 for (var round = 1; ; round++)
@@ -233,7 +234,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
         {
             try
             {
-                await SettleOwnedAsync(held, graph, read);
+                await SettleOwnedAsync(held, graph, read, failed is null ? null : owned);
             }
             catch (Exception teardownError) when (failed is not null)
             {
@@ -328,6 +329,11 @@ public sealed class ReviewGraphCensusTests : IDisposable
             }
         }
 
+        public void BeginSettlement()
+        {
+            lock (_gate) _settling = true;
+        }
+
         public void ReleaseAllAndFuture()
         {
             lock (_gate)
@@ -338,17 +344,31 @@ public sealed class ReviewGraphCensusTests : IDisposable
         }
     }
 
-    private static async Task SettleOwnedAsync(HeldReads held, ReviewGraph graph, Task? read)
+    private static async Task SettleOwnedAsync(
+        HeldReads held, ReviewGraph graph, Task? read, CancellationTokenSource? cancel = null)
     {
         // Keep releasing late registrations too: settling a parent can create another child after the first drain.
-        held.ReleaseAllAndFuture();
+        held.BeginSettlement();
         try
         {
-            if (read is not null) await read.WaitAsync(Poll.Patience);
+            if (cancel is not null) await cancel.CancelAsync();
         }
         finally
         {
-            await graph.SettledAsync().WaitAsync(Poll.Patience);
+            held.ReleaseAllAndFuture();
+            try
+            {
+                if (read is not null) await read.WaitAsync(Poll.Patience);
+            }
+            catch (OperationCanceledException error) when (cancel is { IsCancellationRequested: true }
+                && error.CancellationToken == cancel.Token)
+            {
+                // This cancellation belongs to failed-fixture cleanup; the primary assertion is still propagated by its caller.
+            }
+            finally
+            {
+                await graph.SettledAsync().WaitAsync(Poll.Patience);
+            }
         }
     }
 
@@ -373,6 +393,7 @@ public sealed class ReviewGraphCensusTests : IDisposable
             {
                 if (taken.Contains(candidate) || node.Name != candidate.Name || node.Budget != candidate.Budget
                     || node.Program != candidate.Program || node.Speculative != candidate.Speculative
+                    || (complete && node.Used != candidate.Used)
                     || node.Needs.Count != candidate.Needs.Count
                     || !node.Needs.GroupBy(need => map[need]).All(group =>
                         candidate.Needs.Count(need => ReferenceEquals(need, group.Key)) == group.Count())) continue;
@@ -832,6 +853,84 @@ public sealed class ReviewGraphCensusTests : IDisposable
         {
             release.TrySetResult();
             await SettleOwnedAsync(held, graph, answer);
+        }
+    }
+
+    [Fact]
+    public async Task Complete_topology_rejects_swapped_usage_at_equal_waste_but_partial_usage_can_be_undecided()
+    {
+        static ReviewGraph Pair()
+        {
+            var graph = new ReviewGraph();
+            graph.Run("E", [], () => Task.FromResult(true), speculative: true);
+            graph.Run("K", [], () => Task.FromResult(true), speculative: true);
+            return graph;
+        }
+
+        var reference = Pair();
+        var actual = Pair();
+        var undecided = Pair();
+        await Task.WhenAll(reference.SettledAsync(), actual.SettledAsync(), undecided.SettledAsync()).WaitAsync(Poll.Patience);
+        reference.Nodes[0].Use(true);
+        reference.Nodes[1].Use(false);
+        actual.Nodes[0].Use(false);
+        actual.Nodes[1].Use(true);
+        Assert.Equal(1, reference.Wasted);
+        Assert.Equal(reference.Wasted, actual.Wasted);
+        Assert.Null(MatchTopology(actual.Nodes, reference.Nodes, complete: true));
+        Assert.NotNull(MatchTopology(undecided.Nodes, reference.Nodes));
+        Assert.Null(MatchTopology(undecided.Nodes, reference.Nodes, complete: true));
+    }
+
+    [Fact]
+    public async Task A_failed_actual_frontier_cancels_and_settles_its_owned_scripted_review()
+    {
+        var world = new World(RecordHeld: false, Grown: "held", Bases: "both", Untracked: 2);
+        var trees = Trees(world);
+        var graph = new ReviewGraph();
+        var held = new HeldReads();
+        using var owned = new CancellationTokenSource();
+        var arrived = held.Changed;
+        Task<string>? read = null;
+        var before = WorkingTree.Runs.Value;
+        WorkingTree.Runs.Value = Stand(world, held, graph);
+        async Task FailAsync()
+        {
+            try
+            {
+                using (GitLaunch.Within(GitBudget.Review))
+                {
+                    read = OutcomeAsync(() => ReviewGraphReads.ReadAsync(graph, Session, _tree, Recorded, trees,
+                        (_, _) => Task.FromResult<string?>(null), owned.Token));
+                }
+                await arrived.WaitAsync(Poll.Patience);
+                Assert.NotEmpty(held.Snapshot());
+                Assert.False(read.IsCompleted);
+                Assert.False(owned.IsCancellationRequested);
+                await FrontierAsync(graph, held, read, world, [], 1);
+            }
+            finally
+            {
+                await SettleOwnedAsync(held, graph, read, owned);
+            }
+        }
+
+        try
+        {
+            var error = await Record.ExceptionAsync(FailAsync);
+            Assert.NotNull(error);
+            Assert.Contains("unexpected graph topology", error.Message);
+            Assert.True(owned.IsCancellationRequested);
+            Assert.NotNull(read);
+            Assert.True(read.IsCanceled);
+            Assert.NotEmpty(graph.Nodes);
+            Assert.All(graph.Nodes, node => Assert.True(node.Answered.IsCompletedSuccessfully));
+            Assert.Empty(held.Snapshot());
+        }
+        finally
+        {
+            try { await SettleOwnedAsync(held, graph, read, owned); }
+            finally { WorkingTree.Runs.Value = before; }
         }
     }
 
