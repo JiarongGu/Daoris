@@ -57,7 +57,7 @@ internal static class HistoryHome
         var ours = records.Where(record => !record.Teammate).ToList();
 
         var clearable = units.Where(unit => unit.Clearable).ToList();
-        var intake = HistoryBytes.Of(IntakeRoom.PathOf(world.Home, workspace));
+        var intake = HistoryBytes.Of(IntakeRoomPaths.PathOf(world.Home, workspace));
         var freesRoom = facts.Asks.Where(ask => Here(ask.Workspace, workspace))
             .All(ask => clearable.Any(unit => unit.Asks.Contains(ask.Id, StringComparer.OrdinalIgnoreCase)));
         var leftOver = LeftOver(world, facts, machine);
@@ -258,7 +258,7 @@ internal static class HistoryHome
     internal static (bool Went, long Bytes) RemoveRoom(HistoryWorld world, string workspace, Facts after, SessionHomeFiles files, List<string> failed) =>
         after.Asks.Any(ask => Here(ask.Workspace, workspace))
             ? (false, 0)
-            : files.Take(IntakeRoom.PathOf(world.Home, workspace), folder: true, failed);
+            : files.Take(IntakeRoomPaths.PathOf(world.Home, workspace), folder: true, failed);
 
     /// <summary>
     /// What names a cleared record, tidied (§5 step 4, §4): an empty folder a cleared session's tree left and its empty parents,
@@ -284,7 +284,7 @@ internal static class HistoryHome
             {
                 var quests = after.Quests.Select(quest => quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 var asks = after.Asks.Select(ask => ask.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                new AbandonRecord(world.Home).Forget(entry => entry.Scope == "ask" ? asks.Contains(entry.Id) : quests.Contains(entry.Id));
+                WorkplaceWorkOrders.Current.ForgetAbandoned(world.Home, entry => entry.Scope == "ask" ? asks.Contains(entry.Id) : quests.Contains(entry.Id));
             }
 
             Config(world, scope, cleared, after);

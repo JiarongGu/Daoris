@@ -26,7 +26,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public sealed class QuestionFiles(string home)
 {
-    public const string Suffix = ".question.json";
+    public const string Suffix = SessionHomeFiles.QuestionSuffix;
 
     /// <summary>The writer's bounds (<c>QuestionBox</c>), held on read too: the question, its answers, each label and each <c>does</c>, and by when.</summary>
     public const int MaxQuestion = 1000, MaxChoices = 6, MaxLabel = 80, MaxDoes = 300, MaxBy = 200, MaxWhy = 300;

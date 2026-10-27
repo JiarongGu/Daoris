@@ -220,7 +220,7 @@ internal static class ContextBriefs
             .. all.Where(record => record.EntryKey == key && !on.Contains(record.Id))
                 .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
                 .Select(record => $"session `{record.Id}`{(record.Quest is { } quest ? $" for #{quest}" : "")}, "
-                                  + $"{(record.From is null ? PartBegan.Opened : SessionEntries.ByLink(record.FromWhy))}, {record.State}"),
+                                  + $"{(record.From is null ? PartBegan.Opened : PartBegan.ByLink(record.FromWhy))}, {record.State}"),
         ];
     }
 

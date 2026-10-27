@@ -180,7 +180,7 @@ public sealed class SessionBranches(string home)
     public void Forget(string repository, IReadOnlyCollection<string> branches)
     {
         var open = OpenUnits(home);
-        var owing = WorkObligations.Owing(home);
+        var owing = WorkplaceWorkOrders.Current.Owing(home);
         Edit(all =>
         {
             var now = DateTimeOffset.UtcNow;
@@ -252,7 +252,7 @@ public sealed class SessionBranches(string home)
         var traces = entries.Select((entry, at) => (Entry: entry, At: at)).Where(each => each.Entry.GoneAt is not null).ToList();
         if (!traces.GroupBy(each => each.Entry.Repository, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > TracesKept)) return entries;
         var open = OpenUnits(home);
-        var owing = WorkObligations.Owing(home);
+        var owing = WorkplaceWorkOrders.Current.Owing(home);
         var following = entries.Select((entry, at) => (Entry: entry, At: at))
             .GroupBy(each => $"{each.Entry.Repository.ToUpperInvariant()}\n{each.Entry.Branch}", StringComparer.Ordinal)
             .Where(name => name.All(each => each.Entry.GoneAt is not null))

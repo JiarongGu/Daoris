@@ -115,9 +115,9 @@ public static class Orphans
         // the record it ends carries no evidence, as before.
         if (quest is not { AwaitsEvidence: true })
         {
-            if (EvidenceCheck.CommitWanted(quest, new EvidenceAt(tree, EvidenceCodes.Sweep) { Session = session.Id }) is not null)
+            if (WorkplaceWorkOrders.Current.CommitWanted(quest, new EvidenceAt(tree, EvidenceCodes.Sweep) { Session = session.Id }) is not null)
             {
-                await EvidenceCheck.AtEndAsync(service, quest, new EvidenceAt(tree, EvidenceCodes.Sweep) { Session = session.Id }, null, git, ct)
+                await WorkplaceWorkOrders.Current.AtEndAsync(service, quest, new EvidenceAt(tree, EvidenceCodes.Sweep) { Session = session.Id }, null, git, ct)
                     .ConfigureAwait(false);
             }
 
@@ -130,7 +130,7 @@ public static class Orphans
         var commits = since is not null && await WorkingTree.IsTopLevelAsync(tree, git, ct).ConfigureAwait(false)
             ? await WorkingTree.CommitsSinceAsync(tree, since, git, ct).ConfigureAwait(false)
             : null;
-        return await EvidenceCheck.AtEndAsync(
+        return await WorkplaceWorkOrders.Current.AtEndAsync(
                 service, quest, new EvidenceAt(tree, EvidenceCodes.Sweep) { Base = since, Session = session.Id }, commits, git, ct)
             .ConfigureAwait(false);
     }

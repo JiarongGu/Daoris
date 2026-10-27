@@ -41,7 +41,7 @@ public sealed class SessionArchive(string home)
     /// <param name="groups">Where the reader placed the sessions asked about, as the archive is asked.</param>
     /// <param name="known">Every record's id: a mark for a record that is gone is dropped as this writes.</param>
     public ArchiveAnswer Archive(
-        IReadOnlyCollection<string> ids, IReadOnlyList<SessionGrouping> groups, IReadOnlyCollection<string> known, DateTimeOffset now)
+        IReadOnlyCollection<string> ids, IReadOnlyList<IWorkplaceSessionRow> groups, IReadOnlyCollection<string> known, DateTimeOffset now)
     {
         var placed = groups.GroupBy(group => group.Session, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var outcomes = ids.Distinct(StringComparer.Ordinal).Select(id => Judge(id, placed.GetValueOrDefault(id))).ToList();
@@ -118,7 +118,7 @@ public sealed class SessionArchive(string home)
         [],
         0);
 
-    private static ArchiveOutcome Judge(string id, SessionGrouping? placed) => placed?.Group switch
+    private static ArchiveOutcome Judge(string id, IWorkplaceSessionRow? placed) => placed?.Group switch
     {
         null => new(id, ArchiveVerdict.Unknown),
         SessionGroup.Working => new(id, ArchiveVerdict.Live),
