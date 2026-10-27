@@ -181,10 +181,10 @@ public sealed class AutoLander(
         // The switch is read as it stands now: switched off, the person's press is the way again. Under a named workflow it is
         // its run's bound version's landing step (WORKFLOW1f), read once here and handed to the gate below; a workflow that
         // cannot be read here holds the entry at the gate, never closes it as off.
-        var process = await WorkflowProcesses.ReadAsync(home, config, world, entry.Quest, entry.Repository, entry.Workspace, ct)
+        var process = await WorkplaceWorkflows.Current.ReadProcessAsync(home, config, world.QuestsAsync, entry.Quest, entry.Repository, entry.Workspace, ct)
             .ConfigureAwait(false);
         // FABRIC-END7b: the run whose binding the gate reads, which the gate's files' watch lists by name.
-        LandingJudged.Read(home, entry, process.Binding?.Run);
+        LandingJudged.Read(home, entry, process.BoundRun);
         var rule = process.Landing.Rule;
         if (process is { Problem: null, Unread: null } && rule is not { Form: LandingForm.Branch, AutoAccept: true })
         {
@@ -535,7 +535,7 @@ public sealed class AutoLander(
     /// </remarks>
     /// <param name="process">The run's process the look read for the entry's quest (WORKFLOW1f), handed to the gate where it is read for it.</param>
     private async Task<(string? Said, AutoChoice? Choice)?> PushHeldAsync(
-        AutoLanding entry, AutoTry held, IAutoLandingWorld world, LookRecords looked, WorkflowProcess process, CancellationToken ct)
+        AutoLanding entry, AutoTry held, IAutoLandingWorld world, LookRecords looked, IWorkplaceProcess process, CancellationToken ct)
     {
         var quest = await world.QuestAsync(entry.Quest, ct).ConfigureAwait(false);
         if (!Stands(quest)) return (null, null);
@@ -713,7 +713,7 @@ public sealed class AutoLander(
     /// <param name="tip">The commit to judge the work at, where a push is judged (FABRIC-CLOSE1h16); null reads the tree's head.</param>
     private async Task<(LandingGate Gate, TreeLanding? Held, LandingLine? Line)> GateAsync(
         AutoLanding entry, string session, string? quest, string tree, IAutoLandingWorld world, CancellationToken ct,
-        WorkflowProcess? process = null, string? tip = null)
+        IWorkplaceProcess? process = null, string? tip = null)
     {
         var gate = await trees.GateAsync(tree, quest, world, session, ct, process, tip).ConfigureAwait(false);
         return gate.Refusal is { } held
@@ -767,7 +767,7 @@ public sealed class AutoLander(
     /// <returns>The verdict acted on (<see cref="AutoConcluded"/>), or null.</returns>
     public static string? Concluded(
         string home, DriverConfig config, ISessionEvents events, string session, QuestView quest, string? status, string state,
-        string tree, string? workspace, DateTimeOffset? at = null, WorkflowProcess? process = null)
+        string tree, string? workspace, DateTimeOffset? at = null, IWorkplaceProcess? process = null)
     {
         try
         {
@@ -795,18 +795,27 @@ public sealed class AutoLander(
     }
 
     /// <summary>
+    /// The repository and workspace a concluded record's run is read for (WORKFLOW1f): its tree's owner where this home opened the tree,
+    /// else the quest's repository in the workspace the record names.
+    /// </summary>
+    internal static (string Where, string Repository) RunOwner(string home, string tree, string? workspace, QuestView quest)
+    {
+        var trees = new SessionTrees(home);
+        return trees.Holds(tree) ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
+    }
+
+    /// <summary>
     /// The process a concluded record's run follows (WORKFLOW1f): its repository and workspace read as <see cref="Concluded"/> reads
     /// them, and its run's binding from the chain the service holds. Read once at the conclusion, for the landing and the second
     /// opinion owed alike. Never throws: a run that could not be read is read live, as before.
     /// </summary>
-    public static async Task<WorkflowProcess?> ProcessAsync(
+    public static async Task<IWorkplaceProcess?> ProcessAsync(
         string home, DriverConfig config, IReviewWorld world, QuestView quest, string tree, string? workspace, CancellationToken ct = default)
     {
         try
         {
-            var trees = new SessionTrees(home);
-            var (where, repository) = trees.Holds(tree) ? trees.Owner(tree) : (RemoteTarget.Workspace(workspace), quest.To);
-            return await WorkflowProcesses.ReadAsync(home, config, world, quest.Id, repository, where, ct).ConfigureAwait(false);
+            var (where, repository) = RunOwner(home, tree, workspace, quest);
+            return await WorkplaceWorkflows.Current.ReadProcessAsync(home, config, world.QuestsAsync, quest.Id, repository, where, ct).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or DriverException)
         {

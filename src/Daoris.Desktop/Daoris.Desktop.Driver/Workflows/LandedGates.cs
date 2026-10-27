@@ -21,7 +21,7 @@ public sealed record LandedTip(string Line, string Commit, string Gates);
 public static class LandedGates
 {
     /// <summary>The declaration's name at a repository's top.</summary>
-    public const string File = "daoris.gates.json";
+    public const string File = GeneratedWriters.DeclarationFile;
 
     /// <summary>The acceptance names the tip's declaration.</summary>
     public const string Accepted = "accepted";

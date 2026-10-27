@@ -60,6 +60,11 @@
     "Sessions/Work/RolesWorkOrdersWiring.cs": "Work orders",
     "Sessions/Work/AbandonWorkPlan.cs": "Work orders",
     "Trees/SessionEntryReader.cs": "Work orders",
+    "Workplace/WorkplaceRunFiles.cs": "Workplace",
+    "Workplace/WorkplaceProcess.cs": "Workplace",
+    "Workplace/WorkplaceWorkflows.cs": "Workplace",
+    "Workflows/TreeGateWorkflows.cs": "Workflows",
+    "Workflows/WorkplaceWorkflowsWiring.cs": "Workflows",
     "Agents/AccountCooling.cs": "Agents",
     "Agents/AccountFileNodes.cs": "Agents",
     "Agents/AccountNames.cs": "Agents",
@@ -1010,23 +1015,6 @@
       }
     },
     {
-      "family": "Workplace names Workflows",
-      "after": "Workplace",
-      "files": {
-        "Workplace/HistoryClearing.cs": ["WorkflowRunBindings"],
-        "Workplace/HistoryHome.cs": ["ChatRuns","WorkflowRunBindings"],
-        "Workplace/SessionHomeFiles.cs": ["ChatRuns","WorkflowRunBindings"],
-        "Workplace/ChatLandCommand.cs": ["ChatRuns","WorkflowCurrent"],
-        "Workplace/AutoLander.cs": ["WorkflowProcess","WorkflowProcesses"],
-        "Workplace/EndJudgement.cs": ["WorkflowProcess"],
-        "Workplace/EntryLands.cs": ["WorkflowProcess"],
-        "Workplace/GeneratedWriters.cs": ["LandedGates","WorkflowSelection"],
-        "Workplace/SessionTrees.cs": ["WorkflowGateState","WorkflowProcess"],
-        "Workplace/TreeGates.cs": ["ChatRuns","GraphGate","GraphGateFacts","Involvement","KindPathsRead","NodeRecordFiles","RunUnits","WorkflowGate","WorkflowGateState","WorkflowProcess","WorkflowProcesses"],
-        "Workplace/TreeLands.cs": ["WorkflowGate","WorkflowProcess","WorkflowRunBinding"]
-      }
-    },
-    {
       "family": "HelpRoom.Repository's daoris:help, which moves down to the participant's work rule (O4-6)",
       "after": "Participants",
       "files": {
@@ -1312,6 +1300,8 @@
     "WorkplaceWorkOrdersBoundaryTests.cs": "Workplace",
     "WorkplaceWorkOrdersPortsTests.cs": "Workplace",
     "QuestResultsTests.cs": "Workplace",
+    "WorkplaceWorkflowsBoundaryTests.cs": "Workplace",
+    "WorkplaceWorkflowsPortsTests.cs": "Workplace",
     "WorkplaceHelpBoundaryTests.cs": "Workplace",
     "WorkplaceRolesBoundaryTests.cs": "Workplace",
     "WorkplaceLoopBoundaryTests.cs": "Workplace",

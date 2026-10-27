@@ -23,6 +23,9 @@ internal static class GeneratedWriters
     /// <summary>The declaration's key in <c>daoris.gates.json</c>.</summary>
     internal const string Key = "generated";
 
+    /// <summary>The declaration's name at a repository's top.</summary>
+    internal const string DeclarationFile = "daoris.gates.json";
+
     /// <summary>One declared writer: the folder it writes, relative to the repository's top with no trailing slash, and its command line.</summary>
     internal sealed record Writer(string Folder, string Run)
     {
@@ -44,12 +47,12 @@ internal static class GeneratedWriters
     internal static async Task<IReadOnlyList<Writer>> AcceptedAsync(
         DriverConfig config, string root, string repository, string workspace, string onto, CancellationToken ct)
     {
-        if (WorkflowSelection.ResolveLanded(config, repository, workspace).Gates is not { } accepted) return [];
-        var (found, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{onto}:{LandedGates.File}"], ct)
+        if (WorkplaceWorkflows.Current.AcceptedGates(config, repository, workspace) is not { } accepted) return [];
+        var (found, sha, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"{onto}:{DeclarationFile}"], ct)
             .ConfigureAwait(false);
         var blob = sha.Trim();
         if (found != 0 || blob != accepted) return [];
-        return await LandedGates.TextAsync(root, blob, ct).ConfigureAwait(false) is { } text ? Parse(text) : [];
+        return await WorkplaceWorkflows.Current.DeclarationTextAsync(root, blob, ct).ConfigureAwait(false) is { } text ? Parse(text) : [];
     }
 
     /// <summary>The <c>generated</c> entries of a declaration's text; an entry without both a folder and a command is passed over.</summary>

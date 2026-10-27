@@ -625,6 +625,17 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Workplace_uses_lower_vocabulary_facets_and_ports_and_no_Workflows_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owner == "Workflows" : path.StartsWith("Workflows/", StringComparison.Ordinal))).ToList();
+        Assert.True(edges.Count == 0, $"Workplace names Workflows in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void Roles_uses_lower_vocabulary_facets_and_ports_and_no_Context_Review_or_Work_orders_types()
     {
         var (map, _, _, analysis, _) = Tree.Value;

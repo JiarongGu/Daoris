@@ -1571,7 +1571,7 @@ public sealed class Driver(
     {
         // WORKFLOW1f: its run's process, read once for both, so a named workflow's landing step and opinion step decide what is owed.
         var process = status == "Done"
-            ? await AutoLander.ProcessAsync(home, config, new ServiceReviewWorld(service), quest, workTree, workspace, ct).ConfigureAwait(false)
+            ? await WorkflowProcesses.ConcludedAsync(home, config, new ServiceReviewWorld(service), quest, workTree, workspace, ct).ConfigureAwait(false)
             : null;
         AutoLander.Concluded(home, config, Context.Events, sessionId, quest, status, state, workTree, workspace, process: process);
         // XAGENT1f: a done whose rule reads it is owed a second opinion, which a later look asks (the second-agent design §2.1).

@@ -144,15 +144,27 @@ public static class WorkflowProcesses
         string home, DriverConfig config, IReviewWorld world, string quest, string repository, string? workspace, CancellationToken ct = default) =>
         ReadAsync(WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, world, quest, repository, workspace, ct);
 
+    /// <summary>The process of a quest's work in <paramref name="repository"/>, its chain read from the quests <paramref name="quests"/> answers.</summary>
+    public static Task<WorkflowProcess> ReadAsync(
+        string home, DriverConfig config, Func<CancellationToken, Task<IReadOnlyList<QuestView>>> quests, string quest, string repository,
+        string? workspace, CancellationToken ct = default) =>
+        ReadAsync(WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, quests, quest, repository, workspace, ct);
+
     /// <summary>The process of a quest's work in <paramref name="repository"/>, its run's binding and version read through the ports.</summary>
-    public static async Task<WorkflowProcess> ReadAsync(
+    public static Task<WorkflowProcess> ReadAsync(
         IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config, IReviewWorld world, string quest, string repository,
-        string? workspace, CancellationToken ct = default)
+        string? workspace, CancellationToken ct = default) =>
+        ReadAsync(store, runs, config, world.QuestsAsync, quest, repository, workspace, ct);
+
+    /// <summary>The process of a quest's work in <paramref name="repository"/>, its chain read from the quests <paramref name="quests"/> answers.</summary>
+    public static async Task<WorkflowProcess> ReadAsync(
+        IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config, Func<CancellationToken, Task<IReadOnlyList<QuestView>>> quests,
+        string quest, string repository, string? workspace, CancellationToken ct = default)
     {
         var id = quest.TrimStart('#');
         try
         {
-            var chain = ReviewGate.ChainOf(await world.QuestsAsync(ct).ConfigureAwait(false), id);
+            var chain = ReviewGate.ChainOf(await quests(ct).ConfigureAwait(false), id);
             return Read(store, runs, config, repository, workspace, WorkflowRunBindings.RunOf(chain, repository) ?? id);
         }
         catch (Exception error) when (error is HttpRequestException or DriverException or JsonException or InvalidOperationException
@@ -161,6 +173,25 @@ public static class WorkflowProcesses
             var own = Read(store, runs, config, repository, workspace, WorkflowRunBindings.IsRunId(id) ? id : null);
             if (own.Binding is not null || !runs.AnyNamed(repository)) return own;
             return own with { Unread = $"its chain could not be read, so whether a named workflow governs it is not known: {error.Message.TrimEnd().TrimEnd('.')}." };
+        }
+    }
+
+    /// <summary>
+    /// The process a concluded record's run follows (WORKFLOW1f), as <see cref="AutoLander.ProcessAsync"/> reads it for the workplace, here as
+    /// the workflows' own process for the second opinion owed beside the landing. Never throws: a run that could not be read is read
+    /// live, as before.
+    /// </summary>
+    public static async Task<WorkflowProcess?> ConcludedAsync(
+        string home, DriverConfig config, IReviewWorld world, QuestView quest, string tree, string? workspace, CancellationToken ct = default)
+    {
+        try
+        {
+            var (where, repository) = AutoLander.RunOwner(home, tree, workspace, quest);
+            return await ReadAsync(home, config, world, quest.Id, repository, where, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or DriverException)
+        {
+            return null;
         }
     }
 
