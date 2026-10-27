@@ -23,6 +23,12 @@ Completed 2026-10-28: the two files (`WorkFrame.test.tsx`, `WorkFrame.conversati
 
 Completed 2026-10-28: a named ask whose quest is deleted stands with no quest and says so, and is never routed by its proposal: the ledger refuses an intake for it, the driver's look does not list it, and the delete's answer says what the ask now stands as. Unnamed and intake-routed asks read as before. Proof over the service's own host and the driver's look run four times; D95 carries the amendment and FIX-LOG the cause and what was not run.
 
+## Merge-queue tool test hang (2026-10-28)
+
+> **TOOLTESTHANG1 — a merge-queue tool test must never hang its gate** (stage CI on db86ef9, 2026-10-27, about 16:29-18:00 UTC). `src/Daoris.Cli/tool-test/merge-queue.test.ts` 'a tracked change in the main checkout holds promotion until it is clean' failed after 28 s when its own `git checkout -- qgate.mjs` met `index.lock` in its scratch repository (a race with that scratch queue's runner, which was holding a promotion on the dirty checkout), and the b1 enqueue it had started went on waiting for a verdict that never came, keeping `node --test` and the `tool-tests` gate alive for about 90 minutes until the parent ended it; on a quiet re-run the whole gate passed 382/382.
+
+Completed 2026-10-28: test code only. Every invocation the scratch queue's `run` starts is bounded by a ten-minute hang guard (`HANG_MS` in `merge-queue.test.ts`; the two-minute shared patience first used ended a healthy run under load in the merge queue, so the parent widened the guard, which elapses only on a hang) and ended with its tree at the bound, and `cleanup` ends any still running and the runner too, so a failed assertion leaves no child holding the run. The scratch queue's environment sets `GIT_OPTIONAL_LOCKS=0`, so the runner's `git status` takes no `index.lock` and the test's own git writes cannot meet it. Two new cases in `merge-queue.test.ts` prove it (a forced lock, and an invocation ended at its bound); `docs/FIX-LOG.md` has the entry.
+
 ## USAGECOST1 — what each driven session cost (2026-10-27)
 
 > **USAGECOST1 — the usage report says what each driven session cost** (owner's direction, 2026-10-27: learn where development's tokens go). The report read `turn.ended` only for set-ups; the driven sessions' counts were logged and reported nowhere.

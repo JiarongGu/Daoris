@@ -274,7 +274,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 81 | 1378 |
 | `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 477 | 7109 |
-| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 54 | 852 |
+| `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 59 | 947 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 55 | 1029 |
 
 ### Tools (`tools`)
