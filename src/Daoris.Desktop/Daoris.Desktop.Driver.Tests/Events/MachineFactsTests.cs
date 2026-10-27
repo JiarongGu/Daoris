@@ -13,7 +13,7 @@ public sealed class MachineFactsTests
 {
     private const string Lines = "lines";
 
-    private static readonly TimeSpan Within = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan Within = Poll.Patience;
 
     private static readonly FactRules Rules = new(Deadline: TimeSpan.FromMinutes(5), Bound: TimeSpan.FromSeconds(30), AtOnce: 2);
 
