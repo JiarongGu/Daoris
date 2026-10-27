@@ -409,10 +409,10 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Workplace/SessionEntries.cs": {
+    "Trees/SessionEntryReader.cs": {
       "lines": 2,
       "reads": "tells",
-      "note": "tells an intake from its ask and the absence of a quest; no row of this design moves it"
+      "note": "tells an intake from its ask and the absence of a quest; no row of this design moves it (the reader moved here, to Work orders, from Workplace/SessionEntries.cs in FOUNDATION1 mod-x's Work orders cut)"
     },
     "Trees/SessionGroups.cs": {
       "lines": 1,

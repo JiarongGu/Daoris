@@ -6,106 +6,6 @@ namespace Daoris.Driver;
 
 
 /// <summary>
-/// What an ended session's own tree offers to land (LAND4): the commits on it no branch of the person's holds, by D88's
-/// proof, whatever the session's ending, with the branch and the tree they are on. The press is the review's Accept, at any
-/// of its doors, so everything a landing checks is checked there; this only says there is work a press would land.
-/// </summary>
-/// <param name="Branch">The session's branch, <c>daoris/</c> and its tree's name, as the layout names it (D51).</param>
-/// <param name="Tree">The tree's name under its repository's folder: never a path.</param>
-/// <param name="Commits">The commits a landing would carry: a proven count, above zero.</param>
-/// <param name="Uncommitted">Its uncommitted paths, which a branch leaves behind; null where git could not say.</param>
-public sealed record LandOffer(string Branch, string Tree, int Commits, int? Uncommitted)
-{
-    /// <summary>
-    /// The offer a judged tree makes, or null: only commits git counted, above zero. Uncommitted work alone lands nothing, and
-    /// a count git could not give offers no press, though it stays to review (the clean-up's keep, D88). Commits the line holds
-    /// by content offer none either (SQUASHTIDY1b): accepting them would make a branch of work already there.
-    /// </summary>
-    public static LandOffer? Of(string tree, TreeWork work)
-    {
-        if (work.Commits is not > 0 || work.Held is not null || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
-        // The tree's own branch where it moved onto one (TREEFOLLOW1), else the layout's name for it.
-        return new LandOffer(work.Branch ?? TreeFollows.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
-    }
-}
-
-/// <summary>
-/// What an ended session's own tree offers where its commits are held by content (SQUASHTIDY1b): no landing, since accepting
-/// would make a branch of work a squash merge or a cherry-pick already put elsewhere, but where its work is, in Discard's own
-/// clause, and the review's Discard, unforced, naming the ref its commits stay at. The press is that Discard, which judges
-/// again and keeps the ref at its press (SQUASHTIDY1c); this only says what it would do.
-/// </summary>
-/// <param name="Branch">The session's branch, as <see cref="LandOffer.Branch"/>.</param>
-/// <param name="Tree">The tree's name under its repository's folder: never a path.</param>
-/// <param name="Work">Where its work is held, and what a discard would keep or why the tree stays.</param>
-public sealed record DiscardOffer(string Branch, string Tree, HeldWork Work)
-{
-    /// <summary>
-    /// What the session's page says where <i>Accept…</i> would be, the page showing it as it is: where its work is, in the clause
-    /// the discard says, as a sentence; and where an unforced discard would not go now, why its tree stays.
-    /// </summary>
-    public string Says
-    {
-        get
-        {
-            var said = Work.Held.Said;
-            var where = $"{char.ToUpperInvariant(said[0])}{said[1..]}.";
-            return Work.Stays is { } why ? $"{where} Its tree stays: {why}." : where;
-        }
-    }
-
-    /// <summary>
-    /// What the discard's ask says before its press: where its commits stay and how to have the branch back, in the words the
-    /// discard says once it went (<see cref="ContentHold.KeptAt"/>). Null where the discard would not go now.
-    /// </summary>
-    public string? KeptAt => Work.Keeps is { } reference ? ContentHold.KeptAt(Branch, reference) : null;
-
-    /// <summary>
-    /// What a landing of this tree says at every door (SQUASHTIDY1f): refused, where its work is in the clause the page says where
-    /// <i>Accept…</i> would be, why landing it again is refused, and its discard, or why its tree stays where the discard would not
-    /// go unforced. The press's refusal and the plan before it say it alike, so it names no tense.
-    /// </summary>
-    public string NotLanded =>
-        $"{char.ToUpperInvariant(Work.Held.Said[0])}{Work.Held.Said[1..]}, so it is not landed again: that would make a second copy of it. "
-        + (Work.Stays is { } why ? $"Its tree stays: {why}." : "Discard its tree instead.");
-
-    /// <summary>The offer a judged tree makes, or null: only commits git counted, above zero, that the content proof found held.</summary>
-    public static DiscardOffer? Of(string tree, TreeWork work)
-    {
-        if (work.Commits is not > 0 || work.Held is not { } held || SessionGroups.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
-        return new DiscardOffer(work.Branch ?? TreeFollows.SessionPrefix + name, name, held);
-    }
-}
-
-/// <summary>
-/// The groups a session is listed in by state (D126 §2.1), in the order the person acts on them, and Archived: the
-/// public spelling the page and <c>daoris-driver sessions --group</c> share.
-/// </summary>
-public static class SessionGroup
-{
-    /// <summary>Waiting on you: only the person's press moves it.</summary>
-    public const string You = "you";
-
-    /// <summary>To review: an ended session whose own tree holds work no branch of the person's holds.</summary>
-    public const string Review = "review";
-
-    /// <summary>Working: queued, starting, working, and a live chat between turns.</summary>
-    public const string Working = "working";
-
-    /// <summary>Resumes later: it moves by itself when what it waits on arrives.</summary>
-    public const string Later = "later";
-
-    /// <summary>Ended: a record.</summary>
-    public const string Ended = "ended";
-
-    /// <summary>Archived: out of the way on this machine, kept whole (§5.2).</summary>
-    public const string Archived = "archived";
-
-    /// <summary>The groups in the order a list shows them.</summary>
-    public static IReadOnlyList<string> Order { get; } = [You, Review, Working, Later, Ended, Archived];
-}
-
-/// <summary>
 /// The words a row shows that are not a record state (D126 §2.2): each a fact about the session's quest, or for an
 /// answered park about its record (ANSWER1c), derived here and never written back to the record, so there is no new
 /// session state.
@@ -237,7 +137,7 @@ public sealed record WordsHold(string Why, string Reason)
 /// <summary>Where one session is listed, and what its row's second line says (D126 §2.2, §2.4).</summary>
 /// <param name="Group">One of <see cref="SessionGroup"/>.</param>
 /// <param name="Shown">The record's state, or one of <see cref="ShownState"/>.</param>
-public sealed record SessionGrouping(string Session, string Group, string Shown)
+public sealed record SessionGrouping(string Session, string Group, string Shown) : IWorkplaceSessionRow
 {
     /// <summary>Whether this machine's archive mark stands. A session that needs the person is shown in its group whatever the mark says.</summary>
     public bool Archived { get; init; }
@@ -863,7 +763,7 @@ public static class SessionGroups
     }
 
     /// <summary>A tree path as one tree: separators and a trailing one aside, compared without case, as Windows sees it.</summary>
-    public static string Normal(string tree) => tree.Replace('\\', '/').TrimEnd('/');
+    public static string Normal(string tree) => TreeNames.Normal(tree);
 
     private static bool Held(Func<string, bool> held, string tree)
     {

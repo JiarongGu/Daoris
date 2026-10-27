@@ -58,8 +58,7 @@ public static class IntakeRoom
     ];
 
     /// <summary>Where a circle's room is — the home's <see cref="HomeEntry.Intake"/>, one per circle, whatever it is called.</summary>
-    public static string PathOf(string home, string workspace) =>
-        DaorisHome.Entry(home, HomeEntry.Intake, SafeName(workspace));
+    public static string PathOf(string home, string workspace) => IntakeRoomPaths.PathOf(home, workspace);
 
     /// <summary>Seed the room with the circle's declarations as they stand now, and answer where it is.</summary>
     /// <param name="kinds">The kinds its workspace declares, per repository (WORKFLOW1i-b); null or empty where it declares none.</param>
@@ -250,16 +249,5 @@ public static class IntakeRoom
     /// declarations, so two circles in one room blocked each other and read each other's family.
     /// A name that is already a folder name stays exactly that, so no existing room moves.
     /// </remarks>
-    internal static string SafeName(string workspace)
-    {
-        var name = workspace.Trim().ToLowerInvariant();
-        if (name.Length == 0) name = "default";   // silence is the default circle, as everywhere (D48)
-        var safe = new string(name
-            .Select(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' ? c : '-').ToArray()).Trim('-');
-        if (safe == name && safe.Length > 0) return safe;
-
-        var hash = Convert.ToHexString(
-            System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(name)))[..8].ToLowerInvariant();
-        return safe.Length == 0 ? $"workspace-{hash}" : $"{safe}-{hash}";
-    }
+    internal static string SafeName(string workspace) => IntakeRoomPaths.SafeName(workspace);
 }

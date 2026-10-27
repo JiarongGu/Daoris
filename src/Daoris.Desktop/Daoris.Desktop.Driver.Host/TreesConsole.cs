@@ -280,7 +280,7 @@ internal static class TreesConsole
                     async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                         .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase),
                     log, ReviewDoors.Terminal);
-                var (found, rows) = await EntryAccepts.LookAsync(
+                var (found, rows) = await SessionEntries.LookAsync(
                     service, config, SessionsConsole.Wire(config), lastLook: null, waits: null, home,
                     ask.IsAsk ? entry => entry.Origin == $"ask:{ask.Id}" : entry => entry.Key == ask.Id, default).ConfigureAwait(false);
                 // An ask's are its own entries, one per repository, with work to land; an entry's is the one named.

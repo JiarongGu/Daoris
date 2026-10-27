@@ -126,7 +126,7 @@ public static class ToolHomeLeftovers
                 if (Text(record, "repository") == "daoris:help") origins.Add(new ToolOrigin(KnowledgeRoomPaths.PathOf(home, Text(record, "workspace")), "help", keeps, id));
                 if (Text(record, "ask") is { Length: > 0 })
                 {
-                    origins.Add(new ToolOrigin(IntakeRoom.PathOf(home, RemoteTarget.Workspace(Text(record, "workspace"))), "intake", keeps, id));
+                    origins.Add(new ToolOrigin(IntakeRoomPaths.PathOf(home, RemoteTarget.Workspace(Text(record, "workspace"))), "intake", keeps, id));
                 }
             }
         }

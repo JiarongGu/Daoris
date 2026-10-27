@@ -93,6 +93,19 @@ The landing and pull-request refusals and a workflow's reading of the plugins us
 alone, and the landing's patience and the door words are Workplace's pure `LandingPatience` and `WorkplaceDoors`, which
 `LandingPlugins.DefaultPatience` and `PluginEvents` alias.
 
+Workplace names no Work orders type. What the landing, the archive and the tidy read are Workplace's own: the quest result
+rule (`QuestResults`), the place a done's evidence is read (`EvidenceAt`), the session group words (`SessionGroup`), the offers
+a tree makes (`LandOffer`, `DiscardOffer`), the recovery refs and the facts the inventory is derived from (`RecoveryRef`,
+`StandingBranch`, `InventoryFacts`), the tree path rule (`TreeNames`), the intake room's path and folder name
+(`IntakeRoomPaths`) and the question file's suffix in `SessionHomeFiles`; `SessionGroups.Normal`, `IntakeRoom` and
+`QuestionFiles` keep them under their own names. What stays with Work orders is reached through the required
+`IWorkplaceWorkOrders`, which `Sessions/Work/WorkplaceWorkOrdersWiring.cs` installs: the abandons' record a history clear
+tidies, what units still owe beyond their branch records, the inventory read over the facts the tidy gathers, and a done's
+evidence at a lost session's end. The archive's judgement and an entry's Accept read a session's row through
+`IWorkplaceSessionRow`, which `SessionGrouping` implements; the entries' look (`SessionEntries.Read` and `LookAsync`) and
+the abandon plan's records over the work's pieces are Work orders', while `PartBegan` and the entry records stay in
+`Workplace/SessionEntries.cs`, the file the page's parts flow reads its words from.
+
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and

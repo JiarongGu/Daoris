@@ -54,7 +54,7 @@ public static class SessionBranchDoors
             ? null
             : records
                 .Where(record => !record.Teammate && record.Tree is { } named
-                                 && string.Equals(SessionGroups.Normal(named), SessionGroups.Normal(tree), StringComparison.OrdinalIgnoreCase))
+                                 && string.Equals(TreeNames.Normal(named), TreeNames.Normal(tree), StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal)
                 .FirstOrDefault();
 

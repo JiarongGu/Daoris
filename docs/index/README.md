@@ -24,7 +24,7 @@ Listed first, because nothing below restates their rows: open one of these for w
 | `decisions.md` | each decision's title with its entry's lines, then each dated note with its lines |
 | `outlines/<path>.md` | the declarations or headings of a file over 40 KB, each with its line range |
 
-## Files over 40 KB (325)
+## Files over 40 KB (324)
 
 Each has its outline at `outlines/<its path>.md`: open the outline, then read the range you need, not the file.
 
@@ -139,7 +139,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsSayCommandTests.cs` | 64 | 1303 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Setup/WorkspaceSetupTests.cs` | 40 | 827 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StandInLedger.cs` | 64 | 1256 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StructureTests.cs` | 44 | 763 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/StructureTests.cs` | 45 | 774 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeLifecycleTests.cs` | 60 | 933 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/NodeRuntimeTests.cs` | 50 | 891 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/QuestCloseTests.cs` | 96 | 1696 |
@@ -189,13 +189,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/Work/WorkAbandoning.cs` | 43 | 765 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverChoicesCommand.cs` | 49 | 843 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Settings/DriverConfig.cs` | 96 | 1637 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Inventory/WorkInventory.cs` | 42 | 690 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeGraphs.cs` | 52 | 900 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/NodeRuntime.cs` | 116 | 1765 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/QuestCloser.cs` | 61 | 955 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WireEvaluation.cs` | 49 | 773 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/Nodes/WorkPerformer.cs` | 66 | 1083 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 67 | 1158 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Trees/SessionGroups.cs` | 62 | 1058 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowNamed.cs` | 47 | 836 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/Domain/WorkflowRun.cs` | 59 | 1016 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Workflows/DriverWorkflowsCommand.cs` | 62 | 1080 |
@@ -390,5 +389,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-26-tree-pool-survey.md` | 47 | 562 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 60 | 282 |
-| `docs/development.md` | 41 | 496 |
-| `src/Daoris.Desktop/README.md` | 193 | 960 |
+| `docs/development.md` | 41 | 497 |
+| `src/Daoris.Desktop/README.md` | 194 | 973 |

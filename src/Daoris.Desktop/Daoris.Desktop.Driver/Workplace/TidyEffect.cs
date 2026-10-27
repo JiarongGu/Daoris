@@ -74,7 +74,7 @@ public sealed class TidyEffect : IChainEffect
             grown, new LandedBranches(home).Entries(), [], new AutoLandings(home).All(), [], new HashSet<string>(), _ => false, now);
         var treesRoot = new SessionTrees(home).TreesRoot;
         var pending = new List<TidyUnit>();
-        foreach (var unit in WorkInventory.Derive(facts))
+        foreach (var unit in WorkplaceWorkOrders.Current.Derive(facts))
         {
             // Nothing goes before *held* (canary 15); an unknown owner is never ended, so never pending (canary 27).
             if (unit.End.State != "ended") continue;

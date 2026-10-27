@@ -114,6 +114,8 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     internal const string HelpWiredSuffix = ".wired.json";
     internal const string HelpPublishedSuffix = ".published.json";
 
+    internal const string QuestionSuffix = ".question.json";
+
     internal const string SupervisorDecisionsSuffix = ".decisions";
     internal const string SupervisorPointerSuffix = ".supervisor.json";
 
@@ -137,7 +139,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         // FABRIC-CLOSE1c8: the reopens it was told of, a mark too, which goes with its record.
         new(Mark, Place.Sessions, ReopenMarkSuffix, false, Beside),
         // PARKVIEW1: the question its park asked (QuestionFiles), a mark of the park as the others are, which goes with its record.
-        new(Mark, Place.Sessions, QuestionFiles.Suffix, false, Beside),
+        new(Mark, Place.Sessions, QuestionSuffix, false, Beside),
         // SUPERVISOR1a-i: the supervisor's decisions on its questions and the current one's pointer (QuestionSupervisorDecisions),
         // kept for its history as long as its record, and going with it, never before.
         new(Mark, Place.Sessions, SupervisorDecisionsSuffix, true, Beside),

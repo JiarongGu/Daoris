@@ -23,7 +23,7 @@ public sealed class EntryAccepts(
     Func<CancellationToken, Task<IReadOnlySet<string>>> inUse, MachineLog? log, string door)
 {
     /// <summary>The parts of <paramref name="entry"/> whose tree offers work to land, in the entry's order: what its Accept lands.</summary>
-    public static IReadOnlyList<EntryPart> PartsOf(SessionEntry entry, IReadOnlyList<SessionGrouping> rows)
+    public static IReadOnlyList<EntryPart> PartsOf(SessionEntry entry, IReadOnlyList<IWorkplaceSessionRow> rows)
     {
         var offering = rows.Where(row => row.Lands is not null).Select(row => row.Session).ToHashSet(StringComparer.Ordinal);
         return [.. entry.Parts.Where(part => offering.Contains(part.Session))];
@@ -48,29 +48,12 @@ public sealed class EntryAccepts(
         [.. entries.Where(entry => entry.Origin == $"ask:{ask}" && entry.Repository != "intake")
             .OrderBy(entry => entry.Repository, StringComparer.Ordinal)];
 
-    /// <summary>The entries asked about, from one look whose git walk is only theirs, and their parts' rows.</summary>
-    /// <param name="lastLook">The loop's last verdicts, which a surface with a loop hands so the look need not ask them again.</param>
-    /// <param name="waits">What the loop's look holds waiting on an account, where the surface has a loop.</param>
-    public static async Task<(IReadOnlyList<SessionEntry> Entries, IReadOnlyList<SessionGrouping> Rows)> LookAsync(
-        ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook,
-        IReadOnlyList<AccountWait>? waits, string home, Func<SessionEntry, bool> which, CancellationToken cancellationToken)
-    {
-        // No tree is walked to find the entries (they are the records'); then only their parts' trees are.
-        var look = await SessionGroups.LookAsync(service, config, door, lastLook, home, [], cancellationToken).ConfigureAwait(false);
-        if (waits is not null) look = look with { Waits = waits };
-        var entries = SessionGroups.ReadEntries(look).Where(which).ToList();
-        var ids = entries.SelectMany(entry => entry.Parts.Select(part => part.Session)).ToList();
-        var holds = new SessionTrees(home);
-        look = await SessionGroups.JudgeAsync(look, holds.Holds, holds.WorkAsync, ids, cancellationToken).ConfigureAwait(false);
-        return (entries, SessionGroups.Read(look, ids));
-    }
-
     /// <summary>
     /// Where the entry's parts would land and what holds each: the plan, and each part's gate sentence by session (what holds it,
     /// absent where nothing does). An entry with no part to land has the empty plan.
     /// </summary>
     public async Task<(EntryPlan Plan, IReadOnlyDictionary<string, string> Held)> PlanAsync(
-        SessionEntry entry, IReadOnlyList<SessionGrouping> rows, CancellationToken cancellationToken)
+        SessionEntry entry, IReadOnlyList<IWorkplaceSessionRow> rows, CancellationToken cancellationToken)
     {
         var (subject, parts) = await PartsAsync(entry, rows, cancellationToken).ConfigureAwait(false);
         if (parts.Count == 0) return (new EntryPlan(LandingForm.Branch, "", []), new Dictionary<string, string>());
@@ -86,7 +69,7 @@ public sealed class EntryAccepts(
     /// <c>LAND_SESSION_TREE</c> does for one.
     /// </summary>
     public async Task<EntryLanding> LandAsync(
-        SessionEntry entry, IReadOnlyList<SessionGrouping> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken)
+        SessionEntry entry, IReadOnlyList<IWorkplaceSessionRow> rows, IReadOnlySet<string> leaveOut, CancellationToken cancellationToken)
     {
         var (subject, parts) = await PartsAsync(entry, rows, cancellationToken).ConfigureAwait(false);
         if (parts.Count == 0) return new EntryLanding(false, "Nothing was landed: no part of this entry has work to land on this machine.", null, []);
@@ -126,7 +109,7 @@ public sealed class EntryAccepts(
     /// the chain's first quest walked up as a chain's is (WSR5), so every part lands on the branch named for it.
     /// </summary>
     private async Task<(LandingSubject Subject, IReadOnlyList<EntryLandingPart> Parts)> PartsAsync(
-        SessionEntry entry, IReadOnlyList<SessionGrouping> rows, CancellationToken cancellationToken)
+        SessionEntry entry, IReadOnlyList<IWorkplaceSessionRow> rows, CancellationToken cancellationToken)
     {
         var parts = new List<EntryLandingPart>();
         // FABRIC-CLOSE1h3: the quests the names are read from, each read once; each part's own quest is the result its press is made on.

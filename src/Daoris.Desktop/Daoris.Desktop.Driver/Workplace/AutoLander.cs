@@ -749,7 +749,7 @@ public sealed class AutoLander(
     private DateTimeOffset Now() => clock?.Invoke() ?? DateTimeOffset.UtcNow;
 
     private static bool SameTree(string left, string right) =>
-        string.Equals(SessionGroups.Normal(left), SessionGroups.Normal(right), StringComparison.OrdinalIgnoreCase);
+        string.Equals(TreeNames.Normal(left), TreeNames.Normal(right), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// How a driven record that just concluded stands to its repository's rule (design §2), acted on: due, it joins the due
