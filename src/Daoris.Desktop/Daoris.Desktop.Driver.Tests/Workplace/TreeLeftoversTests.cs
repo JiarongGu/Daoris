@@ -9,13 +9,40 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Files only: with no repository to judge, the clean-up asks git nothing.</remarks>
 public sealed class TreeLeftoversTests : IDisposable
 {
-    private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-tree-leftovers-" + Guid.NewGuid().ToString("N")[..8]);
+    private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "tree-leftovers", Guid.NewGuid().ToString("N")[..8]);
 
     public TreeLeftoversTests() => Directory.CreateDirectory(_home);
 
-    public void Dispose()
+    public void Dispose() => TreeSetAside.DeleteNeverFollowing(_home);
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task The_cleanup_never_enters_or_removes_a_link_at_any_level_of_its_scan(int level)
     {
-        try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        var trees = new SessionTrees(_home);
+        var outside = Path.Combine(_home, "outside");
+        string[] parts = ["aurora", "engine", "s-linked"];
+        var link = parts.Take(level).Aggregate(trees.TreesRoot, Path.Combine);
+        var emptyOutside = parts.Skip(level).Aggregate(outside, Path.Combine);
+        Directory.CreateDirectory(emptyOutside);
+        Directory.CreateDirectory(Path.GetDirectoryName(link)!);
+        TreeDependencies.Link(link, outside);
+        var ordinary = Path.Combine(trees.TreesRoot, "ordinary", "engine", "s-empty");
+        if (level > 0) Directory.CreateDirectory(ordinary);
+
+        var done = await trees.CleanAsync([], new HashSet<string>());
+
+        Assert.True(Directory.Exists(emptyOutside), "the linked target's empty directory must remain");
+        Assert.True(Directory.Exists(link), "the link is not an ordinary leftover to remove");
+        if (level == 0) Assert.Empty(done.Folders!);
+        else
+        {
+            Assert.False(Directory.Exists(ordinary));
+            Assert.Contains(ordinary, Assert.Single(done.Folders!));
+        }
     }
 
     [Fact]

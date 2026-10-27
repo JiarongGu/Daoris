@@ -137,6 +137,8 @@ note). The words beside a clean-up row, which the terminal and the bridge say, a
 Git for Windows' removal follows a junction out of a tree, so each path that has git delete a tree's folder (the removal, a
 landing's tidy, the press, an undone opening) first takes every link in it off as a link with `TreeLinks`, and keeps a tree it
 cannot (TREELINK1, D51's note); the look's own tidy moves folders aside and never needs it.
+The empty-leftover scan skips directory links at its root and every nested level, leaving both links and their targets
+untouched while removing ordinary empty leftovers (TREELEFTLINK1, D51).
 The machine's `cap` counts what the driver starts (CAPCOUNT1, D130's note): a driven quest's session, an intake, a helper and a
 reviewer, and the passes of a brainstorm and a meeting, never a conversation the person holds, which spends nothing resting between
 turns. `ActiveSessions.HoldsSlot` tells them by the record's kind, its place and the mark each of the driver's own carries

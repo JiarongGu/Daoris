@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Leftover directory links (2026-10-27)
+
+> **TREELEFTLINK1 — leftover cleanup stays inside its tree home** (cleanup investigation, 2026-10-27). `TreeLeftovers.EmptyFoldersGone` traverses directory links while scanning workspace/repository levels and can delete empty directories outside the managed home. Prove links at every scan level remain untouched while ordinary empty leftovers are removed, then skip linked entries without following or deleting their targets; TREECLEANFREE1 is a separate unresolved failure.
+
+Completed 2026-10-27: the root guard and all three nested enumerations leave reparse points untouched. All four new real-junction cases failed before the change; the focused leftover/link/structure selection passed all 47 cases afterward, with no skips. D51 and FIX-LOG retain the boundary and proof; TREECLEANFREE1 remains open.
+
 ## FOUNDATION1 integration repairs (2026-10-27)
 
 > **GRAPHQUIET1 — close census rounds on complete graph work** (foundation repair integration, 2026-10-27; under FLAKE1). ReviewGraphCensusTests placed a dynamically created K′ node in round four despite depth two; both isolated class probes passed, leaving the full Driver failure unresolved. Replace temporal quiet guesses with complete-frontier and stand-in acknowledgements, prove the delayed child-registration gap deterministically, and retain depth, program exclusion, topology and chain assertions through full integration; `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Trees/ReviewGraphCensusTests.cs:232`.

@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- Empty-tree cleanup skips directory links at every scan level, preserving links and empty folders outside its managed tree home (TREELEFTLINK1).
 - Managed doctrine now requires documents and skills to have a portable source in their repository or their coordinator's managed store. Daoris includes a repository-owned Codex troubleshooting procedure.
 - Merge-queue failure isolation preserves a .NET gate's existing filter, and requeueing an unchanged tip waits for its new result while retaining its previous hand-back (QUEUEFILTER1, QUEUEWAIT1).
 - Conflicting current and legacy log folders no longer crash the desktop, browser, driver or service while their logger is being created (STARTLOG1). Logging is disabled for that process without choosing, writing or pruning either folder; other home-entry conflicts still report their normal refusal.

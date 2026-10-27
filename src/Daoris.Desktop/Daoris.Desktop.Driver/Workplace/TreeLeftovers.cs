@@ -73,9 +73,12 @@ internal sealed class TreeLeftovers(TreeContext context)
         if (!Directory.Exists(treesRoot)) return said;
         try
         {
-            foreach (var workspace in Directory.EnumerateDirectories(treesRoot))
-            foreach (var repository in Directory.EnumerateDirectories(workspace))
-            foreach (var tree in Directory.EnumerateDirectories(repository))
+            // A link at any level can lead outside the managed home; it is not a leftover to inspect or remove.
+            if (File.GetAttributes(treesRoot).HasFlag(FileAttributes.ReparsePoint)) return said;
+            var options = new EnumerationOptions { AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = false };
+            foreach (var workspace in Directory.EnumerateDirectories(treesRoot, "*", options))
+            foreach (var repository in Directory.EnumerateDirectories(workspace, "*", options))
+            foreach (var tree in Directory.EnumerateDirectories(repository, "*", options))
             {
                 bool empty;
                 try { empty = !Directory.EnumerateFileSystemEntries(tree).Any(); }

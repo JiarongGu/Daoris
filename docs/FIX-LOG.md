@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - Empty-tree cleanup traversed directory links (TREELEFTLINK1)
+
+- **Symptom:** a real-junction regression removed an empty directory outside the managed tree home through a link at the scan root, workspace or repository; the tree-level case removed the link itself.
+- **Root cause:** `TreeLeftovers.EmptyFoldersGone` used ordinary directory enumeration at every level, so its apparent path under the tree home did not establish where the directory actually lived. The scan dates to `1347a490bf`; subsequent ownership moves retained it.
+- **Fix:** reject a linked scan root and skip reparse points in all three nested enumerations. Keep inaccessible-directory failures visible, remove ordinary empty leftovers only, and use link-safe teardown for the repository-local fixture.
+- **Verify:** before the production change, all four new link cases failed and the two original cases passed. The focused `TreeLeftoversTests|TreeLinksTests|StructureTests` selection then passed all 47 cases, with no skips; integration is separate and TREECLEANFREE1 remains open.
+- **Commit:** pending.
+
 ## 2026-10-27 - Compound WorkFrame interactions exhausted the test bound (FRAMEBOUNDS1)
 
 - **Symptom:** the whole nightly web gate on `93f49d4` timed out the driven-send and production-go-ahead/question cases at their existing 20-second limit, with 9,710 other cases passing.
