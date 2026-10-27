@@ -145,8 +145,12 @@ public sealed record PluginManifest(
 /// <param name="Enabled">The person's word (`plugins.json`), independent of whether the plugin is sound.</param>
 /// <param name="Problem">Why it contributes nothing, in a sentence — a version this build does not speak, a malformed manifest, a conflict. Null when sound.</param>
 public sealed record PluginEntry(
-    PluginManifest Manifest, string Folder, string Data, bool Enabled, string? Problem)
+    PluginManifest Manifest, string Folder, string Data, bool Enabled, string? Problem) : IWorkplacePluginEntry
 {
+    string IWorkplacePluginEntry.Id => Manifest.Id;
+
+    IReadOnlyList<string> IWorkplacePluginEntry.Points => Manifest.Hooks?.Points ?? [];
+
     /// <summary>Enabled and sound: what the host actually drives.</summary>
     public bool Contributes => Enabled && Problem is null;
 }

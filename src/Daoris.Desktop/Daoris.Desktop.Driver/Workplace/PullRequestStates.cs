@@ -210,13 +210,13 @@ public static class PullRequestAsking
     /// Why <paramref name="plugin"/> cannot be asked here, in a sentence, or null (D100's four reasons, each its own sentence):
     /// not installed, switched off, unsound, or speaking on no <see cref="HookPoints.State"/> point.
     /// </summary>
-    public static string? Problem(string plugin, PluginCatalog catalog)
+    public static string? Problem(string plugin, IWorkplacePluginCatalog catalog)
     {
-        var entry = catalog.Plugins.FirstOrDefault(p => string.Equals(p.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
+        var entry = catalog.Find(plugin);
         if (entry is null) return $"plugin `{plugin}`, which pushed the branch, is not installed on this machine, so its pull request was not asked about.";
         if (!entry.Enabled) return $"plugin `{plugin}` is switched off on this machine, so its pull request was not asked about.";
         if (entry.Problem is { } problem) return $"plugin `{plugin}` contributes nothing: {problem}";
-        return entry.Manifest.Hooks?.Points.Contains(HookPoints.State, StringComparer.Ordinal) == true
+        return entry.Points.Contains(HookPoints.State, StringComparer.Ordinal)
             ? null
             : $"plugin `{plugin}` does not answer for a pull request — its manifest speaks on no `{HookPoints.State}` point.";
     }

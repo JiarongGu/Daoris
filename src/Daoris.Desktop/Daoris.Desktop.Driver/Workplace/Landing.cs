@@ -554,7 +554,7 @@ public static class LandingRules
     /// <paramref name="catalog"/> holds before anything is written, as <c>daoris driver landing</c> asks it.
     /// </summary>
     /// <exception cref="DriverException">The rule's shape, or its plugin cannot land work here; nothing was written.</exception>
-    public static DriverConfig Put(DriverConfig config, string? repository, string? workspace, LandingRule? rule, PluginCatalog catalog)
+    public static DriverConfig Put(DriverConfig config, string? repository, string? workspace, LandingRule? rule, IWorkplacePluginCatalog catalog)
     {
         if ((repository is null) == (workspace is null))
         {
@@ -575,9 +575,9 @@ public static class LandingRules
     /// <see cref="HookPoints.Land"/> point. Asked when the rule is set and again at the press, so a plugin
     /// gone since is refused before anything is made.
     /// </summary>
-    public static string? PluginProblem(string plugin, PluginCatalog catalog)
+    public static string? PluginProblem(string plugin, IWorkplacePluginCatalog catalog)
     {
-        var entry = catalog.Plugins.FirstOrDefault(p => string.Equals(p.Manifest.Id, plugin, StringComparison.OrdinalIgnoreCase));
+        var entry = catalog.Find(plugin);
         if (entry is null)
         {
             return $"the landing rule names plugin `{plugin}`, which is not installed on this machine — "
@@ -586,12 +586,12 @@ public static class LandingRules
 
         if (!entry.Enabled)
         {
-            return $"plugin `{plugin}` is switched off on this machine — `daoris plugin enable {entry.Manifest.Id}` switches it on.";
+            return $"plugin `{plugin}` is switched off on this machine — `daoris plugin enable {entry.Id}` switches it on.";
         }
 
         if (entry.Problem is { } problem) return $"plugin `{plugin}` contributes nothing: {problem}";
 
-        return entry.Manifest.Hooks?.Points.Contains(HookPoints.Land, StringComparer.Ordinal) == true
+        return entry.Points.Contains(HookPoints.Land, StringComparer.Ordinal)
             ? null
             : $"plugin `{plugin}` does not land work — its manifest speaks on no `{HookPoints.Land}` point.";
     }

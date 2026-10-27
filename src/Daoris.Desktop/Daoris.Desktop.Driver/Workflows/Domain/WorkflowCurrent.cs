@@ -238,8 +238,8 @@ public static class WorkflowCurrent
     }
 
     /// <summary>The plugins a door hands <see cref="Derive"/>: those switched on and sound, in the catalogue's order, with their points.</summary>
-    public static IReadOnlyList<WorkflowPlugin> PluginsOf(PluginCatalog catalog) =>
-        [.. catalog.Contributing.Select(entry => new WorkflowPlugin(entry.Manifest.Id, [.. entry.Manifest.Hooks?.Points ?? []]))];
+    public static IReadOnlyList<WorkflowPlugin> PluginsOf(IWorkplacePluginCatalog catalog) =>
+        [.. catalog.Contributing.Select(entry => new WorkflowPlugin(entry.Id, [.. entry.Points]))];
 
     /// <summary>The text a workflow's version is the digest of — the CLI's <c>workflowCanonical</c>, byte for byte.</summary>
     public static string Canonical(CurrentWorkflow workflow) => Canonical(workflow.StartHolds, workflow.Steps);

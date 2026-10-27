@@ -329,7 +329,7 @@ public static class HistoryCommand
             return 0;
         }
 
-        var outcome = await HistoryClearing.ClearAsync(world, ask.Scope, plan.Id, [unit.Name], PluginEvents.Terminal, ct).ConfigureAwait(false);
+        var outcome = await HistoryClearing.ClearAsync(world, ask.Scope, plan.Id, [unit.Name], WorkplaceDoors.Terminal, ct).ConfigureAwait(false);
         if (outcome.Cleared is [var cleared])
         {
             var stays = ask.Scope == HistoryScope.Failed ? $"; #{plan.Id} and its other sessions stay" : "";
@@ -403,7 +403,7 @@ public static class HistoryCommand
         }
 
         var outcome = await HistoryClearing.ClearAsync(
-                world, HistoryScope.Workspace, workspace, [.. plan.Units.Where(unit => unit.Clearable).Select(unit => unit.Name)], PluginEvents.Terminal, ct)
+                world, HistoryScope.Workspace, workspace, [.. plan.Units.Where(unit => unit.Clearable).Select(unit => unit.Name)], WorkplaceDoors.Terminal, ct)
             .ConfigureAwait(false);
         var went = Join(
         [

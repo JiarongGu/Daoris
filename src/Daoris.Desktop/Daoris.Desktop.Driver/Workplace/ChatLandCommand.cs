@@ -25,7 +25,7 @@ public static class ChatLandCommand
         CancellationToken ct = default)
     {
         var bound = ChatRuns.BindFirst(DriverConfig.Load(DriverConfig.ResolvePath(world.Home)), world.Home, chatRun, tree,
-            WorkflowCurrent.PluginsOf(PluginCatalog.Load(world.Home, AdapterSet.Built().Names)), DateTimeOffset.UtcNow);
+            WorkflowCurrent.PluginsOf(WorkplacePlugins.Current.Load(world.Home)), DateTimeOffset.UtcNow);
         if (bound.Failed is { } failed) return Print(world, TreesWords.BindFailed(session, failed));
 
         var (line, live) = ChatRuns.PressOf(session, recordsJson);
