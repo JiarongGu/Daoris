@@ -1027,14 +1027,6 @@
       }
     },
     {
-      "family": "Workplace names Roles",
-      "after": "Workplace",
-      "files": {
-        "Workplace/GitWiring.cs": ["HolderKey"],
-        "Workplace/SessionHomeFiles.cs": ["QuestionSupervisorDecisions"]
-      }
-    },
-    {
       "family": "Workplace names Work orders",
       "after": "Workplace",
       "files": {
@@ -1378,6 +1370,7 @@
   ],
   "testFolders": ["Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
   "tests": {
+    "WorkplaceRolesBoundaryTests.cs": "Workplace",
     "WorkplaceLoopBoundaryTests.cs": "Workplace",
     "WorkplaceContextPortsTests.cs": "Workplace",
     "AutoLandingLookTests.cs": "Workplace",

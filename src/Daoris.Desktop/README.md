@@ -62,6 +62,10 @@ it constructs a record only at that command's original construction point.
 `Install/InstallRoot.cs` owns the marked-root-or-immediate-data-child rule shared with `SystemWiring`; an unmarked
 home keeps its supplied spelling as the root. This rule differs from finding an install by a program's directory.
 
+Child starts strip the holder-key variable named by Platform's `ChildMarks`. `SessionHomeFiles` owns the supervisor
+decision-directory and pointer suffixes in its cleanup inventory; Roles' public suffix constants alias those names.
+Roles retains the proof, decision memory and persistence operations.
+
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and
