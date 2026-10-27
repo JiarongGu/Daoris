@@ -2,3 +2,6 @@
 # These match the reviewed session mode. Managed requirements and tool review still apply.
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
+
+# The owner permits subscription access only; never fall back to API-key billing.
+forced_login_method = "chatgpt"

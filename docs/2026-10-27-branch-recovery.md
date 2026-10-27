@@ -275,3 +275,15 @@ the integration workflow. The stash and held Fabric commits remain preserved for
 Workplace's mechanical ownership checkpoint is published as quest `11bc8fdf13db`, ask `7cf83e`, from `8968c5087`.
 Its new terminal conversation `1903b870` starts with read-only discovery and inventory verification; implementation
 and taking the quest wait for the parent's next explicit release. FOUNDATION1 and BRANCHRECOVER1 remain open.
+
+## Workplace integration and retained Fabric evidence
+
+The mechanical Workplace source `faae42db9` subsequently passed the parent's byte and census audit and landed
+through the queue as `9884178`. D212 records its twelve passing gates and one classified flake, retained as
+TREECLEANFREE1. The same quest and terminal remain active for the separately reviewed Context eight-edge cut;
+the active tree is not cleanup material. Installed acceptance still belongs to `83ac0a968`.
+
+The new installed conversation's lineage projection was also inspected: eleven Codex call rows retain equal
+thread/root identifiers, but none retains a valid `source=user`. That projection is lossy and does not prove
+the raw metadata omitted the field. It cannot establish D173's required root provenance, so neither held
+Fabric enforcement attempt is ready to land. Both branches and their unique work remain preserved.
