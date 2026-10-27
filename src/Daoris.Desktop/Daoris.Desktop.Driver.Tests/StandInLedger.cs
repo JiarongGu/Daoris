@@ -408,16 +408,17 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     /// <summary>
     /// An ask proposed in <paramref name="workspace"/> and served by no intake yet, the newest (UX6d1): a look whose config
-    /// names an intake's adapter starts one for it.
+    /// names an intake's adapter starts one for it. Its tier is the service's for a new ask, the declarations'; a
+    /// <paramref name="tier"/> of <c>named</c> is a named ask whose quest was deleted, which no intake serves (QUESTDELETE1).
     /// </summary>
-    public void Ask(string id, string workspace = "default")
+    public void Ask(string id, string workspace = "default", string tier = "declarations")
     {
         lock (_gate)
         {
             _asks.Insert(0, new JsonObject
             {
                 ["id"] = id, ["workspace"] = workspace, ["sentence"] = $"The words of ask #{id}.", ["state"] = "Proposed",
-                ["tier"] = "named",
+                ["tier"] = tier,
             });
         }
     }
