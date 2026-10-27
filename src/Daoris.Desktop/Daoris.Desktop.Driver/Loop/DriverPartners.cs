@@ -402,7 +402,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var root = lead?.Tree is { Length: > 0 } tree ? await RootAsync(tree, ct).ConfigureAwait(false) : null;
         if (root is null) return new(PartnerStates.Uncertain, null, PartnerWhy.CopyFailed, null, "the repository's checkout could not be read.");
         var index = DaorisHome.Entry(_context.Home, HomeEntry.Partners, $"{ask.Id}.index");
-        return await PieceKeeper.KeepAsync(root, state.Copy!, ask, index, state.Kept!.Value, PartnerPass.Message(ask, state.Agent, state.Account), ct).ConfigureAwait(false);
+        return await PieceKeeper.KeepAsync(root, state.Copy!, ask.Id, ask.Base, index, state.Kept!.Value, PartnerPass.Message(ask, state.Agent, state.Account), ct).ConfigureAwait(false);
     }
 
     /// <summary>The facts Daoris read itself, never the partner's words: the commit, its files, those beyond the piece, and what was left out.</summary>

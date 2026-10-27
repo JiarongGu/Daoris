@@ -35,6 +35,12 @@
     "Conversations/HandOver/WorkplaceHandedQuestsWiring.cs": "Course",
     "Workplace/WorkplacePressTelling.cs": "Workplace",
     "Sessions/Requests/WorkplacePressTellingWiring.cs": "Course",
+    "Workplace/Domain/HelperWaitTrees.cs": "Workplace",
+    "Workplace/Domain/PieceKeptStates.cs": "Workplace",
+    "Workplace/WorkplaceHarnessBindings.cs": "Workplace",
+    "Conversations/GoOn/WorkplaceHarnessBindingsWiring.cs": "Participants",
+    "Workplace/WorkplaceAccessSetup.cs": "Workplace",
+    "Sessions/WorkplaceAccessSetupWiring.cs": "Participants",
     "Agents/AccountCooling.cs": "Agents",
     "Agents/AccountFileNodes.cs": "Agents",
     "Agents/AccountNames.cs": "Agents",
@@ -966,19 +972,6 @@
   },
   "edges": [
     {
-      "family": "Workplace names Participants",
-      "after": "Workplace",
-      "files": {
-        "Workplace/ToolHomeLeftovers.cs": ["HarnessConversations"],
-        "Workplace/SessionHomeFiles.cs": ["HarnessConversations"],
-        "Workplace/BranchTidying.cs": ["HelperWaits"],
-        "Workplace/AutoLanding.cs": ["AccessRules"],
-        "Workplace/Landing.cs": ["AccessRules"],
-        "Workplace/PieceKeeper.cs": ["PartnerAsk","PartnerReconcile","PartnerStates"],
-        "Workplace/SessionLocks.cs": ["HelperWaits"]
-      }
-    },
-    {
       "family": "Workplace names Plugins",
       "after": "Workplace",
       "files": {
@@ -1357,6 +1350,8 @@
   "tests": {
     "WorkplaceCourseBoundaryTests.cs": "Workplace",
     "WorkplaceCoursePortsTests.cs": "Workplace",
+    "WorkplaceParticipantsBoundaryTests.cs": "Workplace",
+    "WorkplaceParticipantsPortsTests.cs": "Workplace",
     "WorkplaceHelpBoundaryTests.cs": "Workplace",
     "WorkplaceRolesBoundaryTests.cs": "Workplace",
     "WorkplaceLoopBoundaryTests.cs": "Workplace",

@@ -33,12 +33,10 @@ public static class HelperWaits
     /// the lock's let-go and the planner's further part read beside the live sessions, so no other part writes there and nothing clears it
     /// while its helper reads.
     /// </summary>
-    public static bool HoldsTree(PriorSession record) =>
-        !record.Teammate && string.Equals(record.State, "completed", StringComparison.OrdinalIgnoreCase)
-        && Carries(record.NoteParts, NoteCodes.EndedAwaitsHelper);
+    public static bool HoldsTree(PriorSession record) => HelperWaitTrees.HoldsTree(record);
 
     /// <summary>Whether a run's conclusion is the wait on its own helper (<see cref="Observation.AwaitsHelper"/>): its note's code.</summary>
-    public static bool Ended(IReadOnlyList<NotePart>? parts) => Carries(parts, NoteCodes.EndedAwaitsHelper);
+    public static bool Ended(IReadOnlyList<NotePart>? parts) => HelperWaitTrees.Carries(parts, NoteCodes.EndedAwaitsHelper);
 
     /// <summary>
     /// Whether <paramref name="session"/> asked a go-ahead on its work's ask that still waits on the person (KNOWUSE1a, GOAHEAD2): a real
@@ -63,7 +61,4 @@ public static class HelperWaits
             .FirstOrDefault();
         return HelperNotes.Refused(refused?.Code ?? HelperWhy.NoAnswer, refused?.Agent);
     }
-
-    private static bool Carries(IReadOnlyList<NotePart>? parts, NoteCode code) =>
-        parts?.Any(part => string.Equals(part.Code, code.Code, StringComparison.Ordinal)) == true;
 }

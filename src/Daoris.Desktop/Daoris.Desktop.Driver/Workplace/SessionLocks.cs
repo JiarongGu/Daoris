@@ -88,7 +88,7 @@ internal static class SessionLocks
     internal static Task<bool> LetGoEndedAsync(PriorSession record)
     {
         if (record.Teammate || record.State is not ("completed" or "declined" or "failed" or "stopped" or "stood-down")
-            || HelperWaits.HoldsTree(record) || record.NoteParts?.Any(part => part.Code == NoteCodes.EndedSetupChanged.Code) == true
+            || HelperWaitTrees.HoldsTree(record) || record.NoteParts?.Any(part => part.Code == NoteCodes.EndedSetupChanged.Code) == true
             || record.Tree is not { Length: > 0 } tree) return Task.FromResult(false);
         return LetGoAsync(tree, record.Session, CancellationToken.None);
     }
