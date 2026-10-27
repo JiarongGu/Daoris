@@ -21,7 +21,7 @@ public sealed class NoConsoleWindowTests
     /// </summary>
     private static readonly Dictionary<string, string> Inheriting = new(StringComparer.Ordinal)
     {
-        ["Daoris.Desktop.Driver/Platform/GitDoors.cs"] =
+        ["Daoris.Desktop.Driver/Workplace/GitDoors.cs"] =
             "the git doors' ssh: the door is git's console child, and its ssh speaks git's protocol over the stdio git handed it",
         ["Daoris.Desktop.Driver/Platform/PieceLauncher.cs"] =
             "the agents' launcher (TERMTRUST1a): it joins the agents' job and any piece's, then starts the harness, which speaks its protocol "

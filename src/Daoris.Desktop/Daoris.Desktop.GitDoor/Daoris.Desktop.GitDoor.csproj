@@ -17,19 +17,19 @@
 
   <ItemGroup>
     <!-- The doors, the judge, the grants and the routing's names (GITAUTH1b): `GitDoorsTests` holds them. -->
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitDoors.cs" Link="GitDoors.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitAccessRules.cs" Link="GitAccessRules.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitRouting.cs" Link="GitRouting.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitFailures.cs" Link="GitFailures.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitDoors.cs" Link="GitDoors.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitAccessRules.cs" Link="GitAccessRules.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitRouting.cs" Link="GitRouting.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitFailures.cs" Link="GitFailures.cs" />
     <!-- Each refusal and each grant taken, a coded line in the driver's machine log of the day (GITAUTH1b, the git-auth design §11). -->
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitLog.cs" Link="GitLog.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitLog.cs" Link="GitLog.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\MachineLog.cs" Link="MachineLog.cs" />
     <!-- The identities, the pointers and their resolution, the folder's repository, and Daoris's ssh files (GITAUTH1c, the git-auth
          design §3.2 and §4.2): the door hands an identity's key from the files alone. -->
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitIdentities.cs" Link="GitIdentities.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitIdentityUse.cs" Link="GitIdentityUse.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitFolders.cs" Link="GitFolders.cs" />
-    <Compile Include="..\Daoris.Desktop.Driver\Platform\GitSshFiles.cs" Link="GitSshFiles.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitIdentities.cs" Link="GitIdentities.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitIdentityUse.cs" Link="GitIdentityUse.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitFolders.cs" Link="GitFolders.cs" />
+    <Compile Include="..\Daoris.Desktop.Driver\Workplace\GitSshFiles.cs" Link="GitSshFiles.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Store\AtomicFile.cs" Link="AtomicFile.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Platform\BesideReads.cs" Link="BesideReads.cs" />
     <Compile Include="..\Daoris.Desktop.Driver\Store\JsonFile.cs" Link="JsonFile.cs" />

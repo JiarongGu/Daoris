@@ -343,17 +343,17 @@
       "reads": "other",
       "note": "parses the marks off the service's answer into the record view (moved from Trees/SessionGroups.cs, FOUNDATION1 mod-iv); it tells no work"
     },
-    "Sessions/History/HistoryClearing.cs": {
+    "Workplace/HistoryClearing.cs": {
       "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
-    "Sessions/History/HistoryHome.cs": {
+    "Workplace/HistoryHome.cs": {
       "lines": 2,
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
     },
-    "Sessions/History/SessionDeletion.cs": {
+    "Workplace/SessionDeletion.cs": {
       "lines": 3,
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
@@ -379,17 +379,17 @@
       "row": "1q",
       "note": "the session-group projection moved from Knowledge/Room/HelpRoomMachineNow.cs still excludes Ask Daoris's own conversation by the same repository identity; the start layer's (§2.3), Help's judges kept as they read until then (mod-xx)"
     },
-    "Trees/LandedBranches.cs": {
+    "Workplace/LandedBranches.cs": {
       "lines": 3,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Trees/Landing/AutoLander.cs": {
+    "Workplace/AutoLander.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Trees/Landing/ChatPresses.cs": {
+    "Workplace/ChatPresses.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
@@ -409,7 +409,7 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Trees/SessionEntries.cs": {
+    "Workplace/SessionEntries.cs": {
       "lines": 2,
       "reads": "tells",
       "note": "tells an intake from its ask and the absence of a quest; no row of this design moves it"
@@ -419,7 +419,7 @@
       "reads": "tells",
       "note": "tells Ask Daoris's record by its repository; no row of this design moves it (the record's parse and its view moved to Service, FOUNDATION1 mod-iv)"
     },
-    "Trees/SessionTrees/LandedCleanups.cs": {
+    "Workplace/LandedCleanups.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
