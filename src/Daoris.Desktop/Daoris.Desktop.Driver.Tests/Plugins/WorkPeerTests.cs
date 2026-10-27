@@ -105,12 +105,6 @@ public sealed class WorkPeerTests
 
     private static string? IdOf(JsonElement? @params) => @params is { } read && read.TryGetProperty("id", out var id) ? id.GetString() : null;
 
-    private static async Task Until(Func<bool> done)
-    {
-        for (var wait = 0; wait < 400 && !done(); wait++) await Task.Delay(25);
-        Assert.True(done());
-    }
-
     /// <summary>Answers every watch with nothing: a call whose answer comes after a pushed frame shows that frame was read.</summary>
     private static string? Answering(JsonElement frame, string points) =>
         Handshake(frame, points) ?? (Method(frame) == WorkWire.WatchMethod ? Ok(frame, "{}") : null);
@@ -145,7 +139,7 @@ public sealed class WorkPeerTests
         stand.Push("""{"jsonrpc":"2.0","id":99,"method":"work/step","params":{"id":"x2"}}""");
         stand.Push(Event("e1"));
         stand.Push(Event("e2"));
-        await Until(() => { lock (heard) return heard.Count >= 2; });
+        await Poll.Until(() => { lock (heard) return heard.Count >= 2; });
         await peer.WatchAsync(Nothing, CancellationToken.None);
 
         lock (heard) Assert.Equal(["e1", "e2"], heard.Select(IdOf));
@@ -175,7 +169,7 @@ public sealed class WorkPeerTests
 
         stand.Push($$$"""{"jsonrpc":"2.0","method":"work/step","params":{"id":"{{{new string('x', WorkBounds.FrameBytes)}}}"}}""");
         stand.Push(Event("e1"));
-        await Until(() => { lock (heard) return heard.Count >= 2; });
+        await Poll.Until(() => { lock (heard) return heard.Count >= 2; });
 
         lock (heard) Assert.Equal([null, "e1"], heard.Select(IdOf));
         lock (heard) Assert.Null(heard[0]);
@@ -303,6 +297,13 @@ public sealed class WorkPeerTests
         Assert.Equal(WorkWire.Perform(call).ToJsonString(), WorkWire.Perform(WorkWire.ReadPerform(first.GetProperty("params"))!).ToJsonString());
     }
 
+    /// <summary>
+    /// WORKPEERWAIT1: the fifth call goes when a place frees, and what it waits on is the peer's own loop sending it once an answer has been
+    /// read — a signal, not a span of the machine's clock. The peer is handed no patience to wait out for a place (a place is waited for
+    /// without end, as the too-long answers' calls are), where its ten seconds, counted from the call's start, ended the fifth call
+    /// as late under load before the answer's turn came; and the test's own waits read <see cref="Poll.Patience"/>, never a fixed 400 × 25 ms.
+    /// The 200 ms stays: it is the window in which nothing may happen.
+    /// </summary>
     [Fact]
     public async Task At_most_four_calls_are_in_flight_and_the_fifth_goes_when_one_is_answered()
     {
@@ -313,12 +314,12 @@ public sealed class WorkPeerTests
             lock (waiting) waiting.Add(frame);
             return null;
         });
-        var peer = await Started(stand, [HookPoints.Perform]);
+        var peer = await Started(stand, [HookPoints.Perform], patience: Timeout.InfiniteTimeSpan);
 
         var calls = Enumerable.Range(1, WorkBounds.CallsInFlight + 1)
             .Select(at => peer.PerformAsync(new WorkPerformCall("u1", "acme.deploy/deploy", 1, $"i{at}", $"k{at}", "r1", [], At), CancellationToken.None))
             .ToList();
-        await Until(() => stand.Count(WorkWire.PerformMethod) == WorkBounds.CallsInFlight);
+        await Poll.Until(() => stand.Count(WorkWire.PerformMethod) == WorkBounds.CallsInFlight);
         await Task.Delay(200);
         Assert.Equal(WorkBounds.CallsInFlight, stand.Count(WorkWire.PerformMethod));
 
@@ -326,9 +327,9 @@ public sealed class WorkPeerTests
             stand.Push(Ok(frame, WorkWire.PerformAnswer(WorkWire.ReadPerform(frame.GetProperty("params"))!.Invocation).ToJsonString()));
 
         lock (waiting) Answer(waiting[0]);
-        await Until(() => stand.Count(WorkWire.PerformMethod) == WorkBounds.CallsInFlight + 1);
+        await Poll.Until(() => stand.Count(WorkWire.PerformMethod) == WorkBounds.CallsInFlight + 1);
         lock (waiting) foreach (var frame in waiting.Skip(1)) Answer(frame);
-        await Task.WhenAll(calls);
+        await Task.WhenAll(calls).WaitAsync(Poll.Patience);
     }
 
     [Fact]

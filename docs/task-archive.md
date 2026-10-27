@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Work peer in-flight test waits (2026-10-28)
+
+> **WORKPEERWAIT1 — the in-flight bound's test waits on the peer's loop, not the clock** (merge queue sighting, 2026-10-27). `WorkPeerTests.At_most_four_calls_are_in_flight_and_the_fifth_goes_when_one_is_answered` failed once at its second wait on candidate `39e3201` under load and did not fail again. Bound the waiting side by `Poll.Patience` or a held clock, never a wider window or a retry, and keep the four-in-flight, fifth-after-an-answer and 200 ms quiet assertions.
+
+Completed 2026-10-28: the class's fixed 400 × 25 ms `Until` is `Poll.Until`, the case hands the peer an infinite patience (the peer's ten-second default had counted the fifth call's wait from its start), and the closing wait is bounded by `Poll.Patience`; no assertion or product code changed. Shown red with the answer held 11 s under the old patience and green under the new, and the class green five times beside 44 CPU-spinning processes. FIX-LOG says what was not proved.
+
 ## Retired Fabric attempts (2026-10-27)
 
 Completed at the owner's request: retired the unmerged branch names `quest/fabric-c2a-1ce2a0cd9ebb` and `worktree-agent-ac4bd4973eec96ec9`, with no checked-out worktree on either. Their exact tips remain recoverable as `refs/daoris/retired/fabric-c2a-quest-20261027` (`9b3ac2762cffb4d957490f22358e21676aad08c8`) and `refs/daoris/retired/fabric-c2a-agent-20261027` (`8d266a3c2d7904f7f980d5e86a03c1be1b9a7c36`). The existing local recovery bundle was verified to contain both tips and complete history before retirement; deletion verified both recovery refs and original tips in one Git transaction, with worktree checks before and after and absence confirmed by Git's exit 2. FABRIC-C2a remains open for rework and actual ACP lineage proof; no implementation from these attempts was merged or declared complete.
