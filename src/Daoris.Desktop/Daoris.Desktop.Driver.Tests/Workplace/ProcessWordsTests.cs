@@ -21,6 +21,8 @@ public sealed class ProcessWordsTests
     private static ResolvedCommits Rule(string mode, string source = CommitRules.DefaultSource, string? convention = null) =>
         new(new CommitRule(mode, convention), source);
 
+    private const string Stash = "The stash is shared with the repository's checkout and every other tree: set work aside with a commit on this tree's branch, and never use git stash.";
+
     private static string Said(ResolvedCommits? commits, LandingPlan? plan) => ProcessWords.Said(commits, plan)!;
 
     /// <summary>The default, whole: the landing's lead, the branch the pull request comes from by name, then the process as set.</summary>
@@ -35,8 +37,36 @@ public sealed class ProcessWordsTests
             + "This repository's process on this machine:\n"
             + "\n"
             + "- Commit on this tree's branch as you go, each piece once it passes its checks.\n"
-            + "- Do not create, switch or push branches: Daoris makes the pull request's branch when the person accepts the work.\n",
+            + "- Do not create, switch or push branches: Daoris makes the pull request's branch when the person accepts the work.\n"
+            + "- " + Stash + "\n",
             Said(Rule(CommitRules.AsYouGo), Review));
+    }
+
+    /// <summary>
+    /// STASHSHARE1: git's stash is one stack per repository, so a tree of its own is told it is shared with the checkout and the other
+    /// trees, and to set work aside with a commit. Said once, in every mode and every kind of tree, right after the branch line.
+    /// </summary>
+    [Theory]
+    [InlineData(CommitRules.AsYouGo)]
+    [InlineData(CommitRules.Ask)]
+    [InlineData(CommitRules.AtEnd)]
+    public void A_tree_of_its_own_is_told_the_stash_is_shared_in_every_mode_and_kind_of_tree(string mode)
+    {
+        foreach (var plan in new[] { Review, Auto, Merge, Review with { Own = true }, Review with { Plugin = "example.github-pull-request" } })
+        {
+            var said = Said(Rule(mode), plan);
+            Assert.Equal(1, said.Split(Stash).Length - 1);
+            Assert.Contains($"\n- Do not create, switch or push branches", said);
+            Assert.Matches($"- Do not create, switch or push branches[^\n]*\n- {System.Text.RegularExpressions.Regex.Escape(Stash)}\n", said);
+        }
+
+        // After the existing lines, and before the auto-accept close, which stays last.
+        var auto = Said(Rule(CommitRules.AsYouGo), Auto);
+        Assert.True(auto.IndexOf(Stash, StringComparison.Ordinal) < auto.IndexOf("- Commit all of your work before", StringComparison.Ordinal));
+
+        var conversation = ProcessWords.Conversation(Rule(mode), Review);
+        Assert.Equal(1, conversation.Split(Stash).Length - 1);
+        Assert.EndsWith($"\n- Do not create, switch or push branches.\n- {Stash}", conversation);
     }
 
     /// <summary>Each mode in its own words, and in every mode no branch is made, moved or pushed.</summary>
@@ -203,6 +233,7 @@ public sealed class ProcessWordsTests
     {
         var bare = TargetPrompt.Compose(TargetPromptGoldenTests.Bare);
         Assert.DoesNotContain("process on this machine", bare);
+        Assert.DoesNotContain("stash", bare, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(TargetPrompt.Composed(TargetPromptGoldenTests.Bare).Account.Sections, handed => handed.Name == HandedSections.Landing);
     }
 
@@ -223,7 +254,8 @@ public sealed class ProcessWordsTests
             + "This repository's process on this machine:\n"
             + "\n"
             + "- Commit on this tree's branch as you go, each piece once it passes its checks.\n"
-            + "- Do not create, switch or push branches.",
+            + "- Do not create, switch or push branches.\n"
+            + "- " + Stash,
             ProcessWords.Conversation(Rule(CommitRules.AsYouGo), Review));
     }
 
@@ -254,7 +286,7 @@ public sealed class ProcessWordsTests
         {
             var said = ProcessWords.Conversation(Rule(mode), plan);
             Assert.Contains($"\n- {words}\n", said);
-            Assert.EndsWith("\n- Do not create, switch or push branches.", said);
+            Assert.EndsWith($"\n- Do not create, switch or push branches.\n- {Stash}", said);
             Assert.DoesNotContain("the quest", said);
             Assert.DoesNotContain("accepted automatically", said);
         }

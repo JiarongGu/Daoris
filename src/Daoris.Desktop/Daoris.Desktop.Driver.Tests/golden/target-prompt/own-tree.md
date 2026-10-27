@@ -17,6 +17,7 @@ This repository's process on this machine, set for its workspace:
 
 - Ask the person before each commit, and commit only on their yes. Uncommitted work stays in this tree and the person sees it as it stands, but Accept will not land it until it is committed.
 - Do not create, switch or push branches: Daoris makes the pull request's branch when the person accepts the work.
+- The stash is shared with the repository's checkout and every other tree: set work aside with a commit on this tree's branch, and never use git stash.
 
 The person's words on how a commit is written, to follow:
 
