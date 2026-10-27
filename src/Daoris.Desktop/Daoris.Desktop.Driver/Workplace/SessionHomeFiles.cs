@@ -26,8 +26,8 @@ public sealed record SessionFilesRemoved(
 /// </summary>
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
-/// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<c>ReopenMarks</c>), its park's question (<see cref="QuestionFiles"/>) and the supervisor's decisions on it (<see cref="QuestionSupervisorDecisions"/>), each named <c>mark</c>, its choice of a new
-/// session, its hand-over boxes (<c>HandOverBox</c>, its agent's ask and that ask's state, and a limit's move), the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
+/// <c>sessions/&lt;id&gt;/</c>, its native children's lineage among them, <see cref="ChildLineage"/>), its harness conversation id, a leftover process marker, its go-on mark, its reopen mark (<see cref="ReopenMarks"/>), its park's question (<see cref="QuestionFiles"/>) and the supervisor's decisions on it (<see cref="QuestionSupervisorDecisions"/>), each named <c>mark</c>, its choice of a new
+/// session, its hand-over boxes (<see cref="HandOverBox"/>, its agent's ask and that ask's state, and a limit's move), the spawn files a crash left, Ask Daoris's name and pin for it (ASKHIST1), its receipts (HELPWIRED1) and what it published (ASKQUESTS1), its held words, its closed automatic
 /// landing and its archive mark. Until HIST1c the
 /// delete took the first five and the mark, and left the mark, the choice, the held words and the landing behind.</para>
 ///
@@ -49,7 +49,7 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     public const string Mark = "mark";
     public const string Choice = "choice";
 
-    /// <summary>A conversation's ask to go on with another agent (MIXAGENT1a-i, <c>HandOverBox</c>).</summary>
+    /// <summary>A conversation's ask to go on with another agent (MIXAGENT1a-i, <see cref="HandOverBox"/>).</summary>
     public const string HandOver = "hand-over";
     public const string Spawn = "spawn";
 
