@@ -66,7 +66,7 @@ public sealed class WorkplaceCoursePortsTests : IDisposable
         Assert.Equal([new PressTold(PressesTold.Land, "s1", At), new PressTold(PressesTold.LandWithoutLook, null, At.AddSeconds(1))],
             new PressesTold(_home).Take(At.AddSeconds(2)));
 
-        Directory.Delete(Requests, recursive: true);
+        GitSeed.Remove(Requests);
         File.WriteAllText(Requests, "a file where the folder would be");
         Assert.False(WorkplacePressTelling.Current.Tell(_home, TreesMarks.Land, "s1", At));
     }
