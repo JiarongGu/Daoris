@@ -7367,6 +7367,12 @@ The second sighting was its trigger.
   Its assertion now reports the child's status, signal, spawn error and stderr for the next capture. No retry, timeout
   change or native-runtime fix was made; the abort's cause remains unproved. The full baseline subsequently passed,
   including all 180 helper cases; that green run does not close TEST1.
+- 2026-10-27, during the Context checkpoint's CLI gate, the shell-edit guard's child handling an `Edit` request exited
+  `3221226505` instead of zero (`tools/shell-edit-guard.test.mjs:42`); 179 of 180 helper cases passed. Both normal queue
+  probes, on the base and full candidate, passed, so the queue handed the change back as unresolved. No matching Node
+  Application/WER event was found in the failure interval. The assertions now retain PID, Node version, status, signal,
+  spawn error and stderr for every child, following the hook-logger precedent above. The guard, expected results and
+  request inputs are unchanged; no retry or runtime fix is claimed, and TEST1 remains open.
 
 **A family sibling documents the same abort** at about 1.5% of e2e runs, with a standing reproducer (spawn a server,
 poll it, kill it: about 1 in 300 rounds, 4-way concurrent). The row used to say *capture the Playwright HTML report*,
