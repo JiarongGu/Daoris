@@ -578,7 +578,7 @@ export function checks(files, read, map, { lanes = [], laneless = [], union = []
 export async function judgeStructurally(root, commit, units) {
   const { readLanes, pathsReaching } = await import('./merge-branch.mjs');
   const parents = spawnSync('git', ['rev-list', '--parents', '-n', '1', commit.sha], { cwd: root, windowsHide: true, encoding: 'utf8' }).stdout.trim().split(' ').slice(1);
-  const diff = spawnSync('git', ['diff', '--name-only', '--no-renames', '-z', `${commit.sha}^1`, commit.sha], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const diff = spawnSync('git', ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', `${commit.sha}^1`, commit.sha], { cwd: root, windowsHide: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const paths = diff.stdout.split('\0').filter(Boolean);
   const tree = treeOf(root, commit.sha);
   const map = census(tree.files, tree.read);
@@ -635,7 +635,7 @@ async function main(argv) {
   if (verb === 'reach') {
     const [from, to, ...suites] = rest;
     if (!from || !to) throw new Error('usage: node tools/test-map.mjs reach <from> <to> [<suite>…]');
-    const diff = spawnSync('git', ['diff', '--name-only', '--no-renames', '-z', from, to], { cwd: root, windowsHide: true, encoding: 'utf8' });
+    const diff = spawnSync('git', ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', from, to], { cwd: root, windowsHide: true, encoding: 'utf8' });
     if (diff.status !== 0) throw new Error(`git could not compare ${from} and ${to}: ${String(diff.stderr).trim()}`);
     const paths = diff.stdout.split('\0').filter(Boolean);
     const { files, read } = treeOf(root, to);

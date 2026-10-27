@@ -129,7 +129,7 @@ verdict('run');
 /** Where a repository stands: its HEAD and whether anything is uncommitted. */
 function standing(where) {
   const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: where, encoding: 'utf8' }).trim();
-  const status = execFileSync('git', ['status', '--porcelain'], { cwd: where, encoding: 'utf8' }).trim();
+  const status = execFileSync('git', ['--no-optional-locks', 'status', '--porcelain'], { cwd: where, encoding: 'utf8' }).trim();
   return { head, status };
 }
 

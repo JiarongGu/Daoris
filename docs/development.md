@@ -124,7 +124,7 @@ change can reach before handing it back:
 | reads or writes a file in the driver | `node tools/read-shares.mjs` (read a file `AtomicFile` writes through `AtomicFile.ReadText`, `ReadBytes` or `OpenRead`) |
 | moves, splits or renames a driver file that reads a session's marks (its participant work) | `dotnet test` with `--filter FullyQualifiedName~ParticipantWorkReadersTests` in `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests`, `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests` and `src/Daoris.Service/Daoris.Service.Tests` (the shared `src/Daoris.Service/Daoris.Service.Tests/fixtures/participant-work-readers.json` keys each reader by its path: move its entry with the code) |
 | adds a driver test that roots scratch under `_fixtures` | `dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter FullyQualifiedName~GitSeedTests.No_test_deletes` (remove scratch with `GitSeed.Remove` or `GitSeed.Discard`, never `Directory.Delete`, and find the root with `GitSeed.RepoRoot()`) |
-| asks git for a `status` or a `diff` in the driver | `node tools/optional-locks.mjs` (pass `--no-optional-locks` before the command, so a read takes no `index.lock` in a session's tree) |
+| asks git for a `status` or a `diff` in the driver or in a tool (the merge tool and its helpers) | `node tools/optional-locks.mjs` (pass `--no-optional-locks` before the command, so a read takes no `index.lock` in a session's tree or the main checkout) |
 | names an agent's command, a login, or a driver config's `commands` in a test | `node tools/live-logins.mjs` (a script or a stub at a path, never the agent's binary from PATH) |
 
 `node --test` alone is not the workspace's done command. The root `npm test` delegates to the CLI
