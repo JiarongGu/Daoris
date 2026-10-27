@@ -66,6 +66,13 @@ Child starts strip the holder-key variable named by Platform's `ChildMarks`. `Se
 decision-directory and pointer suffixes in its cleanup inventory; Roles' public suffix constants alias those names.
 Roles retains the proof, decision memory and persistence operations.
 
+Workplace names no Course type. The rebase words' key is Workplace's pure `RebaseKeys`, which `DaorisKeys` delegates to,
+and `PressHold` is declared beside the `IChatPressing` port that answers it. The terminal's land press tells its note
+through `IWorkplacePressTelling`, and history clearing reads and clears handed quests through `IWorkplaceHandedQuests`;
+Course installs both from `Sessions/Requests/WorkplacePressTellingWiring.cs` and
+`Conversations/HandOver/WorkplaceHandedQuestsWiring.cs`. `SessionHomeFiles` owns the go-on, reopen, new-session,
+hand-over and limit-move suffixes in its cleanup inventory; Course's public suffix constants alias those names.
+
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;
 Work orders retains rendering, bounds and acknowledgements. Service owns the submitted-state read that retries and
