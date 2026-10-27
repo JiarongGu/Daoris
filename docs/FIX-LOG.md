@@ -5,6 +5,111 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - Compound WorkFrame interactions exhausted the test bound (FRAMEBOUNDS1)
+
+- **Symptom:** the whole nightly web gate on `93f49d4` timed out the driven-send and production-go-ahead/question cases at their existing 20-second limit, with 9,710 other cases passing.
+- **Root cause:** `59280f1ade` kept three driven-send outcomes in one case. The authorization sequence from `3df41bd0d7`, expanded in `cb1e39da66`, combined selected and free Send/Enter refusals, full-phrase typing and approval. Each typed character updates the frame's draft and renders the frame; the shared helper already removes inter-key waits. A diagnostic run observed about 14.5 seconds across the three sends and 9.3 seconds entering the phrase within a 16-second authorization case. Both cases passed in that run: these measurements identify fixture work, not a timing guarantee or the sole scheduling cause of the nightly failures.
+- **Fix:** the independent taken-at-once outcome has its own case. Held-to-idle stays together so the preceding hold's notification cannot leak into the next send, and all original words are typed through the menu. The authorization case pastes the unchanged full phrase through user-event's real clipboard/input behavior, retaining selected/free Send-and-Enter refusals, approval payload, retained park and empty-box checks. Additional request and no-cancellation assertions cover each driven send. The timeout, production code and shared user-event timing defaults are unchanged.
+- **Verify:** the naturally failing nightly cases remain recorded. The three repaired focused scenarios pass, both affected files pass **117 cases** (formerly 116), and web typechecking passes. No retry, artificial load, shorter phrase, raw value assignment or suppressed assertion was used. FRAMEACT1 retains the emitted React act warnings. Full web and parent integration proof remain owed; FRAMEBOUNDS1 stays open until then.
+
+## 2026-10-27 - Review graph census can close a frontier before a producer registers its child (GRAPHQUIET1)
+
+- **Natural red:** the parent's candidate `3c57df7` Driver run passed 15,060 and failed one. The finalized
+  `local/scratch/scope-3c57df7/driver.log` and `driver.scoped.trx` report K′ starting in round four with depth two
+  for line=set, record=grown-held, bases=both, incomparable=false. The scheduler cause is not established.
+- **Fixture diagnosis:** QuietAsync examines only nodes already registered. A tracked producer can have received its
+  parent answer but not yet registered its child; a pool probe and elapsed quiet interval do not acknowledge that producer.
+  The elapsed heuristic was retained through `825d5f734` and `24c8a25d5`; those FLAKE1 repairs addressed different timing
+  symptoms and did not establish producer closure. Separately, copying the held queue and then clearing it can discard
+  an enqueue between those operations. Neither mechanism establishes the queue failure's particular scheduler cause.
+- **Deterministic red:** the same scripted producer first completes ungated, then is positively held after E answers and
+  before K′ registration. The held run requires acknowledgement that its missing child start is being awaited, then permits
+  registration and awaits the actual child start. Finally releases every gate and awaits the tracked producer and settlement.
+  After release, the adapter over original QuietAsync failed once at Assert.Same: QuietAsync had completed while the waiting
+  acknowledgement was still pending. `local/scratch/graphquiet1/frontier-old-red.trx` retains that intended failure.
+- **Repair:** a settled same-World graph supplies topology completeness, alongside the independent chain and named-depth
+  goldens. Injective DAG matching compares name, budget, program/speculation flags and dependency identities with multiplicity;
+  creation order is not identity. The frontier records actual observed rounds and awaits starts, stand-in arrivals, released
+  nodes' Answered signals and final completion. One Poll.Patience deadline bounds each whole frontier, never renewed by progress
+  and cancelled on exit; missing or secretly serialized starts fail at that bound. Exact
+  acknowledged entries are dequeued, preserving late arrivals. Reference command multisets also match; original actual-round
+  equality, no-two-Π, chain result and command/waste assertions remain. Production scheduling and sources are unchanged.
+- **Implementation finding:** an intermediate class run reported an early failure and later timed out, and was stopped without
+  a completed TRX. The helper needed a consistent observed-start snapshot and Answered notifications for acknowledged reads
+  still finishing after dequeue. The deterministic completion-only case now holds that path: it must wake without another arrival.
+- **Focused proof:** the repaired census passed 203 cases before the completion-only regression was added; the next combined
+  selection passed 254/254, including all original 189 census cases and 15 new fixture cases. The command-multiset follow-up
+  also passed 254/254; the final whole-frontier deadline audit passed the same 254/254 with zero skipped, retained in
+  `local/scratch/graphquiet1/frontier-focused-deadline.trx`. D212 records the command and reached checks.
+  This is fixture proof, not full Driver/stage/installed integration; parent owns
+  those gates and GRAPHQUIET1's backlog record. No production defect or full integration completion is claimed.
+- **Parent source-review follow-up:** this was a readiness/teardown concern, not a new failing run. Commit `6959cb117`
+  already captured outstanding Answered tasks before readiness observation and awaited them. The completion-only test is
+  strengthened to let an independent next-round arrival wake the already-waiting helper while a released terminal leaf remains
+  unfinished, then require that leaf's answer alone to wake the ready frontier. Runtime call accounting now requires one unique
+  live uncalled node per held git, matching command classification and budget, and verifies every node was called once on all
+  census paths. Missing/second-call negative cases guard the assumption. It is specific to these Worlds (Review/Untracked,
+  repeated N reads in different frontiers, U at w=1), not every graph or budget in the product.
+- **Failure cleanup:** the census now drains held and future registrations in finally, awaits the read and graph settlement,
+  and restores its stand-in afterward. Cleanup faults retain the primary failure alongside them. The assertion path remains
+  failed; teardown runs the scripted answers freely rather than measuring more frontiers. A deterministic unexpected-topology
+  assertion proves that both its held parent and a child registered during draining settle. The first combined follow-up
+  selection passed 257/257. Final source review makes the arrival acknowledgement observe the held entry itself, since its
+  enqueue wake can precede the stand-in's separate child-start signal; this was inferred, not an observed new failure.
+  The final four-class selection passed 257/257, zero skipped, retained in
+  `local/scratch/graphquiet1/frontier-review-handshake.trx`. D212 records final review proof and regenerated index reach.
+  Production remains unchanged.
+- **Complete-usage/cancellation audit:** complete topology matching now compares final Used as well as metadata and dependency
+  identities; partial matching leaves undecided usage alone. The equal-waste swapped-usage regression failed against the old
+  comparer (Assert.Null received an E/K mapping), retained as `local/scratch/graphquiet1/frontier-used-red.trx`.
+  Building on the existing drain/settlement cleanup, the actual census now owns a cancellation source and cancels it only on
+  failure, before releasing and settling its reads. Cleanup acknowledges cancellation only for that cancelled owned token;
+  the primary assertion and unrelated failures still propagate. No new normal-run deadline or production code changes.
+  A real scripted ReviewGraphReads regression waits for a held arrival, fails the frontier, then verifies the original assertion,
+  cancelled read, empty hold queue and every node answered. Final focused proof passes 259/259, zero skipped (209 census,
+  including all original 189); `local/scratch/graphquiet1/frontier-used-owned-green.trx` retains it. Parent's verified 203-case
+  interim artifact is separate from this cumulative follow-up; no final integration acceptance is inferred.
+
+## 2026-10-27 - Two fast fixtures retained ten-second signal patience (TESTPATIENCE4)
+
+- **Symptom:** candidate `7958f3b`'s full Driver run passed 15,059 and failed two, reporting TimeoutException in MachineFactsTests' late-judge case at line 162,
+  awaiting JudgedAsync after FirstAsync had completed, and RegistrationFollowLoopTests' moved-line case at line 48,
+  awaiting its first whole TickAsync. The finalized natural red evidence is `local/scratch/scope-7958f3b/driver.log` and
+  `driver.scoped.trx` beside it; the earlier live `.partial` file was renamed away.
+- **Confirmed fixture defect:** both outer waits use local ten-second signal-patience constants, contrary to TESTPATIENCE1/2/3
+  and held-clocks. The constants originated in `930de553f` (PARALLEL1a) and `c81088cea` (WSSETUP5), respectively.
+  The final log and TRX do not establish whether scheduling, timer delivery, continuations or other work delayed
+  completion, nor locate the whole tick's delay. A production clock or registration defect is not established.
+- **Repair:** only the RHS expressions of MachineFactsTests.Within and RegistrationFollowLoopTests.Bound change to Poll.Patience. The 200 ms and
+  30 s behavior bounds, assertions, clocks, cancellation, lifetime and test identities are unchanged. No production fix is claimed.
+- **Verification:** after the parent released checks, the foreground `Category!=Process` selection of only the two affected classes
+  passed 16/16 (MachineFacts 13, RegistrationFollowLoop 3), with no skips, below normal priority and no build-server reuse.
+  The TRX is `local/scratch/testpatience4/testpatience4-focused.trx`. No constant-value tests were added. Parent reports that
+  base/candidate probes passed but both queue failures remain unresolved, with neither waived. This is focused fixture proof,
+  not full integration or a production fix; the scheduler cause remains unknown. D212 records the exact command and reached checks.
+
+## 2026-10-27 - Night exposed a room fixture sharing violation and repeated structure-analysis work
+
+- **Symptom:** the Driver fast Night on `93f49d4` passed 15,054 cases and failed two: HelpFactsTests' live room poll threw IOException,
+  and StructureTests reported a 65-second compile/walk against its one-minute bound. The latter assertion itself took 26 ms.
+- **Root cause:** PARALLEL1a (`f586c772b`) introduced the room poll's plain read beside an atomic rename, the same Windows deletion-sharing
+  omission already recorded for HelpRoomScopeTests and READSHARE1. The structure fixture's stopwatch surrounds its shared Lazy's earlier
+  StructureAnalysis.Of call, not the later assertion. The original analyzer (`55d5441f1`) repeatedly queried already-established unique
+  source edges and rebuilt immutable original-type descriptions; the deterministic baseline materialized 40,737 descriptions on this tree.
+  The Night log alone does not apportion its elapsed time between that work and concurrent load.
+- **Fix:** the visibility predicate reads through AtomicFile.ReadText, retaining the live catch-up writer and original assertions/waits.
+  The analyzer reuses descriptions by Roslyn original symbol. A repeated spelling skips binding only after a cross-file edge actually bound,
+  with exactly one source declaration (attribute shorthand included) and no alias anywhere. Ambiguous names, aliases, failed/self-file
+  bindings and first occurrences keep semantic binding. Compilation inputs/options, graph ordering, all structure rules and the bound stay.
+- **Verification:** the held-move predicate failed naturally with IOException; 256 generic references performed 256 queries and descriptions;
+  the complete-tree work-reduction regression also failed before implementation (three red regressions). The final bounded fast selection
+  passes 123/123, including both original failing cases and all StructureTests. The same-compilation unreduced oracle matches every edge's
+  file, line, type and declaring files, plus rules, globals, async files, declared types and census results. Queries fall from 55,801 to
+  34,461 and descriptions from 40,737 to 2,837; the timed compile/walk is 29.45 seconds with the original one-minute assertion intact.
+  One intermediate synthetic assertion expected the second same-named type's declaration rather than the original per-file first edge;
+  its oracle comparison already matched, and the corrected fixture explicitly checks each declaration from separate reader files.
+  D212 records the focused command and artifact limits. No product, gate policy, Process/whole suite or quest transition changed.
+
 ## 2026-10-27 - A dropped merge candidate returned as an incomplete green record (QUEUEDROP1)
 
 - **Symptom:** dropping the foundation candidate removed its request, but its checks continued. A real scratch-repository reproduction then recreated the candidate as only `{ state: "green" }`; the runner failed while reading its missing base.

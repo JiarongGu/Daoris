@@ -231,3 +231,17 @@ loop's queues, and ChatRunner.Queue returns ChatQueue.Idle for an id its process
 without establishing that the external process is between turns. The frontend's turn contract explicitly distinguishes an
 unknown answer from not taking. CLITURN1 retains the ownership-aware read/routing repair and an installed cross-process
 regression; cancellation and message delivery from that window to the external chat were not tested in this reproduction.
+
+## Agents validation follow-up
+
+Repair candidate `3c57df7` passed seven of eight executed gates and retained three earlier passes. Its whole web gate
+passed 9,713 tests; Driver passed 15,060 and failed one ReviewGraphCensus combination (`set`, `grown-held`, `both`,
+not incomparable): K′ was recorded in round four at depth two. The prior shared-read, analyzer and two signal-patience
+failures passed in that full run. Both isolated graph-class probes passed 189 cases; the queue classified the failure
+unresolved and handed request `8a02373e-be9d-4598-863e-6062c57e950c` back at 01:14:50 UTC. Main remains `76de91d91`.
+
+The fixture judges only already-created nodes and a timed quiet interval; the graph intentionally creates K′ after E's
+answer continuation. This leaves a gap its current snapshot cannot prove closed. GRAPHQUIET1 retains the fixture-only
+completion-frontier repair and deterministic regression; the precise scheduling delay is unestablished, and no production
+scheduling defect or fix is claimed. The failed full run remains distinct from its passing probes. Integration, stage
+checks and publication are still owed; the active native conversation and authored branches remain preserved.

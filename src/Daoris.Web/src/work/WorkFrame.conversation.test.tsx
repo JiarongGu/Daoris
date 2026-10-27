@@ -1022,7 +1022,7 @@ describe('starting and holding a conversation', () => {
    * stopped for them.
    */
   it('sends typed words to a working driven session now, and says what the door did', async () => {
-    let answer: object = { sent: true, reaches: 'now', why: null, now: true };
+    const answer = { sent: true, reaches: 'now', why: null, now: true };
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_QUEUE') {
         return { session: 's1a2b3c4', queued: [], taking: true, listening: true, reach: { reaches: 'next-step', steers: true, keepingStop: true } };
@@ -1041,10 +1041,29 @@ describe('starting and holding a conversation', () => {
     });
     expect(box).toHaveValue('');
     expect(notify).not.toHaveBeenCalled();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', expect.anything());
+  });
 
-    answer = { sent: true, reaches: 'turn-end', why: 'no-interrupt', now: false };
+  // FRAMEBOUNDS1: the independent taken-at-once path has its own case. Keep held -> idle together so a prior
+  // hold's line cannot leak into the next send; every send still types its original words and uses the menu.
+  it('says words sent now are held, then sends quietly when no turn is running', async () => {
+    let answer: object = { sent: true, reaches: 'turn-end', why: 'no-interrupt', now: false };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') {
+        return { session: 's1a2b3c4', queued: [], taking: true, listening: true, reach: { reaches: 'next-step', steers: true, keepingStop: true } };
+      }
+      if (type === 'SESSION_INPUT') return answer;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('Message');
     await userEvent.type(box, 'and the tests');
     await sendAt(/Now, cutting its step/);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 's1a2b3c4', text: 'and the tests', level: 'now', now: true },
+    });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Its door cannot take words in a running turn, so these are held for its turn to end.'));
     // Held, not lost: nothing is put back in the box.
@@ -1056,8 +1075,12 @@ describe('starting and holding a conversation', () => {
     answer = { sent: true, reaches: null, why: null, now: true };
     await userEvent.type(box, 'idle');
     await sendAt(/Now, cutting its step/);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 's1a2b3c4', text: 'idle', level: 'now', now: true },
+    });
     await waitFor(() => expect(box).toHaveValue(''));
     expect(notify).not.toHaveBeenCalled();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', expect.anything());
   });
 
   // Each code has its line: a next-step door that never steers, a session still opening, and a code not known
