@@ -27,6 +27,15 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 **Outcome.** Integrated on `83ac0a968`: the full Driver suite passes 15,081 cases and web passes 9,713 across 443 files. Stage validation passes its fresh 24-case browser gate, retains 18 valid gate passes and composes the two Process halves from their current class passes; all 21 pass admission, with no rehearsal owed. D212 and FIX-LOG hold each mechanism, original failure and focused regression proof. The original analyzer/web limits and production behavior remain unchanged; port-mutating fixtures are isolated and the transcript proof retains its open writer. The queue's natural regressions, full tool gate and successful promotion cover SCOPEPLAN1/QUEUEDROP1; QUEUEDRAIN1 remains open. CIFINDINGSKEEP1 records stale finding bookkeeping separately. FOUNDATION1 remains open, with local publication and installed proof recorded separately.
 
+## FOUNDATION1mod-ix — Agents move and cuts (2026-10-27)
+
+**Outcome.** The accepted Agents ownership move and all ten of its upward dependency families are integrated on
+`83ac0a968`, reducing the complete census from 431 tuples / 48 families to 349 / 38. Namespaces, stored shapes,
+permissions and existing behavior are preserved. D212 holds each reviewed checkpoint; the integration-repairs entry
+above and the [recovery receipt](2026-10-27-branch-recovery.md#agents-accepted-and-installed) hold qualified stage,
+installed-window and actual terminal/MCP proof. The worker's quest is Done and its session completed normally.
+This closes mod-ix; the FOUNDATION1 backlog row remains open for Workplace and the later rows.
+
 ## QUEUEFILTER1 and QUEUEWAIT1 — failure isolation and enqueue outcomes (2026-10-26)
 
 > **QUEUEFILTER1 — bisecting a fast .NET failure supplies two filter flags** (scoped verification, 2026-10-26). `tools/merge-branch.mjs:prefixRunner` appends a class filter to a gate that already has `--filter Category!=Process`, so `dotnet test` refuses the command before running any test and the queue reports a base failure as unresolved. Combine the existing filter with the selected class in one argument; prove a fast gate with an existing category filter runs its selected class and preserves the category, alongside the unfiltered Process-gate case.
