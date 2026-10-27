@@ -177,6 +177,9 @@ builder.Services
     // Every answer ends with what waits for the session on its ask's channel, once per new message (COWORK1d, D188's note): the pull
     // an agent meets at its next call, whatever its door.
     .TellWhatWaits(new WaitingLine(composed.Channel, intake).NextAsync)
+    // A call that leaves out an argument its tool requires is refused in plain words, naming it and what the tool takes, before the tool
+    // is built (CONNARGS1): the caller's mistake, kept in the log as a refusal and not as the marshaller's unhandled exception.
+    .RefuseMissingArguments(log)
     // Every class of tools, from the one list the tests read too (PART10a).
     .WithKnowledgeTools();
 

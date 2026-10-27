@@ -21384,3 +21384,11 @@ serialized. `actor.chose.passed` now carries each pass as `choice:agent:code` (`
 writers of the line. The twin tables hold the same bytes, and the reader returns the arrays and prints them as written. The same change
 stops `actor.passed` repeating at every unchanged look (`PassMemory`; the FIX-LOG entry LOGCOLLECTION1). D94's amendment and the
 machine-log design §3 say the contract.
+
+## CONNARGS1 — a connector tool called without a required argument is refused in plain words (2026-10-27)
+
+> **CONNARGS1 — a connector tool called without a required argument is refused in plain words, not logged as an unhandled exception.** On the install a session called `quest_respond` with the wrong parameter names four times, and each time the MCP server logged `error` "threw an unhandled exception" with `System.ArgumentException` "missing a value for the required parameter id" from the argument marshaller (machine log source `mcp`), which the usage report listed under Failed. A missing or misnamed argument is the caller's mistake: answer it as the tool's error result naming the parameter that is missing and the ones the tool takes, and log it as a refusal rather than an error, without masking an `ArgumentException` a tool's own code throws.
+
+(Quest `#8b4ae06acd49`, asked by `#799d58`.)
+
+**Outcome** 2026-10-27. `Daoris.Service.Mcp/ArgumentFilter.cs` holds each call to the required parameters its tool advertises, before the tool is built, and answers a miss as an error result naming what is missing, what was given that the tool does not take, and what it takes; the machine log keeps an information `tool.refused` line of names only. A tool's own `ArgumentException` is untouched. Proof and detail: `ArgumentFilterTests` and the FIX-LOG entry of the same date; the log event is catalogued in `docs/2026-09-30-machine-log-design.md` §4.
