@@ -440,9 +440,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-x: Platform through Workplace); no namespace row: every namespace stays
+        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-xi: Platform through Roles); no namespace row: every namespace stays
         // Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
@@ -636,6 +636,19 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Roles_uses_lower_vocabulary_facets_and_ports_and_no_Context_Review_or_Work_orders_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        string[] owners = ["Context", "Review", "Work orders"];
+        string[] folders = ["Context/", "Review/", "WorkOrders/", "Quests/"];
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Roles/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+        Assert.True(edges.Count == 0, $"Roles names Context, Review or Work orders in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void The_driver_s_own_tree_keeps_its_structure_with_today_s_exceptions_listed()
     {
         var (map, sources, tests, analysis, _) = Tree.Value;
@@ -679,8 +692,11 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         // A record struct is declared, `BoundedLine` among them.
         Assert.Contains("BoundedLine", analysis.DeclaredTypes);
 
-        // The compile is the gate's cost in the fast half: said in the row, held under a minute here.
-        Assert.True(took < TimeSpan.FromMinutes(1), $"the compile and the walk took {took.TotalSeconds:F0}s");
+        // The compile is the gate's cost in the fast half, about half a minute on an idle machine (the row's archive entry). What
+        // holds that cost is the reuse proof's counts, which no load moves; a wall clock here measured the machine as much as the
+        // walk (73 s and 89 s beside the queue's gates and driven sessions' builds, STRUCTBOUND1), so it only catches a hang.
+        output.WriteLine($"the compile and the walk took {took.TotalSeconds:F1}s");
+        Assert.True(took < TimeSpan.FromMinutes(5), $"the compile and the walk took {took.TotalSeconds:F0}s");
     }
 
     private static string MapFile() =>

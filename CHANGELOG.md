@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- Deleting the quest an ask published to a receiver you named no longer makes the driver publish the ask again to the repositories of its routing proposal. The ask stands with no quest and says so, for you to publish or close, and the delete's answer says what the ask now is (QUESTDELETE1).
 - A session in a tree of its own is now told that git's stash is shared with the repository's checkout and every other tree, so it sets work aside with a commit on its tree's branch and never uses `git stash`; a session in the repository's own checkout is told nothing of it (STASHSHARE1).
 - The usage report gains a *Driven sessions* section: each driven session's repository, adapter, models, turns, minutes, calls, tokens read anew, read from the cache, written and written out, and peak context, newest first, rolled up by repository and by adapter and model with the cache read per call; a session with no `turn.ended` is said so, never as zero (USAGECOST1).
 - The machine log now records the models an actor ran and the choices it passed as lists of names instead of a program type's name, so the usage report can count models (LOGCOLLECTION1). A held quest's passed choice is logged when it first passes and when what was passed or why changes, not at every look: the install wrote 10,488 of these lines in one day.

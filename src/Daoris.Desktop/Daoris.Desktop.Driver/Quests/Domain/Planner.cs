@@ -243,7 +243,7 @@ public sealed record Snapshot(
     IReadOnlyList<QuestView> Quests,
     IReadOnlyList<RepoView> Repositories,
     IReadOnlyList<SessionView> Active,
-    IReadOnlyDictionary<string, int>? Strikes = null) : IKnowledgeSnapshot
+    IReadOnlyDictionary<string, int>? Strikes = null) : IKnowledgeSnapshot, ISupervisorLook<Snapshot>
 {
     public IKnowledgeSnapshot Within(IReadOnlyList<QuestView> quests, IReadOnlyList<RepoView> repositories, IReadOnlyList<SessionView> active) =>
         this with { Quests = quests, Repositories = repositories, Active = active };
@@ -371,6 +371,14 @@ public sealed record Snapshot(
 
     /// <summary>The label each session's released supervisor's decision chose, from memory, which the go-on's sentence names. Absent is none.</summary>
     public IReadOnlyDictionary<string, string> SupervisorChose { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>The snapshot with the sessions a held decision holds and the choice each released decision made (<see cref="ISupervisorLook{TLook}"/>).</summary>
+    public Snapshot WithSupervisor(IReadOnlySet<string> held, IReadOnlyDictionary<string, string> chose) =>
+        this with { SupervisorHeld = held, SupervisorChose = chose };
+
+    /// <summary>The snapshot with these records in place of its last runs and its reopens' named records (<see cref="ISupervisorLook{TLook}"/>).</summary>
+    public Snapshot WithRecords(IReadOnlyDictionary<string, PriorSession> lastRun, IReadOnlyDictionary<string, PriorSession> namedByReopen) =>
+        this with { LastRun = lastRun, NamedByReopen = namedByReopen };
 
     /// <summary>Whether a held supervisor's decision holds <paramref name="record"/>: one is held, and no word of the owner's waits.</summary>
     public bool SupervisorHolds(PriorSession record) =>

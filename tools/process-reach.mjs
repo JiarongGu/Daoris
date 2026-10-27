@@ -870,7 +870,7 @@ async function main(argv) {
   if (verb === 'reach') {
     const [from, to, ...wanted] = rest;
     if (!from || !to) throw new Error('usage: node tools/process-reach.mjs reach <from> <to> [<gate>…]');
-    const diff = spawnSync('git', ['diff', '--name-only', '--no-renames', '-z', from, to], { cwd: root, windowsHide: true, encoding: 'utf8' });
+    const diff = spawnSync('git', ['--no-optional-locks', 'diff', '--name-only', '--no-renames', '-z', from, to], { cwd: root, windowsHide: true, encoding: 'utf8' });
     if (diff.status !== 0) throw new Error(`git could not compare ${from} and ${to}: ${String(diff.stderr).trim()}`);
     const paths = diff.stdout.split('\0').filter(Boolean);
     const { files, read } = repository(root, to);

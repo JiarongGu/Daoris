@@ -171,6 +171,16 @@ public static class IntakePrompt
         .. repositories.Where(repository =>
             AccessRules.Resolve(config, repository, workspace).Value(AccessRules.Routing) == AccessRules.Intake),
     ];
+
+    /// <summary>
+    /// Whether an intake may answer <paramref name="ask"/> at all (QUESTDELETE1): never one whose receiver the person named,
+    /// which stands with no quest once that quest is deleted, since an intake would route it by its proposal to repositories
+    /// nobody named. The service's own refusal says the same.
+    /// </summary>
+    public static bool Answers(AskView ask) => !string.Equals(ask.Tier, ByName, StringComparison.Ordinal);
+
+    /// <summary>The ask's own tier word for a receiver the person named — the service's spelling.</summary>
+    public const string ByName = "named";
 }
 
 /// <summary>

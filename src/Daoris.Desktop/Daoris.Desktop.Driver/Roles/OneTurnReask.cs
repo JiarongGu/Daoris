@@ -8,14 +8,16 @@ namespace Daoris.Driver;
 /// <c>choice-not-offered</c> and opens the walk's answer in the same call. Nothing left: the owner's own outcome (no reviewer could run,
 /// <c>not-started</c>, refused) with the pass reasons. Never a cool-off, never stored, gone when the owner's call ends.
 /// </summary>
-internal sealed class OneTurnReask
+internal class OneTurnReask<TChoice, TPassed>
+    where TChoice : IActorChoice<TChoice>
+    where TPassed : IActorPassed<TPassed>
 {
-    private readonly Func<IReadOnlyList<ReviewerPassed>, Task<ReviewerChoice>> _walk;
-    private readonly List<ReviewerPassed> _passed = [];
+    private readonly Func<IReadOnlyList<TPassed>, Task<TChoice>> _walk;
+    private readonly List<TPassed> _passed = [];
 
     /// <param name="first">The choice the owner's walk answered, whose entry runs first.</param>
     /// <param name="walk">The owner's own walk, asked again with what was passed left out.</param>
-    public OneTurnReask(ReviewerChoice first, Func<IReadOnlyList<ReviewerPassed>, Task<ReviewerChoice>> walk)
+    public OneTurnReask(TChoice first, Func<IReadOnlyList<TPassed>, Task<TChoice>> walk)
     {
         Current = first;
         _walk = walk;
@@ -25,7 +27,7 @@ internal sealed class OneTurnReask
     /// The opening note's actor line (§4.6) when a later entry of the actor ran, its passes the walk's own: <c>Ran as Second opinion's choice
     /// 2, …</c>; nothing where entry 1 ran or nothing was passed.
     /// </summary>
-    public static void Say(SessionEvents events, string sessionId, string actor, ReviewerChoice choice, MachineLog? log = null)
+    public static void Say(ISessionEvents events, string sessionId, string actor, TChoice choice, MachineLog? log = null)
     {
         if (choice.Effective is not { } ran) return;
         var passed = choice.Tried.Where(each => each.Entry is not null).Select(each => new BuildPass(each.Entry!, each.Held, each.Refusal)).ToList();
@@ -36,10 +38,10 @@ internal sealed class OneTurnReask
     }
 
     /// <summary>The choice that runs now: the first, or the one a refusal at the open moved it to.</summary>
-    public ReviewerChoice Current { get; private set; }
+    public TChoice Current { get; private set; }
 
     /// <summary>The (entry, account) passed so far in this owner's call.</summary>
-    public IReadOnlyList<ReviewerPassed> Passed => _passed;
+    public IReadOnlyList<TPassed> Passed => _passed;
 
     /// <summary>
     /// The open's refusal of the running entry's model: passed on its account, the walk asked again, and a later entry of the same agent on
@@ -56,7 +58,7 @@ internal sealed class OneTurnReask
             && string.Equals(again.Selection?.Profile, running.Selection?.Profile, StringComparison.OrdinalIgnoreCase))
         {
             // The same session goes on with the walk's later entry; its account's selection stays the one it opened on.
-            Current = again with { Selection = running.Selection };
+            Current = again.WithSelection(running.Selection);
             return (later.Asked, later.From);
         }
 
@@ -67,7 +69,7 @@ internal sealed class OneTurnReask
     /// The refused record has ended <c>choice-not-offered</c>: the walk's answer for what is left, its (entry, account) pass kept if the open's
     /// callback did not. A choice that cannot run says why, with the pass reasons, as the owner's walk always has.
     /// </summary>
-    public async Task<ReviewerChoice> NextAsync()
+    public async Task<TChoice> NextAsync()
     {
         Pass(Current);
         var next = await _walk([.. _passed]).ConfigureAwait(false);
@@ -79,13 +81,13 @@ internal sealed class OneTurnReask
     /// The running (entry, account) as passed; an agent running under its own sign-in names no account, and its entry is passed whole.
     /// False where the choice names no entry to leave out.
     /// </summary>
-    private bool Pass(ReviewerChoice choice)
+    private bool Pass(TChoice choice)
     {
         if (choice.Effective is not { } entry) return false;
         var account = choice.Selection?.Profile is { Length: > 0 } named ? named : null;
         if (!_passed.Any(each => each.Entry == entry && string.Equals(each.Account, account, StringComparison.OrdinalIgnoreCase)))
         {
-            _passed.Add(new ReviewerPassed(entry, account));
+            _passed.Add(TPassed.Of(entry, account));
         }
 
         return true;

@@ -146,4 +146,17 @@ public sealed class CapCountTickTests : IDisposable
 
         Assert.Contains(look.Events, line => line.Contains("ask #a1 waiting: the concurrency cap (1) is spent", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public async Task A_named_ask_standing_with_no_quest_waits_for_no_slot_and_takes_no_intake()
+    {
+        // QUESTDELETE1: the person named its receiver and its quest was deleted, so no intake routes it by its proposal.
+        _ledger.Working("i1", "ask #a0", Tree("intake-room"), ask: "a0");
+        _ledger.Ask("a1", tier: "named");
+        var (driver, _) = Driver(Config(cap: 1) with { IntakeAdapter = "stub" });
+
+        var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+
+        Assert.DoesNotContain(look.Events, line => line.Contains("ask #a1", StringComparison.Ordinal));
+    }
 }

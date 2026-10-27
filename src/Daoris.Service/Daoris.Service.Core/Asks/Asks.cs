@@ -991,6 +991,9 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     /// <remarks>
     /// A quest deleted (D95), here or on another machine, leaves the record as if the ask had never
     /// become it; a published ask left with none is a proposal again, for a person to publish or close.
+    /// QUESTDELETE1: unless the person NAMED its receiver (<see cref="ByName"/>). Its routing was their
+    /// word, so the proposal of the declarations tier is not a route for it: it stands with no quest and
+    /// says so in its note, and no intake serves it — only the person publishes it again, or closes it.
     /// A quest closed done departing from what the person required has not closed for the ask (DRIFT1d,
     /// D133 §4): it waits for their yes, and an ask reading done would say they had agreed.
     /// </remarks>
@@ -1000,11 +1003,36 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         var held = asked.Select(quest => quest.Id).ToHashSet(StringComparer.Ordinal);
         var standing = ask.Quests.All(held.Contains) ? ask : ask with { Quests = [.. ask.Quests.Where(held.Contains)] };
         if (standing.State != AskState.Published) return standing;
-        if (asked.Count == 0) return standing with { State = AskState.Proposed };
+        if (asked.Count == 0)
+        {
+            return standing with
+            {
+                State = AskState.Proposed,
+                Note = standing.Tier == ByName ? standing.Note ?? NoQuestLeft(standing) : standing.Note,
+            };
+        }
+
         return asked.All(quest => quest.Status is QuestStatus.Done or QuestStatus.Declined && !quest.Held)
             ? standing with { State = AskState.Done }
             : standing;
     }
+
+    /// <summary>
+    /// What stands of an ask whose last quest was deleted (QUESTDELETE1), in a sentence: said by the ask's note where the
+    /// person named its receiver, and by the answer to the delete of its quest for every tier, so no door is silent about it.
+    /// </summary>
+    public static string NoQuestLeft(Ask ask) => ask switch
+    {
+        { Tier: ByName } =>
+            $"Ask `#{ask.Id}` stands with no quest: you named its receiver, and the quest it became was deleted. It is not "
+            + "published again, and no intake routes it by its proposal — publish it to a receiver you name, or close it.",
+        { Intake: not null } =>
+            $"Ask `#{ask.Id}` stands with no quest: its intake session already served it, so nothing routes it again — "
+            + "publish it to a receiver you name, or close it.",
+        _ =>
+            $"Ask `#{ask.Id}` has no quest left and is a proposal again: an intake may route it by what the declarations "
+            + "propose, or you publish it to a receiver you name, or close it.",
+    };
 
     /// <summary>
     /// Delete an ask made by mistake (D95), with every quest asked by it — or none of it, when any of
@@ -1033,7 +1061,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         var notes = new List<string>();
         foreach (var quest in asked)
         {
-            var outcome = await exchange.DeleteAsync(quest.Id, now, ct).ConfigureAwait(false);
+            var outcome = await exchange.DeleteAsync(quest.Id, now, ct, askGoesToo: true).ConfigureAwait(false);
             if (outcome.Refusal == QuestDeleteRefusal.None)
             {
                 deleted.Add($"`#{quest.Id}`");
