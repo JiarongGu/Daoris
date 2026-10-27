@@ -36,6 +36,20 @@ policy and sentences. Its public constants forward to Events, and a refused door
 The required protocol-posture marker belongs to Agents (`AgentPostures.Required`); Help forwards the same `!` value.
 Agents also owns the shared `RunningTask` data and pure review-tab title; Review retains the watch and browser-serving operations.
 Roles composes actor opening notes through a higher extension over `RotatedOpening` and Events' existing `ISessionEvents` contract.
+The driver's `Roles/` also owns the actor's own files (FOUNDATION1 mod-xi, D212): the choices and their walk with its pass memory
+(`ActorChoices`, `BuildWalk`), the actor verbs, the run and its asked choices (`Domain/ActorRun.cs`), the one-turn re-ask, the
+supervisor's proof, decisions, quarantine and command, the steward's command and the role act form and brief. Tests are
+mirrored under `Driver.Tests/Roles/`. Namespaces remain `Daoris.Driver`.
+
+Roles names no Context, Review or Work orders type. The actor's run and the one-turn re-ask take Events' `ISessionEvents`.
+The re-ask is `OneTurnReask<TChoice>` over `IActorChoice<TChoice>` and `IActorTried` (`Roles/ActorChoice.cs`), which Review's
+`ReviewerChoice` and `ReviewerTried` implement; `ReviewerPassed` is Roles'. Review's `OneTurnReask` is that rule on the reviewer's
+choice, under the name its callers use. The supervisor's quarantine reads and returns the planner's snapshot through
+`ISupervisorLook<TLook>`, which `Snapshot` implements. The park's question, `ParkQuestion` and `ParkQuestions.Parsed` with the writer's
+bounds, is Roles', and `QuestionFiles` keeps the file and aliases the bounds. `sessions supervise` reads its world and ask through
+`ISupervisorWorld` and `ISupervisorAsk`, which `SessionsWorld` and `SessionsAsk` implement, and builds the ask it returns with the factory
+the sessions verb hands it; the question file and the ask's words come from `IRolesWorkOrders`, which
+`Sessions/Work/RolesWorkOrdersWiring.cs` installs. The supervisor's proof, the holder key and the decisions' memory are unchanged.
 Context owns instruction accounting and session-part composition in `Accounts/`, and supplies the required `AgentContext` operations. Agents owns the composed brief and part carriers; Events owns handed codes and stream shapes. Event history, console output and streams are supplied through lower interfaces while Context retains storage, buffering and lifecycle.
 
 Participants judges `DrivenAccess` and supplies Agents with the `IAgentAccess` start contract. Agents owns the installed
