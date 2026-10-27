@@ -48,6 +48,13 @@ export function captureError(fn: () => unknown): DaorisError {
   throw new Error('expected a throw, but the call returned normally');
 }
 
+/**
+ * The patience of a test waiting on a signal (an answer, a fact, an exit): two minutes, the number every other project's tests
+ * read as `Poll.Patience` (`.claude/knowledge/held-clocks.md`, TESTPATIENCE1). A bound that elapses only on failure, so it fails
+ * the test rather than hang its gate (TOOLTESTHANG1).
+ */
+export const PATIENCE_MS = 120_000;
+
 /** A scratch repo under _fixtures/ — never OS temp. */
 export function makeFixture(name: string): Fixture {
   const root = join(FIXTURE_ROOT, name);

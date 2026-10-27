@@ -1,10 +1,10 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { makeFixture } from '../test/_fixture.ts';
+import { PATIENCE_MS, makeFixture } from '../test/_fixture.ts';
 
 /**
  * CISCOPE1e (D207, design §4 and §5.1, §8 row 5): the merge queue and its candidates, the frozen request, the judgement of a red
@@ -74,6 +74,7 @@ const tool = await import(
   REACH: Rule[];
   ruleFor: (path: string, rules: Rule[], lanes: unknown[]) => Rule | null;
   readLanes: (root: string) => { lanes: unknown[] } | null;
+  endTree: (pid: number) => void;
 };
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -633,6 +634,20 @@ function sh(cwd: string, ...args: string[]): string {
 
 const pause = (ms: number) => new Promise((done) => { setTimeout(done, ms); });
 
+/** Waits for the condition, at most `ms`: a bound that elapses only on failure, so it reads the shared patience. */
+async function until(holds: () => boolean, ms = PATIENCE_MS) {
+  for (const end = Date.now() + ms; !holds() && Date.now() < end;) await pause(100);
+}
+
+const alive = (pid: number) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 function queueScratch(name: string) {
   const fx = makeFixture(`merge-queue-${name}`);
   const root = join(fx.root, 'repo');
@@ -647,7 +662,13 @@ function queueScratch(name: string) {
   sh(root, 'add', '-A');
   sh(root, 'commit', '--quiet', '-m', `first${TRAILER}`);
   mkdirSync(join(root, 'local'), { recursive: true });
-  const env = { ...GIT_ENV, MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', MERGE_BRANCH_QUEUE_POLL_MS: '200', MERGE_BRANCH_QUEUE_TICK_MS: '300' };
+  // TOOLTESTHANG1: the runner's own `git status` (its clean-checkout look, every tick while a candidate is held) refreshes the
+  // index and takes `index.lock` to write it back, so a test's git write on this repository met the lock now and then. The
+  // runner is told to take no optional lock: it reads the checkout as before and never holds the index, so the test's writes
+  // need no retry and no sleep. A write the queue itself makes (the fast-forward, the scope tree's merges) is not optional.
+  const env = { ...GIT_ENV, GIT_OPTIONAL_LOCKS: '0', MERGE_BRANCH_MEMORY: 'off', MERGE_BRANCH_CI_NIGHT_HOUR: 'off', MERGE_BRANCH_QUEUE_POLL_MS: '200', MERGE_BRANCH_QUEUE_TICK_MS: '300' };
+  // Every invocation the test started and has not seen end: a failed assertion leaves them for `cleanup` to end.
+  const started = new Set<ChildProcess>();
   const queueFile = join(root, 'local', 'merge-queue.json');
   const queue = () => (existsSync(queueFile)
     ? JSON.parse(readFileSync(queueFile, 'utf8')) as Queue & { runner: unknown }
@@ -663,20 +684,38 @@ function queueScratch(name: string) {
       sh(root, 'checkout', '--quiet', 'main');
       writeFileSync(join(root, 'local', `${branchName}.msg`), `Merge ${branchName}: its words${TRAILER}\n`);
     },
-    run(args: string[], extra: Record<string, string> = {}): Promise<{ status: number | null; out: string }> {
+    /** One invocation of the tool, bounded: one that has given no verdict by `ms` is ended with its tree, and answers `status: null`. */
+    run(args: string[], extra: Record<string, string> = {}, ms = PATIENCE_MS): Promise<{ status: number | null; out: string }> {
       const child = spawn(process.execPath, [TOOL, ...args], { cwd: root, env: { ...process.env, ...env, ...extra } });
+      started.add(child);
       let out = '';
       child.stdout.on('data', (chunk) => { out += String(chunk); });
       child.stderr.on('data', (chunk) => { out += String(chunk); });
-      return new Promise((done) => { child.on('close', (status) => done({ status, out })); });
+      return new Promise((done) => {
+        const bound = setTimeout(() => {
+          out += `\n[the test ended this invocation: no verdict within ${ms} ms (TOOLTESTHANG1)]\n`;
+          tool.endTree(child.pid!);
+        }, ms);
+        const ended = (status: number | null) => { clearTimeout(bound); started.delete(child); done({ status, out }); };
+        child.on('close', ended);
+        child.on('error', (error) => { out += `${error.message}\n`; ended(null); });
+      });
     },
+    /** The process ids of the invocations still running. */
+    running: () => [...started].map((child) => child.pid!),
     log: () => (existsSync(join(root, 'local', 'merge-queue.log')) ? readFileSync(join(root, 'local', 'merge-queue.log'), 'utf8') : ''),
-    async until(holds: () => boolean, ms = 300_000) {
-      for (const end = Date.now() + ms; !holds() && Date.now() < end;) await pause(100);
-    },
+    until,
     async cleanup() {
+      // An invocation a failed assertion left waiting is ended first, so nothing started here can hold the run (TOOLTESTHANG1).
+      for (const child of started) tool.endTree(child.pid!);
       // The runner ends once idle; its scope tree goes with the fixture.
       for (let i = 0; i < 50 && queue()?.runner; i += 1) await pause(100);
+      // One that is not idle (a candidate held on the checkout, a stop) never ends by itself: it is ended, with its gates.
+      const runner = queue()?.runner as { pid: number } | null | undefined;
+      if (runner && alive(runner.pid)) {
+        tool.endTree(runner.pid);
+        await until(() => !alive(runner.pid), 10_000);
+      }
       fx.cleanup();
     },
   };
@@ -845,6 +884,54 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const done = await waiting;
       assert.equal(done.status, 0, `${done.out}\n${repo.log()}`);
       assert.match(done.out, /held on checkout/);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('TOOLTESTHANG1: a test that fails on a held index leaves no enqueue and no runner behind, and an enqueue without a verdict is ended at its bound', async () => {
+    const repo = queueScratch('forced-lock');
+    let enqueue: number[] = [];
+    let runner = 0;
+    try {
+      repo.branch('b1', { 'a.txt': 'a\n' });
+      assert.equal((await repo.run(['b1', '--preview'])).status, 0);
+      writeFileSync(join(repo.root, 'qgate.mjs'), `${QUEUE_GATE}// an edit the parent has not committed\n`);
+      // The enqueue the sighting left behind: a candidate green and held on the dirty checkout never gives a verdict.
+      const waiting = repo.run(['b1', '--message', 'local/b1.msg']);
+      await repo.until(() => repo.queue()?.candidate?.state === 'held');
+      assert.equal(repo.queue()?.candidate?.state, 'held', repo.log());
+      enqueue =repo.running();
+      runner = (repo.queue()!.runner as { pid: number }).pid;
+      assert.equal(enqueue.length, 1);
+      // The lock the sighting met, held by another writer: the test's own git write is refused, as it was.
+      writeFileSync(join(repo.root, '.git', 'index.lock'), '');
+      const refused = spawnSync('git', ['checkout', '--quiet', '--', 'qgate.mjs'], { cwd: repo.root, encoding: 'utf8', env: { ...process.env, ...GIT_ENV } });
+      assert.notEqual(refused.status, 0);
+      assert.match(refused.stderr, /index\.lock/);
+      // Ending the test here, as a failed assertion does, must leave neither child holding the run.
+      rmSync(join(repo.root, '.git', 'index.lock'), { force: true });
+      await repo.cleanup();
+      const ended = await waiting;
+      assert.notEqual(ended.status, 0, 'the waiting enqueue ended with its test');
+      assert.deepEqual(enqueue.filter(alive), [], 'no enqueue is left running');
+      assert.equal(alive(runner), false, 'the held runner is ended');
+    } finally {
+      rmSync(join(repo.root, '.git', 'index.lock'), { force: true });
+      await repo.cleanup();
+    }
+  });
+
+  test('TOOLTESTHANG1: an invocation with no verdict is ended at its bound, saying so', async () => {
+    const repo = queueScratch('bound');
+    try {
+      repo.branch('b1', { 'a.txt': 'a\n' });
+      assert.equal((await repo.run(['b1', '--preview'])).status, 0);
+      writeFileSync(join(repo.root, 'qgate.mjs'), `${QUEUE_GATE}// an edit the parent has not committed\n`);
+      const ended = await repo.run(['b1', '--message', 'local/b1.msg'], {}, 5_000);
+      assert.notEqual(ended.status, 0, ended.out);
+      assert.match(ended.out, /no verdict within 5000 ms/);
+      assert.deepEqual(repo.running(), []);
     } finally {
       await repo.cleanup();
     }
