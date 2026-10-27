@@ -57,6 +57,14 @@ public sealed class MachineLogTests : IDisposable
             "info", "app.started", [],
             """{"time":"2026-09-30T07:10:00.123Z","source":"host","level":"info","event":"app.started","data":{}}"""
         },
+        {
+            "info", "actor.ran", [("session", "76cdd5db"), ("models", new[] { "gpt-5.5", "claude-sonnet-5-5" }), ("more", 0)],
+            """{"time":"2026-09-30T07:10:00.123Z","source":"host","level":"info","event":"actor.ran","data":{"session":"76cdd5db","models":["gpt-5.5","claude-sonnet-5-5"],"more":0}}"""
+        },
+        {
+            "info", "actor.chose", [("passed", new List<string> { "1:codex:cooling" }), ("none", Array.Empty<string>()), ("gaps", new string?[] { null, "a", null })],
+            """{"time":"2026-09-30T07:10:00.123Z","source":"host","level":"info","event":"actor.chose","data":{"passed":["1:codex:cooling"],"none":[],"gaps":["a"]}}"""
+        },
     };
 
     [Theory]
@@ -66,6 +74,41 @@ public sealed class MachineLogTests : IDisposable
         using (var log = Log()) log.Write(level, @event, data);
 
         Assert.Equal([line], Lines("2026-09-30.host.jsonl"));
+    }
+
+    /// <summary>The twin of the driver writer's test (LOGCOLLECTION1): only a collection of strings is an array; no object is serialized.</summary>
+    [Fact]
+    public void Only_a_collection_of_strings_is_an_array_and_no_object_is_serialized()
+    {
+        using (var log = Log())
+        {
+            log.Info("probe", ("record", new Secret("a person's words")), ("map", new Dictionary<string, string> { ["k"] = "a person's words" }),
+                ("objects", new List<Secret> { new("a person's words") }), ("text", "ok"));
+        }
+
+        var line = Assert.Single(Lines("2026-09-30.host.jsonl"));
+        Assert.DoesNotContain("a person's words", line, StringComparison.Ordinal);
+        using var data = System.Text.Json.JsonDocument.Parse(line);
+        Assert.All(new[] { "record", "map", "objects" }, key =>
+            Assert.Equal(System.Text.Json.JsonValueKind.String, data.RootElement.GetProperty("data").GetProperty(key).ValueKind));
+    }
+
+    /// <summary>A long list and a long name are cut, as the driver writer cuts them.</summary>
+    [Fact]
+    public void A_long_collection_and_a_long_name_are_cut()
+    {
+        using (var log = Log()) log.Info("probe", ("names", Enumerable.Range(0, 100).Select(n => n == 0 ? new string('m', 500) : $"m{n}").ToArray()));
+
+        using var data = System.Text.Json.JsonDocument.Parse(Assert.Single(Lines("2026-09-30.host.jsonl")));
+        var names = data.RootElement.GetProperty("data").GetProperty("names").EnumerateArray().Select(name => name.GetString()!).ToList();
+        Assert.Equal(64, names.Count);
+        Assert.Equal(new string('m', 120) + "…", names[0]);
+        Assert.Equal("m63", names[^1]);
+    }
+
+    private sealed class Secret(string words)
+    {
+        public string Words { get; } = words;
     }
 
     [Fact]

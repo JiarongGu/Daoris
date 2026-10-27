@@ -46,7 +46,10 @@ One JSON object per line, UTF-8, LF:
 
 `time` is UTC with milliseconds; `level` is `info`, `warn` or `error`; `event` is a name from the
 catalogue (§4); `data` is an object whose values are strings, numbers, booleans or null, never
-nested. A reader skips a line it cannot parse and a field it does not know.
+nested, except that a value may be an array of strings (LOGCOLLECTION1): the catalogue's names and codes a line carries several of,
+such as `actor.ran`'s `models` and `actor.chose`'s `passed`. A writer writes an array only for a collection of strings, at most 64 of
+at most 120 characters (longer cut with an ellipsis, a null left out); any other object is written as its text, never serialized. A
+reader skips a line it cannot parse and a field it does not know.
 
 ## 4. The events
 

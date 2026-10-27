@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - Machine log wrote collections as type names and a held pass at every look (LOGCOLLECTION1)
+
+- **Symptom:** the installed log showed `actor.ran` with `models` as `System.String[]` and `actor.chose` with `passed` as a list type's name, so the usage report's per-model roll-up read every model as not logged. The same day's log held 10,488 `actor.passed` lines, nearly all for one held quest whose build choice was passed with code `cooling`.
+- **Root cause:** `MachineLog.Value` (and the service writer's switch) wrote every value it had no case for as `Convert.ToString`, which for a collection is its type's name; D94's line format had no array. The walks (`Driver.WalkBuildPassesAsync`, `DriverIntakes.WalkAsync`, `ChatRunner.WalkAsync`) wrote `actor.passed` for every passed entry at every look, and a held quest is looked at every few seconds, so one unchanging fact became a line per look. `passed` on `actor.chose` also held the walk's sentence, which is not a catalogue word.
+- **Fix:** both writers write a collection of strings as an array of strings (at most 64 names of 120 characters, null left out), leaving every other value as before. `BuildPass.Word` (`choice:agent:code`) is what `actor.chose.passed` carries, at its four writers. `PassMemory` keeps each quest's, ask's and conversation order's last passes in memory, and a walk writes `actor.passed` only for a pass the walk before did not have: the first look and every change, never a re-ask at an open. A restart says each held pass once more.
+- **Verify:** both writers' tables hold the same bytes for the arrays, the reader returns them and prints them as written, an object, a map and a list of objects stay text, and a sequence of looks of a held build quest writes its passes once, again for a second quest, and afterwards only the passes that changed when cool-offs lift and return. The chat walk's looks are held the same way. Fast classes: BuildWalkTests, HelpPlaceWorkspaceTests, ActorRunTests, both MachineLogTests, MachineLogReaderTests. **Not covered by a run here:** the intake's walk repeats the same three lines as Build's and is reached only by the `Process`-category IntakeTests.
+- **Commit:** this change.
+
 ## 2026-10-27 - Real-loop notice fixture used an expired held-clock date (NOTICESCLOCK1)
 
 - **Symptom:** candidate `4143737` passed 2,676 of 2,677 Modules fast cases; `NoticesStateSliceTests.The_presses_read_and_dismiss_through_the_loop_s_notices` expected two retained notices but read none. The queue reproduced the same signature on the unchanged base and filed inherited known red before normal promotion.

@@ -34,6 +34,12 @@ public sealed class MachineLog : IDisposable
     /// <summary>Where a file stops growing.</summary>
     public const long CapBytes = 20L * 1024 * 1024;
 
+    /// <summary>How many strings of a collection a line keeps (LOGCOLLECTION1).</summary>
+    private const int MostWords = 64;
+
+    /// <summary>Where a string of a collection is cut, as the page's strings are (design §4).</summary>
+    private const int WordLength = 120;
+
     /// <summary>How long a line waits for another writer of its file; past it, it is written at the end regardless.</summary>
     private static readonly TimeSpan TurnWait = TimeSpan.FromSeconds(1);
 
@@ -289,6 +295,7 @@ public sealed class MachineLog : IDisposable
                     case float number: json.WriteNumberValue(number); break;
                     case decimal number: json.WriteNumberValue(number); break;
                     case string text: json.WriteStringValue(text); break;
+                    case IEnumerable<string?> words: Words(json, words); break;
                     default: json.WriteStringValue(Convert.ToString(value, CultureInfo.InvariantCulture)); break;
                 }
             }
@@ -299,6 +306,22 @@ public sealed class MachineLog : IDisposable
 
         buffer.WriteByte((byte)'\n');
         return buffer.ToArray();
+    }
+
+    /// <summary>
+    /// A collection of strings as a JSON array of strings (LOGCOLLECTION1), the twin of the driver's: the catalogue's words a line
+    /// carries several of, never nested and never an object's members. A null element is left out, and a list or a word past the
+    /// bounds is cut so a line stays a line.
+    /// </summary>
+    private static void Words(Utf8JsonWriter json, IEnumerable<string?> words)
+    {
+        json.WriteStartArray();
+        foreach (var word in words.Where(word => word is not null).Take(MostWords))
+        {
+            json.WriteStringValue(word!.Length <= WordLength ? word : word[..WordLength] + "…");
+        }
+
+        json.WriteEndArray();
     }
 }
 

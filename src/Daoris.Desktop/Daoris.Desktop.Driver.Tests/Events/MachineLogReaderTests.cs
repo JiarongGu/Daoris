@@ -82,6 +82,34 @@ public sealed class MachineLogReaderTests : IDisposable
         Assert.Equal("2026-09-30T07:10:00.123Z", line.Stamp);
     }
 
+    /// <summary>
+    /// LOGCOLLECTION1: a collection of names the driver's writer wrote, and the same line the service's writer writes (its twin test holds
+    /// these bytes), come back from the reader as arrays of strings, and the terminal prints them as written.
+    /// </summary>
+    [Fact]
+    public void A_collection_either_writer_wrote_is_an_array_of_strings_to_the_reader()
+    {
+        var at = new DateTimeOffset(2026, 9, 30, 7, 10, 0, 123, TimeSpan.Zero);
+        using (var writer = new MachineLog(_home, "desktop", () => at))
+        {
+            writer.Info("actor.ran", ("session", "76cdd5db"), ("models", new[] { "gpt-5.5", "claude-sonnet-5-5" }), ("more", 0));
+        }
+
+        File("2026-09-30.host.jsonl",
+            """{"time":"2026-09-30T07:10:00.123Z","source":"host","level":"info","event":"actor.ran","data":{"session":"76cdd5db","models":["gpt-5.5","claude-sonnet-5-5"],"more":0}}""");
+
+        var read = MachineLogReader.Read(Logs, new LogFilter());
+
+        Assert.Equal(0, read.Skipped);
+        Assert.Equal(["desktop", "host"], read.Lines.Select(line => line.Source));
+        foreach (var line in read.Lines)
+        {
+            Assert.Equal(["gpt-5.5", "claude-sonnet-5-5"], line.Data.GetProperty("models").EnumerateArray().Select(model => model.GetString()));
+            Assert.Equal(0, line.Data.GetProperty("more").GetInt32());
+            Assert.EndsWith("""session=76cdd5db models=["gpt-5.5","claude-sonnet-5-5"] more=0""", MachineLogReader.Format(line));
+        }
+    }
+
     /// <summary>Every source's files, across days, come back as one list in time order.</summary>
     [Fact]
     public void Lines_from_every_source_and_day_are_merged_by_time()

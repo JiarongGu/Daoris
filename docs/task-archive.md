@@ -21367,3 +21367,14 @@ waiting on a limited record still go on within the line's agent (D137 point 7's 
 `85fd557`. CI cleared the historical finding at 19:49:10 UTC under its normal descendant-pass rule. The earlier standalone
 pass did not clear it; no ledger was edited by hand and no bookkeeping defect was established. The qualified full-run
 receipt, including the separate HOSTCLEAN1 fixture flake, is in `docs/2026-10-27-branch-recovery.md`.
+
+## LOGCOLLECTION1 — model-choice diagnostics lose collection values (2026-10-27)
+
+> - [ ] **LOGCOLLECTION1 — model-choice diagnostics lose collection values** (installed Codex audit, 2026-10-26). `MachineLog.Value` logs `actor.ran.models` and `actor.chose.passed` as CLR type names; session model records remain correct. Render only D94-permitted catalogue collections and prove their values survive both log writers without serializing arbitrary objects.
+
+**Outcome** 2026-10-27: Both writers (the driver's `MachineLog` and the service's twin) write a collection of strings as a JSON array of
+strings, at most 64 names of 120 characters, a null left out; any other object, map or collection of objects stays the text it was, never
+serialized. `actor.chose.passed` now carries each pass as `choice:agent:code` (`BuildPass.Word`) instead of the walk's sentence, in all four
+writers of the line. The twin tables hold the same bytes, and the reader returns the arrays and prints them as written. The same change
+stops `actor.passed` repeating at every unchanged look (`PassMemory`; the FIX-LOG entry LOGCOLLECTION1). D94's amendment and the
+machine-log design §3 say the contract.

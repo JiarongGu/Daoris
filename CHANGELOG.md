@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- The machine log now records the models an actor ran and the choices it passed as lists of names instead of a program type's name, so the usage report can count models (LOGCOLLECTION1). A held quest's passed choice is logged when it first passes and when what was passed or why changes, not at every look: the install wrote 10,488 of these lines in one day.
 - Empty-tree cleanup skips directory links at every scan level, preserving links and empty folders outside its managed tree home (TREELEFTLINK1).
 - Managed doctrine now requires documents and skills to have a portable source in their repository or their coordinator's managed store. Daoris includes a repository-owned Codex troubleshooting procedure.
 - Merge-queue failure isolation preserves a .NET gate's existing filter, and requeueing an unchanged tip waits for its new result while retaining its previous hand-back (QUEUEFILTER1, QUEUEWAIT1).
