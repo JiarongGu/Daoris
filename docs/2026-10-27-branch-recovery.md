@@ -245,3 +245,33 @@ answer continuation. This leaves a gap its current snapshot cannot prove closed.
 completion-frontier repair and deterministic regression; the precise scheduling delay is unestablished, and no production
 scheduling defect or fix is claimed. The failed full run remains distinct from its passing probes. Integration, stage
 checks and publication are still owed; the active native conversation and authored branches remain preserved.
+
+## Agents accepted and installed
+
+The repaired source landed as `83ac0a968`. The full Driver suite passes 15,081 cases and web passes 9,713 across
+443 files. Stage CI ended green at 02:29:56 UTC: its 24 browser cases ran freshly, 18 gate passes were retained and
+the two Process halves were composed from valid class passes. Normal publication admission passed all 21;
+this is qualified stage evidence, not a fresh whole-run claim. Nine completed integration repairs moved to the
+archive in the records-only `8968c5087`. CIFINDINGSKEEP1 retains the separate historical finding-ledger discrepancy.
+
+The worker completed quest `23d65c45215e` through its actual MCP tool. Its terminal then received normal end-of-input
+and exited successfully with session `66cc32b2` completed. Daoris retired its merged branch and Git registration
+and moved its tree aside under retention. The parent repair branch was separately retired after a complete,
+verified recovery bundle and an atomic ref transaction verifying main and the judged tip. Authored work and proof
+remain preserved; retention is not reclaimed disk space.
+
+The exact gated `83ac0a968` was published locally as build `20261027T024647Z-f103f22a`. The automatic swap is
+confirmed installed; the application binary and live HTTP service both report that full commit, and a native
+window capture shows the updated application. A fresh installed terminal conversation successfully called the
+knowledge search and quest-list tools on its first turn. CODEXTOOLS1 remains open because this passing observation
+does not explain its earlier intermittent absence; KNOWCURRENT1 records missing current decisions separately.
+The service reports lexical-only knowledge, with semantic capability unavailable; no stronger tier is claimed.
+
+The merge tool removed the completed gate checkout through its normal prune. Before the new Workplace start,
+the only remaining branches were main and the two unique held Fabric attempts. The managed checkout's prior
+ownership refusal and the earlier command-review refusal still stand. The reusable scope checkout remains with
+the integration workflow. The stash and held Fabric commits remain preserved for their prerequisite work.
+
+Workplace's mechanical ownership checkpoint is published as quest `11bc8fdf13db`, ask `7cf83e`, from `8968c5087`.
+Its new terminal conversation `1903b870` starts with read-only discovery and inventory verification; implementation
+and taking the quest wait for the parent's next explicit release. FOUNDATION1 and BRANCHRECOVER1 remain open.
