@@ -668,8 +668,11 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         // A record struct is declared, `BoundedLine` among them.
         Assert.Contains("BoundedLine", analysis.DeclaredTypes);
 
-        // The compile is the gate's cost in the fast half: said in the row, held under a minute here.
-        Assert.True(took < TimeSpan.FromMinutes(1), $"the compile and the walk took {took.TotalSeconds:F0}s");
+        // The compile is the gate's cost in the fast half, about half a minute on an idle machine (the row's archive entry). What
+        // holds that cost is the reuse proof's counts, which no load moves; a wall clock here measured the machine as much as the
+        // walk (73 s and 89 s beside the queue's gates and driven sessions' builds, STRUCTBOUND1), so it only catches a hang.
+        output.WriteLine($"the compile and the walk took {took.TotalSeconds:F1}s");
+        Assert.True(took < TimeSpan.FromMinutes(5), $"the compile and the walk took {took.TotalSeconds:F0}s");
     }
 
     private static string MapFile() =>

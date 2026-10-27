@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-28 - The structure gate's wall-clock bound failed a candidate on the machine's load (STRUCTBOUND1)
+
+- **Symptom:** the merge queue's candidate `63de292` (six branches, none touching the gate) failed its fast Driver gate on one test, `StructureTests.The_census_reads_what_today_s_identifier_scan_missed_and_none_of_what_it_over_counted`: "the compile and the walk took 73s". The FOUNDATION1 mod-xi session's focused runs failed the same way twice (73 s and 89 s) and passed with the class alone. A failure outside the Process category is never re-run, so an unresolved one sends every member of a batch through the queue one at a time.
+- **Root cause:** the test asserted the semantic compile and walk under one minute of wall clock, beside the census assertions. The walk takes about half a minute on an idle machine (FOUNDATION1mod-0's archive entry), and beside the queue's gates and three driven sessions' builds it takes longer, so the bound measured the machine's load as much as the walk. What holds the walk's cost is `Type_description_reuse_preserves_the_complete_driver_analysis_and_census`, whose symbol-query and type-description counts no load moves.
+- **Fix:** the bound is five minutes, a guard against a hang only, and the test writes the time it took to its output; the census assertions and the reuse counts are unchanged.
+- **Verify:** `StructureTests` (filtered, `Category!=Process`) passes whole on the branch; the queue's next candidate carries it ahead of the six.
+- **Commit:** the branch `parent/structbound1`.
+
 ## 2026-10-27 - Machine log wrote collections as type names and a held pass at every look (LOGCOLLECTION1)
 
 - **Symptom:** the installed log showed `actor.ran` with `models` as `System.String[]` and `actor.chose` with `passed` as a list type's name, so the usage report's per-model roll-up read every model as not logged. The same day's log held 10,488 `actor.passed` lines, nearly all for one held quest whose build choice was passed with code `cooling`.
