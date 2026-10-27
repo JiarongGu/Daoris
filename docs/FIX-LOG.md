@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-27 - Real-loop notice fixture used an expired held-clock date (NOTICESCLOCK1)
+
+- **Symptom:** candidate `4143737` passed 2,676 of 2,677 Modules fast cases; `NoticesStateSliceTests.The_presses_read_and_dismiss_through_the_loop_s_notices` expected two retained notices but read none. The queue reproduced the same signature on the unchanged base and filed inherited known red before normal promotion.
+- **Root cause:** `e8335f5aa` introduced this real-loop case. `HeldClock` starts at 2026-10-20T09:00Z, while this route test's ordinary `DriverLoop`, its notices slice and its final reads use the system clock. The unchanged seven-day `Notices.Young` rule excludes those fixture notices from 2026-10-27T09:00Z onward. This is a fixture clock mismatch, not a notice-retention defect or evidence of machine-load timing.
+- **Fix:** only this real-loop case stamps its three seeded notices with one system-clock sample. The global held clock, other held-clock cases, product retention, permissions and every read/dismiss/workspace assertion remain unchanged; no sleep, retry, wider window or production change.
+- **Verify:** whole Modules fast passed 2,677/2,677, zero skipped, using `dotnet test` with `Category!=Process`, below-normal foreground priority and build-server reuse disabled. The original candidate and base-probe red evidence remain under `local/scratch/scope-4143737/`; green proof is `local/scratch/notices-clock/notices-clock-whole.trx`. The actual diff changes only this fixture's timestamp inputs and explanatory comment, with no production or assertion change.
+- **Commit:** pending.
+
 ## 2026-10-27 - Empty-tree cleanup traversed directory links (TREELEFTLINK1)
 
 - **Symptom:** a real-junction regression removed an empty directory outside the managed tree home through a link at the scan root, workspace or repository; the tree-level case removed the link itself.
@@ -13,13 +21,15 @@ repository.
 - **Verify:** before the production change, all four new link cases failed and the two original cases passed. The focused `TreeLeftoversTests|TreeLinksTests|StructureTests` selection then passed all 47 cases, with no skips; integration is separate and TREECLEANFREE1 remains open.
 - **Commit:** `a2e3ad5bb`.
 
-## 2026-10-27 - Three fixture completion waits used private ten-second patience (TESTPATIENCE5, open)
+## 2026-10-27 - Three fixture completion waits used private ten-second patience (TESTPATIENCE5)
 
 - **Symptom:** candidate `01b2e7e`'s actual whole Driver artifact, `local/scratch/scope-01b2e7e/driver.scoped.trx` in the primary checkout, reports 15,100 passed / 3 failed / 15,103 total. All three TimeoutExceptions are at TickAsync().WaitAsync(Bound): GoAheadsGoOnTests' park-answer case (line 103), AccountLimitHoldTests' cooling carry-on case (line 337), and AccountNamesSaidTests' named-account wait case (line 312).
 - **Confirmed mismatch:** these private ten-second bounds wait only for completion/state readiness; held-clocks and TESTPATIENCE1 require Poll.Patience for such failure-only patience. The delayed tick stage and scheduler/timer/continuation cause remain unknown; machine load is not proved the sole cause, and no production defect or runtime fix is claimed.
 - **Repair:** only the three private Bound declaration RHS expressions change from TimeSpan.FromSeconds(10) to Poll.Patience. Every operation, assertion, account/state/park/permission expectation, cancellation source and product deadline remains unchanged. No sleeps, retries or implementation-mirror tests are added.
 - **Verify:** the existing GoAheadsGoOnTests, AccountLimitHoldTests and AccountNamesSaidTests selection, with Category!=Process, passed 49/49, zero skipped. The foreground below-normal command used --no-restore --disable-build-servers -nr:false -p:UseSharedCompilation=false and MSBUILDDISABLENODEREUSE=1; its TRX is local/scratch/testpatience5/testpatience5-focused.trx. Post-feature confirms exactly three declaration replacements and unchanged assertions/product bodies; document and generated-index checks pass. This follow-up remains open until the parent's later whole validation; the natural red is not waived. Context remains unmerged, Loop/Roles remain held, and no Process or whole suite ran here.
 - **Commit:** `d4d1f91ec867bbb92cf089d668094dbd67b30022` (focused repair; parent whole validation remains open).
+
+- **Whole validation amendment, 2026-10-27:** integrated in `4143737`, whose actual whole Driver fast artifact reports 15,159/15,159 passed, zero skipped. TESTPATIENCE5 moved to the archive; the original delayed-tick cause remains unproven and no production timing fix is claimed.
 
 ## 2026-10-27 - Compound WorkFrame interactions exhausted the test bound (FRAMEBOUNDS1)
 

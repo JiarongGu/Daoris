@@ -5,6 +5,18 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Real-loop notice fixture clock (2026-10-27)
+
+> **NOTICESCLOCK1 — keep the real-loop notice fixture on its own clock** (integration, 2026-10-27). The Modules fast gate loses all seeded notices once its fixed held-clock date is seven days behind the real loop; preserve the retention and read/dismiss assertions while aligning fixture timestamps with the loop. Require whole Modules proof; diagnosis and natural red are in FIX-LOG.
+
+Completed 2026-10-27: this real-loop case seeds its three notices from one system-clock sample. Whole Modules fast passed 2,677/2,677, zero skipped; product retention and all assertions are unchanged. FIX-LOG records the calendar boundary and original introducing commit.
+
+## Shared fixture patience validation (2026-10-27)
+
+> **TESTPATIENCE5 — validate shared fixture patience in whole Driver** (open, 2026-10-27). Require a full Driver pass for the Bound repairs in [GoAheadsGoOnTests](../src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Loop/GoAheadsGoOnTests.cs), [AccountLimitHoldTests](../src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountLimitHoldTests.cs) and [AccountNamesSaidTests](../src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/AccountNamesSaidTests.cs). Focused proof is 49/49; the timeout cause remains unproven. Keep open until parent whole validation; evidence: [FIX-LOG TESTPATIENCE5](FIX-LOG.md).
+
+Completed 2026-10-27: integrated in `4143737`; whole Driver fast passed 15,159/15,159, zero skipped. This closes the fixture-contract follow-up; it does not establish the original delayed-tick cause or close broader flake investigations.
+
 ## Leftover directory links (2026-10-27)
 
 > **TREELEFTLINK1 — leftover cleanup stays inside its tree home** (cleanup investigation, 2026-10-27). `TreeLeftovers.EmptyFoldersGone` traverses directory links while scanning workspace/repository levels and can delete empty directories outside the managed home. Prove links at every scan level remain untouched while ordinary empty leftovers are removed, then skip linked entries without following or deleting their targets; TREECLEANFREE1 is a separate unresolved failure.

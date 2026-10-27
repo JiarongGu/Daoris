@@ -232,9 +232,11 @@ public sealed class NoticesStateSliceTests : DriverModuleBridge
     {
         var loop = Loop();
         var module = new DriverModule(Bus, loop);
-        loop.Notices.Record(Ended("s1"), said: false);
-        loop.Notices.Record(Ended("s2", workspace: "work"), said: false);
-        loop.Notices.Record(Ended("s3"), said: false);
+        // This loop uses the system clock; the other cases hand their slice the held clock.
+        var now = DateTimeOffset.UtcNow;
+        loop.Notices.Record(Ended("s1") with { At = now }, said: false);
+        loop.Notices.Record(Ended("s2", workspace: "work") with { At = now }, said: false);
+        loop.Notices.Record(Ended("s3") with { At = now }, said: false);
 
         var read = await AnswerAsync(module, "NOTICES_READ", new { ids = new[] { "ended-s1" } });
         Assert.True(read.GetProperty("written").GetBoolean());
