@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## QUEUELOCK1 — the merge queue's runner reads the main checkout without taking git's optional index lock (2026-10-28)
+
+> **QUEUELOCK1:** the merge queue's runner reads the main checkout without taking git's optional index lock. Evidence: on 2026-10-27 a stale 0-byte `.git/index.lock` in the main checkout (22:59 local, no git process alive) held a green candidate's promotion for about 1 h 45 min ("held on checkout: the fast-forward was refused ... index.lock: File exists") until the parent removed it; TOOLTESTHANG1's worker then found the runner's clean-checkout look runs `git status --porcelain --untracked-files=no` with optional locks on, and `tools/optional-locks.mjs` checks only the driver's sources. Every read-only git command the merge tool and its helpers run on a checkout passes `--no-optional-locks`, writes unchanged; the census extends to the tools that run git; the queue says plainly, when a promotion is held on an `index.lock`, the lock's age and whether a git process is running, without removing it.
+
+Completed 2026-10-28: 20 statuses and diffs in `merge-branch.mjs`, `as-merged.mjs`, `process-reach.mjs`, `test-map.mjs`, `int4f-proof.mjs` and `testbed.mjs` pass the flag. `tools/optional-locks.mjs` reads `tools/*.mjs` beside the driver (`checkToolLocks`). A held fast-forward that names `index.lock` says its age, size and whether a git runs (`tools/index-lock.mjs`, `indexLockSaid`); the queue never removes it. Tests: `tools/optional-locks.test.mjs`, `tools/index-lock.test.mjs`. Detail: FIX-LOG 2026-10-28 (QUEUELOCK1). On Sonnet 5.5.
+
 ## USAGECOST1 — what each driven session cost (2026-10-27)
 
 > **USAGECOST1 — the usage report says what each driven session cost** (owner's direction, 2026-10-27: learn where development's tokens go). The report read `turn.ended` only for set-ups; the driven sessions' counts were logged and reported nowhere.
