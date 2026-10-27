@@ -66,8 +66,8 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 | `plugins install` | `Program.cs:775` | `Daoris.Desktop.Driver/Plugins/PluginPackage.cs:134` PluginPackageCommand | — |
 | `update` | `Program.cs:782` | `Daoris.Desktop.Driver/Install/UpdateCommand.cs:19` UpdateCommand | — |
 | `wiring` | `Program.cs:793` | `Daoris.Desktop.Driver/Platform/WiringCommand.cs:16` WiringCommand | — |
-| `space free` | `Program.cs:803` | `Daoris.Desktop.Driver/Platform/SpaceFreeCommand.cs:24` SpaceFreeCommand | — |
-| `space` | `Program.cs:818` | `Daoris.Desktop.Driver/Platform/SpaceCommand.cs:17` SpaceCommand | free `SpaceCommand.cs:54` |
+| `space free` | `Program.cs:803` | `Daoris.Desktop.Driver/Workplace/SpaceFreeCommand.cs:24` SpaceFreeCommand | — |
+| `space` | `Program.cs:818` | `Daoris.Desktop.Driver/Workplace/SpaceCommand.cs:17` SpaceCommand | free `SpaceCommand.cs:54` |
 | `logs` | `Program.cs:827` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
 | `plugins` | `Program.cs:834` | `Daoris.Desktop.Driver/Plugins/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:775` · new `PluginsCommand.cs:90` · try `PluginsCommand.cs:90` · show `PluginsCommand.cs:92` · activity `PluginsCommand.cs:94` · approve `PluginsCommand.cs:62` · withdraw `PluginsCommand.cs:67` |
 | `drive` | `Program.cs:457` | `Daoris.Desktop.Driver/Loop/DriverCommand.cs:357` DriverCommand.Read | — |

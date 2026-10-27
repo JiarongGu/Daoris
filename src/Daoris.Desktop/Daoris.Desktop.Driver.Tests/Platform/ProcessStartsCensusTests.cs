@@ -30,7 +30,7 @@ public sealed class ProcessStartsCensusTests
     private static readonly Dictionary<string, (int Count, string Why)> Allowed = new(StringComparer.Ordinal)
     {
         ["Daoris.Desktop.Driver/Platform/ProcessStarts.cs"] = (1, "the gate itself: the one place the runtime's start is handed in"),
-        ["Daoris.Desktop.Driver/Platform/GitDoors.cs"] = (3, "the git doors (GITAUTH1b), compiled into a program of their own that git starts, "
+        ["Daoris.Desktop.Driver/Workplace/GitDoors.cs"] = (3, "the git doors (GITAUTH1b), compiled into a program of their own that git starts, "
             + "with no window and no bridge: the repository's ssh setting asked of git, the ssh, and git's own transport"),
         ["Daoris.Desktop.Driver/Platform/PieceLauncher.cs"] = (1, "the agents' launcher (COAGENT1b, TERMTRUST1a), compiled "
             + "into a program of its own that the driver starts for every agent, plugin process and piece, with no window and no bridge: "
@@ -96,12 +96,12 @@ public sealed class ProcessStartsCensusTests
     {
         // git's own streams, the loop's agent starts (a run going on with the person's words is a person's), a plugin's
         // hook program, and the usage probe.
-        ["Daoris.Desktop.Driver/Trees/WorkingTree.cs"] = StartClass.Background,
+        ["Daoris.Desktop.Driver/Workplace/WorkingTree.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Loop/Driver.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Plugins/HookProcess.cs"] = StartClass.Background,
         ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = StartClass.Background,
         // A git identity's key made, or its host's keys read and its test run, at the person's own verb (GITAUTH1c).
-        ["Daoris.Desktop.Driver/Platform/GitIdentityActs.cs"] = StartClass.Person,
+        ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = StartClass.Person,
         // A conversation's agent, a session going on with the person's words, a press, a terminal, and the host the window
         // waits on.
         ["Daoris.Desktop.Driver/Conversations/Chat/ChatRunner.cs"] = StartClass.Person,
@@ -169,9 +169,9 @@ public sealed class ProcessStartsCensusTests
     private static readonly Dictionary<string, string> DaorisOwn = new(StringComparer.Ordinal)
     {
         [AgentRoute] = "the agents' route itself: the launcher's start, or a start it could not contain, through the gate",
-        ["Daoris.Desktop.Driver/Trees/WorkingTree.cs"] = "git's own runs in the trees, Daoris's acts: routed, each run in the look would cost a launcher's start (§3.4)",
+        ["Daoris.Desktop.Driver/Workplace/WorkingTree.cs"] = "git's own runs in the trees, Daoris's acts: routed, each run in the look would cost a launcher's start (§3.4)",
         ["Daoris.Desktop.Driver/Platform/ChildProcess.cs"] = "the one runner of Daoris's own questions read to their end: git, and the harness probes' --version",
-        ["Daoris.Desktop.Driver/Platform/GitIdentityActs.cs"] = "a git identity's key made, or its host's keys read, at the person's own verb: ssh-keygen and ssh",
+        ["Daoris.Desktop.Driver/Workplace/GitIdentityActs.cs"] = "a git identity's key made, or its host's keys read, at the person's own verb: ssh-keygen and ssh",
         ["Daoris.Desktop.Driver/Agents/HarnessActions.cs"] = "an agent's install or sign-in at the person's press: Daoris's start of the agent's own tool, never a session (§3.4)",
         ["Daoris.Desktop.Driver/Agents/CodexUsage.cs"] = "a usage read: Daoris's own probe of an account (§3.4)",
         ["Daoris.Desktop.Modules/Loop/HostSupervisor.cs"] = "the HTTP host the window waits on",
