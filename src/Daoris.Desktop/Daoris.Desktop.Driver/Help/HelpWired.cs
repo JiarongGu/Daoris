@@ -167,7 +167,7 @@ public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Sessio
 /// </remarks>
 public sealed class HelpWired(string home)
 {
-    public const string Suffix = ".wired.json";
+    public const string Suffix = SessionHomeFiles.HelpWiredSuffix;
 
     /// <summary>A conversation's first start.</summary>
     public const string New = "new";

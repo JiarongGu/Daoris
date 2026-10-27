@@ -89,6 +89,10 @@ The driver and modules' `ParticipantWorkReadersTests` share the service tests' `
 Their exact file and line census follows both `HelpRoom.Repository` and its lower owner `KnowledgeRoomIdentity.Repository`;
 a source projection moved across the ports keeps its reader classification and Part B row in that table.
 
+Knowledge's `KnowledgeRoomPaths` owns Ask Daoris room placement and workspace folder encoding; Help's existing path APIs
+delegate to it. Help retains room preparation, access and persistence. `SessionHomeFiles` owns the historical Help-file
+suffixes used by its inventory, with Help's public suffix constants aliasing them.
+
 Scratch cleanup uses the driver tests' `GitSeed.Remove`. Tests of its bounded retries can control the wait after an actual
 refusal per call, so a held file is released at an observed attempt instead of by a competing pool timer. The default
 cleanup still makes twelve attempts with quarter-second waits and excludes reparse points from its attribute walk.

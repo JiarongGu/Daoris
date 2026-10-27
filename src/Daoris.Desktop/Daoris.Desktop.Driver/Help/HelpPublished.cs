@@ -46,7 +46,7 @@ public sealed record HelpPublishing(string? Workspace, string? Ask, string? Ques
 /// </remarks>
 public sealed class HelpPublished(string home)
 {
-    public const string Suffix = ".published.json";
+    public const string Suffix = SessionHomeFiles.HelpPublishedSuffix;
 
     // One writer at a time in this process: two Applies of one conversation's cards would otherwise each drop the other's entry.
     private static readonly object Gate = new();

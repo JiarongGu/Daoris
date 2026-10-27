@@ -99,6 +99,10 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
     /// </summary>
     private sealed record SessionFile(string Name, Place Place, string Suffix, bool Folder, Func<long, HistoryBytes> Counts);
 
+    internal const string HelpConversationsSuffix = ".help.json";
+    internal const string HelpWiredSuffix = ".wired.json";
+    internal const string HelpPublishedSuffix = ".published.json";
+
     internal const string SupervisorDecisionsSuffix = ".decisions";
     internal const string SupervisorPointerSuffix = ".supervisor.json";
 
@@ -139,11 +143,11 @@ public sealed class SessionHomeFiles(string home, Action<string, bool>? remover 
         new(Spawn, Place.Spawn, ".settings.json", false, Beside),
         // FABRIC-PIPELINE1b: the checks its run took, which `run-heavy` reads by the session its tree's lock names.
         new(Spawn, Place.Spawn, SessionChecks.Suffix, false, Beside),
-        new(Help, Place.Sessions, HelpConversations.Suffix, false, Beside),
+        new(Help, Place.Sessions, HelpConversationsSuffix, false, Beside),
         // HELPWIRED1: what each of its starts handed, Ask Daoris's too, so it goes under the same name.
-        new(Help, Place.Sessions, HelpWired.Suffix, false, Beside),
+        new(Help, Place.Sessions, HelpWiredSuffix, false, Beside),
         // ASKQUESTS1: the asks and quests its Applies published, Ask Daoris's too.
-        new(Help, Place.Sessions, HelpPublished.Suffix, false, Beside),
+        new(Help, Place.Sessions, HelpPublishedSuffix, false, Beside),
         // CHATFLOW1c (the chat-flow design §4.3): a chat run's three files, which go with the record its key names, the line's first
         // in its tree; a later record of the line names none of them.
         new(Run, Place.Runs, ".json", false, Beside),

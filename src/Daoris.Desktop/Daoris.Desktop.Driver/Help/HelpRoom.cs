@@ -29,15 +29,7 @@ namespace Daoris.Driver;
 public static class HelpRoom
 {
     /// <summary>The folder under the home that is the room: <c>default</c>'s, the whole machine's.</summary>
-    public const string Folder = "help";
-
-    /// <summary>
-    /// The longest a named workspace's part of its room's folder name is spelled out (ASKSCOPE1b); a longer one keeps its first
-    /// <see cref="NameKept"/> characters and a digest of the whole name, so a folder's name stays well inside what a file system holds.
-    /// </summary>
-    private const int NameSpelled = 48;
-
-    private const int NameKept = 32;
+    public const string Folder = KnowledgeRoomPaths.Folder;
 
     /// <summary>
     /// The "repository" its sessions are recorded in: a colon is in no folder name, so no registered
@@ -76,59 +68,23 @@ public static class HelpRoom
     ];
 
     /// <summary><c>default</c>'s room, the whole machine's: <see cref="Folder"/> under the home.</summary>
-    public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.HelpRoom);
+    public static string PathOf(string home) => KnowledgeRoomPaths.PathOf(home);
 
     /// <summary>
     /// The room of <paramref name="workspace"/> (ASKSCOPE1b): <c>default</c>'s, or none named, is <see cref="PathOf(string)"/>, so
     /// every conversation started before keeps the folder its harness keeps it by; a named workspace's is a folder of its own beside
     /// it, <see cref="FolderOf"/>.
     /// </summary>
-    public static string PathOf(string home, string? workspace) =>
-        ScopeOf(workspace) is { } named ? Path.Combine(Path.GetDirectoryName(PathOf(home))!, FolderOf(named)) : PathOf(home);
+    public static string PathOf(string home, string? workspace) => KnowledgeRoomPaths.PathOf(home, workspace);
 
     /// <summary>
     /// The workspace a room is scoped to (ASKSCOPE1b): null for <c>default</c> or none named, whose room is the whole machine; else
     /// the name, trimmed.
     /// </summary>
-    public static string? ScopeOf(string? workspace)
-    {
-        var circle = RemoteTarget.Workspace(workspace);
-        return string.Equals(circle, RemoteTarget.DefaultWorkspace, StringComparison.OrdinalIgnoreCase) ? null : circle;
-    }
+    public static string? ScopeOf(string? workspace) => KnowledgeRoomPaths.ScopeOf(workspace);
 
-    /// <summary>
-    /// A named workspace's room folder (ASKSCOPE1b): <c>help-</c> and the name as one workspace is one name, whatever its letters'
-    /// case (D48), its ASCII letters and digits kept, lowercase, and every other character spelled by its UTF-8 bytes, each
-    /// <c>_</c> and two hex digits. One name is one folder and two names are two, and none is <see cref="Folder"/>: no character
-    /// is kept that a file system or the harness's own naming of a folder would change. A name spelled longer than
-    /// <see cref="NameSpelled"/> keeps its first <see cref="NameKept"/> characters, <c>-</c> and a digest of the whole name, a
-    /// <c>-</c> no shorter one holds.
-    /// </summary>
-    internal static string FolderOf(string workspace)
-    {
-        var spelled = new StringBuilder();
-        Span<byte> bytes = stackalloc byte[4];
-        foreach (var rune in workspace.Trim().ToUpperInvariant().EnumerateRunes())
-        {
-            if (rune.IsAscii && char.IsAsciiLetterOrDigit((char)rune.Value))
-            {
-                spelled.Append(char.ToLowerInvariant((char)rune.Value));
-                continue;
-            }
-
-            var length = rune.EncodeToUtf8(bytes);
-            foreach (var each in bytes[..length]) spelled.Append('_').Append(each.ToString("x2", System.Globalization.CultureInfo.InvariantCulture));
-        }
-
-        var name = spelled.ToString();
-        if (name.Length > NameSpelled)
-        {
-            var digest = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(workspace.Trim().ToUpperInvariant())));
-            name = $"{name[..NameKept]}-{digest[..16].ToLowerInvariant()}";
-        }
-
-        return $"{Folder}-{name}";
-    }
+    /// <summary>A named workspace's room folder, using Knowledge's shared encoding.</summary>
+    internal static string FolderOf(string workspace) => KnowledgeRoomPaths.FolderOf(workspace);
 
     /// <summary>
     /// The workspace whose room a kept conversation goes on in (ASKSCOPE1b): its record's, save one whose record says it ran in

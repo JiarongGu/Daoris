@@ -162,7 +162,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
 
     /// <summary>The kind its open is logged by (LOG1b): Ask Daoris and an intake by their door, else the record's.</summary>
     private static string KindOf(SessionRecord record) =>
-        record.Repository == HelpRoom.Repository ? SessionOpened.Help
+        record.Repository == KnowledgeRoomIdentity.Repository ? SessionOpened.Help
         : record.Ask is not null ? SessionOpened.Intake
         : record.Kind;
 

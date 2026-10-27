@@ -24,6 +24,7 @@
   ],
   "seams": ["ServiceClient","SessionProcesses","HarnessRoster","DaorisHome","MachineLog","WorkingTree","DesktopStore"],
   "files": {
+    "Knowledge/KnowledgeRoomPaths.cs": "Knowledge",
     "Workplace/IToolHomeWorld.cs": "Workplace",
     "Install/InstallRoot.cs": "Install",
     "Workplace/IWorkplaceEventHistory.cs": "Workplace",
@@ -972,15 +973,6 @@
       }
     },
     {
-      "family": "Workplace names Help",
-      "after": "Workplace",
-      "files": {
-        "Workplace/ToolHomeLeftovers.cs": ["HelpRoom"],
-        "Workplace/SessionDeletion.cs": ["HelpRoom"],
-        "Workplace/SessionHomeFiles.cs": ["HelpConversations","HelpPublished","HelpWired"]
-      }
-    },
-    {
       "family": "Workplace names Participants",
       "after": "Workplace",
       "files": {
@@ -1370,6 +1362,7 @@
   ],
   "testFolders": ["Brainstorms","Conversations","Help","Loop","Plugins","Quests","Review","Service","Sessions","Setup","Trees","Workflows"],
   "tests": {
+    "WorkplaceHelpBoundaryTests.cs": "Workplace",
     "WorkplaceRolesBoundaryTests.cs": "Workplace",
     "WorkplaceLoopBoundaryTests.cs": "Workplace",
     "WorkplaceContextPortsTests.cs": "Workplace",
