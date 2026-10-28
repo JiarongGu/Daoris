@@ -32,13 +32,15 @@ public sealed class ReadShareAccountTests : IDisposable
 
     /// <summary>
     /// The hold let go a second on, for a reader that writes after it reads: the read meets the hold at once, and the write's rename,
-    /// which a hold refuses as it refuses any rename over the file, lands within its retries once the hold is gone.
+    /// which a hold refuses as it refuses any rename over the file, lands within its retries once the hold is gone. On a thread of its
+    /// own, not the pool's: a loaded run's starved pool let the hold go past the rename's four seconds of retries (FLAKE1, three cases
+    /// at once on 2026-10-28), which is the pool's wait, not the reader's.
     /// </summary>
-    private static Task ReleasedSoon(IDisposable hold) => Task.Run(async () =>
+    private static Task ReleasedSoon(IDisposable hold) => Task.Factory.StartNew(() =>
     {
-        await Task.Delay(1000);
+        Thread.Sleep(1000);
         hold.Dispose();
-    });
+    }, TaskCreationOptions.LongRunning);
 
     /// <summary>READSHARE1: <c>AccountFileNodes.Read</c> reads an account file its move into place still holds.</summary>
     [Fact]
