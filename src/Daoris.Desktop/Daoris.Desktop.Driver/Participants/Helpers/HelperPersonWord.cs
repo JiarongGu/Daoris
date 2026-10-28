@@ -59,7 +59,7 @@ public static class HelperPersonWord
     /// (<c>helper.refused</c>), so the look reads it as past judging. <paramref name="output"/> is the loop's transcript where one
     /// runs here, null for the terminal, which keeps the note on the record's events alone.
     /// </summary>
-    public static HelperWordAnswer Decline(HelperFiles files, SessionEvents events, SessionOutput? output, string? session, string askId)
+    public static HelperWordAnswer Decline(HelperFiles files, ISessionEvents events, ISessionOutput? output, string? session, string askId)
     {
         var ask = Find(files, session, askId);
         var state = ask is null ? null : files.ReadState(ask.Id);
@@ -89,7 +89,7 @@ public static class HelperPersonWord
     }
 
     // The look's own refusal, as `DriverHelpers.RefuseAsync` writes it: the state, then the note on the asker's record.
-    private static HelperWordAnswer Declined(HelperFiles files, SessionEvents events, SessionOutput? output, HelperAsk declined)
+    private static HelperWordAnswer Declined(HelperFiles files, ISessionEvents events, ISessionOutput? output, HelperAsk declined)
     {
         files.WriteState(new HelperState(declined.Id, HelperStates.Refused, HelperWhy.Declined, null, DateTimeOffset.UtcNow));
         var note = HelperNotes.Refused(HelperWhy.Declined);

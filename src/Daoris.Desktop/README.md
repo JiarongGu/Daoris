@@ -54,7 +54,21 @@ Context owns instruction accounting and session-part composition in `Accounts/`,
 
 Participants judges `DrivenAccess` and supplies Agents with the `IAgentAccess` start contract. Agents owns the installed
 `LineageHook` data and required `LineageStreams` operation port; Participants installs the actual per-run watcher from
-`Sessions/LineageWiring.cs`. Script installation and the part's lineage end remain Participants' operations.
+`Participants/LineageWiring.cs`. Script installation and the part's lineage end remain Participants' operations.
+The driver's `Participants/` owns the participant's own files (FOUNDATION1 mod-xii, D212): the helpers and partners (their
+judges, rules, words, notes, pieces, instructions, files, doors, choices and verbs, `Domain/` and the two command files), the
+harness conversations and the chat run's bindings (`HarnessConversations`, `ChatRunBinds`), and the access rules, command and
+lease, the driven access, the child lineage with its bindings, wiring and hook script (`hooks/lineage-hook.mjs`, logical name
+`Daoris.Driver.lineage-hook.mjs`), the look's facts, the running sessions and the participant-work rule
+(`Domain/ParticipantWork.cs`). The files kept their sub-folders below the old `Conversations/` or `Sessions/` (`Domain/`, `Helpers/`,
+`Partners/`, `GoOn/`, `Chat/`); tests are mirrored under `Driver.Tests/Participants/`. Namespaces remain `Daoris.Driver`, and the
+files moved byte-identically; D212 records their remaining upward cuts.
+Participants names no Context, Course, Help or Plugins type. Ask Daoris's room spelling is Events' (`Events/Domain/AskDaorisRoom.cs`),
+which the attention headline reads and the participant-work rule aliases, so no higher type is named for it. The harness conversation's
+record and its file are Participants' (`Domain/HarnessConversation.cs`, `GoOn/HarnessConversationFiles.cs`), and Course's `GoOnFiles`
+keeps the marks, the new-session choices and the reopens told. `HelperPersonWord.Decline` takes Events' `ISessionEvents` and Agents'
+`ISessionOutput`; the terminal's no and the chat run's bind open the record and the plugin catalogue through the operations Context
+(`WorkplaceEventRecords`) and Plugins (`WorkplacePlugins`) install for Workplace. The required-posture mark is `AgentPostures.Required`.
 
 Plugins supplies adapters, account declarations and skill composition through `IAgentPlugins`; Agents keeps adapter-set
 joining, provenance reading, skill handing and cleanup. `Plugins/AgentPluginWiring.cs` installs the required catalogue
@@ -89,10 +103,10 @@ hand-over and limit-move suffixes in its cleanup inventory; Course's public suff
 
 Workplace names no Participants type. Deletion's binding forget and the tool-home leftovers' kept-conversation read go through
 `IWorkplaceHarnessBindings`, which `HarnessConversations` implements directly, opened by the required
-`IWorkplaceHarnessBindingStores` that `Conversations/GoOn/WorkplaceHarnessBindingsWiring.cs` installs; `SessionHomeFiles` owns
+`IWorkplaceHarnessBindingStores` that `Participants/GoOn/WorkplaceHarnessBindingsWiring.cs` installs; `SessionHomeFiles` owns
 the `.harness.json` and `.imported` suffixes, which the Participants constants alias. The landing's effective rule and the merges
 note read the access setup through `IWorkplaceAccessSetup` and the `IWorkplaceResolvedAccess` that `ResolvedAccess` implements,
-installed from `Sessions/WorkplaceAccessSetupWiring.cs`: the rule itself stays Participants', where the foundation design's
+installed from `Participants/WorkplaceAccessSetupWiring.cs`: the rule itself stays Participants', where the foundation design's
 placement table puts `Domain/AccessRules`. What holds a tree for a helper's wait is Workplace's pure `HelperWaitTrees`, which
 `HelperWaits` delegates to. The piece keeper takes the piece's id and base commit rather than the ask, and the keeper's three
 state words and the reading of the piece's ref are Workplace's pure `PieceKeptStates`, which `PartnerStates` and
