@@ -101,10 +101,8 @@ public sealed class GateDeclaration
     /// <c>local/</c> that only the owner's checkout holds, repository-relative.
     /// </summary>
     /// <remarks>
-    /// Read by the desktop, not by any gate here (TREELOCAL1, D216): a session's tree, which git checks out without them, is opened
-    /// with each copied from the checkout read-only, the pattern list among them whether named here or not, so the tree's gates run
-    /// the checks the checkout's do. A path outside <c>local/</c>, or one climbing out of it, is not copied, and the tree's opening
-    /// says so; one the checkout lacks is said too.
+    /// Read by the desktop, not by any gate here: a session's tree, which git checks out without them, opens with each copied from
+    /// the checkout read-only, so the tree's gates run the checks the checkout's do (TREELOCAL1; D216 holds the rules).
     /// </remarks>
     public IReadOnlyList<string> LocalInputs { get; init; } = [];
 
