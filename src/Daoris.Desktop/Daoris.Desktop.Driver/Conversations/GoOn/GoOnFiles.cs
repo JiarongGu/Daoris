@@ -5,10 +5,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What this machine keeps beside a session's transcript for its words to go on (MSG1b, MSG1g, ANSWER1a), each
-/// <c>&lt;home&gt;/sessions/&lt;session&gt;.&lt;kind&gt;.json</c>: a mark (<see cref="GoOnMarks"/>), the person's choice of a new
-/// session (<see cref="NewSessionChoices"/>) and the harness's conversation id (<see cref="HarnessConversations"/>), read
-/// without trusting their shape and written whole, atomically, as BOM-less UTF-8 with LF.
+/// What this machine keeps beside a session's transcript for its words to go on (MSG1b, MSG1g), each
+/// <c>&lt;home&gt;/sessions/&lt;session&gt;.&lt;kind&gt;.json</c>: a mark (<see cref="GoOnMarks"/>) and the person's choice of a new
+/// session (<see cref="NewSessionChoices"/>), read without trusting their shape and written whole, atomically, as BOM-less UTF-8 with LF.
 /// </summary>
 /// <remarks>
 /// STRUCT3h, D166's note: the stores decide what is kept and whether a failed write is lost; this
@@ -151,38 +150,6 @@ internal static class GoOnFiles
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
             return [];
-        }
-    }
-
-    /// <summary>A conversation id written to <paramref name="path"/>, its folder made where it is not.</summary>
-    public static void WriteConversation(string path, string adapter, string conversation)
-    {
-        JsonFile.Write(path, writer =>
-        {
-            writer.WriteStartObject();
-            writer.WriteString("adapter", adapter);
-            writer.WriteString("conversation", conversation);
-            writer.WriteEndObject();
-        });
-    }
-
-    /// <summary>The conversation id at <paramref name="path"/>, or null for none or a file that does not read.</summary>
-    public static HarnessConversation? ReadConversation(string path)
-    {
-        try
-        {
-            if (!File.Exists(path)) return null;
-            using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object) return null;
-            return Json.Text(root, "adapter")?.Trim() is { Length: > 0 } adapter
-                   && Json.Text(root, "conversation")?.Trim() is { Length: > 0 } conversation
-                ? new HarnessConversation(adapter, conversation)
-                : null;
-        }
-        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
-        {
-            return null;
         }
     }
 

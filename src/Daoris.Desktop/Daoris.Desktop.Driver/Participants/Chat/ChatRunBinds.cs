@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Nothing of its checks</b> is told here: they are not enforced on its tree before CHATFLOW1h (§4.4).</para>
 /// </remarks>
-internal sealed class ChatRunBinds(string home, ServiceClient service, SessionEvents events)
+internal sealed class ChatRunBinds(string home, ServiceClient service, ISessionEvents events)
 {
     // Each conversation's run once its key was read, and each run whose failed bind was said, so a turn's end asks the service once.
     private readonly ConcurrentDictionary<string, string> _runs = new(StringComparer.Ordinal);
@@ -102,7 +102,7 @@ internal sealed class ChatRunBinds(string home, ServiceClient service, SessionEv
     /// <summary>Bind <paramref name="run"/> and say what the conversation is told of it, once.</summary>
     private ChatRunBound Bind(string session, string run, string repository, string? workspace, DriverConfig config)
     {
-        var plugins = WorkflowCurrent.PluginsOf(PluginCatalog.Load(home, AdapterSet.Built().Names));
+        var plugins = WorkflowCurrent.PluginsOf(WorkplacePlugins.Current.Load(home));
         var bound = ChatRuns.Bind(config, home, run, repository, workspace, plugins, DateTimeOffset.UtcNow);
         var line = bound.Failed is { } why
             ? _failedSaid.TryAdd(run, true) ? ChatRuns.FailedLine(why) : null

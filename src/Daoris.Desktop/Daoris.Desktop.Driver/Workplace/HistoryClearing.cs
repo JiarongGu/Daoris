@@ -128,7 +128,7 @@ public static class HistoryClearing
                 var took = 0L;
                 foreach (var run in unit.Bindings.Where(bound.Add))
                 {
-                    took += machine.Files.Take(WorkflowRunBindings.PathOf(world.Home, run), folder: false, failed).Bytes;
+                    took += machine.Files.Take(WorkplaceRunFiles.PathOf(world.Home, run), folder: false, failed).Bytes;
                 }
 
                 return unit with { Bytes = bytes with { Kept = bytes.Kept + took } };

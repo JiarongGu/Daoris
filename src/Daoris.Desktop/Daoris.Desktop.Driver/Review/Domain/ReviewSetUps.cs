@@ -152,7 +152,7 @@ public static class ReviewLines
 /// <summary>The doors a landing or a verdict is given at, as the review's log lines name them.</summary>
 public static class ReviewDoors
 {
-    public const string Screen = "screen";
-    public const string Terminal = "terminal";
-    public const string Look = "look";
+    public const string Screen = LandingDoors.Screen;
+    public const string Terminal = LandingDoors.Terminal;
+    public const string Look = LandingDoors.Look;
 }

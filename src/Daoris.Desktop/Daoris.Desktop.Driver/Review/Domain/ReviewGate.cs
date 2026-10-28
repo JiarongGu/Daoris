@@ -182,17 +182,6 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
     };
 }
 
-
-/// <summary>What the gate reads of the service: every quest, closed ones included, and an ask. A seam, so its tests stand in.</summary>
-public interface IReviewWorld
-{
-    /// <summary>Every quest the service holds, closed ones included, from which a chain is read.</summary>
-    Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct);
-
-    /// <summary>One ask, or null where the service holds none.</summary>
-    Task<AskView?> AskAsync(string id, CancellationToken ct);
-}
-
 /// <summary>
 /// The review's gate (REVIEWENV1c, D154 points 3 and 7; design §1.4, §3.1–§3.2): which level decides for a chain's work in a
 /// repository, and whether the work that would land may go. A table, a commit, an ancestry and a press: no model reads any of

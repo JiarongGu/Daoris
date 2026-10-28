@@ -88,7 +88,7 @@ internal sealed record EndCycle(string Form, bool Plugin = false, bool Squash = 
     /// The cycle for work not yet handed, through the effective process <i>Accept</i> reads (<c>TreeLands.LandAsync</c>): under a
     /// named workflow its bound version's landing, else the repository's rule, else its workspace's (<see cref="LandingRules.Choose"/>).
     /// </summary>
-    public static EndCycle Accepts(DriverConfig config, string repository, string? workspace, WorkflowProcess? process = null)
+    public static EndCycle Accepts(DriverConfig config, string repository, string? workspace, IWorkplaceProcess? process = null)
     {
         var named = process is { Named: true } ? process : null;
         return Of(named?.Landing ?? LandingRules.Choose(config, repository, workspace), named?.Record);
