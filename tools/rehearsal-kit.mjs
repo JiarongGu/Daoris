@@ -280,15 +280,17 @@ export async function takePorts(names, { start, band = PORT_BAND, isFree = portI
 
 /**
  * Who holds `port`, as the system names its listener: `pid <id> <name> <command line>`, or a sentence saying it was not
- * named. Asked only for a refusal, so its cost (a PowerShell on Windows) is paid when something is already wrong.
+ * named. Asked only for a refusal, so its cost (a PowerShell on Windows) is paid when something is already wrong, and it
+ * is given two minutes: on a fully loaded machine the PowerShell and its two CIM queries ran past thirty seconds and the
+ * refusal named nobody (FLAKE1, 2026-10-28), when naming the holder is the refusal's whole use.
  */
 export function portHolder(port) {
   const ran = process.platform === 'win32'
     ? spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command',
       `Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | `
       + `ForEach-Object { $p = Get-CimInstance Win32_Process -Filter "ProcessId = $_" -ErrorAction SilentlyContinue; "pid $_ $($p.Name) $($p.CommandLine)" }`],
-    { encoding: 'utf8', windowsHide: true, timeout: 30_000 })
-    : spawnSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc'], { encoding: 'utf8', timeout: 30_000 });
+    { encoding: 'utf8', windowsHide: true, timeout: 120_000 })
+    : spawnSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fpc'], { encoding: 'utf8', timeout: 120_000 });
   const said = String(ran.stdout ?? '').trim();
   if (!said) return 'a process the system did not name';
   if (process.platform === 'win32') return said.split(/\r?\n/).map((line) => line.trim()).join('; ');

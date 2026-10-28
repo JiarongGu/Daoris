@@ -6517,9 +6517,11 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // Named, though it is main's tip: the merge that lands meanwhile would supersede a run of main's tip (CIPRIO1c).
     const beside = repo.run(['--full', '--beside', gated], { GATE_HOLD: hold, PATH });
     try {
-      // Bounded by the shared patience: the gate tree's gate has started, and holds until the test lets it go. It was 3000 tries
-      // of 100 ms, which a loaded machine's start outlasted (2026-10-28, candidate 71d60dd).
-      for (const end = Date.now() + PATIENCE; Date.now() < end && !(existsSync(ranThere) && readFileSync(ranThere, 'utf8').includes('first'));) {
+      // Bounded as waitFor is, five times the shared patience: the gate tree's gate has started, and holds until the test lets
+      // it go. It was 3000 tries of 100 ms, which a loaded machine's start outlasted (2026-10-28, candidate 71d60dd); the
+      // shared patience alone, two minutes, is shorter still, and candidate 6a03b3b's start outlasted it. The start is a
+      // worktree, an install and the full set's first gate, not one process.
+      for (const end = Date.now() + 5 * PATIENCE; Date.now() < end && !(existsSync(ranThere) && readFileSync(ranThere, 'utf8').includes('first'));) {
         await new Promise((done) => setTimeout(done, 100));
       }
       assert.ok(existsSync(ranThere), 'the full set runs in the gate tree');

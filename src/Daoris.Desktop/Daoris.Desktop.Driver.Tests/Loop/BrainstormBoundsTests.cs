@@ -278,7 +278,9 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_crash_fails_its_pass_alone_and_the_rest_is_ranked()
     {
-        var (driver, script) = Start();
+        // FLAKE1: nothing here is about a deadline, so the passes' and the synthesis's are held far past the work; at the default
+        // ten minutes of 100 ms a loaded machine let the synthesis's end first, and the answers were left unranked (candidate 48d4522).
+        var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Answers["g1"] = Give("Make the window inclusive");
         script.Behaviours["g2"] = (_, _) => throw new InvalidOperationException("the agent crashed");
