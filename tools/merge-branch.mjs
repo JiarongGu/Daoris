@@ -431,6 +431,7 @@ import { fenced, gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain, renameHeld, spawnGit, stagedTree, writeAtomic } from './fsx.mjs';
 import { indexLockNote, mentionsIndexLock, readIndexLock } from './index-lock.mjs';
 import { censusOf, classesReached, halfOf, reachSettings, repository, withSettings } from './process-reach.mjs';
+import { createAdmission } from './machine-admission.mjs';
 import { endOrphans, endStranded } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
@@ -3901,7 +3902,7 @@ const withWait = (beside, wait) => (wait ? { ...beside, memory: wait } : beside)
  * the plan's order, each once its memory is free (`wait`). A run that stopped (`halted`: a failure, or a run beside ended) runs
  * none again: each keeps its first verdict, a failure named as memory, its note saying why it was not run again.
  */
-async function againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted }) {
+async function againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted, admission = null }) {
   const died = gates.filter((gate) => results.get(gate.name)?.again);
   if (!died.length) return;
   const failure = gates.map((gate) => results.get(gate.name)).find((result) => result && stops(result));
@@ -3910,13 +3911,17 @@ async function againOfMemory(root, gates, dir, results, { run, print, wait, hear
   for (const gate of died) {
     const first = results.get(gate.name);
     first.again = false;
-    if (wait && !halted()) await wait(gate, { again: true, halted });
-    if (halted()) {
+    // HEAVYQUEUE1: its place in the machine's admission, taken again for the run again and let go as it ends.
+    const result = await admitted(admission, gate, halted, async () => {
+      if (wait && !halted()) await wait(gate, { again: true, halted });
+      if (halted()) return null;
+      return run(root, gate, dir, withWait({ again: first }, wait));
+    });
+    if (!result) {
       first.note = `${first.note}; not run again: ${why()}`;
       print(`  not run again: ${gate.name}, which died of memory, since ${why()}`);
       continue;
     }
-    const result = await run(root, gate, dir, withWait({ again: first }, wait));
     results.set(gate.name, result);
     heard(result);
     print(resultLine(root, result));
@@ -3925,21 +3930,41 @@ async function againOfMemory(root, gates, dir, results, { run, print, wait, hear
 }
 
 /**
+ * HEAVYQUEUE1: `fn` run holding the place a heavy gate takes in the machine's admission (`admission.take`), waited for with no bound
+ * and let go as `fn` ends however it ends. A gate that is not heavy takes none, and a wait the run no longer needs (`halted`) runs
+ * nothing: `fn` is not called, and the answer is null. The wait comes before the gate's own memory wait and before its clock starts,
+ * so it is never a timeout of the gate.
+ */
+export async function admitted(admission, gate, halted, fn) {
+  if (!admission || !(memoryNeed(gate) > 0)) return fn();
+  const hold = await admission.take({ what: `${gate.name} gate`, halted });
+  if (!hold) return halted() ? null : fn();
+  try {
+    return await fn();
+  } finally {
+    hold.release();
+  }
+}
+
+/**
  * One gate after another, in the plan's order: every run before GATELANES1, and `--one-at-a-time`. `beside` names what
  * each gate is handed (GATEBUILD1: a Process half, its fast half's pass), and `heard` hears each result. MEMGATE1: a heavy
  * gate first waits for its memory (`wait`), and a gate that died of memory runs again after the last.
  */
-async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () => ({}), heard = () => {}, halt = () => false, wait = null }) {
+async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () => ({}), heard = () => {}, halt = () => false, wait = null, admission = null }) {
   const results = new Map();
   let stopped = false;
   for (let i = 0; i < gates.length; i += 1) {
-    if (wait && !halt()) await wait(gates[i], { halted: halt });
-    if (halt()) {
+    // HEAVYQUEUE1: a heavy gate's place in the machine's admission, taken before its memory wait and let go as it ends.
+    const result = halt() ? null : await admitted(admission, gates[i], halt, async () => {
+      if (wait && !halt()) await wait(gates[i], { halted: halt });
+      return halt() ? null : run(root, gates[i], dir, withWait(beside(gates[i]), wait));
+    });
+    if (!result) {
       stopped = true;
       for (const skipped of gates.slice(i)) print(notRunLine(skipped));
       break;
     }
-    const result = await run(root, gates[i], dir, withWait(beside(gates[i]), wait));
     heard(result);
     results.set(gates[i].name, result);
     print(resultLine(root, result));
@@ -3950,7 +3975,7 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
       break;
     }
   }
-  await againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted: () => stopped || halt() });
+  await againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted: () => stopped || halt(), admission });
   return gates.filter((gate) => results.has(gate.name)).map((gate) => results.get(gate.name));
 }
 
@@ -3982,6 +4007,7 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
  */
 export async function runGates(root, gates, dir, {
   keepGoing = false, oneAtATime = false, width = LIGHT_WIDTH, scripts = null, run = runGate, print = console.log, halt = () => false, memory = null, byMemory = false,
+  admission = null,
 } = {}) {
   const schedule = laneSchedule(gates, { scripts: scripts ?? rootScripts(root), width, byMemory });
   const passed = new Map();
@@ -3991,7 +4017,7 @@ export async function runGates(root, gates, dir, {
   const built = (gate) => (passed.has(schedule.reuses[gate.name]) ? { built: passed.get(schedule.reuses[gate.name]) } : {});
   const wait = memory ? memoryGate({ ...memory, say: print }) : null;
   if (oneAtATime || !schedule.light.length || (schedule.light.length === 1 && !schedule.process.length)) {
-    return runInTurn(root, gates, dir, { keepGoing, run, print, beside: built, heard, halt, wait });
+    return runInTurn(root, gates, dir, { keepGoing, run, print, beside: built, heard, halt, wait, admission });
   }
 
   for (const line of laneLines(schedule)) print(line);
@@ -4006,19 +4032,23 @@ export async function runGates(root, gates, dir, {
     return stopped;
   };
   const one = async (gate, beside) => {
-    // MEMGATE1: a heavy gate waits for its memory in its place; one the run stopped meanwhile starts not.
-    if (wait) {
-      await wait(gate, { halted });
-      if (halted()) return;
-    }
+    // HEAVYQUEUE1: a heavy gate's place in the machine's admission comes first, and is let go as the gate ends.
     let result;
     try {
-      result = await run(root, gate, dir, withWait(beside, wait));
+      result = await admitted(admission, gate, halted, async () => {
+        // MEMGATE1: a heavy gate waits for its memory in its place; one the run stopped meanwhile starts not.
+        if (wait) {
+          await wait(gate, { halted });
+          if (halted()) return null;
+        }
+        return run(root, gate, dir, withWait(beside, wait));
+      });
     } catch (error) {
       // A tool error ends the run as it always did, once the gates running beside it have ended.
       stopped = true;
       throw error;
     }
+    if (!result) return;
     results.set(gate.name, result);
     heard(result);
     print(resultLine(root, result));
@@ -4097,7 +4127,7 @@ export async function runGates(root, gates, dir, {
   const outcomes = await Promise.allSettled([light, processLane]);
   const thrown = outcomes.find((outcome) => outcome.status === 'rejected');
   if (thrown) throw thrown.reason;
-  await againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted });
+  await againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted, admission });
 
   print("  every gate, in the plan's order:");
   for (const gate of gates) print(results.has(gate.name) ? resultLine(root, results.get(gate.name)) : notRunLine(gate));
@@ -4191,6 +4221,17 @@ function chooseGates(root, state, plan) {
   };
 }
 
+/**
+ * HEAVYQUEUE1: the machine's heavy-run admission this tool's heavy gates take a place in (`machine-admission.mjs`), or null where it
+ * is off: `MERGE_BRANCH_ADMISSION=off`, or `MERGE_BRANCH_MEMORY=off` (the tool's own end-to-end tests, which must not wait on the
+ * machine they run on) unless `MERGE_BRANCH_ADMISSION=on`. It has no home to share without `DAORIS_HOME`, and then nothing waits.
+ */
+export function machineAdmission(env = process.env) {
+  const setting = env.MERGE_BRANCH_ADMISSION;
+  if (setting === 'off' || (setting !== 'on' && env.MERGE_BRANCH_MEMORY === 'off')) return null;
+  return createAdmission({ daorisHome: env.DAORIS_HOME || null, kind: 'queue', env, say: console.log });
+}
+
 const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true }).out.trim() || null;
 
 /**
@@ -4212,6 +4253,7 @@ function runRecorded(root, gates, dir, {
     // MEMGATE1: the machine's memory, read before each heavy gate. `MERGE_BRANCH_MEMORY=off` reads none and waits for none: the
     // tool's own end-to-end tests set it, so none of them waits on what the machine holds.
     memory: process.env.MERGE_BRANCH_MEMORY === 'off' ? null : { read: readMemory },
+    admission: machineAdmission(),
     run: async (where, gate, logs, beside) => {
       onStart(gate);
       const tree = contentTree(where);
@@ -6386,7 +6428,9 @@ export function prefixRunner(tree, candidate, plan, dir, watch = null) {
     const narrowed = prefixCommand(gate, failure);
     const trx = /^dotnet test\b/.test(gate.run.trim()) ? join(dir, `${slug(failure.gate)}.prefix-${n}.trx`) : null;
     const probe = { ...gate, name: `${gate.name}.prefix-${n}`, run: trx ? trxCommand(narrowed, trx) : narrowed };
-    const result = await runGate(tree, probe, dir, { trees: watch?.trees ?? null });
+    // HEAVYQUEUE1: a probe is a heavy run like its gate, and takes its place in the machine's admission before it starts.
+    const result = await admitted(machineAdmission(), gate, () => watch?.check() === true, () => runGate(tree, probe, dir, { trees: watch?.trees ?? null }));
+    if (!result) throw new Drained();
     if (result.verdict === 'ENDED') throw new Drained(probe.name);
     if (result.verdict === 'PASS' || result.verdict === 'FLAKE') return { result: 'pass' };
     const found = failuresOf(tree, { ...result, gate }, trx);
