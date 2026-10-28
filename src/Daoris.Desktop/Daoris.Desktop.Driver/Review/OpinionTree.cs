@@ -29,7 +29,7 @@ public sealed record OpinionTreeOpened(string Path, string Tip);
 public static class OpinionTree
 {
     /// <summary>What a copy's folder name starts with, beside a session tree's <c>s-</c>.</summary>
-    public const string Prefix = "o-";
+    public const string Prefix = PassLeftovers.OpinionCopyPrefix;
 
     private const int Attempts = 4;
 

@@ -237,7 +237,7 @@ public sealed record OpinionGateState(string State, string Repository)
 /// </summary>
 /// <remarks>
 /// <para><b>One gate, in a fixed order</b> (§7): the quest's own holds, then this, then D154's look, then the landing. Every
-/// landing door reads both through <see cref="SessionTrees.GateAsync"/> and hands them to <see cref="SessionTrees.LandAsync"/>,
+/// landing door reads both through <see cref="SessionTreeGates.GateAsync"/> and hands them to <see cref="SessionTrees.LandAsync"/>,
 /// which refuses the first that holds (<see cref="LandingGate"/>).</para>
 ///
 /// <para><b>Settled</b> (§8.2): an opinion covers the tip (its candidate's tip is the tip or a descendant of it, by
@@ -592,7 +592,7 @@ public static class OpinionGate
 /// ask; the landing comes last. Since WORKFLOW1f the run's own part comes before the opinion (the workflow design §4.4), and the
 /// landing step's own declarations after the look, all read from one process.
 /// </summary>
-public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Review)
+public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Review) : IWorkplaceGate
 {
     /// <summary>
     /// The run's own part (WORKFLOW1f): the process every part was read with, and what of the run's own holds the work. Null for a
@@ -645,6 +645,26 @@ public sealed record LandingGate(OpinionGateState Opinion, ReviewGateState Revie
     /// still stands as it was drawn (<see cref="OpinionGateState.Token"/>), its disputes or its commits unread are answered.
     /// </summary>
     public bool Answers(string? token) => Opinion.PressAnswers && token is not null && string.Equals(token, Opinion.Token, StringComparison.Ordinal);
+
+    /// <summary>What the trees read of the gate (<see cref="IWorkplaceGate"/>): the gate pinned to a tip, every other part as it was.</summary>
+    IWorkplaceGate IWorkplaceGate.WithTip(string? tip) => this with { Tip = tip };
+
+    /// <summary>The process the gate was read with, as the trees read it.</summary>
+    IWorkplaceProcess? IWorkplaceGate.Process => Process;
+
+    /// <summary>What the review's gate keeps of the set-up that let the work go; null where it asked none.</summary>
+    LandingReview? IWorkplaceGate.ReviewLanding => Review.Landing;
+
+    /// <summary>What the second opinion's gate keeps of the pass that let the work go; null where the level asked none.</summary>
+    LandingOpinion? IWorkplaceGate.OpinionLanding => Opinion.Landing;
+
+    /// <summary>Whether what holds the work is its graph's part and that part asks a pass of the run's next look (FABRIC-CUTOVER1d).</summary>
+    bool IWorkplaceGate.GraphAsksPass => GraphHolds && Graph is { AsksPass: true };
+
+    IReadOnlyList<string> IWorkplaceGate.PlanLines() => LandingGateWords.Plan(this);
+
+    LandingLine? IWorkplaceGate.Held(string session, (string Workspace, string Repository) owner, TreeLanding landed, string door) =>
+        LandingGateWords.Held(session, owner, this, landed, door);
 
     /// <summary>A gate that holds nothing, for a door that asked none: today's behaviour.</summary>
     public static LandingGate Open(string repository) =>

@@ -49,7 +49,7 @@ internal sealed class TreeLands(
     /// The run's process the door read with its gate (WORKFLOW1f): under a named workflow, its version's landing step over the
     /// declared rule. Null reads the rule live, as before.
     /// </param>
-    internal async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, WorkflowProcess? process = null)
+    internal async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, IWorkplaceProcess? process = null)
     {
         var plan = await PlanRuleAsync(path, subject, ct, process).ConfigureAwait(false);
         if (process?.LandingCannot is not null || plan.Target.Length == 0) return plan;
@@ -108,7 +108,7 @@ internal sealed class TreeLands(
     }
 
     /// <summary>What a press would do under the rule, before LANDSYNC1's judgement of what the line holds; an entry's Accept names its branch by it.</summary>
-    internal async Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, WorkflowProcess? process)
+    internal async Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, IWorkplaceProcess? process)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
@@ -118,7 +118,7 @@ internal sealed class TreeLands(
         // A named workflow's landing that cannot start says so before the press, as the press would be refused (design §3.7).
         if (process?.LandingCannot is not null)
         {
-            return new(landing.Rule.Form, "", landing.Source, landing.Rule.Plugin, WorkflowGate.LandingSays(process), landing.Rule.AutoAccept);
+            return new(landing.Rule.Form, "", landing.Source, landing.Rule.Plugin, process.LandingSays, landing.Rule.AutoAccept);
         }
 
         if (landing.Rule.Form == LandingForm.Branch)
@@ -372,7 +372,7 @@ internal sealed class TreeLands(
     /// the branch, since nobody is there to fix it, so the branch is made and recorded and the push is not tried.
     /// </param>
     /// <param name="gate">
-    /// The landing gate for this tree (<see cref="SessionTrees.GateAsync"/>), read once by the door that lands it: the second opinion
+    /// The landing gate for this tree (the review's <c>SessionTreeGates.GateAsync</c>), read once by the door that lands it: the second opinion
     /// (XAGENT1f, D155 point 9) and then D154's look (REVIEWENV1c, D154 point 7). The first part that does not let go refuses before
     /// anything is made, merge or branch, an advance among them, with its sentence and its code
     /// (<see cref="AutoLandingCode.Opinion"/>, then <see cref="AutoLandingCode.Unreviewed"/>); what let each go is kept on the
@@ -407,7 +407,7 @@ internal sealed class TreeLands(
     /// </param>
     internal async Task<TreeLanding> LandAsync(
         string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
-        string acceptedBy = AcceptedBy.Person, LandingGate? gate = null, bool joins = false, bool fetched = false,
+        string acceptedBy = AcceptedBy.Person, IWorkplaceGate? gate = null, bool joins = false, bool fetched = false,
         Func<bool, CancellationToken, Task<TreeLanding?>>? judged = null, Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null,
         int? uncommitted = null)
     {
@@ -475,7 +475,7 @@ internal sealed class TreeLands(
     /// The commit a landing that waited would land (LANDRACE1's review): the tip its door judged, where the door pinned one, else the
     /// tree's head as it stands. Read only after a wait; null where git cannot say, which lands nothing as `already`.
     /// </summary>
-    private static async Task<string?> JudgedAsync(string path, LandingGate? gate, CancellationToken ct)
+    private static async Task<string?> JudgedAsync(string path, IWorkplaceGate? gate, CancellationToken ct)
     {
         if (gate?.Tip is { } pinned) return pinned;
         var (code, head, _) = await WorkingTree.GitAsync(Path.GetFullPath(path), ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], ct).ConfigureAwait(false);
@@ -509,7 +509,7 @@ internal sealed class TreeLands(
     /// <param name="uncommitted">The tree's uncommitted paths as the door read them, as <see cref="LandAsync"/> takes them.</param>
     private async Task<TreeLanding> LandingAsync(
         string path, LandingSubject subject, CancellationToken ct, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse,
-        string acceptedBy, LandingGate? gate, bool joins, bool fetched, LandingHold? hold,
+        string acceptedBy, IWorkplaceGate? gate, bool joins, bool fetched, LandingHold? hold,
         Func<LandedBranch?, bool, CancellationToken, Task<string?>>? beforePush = null, int? uncommitted = null)
     {
         // One look (UIFREEZE1, PROC1d-i): the landing and its tidy ask git's guess at the line once.
@@ -538,7 +538,7 @@ internal sealed class TreeLands(
         // person's review where it runs, then the landing step's own. A merge rule waits as a branch rule does, and an advance waits
         // the same way.
         if (gate?.Refusal is { } refused) return refused;
-        var review = gate?.Review;
+        var review = gate?.ReviewLanding;
 
         var (workspace, repository) = context.OwnerOf(full);
         // Under a named workflow the run's bound version decides how it lands, read with the gate (WORKFLOW1f): a version is never
@@ -641,7 +641,7 @@ internal sealed class TreeLands(
                 landed = Remember(landed, () => context.Recorded.Advanced(repository, landed.Branch!,
                     new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session)
                     {
-                        AcceptedBy = acceptedBy, Review = review?.Landing, Opinion = gate?.Opinion.Landing, Workflow = named?.Record,
+                        AcceptedBy = acceptedBy, Review = review, Opinion = gate?.OpinionLanding, Workflow = named?.Record,
                         // The record moves to the session tip this advance squashed (PROCESS1b-ii point 4); a fast-forward keeps it.
                         Squashed = branched.Squashed,
                         // FABRIC-UNITLINK1, FABRIC-CLOSE1h13: whose work this is, its unit, and the submission it was accepted on.
@@ -664,9 +664,9 @@ internal sealed class TreeLands(
                     AcceptedBy = acceptedBy,
                     Rule = new LandedRule(plugin, landing.Rule.AutoAccept, landing.Source) { Access = landing.Access },
                     // The review that let it go (REVIEWENV1c, design §3.5): reviewed with its set-up's commit, or skipped.
-                    Review = review?.Landing,
+                    Review = review,
                     // The second opinion that let it go (XAGENT1f, design §8.6), or why it landed without one.
-                    Opinion = gate?.Opinion.Landing,
+                    Opinion = gate?.OpinionLanding,
                     // The named version that decided (WORKFLOW1f, the workflow design §5.5); none under Current.
                     Workflow = named?.Record,
                     // The session tip its one commit was made from (PROCESS1b-ii point 3): what proves the session landed.
@@ -775,7 +775,7 @@ internal sealed class TreeLands(
         // sentence a tidy takes out: a merge keeps no landing record, and its conversation's note is its record.
         if (landed.Landed && named is not null)
         {
-            var decided = $" It landed as {named.Name} says, {WorkflowRunBinding.Why(named.Binding!)}.";
+            var decided = $" It landed as {named.Name} says, {named.Decided}.";
             landed = landed with
             {
                 Message = landed.Message.EndsWith(TreeStays, StringComparison.Ordinal)
