@@ -106,6 +106,67 @@ public sealed class ServiceStallTests
         Assert.Single(host.Asked);
     }
 
+    /// <summary>The client a caller hands in carries the caller's deadline: its timeout ends a read once, as the cancellation HttpClient made it (SERVICESTALL1b).</summary>
+    private static ServiceHttp Callers(StandIn host, int boundMilliseconds = 100) =>
+        new(Url, key: null, new HttpClient(host, disposeHandler: false) { Timeout = TimeSpan.FromMilliseconds(boundMilliseconds) });
+
+    /// <summary>🔴 SERVICESTALL1b: a read that met the timeout of the client its caller handed in is the caller's deadline, not a stalled service.</summary>
+    [Fact]
+    public async Task A_read_that_meets_the_callers_own_deadline_stays_a_cancellation_and_is_asked_once()
+    {
+        var host = new StandIn((_, _, ct) => Never(ct));
+        using var doors = Callers(host);
+
+        var read = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => doors.GetAsync("/api/quests", CancellationToken.None));
+        var reply = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => doors.SendAsync(ServiceVerb.Get, "/api/quests/q1/claim", null, CancellationToken.None));
+
+        Assert.IsType<TimeoutException>(read.InnerException);
+        Assert.IsType<TimeoutException>(reply.InnerException);
+        Assert.Equal(["GET /api/quests", "GET /api/quests/q1/claim"], host.Asked);
+    }
+
+    /// <summary>🔴 SERVICESTALL1b: a press against a host that never answers is sent once, and says nothing of the service's stall where the deadline was the caller's.</summary>
+    [Fact]
+    public async Task A_press_the_caller_s_deadline_cut_is_sent_once()
+    {
+        var host = new StandIn((_, _, ct) => Never(ct));
+        using var doors = Callers(host);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => doors.PostAsync("/api/asks", "{}", CancellationToken.None));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => doors.SendAsync(ServiceVerb.Delete, "/api/asks/1", null, CancellationToken.None));
+
+        Assert.Equal(["POST /api/asks", "DELETE /api/asks/1"], host.Asked);
+    }
+
+    /// <summary>🔴 SERVICESTALL1b: a caller's deadline that falls while the read waits to be asked once more ends it as that cancellation, and the second try is never sent.</summary>
+    [Fact]
+    public async Task A_caller_deadline_that_falls_between_the_two_tries_stays_a_cancellation()
+    {
+        var host = new StandIn((_, _, ct) => Never(ct));
+        using var doors = new ServiceHttp(Url, key: null, new HttpClient(host, disposeHandler: false) { Timeout = TimeSpan.FromMilliseconds(50) })
+        {
+            RetryAfter = TimeSpan.FromSeconds(30),
+        };
+        using var deadline = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => doors.GetAsync("/api/sessions", deadline.Token));
+
+        Assert.Single(host.Asked);
+    }
+
+    /// <summary>A service that could not be reached is not one that stalled: its failure comes back as it was, asked once, so a caller that counts its asks counts one.</summary>
+    [Fact]
+    public async Task A_service_that_cannot_be_reached_is_not_asked_again()
+    {
+        var host = new StandIn((_, _, _) => throw new HttpRequestException("refused"));
+        using var doors = Doors(host);
+
+        var error = await Assert.ThrowsAsync<HttpRequestException>(() => doors.GetAsync("/api/sessions", CancellationToken.None));
+
+        Assert.Equal("refused", error.Message);
+        Assert.Single(host.Asked);
+    }
+
     /// <summary>A caller that gave up is not a service that did not answer: its cancellation is its own.</summary>
     [Fact]
     public async Task A_caller_that_gave_up_is_not_said_as_a_stall()

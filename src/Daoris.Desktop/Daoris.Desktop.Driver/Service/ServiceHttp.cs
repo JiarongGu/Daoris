@@ -17,6 +17,7 @@ public sealed class ServiceHttp : IServiceDoors
     {
         BaseUrl = baseUrl.TrimEnd('/');
         _http = http ?? DriverHttp.Client(key);
+        RetryAfter = http is null ? TimeSpan.FromSeconds(1) : null;
         if (http is not null && !string.IsNullOrWhiteSpace(key))
         {
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
@@ -69,8 +70,13 @@ public sealed class ServiceHttp : IServiceDoors
 
     // Through DriverHttp, so a refused read carries the service's own sentence — a bare
     // EnsureSuccessStatusCode threw it away, and the driver's log said less than the service said.
-    /// <summary>The wait before a read the service did not answer is asked once more (SERVICESTALL1).</summary>
-    public TimeSpan RetryAfter { get; init; } = TimeSpan.FromSeconds(1);
+    /// <summary>
+    /// The wait before a read that met the client's own bound is asked once more, and the switch for saying a stall as one
+    /// (SERVICESTALL1, SERVICESTALL1b): set where this client's bound is its own, which is the default for the client the driver
+    /// makes; null where the caller handed in its client, whose timeout is then the caller's deadline and ends a request as the
+    /// cancellation it is, as the loop's look names it (DEV3b).
+    /// </summary>
+    public TimeSpan? RetryAfter { get; init; }
 
     public Task<string> GetAsync(string path, CancellationToken ct) =>
         Attempt(read: true, path, () => DriverHttp.GetAsync(_http, $"{BaseUrl}{path}", ct), ct);
@@ -92,51 +98,51 @@ public sealed class ServiceHttp : IServiceDoors
         }, ct);
 
     /// <summary>
-    /// One request, said as what it saw where the service did not answer (SERVICESTALL1): a read is asked once more after
-    /// <see cref="RetryAfter"/>, since asking again changes nothing; a press that changes state is never asked again blindly, since
-    /// the service may have done it before it stopped answering. A refusal is an answer and comes back as the service said it.
+    /// One request, said as what it saw where the client's own bound ran out (SERVICESTALL1, SERVICESTALL1b): a read is asked once more
+    /// after <see cref="RetryAfter"/>, since asking again changes nothing; a press that changes state is never asked again blindly, since
+    /// the service may have done it before it stopped answering. Nothing else is retried or reworded: a refusal is an answer, a service
+    /// that could not be reached is said as itself, and a cancellation the caller asked for, by its token or by the timeout of the
+    /// client it handed in (<see cref="RetryAfter"/> null), ends the call at once as that cancellation.
     /// </summary>
     private async Task<T> Attempt<T>(bool read, string path, Func<Task<T>> send, CancellationToken ct)
     {
+        if (RetryAfter is not { } wait) return await send().ConfigureAwait(false);
         try
         {
             return await send().ConfigureAwait(false);
         }
-        catch (Exception first) when (Unanswered(first, ct))
+        catch (Exception first) when (Stalled(first, ct))
         {
-            if (!read) throw Said(path, first, again: false);
-            await Task.Delay(RetryAfter, ct).ConfigureAwait(false);
+            if (!read) throw Said(path, first, wait, again: false);
+            await Task.Delay(wait, ct).ConfigureAwait(false);
             try
             {
                 return await send().ConfigureAwait(false);
             }
-            catch (Exception second) when (Unanswered(second, ct))
+            catch (Exception second) when (Stalled(second, ct))
             {
-                throw Said(path, second, again: true);
+                throw Said(path, second, wait, again: true);
             }
         }
     }
 
-    /// <summary>Whether a request failed for want of an answer, not because its caller gave up.</summary>
-    private static bool Unanswered(Exception error, CancellationToken ct) =>
-        !ct.IsCancellationRequested && error is HttpRequestException or TaskCanceledException or TimeoutException;
-
     /// <summary>
-    /// What the driver saw: the address, the bound where it ran out, whether it asked again, and where it did not what to look at. The
-    /// type stays the one a caller already catches.
+    /// Whether the client's own bound ran out while the caller's token stood: <see cref="HttpClient"/> cancels with a
+    /// <see cref="TimeoutException"/> inside, and only that is a stall.
     /// </summary>
-    private HttpRequestException Said(string path, Exception error, bool again)
+    private static bool Stalled(Exception error, CancellationToken ct) =>
+        !ct.IsCancellationRequested && error is TimeoutException or TaskCanceledException { InnerException: TimeoutException };
+
+    /// <summary>What the driver saw: the address, the bound that ran out, whether it asked again, and where it did not what to look at. The type stays the one a caller already catches.</summary>
+    private HttpRequestException Said(string path, Exception error, TimeSpan wait, bool again)
     {
-        var saw = error is HttpRequestException refused
-            ? $"could not be reached ({refused.Message})"
-            : $"did not answer within {RunningService.Seconds(_http.Timeout)}";
         var then = again
-            ? $", and not again after a second try {RunningService.Seconds(RetryAfter)} later"
+            ? $", and not again after a second try {RunningService.Seconds(wait)} later"
             : ". This asked for a change, so it was not asked again: the service may have done it before it stopped answering, so look at what it "
               + "changes (the session, quest or ask it names) before you press it again";
         return new HttpRequestException(
-            $"the service at {BaseUrl} {saw} to {path}{then}. The address was found, so {ServiceClient.UrlVariable} is not what is "
-            + "missing: the service may be busy, so run this again in a moment.", error);
+            $"the service at {BaseUrl} did not answer within {RunningService.Seconds(_http.Timeout)} to {path}{then}. The address was found, so "
+            + $"{ServiceClient.UrlVariable} is not what is missing: the service may be busy, so run this again in a moment.", error);
     }
 
     public void Dispose() => _http.Dispose();
