@@ -6368,6 +6368,39 @@ function requireQueueIgnored(home) {
 }
 
 /**
+ * QUEUETESTLEAK1: why a queue verb is refused where it was started, or null. The queue is its home's (`verdictsHome`, the
+ * repository's first worktree), and only that checkout queues to it or runs it: a verb started in a linked worktree, or in a
+ * folder git read as one (a tool test's scratch whose `.git` a reset had removed, 2026-10-28), never reaches the main checkout's
+ * queue. A verb that may start the runner (`run`) is refused too where the tool running it is another checkout's of the queue's
+ * own repository (`tool`, `sameRepository`): a tree's tool never runs the main checkout's queue. Another repository's tool (the
+ * tool tests' own, over their scratch queues) is not refused.
+ */
+export function queueHomeRefusal({ root, home, tool = null, sameRepository = false, run = false }) {
+  if (!samePath(root, home)) {
+    return `${root} is not the queue's checkout: the queue is kept in ${home}, the repository's main checkout, and only that checkout queues to it or runs it; run this there`;
+  }
+  if (run && tool && sameRepository && !samePath(tool, home)) {
+    return `this is the tool of ${tool}, another checkout of the queue's repository: a tree's tool never runs ${home}'s queue; queue and run it with ${home}'s own tools/merge-branch.mjs`;
+  }
+  return null;
+}
+
+/** The checkout holding this tool, and whether it is one of `home`'s repository (QUEUETESTLEAK1); none where git finds none. */
+function toolCheckout(home) {
+  const asked = git(dirname(fileURLToPath(import.meta.url)), ['rev-parse', '--show-toplevel', '--path-format=absolute', '--git-common-dir'], { allowFail: true });
+  const [top, common] = asked.status === 0 ? lines(asked.out) : [];
+  if (!top || !common) return { tool: null, sameRepository: false };
+  const theirs = git(home, ['rev-parse', '--path-format=absolute', '--git-common-dir'], { allowFail: true });
+  return { tool: resolve(top), sameRepository: theirs.status === 0 && samePath(common, theirs.out.trim()) };
+}
+
+/** QUEUETESTLEAK1: the verb refused, with `queueHomeRefusal`'s sentence, where it was started outside the queue's own checkout. */
+function requireQueueHome(root, home, { run = false } = {}) {
+  const why = queueHomeRefusal({ root, home, ...(run ? toolCheckout(home) : {}), run });
+  if (why) throw new Refusal(why);
+}
+
+/**
  * The scope tree at `commit` (§4.1, *Where*): a detached worktree of its own, made where none stands, reset and moved where it
  * stands; its builds and dependencies stay warm between candidates. A merge left open there is aborted: the queue leaves none.
  */
@@ -6857,6 +6890,7 @@ async function judged(home, candidate, outcome) {
 /** `--queue-run`: the detached runner. It acknowledges by writing its process id and start into the record, and ends when idle. */
 async function queueRunVerb(root) {
   const home = verdictsHome(root);
+  requireQueueHome(root, home, { run: true });
   requireQueueIgnored(home);
   const taken = withQueue(home, (queue) => (queue.runner && queue.runner.pid !== process.pid && pidAlive(queue.runner.pid)
     ? { busy: queue.runner }
@@ -6913,6 +6947,7 @@ async function ensureRunner(home, { ackMs = Number(process.env.MERGE_BRANCH_QUEU
  */
 function previewVerb(root, options) {
   const home = verdictsHome(root);
+  requireQueueHome(root, home);
   requireQueueIgnored(home);
   const [branch] = options.branches;
   const tip = requireBranch(home, branch);
@@ -6949,6 +6984,7 @@ function previewVerb(root, options) {
 /** `<branch> --message <file>` (§4.1, *The queue*): the frozen request queued, the runner started, its outcome waited for. */
 async function enqueueVerb(root, options) {
   const home = verdictsHome(root);
+  requireQueueHome(root, home, { run: true });
   requireQueueIgnored(home);
   const [branch] = options.branches;
   const file = resolve(root, options.messageFile);
@@ -7011,6 +7047,7 @@ async function waitOutcome(home, branch, tip, request) {
 async function queueVerb(root, options) {
   const home = verdictsHome(root);
   if (options.recheck) {
+    requireQueueHome(root, home, { run: true });
     const out = withQueue(home, (queue) => (queue.stop ? { queue: { ...queue, recheck: { at: nowIso() } } } : { none: true }));
     if (out.none) {
       console.log('merge-branch: the queue is not stopped; nothing to recheck');
@@ -7040,6 +7077,7 @@ async function queueVerb(root, options) {
 /** `--drop-batch <branch>…`: queued branches taken off the queue, or a candidate ended and its members handed back. */
 async function dropQueuedVerb(root, options) {
   const home = verdictsHome(root);
+  requireQueueHome(root, home);
   const asked = nowIso();
   const out = withQueue(home, (queue) => dropQueued(queue, options.branches, asked));
   console.log(out.dropped.length ? `merge-branch: taken off the queue: ${out.dropped.join(', ')}` : `merge-branch: none of ${options.branches.join(', ')} is queued`);

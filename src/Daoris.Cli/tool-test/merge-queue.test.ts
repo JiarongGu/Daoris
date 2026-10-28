@@ -87,6 +87,7 @@ const tool = await import(
   stepTrees: (options?: { end?: (pid: number) => void }) => Trees;
   watchCandidate: (candidate: Candidate, current: () => Candidate | null, trees: Trees, options?: { ms?: number }) => Watch;
   prefixRunner: (tree: string, candidate: { base: string; members: Member[] }, plan: { name: string; run: string }[], dir: string, watch?: Watch | null) => (failure: Failure, k: number) => Promise<Outcome>;
+  queueHomeRefusal: (facts: { root: string; home: string; tool?: string | null; sameRepository?: boolean; run?: boolean }) => string | null;
 };
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -995,6 +996,17 @@ const envGate = (file: string) => [
 // QUEUETESTLEAK1 (2026-10-28): a case's enqueue waited on the main checkout's queue and started a runner there from the tree's tool,
 // with the class-probe case's PATH. Its cases run one at a time here, so the variables it sets in the test process meet no other case.
 describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and queue', () => {
+  test("only the queue's own checkout queues to it or runs it, and a tree's tool never runs the main checkout's queue", () => {
+    const home = 'X:/daoris';
+    assert.equal(tool.queueHomeRefusal({ root: home, home }), null);
+    assert.equal(tool.queueHomeRefusal({ root: 'X:/daoris/', home, tool: home, sameRepository: true, run: true }), null, 'its own tool, the path spelled with a slash');
+    assert.match(tool.queueHomeRefusal({ root: 'X:/daoris/local/tree', home })!, /X:\/daoris\/local\/tree is not the queue's checkout: the queue is kept in X:\/daoris, the repository's main checkout/);
+    assert.match(tool.queueHomeRefusal({ root: home, home, tool: 'X:/daoris/local/scope-tree', sameRepository: true, run: true })!,
+      /the tool of X:\/daoris\/local\/scope-tree, another checkout of the queue's repository: a tree's tool never runs X:\/daoris's queue/);
+    assert.equal(tool.queueHomeRefusal({ root: home, home, tool: 'X:/daoris/local/scope-tree', sameRepository: true }), null, 'a verb that starts no runner here runs any checkout\'s tool');
+    assert.equal(tool.queueHomeRefusal({ root: home, home, tool: 'X:/elsewhere', sameRepository: false, run: true }), null, "another repository's tool (the tool tests' scratch queues) runs it");
+  });
+
   test('git\'s repository-locating variables, a stand-in gate\'s variable and a PATH set in the test process reach no case: its tool reads and writes only its scratch queue', async () => {
     // The repository around the tests, stood in for by a decoy with a queue of its own that must be left as it is.
     const decoy = makeFixture(`merge-queue-decoy-${process.pid}`);
@@ -1351,6 +1363,27 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.notEqual(ended.status, 0, ended.out);
       assert.match(ended.out, /no verdict within 5000 ms/);
       assert.deepEqual(repo.running(), []);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  // QUEUETESTLEAK1: the leaked runner was started in a folder git read as the session's tree, whose queue home is the main checkout's.
+  test('QUEUETESTLEAK1: a runner, a preview, an enqueue, a drop or a recheck started in a linked worktree of the repository is refused, saying whose the queue is, and its queue is left as it was', async () => {
+    const repo = queueScratch('linked');
+    try {
+      repo.branch('b1', { 'a.txt': 'a\n' });
+      const linked = join(dirname(repo.root), 'linked');
+      repo.git('worktree', 'add', '--quiet', '--detach', linked, 'main');
+      mkdirSync(join(linked, 'local'), { recursive: true });
+      writeFileSync(join(linked, 'local', 'b1.msg'), `Merge b1: its words${TRAILER}\n`);
+      for (const args of [['--queue-run'], ['b1', '--preview'], ['b1', '--message', 'local/b1.msg'], ['--drop-batch', 'b1'], ['--queue', '--recheck']]) {
+        const refused = await repo.run(args, {}, HANG_MS, linked);
+        assert.equal(refused.status, 2, `${args.join(' ')}: ${refused.out}`);
+        assert.match(refused.out, /is not the queue's checkout: the queue is kept in .*repo.*, the repository's main checkout, and only that checkout queues to it or runs it/, args.join(' '));
+      }
+      assert.equal(repo.queue(), null, 'nothing was written to the queue');
+      assert.equal(repo.log(), '', 'no runner was started');
     } finally {
       await repo.cleanup();
     }
