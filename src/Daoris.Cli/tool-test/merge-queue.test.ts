@@ -16,10 +16,14 @@ import { makeFixture, PATIENCE } from '../test/_fixture.ts';
 interface Signature { test?: string; exception?: string; location?: { method: string; text: string; ordinal: number }; message?: string; gate?: string; step?: string; errors?: string[] }
 type Outcome = { result: 'pass' } | { result: 'fail'; signature: Signature } | { result: 'cannot'; signature: Signature };
 interface Failure { unit?: string; test?: string | undefined; gate: string; signature: Signature; names: 'test' | 'gate' }
-interface Member { branch: string; tip: string; request?: string; message?: string; commit?: string; at?: string; containedBy?: string; handedBack?: { how: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
+interface Member { branch: string; tip: string; request?: string; message?: string; commit?: string; at?: string; containedBy?: string; handedBack?: { how: string; at?: string; failure?: string; with?: string[]; interacting?: string[]; paths?: string[]; why?: string } }
 interface Judged { outcome: string; member?: number; with?: number[]; interacting?: number[]; why?: string; said?: string; runs: unknown[] }
 interface Candidate { base: string; tip: string; members: Member[]; contained?: Member[]; state: string; reforms: number; recordsOnly: boolean; held?: { on: string; why: string }; run?: { pid: number } }
-interface Queue { schema: number; queued: Member[]; previews: Record<string, { tip: string }>; candidate: Candidate | null; stop: unknown; handedBack: Member[]; landed?: Member[]; drained?: Drained }
+interface Queue {
+  schema: number; queued: Member[]; previews: Record<string, { tip: string }>; candidate: Candidate | null; stop: unknown; handedBack: Member[]; landed?: Member[]; drained?: Drained;
+  forming?: { base: string; members: Member[] } | null; contained?: Member[];
+}
+type Standing = { landed?: Member; contained?: Member; back?: Member; pending?: string; gone?: boolean };
 interface Reservation { runner: string; gate: string; needGb: number; job: string }
 interface Admission { schema: number; reservations: Reservation[]; scopedTier: { state: string; since: string } | null; waiting: unknown[] }
 interface Job { state: string; workingGb?: number; committedGb?: number; why?: string }
@@ -43,6 +47,7 @@ const q = await import(
   enqueue: (queue: Queue, request: { branch: string; tip: string; message: string | null; at: string; requeue?: boolean }) => { queue?: Queue; entry?: Member; refused?: string };
   messageOf: (entry: Member) => string;
   dropQueued: (queue: Queue, branches: string[], at?: string) => { queue: Queue; dropped: string[]; ended: Candidate | null };
+  requestStanding: (queue: Queue, request: { branch: string; tip: string; request?: string }) => Standing;
   drainedRecord: (candidate: Candidate, what: { ended?: string[]; left?: string[]; probe?: string | null }, at?: string) => Drained;
   drainedLine: (drained: Drained) => string;
   sameCandidate: (current: Candidate | null, expected: Candidate) => boolean;
@@ -89,6 +94,7 @@ const tool = await import(
   prefixRunner: (tree: string, candidate: { base: string; members: Member[] }, plan: { name: string; run: string }[], dir: string, watch?: Watch | null) => (failure: Failure, k: number) => Promise<Outcome>;
   queueHomeRefusal: (facts: { root: string; home: string; tool?: string | null; sameRepository?: boolean; run?: boolean }) => string | null;
   queueGateEnvironment: (start?: Record<string, string | undefined>) => Record<string, string>;
+  waitSaid: (standing: Standing, facts: { branch: string; request?: string; holder?: string | boolean | null }) => { code: number; lines: string[] } | null;
   BESIDE_ENVIRONMENT: Record<string, string>;
 };
 
@@ -209,6 +215,55 @@ describe('the queue: a frozen request, read before it is queued', () => {
     assert.deepEqual(drained, { tip: 'c', at: AT, ended: ['check', 'driver'], left: ['modules'], probe: 'driver.prefix-2' });
     assert.equal(q.drainedLine(drained), 'ended gates check, driver, the probe driver.prefix-2, each with everything it started; never started: modules');
     assert.equal(q.drainedLine(q.drainedRecord(queue.candidate, {}, AT)), 'ended no gate running, each with everything it started');
+  });
+
+  test('QUEUEWAITEND1: a request dropped while queued or forming is handed back as dropped, so its waiter has an outcome; a drop leaves the rest forming', () => {
+    let queue = q.notePreview(q.emptyQueue(), { branch: 'b1', tip: 'a'.repeat(40), base: 'm', at: AT });
+    queue = q.enqueue(queue, { branch: 'b1', tip: 'a'.repeat(40), message: 'm', at: AT }).queue!;
+    const request = queue.queued[0]!.request;
+    const off = q.dropQueued(queue, ['b1'], AT);
+    assert.deepEqual(off.dropped, ['b1']);
+    assert.deepEqual(off.queue.handedBack.map((each) => [each.branch, each.request, each.handedBack?.how]), [['b1', request, 'dropped']]);
+    const forming = { ...q.emptyQueue(), forming: { base: 'm', members: members(2).map((each, i) => ({ ...each, request: `r${i + 1}` })) } };
+    const one = q.dropQueued(forming, ['b2'], AT);
+    assert.deepEqual(one.dropped, ['b2']);
+    assert.deepEqual(one.queue.forming!.members.map((each) => each.branch), ['b1'], 'the rest stay forming');
+    assert.deepEqual(one.queue.handedBack.map((each) => [each.branch, each.handedBack?.how]), [['b2', 'dropped']]);
+    assert.equal(q.dropQueued(one.queue, ['b1'], AT).queue.forming, null, 'a form left with no request is none');
+    const previewed = q.notePreview(forming, { branch: 'b1', tip: 't1'.padEnd(40, '0'), base: 'm', at: AT });
+    assert.match(q.enqueue(previewed, { branch: 'b1', tip: 't1'.padEnd(40, '0'), message: 'x', at: AT }).refused ?? '', /b1 is queued already/, 'a branch forming is queued already');
+  });
+
+  test('QUEUEWAITEND1: where a request stands, for its waiter: an outcome, in flight, or in no record at all', () => {
+    const asked = { branch: 'b1', tip: 't1', request: 'r1' };
+    const it = { ...asked, at: AT };
+    const candidate = { base: 'm', tip: 'c', members: [{ ...it, commit: 'c1' }], state: 'running', reforms: 0, recordsOnly: false };
+    const empty = q.emptyQueue();
+    assert.deepEqual(q.requestStanding({ ...empty, landed: [{ ...it, commit: 'c1' }] }, asked).landed?.commit, 'c1');
+    assert.ok(q.requestStanding({ ...empty, contained: [it] }, asked).contained);
+    assert.equal(q.requestStanding({ ...empty, handedBack: [{ ...it, handedBack: { how: 'dropped' } }] }, asked).back?.handedBack?.how, 'dropped');
+    assert.equal(q.requestStanding({ ...empty, queued: [it] }, asked).pending, 'queued');
+    assert.equal(q.requestStanding({ ...empty, forming: { base: 'm', members: [it] } }, asked).pending, 'forming');
+    assert.equal(q.requestStanding({ ...empty, candidate }, asked).pending, 'candidate');
+    assert.equal(q.requestStanding({ ...empty, candidate: { ...candidate, members: [], contained: [it] } }, asked).pending, 'contained');
+    assert.equal(q.requestStanding({ ...empty, queued: [{ ...it, request: 'r2' }], handedBack: [{ ...it, request: 'r0', handedBack: { how: 'pinned' } }] }, asked).gone, true,
+      'another occurrence of the same tip is not this request');
+  });
+
+  test("QUEUEWAITEND1: what a waiter says as it ends: in main (0), contained (0), handed back or dropped (1), or gone from the queue's records (1)", () => {
+    const it = { branch: 'b1', tip: 't1', request: 'r1aaaaaaaaa', at: AT };
+    assert.equal(tool.waitSaid({ pending: 'queued' }, { branch: 'b1' }), null, 'a request in flight is waited for');
+    assert.equal(tool.waitSaid({ landed: { ...it, commit: 'c1c1c1c1c1' } }, { branch: 'b1' })!.code, 0);
+    assert.equal(tool.waitSaid({ contained: { ...it } }, { branch: 'b1' })!.code, 0);
+    const dropped = tool.waitSaid({ back: { ...it, handedBack: { how: 'dropped', at: AT } } }, { branch: 'b1' })!;
+    assert.equal(dropped.code, 1);
+    assert.match(dropped.lines.join('\n'), /b1's request was taken off the queue \(--drop-batch, 2026-10-24T10:00:00\.000Z\): nothing of it was merged by this request\. Preview it and queue it again to merge it\./);
+    const inMain = tool.waitSaid({ back: { ...it, handedBack: { how: 'dropped', at: AT } } }, { branch: 'b1', holder: 'parent/batch' })!;
+    assert.match(inMain.lines.join('\n'), /main holds its tip already, landed with parent\/batch: there is nothing to queue again/);
+    assert.equal(tool.waitSaid({ back: { ...it, handedBack: { how: 'pinned', failure: 'check' } } }, { branch: 'b1' })!.code, 1);
+    const gone = tool.waitSaid({ gone: true }, { branch: 'b1', request: it.request })!;
+    assert.equal(gone.code, 1);
+    assert.match(gone.lines.join('\n'), /b1's request \(r1aaaaaa\) is no longer in the queue's records: it is not queued, forming or on the candidate, and was neither landed, contained nor handed back\. This wait ends; --queue says what the queue holds\./);
   });
 
   test('QUEUEDRAIN1: the watch ends the run\'s step trees once the candidate is no longer the queue\'s, and a read that fails is not a drop', () => {
@@ -1436,6 +1491,36 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       assert.equal(seen.drain, null, 'a variable set in the runner after its start is not passed on');
       assert.ok(!seen.path.split(delimiter).includes(shims), 'a PATH set in the runner after its start is not passed on');
     } finally {
+      await repo.cleanup();
+    }
+  });
+
+  // QUEUEWAITEND1 (2026-10-28): eleven waiters whose requests had left the queue (dropped while queued, or merged in another branch's
+  // batch) started a runner every second for a day.
+  test('QUEUEWAITEND1: a request dropped while queued is told to its waiter, which ends saying so; a request gone from every record ends its wait too', async () => {
+    const repo = queueScratch('wait-ends');
+    const hold = join(repo.root, 'local', 'go');
+    try {
+      repo.branch('b1', { 'a.txt': 'a\n' });
+      repo.branch('b2', { 'b.txt': 'b\n' });
+      for (const name of ['b1', 'b2']) assert.equal((await repo.run([name, '--preview'])).status, 0);
+      // The runner holds before it forms, so both requests stay queued; a waiter that never ends is ended at the shared patience.
+      const first = repo.run(['b1', '--message', 'local/b1.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold }, PATIENCE);
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1 && Boolean(repo.queue()?.runner));
+      const second = repo.run(['b2', '--message', 'local/b2.msg'], { MERGE_BRANCH_QUEUE_HOLD: hold }, PATIENCE);
+      await repo.until(() => (repo.queue()?.queued.length ?? 0) === 2);
+      assert.equal((await repo.run(['--drop-batch', 'b1'])).status, 0);
+      const dropped = await first;
+      assert.equal(dropped.status, 1, dropped.out);
+      assert.match(dropped.out, /b1's request was taken off the queue \(--drop-batch, .*\): nothing of it was merged by this request/);
+      // b2's request leaves every record with no outcome (a record written by hand): its waiter says so and ends.
+      q.writeQueue(repo.root, { ...repo.queue()!, queued: [] });
+      const gone = await second;
+      assert.equal(gone.status, 1, gone.out);
+      assert.match(gone.out, /b2's request \([0-9a-f]{8}\) is no longer in the queue's records/);
+      assert.deepEqual(repo.queue()!.handedBack.map((each) => [each.branch, each.handedBack?.how]), [['b1', 'dropped']]);
+    } finally {
+      writeFileSync(hold, '');
       await repo.cleanup();
     }
   });

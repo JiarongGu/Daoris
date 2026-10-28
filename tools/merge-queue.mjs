@@ -146,8 +146,8 @@ export function enqueue(queue, { branch, tip, message, at, requeue = false }) {
   if (previewed.tip !== tip) {
     return { refused: `${branch}'s tip is ${tip.slice(0, 7)}, and its last preview showed ${previewed.tip.slice(0, 7)}: preview it again (a records commit comes before the preview), then queue it` };
   }
-  if (queue.queued.some((each) => each.branch === branch) || queue.candidate?.members.some((each) => each.branch === branch && !each.handedBack)
-    || queue.candidate?.contained?.some((each) => each.branch === branch)) {
+  if (queue.queued.some((each) => each.branch === branch) || queue.forming?.members?.some((each) => each.branch === branch)
+    || queue.candidate?.members.some((each) => each.branch === branch && !each.handedBack) || queue.candidate?.contained?.some((each) => each.branch === branch)) {
     return { refused: `${branch} is queued already: --drop-batch ${branch} takes it off, then queue it again` };
   }
   const entry = { branch, tip, request: randomUUID(), message: Buffer.from(message, 'utf8').toString('base64'), at, ...(requeue ? { requeue } : {}) };
@@ -160,25 +160,59 @@ export const messageOf = (entry) => Buffer.from(entry.message ?? '', 'base64').t
 /**
  * Queued branches taken off the queue; a candidate's branches end it and are handed back (`--drop-batch`). Answers the queue, the
  * branches dropped and, when a candidate ended, `ended`: that candidate, whose runner (QUEUEDRAIN1) is the one to end its run.
+ *
+ * QUEUEWAITEND1: every request a drop takes off is handed back as `dropped`, a queued one and one forming as a candidate's, so
+ * its waiter reads an outcome; one taken off the queue with no record had a waiter that never ended. A drop of some of the requests
+ * forming leaves the rest forming (the runner forms them again, never writing the candidate it was making).
  */
 export function dropQueued(queue, branches, at = new Date().toISOString()) {
   const drop = (branch) => branches.length === 0 || branches.includes(branch);
+  const dropped = (each) => ({ ...each, handedBack: { how: 'dropped', at } });
   const ends = Boolean(queue.candidate?.members.some((each) => drop(each.branch)));
   // C4: a contained member is part of its candidate's request set, so a candidate a drop ends hands it back with the rest, and
   // one dropped by name alone leaves the candidate standing without it.
   const held = queue.candidate?.contained ?? [];
-  const back = ends
-    ? [...queue.candidate.members, ...held].map((each) => ({ ...each, handedBack: { how: 'dropped', at } }))
-    : held.filter((each) => drop(each.branch)).map((each) => ({ ...each, handedBack: { how: 'dropped', at } }));
-  const dropped = [...queue.queued.filter((each) => drop(each.branch)).map((each) => each.branch), ...back.map((each) => each.branch)];
-  const standing = queue.candidate && !ends && back.length
+  const forming = queue.forming?.members ?? [];
+  const back = [
+    ...queue.queued.filter((each) => drop(each.branch)),
+    ...forming.filter((each) => drop(each.branch)),
+    ...(ends ? [...queue.candidate.members, ...held] : held.filter((each) => drop(each.branch))),
+  ].map(dropped);
+  const standing = queue.candidate && !ends && held.some((each) => drop(each.branch))
     ? { ...queue.candidate, contained: held.filter((each) => !drop(each.branch)) }
     : queue.candidate;
+  const left = forming.filter((each) => !drop(each.branch));
   return {
-    queue: { ...queue, queued: queue.queued.filter((each) => !drop(each.branch)), candidate: ends ? null : standing, handedBack: [...(queue.handedBack ?? []), ...back] },
-    dropped,
+    queue: {
+      ...queue,
+      queued: queue.queued.filter((each) => !drop(each.branch)),
+      ...(queue.forming ? { forming: left.length ? { ...queue.forming, members: left } : null } : {}),
+      candidate: ends ? null : standing,
+      handedBack: [...(queue.handedBack ?? []), ...back],
+    },
+    dropped: back.map((each) => each.branch),
     ended: ends ? queue.candidate : null,
   };
+}
+
+/**
+ * QUEUEWAITEND1: where a request stands in the queue's record, for the invocation waiting on it: an outcome (`landed`, `contained`,
+ * `back`), in flight (`pending`: `queued`, `forming`, `candidate`, or `contained` on the candidate), or in no record at all (`gone`).
+ * A request is its branch, its frozen tip and its own id, so another occurrence of the same tip is never this one (QUEUEWAIT1).
+ */
+export function requestStanding(queue, { branch, tip, request }) {
+  const same = (each) => each.branch === branch && each.tip === tip && each.request === request;
+  const landed = (queue.landed ?? []).find(same);
+  if (landed) return { landed };
+  const contained = (queue.contained ?? []).find(same);
+  if (contained) return { contained };
+  const back = (queue.handedBack ?? []).find(same);
+  if (back) return { back };
+  if (queue.queued.some(same)) return { pending: 'queued' };
+  if ((queue.forming?.members ?? []).some(same)) return { pending: 'forming' };
+  if ((queue.candidate?.members ?? []).some((each) => same(each) && !each.handedBack)) return { pending: 'candidate' };
+  if ((queue.candidate?.contained ?? []).some(same)) return { pending: 'contained' };
+  return { gone: true };
 }
 
 /**
@@ -683,6 +717,7 @@ export function queueLines(queue, { branchTip = () => null, now = Date.now() } =
     candidate.members.forEach((member, i) => out.push(`  ${i + 1}. ${member.branch} at ${String(member.tip).slice(0, 7)}${member.commit ? ` → ${String(member.commit).slice(0, 7)}` : ''}`));
     for (const each of candidate.contained ?? []) out.push(`  contained: ${each.branch} at ${String(each.tip).slice(0, 7)}, in ${each.containedBy} (settled when ${each.containedBy} promotes)`);
   }
+  if (queue.forming?.members?.length) out.push(`forming on ${String(queue.forming.base).slice(0, 7)}: ${queue.forming.members.map((each) => each.branch).join(', ')}`);
   if (queue.queued.length) {
     out.push(`queued: ${queue.queued.length}`);
     for (const entry of queue.queued) {
