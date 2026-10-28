@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-28 - The rehearsals' port-holder lookup named nobody on a loaded machine (FLAKE1)
+
+- **Symptom:** the same candidate `30068ce` failed its cli gate on `rehearsal-kit.test.mjs`'s *the holder of a port is named by its process, as Windows tells it*, after 30.5 seconds: `portHolder` answered "a process the system did not name" for a port the test's own process held. The 2026-10-27 and 28 batches had failed on it before.
+- **Root cause:** `portHolder` asks a PowerShell for the listener (`Get-NetTCPConnection`, then `Get-CimInstance Win32_Process`) under a 30-second `spawnSync` timeout. On the 100% loaded machine the PowerShell's start and its two CIM queries took longer, so the call was ended with no output; alone on the same machine it took 14 seconds.
+- **Fix:** the lookup is given two minutes, on Windows and with `lsof`. It runs only for a refusal, whose one use is naming the holder, so a longer wait costs a run that is already refused and nothing else.
+- **Verify:** the case passes on the branch (14 s); the queue's next candidate carries it.
+- **Commit:** the branch `parent/readshare-release`.
+
 ## 2026-10-28 - Three held-file cases of the account readers failed a candidate, their holds let go by a starved pool (FLAKE1)
 
 - **Symptom:** the merge queue's candidate `30068ce` (four branches, none touching the readers) failed its fast Driver gate on three `ReadShareAccountTests` cases at once (`A_grant_reads_the_config_its_move_into_place_still_holds`, `A_rule_proposal_is_answered_while_its_move_into_place_still_holds_it`, `The_help_approvals_are_read_while_their_move_into_place_still_holds_them`), each with `UnauthorizedAccessException` at `AtomicFile.Replace`'s rename after 5 to 8 seconds. GRAPHQUIET1's verification had seen the class fail the same way beside two install sessions. A failure outside the Process category is never re-run, so it sent the batch's members through the queue one at a time.
