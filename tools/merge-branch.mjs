@@ -7026,7 +7026,9 @@ function previewVerb(root, options) {
   if (merged.status > 1 || !tree) throw new Refusal(`git merge-tree could not merge ${branch} onto ${MAIN}:\n${merged.err || merged.out}`);
   const union = unionRecords(home);
   const generated = readGenerated(home);
-  const blocking = conflicted.filter((path) => !union.includes(path) && !isGenerated(path, generated) && path !== backlogPath(home));
+  // INTEGRATE1c: a row table the line declares is settled by the merge base as the backlog is, so it does not block either.
+  const rows = declaredRows(home, base);
+  const blocking = conflicted.filter((path) => !union.includes(path) && !isGenerated(path, generated) && path !== backlogPath(home) && !rows.includes(path));
   console.log(`preview: ${branch} at ${tip.slice(0, 7)} merged onto ${MAIN} at ${base.slice(0, 7)}; nothing is committed, and the queue takes this tip only`);
   console.log(git(home, ['--no-optional-locks', 'diff', '--stat', base, tree]).out.trimEnd());
   console.log('');
@@ -7035,7 +7037,7 @@ function previewVerb(root, options) {
   if (conflicted.length) {
     console.log(`conflicts: ${conflicted.join(', ')}`);
     if (blocking.length) console.log(`  ${blocking.join(', ')} the resolvers cannot merge: resolve it on the branch (merge ${MAIN} into it), then preview again`);
-    else console.log('  each is a union record, the backlog or a generated folder, which the merge resolves or writes');
+    else console.log('  each is a union record, the backlog, a declared row table or a generated folder, which the merge resolves or writes');
   }
   const plan = readPlan(home);
   const lanes = readLanes(home)?.lanes ?? [];

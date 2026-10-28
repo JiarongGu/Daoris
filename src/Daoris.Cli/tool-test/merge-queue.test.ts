@@ -1474,6 +1474,29 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
+  test("a preview names a conflict in a row table the line declares as one the merge settles, never as one the resolvers cannot merge", async () => {
+    const repo = queueScratch('rows-preview');
+    try {
+      const table = (...rows: string[]) => ['# Table', '', '| When | Run |', '|---|---|', '| one | `a` |', ...rows, ''].join('\n');
+      const gates = JSON.parse(readFileSync(join(repo.root, 'daoris.gates.json'), 'utf8')) as { gates: unknown[] };
+      mkdirSync(join(repo.root, 'docs'), { recursive: true });
+      writeFileSync(join(repo.root, 'docs', 'table.md'), table());
+      writeFileSync(join(repo.root, 'daoris.gates.json'), `${JSON.stringify({ ...gates, integration: { merge: [{ paths: 'docs/table.md', by: 'rows' }] } }, null, 2)}\n`);
+      repo.git('add', '-A');
+      repo.git('commit', '--quiet', '-m', `a declared table${TRAILER}`);
+      repo.branch('row', { 'docs/table.md': table('| three | `c` |') });
+      writeFileSync(join(repo.root, 'docs', 'table.md'), table('| two | `b` |'));
+      repo.git('commit', '--quiet', '-am', `main adds a row${TRAILER}`);
+      const previewed = await repo.run(['row', '--preview']);
+      assert.equal(previewed.status, 0, previewed.out);
+      assert.match(previewed.out, /conflicts: docs\/table\.md/);
+      assert.doesNotMatch(previewed.out, /the resolvers cannot merge/);
+      assert.match(previewed.out, /a union record, the backlog, a declared row table or a generated folder/);
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
   // The review's first finding on INTEGRATE1c: the line's marker was the word `line`, which a branch may be named.
   test('a container whose branch is named `line` holds its member provisionally, as any member does: handed back, the member is judged again on its own', async () => {
     const repo = queueScratch('contained-named-line');
