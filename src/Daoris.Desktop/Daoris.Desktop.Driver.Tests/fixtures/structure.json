@@ -689,6 +689,7 @@
     "Sessions/Heavy/HeavyTold.cs": "Review",
     "Sessions/Heavy/HeavyWorkers.cs": "Review",
     "Sessions/Heavy/LongCalls.cs": "Review",
+    "Sessions/Heavy/MachineAdmission.cs": "Review",
     "Sessions/Heavy/SessionChecks.cs": "Review",
     "Sessions/Heavy/SessionChecksCommand.cs": "Review",
     "Knowledge/HistoryBytes.cs": "Knowledge",
