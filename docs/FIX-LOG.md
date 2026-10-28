@@ -11,6 +11,7 @@ repository.
 - **Root cause:** `AcpTests` kept its own waits: five `WaitAsync` of ten seconds on a run's end, a poll of 500 tries of 10 ms, a ten-second deadline on a heard line and a two-second poll. Each waits on a signal that fails to come only when the code is wrong, which TESTPATIENCE1 gives `Poll.Patience` (two minutes), because a starved run reaches any shorter bound on time alone.
 - **Fix:** the five waits are `WaitAsync(Poll.Patience)`, both polls are `Poll.Until`, and the heard-line deadline is `Poll.Patience`; no assertion, case or order changes, and an unbounded wait on a held turn stays as it was.
 - **Verify:** `AcpTests` (filtered, `Category!=Process`) passes whole on the branch; the queue's next candidate carries it with the Workflows cut.
+- **The next candidate:** `28cc101` (with this branch) failed the same way in `AccountRotationHoldTests`, whose private `Bound` of ten seconds waited on two looks under a 21-minute driver gate; it is `Poll.Patience` too. Twenty other test classes keep a private short bound and 65 inline `WaitAsync` waits a fixed few seconds: TESTPATIENCE2 sweeps them.
 - **Commit:** the branch `parent/acpwait1`.
 
 ## 2026-10-28 - The structure gate's wall-clock bound failed a candidate on the machine's load (STRUCTBOUND1)

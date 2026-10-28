@@ -14,7 +14,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class AccountRotationHoldTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+    // A look's end is a signal that fails to come only when the code is wrong: the suite's patience (TESTPATIENCE1, ACPWAIT1).
+    private static readonly TimeSpan Bound = Poll.Patience;
 
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
 
