@@ -247,6 +247,7 @@ day's hand repairs (§2) was a step the product did not own.
 | `gates` | `declared` (the accepted blob's `integration.gates`), or `none` (today's trust of the session's own checks) | `none` |
 | `unconfirmed` | §4.5: for a unit no member reaches and for one a member reaches, each `land`, `split` or `hold` | `{ "unreached": "land", "reached": "split" }` once row b's replay holds (§4.5); until then `split` for both, today's rule |
 | `conflicts` | a conflict of meaning goes to the member's `session`, to a landing `agent` (§5.4), or is held (`hold`) for the steward or owner | `session` |
+| `overlap` | a start whose declared paths meet an open quest's: `warn` (said on both) or `wait` (held on the earlier's `integrate` node, §9) | `warn` |
 | `line` | the line by name | the repository's canonical line (`daoris driver line`) |
 
 ### 4.2 The landing shapes
@@ -285,7 +286,8 @@ repository whose rows collide (§9).
 **The confirm run.** Before a failure is placed on any member, the failing gate's run is repeated once on the candidate's tip **as composed**
 (the same units, settings and order, where the runner can run them so; the gate whole otherwise), **holding the whole admission**: an entry in
 HEAVYQUEUE1's admission that takes every place, first come first served, so it starts once the heavy runs before it end and admits none beside
-it; a session's heavy run asking meanwhile waits and is told, by HEAVYQUEUE1's words. One confirm run per signature per candidate, never more.
+it; a session's heavy run asking meanwhile waits and is told, by HEAVYQUEUE1's words. One confirm run per failing gate per candidate, answering
+for every failure that gate had, never more.
 
 - **Fails again with its signature: confirmed.** It is judged as today (§5.3): the base, then the prefixes, the last transition pinned.
 - **Passes: unconfirmed.** The gate's verdict on the candidate's tree is the confirm run's pass, and the first failure is filed as a **sighting**
@@ -334,8 +336,8 @@ them (`compatible-builds.md`).
 - **The unit's graph.** Under a merge rule, an `integrate` node, `waited`, sits between `handed` and `line` in Current's graph, and a named
   workflow's version decodes its merge landing to the same nodes (the fabric events design §E7). `handed` is reached when the request is frozen
   (`work.landed`); `integrate` is reached when a promoted candidate holds the frozen tip, its evidence the candidate and the promoted commit, or
-  when the unit is found contained (step 3); it fails when the unit is handed back, with the code (`work.integrated` on reach); `line` stays
-  observed by git's proof.
+  when the unit is found contained (step 3), and `work.integrated` is told then; it fails when the unit is handed back, with the code; `line`
+  stays observed by git's proof.
 - **The line's integration run.** One per line, built in: its steps fixed, its options the declaration's, candidates one at a time, each to its
   verdict unless dropped or stopped. It has a record of its own in the store (§5.6), as D192's landed run has, and it is no named workflow (§10).
 
@@ -351,11 +353,11 @@ them (`compatible-builds.md`).
 | 6 | **gates** | the declaration's gates on the candidate's tip, through its runner or directly (§5.9); each heavy gate takes a place in the machine's admission; every process in the candidate's job; the environment composed (§5.5) | `integration.gates` |
 | 7 | **judge** | each failure by its signature (§5.3) | `integration.judged` |
 | 8 | **promote** | the line to the candidate's tip: `merge --ff-only` in a clean checkout on the line, read immediately before (TreeLands' guards, `:264-282`), or, where no worktree has the line out, one `update-ref` verifying the line's old value; held and said otherwise, tried at each look; formed again where the line moved | `integration.promoted`, `integration.held` |
-| 9 | **settle** | for each member: its node reached; its branch's commits past the frozen tip judged **contained** (said), **superseded** (asked, §5.7) or **new** (a new request where its session is done, else its session's) | `integration.settled` |
+| 9 | **settle** | for each member: its node reached; its branch's commits past the frozen tip judged **contained** (said), **superseded** (asked, §5.7) or **new** (a new request where its session is done, else its session's) | `integration.settled`, `work.integrated` |
 | 10 | **tidy** | each member's tree by its rule's tidy, the declared scratch disposable beside `TreeScratch`'s list, nothing forced; a tree that stays follows the landed tip (D87 point 7) | `integration.tidied` |
-| 11 | **close** | the unit's integration note written from its record (a code and its facts), which the review, the session's head, the quest's page, the CLI and Ask Daoris read: *Accept* or *waits for you* is said only where `request` names a press still due | `work.integrated` |
+| 11 | **close** | the unit's integration note written from its record (a code and its facts), which the review, the session's head, the quest's page, the CLI and Ask Daoris read: *Accept* or *waits for you* is said only where `request` names a press still due | `integration.closed` |
 
-A member handed back at step 5, 7 or 8 says why (`integration.handed-back`), to whom and with which words. A line whose base fails a gate that
+A member handed back at step 5 or 7 says why (`integration.handed-back`), to whom and with which words. A line whose base fails a gate that
 names no test stops (`integration.stopped`), lifted by a commit that moves the line, a `recheck`, or the run's own recheck an hour on, as today.
 
 ### 5.3 The judge
@@ -545,8 +547,8 @@ Line counts by `wc -l` at `7ebeba1ba`; tests beside each are not listed.
 
 ## 9. Rows that touch the same files
 
-**The rule, stated:** two rows that change the same files are never built from one base at once. Daoris holds it where it can see it, and says
-it where it cannot:
+**The rule, stated:** two rows that change the same files are built one after the other, never from one base at once. Daoris holds it where the
+paths are declared and the rule says `overlap: wait`, and says it everywhere else it can see it:
 1. **Declared paths.** An ask or a quest may carry `paths` (globs), as a backlog row names its `file:line`. At a start the planner compares a
    quest's paths with every open quest's of the repository, declared or already changed on its branch against the line; an overlap is said on
    both (`overlaps <quest>: <paths>`), and under the rule's `overlap: wait` (absent: `warn`) the later start waits on the earlier unit's
