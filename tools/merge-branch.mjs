@@ -435,7 +435,7 @@ import { endOrphans, endStranded } from './processes.mjs';
 import { gateSignature, readTrx, signatureKey, signatureOf } from './test-failures.mjs';
 import {
   MERGE_QUEUE, MERGE_QUEUE_LOG, RUNNER_ACK_MS, SCOPE_TREE, appendScopeRun, candidateOutcome, dropQueued, enqueue, formCandidate, gitBudget,
-  changeCandidate, judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits, promotion, queueLines, readAdmission, readQueue, sameCandidate,
+  changeCandidate, drainedLine, drainedRecord, judgeFailure, memoryStep, messageOf, nextMembers, notePreview, noteRecheck, overdueWaits, promotion, queueLines, readAdmission, readQueue, sameCandidate,
   recheckDue, recordsOnly, reformCount, resumeCandidate, scopedSet, scopedTier, writeAdmission, writeQueue,
 } from './merge-queue.mjs';
 
@@ -6195,6 +6195,9 @@ async function ciStopVerb(root) {
 /** How often a waiting invocation reads the queue, and how often the runner looks again when it waits. */
 const QUEUE_POLL_MS = Number(process.env.MERGE_BRANCH_QUEUE_POLL_MS) || 5_000;
 const QUEUE_TICK_MS = Number(process.env.MERGE_BRANCH_QUEUE_TICK_MS) || 60_000;
+/** QUEUEDRAIN1: how often the runner asks whether the candidate it runs is still the queue's, and how long a drop waits to hear. */
+const DROP_POLL_MS = Number(process.env.MERGE_BRANCH_DROP_POLL_MS) || 2_000;
+const DRAIN_WAIT_MS = Number(process.env.MERGE_BRANCH_DRAIN_WAIT_MS) || 30_000;
 const sleepMs = (ms) => new Promise((done) => { setTimeout(done, ms); });
 
 /** The queue's record changed under its lock: `change(queue)` answers `{ queue }` to write, with anything else it says. */
@@ -6204,6 +6207,52 @@ function withQueue(home, change) {
     if (out.queue) writeQueue(home, out.queue);
     return out;
   });
+}
+
+/**
+ * QUEUEDRAIN1: a candidate's run watches the queue for its own end. `current()` answers the queue's candidate, read under the
+ * queue's lock (a read made beside a writer must never mistake a record it could not read for a drop); once it is no longer this
+ * frozen candidate (dropped, or replaced), `trees.end` ends every step the run owns, each with what it started, through the
+ * same cancellation a superseded run uses (CIPRIO1c), and the run starts nothing more. It is asked at each tick and before each
+ * probe; the timer keeps no process alive.
+ */
+export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS } = {}) {
+  const watch = {
+    trees,
+    check() {
+      if (trees.ended) return true;
+      let now;
+      try {
+        now = current();
+      } catch {
+        return false;
+      }
+      if (!sameCandidate(now, candidate)) trees.end('the candidate was dropped or replaced');
+      return Boolean(trees.ended);
+    },
+    start() {
+      const timer = setInterval(() => {
+        try {
+          watch.check();
+        } catch {
+          // Asked again at the next tick.
+        }
+      }, ms);
+      timer.unref();
+      watch.stop = () => clearInterval(timer);
+      return watch;
+    },
+    stop() {},
+  };
+  return watch;
+}
+
+/** QUEUEDRAIN1: a probe the drop ended: the judgement stops where it stands, and the run answers that it was drained. */
+class Drained extends Error {
+  constructor(probe = null) {
+    super('the candidate was dropped: its probe was ended');
+    this.probe = probe;
+  }
 }
 
 const mainTipOf = (home) => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${MAIN}^{commit}`], { allowFail: true }).out.trim();
@@ -6319,10 +6368,13 @@ export function prefixCommand(gate, failure) {
 /**
  * One failure's selection run on a prefix in the scope tree (§4.1 point 4): the failing test's class, or the failing gate's own
  * command, at the base plus the first `k` members; answers whether it fails with the signature, another way, or cannot run.
+ * QUEUEDRAIN1: given the candidate's `watch`, a probe starts only while the candidate stands, runs among the run's step trees, and
+ * throws `Drained` once the drop ended it.
  */
-function prefixRunner(tree, candidate, plan, dir) {
+export function prefixRunner(tree, candidate, plan, dir, watch = null) {
   let n = 0;
   return async (failure, k) => {
+    if (watch?.check()) throw new Drained();
     const commit = k === 0 ? candidate.base : candidate.members[k - 1].commit;
     git(tree, ['checkout', '--quiet', '--force', '--detach', commit]);
     const gate = plan.find((each) => each.name === failure.gate);
@@ -6331,7 +6383,8 @@ function prefixRunner(tree, candidate, plan, dir) {
     const narrowed = prefixCommand(gate, failure);
     const trx = /^dotnet test\b/.test(gate.run.trim()) ? join(dir, `${slug(failure.gate)}.prefix-${n}.trx`) : null;
     const probe = { ...gate, name: `${gate.name}.prefix-${n}`, run: trx ? trxCommand(narrowed, trx) : narrowed };
-    const result = await runGate(tree, probe, dir, {});
+    const result = await runGate(tree, probe, dir, { trees: watch?.trees ?? null });
+    if (result.verdict === 'ENDED') throw new Drained(probe.name);
     if (result.verdict === 'PASS' || result.verdict === 'FLAKE') return { result: 'pass' };
     const found = failuresOf(tree, { ...result, gate }, trx);
     const match = found.find((each) => signatureKey(each.signature) === signatureKey(failure.signature));
@@ -6355,6 +6408,26 @@ function knownFor(home, failure) {
  * on red each failure judged over the base and the prefixes. Answers what the queue does next (`candidateOutcome`), with the run.
  */
 async function runCandidate(home, candidate) {
+  // QUEUEDRAIN1: every step this run starts, its gates and its failure probes, is held in one set of step trees, which the
+  // candidate's own drop or replacement ends.
+  const watch = watchCandidate(candidate, () => withQueue(home, (queue) => ({ candidate: queue.candidate })).candidate, stepTrees()).start();
+  try {
+    return await runCandidateWatched(home, candidate, watch);
+  } finally {
+    watch.stop();
+  }
+}
+
+/** QUEUEDRAIN1: what the runner does once the drop has ended the candidate's steps: say what was ended, tell the drop, take the next work. */
+function drained(home, candidate, run, { ended = [], left = [], probe = null } = {}) {
+  const record = drainedRecord(candidate, { ended, left, probe });
+  console.log(`${record.at} ${candidate.tip.slice(0, 7)} was dropped or replaced: ${drainedLine(record)}; the runner takes the next queued work`);
+  appendScopeRun(home, { ...run, state: 'ended', why: 'the candidate was dropped or replaced', drained: record });
+  withQueue(home, (queue) => ({ queue: { ...queue, drained: record } }));
+  return { action: 'drained' };
+}
+
+async function runCandidateWatched(home, candidate, watch) {
   const tree = prepareScopeTree(home, candidate.tip);
   installDependencies(tree);
   copyPrivateFiles(home, tree, privateGateFiles(home));
@@ -6400,7 +6473,11 @@ async function runCandidate(home, candidate) {
   withAdmission(home, (record) => scopedTier(record, 'running', nowIso()));
   let results;
   try {
-    results = await runRecorded(tree, gates, dir, { keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length });
+    // QUEUEDRAIN1: the run's step trees and its halt are the watch's, so a drop ends the gates running and starts no more; this
+    // returns once every step has ended, and only then is the scoped tier released.
+    results = await runRecorded(tree, gates, dir, {
+      keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(),
+    });
   } finally {
     withAdmission(home, (record) => scopedTier(record, null, nowIso()));
   }
@@ -6412,6 +6489,12 @@ async function runCandidate(home, candidate) {
     ran: results.map((result) => ({ gate: result.gate.name, verdict: verdictShown(result), ms: result.ms ?? null })),
     kept: set.kept.map((each) => each.name), deferred: [...set.deferred, ...deferredClasses.map((name) => ({ name, why: "past the git half's budget" }))],
   };
+  // QUEUEDRAIN1: asked once more now every step has ended, so a drop that came as the last gate ended is drained too.
+  const gone = () => ({
+    ended: results.filter((result) => result.verdict === 'ENDED').map((result) => result.gate.name),
+    left: gates.filter((gate) => !results.some((result) => result.gate.name === gate.name)).map((gate) => gate.name),
+  });
+  if (watch.check()) return drained(home, candidate, run, gone());
   if (!sameCandidate(readQueue(home).candidate, candidate)) {
     appendScopeRun(home, { ...run, state: 'ended', why: 'the candidate was dropped or replaced' });
     return { action: 'obsolete' };
@@ -6427,22 +6510,30 @@ async function runCandidate(home, candidate) {
     return { action: 'green', run };
   }
   const judgements = [];
-  const runOn = prefixRunner(tree, candidate, plan, dir);
+  const runOn = prefixRunner(tree, candidate, plan, dir, watch);
   const alone = async (failure, k) => {
+    if (watch.check()) throw new Drained();
     const member = candidate.members[k - 1];
     const formed = mergeMember(tree, member, candidate.base);
     if (formed.conflict) return { result: 'cannot', signature: { gate: failure.gate, step: 'merge', message: formed.conflict[0] } };
     const probe = { ...candidate, members: [{ ...member, commit: formed.commit }] };
-    return prefixRunner(tree, probe, plan, dir)(failure, 1);
+    return prefixRunner(tree, probe, plan, dir, watch)(failure, 1);
   };
-  for (const result of failed) {
-    const gate = gates.find((each) => each.name === result.gate.name);
-    for (const failure of failuresOf(tree, result, result.trx ?? gate?.scopedTrx)) {
-      const judged = await judgeFailure(failure, { members: candidate.members.length, run: runOn, alone, known: failure.names === 'test' ? knownFor(home, failure) : null, baseCommit: candidate.base });
-      judgements.push({ failure, judged });
-      console.log(`  ${failure.test}: ${judged.outcome}${judged.member ? ` at member ${judged.member} (${candidate.members[judged.member - 1].branch})` : ''}${judged.why ? `, ${judged.why}` : ''}`);
+  try {
+    for (const result of failed) {
+      const gate = gates.find((each) => each.name === result.gate.name);
+      for (const failure of failuresOf(tree, result, result.trx ?? gate?.scopedTrx)) {
+        const judged = await judgeFailure(failure, { members: candidate.members.length, run: runOn, alone, known: failure.names === 'test' ? knownFor(home, failure) : null, baseCommit: candidate.base });
+        judgements.push({ failure, judged });
+        console.log(`  ${failure.test}: ${judged.outcome}${judged.member ? ` at member ${judged.member} (${candidate.members[judged.member - 1].branch})` : ''}${judged.why ? `, ${judged.why}` : ''}`);
+      }
     }
+  } catch (error) {
+    // QUEUEDRAIN1: a drop ended the probe running (or none was started): what was judged so far is not filed, and the runner goes on.
+    if (error instanceof Drained) return drained(home, candidate, run, { probe: error.probe, ...gone() });
+    throw error;
   }
+  if (watch.check()) return drained(home, candidate, run, { ...gone() });
   const outcome = candidateOutcome(judgements, candidate.members);
   fileJudged(home, candidate, outcome);
   appendScopeRun(home, { ...run, state: 'red', judged: judgements.map(({ failure, judged }) => ({ test: failure.test, gate: failure.gate, outcome: judged.outcome, member: judged.member ?? null, why: judged.why ?? null, runs: judged.runs.length })), outcome: outcome.action });
@@ -6549,7 +6640,9 @@ async function queueStep(home) {
     return 'next';
   }
   if (action === 'run') {
-    withQueue(home, (q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'running', run: { pid: process.pid, at } } } }));
+    // QUEUEDRAIN1: a drop that came since the step read the queue leaves nothing to run, and nothing is written over it.
+    const started = withQueue(home, (q) => changeCandidate(q, candidate, () => ({ queue: { ...q, candidate: { ...q.candidate, state: 'running', run: { pid: process.pid, at } } } })));
+    if (started.obsolete) return 'next';
     const outcome = await runCandidate(home, candidate);
     return judged(home, candidate, outcome);
   }
@@ -6588,6 +6681,8 @@ async function judged(home, candidate, outcome) {
     return 'next';
   };
   if (outcome.action === 'obsolete') return obsolete();
+  // QUEUEDRAIN1: the run's steps were ended and said so (`drained`); there is nothing to record, and the next queued work forms at once.
+  if (outcome.action === 'drained') return 'next';
   if (outcome.action === 'green') {
     if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'green' } } })).obsolete) return obsolete();
     return 'next';
@@ -6787,11 +6882,37 @@ async function queueVerb(root, options) {
 }
 
 /** `--drop-batch <branch>…`: queued branches taken off the queue, or a candidate ended and its members handed back. */
-function dropQueuedVerb(root, options) {
+async function dropQueuedVerb(root, options) {
   const home = verdictsHome(root);
-  const out = withQueue(home, (queue) => dropQueued(queue, options.branches, nowIso()));
+  const asked = nowIso();
+  const out = withQueue(home, (queue) => dropQueued(queue, options.branches, asked));
   console.log(out.dropped.length ? `merge-branch: taken off the queue: ${out.dropped.join(', ')}` : `merge-branch: none of ${options.branches.join(', ')} is queued`);
+  if (out.ended) await saidDrained(home, out.ended, asked);
   return 0;
+}
+
+/**
+ * QUEUEDRAIN1: what the drop of a candidate ended. The runner owns the run's processes, so it ends them (within `DROP_POLL_MS`) and
+ * records what it ended; this waits, bounded, for that record, and says it. A candidate with no run in progress had none to end.
+ */
+async function saidDrained(home, candidate, asked) {
+  const runner = candidate.run?.pid;
+  const running = ['running', 'bisecting', 'forming'].includes(candidate.state) && pidAlive(runner);
+  if (!running) {
+    console.log(`  ${candidate.tip.slice(0, 7)} had no run in progress (${candidate.state}), so there was nothing to end`);
+    return;
+  }
+  const until = Date.now() + DRAIN_WAIT_MS;
+  for (;;) {
+    const drained = readQueue(home).drained;
+    if (drained?.tip === candidate.tip && drained.at >= asked) {
+      console.log(`  the runner (pid ${runner}) ${drainedLine(drained)}, and takes the next queued work`);
+      return;
+    }
+    if (!pidAlive(runner) || Date.now() >= until) break;
+    await sleepMs(100);
+  }
+  console.log(`  the runner (pid ${runner}) has not yet said it ended ${candidate.tip.slice(0, 7)}'s run; it asks every ${Math.round(DROP_POLL_MS / 1000)} s, and ${MERGE_QUEUE_LOG} says when it has`);
 }
 
 export async function main(argv) {
