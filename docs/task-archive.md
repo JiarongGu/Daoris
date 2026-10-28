@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## CIWATCHHOLD1 — the merge tool's CI-watch tool test passes under load without weakening what it proves (2026-10-28)
+
+> **CIWATCHHOLD1:** the merge tool's CI-watch tool test passes under load, the way the rest of the tool tests do, without weakening what it proves. Evidence (2026-10-28): the `--ci --watch` tool test failed twice under load and passed alone: `--ci` exited 2 "a CI run holds the gate tree already" after a green status, and the wait for the second tip's green ended in a 287 s run.
+
+Completed 2026-10-28: both readings held, one per sighting. `gateCi` wrote its green status before it released the gate tree's lock; it now releases the lock, then writes the ended status, and a new tool test pins that a green status is never read while the hold stands. The test's `waitFor` takes the tool tests' ten-minute patience; its assertions are unchanged. `docs/development.md` says the order. Detail: FIX-LOG 2026-10-28 (CIWATCHHOLD1). On Sonnet 5.5.
+
 ## QUEUELOCK1 — the merge queue's runner reads the main checkout without taking git's optional index lock (2026-10-28)
 
 > **QUEUELOCK1:** the merge queue's runner reads the main checkout without taking git's optional index lock. Evidence: on 2026-10-27 a stale 0-byte `.git/index.lock` in the main checkout (22:59 local, no git process alive) held a green candidate's promotion for about 1 h 45 min ("held on checkout: the fast-forward was refused ... index.lock: File exists") until the parent removed it; TOOLTESTHANG1's worker then found the runner's clean-checkout look runs `git status --porcelain --untracked-files=no` with optional locks on, and `tools/optional-locks.mjs` checks only the driver's sources. Every read-only git command the merge tool and its helpers run on a checkout passes `--no-optional-locks`, writes unchanged; the census extends to the tools that run git; the queue says plainly, when a promotion is held on an `index.lock`, the lock's age and whether a git process is running, without removing it.

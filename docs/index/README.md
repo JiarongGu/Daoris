@@ -273,7 +273,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/test/dogfood.test.ts` | 48 | 840 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 87 | 1455 |
 | `src/Daoris.Cli/tool-test/desktop-publish.test.ts` | 81 | 1378 |
-| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 477 | 7109 |
+| `src/Daoris.Cli/tool-test/merge-branch.test.ts` | 479 | 7143 |
 | `src/Daoris.Cli/tool-test/merge-queue.test.ts` | 59 | 947 |
 | `src/Daoris.Cli/tool-test/setup-kit.test.ts` | 55 | 1029 |
 
@@ -286,7 +286,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 54 | 1090 |
 | `tools/family-rehearsal.mjs` | 359 | 6239 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
-| `tools/merge-branch.mjs` | 399 | 6837 |
+| `tools/merge-branch.mjs` | 400 | 6840 |
 | `tools/orient-index.mjs` | 66 | 1425 |
 | `tools/process-reach.mjs` | 43 | 906 |
 | `tools/rehearsal-kit.mjs` | 55 | 1071 |
@@ -389,5 +389,5 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-26-tree-pool-survey.md` | 47 | 562 |
 | `docs/DAORIS_UNIFIED_COLLABORATION_ARCHITECTURE_AND_PLAN_2026-10-16.md` | 164 | 5380 |
 | `docs/README.md` | 60 | 282 |
-| `docs/development.md` | 41 | 502 |
+| `docs/development.md` | 42 | 503 |
 | `src/Daoris.Desktop/README.md` | 196 | 987 |
