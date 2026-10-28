@@ -24,13 +24,13 @@
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Conversations/Chat/BriefedMove.cs": {
+    "Course/Chat/BriefedMove.cs": {
       "lines": 2,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
-    "Conversations/Chat/ChatGoOn.cs": {
+    "Course/Chat/ChatGoOn.cs": {
       "lines": 2,
       "reads": "tells",
       "row": "1h",
@@ -53,19 +53,19 @@
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
-    "Conversations/Chat/CurveMove.cs": {
+    "Course/Chat/CurveMove.cs": {
       "lines": 1,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
-    "Conversations/Chat/LimitMove.cs": {
+    "Course/Chat/LimitMove.cs": {
       "lines": 2,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
-    "Conversations/Domain/AnswersAlone.cs": {
+    "Course/Domain/AnswersAlone.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
@@ -75,13 +75,13 @@
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Conversations/Domain/Continuation.cs": {
+    "Course/Domain/Continuation.cs": {
       "lines": 1,
       "reads": "tells",
       "row": "1e",
       "note": "tells an intake by its ask for its continue reason; the course's (§3.1)"
     },
-    "Conversations/Domain/HandOverAsks.cs": {
+    "Course/Domain/HandOverAsks.cs": {
       "lines": 2,
       "reads": "tells",
       "row": "1q",
@@ -104,30 +104,30 @@
       "row": "1q",
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
-    "Conversations/GoOn/AnswersAloneHold.cs": {
+    "Course/GoOn/AnswersAloneHold.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Conversations/GoOn/GoOnNew.cs": {
+    "Course/GoOn/GoOnNew.cs": {
       "lines": 1,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
-    "Conversations/GoOn/SessionSay.cs": {
+    "Course/GoOn/SessionSay.cs": {
       "lines": 2,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
-    "Conversations/HandOver/HandOver.cs": {
+    "Course/HandOver/HandOver.cs": {
       "lines": 1,
       "reads": "tells",
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
-    "Conversations/HandOver/HandOverAskWord.cs": {
+    "Course/HandOver/HandOverAskWord.cs": {
       "lines": 2,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
