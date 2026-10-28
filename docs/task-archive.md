@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## WEBPATIENCE1 — the web unit tests' hang detector gives a slow test two minutes (2026-10-28)
+
+> **WEBPATIENCE1:** the web unit tests' timeout is a hang detector, so a slow and correct test on a loaded machine must not fail as a hang. Evidence: the merge queue's candidates `28cc101` and `0c416d3` failed their web unit gates on vitest's 20-second timeout in WorkFrame tests none of their members touched, one of them its own share of the run about 8 s. (The parent's fix; it had no backlog row.)
+
+Completed 2026-10-28, landed in the batch `66f23e8`: vitest's `testTimeout` (`src/Daoris.Web/vite.config.ts`) is 120 s, the two minutes the desktop suites give a signal (TESTPATIENCE1, TESTPATIENCE2); a real failure still fails at its assertion, and a hang still ends. Detail: FIX-LOG 2026-10-28 (WEBPATIENCE1).
+
 ## HEAVYQUEUE1 — driven sessions' heavy test runs and the queue's scoped gates share one admission (2026-10-28)
 
 > **HEAVYQUEUE1 — driven sessions' heavy test runs and the queue's scoped gates share one admission** (merge queue, 2026-10-28; HEAVYRUN1, CISCOPE1e2). Candidates `39e3201` and `5dcd990` ran their fast Driver gate at about twice `d8adbbe`'s time (9–12 min against 4 min 43 s) and failed with clusters of timeouts in a few seconds of the run, each unresolved on re-run, while a driven session's thousand-test focused build and Lyntai's memory bench ran beside them; this repository marks no heavy gates, so sessions' runs take no `run-heavy` slot and `local/admission.json` counts none of them. Decide how a session's heavy run and the queue's scoped tier admit each other (a reservation, a slot, or a queue run that waits), and prove a session's large filtered run waits or is said rather than stalling a candidate.
