@@ -88,6 +88,8 @@ const tool = await import(
   watchCandidate: (candidate: Candidate, current: () => Candidate | null, trees: Trees, options?: { ms?: number }) => Watch;
   prefixRunner: (tree: string, candidate: { base: string; members: Member[] }, plan: { name: string; run: string }[], dir: string, watch?: Watch | null) => (failure: Failure, k: number) => Promise<Outcome>;
   queueHomeRefusal: (facts: { root: string; home: string; tool?: string | null; sameRepository?: boolean; run?: boolean }) => string | null;
+  queueGateEnvironment: (start?: Record<string, string | undefined>) => Record<string, string>;
+  BESIDE_ENVIRONMENT: Record<string, string>;
 };
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -959,14 +961,15 @@ const pidsIn = (dir: string) => TREE.filter((role) => existsSync(join(dir, `${ro
 
 /**
  * A gate that, when `holdWhen` holds, writes its pid, starts a child that starts a grandchild (each writing its own), and waits
- * for `release` in `QUEUE_DRAIN_DIR`: a process tree three deep, the shape a build and its test hosts make. `count` is how many
- * times `check` has run there. With `record`, the arguments it was given are kept in `args`.
+ * for `release` in `dir`: a process tree three deep, the shape a build and its test hosts make. `count` is how many times `check`
+ * has run there. With `record`, the arguments it was given are kept in `args`. The folder is written into the gate
+ * (QUEUETESTLEAK1): the queue's runner passes no test's variable on to a gate.
  */
-function treeGate(holdWhen: string, record = ''): string {
+function treeGate(dir: string, holdWhen: string, record = ''): string {
   return [
     "import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';",
     "import { spawn } from 'node:child_process';",
-    'const dir = process.env.QUEUE_DRAIN_DIR;',
+    `const dir = ${JSON.stringify(dir)};`,
     'const role = process.argv[2];',
     "const wait = async () => { while (!existsSync(`${dir}/release`)) await new Promise((done) => setTimeout(done, 25)); };",
     'let count = 0;',
@@ -1005,6 +1008,11 @@ describe('QUEUETESTLEAK1: a case reaches only its own scratch repository and que
       /the tool of X:\/daoris\/local\/scope-tree, another checkout of the queue's repository: a tree's tool never runs X:\/daoris's queue/);
     assert.equal(tool.queueHomeRefusal({ root: home, home, tool: 'X:/daoris/local/scope-tree', sameRepository: true }), null, 'a verb that starts no runner here runs any checkout\'s tool');
     assert.equal(tool.queueHomeRefusal({ root: home, home, tool: 'X:/elsewhere', sameRepository: false, run: true }), null, "another repository's tool (the tool tests' scratch queues) runs it");
+  });
+
+  test("a gate the queue's runner starts gets the runner's environment at its start, without the tool tests' variables or the tool's switches, with the build servers of its own", () => {
+    const start = { Path: 'X:/bin', HOME: 'X:/home', QUEUE_DRAIN_DIR: 'X:/drain', queue_drop_hold: 'X:/hold', MERGE_BRANCH_QUEUE_TICK_MS: '300', MERGE_BRANCH_MEMORY: 'off', GIT_OPTIONAL_LOCKS: '0' };
+    assert.deepEqual(tool.queueGateEnvironment(start), { Path: 'X:/bin', HOME: 'X:/home', GIT_OPTIONAL_LOCKS: '0', ...tool.BESIDE_ENVIRONMENT });
   });
 
   test('git\'s repository-locating variables, a stand-in gate\'s variable and a PATH set in the test process reach no case: its tool reads and writes only its scratch queue', async () => {
@@ -1065,8 +1073,9 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     try {
       const gate = [
         "import { existsSync, writeFileSync } from 'node:fs';",
-        'const hold = process.env.QUEUE_DROP_HOLD;',
-        "if (process.argv[2] === 'check' && hold) {",
+        // QUEUETESTLEAK1: the hold's path is written into the gate, since the runner passes no test's variable on to a gate.
+        `const hold = ${JSON.stringify(hold)};`,
+        "if (process.argv[2] === 'check') {",
         "  writeFileSync(`${hold}.started`, 'started');",
         '  while (!existsSync(hold)) await new Promise((done) => setTimeout(done, 25));',
         '}',
@@ -1075,7 +1084,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       repo.branch('b1', { 'a.txt': 'a\n', 'qgate.mjs': gate });
       const before = repo.git('rev-parse', 'main');
       assert.equal((await repo.run(['b1', '--preview'])).status, 0);
-      const waiting = repo.run(['b1', '--message', 'local/b1.msg'], { QUEUE_DROP_HOLD: hold });
+      const waiting = repo.run(['b1', '--message', 'local/b1.msg']);
       await repo.until(() => existsSync(started));
       assert.ok(existsSync(started), repo.log());
       assert.equal((await repo.run(['--drop-batch', 'b1'])).status, 0);
@@ -1389,24 +1398,65 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     }
   });
 
+  test("QUEUETESTLEAK1: a stand-in gate's variable and the tool's switches a runner inherited from the enqueue that started it reach none of its gates", async () => {
+    const repo = queueScratch('gate-env');
+    try {
+      const record = join(repo.root, 'local', 'gate-env.json');
+      repo.branch('b1', { 'qgate.mjs': envGate(record) });
+      assert.equal((await repo.run(['b1', '--preview'])).status, 0);
+      // The enqueue the leak's was: its environment holds the class probe's folder, and the runner it starts inherits it.
+      const done = await repo.run(['b1', '--message', 'local/b1.msg'], { QUEUE_DRAIN_DIR: join(repo.root, 'local', 'drain') });
+      assert.equal(done.status, 0, `${done.out}\n${repo.log()}`);
+      const seen = JSON.parse(readFileSync(record, 'utf8')) as { drain: string | null; tick: string | null };
+      assert.deepEqual(seen.drain, null, 'the stand-in gate\'s variable is not passed on');
+      assert.deepEqual(seen.tick, null, "the tool's own switches are not passed on");
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
+  test('QUEUETESTLEAK1: a probe the runner starts gets the environment its process had at its start: a PATH and a variable set in it later reach no probe', async () => {
+    const repo = queueScratch('probe-env');
+    const dir = join(repo.root, 'local', 'probe');
+    const shims = join(dirname(repo.root), 'shims');
+    mkdirSync(dir, { recursive: true });
+    mkdirSync(shims, { recursive: true });
+    try {
+      const gate = join(dirname(repo.root), 'envgate.mjs');
+      const record = join(dirname(repo.root), 'probe-env.json');
+      writeFileSync(gate, envGate(record));
+      const base = repo.git('rev-parse', 'main');
+      const candidate: Candidate = { base, tip: base, members: [], state: 'running', reforms: 0, recordsOnly: false };
+      const failure: Failure = { unit: 'check', test: 'check', gate: 'check', signature: { gate: 'check', step: 'run' }, names: 'gate' };
+      const after = { PATH: `${shims}${delimiter}${pathOf(repo.env)}`, QUEUE_DRAIN_DIR: dir };
+      const probed = await repo.probe({ candidate, plan: [{ name: 'check', run: `node "${gate}" check` }], dir, failure, ks: [0], after });
+      assert.equal(probed.status, 0, probed.out);
+      assert.deepEqual(probed.lines.map((line) => line.answer?.result), ['pass'], probed.out);
+      const seen = JSON.parse(readFileSync(record, 'utf8')) as { drain: string | null; path: string };
+      assert.equal(seen.drain, null, 'a variable set in the runner after its start is not passed on');
+      assert.ok(!seen.path.split(delimiter).includes(shims), 'a PATH set in the runner after its start is not passed on');
+    } finally {
+      await repo.cleanup();
+    }
+  });
+
   test('QUEUEDRAIN1: a candidate dropped while its gate runs ends the gate, its child and grandchild; the scoped tier is released after; what is not its own survives; the next candidate forms at once', async () => {
     const repo = queueScratch('drain-gate');
     const dir = join(repo.root, 'local', 'drain');
     mkdirSync(dir, { recursive: true });
     const bystander = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
     try {
-      repo.branch('b1', { 'hold-check': 'x\n', 'qgate.mjs': treeGate("existsSync('hold-check')") });
+      repo.branch('b1', { 'hold-check': 'x\n', 'qgate.mjs': treeGate(dir, "existsSync('hold-check')") });
       repo.branch('b2', { 'b.txt': 'b\n' });
       for (const name of ['b1', 'b2']) assert.equal((await repo.run([name, '--preview'])).status, 0);
-      const env = { QUEUE_DRAIN_DIR: dir };
-      const first = repo.run(['b1', '--message', 'local/b1.msg'], env);
+      const first = repo.run(['b1', '--message', 'local/b1.msg']);
       await repo.until(() => TREE.every((role) => existsSync(join(dir, `${role}.pid`))));
       const pids = pidsIn(dir);
       assert.equal(pids.length, 3, repo.log());
       assert.ok(pids.every(alive), 'the gate and what it started run');
       await repo.until(() => repo.admission()?.scopedTier?.state === 'running');
       assert.equal(repo.admission()?.scopedTier?.state, 'running');
-      const second = repo.run(['b2', '--message', 'local/b2.msg'], env);
+      const second = repo.run(['b2', '--message', 'local/b2.msg']);
       await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
       // The tier must never read released while a process of the dropped run still lives: read the tier first, then the processes.
       const unsafe: string[] = [];
@@ -1452,12 +1502,12 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     mkdirSync(dir, { recursive: true });
     try {
       // The first run of `check` (the candidate's) fails; every run after it is a probe, and a probe holds.
-      writeFileSync(join(repo.root, 'qgate.mjs'), treeGate('count >= 2'));
+      writeFileSync(join(repo.root, 'qgate.mjs'), treeGate(dir, 'count >= 2'));
       repo.git('commit', '--quiet', '-am', `a gate that holds its probes${TRAILER}`);
       repo.branch('good', { 'good.txt': 'fine\n' });
       repo.branch('bad', { 'break-check': 'x\n' });
       for (const name of ['good', 'bad']) assert.equal((await repo.run([name, '--preview'])).status, 0);
-      const env = { QUEUE_DRAIN_DIR: dir, MERGE_BRANCH_QUEUE_HOLD: hold };
+      const env = { MERGE_BRANCH_QUEUE_HOLD: hold };
       const good = repo.run(['good', '--message', 'local/good.msg'], env);
       await repo.until(() => (repo.queue()?.queued.length ?? 0) === 1);
       const bad = repo.run(['bad', '--message', 'local/bad.msg'], env);
@@ -1499,7 +1549,7 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
     const live = join(dir, 'live');
     try {
       // A `dotnet` that records what it was asked and holds, with a child and a grandchild, as a test host does.
-      writeFileSync(join(shims, 'dotnet.mjs'), treeGate('true', 'args'));
+      writeFileSync(join(shims, 'dotnet.mjs'), treeGate(dir, 'true', 'args'));
       if (process.platform === 'win32') writeFileSync(join(shims, 'dotnet.cmd'), `@node "%~dp0dotnet.mjs" check %*\r\n`);
       else {
         writeFileSync(join(shims, 'dotnet'), '#!/bin/sh\nexec node "$(dirname "$0")/dotnet.mjs" check "$@"\n', { mode: 0o755 });
@@ -1510,10 +1560,10 @@ describe('the queue, end to end in a scratch repository', { concurrency: true },
       const candidate: Candidate = { base, tip: commit, members: [{ branch: 'b1', tip: commit, commit, request: 'first' }], state: 'running', reforms: 0, recordsOnly: false };
       const plan = [{ name: 'driver', run: 'dotnet test Fixture.csproj --filter "Category!=Process"' }];
       const failure: Failure = { unit: 'SessionTests', test: 'Driver.Tests.SessionTests.Resumes', gate: 'driver', signature: sig('x'), names: 'test' };
-      // QUEUETESTLEAK1: the stand-in `dotnet` is first on the probe's own PATH, and the folder it holds in is in its own environment;
-      // the test process's environment, which every other case's children were once spawned from, is never changed.
+      // QUEUETESTLEAK1: the stand-in `dotnet` is first on the probe's own PATH, as its process starts; the test process's environment,
+      // which every other case's children were once spawned from, is never changed.
       writeFileSync(live, '');
-      const probing = repo.probe({ candidate, plan, dir, failure, ks: [1, 0], live }, { PATH: `${shims}${delimiter}${pathOf(repo.env)}`, QUEUE_DRAIN_DIR: dir });
+      const probing = repo.probe({ candidate, plan, dir, failure, ks: [1, 0], live }, { PATH: `${shims}${delimiter}${pathOf(repo.env)}` });
       await repo.until(() => TREE.every((role) => existsSync(join(dir, `${role}.pid`))));
       const pids = pidsIn(dir);
       assert.equal(pids.length, 3);

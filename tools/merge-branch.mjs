@@ -3605,7 +3605,7 @@ export function descendants(listing, pid) {
  * The gate runners take it as a parameter, so their logic is tested without starting a process. Given the run's
  * `trees`, its child is held there while it runs, and a step the run ended answers `STEP_ENDED` (CIPRIO1c).
  */
-export function runStep(command, cwd, fd, { raise = null, trees = null } = {}) {
+export function runStep(command, cwd, fd, { raise = null, trees = null, env = null } = {}) {
   writeSync(fd, `$ ${command}\n`);
   return new Promise((done) => {
     let settled = false;
@@ -3616,7 +3616,8 @@ export function runStep(command, cwd, fd, { raise = null, trees = null } = {}) {
         done(child?.pid && trees?.release(child.pid) ? STEP_ENDED : code);
       }
     };
-    child = spawn(command, { cwd, shell: true, stdio: ['ignore', fd, fd], windowsHide: true });
+    // QUEUETESTLEAK1: a step given its environment gets that one, never this process's as it stands now.
+    child = spawn(command, { cwd, shell: true, stdio: ['ignore', fd, fd], windowsHide: true, ...(env ? { env } : {}) });
     // FAMILYFAIL1b: a rehearsal's step is raised to normal at once, so what it starts inherits normal. The shell has not yet
     // created its own child when `spawn` returns, so the race is small. `raise` says its own failure once.
     if (raise && child.pid) raise(child.pid);
@@ -4298,7 +4299,7 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
-  kind = null, gateVerdict = () => true,
+  kind = null, gateVerdict = () => true, step = runStep,
 } = {}) {
   const commit = headCommit(root);
   return runGates(root, gates, dir, {
@@ -4316,7 +4317,7 @@ function runRecorded(root, gates, dir, {
       const tree = contentTree(where);
       const started = nowIso();
       // GATEBUILD1: a Process half runs its fast half's build when that passed in this run on this same tree.
-      const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree), trees });
+      const result = await runGate(where, gate, logs, { ...beside, noBuild: reuseBuild(beside?.built, tree), trees, step });
       Object.assign(result, { tree, at: started });
       if (result.verdict !== 'ENDED') {
         const home = verdictsHome(where);
@@ -6302,6 +6303,29 @@ const DROP_POLL_MS = Number(process.env.MERGE_BRANCH_DROP_POLL_MS) || 2_000;
 const DRAIN_WAIT_MS = Number(process.env.MERGE_BRANCH_DRAIN_WAIT_MS) || 30_000;
 const sleepMs = (ms) => new Promise((done) => { setTimeout(done, ms); });
 
+/** QUEUETESTLEAK1: this process's environment as the tool loaded, before anything in it changed `process.env`. */
+const START_ENVIRONMENT = Object.freeze({ ...process.env });
+
+/**
+ * QUEUETESTLEAK1: the variables the tool tests' stand-in gates read. The tests write their paths into their gates now, so a name here
+ * in a runner's environment was inherited from a test's process, as the leak's runner inherited the class probe's on 2026-10-28.
+ */
+export const HARNESS_VARIABLES = Object.freeze(['QUEUE_DRAIN_DIR', 'QUEUE_DROP_HOLD']);
+
+/**
+ * QUEUETESTLEAK1: the environment of a gate or a probe the queue's runner starts: the runner's own at its start (`start`), never
+ * `process.env` as something in this process changed it since, without the tool tests' variables (`HARNESS_VARIABLES`) or the
+ * tool's own switches (`MERGE_BRANCH_*`, the runner's inputs and no gate's), with the build servers of its own the runner sets
+ * (`BESIDE_ENVIRONMENT`). The rest of a gate's composition (the design §5.5, INTEGRATE1a) is not this.
+ */
+export function queueGateEnvironment(start = START_ENVIRONMENT) {
+  const kept = Object.entries(start).filter(([name, value]) => value !== undefined && !HARNESS_VARIABLES.includes(name.toUpperCase()) && !/^MERGE_BRANCH_/i.test(name));
+  return { ...Object.fromEntries(kept), ...BESIDE_ENVIRONMENT };
+}
+
+/** QUEUETESTLEAK1: the step the queue's gates and probes run by, each with `queueGateEnvironment`. */
+const queueGateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: queueGateEnvironment() });
+
 /** The queue's record changed under its lock: `change(queue)` answers `{ queue }` to write, with anything else it says. */
 function withQueue(home, change) {
   return holdingLock(join(home, MERGE_QUEUE), () => {
@@ -6534,7 +6558,7 @@ export function prefixRunner(tree, candidate, plan, dir, watch = null) {
     const trx = /^dotnet test\b/.test(gate.run.trim()) ? join(dir, `${slug(failure.gate)}.prefix-${n}.trx`) : null;
     const probe = { ...gate, name: `${gate.name}.prefix-${n}`, run: trx ? trxCommand(narrowed, trx) : narrowed };
     // HEAVYQUEUE1: a probe is a heavy run like its gate, and takes its place in the machine's admission before it starts.
-    const result = await admitted(machineAdmission(), gate, () => watch?.check() === true, () => runGate(tree, probe, dir, { trees: watch?.trees ?? null }));
+    const result = await admitted(machineAdmission(), gate, () => watch?.check() === true, () => runGate(tree, probe, dir, { trees: watch?.trees ?? null, step: queueGateStep }));
     if (!result) throw new Drained();
     if (result.verdict === 'ENDED') throw new Drained(probe.name);
     if (result.verdict === 'PASS' || result.verdict === 'FLAKE') return { result: 'pass' };
@@ -6628,7 +6652,7 @@ async function runCandidateWatched(home, candidate, watch) {
     // QUEUEDRAIN1: the run's step trees and its halt are the watch's, so a drop ends the gates running and starts no more; this
     // returns once every step has ended, and only then is the scoped tier released.
     results = await runRecorded(tree, gates, dir, {
-      keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(),
+      keepGoing: true, byMemory: true, kind: 'scoped', gateVerdict: (gate) => !gate.deferredClasses?.length, trees: watch.trees, halt: () => watch.check(), step: queueGateStep,
     });
   } finally {
     withAdmission(home, (record) => scopedTier(record, null, nowIso()));
