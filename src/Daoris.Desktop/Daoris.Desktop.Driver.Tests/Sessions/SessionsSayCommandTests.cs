@@ -52,7 +52,9 @@ public sealed class SessionsSayCommandTests : IDisposable
     private SessionsWorld World(ServiceClient service, bool loop = true, TimeSpan? wait = null, DriverConfig? config = null) =>
         new(service, _home, config ?? Driving, SessionWire.Pipe, null)
         {
-            Wait = wait ?? TimeSpan.FromSeconds(5),
+            // A test that names no wait expects the take, a signal: the suite's patience (TESTPATIENCE2). One that expects "held"
+            // names its own short wait.
+            Wait = wait ?? Poll.Patience,
             Poll = TimeSpan.FromMilliseconds(20),
             LoopRuns = () => loop,
         };
