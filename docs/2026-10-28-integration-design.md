@@ -1,6 +1,18 @@
-# A repository's integration is a fabric workflow Daoris runs (INTEGRATE1, 2026-10-28: round 2, proposed)
+# A repository's integration is a fabric workflow Daoris runs (INTEGRATE1, 2026-10-28: round 3, accepted)
 
-**Standing (round 2, proposed under D191, D215):** **Both makers read round 1** at `6f1ee69cb`, each without the other's read. Codex asked
+**Standing (accepted by the steward, 2026-10-28, under D191; round 3, D215):** three makers read it. Claude Opus 5.5 wrote it. Codex and
+Claude Fable each read round 1 (each *another round*) and round 2 (each *accept after named changes*). Round 3, from main at `7ebeba1ba`, makes
+the second reads' named changes (§16):
+- **A steward's request never lands a unit** (F31).
+- **The leftovers' admission path**, an existing recorded landing bound to its unit and its exact accepted tip, its tidied-tree case among
+  them (F32, C27).
+- **The live tool runner's upgrade before the flip** (C13).
+- **Fable's F33 to F39**.
+
+The steward settled the readers' disagreements (§15.2) and filled §14's verdicts. Nothing is built; FOUNDATION1 (D212) stays the building
+priority, and §11 marks the rows that can run beside it.
+
+**Round 2's standing, as it was written (proposed under D191, D215):** **Both makers read round 1** at `6f1ee69cb`, each without the other's read. Codex asked
 another round: 26 findings, 10 blocking (C4 to C13). Claude Fable asked another round, narrow: 30 findings, 6 blocking (F5 to F10), the body
 standing in substance. **Round 2 is written by Claude Opus 5.5 from main at `7ebeba1ba`**, unchanged since round 1. Every finding of both was
 checked against the code before it was taken (D191 point 2); each is a row of §14 with the file and line it was checked at, and each changed
@@ -35,8 +47,9 @@ foundation change, so no part accepted on one maker's read; nothing built.
 Daoris runs one integration run per line. Its fixed steps (request, form, replay, resolve, conflict, gates, judge, promote, settle, tidy,
 close) are each a fabric event the page shows. The run is a transport outside every run's graph: the unit's `handed` is the branch its
 landing made, and its `line` observes the promotion as it would a person's merge.
-- **Requests**: every request is the unit's own landing through its gate at the commit it pins, or a records branch on the owner's card. Each
-  revision is requested again by the same rule.
+- **Requests**: a unit is requested by its own landing through its gate at the commit it pins, or, where that landing was already made, from
+  its recorded landing at its exact recorded tip; a records branch on the owner's card. The steward requests, and never lands. Each revision
+  is requested again by the same rule.
 - **Conflicts**: what is mechanical is settled by declared rules. A member contained in another member waits for that member's promotion.
   A conflict of meaning goes to the member's session, or holds.
 - **Gates**: they run in the candidate's own job, under the machine's one admission, in an environment Daoris composes, through the
@@ -279,7 +292,7 @@ becomes the gates' *(C2)*. Each of the day's hand repairs (§2) was a step the p
   "message": "Integrate {name}: {title}",
   "env": { "pass": [] }
 },
-"verification": { "run": "node tools/merge-branch.mjs --daoris-verify", "result": true, "modes": ["plan", "probe", "commits"] }
+"verification": { "run": "node tools/merge-branch.mjs --full --beside --daoris-verify", "result": true, "modes": ["plan", "probe", "commits"] }
 ```
 
 | Key | Means | Absent |
@@ -287,11 +300,11 @@ becomes the gates' *(C2)*. Each of the day's hand repairs (§2) was a step the p
 | `by` | who integrates the line: `daoris`, or `tool` for a repository whose own tool still does (this one until row k); read at promotion by both (§5.6) *(C13)* | `daoris` where the rule integrates |
 | `gates` | the gates at integration: a list of declared gate names, each run whole, or `reached`, the runner's `plan` choosing among the accepted declaration's gates (§4.3) | every declared gate, whole |
 | `commits` | the commit check on each request's range: `runner` (the runner's `commits` mode), or a declared gate's name run on the range *(F7)* | none |
-| `scratch` | globs of ignored output a tidy may take with the tree, beside the thirteen build folders `TreeScratch` lists | none; today's rule |
+| `scratch` | globs of ignored output the **landing's** tidy may take with the tree (LAND3, at `handed`, `TreeScratch.cs:36-58`), beside the thirteen build folders `TreeScratch` lists *(F35)* | none; today's rule |
 | `merge` | files whose conflicts settle by a rule: `by: rows` (by base: a row a side added kept, one removed dropped, rows both add at one place both kept, one base row both changed a conflict, MERGETASKS1's rule widened from the backlog), or a `line` pattern with a `run` writer that recomputes the line after the merge, accepted with the rest; **no rule keeps one side's copy** *(F10, C21)* | none; a conflict |
 | `message` | the merge commit's subject, from `{name}`, `{title}`, `{quest}`, `{repository}`, `{branch}`; its body the unit's closing summary and the members' `Co-Authored-By:` trailers, deduplicated; checked with the range (step 1) *(F7)* | `Merge branch '{branch}'`, today's merge form's (`TreeLands.cs:287-289`) |
 | `env.pass` | exact variable names a gate needs from the install's environment beyond the composed base (§5.5); never a `DAORIS_` name | none |
-| `verification` | D192's runner key, unchanged where no mode is asked, gaining `modes` (§5.9) *(F5)* | Daoris runs each named gate's `run` itself |
+| `verification` | D192's runner key, unchanged where no mode is asked, gaining `modes` (§5.9); its command D192 point 9's, whose flags are the runner's own, a handed tree taking the place of `--beside`'s gate tree *(F5, F39)* | Daoris runs each named gate's `run` itself |
 
 **The install's half** (the landing rule):
 
@@ -303,7 +316,7 @@ becomes the gates' *(C2)*. Each of the day's hand repairs (§2) was a step the p
 
 | Key | Values | Absent |
 |---|---|---|
-| `request` | who makes the request (§4.6): `owner` (the person's Accept, or `trees land`), `done` (the quest's done, through the rule's own `autoAccept`, which must be on), `steward` (the steward's act, §8); `done` and `steward` only where `gates` is `declared` and the accepted declaration names at least one gate *(F9, F26)* | `owner` |
+| `request` | who makes the request (§4.6): `owner` (the person's Accept, or `trees land`), `done` (the quest's done, through the rule's own `autoAccept`, which must be on), `steward` (the steward's act requests a records branch or a landing the owner's press or a done already made, and never lands, §8); `done` and `steward` only where `gates` is `declared` and the accepted declaration names at least one gate *(F9, F26, F31)* | `owner` |
 | `commit` | how each member lands: `merge` (one `--no-ff` merge commit per member), `rebase` (rebase-and-merge: replayed and the line fast-forwarded, no merge commit), `squash` (one commit per member, PROCESS1b-ii's message); the rule's own `squash` is refused beside `integrate` | `merge` |
 | `batch` | members per candidate, 1 to 8 | 8 where gates run, 1 where none |
 | `order` | `arrival`, or `apart` (a member changing a path an earlier member of the forming candidate changed waits for the next candidate) | `arrival` |
@@ -356,11 +369,15 @@ the whole admission**, one confirm run per failing gate per candidate, answering
 
 **The whole admission, as ordinary entries** *(C7)*. The confirm run takes every place by adding, to HEAVYQUEUE1's record, as many entries of
 today's schema as the capacity it reads, each its own id under the same process, each beating, each admitted by today's first-come rule. So a
-writer of any build reads, counts and keeps each one: no field is added for an older writer to drop. It starts once every entry holds. At each
-beat and at its end it reads the record again; any live hold not its own (a writer with a larger capacity, a run that took a place while the
-record could not be read) makes the confirm run **inconclusive**, and so does an admission it could not establish (no home, a read or a write
-that failed, which HEAVYQUEUE1 lets run without waiting, `:145-170`, `:200-213` on that branch). The steward's `drop` ends a confirm run with its
-candidate's job *(F16)*.
+writer of any build reads, counts and keeps each one: no field is added for an older writer to drop.
+- **One write.** The entries go into `waits` in one locked write (`machine-admission.mjs:151-156`), so they stand together in first-come order,
+  and no second confirm run or session's ask can fall between them *(F34)*.
+- **It starts once every entry holds.** While it waits, the holds it sees are the runs it waits for (`:114-119`), never a reason to doubt it.
+- **Inconclusive.** From its start, at each beat and at its end, it reads the record again. Any live hold not its own (a writer with a larger
+  capacity, a run that took a place while the record could not be read) makes the confirm run **inconclusive**. So does an admission it could
+  not establish: no home, or a read or a write that failed, which HEAVYQUEUE1 lets run without waiting (`:145-170`, `:200-213` on that branch)
+  *(F34)*.
+- **A `drop` ends it.** The steward's `drop` ends a confirm run with its candidate's job *(F16)*.
 
 - **Fails again with its signature: confirmed.** Judged as today (§5.3): the base, then the prefixes, the last transition pinned.
 - **Passes, holding the whole admission: unconfirmed.** The first failure is filed as a **sighting** on its unit with the candidate's tip and the
@@ -369,8 +386,14 @@ candidate's job *(F16)*.
   - `split` (the default for both): today's rule, the members one at a time, one of one handed back as unresolved with the sighting;
   - `hold`: the candidate waits for the owner's or the steward's `decide` (§8), the evidence shown;
   - `land`: the confirm run's pass is the gate's verdict on the candidate's tree, and the candidate goes on to promotion.
-- **Inconclusive:** read as `split`, whatever the rule says, and said. It is never `land`.
-- **Fails another way:** the new failure is the candidate's, confirmed, since it failed with nothing heavy beside it.
+- **Inconclusive:** read as `split`, whatever the rule says, and said. It is never `land`. Inconclusive is judged first, before either reading
+  below or above *(F34)*.
+- **Fails another way, holding the whole admission:** the new failure is the candidate's, confirmed, since it failed with nothing heavy beside it.
+
+**`flake` at promotion** *(F33)*. A runner's `flake`, a failure that passed when run again alone, is read as a pass, D192's reading
+(`pipeline-design.md:333-334`) and today's queue rule (`passing`, `merge-branch.mjs:1997`). This repository's runner gives it only for FLAKE1's
+named classes (`:245-251`, `:3736-3742`), the one exception to §10's rejection of confirming by the test alone, kept as today. Every other
+failure goes to the confirm run under the strict policy.
 
 **The default is `split` for both, and it stays so** *(C6, C16, C17, F14)*. The confirm run is useful evidence and no causal proof:
 - **It can miss a member's own race.** A race that fails one run in three passes it as readily as one that was already there.
@@ -409,14 +432,37 @@ they stood, and the frozen tip, and which takes a unit's request only from **tha
   commit: `Workplace/TreeGates.cs:40-57`, `Workflows/Domain/GraphGate.cs:113-140`). The branch it makes at that commit is the request's
   frozen tip.
 - `done`: the rule's own `autoAccept` makes the same landing at the quest's done, through the same gate (`AutoLander`).
-- `steward`: the steward's act asks the same landing (§8), through the same gate; it lands nothing on the line itself.
+- `steward`: **the steward's act never makes a landing** *(F31)*. A unit's landing under a branch rule is the Accept
+  (`SessionTrees.LandAsync`, the press's own path, D145's LAND2b), and every acceptance of what is delivered is never a role's act
+  (`docs/decisions/D209.md:63-65`; a steward's finish neither accepts nor closes its quest, `:311`). So the steward requests only what is
+  already landed or is no unit's: an existing recorded landing (below), made by the owner's press or by a done under `autoAccept`, or a
+  records branch. Granting a role the Accept itself would be the owner's decision and a named amendment of D209 (D191 point 3), not this
+  design's.
 
 So no request can pass a session's stopped `handed`, a required opinion or a review.
 
+**An existing recorded landing** *(F32, C27)*. Branches landed under the old rule, by an older build in the rollback window, before the rule
+carried `integrate`, or left behind by a request the flip hands back (§6.3) are already landed: their landing is not pressed again, since
+`TreeLands.cs:598-604` refuses a moved branch and D145 §3 advances only on a new tip. `IntegrationRequests.Admit` takes such a landing,
+beside the landing's own call, only on all of the following:
+- **Its record.** It is a standing entry of the machine's landings (`LandedBranches`, `Workplace/LandedBranches.cs:8-10`), bound to the unit,
+  session and quest that entry records.
+- **Its exact accepted tip.** The tip is the entry's recorded tip, or its newest advance's (LAND2c). The branch must stand at that commit,
+  else it is refused as moved, a revision being its unit's own next landing (C11).
+- **Its gate proof.** The proof is the landing's own, as it recorded it: the review, the second opinion and the workflow version that let it go
+  (the `LandedBranch` record's `Review`, `Opinion` and `Workflow`, `TreeLands.cs:657-679`). It is read, never judged again, since the Accept it
+  records is done.
+- **No double.** No request is open for it, and the line does not already hold it.
+
+Its doors are the owner's card (`daoris-driver integrate --request --landed <branch>`, a Person route), the steward's act where the rule says
+`request: steward`, and **a come-up sweep** where the rule says `request: done`. The sweep runs once at each come-up and once when the rule is
+set, and requests every such landing of the repository. **A landing whose tree was tidied** (LAND3's tidy at `handed`; the entry says so,
+`LandedBranches.cs:50-55`) needs no tree: the candidate replays from the branch, and settlement judges the branch alone.
+
 **A records branch** (no unit, no run: the steward's records, a person's own branch) is requested only by the owner's card (`daoris-driver
 integrate --request`, a Person route, D156), or by the steward's act where the rule says `request: steward`. Such a request carries no workflow
-gate, and the declared gates and the commit check run on it as on any member. A session's branch or a recorded landing branch is refused there:
-it comes only through its unit's landing.
+gate, and the declared gates and the commit check run on it as on any member. A session's branch, and a landing branch the record does not hold
+as above, are refused there: a unit comes only through its own landing or its recorded landing.
 
 **Each revision is requested again by the same rule** *(C11)*. A commit made after the frozen tip is no part of the request. Under `done`, the
 session's next done advances its landing branch (LAND2c) and makes the next request. Under `owner` or `steward`, the new revision is offered to
@@ -433,8 +479,9 @@ a plugin (§4.1).
 **Integration rides a branch rule** *(C9)*. An older build reads the fields it knows (`LandingKey.cs:359-388`): a branch rule with a pattern
 and, for `request: done`, `autoAccept`. On the person's press or at the done it makes the landing branch and stops there, pushing nothing
 because no plugin is allowed beside `integrate`, and merging nothing. So an older build in the rollback window (D139) can never merge work the
-rule meant to gate. It leaves a branch the line lacks, which the integration run takes once the newer build returns. It keeps `integrate` on its
-writes (`DriverConfig.cs:938-944`). The named legacy exception, today's `merge` rule, promises no gate, so an older build merging it on the
+rule meant to gate. It leaves a recorded landing the line lacks. Once the newer build returns, that landing is requested through §4.6's
+recorded-landing door: by the come-up sweep under `request: done`, else by the owner's card or the steward's act *(F37)*. It keeps `integrate`
+on its writes (`DriverConfig.cs:938-944`). The named legacy exception, today's `merge` rule, promises no gate, so an older build merging it on the
 person's press as today removes no protection (§4.2).
 
 The repository's rule replaces its workspace's whole, `integrate` with it (D164). No run's record and no graph version gains anything, so a
@@ -449,8 +496,10 @@ run bound before any row reads as it did *(C10, F21)*. A build that does not kno
 - **The unit's graph is unchanged.** It is still its landing rule's own graph, `handed` then `line` (`NodeGraphHomes.Landing`,
   `Trees/Nodes/NodeGraphs.cs:747-762`). `handed` is reached by git's proof when the landing makes the branch, as today, and EVENTHOOK1's
   `work.landed` is told then with exactly its published meaning: a branch the line does not hold yet.
-- **The integration run moves the line**, and the unit's `line` node observes that promotion by git's proof, as it observes a person's merge
-  today. `work.integrated` is told when `line` is reached (FOUNDATION1 §4.2).
+- **The integration run moves the line**, and the unit's `line` node observes that promotion as it observes a person's merge today: from
+  the unit's end, D102's content-held proof kept as the landing record's `Held` (`Trees/Nodes/BuiltInNodes.cs:153-160`). Ancestry alone would
+  never reach it, since under every `commit` shape the promoted commit's parents are replayed tips (step 3). `work.integrated` is told when
+  `line` is reached (FOUNDATION1 §4.2) *(F38)*.
 - **Every run is untouched.** A run bound to a schema-1 version, a run bound to an authored schema-2 graph and Current alike are left as they
   are (D190 point 1).
 - **A unit's integration state** (queued, in a candidate, held, handed back, promoted, settled) is read from the integration record by the
@@ -467,15 +516,15 @@ Its machinery is shared with D192's performer where they meet: the job, the slot
 | # | Step | What it does | Its event |
 |---|---|---|---|
 | 1 | **request** | admits the request by §4.6's door; runs the commit check on `base..tip` and on the composed message (the declaration's `commits`; today's maker-trailer and uncommitted-work rules, `merge-branch.mjs:2836-2858`), refusing with its words; freezes the tip and the message *(C5, F7)* | `integration.queued` |
-| 2 | **form** | takes up to `batch` requests by `order` and makes a candidate on the line's tip in the line's integration tree: one per line, under the trees home beside the session trees as a replay's tree is (`Workplace/BranchReplays.cs:244-252`), kept warm, held by the run's lease while a candidate uses it, reset only once the last candidate's job holds no process, its evidence kept outside what a reset clears, its disk counted as the trees' are (outside KEEPSIZE1's `keptTrees`, which counts session trees); the checkout's private files the gates read copied in, refreshed each candidate (GATEWT1b's `privateGateFiles`) *(C22, F20, F28)* | `integration.formed` |
+| 2 | **form** | judges each request's requester's authority first, so a withdrawn member is never formed (step 8 keeps the check for the race alone) *(F36)*; takes up to `batch` requests by `order` and makes a candidate on the line's tip in the line's integration tree: one per line, under the trees home beside the session trees as a replay's tree is (`Workplace/BranchReplays.cs:244-252`), kept warm, held by the run's lease while a candidate uses it, reset only once the last candidate's job holds no process, its evidence kept outside what a reset clears; **it counts against KEEPSIZE1's allowance and is never evicted while a run holds it** (the steward's decision, §15.2); the checkout's private files the gates read copied in, refreshed each candidate (GATEWT1b's `privateGateFiles`) *(C22, F20, F28)* | `integration.formed` |
 | 3 | **replay** | for each member, onto the candidate so far: what the line holds is left out by D87 point 1's judgement (`LineHolds`, content then patch), and said; what only an **earlier member** holds is left out too, and the member is recorded **contained by that member**, provisional: it settles only when that member promotes, and goes back to its own request, re-judged, if that member is handed back, split off or dropped *(C4)*; a member the line itself holds wholly is contained at once; the rest replayed aside (D87 point 2, LANDREBASE1) and landed by `commit`, so a merge commit's second parent is the replayed tip, not the session branch's *(F27)* | `integration.replayed` |
 | 4 | **resolve** | each stop settled where every conflicted path is mechanical: a generated folder (written again by its accepted writer, GENREGEN1), a union record (git's own; the joins union glued set apart, MERGEJOIN1 and UNIONGLUE1, given a driver twin), the backlog (by base, LANDBACKLOG1), a declared row table (`by: rows`), a declared line rule (its accepted `run` writer), the router (its row driver, which git runs from the clone's own configuration) | `integration.resolved` |
 | 5 | **conflict** | any other conflict is one of meaning: the member goes by `conflicts` (§5.4) and the candidate goes on without it | `integration.conflict` |
 | 6 | **gates** | the accepted gates on the candidate's tip, through the runner or directly (§5.9); each heavy gate takes a place in the machine's admission; every process in the candidate's job; the environment composed (§5.5) | `integration.gates` |
 | 7 | **judge** | each failure by its signature (§5.3) | `integration.judged` |
-| 8 | **promote** | under the line's integration lock and immediately before the line moves: the line's committed declaration at the base still says `by: daoris` (else held: another integrator owns the line); every member's requester's authority still stands (§8: a steward's act's appointment and generation live, no owner act on its repository, quest or session since, the rule still integrating and its `request` still admitting it), a member failing it leaving the candidate, which is formed again without it; then the line to the candidate's tip: `merge --ff-only` in a clean checkout on the line, read immediately before (`TreeLands.cs:264-282`), or, where no worktree has the line out, one `update-ref` verifying the line's old value; held and said otherwise, tried at each look; formed again where the line moved *(C12, C13)* | `integration.promoted`, `integration.held` |
+| 8 | **promote** | under the line's integration lock and immediately before the line moves: the line's committed declaration at the base still says `by: daoris` (else held: another integrator owns the line); every member's requester's authority still stands, judged again here for the race since step 2 (§8: a steward's act's appointment and generation live, no owner act on its repository, quest or session since, the rule still integrating and its `request` still admitting it), a member failing it leaving the candidate, which is formed again without it; then the line to the candidate's tip: `merge --ff-only` in a clean checkout on the line, read immediately before (`TreeLands.cs:264-282`), or, where no worktree has the line out, one `update-ref` verifying the line's old value; held and said otherwise, tried at each look; formed again where the line moved *(C12, C13)* | `integration.promoted`, `integration.held` |
 | 9 | **settle** | for each member: its request settled; a member contained by it settled with it; its branch's commits past the frozen tip judged **contained** (said), **superseded** (asked, §5.7) or **new** (offered by §4.6's rule) *(C4, C11)* | `integration.settled` |
-| 10 | **tidy** | each member's tree by its rule's tidy, the declared scratch disposable beside `TreeScratch`'s list, nothing forced; a tree that stays follows the landed tip (D87 point 7) | `integration.tidied` |
+| 10 | **tidy** | the session's tree and its `daoris/` branch went already at `handed`, by the landing's tidy (LAND3), which takes the declared scratch with them; this step retries only a tree the landing kept, nothing forced, a tree that stays following the landed tip (D87 point 7), and removes the landed branch once the line holds it by D102's content-held removal, its recovery ref kept (`docs/decisions/D102.md:243`; `ref-removal-transactions.md`) *(F35)* | `integration.tidied` |
 | 11 | **close** | the unit's integration note written from its record (a code and its facts), which the review, the session's head, the quest's page, the CLI and Ask Daoris read: *Accept* or *waits for you* is said only where `request` names a press still due | `integration.closed` |
 
 A member handed back at step 1, 5 or 7 says why (`integration.handed-back`), to whom and with which words. A line whose base fails a gate that
@@ -662,15 +711,31 @@ subagents' worktree prune is §7.1's named exception.
 3. **Row k's shadow.** For a day, Daoris plans every request the tool's queue takes (objects only: the merge tree, the resolution, the runner's
    `plan`), records what it would do beside the queue's outcome, and the steward reads where they differ.
 4. **Row k's flip, fenced** *(C13, F12)*:
-   1. **The owner's one sitting.** The owner accepts the integration declaration's blob of the prepared flip branch, `integration.by: daoris`
+   1. **The fence lands on its own, and the running runner is the fenced one** *(C13)*. Committed code does not change a running process. The
+      runner loops on the `queueStep` it loaded (`merge-branch.mjs:6638-6642`, its promotion at `:6531-6548`), and an invocation keeps any live
+      runner by its pid (`:6651-6653`). So, before the owner's sitting:
+      - **The fence row lands first.** It makes the runner read `by` immediately before each promotion, and record its own code identity (the
+        blob ids of `tools/merge-branch.mjs` and `tools/merge-queue.mjs` it loaded) in the queue's record at its start. An enqueue that finds a
+        live runner with another identity, or none, refuses with *an older runner runs: let it drain*.
+      - **The old runner drains and ends.** Nothing more is queued behind it; it finishes its candidate and ends by itself once nothing is
+        queued (`:6640`). Stale enqueue invocations only wait on the record, so draining the queue drains them.
+      - **A fenced runner then shows its refusal.** The next enqueue starts a runner from the code on disk (`:6657`). It records the fenced
+        identity, and, given a line whose declaration says `by: daoris` on a scratch repository of the tool's own tests, refuses to promote.
+        `--queue` shows the identity before the flip proceeds.
+   2. **The owner's one sitting.** The owner accepts the integration declaration's blob of the prepared flip branch, `integration.by: daoris`
       and the runner (an acceptance names a blob, never a moment, FABRIC-PIPELINE1a's point 1), and sets the install's rule for this repository
       to the branch rule carrying `integrate`. Daoris holds meanwhile, since the line's committed declaration says `by: tool`.
-   2. **The flip is the tool's last request.** The tool closes its enqueue behind it. A request queued after it is handed back, *integrated by
-      Daoris from `<commit>`: request it there*.
-   3. **The flip promotes.** From that commit, the tool's runner, reading `by` immediately before each promotion, promotes nothing more and
+   3. **The flip is the tool's last request.** The tool closes its enqueue behind it. A request queued after it, or one the flip's own
+      candidate splits off or hands back, is handed back with *integrated by Daoris from `<commit>`: request it there* (F32).
+   4. **The flip promotes.** From that commit, the fenced runner, reading `by` immediately before each promotion, promotes nothing more and
       ends; Daoris's run, its rule and acceptance already in place, takes the next request.
-   4. **The leftovers.** Branches landed earlier under the old rule and not yet queued are requested by the owner's `integrate --request` (row h),
-      or by the steward's act once row i lands *(F18)*.
+   5. **The leftovers** *(F32, C27, F18)*. Each kind is admitted through §4.6's door for it:
+      - **This repository's landings** (the install's `quest/` branches, landed under the old branch rule, queued or never queued, those handed
+        back at step 3 among them): the recorded-landing door, bound to each landing's recorded unit and exact tip. The come-up sweep takes
+        them where the rule says `request: done`; else the owner's card (row h) or the steward's act once row i lands.
+      - **A landing whose tree LAND3's tidy took**: admitted from its record alone, its branch standing at its recorded tip. It needs no tree.
+      - **The parent's own branches** (records, a subagent's): the records-branch door, the owner's card or the steward's act.
+      - **A session branch or an unrecorded landing branch**: refused at the records-branch door, as everywhere.
 
    Neither integrator can promote outside its own committed interval, and the only interval in which neither integrates is the flip's own
    promotion. Round 1's *between the two, the tool integrates* is corrected: with the owner's acceptance and rule set before the flip, no hold
@@ -724,7 +789,8 @@ Line counts by `wc -l` at `7ebeba1ba`; tests beside each are not listed.
 - **The steward** (D209), once STEWARDROLE1d activates the role, gains new acts. Each is one route in one exact form, with a record of its own
   naming the steward and its appointment's generation, overruled by the owner. Each is refused for a repository whose landing pushes, and for a
   rule whose `gates` is `none` *(F9)*:
-  - `request`: a unit's landing, or a records branch, only where the rule says `request: steward`;
+  - `request`: a records branch, or an existing recorded landing the owner's press or a done already made (§4.6), only where the rule says
+    `request: steward`; **never a unit's landing**, which is the Accept *(F31)*;
   - `drop`: a request, or a candidate, its job closed;
   - `requeue`: a handed-back request at the same tip, once;
   - `recheck`: a stopped line;
@@ -733,14 +799,15 @@ Line counts by `wc -l` at `7ebeba1ba`; tests beside each are not listed.
   - `order`: a request first or last.
 
   **Its pending effects meet an execution cutoff at promotion** *(C12)*. A steward's request is recorded with its act's id, its generation, the
-  rule and policy as they stood, and its frozen tip; step 8 checks again that the appointment and generation are live, that the owner has
+  rule and policy as they stood, and its frozen tip; step 2 checks, and step 8 checks again, that the appointment and generation are live, that the owner has
   acted on none of its repository, quest or session since (D209's owner-set), and that the rule still integrates and admits a steward's
   request. A failure drops that member from the candidate, said. A revoke cancels every steward effect not yet executed. A candidate the
   owner holds, or a request only the owner may make, is released by no steward act. Work authorized independently (the owner's press, a done
   under `autoAccept`) is not a steward effect and is not withdrawn by a revoke.
 
   This amends D209 point 3: integrating into a local line under an accepted declaration, by the acts above, is no longer among *landings* there.
-  Those keep meaning a push or a publication and every acceptance of what is delivered; closing a quest as done stays the owner's.
+  Those keep meaning a push or a publication and every acceptance of what is delivered, the Accept of a unit's landing among them; closing a
+  quest as done stays the owner's.
 - **The owner** is still asked:
   - to accept each repository's integration declaration by its blob, and every later blob, since it runs commands unasked (a widening, D209
     point 3);
@@ -830,12 +897,14 @@ names its proof. Round 2 re-orders them: environment, mechanical, declaration, r
 - **INTEGRATE1d ⚑ — the declaration, read and accepted, nothing acting on it.**
   - Contents: `daoris.gates.json`'s `integration` (tool and driver twins); the rule's `integrate` on a branch rule (`LandingKey` and the CLI's
     `driverconfig.ts`, one table); the acceptance of its own, `integrationGates`, with *Accept the gates*; GENREGEN1's writers reading either
-    acceptance, and the line rules' `run` writers run under it; Setup's rows shown.
+    acceptance, and the line rules' `run` writers run under it; the declared `scratch` taken by the landing's own tidy (LAND3, at `handed`),
+    TIDYOUTPUT1 folded in here *(F35)*; Setup's rows shown.
   - Refusals: `integrate` beside a plugin, on a merge rule, or beside the rule's `squash`; `done` without `autoAccept` or gates; `steward` without
     gates; `land` where no whole-set verification runs on the line.
-  - Proof: the twins' table; an older build's read of a rule carrying `integrate` as the branch rule it is; each refusal.
+  - Proof: the twins' table; an older build's read of a rule carrying `integrate` as the branch rule it is; each refusal; a landing's tree whose
+    only extra files are its declared scratch tidied without `--force`.
 - **INTEGRATE1j ⚑ — the runner contract, D192's extended, and this repository's runner.** `verification`'s `modes` and inputs (§5.9);
-  `tools/merge-branch.mjs --daoris-verify` answering `run`, `plan`, `probe` and `commits`, its gates read only from the handed declaration *(F6)*,
+  `tools/merge-branch.mjs --full --beside --daoris-verify` (D192 point 9's command) answering `run`, `plan`, `probe` and `commits`, its gates read only from the handed declaration *(F6)*,
   the commit check as its `commits` mode *(F7)*, `DAORIS_VERIFY_*` stripped from what it starts; shared with FABRIC-PIPELINE1g. Proof: the contract's
   validation table (each unknown case of §5.9); a schema-1 answer when no mode is asked, read as D192 reads it; a probe as composed reproducing a
   pollution within a class; a member's edit of a gate's command not run. After row d.
@@ -852,12 +921,15 @@ names its proof. Round 2 re-orders them: environment, mechanical, declaration, r
   - Its driver half edits `Sessions/Heavy/MachineAdmission.cs`, which FOUNDATION1's mod-xvi moves to Review: beside FOUNDATION1 only while no
     mod-xvi branch is open.
 - **INTEGRATE1e — the integration run over git, unwired** (Workplace).
-  - Contents: the store family; the one door; request with the commit check, form under the trees home with the private files, replay with
-    provisional containment, resolve, conflict as data, promote with its fence and authority check, settle, tidy with the declared scratch
-    (TIDYOUTPUT1 folded in), recovery by ancestry; gates behind the verdict port.
+  - Contents: the store family; the one door with its recorded-landing path (bound to the recorded unit and exact tip, the recorded gate proof
+    read) and its come-up sweep under `request: done` *(F32, C27)*; request with the commit check, form under the trees home with the private
+    files and the requester's check, replay with provisional containment, resolve, conflict as data, promote with its fence and authority check,
+    settle, the landed branch's content-held removal with its recovery ref *(F35)*, recovery by ancestry; gates behind the verdict port.
   - Proof: a Git Process class per step, each crash point (after the line moved, before its record), each promotion path, the fence (a
-    `by: tool` line refused at promotion), the ref transactions (`ref-removal-transactions.md`), and §2's library cases (a status line by its
-    writer, a superseded commit kept visible, a tree whose verify output is declared scratch). Its classes join the git half within its target of
+    `by: tool` line refused at promotion), the ref transactions (`ref-removal-transactions.md`), §2's library cases (a status line by its
+    writer, a superseded commit kept visible), and the recorded-landing door's cases. Those cases: a landing whose tree LAND3's tidy took,
+    integrated from its record; a recorded landing whose branch moved, refused; a session branch refused at the records-branch door; the sweep
+    requesting each standing landing once. Its classes join the git half within its target of
     about 28 class-minutes (D207 point 7), each measured *(F29)*.
   - Starts once the open branches cutting Workplace's edges have landed: mod-x and mod-xi are built (`docs/decisions/D212.md:1309-1313`), and it
     adds new files in Workplace's folder alone *(F23)*.
@@ -877,34 +949,51 @@ names its proof. Round 2 re-orders them: environment, mechanical, declaration, r
 - **INTEGRATE1h — the page and the terminal.** The Integration view and its slice, the head's line, *What needs you*, `daoris-driver integrate` as
   Person routes, Ask Daoris's coverage, words and glossary. Proof: the slice's tests, the page's tests in both languages, the pipe census, the
   installed window.
-- **INTEGRATE1k — this repository moves.** The shadow day, then the fenced flip (§6.3), the leftovers requested by the owner's `--request`;
-  `docs/development.md`'s integration section rewritten. Proof: a day's shadow with its differences read; the tool's runner refusing to promote on
-  a `by: daoris` line; the first promoted candidate on the install. After row h *(F18)*.
+- **INTEGRATE1k — this repository moves.**
+  - Order: the fence row first, landed alone (the runner reading `by` before each promotion and recording its code identity, an enqueue refusing
+    behind a runner of another identity); the old runner drained and ended; a fenced runner shown refusing; then the shadow day; then the owner's
+    sitting and the flip (§6.3); then the leftovers through the recorded-landing door (the sweep or the owner's card) and the records-branch door.
+    `docs/development.md`'s integration section is rewritten.
+  - Proof:
+    - an upgrade test that **begins with a live unfenced runner**: it keeps running and is not replaced, the enqueue refuses until it ends, and
+      a fenced runner then starts and refuses a `by: daoris` line *(C13)*;
+    - a day's shadow with its differences read;
+    - the fenced runner refusing to promote on a `by: daoris` line;
+    - a leftover landing whose tree was tidied, integrated from its record *(C27)*;
+    - the first promoted candidate on the install.
+  - After row h *(F18)*.
 - **INTEGRATE1i — the steward's integration acts** (Roles and the shell's act tables), amending D209 point 3, with the execution cutoff at
   promotion *(C12)*. Proof: each act's record; a revoke cancelling a pending request; an owner's act on a repository making its candidate's
-  steward-requested member leave at promotion; `decide land` refused to the role. After STEWARDROLE1d.
+  steward-requested member leave at form or at promotion; `decide land` refused to the role; **a steward's request of a unit not yet landed
+  refused**, since the role never makes the Accept *(F31)*. After STEWARDROLE1d.
 - **INTEGRATE1l — rows that touch the same files** (§9): the `paths` field's chain, the start's comparison and its bound, the told overlap. Proof:
   an overlapping start held and said; two running units told once each; an agent's declaration unable to release another's hold.
 - **INTEGRATE1m — another repository on integration.** A quest published to the library repository asking for its own `integration` declaration
   (its gates, commit check, scratch and line writers), never written from here; the install's rule for it set by the owner.
 
 **Changed in round 2:** a, b, c, d, e, g, j and k (§15.1); the landing agent is dropped from the rows; the order is a, c, d, j, b, e, f, g, h,
-k, i, l, m. Follow-ups named in §7.1, outside these rows: UPDATESTEP1, USAGEVIEW1, HANDBACK1, BRIEFKIND1, CHANNELJOIN1, SUBAGENTS1; and later
-designs: an `integrate` node kind (§5.1), a landing agent (§5.4), gates before a plugin's push.
+k, i, l, m. **Changed in round 3:** d (the declared scratch in the landing's tidy), e (the recorded-landing door and its sweep, the landed
+branch's removal), i (no steward request of an unlanded unit), j (D192 point 9's command), k (the fence row first, the live runner drained,
+the leftovers' doors) (§16); the order is unchanged.
 
-## 12. Questions left for the steward
+Follow-ups named in §7.1, outside these rows: UPDATESTEP1, USAGEVIEW1, HANDBACK1, BRIEFKIND1, CHANNELJOIN1, SUBAGENTS1; and later designs: an
+`integrate` node kind (§5.1), a landing agent (§5.4), gates before a plugin's push.
 
-1. **`probe` in D192's `check`** (§15.2): a mode a check may answer (Codex) or one it belongs to as the contract's (Fable).
-2. **The acceptance's home**: an acceptance of its own (Fable's second option, taken) or the landed route's reused (Codex allows either).
-3. **The integration tree's lease and disk**: Codex's lease, disk accounting and reset after processes end, with Fable's place under the trees
-   home outside `keptTrees` (both taken, §5.2 step 2): does the steward want it counted in KEEPSIZE1's allowance?
-4. **The legacy merge rule through the transport** (§4.2's last row): both readers say one implementation; the steward confirms that the
-   transport carrying an ungated owner-pressed merge, as the named exception, is acceptable before row g.
+## 12. Decided by the steward
+
+Round 2's open questions, each settled by the steward on 2026-10-28 under D191 (§15.2):
+
+1. **`probe`**: a mode integration requires and any runner may answer; a `check` asks it only once known red by signature exists.
+2. **The acceptance**: separate, `integrationGates` (§4.1).
+3. **The flip**: the owner accepts the flip branch's declaration and sets the install's rule in one sitting before it promotes (§6.3).
+4. **The integration tree**: it counts against KEEPSIZE1's allowance and is never evicted while a run holds it (§5.2 step 2).
+5. **The legacy merge rule**: the ungated merge rule rides the new path as a named exception until row g. Read here: today's press-merge path
+   stands until row g lands, and row g carries it onto the transport as the named exception (§4.2's last row).
 
 ## 13. What stays unmeasured, and what this design's checks do not cover
 
-It is proposed and a document: the documentation gates prove its links, routing and shape, not its claims. Every `file:line` of §1 was read at
-`7ebeba1ba`, and the in-flight branches by `git show` at their tips of 2026-10-28; nothing was built or run but those reads, the decision index's
+It is accepted and a document, nothing of it built: the documentation gates prove its links, routing and shape, not its claims. Every
+`file:line` of §1 was read at `7ebeba1ba`, and the in-flight branches by `git show` at their tips of 2026-10-28; nothing was built or run but those reads, the decision index's
 generator and the document checks. §2's numbers were counted from the queue's records under `local/` by a reading script, never written there, and
 neither reader read them; the steward's accounts in §2 (the five hours, the eleven waiting, the census miss, the library's day) are the brief's
 and were not read from a record. Unmeasured, each the named row's to measure:
@@ -920,67 +1009,88 @@ steward's own procedures (described from the brief), and the integration reviews
 
 ## 14. Reads
 
-Round 1, read at `6f1ee69cb`: Codex, *another round* (C1 to C26, 10 blocking); Claude Fable, *another round* (F1 to F30, 6 blocking). Each finding
-was checked at the lines named; *verified* names where. The steward's verdict column is the steward's to fill.
+Round 1, read at `6f1ee69cb`: Codex, *another round* (C1 to C26, 10 blocking); Claude Fable, *another round* (F1 to F30, 6 blocking). Round 2,
+read at `cd12f0399`, confined to its changed sections: Codex, *accept after named changes* (C4 to C12 resolved, C13 in part, C27 new and
+blocking); Claude Fable, *accept after named changes* (F5 to F10 resolved, F31 and F32 new and blocking, F33 to F39 non-blocking). Each finding
+was checked at the lines named. The steward's column gives the steward's verdict of 2026-10-28; *taken* is the steward's verdict on the
+disposition as written.
+
+**Round 1's findings**
 
 | Reader | Id | Blocking | Verified at | Disposition | Where | Steward |
 |---|---|---|---|---|---|---|
-| Codex | C1 | no | `LineHolds.cs:73-116`; `TreeLands.cs:525-530`, `:583-591` | taken: the driver's containment proofs told apart from the missing settled outcome | §1.2, §1.5 | |
-| Codex | C2 | no | `merge-branch.mjs:6657-6658` (detached, unreferenced) | taken: the weakness is ownership, cancellation, recovery and visibility, not the shell's lifetime | §1.1, §1.5, §3 | |
-| Codex | C3 | no | `merge-branch.mjs:6031-6066` (the newest tip per poll); `docs/development.md:288-361` | taken: the backstop is later tips, standing evidence, sweeps and nightly runs | §1.1, §4.5, §13 | |
-| Codex | C4 | **yes** | `merge-queue.mjs:192-209`, `:232-240`; foundation `:1157` | taken: containment in an earlier member provisional, settled only at its promotion, carried through split and re-form | §5.2 steps 3, 9; §10; row c | |
-| Codex | C5 | **yes** | `TreeGates.cs:40-57`; `GraphGate.cs:113-140` | taken: one door; a unit's request only through its own landing and gate at the pinned commit; a records branch on the owner's card or the steward's act, refused for a session's or landing branch | §4.6, §5.2 step 1; row g's proof | |
-| Codex | C6 | **yes** | `GeneratedWriters.cs:44-52` | taken: `split` the permanent default; `land` the owner's; row b's switch not in the repository; executable line writers wait for row d's acceptance | §4.1, §4.5, §11 rows b, c | |
-| Codex | C7 | **yes** | HEAVYQUEUE1's `machine-admission.mjs:78-88`, `:114-119`, `:151-154`, `:145-170`, `:200-213` | taken: the whole admission as ordinary entries any writer counts; another live hold, or an admission not established, inconclusive and never `land` | §4.5; §10; row b | |
-| Codex | C8 | **yes** | `pipeline-design.md:289-294`, `:327-340` | taken: D192's result rules carried, with base, declaration blob, composition and the complete accepted plan required for promotion | §5.9 | |
-| Codex | C9 | **yes** | `LandingKey.cs:359-388`; `TreeLands.cs:287-290` | taken: integration rides a branch rule, so an older build makes the branch and merges nothing; today's merge rule the named legacy exception | §4.1, §4.2, §4.7; §10 | |
-| Codex | C10 | **yes** | `D190.md:13-18`; `NodeGraphs.cs:747-762` | taken: no node added to any graph; a transport outside every run, observed by `line`; a node kind only by a later explicit version | §5.1; §10 | |
-| Codex | C11 | **yes** | `TreeLands.cs:598-604`; `merge-queue.mjs:131-145` | taken: each revision requested again by the same rule; only a done under `autoAccept` makes one by itself | §4.6, §5.2 step 9, §5.7 | |
-| Codex | C12 | **yes** | `D209.md:66-78`, `:95-105` | taken: the steward's request recorded with its generation, policy and tip, re-checked at promotion; revoke cancels; owner-held never released by the role | §8, §5.2 step 8; row i | |
-| Codex | C13 | **yes** | `merge-branch.mjs:6494-6554` | taken: both integrators read `by` immediately before promoting; the flip closes the tool's enqueue; round 1's *between the two* corrected | §5.6, §6.3; row k | |
-| Codex | C14 | no | `merge-queue.mjs:300-311`; `D207.md:139-148` | taken: the expiry branch in the judge's table with its regression | §1.1, §5.3; row f | |
-| Codex | C15 | no | foundation `:2335`, `:2342`, `:2348-2353`, `:2363-2373` | taken: Settings the shape, Workplace the policy and its verdict port, Review the execution and sightings, Loop's executors kept | §5.6, §6.1 | |
-| Codex | C16 | no | `merge-branch.mjs:6409-6413`, `:6448` | taken: the replay tests accounting only, the confirm run measured prospectively; the rows re-ordered | §4.5, §11 | |
-| Codex | C17 | no | `D207.md:22-24` | taken (Q1): `reached: split`; agrees with Fable's answer | §4.5 | |
-| Codex | C18 | no | `TreeLands.cs:537-558` | taken (Q2) with C9: one transport, authorization unchanged | §4.2 | |
-| Codex | C19 | no | `RebaseTelling.cs:16-26` | taken (Q3): hold first, landing agent deferred; agrees with Fable | §5.4 | |
-| Codex | C20 | no | `LandedGates.cs:12-19` | taken (Q4): two homes, `unconfirmed` the install's; agrees with Fable | §4.1 | |
-| Codex | C21 | no | `D87.md:232-247` | taken (Q5): `run` only; agrees with F10 | §4.1 | |
-| Codex | C22 | no | `merge-branch.mjs:6223-6235` | taken (Q6): one warm tree per line with a lease, disk counted, reset only after its processes end | §5.2 step 2 | |
-| Codex | C23 | no | design §5.1 | taken (Q7): built in, machinery shared with D192's performer | §5.1 | |
-| Codex | C24 | no | design §5.7 | taken (Q8): a superseded commit's disposition stays visible | §5.7, §5.8 | |
-| Codex | C25 | no | `pipeline-design.md:327-340` | partly (Q9): one contract taken; `probe` a mode a check *may* answer, the readers differing on whether it belongs to the check (§15.2) | §5.9, §12 | |
-| Codex | C26 | no | `merge-branch.mjs:3408-3424`; `tools/shell-edit-guard.mjs:3-14` | taken: the prune a named retained exception, the guard a named harness adapter, each with its later home | §3, §7.1, §7.2 | |
-| Fable | F1 | no | `TreeLands.cs:258-262`, `:583-591`; `LandedReview.cs`; `D102.md:465` | taken, with C1 | §1.2, §1.5 | |
-| Fable | F2 | no | `WorkflowSelection.cs:52-56`; `LandedGates.cs:80-88` | taken: the acceptance is the landed route's today | §1.3, §4.1 | |
-| Fable | F3 | no (feeds F5) | `pipeline-design.md:319-343`, `:366-368` | taken | §1.3, §5.9 | |
-| Fable | F4 | no (feeds F8) | `event-hook-design.md:490`, `:496`; `NodeContract.cs:433-435` | taken | §1.3, §5.1 | |
-| Fable | F5 | **yes** | `pipeline-design.md:319-343`, `:366-368` | taken: D192's `verification` extended by modes and inputs, schema 1 kept where no mode is asked; D192 amended by name only for a caller-handed tree | §5.9; D215 | |
-| Fable | F6 | **yes** | `merge-branch.mjs:977-980`, `:6361` | taken: the accepted blob handed to the runner, its gates and commands read only from it | §4.3, §5.9; row j | |
-| Fable | F7 | **yes** | `merge-branch.mjs:2836-2858`, `:6725-6728` | taken: the commit check, and the composed message, at step 1 through the runner's `commits` mode | §4.1, §5.2 step 1, §6.2, §7.1 | |
-| Fable | F8 | **yes** | foundation `:1169`; `event-hook-design.md:496` | taken: with integration on a branch rule, `handed` and `work.landed` are today's, unredefined; `integration.queued` at the request | §5.1 | |
-| Fable | F9 | **yes** | `D209.md:63-65` | taken: the steward's `decide` is `split` or `hand-back`; `land` the owner's; no steward request where gates are none | §8, §4.1 | |
-| Fable | F10 | **yes** | `TreeTidies.cs:43-45`; `D102.md:243` | taken: no rule keeps one side's copy; a line settles only by its accepted writer | §4.1, §10 | |
-| Fable | F11 | no | `WorkflowSelection.cs:52-56` | taken: an acceptance of its own, read by GENREGEN1's writers too | §4.1; row d | |
-| Fable | F12 | no | `merge-branch.mjs:6679-6740` | partly: no gap, by the owner accepting the flip's blob and setting the rule before the flip promotes, not by the tool reading `driver.json` (which would hand the tool the install's home) | §6.3 | |
-| Fable | F13 | no | `docs/development.md:183-192` | taken: the merge in place retires at the flip; a direct commit stays a person's act | §6.2, §7.1 | |
-| Fable | F14 | no | D192 point 7 | taken: `land` refused where no whole-set verification runs on the line | §4.1, §4.5 | |
-| Fable | F15 | no | `docs/development.md:87-90` | taken: the confirm run's reach narrowed; cross-class pollution counted by row b | §4.5, §13 | |
-| Fable | F16 | no | §2's walls | taken: the whole admission's cost measured; `drop` ends a confirm run | §4.5; row b | |
-| Fable | F17 | no | `LandingKey.cs:110-135` | taken: `integrate` refused beside a plugin; the dangling row dropped | §4.1, §4.2 | |
-| Fable | F18 | no | `TASKS.md:424` | taken: row k after h, the leftovers by the owner's `--request` | §6.3; row k | |
-| Fable | F19 | no | design §4.1 | taken: row b's policy from the tool's own switch, never the repository's file | row b | |
-| Fable | F20 | no | `merge-branch.mjs:5027-5048`, `:6360`; `docs/development.md:205-207` | taken: the private files at step 2; the runner reads the home before composing | §5.2 step 2, §5.5 | |
-| Fable | F21 | no | `compatible-builds.md` | taken: moot once no graph or run record changes, and said | §4.7, §5.1 | |
-| Fable | F22 | no | foundation `:2342`, `:2348` | taken: sightings Review's | §5.6 | |
-| Fable | F23 | no | `D212.md:1309-1313` | taken: row e starts once the open Workplace cuts land | row e | |
-| Fable | F24 | no | `session-record-fields.md` | taken: `paths` a record field with its chain, its one writer and the read's bound; an agent's declaration only holds | §9; row l | |
-| Fable | F25 | no | design §5.4 | taken: the landing agent deferred, with C19 | §5.4 | |
-| Fable | F26 | no | `D145.md:70` | taken: the human step after a local integration is the owner's push | §4.6 | |
-| Fable | F27 | no | `merge-branch.mjs:6241`; `TreeLands.cs:607-614` | taken: the merge's second parent is the replayed tip; settlement rests on patch id and content | §1.1, §5.2 step 3, §5.7 | |
-| Fable | F28 | no | `BranchReplays.cs:244-252`; `pipeline-design.md:369-372` | taken: the integration tree under the trees home | §5.2 step 2 | |
-| Fable | F29 | no | D207 point 7 | taken: row e's classes within the git half's target, measured | row e | |
-| Fable | F30 | no | `D209.md:66-78` | taken: one spelling; the terminal's doors Person routes, the steward's `ROLE_ACT` | §5.8 | |
+| Codex | C1 | no | `LineHolds.cs:73-116`; `TreeLands.cs:525-530`, `:583-591` | taken: the driver's containment proofs told apart from the missing settled outcome | §1.2, §1.5 | taken |
+| Codex | C2 | no | `merge-branch.mjs:6657-6658` (detached, unreferenced) | taken: the weakness is ownership, cancellation, recovery and visibility, not the shell's lifetime | §1.1, §1.5, §3 | taken |
+| Codex | C3 | no | `merge-branch.mjs:6031-6066` (the newest tip per poll); `docs/development.md:288-361` | taken: the backstop is later tips, standing evidence, sweeps and nightly runs | §1.1, §4.5, §13 | taken |
+| Codex | C4 | **yes** | `merge-queue.mjs:192-209`, `:232-240`; foundation `:1157` | taken: containment in an earlier member provisional, settled only at its promotion, carried through split and re-form | §5.2 steps 3, 9; §10; row c | taken |
+| Codex | C5 | **yes** | `TreeGates.cs:40-57`; `GraphGate.cs:113-140` | taken: one door; a unit's request only through its own landing and gate at the pinned commit, or (round 3) its recorded landing; a records branch on the owner's card or the steward's act | §4.6, §5.2 step 1; row g's proof | taken |
+| Codex | C6 | **yes** | `GeneratedWriters.cs:44-52` | taken: `split` the permanent default; `land` the owner's; row b's switch not in the repository; executable line writers wait for row d's acceptance | §4.1, §4.5, §11 rows b, c | taken; decided: the acceptance is separate |
+| Codex | C7 | **yes** | HEAVYQUEUE1's `machine-admission.mjs:78-88`, `:114-119`, `:151-154`, `:145-170`, `:200-213` | taken: the whole admission as ordinary entries any writer counts; another live hold, or an admission not established, inconclusive and never `land` | §4.5; §10; row b | taken |
+| Codex | C8 | **yes** | `pipeline-design.md:289-294`, `:327-340` | taken: D192's result rules carried, with base, declaration blob, composition and the complete accepted plan required for promotion | §5.9 | taken |
+| Codex | C9 | **yes** | `LandingKey.cs:359-388`; `TreeLands.cs:287-290` | taken: integration rides a branch rule, so an older build makes the branch and merges nothing; today's merge rule the named legacy exception | §4.1, §4.2, §4.7; §10 | taken |
+| Codex | C10 | **yes** | `D190.md:13-18`; `NodeGraphs.cs:747-762` | taken: no node added to any graph; a transport outside every run, observed by `line`; a node kind only by a later explicit version | §5.1; §10 | taken |
+| Codex | C11 | **yes** | `TreeLands.cs:598-604`; `merge-queue.mjs:131-145` | taken: each revision requested again by the same rule; only a done under `autoAccept` makes one by itself | §4.6, §5.2 step 9, §5.7 | taken |
+| Codex | C12 | **yes** | `D209.md:66-78`, `:95-105` | taken: the steward's request recorded with its generation, policy and tip, re-checked at form and at promotion; revoke cancels; owner-held never released by the role | §8, §5.2 steps 2, 8; row i | taken |
+| Codex | C13 | **yes** | `merge-branch.mjs:6494-6554` | taken: both integrators read `by` immediately before promoting; the flip closes the tool's enqueue; round 1's *between the two* corrected; completed in round 3 by the live runner's upgrade | §5.6, §6.3; row k | taken |
+| Codex | C14 | no | `merge-queue.mjs:300-311`; `D207.md:139-148` | taken: the expiry branch in the judge's table with its regression | §1.1, §5.3; row f | taken |
+| Codex | C15 | no | foundation `:2335`, `:2342`, `:2348-2353`, `:2363-2373` | taken: Settings the shape, Workplace the policy and its verdict port, Review the execution and sightings, Loop's executors kept | §5.6, §6.1 | taken |
+| Codex | C16 | no | `merge-branch.mjs:6409-6413`, `:6448` | taken: the replay tests accounting only, the confirm run measured prospectively; the rows re-ordered | §4.5, §11 | taken |
+| Codex | C17 | no | `D207.md:22-24` | taken (Q1): `reached: split`; agrees with Fable's answer | §4.5 | taken |
+| Codex | C18 | no | `TreeLands.cs:537-558` | taken (Q2) with C9: one transport, authorization unchanged | §4.2 | decided: the legacy ungated merge rule rides the new path as a named exception until row g |
+| Codex | C19 | no | `RebaseTelling.cs:16-26` | taken (Q3): hold first, landing agent deferred; agrees with Fable | §5.4 | taken |
+| Codex | C20 | no | `LandedGates.cs:12-19` | taken (Q4): two homes, `unconfirmed` the install's; agrees with Fable | §4.1 | taken |
+| Codex | C21 | no | `D87.md:232-247` | taken (Q5): `run` only; agrees with F10 | §4.1 | taken |
+| Codex | C22 | no | `merge-branch.mjs:6223-6235` | taken (Q6): one warm tree per line with a lease, reset only after its processes end | §5.2 step 2 | decided: the integration tree counts against KEEPSIZE1's allowance and is never evicted while a run holds it |
+| Codex | C23 | no | design §5.1 | taken (Q7): built in, machinery shared with D192's performer | §5.1 | taken |
+| Codex | C24 | no | design §5.7 | taken (Q8): a superseded commit's disposition stays visible | §5.7, §5.8 | taken |
+| Codex | C25 | no | `pipeline-design.md:327-340` | partly (Q9): one contract taken; `probe` a mode a check *may* answer, the readers differing on whether it belongs to the check (§15.2) | §5.9, §12 | decided: probe is a mode integration requires and any runner may answer, a check asking it only once known red by signature exists |
+| Codex | C26 | no | `merge-branch.mjs:3408-3424`; `tools/shell-edit-guard.mjs:3-14` | taken: the prune a named retained exception, the guard a named harness adapter, each with its later home | §3, §7.1, §7.2 | taken |
+| Fable | F1 | no | `TreeLands.cs:258-262`, `:583-591`; `LandedReview.cs`; `D102.md:465` | taken, with C1 | §1.2, §1.5 | taken |
+| Fable | F2 | no | `WorkflowSelection.cs:52-56`; `LandedGates.cs:80-88` | taken: the acceptance is the landed route's today | §1.3, §4.1 | taken |
+| Fable | F3 | no (feeds F5) | `pipeline-design.md:319-343`, `:366-368` | taken | §1.3, §5.9 | taken |
+| Fable | F4 | no (feeds F8) | `event-hook-design.md:490`, `:496`; `NodeContract.cs:433-435` | taken | §1.3, §5.1 | taken |
+| Fable | F5 | **yes** | `pipeline-design.md:319-343`, `:366-368` | taken: D192's `verification` extended by modes and inputs, schema 1 kept where no mode is asked; D192 amended by name only for a caller-handed tree | §5.9; D215 | taken |
+| Fable | F6 | **yes** | `merge-branch.mjs:977-980`, `:6361` | taken: the accepted blob handed to the runner, its gates and commands read only from it | §4.3, §5.9; row j | taken |
+| Fable | F7 | **yes** | `merge-branch.mjs:2836-2858`, `:6725-6728` | taken: the commit check, and the composed message, at step 1 through the runner's `commits` mode | §4.1, §5.2 step 1, §6.2, §7.1 | taken |
+| Fable | F8 | **yes** | foundation `:1169`; `event-hook-design.md:496` | taken: with integration on a branch rule, `handed` and `work.landed` are today's, unredefined; `integration.queued` at the request | §5.1 | taken |
+| Fable | F9 | **yes** | `D209.md:63-65` | taken: the steward's `decide` is `split` or `hand-back`; `land` the owner's; no steward request where gates are none | §8, §4.1 | taken |
+| Fable | F10 | **yes** | `TreeTidies.cs:43-45`; `D102.md:243` | taken: no rule keeps one side's copy; a line settles only by its accepted writer | §4.1, §10 | taken |
+| Fable | F11 | no | `WorkflowSelection.cs:52-56` | taken: an acceptance of its own, read by GENREGEN1's writers too | §4.1; row d | decided: the acceptance is separate |
+| Fable | F12 | no | `merge-branch.mjs:6679-6740` | partly: no gap, by the owner accepting the flip's blob and setting the rule before the flip promotes, not by the tool reading `driver.json` (which would hand the tool the install's home) | §6.3 | decided: the flip is the owner accepting the flip branch's declaration and setting the install's rule in one sitting before it promotes |
+| Fable | F13 | no | `docs/development.md:183-192` | taken: the merge in place retires at the flip; a direct commit stays a person's act | §6.2, §7.1 | taken |
+| Fable | F14 | no | D192 point 7 | taken: `land` refused where no whole-set verification runs on the line | §4.1, §4.5 | taken |
+| Fable | F15 | no | `docs/development.md:87-90` | taken: the confirm run's reach narrowed; cross-class pollution counted by row b | §4.5, §13 | taken |
+| Fable | F16 | no | §2's walls | taken: the whole admission's cost measured; `drop` ends a confirm run | §4.5; row b | taken |
+| Fable | F17 | no | `LandingKey.cs:110-135` | taken: `integrate` refused beside a plugin; the dangling row dropped | §4.1, §4.2 | taken |
+| Fable | F18 | no | `TASKS.md:424` | taken: row k after h, the leftovers by the owner's `--request` (round 3: through the recorded-landing door) | §6.3; row k | taken |
+| Fable | F19 | no | design §4.1 | taken: row b's policy from the tool's own switch, never the repository's file | row b | taken |
+| Fable | F20 | no | `merge-branch.mjs:5027-5048`, `:6360`; `docs/development.md:205-207` | taken: the private files at step 2; the runner reads the home before composing | §5.2 step 2, §5.5 | taken |
+| Fable | F21 | no | `compatible-builds.md` | taken: moot once no graph or run record changes, and said | §4.7, §5.1 | taken |
+| Fable | F22 | no | foundation `:2342`, `:2348` | taken: sightings Review's | §5.6 | taken |
+| Fable | F23 | no | `D212.md:1309-1313` | taken: row e starts once the open Workplace cuts land | row e | taken |
+| Fable | F24 | no | `session-record-fields.md` | taken: `paths` a record field with its chain, its one writer and the read's bound; an agent's declaration only holds | §9; row l | taken |
+| Fable | F25 | no | design §5.4 | taken: the landing agent deferred, with C19 | §5.4 | taken |
+| Fable | F26 | no | `D145.md:70` | taken: the human step after a local integration is the owner's push | §4.6 | taken |
+| Fable | F27 | no | `merge-branch.mjs:6241`; `TreeLands.cs:607-614` | taken: the merge's second parent is the replayed tip; settlement rests on patch id and content | §1.1, §5.2 step 3, §5.7 | taken |
+| Fable | F28 | no | `BranchReplays.cs:244-252`; `pipeline-design.md:369-372` | taken: the integration tree under the trees home | §5.2 step 2 | taken |
+| Fable | F29 | no | D207 point 7 | taken: row e's classes within the git half's target, measured | row e | taken |
+| Fable | F30 | no | `D209.md:66-78` | taken: one spelling; the terminal's doors Person routes, the steward's `ROLE_ACT` | §5.8 | taken |
+
+**Round 2's findings**
+
+| Reader | Id | Blocking | Verified at | Disposition | Where | Steward |
+|---|---|---|---|---|---|---|
+| Codex | C13 | **yes** (in part) | `merge-branch.mjs:6638-6642`, `:6651-6653`, `:6531-6548` | taken: the fence row lands alone; the runner records its code identity and an enqueue refuses behind another; the old runner drains and ends; a fenced runner shows its refusal before the flip; an upgrade test begins with a live unfenced runner | §6.3 step 4.1; row k; D215 | taken |
+| Codex | C27 | **yes** | `LandedBranches.cs:8-10`, `:50-55`; `TreeLands.cs:598-604` | taken, with F32: the recorded-landing door, bound to the recorded unit and exact tip, its gate proof the landing's own, from the owner's card, the steward's act or the come-up sweep; arbitrary branches refused at the records-branch door; the tidied-tree case | §4.6, §6.3 step 4.5; rows e, k; D215 | taken |
+| Fable | F31 | **yes** | `D209.md:63-65`, `:311`; `TreeLands.cs:510-558` (a unit's landing is the Accept) | taken: the steward's request never makes a landing; it admits a records branch or a landing the owner's press or a done already made | §4.1, §4.6, §8; row i; D215 | taken |
+| Fable | F32 | **yes** | `TreeLands.cs:598-604`; `LandedBranches.cs:50-55` | taken, with C27; a request the flip's own candidate splits off or hands back is handed back with the same words | §4.6, §4.7, §6.3 steps 4.3, 4.5 | taken |
+| Fable | F33 | no | `pipeline-design.md:333-334`; `merge-branch.mjs:1997`, `:3736-3742`, `:245-251` | taken: `flake` read as a pass, as D192 and today's queue read it, this repository's runner giving it for FLAKE1's named classes alone | §4.5 | taken |
+| Fable | F34 | no | HEAVYQUEUE1's `machine-admission.mjs:114-119`, `:151-170` | taken: inconclusive judged only from the confirm run's start, its entries written in one locked write, inconclusive read first | §4.5 | taken |
+| Fable | F35 | no | `TreeScratch.cs:36-58`; `D102.md:243` | taken: the declared scratch belongs to the landing's tidy (row d); step 10 retries a kept tree and removes the landed branch by D102's content-held removal (row e) | §4.1, §5.2 step 10; rows d, e | taken |
+| Fable | F36 | no | `D209.md:95-105` (owner-set) | taken: the requester's authority judged at form, step 8 keeping the race | §5.2 steps 2, 8; §8 | taken |
+| Fable | F37 | no | design §4.7 | taken: the door named, the sweep or the card | §4.7 | taken |
+| Fable | F38 | no | `Trees/Nodes/BuiltInNodes.cs:153-160` | taken: `line` reached from the unit's end, D102's content-held proof | §5.1 | taken |
+| Fable | F39 | no | `D192.md:66-67` | taken: the runner's command aligned with D192 point 9, its flags its own | §4.1, row j | taken |
 
 ## 15. Round 2: both reads of round 1 answered
 
@@ -1015,18 +1125,53 @@ k, i, l, m.
 - **`probe` and D192's `check`** (C25, Fable's Q9). Codex: share the protocol, `probe` optional for a check, which needs execution and verdicts,
   not bisection. Fable: one contract, and `probe` belongs in it, since a check's filing of known red by signature needs the same re-run. **Proposed:**
   `probe` is a mode of the one contract, required of a runner integration calls and answerable by any runner, and a `check` asks it only where its
-  own row later files known red by signature; D192's check needs nothing new now. The steward decides.
+  own row later files known red by signature; D192's check needs nothing new now. **Decided by the steward:** probe is a mode integration
+  requires and any runner may answer, a check asking it only once known red by signature exists.
 - **The acceptance's home** (C6, F11). Codex allows the existing landed-route acceptance reused or a new seam; Fable prefers an acceptance of its
   own. **Proposed:** an acceptance of its own (§4.1), since a repository should not need a verification pipeline to integrate, read by GENREGEN1's
-  writers beside the landed route's.
+  writers beside the landed route's. **Decided by the steward:** the acceptance is separate.
 - **The flip's gap** (F12 against round 1, and C13's correction). Fable proposes the tool keep integrating until the install's rule is set, read
   through the CLI's twin of `driver.json`; **proposed instead** the owner's one sitting before the flip (§6.3), since the tool reading the
   install's `driver.json` needs the install's home, which row a removes from everything the tool starts. Codex's fence at promotion applies either
-  way.
+  way. **Decided by the steward:** the flip is the owner accepting the flip branch's declaration and setting the install's rule in one sitting
+  before it promotes.
+
+Round 2's two other open questions, which no reader disputed, were settled by the steward too:
+- **The integration tree.** It counts against KEEPSIZE1's allowance and is never evicted while a run holds it (§5.2 step 2).
+- **The legacy merge rule.** The legacy ungated merge rule rides the new path as a named exception until row g (§4.2's last row, §12 item 5).
 
 Every other answer to round 1's questions agreed between the readers and is taken (§14: C17 to C24 with Fable's §4).
 
 ### 15.3 What a second read may be confined to
 
 §4.1, §4.2, §4.5, §4.6, §4.7, §5.1, §5.2, §5.6, §5.9, §6.3, §8 and §11, with D215. Other changes are corrections and placements (§1, §3, §5.3,
-§5.4, §5.5, §5.7, §5.8, §7, §9, §10).
+§5.4, §5.5, §5.7, §5.8, §7, §9, §10). Both second reads were confined so, and each accepted after named changes (§16).
+
+## 16. Round 3: the second reads' named changes, and the acceptance
+
+Both makers read round 2 at `cd12f0399`, confined to §15.3's sections and D215, and both asked **accept after named changes**:
+- **Codex** found C4 to C12 resolved, C13 resolved in part, and one new blocking finding, C27.
+- **Claude Fable** found its F5 to F10 resolved, two new blocking findings (F31, F32) and seven non-blocking (F33 to F39).
+
+Each was checked at its lines (§14, round 2's table) and every one is taken. They change these sections:
+
+| Change | Findings | Sections |
+|---|---|---|
+| The steward's request never makes a unit's landing; it admits a records branch or a landing the owner's press or a done already made | F31 | §4.1, §4.6, §8; row i; D215 points 4 and 10 |
+| The recorded-landing door: a standing landing record, its unit and exact tip, its gate proof the landing's own; from the owner's card, the steward's act or the come-up sweep; a tidied tree's landing admitted from its record; arbitrary branches refused | F32, C27, F37 | §4.6, §4.7, §6.3 step 4; rows e, k; D215 points 4 and 12 |
+| The live runner's upgrade before the flip: the fence alone first, the code identity recorded, the old runner drained, a fenced runner shown refusing; the upgrade test from a live unfenced runner | C13 | §6.3 step 4.1; row k; D215 point 12 |
+| `flake` read as a pass for FLAKE1's named classes alone, as today | F33 | §4.5 |
+| The whole admission's ordering and the inconclusive judgement from the start | F34 | §4.5 |
+| The declared scratch in the landing's tidy; the landed branch's content-held removal | F35 | §4.1, §5.2 step 10; rows d, e |
+| The requester's authority judged at form | F36 | §5.2 steps 2, 8; §8 |
+| `line`'s proof named | F38 | §5.1 |
+| The runner's command D192 point 9's | F39 | §4.1; row j |
+| The steward's decisions on round 2's questions | — | §5.2 step 2, §12, §14, §15.2 |
+
+**Accepted by the steward, 2026-10-28, under D191.** Three makers read it:
+- **Claude Opus 5.5** wrote it.
+- **Codex** read rounds 1 and 2: another round, then accept after named changes.
+- **Claude Fable** read rounds 1 and 2, as a foundation: another round, then accept after named changes.
+
+Both second reads accepted after the named changes this round makes, each checked against its finding by the steward. Nothing is built.
+FOUNDATION1 stays the building priority. The rows build in §11's order, the ⚑ rows beside FOUNDATION1 where no open branch holds their files.
