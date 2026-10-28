@@ -19,6 +19,14 @@ repository.
 - **Fix:** `tools/tool-test-census.mjs` (run by `verify`, with its test): every `tools/*.test.mjs` and every `*.test.ts` under `src/Daoris.Cli/tool-test/` must be run by exactly one gate, reading each gate's command through its `npm run` scripts; it names an orphan, a file in two gates and a listed file that is gone. The four files are in the `verify` list; their "outside verify" headers say so no longer. `as-merged.test.mjs`'s scratch trailer is `Claude Fixture (Anthropic) <…>`, as `merge-branch.test.ts`'s fixtures carry, and its merge-tool case passes `--gated`.
 - **Verify:** red first: the case failed on the commit check, then, with the trailer mended, on the missing `PASS bare`. Green by `node --test` alone: `tools/as-merged.test.mjs` (8 cases), `knowledge-bench` (24), `question-bench` (20), `ux-count` (19) and `tool-test-census` (7); `node tools/tool-test-census.mjs` names the four before the change and is clean after (29 files). `npm run verify` was not run (this machine's rule).
 - **Commit:** this change.
+## 2026-10-28 - The ACP door's tests waited ten seconds for signals the suite gives two minutes (ACPWAIT1)
+
+- **Symptom:** the merge queue's candidate `f192609` (the Workplace-names-Workflows cut alone, which touches no agent door) failed its fast Driver gate on one case, `AcpTests.Under_asking_a_request_is_held_off_the_loop_until_the_person_answers_with_an_offered_option(marks: "?!")`, with `TimeoutException` at the run's `WaitAsync(TimeSpan.FromSeconds(10))` after the person's answer, beside six driven sessions and the gate's own load.
+- **Root cause:** `AcpTests` kept its own waits: five `WaitAsync` of ten seconds on a run's end, a poll of 500 tries of 10 ms, a ten-second deadline on a heard line and a two-second poll. Each waits on a signal that fails to come only when the code is wrong, which TESTPATIENCE1 gives `Poll.Patience` (two minutes), because a starved run reaches any shorter bound on time alone.
+- **Fix:** the five waits are `WaitAsync(Poll.Patience)`, both polls are `Poll.Until`, and the heard-line deadline is `Poll.Patience`; no assertion, case or order changes, and an unbounded wait on a held turn stays as it was.
+- **Verify:** `AcpTests` (filtered, `Category!=Process`) passes whole on the branch; the queue's next candidate carries it with the Workflows cut.
+- **The next candidate:** `28cc101` (with this branch) failed the same way in `AccountRotationHoldTests`, whose private `Bound` of ten seconds waited on two looks under a 21-minute driver gate; it is `Poll.Patience` too. Twenty other test classes keep a private short bound and 65 inline `WaitAsync` waits a fixed few seconds: TESTPATIENCE2 sweeps them.
+- **Commit:** the branch `parent/acpwait1`.
 
 ## 2026-10-28 - The structure gate's wall-clock bound failed a candidate on the machine's load (STRUCTBOUND1)
 

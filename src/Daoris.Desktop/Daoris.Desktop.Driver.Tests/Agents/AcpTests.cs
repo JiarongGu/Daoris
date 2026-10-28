@@ -335,16 +335,8 @@ public sealed class AcpTests
         return held!;
     }
 
-    private static async Task UntilAsync(Func<bool> condition, string what)
-    {
-        for (var tries = 0; tries < 500; tries++)
-        {
-            if (condition()) return;
-            await Task.Delay(10);
-        }
-
-        throw new TimeoutException(what);
-    }
+    // A signal that fails to come only when the code is wrong waits the suite's patience (TESTPATIENCE1, ACPWAIT1).
+    private static Task UntilAsync(Func<bool> condition, string what) => Poll.Until(condition, () => what);
 
     private static string Coded(IEnumerable<SessionEvent> events, string code) => events
         .Single(e => e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == code) == true).Text!;
@@ -834,7 +826,7 @@ public sealed class AcpTests
         var run = new AcpSession(agent.Incoming, agent.Outgoing, lines.Enqueue, quiet: TimeSpan.FromMilliseconds(50))
             .RunAsync("D:/fam/Game", "hold this turn", cts.Token);
 
-        var deadline = DateTime.UtcNow.AddSeconds(10);
+        var deadline = DateTime.UtcNow + Poll.Patience;
         while (!lines.Contains("acp heard: hold this turn") && DateTime.UtcNow < deadline) await Task.Delay(20);
         // Read BEFORE the stop: stopping ends the reader, whose last act shows the open line anyway.
         var shownWhileHeld = lines.Contains("acp heard: hold this turn") && !run.IsCompleted;
@@ -2393,11 +2385,7 @@ public sealed class AcpTests
         Assert.Empty(agent.Sent);
     }
 
-    private static async Task Until(Func<bool> condition)
-    {
-        for (var attempt = 0; attempt < 200 && !condition(); attempt++) await Task.Delay(10);
-        Assert.True(condition(), "the condition did not hold within two seconds");
-    }
+    private static Task Until(Func<bool> condition) => Poll.Until(condition, () => "the condition did not hold");
 
     /// <summary>
     /// Two messages the agent sent one after another are two, by the id the wire gives each message
