@@ -5943,8 +5943,6 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     const after = kind === 'sweep' ? { ...judgedAfter, run: judgedAfter.run.filter((name) => chosen.run.includes(name)), owed: [] } : judgedAfter;
     const state = trees.ended ? 'stopped' : after.run.length === 0 ? 'green' : 'failed';
     const ended = nowIso();
-    Object.assign(status, { state, ended });
-    writeStatus();
     const ranNames = results.filter((result) => result.verdict !== 'ENDED').map((result) => result.gate.name);
     // CIFAST1: the record says which run was the stage's path, and what a plain one left owed.
     const noted = { commit, state, at: ended, status: fromHome(home, statusFile), kind, ...(kind === 'stage' ? { stage: true } : {}), ...(after.owed.length ? { owed: after.owed } : {}) };
@@ -5959,6 +5957,11 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     const background = noteBackground({ home, tree, plan, commit, kind, state, started, ended, results });
     status.overdue = background.overdue;
     status.knownRed = background.knownRed;
+    // CIWATCHHOLD1: the status says the run ended only once the gate tree's hold is let go, so a reader told `green` (a stage
+    // about to take the tree, the next `--ci`) is never refused for a hold this run still keeps. The status stays `running`
+    // through the receipt and the background's bookkeeping above, which take as long as the machine makes them.
+    releaseGateLock(home);
+    Object.assign(status, { state, ended });
     writeStatus();
 
     console.log('');

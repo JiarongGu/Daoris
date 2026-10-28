@@ -5340,8 +5340,12 @@ const DESK_FILES: Record<string, string> = {
   'src/Desk/Desk.Tests/LonelyTests.cs': 'namespace Desk.Tests;\n[Trait("Category", "Process")]\npublic sealed class LonelyTests { [Fact] public void Runs() { _ = Shared.Seed; } }\n',
 };
 
-/** CI1: what a test waits for, read again until it holds, failing rather than hanging when it never does. */
-async function waitFor(holds: () => boolean, what: string, ms = 120_000): Promise<void> {
+/**
+ * CI1: what a test waits for, read again until it holds, failing rather than hanging when it never does. CIWATCHHOLD1: the bound
+ * is the tool tests' patience (`HANG_MS` in merge-queue.test.ts, ten minutes): a guard against the hang that elapses only on
+ * failure. A watch gating a tip under a whole-file run's load took longer than the two minutes it was given (287 s run).
+ */
+async function waitFor(holds: () => boolean, what: string, ms = 600_000): Promise<void> {
   for (const end = Date.now() + ms; !holds();) {
     if (Date.now() > end) throw new Error(`never happened: ${what}`);
     await new Promise((done) => setTimeout(done, 100));
@@ -7104,6 +7108,36 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const none = await repo.run(['--ci', '--stop']);
     assert.equal(none.status, 0, none.out);
     assert.match(none.out, /no CI watch is running here: nothing to stop/);
+    repo.cleanup();
+  });
+
+  test('--ci writes its green status only once it has let the gate tree go (CIWATCHHOLD1)', async () => {
+    const repo = scratch('ci-hold', [{ name: 'universal', run: 'node ci-gate.mjs universal' }], { 'ci-gate.mjs': CI_GATE });
+    const sha = git(repo.root, 'rev-parse', 'HEAD');
+    const statusFile = join(repo.root, 'local', 'scratch', `ci-${sha.slice(0, 7)}`, 'status.json');
+    const lockFile = join(repo.root, 'local', 'gate-tree.lock');
+    const stateOf = () => {
+      try {
+        return (JSON.parse(readFileSync(statusFile, 'utf8')) as CiStatus).state;
+      } catch {
+        return null;
+      }
+    };
+    let ended = false;
+    const run = repo.run(['--ci']).finally(() => { ended = true; });
+    // A reader that finds `green` and then the lock still held is the tool contradicting itself: the status is read first, so
+    // the lock it reads after can only have been let go before the status said so. The run keeps its receipt and its
+    // background bookkeeping between its last gate and its end, so the window a wrong order leaves is wide.
+    const contradictions = new Set<string>();
+    while (!ended) {
+      if (stateOf() === 'green' && existsSync(lockFile)) contradictions.add('a green status was read while local/gate-tree.lock stood');
+      await new Promise((done) => { setImmediate(done); });
+    }
+    const result = await run;
+    assert.equal(result.status, 0, result.out);
+    assert.equal(stateOf(), 'green');
+    assert.equal(existsSync(lockFile), false, 'the run lets the gate tree go');
+    assert.deepEqual([...contradictions], [], 'a green status was read while the run still held the gate tree');
     repo.cleanup();
   });
 });
