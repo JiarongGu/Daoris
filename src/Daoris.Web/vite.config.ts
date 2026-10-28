@@ -42,7 +42,9 @@ export default defineConfig({
     // keystroke, and across ~60 files in parallel workers they ran 1–5s alone and 5.1–6s on a loaded
     // machine: four full runs on 2026-09-24 each timed out a DIFFERENT typing test at the 5s default,
     // and every one passed alone. A real failure is an assertion, and it still fails at once.
-    testTimeout: 20_000,
+    // WEBPATIENCE1: two minutes, the desktop suites' patience (TESTPATIENCE1). WorkFrame's free-answer test takes
+    // about 8 s alone and reached 20 s and 47 s in two merge-queue candidates on 2026-10-28 beside the other gates.
+    testTimeout: 120_000,
     // WEBGATE1: a quarter of the machine, not all of it. By default every logical processor but one ran a worker (21 on the
     // owner's machine), beside the installed window, the antivirus and the other gates, and on 2026-10-15 three gate runs
     // failed on 20 s timeouts in files that passed alone. `DAORIS_WEB_WORKERS` (a count or a percentage) says otherwise.

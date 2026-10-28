@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-28 - The web unit tests' hang detector caught slow tests on a loaded machine (WEBPATIENCE1)
+
+- **Symptom:** two merge-queue candidates' web unit gates failed on vitest's 20-second test timeout in tests none of their members touched: `28cc101` five WorkFrame tests (`a park's question` cases at 21 to 48 s and the frame geometry's rail strip), and `0c416d3` one, `WorkFrame.test.tsx > a park's question > sends the free answer through the box as before, naming no question`, at 20.1 s. It passes alone, its own share of the run about 8 s.
+- **Root cause:** the timeout is a hang detector by its own comment (512f4c7c3, 2026-09-24), raised from vitest's 5 s for typing tests that wait on a timer per keystroke; WEBGATE1 later held the gate to a quarter of the machine's processors. On 2026-10-28 the gate ran beside the queue's other gates, driven sessions' builds and the owner's own sessions at 100% CPU, so a slow and correct test crossed 20 s.
+- **Fix:** `testTimeout` is two minutes, the patience the desktop suites give a signal (TESTPATIENCE1, TESTPATIENCE2); a real failure is still an assertion and fails at once, and a hang still ends.
+- **Verify:** the free-answer test passes alone; the queue's next candidate carries this branch.
+- **Commit:** the branch `parent/webpatience1`.
+
 ## 2026-10-28 - The structure gate's wall-clock bound failed a candidate on the machine's load (STRUCTBOUND1)
 
 - **Symptom:** the merge queue's candidate `63de292` (six branches, none touching the gate) failed its fast Driver gate on one test, `StructureTests.The_census_reads_what_today_s_identifier_scan_missed_and_none_of_what_it_over_counted`: "the compile and the walk took 73s". The FOUNDATION1 mod-xi session's focused runs failed the same way twice (73 s and 89 s) and passed with the class alone. A failure outside the Process category is never re-run, so an unresolved one sends every member of a batch through the queue one at a time.
