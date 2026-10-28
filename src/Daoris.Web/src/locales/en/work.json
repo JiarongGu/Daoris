@@ -398,5 +398,7 @@
   "work.heavy.waiting": "waiting for the heavy run · behind {{session}} · {{time}}",
   "work.heavy.failed": "heavy gates failed at {{gate}}",
   "work.heavy.exit": "{{gate}} failed with exit {{exit}}.",
-  "work.heavy.waitingTip": "This repository's heavy gates run one run at a time: this session waits its turn behind another run, not on you."
+  "work.heavy.waitingTip": "This repository's heavy gates run one run at a time: this session waits its turn behind another run, not on you.",
+  "work.heavy.admission": "waiting for the machine to admit its heavy run · {{holds}} of {{capacity}} running · {{time}}",
+  "work.heavy.admissionTip": "The machine runs only so many heavy runs at once, the merge queue's gates among them, so one does not slow another: this session waits for a place, not on you."
 }

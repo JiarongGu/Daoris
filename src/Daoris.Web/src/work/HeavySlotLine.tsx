@@ -30,6 +30,8 @@ export function heavyLine(t: TFunction, part: HeavyPart, titleOf: (session: stri
         session: part.behind ? titleOf(part.behind) : t('projects.heavy.terminal'),
         time: elapsed(part.since),
       });
+    case 'admission':
+      return t('work.heavy.admission', { holds: part.holds, capacity: part.capacity, time: elapsed(part.since) });
   }
 }
 
@@ -64,6 +66,13 @@ export function HeavySlotLine({ part, titleOf, onOpen }: {
 }) {
   const { t } = useTranslation();
   useNow(part.kind === 'failed' ? null : 15_000);
+  if (part.kind === 'admission') {
+    return (
+      <span title={t('work.heavy.admissionTip')} className="inline-flex flex-wrap items-baseline gap-x-1.5 text-meta text-ink-soft">
+        <Dot tone="waits" label={heavyLine(t, part, titleOf)} className="whitespace-normal" />
+      </span>
+    );
+  }
   if (part.kind !== 'waiting') {
     return <Dot tone={part.kind === 'running' ? 'live' : 'failed'} label={heavyLine(t, part, titleOf)} className="whitespace-normal" />;
   }
@@ -109,7 +118,7 @@ export function heavyRow(
 ): DetailRow | null {
   const part = heavyPartOf(slot, session);
   if (!part || !slot) return null;
-  const value = part.kind === 'waiting' || !slot.holder
+  const value = part.kind === 'waiting' || part.kind === 'admission' || !slot.holder
     ? <HeavySlotLine part={part} titleOf={titleOf} onOpen={onOpen} />
     : <PhaseList phases={heavyPhases(t, slot.holder)} label={t('work.heavy.label')} />;
   return { label: t('work.heavy.label'), value };
