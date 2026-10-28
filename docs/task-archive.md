@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## SERVICESTALL1 — a busy service is said as busy, not as missing (2026-10-28)
+
+> **SERVICESTALL1 — a busy service is said as busy, not as missing** (CLI, service; sighting 2026-10-28). A terminal's ask exited 2 with "no DAORIS_SERVICE_URL … nothing answered as its service" about a minute after a landing, while the service was up and slow. Say what the CLI saw (the address, the bound, that it tried again, and that the variable is not the cause when the address came from the home's record); retry an idempotent read once after a short wait; never retry a press that changes state blindly; find what stalls the service or say what was ruled out.
+
+Completed 2026-10-28 (quest `#7a87081fa9d9`): the status door is asked twice, a second apart, in the driver and the CLI, and the refusal names the address, the two seconds and that it asked twice, without the no-variable sentence; a read of the service is asked once more after a second and a press once, with the sentence that says what to look at, in the driver's `ServiceHttp` and the CLI's `request` (which gains a sixty-second bound). No stall was found on the service side (`/api/status` takes no lock; a landing is the driver's); a host that could not be scheduled on a machine at full load is the reading. Detail: the FIX-LOG entry and the discovery row of `.claude/knowledge/twins.md`. The TASKS.md row is on another branch, not main: the parent moves it.
+
 ## QUEUEDRAIN1 — a dropped merge-queue candidate's gates and probes end when it is dropped (2026-10-28)
 
 > **QUEUEDRAIN1 — end owned gate trees when their candidate is dropped** (foundation integration, 2026-10-27). The supported drop removed the request while its gates kept running; QUEUEDROP1 prevents their late outcomes from reviving it, but does not stop those processes. Use the existing step-tree cancellation path through execution and failure probes, release admission only after owned processes end, and prove child/grandchild cleanup without ending unrelated runs. Sighting 2026-10-28: after `--drop-batch` ended candidate `5dcd990`, the runner went on judging its five fast-Driver failures by class probes for about forty minutes before it formed the requeued batch.
