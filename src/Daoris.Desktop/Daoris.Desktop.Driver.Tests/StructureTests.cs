@@ -440,9 +440,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-xiii: Platform through Context); no namespace row: every namespace stays
+        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-xiv: Platform through Course); no namespace row: every namespace stays
         // Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles", "Participants", "Context"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles", "Participants", "Context", "Course"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
@@ -695,6 +695,18 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
                 ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
         Assert.True(edges.Count == 0, $"Context names Course, Review or Work orders in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
+    public void Course_uses_lower_vocabulary_homes_facets_and_ports_and_no_type_above_it()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var order = map.Subdomains.Select(subdomain => subdomain.Name).ToList();
+        var course = order.IndexOf("Course");
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Course/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) && order.IndexOf(owner) > course)).ToList();
+        Assert.True(edges.Count == 0, $"Course names a type above it in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
 

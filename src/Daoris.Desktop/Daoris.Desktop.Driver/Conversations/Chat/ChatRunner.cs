@@ -3,42 +3,6 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <param name="SessionId">The record's id, when one was opened — null when nothing started.</param>
-/// <param name="Message">What to tell the person: the ledger's sentence, or why nothing began.</param>
-public sealed record ChatStart(string? SessionId, string Message);
-
-/// <summary>
-/// Ask Daoris's conversation placed (HELPSTART1, <see cref="ChatRunner.PlaceHelpAsync"/>): its record open in its workspace's room
-/// folder (ASKSCOPE1b), its agent and account chosen, nothing spawned yet.
-/// </summary>
-/// <param name="SessionId">The record's id — null when nothing was placed, and <paramref name="Message"/> says why.</param>
-/// <param name="Message">The ledger's sentence, or why nothing was placed.</param>
-public sealed record HelpPlaced(string? SessionId, string Message)
-{
-    /// <summary>
-    /// The workspace it was placed in (ASKSCOPE1a, D158's ASKSCOPE1 note point 1): the one its window was on at the press, kept
-    /// by its record; <c>default</c> where the press named none.
-    /// </summary>
-    public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
-
-    internal ISessionAdapter? Adapter { get; init; }
-
-    internal HarnessSelection? Selection { get; init; }
-
-    /// <summary>The entry of Ask Daoris's order it was placed on (MODELROLE1d, D205 §4.1), which its run asks; null runs as before.</summary>
-    internal ActorEffective? Chosen { get; init; }
-
-    /// <summary>Its pending start (MODELROLE1d2, D205 §3.5(b)), which its run holds until it is dispatched or exhausted; null for none.</summary>
-    internal ChatPending? Pending { get; init; }
-}
-
-/// <summary>
-/// What a new conversation's walk over its actor's order answered (MODELROLE1d, D205 §4.1): the agent, the account and the entry it took,
-/// and each entry it passed before with its code; or, where none can run, the wait's sentence the press is refused in (§4.5).
-/// </summary>
-internal sealed record ConversationWalk(
-    ISessionAdapter? Adapter, HarnessSelection? Selection, ActorEffective? Chosen, IReadOnlyList<BuildPass> Passes, string? Refusal);
-
 /// <summary>
 /// A conversation with an agent in one repository (D49 §3) — the session D46 built, entered by a
 /// person instead of planned from a quest.
@@ -61,7 +25,7 @@ internal sealed record ConversationWalk(
 /// <para><b>An ended chat goes on</b> (MSG1c, D137 §2.2): the person's words kept on its record are taken up here at
 /// once, its record reopening and its own conversation resumed with them (<see cref="ChatGoOn"/>).</para>
 /// </remarks>
-public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
+public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IChatRunning
 {
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task> _opening = new();
 
@@ -463,9 +427,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// modules publish the help scope after it, never before, and an open <i>What it has</i> reads the new receipt, not the old.
     /// </summary>
     public event Action<string>? WiredKept;
-
-    /// <summary>The earlier conversation's words, kept as this conversation's file, and the line its agent is told beside them.</summary>
-    internal sealed record Handing(IReadOnlyList<KeptFile> Files, string Preface);
 
     /// <summary>The note a conversation's record takes when the driver holding it closes.</summary>
     public const string ClosedNote =
@@ -1314,86 +1275,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         {
             _output?.Append(sessionId, $"— what this start handed could not be recorded: {error.Message}");
         }
-    }
-
-    /// <summary>What differs between a conversation in a repository and Ask Daoris's in its room (HELP1a).</summary>
-    /// <param name="Name">What the conversation is for: the repository, or <see cref="HelpRoom.Repository"/>.</param>
-    /// <param name="Tree">Where its process runs.</param>
-    /// <param name="Rules">What its agent may do, from this machine's rules file and its session id.</param>
-    /// <param name="Plugins">Whether the plugins' servers are handed — and Daoris's browser brought up for one.</param>
-    /// <param name="ConnectorOnPipe">
-    /// Whether the knowledge connector is handed on the pipe door too. The protocol door always carries
-    /// it; a repository's own `.mcp.json` wires it on the pipe, and a room has none.
-    /// </param>
-    /// <param name="Posture">The protocol door's mode for this conversation, or null for the adapter's own (D81).</param>
-    /// <param name="ToolsUpFront">
-    /// Whether its tools load with the first request, by the adapter's own switch (HELP5): true for the room,
-    /// whose every answer reads the family, and false for a repository, which keeps the harness's default.
-    /// </param>
-    internal sealed record ChatPlace(
-        string Name, string Tree, Func<PermissionFile, string, RuleLists> Rules, bool Plugins, bool ConnectorOnPipe,
-        string? Posture, bool ToolsUpFront)
-    {
-        /// <summary>The checkouts it may also write into (D107), which its tree guard lets a write reach.</summary>
-        public IReadOnlyList<string> Also { get; init; } = [];
-
-        /// <summary>
-        /// Whose plugins' servers it is handed, where <see cref="Plugins"/> hands any (HELPPLUG1a): a repository's conversation
-        /// those declared for sessions, Ask Daoris's those declared for it.
-        /// </summary>
-        public string ServersTo { get; init; } = PluginServerTo.Sessions;
-
-        /// <summary>
-        /// Whether its harness conversation's id is kept for it (MSG1c, D137 §4.2), so the conversation goes on when the
-        /// person writes to it after it ended: a repository's conversation, and since ASKHIST1 Ask Daoris's too.
-        /// </summary>
-        public bool Keeps { get; init; }
-
-        /// <summary>
-        /// Ask Daoris's workspace, as its record keeps it (ASKSCOPE1a): one runs at a time in each, so a new one or one going on
-        /// sets aside only its own workspace's. Null for a repository's conversation.
-        /// </summary>
-        public string? Workspace { get; init; }
-
-        /// <summary>
-        /// The workspace its tools are bound to (ASKSCOPE1c, <see cref="HelpCircle"/>): Ask Daoris's room's, under either mode, so its
-        /// connector answers from that workspace alone. Null for <c>default</c>'s room, the whole machine, and for a repository's.
-        /// </summary>
-        public string? Circle { get; init; }
-
-        /// <summary>The native door's permission mode for it, where one is named (HELPMODE1a1, Ask Daoris in full access); null keeps the adapter's own.</summary>
-        public string? PermissionMode { get; init; }
-
-        /// <summary>
-        /// Whether the plugins' servers it is handed are every one the plugins here declare, for whomever and approved or not (HELPMODE1a1,
-        /// Ask Daoris in full access), rather than those <see cref="ServersTo"/> takes.
-        /// </summary>
-        public bool EveryServer { get; init; }
-
-        /// <summary>
-        /// Whether it is handed the tree guard where the person's rules keep it on (PERM3): every conversation, but Ask Daoris in full
-        /// access (HELPMODE1a1), whose housekeeping is outside its room.
-        /// </summary>
-        public bool Guarded { get; init; } = true;
-
-        /// <summary>
-        /// The checkouts it may read through <c>checkout_read</c> (D107, HELPMODE1c4): Ask Daoris's in restricted mode, the readable ones
-        /// the person left on, none in full access, whose own shell reads them, and none for a repository's conversation. What its
-        /// receipt says it was handed (HELPWIRED1), which each call is judged by.
-        /// </summary>
-        public IReadOnlyList<HelpRead> Reads { get; init; } = [];
-
-        /// <summary>The checkouts the person had turned off as its start was composed (HELPMODE1c4), what a later narrowing is compared with.</summary>
-        public IReadOnlyList<string> CheckoutsOff { get; init; } = [];
-
-        /// <summary>
-        /// The housekeeping operations its start was handed (HELPMODE1c2a): Ask Daoris's, as the person chose them when the place was
-        /// composed, in either mode; none for a repository's conversation. Its receipt keeps them, which each call is judged by.
-        /// </summary>
-        public IReadOnlyList<string> Housekeeping { get; init; } = [];
-
-        /// <summary>The chosen settings its start was handed (HELPMODE1c3), as <see cref="Housekeeping"/> is.</summary>
-        public IReadOnlyList<string> Settings { get; init; } = [];
     }
 
     /// <summary>
@@ -2625,115 +2506,40 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     private static IReadOnlyList<AcpConfigOption> ThePersons(IReadOnlyList<AcpConfigOption> options) =>
         [.. options.Where(option => option.ThePersons)];
 
-    /// <summary>
-    /// The person's message as the record keeps it (CONV4c): their words and the names of what they
-    /// attached — never the kept paths, nor the lines or links a door added to reach them.
-    /// </summary>
-    /// <summary>
-    /// What a turn's message puts in the record as it is sent, in order: the browser, the process (PROCESS1d-ii) and where the
-    /// person is as their notes, then the person's message. A conversation handed over from another agent opens with Daoris's
-    /// briefing instead (MIXAGENT1a-i): its one note says where it came from, since no person spoke.
-    /// </summary>
-    internal static IEnumerable<SessionEvent> Recorded(ChatMessage message)
-    {
-        if (message.TakenOver is { } taken)
-        {
-            yield return new SessionEvent { Kind = SessionEventKind.Note, Text = taken.Note, Parts = taken.Parts };
-            // SESSCTX1b (the session-context design §3.4): the brief is the conversation's first prompt, Daoris's, with its account and
-            // the session it continues, as an instruction is kept. Never a message of the person's, nor the browser's line.
-            if (message.Brief is { } brief)
-            {
-                yield return new SessionEvent
-                {
-                    Kind = SessionEventKind.User, Origin = "target", Text = brief.Text, Account = brief.Account, Continues = brief.Continues,
-                };
-            }
+    // The chat runner's port (Course's IChatRunning): the operations the course's executors call, forwarded as they are. The public ones
+    // implement it where they stand; the internal ones, whose places are internal records, answer it here.
+    Task<ChatStart> IChatRunning.RunAsync(
+        string actor, string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
+        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn, ActorEffective? chosen, ChatPending? pending) =>
+        RunAsync(actor, sessionId, message, resolved, selection, config, place, onEnded, ct, goOn, chosen, pending);
 
-            // SESSCTX1c part B (the session-context design §2): a part that goes on from a lost conversation is handed the person's
-            // words that waited there after the brief, in the same prompt; they are the person's, as they said them.
-            if (message.Text.Length > 0) yield return Asked(message);
-            yield break;
-        }
+    ChatPlace IChatRunning.RepositoryPlace(
+        DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree, IReadOnlyList<string>? continued,
+        bool answers) =>
+        RepositoryPlace(config, registry, known, repository, workTree, continued, answers);
 
-        if (message.Helped is { } helped)
-        {
-            // Daoris's words around another agent's claim (MIXAGENT2a-iii), under the id the record gave them so they pair with the
-            // event that showed them waiting; never the person's, so no preface and no browser line ride beside them.
-            // COWORK1e: marked as that helper's, so the answers-alone bound counts the turn it prompts.
-            // CHATFLOW1e: a second opinion's findings by the opinion they carry, as a resumed run's are.
-            yield return new SessionEvent
-            {
-                Kind = SessionEventKind.User, Origin = "target", Helper = helped.Helper, Opinion = helped.By, Id = helped.Id, Text = message.Text,
-            };
-            yield break;
-        }
+    ChatPlace IChatRunning.HelpPlace(string room, IReadOnlyList<HelpRead> reads, string? workspace) => HelpPlace(room, reads, workspace);
 
-        if (message.Said)
-        {
-            // Handed back after a steer found no turn running (STEER2d): said and told already, taken here.
-            yield return ChatMessage.Words(message);
-            yield break;
-        }
+    Task<bool> IChatRunning.AnswersFindingsAsync(string sessionId, string tree, DriverConfig config) => AnswersFindingsAsync(sessionId, tree, config);
 
-        if (message.Daoris is not null)
-        {
-            // SESSCTX1c part B: Daoris's own turn to a conversation, the closing note a hand-over asks of its outgoing agent: Daoris's on
-            // the record, never the person's, so no brief reads it as their word.
-            yield return ChatMessage.Words(message);
-            yield break;
-        }
+    ChatMessage IChatRunning.WithProcess(string sessionId, ChatMessage message) => WithProcess(sessionId, message);
 
-        if (ToldBrowser(message) is { } toldBrowser) yield return toldBrowser;
-        if (ToldProcess(message) is { } toldProcess) yield return toldProcess;
-        if (Told(message) is { } told) yield return told;
-        yield return Asked(message);
-    }
+    Task<ConversationWalk> IChatRunning.WalkAsync(
+        string actor, IReadOnlyList<ActorEffective> order, DriverConfig config, string? workspace, string? profile, CancellationToken ct,
+        (ActorEffective Entry, string? Account)? refused, bool counts, long except) =>
+        WalkAsync(actor, order, config, workspace, profile, ct, refused, counts, except);
 
-    private static SessionEvent Asked(ChatMessage message) => new()
-    {
-        Kind = SessionEventKind.User,
-        Origin = "person",
-        Text = message.Text,
-        Files = message.Files.Count > 0 ? [.. message.Files.Select(file => file.Name)] : null,
-    };
+    /// <summary>What a turn's message puts in the record as it is sent (<see cref="ChatRecorded.Recorded"/>).</summary>
+    internal static IEnumerable<SessionEvent> Recorded(ChatMessage message) => ChatRecorded.Recorded(message);
 
-    /// <summary>
-    /// What the agent was told beside the person's words (HELP1b), as the record keeps it: a note, never
-    /// the person's, so a reader later sees what the agent knew and who said what.
-    /// </summary>
-    internal static SessionEvent? Told(ChatMessage message)
-    {
-        if (message.Preface is not { Length: > 0 } preface) return null;
-        // CONVNOTE2c: the lead by its code; the preface is Daoris's one-copy English to the agent (D142 point 6), shown as written.
-        var told = Noted.Of(NoteCodes.ChatToldWhere, "told where the person is:").Then(" ", Noted.Said(preface, NoteBy.Program));
-        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
-    }
+    /// <summary>What the agent was told beside the person's words, as the record keeps it (<see cref="ChatRecorded.Told"/>).</summary>
+    internal static SessionEvent? Told(ChatMessage message) => ChatRecorded.Told(message);
 
-    /// <summary>
-    /// The browser the agent was handed and told of beside the person's first words (BRWHINT1a), as the record keeps it: a note of
-    /// its own, so the person sees what Daoris told the agent. The line is Daoris's one-copy English (D142 point 6), shown as written.
-    /// </summary>
-    internal static SessionEvent? ToldBrowser(ChatMessage message)
-    {
-        if (message.Briefing is not { Length: > 0 } line) return null;
-        var told = Noted.Of(NoteCodes.ChatToldBrowser, "told the agent:").Then(" ", Noted.Said(line, NoteBy.Program));
-        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
-    }
+    /// <summary>The browser the agent was handed and told of, as the record keeps it (<see cref="ChatRecorded.ToldBrowser"/>).</summary>
+    internal static SessionEvent? ToldBrowser(ChatMessage message) => ChatRecorded.ToldBrowser(message);
 
-    /// <summary>
-    /// The repository's process the agent was told with the person's first words (PROCESS1d-ii), as the record keeps it: a note of
-    /// its own under its own lead, the commit rule's mode and where it was set as facts, the words Daoris's one-copy English.
-    /// </summary>
-    internal static SessionEvent? ToldProcess(ChatMessage message)
-    {
-        if (message.Process is not { Words.Length: > 0 } process) return null;
-        var set = process.Source == CommitRules.DefaultSource ? "by default" : $"set for its {process.Source}";
-        var told = Noted.Of(
-                NoteCodes.ChatToldProcess, $"told the agent this repository's process, its commit rule `{process.Mode}` {set}:",
-                ("mode", process.Mode), ("source", process.Source))
-            .Then(" ", Noted.Said(process.Words, NoteBy.Program));
-        return new SessionEvent { Kind = SessionEventKind.Note, Text = told.Note, Parts = told.Parts };
-    }
+    /// <summary>The repository's process the agent was told, as the record keeps it (<see cref="ChatRecorded.ToldProcess"/>).</summary>
+    internal static SessionEvent? ToldProcess(ChatMessage message) => ChatRecorded.ToldProcess(message);
 
     /// <summary>
     /// What a conversation in a tree of its own is told of its process (PROCESS1d-ii, D164's amendment point 4): the commit rule
@@ -2842,27 +2648,14 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         public string? Preamble { get; init; }
     }
 
-    /// <summary>
-    /// What a conversation's ending note adds where Daoris kept no id for its harness conversation (MSG1c, D137 §4.2): words
-    /// written to it once it ended cannot go on in it, which the record says before anyone writes.
-    /// </summary>
-    public const string NotKept = "Daoris kept no id for its conversation, so words written to it cannot go on in it.";
+    /// <summary>What a conversation's ending note adds where Daoris kept no id for its harness conversation (<see cref="ChatEnded.NotKept"/>).</summary>
+    public const string NotKept = ChatEnded.NotKept;
 
-    /// <summary>The English a conversation the person ended concludes with (<see cref="EndedNote"/>): what the limits stage leaves by.</summary>
-    internal const string EndedByPersonNote = "the person ended the conversation.";
+    /// <summary>The English a conversation the person ended concludes with (<see cref="ChatEnded.EndedNote"/>): what the limits stage leaves by.</summary>
+    internal const string EndedByPersonNote = ChatEnded.EndedByPersonNote;
 
-    /// <summary>
-    /// How a conversation that simply ended says so (the language design §4 rows 61–62), and <see cref="NotKept"/> after it
-    /// where no id was kept (MSG1c; the code LANG1a added, its note under D142), each line with its code.
-    /// </summary>
-    /// <param name="stopped">The person ended it.</param>
-    internal static Noted EndedNote(bool stopped, bool notKept)
-    {
-        var ended = stopped
-            ? Noted.Of(NoteCodes.ChatEndedByPerson, EndedByPersonNote)
-            : Noted.Of(NoteCodes.ChatEnded, "the conversation ended; its commits are its record.");
-        return notKept ? ended.Then(" ", Noted.Of(NoteCodes.ChatNotKept, NotKept)) : ended;
-    }
+    /// <summary>How a conversation that simply ended says so (<see cref="ChatEnded.EndedNote"/>).</summary>
+    internal static Noted EndedNote(bool stopped, bool notKept) => ChatEnded.EndedNote(stopped, notKept);
 
     /// <param name="measured">Told the conversation's high-water context at its end, where its door reported one (USAGE1).</param>
     /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
@@ -3224,15 +3017,6 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
         return session.Usage;
     }
 
-    /// <summary>A conversation whose turns are visible — what every door's question about a turn asks.</summary>
-    internal interface ITurnedChat
-    {
-        ChatTurns Turns { get; }
-
-        /// <summary>Let the turns already asked for run, then end the input.</summary>
-        Task FinishAsync(Action endInput);
-    }
-
     /// <summary>
     /// One conversation on the protocol door (CONV3b): its session once opened, and its turns one at a
     /// time, in the order the person sent them (<see cref="ChatTurns"/>).
@@ -3253,6 +3037,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// </remarks>
     private sealed class ProtocolChat : ITurnedChat, IEpisodeWords
     {
+        IChatTurns ITurnedChat.Turns => Turns;
+
         private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<bool> _stopped;
         private readonly Func<string, Noted?>? _limited;
@@ -3780,6 +3566,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks
     /// </remarks>
     private sealed class NativeChat : ITurnedChat
     {
+        IChatTurns ITurnedChat.Turns => Turns;
+
         private readonly object _gate = new();
         private TaskCompletionSource? _turn;
 

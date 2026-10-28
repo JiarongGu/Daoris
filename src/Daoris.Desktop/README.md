@@ -53,6 +53,10 @@ the sessions verb hands it; the question file and the ask's words come from `IRo
 Context owns instruction accounting and session-part composition (`Context/InstructionAccounting.cs`, `SessionPartsText.cs`), and supplies the required `AgentContext` operations (`Context/AgentContextWiring.cs`). Agents owns the composed brief and part carriers; Events owns handed codes and stream shapes. Event history, console output and streams are supplied through lower interfaces while Context retains storage, buffering and lifecycle.
 The driver's `Context/` owns the context's own files (FOUNDATION1 mod-xiii, D212): the briefs (`Domain/ContextBrief.cs`, `Events/ContextBriefs.cs`), the session event record with its reads and last words (`Events/SessionEventLog.cs`, `SessionEventReads.cs`, `SessionLastWords.cs`), the console output window (`Domain/SessionOutput.cs`), the transcript file (`TranscriptFile.cs`), the instruction accounting, the session parts' text and the agent context's wiring, with `WorkplaceEventRecordsWiring.cs`. The files kept their sub-folders below the old `Accounts/`, `Conversations/` or `Sessions/` (`Domain/`, `Events/`); tests are mirrored under `Driver.Tests/Context/`. Namespaces remain `Daoris.Driver`, and the files moved byte-identically.
 
+The driver's `Course/` owns how work moves (FOUNDATION1 mod-xiv, D212): the chat's go-on, hand-over, limit and curve moves and their pending family (`Chat/`), the conversation's records, rules and words (`Domain/`), going on (`GoOn/`), the hand-over's files and verbs (`HandOver/`), the driven inbox and the say door (`DrivenInbox.cs`, `SaidDoor.cs`), the limit resume (`LimitResume.cs`, once `Loop/`'s) and the session requests (`Requests/`), with the wiring Course installs for lower subdomains. The files kept their sub-folders below the old `Conversations/` or `Sessions/` (`Chat/`, `Domain/`, `GoOn/`, `HandOver/`, `Requests/`); tests are mirrored under `Driver.Tests/Course/`. The chat runner's core (`Chat/ChatRunner.cs`, `ChatTurns.cs`, `ChatHelp.cs`, `StartRequests.cs`) stays in `Conversations/Chat/`, Loop's by the foundation design's map. Namespaces remain `Daoris.Driver`, and the files moved byte-identically.
+
+Course names nothing above it. The chat runner's port is Course's: the executors take `IChatRunning`, `IChatHelping` and `IChatTurns` (`Chat/ChatRunning.cs`, `ChatHelping.cs`, `IChatTurns.cs`), which `ChatRunner`, `ChatHelp` and `ChatTurns` implement in Loop, and the types the runner and the executors share are Course's: `ChatStart`, `ConversationWalk`, `HelpPlaced`, `ChatPlace`, `ITurnedChat`, `Handing`, the pending family, `PressHold`, the start-from codes (`ChatRunner.StartFrom.cs`), and the lines a record keeps (`ChatRecorded`) and ends by (`ChatEnded`), which `ChatRunner`'s own names alias. A conversation's lost and withdrawn lines are Events' (`SessionNotes`), Ask Daoris's room spelling and where a kept conversation goes on are Knowledge's (`KnowledgeRoomIdentity`, `KnowledgeRoomPaths`), and `HelpConversations` is Context's (`Context/HelpConversations.cs`), whose files, records and suffixes it names. The session requests' housekeeping and chosen-setting judges come through the required `ICourseHelp` (`Course/CourseHelp.cs`), which Help installs from `Help/CourseHelpWiring.cs` and the loop's watch over processes resolves; the channel claim's words are `ChannelClaims`, the acknowledgments `ChannelAcks`, the quest's take judged after a session ended `QuestTakes` and the limit resume's transient end `LimitResume.EndedTransient`, each answered by the work orders' older names; `StopAnswer` and the hand-over word's terminal take scalars (`HandOverAskWord.RunAsync(home, ids, verb, output)`) rather than the work orders' world and ask.
+
 Context names no Course, Review or Work orders type. The brief says the outgoing agent's note by `Context/Domain/OutgoingNote.cs`
 (`HandOverNote.Said`, `Absent` and `Limit` answer through it), tells a channel's claim by `ContextBrief.ChannelClaimOpening` (which
 `ChannelText.ClaimOpening` is), knows Daoris's words by `SaidFrom.Daoris`, finds a part's attachments through
@@ -118,8 +122,8 @@ Roles retains the proof, decision memory and persistence operations.
 Workplace names no Course type. The rebase words' key is Workplace's pure `RebaseKeys`, which `DaorisKeys` delegates to,
 and `PressHold` is declared beside the `IChatPressing` port that answers it. The terminal's land press tells its note
 through `IWorkplacePressTelling`, and history clearing reads and clears handed quests through `IWorkplaceHandedQuests`;
-Course installs both from `Sessions/Requests/WorkplacePressTellingWiring.cs` and
-`Conversations/HandOver/WorkplaceHandedQuestsWiring.cs`. `SessionHomeFiles` owns the go-on, reopen, new-session,
+Course installs both from `Course/Requests/WorkplacePressTellingWiring.cs` and
+`Course/HandOver/WorkplaceHandedQuestsWiring.cs`. `SessionHomeFiles` owns the go-on, reopen, new-session,
 hand-over and limit-move suffixes in its cleanup inventory; Course's public suffix constants alias those names.
 
 Workplace names no Participants type. Deletion's binding forget and the tool-home leftovers' kept-conversation read go through
@@ -188,7 +192,7 @@ Work orders retains rendering, bounds and acknowledgements. Service owns the sub
 Work orders share; the retry still applies its start-intent checks in their original order.
 Course keeps ChatMessage, its dispatcher and Daoris word judgement. Agents reads delivery facts and callbacks through
 `IAgentWord`, answered by the original message, while typed Course entry points recover that same object. SessionProcesses
-keeps the inbox registry and its gate; `Conversations/AgentCourseWiring.cs` supplies the actual inbox factory, retry say/key
+keeps the inbox registry and its gate; `Course/AgentCourseWiring.cs` supplies the actual inbox factory, retry say/key
 binding and hand-over text through the required `AgentCourse` port. Queue and word views serialize their owner's runtime
 shape. The later chat-runner, pending and ConversationWalk boundary remains Course's separate foundation row.
 
@@ -285,7 +289,7 @@ Beside it, `Agents/Domain/SwitchDecision.cs` (SWITCH1c-i) says whether a running
 (`off`, no number, room, held thirty minutes after a curve move, or no account with room), reads the others first, or moves
 to the ready account with the most room, at least ten points under its curve on every window. The hand-over box takes
 `curve`, and `HandOverNotes.Moved` and `MovedFrom` (`chat.moved`, `chat.moved-from`) say a move at both ends, naming the
-accounts. The chat runner asks it (SWITCH1c-ii, `Conversations/Chat/CurveMove.cs`): at a conversation's turn's end, judged
+accounts. The chat runner asks it (SWITCH1c-ii, `Course/Chat/CurveMove.cs`): at a conversation's turn's end, judged
 once with nothing running, opening or queued and no hand-over waiting, from its record's account, agent and workspace (the
 hold counted from its `created` where it continues another by the curve); the others are read where it says so, through the
 roster's `ReadUsageAsync` (the walk's floor, cooling, signed-out, key and busy skips), and asked again; a move asks the
@@ -550,7 +554,7 @@ that continues another says the move on both parts (`moved.on`, `moved.from`, wi
 machine log as `session.moved`.
 
 A conversation, a closed quest's session and Ask Daoris's conversation move by themselves only where their own conversation is proven
-lost (SESSCTX1c's part B, D189 point 3; `ContinueReason.Lost`: `gone`, `unkept`, `unable`, `offered`). `Conversations/Chat/BriefedMove`
+lost (SESSCTX1c's part B, D189 point 3; `ContinueReason.Lost`: `gone`, `unkept`, `unable`, `offered`). `Course/Chat/BriefedMove`
 opens the new part in the old one's tree on its agent and account, `from` why `resume`, and hands it the brief and then the person's
 words in one prompt (`ChatMessage.TakenOver` with its text), which leave the old record naming it; the old part says `moved.on` and
 where the words went, the new one opens with `moved.from`. A conversation's go-on calls it before a spawn (no id kept, no resume on the
@@ -758,7 +762,7 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   first thing at the close. A `daoris-driver` or `daoris` the install carries reads it where no `DAORIS_SERVICE_URL` is set
   (`RunningService`), and takes the install's `data/` where no `DAORIS_HOME` is. It takes the address only where its
   `/api/status`, asked with redirects off, answers this home's id (HOMEID1: `<home>/home.json`, `HomeIdentity`, which every
-  path to the folder reads alike), so another install's service at that address is never used.
+  path to the folder reads alike), so another install's service at that address is never used. A status door that does not answer within its two seconds is asked once more after one (SERVICESTALL1), and where neither answers the refusal says what it saw (the address, the bound, that it asked twice) and that `DAORIS_SERVICE_URL` is not the cause, never *no DAORIS_SERVICE_URL*. A read of the service (`ServiceHttp`) the service does not answer in the client's own bound (thirty seconds) is asked once more after a second and then said so; a press that changes state is asked once and says what to look at before pressing it again. Only the bound `ServiceHttp` made for itself is retried (SERVICESTALL1b): a client a caller hands in carries the caller's deadline, whose timeout ends a request once as the cancellation `HttpClient` made it (the loop's look names its exit 2 from it), and a service that could not be reached is neither retried nor reworded.
 - **A terminal's verb is its client over a pipe** (RPC1a, D171 point 3, `docs/2026-10-16-terminal-rpc-design.md`). Once the
   loop holds the home it serves `daoris-<home id>-<session>` (`InstancePipe`): this user's alone, the first instance of its
   name, the kit's request envelopes on lines into the same dispatcher the pages use, so a press over it is the window's press,

@@ -103,6 +103,9 @@ public static class SessionEventCodes
 /// </summary>
 public static class SessionNotes
 {
+    /// <summary>The driver's English for a word it may have read as the person added it: what its console says and a page that does not know the code shows.</summary>
+    public const string LostLine = "— it may have read what you added; its answer was not kept.";
+
     /// <summary>The driver's English for <see cref="Withdrawn"/>: what a page that does not know the code shows.</summary>
     public const string WithdrawnLine = "— taken back before it was sent.";
 

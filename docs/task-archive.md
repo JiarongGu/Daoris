@@ -5,6 +5,12 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## WEBPATIENCE1 — the web unit tests' hang detector gives a slow test two minutes (2026-10-28)
+
+> **WEBPATIENCE1:** the web unit tests' timeout is a hang detector, so a slow and correct test on a loaded machine must not fail as a hang. Evidence: the merge queue's candidates `28cc101` and `0c416d3` failed their web unit gates on vitest's 20-second timeout in WorkFrame tests none of their members touched, one of them its own share of the run about 8 s. (The parent's fix; it had no backlog row.)
+
+Completed 2026-10-28, landed in the batch `66f23e8`: vitest's `testTimeout` (`src/Daoris.Web/vite.config.ts`) is 120 s, the two minutes the desktop suites give a signal (TESTPATIENCE1, TESTPATIENCE2); a real failure still fails at its assertion, and a hang still ends. Detail: FIX-LOG 2026-10-28 (WEBPATIENCE1).
+
 ## HEAVYQUEUE1 — driven sessions' heavy test runs and the queue's scoped gates share one admission (2026-10-28)
 
 > **HEAVYQUEUE1 — driven sessions' heavy test runs and the queue's scoped gates share one admission** (merge queue, 2026-10-28; HEAVYRUN1, CISCOPE1e2). Candidates `39e3201` and `5dcd990` ran their fast Driver gate at about twice `d8adbbe`'s time (9–12 min against 4 min 43 s) and failed with clusters of timeouts in a few seconds of the run, each unresolved on re-run, while a driven session's thousand-test focused build and Lyntai's memory bench ran beside them; this repository marks no heavy gates, so sessions' runs take no `run-heavy` slot and `local/admission.json` counts none of them. Decide how a session's heavy run and the queue's scoped tier admit each other (a reservation, a slot, or a queue run that waits), and prove a session's large filtered run waits or is said rather than stalling a candidate.
@@ -15,6 +21,14 @@ Completed 2026-10-28 (quest `#3d2f1806497d`): one machine-wide admission in the 
 > **TESTPATIENCE3:** the TypeScript CLI tests (`src/Daoris.Cli/test`) and tool tests (`src/Daoris.Cli/tool-test`, `tools/*.test.mjs`) wait on their signals with one shared patience, as TESTPATIENCE2 made the desktop tests do, with a census that keeps new short waits out. Evidence: 2026-10-28, candidates `8ec210d` and `71d60dd` failed on the plugin landing test's 68 s "no answer to hook/work/land", `setup-kit.test.ts`'s ANSWER1b stub window of 10000 ms and `merge-branch.test.ts`'s 3000-try gate-tree poll, beside a loaded machine. (Quest `#9fab63fff94a`; an earlier entry of this id is the driver's tick tests.)
 
 Completed 2026-10-28: `PATIENCE` (two minutes) is exported by `src/Daoris.Cli/test/_fixture.ts` and read at 39 waits in 8 files; the bounds that are the claim, the staging delays and the product inputs stay, each marked. `tools/test-patience.mjs` (with its test, run by `verify`) refuses a new fixed wait of a second or more under it unless marked. Detail: FIX-LOG's TESTPATIENCE3 entry; the check is in `docs/development.md`'s census table.
+
+## SERVICESTALL1 — a busy service is said as busy, not as missing (2026-10-28)
+
+> **SERVICESTALL1 — a busy service is said as busy, not as missing** (CLI, service; sighting 2026-10-28). A terminal's ask exited 2 with "no DAORIS_SERVICE_URL … nothing answered as its service" about a minute after a landing, while the service was up and slow. Say what the CLI saw (the address, the bound, that it tried again, and that the variable is not the cause when the address came from the home's record); retry an idempotent read once after a short wait; never retry a press that changes state blindly; find what stalls the service or say what was ruled out.
+
+Completed 2026-10-28 (quest `#7a87081fa9d9`): the status door is asked twice, a second apart, in the driver and the CLI, and the refusal names the address, the two seconds and that it asked twice, without the no-variable sentence; a read of the service is asked once more after a second and a press once, with the sentence that says what to look at, in the driver's `ServiceHttp` and the CLI's `request` (which gains a sixty-second bound). No stall was found on the service side (`/api/status` takes no lock; a landing is the driver's); a host that could not be scheduled on a machine at full load is the reading. Detail: the FIX-LOG entry and the discovery row of `.claude/knowledge/twins.md`. The TASKS.md row is on another branch, not main: the parent moves it.
+
+Integrated 2026-10-29 with its follow-up, in the parent's batch `parent/batch-1029`. Candidate `452c3de` had failed the first build's fast Driver gate on four of its five failing cases (`SessionsOutliveTheirLookTests`' two met the retried read's error where they expect a cancellation; `LookJudgesTests` and `PlannerTests` counted the second try; the fifth was HEAVYQUEUE1's file placement). SERVICESTALL1b (quest `#8b6f6292c96e`) retries and rewords only the bound the client made for itself, only a timeout of that bound and only a read, so a caller's token or deadline stays a cancellation and a retried read counts once; its FIX-LOG entry holds the detail.
 
 ## QUEUEDRAIN1 — a dropped merge-queue candidate's gates and probes end when it is dropped (2026-10-28)
 
