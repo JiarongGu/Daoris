@@ -1457,7 +1457,7 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ["the brainstorm answers' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-answers.json'], [...BASE, 'service', 'driver']],
     // BRAINSTORM1a3: the brainstorm files' table, which the service's brainstorm desk reads too.
     ["the brainstorm files' table", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/brainstorm-files.json'], [...BASE, 'service', 'driver']],
-    ["the brainstorm posture", ['src/Daoris.Desktop/Daoris.Desktop.Driver/Brainstorms/Domain/BrainstormPermissions.cs'],
+    ["the brainstorm posture", ['src/Daoris.Desktop/Daoris.Desktop.Driver/WorkOrders/Domain/BrainstormPermissions.cs'],
       [...BASE, 'service', 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'deployment']],
     ["the service's tests", ['src/Daoris.Service/Daoris.Service.Tests/HistoryDeskTests.cs'], [...BASE, 'service']],
     // ORIENT2h6: the fence table sits among the CLI's fixtures, and the driver's SelfDescription twin reads it too, and

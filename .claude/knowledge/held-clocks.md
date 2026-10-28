@@ -79,7 +79,7 @@ a real deletion refusal: the test keeps the exclusive handle through two attempt
 keeps it held through exhaustion and checks the exact retry count. This avoids a pool timer competing with synchronous
 waits while leaving the default cleanup bound intact (GITSEEDWAIT1, `docs/FIX-LOG.md`).
 
-`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Sessions/SessionsSayCommandTests.cs`: `Late` and `HeldClock` near the top;
+`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionsSayCommandTests.cs`: `Late` and `HeldClock` near the top;
 `A_loop_that_took_the_words_and_answers_after_the_wait_is_waited_for` (a late loop that answers), `…went_away_unanswered_is_said_at_once`
 and `…never_answers_is_said_after_its_bound` (a late loop that does not), and
 `A_session_still_winding_up_after_the_wait_could_not_take_them` (the clock run by the stand-in door's count, not the loop).
