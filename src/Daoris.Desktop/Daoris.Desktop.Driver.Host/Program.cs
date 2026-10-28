@@ -265,13 +265,16 @@ using Daoris.Driver;
 //                 one readable line each, or as written with --json. A line that cannot be read is
 //                 skipped and counted. Settings → Logs is the screen's door to the same reading.
 //
-//   run-heavy [--gate <name> | --look]
+//   run-heavy [--gate <name> | --look | -- <command>]
 //                 a checkout's heavy gates (HEAVYRUN1a, D180's HEAVYRUN1 note), run in it: those its daoris.gates.json
 //                 marks "heavy": true, one after another, or the one named, holding its repository's one heavy-run slot
 //                 under the home's locks/, which a run from any tree of it waits for, saying behind whom and how long.
 //                 Every gate's processes are in one job, ended and waited for before the slot is let go; Ctrl+C stops
 //                 the run the same way. 0 every gate passed · 1 one failed, was not heavy, or was stopped · 2 could not run.
 //                 --look runs nothing: who holds the slot, at which gate and for how long, and who waits (HEAVYSLOT1).
+//                 Every run, gates or command, also takes a place in the machine's heavy-run admission (HEAVYQUEUE1),
+//                 the one the merge queue's heavy gates take theirs in, and says what it waits for. -- <command> runs a
+//                 command of your own (a filtered dotnet test, a test file's run) as such a run: its exit is the run's.
 //   heavy [<repository> [<name>=<command> [--cwd <folder>]… | --clear]]
 //                 this machine's heavy gates for a repository whose own daoris.gates.json marks none (HEAVYRUN1b2a, D180's
 //                 HEAVYRUN1b2a note), in the order they run: what run-heavy runs there and its sessions are told of. Kept in

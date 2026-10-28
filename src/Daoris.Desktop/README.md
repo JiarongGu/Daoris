@@ -408,7 +408,7 @@ which reads its stores through `TraceHere`'s values) and the pause, abandon, del
 (the trace, its command and reads), `Events/` (the event log and last words; the session log and its watch are in the top-level `Events/`) and `Heavy/` (below); `RunningSessions`,
 `SessionProcesses`, `SessionsCommand` and `HarnessEnding` (the loop's too) stay at the top. Review, with fifteen files at its top, stays flat.
 
-A session's heavy checks run through `daoris-driver run-heavy [--gate <name> | --look]` (HEAVYRUN1a, D180's HEAVYRUN1 notes), in
+A session's heavy checks run through `daoris-driver run-heavy [--gate <name> | --look | -- <command>]` (HEAVYRUN1a, D180's HEAVYRUN1 notes), in
 `Sessions/Heavy/`: run in a checkout, it runs the gates its `daoris.gates.json` marks `"heavy": true` one after another, or the one
 named (`HeavyGates`), holding one slot per repository across its trees (`HeavySlot`: the repository's common git folder, read
 from git's own files, keys a file under the home's `locks/heavy/` whose open handle is the lock, with no lease; a waiting run says
@@ -420,6 +420,7 @@ record at each gate with that gate and its start, and the gate that failed with 
 under `<key>.waits/`, gone as it takes the slot or stops; `HeavySlot.Look` reads both, each only where its process (its id and its
 start) still runs, so a record a dead run left holds nothing. `HEAVY_SLOT` answers it to the page, and `run-heavy --look` to a
 terminal.
+Every heavy run also takes a place in the machine's admission (`MachineAdmission`, HEAVYQUEUE1): `locks/admission/admission.json` in the home, a hold for each heavy run the machine runs and a wait for each that asks, first come first served, up to a capacity (one for each seven processors, two to six; `DAORIS_ADMISSION_SLOTS` sets it). The merge queue's heavy gates and failure probes (`tools/machine-admission.mjs`, its twin, with `fixtures/machine-admission.json` the table both carry) take theirs in the same file, so a session's focused run beside a candidate waits or is waited for rather than doubling the candidate's gate times. An entry counts while its process runs and it has beaten within two minutes, so a holder that dies releases at once; nothing is released by a timeout while the holder lives. A run waiting says what for in a sentence (the holds, who and for how long, and the runs asked before it) in its output and, through `HEAVY_SLOT`'s `admission`, on the page. `run-heavy -- <command>` runs a command of the caller's own, a filtered `dotnet test` or a test file's run, as such a run, with no repository slot; a run started inside a hold (`DAORIS_ADMISSION_HOLD`) takes no second place.
 A driven session is told to use it (`HeavyTold`, HEAVYRUN1b1): where its repository marks a heavy gate and an install's
 `daoris-driver` launcher is beside the home, which its PATH starts with, its instruction says, before the close, to run focused
 checks while it works and those gates once, at its end, through `run-heavy`, never whole another way. A repository whose own file
