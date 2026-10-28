@@ -50,10 +50,10 @@ public static class CommitRules
 
     public const string DefaultSource = "default";
 
-    /// <summary>Where a rule set for the repository itself says it came from; <see cref="OpinionSource.Repository"/> spells it alike.</summary>
+    /// <summary>Where a rule set for the repository itself says it came from; <see cref="OpinionSource.Repository"/> and <see cref="ReviewSource.Repository"/> spell it alike.</summary>
     internal const string RepositorySource = "repository";
 
-    /// <summary>Where a rule set for the repository's workspace says it came from; <see cref="OpinionSource.Workspace"/> spells it alike.</summary>
+    /// <summary>Where a rule set for the repository's workspace says it came from; <see cref="OpinionSource.Workspace"/> and <see cref="ReviewSource.Workspace"/> spell it alike.</summary>
     internal const string WorkspaceSource = "workspace";
 
     internal const string Scope = "a commit rule is set for a repository or a workspace — name exactly one.";

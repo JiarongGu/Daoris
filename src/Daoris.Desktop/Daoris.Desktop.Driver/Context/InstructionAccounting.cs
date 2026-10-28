@@ -125,7 +125,7 @@ internal static class InstructionAccounting
             HandedSections.Look => Own("where to look before asking"),
             HandedSections.Indexes => Indexes(target, chars, size),
             HandedSections.Attributed => Own("the person's words met second-hand"),
-            HandedSections.Asking => Own(AskWords.AskOf(target.Asker) is null
+            HandedSections.Asking => Own(AskSender.AskOf(target.Asker) is null
                 ? "asking another repository, and stopping for the person"
                 : "asking another repository, and stopping for the person, a go-ahead asked once on the ask"),
             HandedSections.Closing => Own("the closing note's two lists, each item naming its source"),
@@ -173,7 +173,7 @@ internal static class InstructionAccounting
     private static HandedSection SetUp(SessionTarget target, int chars, string size)
     {
         var environment = target.SetUp!;
-        var workspace = target.SetUpFrom == ReviewSource.Workspace;
+        var workspace = target.SetUpFrom == CommitRules.WorkspaceSource;
         return new HandedSection(
             HandedSections.SetUp, workspace ? HandedSources.Workspace : HandedSources.Repository,
             $"the set-up for your review: {size}, in `{environment.Name}`, {environment.Kind}, by `{environment.Procedure}`, as the rule "
@@ -225,33 +225,34 @@ internal static class InstructionAccounting
             };
         }
 
-        var (shown, left) = AskWordsText.Bounded(said);
+        var work = ContextWorkOrders.Current;
+        var (shown, left) = work.AskBounded(said);
         var cuts = new List<HandedCut>();
         if (left.Count > 0)
         {
             cuts.Add(new HandedCut(
                 HandedCuts.WordsOlder,
                 $"{Plural(left.Count, "older word")}, said from {When(left[0].At)} to {When(left[^1].At)}, left out past its bound of "
-                + $"{N(AskWordsText.WordsLimit)} characters; the ask's record keeps every one")
+                + $"{N(work.WordsLimit)} characters; the ask's record keeps every one")
             {
                 Count = left.Count,
-                Limit = AskWordsText.WordsLimit,
+                Limit = work.WordsLimit,
                 From = left[0].At,
                 To = left[^1].At,
             });
         }
 
-        var cutLong = shown.Count(word => word.Kind != AskWordView.Asked && word.Text.Length > AskWordsText.WordLimit);
+        var cutLong = shown.Count(word => word.Kind != AskWordView.Asked && word.Text.Length > work.WordLimit);
         if (cutLong > 0)
         {
             cuts.Add(new HandedCut(
                 HandedCuts.WordsLong,
                 cutLong == 1
-                    ? $"1 word cut at {N(AskWordsText.WordLimit)} characters"
-                    : $"{N(cutLong)} words each cut at {N(AskWordsText.WordLimit)} characters")
+                    ? $"1 word cut at {N(work.WordLimit)} characters"
+                    : $"{N(cutLong)} words each cut at {N(work.WordLimit)} characters")
             {
                 Count = cutLong,
-                Limit = AskWordsText.WordLimit,
+                Limit = work.WordLimit,
             });
         }
 
@@ -275,31 +276,32 @@ internal static class InstructionAccounting
     {
         var words = target.Words!;
         var held = words.GoAheads!;
-        var shown = GoAheadsText.Shown(held);
+        var work = ContextWorkOrders.Current;
+        var shown = work.GoAheadsShown(held);
         var cuts = new List<HandedCut>();
         if (shown < held.Count)
         {
             cuts.Add(new HandedCut(
                 HandedCuts.GoAheadsBound,
-                $"go-aheads {held[shown].Number} to {held[^1].Number} left out past its bound of {N(GoAheadsText.Limit)} characters; "
+                $"go-aheads {held[shown].Number} to {held[^1].Number} left out past its bound of {N(work.GoAheadsLimit)} characters; "
                 + "the ask's page shows each")
             {
                 Count = held.Count - shown,
-                Limit = GoAheadsText.Limit,
+                Limit = work.GoAheadsLimit,
             });
         }
 
-        var cutLong = held.Take(shown).Count(goAhead => goAhead.Act.Length > GoAheadsText.ActLimit);
+        var cutLong = held.Take(shown).Count(goAhead => goAhead.Act.Length > work.GoAheadActLimit);
         if (cutLong > 0)
         {
             cuts.Add(new HandedCut(
                 HandedCuts.ActsLong,
                 cutLong == 1
-                    ? $"1 act cut at {N(GoAheadsText.ActLimit)} characters"
-                    : $"{N(cutLong)} acts each cut at {N(GoAheadsText.ActLimit)} characters")
+                    ? $"1 act cut at {N(work.GoAheadActLimit)} characters"
+                    : $"{N(cutLong)} acts each cut at {N(work.GoAheadActLimit)} characters")
             {
                 Count = cutLong,
-                Limit = GoAheadsText.ActLimit,
+                Limit = work.GoAheadActLimit,
             });
         }
 
@@ -375,7 +377,7 @@ internal static class InstructionAccounting
     private static HandedSection Channel(SessionTarget target, int chars, string size)
     {
         var held = target.Channel!;
-        var (shown, left) = ChannelText.Bounded(held.Messages);
+        var (shown, left) = ContextWorkOrders.Current.ChannelBounded(held.Messages);
         return new HandedSection(
             HandedSections.CarryOn, HandedSources.Ask,
             $"the ask's channel since its line of work last read it: {size}: {Plural(shown.Count, "message")} from ask #{held.Ask}")
@@ -390,7 +392,7 @@ internal static class InstructionAccounting
     /// <summary>The channel's messages beside the parts before it or the session it carries on, as a fact; null for none.</summary>
     private static string? ChannelShown(SessionTarget target) =>
         target.Channel is { Messages.Count: > 0 } held
-            ? $"{Plural(ChannelText.Bounded(held.Messages).Shown.Count, "message")} from ask #{held.Ask}'s channel"
+            ? $"{Plural(ContextWorkOrders.Current.ChannelBounded(held.Messages).Shown.Count, "message")} from ask #{held.Ask}'s channel"
             : null;
 
     private static string ChannelFact(SessionTarget target) => ChannelShown(target) is { } shown ? $", and {shown}" : "";

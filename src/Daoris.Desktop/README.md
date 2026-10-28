@@ -50,7 +50,17 @@ bounds, is Roles', and `QuestionFiles` keeps the file and aliases the bounds. `s
 `ISupervisorWorld` and `ISupervisorAsk`, which `SessionsWorld` and `SessionsAsk` implement, and builds the ask it returns with the factory
 the sessions verb hands it; the question file and the ask's words come from `IRolesWorkOrders`, which
 `Sessions/Work/RolesWorkOrdersWiring.cs` installs. The supervisor's proof, the holder key and the decisions' memory are unchanged.
-Context owns instruction accounting and session-part composition in `Accounts/`, and supplies the required `AgentContext` operations. Agents owns the composed brief and part carriers; Events owns handed codes and stream shapes. Event history, console output and streams are supplied through lower interfaces while Context retains storage, buffering and lifecycle.
+Context owns instruction accounting and session-part composition (`Context/InstructionAccounting.cs`, `SessionPartsText.cs`), and supplies the required `AgentContext` operations (`Context/AgentContextWiring.cs`). Agents owns the composed brief and part carriers; Events owns handed codes and stream shapes. Event history, console output and streams are supplied through lower interfaces while Context retains storage, buffering and lifecycle.
+The driver's `Context/` owns the context's own files (FOUNDATION1 mod-xiii, D212): the briefs (`Domain/ContextBrief.cs`, `Events/ContextBriefs.cs`), the session event record with its reads and last words (`Events/SessionEventLog.cs`, `SessionEventReads.cs`, `SessionLastWords.cs`), the console output window (`Domain/SessionOutput.cs`), the transcript file (`TranscriptFile.cs`), the instruction accounting, the session parts' text and the agent context's wiring, with `WorkplaceEventRecordsWiring.cs`. The files kept their sub-folders below the old `Accounts/`, `Conversations/` or `Sessions/` (`Domain/`, `Events/`); tests are mirrored under `Driver.Tests/Context/`. Namespaces remain `Daoris.Driver`, and the files moved byte-identically.
+
+Context names no Course, Review or Work orders type. The brief says the outgoing agent's note by `Context/Domain/OutgoingNote.cs`
+(`HandOverNote.Said`, `Absent` and `Limit` answer through it), tells a channel's claim by `ContextBrief.ChannelClaimOpening` (which
+`ChannelText.ClaimOpening` is), knows Daoris's words by `SaidFrom.Daoris`, finds a part's attachments through
+`Context/SessionAttachments.cs` (`ChatFiles.Folder` answers through it) and reads what a tree holds uncommitted itself. The set-up's
+source is Workplace's `CommitRules.WorkspaceSource`, which `ReviewSource` aliases. The checks a brief reads (the tree's gates file, the
+declared gates and this machine's mapping) come from the required `IContextReview`, which `Review/ContextReviewWiring.cs` installs, and
+the bounds the instruction's ask, go-ahead and channel sections are counted by from the required `IContextWorkOrders`, which
+`Quests/ContextWorkOrdersWiring.cs` installs over the same members those sections are written from; each is resolved only where reached.
 
 Participants judges `DrivenAccess` and supplies Agents with the `IAgentAccess` start contract. Agents owns the installed
 `LineageHook` data and required `LineageStreams` operation port; Participants installs the actual per-run watcher from
@@ -93,7 +103,7 @@ Tools are handed before Workplace removes inherited tokens, resolves the author 
 tree-guard carrier and matcher belong to Agents; the actual resource, installer and guard remain Workplace's.
 
 Workplace reads and removes conversations through the supplied `IWorkplaceEventHistory` and `ISessionEventRemoval`
-facets. Context's `Sessions/Events/SessionEventLog.cs` answers them on the original record, retaining its numbering,
+facets. Context's `Context/Events/SessionEventLog.cs` answers them on the original record, retaining its numbering,
 lock and subscriptions. `Context/WorkplaceEventRecordsWiring.cs` installs the required factory for standalone landing;
 it constructs a record only at that command's original construction point.
 
@@ -510,7 +520,7 @@ conversations, the continuation judge, the say, and the words a failed run left,
 `TranscriptFile` stay at the top, named by several scopes.
 
 A session that goes on in a new part is handed Daoris's brief of its line (SESSCTX1b, D189 point 4; the session-context
-design §3), composed with no model by `ContextBrief.Compose` in `Conversations/Domain/` from what `Sessions/Events/ContextBriefs`
+design §3), composed with no model by `ContextBrief.Compose` in `Context/Domain/` from what `Context/Events/ContextBriefs`
 reads: the line one chain back by each record's `from` (every continuation writes one, `carry-on` and `retry` beside a hand-over's
 five reasons, and `resume` for SESSCTX1c; no box takes those three), each part's events, the tree as it stands, the declared gates
 and the entry's other parts. It carries every word the session took once by its id (a word taken back left out, a channel's

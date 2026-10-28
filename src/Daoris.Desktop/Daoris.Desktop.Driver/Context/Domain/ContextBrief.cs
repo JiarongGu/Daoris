@@ -48,7 +48,7 @@ public sealed record BriefLine(string Why, IReadOnlyList<BriefPart> Parts)
 
     /// <summary>
     /// Whether the outgoing agent was asked for its closing note (SESSCTX1c part B, §2.2): where it was and wrote none, the note's section
-    /// says it is absent (<see cref="HandOverNote.Absent"/>), since the move never waited more than that one turn.
+    /// says it is absent (<see cref="OutgoingNote.Absent"/>), since the move never waited more than that one turn.
     /// </summary>
     public bool NoteAsked { get; init; }
 
@@ -94,6 +94,12 @@ public static class ContextBrief
 
     /// <summary>The outgoing agent's note (item 6).</summary>
     public const int NoteCap = 4_000;
+
+    /// <summary>
+    /// How a channel's claim opens: the page's <c>CHANNEL_CLAIM_OPENING</c>, and what a brief tells a claim by on a record from before the
+    /// event's own mark (SESSCTX1b, <see cref="SessionEvent.Channel"/>). The work orders' <c>ChannelText.ClaimOpening</c> is this.
+    /// </summary>
+    internal const string ChannelClaimOpening = "Another session says, on the ask's channel";
 
     /// <summary>The work's state (item 5).</summary>
     public const int StateCap = 4_000;
@@ -146,11 +152,11 @@ public static class ContextBrief
         var opening = Opening(line, read, clipped);
         // Items 5, 6 and 7 fill under their own caps.
         var (state, stateLeft, planLeft) = State(line, read, clipped);
-        // In MIXAGENT1c's one wording for an outgoing agent's note (HandOverNote), clipped by weight first.
-        var note = line.Note?.Trim() is { Length: > 0 } said && HandOverNote.Said(clipped.Head(said, NoteCap - 200)) is { } claim
+        // In MIXAGENT1c's one wording for an outgoing agent's note (OutgoingNote), clipped by weight first.
+        var note = line.Note?.Trim() is { Length: > 0 } said && OutgoingNote.Said(clipped.Head(said, NoteCap - 200)) is { } claim
             ? "\n\n" + claim
             // SESSCTX1c part B: a closing note asked and not written in its one turn is said absent, in the note's own section.
-            : line.NoteAsked ? "\n\n" + HandOverNote.Absent : null;
+            : line.NoteAsked ? "\n\n" + OutgoingNote.Absent : null;
         var (others, othersLeft) = Others(line.Others);
 
         // Item 3: the newest words under their cap, the oldest after the request left out first.
@@ -372,9 +378,9 @@ public static class ContextBrief
 
         // Daoris's own words and every target it composed (an instruction, an earlier brief) are not repeated: the new part's
         // instruction is composed afresh (§3.1 item 3).
-        if (e.From == DaorisWords.From) return null;
+        if (e.From == SaidFrom.Daoris) return null;
         if (e.Opinion is { Length: > 0 } opinion) return new Word($"Another agent's findings (opinion `{opinion}`), as its claim:", e.Text ?? "", part);
-        if (e.Channel is not null || (e.Text ?? "").StartsWith(ChannelText.ClaimOpening, StringComparison.Ordinal))
+        if (e.Channel is not null || (e.Text ?? "").StartsWith(ChannelClaimOpening, StringComparison.Ordinal))
         {
             return new Word("Another session's message on the ask's channel, as that agent's claim:", e.Text ?? "", part);
         }

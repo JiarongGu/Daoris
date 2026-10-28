@@ -140,7 +140,7 @@ internal static class ContextBriefs
 
     /// <summary>Where a part's kept attachments lie, where it keeps any (<see cref="ChatFiles.Folder"/>).</summary>
     private static string? Kept(string home, string session) =>
-        SessionEventText.IsLocalId(session) && ChatFiles.Folder(home, session) is var folder && Directory.Exists(folder) ? folder : null;
+        SessionEventText.IsLocalId(session) && SessionAttachments.Folder(home, session) is var folder && Directory.Exists(folder) ? folder : null;
 
     /// <summary>
     /// The tree as it stands now (design §3.1 item 5), since a part's end commit is not recorded: its head, what it holds uncommitted,
@@ -152,7 +152,7 @@ internal static class ContextBriefs
         {
             var (headCode, head, _) = await WorkingTree.GitAsync(tree, ["log", "-1", "--format=%h %s"], ct).ConfigureAwait(false);
             if (headCode != 0 || head.Trim().Length == 0) return new BriefTree(null, [], []);
-            var uncommitted = await ConversationTrees.UncommittedAsync(tree, ListRead, ct).ConfigureAwait(false);
+            var uncommitted = await UncommittedAsync(tree, ListRead, ct).ConfigureAwait(false);
             IReadOnlyList<string> commits = [];
             if (since is { Length: > 0 } && WorkingTree.IsCommitId(since))
             {
@@ -169,18 +169,32 @@ internal static class ContextBriefs
         }
     }
 
+    /// <summary>What the tree holds uncommitted, as git says it, at most <paramref name="limit"/>; none where git cannot say (STRUCT3h).</summary>
+    private static async Task<IReadOnlyList<string>> UncommittedAsync(string tree, int limit, CancellationToken ct)
+    {
+        try
+        {
+            return await WorkingTree.UncommittedAsync(tree, limit, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is DriverException or IOException or System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            return [];
+        }
+    }
+
     /// <summary>
-    /// What makes a call a check (design §3.1 item 4): the gates the tree's <c>daoris.gates.json</c> declares, as <see cref="HeavyGates.Read"/>
-    /// reads them, and this machine's heavy-gate mapping for the repository. A file that does not read declares none here.
+    /// What makes a call a check (design §3.1 item 4): the gates the tree's <c>daoris.gates.json</c> declares, as the review's
+    /// <see cref="IContextReview.DeclaredGates"/> reads them, and this machine's heavy-gate mapping for the repository. A file that
+    /// does not read declares none here.
     /// </summary>
     private static IReadOnlyList<HeavyGate> Gates(string? tree, string? repository, DriverConfig? config)
     {
         var gates = new List<HeavyGate>();
-        if (tree is not null && File.Exists(Path.Combine(tree, HeavyGates.FileName)))
+        if (tree is not null && File.Exists(Path.Combine(tree, ContextReview.Current.GatesFile)))
         {
             try
             {
-                gates.AddRange(HeavyGates.Read(tree));
+                gates.AddRange(ContextReview.Current.DeclaredGates(tree));
             }
             catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
             {
@@ -188,7 +202,7 @@ internal static class ContextBriefs
             }
         }
 
-        if (config is not null && repository is { Length: > 0 } && HeavyMapping.For(config, repository) is { } mapped) gates.AddRange(mapped);
+        if (config is not null && repository is { Length: > 0 } && ContextReview.Current.MappedGates(config, repository) is { } mapped) gates.AddRange(mapped);
         return gates;
     }
 
