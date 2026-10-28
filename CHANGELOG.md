@@ -5,6 +5,7 @@ with the version and date at release.
 
 ## Unreleased
 
+- A terminal that finds the service busy now says so, instead of saying a variable is missing. The status door and a read are asked a second time after a second; the refusal names the address it tried, the bound, that it asked twice, and that `DAORIS_SERVICE_URL` is not the cause where the address came from the home's own record. A press that changes something is never asked again blindly, and says what to look at before you press it again (SERVICESTALL1).
 - Deleting the quest an ask published to a receiver you named no longer makes the driver publish the ask again to the repositories of its routing proposal. The ask stands with no quest and says so, for you to publish or close, and the delete's answer says what the ask now is (QUESTDELETE1).
 - A session in a tree of its own is now told that git's stash is shared with the repository's checkout and every other tree, so it sets work aside with a commit on its tree's branch and never uses `git stash`; a session in the repository's own checkout is told nothing of it (STASHSHARE1).
 - The usage report gains a *Driven sessions* section: each driven session's repository, adapter, models, turns, minutes, calls, tokens read anew, read from the cache, written and written out, and peak context, newest first, rolled up by repository and by adapter and model with the cache read per call; a session with no `turn.ended` is said so, never as zero (USAGECOST1).
