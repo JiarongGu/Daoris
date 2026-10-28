@@ -299,7 +299,7 @@ public sealed class SystemSpaceTests : IDisposable
         sizes.Tell(_home, kind => { lock (told) told.Add(kind); });
 
         Assert.True(sizes.Start(_home, ["logs", "set-aside", "nowhere"], WiringBudget.Default));
-        await sizes.Finished(_home).WaitAsync(TimeSpan.FromSeconds(30));
+        await sizes.Finished(_home).WaitAsync(Poll.Patience);
 
         Assert.Equal(["set-aside", "logs"], told);
         Assert.Equal(50, sizes.Of(_home, "logs")!.Bytes);
@@ -317,18 +317,18 @@ public sealed class SystemSpaceTests : IDisposable
         sizes.Tell(_home, kind => { lock (told) told.Add(kind); });
 
         sizes.StartDue(_home, DateTimeOffset.UtcNow, [], WiringBudget.Default);
-        await sizes.Finished(_home).WaitAsync(TimeSpan.FromSeconds(30));
+        await sizes.Finished(_home).WaitAsync(Poll.Patience);
         Assert.Equal(SpaceKinds.Table.Select(kind => kind.Id), told);
 
         told.Clear();
         Assert.False(sizes.StartDue(_home, DateTimeOffset.UtcNow, [], WiringBudget.Default));
         Assert.True(sizes.StartDue(_home, DateTimeOffset.UtcNow, ["downloads"], WiringBudget.Default));
-        await sizes.Finished(_home).WaitAsync(TimeSpan.FromSeconds(30));
+        await sizes.Finished(_home).WaitAsync(Poll.Patience);
         Assert.Equal(["downloads"], told);
 
         told.Clear();
         sizes.StartDue(_home, DateTimeOffset.UtcNow.AddDays(1), [], WiringBudget.Default);
-        await sizes.Finished(_home).WaitAsync(TimeSpan.FromSeconds(30));
+        await sizes.Finished(_home).WaitAsync(Poll.Patience);
         Assert.Equal(SpaceKinds.Table.Select(kind => kind.Id), told);
     }
 

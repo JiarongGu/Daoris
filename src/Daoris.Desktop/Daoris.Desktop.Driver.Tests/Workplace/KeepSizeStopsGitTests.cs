@@ -376,7 +376,7 @@ public sealed class KeepSizeStopsGitTests : KeepSizeFixture
         Assert.Equal(SetAsideClass.Stopped, asked.Class);
 
         var start = new SpaceRuns().Start(world, KeepingRun.Press, [asked]);
-        await Assert.IsType<SpaceRun>(start.Run).Finished.WaitAsync(TimeSpan.FromMinutes(2));
+        await Assert.IsType<SpaceRun>(start.Run).Finished.WaitAsync(Poll.Patience);
 
         Assert.Single(_posts);
         Assert.False(Directory.Exists(aside));
@@ -413,7 +413,7 @@ public sealed class KeepSizeStopsGitTests : KeepSizeFixture
 
         var start = new SpaceRuns().Start(world, KeepingRun.Press, [asked]);
         var run = Assert.IsType<SpaceRun>(start.Run);
-        await run.Finished.WaitAsync(TimeSpan.FromMinutes(2));
+        await run.Finished.WaitAsync(Poll.Patience);
 
         Assert.True(Directory.Exists(aside));
         Assert.Equal(SlimStates.Recorded, Manifest(aside).State);

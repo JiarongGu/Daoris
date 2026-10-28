@@ -10,8 +10,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class WorkspaceSetupLoopTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-wsplan-loop-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -46,7 +44,7 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
         WorkspaceSetupFile.Save(_home, new WorkspaceSetupPlan("work", ["atlas"], 1, 0) { Created = DateTimeOffset.UtcNow });
         var (driver, runs) = Driver();
 
-        var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var look = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
 
         var quest = Assert.Single(_world.Quests);
         Assert.Equal([quest.Id], runs.Started);
@@ -59,7 +57,7 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
     {
         var (driver, _) = Driver();
 
-        var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var look = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
 
         Assert.Equal(0, _world.RegistrationsRead);
         Assert.DoesNotContain(look.Events, line => line.StartsWith("setup", StringComparison.Ordinal));
@@ -73,7 +71,7 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
         _ledger.Publish("q7", "atlas", "Say which tile sizes the map serves");
         var (driver, runs) = Driver();
 
-        var look = await driver.TickAsync(_closing.Token).WaitAsync(Bound);
+        var look = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
 
         Assert.Contains(look.Events, line => line.StartsWith("setup  the workspace plans could not be worked this look", StringComparison.Ordinal)
             && line.Contains("the service went away", StringComparison.Ordinal));

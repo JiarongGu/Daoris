@@ -89,7 +89,7 @@ public sealed class LaunchedSessionJobProcessTests : IDisposable
             Assert.True(PieceLauncher.Carries(process.StartInfo));
             var processes = new SessionProcesses();
             using var tracked = processes.Track("s1", process);
-            Assert.Equal("ready", await process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(30)));
+            Assert.Equal("ready", await process.StandardOutput.ReadLineAsync().WaitAsync(Poll.Patience));
 
             // The launcher's own job, opened by its name: the launcher, the harness and the orphaned child, the start's go-between gone.
             var job = processes.JobOf("s1");
@@ -121,8 +121,8 @@ public sealed class LaunchedSessionJobProcessTests : IDisposable
 
             // The person's stop: the launcher's tree, and through its job the child no walk of that tree reaches.
             Assert.True(processes.Stop("s1"));
-            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
-            await job.WaitEmptyAsync().WaitAsync(TimeSpan.FromSeconds(30));
+            await process.WaitForExitAsync().WaitAsync(Poll.Patience);
+            await job.WaitEmptyAsync().WaitAsync(Poll.Patience);
             Assert.Equal(0, job.Active);
             await Until(() => ProcessJob.ActiveOf(jobs.Name) == 0, "the agents' job emptied as the session was stopped");
         }

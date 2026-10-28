@@ -4,7 +4,7 @@
  *
  *   node --test tools/question-bench.test.mjs
  *
- * Outside `npm run verify`, whose tests are the CLI package's, as `knowledge-bench.test.mjs` is. Every case runs on
+ * Run by `npm run verify`'s `node --test` list, as `knowledge-bench.test.mjs` is (TOOLTESTCENSUS1). Every case runs on
  * the constructed fixture in `question-bench-fixtures/`, and the model tier only against its stub harness: nothing
  * here starts a model or reads an account. Its scratch is a gitignored folder of the repository.
  */

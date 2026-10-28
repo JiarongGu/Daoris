@@ -10,8 +10,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 public sealed class NodeWakesTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-nodewakes-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -65,20 +63,20 @@ public sealed class NodeWakesTests : IDisposable
             try
             {
                 // The loop's start: its whole look, and the runtime's pass beside it.
-                await Poll.Until(() => Count(reports) >= 1 && Volatile.Read(ref _passes) >= 1, () => "no look, or no pass", Bound);
-                await Poll.Until(() => !watch.Running.Passing, () => "the start's pass never ended", Bound);
+                await Poll.Until(() => Count(reports) >= 1 && Volatile.Read(ref _passes) >= 1, () => "no look, or no pass", Poll.Patience);
+                await Poll.Until(() => !watch.Running.Passing, () => "the start's pass never ended", Poll.Patience);
                 (looks, var passes) = (Count(reports), Volatile.Read(ref _passes));
 
                 // A timer the records persist came due: the runtime's pass alone, never the local plan.
                 watch.NodesWoken("due");
-                await Poll.Until(() => Volatile.Read(ref _passes) > passes, () => "the wake ran no pass", Bound);
+                await Poll.Until(() => Volatile.Read(ref _passes) > passes, () => "the wake ran no pass", Poll.Patience);
                 await Task.Delay(TimeSpan.FromMilliseconds(500));
                 Assert.Equal(looks, Count(reports));
             }
             finally
             {
                 await _closing.CancelAsync();
-                try { await watching.WaitAsync(Bound); }
+                try { await watching.WaitAsync(Poll.Patience); }
                 catch (OperationCanceledException) { }
             }
         }

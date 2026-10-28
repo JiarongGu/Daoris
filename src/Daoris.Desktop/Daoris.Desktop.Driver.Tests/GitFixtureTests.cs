@@ -43,7 +43,7 @@ public sealed class GitFixtureTests : IDisposable
             await File.WriteAllTextAsync(Path.Combine(root, $"file-{i:D3}.txt"), "one line\n");
         }
 
-        var added = await GitFixture.RunAsync(root, "add", "-A").WaitAsync(TimeSpan.FromSeconds(60));
+        var added = await GitFixture.RunAsync(root, "add", "-A").WaitAsync(Poll.Patience);
 
         Assert.True(added.ExitCode == 0, added.Stderr);
         // At least a line a file, whatever git's version or language words it as.

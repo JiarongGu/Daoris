@@ -12,8 +12,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>Over the real client and planner with the service's doors and each start's run standing in, in-process.</remarks>
 public sealed class LookWaitTests : IDisposable
 {
-    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(30);
-
     private readonly string _home = Path.Combine(Path.GetTempPath(), "daoris-lookwait-" + Guid.NewGuid().ToString("N")[..8]);
 
     private readonly StandInLedger _ledger = new();
@@ -52,8 +50,8 @@ public sealed class LookWaitTests : IDisposable
             var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
             try
             {
-                await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
-                await Poll.Until(() => Count(reports) >= 1, () => "no look reported", Bound);
+                await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Poll.Patience);
+                await Poll.Until(() => Count(reports) >= 1, () => "no look reported", Poll.Patience);
             }
             finally
             {
@@ -78,7 +76,7 @@ public sealed class LookWaitTests : IDisposable
         using var held = new ManualResetEventSlim();
         var places = new ProcessStarts(1, info =>
         {
-            if (info.FileName == "holder") held.Wait(Bound);
+            if (info.FileName == "holder") held.Wait(Poll.Patience);
             return null;
         });
         var holder = places.StartAsync(new ProcessStartInfo("holder") { UseShellExecute = false }, CancellationToken.None);
@@ -98,8 +96,8 @@ public sealed class LookWaitTests : IDisposable
             var watching = watch.RunAsync(Into(reports), onError: null, _closing.Token);
             try
             {
-                await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Bound);
-                await Poll.Until(() => Count(reports) >= 1, () => "no look reported", Bound);
+                await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Poll.Patience);
+                await Poll.Until(() => Count(reports) >= 1, () => "no look reported", Poll.Patience);
             }
             finally
             {
@@ -109,7 +107,7 @@ public sealed class LookWaitTests : IDisposable
             }
         }
 
-        await holder.WaitAsync(Bound);
+        await holder.WaitAsync(Poll.Patience);
         var stages = Lines("watch.looked").Select(data => data.GetProperty("stages").GetString()).OfType<string>().ToList();
         Assert.True(
             stages.Any(line => line.Split(' ').Any(entry => entry.TrimStart('~').StartsWith("start.queue=", StringComparison.Ordinal))),
@@ -136,7 +134,7 @@ public sealed class LookWaitTests : IDisposable
             {
                 // The start's line: under load another stage may pass a tenth of a second too, and be named as well.
                 await Poll.Until(
-                    () => Lines("look.slow").Any(data => data.GetProperty("stage").GetString() == "start"), () => "the hung start never named", Bound);
+                    () => Lines("look.slow").Any(data => data.GetProperty("stage").GetString() == "start"), () => "the hung start never named", Poll.Patience);
             }
             finally
             {
@@ -176,10 +174,10 @@ public sealed class LookWaitTests : IDisposable
             try
             {
                 // Both are waiting on the screen (a sign the code gives, never a window of the test's), and the looks go on.
-                await Poll.Until(() => Volatile.Read(ref waiting) == 2, () => $"{Volatile.Read(ref waiting)} of the two wait on the screen", Bound);
-                await Poll.Until(() => Count(reports) >= 1, () => "no look reported", Bound);
+                await Poll.Until(() => Volatile.Read(ref waiting) == 2, () => $"{Volatile.Read(ref waiting)} of the two wait on the screen", Poll.Patience);
+                await Poll.Until(() => Count(reports) >= 1, () => "no look reported", Poll.Patience);
                 watch.Nudge();
-                await Poll.Until(() => Count(reports) >= 2, () => "no second look", Bound);
+                await Poll.Until(() => Count(reports) >= 2, () => "no second look", Poll.Patience);
                 Assert.DoesNotContain(Beside(), entry => entry is "~follow" or "~tidy");
 
                 screen.SetResult();
@@ -190,7 +188,7 @@ public sealed class LookWaitTests : IDisposable
                         var beside = Beside();
                         return beside.Contains("~follow") && beside.Contains("~tidy");
                     },
-                    () => $"after the screen, the looks' lines name {string.Join(", ", Beside())}", Bound);
+                    () => $"after the screen, the looks' lines name {string.Join(", ", Beside())}", Poll.Patience);
             }
             finally
             {
@@ -242,7 +240,7 @@ public sealed class LookWaitTests : IDisposable
 
     private static async Task Settled(Task running)
     {
-        try { await running.WaitAsync(Bound); }
+        try { await running.WaitAsync(Poll.Patience); }
         catch (OperationCanceledException) { }
     }
 

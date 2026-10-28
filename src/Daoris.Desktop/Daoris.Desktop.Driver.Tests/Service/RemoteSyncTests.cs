@@ -1347,12 +1347,12 @@ public sealed class RemoteSyncSetTests
             {
                 var url = request.RequestUri!.ToString();
                 if (url.StartsWith(Tools, StringComparison.Ordinal)) toolsAsked.TrySetResult();
-                if (url.StartsWith(Aurora, StringComparison.Ordinal)) await toolsAsked.Task.WaitAsync(TimeSpan.FromSeconds(20));
+                if (url.StartsWith(Aurora, StringComparison.Ordinal)) await toolsAsked.Task.WaitAsync(Poll.Patience);
             },
         };
         using var set = Set(transport);
 
-        var report = await set.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var report = await set.RunOnceAsync().WaitAsync(Poll.Patience);
 
         Assert.Null(report.Problem);
         Assert.Contains(transport.Calls, c => c.Call == $"POST {Aurora}/api/registry");

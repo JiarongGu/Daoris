@@ -50,7 +50,7 @@ public sealed class AccountFilesKeepLockTests : IDisposable
             other = Task.Run(() => AccountNames.Rename(Home, "claude-code", accounts, "acct-0000000b", "home"));
             other.Wait(TimeSpan.FromMilliseconds(300));
         });
-        await other!.WaitAsync(TimeSpan.FromMinutes(1));
+        await other!.WaitAsync(Poll.Patience);
 
         Assert.True(held, "accounts.json's keep lock is held between the read and the write");
         Assert.Equal("work", AccountNames.NameOf(Home, "claude-code", "acct-0000000a"));
@@ -71,7 +71,7 @@ public sealed class AccountFilesKeepLockTests : IDisposable
             other = Task.Run(() => AccountCooling.Cool(Home, Entry("acct-0000000b"), Now));
             other.Wait(TimeSpan.FromMilliseconds(300));
         });
-        await other!.WaitAsync(TimeSpan.FromMinutes(1));
+        await other!.WaitAsync(Poll.Patience);
 
         Assert.True(held, "cooling.json's keep lock is held between the read and the write");
         Assert.NotNull(AccountCooling.Of(Home, "claude-code", "acct-0000000a", Now));
@@ -93,7 +93,7 @@ public sealed class AccountFilesKeepLockTests : IDisposable
             other = Task.Run(() => HarnessSettings.Change(path, read => read.WithVersion("codex", "2.0.0")));
             other.Wait(TimeSpan.FromMilliseconds(300));
         });
-        await other!.WaitAsync(TimeSpan.FromMinutes(1));
+        await other!.WaitAsync(Poll.Patience);
 
         Assert.True(held, "harnesses.json's keep lock is held between the read and the write");
         Assert.Equal("1.0.0", written.ResolveVersion("claude-code", null, null));

@@ -231,7 +231,7 @@ public sealed class BrainstormProcessTests : IDisposable
         files.WriteSent(id, state.Packet!, DateTimeOffset.UtcNow);
         var events = new List<string>();
         await driver.BrainstormsAsync(snapshot, 0, events, CancellationToken.None);
-        await driver.Running.SettledAsync().WaitAsync(TimeSpan.FromSeconds(120));
+        await driver.Running.SettledAsync().WaitAsync(Poll.Patience);
 
         Assert.True(files.ReadState(id)!.State == BrainstormStates.Ended, string.Join('\n', events) + "\n" + File.ReadAllText(files.PathOf(id, "state.json")));
 
