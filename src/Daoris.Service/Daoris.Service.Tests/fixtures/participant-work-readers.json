@@ -70,7 +70,7 @@
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Conversations/Domain/ContextBrief.cs": {
+    "Context/Domain/ContextBrief.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"

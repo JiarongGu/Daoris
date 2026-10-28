@@ -12,7 +12,7 @@
     { "name": "Workplace", "folder": "Workplace", "domain": true, "moved": true },
     { "name": "Roles", "folder": "Roles", "domain": true, "moved": true },
     { "name": "Participants", "folder": "Participants", "domain": true, "moved": true },
-    { "name": "Context", "folder": "Context", "domain": true },
+    { "name": "Context", "folder": "Context", "domain": true, "moved": true },
     { "name": "Course", "folder": "Course", "domain": true },
     { "name": "Work orders", "folder": "WorkOrders", "domain": true },
     { "name": "Review", "folder": "Review", "domain": true },
@@ -96,8 +96,8 @@
     "Agents/PoolReceipts.cs": "Agents",
     "Agents/RotationUse.cs": "Agents",
     "Events/Domain/HandedCodes.cs": "Events",
-    "Accounts/AgentContextWiring.cs": "Context",
-    "Accounts/InstructionAccounting.cs": "Context",
+    "Context/AgentContextWiring.cs": "Context",
+    "Context/InstructionAccounting.cs": "Context",
     "Agents/AccountRotation.cs": "Agents",
     "Agents/LineAccount.cs": "Agents",
     "Agents/RefusedAccounts.cs": "Agents",
@@ -128,7 +128,7 @@
     "Agents/DshProfile.cs": "Agents",
     "Agents/InAppBrowserHost.cs": "Agents",
     "Agents/InAppBrowserServers.cs": "Agents",
-    "Accounts/SessionPartsText.cs": "Context",
+    "Context/SessionPartsText.cs": "Context",
     "Agents/AgentAccountsCommand.cs": "Agents",
     "Agents/AgentListCommand.cs": "Agents",
     "Agents/AgentLoginCommand.cs": "Agents",
@@ -185,7 +185,7 @@
     "Conversations/Domain/AnswersAlone.cs": "Course",
     "Conversations/Domain/ChatMessage.cs": "Course",
     "Conversations/Domain/ChatQueue.cs": "Course",
-    "Conversations/Domain/ContextBrief.cs": "Context",
+    "Context/Domain/ContextBrief.cs": "Context",
     "Conversations/Domain/Continuation.cs": "Course",
     "Conversations/Domain/DaorisWords.cs": "Course",
     "Conversations/Domain/GoOnRecords.cs": "Course",
@@ -256,7 +256,7 @@
     "Participants/Partners/PartnerReservations.cs": "Participants",
     "Participants/Partners/SessionsPartnerCommand.cs": "Participants",
     "Conversations/SaidDoor.cs": "Course",
-    "Conversations/TranscriptFile.cs": "Context",
+    "Context/TranscriptFile.cs": "Context",
     "Events/Chain.cs": "Events",
     "Events/ChangeWatch.cs": "Events",
     "Events/Domain/AttentionEvent.cs": "Events",
@@ -696,12 +696,12 @@
     "Participants/Domain/ParticipantWork.cs": "Participants",
     "Sessions/Domain/PauseOutcome.cs": "Work orders",
     "Sessions/Domain/PausedBy.cs": "Work orders",
-    "Sessions/Domain/SessionOutput.cs": "Context",
+    "Context/Domain/SessionOutput.cs": "Context",
     "Sessions/Domain/StopAnswer.cs": "Work orders",
-    "Sessions/Events/ContextBriefs.cs": "Context",
-    "Sessions/Events/SessionEventLog.cs": "Context",
-    "Sessions/Events/SessionEventReads.cs": "Context",
-    "Sessions/Events/SessionLastWords.cs": "Context",
+    "Context/Events/ContextBriefs.cs": "Context",
+    "Context/Events/SessionEventLog.cs": "Context",
+    "Context/Events/SessionEventReads.cs": "Context",
+    "Context/Events/SessionLastWords.cs": "Context",
     "Agents/HarnessEnding.cs": "Agents",
     "Agents/HarnessWords.cs": "Agents",
     "Sessions/Heavy/HeavyGates.cs": "Review",
@@ -1014,24 +1014,24 @@
       "family": "Context names Course",
       "after": "Context",
       "files": {
-        "Conversations/Domain/ContextBrief.cs": ["DaorisWords","HandOverNote"],
-        "Sessions/Events/ContextBriefs.cs": ["ChatFiles","ConversationTrees"]
+        "Context/Domain/ContextBrief.cs": ["DaorisWords","HandOverNote"],
+        "Context/Events/ContextBriefs.cs": ["ChatFiles","ConversationTrees"]
       }
     },
     {
       "family": "Context names Review",
       "after": "Context",
       "files": {
-        "Accounts/InstructionAccounting.cs": ["ReviewSource"],
-        "Sessions/Events/ContextBriefs.cs": ["HeavyGates","HeavyMapping"]
+        "Context/InstructionAccounting.cs": ["ReviewSource"],
+        "Context/Events/ContextBriefs.cs": ["HeavyGates","HeavyMapping"]
       }
     },
     {
       "family": "Context names Work orders",
       "after": "Context",
       "files": {
-        "Accounts/InstructionAccounting.cs": ["AskWords","AskWordsText","ChannelText","GoAheadsText"],
-        "Conversations/Domain/ContextBrief.cs": ["ChannelText"]
+        "Context/InstructionAccounting.cs": ["AskWords","AskWordsText","ChannelText","GoAheadsText"],
+        "Context/Domain/ContextBrief.cs": ["ChannelText"]
       }
     },
     {
@@ -1468,6 +1468,10 @@
     "ParticipantsPortsTests.cs": "Participants",
     "ParticipantsWorkBoundaryTests.cs": "Participants",
     "ParticipantsAbovePortsTests.cs": "Participants",
+    "ContextBriefTests.cs": "Context",
+    "InstructionAccountTests.cs": "Context",
+    "SessionEventsTests.cs": "Context",
+    "SessionOutputTests.cs": "Context",
     "ParticipantPortsTests.cs": "Agents",
     "AgentPluginPortsTests.cs": "Agents",
     "AgentWorkplacePortsTests.cs": "Agents",
@@ -1677,7 +1681,6 @@
     "LookDeadlineTests.cs": "Events",
     "SessionWatchProcessTests.cs": "Events",
     "ObservationTests.cs": "Events",
-    "SessionEventsTests.cs": "Events",
     "HeldPermissionsTests.cs": "Events",
     "RunningCallsTests.cs": "Events",
     "SessionLogTests.cs": "Events",
