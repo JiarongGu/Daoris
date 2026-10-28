@@ -36,7 +36,7 @@
       "row": "1h",
       "note": "tells Ask Daoris's record or an intake for what never goes on or moves; the conversations' path onto the course (§3.1)"
     },
-    "Conversations/Chat/ChatRunBinds.cs": {
+    "Participants/Chat/ChatRunBinds.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
@@ -87,18 +87,18 @@
       "row": "1q",
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
-    "Conversations/Domain/HelperJudge.cs": {
+    "Participants/Domain/HelperJudge.cs": {
       "lines": 2,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
-    "Conversations/Domain/PartnerInstruction.cs": {
+    "Participants/Domain/PartnerInstruction.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a word's author, a pass's ask, a harness's rule or a repository type of the same name; no record's mark tells a work"
     },
-    "Conversations/Domain/PartnerJudge.cs": {
+    "Participants/Domain/PartnerJudge.cs": {
       "lines": 2,
       "reads": "tells",
       "row": "1q",
@@ -132,17 +132,22 @@
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
     },
-    "Conversations/Helpers/SessionsHelperCommand.cs": {
+    "Participants/Helpers/SessionsHelperCommand.cs": {
       "lines": 3,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
     },
-    "Conversations/Partners/PartnerPersonAsk.cs": {
+    "Participants/Partners/PartnerPersonAsk.cs": {
       "lines": 1,
       "reads": "tells",
       "row": "1q",
       "note": "judges who may ask a helper, lead a partner's piece or hand over by the asker's marks; the start layer's (§2.3)"
+    },
+    "Events/Domain/AskDaorisRoom.cs": {
+      "lines": 1,
+      "reads": "other",
+      "note": "declares the room repository's identity for Events' attention headline, which the participant-work rule aliases; no record's mark tells a work"
     },
     "Events/Domain/AttentionEvent.cs": {
       "lines": 1,
@@ -289,7 +294,7 @@
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
     "Loop/OpinionGateLook.cs": {
-      "lines": 5,
+      "lines": 4,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
@@ -358,7 +363,7 @@
       "reads": "tells",
       "note": "tells a conversation, an intake or Ask Daoris's record by its marks to name it or to list it; no row of this design moves it"
     },
-    "Sessions/RunningSessions.cs": {
+    "Participants/RunningSessions.cs": {
       "lines": 1,
       "reads": "other",
       "note": "an ask's own fields, a channel entry's, a file's lookup by ask, or a join key; no record's mark tells a work"
@@ -389,7 +394,7 @@
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"
     },
-    "Workplace/ChatPresses.cs": {
+    "Review/ChatPresses.cs": {
       "lines": 1,
       "reads": "other",
       "note": "a workflow step's, a gate's or a landing's own opinion or ask, not a record's mark"

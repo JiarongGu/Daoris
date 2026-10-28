@@ -19,11 +19,11 @@ namespace Daoris.Driver;
 internal sealed class LookFacts
 {
     private readonly object _gate = new();
-    private readonly Dictionary<string, OpinionFact> _opinions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, IOpinionFact> _opinions = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, PriorSession?> _askers = new(StringComparer.Ordinal);
 
     /// <summary>What the last judgment of <paramref name="due"/> found, or null where none has answered yet.</summary>
-    internal OpinionFact? Opinion(string due)
+    internal IOpinionFact? Opinion(string due)
     {
         lock (_gate) return _opinions.GetValueOrDefault(due);
     }
@@ -32,23 +32,23 @@ internal sealed class LookFacts
     /// Keep what a judgment of <paramref name="due"/> found. Whether the plan should read it at once: its first, a change in which quests
     /// it sits, or a pass it found owed. One that found the same holds again moves nothing.
     /// </summary>
-    internal bool KeepOpinion(string due, OpinionFact fact)
+    internal bool KeepOpinion(string due, IOpinionFact fact)
     {
         lock (_gate)
         {
             var before = _opinions.GetValueOrDefault(due);
             _opinions[due] = fact;
-            return before is null || fact.Act is not null || !before.Sits.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(fact.Sits.Keys);
+            return before is null || fact.Act is not null || !before.SatQuests.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(fact.SatQuests);
         }
     }
 
     /// <summary>The pass <paramref name="due"/>'s last judgment found owed, taken once: one look begins it, or finds its claim held.</summary>
-    internal OpinionAct? TakeAct(string due)
+    internal IOpinionAct? TakeAct(string due)
     {
         lock (_gate)
         {
             if (_opinions.GetValueOrDefault(due) is not { Act: { } act } fact) return null;
-            _opinions[due] = fact with { Act = null };
+            _opinions[due] = fact.WithoutAct();
             return act;
         }
     }
@@ -109,14 +109,20 @@ internal sealed class LookFacts
 }
 
 /// <summary>
-/// What one judgment of an owed opinion found (PARALLEL1g): the quests it sits, each with its sentence (<see cref="Snapshot.Opinions"/>);
-/// the landing opinion's gate, as the attention band reads it (XAGENT1g3); and the pass it found owed, for a look to begin.
+/// What one judgment of an owed opinion found, as the looks keep it for the plan (PARALLEL1g): the quests it sits and the pass it
+/// found owed. The review's <c>OpinionFact</c> implements it, so the facts name no more of the opinion than they read.
 /// </summary>
-internal sealed record OpinionFact(IReadOnlyDictionary<string, OpinionSit> Sits, OpinionJudged? Judged, OpinionAct? Act);
+internal interface IOpinionFact
+{
+    /// <summary>The quests it sits (<see cref="Snapshot.Opinions"/>).</summary>
+    IEnumerable<string> SatQuests { get; }
 
-/// <summary>
-/// A pass an owed opinion's judgment found owed (PARALLEL1g): the look's own ask at <paramref name="Occasion"/>, or the person's
-/// (<paramref name="Person"/>, taken from the gate as it is begun), under the chain's claim, with what its ask reads.
-/// </summary>
-internal sealed record OpinionAct(
-    OpinionDue Due, string Key, string Claim, IReadOnlyList<QuestView> Chain, string Occasion, bool Person, WorkflowProcess Process);
+    /// <summary>The pass it found owed, for a look to begin; null where none.</summary>
+    IOpinionAct? Act { get; }
+
+    /// <summary>The same finding with its pass taken.</summary>
+    IOpinionFact WithoutAct();
+}
+
+/// <summary>A pass an owed opinion's judgment found owed, which a look takes once and begins; the review's <c>OpinionAct</c> implements it.</summary>
+internal interface IOpinionAct;

@@ -28,8 +28,3 @@ public sealed record NewSessionChoice(IReadOnlyList<string> Said, DateTimeOffset
 /// <param name="Why">Why not, by a code of <see cref="WordsNever"/> or <see cref="GoOnNew"/>; null where it was kept.</param>
 /// <param name="Message">The sentence, in the terminal's words; the screen words <see cref="Why"/> itself.</param>
 public sealed record GoOnNewAnswer(bool Sent, string? Why, string Message);
-
-/// <summary>The harness's own conversation a session ran, as its wire named it, and the adapter that opened it (ANSWER1a).</summary>
-/// <param name="Adapter">The Daoris adapter whose door opened it: a conversation is only that door's to resume.</param>
-/// <param name="Conversation">The id the harness gave it: ACP's <c>sessionId</c>, or the native door's <c>session_id</c>.</param>
-public sealed record HarnessConversation(string Adapter, string Conversation);

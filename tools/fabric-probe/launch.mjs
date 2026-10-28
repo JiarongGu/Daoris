@@ -6,7 +6,7 @@
  *
  * With `--connector <daoris-knowledge executable>` (a build of `src/Daoris.Service/Daoris.Service.Mcp`), Daoris's own
  * connector is handed beside the stand-in as the driver hands it a session, and each agent calls its `knowledge_search`;
- * with `--lineage-hook <lineage-hook.mjs>` (the driver's, `src/Daoris.Desktop/Daoris.Desktop.Driver/Sessions/hooks/`) Claude
+ * with `--lineage-hook <lineage-hook.mjs>` (the driver's, `src/Daoris.Desktop/Daoris.Desktop.Driver/Participants/hooks/`) Claude
  * Code is handed the driver's lineage hook too. Both write the session's lineage file under the run's home (FABRIC-C1a).
  *
  * One run is one folder, `_fixtures/fabric-probe/<run>/` (gitignored): a scratch repository with one empty commit, a

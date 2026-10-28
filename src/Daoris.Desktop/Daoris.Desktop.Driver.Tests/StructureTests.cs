@@ -440,9 +440,9 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(21, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-xi: Platform through Roles); no namespace row: every namespace stays
+        // The ownership moves, bottom up (FOUNDATION1 mod-i through mod-xii: Platform through Participants); no namespace row: every namespace stays
         // Daoris.Driver (D166 point 4).
-        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
+        Assert.Equal(["Platform", "Store", "Settings", "Service", "Install", "Instance", "Events", "Knowledge", "Agents", "Workplace", "Roles", "Participants"], map.Subdomains.Where(subdomain => subdomain.Moved).Select(subdomain => subdomain.Name));
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
@@ -625,6 +625,28 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     }
 
     [Fact]
+    public void Workplace_uses_lower_vocabulary_facets_and_ports_and_no_Workflows_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owner == "Workflows" : path.StartsWith("Workflows/", StringComparison.Ordinal))).ToList();
+        Assert.True(edges.Count == 0, $"Workplace names Workflows in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
+    public void Workplace_uses_lower_vocabulary_facets_ports_and_homes_and_no_Review_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Workplace/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owner == "Review" : path.StartsWith("Review/", StringComparison.Ordinal) || path.StartsWith("Sessions/Heavy/", StringComparison.Ordinal))).ToList();
+        Assert.True(edges.Count == 0, $"Workplace names Review in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
     public void Roles_uses_lower_vocabulary_facets_and_ports_and_no_Context_Review_or_Work_orders_types()
     {
         var (map, _, _, analysis, _) = Tree.Value;
@@ -634,6 +656,42 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
                 ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
         Assert.True(edges.Count == 0, $"Roles names Context, Review or Work orders in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
+    public void Participants_uses_lower_vocabulary_facets_ports_and_homes_and_no_Context_Course_Help_or_Plugins_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        string[] owners = ["Context", "Course", "Help", "Plugins"];
+        string[] folders = ["Context/", "Course/", "Help/", "Plugins/"];
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Participants/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+        Assert.True(edges.Count == 0, $"Participants names Context, Course, Help or Plugins in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
+    public void Participants_uses_lower_homes_facets_and_ports_and_no_Review_Work_orders_or_Workflows_types()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        string[] owners = ["Review", "Work orders", "Workflows"];
+        string[] folders = ["Review/", "Sessions/Heavy/", "WorkOrders/", "Quests/", "Brainstorms/", "Workflows/"];
+        var edges = analysis.Edges.Where(edge => edge.File.StartsWith("Participants/", StringComparison.Ordinal)
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner)
+                ? owners.Contains(owner) : folders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal)))).ToList();
+        Assert.True(edges.Count == 0, $"Participants names Review, Work orders or Workflows in {edges.Count} semantic tuples:\n"
+            + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
+    }
+
+    [Fact]
+    public void Events_names_no_Help_room_type_for_the_attention_headline()
+    {
+        var (map, _, _, analysis, _) = Tree.Value;
+        var edges = analysis.Edges.Where(edge => edge.File == "Events/Domain/AttentionEvent.cs"
+            && edge.DeclaredIn.Any(path => map.Files.TryGetValue(path, out var owner) ? owner == "Help" : path.StartsWith("Help/", StringComparison.Ordinal))).ToList();
+        Assert.True(edges.Count == 0, $"AttentionEvent names Help in {edges.Count} semantic tuples:\n"
             + string.Join('\n', edges.Select(edge => $"{edge.File}: {edge.Type}")));
     }
 

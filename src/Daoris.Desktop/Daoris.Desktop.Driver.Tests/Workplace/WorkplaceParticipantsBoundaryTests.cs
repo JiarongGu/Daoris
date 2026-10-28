@@ -145,11 +145,11 @@ public sealed class WorkplaceParticipantsBoundaryTests : IDisposable
         // A readable file: resumable; one that does not read as a conversation: unread; one that will not open: unread.
         Directory.CreateDirectory(Sessions);
         var file = Path.Combine(Sessions, "s1.harness.json");
-        GoOnFiles.WriteConversation(file, "claude-code-acp", "c-1");
+        HarnessConversationFiles.Write(file, "claude-code-acp", "c-1");
         Assert.Equal("resumable", Assert.Single(ToolHomeLeftovers.Origins(_home, Records())!).Keeps);
         File.WriteAllText(file, "{broken");
         Assert.Equal("record-unread", Assert.Single(ToolHomeLeftovers.Origins(_home, Records())!).Keeps);
-        GoOnFiles.WriteConversation(file, "claude-code-acp", "c-1");
+        HarnessConversationFiles.Write(file, "claude-code-acp", "c-1");
         using (new FileStream(file, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             Assert.Equal("record-unread", Assert.Single(ToolHomeLeftovers.Origins(_home, Records())!).Keeps);
         File.Delete(file);

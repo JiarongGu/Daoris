@@ -33,17 +33,16 @@ namespace Daoris.Driver;
 public static class WorkflowRunBindings
 {
     /// <summary>The folder under the home's workflows that holds the runs.</summary>
-    public const string Folder = "runs";
+    public const string Folder = WorkplaceRunFiles.Runs;
 
-    /// <summary>The folder of a home's runs.</summary>
-    public static string FolderOf(string home) => Path.Combine(WorkflowStore.FolderOf(home), Folder);
+    /// <summary>The folder of a home's runs (the workplace's, <see cref="WorkplaceRunFiles.RunsFolder"/>).</summary>
+    public static string FolderOf(string home) => WorkplaceRunFiles.RunsFolder(home);
 
     /// <summary>A run's id as a file may be named by it: a quest's id, letters, digits, dashes and underscores, at most 64.</summary>
-    public static bool IsRunId(string? run) => run is not null && SafeNames.IsPlainId(run);
+    public static bool IsRunId(string? run) => WorkplaceRunFiles.IsRunId(run);
 
     /// <summary>A run's file, its id passed by <see cref="IsRunId"/>, so it names no path.</summary>
-    public static string PathOf(string home, string run) =>
-        IsRunId(run) ? Path.Combine(FolderOf(home), run + ".json") : throw new DriverException($"`{run}` is not a run's id.");
+    public static string PathOf(string home, string run) => WorkplaceRunFiles.PathOf(home, run);
 
     /// <summary>
     /// The run a chain's work in <paramref name="repository"/> is (design §1, §3.8): named by the chain's first quest there, which

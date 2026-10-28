@@ -105,11 +105,7 @@ internal sealed class HeavyStep : IDisposable
         $"\"{SystemShell()}\" /d /s /c \"{run}\"";
 
     /// <summary>The system's <c>cmd.exe</c>: <c>ComSpec</c> where it names one that is there, else the system folder's.</summary>
-    internal static string SystemShell()
-    {
-        var named = Environment.GetEnvironmentVariable("ComSpec");
-        return named is { Length: > 0 } && Path.IsPathRooted(named) && File.Exists(named) ? named : Path.Combine(Environment.SystemDirectory, "cmd.exe");
-    }
+    internal static string SystemShell() => GeneratedWriters.SystemShell();
 
     /// <summary>This process's environment with <paramref name="added"/> over it, as the block CreateProcess reads, sorted as the system keeps its own.</summary>
     internal static string EnvironmentBlock(IReadOnlyDictionary<string, string> added)

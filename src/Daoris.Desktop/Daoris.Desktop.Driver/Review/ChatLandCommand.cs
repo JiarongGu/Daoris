@@ -24,11 +24,11 @@ public static class ChatLandCommand
         ChatLandWorld world, string session, string tree, string chatRun, string recordsJson, string? entered, ChatLookPress? withoutLook,
         CancellationToken ct = default)
     {
-        var bound = ChatRuns.BindFirst(DriverConfig.Load(DriverConfig.ResolvePath(world.Home)), world.Home, chatRun, tree,
-            WorkflowCurrent.PluginsOf(WorkplacePlugins.Current.Load(world.Home)), DateTimeOffset.UtcNow);
-        if (bound.Failed is { } failed) return Print(world, TreesWords.BindFailed(session, failed));
+        var bound = WorkplaceWorkflows.Current.BindChatFirst(DriverConfig.Load(DriverConfig.ResolvePath(world.Home)), world.Home, chatRun, tree,
+            WorkplacePlugins.Current.Load(world.Home), DateTimeOffset.UtcNow);
+        if (bound is { } failed) return Print(world, TreesWords.BindFailed(session, failed));
 
-        var (line, live) = ChatRuns.PressOf(session, recordsJson);
+        var (line, live) = WorkplaceWorkflows.Current.ChatPressOf(session, recordsJson);
         if (live)
         {
             var route = withoutLook is null ? TreesRoutes.Land : TreesRoutes.LandWithoutLook;

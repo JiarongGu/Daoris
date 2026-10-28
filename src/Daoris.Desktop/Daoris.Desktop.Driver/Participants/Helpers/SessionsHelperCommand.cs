@@ -21,22 +21,23 @@ public static class SessionsHelperCommand
         "`helper` takes one session's id, the question in quotes, and `--agent <name>` where one agent is wanted.";
 
     /// <summary>What the words ask: <c>helper &lt;id&gt; "…" [--agent &lt;name&gt;]</c>, or null with what is wrong with them.</summary>
-    public static SessionsAsk? Read(IReadOnlyList<string> args, out string? problem)
+    public static TAsk? Read<TAsk>(IReadOnlyList<string> args, out string? problem, ParticipantsAskMaker<TAsk> make)
+        where TAsk : class
     {
         problem = null;
         switch (args)
         {
             case ["helper", "--approve", var ask] when Word(ask):
-                return new SessionsAsk("helper-approve") { Ids = [ask] };
+                return make("helper-approve", [ask], null, null, []);
             case ["helper", "--decline", var ask] when Word(ask):
-                return new SessionsAsk("helper-decline") { Ids = [ask] };
+                return make("helper-decline", [ask], null, null, []);
             case ["helper", "--approve" or "--decline", ..]:
                 problem = "`helper --approve` and `helper --decline` take one ask's id, as `#<ask>` is said on its session's page.";
                 return null;
             case ["helper", var id, var question] when Word(id) && question.Trim().Length > 0:
-                return new SessionsAsk("helper") { Ids = [id], Text = question.Trim() };
+                return make("helper", [id], question.Trim(), null, []);
             case ["helper", var id, var question, "--agent", var agent] when Word(id) && question.Trim().Length > 0 && Word(agent):
-                return new SessionsAsk("helper") { Ids = [id], Text = question.Trim(), Agent = agent.Trim() };
+                return make("helper", [id], question.Trim(), agent.Trim(), []);
         }
 
         problem = UsageProblem;
@@ -44,7 +45,7 @@ public static class SessionsHelperCommand
     }
 
     /// <summary>Write the ask for the driver's look, or say why not.</summary>
-    public static async Task<int> RunAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct = default)
+    public static async Task<int> RunAsync(IParticipantsWorld world, IParticipantsAsk ask, TextWriter output, CancellationToken ct = default)
     {
         var (id, question, agent) = (ask.Ids[0], ask.Text ?? "", ask.Agent);
         if (question.Length > MaxQuestion)
@@ -107,7 +108,7 @@ public static class SessionsHelperCommand
     /// judge the page's presses use (<see cref="HelperPersonWord"/>). The driver's look reads the file at its next look; the loop
     /// is not nudged from here, and the line says so. Exit 0 where the word stands, 1 where the judge refuses it.
     /// </summary>
-    public static Task<int> RunWordAsync(SessionsWorld world, SessionsAsk ask, TextWriter output)
+    public static Task<int> RunWordAsync(IParticipantsWorld world, IParticipantsAsk ask, TextWriter output)
     {
         var id = ask.Ids[0].TrimStart('#');
         var files = new HelperFiles(world.Home);
@@ -115,7 +116,7 @@ public static class SessionsHelperCommand
         {
             var answer = ask.Verb == "helper-approve"
                 ? HelperPersonWord.Approve(files, null, id)
-                : HelperPersonWord.Decline(files, new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions)), null, null, id);
+                : HelperPersonWord.Decline(files, WorkplaceEventRecords.Current.Open(DaorisHome.Entry(world.Home, HomeEntry.Sessions)), null, null, id);
             output.WriteLine($"sessions: {answer.Message}{(answer.Stands ? "" : " Nothing was changed.")}");
             return Task.FromResult(answer.Stands ? 0 : 1);
         }

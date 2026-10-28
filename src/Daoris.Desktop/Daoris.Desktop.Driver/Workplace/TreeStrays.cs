@@ -74,7 +74,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     /// hold: an opinion's copy (<see cref="OpinionTree.Prefix"/>) and a replay's tree (<see cref="BranchReplays.Prefix"/>). What a
     /// killed pass of theirs left, the next pass of its kind moves aside (<see cref="PassLeftovers"/>, STRAYOTHERS1).
     /// </summary>
-    private static readonly string[] OthersOwn = [OpinionTree.Prefix, BranchReplays.Prefix];
+    private static readonly string[] OthersOwn = [PassLeftovers.OpinionCopyPrefix, BranchReplays.Prefix];
 
     /// <summary>A folder judged to go: what it is, and for a cut-off opening its branch, the commit judged, its lock's reason and why.</summary>
     private sealed record Found(string Folder, string Kind, string? Branch = null, string? Tip = null, string? Reason = null, string? Clause = null)

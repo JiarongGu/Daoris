@@ -68,7 +68,7 @@ public sealed class BranchTidying(string home)
     /// the same written to <paramref name="log"/>. Never throws for a service or git that does not answer: it says so, once.
     /// </summary>
     /// <param name="reviewing">
-    /// The folders a review step in progress shows from (<see cref="ReviewingAsync"/>), asked with the sessions once a
+    /// The folders a review step in progress shows from (<see cref="ReviewServed.ReviewingAsync"/>), asked with the sessions once a
     /// repository is held: the tree each lies in is kept as a session's in use is. Null where nothing is reviewed here.
     /// </param>
     public async Task<IReadOnlyList<string>> LookAsync(
@@ -724,32 +724,6 @@ public sealed class BranchTidying(string home)
     private static string Size(long bytes) => bytes >= 1 << 20
         ? (bytes / 1048576.0).ToString("0.0 MB", System.Globalization.CultureInfo.InvariantCulture)
         : (bytes / 1024.0).ToString("0.0 KB", System.Globalization.CultureInfo.InvariantCulture);
-
-    /// <summary>
-    /// The folders a review step in progress shows from (REVIEWENV1d): the tree of the session that said each set-up waiting
-    /// for the person's verdict, read from the service's records as the review's gate reads them, whether or not this loop has
-    /// a desk, since <i>Show it again</i> serves from that tree; and, where the shell has a desk, each build it serves to a tab
-    /// now.
-    /// </summary>
-    public static async Task<IReadOnlyCollection<string>> ReviewingAsync(ReviewDesk? desk, ServiceClient service, CancellationToken ct)
-    {
-        var paths = desk?.Tabs.Serving.Select(serve => serve.Folder).ToList() ?? [];
-        var waiting = (await service.EveryQuestAsync(ct).ConfigureAwait(false))
-            .Where(quest => quest.SetUpIn is not null && quest.Status != "Declined")
-            .Select(quest => (Quest: quest, Newest: ReviewServed.Newest(quest)))
-            .Where(each => each.Newest is { Session.Length: > 0 }
-                           && ReviewServed.Answered(each.Quest, ReviewServed.Reference(each.Newest)) is null)
-            .Select(each => each.Newest!.Session!)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (waiting.Count > 0)
-        {
-            paths.AddRange((await service.SessionRecordsAsync(ct).ConfigureAwait(false))
-                .Where(record => waiting.Contains(record.Id) && record.Tree is { Length: > 0 })
-                .Select(record => record.Tree!));
-        }
-
-        return paths;
-    }
 
     /// <summary>
     /// The tree each path lies in, by the layout this home chose (<c>trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>): a

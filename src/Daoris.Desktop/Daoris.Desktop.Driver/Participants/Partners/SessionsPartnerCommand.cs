@@ -19,15 +19,16 @@ public static class SessionsPartnerCommand
         + "or a session's id and `--list`; or a piece's id and `--stop`.";
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
-    public static SessionsAsk? Read(IReadOnlyList<string> args, out string? problem)
+    public static TAsk? Read<TAsk>(IReadOnlyList<string> args, out string? problem, ParticipantsAskMaker<TAsk> make)
+        where TAsk : class
     {
         problem = null;
         switch (args)
         {
             case ["partner", var id, "--list"] when Word(id):
-                return new SessionsAsk("partner-list") { Ids = [id] };
+                return make("partner-list", [id], null, null, []);
             case ["partner", var piece, "--stop"] when Word(piece):
-                return new SessionsAsk("partner-stop") { Ids = [piece.TrimStart('#')] };
+                return make("partner-stop", [piece.TrimStart('#')], null, null, []);
             case ["partner", var id, var words, ..] when Word(id) && Word(words):
             {
                 var rest = args.Skip(3).ToList();
@@ -55,7 +56,7 @@ public static class SessionsPartnerCommand
                     return null;
                 }
 
-                return new SessionsAsk("partner") { Ids = [id], Text = words.Trim(), Agent = agent, Paths = paths };
+                return make("partner", [id], words.Trim(), agent, paths);
             }
         }
 
@@ -64,7 +65,7 @@ public static class SessionsPartnerCommand
     }
 
     /// <summary>Write the ask for the driver's look, or say why not.</summary>
-    public static async Task<int> RunAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct = default)
+    public static async Task<int> RunAsync(IParticipantsWorld world, IParticipantsAsk ask, TextWriter output, CancellationToken ct = default)
     {
         PartnerAsked asked;
         try
@@ -91,7 +92,7 @@ public static class SessionsPartnerCommand
     /// <c>partner &lt;session&gt; --list</c>: each piece the session asked, oldest first, with where it stands, the agent it went to, its
     /// partner's record and its frozen ref once imported. Read off the box, so it says the same with or without a running Daoris.
     /// </summary>
-    public static Task<int> ListAsync(SessionsWorld world, string session, TextWriter output)
+    public static Task<int> ListAsync(IParticipantsWorld world, string session, TextWriter output)
     {
         var files = new PartnerFiles(world.Home);
         var pieces = files.Asks().Where(ask => string.Equals(ask.Asker, session, StringComparison.Ordinal)).ToList();
@@ -120,7 +121,7 @@ public static class SessionsPartnerCommand
     /// The partner's record a piece's stop ends: only a piece started and not yet ended has one running. Null, said, where there is
     /// none to stop.
     /// </summary>
-    public static string? Working(SessionsWorld world, string piece, TextWriter output)
+    public static string? Working(IParticipantsWorld world, string piece, TextWriter output)
     {
         var files = new PartnerFiles(world.Home);
         if (files.ReadAsk(piece) is null)

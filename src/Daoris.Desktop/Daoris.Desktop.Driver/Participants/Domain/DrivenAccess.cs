@@ -130,7 +130,7 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
             ? new(permissions, said) { PermissionMode = mode, Repository = repository }
             : new(permissions, said)
             {
-                Posture = unrestricted ? $"{HelpModes.Required}{mode}" : $"{HelpModes.Required}{AcpSession.PersonAnswers}{mode}",
+                Posture = unrestricted ? $"{AgentPostures.Required}{mode}" : $"{AgentPostures.Required}{AcpSession.PersonAnswers}{mode}",
                 Repository = repository,
             };
     }
@@ -153,7 +153,7 @@ public sealed record DrivenAccess(string Permissions, string Said) : IAgentAcces
     /// <summary>A posture list as a sentence says it: <c>auto|acceptEdits</c> is <c>`auto` or `acceptEdits`</c>.</summary>
     private static string Spelled(string posture) => string.Join(
         " or ",
-        posture.TrimStart(HelpModes.Required).Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(mode => $"`{mode}`"));
+        posture.TrimStart(AgentPostures.Required).Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(mode => $"`{mode}`"));
 
     /// <summary>
     /// The permission prompts a record says it started under (AUTONOMY1a's <c>access</c>), read as a stored shape: a record from before

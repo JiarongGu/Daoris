@@ -12,8 +12,8 @@ namespace Daoris.Driver;
 /// <param name="Tree">Its tree here, which the record names.</param>
 public sealed record EntryLandingPart(string Session, string Tree)
 {
-    /// <summary>The landing gate its door read for this part (<see cref="SessionTrees.GateAsync"/>); null is a door that asked none.</summary>
-    public LandingGate? Gate { get; init; }
+    /// <summary>The landing gate its door read for this part (the review's <c>SessionTreeGates.GateAsync</c>); null is a door that asked none.</summary>
+    public IWorkplaceGate? Gate { get; init; }
 
     /// <summary>
     /// What the part is named for on its own (TREEFOLLOWNAME1): its own quest and title, which name its landing where its tree is on a
@@ -125,6 +125,20 @@ public static class EntryLandings
     /// merged pull request takes nothing more and the entry's next work makes a new branch, still named for its first quest.
     /// </summary>
     public static string Candidate(string name, int n) => n <= 1 ? name : $"{name}-{n}";
+
+    /// <summary>
+    /// The part a session's own Accept is named for (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): its entry's first, the records
+    /// sharing its key oldest first by <c>created</c> then id, as <see cref="SessionEntries.Read"/> orders an entry's parts. Null where
+    /// the session has no record here or is its entry's only part: it lands as before. <c>EntryAccepts.EntryLead</c> answers it.
+    /// </summary>
+    public static SessionRecord? LeadOf(IReadOnlyList<SessionRecord> records, string session)
+    {
+        if (records.FirstOrDefault(record => record.Id == session) is not { } own) return null;
+        var parts = records.Where(record => string.Equals(record.EntryKey, own.EntryKey, StringComparison.Ordinal))
+            .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
+            .ToList();
+        return parts.Count > 1 ? parts[0] : null;
+    }
 
     /// <summary>
     /// Whether <paramref name="earlier"/>'s work is superseded by a later part's (point 3), from two trials over trees: the later
@@ -301,7 +315,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     /// </summary>
     /// <param name="session">The part pressed: its landing records its own session.</param>
     /// <param name="entry">What the entry is named for: its first part's subject, as <see cref="PlanAsync"/> is handed it.</param>
-    internal async Task<LandingSubject> JoinAsync(string tree, string session, LandingSubject entry, CancellationToken ct, WorkflowProcess? process)
+    internal async Task<LandingSubject> JoinAsync(string tree, string session, LandingSubject entry, CancellationToken ct, IWorkplaceProcess? process)
     {
         var branch = await BranchAsync(tree, process, entry, ct).ConfigureAwait(false);
         return Joining(entry, session, branch is null ? LandingForm.Merge : LandingForm.Branch, branch ?? "");
@@ -324,7 +338,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     /// where that branch's pull request was merged or closed, the first of its successors (<see cref="EntryLandings.Candidate"/>) that
     /// is free or stands open. Null under a merge rule, which makes no branch.
     /// </summary>
-    private async Task<string?> BranchAsync(string tree, WorkflowProcess? process, LandingSubject subject, CancellationToken ct)
+    private async Task<string?> BranchAsync(string tree, IWorkplaceProcess? process, LandingSubject subject, CancellationToken ct)
     {
         var full = Path.GetFullPath(tree);
         var (workspace, repository) = context.OwnerOf(full);

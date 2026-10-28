@@ -54,7 +54,32 @@ Context owns instruction accounting and session-part composition in `Accounts/`,
 
 Participants judges `DrivenAccess` and supplies Agents with the `IAgentAccess` start contract. Agents owns the installed
 `LineageHook` data and required `LineageStreams` operation port; Participants installs the actual per-run watcher from
-`Sessions/LineageWiring.cs`. Script installation and the part's lineage end remain Participants' operations.
+`Participants/LineageWiring.cs`. Script installation and the part's lineage end remain Participants' operations.
+The driver's `Participants/` owns the participant's own files (FOUNDATION1 mod-xii, D212): the helpers and partners (their
+judges, rules, words, notes, pieces, instructions, files, doors, choices and verbs, `Domain/` and the two command files), the
+harness conversations and the chat run's bindings (`HarnessConversations`, `ChatRunBinds`), and the access rules, command and
+lease, the driven access, the child lineage with its bindings, wiring and hook script (`hooks/lineage-hook.mjs`, logical name
+`Daoris.Driver.lineage-hook.mjs`), the look's facts, the running sessions and the participant-work rule
+(`Domain/ParticipantWork.cs`). The files kept their sub-folders below the old `Conversations/` or `Sessions/` (`Domain/`, `Helpers/`,
+`Partners/`, `GoOn/`, `Chat/`); tests are mirrored under `Driver.Tests/Participants/`. Namespaces remain `Daoris.Driver`, and the
+files moved byte-identically; D212 records their upward cuts.
+Participants names nothing above it: no Context, Course, Help, Plugins, Review, Work orders or Workflows type. Ask Daoris's room spelling is Events' (`Events/Domain/AskDaorisRoom.cs`),
+which the attention headline reads and the participant-work rule aliases, so no higher type is named for it. The harness conversation's
+record and its file are Participants' (`Domain/HarnessConversation.cs`, `GoOn/HarnessConversationFiles.cs`), and Course's `GoOnFiles`
+keeps the marks, the new-session choices and the reopens told. `HelperPersonWord.Decline` takes Events' `ISessionEvents` and Agents'
+`ISessionOutput`; the terminal's no and the chat run's bind open the record and the plugin catalogue through the operations Context
+(`WorkplaceEventRecords`) and Plugins (`WorkplacePlugins`) install for Workplace. The required-posture mark is `AgentPostures.Required`.
+The reviewer's choice (`Domain/ReviewerChoice.cs`, with `AgentFamily`, `ReviewerPassed` and `ReviewerUnavailable`) and the posture words
+(`Domain/OpinionPosture.cs`) are Participants', the lowest reader, and Review reads them down; the helper's rule says where it was set with
+the commit rules' words. The loop's reserved start (`StartReservation`), its run (`StartRun`) and the slots a session holds (`ActiveSessions`)
+are Participants' too, the tree comparison is Workplace's `TreeNames.Same`, and a planned start and a bound run are held through
+`IPlannedStart` and `IRunBound`, which the planner's `Consideration` and the workflows' `WorkflowBind` implement. The looks' opinion facts are held
+through `IOpinionFact` and `IOpinionAct`, which `Workflows/OpinionFacts.cs` implements. The helper's and the partner's verbs read the terminal
+through `IParticipantsAsk` and `IParticipantsWorld`, which the sessions verb's `SessionsAsk` and `SessionsWorld` implement, and take the factory
+that builds the ask; a helper's wait reads the ask's words as Agents' `IAgentAskWords`. Two required ports, installed when the driver loads and
+resolved only where reached, carry the rest: `IParticipantsWorkOrders` (the connector's tool list a partner is denied by; Work orders installs it
+from `Sessions/Work/ParticipantsWorkOrdersWiring.cs`) and `IParticipantsWorkflows` (a chat run's bound test, its chat run, its bind and its
+process, over Workplace's `IWorkplaceProcess`; Workflows installs it from `Workflows/ParticipantsWorkflowsWiring.cs`).
 
 Plugins supplies adapters, account declarations and skill composition through `IAgentPlugins`; Agents keeps adapter-set
 joining, provenance reading, skill handing and cleanup. `Plugins/AgentPluginWiring.cs` installs the required catalogue
@@ -89,10 +114,10 @@ hand-over and limit-move suffixes in its cleanup inventory; Course's public suff
 
 Workplace names no Participants type. Deletion's binding forget and the tool-home leftovers' kept-conversation read go through
 `IWorkplaceHarnessBindings`, which `HarnessConversations` implements directly, opened by the required
-`IWorkplaceHarnessBindingStores` that `Conversations/GoOn/WorkplaceHarnessBindingsWiring.cs` installs; `SessionHomeFiles` owns
+`IWorkplaceHarnessBindingStores` that `Participants/GoOn/WorkplaceHarnessBindingsWiring.cs` installs; `SessionHomeFiles` owns
 the `.harness.json` and `.imported` suffixes, which the Participants constants alias. The landing's effective rule and the merges
 note read the access setup through `IWorkplaceAccessSetup` and the `IWorkplaceResolvedAccess` that `ResolvedAccess` implements,
-installed from `Sessions/WorkplaceAccessSetupWiring.cs`: the rule itself stays Participants', where the foundation design's
+installed from `Participants/WorkplaceAccessSetupWiring.cs`: the rule itself stays Participants', where the foundation design's
 placement table puts `Domain/AccessRules`. What holds a tree for a helper's wait is Workplace's pure `HelperWaitTrees`, which
 `HelperWaits` delegates to. The piece keeper takes the piece's id and base commit rather than the ask, and the keeper's three
 state words and the reading of the piece's ref are Workplace's pure `PieceKeptStates`, which `PartnerStates` and
@@ -119,6 +144,33 @@ evidence at a lost session's end. The archive's judgement and an entry's Accept 
 `IWorkplaceSessionRow`, which `SessionGrouping` implements; the entries' look (`SessionEntries.Read` and `LookAsync`) and
 the abandon plan's records over the work's pieces are Work orders', while `PartBegan` and the entry records stay in
 `Workplace/SessionEntries.cs`, the file the page's parts flow reads its words from.
+
+Workplace names no Workflows type. Where a run's files lie and how its id reads are Workplace's `WorkplaceRunFiles` (the runs and
+looks folders, the opinion gates' folder, the chat key and its record), which `WorkflowRunBindings` and `ChatRuns` answer through, so
+the history, its clearing and a session's inventory name no workflow. The trees, the auto-lander and the end judgement read the
+process a run follows through `IWorkplaceProcess`, which `WorkflowProcess` implements: whether a named workflow governs the work,
+the landing it lands by, why its run or landing cannot start, the version that decided and the second-opinion rule. The rest is
+asked of Workflows through two required holders it installs from `Workflows/WorkplaceWorkflowsWiring.cs`: `IWorkplaceWorkflows`
+(the landed route's accepted declaration, a quest's process read from the chain the service answers, a chat run's bind and its press)
+and `IWorkplaceGateWorkflows`, which assembles the landing gate (the run's process, its workflow part and its graph's, then the
+review and the second opinion over that one process, in `Workflows/TreeGateWorkflows.cs`) while `TreeGates` keeps the git reads it
+uses (the second opinion's part is Review's `TreeGateOpinions`). `trees.WorkflowAsync` is Workflows' extension of `SessionTrees`, and `WorkflowProcesses.ConcludedAsync`
+reads a concluded run's process for the second opinion owed beside the landing.
+
+Workplace names no Review type. The trees read the landing gate a door hands them as `IWorkplaceGate` (the tip it was judged at and
+`WithTip`, the first part that holds as a landing's refusal, the process it was read with, what the review and the second opinion keep on
+the landing's record, whether the graph's part asks a pass, and its plan lines and machine-log line), which Review's `LandingGate`
+implements. `SessionTrees.GateOfAsync` reads it over `IReviewWorld`, the service's quests and asks, which is Workplace's, through the
+Workflows port; Review's `SessionTreeGates` answers the same gate as the `LandingGate` record every other door reads (`trees.GateAsync`,
+with `ReviewAsync` and `OpinionAsync`), the second opinion's part being `Review/TreeGateOpinions.cs`. The look reads its world as
+`IWorkplaceLandingWorld`; Review's `IAutoLandingWorld` adds the opinions (`IOpinionWorld`), and `ServiceAutoLandingWorld` is Review's. A
+second opinion a held landing is owed goes through `IWorkplaceReview`, which `Review/WorkplaceReviewWiring.cs` installs. The press on a chat
+run's work (`ChatPresses`, `ChatLandCommand`) and an entry's Accept (`EntryAccepts`) are Review's, since they read the gate and press the
+opinion; the entry's lead is Workplace's `EntryLandings.LeadOf`. The words the trees and the review spell alike are Workplace's, and
+`ReviewDoors`, `SessionChecks`, `OpinionTree`, `OpinionSource` and `HeavyStep` alias or answer through them: the landing doors
+(`LandingDoors`), the checks' file suffix (`SessionHomeFiles.ChecksSuffix`), the opinion copy's prefix (`PassLeftovers.OpinionCopyPrefix`), a
+commit rule's two sources and the system shell (`GeneratedWriters.SystemShell`). The folders a review step shows from
+(`ReviewServed.ReviewingAsync`) are Review's, and the branch tidy takes them as a delegate.
 
 Work orders supplies ask, go-ahead and channel instruction sections through the required `AgentWorkWords` port,
 installed by `Quests/AgentWorkWordsWiring.cs`. Agents owns the shared channel input and spawn variable names;

@@ -34,14 +34,7 @@ public sealed class EntryAccepts(
     /// sharing its key oldest first by <c>created</c> then id, as <see cref="SessionEntries.Read"/> orders an entry's parts. Null where
     /// the session has no record here or is its entry's only part: it lands as before.
     /// </summary>
-    public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session)
-    {
-        if (records.FirstOrDefault(record => record.Id == session) is not { } own) return null;
-        var parts = records.Where(record => string.Equals(record.EntryKey, own.EntryKey, StringComparison.Ordinal))
-            .OrderBy(record => record.Created).ThenBy(record => record.Id, StringComparer.Ordinal)
-            .ToList();
-        return parts.Count > 1 ? parts[0] : null;
-    }
+    public static SessionRecord? EntryLead(IReadOnlyList<SessionRecord> records, string session) => EntryLandings.LeadOf(records, session);
 
     /// <summary>An ask's own entries (point 4): one per repository, by its name, never its intake.</summary>
     public static IReadOnlyList<SessionEntry> EntriesOf(string ask, IReadOnlyList<SessionEntry> entries) =>
@@ -78,7 +71,7 @@ public sealed class EntryAccepts(
         foreach (var part in parts)
         {
             var quest = entry.Parts.First(each => each.Session == part.Session).Quest;
-            pressed.Add(part with { Gate = await presses.PressedAsync(part.Session, part.Gate!, null, part.Tree, quest, cancellationToken).ConfigureAwait(false) });
+            pressed.Add(part with { Gate = await presses.PressedAsync(part.Session, (LandingGate)part.Gate!, null, part.Tree, quest, cancellationToken).ConfigureAwait(false) });
         }
 
         var landed = await trees.LandEntryAsync(pressed, subject, leaveOut, cancellationToken, inUse).ConfigureAwait(false);
@@ -95,7 +88,7 @@ public sealed class EntryAccepts(
             if (part.Landing is not { } its) continue;
             if (its.Landed) events.Keep(part.Session, LandingRules.Note(its), line => say(part.Session, line));
             var gate = pressed.First(each => each.Session == part.Session);
-            if (log is not null && LandingGateWords.Held(part.Session, trees.Owner(gate.Tree), gate.Gate!, its, door) is { } held)
+            if (log is not null && gate.Gate!.Held(part.Session, trees.Owner(gate.Tree), its, door) is { } held)
             {
                 SessionLog.WriteLanding(log, held);
             }
