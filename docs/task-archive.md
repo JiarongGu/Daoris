@@ -15,6 +15,13 @@ Completed 2026-10-28 (quest `#3d2f1806497d`): one machine-wide admission in the 
 > **TESTPATIENCE3:** the TypeScript CLI tests (`src/Daoris.Cli/test`) and tool tests (`src/Daoris.Cli/tool-test`, `tools/*.test.mjs`) wait on their signals with one shared patience, as TESTPATIENCE2 made the desktop tests do, with a census that keeps new short waits out. Evidence: 2026-10-28, candidates `8ec210d` and `71d60dd` failed on the plugin landing test's 68 s "no answer to hook/work/land", `setup-kit.test.ts`'s ANSWER1b stub window of 10000 ms and `merge-branch.test.ts`'s 3000-try gate-tree poll, beside a loaded machine. (Quest `#9fab63fff94a`; an earlier entry of this id is the driver's tick tests.)
 
 Completed 2026-10-28: `PATIENCE` (two minutes) is exported by `src/Daoris.Cli/test/_fixture.ts` and read at 39 waits in 8 files; the bounds that are the claim, the staging delays and the product inputs stay, each marked. `tools/test-patience.mjs` (with its test, run by `verify`) refuses a new fixed wait of a second or more under it unless marked. Detail: FIX-LOG's TESTPATIENCE3 entry; the check is in `docs/development.md`'s census table.
+## INTEGRATE1c — mechanical resolution completed, the command-free part (2026-10-28, D215)
+
+> - [ ] **INTEGRATE1c — mechanical resolution completed** (merge tool and its driver twins). A member another member or the line already holds is recorded as contained, not set aside; declared row tables and line rules settle by rule. Contract and proof: §11 row c.
+
+(Quest `#215707073ceb`, asked by `#b233a0`.)
+
+**Outcome** 2026-10-28: built, apart from the line rules' `run` writers, which wait for row d's acceptance (C6) and stay on `INTEGRATE1d`. A member the line or an earlier member holds is recorded contained (provisional on the earlier one, settled at its promotion, given back to be judged again otherwise); the line's declared `by: rows` tables merge by the base in the tool and the driver's replay and plan; the replay sets apart what union joined. Detail and proof: D215's and D87's notes of the day.
 
 ## QUEUEDRAIN1 — a dropped merge-queue candidate's gates and probes end when it is dropped (2026-10-28)
 

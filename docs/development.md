@@ -260,7 +260,13 @@ The invocation starts the queue's runner where none runs (`node tools/merge-bran
 back* with why (1). Each enqueue has its own request id, retained through re-forms and outcomes; requeueing the same tip waits
 for that occurrence while the earlier hand-back stays in history. Ending the wait leaves the request queued. The runner forms a **candidate** in `local/scope-tree`, a
 worktree of its own with warm builds: every queued branch, up to eight in arrival order, each merged on the last with
-`--no-ff` and its own message. A branch the resolvers cannot merge is set aside and handed back. On the candidate it runs the
+`--no-ff` and its own message. A branch the resolvers cannot merge is set aside and handed back. The resolvers take the backlog
+and each row table `daoris.gates.json`'s `integration.merge` declares `by: rows` (read from the side the work lands on, never the branch's
+copy) by the merge base: a row a side added is kept, one removed is dropped, rows both add at one place are both kept, a row both changed
+is a conflict (INTEGRATE1c; a `run` writer waits for its own acceptance). A branch whose work the candidate holds already is **contained**,
+never set aside: one the line holds is settled at once; one an earlier member holds stays on the candidate, settled only when that member
+promotes, and merged or found contained again, as its own request, when the candidate ends otherwise (a hand-back, a split, a re-form, a
+drop). `--queue` shows it. On the candidate it runs the
 **scoped set**: the blocking checks always; each gate the candidate's paths reach, a .NET fast half whole; the `Process` halves
 by class; the git half within an eight-minute budget, the rest deferred; a gate holding an open known red, whatever is
 reached. Browser specs and rehearsals are deferred to the background run. A gate whose pass stands on the candidate's tree is

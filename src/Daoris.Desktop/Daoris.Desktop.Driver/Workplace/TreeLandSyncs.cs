@@ -31,6 +31,12 @@ internal sealed record LandReplay(string Now, IReadOnlyList<LandingCommit> Lande
     /// the lines kept and dropped. Null where it settled none.
     /// </summary>
     internal BacklogMerge.Settled? Backlog { get; init; }
+
+    /// <summary>The declared row tables the replay settled by the merge base the same way (INTEGRATE1c): each path and its lines kept and dropped.</summary>
+    internal IReadOnlyList<BacklogMerge.Settled> Tables { get; init; } = [];
+
+    /// <summary>The joins union left in the replay that were set apart in a commit on top (INTEGRATE1c): each file, line and label.</summary>
+    internal IReadOnlyList<UnionJoins.Set> Joined { get; init; } = [];
 }
 
 /// <summary>
@@ -143,6 +149,8 @@ internal sealed class TreeLandSyncs(TreeContext context, BranchReplays replays)
             Generated = made.Generated,
             Written = made.Written,
             Backlog = made.Backlog,
+            Tables = made.Tables,
+            Joined = made.Joined,
         }, null);
     }
 
@@ -303,7 +311,24 @@ public static class LandingSyncWords
     /// then the generated files it took at the line's copy. Nothing where it settled neither.
     /// </summary>
     internal static string Settled(LandReplay replay) =>
-        Backlog(replay.Backlog?.Path, replay.Backlog?.Kept ?? 0, replay.Backlog?.Dropped ?? 0) + Generated(replay);
+        Backlog(replay.Backlog?.Path, replay.Backlog?.Kept ?? 0, replay.Backlog?.Dropped ?? 0)
+        + string.Concat(replay.Tables.Select(table => Table(table.Path, table.Kept, table.Dropped))) + Joined(replay.Joined) + Generated(replay);
+
+    /// <summary>
+    /// The joins union left in a replay and Daoris set apart (INTEGRATE1c), said after the sentence as the merge tool says them: each
+    /// file and the line its label or heading now stands on. Nothing where it set none.
+    /// </summary>
+    internal static string Joined(IReadOnlyList<UnionJoins.Set> joined) => joined.Count == 0 ? ""
+        : " Set apart in a commit on top, where union had joined it to the line above: "
+          + string.Join(", ", joined.Select(each => $"`{each.Path}:{each.Line}`")) + ".";
+
+    /// <summary>
+    /// A declared row table a replay settled by the merge base (INTEGRATE1c), said after the sentence as <see cref="Backlog"/> says the
+    /// backlog: the lines a side added kept and those a side removed dropped.
+    /// </summary>
+    public static string Table(string path, int kept, int dropped) =>
+        $" The declared row table `{path}` conflicted with the line's and was settled by the merge base: {kept} line(s) a side added kept, "
+        + $"{dropped} line(s) a side removed dropped.";
 
     /// <summary>
     /// The backlog a replay settled by the merge base (LANDBACKLOG1), said after the sentence: the lines a side added kept and those a

@@ -141,6 +141,96 @@ public sealed class LandBacklogLandingTests : LandedFixture
         Assert.Equal(before, await StateAsync(root, tree));
     }
 
+    private const string Census = "# Guide\n\n| When | Run |\n|---|---|\n| a test names a login | `node tools/live-logins.mjs` |\n{0}\nNext.\n";
+
+    private static string CensusWith(params string[] rows) => string.Format(Census, string.Concat(rows.Select(row => row + "\n")));
+
+    private const string RowsDeclared = "{ \"integration\": { \"merge\": [ { \"paths\": \"docs/development.md\", \"by\": \"rows\" } ] } }\n";
+
+    /// <summary>
+    /// INTEGRATE1c: the line's <c>daoris.gates.json</c> declares <c>docs/development.md</c> a row table. The work and the line each add a
+    /// row at the census table's last line (the merge queue's set-aside of 2026-10-28), which git reads as one conflict: the press lands
+    /// the work replayed with both rows, the line's first, and says it settled the table.
+    /// </summary>
+    [Fact]
+    public async Task A_conflict_only_in_a_declared_row_table_is_settled_by_its_base_and_lands_replayed()
+    {
+        var root = await RepositoryAsync("engine");
+        Directory.CreateDirectory(Path.Combine(root, "docs"));
+        await File.WriteAllTextAsync(Path.Combine(root, "docs", "development.md"), CensusWith());
+        await CommitAsync(root, "daoris.gates.json", RowsDeclared, "the row table declared");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, Path.Combine("docs", "development.md"), CensusWith("| a tool reads git | `node tools/optional-locks.mjs` |"), "the work");
+        await CommitAsync(root, Path.Combine("docs", "development.md"), CensusWith("| a test waits | `node tools/short-waits.mjs` |"), "the line's row");
+
+        var plan = await trees.PlanAsync(tree.Path, Subject);
+        Assert.Null(plan.Conflict);
+
+        var landed = await trees.LandAsync(tree.Path, Subject);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Contains(
+            " The declared row table `docs/development.md` conflicted with the line's and was settled by the merge base: 2 line(s) a side added kept, "
+            + "0 line(s) a side removed dropped.",
+            landed.Message);
+        Assert.DoesNotContain("The backlog", landed.Message);
+        Assert.Equal(
+            CensusWith("| a test waits | `node tools/short-waits.mjs` |", "| a tool reads git | `node tools/optional-locks.mjs` |"),
+            await GitAsync(root, "show", $"{Branch}:docs/development.md"));
+    }
+
+    /// <summary>The same table declared only by the session's own commit is not the line's declaration: refused as any file's conflict is.</summary>
+    [Fact]
+    public async Task A_row_table_only_the_session_declared_is_not_settled()
+    {
+        var root = await RepositoryAsync("engine");
+        Directory.CreateDirectory(Path.Combine(root, "docs"));
+        await CommitAsync(root, Path.Combine("docs", "development.md"), CensusWith(), "the guide");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(tree.Path, "daoris.gates.json"), RowsDeclared);
+        await CommitAsync(tree.Path, Path.Combine("docs", "development.md"), CensusWith("| a tool reads git | `node tools/optional-locks.mjs` |"), "the work");
+        await CommitAsync(root, Path.Combine("docs", "development.md"), CensusWith("| a test waits | `node tools/short-waits.mjs` |"), "the line's row");
+        var before = await StateAsync(root, tree);
+
+        var refused = await trees.LandAsync(tree.Path, Subject);
+
+        Assert.False(refused.Landed, refused.Message);
+        Assert.Contains("Merge conflict in docs/development.md", refused.Conflict!.Says);
+        Assert.Equal(before, await StateAsync(root, tree));
+    }
+
+    /// <summary>
+    /// INTEGRATE1c: the work and the line each append an entry to a union-merged record (the task archive). Git's union merge keeps the
+    /// blank line they both open with once, so the work's heading lands under the line's last line; the replay sets it apart in a commit on
+    /// top, as the merge tool does (UNIONGLUE1), and says so. The entry the line already held that way is left alone.
+    /// </summary>
+    [Fact]
+    public async Task A_heading_union_joined_to_the_line_above_in_the_replay_is_set_apart_in_a_commit_on_top()
+    {
+        var root = await RepositoryAsync("engine");
+        Directory.CreateDirectory(Path.Combine(root, "docs"));
+        const string Archive = "# Archive\n\n## OLD - old (2026-10-01)\nOld.\n";
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "docs/task-archive.md merge=union\n");
+        await CommitAsync(root, Path.Combine("docs", "task-archive.md"), Archive, "the archive");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, Path.Combine("docs", "task-archive.md"), Archive + "\n## B - b (2026-10-28)\nOutcome B.\n", "the work");
+        await CommitAsync(root, Path.Combine("docs", "task-archive.md"), Archive + "\n## A - a (2026-10-27)\nOutcome A.\n", "the line's entry");
+        var line = await HeadAsync(root);
+
+        var landed = await trees.LandAsync(tree.Path, Subject);
+
+        Assert.True(landed.Landed, landed.Message);
+        Assert.Contains(" Set apart in a commit on top, where union had joined it to the line above: `docs/task-archive.md:", landed.Message);
+        Assert.Equal(
+            Archive + "\n## A - a (2026-10-27)\nOutcome A.\n\n## B - b (2026-10-28)\nOutcome B.\n",
+            await GitAsync(root, "show", $"{Branch}:docs/task-archive.md"));
+        Assert.Equal(line, (await GitAsync(root, "rev-parse", $"{Branch}~2")).Trim());
+        Assert.Equal("Set apart what union joined in the replay", (await GitAsync(root, "log", "-1", "--format=%s", Branch)).Trim());
+    }
+
     private static async Task<string> HeadAsync(string place) => (await GitAsync(place, "rev-parse", "HEAD")).Trim();
 
     /// <summary>How many working trees git lists for the checkout: a tree of Daoris's own made for a replay is gone after it.</summary>

@@ -317,6 +317,12 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
 
         /// <summary>The declared backlog it settled by the merge base where it conflicted (LANDBACKLOG1); null where it settled none.</summary>
         public BacklogMerge.Settled? Backlog { get; init; }
+
+        /// <summary>The declared row tables it settled the same way where they conflicted (INTEGRATE1c); none where it settled none.</summary>
+        public IReadOnlyList<BacklogMerge.Settled> Tables { get; init; } = [];
+
+        /// <summary>The joins union left that it set apart, in a commit on top (INTEGRATE1c); none where it set none.</summary>
+        public IReadOnlyList<UnionJoins.Set> Joined { get; init; } = [];
     }
 
     /// <summary>
@@ -344,6 +350,13 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
         try
         {
             var made = await RebaseStretchesAsync(aside, onto, stretches, switchFirst: false, ct, landing: new BacklogMerge.Stops(onto)).ConfigureAwait(false);
+            if (made.Now is not null)
+            {
+                // INTEGRATE1c: what union joined in the replay is set apart as the merge tool sets it, in a commit on top.
+                var joined = await UnionJoins.SetApartAsync(aside, onto, commits[^1].Sha, ct).ConfigureAwait(false);
+                if (joined.Count > 0) made = made with { Now = await CommitOfAsync(aside, "HEAD", ct).ConfigureAwait(false) ?? made.Now, Joined = joined };
+            }
+
             if (made.Now is null || made.Generated.Count == 0) return made;
             var writers = await AcceptedWritersAsync(root, repository, workspace, onto, ct).ConfigureAwait(false);
             var written = await GeneratedWriters.WriteAsync(aside, writers, made.Generated, ct).ConfigureAwait(false);
@@ -449,7 +462,7 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             current = await CommitOfAsync(tree, "HEAD", ct).ConfigureAwait(false) ?? current;
         }
 
-        return new(current, "", false) { Generated = generated, Backlog = landing?.Settled };
+        return new(current, "", false) { Generated = generated, Backlog = landing?.Settled, Tables = landing?.Tables ?? [] };
     }
 
     /// <summary>
@@ -475,20 +488,35 @@ internal sealed class BranchReplays(TreeContext context, PassLeftovers leftovers
             if (listed != 0 || paths.Length == 0) break;
             // The backlog is asked of only where the generated files alone do not settle the stop, so a replay that meets none reads no
             // manifest; its other files must all be generated, and its own conflict must settle by its base.
-            string? settled = null;
+            // INTEGRATE1c: the declared row tables are settled by the merge base as the backlog is.
+            var settled = new HashSet<string>(StringComparer.Ordinal);
             if (await GeneratedPaths.AllAsync(tree, paths, ct).ConfigureAwait(false) is not true)
             {
-                settled = await backlog.DeclaredAsync(tree, ct).ConfigureAwait(false);
-                var others = paths.Where(path => path != settled).ToArray();
-                if (settled is null || others.Length == paths.Length
-                    || (others.Length > 0 && await GeneratedPaths.AllAsync(tree, others, ct).ConfigureAwait(false) is not true)
-                    || !await backlog.SettleAsync(tree, settled, ct).ConfigureAwait(false))
+                var declared = await backlog.DeclaredAsync(tree, ct).ConfigureAwait(false);
+                var mine = paths.Where(declared.Settles).ToArray();
+                var others = paths.Where(path => !declared.Settles(path)).ToArray();
+                if (mine.Length == 0
+                    || (others.Length > 0 && await GeneratedPaths.AllAsync(tree, others, ct).ConfigureAwait(false) is not true))
                 {
                     break;
                 }
+
+                var all = true;
+                foreach (var path in mine)
+                {
+                    if (!await backlog.SettleAsync(tree, path, ct).ConfigureAwait(false))
+                    {
+                        all = false;
+                        break;
+                    }
+
+                    settled.Add(path);
+                }
+
+                if (!all) break;
             }
 
-            foreach (var path in paths.Where(path => path != settled))
+            foreach (var path in paths.Where(path => !settled.Contains(path)))
             {
                 // The line's side, `--ours` in a rebase; a path the line removed goes, as it does there.
                 var (taken, _, _) = await WorkingTree.GitAsync(tree, ["checkout", "--ours", "--", path], ct).ConfigureAwait(false);

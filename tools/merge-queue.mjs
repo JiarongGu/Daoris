@@ -146,7 +146,8 @@ export function enqueue(queue, { branch, tip, message, at, requeue = false }) {
   if (previewed.tip !== tip) {
     return { refused: `${branch}'s tip is ${tip.slice(0, 7)}, and its last preview showed ${previewed.tip.slice(0, 7)}: preview it again (a records commit comes before the preview), then queue it` };
   }
-  if (queue.queued.some((each) => each.branch === branch) || queue.candidate?.members.some((each) => each.branch === branch && !each.handedBack)) {
+  if (queue.queued.some((each) => each.branch === branch) || queue.candidate?.members.some((each) => each.branch === branch && !each.handedBack)
+    || queue.candidate?.contained?.some((each) => each.branch === branch)) {
     return { refused: `${branch} is queued already: --drop-batch ${branch} takes it off, then queue it again` };
   }
   const entry = { branch, tip, request: randomUUID(), message: Buffer.from(message, 'utf8').toString('base64'), at, ...(requeue ? { requeue } : {}) };

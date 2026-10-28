@@ -313,6 +313,13 @@ describe('a contained member (INTEGRATE1c)', () => {
     assert.deepEqual(q.requestsOf(null, retained).map((each) => each.branch), ['b1', 'b3']);
   });
 
+  test('a branch contained on a candidate is queued already: it is not queued a second time', async () => {
+    const formed = await q.formCandidate({ base: 'm0', members: members(2), at: AT, merge: holds('b1', 'b2') });
+    const tip = 't2'.padEnd(40, '0');
+    const queue = q.notePreview({ ...q.emptyQueue(), candidate: formed.candidate }, { branch: 'b2', tip, base: 'm0', at: AT });
+    assert.match(q.enqueue(queue, { branch: 'b2', tip, message: 'x', at: AT }).refused ?? '', /b2 is queued already/);
+  });
+
   test("a drop that ends a candidate hands its contained member back with the rest; one dropped by name alone leaves the candidate standing", async () => {
     const formed = await q.formCandidate({ base: 'm0', members: members(3), at: AT, merge: holds('b1', 'b2') });
     const queue = { ...q.emptyQueue(), candidate: formed.candidate };
