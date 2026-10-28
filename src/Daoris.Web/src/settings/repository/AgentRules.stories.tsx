@@ -23,8 +23,8 @@ const DEFAULTS: AgentRulesState['defaults'] = [
   },
   // A hook, not a rule (PERM3): the driver answers the tools it judges, and no rules.
   {
-    id: 'tree-guard', list: 'deny', on: true, rules: [], hook: 'Edit|Write|MultiEdit|NotebookEdit',
-    why: 'A session writes files only inside its own tree: an edit or a write anywhere else is refused, through links as well. A change needed elsewhere is a quest.',
+    id: 'tree-guard', list: 'deny', on: true, rules: [], hook: 'Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell',
+    why: 'A session writes files only inside its own tree: an edit, a write or a shell command\'s write anywhere else is refused, through links as well. A change needed elsewhere is a quest.',
   },
 ];
 

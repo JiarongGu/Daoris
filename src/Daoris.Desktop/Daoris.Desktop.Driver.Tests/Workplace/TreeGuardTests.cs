@@ -188,15 +188,250 @@ public sealed class TreeGuardTests : IDisposable
         Assert.Empty(TreeGuard.For(_home, _home).Also);
     }
 
-    /// <summary>A tool with no path this guard knows how to judge — a shell command — is not its call.</summary>
-    [Fact]
-    public async Task A_shell_command_is_not_this_guards_to_judge()
+    // ——— A shell's writes (TREESHELL1): the targets it can read, judged as an edit tool's path is.
+
+    /// <summary>
+    /// Each form the guard reads, aimed outside the tree and inside it. The outside one is refused in the guard's own
+    /// sentence; the inside one gets no decision. <c>{0}</c> is the target, a path with forward slashes, which both
+    /// shells and both platforms take.
+    /// </summary>
+    [Theory]
+    [InlineData("Bash", "echo x > \"{0}/a.txt\"")]
+    [InlineData("Bash", "echo x >> \"{0}/a.txt\"")]
+    [InlineData("Bash", "echo x >\"{0}/a.txt\"")]
+    [InlineData("Bash", "echo x 2> \"{0}/a.txt\"")]
+    [InlineData("Bash", "echo x &> \"{0}/a.txt\"")]
+    [InlineData("Bash", "echo x | tee \"{0}/a.txt\"")]
+    [InlineData("Bash", "echo x | tee -a \"{0}/a.txt\"")]
+    [InlineData("Bash", "cp a.txt \"{0}/a.txt\"")]
+    [InlineData("Bash", "cp -r a.txt b.txt \"{0}/\"")]
+    [InlineData("Bash", "cp -t \"{0}\" a.txt")]
+    [InlineData("Bash", "mv a.txt \"{0}/a.txt\"")]
+    [InlineData("Bash", "rm \"{0}/a.txt\"")]
+    [InlineData("Bash", "rm -rf -- \"{0}/a.txt\"")]
+    [InlineData("Bash", "FOO=1 sudo rm \"{0}/a.txt\"")]
+    [InlineData("Bash", "bash -c 'echo x > \"{0}/a.txt\"'")]
+    [InlineData("PowerShell", "Set-Content -Path \"{0}/a.txt\" -Value x")]
+    [InlineData("PowerShell", "Set-Content \"{0}/a.txt\" x")]
+    [InlineData("PowerShell", "'x' | Out-File -FilePath \"{0}/a.txt\"")]
+    [InlineData("PowerShell", "Out-File -Append \"{0}/a.txt\" -InputObject x")]
+    [InlineData("PowerShell", "Add-Content -LiteralPath \"{0}/a.txt\" -Value x")]
+    [InlineData("PowerShell", "'x' >> \"{0}/a.txt\"")]
+    [InlineData("PowerShell", "Copy-Item a.txt \"{0}/a.txt\" -Force")]
+    [InlineData("PowerShell", "Move-Item -Path a.txt -Destination \"{0}/a.txt\"")]
+    [InlineData("PowerShell", "Remove-Item \"{0}/a.txt\" -Recurse -Force")]
+    public async Task A_shell_write_to_a_target_it_reads_is_refused_outside_the_tree_and_left_alone_inside(string tool, string form)
     {
         var (tree, outside) = Trees();
 
-        var (_, output) = await Hook(tree, Call("Bash", new JsonObject { ["command"] = $"echo x > \"{Path.Combine(outside, "a.txt")}\"" }, tree));
+        var refused = await Hook(tree, Shell(tool, string.Format(form, Slashed(outside)), tree));
+        var allowed = await Hook(tree, Shell(tool, string.Format(form, Slashed(Path.Combine(tree, "src"))), tree));
 
-        Assert.Equal("", output.Trim());
+        Assert.Equal(0, refused.Code);
+        var reason = (string?)JsonNode.Parse(refused.Output)!["hookSpecificOutput"]!["permissionDecisionReason"] ?? "";
+        Assert.Contains("outside this session's tree", reason);
+        Assert.Contains("quest", reason);
+        Assert.Equal("", allowed.Output.Trim());
+    }
+
+    /// <summary>A <c>mv</c> takes its source out of where it was: a source outside the tree is a delete there.</summary>
+    [Fact]
+    public async Task A_move_out_of_a_source_outside_the_tree_is_refused_too()
+    {
+        var (tree, outside) = Trees();
+
+        var (_, output) = await Hook(tree, Shell("Bash", $"mv \"{Slashed(outside)}/a.txt\" src/", tree));
+
+        Assert.Contains("\"deny\"", output);
+    }
+
+    /// <summary>
+    /// A relative target is the call's working directory's, not the tree's: the harness's own cwd is where the shell
+    /// writes it. A <c>..</c> climbs out of the tree from inside it, and a cwd outside makes a plain name outside.
+    /// </summary>
+    [Fact]
+    public async Task A_relative_target_is_resolved_against_the_calls_working_directory()
+    {
+        var (tree, outside) = Trees();
+
+        var inside = await Hook(tree, Shell("Bash", "echo x > src/a.txt", tree));
+        var climbs = await Hook(tree, Shell("Bash", "echo x > ../other/a.txt", tree));
+        var elsewhere = await Hook(tree, Shell("Bash", "echo x > a.txt", outside));
+        var back = await Hook(tree, Shell("Bash", "echo x > ../engine/src/a.txt", outside));
+
+        Assert.Equal("", inside.Output.Trim());
+        Assert.Contains("\"deny\"", climbs.Output);
+        Assert.Contains("\"deny\"", elsewhere.Output);
+        Assert.Equal("", back.Output.Trim());
+    }
+
+    /// <summary>A <c>cd</c> moves the directory every later part of the command writes relative to, and a <c>cd</c> back moves it home.</summary>
+    [Fact]
+    public async Task A_cd_then_a_write_is_judged_from_where_the_cd_went()
+    {
+        var (tree, outside) = Trees();
+        var out_ = Slashed(outside);
+
+        var away = await Hook(tree, Shell("Bash", $"cd \"{out_}\" && echo x >> notes.md", tree));
+        var up = await Hook(tree, Shell("Bash", "cd .. ; cat >> other/notes.md", tree));
+        var into = await Hook(tree, Shell("Bash", "cd src && echo x > a.txt", tree));
+        var returned = await Hook(tree, Shell("Bash", $"cd \"{out_}\"; cd \"{Slashed(tree)}\"; echo x > a.txt", tree));
+        var sub = await Hook(tree, Shell("Bash", $"(cd \"{out_}\" && ls) && echo x > a.txt", tree));
+        var power = await Hook(tree, Shell("PowerShell", $"Set-Location \"{out_}\"; 'x' | Out-File a.txt", tree));
+
+        Assert.Contains("\"deny\"", away.Output);
+        Assert.Contains("\"deny\"", up.Output);
+        Assert.Equal("", into.Output.Trim());
+        Assert.Equal("", returned.Output.Trim());
+        Assert.Equal("", sub.Output.Trim());
+        Assert.Contains("\"deny\"", power.Output);
+    }
+
+    [Fact]
+    public async Task A_quoted_path_with_spaces_is_one_target()
+    {
+        var (tree, _) = Trees();
+        var spaced = Path.Combine(_home, "work", "out side");
+        Directory.CreateDirectory(spaced);
+        var inSpaced = Path.Combine(tree, "src", "in side");
+        Directory.CreateDirectory(inSpaced);
+
+        var refused = await Hook(tree, Shell("Bash", $"echo x > \"{Slashed(spaced)}/a b.txt\"", tree));
+        var refusedSingle = await Hook(tree, Shell("Bash", $"cp 'a b.txt' '{Slashed(spaced)}/c d.txt'", tree));
+        var power = await Hook(tree, Shell("PowerShell", $"Set-Content -Path '{Slashed(spaced)}/a b.txt' -Value 'x y'", tree));
+        var allowed = await Hook(tree, Shell("Bash", $"echo x > \"{Slashed(inSpaced)}/a b.txt\"", tree));
+
+        Assert.Contains("\"deny\"", refused.Output);
+        Assert.Contains("\"deny\"", refusedSingle.Output);
+        Assert.Contains("\"deny\"", power.Output);
+        Assert.Equal("", allowed.Output.Trim());
+    }
+
+    /// <summary>
+    /// The incident's shape: a heredoc appended to a file outside, which the harness did not ask about. The body is text, so a
+    /// write inside it names no target, and a target after the heredoc's marker is still found.
+    /// </summary>
+    [Fact]
+    public async Task A_heredoc_append_is_judged_by_its_target_and_its_body_names_none()
+    {
+        var (tree, outside) = Trees();
+
+        var refused = await Hook(tree, Shell("Bash", $"cat >> \"{Slashed(outside)}/notes.md\" <<'EOF'\n## a note\nEOF", tree));
+        var markerFirst = await Hook(tree, Shell("Bash", $"cat <<EOF >> \"{Slashed(outside)}/notes.md\"\nbody\nEOF", tree));
+        var allowed = await Hook(tree, Shell("Bash", $"cat >> \"{Slashed(tree)}/notes.md\" <<'EOF'\necho x > \"{Slashed(outside)}/z\"\n> /elsewhere\nEOF", tree));
+        var after = await Hook(tree, Shell("Bash", $"cat > a.txt <<'EOF'\nbody\nEOF\necho y > \"{Slashed(outside)}/z\"", tree));
+        var power = await Hook(tree, Shell("PowerShell", $"@'\nbody > \"{Slashed(outside)}/in-body\"\n'@ | Set-Content src/a.txt", tree));
+
+        Assert.Contains("\"deny\"", refused.Output);
+        Assert.Contains("\"deny\"", markerFirst.Output);
+        Assert.Equal("", allowed.Output.Trim());
+        Assert.Contains("\"deny\"", after.Output);
+        Assert.Equal("", power.Output.Trim());
+    }
+
+    /// <summary>
+    /// A command it cannot read is the harness's boundary's, as before, never refused for being unread: an unclosed quote,
+    /// a target a variable or a substitution makes, a cd to one, and an interpreter it does not look into.
+    /// </summary>
+    [Fact]
+    public async Task A_command_it_cannot_read_is_left_to_the_boundary_and_never_refused_for_it()
+    {
+        var (tree, outside) = Trees();
+        var out_ = Slashed(outside);
+
+        foreach (var (tool, command) in new[]
+        {
+            ("Bash", $"echo x > \"{out_}/a.txt"),
+            ("Bash", "echo x > $HOME/a.txt"),
+            ("Bash", $"echo x > \"{out_}/$(date).txt\""),
+            ("Bash", "echo x > `pwd`/a.txt"),
+            ("Bash", "cd $SOMEWHERE && echo x > a.txt"),
+            ("Bash", $"cd - && tee a.txt < \"{out_}/b\""),
+            ("Bash", $"python -c \"open('{out_}/a.txt', 'w').write('x')\""),
+            ("PowerShell", "Set-Content -Path $env:TEMP\\a.txt -Value x"),
+            ("PowerShell", $"Set-Content -Path \"{out_}/a.txt -Value x"),
+            ("Bash", ""),
+        })
+        {
+            var (code, output) = await Hook(tree, Shell(tool, command, tree));
+            Assert.True(code == 0 && output.Trim() == "", $"{tool}: {command} was answered {code} `{output.Trim()}`");
+        }
+    }
+
+    /// <summary>What a command reads, logs to nowhere or says in a quoted word writes no file outside: all of these pass.</summary>
+    [Fact]
+    public async Task A_read_a_stream_redirect_and_a_quoted_arrow_are_not_writes()
+    {
+        var (tree, outside) = Trees();
+
+        foreach (var (tool, command) in new[]
+        {
+            ("Bash", "ls -la"),
+            ("Bash", $"cat \"{Slashed(outside)}/a.txt\""),
+            ("Bash", $"grep -n x < \"{Slashed(outside)}/a.txt\""),
+            ("Bash", $"cp \"{Slashed(outside)}/a.txt\" src/a.txt"),
+            ("Bash", "npm test > /dev/null 2>&1"),
+            ("Bash", "make 2>&1 | tee"),
+            ("Bash", "echo x >&2"),
+            ("Bash", $"git commit -m \"a > {Slashed(outside)}/a.txt\""),
+            ("Bash", $"echo 'x > {Slashed(outside)}/a.txt' # > {Slashed(outside)}/b.txt"),
+            ("PowerShell", "Get-Content a.txt 2>&1 | Out-Null"),
+            ("PowerShell", $"Copy-Item \"{Slashed(outside)}/a.txt\" src/a.txt"),
+            ("PowerShell", "'x' | Out-File $null"),
+            ("PowerShell", $"Write-Output 'x > {Slashed(outside)}/a.txt'"),
+        })
+        {
+            var (code, output) = await Hook(tree, Shell(tool, command, tree));
+            Assert.True(code == 0 && output.Trim() == "", $"{tool}: {command} was answered {code} `{output.Trim()}`");
+        }
+    }
+
+    /// <summary>One refused part refuses the command, wherever it stands in a chain, and a declared target is the tree's like.</summary>
+    [Fact]
+    public async Task A_chain_is_refused_for_any_one_outside_write_and_a_declared_target_is_let_through()
+    {
+        var (tree, outside) = Trees();
+        var elsewhere = Path.Combine(_home, "work", "third");
+        Directory.CreateDirectory(elsewhere);
+
+        var chain = await Hook(tree, Shell("Bash", $"echo a > src/a.txt && echo b | tee src/b.txt > \"{Slashed(outside)}/c.txt\"", tree));
+        var declared = await HookWith([tree, outside], Shell("Bash", $"echo x > \"{Slashed(outside)}/a.txt\"", tree));
+        var third = await HookWith([tree, outside], Shell("Bash", $"echo x > \"{Slashed(elsewhere)}/a.txt\"", tree));
+
+        Assert.Contains("\"deny\"", chain.Output);
+        Assert.Equal("", declared.Output.Trim());
+        var reason = (string?)JsonNode.Parse(third.Output)!["hookSpecificOutput"]!["permissionDecisionReason"] ?? "";
+        Assert.Contains(outside, reason);
+    }
+
+    /// <summary>🔴 A link inside the tree that leads out of it is outside for a shell's write too: the same resolution an edit's path has.</summary>
+    [Fact]
+    public async Task A_shell_write_through_a_link_that_leads_out_of_the_tree_is_refused()
+    {
+        var (tree, outside) = Trees();
+        var link = Path.Combine(tree, "escape");
+        if (OperatingSystem.IsWindows())
+        {
+            Run("cmd", "/c", "mklink", "/J", link, outside);
+        }
+        else
+        {
+            Directory.CreateSymbolicLink(link, outside);
+        }
+
+        Assert.True(Directory.Exists(link), "the link was not made, so this proves nothing");
+
+        var (_, output) = await Hook(tree, Shell("Bash", "echo x >> escape/notes.md", tree));
+
+        Assert.Contains("\"deny\"", output);
+    }
+
+    /// <summary>The tools it judges are the edit tools and now the two shells, in the harness's own matcher shape.</summary>
+    [Fact]
+    public void The_matcher_names_the_edit_tools_and_both_shells()
+    {
+        Assert.Equal("Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell", TreeGuard.Matcher);
+        Assert.StartsWith(TreeGuardHook.EditMatcher, TreeGuard.Matcher);
     }
 
     /// <summary>
@@ -289,6 +524,12 @@ public sealed class TreeGuardTests : IDisposable
         ["tool_input"] = input,
         ["tool_use_id"] = "toolu_1",
     }.ToJsonString();
+
+    /// <summary>A shell tool's call as the harness sends it: the command and the directory the shell stands in.</summary>
+    private static string Shell(string tool, string command, string cwd) => Call(tool, new JsonObject { ["command"] = command }, cwd);
+
+    /// <summary>A path with forward slashes, which Git Bash, PowerShell and node all take on Windows as they do elsewhere.</summary>
+    private static string Slashed(string path) => path.Replace('\\', '/');
 
     /// <summary>The hook exactly as the harness runs it: exec form, the tree as one argument, JSON on stdin.</summary>
     private Task<(int Code, string Output)> Hook(string? tree, string stdin) => HookWith(tree is null ? [] : [tree], stdin);

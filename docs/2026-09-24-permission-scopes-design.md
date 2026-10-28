@@ -61,7 +61,7 @@ unknown key written by a newer build is kept on every write.
 | `connector` | allow | the Daoris connector's own tools: `registry`, `knowledge_search`, `knowledge_get`, `knowledge_repositories`, `knowledge_convergence`, `quest_list`, `quest_respond`, `quest_publish`, `permission_propose` (each as `mcp__daoris-knowledge__<tool>`) | A driven session must be able to take and close its own quest and publish the requests it finds (INT3b), and propose a change to these rules (PERM2, §6), which only proposes. `knowledge_refresh` is not in it: rebuilding the index is the machine's job, not a session's. |
 | `commit` | allow | `Bash(cd:*)`, `Bash(git add:*)`, `Bash(git commit:*)`, `Bash(git mv:*)` | A driven session commits its own work in its own tree (D37). **The owner's answer to PERM4**, from a measured failure: untrusted, a real session made its edit, was refused the commit and declined (§3a). `git mv` joined it with UNBLOCK4 (D122 §3.6). |
 | `no-push` | deny | `Bash(git push)`, `Bash(git push:*)`, `Bash(git -* push)`, `Bash(git -* push *)`; and, in the spawn file only, an `autoMode.hard_deny` entry after `"$defaults"` | A push leaves the machine, and it stays the person's (D37). Held as a structural refusal, never as a script's exit code (HELP3's probe 4: PowerShell 5.1 collapses a native exit). The option-first rules and the classifier's entry are UNBLOCK4's (D122 §3.7): a `git push` rule does not stop `git -C . push`, and auto mode allows a push to the working repository by default. |
-| `tree-guard` | deny, **a hook** | none — it judges `Edit\|Write\|MultiEdit\|NotebookEdit` | A session writes files only inside its own tree (D51). A rule cannot say "outside" (below), so this is a PreToolUse hook (§3b). |
+| `tree-guard` | deny, **a hook** | none — it judges `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|PowerShell` | A session writes files only inside its own tree (D51). A rule cannot say "outside" (below), so this is a PreToolUse hook (§3b). |
 
 **What a rule cannot say, and who says it instead.** HELP3 also asked for *refuse a write outside
 the session's tree*. A rule cannot express "outside": there is no negation, and `deny` beats `allow`,
@@ -84,7 +84,7 @@ harness, and the person can switch `commit` off by id like any default.
 ### 3b. `tree-guard` — the tree as a hook (PERM3, as built)
 
 - **What it is.** A PreToolUse hook in the same settings file the rules ride:
-  `hooks.PreToolUse[{matcher: "Edit|Write|MultiEdit|NotebookEdit", hooks: [{type: "command",
+  `hooks.PreToolUse[{matcher: "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell", hooks: [{type: "command",
   command: "node", args: [<script>, <tree>], timeout: 30}]}]`. **Exec form**: with `args` present the
   harness spawns `node` directly with each element as one argument (its hooks reference), so no shell
   quotes a path. On Windows that shell would be Git Bash, or PowerShell where Git Bash is absent.
@@ -102,11 +102,22 @@ harness, and the person can switch `commit` off by id like any default.
   "permissionDecision": "deny", "permissionDecisionReason": "Daoris's tree guard: … a change needed
   elsewhere is a quest …"}}` on stdout, exit 0. Inside: **nothing**. An `allow` would lift the
   harness's own asking. A call it cannot read is refused, because the harness only sends it writes.
-- **What it does not cover.** A shell command's writes. They cannot be judged by reading the command
-  (a redirection, a script, a tool's own output flag), so Bash is not its call. There the harness's
-  working-directory boundary stands, and a command runs only if a rule allowed it. A hook that fails
-  or times out does not block (the harness's reference), so the guard stands **beside** that
-  boundary, never instead of it.
+- **A shell's writes, as far as the command can be read (TREESHELL1).** The first build left Bash to
+  the harness's working-directory boundary, on the ground that a command's writes cannot be judged by
+  reading it. A driven session on `auto` then appended to a file outside its tree through `cat >> <path>
+  <<'EOF'`, four seconds after the guard refused its Edit of the same path, and nothing asked: `auto`
+  hands the shell call to the harness's classifier, and `bypassPermissions` asks nothing (the FIX-LOG
+  entry TREESHELL1 has the finding). The matcher now also names `Bash` and `PowerShell`, and the script reads
+  the targets of a redirect (`>`, `>>`, `>|`, `&>`), `tee`, `cp`, `mv` (source and destination), `rm`,
+  `rmdir`, `unlink`, and PowerShell's `Set-Content`, `Add-Content`, `Out-File`, `Tee-Object`,
+  `Copy-Item`, `Move-Item` and `Remove-Item` (with their aliases), each resolved against the directory
+  the command stands in at that point, a `cd`, `pushd` or `Set-Location` moving it, and then judges it
+  as an edit's path is judged, through links. `bash -c '…'` is read the same way, three deep. It never
+  refuses a command it cannot read: an unclosed quote, a target a variable, a substitution or a
+  backtick makes, a relative target after a `cd` it could not place, and every write with no form here
+  (`sed -i`, `dd of=`, `touch`, `mkdir`, `install`, a program's own file write, `xargs`, `find -exec`,
+  `eval`, `node -e`) are the harness's boundary's, as before. A hook that fails or times out does not
+  block (the harness's reference), so the guard stands **beside** that boundary, never instead of it.
 - **Where the script lives.** The script is carried inside the driver's assembly and written to
   `<home>/hooks/tree-guard.mjs` on first use, then put back as shipped if changed. It is found the
   same way in a scratch run, a test and an install, whatever the publish layout. It needs `node` on

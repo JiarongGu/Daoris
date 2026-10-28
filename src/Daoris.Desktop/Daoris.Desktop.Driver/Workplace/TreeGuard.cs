@@ -12,9 +12,13 @@ namespace Daoris.Driver;
 /// anybody changed it, because the hook runs what the file says.</para>
 ///
 /// <para><b>What it covers, and what it does not.</b> It judges the tools that name a file: Write,
-/// Edit, MultiEdit and NotebookEdit, by their path fields, resolved through links. A shell command's
-/// writes cannot be judged by reading the command, so Bash is not its call. There the harness's own
-/// working-directory boundary stands, and a command runs only if a rule allowed it.</para>
+/// Edit, MultiEdit and NotebookEdit, by their path fields, resolved through links. And, since TREESHELL1,
+/// a shell's call (Bash, PowerShell) by the write targets it can read in the command: a redirect,
+/// <c>tee</c>, <c>cp</c>, <c>mv</c>, <c>rm</c>, and PowerShell's content, copy, move and remove cmdlets,
+/// each resolved against the directory the command stands in, a <c>cd</c> moving it. A command's writes
+/// cannot all be read from it, so what the script cannot read (an unclosed quote, a target a variable makes,
+/// a program's own file write) is never refused for it: the harness's own working-directory boundary stands
+/// there, and a command runs only if a rule allowed it or its mode did.</para>
 ///
 /// <para>🔴 <b>Structurally, never by an exit code</b> — the harness reads any exit but 2 as a
 /// non-blocking error, and HELP3's probe 4 saw PowerShell collapse a native one. And a hook that fails

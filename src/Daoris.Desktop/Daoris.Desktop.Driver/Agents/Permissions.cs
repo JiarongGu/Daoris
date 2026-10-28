@@ -171,8 +171,8 @@ public static class PermissionRules
         new(
             TreeGuardId, RuleList.Deny,
             [],
-            "A session writes files only inside its own tree: an edit or a write anywhere else is refused, "
-            + "through links as well. A change needed elsewhere is a quest.",
+            "A session writes files only inside its own tree: an edit, a write or a shell command's write "
+            + "anywhere else is refused, through links as well. A change needed elsewhere is a quest.",
             Hook: TreeGuardHook.Matcher),
     ];
 

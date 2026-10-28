@@ -116,7 +116,7 @@ public sealed class AgentWorkplacePortsTests : IDisposable
         var hooks = document.RootElement.GetProperty("hooks");
         Assert.Equal(["PreToolUse", "SubagentStart", "SubagentStop"], hooks.EnumerateObject().Select(pair => pair.Name));
         var before = hooks.GetProperty("PreToolUse").EnumerateArray().ToList();
-        Assert.Equal(["Edit|Write|MultiEdit|NotebookEdit", "mcp__daoris-knowledge__.*"], before.Select(entry => entry.GetProperty("matcher").GetString()));
+        Assert.Equal(["Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell", "mcp__daoris-knowledge__.*"], before.Select(entry => entry.GetProperty("matcher").GetString()));
         var command = Assert.Single(before[0].GetProperty("hooks").EnumerateArray());
         Assert.Equal(["type", "command", "args", "timeout"], command.EnumerateObject().Select(pair => pair.Name));
         Assert.Equal([guard.Script, guard.Tree, .. guard.Also], command.GetProperty("args").EnumerateArray().Select(arg => arg.GetString()));
